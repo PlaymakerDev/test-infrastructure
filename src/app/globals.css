@@ -1,3 +1,7 @@
+/* IMPORT URL */
+@import url('../styles/auth.css');
+@import url('../styles/example.css');
+
 @import "tailwindcss";
 
 :root {
@@ -14,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #191919;
     --foreground: #ededed;
   }
 }
