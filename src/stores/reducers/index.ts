@@ -7,7 +7,7 @@ const rootReducer = {
   example,
   admin,
   auth,
-  layout
+  layout,
 }
 
 export default rootReducer

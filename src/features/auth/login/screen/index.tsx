@@ -43,7 +43,7 @@ const AuthScreen: React.FC<Props> = (props) => {
       const response = await axios.post('/api/auth/login', value)
       if (response.status === 200) {
         // UPON FINISH
-        const path = menu['ADMIN']
+        const path = menu['EXAMPLE']
         message.success('Login successful')
         router.push(path[0].path)  // ← just redirect, no modal needed
       }

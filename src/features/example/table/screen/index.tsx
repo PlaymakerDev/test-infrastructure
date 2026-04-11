@@ -155,7 +155,7 @@ const TableScreen: React.FC<Props> = (props) => {
           total: data.length,
           onChange: (page: number, pageSize: number) => console.log(page, pageSize),
           showSizeChanger: true,
-          position: ['bottomRight'],
+          placement: ['bottomEnd'],
           showTotal: (total: number, range: [number, number]) => {
             return `${range[0]}-${range[1]} ของ ${total} รายการ`
           },

@@ -1,12 +1,30 @@
 /* IMPORT URL */
+@import url('../styles/antd.css');
 @import url('../styles/auth.css');
+@import url('../styles/custom.css');
 @import url('../styles/example.css');
-
+@import url('../styles/layout.css');
+/* IMPORT TAILWINDCSS */
 @import "tailwindcss";
 
+/* ===== RESET & BASE ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  /* margin: 0; */
+  /* padding: 0; */
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #212121;
+  --foreground: #ededed;
+  /* COLOUR PALETTE */
+  --yellow: #FCD116;
+  --light-black: #212121;
+  --dark-black: #191919;
+  --white: #FFFFFF;
+  --black: #000000;
 }
 
 @theme inline {
@@ -16,15 +34,43 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #191919;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* FONTS */
+h1 {}
+
+h2 {}
+
+h3 {}
+
+h4 {}
+
+h5 {}
+
+h6 {}
+
+p {}
+
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--off-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mid-gray);
+  border-radius: 3px;
 }
