@@ -1,0 +1,45 @@
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.nav-main-menu,
+.nav-side-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.nav-menu-list {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+/* MOBILE */
+.mobile-side-menu,
+.mobile-hamburger-icon {
+  display: none;
+}
+
+
+@media (max-width: 900px) {
+
+  /* NAVBAR */
+  .nav-side-menu,
+  .nav-menu-list {
+    display: none;
+  }
+
+  /* MOBILE */
+  .mobile-side-menu,
+  .mobile-hamburger-icon {
+    display: block;
+  }
+
+}
