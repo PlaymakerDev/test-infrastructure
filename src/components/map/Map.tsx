@@ -8,7 +8,7 @@ const Map = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    mapboxgl.accessToken = ""
+    mapboxgl.accessToken = process.env.MAPBOX_TOKEN || ''
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current!,
       center: [-71.06776, 42.35816], // starting position [lng, lat]. Note that lat must be set between -90 and 90
