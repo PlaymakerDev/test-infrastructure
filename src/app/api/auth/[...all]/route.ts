@@ -49,15 +49,12 @@ export const POST = async (
     }
     // LOGOUT
     if (all.includes('logout')) {
-      console.log("is_logout", all)
-      console.log("is_logout_access_token", session.access_token)
       const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/logout`, {}, {
         headers: {
           ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
           "Authorization": `Bearer ${session.access_token}`
         }
       })
-      console.log("is_logout_response", response)
       if (response.status === 200) {
         session.destroy()
       }
@@ -84,6 +81,7 @@ export const POST = async (
     return NextResponse.json({ message: 'Bad request' }, { status: 400 })
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.log("===", error)
       const status = error.response?.status ?? 500
       const data = error.response?.data ?? { message: 'Internal server error' }
       return NextResponse.json(data, { status })

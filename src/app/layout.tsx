@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Prompt } from "next/font/google";
+import { Geist, Geist_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import StoreProvider from '@/components/provider/StoreProvider';
+import { ConfigProvider } from "antd";
+import { theme } from "@/configs/antd/themeConfig";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,11 +16,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const promptSans = Prompt({
-  variable: "--font-prompt-sans",
-  weight: ["400", "700"],
-  subsets: ["latin"]
-})
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  variable: "--font-ibm-plex-sans-thai",
+  subsets: ["thai", "latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -33,11 +35,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${promptSans.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${ibmPlexSansThai.variable} antialiased`}
       >
         <AntdRegistry>
           <StoreProvider>
-            {children}
+            <ConfigProvider
+              theme={{
+                ...theme.theme
+              }}
+            >
+              {children}
+            </ConfigProvider>
           </StoreProvider>
         </AntdRegistry>
       </body>
