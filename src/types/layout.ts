@@ -1,4 +1,4 @@
-import { PromiseProperties } from "./shared/redux";
+import { PromiseProperties } from "./shared";
 
 export interface LayoutState {
   task_schedules: PromiseProperties;

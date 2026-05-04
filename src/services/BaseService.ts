@@ -37,7 +37,7 @@ BaseService.interceptors.request.use(
 const logout = async () => {
 	await axios.post("/api/auth/logout", {})
 	if (typeof window !== "undefined") {
-		window.location.href = "/login"
+		window.location.href = "/auth/login"
 	}
 }
 

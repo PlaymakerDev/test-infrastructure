@@ -42,7 +42,7 @@ export const POST = async (
       if (response.status === 200) {
         session.access_token = response.data.access_token;
         session.refresh_token = response.data.refresh_token;
-        session.role = "EXAMPLE"; // Set role based on your application's logic
+        session.role = "ADMIN"; // Set role based on your application's logic
         await session.save();
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })

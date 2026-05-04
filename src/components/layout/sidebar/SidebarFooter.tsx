@@ -3,6 +3,8 @@ import React, { useCallback } from 'react'
 import { Button, Modal } from 'antd'
 import { useRouter } from 'next/navigation'
 import axios, { AxiosError } from 'axios'
+import { useAppDispatch } from '@/stores/hooks'
+import { resetDrawerOpen } from '@/stores/reducers/layout/layoutSlice'
 
 interface Props {
 }
@@ -11,15 +13,18 @@ const SidebarFooter: React.FC<Props> = (props) => {
   const { } = props
   const [modal, contextHolder] = Modal.useModal()
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
   const onLogout = useCallback(async () => {
     try {
       const response = await axios.post('/api/auth/logout', {})
       if (response.status === 200) {
+        dispatch(resetDrawerOpen())
+
         modal.success({
           title: 'Logout successful',
           content: 'You have been logged out successfully.',
-          onOk: () => router.push('/login'),
+          onOk: () => router.push('/auth/login'),
           onCancel: () => Modal.destroyAll(),
         })
       }
@@ -33,7 +38,7 @@ const SidebarFooter: React.FC<Props> = (props) => {
         })
       }
     }
-  }, [modal, router])
+  }, [modal, router, dispatch])
 
 
   return (

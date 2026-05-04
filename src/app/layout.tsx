@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
-import "./globals.css";
+import "../styles/globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import StoreProvider from '@/components/provider/StoreProvider';
 import { ConfigProvider } from "antd";
