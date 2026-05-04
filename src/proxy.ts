@@ -12,14 +12,14 @@ export async function proxy(request: NextRequest) {
 
   const path = menu[session.role as keyof typeof menu]
 
-  // Authenticated user on /login → send to dashboard
-  if (isAuthenticated && pathname.startsWith('/login')) {
+  // Authenticated user on /auth/login → send to dashboard
+  if (isAuthenticated && pathname.startsWith('/auth/login')) {
     return NextResponse.redirect(new URL(path[0].path, request.url))
   }
 
-  // Unauthenticated user on a protected route (not /login) → send to login
-  if (!isAuthenticated && !pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // Unauthenticated user on a protected route (not /auth/login) → send to login
+  if (!isAuthenticated && !pathname.startsWith('/auth/login')) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   return response

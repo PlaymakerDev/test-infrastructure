@@ -5,95 +5,112 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Development
-npm run dev              # Start Next.js dev server
-npm run build            # Production build
-npm run start            # Production server
-npm run lint             # Run ESLint
-
-# Testing (Storybook + Vitest)
-npm run storybook        # Start Storybook on port 6006
-npm run build-storybook  # Build Storybook
-npx vitest               # Run Storybook-based component tests (Playwright/Chromium)
-
-# Run a single test file
-npx vitest src/components/video/HLSLivePlayer.stories.tsx
+npm run dev          # Start development server
+npm run build        # Production build
+npm run lint         # Run ESLint
+npm run storybook    # Storybook dev server
 ```
+
+No test runner is configured — Vitest/Playwright are listed as dependencies but no test scripts exist in package.json.
 
 ## Architecture Overview
 
-This is a **Next.js 16 App Router** frontend for a road/traffic incident management system (DRR-ITS) — a role-based admin dashboard.
+Next.js 16 App Router dashboard application for traffic incident management (DRR ITS), written in TypeScript strict mode.
 
-### Key Libraries
-- **UI**: Ant Design v6 (requires `AntdRegistry` in root layout for SSR compatibility)
-- **State**: Redux Toolkit with typed hooks in `src/stores/hooks.ts`
-- **Forms**: React Hook Form with Ant Design controllers
-- **Auth**: `better-auth` + `iron-session` (httpOnly cookie named `DRR_ITS`, 30-day expiry)
-- **HTTP**: Axios with session-aware interceptors in `src/services/BaseService.ts`
-- **Video**: HLS.js for live CCTV stream playback
-- **Styling**: Tailwind CSS v4
+**Stack:** Next.js 16 · React 19 · Redux Toolkit · Ant Design 6 · TailwindCSS 4 · Axios · iron-session · Mapbox GL
 
-### Route Group Structure
+### Path alias
+
+`@/*` → `./src/*` (used everywhere; prefer over relative imports)
+
+### Routing
+
+Root (`/`) redirects to `/auth/login` via `next.config.ts`. All middleware logic lives in `src/proxy.ts` (exported as `middleware` — not `src/middleware.ts`):
+
+- Unauthenticated → redirect to `/auth/login`
+- Authenticated on `/auth/login` → redirect to first menu item path for user role
+
+App Router groups:
+- `src/app/auth/` — login layout (minimal)
+- `src/app/admin/` — protected pages, uses `PageLayout` (Navbar + Sidebar)
+- `src/app/example/` — development/demo pages
+
+### Feature organization
 
 ```
-src/app/
-  (auth)/login/        # Public - login page
-  (admin)/dashboard/   # Admin role
-  (example)/           # Example/dev pages
-  api/auth/[...all]/   # API routes: login, logout, refresh, session
+src/features/<domain>/<feature>/
+  screen/index.tsx     # Main page component (imported by app/*/page.tsx)
+  components/          # Feature-scoped sub-components
+  context/             # Feature-scoped providers
 ```
 
-The root `page.tsx` redirects `/` → `/login` via `next.config.ts`.
+Page files in `src/app/` are thin shells that just render the feature screen.
 
-### Authentication Flow
+### State management (Redux Toolkit)
 
-1. POST `/api/auth/login` → validates credentials, stores tokens in iron-session cookie
-2. All API requests: `BaseService` fetches session from `/api/auth/session` and injects `Authorization: Bearer {token}` + `x-api-key` headers
-3. `src/proxy.ts` (middleware) guards routes: unauthenticated non-login routes → redirect to `/`; authenticated users on `/login` → redirect to their role's first menu path
-4. Token refresh: response interceptor in `BaseService` handles `res_code: 40199` (expired) by showing a modal and calling `/api/auth/refresh`; `40100` (invalid) forces logout
+Store slices: `auth`, `admin`, `example`, `layout`
 
-### Feature Module Pattern
+- `src/stores/store.ts` — store config
+- `src/stores/hooks.ts` — typed `useAppDispatch` / `useAppSelector`
+- `src/stores/reducers/` — slice files with `createAsyncThunk` + `extraReducers`
 
-Each feature lives in `src/features/<role>/<feature>/` with:
-- `context/index.tsx` — React context provider (wrap the page layout)
-- `screen/index.tsx` — Main screen component (used in `page.tsx`)
+Thunks follow the pattern: `pending` sets loading flag, `fulfilled`/`rejected` update state.
 
-Page files in `src/app/` are thin: they import the screen and wrap it with the context provider.
+The `layout` slice tracks:
+- `task_schedules` — global loading/status state shared across features
+- `drawer.open` — sidebar drawer visibility
 
-### Redux Pattern
+### Auth & sessions
 
-- Slices in `src/stores/reducers/<domain>/`
-- Async thunks call services and update `task_schedules` (loading/status per operation)
-- Always use typed hooks: `useAppDispatch`, `useAppSelector`, `useAppStore` from `src/stores/hooks.ts`
-- Root reducer assembled in `src/stores/reducers/index.ts`
+Auth is handled by `iron-session` (HTTP-only encrypted cookies, cookie name: `DRR_ITS`).
 
-### Services Layer
+Next.js API routes at `src/app/api/auth/[...all]/route.ts`:
+- `GET /api/auth/session` — read session tokens
+- `POST /api/auth/login` — login, store `access_token` + `refresh_token`
+- `POST /api/auth/logout` — destroy session
+- `POST /api/auth/refresh` — refresh tokens
 
-- `BaseService.ts` — Axios instance (base URL: `NEXT_PUBLIC_HOST_BACKEND`, timeout: 60s) with request/response interceptors
-- `ApiService.ts` — Generic typed wrapper: `fetchData<Response, Request>(config)`
-- `src/services/routes/` — One file per domain (`AdminService.ts`, `ExampleService.ts`, etc.)
+Session contains: `{ access_token, refresh_token, role }`. Role is either `"ADMIN"` or `"EXAMPLE"`.
 
-### Navigation / Menu Config
+Required env var: `TOKEN_SECRET` (session encryption key).
 
-Role menus are defined in `src/configs/menu/` (`admin.ts`, `manager.ts`, `user.ts`). Each entry has a `path`, `label`, and icon key. The middleware uses the first item's path to determine post-login redirect. Icons are resolved in `Navbar.tsx` via an `ICON_LIST` map from `react-icons`.
+### API / service layer
 
-### HLSLivePlayer Component
+```
+BaseService (Axios instance, 60s timeout)
+  └── ApiService.fetchData<Response, Request>(config) — typed wrapper
+        └── src/services/routes/*.ts — domain-specific service calls
+```
 
-`src/components/video/HLSLivePlayer.tsx` is a complex HLS streaming component with:
-- Automatic HLS vs direct video detection (`.m3u8` URL → HLS.js)
-- Exponential backoff retry with configurable `maxRetries` and `retryDelay`
-- Intersection Observer to pause off-screen streams (performance)
-- Canvas-based last-frame capture during reconnection
-- `useImperativeHandle` exposing `retry()`, `getStatus()`, `isConnected()`
+**Request interceptor:** auto-attaches `Authorization: Bearer {access_token}` and `x-api-key: {NEXT_PUBLIC_API_KEY}` to every request.
 
-### Environment Variables
+**Response interceptor:** handles `res_code === "40199"` (token expired → refresh modal) and `res_code === "40100"` (invalid token → force logout). Status `401` also triggers logout.
+
+Backend base URL: `NEXT_PUBLIC_HOST_BACKEND` (defaults to `https://api-go.enixma.net/api`).
+
+### Map
+
+`src/components/map/ReactMap.tsx` renders a full-screen Mapbox map centered on Thailand (lat 14.0, lng 101.5, zoom 5.2). Token: `NEXT_PUBLIC_MAPBOX_TOKEN`. Uses a custom Mapbox style with brightness filtered to 0.5.
+
+### Menu & role-based navigation
+
+`src/configs/menu/index.ts` exports `menu: Record<Role, MenuItem[]>`. Each item has `key`, `title`, `path`, `path_active`, `path_list`, and an icon name string (Tabler Icons convention, e.g. `"TbLayoutDashboard"`).
+
+The sidebar resolves icon components dynamically from the name string. To add a new menu item, add it to `src/configs/menu/admin.ts` with a valid `@tabler/icons-react` icon name.
+
+### Environment variables
 
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_HOST_BACKEND` | Backend API base URL |
-| `SESSION_SECRET` | iron-session encryption secret |
-| `NEXT_PUBLIC_API_KEY` | Value for `x-api-key` request header |
+| `NEXT_PUBLIC_API_KEY` | API key sent as `x-api-key` header |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox access token |
+| `TOKEN_SECRET` | iron-session cookie encryption key |
 
-### Testing Approach
+### Key conventions
 
-Tests are Storybook stories executed via Vitest + Playwright (Chromium, headless). Story files live alongside components as `*.stories.tsx`. There are no separate unit test files currently — add tests as stories in `src/stories/` or co-located `*.stories.tsx`.
+- Mark components that use hooks, Redux, or browser APIs with `"use client"`.
+- Use `React.memo()` for list-rendered or frequently re-rendered components.
+- Form state is managed with `react-hook-form` using `Controller` pattern; never uncontrolled inputs.
+- Error feedback is modal-based (Ant Design `Modal.error`), not inline.
+- The `PromiseProperties` type (loading boolean + status enum) is the standard shape for async state in slices.
