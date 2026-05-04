@@ -2,6 +2,7 @@ import React from 'react'
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { PageProvider } from '../provider/ContextProvider';
+import { usePathname } from 'next/navigation';
 
 interface Props {
   children: React.ReactNode;
@@ -9,12 +10,14 @@ interface Props {
 
 const Layout: React.FC<Props> = (props) => {
   const { children } = props
+  const pathname = usePathname()
+  const isDashboard = pathname === '/admin/dashboard'
 
   return (
     <PageProvider>
       <Navbar />
       <Sidebar />
-      <main className='h-screen w-screen'>
+      <main className={`h-screen w-screen ${isDashboard ? '' : 'pt-(--nav-offset)'}`}>
         {children}
       </main>
     </PageProvider>

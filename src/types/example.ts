@@ -1,4 +1,4 @@
-import { PromiseProperties } from "./shared/redux";
+import { PromiseProperties } from "./shared";
 
 // API
 export type APIGetResponseExample = ExampleMe;

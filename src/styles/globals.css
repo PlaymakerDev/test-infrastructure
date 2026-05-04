@@ -1,0 +1,125 @@
+/* IMPORT URL */
+@import url('../styles/antd.css');
+@import url('../styles/auth.css');
+@import url('../styles/custom.css');
+@import url('../styles/example.css');
+@import url('../styles/layout.css');
+/* IMPORT TAILWINDCSS */
+@import "tailwindcss";
+
+/* ===== RESET & BASE ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  /* margin: 0; */
+  /* padding: 0; */
+}
+
+:root {
+  /* Background and Foreground */
+  --background: #212121;
+  --foreground: #ededed;
+  /* COLOUR PALETTE */
+  --yellow: #FCD116;
+  --light-black: #212121;
+  --dark-black: #191919;
+  --white: #FFFFFF;
+  --black: #000000;
+  --light-blue: #05F2DB99;
+  --default-blue: #66AEFF;
+  --red: #FF6666;
+  /* LAYOUT */
+  --nav-h: 72px;
+  --nav-offset: 100px;
+  /* add this — accounts for trapezoid overhang */
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+/* FONTS */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(1.375rem, 3.73vw, 2rem);
+}
+
+h2 {
+  font-size: clamp(1.125rem, 3.73vw, 1.75rem);
+}
+
+h3 {
+  font-size: clamp(1rem, 3.73vw, 1.17rem);
+}
+
+h4 {
+  font-size: clamp(0.875rem, 3.73vw, 1rem);
+}
+
+h5 {
+  font-size: clamp(0.75rem, 3.73vw, 0.83rem);
+}
+
+h6 {
+  font-size: clamp(0.625rem, 3.73vw, 0.67rem);
+}
+
+p {
+  font-size: clamp(0.875rem, 3.73vw, 1rem);
+}
+
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--off-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mid-gray);
+  border-radius: 3px;
+}

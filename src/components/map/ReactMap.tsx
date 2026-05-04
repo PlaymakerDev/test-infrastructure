@@ -4,7 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const ReactMap = () => {
   return (
     <Map
-      mapboxAccessToken={process.env.MAPBOX_TOKEN || ''}
+      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''}
       initialViewState={{
         longitude: 101.5,
         latitude: 14.0,

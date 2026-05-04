@@ -20,6 +20,7 @@ const AuthScreen: React.FC<Props> = (props) => {
   const router = useRouter()
   const { task_schedules: { loading } } = useAppSelector(state => state.layout)
   const dispatch = useAppDispatch()
+  const [modal, contextHolder] = Modal.useModal()
 
   const form = useForm<FormLogin>({
     defaultValues: {
@@ -43,14 +44,14 @@ const AuthScreen: React.FC<Props> = (props) => {
       const response = await axios.post('/api/auth/login', value)
       if (response.status === 200) {
         // UPON FINISH
-        const path = menu['EXAMPLE']
+        const path = menu["ADMIN"]
         message.success('Login successful')
         router.push(path[0].path)  // ← just redirect, no modal needed
       }
     } catch (error) {
       if (error instanceof AxiosError) {
         console.log(error.response?.data)
-        Modal.error({
+        modal.error({
           title: 'Login failed',
           content: error.response?.data?.res_data?.message,
           onOk: () => Modal.destroyAll(),
@@ -68,59 +69,62 @@ const AuthScreen: React.FC<Props> = (props) => {
   }, [router, dispatch])
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        control={control}
-        name='username'
-        rules={{
-          required: 'Please enter Username'
-        }}
-        render={({ field }) => {
-          return (
-            <fieldset>
-              <label>Username</label>
-              <Input
-                {...field}
-                name={field.name}
-                placeholder='Username'
-              />
-              {!!errors.username &&
-                <p className='text-red-500'>{errors.username.message}</p>
-              }
-            </fieldset>
-          )
-        }}
-      />
-      <Controller
-        control={control}
-        name='password'
-        rules={{
-          required: 'Please enter Password'
-        }}
-        render={({ field }) => {
-          return (
-            <fieldset>
-              <label>Password</label>
-              <Input.Password
-                {...field}
-                name={field.name}
-                placeholder='Password'
-              />
-              {!!errors.password &&
-                <p className='text-red-500'>{errors.password.message}</p>
-              }
-            </fieldset>
-          )
-        }}
-      />
-      <Button
-        htmlType='submit'
-        type='primary'
-        loading={loading}
-      >
-        Login
-      </Button>
-    </form>
+    <>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Controller
+          control={control}
+          name='username'
+          rules={{
+            required: 'Please enter Username'
+          }}
+          render={({ field }) => {
+            return (
+              <fieldset>
+                <label>Username</label>
+                <Input
+                  {...field}
+                  name={field.name}
+                  placeholder='Username'
+                />
+                {!!errors.username &&
+                  <p className='text-red-500'>{errors.username.message}</p>
+                }
+              </fieldset>
+            )
+          }}
+        />
+        <Controller
+          control={control}
+          name='password'
+          rules={{
+            required: 'Please enter Password'
+          }}
+          render={({ field }) => {
+            return (
+              <fieldset>
+                <label>Password</label>
+                <Input.Password
+                  {...field}
+                  name={field.name}
+                  placeholder='Password'
+                />
+                {!!errors.password &&
+                  <p className='text-red-500'>{errors.password.message}</p>
+                }
+              </fieldset>
+            )
+          }}
+        />
+        <Button
+          htmlType='submit'
+          type='primary'
+          loading={loading}
+        >
+          Login
+        </Button>
+      </form>
+      {contextHolder}
+    </>
   )
 }
 

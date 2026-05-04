@@ -3,7 +3,20 @@ import React, { useCallback, useMemo } from 'react'
 import Link from 'next/link';
 import {
   TbForms,
-  TbBrandDatabricks
+  TbBrandDatabricks,
+  TbLayoutDashboard,
+  TbVideo,
+  TbCar,
+  TbTruckDelivery,
+  TbTrafficLights,
+  TbWalk,
+  TbBolt,
+  TbDeviceDesktop,
+  TbBuildingBridge,
+  TbBuildingBridge2,
+  TbTopologyStar3,
+  TbAdjustmentsHorizontal,
+  TbBriefcase
 } from "react-icons/tb";
 import menu from '@/configs/menu';
 import { usePathname } from 'next/navigation';
@@ -14,7 +27,21 @@ interface Props {
 
 const ICON_LIST: Record<string, React.ComponentType> = {
   TbForms,
-  TbBrandDatabricks
+  TbBrandDatabricks,
+  // ADMIN
+  TbLayoutDashboard,
+  TbVideo,
+  TbCar,
+  TbTruckDelivery,
+  TbTrafficLights,
+  TbWalk,
+  TbBolt,
+  TbDeviceDesktop,
+  TbBuildingBridge,
+  TbBuildingBridge2,
+  TbTopologyStar3,
+  TbAdjustmentsHorizontal,
+  TbBriefcase
 }
 const Sidebar: React.FC<Props> = (props) => {
   const { } = props
@@ -26,7 +53,7 @@ const Sidebar: React.FC<Props> = (props) => {
   }, [])
 
   const renderMenuList = useMemo(() => {
-    const newList = menu['EXAMPLE']?.map((item, index) => {
+    const newList = menu["ADMIN"]?.map((item, index) => {
       if (pathname === item.path) {
         return (
           <li
