@@ -28,7 +28,7 @@ const SwapButton: React.FC<Props> = (props) => {
           setLabelValue(item.value)
         }}
       >
-        {item.label}
+        <p>{item.label}</p>
       </Button>
     ))
   }, [options, setLabelValue, active])

@@ -125,7 +125,7 @@ export default function Navbar() {
       <div className="nav-container">
         <div className="nav-main-menu">
           <TbMenu2
-            className={`${iconClassName} mobile-hamburger-icon`}
+            className={`${iconClassName}`}
             onClick={() => dispatch(setDrawerOpen({ open: true }))}
           />
           <div>
@@ -134,9 +134,9 @@ export default function Navbar() {
           </div>
         </div>
         {/* NAVBAR SESSION START */}
-        <ul className="nav-menu-list">
+        {/* <ul className="nav-menu-list">
           {renderMenuList}
-        </ul>
+        </ul> */}
         {/* NAVBAR SESSION END */}
         <div className="nav-side-menu">
           <TbZoomInArea

@@ -9,6 +9,8 @@ export { default as ChartSection } from './sections/overall/ChartSection'
 export { default as StationSection } from './StationSection'
 // WIM
 export { default as WIMSection } from './WIMSection'
+export { default as StatInfoCard } from './sections/wim/StatInfoCard'
+export { default as TableWIMProject } from './sections/wim/TableWIMProject'
 // MOBILE
 export { default as MobileSection } from './MobileSection'
 // GPS

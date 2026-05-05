@@ -1,8 +1,6 @@
 /* IMPORT URL */
 @import url('../styles/antd.css');
-@import url('../styles/auth.css');
 @import url('../styles/custom.css');
-@import url('../styles/example.css');
 @import url('../styles/layout.css');
 /* IMPORT TAILWINDCSS */
 @import "tailwindcss";

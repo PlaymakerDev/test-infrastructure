@@ -1,45 +1,126 @@
+"use client"
+import React, { useCallback, useMemo, useState } from 'react'
+import { Button, ConfigProvider, Segmented } from 'antd'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay } from 'swiper/modules';
 import ReactMap from '@/components/map/ReactMap'
-import { Col, Row } from 'antd'
-import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import '@/styles/map.css'
+import 'swiper/css'
 
-interface Props {
+const FILTER_OPTIONS = ['ทั้งหมด', 'สถานี', 'WIM', 'เคลื่อนที่']
 
-}
+const mockCameras = [
+  {
+    id: 1,
+    code: 'DRR-CCO-Weight-CAM01 (N) ขาออก ด่านชั่ง',
+    location: 'สถานีด่านฯ ฉะเชิงเทรา',
+  },
+  {
+    id: 2,
+    code: '6B4M-WIM-NON1002-CAM001',
+    location: 'WIM นนทบุรี (นน.1002) ฝั่งบาง',
+  },
+  {
+    id: 3,
+    code: '67PSK-WIM-NON4018-F002',
+    location: 'WIM เลี้ยงเมืองนนทบุรี (นน.4018)',
+  },
+]
 
-const LocationSection: React.FC<Props> = (props) => {
-  const { } = props
+const LocationSection = () => {
+  const [activeFilter, setActiveFilter] = useState('ทั้งหมด')
+
+  const renderCameraList = useCallback((type: 'PC' | 'MOBILE') => {
+    if (type === 'MOBILE') {
+      return mockCameras.map((item) => (
+        <SwiperSlide key={item.id}>
+          <div className="camera-item">
+            <figure className="camera-thumb">
+              <HLSLivePlayer />
+            </figure>
+            <h4 className="camera-code">{item.code}</h4>
+            <p className="camera-location">{item.location}</p>
+          </div>
+        </SwiperSlide>
+      ))
+    }
+
+    if (type === 'PC') {
+      return mockCameras.map((item) => (
+        <div className="camera-item" key={item.id}>
+          <figure className="camera-thumb">
+            <HLSLivePlayer />
+          </figure>
+          <h4 className="camera-code">{item.code}</h4>
+          <p className="camera-location">{item.location}</p>
+        </div>
+      ))
+    }
+
+    return
+  }, [])
+
+  const renderOptionButton = useMemo(() => {
+    return FILTER_OPTIONS.map((item) => (
+      <ConfigProvider
+        key={item}
+        theme={{
+          token: {
+            colorPrimary: '#212121',
+          }
+        }}
+      >
+        <Button
+          shape='round'
+          type={activeFilter === item ? 'primary' : 'text'}
+          size='medium'
+          onClick={() => {
+            setActiveFilter(item)
+          }}
+        >
+          <p className={`fs-12 ${activeFilter === item ? 'text-(--yellow)' : 'text-white'}`}>{item}</p>
+        </Button>
+      </ConfigProvider>
+    ))
+  }, [activeFilter])
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} sm={24} md={6} lg={6} xl={6} xxl={6} xxxl={6}>
-        <div>
-          <figure className='figure-sm rounded-lg overflow-hidden'>
-            <HLSLivePlayer />
-          </figure>
-          <h3 className='text-blue-400'>DRR-CCO-Weight-CAM01 (N) ขาออก ด่านชั่ง</h3>
-          <p>สถานีด่านฯ ฉะเชิงเทรา</p>
+    <div className="location-section">
+
+      {/* ── Desktop: scrollable camera list ── */}
+      <div className="camera-list">
+        {renderCameraList('PC')}
+      </div>
+
+      {/* ── Mobile: swiper camera list ── */}
+      <div className="mobile-cam-list">
+        <Swiper
+          slidesPerView={1}
+          grabCursor
+          modules={[Autoplay]}
+          autoplay={{
+            delay: 3000,
+            pauseOnMouseEnter: true
+          }}
+        >
+          {renderCameraList('MOBILE')}
+        </Swiper>
+      </div>
+
+      {/* ── Map with filter overlay ── */}
+      <div className="map-wrapper">
+        <div className="filter-bar">
+          <div className='bg-[#A2A2A233] rounded-3xl p-1.5'>
+            <div className='flex items-center gap-3'></div>
+            {renderOptionButton}
+          </div>
         </div>
-        <div>
-          <figure className='figure-sm rounded-lg overflow-hidden'>
-            <HLSLivePlayer />
-          </figure>
-          <h3 className='text-blue-400'>DRR-CCO-Weight-CAM01 (N) ขาออก ด่านชั่ง</h3>
-          <p>สถานีด่านฯ ฉะเชิงเทรา</p>
-        </div>
-        <div>
-          <figure className='figure-sm rounded-lg overflow-hidden'>
-            <HLSLivePlayer />
-          </figure>
-          <h3 className='text-blue-400'>DRR-CCO-Weight-CAM01 (N) ขาออก ด่านชั่ง</h3>
-          <p>สถานีด่านฯ ฉะเชิงเทรา</p>
-        </div>
-      </Col>
-      <Col xs={24} sm={24} md={18} lg={18} xl={18} xxl={18} xxxl={18}>
         <ReactMap />
-      </Col>
-    </Row>
+      </div>
+
+    </div>
   )
 }
 
-export default React.memo<Props>(LocationSection)
+export default React.memo(LocationSection)
