@@ -1,0 +1,16 @@
+.ant-table-wrapper .ant-table-body::-webkit-scrollbar,
+.ant-table-wrapper .ant-table-content::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.ant-table-wrapper .ant-table-body::-webkit-scrollbar-track,
+.ant-table-wrapper .ant-table-content::-webkit-scrollbar-track {
+  background: #191919;
+}
+
+.ant-table-wrapper .ant-table-body::-webkit-scrollbar-thumb,
+.ant-table-wrapper .ant-table-content::-webkit-scrollbar-thumb {
+  background: #444444;
+  border-radius: 3px;
+}

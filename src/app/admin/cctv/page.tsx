@@ -1,3 +1,5 @@
+import CCTVScreen from "@/features/admin/cctv/screen/overview"
+
 export default function CCTVPage() {
-  return <h1>This is CCTV</h1>
+  return <CCTVScreen />;
 }
