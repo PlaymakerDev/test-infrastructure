@@ -34,15 +34,34 @@ export const theme: ConfigProviderProps = {
         // WHEN ACTIVE
         activeBorderColor: "var(--yellow)",
       },
+      DatePicker: {
+        // Input field — mirrors Input component
+        colorBorder: "var(--yellow)",
+        colorBgContainer: "transparent",
+        colorText: "var(--white)",
+        colorIcon: "var(--yellow)",
+        colorTextPlaceholder: "#FFFFFF50",
+        colorIconHover: "var(--white)",
+        hoverBorderColor: "var(--white)",
+        activeBorderColor: "var(--yellow)",
+        // Dropdown panel
+        colorBgElevated: "var(--dark-black)",
+        colorTextHeading: "var(--white)",
+        colorSplit: "#333333",
+        colorTextDisabled: "#FFFFFF30",
+        // Date cells
+        cellHoverBg: "#2A2A2A",
+      },
       Segmented: {
         trackBg: '#1A1A1A',
         trackPadding: 4,
+        colorBorder: '#FCD116',
         itemColor: 'rgba(255, 255, 255, 0.55)',
         itemHoverColor: '#FFFFFF',
         itemHoverBg: 'rgba(255, 255, 255, 0.06)',
-        itemSelectedColor: '#FCD116',
-        itemSelectedBg: '#2D2D2D',
-        itemActiveBg: '#333333',
+        itemSelectedColor: 'var(--dark-black)',
+        itemSelectedBg: '#FCD116',
+        itemActiveBg: '#FCD116',
       },
       Table: {
         colorBgContainer: "#191919",
