@@ -1,4 +1,4 @@
-import SearchCard from '@/components/searchable/SearchCard'
+import SearchBar from '@/components/searchable/SearchBar'
 import React from 'react'
 
 interface Props {
@@ -10,7 +10,7 @@ const OverviewScreen: React.FC<Props> = (props) => {
 
   return (
     <div>
-      <SearchCard />
+      <SearchBar />
     </div>
   )
 }
