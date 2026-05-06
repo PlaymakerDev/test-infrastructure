@@ -13,6 +13,7 @@ import {
   // LOWER SECTION
   OverallDailyWeightList,
   TableOverallDailyWeight,
+  OverallDataDisplaySection,
 } from '../components'
 
 interface Props {
@@ -26,7 +27,7 @@ const OverallSection: React.FC<Props> = (props) => {
     <>
       <section>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={12}>
+          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={10}>
             <section>
               <OverallWeightStat />
             </section>
@@ -40,14 +41,24 @@ const OverallSection: React.FC<Props> = (props) => {
               <OverallAvgSpeed />
             </section>
           </Col>
-          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={12}>
-            <p>CONTENT</p>
+          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={14}>
+            <section>
+              <p>MAP CONTENT</p>
+            </section>
+            <section className='mt-5'>
+              <OverallCCTV />
+            </section>
+            <section className='mt-5'>
+              <TableOverallWeight />
+            </section>
+            <section className='mt-5'>
+              <p>CONTEXT</p>
+            </section>
           </Col>
         </Row>
       </section>
       <section className='mt-5'>
-        <h3 className='text-(--yellow)'>ตารางข้อมูลรถเข้าชั่งน้ำหนักวันนี้</h3>
-        <p>CONTENT</p>
+        <OverallDataDisplaySection />
       </section>
     </>
   )

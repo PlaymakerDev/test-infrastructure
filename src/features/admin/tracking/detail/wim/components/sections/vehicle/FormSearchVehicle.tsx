@@ -84,6 +84,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
                   <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
                   <div className='overflow-x-auto'>
                     <Segmented
+                      block
                       {...field}
                       options={PERIOD_OPTIONS}
                       size='large'
@@ -107,6 +108,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
                   <label className='block fs-12 text-(--yellow)'>สถานะ</label>
                   <div className='overflow-x-auto'>
                     <Segmented
+                      block
                       {...field}
                       options={STATUS_OPTIONS}
                       size='large'
