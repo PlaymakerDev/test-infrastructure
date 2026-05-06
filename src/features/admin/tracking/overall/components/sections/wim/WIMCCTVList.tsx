@@ -30,8 +30,8 @@ const WIMCCTVList: React.FC<Props> = (props) => {
     return mockCameras.map((item) => (
       <div key={item.id} className='flex-1 flex flex-col min-h-0'>
         <HLSLivePlayer figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg' />
-        <h4 className='text-xs font-medium text-[#66AEFF] leading-snug break-all mb-0.5'>{item.code}</h4>
-        <p className='text-xs text-white leading-snug m-0'>{item.location}</p>
+        <h4 className="camera-code">{item.code}</h4>
+        <p className="camera-location">{item.location}</p>
       </div>
     ))
   }, [])

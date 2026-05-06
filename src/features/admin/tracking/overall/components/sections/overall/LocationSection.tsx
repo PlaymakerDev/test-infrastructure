@@ -1,6 +1,6 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { Button, ConfigProvider, Segmented } from 'antd'
+import { Button, ConfigProvider } from 'antd'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay } from 'swiper/modules';
 import ReactMap from '@/components/map/ReactMap'

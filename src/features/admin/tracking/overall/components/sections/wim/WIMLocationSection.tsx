@@ -1,23 +1,32 @@
 "use client"
 import React from 'react'
-import { WIMCCTVList, WIMMap, WIMSearchPanel } from '@/features/admin/tracking/overall/components'
-import { Col, Row } from 'antd'
+import { WIMCCTVList, WIMMap, WIMMobileCameraList, WIMSearchPanel } from '@/features/admin/tracking/overall/components'
+import '@/styles/map.css'
 
 const WIMLocationSection = () => {
-
   return (
-    <div>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={24} md={24} lg={12} xl={8} xxl={6} xxxl={6}>
-          <WIMCCTVList />
-        </Col>
-        <Col xs={24} sm={24} md={24} lg={12} xl={16} xxl={12} xxxl={12}>
-          <WIMMap />
-        </Col>
-        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={6} xxxl={6}>
-          <WIMSearchPanel />
-        </Col>
-      </Row>
+    <div className='location-section'>
+
+      {/* Left — CCTV list */}
+      <div className='camera-list'>
+        <WIMCCTVList />
+      </div>
+
+      {/* Left — Mobile camera list */}
+      <div className="mobile-cam-list">
+        <WIMMobileCameraList />
+      </div>
+
+      {/* Center — Map */}
+      <div className='map-wrapper'>
+        <WIMMap />
+      </div>
+
+      {/* Right — Search / stats panel */}
+      <div className='search-panel'>
+        <WIMSearchPanel />
+      </div>
+
     </div>
   )
 }
