@@ -1,5 +1,8 @@
-import TrackingScreen from '@/features/admin/tracking/screen'
+import React from 'react'
+import TrackingScreen from '@/features/admin/tracking/overall/screen'
 
-export default function TrackingPage() {
+const TrackingPage = () => {
   return <TrackingScreen />
 }
+
+export default React.memo(TrackingPage)
