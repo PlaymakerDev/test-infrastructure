@@ -29,9 +29,10 @@
   --default-blue: #66AEFF;
   --red: #FF6666;
   /* LAYOUT */
-  --nav-h: 72px;
-  --nav-offset: 100px;
-  /* add this — accounts for trapezoid overhang */
+  --nav-h: 48px;
+  /* matches the trapezoid SVG height */
+  --nav-offset: 64px;
+  /* nav-h + ~16px breathing for the trapezoid drop-shadow */
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --radius: 12px;
   --radius-sm: 8px;

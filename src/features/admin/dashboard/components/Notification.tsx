@@ -6,10 +6,40 @@ interface Props {
   count?: number
   title?: string
   description?: string
+  /**
+   * Compact pill (icon + count only) — for tight spaces like the mobile map overlay.
+   * Default false = full card with title + description (used in desktop right panel).
+   */
+  compact?: boolean
 }
 
 const Notification: React.FC<Props> = (props) => {
-  const { count = 74, title = "แจ้งเตือนด่วน", description = "อุปกรณ์ตรวจจับใหม่" } = props
+  const {
+    count = 74,
+    title = "แจ้งเตือนด่วน",
+    description = "อุปกรณ์ตรวจจับใหม่",
+    compact = false,
+  } = props
+
+  if (compact) {
+    return (
+      <div
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
+        style={{
+          background: "rgba(10,14,26,0.95)",
+          border: "1px solid rgba(245,200,66,0.5)",
+          backdropFilter: "blur(5px)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+        }}
+        title={`${title} · ${description}`}
+      >
+        <TbAlertTriangle size={16} color="#f5c842" />
+        <span className="text-[#f5c842] text-sm font-bold leading-none tabular-nums">
+          {count}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div

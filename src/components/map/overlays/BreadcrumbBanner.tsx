@@ -21,7 +21,7 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
   return (
     <div
-      className="absolute z-20 flex items-center gap-2 px-4 py-2 pointer-events-auto"
+      className="absolute z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2 pointer-events-auto max-w-[calc(100vw-160px)] sm:max-w-[calc(100vw-80px)] overflow-x-auto scrollbar-none"
       style={{
         top,
         left: '50%',
@@ -33,26 +33,34 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
         boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
       }}
     >
-      <span className="text-[11px] text-[#6b7f9a]">กำลังดู</span>
+      <span className="text-[10px] sm:text-[11px] text-[#6b7f9a] whitespace-nowrap shrink-0">
+        กำลังดู
+      </span>
       {province.central ? (
         <>
-          <span className="text-[12px] font-semibold text-(--yellow)">ทช. ส่วนกลาง</span>
-          <span className="text-[#6b7f9a]">›</span>
-          <span className="text-[12px] font-semibold text-white">{province.name}</span>
+          <span className="text-[10px] sm:text-[12px] font-semibold text-(--yellow) whitespace-nowrap shrink-0">
+            ทช. ส่วนกลาง
+          </span>
+          <span className="text-[#6b7f9a] shrink-0">›</span>
+          <span className="text-[10px] sm:text-[12px] font-semibold text-white whitespace-nowrap shrink-0">
+            {province.name}
+          </span>
         </>
       ) : (
         <>
-          <span className="text-[12px] font-semibold text-(--yellow)">
+          <span className="text-[10px] sm:text-[12px] font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             สทช.{stchInfo.stch} ({stchInfo.hqProvinceName})
           </span>
-          <span className="text-[#6b7f9a]">›</span>
-          <span className="text-[12px] font-semibold text-white">ขทช.{province.name}</span>
+          <span className="text-[#6b7f9a] shrink-0">›</span>
+          <span className="text-[10px] sm:text-[12px] font-semibold text-white whitespace-nowrap shrink-0">
+            ขทช.{province.name}
+          </span>
         </>
       )}
       {onReset && (
         <button
           onClick={onReset}
-          className="ml-1 text-[11px] text-[#6b7f9a] hover:text-(--yellow) transition-colors px-2 py-0.5 rounded-full border border-[#6b7f9a]/30 hover:border-[#FCD116]/60"
+          className="ml-0.5 sm:ml-1 text-[10px] sm:text-[11px] text-[#6b7f9a] hover:text-(--yellow) transition-colors px-1.5 sm:px-2 py-0.5 rounded-full border border-[#6b7f9a]/30 hover:border-[#FCD116]/60 whitespace-nowrap shrink-0"
           title="กลับไปดูทั่วประเทศ"
         >
           ← ทั่วประเทศ
