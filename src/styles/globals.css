@@ -121,3 +121,18 @@ p {
   background: var(--mid-gray);
   border-radius: 3px;
 }
+
+/* ===== UTILITIES (dashboard) ===== */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Hide Mapbox built-in branding when used in full-screen dashboard */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+/* STCH yellow marker (Dashboard) — hover scale */
+.stch-marker-inner:hover {
+  transform: scale(1.12);
+}
