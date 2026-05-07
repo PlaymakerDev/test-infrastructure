@@ -1,16 +1,26 @@
+"use client"
 import React from 'react'
-import ReactMap from '@/components/map/ReactMap'
+import BaseMap from '@/components/map/BaseMap'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
+import TrackingOverviewMarker from '@/components/map/markers/TrackingOverviewMarker'
+import { TRACKING_STATIONS } from '@/features/admin/tracking/overall/data/trackingStations'
 
-interface Props {
+// WIM tab: show only WIM-type stations (yellow pins) — same look & popup
+// as the overview tab, just filtered.
+const VISIBLE_TYPES = new Set(['wim'] as const)
 
-}
+interface Props {}
 
-const WIMMap: React.FC<Props> = (props) => {
-  const { } = props
-
+const WIMMap: React.FC<Props> = () => {
   return (
     <div className="h-full">
-      <ReactMap />
+      <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4}>
+        <ThailandMaskLayer />
+        <TrackingOverviewMarker
+          stations={TRACKING_STATIONS}
+          visibleTypes={VISIBLE_TYPES}
+        />
+      </BaseMap>
     </div>
   )
 }

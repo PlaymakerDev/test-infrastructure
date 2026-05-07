@@ -3,12 +3,25 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay } from 'swiper/modules';
-import ReactMap from '@/components/map/ReactMap'
+import BaseMap from '@/components/map/BaseMap'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
+import TrackingOverviewMarker from '@/components/map/markers/TrackingOverviewMarker'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import {
+  TRACKING_STATIONS,
+  type TrackingStationType,
+} from '@/features/admin/tracking/overall/data/trackingStations'
 import '@/styles/map.css'
 import 'swiper/css'
 
-const FILTER_OPTIONS = ['ทั้งหมด', 'สถานี', 'WIM', 'เคลื่อนที่']
+type FilterOption = 'ทั้งหมด' | 'สถานี' | 'WIM' | 'เคลื่อนที่'
+const FILTER_OPTIONS: FilterOption[] = ['ทั้งหมด', 'สถานี', 'WIM', 'เคลื่อนที่']
+
+const FILTER_TO_TYPE: Record<Exclude<FilterOption, 'ทั้งหมด'>, TrackingStationType> = {
+  สถานี: 'station',
+  WIM: 'wim',
+  เคลื่อนที่: 'mobile',
+}
 
 const mockCameras = [
   {
@@ -29,7 +42,14 @@ const mockCameras = [
 ]
 
 const LocationSection = () => {
-  const [activeFilter, setActiveFilter] = useState('ทั้งหมด')
+  const [activeFilter, setActiveFilter] = useState<FilterOption>('ทั้งหมด')
+
+  const visibleTypes = useMemo(() => {
+    if (activeFilter === 'ทั้งหมด') {
+      return new Set<TrackingStationType>(['wim', 'mobile', 'station'])
+    }
+    return new Set<TrackingStationType>([FILTER_TO_TYPE[activeFilter]])
+  }, [activeFilter])
 
   const renderCameraList = useCallback((type: 'PC' | 'MOBILE') => {
     if (type === 'MOBILE') {
@@ -116,7 +136,13 @@ const LocationSection = () => {
             {renderOptionButton}
           </div>
         </div>
-        <ReactMap />
+        <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4}>
+          <ThailandMaskLayer />
+          <TrackingOverviewMarker
+            stations={TRACKING_STATIONS}
+            visibleTypes={visibleTypes}
+          />
+        </BaseMap>
       </div>
 
     </div>
