@@ -63,13 +63,15 @@ const DashboardScreen: React.FC<Props> = () => {
             <RatioChart size={110} />
           </div>
 
-          {/* DESKTOP: right absolute panel */}
+          {/* DESKTOP: right absolute panel
+            * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
+            * Notification + TrafficStat don't use → no empty gap at the bottom. */}
           <aside
             className="absolute right-4 z-10 flex flex-col gap-2"
             style={{ top: 60, bottom: 16, width: 408 }}
           >
             <Notification />
-            <VehicleRatioChart />
+            <VehicleRatioChart className="flex-1 min-h-0" />
             <TrafficStat />
           </aside>
         </>
@@ -77,15 +79,16 @@ const DashboardScreen: React.FC<Props> = () => {
 
       {isDesktop === false && (
         <>
-          {/* MOBILE: notification floating */}
-          <div className="absolute z-20 right-3" style={{ top: 56 }}>
-            <Notification />
+          {/* MOBILE: notification — compact pill below the navbar (48px) so it
+            * sits beside the centered filter pills + breadcrumb without covering them. */}
+          <div className="absolute z-20 right-3" style={{ top: 60 }}>
+            <Notification compact />
           </div>
 
-          {/* MOBILE: scrollable column */}
+          {/* MOBILE: scrollable column — map takes top 60vh, cards bottom 40vh */}
           <div
             className="absolute left-0 right-0 overflow-y-auto z-10"
-            style={{ top: "42vh", bottom: 0 }}
+            style={{ top: "60vh", bottom: 0 }}
           >
             <div className="flex flex-col gap-3 p-3 pb-8">
               <div className="flex">

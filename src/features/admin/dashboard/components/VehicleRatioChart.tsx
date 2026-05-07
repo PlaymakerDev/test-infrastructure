@@ -20,7 +20,8 @@ const TOTAL_COUNT = VEHICLES.reduce((sum, v) => sum + v.count, 0)
 
 const ROSE_OPTION = {
   backgroundColor: "transparent",
-  polar: { center: ["50%", "50%"], radius: ["0%", "75%"] },
+  // 88% radius — fill the (now-square) container; a bit of padding for axis labels
+  polar: { center: ["50%", "50%"], radius: ["0%", "88%"] },
   angleAxis: {
     type: "category",
     data: VEHICLES.map((d) => d.name),
@@ -31,7 +32,9 @@ const ROSE_OPTION = {
   },
   radiusAxis: {
     type: "value",
-    max: 700000,
+    // Largest bar is ~515k → max 600k makes the biggest sector reach ~85% of polar
+    // (was 700k which left big visual gap)
+    max: 600000,
     interval: 100000,
     axisLine: { show: false },
     axisTick: { show: false },
@@ -75,7 +78,8 @@ const RoseEChart = memo(function RoseEChart() {
     <ReactECharts
       option={ROSE_OPTION}
       notMerge={false}
-      style={{ width: "100%", height: "100%", minHeight: 240 }}
+      // Fill the parent — the parent decides the actual size (square wrapper).
+      style={{ width: "100%", height: "100%" }}
       opts={{ renderer: "canvas" }}
     />
   )
@@ -83,14 +87,17 @@ const RoseEChart = memo(function RoseEChart() {
 
 const TAB_OPTIONS = ["วันนี้", "เดือน", "ปี"]
 
-interface Props {}
+interface Props {
+  /** Extra utility classes for the outer card — e.g. "flex-1 min-h-0" to fill a flex parent */
+  className?: string
+}
 
-const VehicleRatioChart: React.FC<Props> = () => {
+const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
   const [tab, setTab] = useState("วันนี้")
 
   return (
     <div
-      className="flex flex-col p-3"
+      className={`flex flex-col p-3 ${className}`}
       style={{
         background: "rgba(0,0,0,0.55)",
         borderRadius: 20,
@@ -104,8 +111,17 @@ const VehicleRatioChart: React.FC<Props> = () => {
         </div>
         <Tabs value={tab} onChange={setTab} options={TAB_OPTIONS} />
       </div>
-      <div className="flex items-center justify-center" style={{ height: 340 }}>
-        <RoseEChart />
+      {/*
+       * Mobile (default): width-based square — `w-full max-w-[280px]` so the rose
+       *   matches the card width without `grow` (which can't apply when the card
+       *   has no fixed height in the scrollable mobile column).
+       * Desktop (sm+): height-based square — `h-full` lets the card's flex-1
+       *   space fill the chart, and aspect-square keeps it round.
+       */}
+      <div className="flex items-center justify-center grow min-h-0">
+        <div className="aspect-square w-full max-w-[280px] mx-auto sm:w-auto sm:h-full sm:max-w-90 sm:max-h-90">
+          <RoseEChart />
+        </div>
       </div>
       <div className="px-14">
         {VEHICLES.map((d) => (

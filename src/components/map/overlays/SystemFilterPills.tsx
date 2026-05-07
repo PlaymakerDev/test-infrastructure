@@ -64,7 +64,9 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
 
   return (
     <div
-      className="absolute z-20 flex items-center gap-1.5 px-2 py-1.5 pointer-events-auto scrollbar-none"
+      // mobile: leave 80px each side so the notification badge has clearance
+      // sm+: only need 40px per side
+      className="absolute z-20 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 sm:py-1.5 pointer-events-auto scrollbar-none max-w-[calc(100vw-160px)] sm:max-w-[calc(100vw-80px)]"
       style={{
         top,
         left: '50%',
@@ -74,7 +76,6 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
         borderRadius: 999,
         backdropFilter: 'blur(8px)',
         boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-        maxWidth: 'calc(100vw - 80px)',
         overflowX: 'auto',
       }}
     >
@@ -86,7 +87,7 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
           <button
             key={type}
             onClick={() => toggle(type)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap shrink-0"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-medium transition-all whitespace-nowrap shrink-0"
             style={{
               background: active ? color : 'transparent',
               color: active ? '#fff' : 'rgba(255,255,255,0.4)',
@@ -95,14 +96,14 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
             }}
             title={`${active ? 'ซ่อน' : 'แสดง'} ${SYSTEMS[type].label}`}
           >
-            <Icon size={12} />
+            <Icon size={11} />
             <span>{SYSTEMS[type].label}</span>
           </button>
         )
       })}
       <button
         onClick={reset}
-        className="ml-1 px-2 py-1 text-[10px] text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
+        className="ml-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
         title={allOn ? 'ซ่อนทั้งหมด' : 'แสดงทั้งหมด'}
       >
         {noneOn ? '↻ แสดงทั้งหมด' : allOn ? '✕ ซ่อนทั้งหมด' : '↻ รีเซ็ต'}
