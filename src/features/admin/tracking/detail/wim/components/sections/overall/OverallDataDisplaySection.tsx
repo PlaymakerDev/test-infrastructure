@@ -8,7 +8,7 @@ interface Props {
 
 const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const { } = props
-  const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('GRID')
+  const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('TABLE')
 
   const renderContent = useMemo(() => {
     switch (displayType) {

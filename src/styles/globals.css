@@ -2,6 +2,7 @@
 @import url('../styles/antd.css');
 @import url('../styles/custom.css');
 @import url('../styles/layout.css');
+@import url('../styles/swiper.css');
 /* IMPORT TAILWINDCSS */
 @import "tailwindcss";
 
