@@ -1,15 +1,21 @@
 import React from 'react'
+import { MobileLocationSection, TableMobile } from '../components'
 
-interface Props {
-
-}
-
-const MobileSection: React.FC<Props> = (props) => {
-  const { } = props
+const MobileSection = () => {
 
   return (
-    <div>index</div>
+    <div>
+      <section>
+        <MobileLocationSection />
+      </section>
+      <section className='mt-5'>
+        <p>CHART</p>
+      </section>
+      <section className='mt-5'>
+        <TableMobile />
+      </section>
+    </div>
   )
 }
 
-export default React.memo<Props>(MobileSection)
+export default React.memo(MobileSection)

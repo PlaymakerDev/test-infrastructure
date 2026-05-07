@@ -9,7 +9,7 @@
 .camera-list {
   width: 280px;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -55,6 +55,16 @@
   font-size: 12px;
   color: #FFFFFF;
   line-height: 1.4;
+}
+
+/* ── Station list (MobileStationData) ── */
+.station-list {
+  width: 280px;
+  flex-shrink: 0;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-right: 4px;
 }
 
 /* ── Mobile swiper ── */
@@ -118,6 +128,12 @@
 
   .mobile-cam-list {
     display: block;
+  }
+
+  .station-list {
+    width: 100%;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .map-wrapper {
