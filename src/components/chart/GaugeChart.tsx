@@ -113,7 +113,6 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
           },
           detail: {
             show: true,
-            valueAnimation: false,
             formatter: (val: number) =>
               `{v|${val.toFixed(2)}}${unit ? `\n{u|${unit}}` : ''}`,
             rich: {
@@ -151,7 +150,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
             {icon}
           </div>
         )}
-        <h2 className='font-semibold text-base' style={{ color: '#FCD116' }}>
+        <h2 className='text-base' style={{ color: '#FCD116' }}>
           {title}
         </h2>
       </div>
@@ -172,7 +171,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
         {/* Hourly table */}
         <div className='flex-1 pt-1 min-w-0'>
           {tableTitle && (
-            <p className='text-sm font-semibold mb-3' style={{ color: '#FCD116' }}>
+            <p className='text-sm mb-3' style={{ color: '#FCD116' }}>
               {tableTitle}
             </p>
           )}
