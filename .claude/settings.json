@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/www/ClauadAI/projects/its-dashboard/**)",
+      "Bash(npm install *)",
+      "Bash(cp \"d:/www/ClauadAI/projects/its-dashboard/public/data/thailand.geojson\" \"d:/www/react/drr-its-new/public/data/thailand.geojson\")",
+      "Bash(cp \"d:/www/ClauadAI/projects/its-dashboard/public/data/th-provinces.geojson\" \"d:/www/react/drr-its-new/public/data/th-provinces.geojson\")",
+      "Bash(npx tsc *)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(grep -E \"\\(map\\\\\\\\\\\\\\\\ReactMap|dashboard|layout\\\\\\\\\\\\\\\\Navbar\\)\")",
+      "Bash(grep -B 1 -A 3 \"dashboard\\\\\\\\\\\\\\\\components\\\\\\\\\\\\\\\\\\\\\\(Notification\\\\|TrafficStat\\\\|StatusChart\\\\|AccidentChart\\\\|VehicleRatio\\\\|RatioChart\\\\|Tabs\\\\\\)\\\\|dashboard\\\\\\\\\\\\\\\\screen\\\\\\\\\\\\\\\\index\\\\|map\\\\\\\\\\\\\\\\ReactMap\\\\|layout\\\\\\\\\\\\\\\\Navbar\")",
+      "Bash(cd \"d:/www/react/drr-its-new\" && npm run lint 2>&1 > /tmp/lint.log; grep -B 1 -A 3 -E \"dashboard|map.ReactMap|layout.Navbar\" /tmp/lint.log | head -120)",
+      "Read(//tmp/**)",
+      "Bash(echo \"TS Exit: $?\")",
+      "Bash(awk '/\"timestamp\":\"02:07/' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:07:23\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:08:30\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:16:02\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(xargs grep -l -E \"WIM|station|Station|wim\")",
+      "Bash(xargs grep -L \"import\\\\|export\")",
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:20:50\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:30:00\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")"
+    ]
+  }
+}
