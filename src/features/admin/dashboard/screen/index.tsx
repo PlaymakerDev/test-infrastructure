@@ -43,10 +43,10 @@ const DashboardScreen: React.FC<Props> = () => {
 
       {isDesktop === true && (
         <>
-          {/* DESKTOP: left absolute panels */}
+          {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
           <aside
             className="absolute left-4 z-10 flex flex-col gap-3"
-            style={{ top: 60, bottom: 180, width: 620 }}
+            style={{ top: 52, bottom: 180, width: 620 }}
           >
             <div className="flex-1" />
             <div className="flex" style={{ width: 372 }}>
@@ -63,12 +63,12 @@ const DashboardScreen: React.FC<Props> = () => {
             <RatioChart size={110} />
           </div>
 
-          {/* DESKTOP: right absolute panel
+          {/* DESKTOP: right absolute panel — top:48 sits right under the 48px navbar.
             * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
             * Notification + TrafficStat don't use → no empty gap at the bottom. */}
           <aside
             className="absolute right-4 z-10 flex flex-col gap-2"
-            style={{ top: 60, bottom: 16, width: 408 }}
+            style={{ top: 48, bottom: 16, width: 408 }}
           >
             <Notification />
             <VehicleRatioChart className="flex-1 min-h-0" />

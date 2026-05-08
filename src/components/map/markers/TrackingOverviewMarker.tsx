@@ -29,73 +29,120 @@ export interface TrackingOverviewMarkerProps {
   /** Click on a station marker (still fires even if popup is shown) */
   onClick?: (station: TrackingStation) => void
   /**
+   * Click on the "ดูรายละเอียด" button inside the default popup.
+   * Has no effect if `popup` is overridden — in that case the caller wires up
+   * their own buttons inside the custom popup JSX.
+   */
+  onViewDetail?: (station: TrackingStation) => void
+  /**
    * Override popup content. Pass `null` to disable popup.
    * If omitted, uses the built-in `DefaultStationPopup`.
    */
   popup?: ((station: TrackingStation) => React.ReactNode) | null
 }
 
-/** Default popup body — WIM/สถานี/เคลื่อนที่ summary card */
-export function DefaultStationPopup({ station }: { station: TrackingStation }) {
+/**
+ * Default popup body — WIM / สถานี / เคลื่อนที่ summary card.
+ *
+ * Layout differs by type:
+ *  - mobile  → title "สายทาง [code]"  + "ผู้ตั้งด่าน : ..." line (no status)
+ *  - others  → title "[name] ([code])" + "สถานะ : เปิดปกติ ●" line
+ *
+ * Always ends with a yellow "ดูรายละเอียด" CTA button.
+ */
+export function DefaultStationPopup({
+  station,
+  onViewDetail,
+}: {
+  station: TrackingStation
+  onViewDetail?: (station: TrackingStation) => void
+}) {
   const color = TRACKING_STATION_COLORS[station.type]
+  const isMobile = station.type === 'mobile'
   const statusOn = station.status === 'open'
+  const title = isMobile ? `สายทาง ${station.code}` : `${station.name} (${station.code})`
+
   return (
     <div
       style={{
-        padding: '12px 14px',
-        minWidth: 220,
+        padding: '14px 16px',
+        minWidth: 240,
         fontFamily: 'ui-sans-serif,system-ui',
-        background: 'rgba(5,13,26,0.96)',
+        background: '#000000CC',
         border: `1px solid ${color}`,
         borderRadius: 12,
         color: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
       }}
     >
-      <div style={{ fontSize: 13, fontWeight: 700, color }}>
-        {station.name} ({station.code})
+      {/* Title */}
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{title}</div>
+
+      {/* เปิดด่านล่าสุด */}
+      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+        เปิดด่านล่าสุด :{' '}
+        <span style={{ color: '#fff' }}>{station.lastOpenDate}</span>
       </div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-        เปิดด่านล่าสุด : <span style={{ color: '#fff' }}>{station.lastOpenDate}</span>
-      </div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span>สถานะ :</span>
-        <span style={{ color: '#fff' }}>{statusOn ? 'เปิดปกติ' : 'ปิด'}</span>
-        <span
-          style={{
-            display: 'inline-block',
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: statusOn ? '#06b6d4' : '#ef4444',
-          }}
-        />
-      </div>
-      <div
-        style={{
-          marginTop: 10,
-          paddingTop: 10,
-          borderTop: '1px dashed rgba(255,255,255,0.15)',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          rowGap: 6,
-          fontSize: 12,
-        }}
-      >
-        <span style={{ color: '#94a3b8' }}>รถเข้าชั่งทั้งหมด</span>
-        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+
+      {/* ผู้ตั้งด่าน (mobile) | สถานะ (others) */}
+      {isMobile && station.officerName ? (
+        <div style={{ fontSize: 12 }}>
+          <span style={{ color: '#05F2DB' }}>ผู้ตั้งด่าน : </span>
+          <span style={{ color: '#fff' }}>{station.officerName}</span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: '#06b6d4' }}>สถานะ :</span>
+          <span style={{ color: '#fff' }}>{statusOn ? 'เปิดปกติ' : 'ปิด'}</span>
+          <span
+            style={{
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: statusOn ? '#06b6d4' : '#ef4444',
+            }}
+          />
+        </div>
+      )}
+
+      {/* รถเข้าชั่งทั้งหมด */}
+      <div style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ color: '#FCD116' }}>รถเข้าชั่งทั้งหมด</span>
+        <span style={{ color: '#fff', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {station.totalVehicles.toLocaleString()}
         </span>
-        <span style={{ color: '#94a3b8' }}>รถเข้าน้ำหนักเกิน</span>
-        <span
-          style={{
-            fontWeight: 600,
-            fontVariantNumeric: 'tabular-nums',
-            color: station.overweightVehicles > 0 ? '#fbbf24' : '#fff',
-          }}
-        >
+      </div>
+
+      {/* รถเข้าน้ำหนักเกิน */}
+      <div style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ color: '#FF6B6B' }}>รถเข้าน้ำหนักเกิน</span>
+        <span style={{ color: '#fff', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {station.overweightVehicles.toLocaleString()}
         </span>
       </div>
+
+      {/* ดูรายละเอียด CTA */}
+      <button
+        onClick={() => onViewDetail?.(station)}
+        style={{
+          marginTop: 6,
+          padding: '8px 14px',
+          background: '#FCD116',
+          color: '#0a1428',
+          border: 'none',
+          borderRadius: 999,
+          fontWeight: 700,
+          fontSize: 13,
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+          width: '100%',
+        }}
+      >
+        ดูรายละเอียด
+      </button>
     </div>
   )
 }
@@ -108,6 +155,7 @@ const TrackingOverviewMarker: React.FC<TrackingOverviewMarkerProps> = ({
   stations,
   visibleTypes,
   onClick,
+  onViewDetail,
   popup,
 }) => {
   return (
@@ -120,7 +168,7 @@ const TrackingOverviewMarker: React.FC<TrackingOverviewMarkerProps> = ({
             ? undefined
             : popup
               ? () => popup(s)
-              : () => <DefaultStationPopup station={s} />
+              : () => <DefaultStationPopup station={s} onViewDetail={onViewDetail} />
         return (
           <HTMLMarker
             key={s.id}

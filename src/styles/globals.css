@@ -134,6 +134,18 @@ p {
   display: none !important;
 }
 
+/* React-rendered popups (showReactPopup) — clear Mapbox's default white wrapper.
+   The inner JSX renders its own background/border, so the wrapper should be invisible. */
+.react-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.react-popup .mapboxgl-popup-tip {
+  display: none !important;
+}
+
 /* STCH yellow marker (Dashboard) — hover scale */
 .stch-marker-inner:hover {
   transform: scale(1.12);
