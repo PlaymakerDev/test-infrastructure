@@ -58,13 +58,12 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbBriefcase,
 }
 
-// Match the trapezoid nav icon size (20) so the whole navbar feels uniform.
-const NAV_ICON_SIZE = 20
-
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
-  const iconClassName = "cursor-pointer"
+  // fs-24 = clamp(1.5rem, 6.4vw, 1.875rem) → 24-30px responsive (the original size).
+  // Icons fit comfortably in the 48px navbar with vertical centering.
+  const iconClassName = "fs-24 cursor-pointer"
   const dispatch = useAppDispatch()
 
   const [currentTime, setCurrentTime] = useState(dayjs().format("HH:mm:ss"))
@@ -85,10 +84,10 @@ export default function Navbar() {
   }, [])
 
   const items: MenuProps["items"] = [
-    { key: "1", label: <TbZoomInArea size={NAV_ICON_SIZE} className={iconClassName} /> },
-    { key: "2", label: <TbSearch size={NAV_ICON_SIZE} className={iconClassName} /> },
-    { key: "3", label: <TbBellRinging2 size={NAV_ICON_SIZE} className={iconClassName} /> },
-    { key: "4", label: <BsFillGrid3X2GapFill size={NAV_ICON_SIZE} className={iconClassName} /> },
+    { key: "1", label: <TbZoomInArea className={iconClassName} /> },
+    { key: "2", label: <TbSearch className={iconClassName} /> },
+    { key: "3", label: <TbBellRinging2 className={iconClassName} /> },
+    { key: "4", label: <BsFillGrid3X2GapFill className={iconClassName} /> },
   ]
 
   const Icon = useCallback(
@@ -130,7 +129,6 @@ export default function Navbar() {
         {/* LEFT — hamburger + clock (inline to fit 48px navbar) */}
         <div className="nav-main-menu shrink-0">
           <TbMenu2
-            size={NAV_ICON_SIZE}
             className={iconClassName}
             onClick={() => dispatch(setDrawerOpen({ open: true }))}
           />
@@ -177,11 +175,11 @@ export default function Navbar() {
 
         {/* RIGHT — desktop side icons */}
         <div className="nav-side-menu shrink-0">
-          <TbZoomInArea size={NAV_ICON_SIZE} className={iconClassName} />
-          <TbSearch size={NAV_ICON_SIZE} className={iconClassName} />
-          <TbBrandGithubCopilot size={NAV_ICON_SIZE} className={iconClassName} />
-          <TbBellRinging2 size={NAV_ICON_SIZE} className={iconClassName} />
-          <BsFillGrid3X2GapFill size={NAV_ICON_SIZE} className={iconClassName} />
+          <TbZoomInArea className={iconClassName} />
+          <TbSearch className={iconClassName} />
+          <TbBrandGithubCopilot className={iconClassName} />
+          <TbBellRinging2 className={iconClassName} />
+          <BsFillGrid3X2GapFill className={iconClassName} />
         </div>
 
         {/* MOBILE — dropdown */}
