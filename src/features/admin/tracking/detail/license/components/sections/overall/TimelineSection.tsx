@@ -14,8 +14,6 @@ const STAT_ITEMS = [
 const TimelineSection: React.FC = () => {
   const { license } = useLicenseContext()
 
-  if (!license.id) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
-
   return (
     <div className='lg:px-8'>
       {/* Header */}
