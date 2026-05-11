@@ -11,7 +11,6 @@ import {
   TRACKING_STATIONS,
   type TrackingStationType,
 } from '@/features/admin/tracking/overall/data/trackingStations'
-import '@/styles/map.css'
 import 'swiper/css'
 
 type FilterOption = 'ทั้งหมด' | 'สถานี' | 'WIM' | 'เคลื่อนที่'

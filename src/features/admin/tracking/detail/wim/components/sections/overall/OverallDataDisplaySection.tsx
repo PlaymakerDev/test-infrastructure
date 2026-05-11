@@ -24,7 +24,7 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   return (
     <div>
       <section>
-        <h3 className='text-yellow-500'>ตารางข้อมูลรถเข้าชั่งน้ำหนักวันนี้</h3>
+        <h3 className='text-(--yellow)'>ตารางข้อมูลรถเข้าชั่งน้ำหนักวันนี้</h3>
       </section>
       <section className='mt-5'>
         <SearchBar

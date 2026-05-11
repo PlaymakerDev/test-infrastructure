@@ -86,7 +86,7 @@ const TableOverallWeight: React.FC<Props> = () => {
 
   return (
     <div>
-      <h3 className='text-yellow-500 mb-5'>ตารางข้อมูลรถเข้าชั่งน้ำหนัก 7 วันย้อนหลัง</h3>
+      <h3 className='text-(--yellow) mb-5'>ตารางข้อมูลรถเข้าชั่งน้ำหนัก 7 วันย้อนหลัง</h3>
       <Table<OverallWeightRecord>
         columns={columns}
         dataSource={mockData}

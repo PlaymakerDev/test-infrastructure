@@ -30,7 +30,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
           {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
           <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-r lg:border-b-0'>
             <section className='text-center'>
-              <h1 className='text-xs font-semibold text-yellow-500 sm:text-sm'>10</h1>
+              <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>10</h1>
               <p className='text-xs text-gray-400'>ประเภท</p>
               <p className='text-xs text-gray-400'>กึ่งพ่วง 5 เพลา 18 เส้น</p>
             </section>
@@ -39,7 +39,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
           {/* f2 — xs: border-b | sm: border-b (rightmost, no border-r) | lg: border-b-0 + border-r */}
           <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b lg:border-b-0 lg:border-r'>
             <section className='text-center'>
-              <h1 className='text-xs font-semibold text-yellow-500 sm:text-sm'>10</h1>
+              <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>10</h1>
               <p className='text-xs text-gray-400'>น้ำหนักมาตราฐาน</p>
               <p className='text-xs text-gray-400'>(ตัน)</p>
             </section>

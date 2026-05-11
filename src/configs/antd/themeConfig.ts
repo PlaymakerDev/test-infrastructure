@@ -6,8 +6,12 @@ export const theme: ConfigProviderProps = {
       fontFamily: "var(--font-ibm-plex-sans-thai)",
       colorPrimary: '#FCD116',
       colorTextLightSolid: 'var(--dark-black)',
+      colorTextDescription: "var(--white)",
     },
     components: {
+      Progress: {
+        remainingColor: "#333333",
+      },
       Card: {
         colorBgContainer: "var(--dark-black)",
         colorText: "var(--white)",
@@ -80,6 +84,10 @@ export const theme: ConfigProviderProps = {
         footerColor: "#FFFFFF",
         colorBorderSecondary: "#333333",
       },
+      Timeline: {
+        colorText: "#FFFFFF",
+        tailColor: "#000000"
+      }
     }
   },
 }

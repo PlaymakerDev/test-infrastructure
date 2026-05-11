@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import { WIMCCTVList, WIMMap, WIMMobileCameraList, WIMSearchPanel } from '@/features/admin/tracking/overall/components'
-import '@/styles/map.css'
 
 const WIMLocationSection = () => {
   return (
