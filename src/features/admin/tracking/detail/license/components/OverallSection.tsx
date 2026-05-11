@@ -1,7 +1,7 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
-import { Button } from 'antd'
-import React, { useState } from 'react'
+import { Button, Empty } from 'antd'
+import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
 import { useLicenseContext } from '../context'
@@ -64,6 +64,22 @@ const MapSection: React.FC = () => {
 
 const OverallSection: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(true)
+  const { license } = useLicenseContext()
+
+  const renderTimelineSection = useMemo(() => {
+    if (!license.id) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
+    return <TimelineSection />
+  }, [license.id])
+
+  const renderMapAndStatSection = useMemo(() => {
+    if (!license.id) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
+    return (
+      <>
+        <MapSection />
+        <StatSection />
+      </>
+    )
+  }, [license.id])
 
   return (
     <>
@@ -98,15 +114,14 @@ const OverallSection: React.FC = () => {
 
         {/* ══ CENTER: timeline ══ */}
         <div className='flex-1 min-w-0 xl:overflow-y-auto px-4 xl:px-6 py-4'>
-          <TimelineSection />
+          {renderTimelineSection}
         </div>
 
         {/* ══ RIGHT: map + location + stats
               xl+  → fixed side column, scrolls independently
               < xl → full width, stacks below center ══ */}
         <div className='w-full xl:w-80 2xl:w-96 xl:shrink-0 xl:overflow-y-auto flex flex-col gap-4 p-4 xl:border-l xl:border-white/5'>
-          <MapSection />
-          <StatSection />
+          {renderMapAndStatSection}
         </div>
 
       </div>
