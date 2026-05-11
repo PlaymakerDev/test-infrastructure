@@ -4,6 +4,7 @@ import {
   OverallSection,
   VehicleSection
 } from '../components'
+import { MobileProvider } from '../context';
 
 interface Props {
   id: string[] | string | number | undefined;
@@ -23,13 +24,16 @@ const MobileDetailScreen: React.FC<Props> = (props) => {
         return <OverallSection />
     }
   }, [currentTab])
+
   return (
-    <div className='main-screen'>
-      <TitleSection setCurrentTab={setCurrentTab} />
-      <section className='mt-8 px-10'>
-        {renderContent}
-      </section>
-    </div>
+    <MobileProvider>
+      <div className='main-screen'>
+        <TitleSection setCurrentTab={setCurrentTab} />
+        <section className='mt-8 px-10'>
+          {renderContent}
+        </section>
+      </div>
+    </MobileProvider>
   )
 }
 

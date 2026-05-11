@@ -3,6 +3,9 @@
 @import url('../styles/custom.css');
 @import url('../styles/layout.css');
 @import url('../styles/swiper.css');
+@import url('../styles/tracking.css');
+@import url('../styles/dashboard.css');
+@import url('../styles/mapboxgl.css');
 /* IMPORT TAILWINDCSS */
 @import "tailwindcss";
 
@@ -28,11 +31,12 @@
   --light-blue: #05F2DB99;
   --default-blue: #66AEFF;
   --red: #FF6666;
+  --gray: #333333;
+  --mid-gray: #2B2B2B;
   /* LAYOUT */
-  --nav-h: 48px;
-  /* matches the trapezoid SVG height */
-  --nav-offset: 64px;
-  /* nav-h + ~16px breathing for the trapezoid drop-shadow */
+  --nav-h: 72px;
+  --nav-offset: 100px;
+  /* add this — accounts for trapezoid overhang */
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --radius: 12px;
   --radius-sm: 8px;
@@ -122,31 +126,4 @@ p {
 ::-webkit-scrollbar-thumb {
   background: var(--mid-gray);
   border-radius: 3px;
-}
-
-/* ===== UTILITIES (dashboard) ===== */
-.scrollbar-none::-webkit-scrollbar { display: none; }
-.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Hide Mapbox built-in branding when used in full-screen dashboard */
-.mapboxgl-ctrl-logo,
-.mapboxgl-ctrl-attrib {
-  display: none !important;
-}
-
-/* React-rendered popups (showReactPopup) — clear Mapbox's default white wrapper.
-   The inner JSX renders its own background/border, so the wrapper should be invisible. */
-.react-popup .mapboxgl-popup-content {
-  background: transparent !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-.react-popup .mapboxgl-popup-tip {
-  display: none !important;
-}
-
-/* STCH yellow marker (Dashboard) — hover scale */
-.stch-marker-inner:hover {
-  transform: scale(1.12);
 }
