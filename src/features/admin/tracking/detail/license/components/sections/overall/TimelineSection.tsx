@@ -61,7 +61,7 @@ const TimelineSection: React.FC = () => {
               variant='filled'
               mode='start'
               items={license.timeline.map((item, index) => ({
-                children: <TimelineCard key={item.id} item={item} isFirst={index === 0} />,
+                content: <TimelineCard key={item.id} item={item} isFirst={index === 0} />,
               }))}
             />
           ) : (
