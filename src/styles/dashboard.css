@@ -1,0 +1,14 @@
+/* ===== UTILITIES (dashboard) ===== */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* STCH yellow marker (Dashboard) — hover scale */
+.stch-marker-inner:hover {
+  transform: scale(1.12);
+}
