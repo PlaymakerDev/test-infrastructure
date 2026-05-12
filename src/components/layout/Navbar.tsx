@@ -24,6 +24,7 @@ import {
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
+  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase,
 } from "react-icons/tb"
@@ -54,9 +55,12 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
+  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase,
 }
+
+// Match
 
 // Match the trapezoid nav icon size (20) so the whole navbar feels uniform.
 const NAV_ICON_SIZE = 20

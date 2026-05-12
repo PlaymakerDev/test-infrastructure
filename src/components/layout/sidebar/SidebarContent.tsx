@@ -15,6 +15,7 @@ import {
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
+  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase
 } from "react-icons/tb";
@@ -40,6 +41,7 @@ const ICON_LIST: Record<string, React.ComponentType> = {
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
+  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase
 }
