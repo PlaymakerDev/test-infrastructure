@@ -1,0 +1,1655 @@
+/* ===================== LAYOUT ===================== */
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #212121;
+  color: #fff;
+}
+
+.screenCol {
+  min-height: 0;
+  height: 100%;
+  scrollbar-width: none;
+}
+
+.screenCol::-webkit-scrollbar {
+  display: none;
+}
+
+/* Col 1 — Sidebar */
+.colSidebar {
+  overflow-y: auto;
+  background: #191919;
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+  padding: 0 16px;
+}
+
+/* Shared scroll wrapper for col 2 + col 3 */
+.sharedScroll {
+  display: flex;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sharedScroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Col 2 — Main Content */
+.colContent {
+  flex: 4;
+  min-width: 0;
+  padding: 24px;
+}
+
+/* Col 3 — Right Panel */
+.colRight {
+  flex: 1.5;
+  min-width: 0;
+  background: #212121;
+}
+
+/* Custom Scrollbar for Sidebar */
+.colSidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.colSidebar::-webkit-scrollbar-track {
+  background: #121319;
+  border-left: 1px solid #232532;
+}
+
+.colSidebar::-webkit-scrollbar-thumb {
+  background: #3c3e4e;
+  border-radius: 4px;
+}
+
+.colSidebar::-webkit-scrollbar-thumb:hover {
+  background: #555870;
+}
+
+/* ===================== HEADER ===================== */
+.header {
+  padding: 20px 54px 24px;
+}
+
+.headerTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #F8C318;
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+
+.headerSubtitle {
+  font-size: 13px;
+  color: #8c8c9e;
+  margin: 0 0 20px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #F8C318;
+  color: #121319;
+  transition: opacity 0.2s;
+}
+
+.btnPrimary:hover {
+  opacity: 0.9;
+}
+
+.btnSecondary {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #3c3e4e;
+  background: rgba(255, 255, 255, 0.03);
+  color: #c2c2d3;
+  transition: background 0.2s;
+}
+
+.btnSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===================== SIDEBAR ===================== */
+.sidebarSearch {
+  padding: 16px;
+  border-bottom: 1px solid #232532;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #212121;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color 0.2s;
+}
+
+.searchRow:focus-within {
+  border-color: #F8C318;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #F8C318;
+  font-size: 12px;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #F8C318;
+}
+
+.searchIcon {
+  color: #F8C318;
+  font-size: 14px;
+}
+
+.searchDesc {
+  margin: 12px 0 0;
+  font-size: 10px;
+  color: #979797;
+  line-height: 1.5;
+}
+
+.searchDescBold {
+  color: #F8C318;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.routeListHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #F8C318;
+}
+
+.routeListHeaderRight {
+  color: #F8C318;
+}
+
+/* Route group */
+.routeGroup {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: #212121;
+  border: 1px solid #232532;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.routeGroupActive {
+  border-color: #F8C318;
+}
+
+.routeGroupRow {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.routeGroupRow:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.routeGroupRowActive {
+  background: transparent;
+}
+
+.routeGroupChevron {
+  font-size: 11px;
+  color: #F8C318;
+  margin-right: 8px;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.routeGroupChevronOpen {
+  transform: rotate(180deg);
+}
+
+.routeGroupName {
+  flex: 1;
+  font-size: 13px;
+  color: #F8C318;
+}
+
+.routeGroupNameActive {
+  font-weight: 600;
+}
+
+.routeDots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pillWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 11px;
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pillTeal {
+  color: #00b4d8;
+  border-color: #006070;
+}
+
+.pillTeal .pillDot {
+  background: #00ffff;
+  box-shadow: 0 0 4px #00ffff;
+}
+
+.pillRed {
+  color: #e63946;
+  border-color: #8c1e28;
+}
+
+.pillRed .pillDot {
+  background: #ff5555;
+  box-shadow: 0 0 4px #ff5555;
+}
+
+/* Sign items in sidebar */
+.signItems {
+  padding: 4px 12px 12px 12px;
+}
+
+.signItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #212121;
+  transition: all 0.15s;
+}
+
+.signItem:hover {
+  background: #2a2a2a;
+}
+
+.signItemActive {
+  border-color: #626477;
+}
+
+.signThumb {
+  width: 64px;
+  height: 40px;
+  border-radius: 4px;
+  background: #0d0e13;
+  border: 1px solid #232532;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signThumbInner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.signThumbText {
+  color: #fff;
+  font-size: 6px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.signThumbArrow {
+  color: #16b47c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.signThumbNoSignal {
+  color: #3b3d4d;
+  font-size: 20px;
+}
+
+.signItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.signItemName {
+  font-size: 11px;
+  color: #b0b0c6;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signItemNameActive {
+  color: #F8C318;
+}
+
+.signItemAnydesk {
+  font-size: 10px;
+  color: #626477;
+  margin-top: 4px;
+}
+
+.signItemStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.signItemOnline {
+  background: #16b47c;
+  box-shadow: 0 0 6px rgba(22, 180, 124, 0.4);
+}
+
+.signItemOffline {
+  background: #e63946;
+}
+
+/* ===================== SIGN INFO HEADER ===================== */
+.signInfoHeader {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.signInfoLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signInfoRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signInfoTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.badgeOnline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1.5px solid #05F2DB;
+  color: #05F2DB;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgeOnlineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #05F2DB;
+  box-shadow: 0 0 6px #05F2DB;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.badgeAnydesk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(30, 136, 229, 0.1);
+  border: 1px solid rgba(30, 136, 229, 0.3);
+  color: #4da6ff;
+  font-size: 12px;
+}
+
+.signInfoMeta {
+  font-size: 12px;
+  color: #8c8c9e;
+  margin: 4px 0 0;
+}
+
+.btnAddCommand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: #F8C318;
+  color: #121319;
+  font-size: 13px;
+  font-weight: 400;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.btnAddCommand:hover {
+  opacity: 0.85;
+}
+
+.btnCancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: #4a4a56;
+  color: #c8c8d4;
+  font-size: 13px;
+  font-weight: 400;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.btnCancel:hover {
+  opacity: 0.85;
+}
+
+/* ===================== SIGN BOARD ===================== */
+.screenControlCardOuter {
+  background: #333333;
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.screenControlCard {
+  background: #191919;
+  border-radius: 16px;
+  padding: 32px 24px 24px;
+}
+
+.signBoardWrap {
+  margin-bottom: 24px;
+}
+
+.signBoardLed {
+  background: #000;
+  border-radius: 8px;
+  padding: 20px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #1a1a1a;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.signBoardContent {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: 140px;
+}
+
+.signCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 8px;
+  border-right: 1px dashed #1a1a1a;
+  text-align: center;
+}
+
+.signCol:last-child {
+  border-right: none;
+}
+
+.signColDest {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.4;
+  height: 20px;
+  margin-bottom: 8px;
+}
+
+.signColTime {
+  font-size: 28px;
+  font-weight: 800;
+  color: #F8C318;
+  margin: 4px 0 2px;
+  line-height: 1;
+}
+
+.signColUnit {
+  font-size: 11px;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.signColSub {
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1.5;
+  max-width: 120px;
+  margin-top: auto;
+}
+
+/* H-junction arrow */
+.junctionWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 6px 0 10px;
+}
+
+.junctionArrows {
+  display: flex;
+  gap: 36px;
+  margin-bottom: -1px;
+}
+
+.arrowUp {
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 20px solid #16b47c;
+}
+
+.junctionBody {
+  display: flex;
+  align-items: center;
+}
+
+.junctionBar {
+  width: 18px;
+  background: #16b47c;
+  height: 40px;
+}
+
+.junctionConnector {
+  width: 46px;
+  height: 14px;
+  background: #16b47c;
+}
+
+/* Sign board bottom bar */
+.signBoardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 10px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.signText {
+  font-size: 11px;
+  color: #00b4d8;
+  margin-right: auto;
+  font-weight: 600;
+}
+
+.signWeather {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #ccc;
+}
+
+.signAqi {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aqiBadge {
+  background: #16b47c;
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.aqiLabel {
+  font-size: 10px;
+  color: #00b4d8;
+}
+
+.signStatusDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #222;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.signStatusRed {
+  background: #ff2a2a;
+  border-color: #aa1111;
+  box-shadow: 0 0 8px #ff2a2a;
+}
+
+.signStatusOrange {
+  background: #ff9900;
+  border-color: #aa6600;
+}
+
+/* ===================== DISPLAY FORMAT ===================== */
+.formatPanel {
+  margin-bottom: 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.panelIcon {
+  color: #F8C318;
+  font-size: 18px;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8C318;
+}
+
+.panelSubtitle {
+  font-size: 11px;
+  color: #8c8c9e;
+  margin-top: 2px;
+}
+
+.formatTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.formatTab {
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  background: #979797;
+  color: #3a3a3a;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.formatTab:hover {
+  background: #444444;
+  color: #b0b0b0;
+}
+
+.formatTabActive {
+  background: #F8C318;
+  color: #121319;
+  border-color: #F8C318;
+  font-weight: 700;
+}
+
+.formatTabAdd {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px dashed #3c3e4e;
+  background: transparent;
+  color: #626477;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formatDurations {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.durationInput {
+  flex: 1;
+  max-width: 80px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid #3c3e4e;
+  border-radius: 20px;
+  color: #8c8c9e;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+
+.durationInput:focus {
+  border-color: #F8C318;
+  color: #fff;
+}
+
+.formatTextLabel {
+  font-size: 14px;
+  color: #F8C318;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.formatTextarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #F8C318;
+  border-radius: 8px;
+  color: #F8C318;
+  font-size: 13px;
+  padding: 12px 16px;
+  resize: vertical;
+  min-height: 48px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.formatTextarea:focus {
+  box-shadow: 0 0 0 1px #F8C318;
+}
+
+/* ===================== MEDIA LIBRARY ===================== */
+.mediaPanel {
+  background: #191919;
+  border: 1px solid #232532;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.mediaPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.mediaPanelTitleArea {
+  flex: 1;
+}
+
+.mediaPanelDesc {
+  font-size: 11px;
+  color: #626477;
+  margin: -4px 0 0 28px;
+}
+
+.btnViewAll {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #F8C318;
+  color: #121319;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+
+.mediaCategoryTabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #232532;
+}
+
+.mediaCatTab {
+  padding: 0 0 10px 0;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #626477;
+  position: relative;
+}
+
+.mediaCatTab:hover {
+  color: #8c8c9e;
+}
+
+.mediaCatTabActive {
+  color: #F8C318;
+  font-weight: 600;
+}
+
+.mediaCatTabActive::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #F8C318;
+}
+
+.mediaThumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+}
+
+/* ===================== MAP PANEL ===================== */
+.mapPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 0;
+}
+
+.mapWrapper {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #1c1d27;
+  margin-bottom: 12px;
+}
+
+.mapBtnGoogleMap {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  padding: 8px 16px;
+  background: #0052cc;
+  border: none;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mapBtnGoogleMap:hover {
+  background: #0043a6;
+}
+
+/* Location card */
+.locationCard {
+  background: #0d0e13;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cardHeaderIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardHeaderTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #F8C318;
+  text-decoration: none;
+  background: transparent;
+}
+
+.cardLine {
+  font-size: 12px;
+  color: #e2e2e2;
+  margin: 8px 0;
+}
+
+.cardLineMuted {
+  color: #8c8c9e;
+}
+
+/* Project info card */
+.projectCard {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 20px 16px;
+  margin-bottom: 12px;
+}
+
+.projectDesc {
+  font-size: 12px;
+  color: #bfae6b;
+  line-height: 1.6;
+  margin: 16px 0 32px;
+}
+
+.projectStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px 16px;
+}
+
+.projectStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.projectStatIcon {
+  color: #ffffff;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projectStatIconCyan {
+  color: #00d2d3;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projectStatValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.projectStatValueCyan {
+  font-size: 13px;
+  font-weight: 500;
+  color: #00d2d3;
+}
+
+.projectStatLabel {
+  font-size: 10px;
+  color: #8c8c9e;
+}
+
+/* ===================== ADD DISPLAY FORMAT ===================== */
+.addFormatPanel {
+  background: #191919;
+  border: 1px solid #232532;
+  border-radius: 12px;
+  padding: 20px 20px 16px;
+  margin-bottom: 20px;
+}
+
+.addFormatDesc {
+  font-size: 11px;
+  color: #626477;
+  margin: 0 0 16px 28px;
+}
+
+.addFormatSectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0 0 10px;
+}
+
+.addFormatRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.addFormatField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.addFormatLabel {
+  font-size: 12px;
+  color: #F8C318;
+  font-weight: 500;
+}
+
+.addFormatRequired {
+  color: #F8C318;
+  margin-left: 2px;
+}
+
+.addFormatInput {
+  background: transparent;
+  border: 1px solid rgba(248, 195, 24, 0.3);
+  border-radius: 8px;
+  color: #c2c2d3;
+  font-size: 12px;
+  padding: 9px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.addFormatInput::placeholder {
+  color: #5a5b6b;
+}
+
+.addFormatInput:focus {
+  border-color: #F8C318;
+  color: #fff;
+}
+
+.addFormatSelectWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.addFormatSelect {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(248, 195, 24, 0.3);
+  border-radius: 8px;
+  color: #5a5b6b;
+  font-size: 12px;
+  padding: 9px 32px 9px 14px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.addFormatSelect:focus {
+  border-color: #F8C318;
+  color: #fff;
+}
+
+.addFormatSelectFilled {
+  color: #c2c2d3;
+}
+
+.addFormatSelect option {
+  background: #1a1a1a;
+  color: #c2c2d3;
+}
+
+.addFormatSelectChevron {
+  position: absolute;
+  right: 12px;
+  color: #F8C318;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.addFormatDateWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.addFormatDateInput {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(248, 195, 24, 0.3);
+  border-radius: 8px;
+  color: #c2c2d3;
+  font-size: 12px;
+  padding: 9px 40px 9px 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.addFormatDateInput:focus {
+  border-color: #F8C318;
+  color: #fff;
+}
+
+.addFormatDateInput::-webkit-calendar-picker-indicator {
+  display: none;
+  opacity: 0;
+}
+
+.addFormatDateIcon {
+  position: absolute;
+  right: 10px;
+  color: #F8C318;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.addFormatDateEmpty {
+  color: transparent;
+}
+
+.addFormatDateWrap:focus-within .addFormatDateEmpty {
+  color: #c2c2d3;
+}
+
+.addFormatDatePlaceholder {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5a5b6b;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 50px);
+}
+
+.addFormatDateWrap:focus-within .addFormatDatePlaceholder {
+  display: none;
+}
+
+.addFormatRadioGroup {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.addFormatRadioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #c2c2d3;
+  cursor: pointer;
+}
+
+.addFormatRadio {
+  accent-color: #F8C318;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.addFormatDropzone {
+  border: 1.5px dashed rgba(248, 195, 24, 0.5);
+  border-radius: 10px;
+  background: #131313;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 20px;
+  min-height: 120px;
+}
+
+.addFormatDropzone:hover {
+  border-color: rgba(248, 195, 24, 0.8);
+  background: #1a1a1a;
+}
+
+.addFormatDropzoneActive {
+  border-color: #F8C318;
+  background: rgba(248, 195, 24, 0.04);
+}
+
+.addFormatDropzoneText {
+  font-size: 13px;
+  color: #e0e0e0;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.addFormatDropzoneHint {
+  font-size: 11px;
+  color: #626477;
+  text-align: center;
+}
+
+.addFormatDropzoneFile {
+  font-size: 12px;
+  color: #F8C318;
+  font-weight: 600;
+  word-break: break-all;
+  text-align: center;
+}
+
+/* ─── Upload Progress Card ─── */
+.uploadProgressCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.uploadProgressIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uploadProgressBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uploadProgressName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uploadProgressTrack {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.uploadProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 4px;
+  transition: width 0.18s ease, background 0.3s ease;
+}
+
+.uploadProgressFillDone {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.uploadProgressMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.uploadProgressPauseBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 6px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.uploadProgressPauseBtn:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.uploadSuccessBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.addFormatFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* ===================== MEDIA LIBRARY (RIGHT PANEL) ===================== */
+.mediaPanelRight {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.mediaCarouselRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #3c3e4e transparent;
+}
+
+.mediaCarouselRow::-webkit-scrollbar {
+  height: 4px;
+}
+
+.mediaCarouselRow::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mediaCarouselRow::-webkit-scrollbar-thumb {
+  background: #3c3e4e;
+  border-radius: 2px;
+}
+
+.mediaCarouselItem {
+  flex: 0 0 160px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #282a38;
+  transition: border-color 0.15s;
+}
+
+.mediaCarouselItem:hover {
+  border-color: #F8C318;
+}
+
+.mediaCarouselItem .mediaThumb {
+  width: 160px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediaGridRight {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mediaItemRight {
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #282a38;
+  transition: border-color 0.15s;
+}
+
+.mediaItemRight:hover {
+  border-color: #3c3e4e;
+}
+
+.mediaItemRight .mediaThumb {
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mediaViewAllWrap {
+  display: flex;
+  justify-content: center;
+}
+
+/* ===================== SIGNAL HISTORY MODAL ===================== */
+.signalModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.signalModal {
+  background: #191919;
+  border: 1px solid #2e2e2e;
+  border-radius: 16px;
+  padding: 24px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3c3e4e transparent;
+}
+
+.signalModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.signalModalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #F8C318;
+}
+
+.signalModalRoute {
+  font-size: 13px;
+  color: #8c8c9e;
+  margin-left: 4px;
+}
+
+.signalModalClose {
+  background: transparent;
+  border: none;
+  color: #8c8c9e;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.signalModalClose:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.signalModalSummary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.signalSummaryPill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.signalSummaryOnline {
+  background: rgba(5, 242, 219, 0.08);
+  border: 1px solid rgba(5, 242, 219, 0.25);
+  color: #05F2DB;
+}
+
+.signalSummaryOffline {
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid rgba(230, 57, 70, 0.25);
+  color: #e63946;
+}
+
+.signalSummaryDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.signalSummaryNote {
+  font-size: 11px;
+  color: #626477;
+  margin-left: auto;
+}
+
+.signalTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.signalTimelineItem {
+  display: flex;
+  gap: 12px;
+}
+
+.signalTimelineTrack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 16px;
+}
+
+.signalTimelineDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.signalTimelineLine {
+  width: 2px;
+  flex: 1;
+  background: #2e2e2e;
+  margin: 4px 0;
+  min-height: 20px;
+}
+
+.signalTimelineContent {
+  padding-bottom: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.signalTimelineTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.signalTimelineStatus {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.signalTimelineNote {
+  font-size: 11px;
+  color: #8c8c9e;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.signalTimelineTime {
+  font-size: 12px;
+  color: #c2c2d3;
+  margin-bottom: 4px;
+}
+
+.signalTimelineDuration {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #8c8c9e;
+}
