@@ -1,3 +1,6 @@
-export default function VMSPage() {
-  return <h1>This is VMS</h1>
+"use client"
+import VmsScreen from '@/features/admin/vms/overall/screen'
+
+export default function VmsPage() {
+	return <VmsScreen />
 }
