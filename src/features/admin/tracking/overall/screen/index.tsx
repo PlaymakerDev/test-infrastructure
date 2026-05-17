@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   TitleSection,
   OverallSection,
@@ -9,9 +9,17 @@ import {
   GPSSection,
   LicenseSection
 } from '../components'
+import { useRouter } from 'next/navigation'
+import { OverallProvider } from '../context'
 
 const TrackingScreen = () => {
   const [currentTab, setCurrentTab] = useState('OVERALL')
+  const router = useRouter()
+
+  useEffect(() => {
+    if (currentTab === 'TRACK_GPS') router.push('/admin/tracking/detail/gps')
+    if (currentTab === 'LICENSE') router.push('/admin/tracking/detail/license')
+  }, [currentTab, router])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
@@ -33,12 +41,14 @@ const TrackingScreen = () => {
   }, [currentTab])
 
   return (
-    <div className='main-screen px-10'>
-      <TitleSection setCurrentTab={setCurrentTab} />
-      <section className='mt-8'>
-        {renderContent}
-      </section>
-    </div>
+    <OverallProvider>
+      <div className='main-screen px-10'>
+        <TitleSection setCurrentTab={setCurrentTab} />
+        <section className='mt-8'>
+          {renderContent}
+        </section>
+      </div>
+    </OverallProvider>
   )
 }
 

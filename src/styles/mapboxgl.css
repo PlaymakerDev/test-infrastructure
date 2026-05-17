@@ -1,0 +1,18 @@
+/* Hide Mapbox built-in branding when used in full-screen dashboard */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+/* React-rendered popups (showReactPopup) — clear Mapbox's default white wrapper.
+   The inner JSX renders its own background/border, so the wrapper should be invisible. */
+.react-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.react-popup .mapboxgl-popup-tip {
+  display: none !important;
+}

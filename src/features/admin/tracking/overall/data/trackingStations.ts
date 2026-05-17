@@ -18,6 +18,8 @@ export interface TrackingStation {
   totalVehicles: number
   /** จำนวนรถน้ำหนักเกิน */
   overweightVehicles: number
+  /** ผู้ตั้งด่าน — ใช้เฉพาะ type='mobile' (popup แสดงแทน 'สถานะ') */
+  officerName?: string
 }
 
 export const TRACKING_STATION_COLORS: Record<TrackingStationType, string> = {
@@ -72,10 +74,10 @@ export const TRACKING_STATIONS: TrackingStation[] = [
     totalVehicles: 3890, overweightVehicles: 10 },
 
   // ── เคลื่อนที่ (ม่วง) ──
-  { id: 'mob-bkk-001', code: 'กท.M01', name: 'หน่วยเคลื่อนที่ กรุงเทพ', type: 'mobile',
+  { id: 'mob-bkk-001', code: 'มห.4012', name: 'หน่วยเคลื่อนที่ กรุงเทพ', type: 'mobile',
     coord: [100.502, 13.754], status: 'open', lastOpenDate: '20 เม.ย. 69',
-    totalVehicles: 380, overweightVehicles: 1 },
+    totalVehicles: 4, overweightVehicles: 0, officerName: 'อัฐพงษ์ ศิริพันธ์' },
   { id: 'mob-cm-001', code: 'ชม.M01', name: 'หน่วยเคลื่อนที่ เชียงใหม่', type: 'mobile',
     coord: [98.965, 18.768], status: 'open', lastOpenDate: '20 เม.ย. 69',
-    totalVehicles: 240, overweightVehicles: 0 },
+    totalVehicles: 240, overweightVehicles: 0, officerName: 'พฤกษา ใจดี' },
 ]

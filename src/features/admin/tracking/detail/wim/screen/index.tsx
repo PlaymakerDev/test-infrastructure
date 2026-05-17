@@ -4,6 +4,7 @@ import {
   OverallSection,
   VehicleSection
 } from '../components'
+import { WIMProvider } from '../context';
 
 interface Props {
   id: string[] | string | number | undefined;
@@ -25,13 +26,16 @@ const WIMDetailScreen: React.FC<Props> = (props) => {
         return <OverallSection />
     }
   }, [currentTab])
+
   return (
-    <div className='main-screen'>
-      <TitleSection setCurrentTab={setCurrentTab} />
-      <section className='mt-8 px-10'>
-        {renderContent}
-      </section>
-    </div>
+    <WIMProvider>
+      <div className='main-screen'>
+        <TitleSection setCurrentTab={setCurrentTab} />
+        <section className='mt-8 px-10'>
+          {renderContent}
+        </section>
+      </div>
+    </WIMProvider>
   )
 }
 
