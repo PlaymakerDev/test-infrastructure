@@ -1,21 +1,23 @@
 "use client"
 import React, { useState } from 'react'
+import { Segmented } from 'antd'
+import SwapButton from '@/components/swap-button/SwapButton'
 import { OverviewSection, IncidentSection, AlertSection, StatusSection } from '../components'
 
-const tabs = [
-  { key: 'overview', label: 'ภาพรวม' },
-  { key: 'incident', label: 'รายงานเหตุการณ์' },
-  { key: 'alert', label: 'ไฟฟ้าแจ้งเตือน' },
-  { key: 'status', label: 'สถานะและการปรับเปลี่ยนข้อความ' },
+const TAB_OPTIONS = [
+  { label: 'ภาพรวม', value: 'overview' },
+  { label: 'รายงานเหตุการณ์', value: 'incident' },
+  { label: 'ไฟฟ้าแจ้งเตือน', value: 'alert' },
+  { label: 'สถานะและการปรับเปลี่ยนข้อความ', value: 'status' },
 ]
 
-const periods = [
-  { key: 'today', label: 'วันนี้' },
-  { key: '7days', label: '7 วัน' },
-  { key: 'month', label: 'เดือนนี้' },
-  { key: 'year', label: 'ปีนี้' },
-  { key: 'lastyear', label: 'ปีที่ผ่านมา' },
-  { key: 'all', label: 'ทั้งหมด' },
+const PERIOD_OPTIONS = [
+  { label: 'วันนี้', value: 'TODAY' },
+  { label: '7 วันที่ผ่านมา', value: 'LAST_7_DAYS' },
+  { label: 'เดือนนี้', value: 'THIS_MONTH' },
+  { label: 'ปีนี้', value: 'THIS_YEAR' },
+  { label: 'ปีที่ผ่านมา', value: 'LAST_YEAR' },
+  { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
 const sectionMap: Record<string, React.FC> = {
@@ -26,56 +28,43 @@ const sectionMap: Record<string, React.FC> = {
 }
 
 const StatisticsScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(tabs[0].key)
-  const [activePeriod, setActivePeriod] = useState<string>('all')
+  const [activeTab, setActiveTab] = useState(TAB_OPTIONS[0].value)
+  const [activePeriod, setActivePeriod] = useState<string>('ALL')
 
   const ActiveSection = sectionMap[activeTab]
 
   return (
     <div className="main-screen px-10">
-      <section>
-        <h1 className="text-[32px] font-bold text-[#FCD116]">Statistics</h1>
-        <p className="mt-2 text-base leading-none text-[#FCD116]">สถิติและรายงานการแจ้งเตือนเหตุการณ์</p>
-      </section>
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-4">
-          {tabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="h-10 min-w-40 px-6 rounded-[100px] text-sm font-medium transition-all duration-300 hover:scale-105 cursor-pointer"
-              style={{
-                backgroundColor: activeTab === tab.key ? '#FCD116' : '#212121',
-                color: activeTab === tab.key ? '#212121' : '#FCD116',
-                boxShadow: activeTab === tab.key ? 'none' : '2px 2px 10px 0px #FCD116',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <div
-          className="flex h-10 shrink-0 overflow-hidden rounded-[10px] border border-[#FCD116]"
-          style={{ minWidth: 360, width: 360 }}
-        >
-          {periods.map(period => (
-            <button
-              key={period.key}
-              onClick={() => setActivePeriod(period.key)}
-              className="flex flex-1 cursor-pointer items-center justify-center transition-all duration-300"
-              style={{
-                color: activePeriod === period.key ? '#212121' : '#FCD116',
-                backgroundColor: activePeriod === period.key ? '#FCD116' : 'transparent',
-                borderRadius: activePeriod === period.key ? 5 : 0,
-                margin: activePeriod === period.key ? '6.5px 2px' : 0,
-              }}
-            >
-              <span className="text-xs font-medium whitespace-nowrap">{period.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      {ActiveSection && <ActiveSection />}
+      {activeTab !== 'status' && (
+        <>
+          <section>
+            <h1 className="text-[32px] font-bold text-[#FCD116]">Statistics</h1>
+            <p className="mt-2 text-base leading-none text-[#FCD116]">สถิติและรายงานการแจ้งเตือนเหตุการณ์</p>
+          </section>
+          <section className="mt-5 flex items-end justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <SwapButton
+                options={TAB_OPTIONS}
+                defaultActive="overview"
+                setLabelValue={(value) => setActiveTab(value)}
+              />
+            </div>
+            <div className="shrink-0">
+              <Segmented
+                value={activePeriod}
+                onChange={(value) => setActivePeriod(value as string)}
+                options={PERIOD_OPTIONS}
+                size="large"
+                classNames={{
+                  root: 'min-w-max border! border-(--yellow)!',
+                }}
+              />
+            </div>
+          </section>
+        </>
+      )}
+      {activeTab === 'status' && <StatusSection onBack={() => setActiveTab('overview')} />}
+      {activeTab !== 'status' && ActiveSection && <ActiveSection />}
     </div>
   )
 }
