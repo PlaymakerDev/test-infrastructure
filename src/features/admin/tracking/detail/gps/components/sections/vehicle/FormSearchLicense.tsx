@@ -1,0 +1,68 @@
+import { Input } from 'antd'
+import React, { useCallback, useRef } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { TbSearch } from 'react-icons/tb'
+
+interface Props {
+
+}
+
+interface FormSearchLicenseValues {
+  search: string
+}
+
+let timeout: NodeJS.Timeout
+
+const FormSearchLicense: React.FC<Props> = (props) => {
+  const { } = props
+  const submitRef = useRef<HTMLButtonElement>(null)
+
+  const form = useForm<FormSearchLicenseValues>({
+    defaultValues: {
+      search: ''
+    }
+  })
+
+  const {
+    control,
+    handleSubmit,
+  } = form
+
+  const onSubmit = useCallback((value: FormSearchLicenseValues) => {
+    console.log('submit', value)
+  }, [])
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Controller
+        control={control}
+        name="search"
+        render={({ field }) => {
+          return (
+            <fieldset>
+              <Input
+                {...field}
+                name={field.name}
+                placeholder="ค้นหาป้ายทะเบียน..."
+                className='rounded-lg'
+                suffix={<TbSearch />}
+                size='large'
+                onChange={(e) => {
+                  field.onChange(e)
+
+                  if (timeout) clearTimeout(timeout)
+                  timeout = setTimeout(() => {
+                    submitRef.current?.click()
+                  }, 700)
+                }}
+              />
+            </fieldset>
+          )
+        }}
+      />
+      <button ref={submitRef} type='submit' hidden />
+    </form>
+  )
+}
+
+export default React.memo<Props>(FormSearchLicense)
