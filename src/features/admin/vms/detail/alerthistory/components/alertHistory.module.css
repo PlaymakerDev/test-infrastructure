@@ -766,3 +766,65 @@
   font-size: 12px;
   font-weight: 500;
 }
+
+/* ─── Responsive Layout ─── */
+@media (max-width: 767px) {
+  .body {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .leftPanel {
+    overflow-y: visible;
+  }
+  .rightPanel {
+    width: 100%;
+    flex-shrink: 1;
+    overflow-y: visible;
+  }
+  .statsRow {
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+  }
+  .statCard {
+    min-width: 180px;
+  }
+  .routeListToolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .routeListRight {
+    flex-direction: column;
+  }
+  .searchWrap {
+    min-width: 0;
+    width: 100%;
+  }
+  .btnReport {
+    width: 100%;
+    justify-content: center;
+  }
+  .scheduleCard {
+    padding: 12px;
+  }
+  .deleteModalCard {
+    padding: 28px 20px 24px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .body {
+    gap: 12px;
+  }
+  .rightPanel {
+    width: 240px;
+  }
+  .routeListToolbar {
+    flex-wrap: wrap;
+  }
+  .searchWrap {
+    min-width: 200px;
+  }
+}
