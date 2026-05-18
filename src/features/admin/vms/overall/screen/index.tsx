@@ -38,13 +38,13 @@ const VmsScreenInner: React.FC = () => {
       case 'vms':
       default:
         return (
-          <Row style={{ flex: 1, minHeight: 0, flexWrap: 'nowrap', marginLeft: '-2.5rem' }}>
-            <Col span={5}>
+          <Row className={styles.mainRow} style={{ flex: 1, minHeight: 0, flexWrap: 'nowrap' }}>
+            <Col xs={0} md={7} lg={5}>
               <aside className={`${styles.screenCol} ${styles.colSidebar}`}>
                 <SidebarVms routes={VMS_ROUTES} />
               </aside>
             </Col>
-            <Col span={19} style={{ minHeight: 0, height: '100%' }}>
+            <Col xs={24} md={17} lg={19} style={{ minHeight: 0, height: '100%' }}>
               <div className={styles.sharedScroll}>
                 <div className={styles.colContent}>
                   <ContentPanelVms />
@@ -60,7 +60,7 @@ const VmsScreenInner: React.FC = () => {
   }, [currentTab])
 
   return (
-    <div className={`${styles.screen} px-10`}>
+    <div className={`${styles.screen} px-4 md:px-10`}>
       <HeaderVms onTabChange={setCurrentTab} />
       <section className='mt-8' style={{ flex: 1, minHeight: 0 }}>
         {renderContent}
