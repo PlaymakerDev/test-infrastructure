@@ -6,7 +6,6 @@ import styles from './vms.module.css'
 import MediaLibraryVms from './MediaLibraryVms'
 import { useVmsContext } from '../context'
 
-
 const MapPanelVms: React.FC = () => {
   const { mediaExpanded } = useVmsContext()
   const [viewState, setViewState] = useState({
