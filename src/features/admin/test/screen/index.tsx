@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { TbMapPin, TbTruck, TbClockHour4, TbGauge } from 'react-icons/tb'
-import BarChart, { BarChartDataPoint, BarConfig } from '@/components/chart/ฺBarchart'
+import BarChart, { BarChartDataPoint, BarConfig } from '@/components/chart/Barchart'
 import PieChart, { PieChartDataPoint } from '@/components/chart/PieChart'
 import LineChart, { LineChartDataPoint, LineConfig, LineChartStat } from '@/components/chart/LineChart'
 import GaugeChart, { GaugeTableRow } from '@/components/chart/GaugeChart'
