@@ -1,0 +1,768 @@
+/* ─── Modal ─── */
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalCardIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  animation: modalOverlayIn 0.2s ease;
+}
+
+.modalCard {
+  background: #1a1a1a;
+  border: 1px solid #2e2e2e;
+  border-radius: 16px;
+  width: 600px;
+  max-width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+.modalHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #F8C318;
+  line-height: 1.3;
+}
+
+.modalSubtitle {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.modalCloseBtn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.modalBody::-webkit-scrollbar { width: 4px; }
+.modalBody::-webkit-scrollbar-track { background: transparent; }
+.modalBody::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+/* ─── Delete Confirm Modal ─── */
+.deleteModalCard {
+  background: #fff;
+  border-radius: 20px;
+  width: 500px;
+  max-width: 92vw;
+  padding: 40px 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: modalCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.deleteModalIconWrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid #e63946;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.deleteModalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.deleteModalSub {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.deleteInfoBox {
+  width: 100%;
+  background: rgba(233, 76, 76, 0.2);
+  border: 2px solid #E94C4C;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deleteInfoRow {
+  display: flex;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.deleteInfoLabel {
+  color: #888;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.deleteInfoHighlight {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.deleteInfoStatus {
+  color: #e63946;
+  font-weight: 600;
+}
+
+.deleteModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.deleteBtnCancel {
+  padding: 12px 32px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #d9d9d9;
+  color: #333;
+  transition: background 0.15s;
+}
+
+.deleteBtnCancel:hover { background: #c8c8c8; }
+
+.deleteBtnConfirm {
+  padding: 12px 32px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #F8C318;
+  color: #1a1a1a;
+  transition: opacity 0.15s;
+}
+
+.deleteBtnConfirm:hover { opacity: 0.88; }
+
+/* ─── Screen Layout ─── */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1a1c1e;
+  color: #fff;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.statsSection {
+  flex-shrink: 0;
+  padding: 20px 24px 0;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.leftPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.leftPanel::-webkit-scrollbar { width: 4px; }
+.leftPanel::-webkit-scrollbar-track { background: transparent; }
+.leftPanel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+.rightPanel {
+  width: 292px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.rightPanel::-webkit-scrollbar { width: 4px; }
+.rightPanel::-webkit-scrollbar-track { background: transparent; }
+.rightPanel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+/* ─── Stats Cards ─── */
+.statsRow {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+  width: fit-content;
+}
+
+.statCard {
+  --c: #BDFF66;
+  --c-glow: rgba(189, 255, 102, 0.22);
+  --c-glow-in: rgba(189, 255, 102, 0.1);
+  min-width: 210px;
+  background: rgba(102, 174, 255, 0.1);
+  border: 1.5px solid var(--c);
+  box-shadow: 0 0 18px var(--c-glow), 0 0 6px var(--c-glow-in) inset;
+  border-radius: 14px;
+  padding: 16px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statCardGreen {
+  --c: #4CE99A;
+  --c-glow: rgba(76, 233, 154, 0.22);
+  --c-glow-in: rgba(76, 233, 154, 0.1);
+}
+
+.statIcon {
+  color: var(--c);
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: var(--c);
+  font-weight: 600;
+}
+
+.statValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.statValueNum {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.statValueUnit {
+  font-size: 12px;
+  color: #888;
+}
+
+.statValueLarge {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.statSub {
+  font-size: 11px;
+  color: #666;
+}
+
+/* ─── Route List ─── */
+.routeListWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.routeListToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.routeListTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #F8C318;
+  white-space: nowrap;
+}
+
+.routeListRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: 1.5px solid #F8C318;
+  border-radius: 50px;
+  padding: 8px 16px;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.searchIcon { color: #F8C318; flex-shrink: 0; }
+
+.searchInput {
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+}
+
+.searchInput::placeholder { color: #666; }
+
+.btnReport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1E8AEF;
+  border: none;
+  color: #fff;
+  border-radius: 50px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btnReport:hover { background: #1a7ad4; }
+
+/* Route Card */
+.routeCard {
+  background: #191919;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.routeCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  gap: 12px;
+}
+
+.routeNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.routeActiveDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #00e27a;
+  flex-shrink: 0;
+}
+
+.routeName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F8C318;
+}
+
+.routeMeta {
+  font-size: 12px;
+  color: #777;
+  padding-left: 19px;
+}
+
+.routeDate {
+  font-size: 12px;
+  color: #aaa;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Route Table */
+.routeTableWrap {
+  overflow-x: auto;
+}
+
+.routeTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.routeTable thead tr { background: #F8C318; }
+
+.routeTable thead th {
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.routeTable tbody tr { border-top: 1px solid #25262e; }
+.routeTable tbody tr:hover { background: #22232b; }
+
+.routeTable tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #ccc;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tdInstall { color: #fff; font-weight: 500; min-width: 220px; }
+.tdDate { font-size: 12px; line-height: 1.6; }
+.tdDuration { color: #00e27a; font-weight: 600; }
+
+.badgeOnline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #0a2419;
+  color: #00e27a;
+  border: 1px solid rgba(0,226,122,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badgeOnlineDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00e27a;
+}
+
+/* ─── Calendar ─── */
+.calendarPanelWrap {
+  background: #191919;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendarCard {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.calendarNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.calNavBtn {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.calNavBtn:hover { color: #fff; background: #2e2e38; }
+
+.calMonthTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.calDayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.calDayHeader {
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+  padding: 3px 0;
+}
+
+.calDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.calDay {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #bbb;
+  cursor: pointer;
+  border-radius: 50%;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.calDay:hover { background: #2a2a34; }
+
+.calDayToday {
+  background: #00e27a !important;
+  color: #000 !important;
+  font-weight: 700;
+}
+
+.calDayHasEvent::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #F8C318;
+}
+
+.calDayEmpty { pointer-events: none; }
+
+/* ─── Schedule Section ─── */
+.scheduleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scheduleSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.schedulePills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pillGreen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #0a2419;
+  border: 1px solid rgba(0,226,122,0.2);
+  color: #00e27a;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pillAddCmd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid #F8C318;
+  color: #F8C318;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pillAddCmd:hover { background: rgba(248,195,24,0.08); }
+
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduleCard {
+  background: #212121;
+  border: 1px solid #2a2a34;
+  border-radius: 10px;
+  padding: 14px;
+  position: relative;
+}
+
+.scheduleCardTopRow {
+  position: relative;
+  margin-bottom: 2px;
+}
+
+.scheduleTime {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F8C318;
+  line-height: 1.2;
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.scheduleCardActions {
+  display: flex;
+  gap: 6px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.scheduleActionBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0.8;
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+
+.scheduleActionBtn:hover { opacity: 1; }
+
+.scheduleDate {
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.scheduleMeta {
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.scheduleMetaLabel { color: #555; }
+
+.scheduleBadgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.scheduleBadgeOnline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: #66AEFF;
+  border: 1.5px solid #66AEFF;
+  border-radius: 50px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.scheduleBadgeOnline svg { color: #66AEFF; }
+
+.scheduleBadgeDays {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1.5px solid #F8C318;
+  color: #F8C318;
+  border-radius: 50px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+}
