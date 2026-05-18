@@ -57,6 +57,36 @@ export interface LineChartProps {
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
   yAxisDomain?: [number | 'auto', number | 'auto']
+
+  // ── Theme overrides (optional — defaults preserve original look) ──────────
+  /** ขนาด title (pixel). ถ้าไม่ระบุ ใช้ globals.css h2 clamp */
+  titleSize?: number
+  /** สี title + icon accent (default `#FCD116`) */
+  accentColor?: string
+  /** สีพื้นหลังการ์ด (default `#00000080`) */
+  cardBackground?: string
+  /** สีขอบการ์ด (default `#1f2d3d`) */
+  cardBorderColor?: string
+  /** แสดง golden glow ที่มุมบน 2 มุม (default `true`) */
+  showGlow?: boolean
+  /** ห่อ icon ในวงกลม yellow tint (default `true`) ตั้ง false เพื่อแสดง icon ตรงๆ */
+  iconCircle?: boolean
+
+  // ── Tooltip extras ────────────────────────────────────────────────────────
+  /** วันที่แสดงตรงบนสุดของ tooltip (เช่น "20 เม.ย. 2569"). ถ้าไม่ส่งจะไม่แสดง */
+  tooltipDate?: string
+  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") */
+  tooltipUnit?: string
+  /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
+  tooltipShowDot?: boolean
+}
+
+interface TooltipParam {
+  color: string
+  value: number
+  seriesName: string
+  seriesIndex: number
+  axisValue: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -76,6 +106,17 @@ const LineChart: React.FC<LineChartProps> = ({
   height = 260,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  // Theme overrides — defaults match the original look
+  titleSize,
+  accentColor = '#FCD116',
+  cardBackground = '#00000080',
+  cardBorderColor = '#1f2d3d',
+  showGlow = true,
+  iconCircle = true,
+  // Tooltip extras
+  tooltipDate,
+  tooltipUnit,
+  tooltipShowDot = false,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -126,16 +167,35 @@ const LineChart: React.FC<LineChartProps> = ({
           type: 'line',
           lineStyle: { color: 'rgba(255,255,255,0.15)', width: 1, type: 'solid' },
         },
-        formatter: (params: any[]) =>
-          params
+        // When `tooltipDate` is provided, prepend a centered "date / x-axis-label"
+        // header to each tooltip. When `tooltipShowDot` is true, lead each line
+        // with a colored "●" matching the series color. When `tooltipUnit` is
+        // provided, append it after each value.
+        formatter: (params: TooltipParam[]) => {
+          const header = tooltipDate
+            ? `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;">
+                 <div style="color:#fff;font-size:13px;font-weight:600;">${tooltipDate}</div>
+                 <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''} น.</div>
+               </div>`
+            : ''
+          const rows = params
             .map((p) => {
               const cfg = lines[p.seriesIndex]
-              return `<div style="display:flex;justify-content:space-between;gap:24px;align-items:center">
-                <span style="color:${cfg?.color}">${cfg?.label ?? p.seriesName}</span>
-                <span style="color:${cfg?.color};font-weight:700">${Number(p.value).toLocaleString()}</span>
+              const color = cfg?.color ?? p.color
+              const label = cfg?.label ?? p.seriesName
+              const value = Number(p.value).toLocaleString()
+              const unit = tooltipUnit ? ` ${tooltipUnit}` : ''
+              const dot = tooltipShowDot
+                ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;"></span>`
+                : ''
+              return `<div style="display:flex;justify-content:space-between;gap:24px;align-items:center;margin-top:${header ? 4 : 0}px">
+                <span style="color:${color};display:inline-flex;align-items:center;">${dot}${label}</span>
+                <span style="color:${tooltipShowDot ? '#fff' : color};font-weight:700">${value}${unit}</span>
               </div>`
             })
-            .join(''),
+            .join('')
+          return header + rows
+        },
       },
       series: lines.map((line) => ({
         name: line.label,
@@ -156,34 +216,44 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot])
 
   return (
     <div
       className='relative rounded-2xl p-5 w-full overflow-hidden'
-      style={{ background: '#00000080', border: '1px solid #1f2d3d' }}
+      style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
-      {/* Golden glow top-left */}
-      <div
-        className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
-      />
-      {/* Golden glow top-right */}
-      <div
-        className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
-      />
+      {showGlow && (
+        <>
+          {/* Golden glow top-left */}
+          <div
+            className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
+          />
+          {/* Golden glow top-right */}
+          <div
+            className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
+          />
+        </>
+      )}
 
       {/* Header */}
       <div className='relative flex items-start justify-between mb-4 flex-wrap gap-3'>
         <div className='flex items-center gap-3'>
           {icon && (
-            <div
-              className='flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0'
-              style={{ background: 'rgba(234,179,8,0.15)' }}
-            >
-              {icon}
-            </div>
+            iconCircle ? (
+              <div
+                className='flex items-center justify-center w-9 h-9 rounded-full shrink-0'
+                style={{ background: 'rgba(234,179,8,0.15)', color: accentColor }}
+              >
+                {icon}
+              </div>
+            ) : (
+              <div className='shrink-0' style={{ color: accentColor }}>
+                {icon}
+              </div>
+            )
           )}
           <div>
             <h2 className='font-semibold leading-tight' style={{ color: '#FCD116', fontSize: titleSize }}>
@@ -225,7 +295,7 @@ const LineChart: React.FC<LineChartProps> = ({
           {stats.map((stat, i) => (
             <div key={i} className='flex items-start gap-2'>
               <span
-                className='w-3 h-3 rounded-full mt-1.5 flex-shrink-0'
+                className='w-3 h-3 rounded-full mt-1.5 shrink-0'
                 style={{ background: stat.color }}
               />
               <div>
