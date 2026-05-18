@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
 import "../styles/globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import StoreProvider from '@/components/provider/StoreProvider';
+import AntdAppProvider from '@/components/provider/AntdAppProvider';
 import { ConfigProvider } from "antd";
 import { theme } from "@/configs/antd/themeConfig";
 
@@ -44,7 +45,9 @@ export default function RootLayout({
                 ...theme.theme
               }}
             >
-              {children}
+              <AntdAppProvider>
+                {children}
+              </AntdAppProvider>
             </ConfigProvider>
           </StoreProvider>
         </AntdRegistry>
