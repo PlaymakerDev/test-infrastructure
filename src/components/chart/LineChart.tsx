@@ -59,8 +59,6 @@ export interface LineChartProps {
   yAxisDomain?: [number | 'auto', number | 'auto']
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
-  /** ขนาด title (pixel). ถ้าไม่ระบุ ใช้ globals.css h2 clamp */
-  titleSize?: number
   /** สี title + icon accent (default `#FCD116`) */
   accentColor?: string
   /** สีพื้นหลังการ์ด (default `#00000080`) */
@@ -107,7 +105,6 @@ const LineChart: React.FC<LineChartProps> = ({
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
   // Theme overrides — defaults match the original look
-  titleSize,
   accentColor = '#FCD116',
   cardBackground = '#00000080',
   cardBorderColor = '#1f2d3d',
@@ -256,7 +253,10 @@ const LineChart: React.FC<LineChartProps> = ({
             )
           )}
           <div>
-            <h2 className='font-semibold leading-tight' style={{ color: '#FCD116', fontSize: titleSize }}>
+            <h2
+              className='font-semibold leading-tight'
+              style={{ color: accentColor, fontSize: titleSize }}
+            >
               {title}
             </h2>
             {subtitle && (
