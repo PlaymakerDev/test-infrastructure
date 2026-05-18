@@ -163,7 +163,11 @@ const BarChart: React.FC<BarChartProps> = ({
             </div>
           )}
           <div>
+<<<<<<< HEAD
             <h2 className='font-semibold leading-tight' style={{ color: '#FCD116', fontSize: titleSize }}>
+=======
+            <h2 className='font-semibold text-sm leading-tight' style={{ color: '#FCD116' }}>
+>>>>>>> bf69e86aaf18dfc6bad563701eca25cc01f15451
               {title}
             </h2>
             {subtitle && (

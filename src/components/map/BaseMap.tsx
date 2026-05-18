@@ -76,6 +76,13 @@ const BaseMap: React.FC<BaseMapProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (!map || !containerRef.current) return
+    const observer = new ResizeObserver(() => map.resize())
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [map])
+
   const ctx = useMemo(() => ({ map, isLoaded }), [map, isLoaded])
 
   return (

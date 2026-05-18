@@ -6,7 +6,10 @@ import styles from './vms.module.css'
 import MediaLibraryVms from './MediaLibraryVms'
 import { useVmsContext } from '../context'
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> bf69e86aaf18dfc6bad563701eca25cc01f15451
 const MapPanelVms: React.FC = () => {
   const { mediaExpanded } = useVmsContext()
   const [viewState, setViewState] = useState({
@@ -25,7 +28,11 @@ const MapPanelVms: React.FC = () => {
           {...viewState}
           onMove={(evt: any) => setViewState(evt.viewState)}
           mapStyle="mapbox://styles/mapbox/dark-v11"
+<<<<<<< HEAD
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ""}
+=======
+          mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ""}
+>>>>>>> bf69e86aaf18dfc6bad563701eca25cc01f15451
           style={{ width: '100%', height: '100%' }}
         >
           <Layer
