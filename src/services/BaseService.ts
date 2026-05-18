@@ -1,5 +1,5 @@
 import axios from "axios"
-import { Modal } from "antd"
+import { getGlobalModal } from "@/utils/hooks/useTimeoutModal"
 
 const unauthorizedCode = [401]
 const TOKEN_EXPIRED_CODE = 40199
@@ -55,7 +55,7 @@ BaseService.interceptors.response.use(
 			const { refresh_token } = await sessionRes.json()
 
 			return new Promise((resolve, reject) => {
-				Modal.confirm({
+				getGlobalModal()?.confirm({
 					title: "Session Expired",
 					content: "Your session has expired. Would you like to refresh it?",
 					okText: "Refresh Session",
@@ -63,7 +63,7 @@ BaseService.interceptors.response.use(
 					onOk: async () => {
 						try {
 							await axios.post("/api/auth/refresh", { refresh_token })
-							resolve(BaseService(config)) // retry original request with new token
+							resolve(BaseService(config))
 						} catch {
 							await logout()
 							reject(error)
@@ -79,7 +79,7 @@ BaseService.interceptors.response.use(
 
 		// Handle invalid token: res_code 40100
 		if (response?.data?.res_code === TOKEN_INVALID_CODE) {
-			Modal.error({
+			getGlobalModal()?.error({
 				title: "Session Invalid",
 				content: "Your session is invalid. Please login again.",
 				okText: "Logout",

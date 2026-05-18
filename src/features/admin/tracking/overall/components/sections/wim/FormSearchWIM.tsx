@@ -40,7 +40,7 @@ const FormSearchWIM: React.FC<Props> = (props) => {
               <Input
                 {...field}
                 name={field.name}
-                placeholder="ค้นหาสถานี WIM (Weigh-In-Motion)..."
+                placeholder="ค้นหาสถานี WIM (Weight-In-Motion)..."
                 className='rounded-lg'
                 suffix={<TbSearch />}
                 size='medium'

@@ -5,6 +5,7 @@ export const theme: ConfigProviderProps = {
     token: {
       fontFamily: "var(--font-ibm-plex-sans-thai)",
       colorPrimary: '#FCD116',
+      colorText: "#FFFFFF",
       colorTextLightSolid: 'var(--dark-black)',
       colorTextDescription: "var(--white)",
     },
@@ -87,6 +88,12 @@ export const theme: ConfigProviderProps = {
       Timeline: {
         colorText: "#FFFFFF",
         tailColor: "#000000"
+      },
+      Modal: {
+        contentBg: "var(--dark-black)",
+        headerBg: "var(--dark-black)",
+        footerBg: "var(--dark-black)",
+        titleColor: "#FFFFFF",
       }
     }
   },

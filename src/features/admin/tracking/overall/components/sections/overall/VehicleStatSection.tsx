@@ -47,7 +47,7 @@ const VehicleStatSection: React.FC<Props> = (props) => {
         {/* f3 — xs: border-b | sm: border-b-0 + border-r | lg: border-r */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--yellow)/50 border-b sm:border-b-0 sm:border-r'>
           <section className='text-center'>
-            <h3 className='text-xs font-semibold text-white sm:text-sm'>WIM (Weigh-In-Motion)</h3>
+            <h3 className='text-xs font-semibold text-white sm:text-sm'>WIM (Weight-In-Motion)</h3>
             <p className='text-xs text-gray-400'>เปิดใช้งาน 21 / 74</p>
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
