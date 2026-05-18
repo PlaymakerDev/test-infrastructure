@@ -1653,3 +1653,38 @@
   font-size: 11px;
   color: #8c8c9e;
 }
+/* ─── Responsive Layout ─── */
+.mainRow {
+  margin-left: -2.5rem;
+}
+
+@media (max-width: 767px) {
+  .mainRow {
+    margin-left: 0;
+  }
+  .sharedScroll {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .colRight {
+    display: none;
+  }
+  .colContent {
+    padding: 16px;
+  }
+  .addFormatRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .colRight {
+    display: none;
+  }
+  .colContent {
+    padding: 16px;
+  }
+  .addFormatRow {
+    grid-template-columns: 1fr;
+  }
+}
