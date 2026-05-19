@@ -77,6 +77,17 @@ const admin = [
     path_list: [],
   },
   {
+    key: '14',
+    title: 'Bridge Lighting',
+    label: 'Bridge Lighting',
+    label_key: "bridge-lighting",
+    icon: "TbLamp",
+    default_color_icon: '',
+    path: "/admin/bridge-lighting",
+    path_active: "/admin/bridge-lighting",
+    path_list: [],
+  },
+  {
     key: '8',
     title: 'VMS',
     label: "VMS",
