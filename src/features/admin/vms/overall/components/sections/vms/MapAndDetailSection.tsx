@@ -1,5 +1,6 @@
 import React from 'react'
-import { MapSection, VMSDetail } from '../../../components'
+import { DetailItemStorage, MapSection, VMSDetail } from '../../../components'
+import { useVMSContext } from '../../../context'
 
 interface Props {
 
@@ -7,6 +8,7 @@ interface Props {
 
 const MapAndDetailSection: React.FC<Props> = (props) => {
   const { } = props
+  const { isAddMode } = useVMSContext()
 
   return (
     <>
@@ -16,6 +18,11 @@ const MapAndDetailSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <VMSDetail />
       </section>
+      {isAddMode && (
+        <section className='mt-5'>
+          <DetailItemStorage />
+        </section>
+      )}
     </>
   )
 }
