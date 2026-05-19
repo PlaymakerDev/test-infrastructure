@@ -11,8 +11,8 @@ const VMSDetail: React.FC<Props> = (props) => {
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
       <div className='flex items-center gap-2 mb-5'>
-        <TbClipboard className='fs-22 shrink-0' />
-        <h4 className='mb-0'>ข้อมูลโครงการ</h4>
+        <TbClipboard className='fs-22 text-blue-400 shrink-0' />
+        <h4 className='text-blue-400 mb-0'>ข้อมูลโครงการ</h4>
       </div>
 
       <div className='mb-5'>

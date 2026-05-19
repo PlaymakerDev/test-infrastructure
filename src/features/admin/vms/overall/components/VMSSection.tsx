@@ -1,6 +1,6 @@
 "use client"
-import { Button } from 'antd'
-import React, { useState } from 'react'
+import { Button, Empty } from 'antd'
+import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DetailSection, DrawerSearchSection, MapAndDetailSection, SearchSection } from '../components'
 import { useVMSContext } from '../context'
@@ -8,7 +8,17 @@ import { useVMSContext } from '../context'
 
 const VMSSection: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(true)
-  const { } = useVMSContext()
+  const { bureauSign } = useVMSContext()
+
+  const renderDetailSection = useMemo(() => {
+    if (!bureauSign?.id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
+    return <DetailSection />
+  }, [bureauSign?.id])
+
+  const renderMapAndDetailSection = useMemo(() => {
+    if (!bureauSign?.id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
+    return <MapAndDetailSection />
+  }, [bureauSign?.id])
 
   return (
     <>
@@ -43,14 +53,14 @@ const VMSSection: React.FC = () => {
 
         {/* ══ CENTER: timeline ══ */}
         <div className='flex-1 min-w-0 xl:overflow-y-auto px-4 xl:px-6 py-4'>
-          <DetailSection />
+          {renderDetailSection}
         </div>
 
         {/* ══ RIGHT: map + location + stats
               xl+  → fixed side column, scrolls independently
               < xl → full width, stacks below center ══ */}
         <div className='w-full xl:w-80 2xl:w-96 xl:shrink-0 xl:overflow-y-auto flex flex-col gap-4 p-4 xl:border-l xl:border-white/5'>
-          <MapAndDetailSection />
+          {renderMapAndDetailSection}
         </div>
 
       </div>
