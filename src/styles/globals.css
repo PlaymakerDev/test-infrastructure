@@ -10,8 +10,14 @@
 @import "tailwindcss";
 
 /* ===== UTILITIES ===== */
-.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 /* ===== RESET & BASE ===== */
 *,
@@ -35,6 +41,7 @@
   --light-blue: #05F2DB99;
   --default-blue: #66AEFF;
   --red: #FF6666;
+  --light-gray: #525252;
   --gray: #333333;
   --mid-gray: #2B2B2B;
   /* LAYOUT */

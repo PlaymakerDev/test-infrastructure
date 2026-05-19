@@ -21,33 +21,33 @@ const OverallCalibrateWeight: React.FC<Props> = (props) => {
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4'>
         <div className='flex flex-col items-center text-center'>
           <TbClipboardList className='text-5xl text-white mb-2' />
-          <p className='fs-13 text-gray-400 mb-0.5'>Calibrate ครั้งล่าสุด</p>
-          <p className='text-[#66AEFF] mb-0.5'>10 ส.ค. 2567</p>
-          <p className='fs-13 text-white mb-0'>(2 ปีที่แล้ว)</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>Calibrate ครั้งล่าสุด</p>
+          <p className='fs-12 text-[#66AEFF] mb-0.5'>10 ส.ค. 2567</p>
+          <p className='fs-12 text-white mb-0'>(2 ปีที่แล้ว)</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbCalendarStats className='text-5xl text-white mb-2' />
-          <p className='fs-13 text-gray-400 mb-0.5'>กำหนด Calibrate ครั้งถัดไป</p>
-          <p className='text-[#66AEFF] mb-0'>10 ส.ค. 2568</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>กำหนด Calibrate ครั้งถัดไป</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>10 ส.ค. 2568</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbArticle className='text-5xl text-white mb-2' />
-          <p className='fs-13 text-gray-400 mb-0.5'>เลขที่ Certificate</p>
-          <p className='text-[#66AEFF] mb-0'>CERT-2024-102</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>เลขที่ Certificate</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>CERT-2024-102</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbUser className='text-5xl text-white mb-2' />
-          <p className='fs-13 text-gray-400 mb-0.5'>ผู้ทำการ Calibrate</p>
-          <p className='text-[#66AEFF] mb-0'>นายวิชัย สุขสันต์</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้ทำการ Calibrate</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>นายวิชัย สุขสันต์</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbBrandCoinbase className='text-5xl text-white mb-2' />
-          <p className='fs-13 text-gray-400 mb-0.5'>บริษัททำการ Calibrate</p>
-          <p className='text-[#66AEFF] mb-0'>บริษัท เทคโนโลยีชั่งน้ำหนัก จำกัด</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>บริษัททำการ Calibrate</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>บริษัท เทคโนโลยีชั่งน้ำหนัก จำกัด</p>
         </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ const DrawerSearchSection: React.FC = () => {
       <Drawer
         open={open}
         onClose={() => setOpen(false)}
-        placement='left'
+        placement='bottom'
         styles={{
           wrapper: { width: '100%' },
           body: { padding: 0, background: 'var(--dark-black)' },
