@@ -1,4 +1,4 @@
-import { PlusOutlined } from '@ant-design/icons'
+import { CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import { Badge, Button, ConfigProvider } from 'antd'
 import React from 'react'
 import { TbAppWindow } from 'react-icons/tb'
@@ -10,7 +10,7 @@ interface Props {
 
 const DetailTitle: React.FC<Props> = (props) => {
   const { } = props
-  const { setAddMode, bureauRoute, bureauSign } = useVMSContext()
+  const { isAddMode, setAddMode, bureauRoute, bureauSign } = useVMSContext()
 
   // PREV 2xl:items-center
   return (
@@ -29,16 +29,18 @@ const DetailTitle: React.FC<Props> = (props) => {
             <p className='fs-12'>Anydesk : {bureauSign?.anydesk || '-'}</p>
           </Button>
         </ConfigProvider>
-        <Button
-          type="primary"
-          size="middle"
-          shape="round"
-          icon={<PlusOutlined />}
-          className='w-full! sm:w-auto!'
-          onClick={() => setAddMode(true)}
-        >
-          <p className='fs-12'>เพิ่มคำสั่ง</p>
-        </Button>
+        <ConfigProvider theme={{ token: { colorPrimary: isAddMode ? '#6B6B6B' : '#FCD116', colorTextLightSolid: isAddMode ? '#FFFFFF' : 'var(--dark-black)' } }}>
+          <Button
+            type="primary"
+            size="middle"
+            shape="round"
+            icon={isAddMode ? <CloseOutlined /> : <PlusOutlined />}
+            className='w-full! sm:w-auto!'
+            onClick={() => setAddMode(!isAddMode)}
+          >
+            <p className='fs-12'>{isAddMode ? 'ยกเลิก' : 'เพิ่มคำสั่ง'}</p>
+          </Button>
+        </ConfigProvider>
       </div>
     </div>
   )
