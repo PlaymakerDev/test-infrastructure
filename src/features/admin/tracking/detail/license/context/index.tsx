@@ -1,5 +1,5 @@
 "use client"
-import { LicenseItem, LicenseTimelineItem } from '@/components/list/LicenseList';
+import { LicenseItem } from '@/components/list/LicenseList';
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {

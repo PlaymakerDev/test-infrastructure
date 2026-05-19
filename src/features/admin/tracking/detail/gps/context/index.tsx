@@ -1,8 +1,12 @@
 "use client"
-import { createContext, useContext } from 'react'
+import { RoadItem } from '@/components/list';
+import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
-  text?: string;
+  route: RoadItem;
+  setRoute: React.Dispatch<React.SetStateAction<RoadItem>>;
+  licenseOpen: boolean;
+  setLicenseOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface PageProviderProps {
@@ -13,10 +17,22 @@ export const GPSContext = createContext<ContextProps | null>(null)
 
 export const GPSProvider = (props: PageProviderProps) => {
   const { children } = props
+  const [route, setRoute] = useState<RoadItem>({
+    id: "",
+    road_code: "",
+    road_name: "",
+    vehicle_count: 0
+  })
+  const [licenseOpen, setLicenseOpen] = useState(false)
 
   return (
     <GPSContext.Provider
-      value={{}}
+      value={{
+        route,
+        setRoute,
+        licenseOpen,
+        setLicenseOpen,
+      }}
     >
       {children}
     </GPSContext.Provider>

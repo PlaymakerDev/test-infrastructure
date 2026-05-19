@@ -16,12 +16,14 @@ export { default as VehicleStat } from './sections/overall/VehicleStat'
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'
 export { default as DrawerSearchSection } from './sections/vehicle/DrawerSearchSection'
+export { default as DrawerSearchLicense } from './sections/vehicle/DrawerSearchLicense'
 export { default as FormSearchLicense } from './sections/vehicle/FormSearchLicense'
 export { default as FormSearchRoute } from './sections/vehicle/FormSearchRoute'
 export { default as MapSection } from './sections/vehicle/MapSection'
 export { default as SearchLicenseSection } from './sections/vehicle/SearchLicenseSection'
 export { default as SearchRouteSection } from './sections/vehicle/SearchRouteSection'
 export { default as RouteDetail } from './sections/vehicle/RouteDetail'
+export { default as LicenseTabContent } from './sections/vehicle/LicenseTabContent'
 
 // SUMMARY
 export { default as SummarySection } from './SummarySection'
