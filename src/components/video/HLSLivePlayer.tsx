@@ -22,6 +22,100 @@ interface Props extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement
   viewportThreshold?: number;
 }
 
+// ── Loading indicator ─────────────────────────────────────────────────────────
+
+const LOADING_STEPS = ['dots', 'Stream', 'Device'] as const
+type LoadingStep = typeof LOADING_STEPS[number]
+
+const LoadingIndicator: React.FC = () => {
+  const [stepIdx, setStepIdx] = useState(0)
+  const [phase, setPhase] = useState<'enter' | 'hold' | 'exit'>('enter')
+
+  useEffect(() => {
+    let t: NodeJS.Timeout
+    if (phase === 'enter') {
+      t = setTimeout(() => setPhase('hold'), 350)
+    } else if (phase === 'hold') {
+      t = setTimeout(() => setPhase('exit'), 1500)
+    } else {
+      t = setTimeout(() => {
+        setStepIdx((prev) => (prev + 1) % LOADING_STEPS.length)
+        setPhase('enter')
+      }, 300)
+    }
+    return () => clearTimeout(t)
+  }, [phase])
+
+  const step = LOADING_STEPS[stepIdx]
+
+  return (
+    <>
+      <style>{`
+        @keyframes hls-wave {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+          30% { transform: translateY(-6px); opacity: 1; }
+        }
+        @keyframes hls-slide-in {
+          from { transform: translateY(-14px); opacity: 0; }
+          to   { transform: translateY(0);     opacity: 1; }
+        }
+        @keyframes hls-slide-out {
+          from { transform: translateY(0);    opacity: 1; }
+          to   { transform: translateY(14px); opacity: 0; }
+        }
+      `}</style>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }}>
+        <span style={{ color: '#ccc', fontSize: 12, letterSpacing: '0.05em' }}>Loading</span>
+        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', minWidth: 52, height: 18, overflow: 'hidden' }}>
+          <span
+            style={{
+              position: 'absolute',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              animation: phase === 'exit'
+                ? 'hls-slide-out 0.3s ease forwards'
+                : phase === 'enter'
+                  ? 'hls-slide-in 0.3s ease forwards'
+                  : 'none',
+            }}
+          >
+            {step === 'dots'
+              ? [0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    display: 'inline-block',
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: '#E94C4C',
+                    animation: phase !== 'exit'
+                      ? `hls-wave 1.2s ease-in-out ${i * 0.18}s infinite`
+                      : 'none',
+                  }}
+                />
+              ))
+              : (
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  color: '#E94C4C',
+                }}>
+                  {step}
+                </span>
+              )
+            }
+          </span>
+        </span>
+      </div>
+    </>
+  )
+}
+
+// ── Main player ───────────────────────────────────────────────────────────────
+
 const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
   const {
     hlsUrl = '',
@@ -923,11 +1017,8 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
       {/* Loading overlay - only for initial load */}
       {isLoading && !wasConnectedBefore && isInViewport && (
-        <div className="absolute inset-0 bg-slate-900 flex items-center justify-center z-20">
-          <div className="text-center text-slate-400">
-            <div className="w-6 h-6 border-2 border-slate-600 border-t-cyan-400 rounded-full animate-spin mx-auto mb-2" />
-            <div className="text-xs">Loading...</div>
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center z-20" style={{ background: '#0e0e0e' }}>
+          <LoadingIndicator />
         </div>
       )}
 
