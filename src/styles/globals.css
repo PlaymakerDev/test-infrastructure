@@ -9,6 +9,10 @@
 /* IMPORT TAILWINDCSS */
 @import "tailwindcss";
 
+/* ===== UTILITIES ===== */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* ===== RESET & BASE ===== */
 *,
 *::before,
