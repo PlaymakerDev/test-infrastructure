@@ -1,0 +1,287 @@
+[
+  {
+    "id": "1",
+    "title": "สทช. 1 (ปทุมธานี)",
+    "total_active": 25,
+    "total_inactive": 1,
+    "latitude": 14.018000,
+    "longitude": 100.529000,
+    "state": []
+  },
+  {
+    "id": "2",
+    "title": "สทช. 2 (สระบุรี)",
+    "total_active": 14,
+    "total_inactive": 5,
+    "latitude": 14.530000,
+    "longitude": 100.917000,
+    "state": []
+  },
+  {
+    "id": "3",
+    "title": "สทช. 3 (ชลบุรี)",
+    "total_active": 5,
+    "total_inactive": 1,
+    "latitude": 13.361000,
+    "longitude": 100.985000,
+    "state": []
+  },
+  {
+    "id": "4",
+    "title": "สทช. 4 (เพชรบุรี)",
+    "total_active": 20,
+    "total_inactive": 4,
+    "latitude": 13.112000,
+    "longitude": 99.939000,
+    "state": []
+  },
+  {
+    "id": "5",
+    "title": "สทช. 5 (นครราชสีมา)",
+    "total_active": 2,
+    "total_inactive": 0,
+    "latitude": 14.979000,
+    "longitude": 102.098000,
+    "state": []
+  },
+  {
+    "id": "6",
+    "title": "สทช. 6 (ขอนแก่น)",
+    "total_active": 16,
+    "total_inactive": 0,
+    "latitude": 16.440000,
+    "longitude": 102.836000,
+    "state": []
+  },
+  {
+    "id": "7",
+    "title": "สทช. 7 (อุบลราชธานี)",
+    "total_active": 9,
+    "total_inactive": 0,
+    "latitude": 15.228000,
+    "longitude": 104.856000,
+    "state": []
+  },
+  {
+    "id": "8",
+    "title": "สทช. 10 (เชียงใหม่)",
+    "total_active": 8,
+    "total_inactive": 1,
+    "latitude": 18.787000,
+    "longitude": 98.993000,
+    "state": []
+  },
+  {
+    "id": "9",
+    "title": "สทช. 13 (ฉะเชิงเทรา)",
+    "total_active": 22,
+    "total_inactive": 10,
+    "latitude": 13.690000,
+    "longitude": 101.077000,
+    "state": [
+      {
+        "id": "1",
+        "title": "ขทช. ฉะเชิงเทรา",
+        "total_active": 14,
+        "total_inactive": 3,
+        "latitude": 13.690000,
+        "longitude": 101.077000,
+        "route": [
+          {
+            "id": "1",
+            "title": "ฉช.3005",
+            "total_active": 4,
+            "total_inactive": 1,
+            "latitude": 13.698234,
+            "longitude": 101.042567,
+            "sign": [
+              {
+                "id": "1",
+                "name": "VMS >> ฉช.3005 จุดที่ 1",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.698234,
+                "longitude": 101.042567,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "2",
+                "name": "VMS >> ฉช.3005 จุดที่ 2",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.682456,
+                "longitude": 101.058901,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "3",
+                "name": "VMS >> ฉช.3005 จุดที่ 3",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.666789,
+                "longitude": 101.075234,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "4",
+                "name": "VMS >> ฉช.3005 จุดที่ 4",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.651012,
+                "longitude": 101.091567,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "5",
+                "name": "VMS >> ฉช.3005 จุดที่ 5",
+                "anydesk": "",
+                "is_active": false,
+                "latitude": 13.635345,
+                "longitude": 101.107901,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              }
+            ]
+          },
+          {
+            "id": "2",
+            "title": "ฉช.3017",
+            "total_active": 2,
+            "total_inactive": 0,
+            "latitude": 13.734567,
+            "longitude": 101.123456,
+            "sign": [
+              {
+                "id": "1",
+                "name": "VMS >> ฉช.3017 จุดที่ 1",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.734567,
+                "longitude": 101.123456,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "2",
+                "name": "VMS >> ฉช.3017 จุดที่ 2",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.718901,
+                "longitude": 101.139789,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              }
+            ]
+          },
+          {
+            "id": "3",
+            "title": "ฉช.4023",
+            "total_active": 2,
+            "total_inactive": 0,
+            "latitude": 13.801234,
+            "longitude": 101.058901,
+            "sign": [
+              {
+                "id": "1",
+                "name": "VMS >> ฉช.4023 จุดที่ 1",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.801234,
+                "longitude": 101.058901,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "2",
+                "name": "VMS >> ฉช.4023 จุดที่ 2",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.785678,
+                "longitude": 101.074234,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              }
+            ]
+          },
+          {
+            "id": "4",
+            "title": "ฉช.4050",
+            "total_active": 6,
+            "total_inactive": 2,
+            "latitude": 13.736717,
+            "longitude": 100.523186,
+            "sign": [
+              {
+                "id": "1",
+                "name": "VMS >> ฉช.4050 จุดที่ 1",
+                "anydesk": "1194336831",
+                "is_active": true,
+                "latitude": 13.736717,
+                "longitude": 100.523186,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "2",
+                "name": "VMS >> ฉช.4050 จุดที่ 2",
+                "anydesk": "1150133823",
+                "is_active": true,
+                "latitude": 13.724561,
+                "longitude": 100.548923,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "3",
+                "name": "VMS >> ฉช.4050 จุดที่ 3",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.712348,
+                "longitude": 100.573456,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "4",
+                "name": "VMS >> ฉช.4050 จุดที่ 4",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.700234,
+                "longitude": 100.597891,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "5",
+                "name": "VMS >> ฉช.4050 จุดที่ 5",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.688123,
+                "longitude": 100.622345,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "6",
+                "name": "VMS >> ฉช.4050 จุดที่ 6",
+                "anydesk": "",
+                "is_active": true,
+                "latitude": 13.676012,
+                "longitude": 100.646789,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "7",
+                "name": "VMS >> ฉช.4050 จุดที่ 7",
+                "anydesk": "",
+                "is_active": false,
+                "latitude": 13.663901,
+                "longitude": 100.671234,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              },
+              {
+                "id": "8",
+                "name": "VMS >> ฉช.4050 จุดที่ 8",
+                "anydesk": "",
+                "is_active": false,
+                "latitude": 13.651789,
+                "longitude": 100.695678,
+                "vms_img": "https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
