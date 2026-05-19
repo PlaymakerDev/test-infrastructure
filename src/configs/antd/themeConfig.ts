@@ -89,6 +89,39 @@ export const theme: ConfigProviderProps = {
         colorText: "#FFFFFF",
         tailColor: "#000000"
       },
+      Radio: {
+        // Circle border when unselected
+        colorBorder: "#FFFFFF60",
+        // Label text
+        colorText: "var(--white)",
+        // Dot & ring when selected (inherits colorPrimary yellow, but explicit here)
+        colorPrimary: "#FCD116",
+        // Hover border on unselected
+        colorPrimaryHover: "var(--yellow)",
+        // Button-group variant
+        buttonBg: "transparent",
+        buttonColor: "var(--white)",
+        buttonCheckedBg: "#FCD11620",
+        buttonSolidCheckedBg: "#FCD116",
+        buttonSolidCheckedColor: "var(--dark-black)",
+      },
+      Select: {
+        // Trigger field — mirrors Input
+        colorBgContainer: "transparent",
+        colorBorder: "var(--yellow)",
+        colorText: "var(--white)",
+        colorTextPlaceholder: "#FFFFFF50",
+        colorIcon: "var(--yellow)",
+        colorIconHover: "var(--white)",
+        hoverBorderColor: "var(--white)",
+        activeBorderColor: "var(--yellow)",
+        // Dropdown panel
+        colorBgElevated: "var(--dark-black)",
+        optionSelectedBg: "#FCD11620",
+        optionSelectedColor: "var(--yellow)",
+        optionActiveBg: "#2A2A2A",
+        colorTextDisabled: "#FFFFFF30",
+      },
       Modal: {
         contentBg: "var(--dark-black)",
         headerBg: "var(--dark-black)",
