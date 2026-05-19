@@ -7,3 +7,6 @@ export type { LicenseListProps, LicenseItem } from './LicenseList'
 export { default as RoadList } from './RoadList'
 export type { RoadListProps, RoadItem } from './RoadList'
 
+export { default as VehicleList } from './VehicleList'
+export type { VehicleListProps, VehicleItem, WeightStatus, MoveStatus } from './VehicleList'
+
