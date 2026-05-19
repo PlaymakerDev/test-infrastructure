@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { fn } from 'storybook/test'
 import { TbMapPin, TbTruck, TbAlertTriangle } from 'react-icons/tb'
-import BarChart, { BarChartDataPoint, BarConfig } from './ฺBarchart'
+import BarChart, { BarChartDataPoint, BarConfig } from './Barchart'
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

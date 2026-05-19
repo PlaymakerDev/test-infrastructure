@@ -15,6 +15,8 @@ export interface GaugeTableRow {
 
 export interface GaugeChartProps {
   title: string
+  /** ขนาด font ของ title (px) */
+  titleSize?: number
   icon?: React.ReactNode
   value: number
   unit?: string
@@ -32,6 +34,7 @@ export interface GaugeChartProps {
 
 const GaugeChart: React.FC<GaugeChartProps> = ({
   title,
+  titleSize = 16,
   icon,
   value,
   unit = '',
@@ -150,7 +153,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
             {icon}
           </div>
         )}
-        <h2 className='text-base' style={{ color: '#FCD116' }}>
+        <h2 style={{ color: '#FCD116', fontSize: titleSize }}>
           {title}
         </h2>
       </div>

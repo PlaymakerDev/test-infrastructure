@@ -22,8 +22,12 @@ export interface BarChartDataPoint {
 export interface BarChartProps {
   /** ชื่อหัวข้อ */
   title: string
+  /** ขนาด font ของ title (px) */
+  titleSize?: number
   /** คำอธิบายใต้ title */
   subtitle?: string
+  /** ขนาด font ของ subtitle (px) */
+  subtitleSize?: number
   /** icon แสดงด้านซ้ายของ title */
   icon?: React.ReactNode
   /** ข้อมูลกราฟ */
@@ -48,7 +52,9 @@ export interface BarChartProps {
 
 const BarChart: React.FC<BarChartProps> = ({
   title,
+  titleSize = 16,
   subtitle,
+  subtitleSize = 12,
   icon,
   data,
   bars,
@@ -157,11 +163,11 @@ const BarChart: React.FC<BarChartProps> = ({
             </div>
           )}
           <div>
-            <h2 className='font-semibold text-sm leading-tight' style={{ color: '#FCD116' }}>
+            <h2 className='font-semibold leading-tight' style={{ color: '#FCD116', fontSize: titleSize }}>
               {title}
             </h2>
             {subtitle && (
-              <p className='text-xs' style={{ color: '#8a9ab5' }}>{subtitle}</p>
+              <p style={{ color: '#8a9ab5', fontSize: subtitleSize }}>{subtitle}</p>
             )}
           </div>
         </div>
