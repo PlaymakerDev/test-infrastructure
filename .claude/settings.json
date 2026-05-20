@@ -20,7 +20,16 @@
       "Bash(xargs grep -l -E \"WIM|station|Station|wim\")",
       "Bash(xargs grep -L \"import\\\\|export\")",
       "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:20:50\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
-      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:30:00\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")"
+      "Bash(awk -F'\"' '/^{\"timestamp\"/ { ts=$4; if \\(ts > \"02:30:00\"\\) print }' \"d:/www/react/drr-its-new/.next/dev/logs/next-development.log\")",
+      "Bash(cd d:/www/react/drr-its-new && mkdir -p src/app/admin/bridge-lighting/detail/\\\\[id\\\\] && mkdir -p src/features/admin/bridge-lighting/detail/screen && mkdir -p src/features/admin/bridge-lighting/detail/components/sections/overall && echo \"Done\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"TSC Exit: $?\")",
+      "Bash(git stash *)",
+      "Bash(echo \"TSC Exit \\(real\\): $?\")",
+      "Bash(echo \"TSC: $?\")"
+    ],
+    "additionalDirectories": [
+      "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"
     ]
   }
 }

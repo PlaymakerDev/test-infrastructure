@@ -13,6 +13,8 @@ export interface PieChartDataPoint {
 export interface PieChartProps {
   /** ชื่อหัวข้อ */
   title: string
+  /** ขนาด font ของ title (px) */
+  titleSize?: number
   /** icon แสดงด้านซ้ายของ title */
   icon?: React.ReactNode
   /** ข้อมูลกราฟ */
@@ -35,6 +37,7 @@ export interface PieChartProps {
 
 const PieChart: React.FC<PieChartProps> = ({
   title,
+  titleSize = 16,
   icon,
   data,
   centerLabel,
@@ -118,7 +121,7 @@ const PieChart: React.FC<PieChartProps> = ({
               {icon}
             </div>
           )}
-          <h2 className='font-semibold text-base' style={{ color: '#FCD116' }}>
+          <h2 className='font-semibold' style={{ color: '#FCD116', fontSize: titleSize }}>
             {title}
           </h2>
         </div>

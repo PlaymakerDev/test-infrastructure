@@ -4,7 +4,7 @@ interface Props {
 
 }
 
-const DetailScreen: React.FC<Props> = (props) => {
+const SummarySection: React.FC<Props> = (props) => {
   const { } = props
 
   return (
@@ -12,4 +12,4 @@ const DetailScreen: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(DetailScreen)
+export default React.memo<Props>(SummarySection)
