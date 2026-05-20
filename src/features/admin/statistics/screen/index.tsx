@@ -1,5 +1,6 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Segmented } from 'antd'
 import SwapButton from '@/components/swap-button/SwapButton'
 import { OverviewSection, IncidentSection, AlertSection, StatusSection } from '../components'
@@ -28,8 +29,19 @@ const sectionMap: Record<string, React.FC> = {
 }
 
 const StatisticsScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(TAB_OPTIONS[0].value)
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [activePeriod, setActivePeriod] = useState<string>('ALL')
+
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  const setActiveTab = useCallback((value: string) => {
+    router.push(`/admin/statistics?tab=${value}`)
+  }, [router])
+
+  const handleStatusBack = useCallback(() => {
+    router.push('/admin/statistics?tab=overview')
+  }, [router])
 
   const ActiveSection = sectionMap[activeTab]
 
@@ -45,8 +57,8 @@ const StatisticsScreen: React.FC = () => {
             <div className="flex-1 min-w-0">
               <SwapButton
                 options={TAB_OPTIONS}
-                defaultActive="overview"
-                setLabelValue={(value) => setActiveTab(value)}
+                defaultActive={activeTab}
+                setLabelValue={setActiveTab}
               />
             </div>
             <div className="shrink-0">
@@ -63,7 +75,7 @@ const StatisticsScreen: React.FC = () => {
           </section>
         </>
       )}
-      {activeTab === 'status' && <StatusSection onBack={() => setActiveTab('overview')} />}
+      {activeTab === 'status' && <StatusSection onBack={handleStatusBack} />}
       {activeTab !== 'status' && ActiveSection && <ActiveSection />}
     </div>
   )

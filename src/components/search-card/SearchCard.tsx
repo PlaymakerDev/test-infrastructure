@@ -8,6 +8,8 @@ interface Props {
   placeholder?: string
   /** Callback when user submits search */
   onSearch?: (value: string) => void
+  /** Callback on every input change (real-time filter) */
+  onChange?: (value: string) => void
   /** Content below the search input */
   children?: React.ReactNode
   /** Additional className */
@@ -19,6 +21,7 @@ interface Props {
 const SearchCard: React.FC<Props> = ({
   placeholder = 'ค้นหาสายทาง...',
   onSearch,
+  onChange,
   children,
   className,
   style,
@@ -27,7 +30,8 @@ const SearchCard: React.FC<Props> = ({
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value)
-  }, [])
+    onChange?.(e.target.value)
+  }, [onChange])
 
   const handlePressEnter = useCallback(() => {
     onSearch?.(value)
@@ -56,6 +60,7 @@ const SearchCard: React.FC<Props> = ({
         onPressEnter={handlePressEnter}
         placeholder={placeholder}
         className='rounded-lg'
+        style={{ width: '100%' }}
         classNames={{
           input: 'search-card-input',
         }}
@@ -70,7 +75,9 @@ const SearchCard: React.FC<Props> = ({
         size='large'
         allowClear
       />
-      {children}
+      <div style={{ maxHeight: 550, overflowY: 'auto' }}>
+        {children}
+      </div>
     </div>
   )
 }
