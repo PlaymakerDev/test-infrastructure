@@ -17,7 +17,7 @@ export interface VehicleListProps {
   items: VehicleItem[]
 }
 
-const PILL = 'text-xs whitespace-nowrap rounded-full px-2.5 py-0.5 border'
+const PILL = 'fs-12 whitespace-nowrap rounded-full px-2.5 py-0.5 border'
 
 const WEIGHT_STATUS_CLASS: Record<WeightStatus, string> = {
   normal: `${PILL} text-blue-400 border-blue-400`,

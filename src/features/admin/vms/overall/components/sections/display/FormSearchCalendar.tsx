@@ -1,12 +1,14 @@
 import { Button, Calendar, ConfigProvider } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import dayjs, { Dayjs } from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
+
+dayjs.extend(buddhistEra)
 import React, { useCallback, useRef } from 'react'
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import { Controller, useForm } from 'react-hook-form'
 
-dayjs.locale('th')
 
 interface Props {
 
@@ -63,7 +65,7 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
                         onClick={prev}
                       />
                       <span className='text-(--yellow) font-semibold'>
-                        {dayjs(value).format('MMMM')} {value.year() + 543}
+                        {dayjs(value).format('MMMM BBBB')}
                       </span>
                       <Button
                         type='text'
