@@ -2,7 +2,7 @@ import React from 'react'
 import { useVMSContext } from '../../../context';
 import BaseMap from '@/components/map/BaseMap';
 import { TbMapPin } from 'react-icons/tb';
-import { Button } from 'antd';
+import { Button, ConfigProvider } from 'antd';
 
 interface Props {
 
@@ -37,15 +37,18 @@ const MapSection: React.FC<Props> = (props) => {
       </div>
 
       {/* Google Map button */}
-      <Button
-        type='primary'
-        size='small'
-        href={googleMapsUrl}
-        target='_blank'
-        className='absolute! top-3 right-3 z-10'
-      >
-        Google Map
-      </Button>
+      <ConfigProvider theme={{ token: { colorPrimary: '#1A73E8', colorTextLightSolid: '#FFFFFF' } }}>
+        <Button
+          type='primary'
+          size='small'
+          href={googleMapsUrl}
+          target='_blank'
+          className='absolute! top-3 right-3 z-10'
+          shape='round'
+        >
+          Google Map
+        </Button>
+      </ConfigProvider>
 
       {/* Location overlay */}
       {hasCoords && (
@@ -54,7 +57,7 @@ const MapSection: React.FC<Props> = (props) => {
             <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
               <TbMapPin className='text-(--yellow) text-xs' />
             </div>
-            <p className='fs-11 text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</p>
+            <h5 className='text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</h5>
           </div>
           <p className='text-white leading-snug fs-11'>TrafficSign: {bureauSign?.name || '-'}</p>
           <p className='text-white leading-snug fs-11'>รหัสสายทาง: {bureauRoute?.title || '-'}</p>
