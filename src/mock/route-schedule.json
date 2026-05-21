@@ -1,0 +1,105 @@
+[
+  {
+    "id": "1",
+    "routeCode": "ฉช.4050",
+    "district": "แขวงทางหลวงชนบทฉะเชิงเทรา",
+    "region": "ภาคตะวันออก",
+    "startDate": "1 เม.ย. 2569",
+    "endDate": "30 เม.ย. 2569",
+    "color": "#FCD116",
+    "schedules": [
+      {
+        "key": "1-1",
+        "location": "จุดติดตั้ง : VMS >> ฉช.4050 จุดที่ 1",
+        "category": "การท่องเที่ยว",
+        "contentType": "รูปภาพ",
+        "startDate": "23 เม.ย. 2569\n16:00 น.",
+        "endDate": "23 เม.ย. 2569\n24:00 น.",
+        "duration": "8 ชั่วโมง",
+        "isOnline": true
+      },
+      {
+        "key": "1-2",
+        "location": "จุดติดตั้ง : VMS >> ฉช.4050 จุดที่ 2",
+        "category": "การท่องเที่ยว",
+        "contentType": "รูปภาพ",
+        "startDate": "23 เม.ย. 2569\n16:00 น.",
+        "endDate": "23 เม.ย. 2569\n24:00 น.",
+        "duration": "8 ชั่วโมง",
+        "isOnline": true
+      },
+      {
+        "key": "1-3",
+        "location": "จุดติดตั้ง : ฉช.4050 - VMS จุดที่ 3",
+        "category": "การท่องเที่ยว",
+        "contentType": "รูปภาพ",
+        "startDate": "23 เม.ย. 2569\n16:00 น.",
+        "endDate": "23 เม.ย. 2569\n24:00 น.",
+        "duration": "8 ชั่วโมง",
+        "isOnline": true
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "routeCode": "ชบ.3059",
+    "district": "แขวงทางหลวงชนบทชลบุรี",
+    "region": "ภาคตะวันออก",
+    "startDate": "1 พ.ค. 2569",
+    "endDate": "31 พ.ค. 2569",
+    "color": "#4ADE80",
+    "schedules": [
+      {
+        "key": "2-1",
+        "location": "จุดติดตั้ง : VMS >> ชบ.3059 จุด 1",
+        "category": "ซ่อมแซมถนน",
+        "contentType": "รูปภาพ",
+        "startDate": "12 พ.ค. 2569\n00:00 น.",
+        "endDate": "22 พ.ค. 2569\n00:00 น.",
+        "duration": "10 วัน",
+        "isOnline": true
+      },
+      {
+        "key": "2-2",
+        "location": "จุดติดตั้ง : VMS >> ชบ.3059 จุด 2",
+        "category": "ซ่อมแซมถนน",
+        "contentType": "รูปภาพ",
+        "startDate": "12 พ.ค. 2569\n00:00 น.",
+        "endDate": "22 พ.ค. 2569\n00:00 น.",
+        "duration": "10 วัน",
+        "isOnline": true
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "routeCode": "ชบ.3083",
+    "district": "แขวงทางหลวงชนบทชลบุรี",
+    "region": "ภาคตะวันออก",
+    "startDate": "1 พ.ค. 2569",
+    "endDate": "31 พ.ค. 2569",
+    "color": "#4ADE80",
+    "schedules": [
+      {
+        "key": "3-1",
+        "location": "จุดติดตั้ง : VMS >> ชบ.3083 จุด 1",
+        "category": "ซ่อมแซมถนน",
+        "contentType": "รูปภาพ",
+        "startDate": "12 พ.ค. 2569\n00:00 น.",
+        "endDate": "22 พ.ค. 2569\n00:00 น.",
+        "duration": "10 วัน",
+        "isOnline": true
+      },
+      {
+        "key": "3-2",
+        "location": "จุดติดตั้ง : VMS >> ชบ.3083 จุด 2",
+        "category": "ซ่อมแซมถนน",
+        "contentType": "รูปภาพ",
+        "startDate": "12 พ.ค. 2569\n00:00 น.",
+        "endDate": "22 พ.ค. 2569\n00:00 น.",
+        "duration": "10 วัน",
+        "isOnline": true
+      }
+    ]
+  }
+]
