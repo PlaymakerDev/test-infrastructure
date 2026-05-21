@@ -127,6 +127,28 @@ export const theme: ConfigProviderProps = {
         headerBg: "var(--dark-black)",
         footerBg: "var(--dark-black)",
         titleColor: "#FFFFFF",
+      },
+      Calendar: {
+        // Container
+        // colorBgContainer: "var(--dark-black)",
+        colorBgContainer: "#363636",
+        // Header (month/year selectors)
+        // colorBgElevated: "var(--dark-black)",
+        colorBgElevated: "#363636",
+        // Text
+        colorText: "#FFFFFF",
+        colorTextHeading: "#FFFFFF",
+        colorTextDisabled: "#FFFFFF30",
+        colorTextDescription: "#FFFFFF60",
+        // Selected date cell
+        colorPrimary: "#FCD116",
+        colorPrimaryBorder: "#FCD116",
+        // Hover
+        controlItemBgHover: "#2A2A2A",
+        // Today highlight
+        colorHighlight: "#FCD116",
+        // Cell borders / splits
+        colorSplit: "#333333",
       }
     }
   },

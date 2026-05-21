@@ -1,5 +1,5 @@
 import { CloudUploadOutlined } from '@ant-design/icons'
-import { Button, Col, ConfigProvider, DatePicker, Input, Radio, Row, Select, Upload } from 'antd'
+import { Button, Col, ConfigProvider, DatePicker, Input, Radio, Row, Select, Upload, UploadFile } from 'antd'
 import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbCopyPlus } from 'react-icons/tb'
@@ -16,7 +16,7 @@ interface FormValues {
   start_date: string
   end_date: string
   display_type: string
-  file: File[]
+  file: UploadFile[]
 }
 
 const FormAddDetail: React.FC<Props> = (props) => {
@@ -240,17 +240,16 @@ const FormAddDetail: React.FC<Props> = (props) => {
                 rules={{
                   required: 'กรุณาอัปโหลดไฟล์'
                 }}
-                render={({ field }) => {
+                render={({ field: { value, onChange, name: fieldName } }) => {
                   return (
                     <fieldset>
                       <label>อัปโหลดไฟล์ <span className='text-red-500'>*</span></label>
                       <p className='fs-12 text-gray-400 mb-2'>ลากและวางไฟล์ที่นี่เพื่อดำเนินการต่อ</p>
                       <Upload.Dragger
-                        {...field}
-                        name={field.name}
-                        beforeUpload={() => {
-                          return false
-                        }}
+                        name={fieldName}
+                        fileList={value}
+                        onChange={({ fileList }) => onChange(fileList)}
+                        beforeUpload={() => false}
                       >
                         <p className="ant-upload-drag-icon">
                           <CloudUploadOutlined />

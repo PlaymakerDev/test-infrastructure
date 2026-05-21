@@ -18,3 +18,12 @@ export { default as VMSDetail } from './sections/vms/VMSDetail'
 
 // DISPLAY
 export { default as DisplaySection } from './DisplaySection'
+export { default as DataDisplaySection } from './sections/display/DataDisplaySection'
+export { default as DisplayStatCard } from './sections/display/DisplayStatCard'
+export { default as DisplayTableData } from './sections/display/DisplayTableData'
+export { default as DisplayTableList } from './sections/display/DisplayTableList'
+export { default as DisplayTitle } from './sections/display/DisplayTitle'
+export { default as FormSearchCalendar } from './sections/display/FormSearchCalendar'
+export { default as FormSearchDisplay } from './sections/display/FormSearchDisplay'
+export { default as ScheduleSection } from './sections/display/ScheduleSection'
+
