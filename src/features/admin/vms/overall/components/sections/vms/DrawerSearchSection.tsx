@@ -2,7 +2,7 @@
 import { Drawer, FloatButton } from 'antd'
 import React, { useState } from 'react'
 import { TbSearch } from 'react-icons/tb'
-import SearchSection from './SearchSection'
+import { SearchSection } from '../../../components'
 
 const DrawerSearchSection: React.FC = () => {
   const [open, setOpen] = useState(false)
@@ -31,7 +31,7 @@ const DrawerSearchSection: React.FC = () => {
           },
           close: { color: 'white' },
         }}
-        title='ค้นหาป้ายทะเบียน'
+        title='ค้นหาสายทาง'
       >
         <SearchSection
           openFromDrawer={true}
