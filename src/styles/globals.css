@@ -13,6 +13,12 @@
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+/* ===== SAFELIST: badge colors used dynamically ===== */
+.border-orange-500 { border-color: #f97316; }
+.text-orange-500 { color: #f97316; }
+.border-red-500 { border-color: #ef4444; }
+.text-red-500 { color: #ef4444; }
+
 /* ===== RESET & BASE ===== */
 *,
 *::before,

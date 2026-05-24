@@ -75,7 +75,7 @@ const SearchCard: React.FC<Props> = ({
         size='large'
         allowClear
       />
-      <div style={{ maxHeight: 550, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         {children}
       </div>
     </div>

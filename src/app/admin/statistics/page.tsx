@@ -1,8 +1,7 @@
-"use client"
 import React from 'react'
-import StatisticsScreen from '@/features/admin/statistics/screen'
+import StatisticsScreen from '@/features/admin/statistics/overall/screen'
 
-const StatisticsPage: React.FC = () => {
+const StatisticsPage = () => {
   return <StatisticsScreen />
 }
 

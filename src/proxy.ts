@@ -10,11 +10,12 @@ export async function proxy(request: NextRequest) {
   const session = await getIronSession<SessionData>(request, response, sessionOptions)
   const isAuthenticated = !!session.access_token
 
-  const path = menu[session.role as keyof typeof menu]
+  const menuItems = menu[session.role as keyof typeof menu]
 
   // Authenticated user on /auth/login → send to dashboard
   if (isAuthenticated && pathname.startsWith('/auth/login')) {
-    return NextResponse.redirect(new URL(path[0].path, request.url))
+    const firstPath = menuItems?.[0]?.path ?? '/admin/dashboard'
+    return NextResponse.redirect(new URL(firstPath, request.url))
   }
 
   // Unauthenticated user on a protected route (not /auth/login) → send to login
