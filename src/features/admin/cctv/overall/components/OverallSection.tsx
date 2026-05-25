@@ -80,11 +80,11 @@ const OverallSection: React.FC = () => {
     const term = search.trim().toLowerCase()
     return CCTV_CAMERAS.filter((c) => {
       switch (activeFilter) {
-        case 'online':      if (c.connection !== 'online') return false; break
-        case 'offline':     if (c.connection !== 'offline') return false; break
+        case 'online': if (c.connection !== 'online') return false; break
+        case 'offline': if (c.connection !== 'offline') return false; break
         case 'in-warranty': if (c.warranty !== 'in-warranty') return false; break
-        case 'expired':     if (c.warranty !== 'expired') return false; break
-        case 'all':         break
+        case 'expired': if (c.warranty !== 'expired') return false; break
+        case 'all': break
       }
       if (term) {
         const haystack = `${c.roadCode} ${c.projectName} ${c.installPoint} ${c.contractNo} ${c.bureau} ${c.ip}`.toLowerCase()
@@ -165,9 +165,9 @@ const OverallSection: React.FC = () => {
           stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
-          searchPlaceholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-          search={search}
-          onSearchChange={setSearch}
+          // searchPlaceholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
+          // search={search}
+          // onSearchChange={setSearch}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => alert('TODO: นำออกเอกสาร')}

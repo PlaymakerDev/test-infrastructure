@@ -2,115 +2,95 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+This is a Next.js 16 ITS (Intelligent Transportation System) dashboard for Thailand's Department of Rural Roads (กรมทางหลวงชนบท). It features CCTV management, vehicle tracking, VMS (Variable Message Signs), bridge lighting control, and traffic monitoring with live maps and video streaming.
+
 ## Commands
 
 ```bash
 npm run dev          # Start development server
 npm run build        # Production build
-npm run lint         # Run ESLint
-npm run storybook    # Storybook dev server
+npm run lint         # ESLint
+npm run storybook    # Storybook component explorer on port 6006
 ```
 
-No test runner is configured — Vitest/Playwright are listed as dependencies but no test scripts exist in package.json.
+There are no separate unit test commands — testing is Storybook-centric via Vitest + Playwright.
 
-## Architecture Overview
+## Architecture
 
-Next.js 16 App Router dashboard application for traffic incident management (DRR ITS), written in TypeScript strict mode.
+### Page → Screen → Component pattern
 
-**Stack:** Next.js 16 · React 19 · Redux Toolkit · Ant Design 6 · TailwindCSS 4 · Axios · iron-session · Mapbox GL
-
-### Path alias
-
-`@/*` → `./src/*` (used everywhere; prefer over relative imports)
-
-### Routing
-
-Root (`/`) redirects to `/auth/login` via `next.config.ts`. All middleware logic lives in `src/proxy.ts` (exported as `middleware` — not `src/middleware.ts`):
-
-- Unauthenticated → redirect to `/auth/login`
-- Authenticated on `/auth/login` → redirect to first menu item path for user role
-
-App Router groups:
-- `src/app/auth/` — login layout (minimal)
-- `src/app/admin/` — protected pages, uses `PageLayout` (Navbar + Sidebar)
-- `src/app/example/` — development/demo pages
-
-### Feature organization
+Pages (`src/app/`) are thin wrappers that import and render a Screen component:
 
 ```
-src/features/<domain>/<feature>/
-  screen/index.tsx     # Main page component (imported by app/*/page.tsx)
-  components/          # Feature-scoped sub-components
-  context/             # Feature-scoped providers
+src/app/admin/dashboard/page.tsx
+  → src/features/admin/dashboard/screen/index.tsx   (logic + layout)
+    → src/features/admin/dashboard/components/       (UI pieces)
 ```
 
-Page files in `src/app/` are thin shells that just render the feature screen.
+All business logic lives in `screen/index.tsx` or a `context/` directory alongside it. Pages never contain logic.
 
-### State management (Redux Toolkit)
-
-Store slices: `auth`, `admin`, `example`, `layout`
-
-- `src/stores/store.ts` — store config
-- `src/stores/hooks.ts` — typed `useAppDispatch` / `useAppSelector`
-- `src/stores/reducers/` — slice files with `createAsyncThunk` + `extraReducers`
-
-Thunks follow the pattern: `pending` sets loading flag, `fulfilled`/`rejected` update state.
-
-The `layout` slice tracks:
-- `task_schedules` — global loading/status state shared across features
-- `drawer.open` — sidebar drawer visibility
-
-### Auth & sessions
-
-Auth is handled by `iron-session` (HTTP-only encrypted cookies, cookie name: `DRR_ITS`).
-
-Next.js API routes at `src/app/api/auth/[...all]/route.ts`:
-- `GET /api/auth/session` — read session tokens
-- `POST /api/auth/login` — login, store `access_token` + `refresh_token`
-- `POST /api/auth/logout` — destroy session
-- `POST /api/auth/refresh` — refresh tokens
-
-Session contains: `{ access_token, refresh_token, role }`. Role is either `"ADMIN"` or `"EXAMPLE"`.
-
-Required env var: `TOKEN_SECRET` (session encryption key).
-
-### API / service layer
+### Directory Map
 
 ```
-BaseService (Axios instance, 60s timeout)
-  └── ApiService.fetchData<Response, Request>(config) — typed wrapper
-        └── src/services/routes/*.ts — domain-specific service calls
+src/
+├── app/             # Next.js App Router — pages and API routes only
+├── features/        # Feature modules (admin, auth, example)
+├── components/      # Shared UI (chart, layout, map, video, list)
+├── stores/          # Redux store, slices, typed hooks
+├── services/        # API layer (BaseService, ApiService, route services)
+├── configs/         # Ant Design theme, menu config
+├── types/           # Shared TypeScript types
+├── utils/           # Utility functions and custom hooks
+├── lib/             # iron-session config
+├── mock/            # Mock data for development
+└── styles/          # Global CSS
 ```
 
-**Request interceptor:** auto-attaches `Authorization: Bearer {access_token}` and `x-api-key: {NEXT_PUBLIC_API_KEY}` to every request.
+### API Layer
 
-**Response interceptor:** handles `res_code === "40199"` (token expired → refresh modal) and `res_code === "40100"` (invalid token → force logout). Status `401` also triggers logout.
+All HTTP calls go through `src/services/BaseService.ts` (Axios instance), which:
+- Injects `Authorization: Bearer <token>` and `x-api-key` on every request
+- On `40199` (token expired): shows a modal asking the user to refresh, then retries the original request
+- On `40100` or `401`: auto-logs the user out
 
-Backend base URL: `NEXT_PUBLIC_HOST_BACKEND` (defaults to `https://api-go.enixma.net/api`).
+`src/services/ApiService.ts` wraps BaseService with a generic Promise interface. Feature-specific services live in `src/services/routes/` (e.g., `AdminService.ts`).
 
-### Map
+Backend base URL is set via `NEXT_PUBLIC_HOST_BACKEND` in `.env`.
 
-`src/components/map/ReactMap.tsx` renders a full-screen Mapbox map centered on Thailand (lat 14.0, lng 101.5, zoom 5.2). Token: `NEXT_PUBLIC_MAPBOX_TOKEN`. Uses a custom Mapbox style with brightness filtered to 0.5.
+### Authentication
 
-### Menu & role-based navigation
+- Server-side session: iron-session cookies configured in `src/lib/defaultSession.ts`
+- API routes: `src/app/api/auth/[...all]/route.ts` handles login, logout, and token refresh
+- Client hook: `src/utils/hooks/useGetSession.ts` reads the session
+- Token expiry modal: `src/utils/hooks/useTimeoutModal.ts`
 
-`src/configs/menu/index.ts` exports `menu: Record<Role, MenuItem[]>`. Each item has `key`, `title`, `path`, `path_active`, `path_list`, and an icon name string (Tabler Icons convention, e.g. `"TbLayoutDashboard"`).
+### State Management
 
-The sidebar resolves icon components dynamically from the name string. To add a new menu item, add it to `src/configs/menu/admin.ts` with a valid `@tabler/icons-react` icon name.
+Redux Toolkit via `src/stores/`. Always use the typed helpers:
+- `useAppDispatch`, `useAppSelector`, `useAppStore` from `src/stores/hooks.ts`
 
-### Environment variables
+Reducers: `auth`, `admin`, `example`, `layout`.
+
+### Import Alias
+
+`@/*` maps to `src/*`. Always use `@/` imports, never relative paths crossing feature boundaries.
+
+## UI Conventions
+
+- **Component library**: Ant Design 6 with a custom dark theme — primary color `#FCD116` (yellow). Theme config is in `src/configs/antd/themeConfig.ts`.
+- **Styling**: Tailwind CSS 4. Prefer Tailwind utility classes; use `src/styles/` for global overrides only.
+- **Font**: IBM Plex Sans Thai (loaded globally).
+- **Charts**: ECharts via `src/components/chart/` wrappers. Use existing wrappers before reaching for ECharts directly.
+- **Maps**: Mapbox GL via `src/components/map/`.
+- **Video**: HLS live streams via `src/components/video/`.
+
+## Environment Variables
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_HOST_BACKEND` | Backend API base URL |
 | `NEXT_PUBLIC_API_KEY` | API key sent as `x-api-key` header |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox access token |
-| `TOKEN_SECRET` | iron-session cookie encryption key |
-
-### Key conventions
-
-- Mark components that use hooks, Redux, or browser APIs with `"use client"`.
-- Use `React.memo()` for list-rendered or frequently re-rendered components.
-- Form state is managed with `react-hook-form` using `Controller` pattern; never uncontrolled inputs.
-- Error feedback is modal-based (Ant Design `Modal.error`), not inline.
-- The `PromiseProperties` type (loading boolean + status enum) is the standard shape for async state in slices.
+| `NEXT_PUBLIC_HOST_BACKEND` | Backend base URL |
+| `TOKEN_SECRET` | iron-session cookie secret |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox GL access token |
