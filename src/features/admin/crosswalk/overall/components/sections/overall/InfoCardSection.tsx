@@ -11,7 +11,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
 
   return (
     <Row gutter={[16, 16]}>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
         <div className="h-full bg-[#FFB1001A] border-2 rounded-lg p-5 border-(--yellow)">
           <TbWalk className='fs-24 text-(--yellow) mb-1' />
           <h3 className='text-(--yellow)'>ทางข้ามในระบบทั้งหมด</h3>
@@ -19,7 +19,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
           <p className='fs-11 text-gray-400'>Active : 8 (38.9%)</p>
         </div>
       </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
         <div className="h-full bg-[#05F2DB1A] border-2 rounded-lg p-5 border-teal-500">
           <TbShield className='fs-24 text-teal-500 mb-1' />
           <h3 className='text-teal-500'>ในค้ำ</h3>
@@ -27,7 +27,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
           <p className='fs-11 text-gray-400'>Active : 5 (100.0%)</p>
         </div>
       </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
         <div className="h-full bg-[#9797971A] border-2 rounded-lg p-5 border-gray-500">
           <TbShield className='fs-24 text-gray-500 mb-1' />
           <h3 className='text-gray-500'>อัตรารถบนสายทาง</h3>

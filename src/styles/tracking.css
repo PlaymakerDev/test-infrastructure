@@ -2,7 +2,8 @@
   display: flex;
   gap: 16px;
   /* height: 580px; */
-  height: 640px;
+  /* height: 640px; */
+  height: 80dvh;
 }
 
 /* ── Camera list ── */
