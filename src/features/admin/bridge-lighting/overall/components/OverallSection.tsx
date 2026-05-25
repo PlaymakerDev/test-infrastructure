@@ -11,6 +11,7 @@ import LocationMapSection from './sections/overall/LocationMapSection'
 import MadrixControlPanel from './sections/overall/MadrixControlPanel'
 import BridgeProjectsTable from './sections/overall/BridgeProjectsTable'
 import BridgeProjectsSummaryTable from './sections/overall/BridgeProjectsSummaryTable'
+import FormSearchBridgeLighting from './sections/overall/FormSearchBridgeLighting'
 import { BRIDGE_PROJECTS } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 // ── Filter config — 5 categories for bridge lighting ──────────────────────────
@@ -195,9 +196,7 @@ const OverallSection: React.FC<Props> = () => {
           stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
-          searchPlaceholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-          search={search}
-          onSearchChange={setSearch}
+          formSearch={<FormSearchBridgeLighting onSearchChange={setSearch} />}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => alert('TODO: นำออกเอกสาร')}
