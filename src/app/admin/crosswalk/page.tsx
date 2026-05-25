@@ -1,3 +1,8 @@
-export default function CrosswalkPage() {
-  return <h1>This is Crosswalk</h1>
+import React from 'react'
+import CrosswalkScreen from '@/features/admin/crosswalk/overall/screen'
+
+const CrosswalkPage = () => {
+  return <CrosswalkScreen />
 }
+
+export default React.memo(CrosswalkPage)
