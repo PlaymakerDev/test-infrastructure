@@ -1,9 +1,10 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
+import BridgeInfoModal from '@/features/admin/bridge-lighting/overall/components/BridgeInfoModal'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 interface Props {
@@ -51,13 +52,16 @@ const WarrantyPill: React.FC<{ warranty: BridgeProject['warranty'] }> = ({ warra
   )
 }
 
-/** Single-table row — bureau divider or real project row. */
+/** Single-table row — bureau divider or real project row.
+ *  `roadCodeSpan` controls vertical cell merging in the `รหัสสายทาง` column
+ *  (first row of a same-roadCode run = full span, others = 0 to hide). */
 type Row =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | { kind: 'project'; id: string; project: BridgeProject }
+  | { kind: 'project'; id: string; project: BridgeProject; roadCodeSpan: number }
 
 const BridgeProjectsSummaryTable: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
+  const [infoBridge, setInfoBridge] = useState<BridgeProject | null>(null)
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, BridgeProject[]>()
     for (const p of projects) {
@@ -68,8 +72,31 @@ const BridgeProjectsSummaryTable: React.FC<Props> = ({ projects }) => {
     const out: Row[] = []
     for (const [bureau, items] of groups) {
       out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
-      for (const p of items) {
-        out.push({ kind: 'project', id: p.id, project: p })
+
+      // Within each bureau, merge consecutive rows that share the same
+      // roadCode by assigning rowSpan to the first row and 0 to the rest.
+      let i = 0
+      while (i < items.length) {
+        const code = items[i].roadCode
+        let span = 1
+        while (i + span < items.length && items[i + span].roadCode === code) {
+          span++
+        }
+        out.push({
+          kind: 'project',
+          id: items[i].id,
+          project: items[i],
+          roadCodeSpan: span,
+        })
+        for (let j = 1; j < span; j++) {
+          out.push({
+            kind: 'project',
+            id: items[i + j].id,
+            project: items[i + j],
+            roadCodeSpan: 0,
+          })
+        }
+        i += span
       }
     }
     return out
@@ -83,13 +110,15 @@ const BridgeProjectsSummaryTable: React.FC<Props> = ({ projects }) => {
         title: 'รหัสสายทาง',
         key: 'roadCode',
         width: 180,
-        onCell: (row) =>
-          row.kind === 'bureau'
-            ? {
-                colSpan: TOTAL_COLS,
-                style: { background: '#2a2a2a', padding: '10px 16px' },
-              }
-            : {},
+        onCell: (row) => {
+          if (row.kind === 'bureau') {
+            return {
+              colSpan: TOTAL_COLS,
+              style: { background: '#2a2a2a', padding: '10px 16px' },
+            }
+          }
+          return { rowSpan: row.roadCodeSpan }
+        },
         render: (_: unknown, row: Row) => {
           if (row.kind === 'bureau') {
             return (
@@ -152,7 +181,8 @@ const BridgeProjectsSummaryTable: React.FC<Props> = ({ projects }) => {
               <TbInfoSquareRoundedFilled
                 size={18}
                 className='text-white cursor-pointer hover:text-(--yellow)'
-                title='ดูรายละเอียดสัญญา'
+                title='ดูข้อมูลโครงการ'
+                onClick={() => setInfoBridge(row.project)}
               />
             </span>
           )
@@ -203,18 +233,22 @@ const BridgeProjectsSummaryTable: React.FC<Props> = ({ projects }) => {
   }, [router])
 
   return (
-    <Table<Row>
-      rowKey='id'
-      columns={columns}
-      dataSource={data}
-      pagination={false}
-      size='middle'
-      // Keep horizontal scroll inside the table on narrow viewports.
-      // Using a specific min-width (instead of `max-content`) lets the
-      // table fit the container on wide screens — `max-content` would
-      // force the table to expand to its full natural width and overflow.
-      scroll={{ x: 1300 }}
-    />
+    <>
+      <Table<Row>
+        rowKey='id'
+        columns={columns}
+        dataSource={data}
+        pagination={false}
+        size='middle'
+        // Keep horizontal scroll inside the table on narrow viewports.
+        // Using a specific min-width (instead of `max-content`) lets the
+        // table fit the container on wide screens — `max-content` would
+        // force the table to expand to its full natural width and overflow.
+        scroll={{ x: 1300 }}
+        className='bridge-projects-table'
+      />
+      <BridgeInfoModal bridge={infoBridge} onClose={() => setInfoBridge(null)} />
+    </>
   )
 }
 

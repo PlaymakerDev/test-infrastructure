@@ -1,7 +1,7 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Modal, message } from 'antd'
+import { message } from 'antd'
 import {
   TbApps,
   TbArrowBigLeftFilled,
@@ -10,6 +10,7 @@ import {
   TbWifi,
   TbWifiOff,
 } from 'react-icons/tb'
+import BridgeInfoModal from '@/features/admin/bridge-lighting/overall/components/BridgeInfoModal'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 interface Props {
@@ -33,6 +34,7 @@ const Pill: React.FC<{
 
 const TitleSection: React.FC<Props> = ({ bridge }) => {
   const router = useRouter()
+  const [infoOpen, setInfoOpen] = useState(false)
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const handleBack = () => {
@@ -45,26 +47,7 @@ const TitleSection: React.FC<Props> = ({ bridge }) => {
     }
   }
 
-  // ── Click handlers — use AntD Modal/message per project convention ────────
-  const handleShowContractInfo = () => {
-    Modal.info({
-      title: 'รายละเอียดสัญญา',
-      content: (
-        <div className='flex flex-col gap-2 mt-3 text-sm'>
-          <div><span className='text-white/60'>เลขที่สัญญา: </span>{bridge.contractNo}</div>
-          <div><span className='text-white/60'>ชื่อโครงการ: </span>{bridge.projectName}</div>
-          <div><span className='text-white/60'>จุดติดตั้ง: </span>{bridge.installPoint}</div>
-          <div>
-            <span className='text-white/60'>การค้ำประกัน: </span>
-            {bridge.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ'}
-          </div>
-        </div>
-      ),
-      okText: 'ปิด',
-      centered: true,
-    })
-  }
-
+  // ── Click handlers ────────────────────────────────────────────────────────
   const handleOpenGoogleMap = () => {
     // bridge.coord is [lng, lat]; Google Maps wants `q=lat,lng`.
     const [lng, lat] = bridge.coord
@@ -104,8 +87,8 @@ const TitleSection: React.FC<Props> = ({ bridge }) => {
             <TbInfoSquareRoundedFilled
               className='text-white cursor-pointer hover:text-(--yellow) transition-colors'
               size={18}
-              title='ดูรายละเอียดสัญญา'
-              onClick={handleShowContractInfo}
+              title='ดูข้อมูลโครงการ'
+              onClick={() => setInfoOpen(true)}
             />
 
             {/* Warranty pill */}
@@ -148,6 +131,12 @@ const TitleSection: React.FC<Props> = ({ bridge }) => {
           </div>
         </div>
       </section>
+
+      {/* ── Bridge info modal — shared with overall page table info icons ─ */}
+      <BridgeInfoModal
+        bridge={infoOpen ? bridge : null}
+        onClose={() => setInfoOpen(false)}
+      />
     </div>
   )
 }

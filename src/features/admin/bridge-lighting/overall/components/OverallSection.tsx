@@ -142,7 +142,11 @@ const OverallSection: React.FC<Props> = () => {
           className='relative w-full xl:absolute xl:inset-0'
           style={{ minHeight: 340 }}
         >
-          <LocationMapSection />
+          {/* Vignette fade — heavier on left/right (overlay cards live there),
+            * lighter on top/bottom. Forwarded into the underlying BaseMap. */}
+          <LocationMapSection
+            edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
+          />
         </div>
 
         {/* ── Mobile / tablet (< xl): content stacks below the map.
