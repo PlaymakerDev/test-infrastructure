@@ -1,8 +1,6 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Button, ConfigProvider } from 'antd'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay } from 'swiper/modules';
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import TrackingOverviewMarker from '@/components/map/markers/TrackingOverviewMarker'
@@ -11,7 +9,6 @@ import {
   TRACKING_STATIONS,
   type TrackingStationType,
 } from '@/features/admin/tracking/overall/data/trackingStations'
-import 'swiper/css'
 
 type FilterOption = 'ทั้งหมด' | 'สถานี' | 'WIM' | 'เคลื่อนที่'
 const FILTER_OPTIONS: FilterOption[] = ['ทั้งหมด', 'สถานี', 'WIM', 'เคลื่อนที่']
@@ -50,53 +47,17 @@ const LocationSection = () => {
     return new Set<TrackingStationType>([FILTER_TO_TYPE[activeFilter]])
   }, [activeFilter])
 
-  const renderCameraList = useCallback((type: 'PC' | 'MOBILE') => {
-    if (type === 'MOBILE') {
-      return mockCameras.map((item) => (
-        <SwiperSlide key={item.id}>
-          <div className="camera-item">
-            <figure className="camera-thumb">
-              <HLSLivePlayer />
-            </figure>
-            <h4 className="camera-code">{item.code}</h4>
-            <p className="camera-location">{item.location}</p>
-          </div>
-        </SwiperSlide>
-      ))
-    }
-
-    if (type === 'PC') {
-      return mockCameras.map((item) => (
-        <div className="camera-item" key={item.id}>
-          <figure className="camera-thumb">
-            <HLSLivePlayer />
-          </figure>
-          <h4 className="camera-code">{item.code}</h4>
-          <p className="camera-location">{item.location}</p>
-        </div>
-      ))
-    }
-
-    return
-  }, [])
-
   const renderOptionButton = useMemo(() => {
     return FILTER_OPTIONS.map((item) => (
       <ConfigProvider
         key={item}
-        theme={{
-          token: {
-            colorPrimary: '#212121',
-          }
-        }}
+        theme={{ token: { colorPrimary: '#212121' } }}
       >
         <Button
           shape='round'
           type={activeFilter === item ? 'primary' : 'text'}
-          size='medium'
-          onClick={() => {
-            setActiveFilter(item)
-          }}
+          size='middle'
+          onClick={() => setActiveFilter(item)}
         >
           <p className={`fs-12 ${activeFilter === item ? 'text-(--yellow)' : 'text-white'}`}>{item}</p>
         </Button>
@@ -105,30 +66,23 @@ const LocationSection = () => {
   }, [activeFilter])
 
   return (
-    <div className="location-section">
+    <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:h-[75dvh]'>
 
-      {/* ── Desktop: scrollable camera list ── */}
-      <div className="camera-list">
-        {renderCameraList('PC')}
+      {/* Camera list — hidden on mobile, col 1 on desktop */}
+      <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:overflow-y-auto lg:h-full lg:pr-1'>
+        {mockCameras.map((item) => (
+          <div key={item.id} className='flex-1 min-h-0 flex flex-col'>
+            <figure className='flex-1 min-h-0 rounded-lg overflow-hidden mb-1.5'>
+              <HLSLivePlayer figureClassName='h-full' />
+            </figure>
+            <h4 className="camera-code">{item.code}</h4>
+            <p className="camera-location">{item.location}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Mobile: swiper camera list ── */}
-      <div className="mobile-cam-list">
-        <Swiper
-          slidesPerView={1}
-          grabCursor
-          modules={[Autoplay]}
-          autoplay={{
-            delay: 3000,
-            pauseOnMouseEnter: true
-          }}
-        >
-          {renderCameraList('MOBILE')}
-        </Swiper>
-      </div>
-
-      {/* ── Map with filter overlay ── */}
-      <div className="map-wrapper">
+      {/* Map — row 1 on mobile (top), col 2 on desktop */}
+      <div className='row-start-1 lg:col-start-2 lg:row-start-1 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
         <div className="filter-bar">
           <div className='bg-[#A2A2A233] rounded-3xl p-1.5'>
             <div className='flex items-center gap-3'></div>
