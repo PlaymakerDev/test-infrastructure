@@ -7,7 +7,7 @@ const WIMLocationSection = () => {
     <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
 
       {/* Camera list — hidden on mobile, col 1 on desktop */}
-      <div className='hidden lg:flex lg:col-start-1 lg:row-start-1 lg:flex-col lg:gap-4 lg:overflow-y-auto lg:h-full lg:pr-1'>
+      <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:overflow-y-auto lg:h-full lg:pr-1'>
         <WIMCCTVList />
       </div>
 
