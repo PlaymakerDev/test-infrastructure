@@ -1,2 +1,3 @@
-export { default as CctvDetail } from './CctvDetail'
+export { default as TitleSection } from './TitleSection'
+export { default as OverallSection } from './OverallSection'
 export { default as CameraInstallTable } from './CameraInstallTable'

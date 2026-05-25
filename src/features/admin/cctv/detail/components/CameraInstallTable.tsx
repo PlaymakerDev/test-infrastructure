@@ -8,7 +8,7 @@ import SearchBar, {
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
-import CameraGridView, { type InstallGroup, type CameraRow } from '@/features/admin/cctv/serchcctv/components/CameraGridView'
+import CameraGridView, { type InstallGroup, type CameraRow } from '@/features/admin/cctv/serchcctv/components/sections/overall/CameraGridView'
 
 // ── Types (local) ─────────────────────────────────────────────────────────────
 
