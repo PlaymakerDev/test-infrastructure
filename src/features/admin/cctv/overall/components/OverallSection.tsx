@@ -104,7 +104,7 @@ const OverallSection: React.FC = () => {
           className='relative w-full xl:absolute xl:inset-0'
           style={{ minHeight: 340 }}
         >
-          <MapSectionCctv />
+          <MapSectionCctv edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
         </div>
 
         {/* Mobile / tablet: stacks below map */}

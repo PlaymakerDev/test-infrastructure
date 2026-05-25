@@ -1,20 +1,12 @@
 "use client"
 import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { TbArrowBigLeftFilled, TbSearch, TbRoad, TbVideo, TbList } from 'react-icons/tb'
-import BaseMap from '@/components/map/BaseMap'
-import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import CameraDetailTableCctv from './CameraDetailTableCctv'
+import { TbSearch, TbRoad, TbVideo, TbList } from 'react-icons/tb'
+import CameraDetailTableCctv from './sections/overall/CameraDetailTableCctv'
+import MapSection from './sections/overall/MapSection'
 
 // ── Pill badge ────────────────────────────────────────────────────────────────
 
-interface PillProps {
-  count: number
-  label: string
-  color: string
-}
-
-const Pill: React.FC<PillProps> = ({ count, label, color }) => (
+const Pill: React.FC<{ count: number; label: string; color: string }> = ({ count, label, color }) => (
   <span
     className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
@@ -26,14 +18,12 @@ const Pill: React.FC<PillProps> = ({ count, label, color }) => (
 
 // ── Info card ─────────────────────────────────────────────────────────────────
 
-interface InfoCardProps {
+const InfoCard: React.FC<{
   icon: React.ReactNode
   label: string
   accentColor?: string
   children: React.ReactNode
-}
-
-const InfoCard: React.FC<InfoCardProps> = ({ icon, label, accentColor = '#2a2a2a', children }) => (
+}> = ({ icon, label, accentColor = '#2a2a2a', children }) => (
   <div
     className='flex flex-col gap-3 rounded-2xl p-4'
     style={{ background: '#1a1a1a', border: `1px solid ${accentColor}` }}
@@ -48,37 +38,19 @@ const InfoCard: React.FC<InfoCardProps> = ({ icon, label, accentColor = '#2a2a2a
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const SerchCctv: React.FC = () => {
-  const router = useRouter()
+const OverallSection: React.FC = () => {
   const [searchValue, setSearchValue] = useState('')
 
   return (
-    <div className='main-screen px-10'>
-
-      {/* Title with inline back button */}
-      <section>
-        <h1 className='flex items-center gap-3 text-(--yellow)'>
-          <button
-            type='button'
-            onClick={() => router.back()}
-            className='cursor-pointer shrink-0'
-            style={{ background: 'none', border: 'none', padding: 0, lineHeight: 0 }}
-          >
-            <TbArrowBigLeftFilled size={32} style={{ color: '#FCD116' }} />
-          </button>
-          ค้นหากล้อง CCTV รายสายทาง
-        </h1>
-        <p className='text-(--yellow) ml-11'>รวบรวมกล้อง CCTV ทุกจุดติดตั้งในสายทาง</p>
-      </section>
-
-      {/* Map section */}
-      <section className='relative -mx-10 mt-6 overflow-hidden' style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}>
-
-        {/* Map */}
+    <>
+      {/* ── Map + search overlay ── */}
+      <section
+        className='relative -mx-10 mt-6 overflow-hidden'
+        style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}
+      >
+        {/* Mapbox — fills entire section */}
         <div className='absolute inset-0'>
-          <BaseMap initialCenter={[100.5018, 13.7563]} initialZoom={11}>
-            <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-          </BaseMap>
+          <MapSection edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
         </div>
 
         {/* Right overlay — search + info cards */}
@@ -129,16 +101,14 @@ const SerchCctv: React.FC = () => {
             </div>
           </InfoCard>
         </aside>
-
       </section>
 
-      {/* Camera detail table */}
+      {/* ── Camera detail table ── */}
       <section className='mt-8'>
         <CameraDetailTableCctv />
       </section>
-
-    </div>
+    </>
   )
 }
 
-export default React.memo(SerchCctv)
+export default React.memo(OverallSection)

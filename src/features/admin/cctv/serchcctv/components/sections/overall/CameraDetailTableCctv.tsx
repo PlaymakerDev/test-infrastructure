@@ -4,7 +4,6 @@ import { Segmented, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import SearchBar, {
-  type FilterConfig,
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
@@ -116,16 +115,6 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
     </span>
   )
 }
-
-// ── FilterConfig ──────────────────────────────────────────────────────────────
-
-const CAMERA_FILTERS: FilterConfig[] = [
-  { key: 'all',         label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white',  badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
-  { key: 'online',      label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white',  badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
-  { key: 'offline',     label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white',     badgeIdleClass: 'bg-red-500/20 text-red-400' },
-  { key: 'in-warranty', label: 'ในค้ำ',   colorPrimary: '#05F2DB', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#016f64] text-white',  badgeIdleClass: 'bg-[#05F2DB]/20 text-[#05F2DB]', statKey: 'inWarranty' },
-  { key: 'expired',     label: 'หมดค้ำ',  colorPrimary: '#979797', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#4a4a4a] text-white',  badgeIdleClass: 'bg-[#979797]/20 text-[#979797]' },
-]
 
 // ── Main component ────────────────────────────────────────────────────────────
 

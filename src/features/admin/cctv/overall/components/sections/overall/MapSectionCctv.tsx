@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import BaseMap from '@/components/map/BaseMap'
+import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { CCTV_PROVINCE_CLUSTERS } from '@/features/admin/cctv/overall/data/cctvData'
@@ -35,9 +35,13 @@ const ClusterMarker: React.FC<ClusterMarkerProps> = ({ count }) => {
   )
 }
 
-const MapSectionCctv: React.FC = () => {
+interface Props {
+  edgeFade?: MapEdgeFadeProps
+}
+
+const MapSectionCctv: React.FC<Props> = ({ edgeFade }) => {
   return (
-    <BaseMap initialCenter={[101.0, 13.5]} initialZoom={5.4}>
+    <BaseMap initialCenter={[101.0, 13.5]} initialZoom={5.4} edgeFade={edgeFade}>
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
       {CCTV_PROVINCE_CLUSTERS.map((province) => (
         <HTMLMarker
