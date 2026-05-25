@@ -14,3 +14,52 @@
   background: #444444;
   border-radius: 3px;
 }
+
+/* ── ProjectInfoModal — strip Antd's modal styling so an inner styled div
+ * inside the body becomes the visible "modal". Inline `style` on the inner
+ * div carries the dark bg + blue border + radius reliably, since inline
+ * styles win over Antd's runtime CSS-in-JS injection.
+ *
+ * Antd 6 added `.ant-modal-container` as a wrapper between `.ant-modal` and
+ * the body — it carries the dark bg + padding that previously lived on
+ * `.ant-modal-content` in Antd 5. We reset BOTH class names so the rule
+ * works across minor version drift. `body ...` boosts specificity so we
+ * beat Antd's runtime CSS-in-JS classes. */
+body .project-info-modal .ant-modal,
+body .project-info-modal .ant-modal-container,
+body .project-info-modal .ant-modal-content,
+body .project-info-modal.ant-modal .ant-modal-container,
+body .project-info-modal.ant-modal .ant-modal-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+body .project-info-modal .ant-modal-body {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Antd 6 sometimes adds a subtle ::before/::after ring on the modal content
+ * for animation purposes. Hide them too. */
+body .project-info-modal .ant-modal-container::before,
+body .project-info-modal .ant-modal-container::after,
+body .project-info-modal .ant-modal-content::before,
+body .project-info-modal .ant-modal-content::after {
+  display: none !important;
+}
+
+/* ── Bridge projects table — yellow row dividers per Figma.
+ * `.bridge-projects-table` is applied to both BridgeProjectsTable and
+ * BridgeProjectsSummaryTable. The first selector targets project-row cells
+ * (body), the second leaves bureau divider rows alone (they already have
+ * their own dark bg). `tbody tr:last-child td` removes the trailing border
+ * so the table doesn't show a dangling yellow line at the bottom. */
+body .bridge-projects-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #FCD116 !important;
+}
+
+body .bridge-projects-table .ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}

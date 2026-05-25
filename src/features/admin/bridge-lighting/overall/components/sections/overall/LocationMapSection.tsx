@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import BaseMap from '@/components/map/BaseMap'
+import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { BRIDGE_PROJECTS } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
@@ -33,11 +33,14 @@ const NumberedMarker: React.FC<NumberedMarkerProps> = ({ number }) => (
   </div>
 )
 
-interface Props {}
+interface Props {
+  /** Optional vignette overlay forwarded to BaseMap. */
+  edgeFade?: MapEdgeFadeProps
+}
 
-const LocationMapSection: React.FC<Props> = () => {
+const LocationMapSection: React.FC<Props> = ({ edgeFade }) => {
   return (
-    <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4}>
+    <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4} edgeFade={edgeFade}>
       {/* Mask matches the page background (--background: #212121) at full
         * opacity so the area outside Thailand blends seamlessly with the
         * rest of the screen — no visible boundary on the map edges. */}
