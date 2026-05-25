@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "display_range": "16:00 - 24:00",
+    "on_date": "2026-04-23",
+    "route": "ฉช.4050",
+    "installation_point": "VMS >> ฉช.4050 จุดที่ 1",
+    "anydesk": "1194336831",
+    "is_online": true,
+    "day_remaining": 3
+  },
+  {
+    "id": "2",
+    "display_range": "16:00 - 24:00",
+    "on_date": "2026-04-23",
+    "route": "ฉช.4050",
+    "installation_point": "VMS >> ฉช.4050 จุดที่ 2",
+    "anydesk": "1150133823",
+    "is_online": true,
+    "day_remaining": 3
+  }
+]
