@@ -79,15 +79,8 @@ interface Props {
   onViewModeChange?: (mode: ViewMode) => void
   onExport?: () => void
 
-  /**
-   * Render a search input on the right when set. Pass `searchPlaceholder` to enable.
-   * Use controlled `search` + `onSearchChange` for two-way binding.
-   */
-  searchPlaceholder?: string
-  search?: string
-  onSearchChange?: (text: string) => void
-  /** Width of the search input (default 320px) */
-  searchWidth?: number
+  /* FORM SEARCH */
+  formSearch?: React.ReactNode
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -101,19 +94,13 @@ const SearchBar: React.FC<Props> = ({
   defaultViewMode = 'TABLE',
   onViewModeChange,
   onExport,
-  searchPlaceholder,
-  search: controlledSearch,
-  onSearchChange,
-  searchWidth = 320,
+  formSearch
 }) => {
   const initialFilter = defaultFilter ?? filters[0]?.key ?? ''
   const [uncontrolledFilter, setUncontrolledFilter] = useState<string>(initialFilter)
   const activeFilter = controlledFilter ?? uncontrolledFilter
 
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode)
-
-  const [uncontrolledSearch, setUncontrolledSearch] = useState('')
-  const search = controlledSearch ?? uncontrolledSearch
 
   const handleFilter = (key: string) => {
     if (controlledFilter === undefined) setUncontrolledFilter(key)
@@ -125,14 +112,6 @@ const SearchBar: React.FC<Props> = ({
     setViewMode(mode)
     onViewModeChange?.(mode)
   }
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value
-    if (controlledSearch === undefined) setUncontrolledSearch(v)
-    onSearchChange?.(v)
-  }
-
-  const showSearch = searchPlaceholder !== undefined
 
   return (
     <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
@@ -174,21 +153,7 @@ const SearchBar: React.FC<Props> = ({
 
       {/* ── Right controls ── */}
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
-        {showSearch && (
-          <Input
-            placeholder={searchPlaceholder}
-            suffix={<SearchOutlined style={{ color: '#FCD116', fontSize: 18 }} />}
-            value={search}
-            onChange={handleSearch}
-            size='large'
-            style={{
-              width: searchWidth,
-              height: 36,
-              background: '#191919',
-              borderRadius: 10,
-            }}
-          />
-        )}
+        {formSearch}
 
         <Segmented
           value={viewMode}
@@ -198,6 +163,7 @@ const SearchBar: React.FC<Props> = ({
             { value: 'GRID', icon: <AppstoreOutlined /> },
           ]}
           size='large'
+          block
         />
         <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
           {/* Fixed min-width so the export button looks identical across pages
