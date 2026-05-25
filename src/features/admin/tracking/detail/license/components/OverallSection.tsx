@@ -6,7 +6,7 @@ import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
 import { useLicenseContext } from '../context'
 
-function formatCoords(lat: number, lng: number): string {
+const formatCoords = (lat: number, lng: number): string => {
   return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
 }
 
