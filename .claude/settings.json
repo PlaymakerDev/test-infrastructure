@@ -26,7 +26,8 @@
       "Bash(echo \"TSC Exit: $?\")",
       "Bash(git stash *)",
       "Bash(echo \"TSC Exit \\(real\\): $?\")",
-      "Bash(echo \"TSC: $?\")"
+      "Bash(echo \"TSC: $?\")",
+      "Bash(git pull *)"
     ],
     "additionalDirectories": [
       "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"
