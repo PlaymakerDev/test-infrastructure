@@ -30,7 +30,8 @@ const OverallSection: React.FC<Props> = ({ bridge }) => {
         * Without it the map escapes up to the section element and covers the
         * stacked cards below. */}
       <div className='relative h-70 sm:h-90 xl:absolute xl:inset-0 xl:h-auto'>
-        <BridgeLocationMap bridge={bridge} />
+        {/* Vignette fade on all 4 edges (default 30%) — forwarded to BaseMap. */}
+        <BridgeLocationMap bridge={bridge} edgeFade={{ all: 30 }} />
       </div>
 
       {/* ── Content — 1 column on mobile, 3 columns on xl+.

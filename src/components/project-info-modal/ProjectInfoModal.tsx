@@ -63,7 +63,7 @@ const ProjectInfoModal: React.FC<ProjectInfoModalProps> = ({
       closable={false}
       centered
       width={width}
-      destroyOnClose
+      destroyOnHidden
       // Make the Antd modal content invisible (transparent bg / no border /
       // no padding) so the visible "modal" is the inner div below — it gets
       // its styling via inline `style`, which always wins over Antd's

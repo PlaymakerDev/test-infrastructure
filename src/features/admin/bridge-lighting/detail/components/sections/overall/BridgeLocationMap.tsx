@@ -1,19 +1,26 @@
 "use client"
 import React from 'react'
 import { TbMapPin } from 'react-icons/tb'
-import BaseMap from '@/components/map/BaseMap'
+import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 interface Props {
   bridge: BridgeProject
+  /** Optional vignette overlay forwarded to BaseMap. */
+  edgeFade?: MapEdgeFadeProps
 }
 
 /** Single-bridge centered map used as the detail page background.
  *  Higher zoom + 3D-ish pitch so the focus bridge fills the viewport. */
-const BridgeLocationMap: React.FC<Props> = ({ bridge }) => {
+const BridgeLocationMap: React.FC<Props> = ({ bridge, edgeFade }) => {
   return (
-    <BaseMap initialCenter={bridge.coord} initialZoom={16} initialPitch={45}>
+    <BaseMap
+      initialCenter={bridge.coord}
+      initialZoom={16}
+      initialPitch={45}
+      edgeFade={edgeFade}
+    >
       <HTMLMarker lngLat={bridge.coord} anchor='bottom' title={bridge.installPoint}>
         <div
           className='flex items-center justify-center'
