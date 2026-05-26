@@ -138,27 +138,6 @@ const TableBridgeLighting: React.FC<Props> = ({ projects }) => {
           row.kind === 'project' ? row.project.projectName : null,
       },
       {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 280,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span
-              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() =>
-                router.push(`/admin/bridge-lighting/detail/${row.project.id}`)
-              }
-              role='link'
-              tabIndex={0}
-            >
-              {row.project.installPoint}
-            </span>
-          )
-        },
-      },
-      {
         title: 'เลขที่สัญญา',
         key: 'contractNo',
         width: 200,
@@ -189,6 +168,27 @@ const TableBridgeLighting: React.FC<Props> = ({ projects }) => {
             <Pill text='ในค้ำ' color='#05F2DB' />
           ) : (
             <Pill text='หมดค้ำ' color='#979797' />
+          )
+        },
+      },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 280,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.kind !== 'project') return null
+          return (
+            <span
+              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
+              onClick={() =>
+                router.push(`/admin/bridge-lighting/detail/${row.project.id}`)
+              }
+              role='link'
+              tabIndex={0}
+            >
+              {row.project.installPoint}
+            </span>
           )
         },
       },
