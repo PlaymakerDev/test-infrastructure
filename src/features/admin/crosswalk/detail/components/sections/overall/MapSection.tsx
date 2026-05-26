@@ -1,4 +1,4 @@
-import { LocationMapSection } from '@/features/admin/bridge-lighting/overall/components'
+import BaseMap from '@/components/map/BaseMap'
 import React from 'react'
 
 interface Props {
@@ -10,7 +10,7 @@ const MapSection: React.FC<Props> = (props) => {
 
   return (
     <div>
-      <LocationMapSection
+      <BaseMap
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       />
     </div>
