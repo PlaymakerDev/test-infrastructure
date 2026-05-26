@@ -1,6 +1,6 @@
 import { Col, Row } from 'antd'
 import React from 'react'
-import { CCTVSection, DataDisplaySection, InfoCardSection, LocationSection, MapSection } from '../components'
+import { DataDisplaySection, LocationSection } from '../components'
 
 interface Props {
 
