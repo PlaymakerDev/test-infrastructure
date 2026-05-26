@@ -26,7 +26,7 @@ interface Props {
  * shows project info (overall table info icons, detail page title bar)
  * stays in sync. State (which bridge is selected) is owned by the caller.
  */
-const BridgeInfoModal: React.FC<Props> = ({ bridge, onClose }) => {
+const ModalInfoBridgeLighting: React.FC<Props> = ({ bridge, onClose }) => {
   const rows: ProjectInfoField[][] = useMemo(() => {
     if (!bridge) return []
     return [
@@ -101,4 +101,4 @@ const BridgeInfoModal: React.FC<Props> = ({ bridge, onClose }) => {
   )
 }
 
-export default React.memo(BridgeInfoModal)
+export default React.memo(ModalInfoBridgeLighting)

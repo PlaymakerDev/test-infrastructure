@@ -2,7 +2,7 @@
 import React from 'react'
 import { TitleSection, OverallSection } from '../components'
 
-const BridgeLightingScreen: React.FC = () => {
+const ScreenOverallBridgeLighting: React.FC = () => {
   return (
     <div className='main-screen px-10'>
       <TitleSection />
@@ -13,4 +13,4 @@ const BridgeLightingScreen: React.FC = () => {
   )
 }
 
-export default React.memo(BridgeLightingScreen)
+export default React.memo(ScreenOverallBridgeLighting)

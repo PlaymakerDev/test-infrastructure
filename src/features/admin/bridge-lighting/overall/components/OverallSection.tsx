@@ -5,12 +5,12 @@ import SearchBar, {
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
-import LatestBridgeCard from './sections/overall/LatestBridgeCard'
-import StatsSection from './sections/overall/StatsSection'
-import LocationMapSection from './sections/overall/LocationMapSection'
+import StatusBridgeLighting from './sections/overall/StatusBridgeLighting'
+import StatsSectionBridgeLighting from './sections/overall/StatsSectionBridgeLighting'
+import MapBridgeLighting from './sections/overall/MapBridgeLighting'
 import MadrixControlPanel from './sections/overall/MadrixControlPanel'
-import BridgeProjectsTable from './sections/overall/BridgeProjectsTable'
-import BridgeProjectsSummaryTable from './sections/overall/BridgeProjectsSummaryTable'
+import TableBridgeLighting from './sections/overall/TableBridgeLighting'
+import SummaryTableBridgeLighting from './sections/overall/SummaryTableBridgeLighting'
 import FormSearchBridgeLighting from './sections/overall/FormSearchBridgeLighting'
 import { BRIDGE_PROJECTS } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
@@ -145,7 +145,7 @@ const OverallSection: React.FC<Props> = () => {
         >
           {/* Vignette fade — heavier on left/right (overlay cards live there),
             * lighter on top/bottom. Forwarded into the underlying BaseMap. */}
-          <LocationMapSection
+          <MapBridgeLighting
             edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
           />
         </div>
@@ -153,11 +153,11 @@ const OverallSection: React.FC<Props> = () => {
         {/* ── Mobile / tablet (< xl): content stacks below the map.
           * Hidden on xl+ where overlays take over. */}
         <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
-          <LatestBridgeCard bridge={latestBridge} />
+          <StatusBridgeLighting bridge={latestBridge} />
           <div className='w-full h-70 sm:h-90'>
             <MadrixControlPanel />
           </div>
-          <StatsSection
+          <StatsSectionBridgeLighting
             total={totalDevices}
             totalActive={totalOnlineDevices}
             inWarranty={inWarrantyDevices}
@@ -170,7 +170,7 @@ const OverallSection: React.FC<Props> = () => {
         {/* ── Desktop xl+: overlay cards on top of the absolute map background. */}
         <aside className='hidden xl:flex flex-col gap-4 absolute z-10 pl-10 pointer-events-none top-5 left-0'>
           <div className='pointer-events-auto w-107.5'>
-            <LatestBridgeCard bridge={latestBridge} />
+            <StatusBridgeLighting bridge={latestBridge} />
           </div>
           <div className='pointer-events-auto w-170 h-98.75'>
             <MadrixControlPanel />
@@ -178,7 +178,7 @@ const OverallSection: React.FC<Props> = () => {
         </aside>
 
         <aside className='hidden xl:flex flex-col gap-4 absolute z-10 items-end pr-10 pointer-events-auto top-5 right-0 w-80'>
-          <StatsSection
+          <StatsSectionBridgeLighting
             total={totalDevices}
             totalActive={totalOnlineDevices}
             inWarranty={inWarrantyDevices}
@@ -207,9 +207,9 @@ const OverallSection: React.FC<Props> = () => {
         * and summary (count columns) layouts. Both are tables, not card grids. */}
       <section>
         {viewMode === 'TABLE' ? (
-          <BridgeProjectsTable projects={filtered} />
+          <TableBridgeLighting projects={filtered} />
         ) : (
-          <BridgeProjectsSummaryTable projects={filtered} />
+          <SummaryTableBridgeLighting projects={filtered} />
         )}
       </section>
     </div>

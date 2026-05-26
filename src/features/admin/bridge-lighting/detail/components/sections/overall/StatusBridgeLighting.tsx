@@ -9,7 +9,7 @@ interface Props {
 
 /** Bridge work-status card — shown on the left side of the detail page.
  *  Mirrors the "ไฟประดับสะพานแสดงผลล่าสุด" card style from the overall page. */
-const BridgeStatusCard: React.FC<Props> = ({ bridge }) => {
+const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
   return (
     <div
       className='p-3 flex flex-col gap-1.5 w-full'
@@ -41,4 +41,4 @@ const BridgeStatusCard: React.FC<Props> = ({ bridge }) => {
   )
 }
 
-export default React.memo<Props>(BridgeStatusCard)
+export default React.memo<Props>(StatusBridgeLighting)

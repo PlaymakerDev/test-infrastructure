@@ -38,7 +38,7 @@ interface Props {
   edgeFade?: MapEdgeFadeProps
 }
 
-const LocationMapSection: React.FC<Props> = ({ edgeFade }) => {
+const MapBridgeLighting: React.FC<Props> = ({ edgeFade }) => {
   return (
     <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4} edgeFade={edgeFade}>
       {/* Mask matches the page background (--background: #212121) at full
@@ -59,4 +59,4 @@ const LocationMapSection: React.FC<Props> = ({ edgeFade }) => {
   )
 }
 
-export default React.memo<Props>(LocationMapSection)
+export default React.memo<Props>(MapBridgeLighting)

@@ -36,7 +36,7 @@ const SparkleIcon: React.FC<{ size?: number; className?: string }> = ({
   </svg>
 )
 
-const LatestBridgeCard: React.FC<Props> = ({ bridge }) => {
+const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
   // Derive display values from the bridge if provided, else fall back to a
   // sensible placeholder. The bridge name is the install point with the
   // leading "ไฟประดับ : " prefix stripped, matching the Figma layout.
@@ -75,4 +75,4 @@ const LatestBridgeCard: React.FC<Props> = ({ bridge }) => {
   )
 }
 
-export default React.memo<Props>(LatestBridgeCard)
+export default React.memo<Props>(StatusBridgeLighting)

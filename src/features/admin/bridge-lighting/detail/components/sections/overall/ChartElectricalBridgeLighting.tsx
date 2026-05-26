@@ -64,7 +64,7 @@ const buildPoints = (
  *  Both use the central `<LineChart>` with theme overrides (accent color,
  *  dark card bg, no golden glow, plain icon) plus a custom tooltip that
  *  shows Thai BE date + time + colored phase dots. */
-const ElectricalChartsSection: React.FC<Props> = () => {
+const ChartElectricalBridgeLighting: React.FC<Props> = () => {
   const voltageData = useMemo(() => buildPoints(VOLTAGE_SERIES), [])
   const currentData = useMemo(() => buildPoints(CURRENT_SERIES), [])
   const tooltipDate = useMemo(() => formatThaiDate(new Date()), [])
@@ -109,4 +109,4 @@ const ElectricalChartsSection: React.FC<Props> = () => {
   )
 }
 
-export default React.memo<Props>(ElectricalChartsSection)
+export default React.memo<Props>(ChartElectricalBridgeLighting)

@@ -64,7 +64,7 @@ interface Props {
 /** Two rows of 4 cards each — Voltage (yellow) on top, Current (blue) below.
  *  Wrapped in an outer dark container (#191919CC) that frames the entire grid
  *  to match the Figma detail page top-right overlay. */
-const ElectricalStatsSection: React.FC<Props> = ({ bridge }) => {
+const StatsElectricalBridgeLighting: React.FC<Props> = ({ bridge }) => {
   const { voltage, current } = bridge
 
   return (
@@ -95,4 +95,4 @@ const ElectricalStatsSection: React.FC<Props> = ({ bridge }) => {
   )
 }
 
-export default React.memo<Props>(ElectricalStatsSection)
+export default React.memo<Props>(StatsElectricalBridgeLighting)

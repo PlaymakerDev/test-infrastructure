@@ -67,7 +67,7 @@ interface Props {
   expiredActive?: number
 }
 
-const StatsSection: React.FC<Props> = ({
+const StatsSectionBridgeLighting: React.FC<Props> = ({
   total = 12,
   totalActive = 10,
   inWarranty = 5,
@@ -116,4 +116,4 @@ const StatsSection: React.FC<Props> = ({
   )
 }
 
-export default React.memo<Props>(StatsSection)
+export default React.memo<Props>(StatsSectionBridgeLighting)

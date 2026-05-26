@@ -1,5 +1,5 @@
-import BridgeLightingScreen from '@/features/admin/bridge-lighting/overall/screen'
+import ScreenOverallBridgeLighting from '@/features/admin/bridge-lighting/overall/screen/ScreenOverallBridgeLighting'
 
 export default function BridgeLightingPage() {
-  return <BridgeLightingScreen />
+  return <ScreenOverallBridgeLighting />
 }

@@ -13,7 +13,7 @@ interface Props {
 
 /** Single-bridge centered map used as the detail page background.
  *  Higher zoom + 3D-ish pitch so the focus bridge fills the viewport. */
-const BridgeLocationMap: React.FC<Props> = ({ bridge, edgeFade }) => {
+const MapDetailBridgeLighting: React.FC<Props> = ({ bridge, edgeFade }) => {
   return (
     <BaseMap
       initialCenter={bridge.coord}
@@ -40,4 +40,4 @@ const BridgeLocationMap: React.FC<Props> = ({ bridge, edgeFade }) => {
   )
 }
 
-export default React.memo<Props>(BridgeLocationMap)
+export default React.memo<Props>(MapDetailBridgeLighting)

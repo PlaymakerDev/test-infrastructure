@@ -10,7 +10,7 @@ import {
   TbWifi,
   TbWifiOff,
 } from 'react-icons/tb'
-import BridgeInfoModal from '@/features/admin/bridge-lighting/overall/components/BridgeInfoModal'
+import ModalInfoBridgeLighting from '@/features/admin/bridge-lighting/overall/components/ModalInfoBridgeLighting'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 interface Props {
@@ -133,7 +133,7 @@ const TitleSection: React.FC<Props> = ({ bridge }) => {
       </section>
 
       {/* ── Bridge info modal — shared with overall page table info icons ─ */}
-      <BridgeInfoModal
+      <ModalInfoBridgeLighting
         bridge={infoOpen ? bridge : null}
         onClose={() => setInfoOpen(false)}
       />

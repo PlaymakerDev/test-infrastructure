@@ -8,7 +8,7 @@ interface Props {
   id: string
 }
 
-const BridgeLightingDetailScreen: React.FC<Props> = ({ id }) => {
+const ScreenDetailBridgeLighting: React.FC<Props> = ({ id }) => {
   const router = useRouter()
   const bridge = getBridgeProjectById(id)
 
@@ -39,4 +39,4 @@ const BridgeLightingDetailScreen: React.FC<Props> = ({ id }) => {
   )
 }
 
-export default React.memo<Props>(BridgeLightingDetailScreen)
+export default React.memo<Props>(ScreenDetailBridgeLighting)

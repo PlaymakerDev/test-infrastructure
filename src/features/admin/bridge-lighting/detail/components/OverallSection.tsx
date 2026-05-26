@@ -1,9 +1,9 @@
 "use client"
 import React from 'react'
-import BridgeLocationMap from './sections/overall/BridgeLocationMap'
-import ElectricalStatsSection from './sections/overall/ElectricalStatsSection'
-import ElectricalChartsSection from './sections/overall/ElectricalChartsSection'
-import BridgeStatusCard from './sections/overall/BridgeStatusCard'
+import MapDetailBridgeLighting from './sections/overall/MapDetailBridgeLighting'
+import StatsElectricalBridgeLighting from './sections/overall/StatsElectricalBridgeLighting'
+import ChartElectricalBridgeLighting from './sections/overall/ChartElectricalBridgeLighting'
+import StatusBridgeLighting from './sections/overall/StatusBridgeLighting'
 import RemoteControlCard from './sections/overall/RemoteControlCard'
 import MadrixControlPanel from '@/features/admin/bridge-lighting/overall/components/sections/overall/MadrixControlPanel'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
@@ -31,7 +31,7 @@ const OverallSection: React.FC<Props> = ({ bridge }) => {
         * stacked cards below. */}
       <div className='relative h-70 sm:h-90 xl:absolute xl:inset-0 xl:h-auto'>
         {/* Vignette fade on all 4 edges (default 30%) — forwarded to BaseMap. */}
-        <BridgeLocationMap bridge={bridge} edgeFade={{ all: 30 }} />
+        <MapDetailBridgeLighting bridge={bridge} edgeFade={{ all: 30 }} />
       </div>
 
       {/* ── Content — 1 column on mobile, 3 columns on xl+.
@@ -43,10 +43,10 @@ const OverallSection: React.FC<Props> = ({ bridge }) => {
         {/* RIGHT (mobile order 1) — stats + charts */}
         <aside className='flex flex-col gap-3 min-w-0 order-1 xl:order-3'>
           <div className='pointer-events-auto min-w-0'>
-            <ElectricalStatsSection bridge={bridge} />
+            <StatsElectricalBridgeLighting bridge={bridge} />
           </div>
           <div className='pointer-events-auto flex-1 flex flex-col min-w-0'>
-            <ElectricalChartsSection />
+            <ChartElectricalBridgeLighting />
           </div>
         </aside>
 
@@ -60,7 +60,7 @@ const OverallSection: React.FC<Props> = ({ bridge }) => {
               backdropFilter: 'blur(5px)',
             }}
           >
-            <BridgeStatusCard bridge={bridge} />
+            <StatusBridgeLighting bridge={bridge} />
             <RemoteControlCard />
           </div>
         </aside>
