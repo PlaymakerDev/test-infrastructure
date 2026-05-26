@@ -1,6 +1,5 @@
-import { Col, Row } from 'antd'
 import React from 'react'
-import { DataDisplaySection, LocationSection } from '../components'
+import { ChartSection, DataDisplaySection, LocationSection } from '../components'
 
 interface Props {
 
@@ -16,6 +15,9 @@ const OverallSection: React.FC<Props> = (props) => {
       </section>
       <section className='mt-5'>
         <DataDisplaySection />
+      </section>
+      <section className='mt-5'>
+        <ChartSection />
       </section>
     </div>
   )

@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { useRouter } from 'next/navigation'
 
 interface Props { }
 
@@ -140,6 +141,7 @@ const buildRows = (entries: CrosswalkEntry[]): Row[] => {
 
 const TableCrosswalkData: React.FC<Props> = () => {
   const data = useMemo(() => buildRows(rawData), [])
+  const router = useRouter()
 
   const columns: ColumnsType<Row> = useMemo(() => [
     {
@@ -248,6 +250,12 @@ const TableCrosswalkData: React.FC<Props> = () => {
       pagination={false}
       size='middle'
       scroll={{ x: 1400 }}
+      onRow={() => {
+        return {
+          onClick: () => router.push(`/admin/crosswalk/detail/EXAMPLE_CROSSWALK_ID`),
+          className: 'cursor-pointer',
+        }
+      }}
     />
   )
 }
