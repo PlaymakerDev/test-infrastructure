@@ -45,13 +45,13 @@ const admin = [
   },
   {
     key: '5',
-    title: 'Traffic',
-    label: 'Traffic',
-    label_key: "traffic",
+    title: 'Traffic Signal',
+    label: 'Traffic Signal',
+    label_key: "traffic-signal",
     icon: 'TbTrafficLights',
     default_color_icon: '',
-    path: "/admin/traffic",
-    path_active: "/admin/traffic",
+    path: "/admin/traffic-signal",
+    path_active: "/admin/traffic-signal",
     path_list: [],
   },
   {

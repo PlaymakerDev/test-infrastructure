@@ -203,13 +203,14 @@ const OverallSection: React.FC<Props> = () => {
         />
       </section>
 
-      {/* ── Projects table — view toggle switches between detail (status pills)
-        * and summary (count columns) layouts. Both are tables, not card grids. */}
+      {/* ── Projects table — view toggle:
+        *  • TABLE (lines ☰ icon) → summary view with device counts
+        *  • GRID (squares ⊞ icon) → detail view with status / stream pills */}
       <section>
         {viewMode === 'TABLE' ? (
-          <TableBridgeLighting projects={filtered} />
-        ) : (
           <SummaryTableBridgeLighting projects={filtered} />
+        ) : (
+          <TableBridgeLighting projects={filtered} />
         )}
       </section>
     </div>

@@ -4,17 +4,19 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import ModalInfoBridgeLighting from '@/features/admin/bridge-lighting/overall/components/ModalInfoBridgeLighting'
-import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import ModalInfoTrafficSignal from '@/features/admin/traffic-signal/overall/components/ModalInfoTrafficSignal'
+import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
-  /** Filtered + searched projects */
-  projects: BridgeProject[]
+  /** Filtered + searched signal projects */
+  projects: TrafficSignalProject[]
 }
 
 /**
- * Count badge — colored chip that highlights when value > 0.
- * Used in the "summary" view to call out online/offline totals.
+ * Count badge — same shape as `SummaryTableBridgeLighting`:
+ *   • value === 0 → colored bold text only (no badge)
+ *   • value > 0 + highlight → solid-bg badge with dark text
+ *   • value > 0 + no highlight → colored bold text
  */
 const CountBadge: React.FC<{ value: number; color: string; highlight?: boolean }> = ({
   value,
@@ -37,7 +39,7 @@ const CountBadge: React.FC<{ value: number; color: string; highlight?: boolean }
   return <span style={{ color, fontWeight: 600 }}>{value}</span>
 }
 
-const WarrantyPill: React.FC<{ warranty: BridgeProject['warranty'] }> = ({ warranty }) => {
+const WarrantyPill: React.FC<{ warranty: TrafficSignalProject['warranty'] }> = ({ warranty }) => {
   const config =
     warranty === 'in-warranty'
       ? { text: 'ในค้ำ', color: '#05F2DB' }
@@ -53,17 +55,16 @@ const WarrantyPill: React.FC<{ warranty: BridgeProject['warranty'] }> = ({ warra
 }
 
 /** Single-table row — bureau divider or real project row.
- *  `roadCodeSpan` controls vertical cell merging in the `รหัสสายทาง` column
- *  (first row of a same-roadCode run = full span, others = 0 to hide). */
+ *  `roadCodeSpan` controls vertical cell merging in the `รหัสสายทาง` column. */
 type Row =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | { kind: 'project'; id: string; project: BridgeProject; roadCodeSpan: number }
+  | { kind: 'project'; id: string; project: TrafficSignalProject; roadCodeSpan: number }
 
-const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
+const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
-  const [infoBridge, setInfoBridge] = useState<BridgeProject | null>(null)
+  const [infoProject, setInfoProject] = useState<TrafficSignalProject | null>(null)
   const data = useMemo<Row[]>(() => {
-    const groups = new Map<string, BridgeProject[]>()
+    const groups = new Map<string, TrafficSignalProject[]>()
     for (const p of projects) {
       const list = groups.get(p.bureau) ?? []
       list.push(p)
@@ -161,7 +162,7 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
                 size={18}
                 className='text-white cursor-pointer hover:text-(--yellow)'
                 title='ดูข้อมูลโครงการ'
-                onClick={() => setInfoBridge(row.project)}
+                onClick={() => setInfoProject(row.project)}
               />
             </span>
           )
@@ -186,7 +187,7 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
             <span
               className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
               onClick={() =>
-                router.push(`/admin/bridge-lighting/detail/${row.project.id}`)
+                router.push(`/admin/traffic-signal/detail/${row.project.id}`)
               }
               role='link'
               tabIndex={0}
@@ -197,32 +198,33 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
         },
       },
       {
-        title: 'ดวงไฟทั้งหมด',
-        key: 'totalDevices',
+        title: 'กล้องทั้งหมด',
+        key: 'totalCameras',
         align: 'center',
         width: 130,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <span className='text-white font-semibold'>{row.project.totalDevices}</span>
+            <span className='text-white font-semibold'>{row.project.totalCameras}</span>
           ) : null,
       },
       {
         title: 'ออนไลน์',
-        key: 'onlineCount',
+        key: 'onlineCameras',
         align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          // Highlight (badge) only when one side is `0`; when both online
-          // and offline have data, render both as plain colored text so
-          // the badge calls out the "lopsided" rows specifically.
+          // Highlight (badge) only when one side is `0`; if both columns
+          // have data, render both as plain colored text — the user wants
+          // the badge to call out the "lopsided" rows where everything is
+          // online or everything is offline.
           const bothActive =
-            row.project.onlineCount > 0 && row.project.offlineCount > 0
+            row.project.onlineCameras > 0 && row.project.offlineCameras > 0
           return (
             <CountBadge
-              value={row.project.onlineCount}
+              value={row.project.onlineCameras}
               color='#66AEFF'
               highlight={!bothActive}
             />
@@ -231,17 +233,17 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
       },
       {
         title: 'ออฟไลน์',
-        key: 'offlineCount',
+        key: 'offlineCameras',
         align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
           const bothActive =
-            row.project.onlineCount > 0 && row.project.offlineCount > 0
+            row.project.onlineCameras > 0 && row.project.offlineCameras > 0
           return (
             <CountBadge
-              value={row.project.offlineCount}
+              value={row.project.offlineCameras}
               color='#E94C4C'
               highlight={!bothActive}
             />
@@ -259,16 +261,15 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
         dataSource={data}
         pagination={false}
         size='middle'
-        // Keep horizontal scroll inside the table on narrow viewports.
-        // Using a specific min-width (instead of `max-content`) lets the
-        // table fit the container on wide screens — `max-content` would
-        // force the table to expand to its full natural width and overflow.
+        // Same scroll x as bridge-lighting summary — keeps the table compact
+        // enough to fit common viewports while allowing horizontal scroll on
+        // narrow screens.
         scroll={{ x: 1300 }}
         className='bridge-projects-table'
       />
-      <ModalInfoBridgeLighting bridge={infoBridge} onClose={() => setInfoBridge(null)} />
+      <ModalInfoTrafficSignal project={infoProject} onClose={() => setInfoProject(null)} />
     </>
   )
 }
 
-export default React.memo<Props>(SummaryTableBridgeLighting)
+export default React.memo<Props>(SummaryTableTrafficSignal)

@@ -51,15 +51,37 @@ body .project-info-modal .ant-modal-content::after {
 }
 
 /* ── Bridge projects table — yellow row dividers per Figma.
- * `.bridge-projects-table` is applied to both BridgeProjectsTable and
- * BridgeProjectsSummaryTable. The first selector targets project-row cells
- * (body), the second leaves bureau divider rows alone (they already have
- * their own dark bg). `tbody tr:last-child td` removes the trailing border
- * so the table doesn't show a dangling yellow line at the bottom. */
+ * `.bridge-projects-table` is applied to BridgeProjectsTable,
+ * BridgeProjectsSummaryTable, and Traffic Signal tables.
+ *
+ * Rules:
+ * 1. Header (`thead th`): no bottom border — the yellow header background
+ *    already provides clear separation from the body, so the default Antd
+ *    divider isn't needed.
+ * 2. Body rows: yellow bottom border (= row separator).
+ * 3. Last body row: no bottom border (avoids a dangling yellow line).
+ *
+ * Bureau divider rows carry their own dark bg via inline `style` on the
+ * colSpan cell (`#2a2a2a`); no global cell background rule is set so that
+ * inline style isn't overridden. */
+body .bridge-projects-table .ant-table-thead > tr > th {
+  border-bottom: none !important;
+}
+
 body .bridge-projects-table .ant-table-tbody > tr > td {
   border-bottom: 1px solid #FCD116 !important;
 }
 
 body .bridge-projects-table .ant-table-tbody > tr:last-child > td {
   border-bottom: none !important;
+}
+
+/* Antd 6 may add a scroll shadow on right-fixed columns when `scroll: { x }`
+ * is active — kill any such shadow on our tables for a clean edge. */
+body .bridge-projects-table .ant-table-cell-fix-right-first::after,
+body .bridge-projects-table .ant-table-cell-fix-right-last::after,
+body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-first::after,
+body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last::after {
+  display: none !important;
+  box-shadow: none !important;
 }

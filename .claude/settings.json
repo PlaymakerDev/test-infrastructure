@@ -27,7 +27,17 @@
       "Bash(git stash *)",
       "Bash(echo \"TSC Exit \\(real\\): $?\")",
       "Bash(echo \"TSC: $?\")",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(mv overall/screen/index.tsx overall/screen/ScreenOverallBridgeLighting.tsx)",
+      "Bash(mv detail/screen/index.tsx detail/screen/ScreenDetailBridgeLighting.tsx)",
+      "Bash(mv overall/components/BridgeInfoModal.tsx overall/components/ModalInfoBridgeLighting.tsx)",
+      "Bash(mv overall/components/sections/overall/BridgeProjectsTable.tsx overall/components/sections/overall/TableBridgeLighting.tsx)",
+      "Bash(mv overall/components/sections/overall/BridgeProjectsSummaryTable.tsx overall/components/sections/overall/SummaryTableBridgeLighting.tsx)",
+      "Bash(grep -v \"^>$\")",
+      "Bash(grep -v \"^<$\")",
+      "Bash(Select-String -Pattern \"bridge-lighting|traffic-signal\")",
+      "Bash(Select-Object -First 50)",
+      "PowerShell(npx tsc --noEmit 2>&1)"
     ],
     "additionalDirectories": [
       "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"
