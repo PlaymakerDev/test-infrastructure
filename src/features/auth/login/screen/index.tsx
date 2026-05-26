@@ -8,12 +8,15 @@ import menu from '@/configs/menu';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setTaskSchedule } from '@/stores/reducers/layout/layoutSlice';
 
-
+interface Props {
+  username?: string
+  password?: string
+}
 
 type FormLogin = Props
 
 const AuthScreen: React.FC<Props> = (props) => {
-  
+  const { username = '', password = '' } = props
   const router = useRouter()
   const { task_schedules: { loading } } = useAppSelector(state => state.layout)
   const dispatch = useAppDispatch()
@@ -63,7 +66,7 @@ const AuthScreen: React.FC<Props> = (props) => {
         status: "SUCCESS"
       }))
     }
-  }, [router, dispatch])
+  }, [router, dispatch, modal])
 
   return (
     <>
