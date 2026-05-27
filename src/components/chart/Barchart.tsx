@@ -19,6 +19,15 @@ export interface BarChartDataPoint {
   [key: string]: string | number
 }
 
+export interface BarChartStat {
+  /** ตัวเลขสรุปแสดงด้านบนกราฟ */
+  value: number | string
+  /** คำอธิบายใต้ตัวเลข */
+  label: string
+  /** สีจุดและ label */
+  color: string
+}
+
 export interface BarChartProps {
   /** ชื่อหัวข้อ */
   title: string
@@ -34,6 +43,8 @@ export interface BarChartProps {
   data: BarChartDataPoint[]
   /** กำหนด bar แต่ละชุด */
   bars: BarConfig[]
+  /** สรุปตัวเลขแสดงเหนือกราฟ */
+  stats?: BarChartStat[]
   /** ตัวเลือก tab period — ถ้าไม่ส่งจะไม่แสดง tab */
   periods?: string[]
   /** period ที่ active เริ่มต้น */
@@ -46,6 +57,21 @@ export interface BarChartProps {
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
   yAxisDomain?: [number | 'auto', number | 'auto']
+
+  // ── Theme overrides (optional — defaults preserve original look) ──────────
+  /** สี title + icon accent (default `#FCD116`) */
+  accentColor?: string
+  /** สีพื้นหลังการ์ด (default `#00000080`) */
+  cardBackground?: string
+  /** สีขอบการ์ด (default `#1f2d3d`) */
+  cardBorderColor?: string
+  /** แสดง golden glow ที่มุมบน 2 มุม (default `true`) */
+  showGlow?: boolean
+  /** ห่อ icon ในวงกลม yellow tint (default `true`) */
+  iconCircle?: boolean
+  /** Optional content rendered inside the card, below the chart. Useful for
+   *  putting an average/summary footer inside the same border as the chart. */
+  footer?: React.ReactNode
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -58,12 +84,19 @@ const BarChart: React.FC<BarChartProps> = ({
   icon,
   data,
   bars,
+  stats,
   periods,
   defaultPeriod,
   onPeriodChange,
   height = 280,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  accentColor = '#FCD116',
+  cardBackground = '#00000080',
+  cardBorderColor = '#1f2d3d',
+  showGlow = true,
+  iconCircle = true,
+  footer,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -79,7 +112,7 @@ const BarChart: React.FC<BarChartProps> = ({
 
     return {
       backgroundColor: 'transparent',
-      grid: { top: 16, right: 8, bottom: 56, left: 40, containLabel: false },
+      grid: { top: 16, right: 8, bottom: 44, left: 40, containLabel: false },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -110,7 +143,7 @@ const BarChart: React.FC<BarChartProps> = ({
         borderWidth: 1,
         padding: [10, 16],
         textStyle: { color: '#ffffff', fontSize: 12 },
-        formatter: (params: any[]) =>
+        formatter: (params: { seriesIndex: number; value: number; seriesName: string }[]) =>
           params
             .map((p) => {
               const cfg = bars[p.seriesIndex]
@@ -137,33 +170,43 @@ const BarChart: React.FC<BarChartProps> = ({
 
   return (
     <div
-      className='relative rounded-2xl p-5 w-full overflow-hidden'
-      style={{ background: '#00000080', border: '1px solid #1f2d3d' }}
+      className='relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden'
+      style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
-      {/* Golden glow top-left */}
-      <div
-        className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
-      />
-      {/* Golden glow top-right */}
-      <div
-        className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
-      />
+      {showGlow && (
+        <>
+          {/* Golden glow top-left */}
+          <div
+            className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
+          />
+          {/* Golden glow top-right */}
+          <div
+            className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
+          />
+        </>
+      )}
 
       {/* Header */}
       <div className='relative flex items-start justify-between mb-4 flex-wrap gap-3'>
         <div className='flex items-center gap-3'>
           {icon && (
-            <div
-              className='flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0'
-              style={{ background: 'rgba(234,179,8,0.15)' }}
-            >
-              {icon}
-            </div>
+            iconCircle ? (
+              <div
+                className='flex items-center justify-center w-9 h-9 rounded-full shrink-0'
+                style={{ background: 'rgba(234,179,8,0.15)', color: accentColor }}
+              >
+                {icon}
+              </div>
+            ) : (
+              <div className='shrink-0' style={{ color: accentColor }}>
+                {icon}
+              </div>
+            )
           )}
           <div>
-            <h2 className='font-semibold leading-tight' style={{ color: '#FCD116', fontSize: titleSize }}>
+            <h2 className='font-semibold leading-tight' style={{ color: accentColor, fontSize: titleSize }}>
               {title}
             </h2>
             {subtitle && (
@@ -196,6 +239,26 @@ const BarChart: React.FC<BarChartProps> = ({
         )}
       </div>
 
+      {/* Stats summary — same layout as LineChart for visual consistency */}
+      {stats && stats.length > 0 && (
+        <div className='relative flex gap-8 mb-4 flex-wrap'>
+          {stats.map((stat, i) => (
+            <div key={i} className='flex items-start gap-2'>
+              <span
+                className='w-3 h-3 rounded-full mt-1.5 shrink-0'
+                style={{ background: stat.color }}
+              />
+              <div>
+                <p className='text-2xl font-bold text-white leading-tight'>
+                  {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                </p>
+                <p className='text-xs mt-0.5' style={{ color: stat.color }}>{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ECharts */}
       <div className='relative'>
         <ReactECharts
@@ -205,6 +268,11 @@ const BarChart: React.FC<BarChartProps> = ({
           opts={{ renderer: 'svg' }}
         />
       </div>
+
+      {/* Optional footer — renders inside the same card border as the chart.
+        * `mb-3` adds breathing room below the footer so it doesn't hug the
+        * card's bottom edge. */}
+      {footer && <div className='relative mt-3 mb-3'>{footer}</div>}
     </div>
   )
 }

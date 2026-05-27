@@ -10,6 +10,19 @@ export interface PieChartDataPoint {
   color: string
 }
 
+/** One outer label entry — render order matches `data[]` (per-segment).
+ *  Position is computed from each segment's midpoint angle. */
+export interface PieChartOuterLabel {
+  /** Top line (e.g. phase name "P1") */
+  title: string
+  /** Bottom line below the dot (e.g. "60s") */
+  subtitle?: string
+  /** Color for title. Falls back to the segment's color. */
+  titleColor?: string
+  /** Color for the dot before subtitle. Falls back to titleColor / segment color. */
+  dotColor?: string
+}
+
 export interface PieChartProps {
   /** ชื่อหัวข้อ */
   title: string
@@ -31,6 +44,52 @@ export interface PieChartProps {
   onPeriodChange?: (period: string) => void
   /** ความสูงของ donut chart (default 280) */
   height?: number
+
+  // ── Theme overrides (optional — defaults preserve original look) ──────────
+  /** Card background (default `#00000080`) */
+  cardBackground?: string
+  /** Card border color (default `#1f2d3d`) */
+  cardBorderColor?: string
+  /** แสดง golden glow ที่มุมบน 2 มุม (default `true`) */
+  showGlow?: boolean
+  /** ห่อ icon ในวงกลม yellow tint (default `true`) */
+  iconCircle?: boolean
+  /** สี title (default `#FCD116`) */
+  titleColor?: string
+
+  // ── Donut config ──────────────────────────────────────────────────────────
+  /** Sweep direction (default `true` = clockwise) */
+  clockwise?: boolean
+  /** มุมเริ่มต้นเป็นองศา (default 90 = 12 นาฬิกา) */
+  startAngle?: number
+  /** Donut เป็นสี่เหลี่ยมจัตุรัส (px). ถ้าไม่ส่งใช้ 260 × height */
+  donutSize?: number
+  /** Inner/outer radius เป็น % (default `['62%', '88%']`) */
+  radius?: [string, string]
+  /** สีเส้นแบ่ง segment ของ donut (default `#00000080`) */
+  segmentBorderColor?: string
+  /** ความหนาเส้นแบ่ง segment (px). ส่ง `0` เพื่อปิดเส้นแบ่ง (default 2) */
+  segmentBorderWidth?: number
+
+  // ── Center text customization ─────────────────────────────────────────────
+  /** Override center number (default = sum of data values) */
+  centerValue?: string | number
+  /** สี center value (default `#fff`) */
+  centerValueColor?: string
+  /** ขนาด font ของ center value (default 30) */
+  centerValueSize?: number
+  /** สี centerLabel (top) (default `#8a9ab5`) */
+  centerLabelColor?: string
+  /** สี centerUnit (bottom) (default `#8a9ab5`) */
+  centerUnitColor?: string
+
+  // ── Legend / outer labels ─────────────────────────────────────────────────
+  /** Show right-side legend list (default `true` when no `outerLabels`, else `false`) */
+  showLegend?: boolean
+  /** Outer labels positioned around the donut by segment midpoint. */
+  outerLabels?: PieChartOuterLabel[]
+  /** Radius (px from donut center) for outer labels. Default `donutSize/2 + 20`. */
+  outerLabelRadius?: number
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -46,15 +105,67 @@ const PieChart: React.FC<PieChartProps> = ({
   defaultPeriod,
   onPeriodChange,
   height = 280,
+
+  // theme
+  cardBackground = '#00000080',
+  cardBorderColor = '#1f2d3d',
+  showGlow = true,
+  iconCircle = true,
+  titleColor = '#FCD116',
+
+  // donut
+  clockwise = true,
+  startAngle = 90,
+  donutSize,
+  radius = ['62%', '88%'],
+  segmentBorderColor = '#00000080',
+  segmentBorderWidth = 2,
+
+  // center
+  centerValue,
+  centerValueColor = '#ffffff',
+  centerValueSize = 30,
+  centerLabelColor = '#8a9ab5',
+  centerUnitColor = '#8a9ab5',
+
+  // layout
+  showLegend,
+  outerLabels,
+  outerLabelRadius,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
   const total = data.reduce((sum, d) => sum + d.value, 0)
+  const shouldShowLegend = showLegend ?? !outerLabels
+  const containerWidth = donutSize ?? 260
+  const containerHeight = donutSize ?? height
+  const labelRadius = outerLabelRadius ?? containerWidth / 2 + 20
 
   const handlePeriod = (p: string) => {
     setActivePeriod(p)
     onPeriodChange?.(p)
   }
+
+  // ── Outer label positions — computed from each segment's midpoint angle.
+  // ECharts default direction is clockwise. With math angles measured
+  // counter-clockwise from positive x-axis, "clockwise" means decreasing angle.
+  const labelPositions = useMemo(() => {
+    if (!outerLabels || outerLabels.length === 0) return []
+    const direction = clockwise ? -1 : 1
+    let acc = startAngle
+    return data.map((d, i) => {
+      const span = total > 0 ? (d.value / total) * 360 : 0
+      const mid = acc + (direction * span) / 2
+      acc += direction * span
+      const rad = (mid * Math.PI) / 180
+      return {
+        x: Math.cos(rad),
+        y: -Math.sin(rad), // CSS y is flipped vs math
+        label: outerLabels[i],
+        segmentColor: d.color,
+      }
+    })
+  }, [data, outerLabels, total, startAngle, clockwise])
 
   const option = useMemo(() => ({
     backgroundColor: 'transparent',
@@ -65,7 +176,7 @@ const PieChart: React.FC<PieChartProps> = ({
       borderWidth: 1,
       padding: [10, 16],
       textStyle: { color: '#ffffff', fontSize: 12 },
-      formatter: (params: any) =>
+      formatter: (params: { name: string; value: number; data: { itemStyle: { color: string } } }) =>
         `<div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.data.itemStyle.color}"></span>
           <span>${params.name}</span>
@@ -75,13 +186,18 @@ const PieChart: React.FC<PieChartProps> = ({
     series: [
       {
         type: 'pie',
-        radius: ['62%', '88%'],
+        radius,
         center: ['50%', '50%'],
-        startAngle: 90,
+        startAngle,
+        clockwise,
         data: data.map((d) => ({
           name: d.name,
           value: d.value,
-          itemStyle: { color: d.color, borderColor: '#00000080', borderWidth: 2 },
+          itemStyle: {
+            color: d.color,
+            borderColor: segmentBorderColor,
+            borderWidth: segmentBorderWidth,
+          },
         })),
         label: { show: false },
         labelLine: { show: false },
@@ -92,36 +208,43 @@ const PieChart: React.FC<PieChartProps> = ({
         },
       },
     ],
-  }), [data])
+  }), [data, radius, startAngle, clockwise, segmentBorderColor, segmentBorderWidth])
 
   return (
     <div
-      className='relative rounded-2xl p-5 w-full overflow-hidden'
-      style={{ background: '#00000080', border: '1px solid #1f2d3d' }}
+      className='relative rounded-2xl p-5 w-full h-full overflow-hidden'
+      style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
-      {/* Golden glow top-left */}
-      <div
-        className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
-      />
-      {/* Golden glow top-right */}
-      <div
-        className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
-        style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
-      />
+      {/* Golden glow — optional */}
+      {showGlow && (
+        <>
+          <div
+            className='pointer-events-none absolute -top-16 -left-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top left, rgba(234,179,8,0.25) 0%, transparent 70%)' }}
+          />
+          <div
+            className='pointer-events-none absolute -top-16 -right-16 w-96 h-72'
+            style={{ background: 'radial-gradient(ellipse at top right, rgba(234,179,8,0.2) 0%, transparent 70%)' }}
+          />
+        </>
+      )}
 
       {/* Header */}
       <div className='relative flex items-center justify-between mb-6 flex-wrap gap-3'>
         <div className='flex items-center gap-3'>
           {icon && (
-            <div
-              className='flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0'
-              style={{ background: 'rgba(234,179,8,0.15)' }}
-            >
-              {icon}
-            </div>
+            iconCircle ? (
+              <div
+                className='flex items-center justify-center w-9 h-9 rounded-full shrink-0'
+                style={{ background: 'rgba(234,179,8,0.15)' }}
+              >
+                {icon}
+              </div>
+            ) : (
+              <span className='flex items-center shrink-0'>{icon}</span>
+            )
           )}
-          <h2 className='font-semibold' style={{ color: '#FCD116', fontSize: titleSize }}>
+          <h2 className='font-semibold' style={{ color: titleColor, fontSize: titleSize }}>
             {title}
           </h2>
         </div>
@@ -151,10 +274,14 @@ const PieChart: React.FC<PieChartProps> = ({
       </div>
 
       {/* Body */}
-      <div className='relative flex items-center gap-8 flex-wrap'>
-
-        {/* Donut chart + center text */}
-        <div className='relative flex-shrink-0' style={{ width: 260, height }}>
+      <div
+        className={`relative flex items-center gap-8 flex-wrap ${shouldShowLegend ? '' : 'justify-center'}`}
+      >
+        {/* Donut chart + center text + optional outer labels */}
+        <div
+          className='relative shrink-0'
+          style={{ width: containerWidth, height: containerHeight }}
+        >
           <ReactECharts
             option={option}
             style={{ width: '100%', height: '100%' }}
@@ -163,42 +290,96 @@ const PieChart: React.FC<PieChartProps> = ({
           />
 
           {/* Center text overlay */}
-          <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6'>
+          <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4'>
             {centerLabel && (
-              <p className='text-xs leading-snug mb-1' style={{ color: '#8a9ab5' }}>
+              <p
+                className='leading-snug mb-1'
+                style={{ color: centerLabelColor, fontSize: 12 }}
+              >
                 {centerLabel}
               </p>
             )}
-            <p className='text-3xl font-bold text-white leading-none'>
-              {total.toLocaleString()}
+            <p
+              className='font-bold leading-none'
+              style={{ color: centerValueColor, fontSize: centerValueSize }}
+            >
+              {centerValue !== undefined
+                ? centerValue
+                : total.toLocaleString()}
             </p>
             {centerUnit && (
-              <p className='text-sm mt-1' style={{ color: '#8a9ab5' }}>{centerUnit}</p>
+              <p className='mt-1' style={{ color: centerUnitColor, fontSize: 14 }}>
+                {centerUnit}
+              </p>
             )}
           </div>
+
+          {/* Outer labels — positioned around the donut */}
+          {outerLabels && (
+            <div className='absolute inset-0 pointer-events-none'>
+              {labelPositions.map((lp, i) => {
+                if (!lp.label) return null
+                const titleClr = lp.label.titleColor ?? lp.segmentColor
+                const dotClr = lp.label.dotColor ?? titleClr
+                return (
+                  <div
+                    key={i}
+                    className='absolute flex flex-col items-start'
+                    style={{
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(${lp.x * labelRadius}px, ${lp.y * labelRadius}px) translate(-50%, -50%)`,
+                      minWidth: 40,
+                    }}
+                  >
+                    <span
+                      className='font-bold leading-none'
+                      style={{ color: titleClr, fontSize: 18 }}
+                    >
+                      {lp.label.title}
+                    </span>
+                    {lp.label.subtitle && (
+                      <span
+                        className='flex items-center gap-1 text-white mt-1'
+                        style={{ fontSize: 11 }}
+                      >
+                        <span
+                          className='inline-block rounded-full'
+                          style={{ width: 5, height: 5, background: dotClr }}
+                        />
+                        {lp.label.subtitle}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Legend */}
-        <div className='flex-1 min-w-0 flex flex-col gap-3'>
-          {data.map((entry, i) => {
-            const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0'
-            return (
-              <div key={i} className='flex items-center gap-3'>
-                <span
-                  className='w-3 h-3 rounded-full flex-shrink-0'
-                  style={{ background: entry.color }}
-                />
-                <span className='flex-1 text-sm text-white truncate'>{entry.name}</span>
-                <span className='text-sm tabular-nums' style={{ color: '#8a9ab5' }}>
-                  {entry.value.toLocaleString()}
-                </span>
-                <span className='text-sm font-semibold tabular-nums w-12 text-right text-white'>
-                  {pct}%
-                </span>
-              </div>
-            )
-          })}
-        </div>
+        {/* Legend (right side) */}
+        {shouldShowLegend && (
+          <div className='flex-1 min-w-0 flex flex-col gap-3'>
+            {data.map((entry, i) => {
+              const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0'
+              return (
+                <div key={i} className='flex items-center gap-3'>
+                  <span
+                    className='w-3 h-3 rounded-full shrink-0'
+                    style={{ background: entry.color }}
+                  />
+                  <span className='flex-1 text-sm text-white truncate'>{entry.name}</span>
+                  <span className='text-sm tabular-nums' style={{ color: '#8a9ab5' }}>
+                    {entry.value.toLocaleString()}
+                  </span>
+                  <span className='text-sm font-semibold tabular-nums w-12 text-right text-white'>
+                    {pct}%
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

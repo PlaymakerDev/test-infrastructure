@@ -6,6 +6,26 @@ export type ConnectionStatus = 'online' | 'offline'
 export type SignalPhase = 3 | 4
 export type OperatingMode = 'FixedTime' | 'Adaptive_ET' | 'Flashing24Hr'
 
+/** Shared phase color palette — used by the cycle donut, phase timing card,
+ *  charts (24h volume, real-time bars), 7-day daily cards, and the summary
+ *  table. Order corresponds to phase 1..N. Use `getPhaseColor(phase)` for
+ *  bounds-safe access. */
+export const PHASE_COLORS = ['#05F2DB', '#B2FF00', '#FCD116', '#FF7B00'] as const
+
+export const getPhaseColor = (phase: number): string =>
+  PHASE_COLORS[(phase - 1) % PHASE_COLORS.length]
+
+/** Single phase timing config — used by the Phase Timing card + donut chart on
+ *  the detail page. Sum of all phases' (green + red) = full cycle (e.g. 240s). */
+export interface PhaseTimingConfig {
+  /** Phase number (1–4) */
+  phase: number
+  /** Green-light duration (seconds) */
+  greenSec: number
+  /** Red-light duration before next phase (seconds) */
+  redSec: number
+}
+
 export interface TrafficSignalProject {
   id: string
   /** รหัสสายทาง เช่น "กท.1001" */
@@ -32,6 +52,19 @@ export interface TrafficSignalProject {
   onlineCameras: number
   /** จำนวนกล้องที่ออฟไลน์ */
   offlineCameras: number
+  // ── Detail page metrics ─────────────────────────────────────────────────
+  /** Anydesk ID shown in the title bar (e.g. "1194336831") */
+  anydeskId?: string
+  /** ประสิทธิภาพของระบบ (%) */
+  efficiency?: number
+  /** PCU ประจำวัน */
+  dailyPCU?: number
+  /** จำนวนรถในช่วงเร่งด่วน (peak hour) */
+  peakHourTraffic?: number
+  /** Phase ที่เป็น peak (เช่น 2 = "Phase 2 - Peak") */
+  peakPhase?: number
+  /** Phase timing config — array length = number of phases */
+  phaseTiming?: PhaseTimingConfig[]
 }
 
 export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
@@ -45,6 +78,13 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 3, operatingMode: 'FixedTime',
     coord: [100.430, 13.720],
     totalCameras: 76, onlineCameras: 72, offlineCameras: 4,
+    anydeskId: '1153028471',
+    efficiency: 85.3, dailyPCU: 12453, peakHourTraffic: 4500, peakPhase: 1,
+    phaseTiming: [
+      { phase: 1, greenSec: 70, redSec: 20 },
+      { phase: 2, greenSec: 50, redSec: 20 },
+      { phase: 3, greenSec: 60, redSec: 20 },
+    ],
   },
 
   // ── สทช.1 ปทุมธานี ───────────────────────────────────────────────────────
@@ -57,6 +97,14 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 4, operatingMode: 'Adaptive_ET',
     coord: [100.620, 14.020],
     totalCameras: 42, onlineCameras: 0, offlineCameras: 42,
+    anydeskId: '1248391552',
+    efficiency: 0, dailyPCU: 0, peakHourTraffic: 0, peakPhase: 1,
+    phaseTiming: [
+      { phase: 1, greenSec: 60, redSec: 20 },
+      { phase: 2, greenSec: 45, redSec: 20 },
+      { phase: 3, greenSec: 55, redSec: 20 },
+      { phase: 4, greenSec: 70, redSec: 10 },
+    ],
   },
 
   // ── สทช.13 ฉะเชิงเทรา ────────────────────────────────────────────────────
@@ -69,6 +117,14 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 4, operatingMode: 'Adaptive_ET',
     coord: [101.080, 13.685],
     totalCameras: 23, onlineCameras: 23, offlineCameras: 0,
+    anydeskId: '1187234901',
+    efficiency: 88.2, dailyPCU: 4520, peakHourTraffic: 15240, peakPhase: 3,
+    phaseTiming: [
+      { phase: 1, greenSec: 55, redSec: 20 },
+      { phase: 2, greenSec: 45, redSec: 20 },
+      { phase: 3, greenSec: 75, redSec: 20 },
+      { phase: 4, greenSec: 65, redSec: 10 },
+    ],
   },
   {
     id: 'ts-004', roadCode: 'ฉช.4050', bureau: 'สทช.13 ฉะเชิงเทรา',
@@ -79,6 +135,17 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 4, operatingMode: 'Adaptive_ET',
     coord: [101.060, 13.700],
     totalCameras: 11, onlineCameras: 11, offlineCameras: 0,
+    anydeskId: '1194336831',
+    efficiency: 86.9,
+    dailyPCU: 5604,
+    peakHourTraffic: 18676,
+    peakPhase: 2,
+    phaseTiming: [
+      { phase: 1, greenSec: 60, redSec: 20 },
+      { phase: 2, greenSec: 40, redSec: 20 },
+      { phase: 3, greenSec: 60, redSec: 20 },
+      { phase: 4, greenSec: 80, redSec: 10 },
+    ],
   },
   {
     id: 'ts-005', roadCode: 'ฉช.4050', bureau: 'สทช.13 ฉะเชิงเทรา',
@@ -89,6 +156,13 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 3, operatingMode: 'Flashing24Hr',
     coord: [101.070, 13.715],
     totalCameras: 27, onlineCameras: 24, offlineCameras: 3,
+    anydeskId: '1294582031',
+    efficiency: 72.5, dailyPCU: 3210, peakHourTraffic: 8520, peakPhase: 2,
+    phaseTiming: [
+      { phase: 1, greenSec: 50, redSec: 20 },
+      { phase: 2, greenSec: 65, redSec: 20 },
+      { phase: 3, greenSec: 55, redSec: 20 },
+    ],
   },
   {
     id: 'ts-006', roadCode: 'ฉช.4050', bureau: 'สทช.13 ฉะเชิงเทรา',
@@ -99,6 +173,14 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 4, operatingMode: 'Adaptive_ET',
     coord: [101.075, 13.730],
     totalCameras: 56, onlineCameras: 52, offlineCameras: 4,
+    anydeskId: '1273918450',
+    efficiency: 91.2, dailyPCU: 7820, peakHourTraffic: 22050, peakPhase: 4,
+    phaseTiming: [
+      { phase: 1, greenSec: 60, redSec: 20 },
+      { phase: 2, greenSec: 50, redSec: 20 },
+      { phase: 3, greenSec: 60, redSec: 20 },
+      { phase: 4, greenSec: 90, redSec: 10 },
+    ],
   },
   {
     id: 'ts-007', roadCode: 'ฉช.3204', bureau: 'สทช.13 ฉะเชิงเทรา',
@@ -109,6 +191,13 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 3, operatingMode: 'FixedTime',
     coord: [101.150, 13.690],
     totalCameras: 14, onlineCameras: 14, offlineCameras: 0,
+    anydeskId: '1156782301',
+    efficiency: 78.5, dailyPCU: 2890, peakHourTraffic: 7240, peakPhase: 1,
+    phaseTiming: [
+      { phase: 1, greenSec: 65, redSec: 20 },
+      { phase: 2, greenSec: 55, redSec: 20 },
+      { phase: 3, greenSec: 50, redSec: 20 },
+    ],
   },
   {
     id: 'ts-008', roadCode: 'ฉช.2002', bureau: 'สทช.13 ฉะเชิงเทรา',
@@ -119,6 +208,14 @@ export const TRAFFIC_SIGNAL_PROJECTS: TrafficSignalProject[] = [
     phase: 4, operatingMode: 'FixedTime',
     coord: [101.205, 13.720],
     totalCameras: 18, onlineCameras: 0, offlineCameras: 18,
+    anydeskId: '1119840562',
+    efficiency: 0, dailyPCU: 0, peakHourTraffic: 0, peakPhase: 1,
+    phaseTiming: [
+      { phase: 1, greenSec: 60, redSec: 20 },
+      { phase: 2, greenSec: 45, redSec: 20 },
+      { phase: 3, greenSec: 60, redSec: 20 },
+      { phase: 4, greenSec: 75, redSec: 10 },
+    ],
   },
 ]
 

@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import CctvModal, { type CctvModalCamera } from '@/components/modalcctv'
+import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ const parseKm = (km: string): number => {
   return (parseInt(main ?? '0', 10) * 1000) + parseInt(sub ?? '0', 10)
 }
 
-const toModalCamera = (cam: CameraRow, location: string): CctvModalCamera => ({
+const toModalCamera = (cam: CameraRow, location: string): CctvCameraDetail => ({
   id:           cam.id,
   name:         cam.name,
   hlsUrl:       cam.hlsUrl,
@@ -140,7 +140,7 @@ interface Props {
 }
 
 const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
-  const [modalCamera, setModalCamera] = useState<CctvModalCamera | null>(null)
+  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
 
   const kmSorted = useMemo(() => {
     if (mode !== 'km') return []
@@ -196,10 +196,10 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
         </div>
       )}
 
-      <CctvModal
+      <ModalLiveStreamCctv
         open={!!modalCamera}
         onClose={() => setModalCamera(null)}
-        camera={modalCamera!}
+        camera={modalCamera}
       />
     </>
   )

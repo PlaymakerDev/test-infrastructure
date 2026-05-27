@@ -11,6 +11,22 @@ export interface LineConfig {
   color: string
   /** ชื่อที่แสดงใน tooltip */
   label: string
+  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "%", "kg") — override `tooltipUnit` */
+  unit?: string
+}
+
+/** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
+ *  you want the chart to focus on one series visually but expose related
+ *  metrics on hover (e.g. ET Rate line + time saved + CO2 reduction). */
+export interface TooltipExtra {
+  /** Field key in `data` to read from */
+  dataKey: string
+  /** Label shown on the left of the row */
+  label: string
+  /** Color for the row label/dot */
+  color: string
+  /** Optional unit suffix shown after value (e.g. "m", "kg") */
+  unit?: string
 }
 
 export interface LineChartDataPoint {
@@ -73,10 +89,13 @@ export interface LineChartProps {
   // ── Tooltip extras ────────────────────────────────────────────────────────
   /** วันที่แสดงตรงบนสุดของ tooltip (เช่น "20 เม.ย. 2569"). ถ้าไม่ส่งจะไม่แสดง */
   tooltipDate?: string
-  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") */
+  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") — ใช้เป็น default ถ้า LineConfig.unit ว่าง */
   tooltipUnit?: string
   /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
   tooltipShowDot?: boolean
+  /** Extra rows shown in tooltip but NOT rendered as visible lines.
+   *  Reads values from each data point via `dataKey`. */
+  tooltipExtras?: TooltipExtra[]
 }
 
 interface TooltipParam {
@@ -85,6 +104,7 @@ interface TooltipParam {
   seriesName: string
   seriesIndex: number
   axisValue: string
+  dataIndex: number
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -114,6 +134,7 @@ const LineChart: React.FC<LineChartProps> = ({
   tooltipDate,
   tooltipUnit,
   tooltipShowDot = false,
+  tooltipExtras,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -129,7 +150,7 @@ const LineChart: React.FC<LineChartProps> = ({
 
     return {
       backgroundColor: 'transparent',
-      grid: { top: 16, right: 16, bottom: 40, left: 8, containLabel: true },
+      grid: { top: 16, right: 16, bottom: 28, left: 8, containLabel: true },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -181,7 +202,9 @@ const LineChart: React.FC<LineChartProps> = ({
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
               const value = Number(p.value).toLocaleString()
-              const unit = tooltipUnit ? ` ${tooltipUnit}` : ''
+              // Per-line unit wins; fall back to global tooltipUnit.
+              const rowUnit = cfg?.unit ?? tooltipUnit
+              const unit = rowUnit ? ` ${rowUnit}` : ''
               const dot = tooltipShowDot
                 ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;"></span>`
                 : ''
@@ -191,7 +214,26 @@ const LineChart: React.FC<LineChartProps> = ({
               </div>`
             })
             .join('')
-          return header + rows
+
+          // Extra rows — read by `dataKey` from the original data point.
+          const dataIdx = params[0]?.dataIndex
+          const extras = (tooltipExtras ?? [])
+            .map((extra) => {
+              const raw = dataIdx !== undefined ? data[dataIdx]?.[extra.dataKey] : undefined
+              if (raw === undefined || raw === null || raw === '') return ''
+              const value = typeof raw === 'number' ? raw.toLocaleString() : String(raw)
+              const unit = extra.unit ? ` ${extra.unit}` : ''
+              const dot = tooltipShowDot
+                ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${extra.color};margin-right:6px;"></span>`
+                : ''
+              return `<div style="display:flex;justify-content:space-between;gap:24px;align-items:center;margin-top:4px">
+                <span style="color:${extra.color};display:inline-flex;align-items:center;">${dot}${extra.label}</span>
+                <span style="color:${tooltipShowDot ? '#fff' : extra.color};font-weight:700">${value}${unit}</span>
+              </div>`
+            })
+            .join('')
+
+          return header + rows + extras
         },
       },
       series: lines.map((line) => ({
@@ -213,11 +255,11 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot, tooltipExtras])
 
   return (
     <div
-      className='relative rounded-2xl p-5 w-full overflow-hidden'
+      className='relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden'
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (

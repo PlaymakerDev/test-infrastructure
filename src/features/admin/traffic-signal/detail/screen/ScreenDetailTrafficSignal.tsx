@@ -1,6 +1,8 @@
 "use client"
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { TitleSection, OverallSection, SummaryTrafficSection } from '../components'
+import { DetailProvider } from '../context'
 import { getTrafficSignalById } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
@@ -10,6 +12,18 @@ interface Props {
 const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   const router = useRouter()
   const project = getTrafficSignalById(id)
+  const [currentTab, setCurrentTab] = useState('OVERALL')
+
+  const renderContent = useMemo(() => {
+    switch (currentTab) {
+      case 'OVERALL':
+        return <OverallSection />
+      case 'SUMMARY':
+        return <SummaryTrafficSection />
+      default:
+        return <OverallSection />
+    }
+  }, [currentTab])
 
   // ── Guard: id not found → show fallback with a back button ──
   if (!project) {
@@ -28,12 +42,13 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
     )
   }
 
-  // ── Placeholder body — sections will be filled in next. ──
   return (
-    <div className='main-screen px-10 pt-10'>
-      <h1 className='text-(--yellow)'>{project.projectName}</h1>
-      <p className='text-white/70 mt-2'>{project.installPoint}</p>
-    </div>
+    <DetailProvider project={project}>
+      <div className='main-screen'>
+        <TitleSection setCurrentTab={setCurrentTab} />
+        <section className='mt-8 px-10'>{renderContent}</section>
+      </div>
+    </DetailProvider>
   )
 }
 

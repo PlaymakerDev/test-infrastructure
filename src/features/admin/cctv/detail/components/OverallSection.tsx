@@ -5,7 +5,7 @@ import { TbChevronDown } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvInstallDetail, PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import CameraInstallTable from './CameraInstallTable'
-import CctvModal, { type CctvModalCamera } from '@/components/modalcctv'
+import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
 import CctvLocationMap from './sections/CctvLocationMap'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
@@ -56,9 +56,9 @@ interface Props {
 
 const OverallSection: React.FC<Props> = ({ detail }) => {
   const [panelFilter, setPanelFilter] = useState<string>('all')
-  const [modalCamera, setModalCamera] = useState<CctvModalCamera | null>(null)
+  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
 
-  const toModal = (cam: PanelCamera): CctvModalCamera => ({
+  const toModal = (cam: PanelCamera): CctvCameraDetail => ({
     id: cam.id,
     name: cam.name,
     hlsUrl: cam.hlsUrl,
@@ -146,10 +146,10 @@ const OverallSection: React.FC<Props> = ({ detail }) => {
         <CameraInstallTable />
       </section>
 
-      <CctvModal
+      <ModalLiveStreamCctv
         open={!!modalCamera}
         onClose={() => setModalCamera(null)}
-        camera={modalCamera!}
+        camera={modalCamera}
       />
 
     </>
