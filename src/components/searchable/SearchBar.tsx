@@ -9,10 +9,10 @@ import { TbPrinter } from 'react-icons/tb'
 export type ViewMode = 'TABLE' | 'GRID'
 
 /**
- * Built-in filter keys for the default (weight) preset. Callers can pass their own
+ * Built-in filter keys for the default (status) preset. Callers can pass their own
  * `filters` array with any string keys to override.
  */
-export type FilterType = 'all' | 'normal' | 'overweight'
+export type FilterType = 'all' | 'normal' | 'overweight' | 'example_active' | 'example_inactive'
 
 export type FilterStats = Record<string, number | undefined>
 
@@ -29,6 +29,8 @@ export interface FilterConfig {
   badgeActiveClass: string
   /** Tailwind classes for the badge in idle state */
   badgeIdleClass: string
+  /** MODE **/
+  mode?: 'default' | 'form' | 'title'
 }
 
 // ── Default config (back-compat with existing weight-based pages) ─────────────
@@ -37,22 +39,22 @@ const DEFAULT_FILTERS: FilterConfig[] = [
   {
     key: 'all',
     label: 'ทั้งหมด',
-    colorPrimary: '#66AEFF',
-    colorTextLightSolid: '#0A0A0A',
-    badgeActiveClass: 'bg-[#1B3F8B] text-white',
-    badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]',
-  },
-  {
-    key: 'normal',
-    label: 'น้ำหนักปกติ',
     colorPrimary: '#FCD116',
     colorTextLightSolid: '#0A0A0A',
     badgeActiveClass: 'bg-[#8a7000] text-white',
     badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]',
   },
   {
-    key: 'overweight',
-    label: 'น้ำหนักเกิน',
+    key: 'example_active',
+    label: 'ออนไลน์',
+    colorPrimary: '#2dd4bf',
+    colorTextLightSolid: '#0A0A0A',
+    badgeActiveClass: 'bg-teal-800 text-white',
+    badgeIdleClass: 'bg-teal-500/20 text-teal-400',
+  },
+  {
+    key: 'example_inactive',
+    label: 'ออฟไลน์',
     colorPrimary: '#ef4444',
     colorTextLightSolid: '#ffffff',
     badgeActiveClass: 'bg-red-800 text-white',
@@ -60,12 +62,16 @@ const DEFAULT_FILTERS: FilterConfig[] = [
   },
 ]
 
-const DEFAULT_STATS: FilterStats = { all: 10, normal: 8, overweight: 2 }
+const DEFAULT_STATS: FilterStats = { all: 8, example_active: 7, example_inactive: 1 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  /** Override the filter buttons. Defaults to the 3 weight filters (all/normal/overweight). */
+  /** Controls overall layout. 'form' = filters+search+export (default), 'default' = filters+viewMode only, 'title' = title+viewMode+export */
+  mode?: 'form' | 'default' | 'title'
+  /** Displayed as heading in 'title' mode */
+  title?: string
+  /** Override the filter buttons. Defaults to the 3 status filters (all/example_active/example_inactive). */
   filters?: FilterConfig[]
   /** Counts shown in each filter's badge — key must match `FilterConfig.statKey` (or `key`). */
   stats?: FilterStats
@@ -78,6 +84,7 @@ interface Props {
   defaultViewMode?: ViewMode
   onViewModeChange?: (mode: ViewMode) => void
   onExport?: () => void
+  showExportButton?: boolean
 
   /* FORM SEARCH */
   formSearch?: React.ReactNode
@@ -86,6 +93,8 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const SearchBar: React.FC<Props> = ({
+  mode = 'form',
+  title,
   filters = DEFAULT_FILTERS,
   stats = DEFAULT_STATS,
   defaultFilter,
@@ -94,6 +103,7 @@ const SearchBar: React.FC<Props> = ({
   defaultViewMode = 'TABLE',
   onViewModeChange,
   onExport,
+  showExportButton = true,
   formSearch
 }) => {
   const initialFilter = defaultFilter ?? filters[0]?.key ?? ''
@@ -108,52 +118,56 @@ const SearchBar: React.FC<Props> = ({
   }
 
   const handleViewMode = (value: string | number) => {
-    const mode = value as ViewMode
-    setViewMode(mode)
-    onViewModeChange?.(mode)
+    const v = value as ViewMode
+    setViewMode(v)
+    onViewModeChange?.(v)
   }
 
   return (
     <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
 
-      {/* ── Filter buttons ── */}
-      <div className='flex items-center gap-2 overflow-x-auto pb-0.5 lg:pb-0 lg:flex-wrap'>
-        {filters.map((f) => {
-          const isActive = activeFilter === f.key
-          const count = stats[f.statKey ?? f.key]
-          return (
-            <ConfigProvider
-              key={f.key}
-              theme={{ token: { colorPrimary: f.colorPrimary, colorTextLightSolid: f.colorTextLightSolid } }}
-            >
-              <Button
-                type='primary'
-                ghost={!isActive}
-                shape='default'
-                size='large'
-                onClick={() => handleFilter(f.key)}
+      {/* ── Left: filter buttons (form/default) or title (title mode) ── */}
+      {mode === 'title' ? (
+        <h3 className='text-(--yellow) mb-0 truncate'>{title}</h3>
+      ) : (
+        <div className='flex items-center gap-2 overflow-x-auto pb-0.5 lg:pb-0 lg:flex-wrap'>
+          {filters.map((f) => {
+            const isActive = activeFilter === f.key
+            const count = stats[f.statKey ?? f.key]
+            return (
+              <ConfigProvider
+                key={f.key}
+                theme={{ token: { colorPrimary: f.colorPrimary, colorTextLightSolid: f.colorTextLightSolid } }}
               >
-                <span className='flex items-center gap-2'>
-                  <span>{f.label}</span>
-                  {count !== undefined && (
-                    <span className={[
-                      'text-xs rounded min-w-6 h-6 px-1.5',
-                      'flex items-center justify-center leading-none',
-                      isActive ? f.badgeActiveClass : f.badgeIdleClass,
-                    ].join(' ')}>
-                      {count}
-                    </span>
-                  )}
-                </span>
-              </Button>
-            </ConfigProvider>
-          )
-        })}
-      </div>
+                <Button
+                  type='primary'
+                  ghost={!isActive}
+                  shape='default'
+                  size='large'
+                  onClick={() => handleFilter(f.key)}
+                >
+                  <span className='flex items-center gap-2'>
+                    <span>{f.label}</span>
+                    {count !== undefined && (
+                      <span className={[
+                        'text-xs rounded min-w-6 h-6 px-1.5',
+                        'flex items-center justify-center leading-none',
+                        isActive ? f.badgeActiveClass : f.badgeIdleClass,
+                      ].join(' ')}>
+                        {count}
+                      </span>
+                    )}
+                  </span>
+                </Button>
+              </ConfigProvider>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Right controls ── */}
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
-        {formSearch}
+        {mode === 'form' && formSearch}
 
         <Segmented
           value={viewMode}
@@ -165,21 +179,20 @@ const SearchBar: React.FC<Props> = ({
           size='large'
           block
         />
-        <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-          {/* Fixed min-width so the export button looks identical across pages
-              regardless of whether the search input is enabled or not. */}
-          <Button
-            type='primary'
-            size='large'
-            shape='round'
-            icon={<TbPrinter />}
-            onClick={onExport}
-            className='w-full! sm:w-auto!'
-            style={{ minWidth: 180 }}
-          >
-            <span>นำออกเอกสาร</span>
-          </Button>
-        </ConfigProvider>
+        {mode !== 'default' && showExportButton && (
+          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+            <Button
+              type='primary'
+              size='large'
+              shape='round'
+              icon={<TbPrinter />}
+              onClick={onExport}
+              className='w-full! sm:w-auto! sm:min-w-[180px]!'
+            >
+              <span>นำออกเอกสาร</span>
+            </Button>
+          </ConfigProvider>
+        )}
       </div>
 
     </div>

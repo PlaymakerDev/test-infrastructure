@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   FormSearchViolation,
   ViolationStatCard,
-  TableViolationData
+  TableViolationData,
+  CCTVViolationData
 } from '../components'
+import SearchBar, { ViewMode } from '@/components/searchable/SearchBar'
 
 interface Props {
 
@@ -11,6 +13,18 @@ interface Props {
 
 const ViolationSection: React.FC<Props> = (props) => {
   const { } = props
+  const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
+
+  const renderContent = useMemo(() => {
+    switch (displayType) {
+      case 'TABLE':
+        return <TableViolationData />
+      case 'GRID':
+        return <CCTVViolationData />
+      default:
+        return null
+    }
+  }, [displayType])
 
   return (
     <div>
@@ -21,10 +35,14 @@ const ViolationSection: React.FC<Props> = (props) => {
         <ViolationStatCard />
       </section>
       <section className='mt-5'>
-        <h3 className='text-(--yellow) mb-4'>ตารางข้อมูลการฝ่าฝืนสัญญาณไฟทางข้าม</h3>
+        <SearchBar
+          mode='title'
+          title='ตารางข้อมูลการฝ่าฝืนสัญญาณไฟทางข้าม'
+          onViewModeChange={setDisplayType}
+        />
       </section>
       <section className='mt-5'>
-        <TableViolationData />
+        {renderContent}
       </section>
     </div>
   )
