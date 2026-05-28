@@ -1,0 +1,1976 @@
+[
+  {
+    "DeptGroup": 0,
+    "DeptGroupName": "ทช. ส่วนกลาง",
+    "DeptList": [
+      {
+        "DeptName": "ทช. ส่วนกลาง",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "0"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "0"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "0"
+          },
+          {
+            "TypeName": "SCADA",
+            "Link": "0"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.กัลปพฤกษ์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "95"
+          },
+          {
+            "TypeName": "BridgeLighting",
+            "Link": "95"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "95"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "95"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "95"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "95"
+          },
+          {
+            "TypeName": "Reverse",
+            "Link": "95"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "95"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "95"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.นครอินทร์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "96"
+          },
+          {
+            "TypeName": "Bridge",
+            "Link": "96"
+          },
+          {
+            "TypeName": "BridgeLighting",
+            "Link": "96"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "96"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "96"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "96"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "96"
+          },
+          {
+            "TypeName": "SCADA",
+            "Link": "96"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "96"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "96"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.ราชพฤกษ์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "97"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "97"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "97"
+          },
+          {
+            "TypeName": "Flooding",
+            "Link": "97"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "97"
+          },
+          {
+            "TypeName": "SCADA",
+            "Link": "97"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "97"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "97"
+          },
+          {
+            "TypeName": "Tunnel",
+            "Link": "97"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.ชัยพฤกษ์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "98"
+          },
+          {
+            "TypeName": "BridgeLighting",
+            "Link": "98"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "98"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "98"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "98"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "98"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "98"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "98"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.วงแหวนฯ",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "99"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "99"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "99"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "99"
+          },
+          {
+            "TypeName": "Speaker",
+            "Link": "99"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "99"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 1,
+    "DeptGroupName": "สทช.1 (ปทุมธานี)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.1 (ปทุมธานี)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "1"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "1"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "1"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "1"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "1"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "1"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "1"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "1"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ปทุมธานี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "2"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "2"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "2"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "2"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สมุทรปราการ",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "3"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "3"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "3"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "3"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "3"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "3"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "3"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "3"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.พระนครศรีอยุธยา",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "4"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "4"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "4"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "4"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "4"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นนทบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "6"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "6"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "6"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "6"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "6"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 10,
+    "DeptGroupName": "สทช.10 (เชียงใหม่)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.10 (เชียงใหม่)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "49"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "49"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "49"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.เชียงใหม่",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "50"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "50"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "50"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "50"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "50"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "50"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "50"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "50"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "50"
+          },
+          {
+            "TypeName": "Tunnel",
+            "Link": "50"
+          },
+          {
+            "TypeName": "Tunnelx",
+            "Link": "50"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "50"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ลำพูน",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "51"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "51"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "51"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "51"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "51"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "51"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ลำปาง",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "52"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "52"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "52"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "52"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.แม่ฮ่องสอน",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "53"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "53"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "53"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "53"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "53"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 11,
+    "DeptGroupName": "สทช.11 (สุราษฎร์ธานี)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.11 (สุราษฎร์ธานี)",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "54"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "54"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ชุมพร",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "56"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "56"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "56"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "56"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นครศรีธรรมราช",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "57"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "57"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "57"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "57"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "57"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 12,
+    "DeptGroupName": "สทช.12 (สงขลา)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.12 (สงขลา)",
+        "Solution": [
+          {
+            "TypeName": "Lighting",
+            "Link": "59"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สงขลา",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "60"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "60"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "60"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "60"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "60"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สตูล",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "61"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "61"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "61"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ปัตตานี",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "62"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "62"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นราธิวาส",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "64"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "64"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 13,
+    "DeptGroupName": "สทช.13 (ฉะเชิงเทรา)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.13 (ฉะเชิงเทรา)",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "65"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ฉะเชิงเทรา",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "66"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "66"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "66"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "66"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "66"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "66"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "66"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "66"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ปราจีนบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "67"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "67"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "67"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "67"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สระแก้ว",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "68"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "68"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "68"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "68"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "68"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นครนายก",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "69"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "69"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "69"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "69"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "69"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "69"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "69"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 14,
+    "DeptGroupName": "สทช.14 (กระบี่)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.ภูเก็ต",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "72"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "72"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "72"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "72"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "72"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "72"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "72"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ตรัง",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "74"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "74"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "74"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "74"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "74"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.พัทลุง",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "75"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "75"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "75"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "75"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "75"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 15,
+    "DeptGroupName": "สทช.15 (อุดรธานี)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.อุดรธานี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "77"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "77"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "77"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "77"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "77"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "77"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.หนองบัวลำภู",
+        "Solution": [
+          {
+            "TypeName": "Lighting",
+            "Link": "80"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 16,
+    "DeptGroupName": "สทช.16 (กาฬสินธุ์)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.16 (กาฬสินธุ์)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "81"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "81"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "81"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "81"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "81"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "81"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.กาฬสินธุ์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "82"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "82"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "82"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "82"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นครพนม",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "83"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "83"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "83"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "83"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.มุกดาหาร",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "84"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "84"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "84"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "84"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "84"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สกลนคร",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "85"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "85"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "85"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 17,
+    "DeptGroupName": "สทช.17 (เชียงราย)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.เชียงราย",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "87"
+          },
+          {
+            "TypeName": "BridgeLighting",
+            "Link": "87"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "87"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "87"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "87"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "87"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "87"
+          },
+          {
+            "TypeName": "Sensor",
+            "Link": "87"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "87"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "87"
+          },
+          {
+            "TypeName": "Tunnel",
+            "Link": "87"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "87"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.พะเยา",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "88"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "88"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "88"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "88"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "88"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "88"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "88"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.แพร่",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "90"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "90"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "90"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "90"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "90"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 18,
+    "DeptGroupName": "สทช.18 (สุพรรณบุรี)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.กาญจนบุรี",
+        "Solution": [
+          {
+            "TypeName": "Lighting",
+            "Link": "92"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นครปฐม",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "93"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "93"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "93"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "93"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "93"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สุพรรณบุรี",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "94"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "94"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 2,
+    "DeptGroupName": "สทช.2 (สระบุรี)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.2 (สระบุรี)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "7"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "7"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "7"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "7"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สระบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "8"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "8"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "8"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "8"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "8"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "8"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สิงห์บุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "9"
+          },
+          {
+            "TypeName": "BridgeLighting",
+            "Link": "9"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "9"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "9"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "9"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "9"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "9"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "9"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "9"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ลพบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "11"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "11"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "11"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "11"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "11"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 3,
+    "DeptGroupName": "สทช.3 (ชลบุรี)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.3 (ชลบุรี)",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "12"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "12"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "12"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "12"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ชลบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "13"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "13"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "13"
+          },
+          {
+            "TypeName": "CrossWalk",
+            "Link": "13"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "13"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "13"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "13"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "13"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ระยอง",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "15"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "15"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "15"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "15"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "15"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "15"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "15"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ตราด",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "16"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "16"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 4,
+    "DeptGroupName": "สทช.4 (เพชรบุรี)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.4 (เพชรบุรี)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "17"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "17"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "17"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "17"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "17"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "17"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.เพชรบุรี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "18"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "18"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "18"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "18"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "18"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "18"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สมุทรสาคร",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "19"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "19"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "19"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ราชบุรี",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "21"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "21"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ประจวบคีรีขันธ์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "22"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "22"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "22"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "22"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "22"
+          }
+        ]
+      },
+      {
+        "DeptName": "บทช.ทับสะแก",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "10180"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "10180"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "10180"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "10180"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "10180"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 5,
+    "DeptGroupName": "สทช.5 (นครราชสีมา)",
+    "DeptList": [
+      {
+        "DeptName": "สทช.5 (นครราชสีมา)",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "23"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "23"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "23"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.นครราชสีมา",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "24"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "24"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "24"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "24"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "24"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "24"
+          },
+          {
+            "TypeName": "Tunnel",
+            "Link": "24"
+          },
+          {
+            "TypeName": "WIM",
+            "Link": "24"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.สุรินทร์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "26"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "26"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "26"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "26"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 6,
+    "DeptGroupName": "สทช.6 (ขอนแก่น)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.ขอนแก่น",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "29"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "29"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "29"
+          },
+          {
+            "TypeName": "PLC",
+            "Link": "29"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "29"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "29"
+          },
+          {
+            "TypeName": "Tunnel",
+            "Link": "29"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ร้อยเอ็ด",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "30"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "30"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "30"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "30"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "30"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.เลย",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "32"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "32"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "32"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "32"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "32"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 7,
+    "DeptGroupName": "สทช.7 (อุบลราชธานี)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.อุบลราชธานี",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "34"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "34"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "34"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "34"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.อำนาจเจริญ",
+        "Solution": [
+          {
+            "TypeName": "CCTV",
+            "Link": "36"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "36"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "36"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "36"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 8,
+    "DeptGroupName": "สทช.8 (นครสวรรค์)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.นครสวรรค์",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "39"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "39"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "39"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "39"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.กำแพงเพชร",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "40"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "40"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "40"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "40"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "40"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.อุทัยธานี",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "41"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "41"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "41"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "41"
+          },
+          {
+            "TypeName": "LPR",
+            "Link": "41"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "41"
+          }
+        ]
+      },
+      {
+        "DeptName": "ขทช.ตาก",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "43"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "43"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "43"
+          },
+          {
+            "TypeName": "Lighting",
+            "Link": "43"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 9,
+    "DeptGroupName": "สทช.9 (อุตรดิตถ์)",
+    "DeptList": [
+      {
+        "DeptName": "ขทช.พิษณุโลก",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "46"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "46"
+          },
+          {
+            "TypeName": "Counting",
+            "Link": "46"
+          },
+          {
+            "TypeName": "Traffic",
+            "Link": "46"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "DeptGroup": 9999,
+    "DeptGroupName": "ทดสอบระบบ",
+    "DeptList": []
+  },
+  {
+    "DeptGroup": 20,
+    "DeptGroupName": "กรมทางหลวง ทล.",
+    "DeptList": [
+      {
+        "DeptName": "กรมทางหลวง ทล.",
+        "Solution": [
+          {
+            "TypeName": "Analytic",
+            "Link": "100"
+          },
+          {
+            "TypeName": "CCTV",
+            "Link": "100"
+          },
+          {
+            "TypeName": "TrafficSign",
+            "Link": "100"
+          }
+        ]
+      }
+    ]
+  }
+]
