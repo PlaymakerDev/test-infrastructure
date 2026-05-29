@@ -18,51 +18,137 @@
           },
           {
             "solution_type_id": "3",
-            "solution_type_name": "VMS",
+            "solution_type_name": "Traffic Volume",
             "roads_count": 0
           },
           {
             "solution_type_id": "4",
-            "solution_type_name": "Crosswalk",
-            "roads_count": 0
-          },
-          {
-            "solution_type_id": "5",
-            "solution_type_name": "Bridge Lighting",
-            "roads_count": 0
-          },
-          {
-            "solution_type_id": "6",
-            "solution_type_name": "Traffic Signal",
-            "roads_count": 0
-          },
-          {
-            "solution_type_id": "7",
             "solution_type_name": "Incident Detection",
             "roads_count": 0
           },
           {
-            "solution_type_id": "8",
+            "solution_type_id": "5",
+            "solution_type_name": "Traffic Signal",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "6",
+            "solution_type_name": "Crosswalk",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "7",
             "solution_type_name": "Traffic Lighting",
             "roads_count": 0
           },
           {
+            "solution_type_id": "8",
+            "solution_type_name": "VMS",
+            "roads_count": 0
+          },
+          {
             "solution_type_id": "9",
-            "solution_type_name": "Tracking",
+            "solution_type_name": "Bridge Lighting",
             "roads_count": 0
           },
           {
             "solution_type_id": "10",
-            "solution_type_name": "Control VMS",
+            "solution_type_name": "Tunnel",
             "roads_count": 0
           },
           {
             "solution_type_id": "11",
-            "solution_type_name": "Statistic",
+            "solution_type_name": "Tracking",
             "roads_count": 0
           },
           {
             "solution_type_id": "12",
+            "solution_type_name": "Control VMS",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "13",
+            "solution_type_name": "Statistic",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "14",
+            "solution_type_name": "Maintenance",
+            "roads_count": 0
+          }
+        ]
+      },
+      {
+        "department_short_name": "บทช. วงแหวนฯ",
+        "department_id": "2",
+        "solutions": [
+          {
+            "solution_type_id": "1",
+            "solution_type_name": "Dashboard",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "2",
+            "solution_type_name": "CCTV",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "3",
+            "solution_type_name": "Traffic Volume",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "4",
+            "solution_type_name": "Incident Detection",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "5",
+            "solution_type_name": "Traffic Signal",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "6",
+            "solution_type_name": "Crosswalk",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "7",
+            "solution_type_name": "Traffic Lighting",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "8",
+            "solution_type_name": "VMS",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "9",
+            "solution_type_name": "Bridge Lighting",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "10",
+            "solution_type_name": "Tunnel",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "11",
+            "solution_type_name": "Tracking",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "12",
+            "solution_type_name": "Control VMS",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "13",
+            "solution_type_name": "Statistic",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "14",
             "solution_type_name": "Maintenance",
             "roads_count": 0
           }
@@ -71,16 +157,81 @@
     ]
   },
   {
-    "department_short_name": "",
+    "department_short_name": "สทช. 10 (เชียงใหม่)",
     "sub_department": [
       {
-        "department_short_name": "",
-        "department_id": "",
+        "department_short_name": "ขทช. เชียงใหม่",
+        "department_id": "10",
         "solutions": [
           {
-            "solution_type_id": "",
-            "solution_type_name": "",
-            "roads_count": []
+            "solution_type_id": "1",
+            "solution_type_name": "Dashboard",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "2",
+            "solution_type_name": "CCTV",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "3",
+            "solution_type_name": "Traffic Volume",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "4",
+            "solution_type_name": "Incident Detection",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "5",
+            "solution_type_name": "Traffic Signal",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "6",
+            "solution_type_name": "Crosswalk",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "7",
+            "solution_type_name": "Traffic Lighting",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "8",
+            "solution_type_name": "VMS",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "9",
+            "solution_type_name": "Bridge Lighting",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "10",
+            "solution_type_name": "Tunnel",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "11",
+            "solution_type_name": "Tracking",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "12",
+            "solution_type_name": "Control VMS",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "13",
+            "solution_type_name": "Statistic",
+            "roads_count": 0
+          },
+          {
+            "solution_type_id": "14",
+            "solution_type_name": "Maintenance",
+            "roads_count": 0
           }
         ]
       }
