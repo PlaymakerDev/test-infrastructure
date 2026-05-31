@@ -133,17 +133,6 @@ const admin = [
   },
   {
     key: '12',
-    title: 'Statistics',
-    label: "Statistics",
-    label_key: "statistics",
-    icon: "TbChartBar",
-    default_color_icon: '',
-    path: "/admin/statistics",
-    path_active: "/admin/statistics",
-    path_list: [],
-  },
-  {
-    key: '13',
     title: 'Settings',
     label: "Settings",
     label_key: "settings",
@@ -154,7 +143,7 @@ const admin = [
     path_list: [],
   },
   {
-    key: '14',
+    key: '13',
     title: 'Monitoring',
     label: "Monitoring",
     label_key: "monitoring",

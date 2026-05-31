@@ -42,6 +42,3 @@ next-env.d.ts
 
 *storybook.log
 storybook-static
-
-# project documentation (local only)
-PROJECT_GUIDE.md

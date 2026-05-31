@@ -25,7 +25,6 @@ import {
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
-  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase,
   TbBrandGithubCopilot
@@ -59,13 +58,10 @@ const ICON_LIST: Record<string, React.ComponentType> = {
   TbBuildingBridge,
   TbBuildingBridge2,
   TbTopologyStar3,
-  TbChartBar,
   TbAdjustmentsHorizontal,
   TbBriefcase
 }
 
-// Match the trapezoid nav icon size (20) so the whole navbar feels uniform.
-const NAV_ICON_SIZE = 20
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
