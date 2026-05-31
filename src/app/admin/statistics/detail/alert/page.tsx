@@ -1,9 +1,13 @@
 "use client"
-import React from 'react'
+import React, { Suspense } from 'react'
 import AlertDetailScreen from '@/features/admin/statistics/detail/alert/screen'
 
 const AlertDetailPage = () => {
-  return <AlertDetailScreen />
+  return (
+    <Suspense>
+      <AlertDetailScreen />
+    </Suspense>
+  )
 }
 
 export default React.memo(AlertDetailPage)

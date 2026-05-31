@@ -4,10 +4,10 @@ import Map, { Marker, Layer } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import styles from './vms.module.css'
 import MediaLibraryVms from './MediaLibraryVms'
-import { useVmsContext } from '../context'
+import { useVMSContext } from '../context'
 
 const MapPanelVms: React.FC = () => {
-  const { mediaExpanded } = useVmsContext()
+  const { mediaExpanded } = useVMSContext()
   const [viewState, setViewState] = useState({
     longitude: 101.132292,
     latitude: 13.740392,

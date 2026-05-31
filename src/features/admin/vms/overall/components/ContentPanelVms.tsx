@@ -3,10 +3,10 @@ import styles from './vms.module.css'
 import SignBoardVms from './SignBoardVms'
 import AddDisplayFormatVms from './AddDisplayFormatVms'
 import MediaLibraryVms from './MediaLibraryVms'
-import { useVmsContext } from '../context'
+import { useVMSContext } from '../context'
 
 const ContentPanelVms: React.FC = () => {
-  const { mediaExpanded, setMediaExpanded } = useVmsContext()
+  const { mediaExpanded, setMediaExpanded } = useVMSContext()
 
   return (
     <>

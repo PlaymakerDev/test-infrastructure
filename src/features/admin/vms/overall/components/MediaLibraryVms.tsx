@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from 'react'
 import styles from './vms.module.css'
-import { useVmsContext } from '../context'
+import { useVMSContext } from '../context'
 import { MdOutlineWindow } from "react-icons/md";
 
 const CATEGORIES = ['ทั้งหมด', 'เส้นทาง', 'เทศกาล', 'แผ่นดินไหว']
@@ -72,7 +72,7 @@ interface Props {
 
 const MediaLibraryVms: React.FC<Props> = ({ variant = 'carousel' }) => {
   const [activeCategory, setActiveCategory] = useState('ทั้งหมด')
-  const { setMediaExpanded } = useVmsContext()
+  const { setMediaExpanded } = useVMSContext()
 
   /* ── Grid variant (right panel) ── */
   if (variant === 'grid') {

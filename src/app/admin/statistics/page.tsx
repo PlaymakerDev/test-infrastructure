@@ -1,8 +1,13 @@
-import React from 'react'
+"use client"
+import React, { Suspense } from 'react'
 import StatisticsScreen from '@/features/admin/statistics/overall/screen'
 
 const StatisticsPage = () => {
-  return <StatisticsScreen />
+  return (
+    <Suspense>
+      <StatisticsScreen />
+    </Suspense>
+  )
 }
 
 export default React.memo(StatisticsPage)
