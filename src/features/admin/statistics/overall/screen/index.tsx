@@ -39,7 +39,7 @@ const StatisticsContent: React.FC = () => {
   }, [currentTab])
 
   return (
-    <div className='main-screen px-10'>
+    <div className={`main-screen ${(currentTab === 'STATUS' || currentTab === 'ALERT' || currentTab === 'INCIDENT') ? 'px-0' : 'px-3 sm:px-10'}`}>
       <TitleSection />
       <section className={(currentTab === 'STATUS' || currentTab === 'ALERT' || currentTab === 'INCIDENT') ? 'mt-2' : 'mt-8'}>
         {renderContent}

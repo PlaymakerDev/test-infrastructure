@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Table, Input, Button, ConfigProvider, Segmented } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbSearch, TbPrinter, TbChevronRight } from 'react-icons/tb'
@@ -20,6 +20,18 @@ export interface ComparisonRecord {
 }
 
 const isParent = (r: ComparisonRecord) => !r.isChild
+
+const useIsMobile = (breakpoint = 640) => {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    setIsMobile(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [breakpoint])
+  return isMobile
+}
 
 const COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   {
@@ -80,30 +92,31 @@ export interface StatisticsComparisonTableProps {
 
 const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand }) => {
   const [activePeriod, setActivePeriod] = React.useState('ALL')
+  const isMobile = useIsMobile()
 
   return (
-    <div className="mt-6 flex-1 p-5 min-h-[400px] sm:min-h-[500px] lg:min-h-[580px]">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 flex-wrap">
+    <div className="mt-6 flex-1 p-3 sm:p-5 min-h-[400px] sm:min-h-[500px] lg:min-h-[580px]">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Input
             placeholder="ค้นหาหน่วยงาน..."
             className="rounded-lg"
             suffix={<TbSearch />}
             size="middle"
-            style={{ width: 320, height: 40 }}
+            style={{ width: isMobile ? '100%' : 320, height: 40, minWidth: isMobile ? 200 : undefined, maxWidth: isMobile ? 320 : undefined }}
           />
           {(summaryBadges ?? [
             { label: '45 หน่วยงาน', color: '#B2FF00' },
             { label: '53 จุดติดตั้ง', color: '#66AEFF' },
             { label: '16 เหตุการณ์', color: '#05F2DB' },
           ]).map((b) => (
-            <span key={b.label} style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: `1px solid ${b.color}`, color: b.color, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, whiteSpace: 'nowrap' }}>
+            <span key={b.label} style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: `1px solid ${b.color}`, color: b.color, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: isMobile ? 11 : 13, whiteSpace: 'nowrap' }}>
               {b.icon && <img src={b.icon} alt="" width={16} height={16} />}
               {b.label}
             </span>
           ))}
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-            <Button type="primary" size="large" shape="round" icon={<TbPrinter />} style={{ height: 40 }}>
+            <Button type="primary" size={isMobile ? 'middle' : 'large'} shape="round" icon={<TbPrinter />} style={{ height: 40 }}>
               <p>นำออกเอกสาร</p>
             </Button>
           </ConfigProvider>
@@ -112,7 +125,7 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
           value={activePeriod}
           onChange={(value) => setActivePeriod(value as string)}
           options={PERIOD_OPTIONS}
-          size="large"
+          size={isMobile ? 'middle' : 'large'}
           classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
         />
       </div>

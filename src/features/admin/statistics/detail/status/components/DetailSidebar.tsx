@@ -25,7 +25,11 @@ const renderCount = (count: string) => {
   )
 }
 
-const DetailSidebar: React.FC = () => {
+interface DetailSidebarProps {
+  fromDrawer?: boolean
+}
+
+const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const routeParam = searchParams.get('route') || ''
@@ -47,17 +51,54 @@ const DetailSidebar: React.FC = () => {
       .filter((item) => item.name.toLowerCase().includes(keyword) || item.sub3.length > 0)
   }, [searchText])
 
-  return (
-    <div className='relative shrink-0'>
-      <div className={[
-        'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
-        searchOpen ? 'w-[370px] rounded-lg' : 'w-0',
-      ].join(' ')}>
-        <div className='w-[370px] h-full overflow-y-auto'>
-          <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => setSearchText(value)}>
-            <Collapse
-              ghost
-              expandIcon={({ isActive }) => (
+  const collapseContent = (
+    <Collapse
+      ghost
+      expandIcon={({ isActive }) => (
+        <TbChevronDown
+          size={20}
+          style={{
+            color: '#FCD116',
+            transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s',
+          }}
+        />
+      )}
+      style={{ marginTop: 16 }}
+      defaultActiveKey={routeParam ? [routeParam] : []}
+      items={filteredRoutes.map((item, index) => ({
+        key: item.name,
+        label: (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
+              {item.name}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <span style={{
+                fontSize: 12, fontWeight: 500, color: '#FCD116',
+                width: 50, height: 22, borderRadius: 88,
+                border: '1px solid #FCD116',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
+                {index + 1}
+              </span>
+              {renderCount(item.count)}
+            </div>
+          </div>
+        ),
+        style: { marginBottom: 4 },
+        classNames: { header: 'rounded-lg bg-[#363636]' },
+        styles: {
+          header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 },
+          content: { padding: '8px 0 0 0' },
+          body: { padding: 0 },
+        },
+        children: (
+          <Collapse
+            ghost
+            expandIcon={({ isActive }) => (
+              <span style={{ marginLeft: 24 }}>
                 <TbChevronDown
                   size={20}
                   style={{
@@ -66,123 +107,101 @@ const DetailSidebar: React.FC = () => {
                     transition: 'transform 0.2s',
                   }}
                 />
-              )}
-              style={{ marginTop: 16 }}
-              defaultActiveKey={routeParam ? [routeParam] : []}
-              items={filteredRoutes.map((item, index) => ({
-                key: item.name,
-                label: (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
-                      {item.name}
+              </span>
+            )}
+            style={{ marginTop: 4 }}
+            defaultActiveKey={routeParam === item.name ? [`${item.name}-sub`] : []}
+            items={[{
+              key: `${item.name}-sub`,
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
+                    {item.name}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: 12, fontWeight: 500, color: '#FCD116',
+                      width: 50, height: 22, borderRadius: 88,
+                      border: '1px solid #FCD116',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
+                      {index + 1}
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                      <span style={{
-                        fontSize: 12, fontWeight: 500, color: '#FCD116',
-                        width: 50, height: 22, borderRadius: 88,
-                        border: '1px solid #FCD116',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
-                        {index + 1}
-                      </span>
-                      {renderCount(item.count)}
-                    </div>
+                    {renderCount(item.count)}
                   </div>
-                ),
-                style: { marginBottom: 4 },
-                classNames: { header: 'rounded-lg bg-[#363636]' },
-                styles: {
-                  header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 },
-                  content: { padding: '8px 0 0 0' },
-                  body: { padding: 0 },
-                },
-                children: (
-                  <Collapse
-                    ghost
-                    expandIcon={({ isActive }) => (
-                      <span style={{ marginLeft: 24 }}>
-                        <TbChevronDown
-                          size={20}
+                </div>
+              ),
+              style: { marginBottom: 4 },
+              classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
+              styles: {
+                header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 },
+                body: { padding: 0 },
+              },
+              children: (
+                <div style={{ marginTop: 4 }}>
+                  {item.sub3.map((sub) =>
+                    sub.detail.map((d) => {
+                      const isActive = d === detailParam
+                      return (
+                        <div
+                          key={`${item.name}-${sub.label}-${d}`}
+                          onClick={() => router.push(`/admin/statistics/detail/status?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
                           style={{
-                            color: '#FCD116',
-                            transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            width: '100%', borderRadius: 8,
+                            paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer',
+                            backgroundColor: isActive ? '#FCD11630' : '#212121',
+                            border: isActive ? '1px solid #FCD116' : 'none',
                           }}
-                        />
-                      </span>
-                    )}
-                    style={{ marginTop: 4 }}
-                    defaultActiveKey={routeParam === item.name ? [`${item.name}-sub`] : []}
-                    items={[{
-                      key: `${item.name}-sub`,
-                      label: (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                          <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
-                            {item.name}
+                        >
+                          <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>
+                            {d}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            <span style={{
-                              fontSize: 12, fontWeight: 500, color: '#FCD116',
-                              width: 50, height: 22, borderRadius: 88,
-                              border: '1px solid #FCD116',
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                            }}>
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
-                              {index + 1}
-                            </span>
-                            {renderCount(item.count)}
+                            {sub.connected ? (
+                              <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
+                            ) : (
+                              <img src="/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
+                            )}
                           </div>
                         </div>
-                      ),
-                      style: { marginBottom: 4 },
-                      classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
-                      styles: {
-                        header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 },
-                        body: { padding: 0 },
-                      },
-                      children: (
-                        <div style={{ marginTop: 4 }}>
-                          {item.sub3.map((sub) =>
-                            sub.detail.map((d) => {
-                              const isActive = d === detailParam
-                              return (
-                                <div
-                                  key={`${item.name}-${sub.label}-${d}`}
-                                  onClick={() => router.push(`/admin/statistics/detail/status?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
-                                  style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    width: '100%', borderRadius: 8,
-                                    paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer',
-                                    backgroundColor: isActive ? '#FCD11630' : '#212121',
-                                    border: isActive ? '1px solid #FCD116' : 'none',
-                                  }}
-                                >
-                                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>
-                                    {d}
-                                  </span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                    {sub.connected ? (
-                                      <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
-                                    ) : (
-                                      <img src="/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            })
-                          )}
-                        </div>
-                      ),
-                    }]}
-                  />
-                ),
-              }))}
-            />
+                      )
+                    })
+                  )}
+                </div>
+              ),
+            }]}
+          />
+        ),
+      }))}
+    />
+  )
+
+  if (fromDrawer) {
+    return (
+      <div className='bg-(--dark-black) h-full'>
+        <div className='w-full h-full overflow-y-auto'>
+          <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => setSearchText(value)}>
+            {collapseContent}
           </SearchCard>
         </div>
       </div>
+    )
+  }
 
+  return (
+    <div className='shrink-0 max-xl:hidden' style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 370 }}>
+      <div className={[
+        'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
+        searchOpen ? 'w-[370px] rounded-lg' : 'w-0',
+      ].join(' ')}>
+        <div className='w-[370px] h-full overflow-y-auto'>
+          <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => setSearchText(value)}>
+            {collapseContent}
+          </SearchCard>
+        </div>
+      </div>
       <Button
         type='primary'
         shape='circle'

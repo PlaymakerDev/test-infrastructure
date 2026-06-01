@@ -5,7 +5,7 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
 import { StatusDetailProvider, useStatusDetailContext } from '../context'
-import { DetailSidebar, StatusDetailTable } from '../components'
+import { DetailSidebar, DrawerDetailSidebar, StatusDetailTable } from '../components'
 
 const { RangePicker } = DatePicker
 
@@ -22,8 +22,9 @@ const StatusDetailContent: React.FC = () => {
   }
 
   return (
-    <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col" style={{ paddingBottom: 60 }}>
-      <section className="flex items-start gap-3">
+    <div className="main-screen flex flex-col">
+      <div className="px-3 xl:pr-3 xl:pl-0">
+        <section className="flex items-start gap-3">
         <TbArrowBigLeftFilled
           className="fs-24 text-(--yellow) cursor-pointer"
           onClick={handleBack}
@@ -78,9 +79,10 @@ const StatusDetailContent: React.FC = () => {
                 Anydesk : 1194336831
               </span>
             </div>
-            <fieldset style={{ flexShrink: 0, marginLeft: 'auto' }}>
+            <fieldset className="w-full sm:w-auto" style={{ flexShrink: 0, marginLeft: 'auto' }}>
               <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
               <RangePicker
+                className='w-full sm:w-auto'
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null)}
                 placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
@@ -91,8 +93,10 @@ const StatusDetailContent: React.FC = () => {
           </div>
         </div>
       </section>
-      <section className="mt-6 flex flex-col lg:flex-row gap-4 lg:gap-6 items-stretch">
+      </div>
+      <section className="mt-5 pr-3 relative xl:pl-98.5">
         <DetailSidebar />
+        <DrawerDetailSidebar />
         <div className="flex flex-col flex-1 gap-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4" style={{ alignContent: 'start' }}>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #66AEFF' }}>

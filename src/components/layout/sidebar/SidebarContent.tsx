@@ -17,7 +17,9 @@ import {
   TbBuildingBridge2,
   TbTopologyStar3,
   TbAdjustmentsHorizontal,
-  TbBriefcase
+  TbBriefcase,
+  TbChartBar,
+  TbTool
 } from "react-icons/tb";
 import menu from '@/configs/menu';
 import { usePathname } from 'next/navigation';
@@ -43,7 +45,9 @@ const ICON_LIST: Record<string, React.ComponentType> = {
   TbBuildingBridge2,
   TbTopologyStar3,
   TbAdjustmentsHorizontal,
-  TbBriefcase
+  TbBriefcase,
+  TbChartBar,
+  TbTool
 }
 const Sidebar: React.FC<Props> = (props) => {
   const { } = props

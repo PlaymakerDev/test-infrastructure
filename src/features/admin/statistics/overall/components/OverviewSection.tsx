@@ -28,55 +28,52 @@ const OverviewSection: React.FC = () => {
       {CARDS.map(card => (
         <div
           key={card.id}
-          className="relative rounded-[20px] overflow-hidden w-full h-auto min-h-[600px] lg:min-h-[700px]"
+          className="relative rounded-[20px] overflow-hidden w-full h-auto min-h-115 sm:min-h-145 lg:min-h-175"
           style={{ backgroundColor: '#191919' }}
         >
           {card.imageBg && (
             <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-[60px]"
+              className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-[30px] sm:translate-y-[45px] lg:translate-y-[60px] w-[180px] sm:w-[240px] lg:w-[310px] h-[180px] sm:h-[240px] lg:h-[310px] rounded-full"
               style={{
-                width: 310,
-                height: 310,
-                borderRadius: '50%',
                 background: `radial-gradient(circle, ${card.glowColor}1A 0%, transparent 70%)`,
                 filter: 'blur(40px)',
               }}
             />
           )}
           {card.src && (
-            <div className="mx-auto mt-[80px] flex flex-col items-center justify-center">
+            <div className="mx-auto mt-[40px] sm:mt-[60px] lg:mt-[80px] flex flex-col items-center justify-center px-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={card.src}
                 alt={`overview-card-${card.id}`}
-                style={{ width: 150, height: 150 }}
+                className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] lg:w-[150px] lg:h-[150px]"
               />
-              <p className="mt-4 text-center text-3xl sm:text-4xl lg:text-[40px] font-bold text-white">{card.value}</p>
-              <p className="mt-2 text-center text-2xl sm:text-3xl lg:text-[32px] font-bold" style={{ color: card.glowColor }}>{card.label}</p>
-              <p className="mt-2 text-center text-sm sm:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
-              <div className="flex flex-col gap-[10px] mt-10">
+              <p className="mt-3 sm:mt-4 text-center text-2xl sm:text-3xl lg:text-[40px] font-bold text-white">{card.value}</p>
+              <p className="mt-1 sm:mt-2 text-center text-lg sm:text-2xl lg:text-[32px] font-bold" style={{ color: card.glowColor }}>{card.label}</p>
+              <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm lg:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
+              <div className="flex flex-col gap-2 sm:gap-[10px] mt-6 sm:mt-8 lg:mt-10 w-full">
                 <div
-                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-[calc(100%-16px)] sm:w-[400px] md:w-[460px] lg:w-[500px] h-[100px] sm:h-[110px] md:h-[120px]"
+                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
                   style={{ borderColor: card.glowColor }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={card.detail1.img} alt="detail-1" className="w-[48px] h-[48px] sm:w-[52px] sm:h-[52px] md:w-[60px] md:h-[60px] shrink-0" />
-                  <div className="ml-3 sm:ml-4 self-start mt-[14px] sm:mt-[16px] md:mt-[18px]">
-                    <p className="text-sm sm:text-base font-bold" style={{ color: card.glowColor }}>{card.detail1.title}</p>
-                    <p className="mt-1 text-lg sm:text-xl md:text-2xl font-bold text-white">{card.detail1.subtitle}</p>
-                    <p className="mt-1 text-xs sm:text-sm text-[#979797]">{card.detail1.summary}</p>
+                  <img src={card.detail1.img} alt="detail-1" className="w-[36px] h-[36px] sm:w-[48px] sm:h-[48px] md:w-[60px] md:h-[60px] shrink-0" />
+                  <div className="ml-2 sm:ml-3 md:ml-4 self-start mt-2 sm:mt-[14px] md:mt-[18px] min-w-0">
+                    <p className="text-xs sm:text-sm md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail1.title}</p>
+                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail1.subtitle}</p>
+                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm text-[#979797] truncate">{card.detail1.summary}</p>
                   </div>
                 </div>
                 <div
-                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-[calc(100%-16px)] sm:w-[400px] md:w-[460px] lg:w-[500px] h-[100px] sm:h-[110px] md:h-[120px]"
+                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
                   style={{ borderColor: card.glowColor }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={card.detail2.img} alt="detail-2" className="w-[48px] h-[48px] sm:w-[52px] sm:h-[52px] md:w-[60px] md:h-[60px] shrink-0" />
-                  <div className="ml-3 sm:ml-4 self-start mt-[14px] sm:mt-[16px] md:mt-[18px]">
-                    <p className="text-sm sm:text-base font-bold" style={{ color: card.glowColor }}>{card.detail2.title}</p>
-                    <p className="mt-1 text-lg sm:text-xl md:text-2xl font-bold text-white">{card.detail2.subtitle}</p>
-                    <p className="mt-1 text-xs sm:text-sm text-[#979797]">{card.detail2.summary}</p>
+                  <img src={card.detail2.img} alt="detail-2" className="w-[36px] h-[36px] sm:w-[48px] sm:h-[48px] md:w-[60px] md:h-[60px] shrink-0" />
+                  <div className="ml-2 sm:ml-3 md:ml-4 self-start mt-2 sm:mt-[14px] md:mt-[18px] min-w-0">
+                    <p className="text-xs sm:text-sm md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail2.title}</p>
+                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail2.subtitle}</p>
+                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm text-[#979797] truncate">{card.detail2.summary}</p>
                   </div>
                 </div>
               </div>

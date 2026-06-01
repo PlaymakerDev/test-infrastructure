@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { Segmented } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -7,6 +7,18 @@ import SwapButton from '@/components/swap-button/SwapButton'
 import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard } from './shared'
+
+const useIsMobile = (breakpoint = 640) => {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    setIsMobile(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [breakpoint])
+  return isMobile
+}
 
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
@@ -46,6 +58,7 @@ const StatusSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setCurrentTab } = useStatisticsContext()
+  const isMobile = useIsMobile()
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('ALL')
   const [searchText, setSearchText] = useState('')
@@ -53,32 +66,35 @@ const StatusSection: React.FC = () => {
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
   return (
-    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
-      <section className="flex items-start gap-3">
-        <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
-        <div>
-          <h1 className="text-(--yellow)">สถานะและการปรับเปลี่ยนข้อความ</h1>
-          <p className="text-(--yellow)">สถิติและรายงานการแจ้งเตือนเหตุการณ์</p>
-        </div>
-      </section>
-      <section className="mt-5">
-        <SwapButton
-          options={SUB_TAB_OPTIONS}
-          defaultActive={activeSubTab}
-          setLabelValue={(value) => router.push(`/admin/statistics?status&subtab=${value.toLowerCase()}`)}
-        />
-      </section>
-      {activeSubTab === 'OVERVIEW' && (
-        <section className="mt-4">
-          <Segmented
-            value={activePeriod}
-            onChange={(value) => setActivePeriod(value as string)}
-            options={PERIOD_OPTIONS}
-            size="large"
-            classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <div className="px-3">
+        <section className="flex items-start gap-3">
+          <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
+          <div>
+            <h1 className="text-(--yellow)">สถานะและการปรับเปลี่ยนข้อความ</h1>
+            <p className="text-(--yellow)">สถิติและรายงานการแจ้งเตือนเหตุการณ์</p>
+          </div>
+        </section>
+        <section className="mt-5 px-3 sm:px-10 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <SwapButton
+            options={SUB_TAB_OPTIONS}
+            defaultActive={activeSubTab}
+            setLabelValue={(value) => router.push(`/admin/statistics?status&subtab=${value.toLowerCase()}`)}
+            size={isMobile ? 'middle' : 'large'}
           />
         </section>
-      )}
+        {activeSubTab === 'OVERVIEW' && (
+          <section className="mt-4 px-3 sm:px-10 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Segmented
+              value={activePeriod}
+              onChange={(value) => setActivePeriod(value as string)}
+              options={PERIOD_OPTIONS}
+              size={isMobile ? 'middle' : 'large'}
+              classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+            />
+          </section>
+        )}
+      </div>
       {activeSubTab === 'OVERVIEW' && (
         <StatisticsMapPanel
           markerColorFn={() => '#B2FF00'}

@@ -151,7 +151,7 @@ const StatusDetailTable: React.FC<Props> = ({ data = STATUS_MOCK_DATA, loading =
   }, [activeTab, data])
 
   return (
-    <div>
+    <div className="pb-6">
       <section className="mb-4">
         <SearchBar
           filters={FILTER_CONFIG}
