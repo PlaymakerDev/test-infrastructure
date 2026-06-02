@@ -153,12 +153,6 @@ const admin = [
     path_active: "/admin/maintenance",
     path_list: [],
   },
-
-
-
-
-
-
 ]
 
 export default admin

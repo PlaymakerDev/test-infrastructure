@@ -14,7 +14,10 @@ export async function proxy(request: NextRequest) {
 
   // Authenticated user on /auth/login → send to dashboard
   if (isAuthenticated && pathname.startsWith('/auth/login')) {
-    return NextResponse.redirect(new URL(path[0].path, request.url))
+    if (path && path.length > 0) {
+      return NextResponse.redirect(new URL(path[0].path, request.url))
+    }
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   // Unauthenticated user on a protected route (not /auth/login) → send to login

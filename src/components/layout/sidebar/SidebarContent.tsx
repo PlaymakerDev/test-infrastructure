@@ -13,6 +13,8 @@ import {
   TbTopologyStar3,
   TbAdjustmentsHorizontal,
   TbBriefcase,
+  TbChartBar,
+  TbTool,
   TbShieldHalf,
   TbCarCrash,
   TbChevronRight,

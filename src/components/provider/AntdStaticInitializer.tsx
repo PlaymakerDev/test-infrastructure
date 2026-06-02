@@ -6,7 +6,7 @@ import { setModalInstance } from '@/lib/antd-static'
 export default function AntdStaticInitializer() {
   const { modal } = App.useApp()
   useEffect(() => {
-    setModalInstance(modal)
+    setModalInstance(modal as unknown as Parameters<typeof setModalInstance>[0])
   }, [modal])
   return null
 }
