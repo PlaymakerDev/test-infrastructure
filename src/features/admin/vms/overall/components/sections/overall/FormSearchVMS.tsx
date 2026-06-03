@@ -5,13 +5,17 @@ import { TbSearch } from 'react-icons/tb'
 
 interface Props {}
 
-interface FormValues { search: string }
+interface FormValues {
+  search: string
+}
 
 let timeout: NodeJS.Timeout
 
 const FormSearchVMS: React.FC<Props> = () => {
   const submitRef = useRef<HTMLButtonElement>(null)
-  const { control, handleSubmit } = useForm<FormValues>({ defaultValues: { search: '' } })
+  const { control, handleSubmit } = useForm<FormValues>({
+    defaultValues: { search: '' },
+  })
 
   return (
     <form onSubmit={handleSubmit((v) => console.log('submit', v))}>
@@ -35,7 +39,11 @@ const FormSearchVMS: React.FC<Props> = () => {
           </fieldset>
         )}
       />
-      <button ref={submitRef} type='submit' hidden />
+      <button
+        ref={submitRef}
+        type='submit'
+        hidden
+      />
     </form>
   )
 }

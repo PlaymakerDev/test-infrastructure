@@ -11,7 +11,11 @@ export const DetailContext = createContext<ContextProps | null>(null)
 
 export const DetailProvider = (props: PageProviderProps) => {
   const { children } = props
-  return <DetailContext.Provider value={{}}>{children}</DetailContext.Provider>
+  return (
+    <DetailContext.Provider value={{}}>
+      {children}
+    </DetailContext.Provider>
+  )
 }
 
 export const useDetailContext = () => {

@@ -138,8 +138,8 @@ const admin = [
     label_key: "statistic",
     icon: "",
     default_color_icon: '',
-    path: "/admin/statistic",
-    path_active: "/admin/statistic",
+    path: "/admin/statistics",
+    path_active: "/admin/statistics",
     path_list: [],
   },
   {

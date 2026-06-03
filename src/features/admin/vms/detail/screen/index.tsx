@@ -8,22 +8,13 @@ interface Props {
 
 const VMSDetailScreen: React.FC<Props> = (props) => {
   const { } = props
-  const [currentTab, setCurrentTab] = useState('OVERALL')
-
-  const renderContent = useMemo(() => {
-    switch (currentTab) {
-      case 'OVERALL': return <OverallSection />
-      case 'CONTROL': return <ControlSection />
-      default: return <OverallSection />
-    }
-  }, [currentTab])
 
   return (
     <DetailProvider>
       <div className='main-screen'>
-        <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>
-          {renderContent}
+        <TitleSection />
+        <section className='mt-8'>
+          <OverallSection />
         </section>
       </div>
     </DetailProvider>

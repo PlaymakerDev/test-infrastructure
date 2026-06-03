@@ -1,5 +1,5 @@
-import React from 'react'
 import { Image } from 'antd'
+import React from 'react'
 
 interface Props {
 
@@ -13,7 +13,7 @@ const VMSScreen: React.FC<Props> = (props) => {
       <h3 className='text-(--yellow) mb-1.5'>หน้าจอโปรแกรมป้าย VMS</h3>
       <figure className='figure-large min-h-0 overflow-hidden rounded-lg lg:flex-1 lg:max-h-none'>
         <Image
-          src={'/images/mock-img/test-img.png'}
+          src={'https://files.catbox.moe/pne90v.png'}
           alt='example-image'
           width={'100%'}
           height={'100%'}

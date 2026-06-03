@@ -6,7 +6,9 @@ interface Props {}
 const MapSection: React.FC<Props> = () => {
   return (
     <div>
-      <BaseMap edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }} />
+      <BaseMap
+        edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
+      />
     </div>
   )
 }

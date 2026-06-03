@@ -6,9 +6,15 @@ interface Props {}
 const OverallSection: React.FC<Props> = () => {
   return (
     <div>
-      <section><LocationSection /></section>
-      <section className='mt-5'><DataDisplaySection /></section>
-      <section className='mt-5'><ChartSection /></section>
+      <section>
+        <LocationSection />
+      </section>
+      <section className='mt-5'>
+        <DataDisplaySection />
+      </section>
+      <section className='mt-5'>
+        <ChartSection />
+      </section>
     </div>
   )
 }

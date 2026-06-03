@@ -9,18 +9,29 @@ const ControlSection: React.FC<Props> = () => {
 
   const renderContent = useMemo(() => {
     switch (displayType) {
-      case 'TABLE': return <TableControlData />
-      case 'GRID': return <CCTVControlData />
-      default: return null
+      case 'TABLE':
+        return <TableControlData />
+      case 'GRID':
+        return <CCTVControlData />
+      default:
+        return null
     }
   }, [displayType])
 
   return (
     <div>
-      <section><FormSearchControl /></section>
-      <section className='mt-5'><ControlStatCard /></section>
+      <section>
+        <FormSearchControl />
+      </section>
       <section className='mt-5'>
-        <SearchBar mode='title' title='ตารางข้อมูลการควบคุม VMS' onViewModeChange={setDisplayType} />
+        <ControlStatCard />
+      </section>
+      <section className='mt-5'>
+        <SearchBar
+          mode='title'
+          title='ตารางข้อมูลการควบคุม VMS'
+          onViewModeChange={setDisplayType}
+        />
       </section>
       <section className='mt-5'>{renderContent}</section>
     </div>

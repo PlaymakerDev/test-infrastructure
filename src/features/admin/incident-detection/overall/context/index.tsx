@@ -13,7 +13,11 @@ export const OverallContext = createContext<ContextProps | null>(null)
 
 export const OverallProvider = (props: PageProviderProps) => {
   const { children } = props
-  return <OverallContext.Provider value={{}}>{children}</OverallContext.Provider>
+  return (
+    <OverallContext.Provider value={{}}>
+      {children}
+    </OverallContext.Provider>
+  )
 }
 
 export const useOverallContext = () => {

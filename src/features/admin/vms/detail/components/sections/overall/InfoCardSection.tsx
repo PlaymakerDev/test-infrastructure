@@ -1,53 +1,48 @@
 import { Col, Row } from 'antd'
 import React from 'react'
-import { TbDeviceDesktop, TbDeviceDesktopOff, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbCloud, TbRainbow, TbThermometer, TbUmbrella, TbWind } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 const InfoCardSection: React.FC<Props> = () => {
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24}>
-        <div className='bg-[#66AEFF1A] border border-white py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbDeviceDesktop className='fs-22 text-white shrink-0' />
-            <h4 className='text-white mb-0'>ป้าย VMS ทั้งหมด</h4>
+    <div className='flex-1 min-h-0 flex flex-col bg-black/70 backdrop-blur-xs rounded-lg p-5'>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+          <div className='h-full bg-[#FFB1001A] border-2 rounded-lg px-4 py-2 border-(--yellow)'>
+            <TbRainbow className='fs-24 text-(--yellow) mb-1' />
+            <h4 className='text-(--yellow)'>สภาพอากาศโดยรวม</h4>
+            <p className='fs-14 font-bold'>ท้องฟ้าโปร่ง มีแสงอาทิตย์ส่อง</p>
           </div>
-          <p className='mb-0.5'><span className='fs-18 font-bold'>4</span> <span className='fs-14'>ป้าย</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>อัปเดตล่าสุด : 18:35:29 น.</p>
-        </div>
-      </Col>
-      <Col xs={24}>
-        <div className='bg-[#66AEFF1A] border border-blue-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbWifi className='fs-22 text-blue-500 shrink-0' />
-            <h4 className='text-blue-500 mb-0'>ออนไลน์</h4>
+        </Col>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-teal-500'>
+            <TbCloud className='fs-24 text-teal-500 mb-1' />
+            <h4 className='text-teal-500'>คุณภาพอากาศ AQI</h4>
+            <p className='fs-14 font-bold'>คุณภาพอากาศดี</p>
           </div>
-          <p className='mb-0.5'><span className='fs-18 font-bold'>4</span> <span className='fs-14'>ป้าย</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>อัปเดตล่าสุด : 18:35:29 น.</p>
-        </div>
-      </Col>
-      <Col xs={24}>
-        <div className='bg-[#66AEFF1A] border border-red-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbWifiOff className='fs-22 text-red-500 shrink-0' />
-            <h4 className='text-red-500 mb-0'>ออฟไลน์</h4>
+        </Col>
+        <Col xs={24} sm={8} md={8} lg={12} xl={8} xxl={8} xxxl={8}>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+            <TbThermometer className='fs-24 text-blue-500 mb-1' />
+            <h4 className='text-blue-500'>อุณหภูมิ</h4>
+            <p className='mb-0.5'><span className='fs-14 font-bold'>4</span> <span className='fs-12'>°C</span></p>        </div>
+        </Col>
+        <Col xs={24} sm={8} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+            <TbUmbrella className='fs-24 text-blue-500 mb-1' />
+            <h4 className='text-blue-500'>ปริมาณน้ำฝน</h4>
+            <p className='mb-0.5'><span className='fs-14 font-bold'>4</span> <span className='fs-12'>mm/min</span></p>        </div>
+        </Col>
+        <Col xs={24} sm={8} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+            <TbWind className='fs-24 text-blue-500 mb-1' />
+            <h4 className='text-blue-500'>ความเร็วลม</h4>
+            <p className='mb-0.5'><span className='fs-14 font-bold'>4</span> <span className='fs-12'>km/h</span></p>
           </div>
-          <p className='mb-0.5'><span className='fs-18 font-bold'>0</span> <span className='fs-14'>ป้าย</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>อัปเดตล่าสุด : 18:35:29 น.</p>
-        </div>
-      </Col>
-      <Col xs={24}>
-        <div className='bg-[#66AEFF1A] border border-orange-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbDeviceDesktopOff className='fs-22 text-orange-500 shrink-0' />
-            <h4 className='text-orange-500 mb-0'>ข้อความที่แสดงล่าสุด</h4>
-          </div>
-          <p className='mb-0.5 fs-12'>ระวังอุบัติเหตุ ลดความเร็ว</p>
-          <p className='fs-12 text-gray-400 mb-0'>อัปเดตล่าสุด : 10:19:07 น.</p>
-        </div>
-      </Col>
-    </Row>
+        </Col>
+      </Row>
+    </div>
   )
 }
 
