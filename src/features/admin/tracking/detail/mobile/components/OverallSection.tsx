@@ -3,6 +3,7 @@ import { Col, Row } from 'antd'
 import {
   MobileDetailCard,
   MobileDetailImage,
+  MobileDetailMap,
   MobileStatCard,
   OverallDataDisplaySection
 } from '../components'
@@ -25,7 +26,7 @@ const OverallSection: React.FC<Props> = (props) => {
             <MobileDetailImage />
           </Col>
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={6} xxxl={6}>
-            MAP
+            <MobileDetailMap />
           </Col>
         </Row>
       </section>

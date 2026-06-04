@@ -140,7 +140,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
 
   return (
     <div
-      className='relative rounded-2xl p-5 w-full overflow-hidden'
+      className='relative rounded-2xl p-5 w-full h-full overflow-hidden'
       style={{ background: '#111111', border: '1px solid #FCD116' }}
     >
       {/* ── Header ── */}

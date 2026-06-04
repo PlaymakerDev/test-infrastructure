@@ -6,7 +6,7 @@ const VehicleStatSection: React.FC<Props> = (props) => {
   const { } = props
 
   return (
-    <div className='border-2 rounded-lg border-(--yellow) p-5'>
+    <div className='border-2 rounded-lg border-(--default-blue) p-5'>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
         {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--yellow)/50 border-b sm:border-r lg:border-b-0'>

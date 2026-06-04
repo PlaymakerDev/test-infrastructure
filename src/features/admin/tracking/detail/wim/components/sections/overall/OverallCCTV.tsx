@@ -35,7 +35,7 @@ const OverallCCTV: React.FC<Props> = (props) => {
   const renderCameraList = useMemo(() => {
     return mockCameras.map((item) => (
       <Col key={item.id} xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={6}>
-        <HLSLivePlayer figureClassName='figure-small min-h-0 mb-1.5 rounded-lg' />
+        <HLSLivePlayer figureClassName='h-64 lg:h-50 min-h-0 mb-1.5 rounded-lg' />
         <h4 className='fs-12 text-[#66AEFF] leading-snug break-all mb-0.5'>{item.name}</h4>
         <p className='fs-12 text-gray-400 leading-snug m-0'>IP Address : {item.ip_address}</p>
       </Col>

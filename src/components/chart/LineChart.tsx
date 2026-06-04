@@ -259,7 +259,7 @@ const LineChart: React.FC<LineChartProps> = ({
 
   return (
     <div
-      className='relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden'
+      className='relative rounded-2xl pt-5 px-5 pb-1 w-full h-full overflow-hidden'
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (

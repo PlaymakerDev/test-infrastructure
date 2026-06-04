@@ -65,10 +65,12 @@ export interface BarChartProps {
   cardBackground?: string
   /** สีขอบการ์ด (default `#1f2d3d`) */
   cardBorderColor?: string
-  /** แสดง golden glow ที่มุมบน 2 มุม (default `true`) */
+  /** แสดง golden glow ที่มุมบน 2 มุม (default `false`) */
   showGlow?: boolean
   /** ห่อ icon ในวงกลม yellow tint (default `true`) */
   iconCircle?: boolean
+  /** รูปแบบการแสดงผล bar: solid = สีทึบ, gradient = ไล่สีจากบนลงล่าง (default `'solid'`) */
+  barFill?: 'solid' | 'gradient'
   /** Optional content rendered inside the card, below the chart. Useful for
    *  putting an average/summary footer inside the same border as the chart. */
   footer?: React.ReactNode
@@ -94,8 +96,9 @@ const BarChart: React.FC<BarChartProps> = ({
   accentColor = '#FCD116',
   cardBackground = '#00000080',
   cardBorderColor = '#1f2d3d',
-  showGlow = true,
+  showGlow = false,
   iconCircle = true,
+  barFill = 'solid',
   footer,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
@@ -159,14 +162,23 @@ const BarChart: React.FC<BarChartProps> = ({
         type: 'bar',
         data: data.map((d) => d[bar.dataKey] ?? 0),
         itemStyle: {
-          color: bar.color,
+          color: barFill === 'gradient'
+            ? {
+              type: 'linear',
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: bar.color },
+                { offset: 1, color: `${bar.color}22` },
+              ],
+            }
+            : bar.color,
           borderRadius: [3, 3, 0, 0],
         },
         barMaxWidth: 32,
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill])
 
   return (
     <div
@@ -219,7 +231,7 @@ const BarChart: React.FC<BarChartProps> = ({
         {periods && periods.length > 0 && (
           <div
             className='flex gap-1 rounded-full p-1 text-sm'
-            style={{ background: '#3a2e00' }}
+            style={{ background: '#A2A2A233' }}
           >
             {periods.map((p) => (
               <button

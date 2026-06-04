@@ -13,7 +13,7 @@ const MobileDetailImage: React.FC<Props> = (props) => {
       <div className='mb-1.5'>
         <figure className='h-52 overflow-hidden rounded-lg'>
           <Image
-            src='https://i.pinimg.com/736x/78/0d/41/780d410dcb9da0f84c05aa5cb80daec3.jpg'
+            src='https://files.catbox.moe/pne90v.png'
             alt='example-image'
             width={'100%'}
             height={'100%'}
@@ -25,7 +25,7 @@ const MobileDetailImage: React.FC<Props> = (props) => {
       <div className='mt-1.5'>
         <figure className='h-52 overflow-hidden rounded-lg'>
           <Image
-            src='https://i.pinimg.com/736x/78/0d/41/780d410dcb9da0f84c05aa5cb80daec3.jpg'
+            src='https://files.catbox.moe/0mw93c.png'
             alt='example-image'
             width={'100%'}
             height={'100%'}

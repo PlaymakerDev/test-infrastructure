@@ -31,7 +31,7 @@ const TitleSection: React.FC<Props> = (props) => {
     <div className='px-3'>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
-          className='fs-24 text-(--yellow) cursor-pointer'
+          className='fs-24 text-(--yellow) cursor-pointer mt-2'
           onClick={() => router.back()}
         />
         <div>

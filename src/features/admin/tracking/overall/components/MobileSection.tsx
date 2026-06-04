@@ -1,5 +1,6 @@
 import React from 'react'
 import { MobileLocationSection, TableMobile } from '../components'
+import ChartMobileUnitPlan from './sections/mobile/ChartMobileUnitPlan'
 
 const MobileSection = () => {
 
@@ -9,7 +10,7 @@ const MobileSection = () => {
         <MobileLocationSection />
       </section>
       <section className='mt-5'>
-        <p>CHART</p>
+        <ChartMobileUnitPlan />
       </section>
       <section className='mt-5'>
         <TableMobile />
