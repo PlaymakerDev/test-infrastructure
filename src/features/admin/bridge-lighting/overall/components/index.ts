@@ -4,6 +4,8 @@ export { default as OverallSection } from './OverallSection'
 export { default as ModalInfoBridgeLighting } from './ModalInfoBridgeLighting'
 
 // Sections (sub-components)
+export { default as LocationSection } from './sections/overall/LocationSection'
+export { default as DataDisplaySection } from './sections/overall/DataDisplaySection'
 export { default as StatusBridgeLighting } from './sections/overall/StatusBridgeLighting'
 export { default as StatsSectionBridgeLighting } from './sections/overall/StatsSectionBridgeLighting'
 export { default as MapBridgeLighting } from './sections/overall/MapBridgeLighting'

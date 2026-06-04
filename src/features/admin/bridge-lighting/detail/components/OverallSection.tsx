@@ -30,7 +30,7 @@ const OverallSection: React.FC = () => {
       </div>
 
       {/* Center: MADRIX panel — defined height, anchored bottom-center */}
-      <div className='flex flex-col px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-[calc(clamp(20rem,22vw,28rem)+2rem)] lg:right-[calc(clamp(30rem,38vw,52rem)+2rem)] lg:z-10 lg:h-[clamp(14rem,35dvh,24rem)]'>
+      <div className='flex flex-col px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-[calc(clamp(20rem,22vw,28rem)+2rem)] lg:right-[calc(clamp(30rem,38vw,52rem)+2rem)] lg:z-10'>
         <MadrixControlPanel />
       </div>
     </div>
