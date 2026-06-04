@@ -1,79 +1,40 @@
 "use client"
 import React from 'react'
 import MapDetailBridgeLighting from './sections/overall/MapDetailBridgeLighting'
-import StatsElectricalBridgeLighting from './sections/overall/StatsElectricalBridgeLighting'
 import ChartElectricalBridgeLighting from './sections/overall/ChartElectricalBridgeLighting'
-import StatusBridgeLighting from './sections/overall/StatusBridgeLighting'
-import RemoteControlCard from './sections/overall/RemoteControlCard'
 import MadrixControlPanel from '@/features/admin/bridge-lighting/overall/components/sections/overall/MadrixControlPanel'
-import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import BridgeLightingStatus from './sections/overall/BridgeLightingStatus'
+import VoltageStat from './sections/overall/VoltageStat'
 
-interface Props {
-  bridge: BridgeProject
-}
-
-/** Detail page main section.
- *
- *  Layout strategy:
- *  • Mobile / tablet (< xl, 1280px): everything stacks vertically — map is a
- *    fixed-height block at the top, then the cards flow below it in normal
- *    document order. Content order: stats → charts → status+remote → MADRIX.
- *  • Desktop (xl+): map becomes an absolute full-bleed background, and the
- *    cards form a 3-column overlay grid (LEFT status+remote, CENTER MADRIX,
- *    RIGHT stats+charts) with empty space passing clicks through to the map. */
-const OverallSection: React.FC<Props> = ({ bridge }) => {
+const OverallSection: React.FC = () => {
   return (
-    <section className='relative -mx-10 overflow-x-hidden xl:overflow-hidden'>
-      {/* MAP — normal flow on mobile (fixed height), absolute bg on xl+.
-        * `relative` is required so the underlying BaseMap's `position: absolute`
-        * is contained here on mobile (where the wrapper has a fixed height).
-        * Without it the map escapes up to the section element and covers the
-        * stacked cards below. */}
-      <div className='relative h-70 sm:h-90 xl:absolute xl:inset-0 xl:h-auto'>
-        {/* Vignette fade on all 4 edges (default 30%) — forwarded to BaseMap. */}
-        <MapDetailBridgeLighting bridge={bridge} edgeFade={{ all: 30 }} />
+    <div className='flex flex-col gap-4 lg:block lg:relative lg:h-full'>
+      {/* Map: full-width background; defines container height on desktop via h-full */}
+      <div className='relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
+        <MapDetailBridgeLighting edgeFade={{ all: 30 }} />
       </div>
 
-      {/* ── Content — 1 column on mobile, 3 columns on xl+.
-        * On xl+ this overlays the map; pointer-events-none on the grid +
-        * pointer-events-auto on each card lets clicks fall through empty
-        * space to the Mapbox map underneath. */}
-      <div className='relative grid grid-cols-1 xl:grid-cols-[minmax(260px,1fr)_minmax(360px,1.8fr)_minmax(380px,1.6fr)] gap-3 px-10 py-5 xl:pointer-events-none'>
-
-        {/* RIGHT (mobile order 1) — stats + charts */}
-        <aside className='flex flex-col gap-3 min-w-0 order-1 xl:order-3'>
-          <div className='pointer-events-auto min-w-0'>
-            <StatsElectricalBridgeLighting bridge={bridge} />
-          </div>
-          <div className='pointer-events-auto flex-1 flex flex-col min-w-0'>
-            <ChartElectricalBridgeLighting />
-          </div>
-        </aside>
-
-        {/* LEFT (mobile order 2) — status + remote, bottom-anchored at xl+ */}
-        <aside className='flex flex-col min-w-0 order-2 xl:order-1 xl:justify-end'>
-          <div
-            className='flex flex-col gap-4 p-4 pointer-events-auto min-w-0'
-            style={{
-              borderRadius: 20,
-              background: '#191919CC',
-              backdropFilter: 'blur(5px)',
-            }}
-          >
-            <StatusBridgeLighting bridge={bridge} />
-            <RemoteControlCard />
-          </div>
-        </aside>
-
-        {/* CENTER (mobile order 3) — MADRIX panel */}
-        <aside className='flex flex-col min-w-0 order-3 xl:order-2 xl:justify-end'>
-          <div className='pointer-events-auto w-full h-65 xl:h-85 min-w-0'>
-            <MadrixControlPanel />
-          </div>
-        </aside>
+      {/* Right column: stats then charts, spans full height on desktop */}
+      <div className='flex flex-col gap-3 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(30rem,38vw,52rem)]'>
+        <div className='shrink-0'>
+          <VoltageStat />
+        </div>
+        <div className='flex-1 min-h-0'>
+          <ChartElectricalBridgeLighting />
+        </div>
       </div>
-    </section>
+
+      {/* Left column: BridgeLightingStatus — natural height, anchored bottom-left */}
+      <div className='px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-4 lg:z-10 lg:w-[clamp(20rem,22vw,28rem)]'>
+        <BridgeLightingStatus />
+      </div>
+
+      {/* Center: MADRIX panel — defined height, anchored bottom-center */}
+      <div className='flex flex-col px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-[calc(clamp(20rem,22vw,28rem)+2rem)] lg:right-[calc(clamp(30rem,38vw,52rem)+2rem)] lg:z-10 lg:h-[clamp(14rem,35dvh,24rem)]'>
+        <MadrixControlPanel />
+      </div>
+    </div>
   )
 }
 
-export default React.memo<Props>(OverallSection)
+export default React.memo(OverallSection)

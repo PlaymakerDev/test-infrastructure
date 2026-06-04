@@ -80,7 +80,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
             name='period'
             render={({ field }) => {
               return (
-                <div>
+                <fieldset>
                   <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
                   <div className='overflow-x-auto'>
                     <Segmented
@@ -93,7 +93,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
                       }}
                     />
                   </div>
-                </div>
+                </fieldset>
               )
             }}
           />
@@ -104,7 +104,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
             name='status'
             render={({ field }) => {
               return (
-                <div>
+                <fieldset>
                   <label className='block fs-12 text-(--yellow)'>สถานะ</label>
                   <div className='overflow-x-auto'>
                     <Segmented
@@ -117,7 +117,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
                       }}
                     />
                   </div>
-                </div>
+                </fieldset>
               )
             }}
           />

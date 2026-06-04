@@ -1,15 +1,12 @@
 "use client"
 import React from 'react'
 import { TbSparkles } from 'react-icons/tb'
-import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
-
-interface Props {
-  bridge: BridgeProject
-}
+import { useDetailContext } from '../../../context'
 
 /** Bridge work-status card — shown on the left side of the detail page.
  *  Mirrors the "ไฟประดับสะพานแสดงผลล่าสุด" card style from the overall page. */
-const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
+const StatusBridgeLighting: React.FC = () => {
+  const { bridge } = useDetailContext()
   return (
     <div
       className='p-3 flex flex-col gap-1.5 w-full'
@@ -41,4 +38,4 @@ const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
   )
 }
 
-export default React.memo<Props>(StatusBridgeLighting)
+export default React.memo(StatusBridgeLighting)

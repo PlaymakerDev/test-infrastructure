@@ -6,7 +6,7 @@ import LineChart, {
   type LineConfig,
 } from '@/components/chart/LineChart'
 
-interface Props {}
+interface Props { }
 
 // ── Mock hourly data ──────────────────────────────────────────────────────────
 // 13 points covering 00:00 → 24:00 (every 2 hours). Values dip near-zero in

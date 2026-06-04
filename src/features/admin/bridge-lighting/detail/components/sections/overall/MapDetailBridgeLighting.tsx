@@ -3,17 +3,17 @@ import React from 'react'
 import { TbMapPin } from 'react-icons/tb'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import { useDetailContext } from '../../../context'
 
 interface Props {
-  bridge: BridgeProject
   /** Optional vignette overlay forwarded to BaseMap. */
   edgeFade?: MapEdgeFadeProps
 }
 
 /** Single-bridge centered map used as the detail page background.
  *  Higher zoom + 3D-ish pitch so the focus bridge fills the viewport. */
-const MapDetailBridgeLighting: React.FC<Props> = ({ bridge, edgeFade }) => {
+const MapDetailBridgeLighting: React.FC<Props> = ({ edgeFade }) => {
+  const { bridge } = useDetailContext()
   return (
     <BaseMap
       initialCenter={bridge.coord}
@@ -40,4 +40,4 @@ const MapDetailBridgeLighting: React.FC<Props> = ({ bridge, edgeFade }) => {
   )
 }
 
-export default React.memo<Props>(MapDetailBridgeLighting)
+export default React.memo(MapDetailBridgeLighting)
