@@ -163,8 +163,18 @@ const BaseMap: React.FC<BaseMapProps> = ({
   edgeFade,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  // Click-to-activate state — wheel zoom is disabled by default and only
+  // enabled after the user clicks on the map. Click outside (or press Esc)
+  // turns it back off. Solves the "scroll over map = page hijack" issue
+  // without requiring a keyboard modifier.
+  const [isInteractive, setIsInteractive] = useState(false)
+  const isInteractiveRef = useRef(false)
+  // Timer used to debounce auto-deactivate-on-mouseleave so a brief cursor
+  // drift outside the map doesn't immediately cancel zoom mode.
+  const leaveTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -186,6 +196,10 @@ const BaseMap: React.FC<BaseMapProps> = ({
         preserveDrawingBuffer: false,
       })
 
+      // Wheel-zoom disabled by default — enable via click-to-activate below.
+      // Touch interactions (pinch / drag) stay enabled for mobile users.
+      instance.scrollZoom.disable()
+
       instance.on('load', () => {
         if (cancelled) return
         setIsLoaded(true)
@@ -203,6 +217,74 @@ const BaseMap: React.FC<BaseMapProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Click-to-activate scroll zoom ──────────────────────────────────────
+  // Clicking inside the map wrapper enables wheel zoom; clicking outside
+  // (or pressing Escape) disables it. A ref mirrors the state so the
+  // document listener doesn't need re-binding when toggling.
+  useEffect(() => {
+    if (!map) return
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const wrapper = wrapperRef.current
+      if (!wrapper) return
+      const isInside = wrapper.contains(e.target as Node)
+      if (isInside && !isInteractiveRef.current) {
+        map.scrollZoom.enable()
+        isInteractiveRef.current = true
+        setIsInteractive(true)
+      } else if (!isInside && isInteractiveRef.current) {
+        map.scrollZoom.disable()
+        isInteractiveRef.current = false
+        setIsInteractive(false)
+      }
+    }
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isInteractiveRef.current) {
+        map.scrollZoom.disable()
+        isInteractiveRef.current = false
+        setIsInteractive(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [map])
+
+  // Clear pending leave-timer on unmount so it doesn't fire after teardown.
+  useEffect(() => {
+    return () => {
+      if (leaveTimerRef.current !== null) {
+        window.clearTimeout(leaveTimerRef.current)
+        leaveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Auto-deactivate on cursor leave — cancels if cursor returns within 400ms.
+  const handleMouseEnter = () => {
+    if (leaveTimerRef.current !== null) {
+      window.clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!isInteractiveRef.current || !map) return
+    leaveTimerRef.current = window.setTimeout(() => {
+      if (isInteractiveRef.current && map) {
+        map.scrollZoom.disable()
+        isInteractiveRef.current = false
+        setIsInteractive(false)
+      }
+      leaveTimerRef.current = null
+    }, 400)
+  }
+
   useEffect(() => {
     if (!map || !containerRef.current) return
     const observer = new ResizeObserver(() => map.resize())
@@ -214,19 +296,66 @@ const BaseMap: React.FC<BaseMapProps> = ({
 
   return (
     <MapContext.Provider value={ctx}>
+      {/* Wrapper holds everything BaseMap renders. Used by:
+        *   • document pointerdown handler — detect "inside vs outside" clicks
+        *   • onMouseEnter/Leave — auto-deactivate zoom on cursor leave (400ms
+        *     debounce so brief drift doesn't cancel)
+        * Pointer-events stays default so mouseenter/leave fire on this div;
+        * the map div + children sit on top with their own pointer-events. */}
       <div
-        ref={containerRef}
-        className={className}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          ...style,
-        }}
-      />
-      {children}
-      {edgeFade && <MapEdgeFade {...edgeFade} />}
+        ref={wrapperRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        <div
+          ref={containerRef}
+          className={className}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'auto',
+            ...style,
+          }}
+        />
+        {children}
+        {edgeFade && <MapEdgeFade {...edgeFade} />}
+
+        {/* Hint badge — message changes based on zoom state.
+          * • Inactive: instructs user to click to activate
+          * • Active:   instructs user how to exit (move mouse away / Esc) */}
+        <div
+          className='absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-md'
+          style={{
+            background: 'rgba(0,0,0,0.7)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: 'rgba(255,255,255,0.9)',
+            fontSize: 12,
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            transition: 'opacity 0.2s',
+            pointerEvents: 'none',
+          }}
+        >
+          {isInteractive
+            ? 'เลื่อนเมาส์ออก หรือกด ESC เพื่อยกเลิก'
+            : 'คลิกเพื่อใช้งานแผนที่'}
+        </div>
+
+        {/* Active-state border — subtle inset glow indicating wheel-zoom is on. */}
+        {isInteractive && (
+          <div
+            className='absolute inset-0'
+            style={{
+              boxShadow: 'inset 0 0 0 1px rgba(252,209,22,0.25)',
+              transition: 'box-shadow 0.2s',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+      </div>
     </MapContext.Provider>
   )
 }

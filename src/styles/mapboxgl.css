@@ -16,3 +16,37 @@
 .react-popup .mapboxgl-popup-tip {
   display: none !important;
 }
+
+/* ── Cooperative gesture hint ──────────────────────────────────────────────
+ * Mapbox v3 uses `.mapboxgl-scroll-zoom-blocker` (desktop) and
+ * `.mapboxgl-touch-pan-blocker` (mobile). Default is a fullscreen black
+ * overlay with white centered text — override to a small toast pill at
+ * top-center so it doesn't dominate the map. */
+.mapboxgl-scroll-zoom-blocker,
+.mapboxgl-touch-pan-blocker {
+  /* Reposition from fullscreen → small toast top-center */
+  top: 12px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100% - 24px);
+
+  /* Pill styling */
+  padding: 6px 14px !important;
+  border-radius: 6px !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  /* Typography */
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
