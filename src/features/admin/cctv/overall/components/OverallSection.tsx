@@ -17,6 +17,8 @@ import {
   CCTV_CAMERAS,
   type CctvCameraEntry,
 } from '@/features/admin/cctv/overall/data/cctvData'
+import { useAppSelector } from '@/stores/hooks'
+import { Skeleton } from 'antd'
 
 const CCTV_FILTERS: FilterConfig[] = [
   {
@@ -68,6 +70,10 @@ const OverallSection: React.FC = () => {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
 
+
+  const { overview, task_schedules: { overview: { loading } } } = useAppSelector(state => state.cctv)
+
+
   const stats: FilterStats = useMemo(() => ({
     all: CCTV_CAMERAS.length,
     online: CCTV_CAMERAS.filter((c) => c.connection === 'online').length,
@@ -93,6 +99,8 @@ const OverallSection: React.FC = () => {
       return true
     })
   }, [activeFilter, search])
+
+  if (loading) return <Skeleton loading={loading} />
 
   return (
     <div className='flex flex-col gap-5'>
