@@ -189,7 +189,7 @@ const FormAddDetail: React.FC<Props> = (props) => {
                 render={({ field }) => {
                   return (
                     <fieldset>
-                      <label>สิ้นสุดการแสดงผล* <span className='text-red-500'>*</span></label>
+                      <label>สิ้นสุดการแสดงผล <span className='text-red-500'>*</span></label>
                       <DatePicker
                         {...field}
                         placeholder='กรุณาเลือกวันที่และเวลาสิ้นสุด...'

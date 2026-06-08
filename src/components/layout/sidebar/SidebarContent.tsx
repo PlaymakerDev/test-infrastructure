@@ -13,16 +13,17 @@ import {
   TbTopologyStar3,
   TbAdjustmentsHorizontal,
   TbBriefcase,
-  TbChartBar,
-  TbTool,
+  // TbChartBar,
+  // TbTool,
   TbShieldHalf,
   TbCarCrash,
   TbChevronRight,
 } from "react-icons/tb";
 import { motion, AnimatePresence } from 'framer-motion'
-import mockData from '@/mock/test.json'
+// import mockData from '@/mock/test.json'
 import menu from '@/configs/menu'
 import { useRouter, usePathname } from 'next/navigation'
+import { useAppSelector } from '@/stores/hooks';
 
 const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "Dashboard": TbLayoutDashboard,
@@ -63,6 +64,7 @@ const SidebarContent: React.FC = () => {
   const [openDepts, setOpenDepts] = useState<Set<string>>(new Set())
   const router = useRouter()
   const pathname = usePathname()
+  const { sidebar } = useAppSelector(state => state.layout)
 
   const pathMap = useMemo<Record<string, RouteEntry>>(() => {
     const map: Record<string, RouteEntry> = {}
@@ -90,7 +92,7 @@ const SidebarContent: React.FC = () => {
 
   return (
     <div>
-      {mockData.map((group, groupIndex) => {
+      {sidebar.map((group, groupIndex) => {
         const isGroupOpen = openGroups.has(groupIndex)
         return (
           <React.Fragment key={groupIndex}>
@@ -167,7 +169,7 @@ const SidebarContent: React.FC = () => {
                                     <motion.div
                                       key={solution.solution_type_id}
                                       variants={solutionItemVariants}
-                                      onClick={() => route && router.push(route.path)}
+                                      onClick={() => route && router.push(`${route.path}?dept_id=${dept.department_id}`)}
                                       className={`pl-10 py-3 pr-3 flex items-center justify-between mb-2 rounded-md transition-colors ${route ? 'cursor-pointer' : 'cursor-default opacity-50'} ${isActive ? 'bg-(--yellow)' : 'bg-(--light-black) hover:bg-(--mid-gray)'}`}
                                     >
                                       <div className="flex items-center gap-2">

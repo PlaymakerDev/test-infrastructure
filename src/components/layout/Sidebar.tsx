@@ -1,8 +1,8 @@
 "use client"
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Drawer } from 'antd'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
-import { resetDrawerOpen } from '@/stores/reducers/layout/layoutSlice'
+import { getSidebarData, resetDrawerOpen } from '@/stores/reducers/layout/layoutSlice'
 import SidebarHeader from './sidebar/SidebarHeader'
 import SidebarContent from './sidebar/SidebarContent'
 import SidebarFooter from './sidebar/SidebarFooter'
@@ -16,6 +16,11 @@ const Sidebar: React.FC<Props> = (props) => {
   const { drawer } = useAppSelector(state => state.layout)
   const { open } = drawer
   const dispatch = useAppDispatch()
+  const { task_schedules: { loading } } = useAppSelector(state => state.layout)
+
+  useEffect(() => {
+    if (open) dispatch(getSidebarData())
+  }, [open, dispatch])
 
   return (
     <aside>
@@ -26,6 +31,7 @@ const Sidebar: React.FC<Props> = (props) => {
         placement='left'
         closable={false}
         footer={<SidebarFooter />}
+        loading={loading}
       >
         <SidebarContent />
       </Drawer>
