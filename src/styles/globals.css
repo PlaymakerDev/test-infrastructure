@@ -6,6 +6,7 @@
 @import url('../styles/tracking.css');
 @import url('../styles/dashboard.css');
 @import url('../styles/mapboxgl.css');
+@import url('../styles/maintenance.css');
 /* IMPORT TAILWINDCSS */
 @import "tailwindcss";
 

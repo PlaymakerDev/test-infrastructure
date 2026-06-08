@@ -1,6 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { LayoutState } from '@/types/layout';
-import { set } from 'better-auth';
+import { getSidebarAPI } from '@/services/routes/LayoutService';
 
 const initialState: LayoutState = {
   task_schedules: {
@@ -9,10 +9,17 @@ const initialState: LayoutState = {
   },
   drawer: {
     open: false
-  }
+  },
+  sidebar: []
 }
 
 export const SLICE_NAME = 'layoutSlice';
+
+// API
+export const getSidebarData = createAsyncThunk(SLICE_NAME + '/apiGetSidebarData', async () => {
+  const response = await getSidebarAPI()
+  return response.data
+})
 
 const layoutSlice = createSlice({
   name: `${SLICE_NAME}/layout`,
@@ -32,6 +39,22 @@ const layoutSlice = createSlice({
     resetDrawerOpen: (state) => {
       state.drawer.open = initialState.drawer.open
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(getSidebarData.fulfilled, (state, action) => {
+        state.sidebar = action.payload
+        state.task_schedules.loading = false
+        state.task_schedules.status = "SUCCESS"
+      })
+      .addCase(getSidebarData.pending, (state) => {
+        state.task_schedules.loading = true
+        state.task_schedules.status = "LOADING"
+      })
+      .addCase(getSidebarData.rejected, (state) => {
+        state.task_schedules.loading = false
+        state.task_schedules.status = "FAILED"
+      })
   }
 })
 
