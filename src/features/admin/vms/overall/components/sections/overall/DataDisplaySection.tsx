@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { TableVMSData, VMSList } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchVMS from './FormSearchVMS'
 
-interface Props {}
+interface Props { }
 
 const VMS_FILTERS: FilterConfig[] = [
   {
@@ -72,6 +72,10 @@ const DataDisplaySection: React.FC<Props> = () => {
     }
   }, [displayType])
 
+  const onSearch = useCallback((data: string) => {
+    console.log(data)
+  }, [])
+
   return (
     <div>
       <section>
@@ -79,7 +83,10 @@ const DataDisplaySection: React.FC<Props> = () => {
           filters={VMS_FILTERS}
           stats={VMS_STATS}
           activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+          onFilterChange={(filter) => {
+            setActiveFilter(filter)
+            onSearch(filter)
+          }}
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
           formSearch={<FormSearchVMS />}

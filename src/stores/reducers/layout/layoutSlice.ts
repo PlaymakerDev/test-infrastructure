@@ -3,14 +3,18 @@ import { LayoutState } from '@/types/layout';
 import { getSidebarAPI } from '@/services/routes/LayoutService';
 
 const initialState: LayoutState = {
-  task_schedules: {
-    loading: false,
-    status: "IDLE"
-  },
+  loading: false,
+  fullscreen_loading: false,
   drawer: {
     open: false
   },
-  sidebar: []
+  sidebar: [],
+  task_schedules: {
+    sidebar: {
+      loading: false,
+      status: "IDLE"
+    }
+  },
 }
 
 export const SLICE_NAME = 'layoutSlice';
@@ -25,13 +29,11 @@ const layoutSlice = createSlice({
   name: `${SLICE_NAME}/layout`,
   initialState,
   reducers: {
-    setTaskSchedule: (state, action) => {
-      state.task_schedules.loading = action.payload.loading
-      state.task_schedules.status = action.payload.status
+    setLoading: (state, action) => {
+      state.loading = action.payload.loading
     },
-    resetTaskSchedule: (state) => {
-      state.task_schedules.loading = initialState.task_schedules.loading
-      state.task_schedules.status = initialState.task_schedules.status
+    setFullscreenLoading: (state, action) => {
+      state.fullscreen_loading = action.payload.fullscreen_loading
     },
     setDrawerOpen: (state, action) => {
       state.drawer.open = action.payload.open
@@ -44,23 +46,23 @@ const layoutSlice = createSlice({
     builder
       .addCase(getSidebarData.fulfilled, (state, action) => {
         state.sidebar = action.payload
-        state.task_schedules.loading = false
-        state.task_schedules.status = "SUCCESS"
+        state.task_schedules.sidebar.loading = false
+        state.task_schedules.sidebar.status = "SUCCESS"
       })
       .addCase(getSidebarData.pending, (state) => {
-        state.task_schedules.loading = true
-        state.task_schedules.status = "LOADING"
+        state.task_schedules.sidebar.loading = true
+        state.task_schedules.sidebar.status = "LOADING"
       })
       .addCase(getSidebarData.rejected, (state) => {
-        state.task_schedules.loading = false
-        state.task_schedules.status = "FAILED"
+        state.task_schedules.sidebar.loading = false
+        state.task_schedules.sidebar.status = "FAILED"
       })
   }
 })
 
 export const {
-  setTaskSchedule,
-  resetTaskSchedule,
+  setLoading,
+  setFullscreenLoading,
   setDrawerOpen,
   resetDrawerOpen
 } = layoutSlice.actions

@@ -1,39 +1,27 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { useAppSelector } from '@/stores/hooks'
 import React, { useMemo } from 'react'
 
-interface Props {}
-
-const mockCameras = [
-  {
-    id: 1,
-    code: 'CAM-F03B',
-    location: 'IP Address : 192.168.30.119',
-  },
-  {
-    id: 2,
-    code: 'P1-CAM-B01',
-    location: 'IP Address : 10.172.26.17',
-  },
-  {
-    id: 3,
-    code: '68SET-PKT3033-B001-จุดที่1-กม.1+400-ป้ายVMS',
-    location: 'IP Address : 10.101.27.1',
-  },
-]
+interface Props { }
 
 const CCTVSection: React.FC<Props> = () => {
+  const { vms_random_online } = useAppSelector(state => state.vms_overview)
+
   const renderCameraList = useMemo(() => {
-    return mockCameras.map((item) => (
+    return vms_random_online.map((item) => (
       <div
-        key={item.id}
+        key={item.solution.id}
         className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
       >
-        <HLSLivePlayer figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg' />
-        <h4 className='camera-code'>{item.code}</h4>
-        <p className='camera-location'>{item.location}</p>
+        <HLSLivePlayer
+          figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
+          hlsUrl={item.vms.hls_url}
+        />
+        <h4 className='camera-code'>{item.solution.solution_name}</h4>
+        <p className='camera-location'>เชื่อมต่อล่าสุด :{item.vms.last_connected}</p>
       </div>
     ))
-  }, [])
+  }, [vms_random_online])
 
   return (
     <div className='h-full flex flex-col gap-4'>
