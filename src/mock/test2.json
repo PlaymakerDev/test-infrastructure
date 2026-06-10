@@ -1,0 +1,212 @@
+[
+    {
+        "road": {
+            "id": 1797,
+            "code_name": "ชม.3024"
+        },
+        "solution": {
+            "id": 2439,
+            "solution_name": "ชม.3024 จุดที่ 1"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1771,
+            "code_name": "ชม.3038"
+        },
+        "solution": {
+            "id": 2420,
+            "solution_name": "ชม.3038 กม.0+050"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1768,
+            "code_name": "ชม.4032"
+        },
+        "solution": {
+            "id": 2433,
+            "solution_name": "ชม.4032 กม.7+600"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1779,
+            "code_name": "ชม.4046"
+        },
+        "solution": {
+            "id": 2422,
+            "solution_name": "ชม.4046 กม.0+200"
+        },
+        "camera": {
+            "total": 4,
+            "online": 0,
+            "offline": 4
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1781,
+            "code_name": "ชม.4051"
+        },
+        "solution": {
+            "id": 2436,
+            "solution_name": "ชม.4051 กม.0+100"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1792,
+            "code_name": "ชม.5080"
+        },
+        "solution": {
+            "id": 2442,
+            "solution_name": "ชม.5080 กม.0+250"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1832,
+            "code_name": "มส.5019"
+        },
+        "solution": {
+            "id": 2421,
+            "solution_name": "มส.5019 กม.0+050"
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1872,
+            "code_name": "ลป.4034"
+        },
+        "solution": {
+            "id": 2452,
+            "solution_name": "ลป.4034 จุดที่ 1 กม.27+200 "
+        },
+        "camera": {
+            "total": 4,
+            "online": 4,
+            "offline": 0
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 1872,
+            "code_name": "ลป.4034"
+        },
+        "solution": {
+            "id": 2455,
+            "solution_name": "ลป.4034 จุดที่ 2 กม.32+500"
+        },
+        "camera": {
+            "total": 4,
+            "online": 3,
+            "offline": 1
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    },
+    {
+        "road": {
+            "id": 25,
+            "code_name": "ลพ.3083"
+        },
+        "solution": {
+            "id": 2445,
+            "solution_name": "ลพ.3083  จุดที่ 1 กม.0+500 "
+        },
+        "camera": {
+            "total": 4,
+            "online": 0,
+            "offline": 4
+        },
+        "project": {
+            "id": 672,
+            "budget_year": 2568,
+            "contract_no": "สทช.ที่ 10/30/2568"
+        },
+        "is_warranty": true
+    }
+]
