@@ -1,3 +1,35 @@
+import { MetaData } from "../shared";
+
+export interface APIRequestVMSList {
+  road_code?: string;
+  contract_no?: string;
+  status_name?: string;
+  warranty_name?: string;
+  page: number;
+  search?: string;
+  field?: string;
+  sort?: 'ASC' | 'DESC';
+  limit: number;
+}
+
+export interface APIResponseVMSList {
+  res_data: ListResData[];
+  meta_data: MetaData;
+}
+
+export interface ListResData {
+  road: Road
+  project: Project
+  solution: Solution
+  vms: Vms
+  warranty: ListWarranty
+}
+
+export interface ListWarranty {
+  is_warranty: boolean
+  name: string
+}
+
 export interface APIResponseVMSTotal {
   solution: TotalSolution
   warranty: TotalWarranty
@@ -13,7 +45,6 @@ export interface TotalWarranty {
   active: number
   expired: number
 }
-
 
 export interface APIRequestVMSRandomOnline {
   limit: number

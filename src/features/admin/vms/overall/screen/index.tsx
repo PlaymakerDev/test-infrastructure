@@ -2,14 +2,15 @@
 import React, { useEffect } from 'react'
 import { OverallSection, TitleSection } from '../components'
 import { OverallProvider } from '../context'
-import { useAppDispatch } from '@/stores/hooks'
-import { getVMSOverviewData, getVMSOverviewRandomOnlineData, getVMSOverviewTotalData } from '@/stores/reducers/vms/vmsOverviewSlice'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { getVMSOverviewData, getVMSOverviewListData, getVMSOverviewRandomOnlineData, getVMSOverviewTotalData } from '@/stores/reducers/vms/vmsOverviewSlice'
 import { useSearchParams } from 'next/navigation'
 
 const VMSScreen = () => {
   const dispatch = useAppDispatch()
   const searchParams = useSearchParams()
   const deptId = searchParams.get('dept_id')
+  const { vms_list } = useAppSelector(state => state.vms_overview)
 
   useEffect(() => {
     if (deptId) dispatch(getVMSOverviewData(deptId))
@@ -29,6 +30,15 @@ const VMSScreen = () => {
   useEffect(() => {
     if (deptId) dispatch(getVMSOverviewTotalData(deptId))
   }, [deptId, dispatch])
+
+  useEffect(() => {
+    if (deptId) {
+      dispatch(getVMSOverviewListData({
+        deptId,
+        requestParams: vms_list.search
+      }))
+    }
+  }, [deptId, dispatch, vms_list.search])
 
   return (
     <OverallProvider>

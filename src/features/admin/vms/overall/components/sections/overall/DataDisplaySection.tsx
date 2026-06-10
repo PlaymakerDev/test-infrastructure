@@ -2,6 +2,10 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { TableVMSData, VMSList } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchVMS from './FormSearchVMS'
+import { AxiosError } from 'axios'
+import { message } from 'antd'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { getVMSOverviewListData, setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
 
 interface Props { }
 
@@ -60,6 +64,8 @@ const VMS_STATS: FilterStats = {
 const DataDisplaySection: React.FC<Props> = () => {
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const dispatch = useAppDispatch()
+  const { vms_list } = useAppSelector(state => state.vms_overview)
 
   const renderContent = useMemo(() => {
     switch (displayType) {
@@ -72,8 +78,16 @@ const DataDisplaySection: React.FC<Props> = () => {
     }
   }, [displayType])
 
-  const onSearch = useCallback((data: string) => {
-    console.log(data)
+  const onSearch = useCallback(async (data: string) => {
+    try {
+
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.response?.data?.message || 'เกิดข้อผิดพลาดในการค้นหา')
+      } else {
+        console.error(error)
+      }
+    }
   }, [])
 
   return (
@@ -92,7 +106,9 @@ const DataDisplaySection: React.FC<Props> = () => {
           formSearch={<FormSearchVMS />}
         />
       </section>
-      <section className='mt-5'>{renderContent}</section>
+      <section className='mt-5'>
+        {renderContent}
+      </section>
     </div>
   )
 }
