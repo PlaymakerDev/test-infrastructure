@@ -5,7 +5,7 @@ import { ChatWindow, Composer, HistorySidebar, TitleSection } from "../component
 const SmartSearchScreen: React.FC = () => {
   return (
     <SmartSearchProvider>
-      <div className="main-screen flex flex-col h-[calc(100vh-var(--nav-offset))]">
+      <div className="main-screen flex flex-col -mt-7 h-[calc(100vh-var(--nav-h))]">
         <TitleSection />
         <div className="mt-4 flex-1 min-h-0 flex gap-4">
           <HistorySidebar />
