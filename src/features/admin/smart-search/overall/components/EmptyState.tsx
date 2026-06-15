@@ -3,6 +3,7 @@ import React from "react"
 import { TbBrandGithubCopilot } from "react-icons/tb"
 import { useSmartSearchContext } from "../context"
 import { SUGGESTED_PROMPTS } from "../data/suggestedPrompts"
+import InsightsPanel from "./InsightsPanel"
 
 const EmptyState: React.FC = () => {
   const { send, isStreaming } = useSmartSearchContext()
@@ -32,6 +33,8 @@ const EmptyState: React.FC = () => {
           </button>
         ))}
       </div>
+
+      <InsightsPanel />
     </div>
   )
 }

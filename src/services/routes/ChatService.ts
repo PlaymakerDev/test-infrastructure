@@ -3,6 +3,7 @@ import type {
   ConversationDetail,
   ConversationSummary,
   FeedbackRequest,
+  InsightsResponse,
 } from "@/types/chat"
 
 // Some endpoints may wrap the body in the { res_code, res_data } envelope
@@ -60,4 +61,10 @@ export async function exportHtml(message: string): Promise<string> {
 // ── Feedback (§4) ──
 export async function submitFeedback(body: FeedbackRequest): Promise<void> {
   await chatHttp.post("/feedback", body)
+}
+
+// ── Proactive insights (§5) ──
+export async function fetchInsights(): Promise<InsightsResponse> {
+  const res = await chatHttp.get("/insights")
+  return unwrap<InsightsResponse>(res.data)
 }

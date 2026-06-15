@@ -100,6 +100,27 @@ export interface ConversationDetail {
   messages: ConversationMessage[]
 }
 
+// ── Proactive insights (§5) ──
+export type InsightType = "status" | "mover"
+
+export interface Insight {
+  type: InsightType
+  metric: string
+  unit?: string
+  recent: number
+  prior: number
+  pct_change: number
+  direction: string // "offline" | "up" | "down"
+  summary: string // Thai, ready to display
+  road_code?: string
+  road_name?: string
+}
+
+export interface InsightsResponse {
+  period: string
+  insights: Insight[]
+}
+
 // ── Error classification for a turn (drives the error UI) ──
 export type ChatErrorKind = "auth" | "rate_limit" | "generic"
 
