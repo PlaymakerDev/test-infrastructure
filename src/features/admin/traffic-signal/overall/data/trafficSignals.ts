@@ -27,6 +27,9 @@ export interface PhaseTimingConfig {
 }
 
 export interface TrafficSignalProject {
+  /** Solution id — same value used by `/traffic/details/{id}` and the rest
+   *  of the solution-scoped detail endpoints. Comes from `solution.id` on
+   *  the list endpoint. */
   id: string
   /** รหัสสายทาง เช่น "กท.1001" */
   roadCode: string

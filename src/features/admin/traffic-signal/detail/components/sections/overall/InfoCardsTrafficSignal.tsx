@@ -86,12 +86,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
       <Card
         icon={<TbWaveSine />}
         label='การจราจรช่วงเวลาเร่งด่วน'
-        value={
-          <>
-            {(project.peakHourTraffic ?? 0).toLocaleString()}{' '}
-            <span className='fs-14 font-normal'>คัน</span>
-          </>
-        }
+        value={(project.peakHourTraffic ?? 0).toLocaleString()}
         sublabel={`Phase ${project.peakPhase ?? '-'} : Peak`}
         color='#7CFC00'
       />

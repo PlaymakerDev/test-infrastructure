@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import {
   TbGridDots,
@@ -7,7 +7,7 @@ import {
   TbWifiOff,
   TbInfoSquareRoundedFilled,
 } from 'react-icons/tb'
-import type { CctvCameraEntry } from '@/features/admin/cctv/overall/data/cctvData'
+import type { CctvDeptOverviewListItem } from '@/types/cctv'
 
 // ── Pill badge ───────────────────────────────────────────────────────────────
 
@@ -22,11 +22,10 @@ const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
 
 // ── Single camera card ────────────────────────────────────────────────────────
 
-const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
+const CctvCard: React.FC<{ item: CctvDeptOverviewListItem }> = ({ item }) => {
   const router = useRouter()
-  const warrantyColor = camera.warranty === 'in-warranty' ? '#05F2DB' : '#979797'
-  const warrantyText = camera.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ'
-  const roadColor = camera.connection === 'online' ? '#66AEFF' : '#E94C4C'
+  const warrantyColor = item.is_warranty ? '#05F2DB' : '#979797'
+  const warrantyText = item.is_warranty ? 'ในค้ำ' : 'หมดค้ำ'
 
   return (
     <div
@@ -38,12 +37,12 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
         className='text-base font-semibold leading-snug mb-0'
         style={{ color: 'var(--yellow)' }}
       >
-        {camera.projectName}
+        {item.solution.solution_name}
       </h4>
 
       {/* Badges row */}
       <div className='flex flex-wrap items-center gap-2'>
-        <Pill text={camera.roadCode} color={roadColor} />
+        <Pill text={item.road.code_name} color='#66AEFF' />
         <Pill text={warrantyText} color={warrantyColor} />
         <TbInfoSquareRoundedFilled
           size={32}
@@ -56,23 +55,23 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
       {/* Info rows */}
       <div className='flex flex-col gap-1.5 text-sm'>
         <div className='flex gap-2'>
-          <span className='text-white/50 whitespace-nowrap shrink-0'>จุดติดตั้ง :</span>
+          <span className='text-white/50 whitespace-nowrap shrink-0'>ชื่อโครงการ :</span>
           <span
             className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-            onClick={() => router.push(`/admin/cctv/detail/${camera.id}`)}
+            onClick={() => router.push(`/admin/cctv/detail/${item.solution.id}`)}
             role='link'
             tabIndex={0}
           >
-            {camera.installPoint}
+            {item.solution.solution_name}
           </span>
         </div>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>เลขที่สัญญา :</span>
-          <span className='text-white'>{camera.contractNo}</span>
+          <span className='text-white'>{item.project.contract_no}</span>
         </div>
         <div className='flex gap-2'>
-          <span className='text-white/50 whitespace-nowrap shrink-0'>หน่วยงานที่รับผิดชอบ :</span>
-          <span className='font-medium' style={{ color: 'var(--yellow)' }}>{camera.bureau}</span>
+          <span className='text-white/50 whitespace-nowrap shrink-0'>ปีงบประมาณ :</span>
+          <span className='font-medium' style={{ color: 'var(--yellow)' }}>{item.project.budget_year}</span>
         </div>
       </div>
 
@@ -81,10 +80,8 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
 
         {/* ทั้งหมด */}
         <div className='flex flex-col items-center gap-2'>
-          <span
-            className='fs-24 font-bold tabular-nums leading-none text-white'
-          >
-            {camera.totalCameras}
+          <span className='fs-24 font-bold tabular-nums leading-none text-white'>
+            {item.camera.total}
           </span>
           <div className='flex items-center gap-1 text-sm text-white/50'>
             <TbGridDots size={16} />
@@ -96,9 +93,9 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
         <div className='flex flex-col items-center gap-2'>
           <span
             className='fs-24 font-bold tabular-nums leading-none'
-            style={{ color: camera.onlineCount === 0 ? '#66AEFF55' : '#66AEFF' }}
+            style={{ color: item.camera.online === 0 ? '#66AEFF55' : '#66AEFF' }}
           >
-            {camera.onlineCount}
+            {item.camera.online}
           </span>
           <div className='flex items-center gap-1 text-sm' style={{ color: '#66AEFF99' }}>
             <TbWifi size={16} />
@@ -110,9 +107,9 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
         <div className='flex flex-col items-center gap-2'>
           <span
             className='fs-24 font-bold tabular-nums leading-none'
-            style={{ color: camera.offlineCount === 0 ? '#E94C4C55' : '#E94C4C' }}
+            style={{ color: item.camera.offline === 0 ? '#E94C4C55' : '#E94C4C' }}
           >
-            {camera.offlineCount}
+            {item.camera.offline}
           </span>
           <div className='flex items-center gap-1 text-sm' style={{ color: '#E94C4C99' }}>
             <TbWifiOff size={16} />
@@ -125,53 +122,24 @@ const CctvCard: React.FC<{ camera: CctvCameraEntry }> = ({ camera }) => {
   )
 }
 
-// ── Grid with bureau group headers ────────────────────────────────────────────
+// ── Grid ──────────────────────────────────────────────────────────────────────
 
 interface Props {
-  cameras: CctvCameraEntry[]
+  items: CctvDeptOverviewListItem[]
 }
 
-const CardGridCctv: React.FC<Props> = ({ cameras }) => {
-  const groups = useMemo(() => {
-    const map = new Map<string, CctvCameraEntry[]>()
-    for (const c of cameras) {
-      const list = map.get(c.bureau) ?? []
-      list.push(c)
-      map.set(c.bureau, list)
-    }
-    return Array.from(map.entries()).map(([bureau, items]) => ({ bureau, items }))
-  }, [cameras])
+const CardGridCctv: React.FC<Props> = ({ items }) => {
 
-  if (cameras.length === 0) {
+  if (items.length === 0) {
     return (
       <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
     )
   }
 
   return (
-    <div className='flex flex-col gap-8'>
-      {groups.map(({ bureau, items }) => (
-        <div key={bureau} className='flex flex-col gap-4'>
-
-          {/* Bureau header */}
-          <div className='flex items-center gap-3'>
-            <span className='text-white font-bold'>{bureau}</span>
-            <span
-              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-              style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
-            >
-              {items.length} โครงการ
-            </span>
-          </div>
-
-          {/* Cards grid */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-            {items.map((camera) => (
-              <CctvCard key={camera.id} camera={camera} />
-            ))}
-          </div>
-
-        </div>
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+      {items.map((item) => (
+        <CctvCard key={item.solution.id} item={item} />
       ))}
     </div>
   )

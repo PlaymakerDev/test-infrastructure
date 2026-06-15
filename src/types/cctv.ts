@@ -47,14 +47,97 @@ export interface CctvDeptOverview {
   locations: CctvLocation[]
 }
 
+export interface CctvDeptOverviewListParams {
+  deptId: string
+  page?: number
+  limit?: number
+}
+
+export interface CctvDeptOverviewListItem {
+  road: {
+    id: number
+    code_name: string
+  }
+  solution: {
+    id: number
+    solution_name: string
+  }
+  camera: {
+    total: number
+    online: number
+    offline: number
+  }
+  project: {
+    id: number
+    budget_year: number
+    contract_no: string
+  }
+  department: {
+    id: number
+    name: string
+  }
+  is_warranty: boolean
+}
+
+export interface CctvDeptOverviewListResponse {
+  res_data: CctvDeptOverviewListItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface CctvDeptCamera {
+  id: string
+  camera_name: string
+  hls_url: string
+  geometry_point: [number, number]
+}
+
+export interface CctvDeptCamerasResponse {
+  cctv: CctvDeptCamera[]
+}
+
+export interface CctvDeptOverviewTotals {
+  camera: {
+    total: number
+    online: number
+    offline: number
+  }
+  warranty: {
+    active: number
+    expired: number
+  }
+}
+
+export interface CctvRandomOnlineCamera {
+  id: string
+  camera_name: string
+  road_code: string
+  hls_url: string
+  is_online: boolean
+}
+
+export interface CctvRandomOnlineResponse {
+  count: number
+  data: CctvRandomOnlineCamera[]
+}
+
 // Redux State
 export interface CctvState {
   list: CctvCameraEntry[]
   stats: CctvStats
   overview: CctvDeptOverview | null
+  overviewList: CctvDeptOverviewListResponse | null
+  totals: CctvDeptOverviewTotals | null
+  detailCameras: CctvDeptCamerasResponse | null
+  randomOnlineCameras: CctvRandomOnlineCamera[]
   task_schedules: {
     list: PromiseProperties
     stats: PromiseProperties
     overview: PromiseProperties
+    overviewList: PromiseProperties
+    totals: PromiseProperties
+    detailCameras: PromiseProperties
+    randomOnlineCameras: PromiseProperties
   }
 }

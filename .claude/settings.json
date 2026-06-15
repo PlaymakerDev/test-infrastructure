@@ -41,7 +41,10 @@
       "Bash(grep -oE \"mapboxgl-scroll-zoom-blocker[^,{]*\" /d/www/react/drr-its-new/node_modules/mapbox-gl/dist/mapbox-gl.css)",
       "Bash(grep -oE \"[^{},]*mapboxgl-scroll-zoom-blocker[^{},]*\\\\{[^}]*\\\\}\" /d/www/react/drr-its-new/node_modules/mapbox-gl/dist/mapbox-gl.css)",
       "Bash(cat /c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/bla78k5py.output 2>/dev/null)",
-      "Read(//c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/**)"
+      "Read(//c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/**)",
+      "Bash(ls /d/www/react/drr-cm-fe/ 2>/dev/null | head -30)",
+      "Read(//d/www/react/drr-cm-fe//**)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('deps:', Object.keys\\(p.dependencies\\).length, '| devDeps:', Object.keys\\(p.devDependencies\\).length\\)\")"
     ],
     "additionalDirectories": [
       "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"

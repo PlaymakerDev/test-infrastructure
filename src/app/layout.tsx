@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import StoreProvider from '@/components/provider/StoreProvider';
 import AntdAppProvider from '@/components/provider/AntdAppProvider';
+import QueryProvider from '@/components/provider/QueryProvider';
 import { ConfigProvider } from "antd";
 import { theme } from "@/configs/antd/themeConfig";
 
@@ -40,15 +41,17 @@ export default function RootLayout({
       >
         <AntdRegistry>
           <StoreProvider>
-            <ConfigProvider
-              theme={{
-                ...theme.theme
-              }}
-            >
-              <AntdAppProvider>
-                {children}
-              </AntdAppProvider>
-            </ConfigProvider>
+            <QueryProvider>
+              <ConfigProvider
+                theme={{
+                  ...theme.theme
+                }}
+              >
+                <AntdAppProvider>
+                  {children}
+                </AntdAppProvider>
+              </ConfigProvider>
+            </QueryProvider>
           </StoreProvider>
         </AntdRegistry>
       </body>
