@@ -56,20 +56,20 @@ const VMS_FILTERS: FilterConfig[] = [
   },
 ]
 
-const VMS_STATS: FilterStats = {
-  all: 207,
-  online: 55,
-  offline: 152,
-  inWarranty: 115,
-  expired: 92,
-}
-
 const DataDisplaySection: React.FC<Props> = (props) => {
   const { deptId } = props
   const dispatch = useAppDispatch()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
-  const { vms_list } = useAppSelector(state => state.vms_overview)
+  const { vms_list, vms_total } = useAppSelector(state => state.vms_overview)
+
+  const vmsStats = useMemo<FilterStats>(() => ({
+    all: vms_total.solution.total,
+    online: vms_total.solution.online,
+    offline: vms_total.solution.offline,
+    inWarranty: vms_total.warranty.active,
+    expired: vms_total.warranty.expired,
+  }), [vms_total])
 
   const { data, isLoading } = useQuery({
     queryKey: ['vms_list', vms_list.search],
@@ -114,7 +114,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       <section>
         <SearchBar
           filters={VMS_FILTERS}
-          stats={VMS_STATS}
+          stats={vmsStats}
           activeFilter={activeFilter}
           onFilterChange={(filter) => {
             setActiveFilter(filter)
