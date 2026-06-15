@@ -157,6 +157,46 @@
 
 .modalBtnConfirm:hover { opacity: 0.88; }
 
+/* ─── Save Success Modal (responsive) ─── */
+.saveModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalOverlayIn 0.2s ease;
+}
+
+.saveModalBg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.saveModalContent {
+  position: relative;
+  z-index: 2;
+  width: 95vw;
+  max-width: 800px;
+  min-height: auto;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 16px 16px 20px;
+  animation: modalCardIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .saveModalContent {
+    width: 800px;
+    min-height: 560px;
+    padding: 24px 32px;
+  }
+}
+
 /* ─── Image Preview ─── */
 .imagePreviewItem {
   position: relative;

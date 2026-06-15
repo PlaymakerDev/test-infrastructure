@@ -42,10 +42,8 @@ const MaintenanceTitleSection: React.FC = () => {
   const handleBack = useCallback(() => router.push('/admin/maintenance'), [router])
 
   const handleTabChange = (value: string) => {
-    const period = searchParams.get('period')
     const queryParts: string[] = []
     if (value === 'REPAIR') queryParts.push('repair')
-    if (period) queryParts.push(`period=${period}`)
     const query = queryParts.join('&')
     router.push(`/admin/maintenance${query ? `?${query}` : ''}`)
   }

@@ -1,6 +1,6 @@
 "use client"
 import React, { Suspense } from 'react'
-import MaintenanceScreen from '@/features/admin/maintenance/screen'
+import MaintenanceScreen from '@/features/admin/maintenance/overall/screen'
 
 const MaintenancePage = () => {
   return (

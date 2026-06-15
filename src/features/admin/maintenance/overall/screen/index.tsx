@@ -4,13 +4,15 @@ import { useSearchParams } from 'next/navigation'
 import {
   MaintenanceTitleSection,
   MaintenanceOverviewSection,
-  RepairRecordsSection,
 } from '../components'
+import { RepairRecordsSection } from '../../repair-history/components'
 import { MaintenanceProvider } from '../context'
 
 const MaintenanceContent: React.FC = () => {
   const searchParams = useSearchParams()
   const hasRepair = searchParams.has('repair')
+
+  const period = searchParams.get('period') || undefined
 
   const currentTab = useMemo(() => {
     if (hasRepair) return 'REPAIR'
@@ -20,13 +22,13 @@ const MaintenanceContent: React.FC = () => {
   const renderContent = useMemo(() => {
     switch (currentTab) {
       case 'OVERVIEW':
-        return <MaintenanceOverviewSection />
+        return <MaintenanceOverviewSection period={period} />
       case 'REPAIR':
         return <RepairRecordsSection />
       default:
-        return <MaintenanceOverviewSection />
+        return <MaintenanceOverviewSection period={period} />
     }
-  }, [currentTab])
+  }, [currentTab, period])
 
   return (
     <div className="main-screen">
