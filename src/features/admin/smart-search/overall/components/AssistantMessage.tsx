@@ -1,8 +1,10 @@
 "use client"
 import React from "react"
-import { TbBrandGithubCopilot } from "react-icons/tb"
+import { TbBrandGithubCopilot, TbDatabaseOff } from "react-icons/tb"
 import type { ChatTurn } from "@/types/chat"
 import AnswerText from "./AnswerText"
+import ConfidenceBadge from "./ConfidenceBadge"
+import ResultTable from "./ResultTable"
 
 interface Props {
   turn: ChatTurn
@@ -20,13 +22,25 @@ const TypingDots: React.FC = () => (
   </span>
 )
 
-// Composite assistant turn. Step 1 renders the streamed answer (and an error
-// fallback). Table / chart / confidence / suggestions / actions are layered in
-// by later steps.
+const NoDataCard: React.FC = () => (
+  <div className="my-2 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+    <TbDatabaseOff className="text-white/50 shrink-0" size={22} />
+    <p className="text-white/70 fs-14">
+      ไม่พบข้อมูลที่ตรงกับคำถาม ลองปรับคำถามให้เจาะจงขึ้น
+    </p>
+  </div>
+)
+
+// Composite assistant turn. Render order follows the result spec:
+// table (chart in a later step) → streamed answer → confidence.
 const AssistantMessage: React.FC<Props> = ({ turn }) => {
-  const { answer, status, errorMessage } = turn
+  const { answer, status, errorMessage, result, confidence } = turn
   const isStreaming = status === "streaming"
+  const isDone = status === "done"
   const waitingForFirstToken = isStreaming && !answer
+
+  const hasTable = !!result && result.row_count > 0
+  const isEmptyResult = !!result && result.row_count === 0
 
   return (
     <div className="flex gap-3">
@@ -38,10 +52,23 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
           <p className="text-red-400">
             {errorMessage ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"}
           </p>
-        ) : waitingForFirstToken ? (
-          <TypingDots />
         ) : (
-          <AnswerText text={answer} streaming={isStreaming} />
+          <>
+            {hasTable && <ResultTable result={result} />}
+            {isEmptyResult && <NoDataCard />}
+
+            {waitingForFirstToken ? (
+              <TypingDots />
+            ) : (
+              answer && <AnswerText text={answer} streaming={isStreaming} />
+            )}
+
+            {isDone && confidence && (
+              <div className="mt-2">
+                <ConfidenceBadge confidence={confidence} />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

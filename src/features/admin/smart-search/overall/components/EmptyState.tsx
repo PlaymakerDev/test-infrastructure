@@ -9,7 +9,7 @@ const EmptyState: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col items-center justify-center text-center gap-6 px-6">
-      <TbBrandGithubCopilot className="text-white/30" size={96} />
+      <TbBrandGithubCopilot className="fs-24 cursor-pointer" size={96} />
       <div className="max-w-xl">
         <p className="text-white/70">
           พิมพ์คำถามเกี่ยวกับข้อมูลจราจรหรือถนนเป็นภาษาไทยหรืออังกฤษ
