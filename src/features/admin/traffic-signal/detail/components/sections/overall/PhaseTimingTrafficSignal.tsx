@@ -41,7 +41,26 @@ const PhaseTimingTrafficSignal: React.FC = () => {
     return { activeIdx: 0, inGreen: true, remaining: phases[0]?.greenSec ?? 0 }
   }, [elapsed, phases])
 
-  if (phases.length === 0) return null
+  // Empty state — render the card shell with a placeholder so the page
+  // layout stays consistent. Hits when the API returns no phase data yet.
+  if (phases.length === 0) {
+    return (
+      <div
+        className='relative rounded-2xl p-4 w-full h-full overflow-hidden flex flex-col'
+        style={{ background: '#191919CC', border: '1px solid #1f2d3d' }}
+      >
+        <div className='relative flex items-center gap-2 mb-2'>
+          <TbAffiliate size={22} color='#66AEFF' />
+          <h4 className='mb-0' style={{ color: '#66AEFF', fontSize: 16, fontWeight: 600 }}>
+            Phase Timing
+          </h4>
+        </div>
+        <div className='relative flex-1 flex items-center justify-center'>
+          <p className='text-white/40 text-sm mb-0'>ไม่มีข้อมูล Phase Timing</p>
+        </div>
+      </div>
+    )
+  }
 
   const activePhase = phases[activeIdx]
   const activeColor = getPhaseColor(activePhase.phase)

@@ -960,6 +960,22 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     getCameraId: () => cameraId
   }));
 
+  // Empty / missing URL — render a placeholder instead of letting the
+  // (untouched) HLS init see a falsy value and triggering downstream
+  // network errors in dev tools. Callers can now pass `hlsUrl` directly
+  // without wrapping in a conditional.
+  if (!hlsUrl) {
+    return (
+      <figure
+        ref={containerRef as any}
+        className={`relative overflow-hidden bg-black/40 flex items-center justify-center ${figureClassName}`}
+        {...propsHLSLivePlayer}
+      >
+        <span className='text-white/50 text-xs'>ไม่มีสตรีม</span>
+      </figure>
+    )
+  }
+
   if (hasError && retryCount >= maxRetries && connectionStatus === 'failed') {
     return (
       <div className={`w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center ${className}`} style={style}>
