@@ -1,10 +1,11 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { TbChevronDown } from 'react-icons/tb'
 
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvInstallDetail, PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import CameraInstallTable from './CameraInstallTable'
+import type { InstallGroup, CameraRow } from './sections/CameraGridView'
 import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
 import CctvLocationMap from './sections/CctvLocationMap'
 
@@ -57,6 +58,22 @@ interface Props {
 const OverallSection: React.FC<Props> = ({ detail }) => {
   const [panelFilter, setPanelFilter] = useState<string>('all')
   const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
+
+  const groups = useMemo<InstallGroup[]>(() => [{
+    id: 'cameras',
+    label: `จุดติดตั้ง : ${detail.location || detail.title}`,
+    warranty: detail.warrantyStatus,
+    cameras: detail.cameras.map<CameraRow>((cam) => ({
+      id: cam.id,
+      name: cam.name,
+      km: '',
+      functions: (cam.functions ?? []) as CameraRow['functions'],
+      ip: cam.ip,
+      hlsUrl: cam.hlsUrl,
+      streamStatus: cam.online ? 'connect' : 'disconnect',
+      deviceStatus: cam.online ? 'connect' : 'disconnect',
+    })),
+  }], [detail])
 
   const toModal = (cam: PanelCamera): CctvCameraDetail => ({
     id: cam.id,
@@ -143,7 +160,7 @@ const OverallSection: React.FC<Props> = ({ detail }) => {
 
       {/* ── Camera table ── */}
       <section className='mt-8'>
-        <CameraInstallTable />
+        <CameraInstallTable groups={groups} />
       </section>
 
       <ModalLiveStreamCctv

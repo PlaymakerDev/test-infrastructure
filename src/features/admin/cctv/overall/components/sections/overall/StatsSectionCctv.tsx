@@ -1,20 +1,20 @@
 "use client"
-import React, { useCallback } from 'react'
+import React from 'react'
 import { TbVideo, TbShield } from 'react-icons/tb'
+import { CctvDeptOverviewTotals } from '@/types/cctv'
 
 interface StatCardProps {
   icon: React.ReactNode
   label: string
   value: number
   unit: string
-  active: number
-  activePercent: number
+  sub?: string
   color: string
   tint?: string
 }
 
 const StatCard: React.FC<StatCardProps> = ({
-  icon, label, value, unit, active, activePercent, color, tint,
+  icon, label, value, unit, sub, color, tint,
 }) => (
   <div
     className='flex flex-col gap-1 sm:gap-1.5 p-3 sm:p-4 w-full xl:w-70 h-40 sm:h-44 xl:h-42.5'
@@ -39,63 +39,44 @@ const StatCard: React.FC<StatCardProps> = ({
       </span>
       <span className='text-white/70 text-[11px] sm:text-xs'>{unit}</span>
     </div>
-    <p className='text-white/50 text-[11px] sm:text-xs mt-auto'>
-      Active : {active} ({activePercent.toFixed(1)}%)
-    </p>
+    {sub && (
+      <p className='text-white/50 text-[11px] sm:text-xs mt-auto'>{sub}</p>
+    )}
   </div>
 )
 
 interface Props {
-  total?: number
-  totalActive?: number
-  inWarranty?: number
-  inWarrantyActive?: number
-  expired?: number
-  expiredActive?: number
+  totals: CctvDeptOverviewTotals | null
 }
 
-const StatsSectionCctv: React.FC<Props> = ({
-  total = 9128,
-  totalActive = 6235,
-  inWarranty = 6026,
-  inWarrantyActive = 5193,
-  expired = 3102,
-  expiredActive = 1932,
-}) => {
-  const pct = useCallback(
-    (n: number, d: number) => (d === 0 ? 0 : (n / d) * 100),
-    []
-  )
+const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
+  const camera = totals?.camera
+  const warranty = totals?.warranty
 
   return (
     <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-3'>
       <StatCard
         icon={<TbVideo />}
         label='กล้อง CCTV ในระบบทั้งหมด'
-        value={total}
+        value={camera?.total ?? 0}
         unit='ตัว'
-        active={totalActive}
-        activePercent={pct(totalActive, total)}
+        // sub={camera ? `ออนไลน์ ${camera.online} / ออฟไลน์ ${camera.offline}` : undefined}
         color='#FCD116'
         tint='rgba(252,209,22,0.15)'
       />
       <StatCard
         icon={<TbShield />}
         label='ในค้ำ'
-        value={inWarranty}
+        value={warranty?.active ?? 0}
         unit='ตัว'
-        active={inWarrantyActive}
-        activePercent={pct(inWarrantyActive, inWarranty)}
         color='#05F2DB'
         tint='rgba(5,242,219,0.15)'
       />
       <StatCard
         icon={<TbShield />}
         label='หมดค้ำ'
-        value={expired}
+        value={warranty?.expired ?? 0}
         unit='ตัว'
-        active={expiredActive}
-        activePercent={pct(expiredActive, expired)}
         color='#979797'
       />
     </div>

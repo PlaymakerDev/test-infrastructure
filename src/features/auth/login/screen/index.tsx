@@ -1,6 +1,6 @@
 "use client"
 import React, { useCallback } from 'react'
-import { Button, Input, message, Modal } from 'antd';
+import { App, Button, Input, Modal } from 'antd';
 import axios, { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form';
@@ -20,6 +20,7 @@ const AuthScreen: React.FC<Props> = (props) => {
   const router = useRouter()
   const { task_schedules: { loading } } = useAppSelector(state => state.layout)
   const dispatch = useAppDispatch()
+  const { message } = App.useApp()
   const [modal, contextHolder] = Modal.useModal()
 
   const form = useForm<FormLogin>({
@@ -66,7 +67,7 @@ const AuthScreen: React.FC<Props> = (props) => {
         status: "SUCCESS"
       }))
     }
-  }, [router, dispatch, modal])
+  }, [router, dispatch, modal, message])
 
   return (
     <>

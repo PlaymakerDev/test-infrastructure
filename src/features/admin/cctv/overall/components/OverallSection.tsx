@@ -11,12 +11,6 @@ import StatsSectionCctv from './sections/overall/StatsSectionCctv'
 import CameraListCctv from './sections/overall/CameraListCctv'
 import CamerasTableCctv from './sections/overall/CamerasTableCctv'
 import CardGridCctv from './sections/overall/CardGridCctv'
-import {
-  SAMPLE_CCTV_CAMERAS,
-  CCTV_STATS,
-  CCTV_CAMERAS,
-  type CctvCameraEntry,
-} from '@/features/admin/cctv/overall/data/cctvData'
 import { useAppSelector } from '@/stores/hooks'
 import { Skeleton } from 'antd'
 
@@ -68,37 +62,36 @@ const OverallSection: React.FC = () => {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [viewMode, setViewMode] = useState<ViewMode>('GRID')
+  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
 
-  const { overview, task_schedules: { overview: { loading } } } = useAppSelector(state => state.cctv)
-
+  const { overview, overviewList, totals, randomOnlineCameras, task_schedules: { overview: { loading } } } = useAppSelector(state => state.cctv)
+  const allItems = useMemo(() => overviewList?.res_data ?? [], [overviewList?.res_data])
 
   const stats: FilterStats = useMemo(() => ({
-    all: CCTV_CAMERAS.length,
-    online: CCTV_CAMERAS.filter((c) => c.connection === 'online').length,
-    offline: CCTV_CAMERAS.filter((c) => c.connection === 'offline').length,
-    inWarranty: CCTV_CAMERAS.filter((c) => c.warranty === 'in-warranty').length,
-    expired: CCTV_CAMERAS.filter((c) => c.warranty === 'expired').length,
-  }), [])
+    all: allItems.length,
+    online: allItems.filter((i) => i.camera.online > 0).length,
+    offline: allItems.filter((i) => i.camera.offline > 0).length,
+    inWarranty: allItems.filter((i) => i.is_warranty).length,
+    expired: allItems.filter((i) => !i.is_warranty).length,
+  }), [allItems])
 
-  const filtered = useMemo<CctvCameraEntry[]>(() => {
+  const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
-    return CCTV_CAMERAS.filter((c) => {
+    return allItems.filter((item) => {
       switch (activeFilter) {
-        case 'online': if (c.connection !== 'online') return false; break
-        case 'offline': if (c.connection !== 'offline') return false; break
-        case 'in-warranty': if (c.warranty !== 'in-warranty') return false; break
-        case 'expired': if (c.warranty !== 'expired') return false; break
-        case 'all': break
+        case 'online': if (item.camera.online === 0) return false; break
+        case 'offline': if (item.camera.offline === 0) return false; break
+        case 'in-warranty': if (!item.is_warranty) return false; break
+        case 'expired': if (item.is_warranty) return false; break
       }
       if (term) {
-        const haystack = `${c.roadCode} ${c.projectName} ${c.installPoint} ${c.contractNo} ${c.bureau} ${c.ip}`.toLowerCase()
+        const haystack = `${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
         if (!haystack.includes(term)) return false
       }
       return true
     })
-  }, [activeFilter, search])
+  }, [allItems, activeFilter, search])
 
   if (loading) return <Skeleton loading={loading} />
 
@@ -117,21 +110,14 @@ const OverallSection: React.FC = () => {
 
         {/* Mobile / tablet: stacks below map */}
         <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
-          <CameraListCctv cameras={SAMPLE_CCTV_CAMERAS} />
-          <StatsSectionCctv
-            total={CCTV_STATS.total}
-            totalActive={CCTV_STATS.totalActive}
-            inWarranty={CCTV_STATS.inWarranty}
-            inWarrantyActive={CCTV_STATS.inWarrantyActive}
-            expired={CCTV_STATS.expired}
-            expiredActive={CCTV_STATS.expiredActive}
-          />
+          <CameraListCctv cameras={randomOnlineCameras} />
+          <StatsSectionCctv totals={totals} />
         </div>
 
         {/* Desktop xl+: left overlay — camera preview list */}
         <aside className='hidden xl:flex flex-col absolute z-10 pl-10 pointer-events-none top-5 left-0 w-72'>
           <div className='pointer-events-auto'>
-            <CameraListCctv cameras={SAMPLE_CCTV_CAMERAS} />
+            <CameraListCctv cameras={randomOnlineCameras} />
           </div>
         </aside>
 
@@ -155,14 +141,7 @@ const OverallSection: React.FC = () => {
           </button>
 
           {/* Stats cards */}
-          <StatsSectionCctv
-            total={CCTV_STATS.total}
-            totalActive={CCTV_STATS.totalActive}
-            inWarranty={CCTV_STATS.inWarranty}
-            inWarrantyActive={CCTV_STATS.inWarrantyActive}
-            expired={CCTV_STATS.expired}
-            expiredActive={CCTV_STATS.expiredActive}
-          />
+          <StatsSectionCctv totals={totals} />
         </aside>
       </section>
 
@@ -185,9 +164,9 @@ const OverallSection: React.FC = () => {
       {/* ── Table / Card grid ── */}
       <section>
         {viewMode === 'TABLE' ? (
-          <CamerasTableCctv cameras={filtered} />
+          <CamerasTableCctv items={filtered} />
         ) : (
-          <CardGridCctv cameras={filtered} />
+          <CardGridCctv items={filtered} />
         )}
       </section>
     </div>

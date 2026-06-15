@@ -8,7 +8,8 @@ import SearchBar, {
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
-import CameraGridView, { type InstallGroup, type CameraRow } from '@/features/admin/cctv/serchcctv/components/sections/overall/CameraGridView'
+import CameraGridView, { type InstallGroup, type CameraRow } from './sections/CameraGridView'
+import { useAppSelector } from '@/stores/hooks'
 
 // ── Types (local) ─────────────────────────────────────────────────────────────
 
@@ -19,26 +20,6 @@ type WarrantyStatus = 'in-warranty' | 'expired'
 type Row =
   | { kind: 'group'; id: string; group: InstallGroup }
   | { kind: 'camera'; id: string; seq: number; camera: CameraRow }
-
-// ── Mock data ─────────────────────────────────────────────────────────────────
-
-const MOCK_GROUPS: InstallGroup[] = [
-  {
-    id: 'g1',
-    label: 'จุดติดตั้ง : ฉช.3001 สี่แยกเกาะไร่ กม.7+900',
-    warranty: 'in-warranty',
-    cameras: [
-      { id: 'det001', name: '68MST-CCO3001-FAI001-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าลาดกระบัง', km: '7+900', functions: ['CCTV', 'Incident'], ip: '10.101.27.1', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det002', name: '68MST-CCO3001-FAI002-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าแยกท่า', km: '7+900', functions: ['CCTV'], ip: '10.101.27.2', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'det003', name: '68MST-CCO3001-FAI003-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้านานา', km: '7+900', functions: ['CCTV', 'Volume'], ip: '10.101.27.3', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det004', name: '68MST-CCO3001-FAI004-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าเมือง', km: '7+900', functions: ['CCTV'], ip: '10.101.27.4', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det005', name: '68MST-CCO3001-FAI005-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าบ้านโพธิ์', km: '7+900', functions: ['CCTV', 'Volume'], ip: '10.101.27.5', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det006', name: '68MST-CCO3001-FAI006-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าหวัน', km: '7+900', functions: ['CCTV', 'Incident'], ip: '10.101.27.6', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det007', name: '68MST-CCO3001-FAI007-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้านนทบุรี', km: '7+900', functions: ['CCTV', 'Incident'], ip: '10.101.27.7', streamStatus: 'connect', deviceStatus: 'connect' },
-      { id: 'det008', name: '68MST-CCO3001-FAI008-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าออกเมือง', km: '7+900', functions: ['CCTV'], ip: '10.101.27.8', streamStatus: 'connect', deviceStatus: 'connect' },
-    ],
-  },
-]
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -101,10 +82,11 @@ const TOTAL_COLS = 7
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
-  groups?: InstallGroup[]
+  groups: InstallGroup[]
 }
 
-const CameraInstallTable: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
+const CameraInstallTable: React.FC<Props> = ({ groups }) => {
+  const loading = useAppSelector((s) => s.cctv.task_schedules.detailCameras.loading)
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode]         = useState<ViewMode>('GRID')
 
@@ -235,6 +217,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
           rowKey='id'
           columns={columns}
           dataSource={data}
+          loading={loading}
           pagination={false}
           size='middle'
           scroll={{ x: 1100 }}
