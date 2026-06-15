@@ -153,6 +153,17 @@ const admin = [
     path_active: "/admin/maintenance",
     path_list: [],
   },
+  {
+    key: '15',
+    title: 'Smart Search',
+    label: "Smart Search",
+    label_key: "smart_search",
+    icon: "TbBrandGithubCopilot",
+    default_color_icon: '',
+    path: "/admin/smart-search",
+    path_active: "/admin/smart-search",
+    path_list: [],
+  },
 ]
 
 export default admin

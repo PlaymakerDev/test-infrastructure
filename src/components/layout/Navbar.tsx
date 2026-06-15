@@ -150,6 +150,7 @@ export default function Navbar() {
           />
           <TbBrandGithubCopilot
             className={iconClassName}
+            onClick={() => router.push("/admin/smart-search")}
           />
           <TbBellRinging2
             className={iconClassName}
