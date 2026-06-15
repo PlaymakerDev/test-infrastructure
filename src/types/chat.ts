@@ -38,6 +38,7 @@ export interface ChartHint {
   type: ChartType
   x?: string
   y?: string[]
+  value?: number | string // metric only — the single value for the card
 }
 
 // ── SSE frame payloads ──

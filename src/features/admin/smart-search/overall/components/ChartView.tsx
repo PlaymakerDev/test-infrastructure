@@ -30,8 +30,8 @@ const toNumber = (value: Cell): number => {
 }
 
 interface Props {
-  result: ResultPayload
   chart: ChartHint
+  result?: ResultPayload
 }
 
 interface Series {
@@ -40,26 +40,12 @@ interface Series {
   label: string
 }
 
-const MetricCard: React.FC<{ value: Cell; label: string }> = ({ value, label }) => (
-  <div className="my-2 rounded-lg border border-[#1f2d3d] bg-[#00000080] px-5 py-4">
-    <p className="fs-12 text-white/60">{label}</p>
-    <p className="text-(--yellow) text-3xl font-semibold mt-1">
-      {typeof value === "number" ? value.toLocaleString("en-US") : String(value ?? "—")}
-    </p>
-  </div>
-)
-
-const ChartView: React.FC<Props> = ({ result, chart }) => {
-  const { columns, rows } = result
-
+// Renders bar/line charts only. metric → answered as text (no card); table → table only.
+const ChartView: React.FC<Props> = ({ chart, result }) => {
   const model = useMemo(() => {
-    if (chart.type === "metric") {
-      const yCol = chart.y?.[0]
-      const colIdx = yCol ? columns.indexOf(yCol) : -1
-      const value = colIdx >= 0 ? rows[0]?.[colIdx] : rows[0]?.[0]
-      return { kind: "metric" as const, value: value ?? null, label: yCol ?? columns[0] ?? "" }
-    }
+    if (!result || (chart.type !== "bar" && chart.type !== "line")) return null
 
+    const { columns, rows } = result
     const xIdx = chart.x ? Math.max(0, columns.indexOf(chart.x)) : 0
     let yCols = (chart.y ?? []).filter((y) => columns.includes(y))
     if (yCols.length === 0) {
@@ -82,12 +68,9 @@ const ChartView: React.FC<Props> = ({ result, chart }) => {
     const title = yCols.length === 1 ? yCols[0] : "กราฟเปรียบเทียบ"
 
     return { kind: chart.type, data, series, title }
-  }, [chart, columns, rows])
+  }, [chart, result])
 
   if (!model) return null
-  if (model.kind === "metric") {
-    return <MetricCard value={model.value} label={model.label} />
-  }
   if (model.kind === "line") {
     return (
       <div className="my-2">

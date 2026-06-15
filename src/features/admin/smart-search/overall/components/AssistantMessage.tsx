@@ -44,9 +44,15 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
   const isDone = status === "done"
   const waitingForFirstToken = isStreaming && !answer
 
-  const hasTable = !!result && result.row_count > 0
+  // FE renders exactly what the backend signals — the backend decides which
+  // turns get a result/chart and which chart type to use.
+  const hasResult = !!result && result.row_count > 0
   const isEmptyResult = !!result && result.row_count === 0
-  const hasChart = hasTable && !!chart && chart.type !== "table"
+  // Only bar/line get a chart. metric (single value) → answered as text only.
+  const showChart =
+    hasResult && !!chart && (chart.type === "bar" || chart.type === "line")
+  // metric → text only (no 1-row table); otherwise render the table when present.
+  const showTable = hasResult && chart?.type !== "metric"
 
   return (
     <div className="flex gap-3">
@@ -72,8 +78,8 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
           </div>
         ) : (
           <>
-            {hasChart && <ChartView result={result} chart={chart} />}
-            {hasTable && <ResultTable result={result} />}
+            {showChart && chart && <ChartView chart={chart} result={result} />}
+            {showTable && <ResultTable result={result} />}
             {isEmptyResult && <NoDataCard />}
 
             {waitingForFirstToken ? (

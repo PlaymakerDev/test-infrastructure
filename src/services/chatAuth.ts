@@ -11,7 +11,9 @@
 //   3. the app session token (production default)
 import axios from "axios"
 
-export const TOKEN_EXPIRED_CODE = 40199 // recoverable: refresh + retry
+// Token expired (recoverable). The backend returns 40199 in practice; FRONTEND.md
+// documents 40119 — accept both to be safe.
+export const TOKEN_EXPIRED_CODES = [40199, 40119]
 export const TOKEN_INVALID_CODE = 40100 // not recoverable here: surface error
 
 const DEV_TOKEN = process.env.NEXT_PUBLIC_CHAT_DEV_TOKEN
@@ -22,7 +24,7 @@ const tokenSource = DEV_TOKEN ? "dev-token" : LOCAL_AUTH ? "local-auth" : "sessi
 let refreshInFlight: Promise<boolean> | null = null
 
 export function isTokenExpired(resCode: unknown): boolean {
-  return resCode === TOKEN_EXPIRED_CODE
+  return typeof resCode === "number" && TOKEN_EXPIRED_CODES.includes(resCode)
 }
 
 export function isTokenInvalid(resCode: unknown): boolean {
