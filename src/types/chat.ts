@@ -59,6 +59,50 @@ export interface DonePayload {
   message_id: string
 }
 
+// ── Feedback (§4) — references a turn by message_id; backend resolves SQL ──
+export type FeedbackVote = "like" | "dislike"
+
+export interface FeedbackRequest {
+  conversation_id: string
+  message_id: string
+  vote: FeedbackVote
+  note?: string
+}
+
+export type ExportFormat = "xlsx" | "html"
+
+// ── Conversation history (sidebar) ──
+export interface ConversationSummary {
+  id: string
+  title: string
+  updated_at: string // RFC3339
+  message_count: number
+}
+
+// A persisted turn returned by GET /conversations/:id — full fidelity
+// (no SQL). `id` is the message_id used for feedback.
+export interface ConversationMessage {
+  id: string
+  question: string
+  answer: string
+  result?: ResultPayload
+  chart?: ChartHint
+  confidence?: Confidence
+  suggestions?: string[]
+  time: string // RFC3339
+}
+
+export interface ConversationDetail {
+  id: string
+  title: string
+  created_at: string
+  updated_at: string
+  messages: ConversationMessage[]
+}
+
+// ── Error classification for a turn (drives the error UI) ──
+export type ChatErrorKind = "auth" | "rate_limit" | "generic"
+
 // ── A single conversation turn rendered in the UI ──
 export interface ChatTurn {
   id: string // local id for React keys
@@ -72,5 +116,6 @@ export interface ChatTurn {
   messageId?: string // from `done` frame — used for feedback
   status: "streaming" | "done" | "error"
   errorMessage?: string
+  errorKind?: ChatErrorKind
   mode: AskMode
 }

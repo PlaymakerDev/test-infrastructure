@@ -1,10 +1,15 @@
 "use client"
+import { Button } from "antd"
 import React from "react"
-import { TbBrandGithubCopilot, TbDatabaseOff } from "react-icons/tb"
+import { TbBrandGithubCopilot, TbDatabaseOff, TbLogin2 } from "react-icons/tb"
+import { reloginChat } from "@/services/chatAuth"
 import type { ChatTurn } from "@/types/chat"
 import AnswerText from "./AnswerText"
+import ChartView from "./ChartView"
 import ConfidenceBadge from "./ConfidenceBadge"
+import MessageActions from "./MessageActions"
 import ResultTable from "./ResultTable"
+import SuggestionChips from "./SuggestionChips"
 
 interface Props {
   turn: ChatTurn
@@ -34,13 +39,14 @@ const NoDataCard: React.FC = () => (
 // Composite assistant turn. Render order follows the result spec:
 // table (chart in a later step) → streamed answer → confidence.
 const AssistantMessage: React.FC<Props> = ({ turn }) => {
-  const { answer, status, errorMessage, result, confidence } = turn
+  const { answer, status, errorMessage, errorKind, result, chart, suggestions, confidence } = turn
   const isStreaming = status === "streaming"
   const isDone = status === "done"
   const waitingForFirstToken = isStreaming && !answer
 
   const hasTable = !!result && result.row_count > 0
   const isEmptyResult = !!result && result.row_count === 0
+  const hasChart = hasTable && !!chart && chart.type !== "table"
 
   return (
     <div className="flex gap-3">
@@ -49,11 +55,24 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
       </div>
       <div className="flex-1 min-w-0 rounded-2xl rounded-tl-sm bg-(--dark-black) border border-white/5 px-4 py-3">
         {status === "error" ? (
-          <p className="text-red-400">
-            {errorMessage ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"}
-          </p>
+          <div className="flex flex-col items-start gap-2">
+            <p className="text-red-400">
+              {errorMessage ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"}
+            </p>
+            {errorKind === "auth" && (
+              <Button
+                type="primary"
+                size="small"
+                icon={<TbLogin2 />}
+                onClick={() => reloginChat()}
+              >
+                เข้าสู่ระบบใหม่
+              </Button>
+            )}
+          </div>
         ) : (
           <>
+            {hasChart && <ChartView result={result} chart={chart} />}
             {hasTable && <ResultTable result={result} />}
             {isEmptyResult && <NoDataCard />}
 
@@ -68,6 +87,10 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
                 <ConfidenceBadge confidence={confidence} />
               </div>
             )}
+
+            {isDone && suggestions && <SuggestionChips questions={suggestions} />}
+
+            {isDone && <MessageActions turn={turn} />}
           </>
         )}
       </div>

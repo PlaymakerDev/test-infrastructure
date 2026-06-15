@@ -1,0 +1,115 @@
+"use client"
+import { App, Dropdown, Input, type InputRef, type MenuProps } from "antd"
+import React, { useCallback, useRef, useState } from "react"
+import { TbDots, TbPencil, TbTrash } from "react-icons/tb"
+import type { ConversationSummary } from "@/types/chat"
+import { useSmartSearchContext } from "../context"
+
+interface Props {
+  conversation: ConversationSummary
+  active: boolean
+}
+
+const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
+  const { openConversation, prefetchConversation, renameConversation, deleteConversation } =
+    useSmartSearchContext()
+  const { modal, message } = App.useApp()
+
+  const [editing, setEditing] = useState(false)
+  const [draftTitle, setDraftTitle] = useState(conversation.title)
+  const inputRef = useRef<InputRef>(null)
+
+  const startEditing = useCallback(() => {
+    setDraftTitle(conversation.title)
+    setEditing(true)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }, [conversation.title])
+
+  const commitRename = useCallback(async () => {
+    const title = draftTitle.trim()
+    setEditing(false)
+    if (!title || title === conversation.title) return
+    try {
+      await renameConversation(conversation.id, title)
+    } catch {
+      message.error("เปลี่ยนชื่อไม่สำเร็จ")
+    }
+  }, [draftTitle, conversation.id, conversation.title, renameConversation, message])
+
+  const confirmDelete = useCallback(() => {
+    modal.confirm({
+      title: "ลบประวัติการค้นหา",
+      content: `ต้องการลบ "${conversation.title}" หรือไม่`,
+      okText: "ลบ",
+      okButtonProps: { danger: true },
+      cancelText: "ยกเลิก",
+      onOk: async () => {
+        try {
+          await deleteConversation(conversation.id)
+        } catch {
+          message.error("ลบไม่สำเร็จ")
+        }
+      },
+    })
+  }, [modal, conversation.id, conversation.title, deleteConversation, message])
+
+  const menuItems: MenuProps["items"] = [
+    { key: "rename", label: "เปลี่ยนชื่อ", icon: <TbPencil /> },
+    { key: "delete", label: "ลบ", icon: <TbTrash />, danger: true },
+  ]
+
+  const onMenuClick: MenuProps["onClick"] = ({ key, domEvent }) => {
+    domEvent.stopPropagation()
+    if (key === "rename") startEditing()
+    else if (key === "delete") confirmDelete()
+  }
+
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        size="small"
+        value={draftTitle}
+        onChange={(e) => setDraftTitle(e.target.value)}
+        onPressEnter={commitRename}
+        onBlur={commitRename}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setEditing(false)
+        }}
+      />
+    )
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => openConversation(conversation.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") openConversation(conversation.id)
+      }}
+      onMouseEnter={() => prefetchConversation(conversation.id)}
+      className={`group flex items-center gap-1 rounded-md px-2.5 py-2 cursor-pointer transition-colors ${
+        active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
+      }`}
+    >
+      <span className="flex-1 min-w-0 truncate fs-14">{conversation.title}</span>
+      <Dropdown
+        menu={{ items: menuItems, onClick: onMenuClick }}
+        trigger={["click"]}
+        placement="bottomRight"
+      >
+        <button
+          type="button"
+          aria-label="ตัวเลือก"
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 text-white/60 hover:text-white px-1"
+        >
+          <TbDots />
+        </button>
+      </Dropdown>
+    </div>
+  )
+}
+
+export default React.memo(ConversationItem)

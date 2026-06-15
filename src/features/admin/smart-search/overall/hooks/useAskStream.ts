@@ -10,8 +10,15 @@ const newId = () => crypto.randomUUID()
  * the streaming flag, the active conversation id (created lazily, client-side)
  * and the accurate/fast mode. Streaming tokens are batched with
  * requestAnimationFrame so the message list re-renders at most once per frame.
+ *
+ * `onPersisted(conversationId)` fires after a turn finishes successfully — the
+ * server has now persisted the conversation, so the caller can refetch the
+ * sidebar (the new room appears with its LLM-generated title).
  */
-export function useAskStream() {
+export function useAskStream(onPersisted?: (conversationId: string) => void) {
+  const onPersistedRef = useRef(onPersisted)
+  onPersistedRef.current = onPersisted
+
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [turns, setTurns] = useState<ChatTurn[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
@@ -87,9 +94,9 @@ export function useAskStream() {
             },
             onSuggestions: (q) => patchTurn(turnId, { suggestions: q }),
             onExport: (p) => patchTurn(turnId, { exportHint: p }),
-            onError: (msg) => {
+            onError: (msg, kind) => {
               flushTokens()
-              patchTurn(turnId, { status: "error", errorMessage: msg })
+              patchTurn(turnId, { status: "error", errorMessage: msg, errorKind: kind })
             },
             onDone: (d) => {
               flushTokens()
@@ -98,6 +105,8 @@ export function useAskStream() {
                 confidence: d.confidence,
                 messageId: d.message_id,
               })
+              // Turn persisted server-side → let the caller refresh the sidebar.
+              onPersistedRef.current?.(convId)
             },
           },
           controller.signal,
@@ -110,6 +119,7 @@ export function useAskStream() {
           patchTurn(turnId, {
             status: "error",
             errorMessage: "การเชื่อมต่อขัดข้อง กรุณาลองใหม่อีกครั้ง",
+            errorKind: "generic",
           })
         }
       } finally {
@@ -133,5 +143,26 @@ export function useAskStream() {
     setIsStreaming(false)
   }, [])
 
-  return { conversationId, turns, isStreaming, mode, setMode, send, stop, newChat }
+  // Open an existing conversation: replace the session with its persisted turns.
+  const loadConversation = useCallback(
+    (id: string, loadedTurns: ChatTurn[]) => {
+      abortRef.current?.abort()
+      setConversationId(id)
+      setTurns(loadedTurns)
+      setIsStreaming(false)
+    },
+    [],
+  )
+
+  return {
+    conversationId,
+    turns,
+    isStreaming,
+    mode,
+    setMode,
+    send,
+    stop,
+    newChat,
+    loadConversation,
+  }
 }
