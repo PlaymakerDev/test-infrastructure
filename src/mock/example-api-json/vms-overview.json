@@ -1,0 +1,272 @@
+{
+  "locations": [
+    {
+      "solution": {
+        "id": 1720,
+        "solution_name": "67 - ชม.3028(31) ป้าย 1: กม.0+300"
+      },
+      "road": {
+        "id": 1807,
+        "code_name": "ชม.3028"
+      },
+      "vms": {
+        "anydesk": "1362671896",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67lpc-cmi3028vms1.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67lpc-cmi3028vms1.enixma.net/live/10.101.201.118.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        98.946517,
+        18.727578
+      ]
+    },
+    {
+      "solution": {
+        "id": 1721,
+        "solution_name": "67 - ชม.3028(31) ป้าย 2: กม.2+300"
+      },
+      "road": {
+        "id": 1807,
+        "code_name": "ชม.3028"
+      },
+      "vms": {
+        "anydesk": "1866495747",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67lpc-cmi3028vms2.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67lpc-cmi3028vms2.enixma.net/live/10.101.201.121.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        98.929966,
+        18.743031
+      ]
+    },
+    {
+      "solution": {
+        "id": 1712,
+        "solution_name": "ชม.3029: อุโมงค์ทางลอดรวมโชคมีชัย"
+      },
+      "road": {
+        "id": 1808,
+        "code_name": "ชม.3029"
+      },
+      "vms": {
+        "anydesk": "1252433877",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67ftd-cmivms1-3029.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmivms1-3029.enixma.net/live/10.101.200.1.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        99.006349,
+        18.828354
+      ]
+    },
+    {
+      "solution": {
+        "id": 1713,
+        "solution_name": "ชม.3029: อุโมงค์ทางลอดรวมโชคมีชัย"
+      },
+      "road": {
+        "id": 1808,
+        "code_name": "ชม.3029"
+      },
+      "vms": {
+        "anydesk": "1319723378",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67ftd-cmivms2-3029.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmivms2-3029.enixma.net/live/10.101.200.2.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        99.018164,
+        18.819342
+      ]
+    },
+    {
+      "solution": {
+        "id": 1714,
+        "solution_name": "ชม.3029: อุโมงค์ทางลอดแม่คาวสะอาดใส"
+      },
+      "road": {
+        "id": 1808,
+        "code_name": "ชม.3029"
+      },
+      "vms": {
+        "anydesk": "1165529177",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67ftd-cmivms3-3029.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmivms3-3029.enixma.net/live/10.101.200.45.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        99.023849,
+        18.81275
+      ]
+    },
+    {
+      "solution": {
+        "id": 1696,
+        "solution_name": "อุโมงค์ทางลอด1:  ศูนย์ราชการร่วมใจ - ขาออก"
+      },
+      "road": {
+        "id": 1808,
+        "code_name": "ชม.3029"
+      },
+      "vms": {
+        "anydesk": "302554441",
+        "last_connected": "20/09/2568 00:25:37",
+        "desktop_screen": "",
+        "hls_url": "",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "GeometryPoint": [
+        98.97384315250885,
+        18.839888414453558
+      ]
+    },
+    {
+      "solution": {
+        "id": 1697,
+        "solution_name": "อุโมงค์ทางลอด1:  ศูนย์ราชการร่วมใจ - ขาเข้า"
+      },
+      "road": {
+        "id": 1808,
+        "code_name": "ชม.3029"
+      },
+      "vms": {
+        "anydesk": "818497322",
+        "last_connected": "15/10/2568 16:17:01",
+        "desktop_screen": "",
+        "hls_url": "",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "GeometryPoint": [
+        98.97384315250885,
+        18.839888414453558
+      ]
+    },
+    {
+      "solution": {
+        "id": 1718,
+        "solution_name": "ชม.3035: อุโมงค์ทางลอดต้นเกว๋นป้าย 2 - กม.1+800 (ขาเข้า)"
+      },
+      "road": {
+        "id": 1809,
+        "code_name": "ชม.3035"
+      },
+      "vms": {
+        "anydesk": "1044338495",
+        "last_connected": "03/06/2569 10:06:22",
+        "desktop_screen": "https://67ftd-cmiipc009-3035.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmiipc009-3035.enixma.net/live/10.101.4.3.stream/playlist.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "GeometryPoint": [
+        98.9271704,
+        18.724515
+      ]
+    },
+    {
+      "solution": {
+        "id": 1719,
+        "solution_name": "ชม.3035: อุโมงค์ทางลอดต้นเกว๋นป้าย 3 - กม.10+000"
+      },
+      "road": {
+        "id": 1809,
+        "code_name": "ชม.3035"
+      },
+      "vms": {
+        "anydesk": "1520049966",
+        "last_connected": "10/08/2568 16:15:14",
+        "desktop_screen": "https://67ftd-cmiipc018-3035.enixma.net/live/vms..stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmiipc018-3035.enixma.net/live/10.101.13.3.stream/playlist.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "GeometryPoint": [
+        98.9271704,
+        18.724515
+      ]
+    },
+    {
+      "solution": {
+        "id": 1717,
+        "solution_name": "ชม.3035: อุโมงค์ทางลอดต้นเกว๋นป้าย 1 - กม.1+800 (ขาออก)"
+      },
+      "road": {
+        "id": 1809,
+        "code_name": "ชม.3035"
+      },
+      "vms": {
+        "anydesk": "1788863441",
+        "last_connected": "09/06/2569 14:25:11",
+        "desktop_screen": "https://67ftd-cmiipc008-3035.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://67ftd-cmiipc008-3035.enixma.net/live/10.101.3.3.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "GeometryPoint": [
+        98.9271704,
+        18.724515
+      ]
+    },
+    {
+      "solution": {
+        "id": 1687,
+        "solution_name": "ชม.3035: ทางลงอุโมงค์แม่วาง - มุ่งหน้าไปเชียงใหม่"
+      },
+      "road": {
+        "id": 1809,
+        "code_name": "ชม.3035"
+      },
+      "vms": {
+        "anydesk": "506986152",
+        "last_connected": "04/06/2569 23:02:04",
+        "desktop_screen": "",
+        "hls_url": "",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "GeometryPoint": [
+        98.833528,
+        18.605139
+      ]
+    }
+  ],
+  "centroid": [
+    98.928689,
+    18.722514
+  ]
+}

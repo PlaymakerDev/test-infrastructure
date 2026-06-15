@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form';
 import menu from '@/configs/menu';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
-import { setTaskSchedule } from '@/stores/reducers/layout/layoutSlice';
+import { setLoading } from '@/stores/reducers/layout/layoutSlice';
 
 interface Props {
   username?: string
@@ -18,7 +18,7 @@ type FormLogin = Props
 const AuthScreen: React.FC<Props> = (props) => {
   const { username = '', password = '' } = props
   const router = useRouter()
-  const { task_schedules: { loading } } = useAppSelector(state => state.layout)
+  const { loading } = useAppSelector(state => state.layout)
   const dispatch = useAppDispatch()
   const { message } = App.useApp()
   const [modal, contextHolder] = Modal.useModal()
@@ -37,9 +37,8 @@ const AuthScreen: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback(async (value: FormLogin) => {
-    dispatch(setTaskSchedule({
-      loading: true,
-      status: "LOADING"
+    dispatch(setLoading({
+      loading: true
     }))
     try {
       const response = await axios.post('/api/auth/login', value)
@@ -62,9 +61,8 @@ const AuthScreen: React.FC<Props> = (props) => {
         console.error(error)
       }
     } finally {
-      dispatch(setTaskSchedule({
-        loading: false,
-        status: "SUCCESS"
+      dispatch(setLoading({
+        loading: false
       }))
     }
   }, [router, dispatch, modal, message])

@@ -1,0 +1,300 @@
+{
+  "res_data": [
+    {
+      "road": {
+        "id": 5,
+        "code_name": "กท.1001"
+      },
+      "project": {
+        "id": 141,
+        "budget_year": 2567,
+        "contract_no": "สอป.5/2567"
+      },
+      "solution": {
+        "id": 1771,
+        "solution_name": "กท.1001 - จุดที่ 3 กม.6+300 กินกันจัง"
+      },
+      "vms": {
+        "anydesk": "1345396666",
+        "last_connected": "10/06/2569 17:27:48",
+        "desktop_screen": "https://server2.streamtraffic.net:443/vms_kt1001_03_01/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/vms_kt1001_03_02/stream.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 5,
+        "code_name": "กท.1001"
+      },
+      "project": {
+        "id": 141,
+        "budget_year": 2567,
+        "contract_no": "สอป.5/2567"
+      },
+      "solution": {
+        "id": 1773,
+        "solution_name": "กท.1001 - จุดที่ 2 กม.5+800 เมโทรทาวน์"
+      },
+      "vms": {
+        "anydesk": "1972062150",
+        "last_connected": "15/06/2569 11:30:34",
+        "desktop_screen": "https://server2.streamtraffic.net:443/vms_kt1001_02_01/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/vms_kt1001_02_02/stream.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 3301,
+        "code_name": "กท.1001 (กัลปพฤกษ์)"
+      },
+      "project": {
+        "id": 531,
+        "budget_year": 2566,
+        "contract_no": ""
+      },
+      "solution": {
+        "id": 1695,
+        "solution_name": "ถ.กัลปพฤกษ์: มาจาก ถ.กาญจนาภิเษก"
+      },
+      "vms": {
+        "anydesk": "136702800",
+        "last_connected": "15/06/2569 11:30:44",
+        "desktop_screen": "https://drr-kppits-vms.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://drr-kppits-vms.enixma.net/live/192.168.48.98.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": false,
+        "name": "หมดค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 1,
+        "code_name": "นบ.3021"
+      },
+      "project": {
+        "id": 393,
+        "budget_year": 2568,
+        "contract_no": "สอป.48/2567"
+      },
+      "solution": {
+        "id": 1852,
+        "solution_name": "VMS >> นบ.3021: กม.3+100-LT"
+      },
+      "vms": {
+        "anydesk": "1513841055",
+        "last_connected": "24/03/2569 14:30:14",
+        "desktop_screen": "https://server2.streamtraffic.net:443/stream264/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/stream263/stream.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 1,
+        "code_name": "นบ.3021"
+      },
+      "project": {
+        "id": 393,
+        "budget_year": 2568,
+        "contract_no": "สอป.48/2567"
+      },
+      "solution": {
+        "id": 1848,
+        "solution_name": "VMS >> นบ.3021: กม.3+100-RT"
+      },
+      "vms": {
+        "anydesk": "1092264358",
+        "last_connected": "24/03/2569 14:30:14",
+        "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021_km_3+100RT_03/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/vms_nb3021_km_3+100RT_01/stream.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 1,
+        "code_name": "นบ.3021"
+      },
+      "project": {
+        "id": 393,
+        "budget_year": 2568,
+        "contract_no": "สอป.48/2567"
+      },
+      "solution": {
+        "id": 1849,
+        "solution_name": "VMS >> นบ.3021: กม.4+500-RT"
+      },
+      "vms": {
+        "anydesk": "1370479542",
+        "last_connected": "22/04/2569 10:13:24",
+        "desktop_screen": "https://server2.streamtraffic.net:443/vms_bts_bangwa_1/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/vms_bts_bangwa_2/stream.m3u8",
+        "status": {
+          "is_online": false,
+          "name": "Offline"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 1,
+        "code_name": "นบ.3021"
+      },
+      "project": {
+        "id": 393,
+        "budget_year": 2568,
+        "contract_no": "สอป.48/2567"
+      },
+      "solution": {
+        "id": 1851,
+        "solution_name": "VMS >> นบ.3021: กม.1+700-LT"
+      },
+      "vms": {
+        "anydesk": "1070960277",
+        "last_connected": "15/06/2569 11:30:34",
+        "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021_bts_taratphu_03/stream.m3u8",
+        "hls_url": "https://server2.streamtraffic.net:443/vms_nb3021_bts_taratphu_01/stream.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 3306,
+        "code_name": "สะพานกรุงเทพ"
+      },
+      "project": {
+        "id": 537,
+        "budget_year": 2568,
+        "contract_no": "สบร.266/2568"
+      },
+      "solution": {
+        "id": 1839,
+        "solution_name": "สะพานกรุงเทพ"
+      },
+      "vms": {
+        "anydesk": "594398458",
+        "last_connected": "15/06/2569 11:30:44",
+        "desktop_screen": "https://68mst-ktbridge.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 3316,
+        "code_name": "สะพานตากสิน"
+      },
+      "project": {
+        "id": 235,
+        "budget_year": 2567,
+        "contract_no": "สบร.83/2568"
+      },
+      "solution": {
+        "id": 1779,
+        "solution_name": "VMS >>สะพานตากสิน จุดที่ 1"
+      },
+      "vms": {
+        "anydesk": "1843226465",
+        "last_connected": "15/06/2569 11:30:44",
+        "desktop_screen": "https://68mst-tsvms1.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "https://68mst-tssv1.enixma.net/live/10.208.200.4.stream/playlist.m3u8",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    },
+    {
+      "road": {
+        "id": 3316,
+        "code_name": "สะพานตากสิน"
+      },
+      "project": {
+        "id": 235,
+        "budget_year": 2567,
+        "contract_no": "สบร.83/2568"
+      },
+      "solution": {
+        "id": 1780,
+        "solution_name": "VMS >>สะพานตากสิน จุดที่ 2"
+      },
+      "vms": {
+        "anydesk": "1794058736",
+        "last_connected": "15/06/2569 11:30:44",
+        "desktop_screen": "https://68mst-tssv2.enixma.net/live/vms.stream/playlist.m3u8",
+        "hls_url": "",
+        "status": {
+          "is_online": true,
+          "name": "Online"
+        }
+      },
+      "warranty": {
+        "is_warranty": true,
+        "name": "อยู่ในค้ำ"
+      }
+    }
+  ],
+  "meta_data": {
+    "count": 10,
+    "page": 1,
+    "limit": 10,
+    "total_pages": 1
+  }
+}

@@ -16,7 +16,7 @@ const Sidebar: React.FC<Props> = (props) => {
   const { drawer } = useAppSelector(state => state.layout)
   const { open } = drawer
   const dispatch = useAppDispatch()
-  const { task_schedules: { loading } } = useAppSelector(state => state.layout)
+  const { task_schedules: { sidebar: { loading } } } = useAppSelector(state => state.layout)
 
   useEffect(() => {
     if (open) dispatch(getSidebarData())

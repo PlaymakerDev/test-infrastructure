@@ -1,10 +1,13 @@
+import { useAppSelector } from '@/stores/hooks'
 import { Col, Row } from 'antd'
 import React from 'react'
 import { TbDeviceDesktop, TbShield } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 const InfoCardSection: React.FC<Props> = () => {
+  const { vms_total } = useAppSelector(state => state.vms_overview)
+
   return (
     <Row gutter={[16, 16]}>
       <Col
@@ -20,7 +23,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <TbDeviceDesktop className='fs-24 text-(--yellow) mb-1' />
           <h3 className='text-(--yellow)'>ป้าย VMS ในระบบทั้งหมด</h3>
           <p>
-            <span className='fs-24 font-bold'>207</span> จุดติดตั้ง
+            <span className='fs-24 font-bold'>{vms_total.solution.total || 0}</span> จุดติดตั้ง
           </p>
           <p className='fs-11 text-gray-400'>Active : 55 (41.4%)</p>
         </div>
@@ -38,7 +41,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <TbShield className='fs-24 text-teal-500 mb-1' />
           <h3 className='text-teal-500'>ในค้ำ</h3>
           <p>
-            <span className='fs-24 font-bold'>115</span> จุดติดตั้ง
+            <span className='fs-24 font-bold'>{vms_total.warranty.active || 0}</span> จุดติดตั้ง
           </p>
           <p className='fs-11 text-gray-400'>Active : 45 (42.9%)</p>
         </div>
@@ -56,7 +59,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <TbShield className='fs-24 text-gray-500 mb-1' />
           <h3 className='text-gray-500'>หมดค้ำ</h3>
           <p>
-            <span className='fs-24 font-bold'>92</span> จุดติดตั้ง
+            <span className='fs-24 font-bold'>{vms_total.warranty.expired || 0}</span> จุดติดตั้ง
           </p>
           <p className='fs-11 text-gray-400'>Active : 10 (8.5%)</p>
         </div>

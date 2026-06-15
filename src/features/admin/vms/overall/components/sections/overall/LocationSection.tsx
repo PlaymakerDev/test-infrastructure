@@ -2,7 +2,7 @@
 import React from 'react'
 import { CCTVSection, InfoCardSection, MapSection } from '../../../components'
 
-interface Props {}
+interface Props { }
 
 const LocationSection: React.FC<Props> = () => {
   return (

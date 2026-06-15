@@ -1,9 +1,16 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { TableVMSData, VMSList } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
-import FormSearchVMS from './FormSearchVMS'
+import FormSearchVMS, { FormValues } from './FormSearchVMS'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { getVMSOverviewListAPI } from '@/services/routes/VMSService'
 
-interface Props {}
+
+interface Props {
+  deptId?: string | string[] | number
+}
 
 const VMS_FILTERS: FilterConfig[] = [
   {
@@ -49,43 +56,92 @@ const VMS_FILTERS: FilterConfig[] = [
   },
 ]
 
-const VMS_STATS: FilterStats = {
-  all: 207,
-  online: 55,
-  offline: 152,
-  inWarranty: 115,
-  expired: 92,
-}
-
-const DataDisplaySection: React.FC<Props> = () => {
+const DataDisplaySection: React.FC<Props> = (props) => {
+  const { deptId } = props
+  const dispatch = useAppDispatch()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const { vms_list, vms_total } = useAppSelector(state => state.vms_overview)
+
+  const vmsStats = useMemo<FilterStats>(() => ({
+    all: vms_total.solution.total,
+    online: vms_total.solution.online,
+    offline: vms_total.solution.offline,
+    inWarranty: vms_total.warranty.active,
+    expired: vms_total.warranty.expired,
+  }), [vms_total])
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['vms_list', vms_list.search],
+    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData
+  })
 
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableVMSData />
+        return <TableVMSData data={data?.data} loading={isLoading} />
       case 'GRID':
-        return <VMSList />
+        return <VMSList data={data?.data} loading={isLoading} />
       default:
         return null
     }
-  }, [displayType])
+  }, [displayType, data, isLoading])
+
+  const onSearch = useCallback((formData: FormValues) => {
+    if (activeFilter === 'in-warranty' || activeFilter === 'expired') {
+      dispatch(setSearchVMSList({
+        ...vms_list.search,
+        ...formData,
+        status_name: undefined,
+        warranty_name: activeFilter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
+        page: 1,
+      }))
+    } else {
+      dispatch(setSearchVMSList({
+        ...vms_list.search,
+        ...formData,
+        status_name: activeFilter === 'all' ? undefined : activeFilter,
+        warranty_name: undefined,
+        page: 1,
+      }))
+    }
+  }, [dispatch, vms_list.search, activeFilter])
 
   return (
     <div>
       <section>
         <SearchBar
           filters={VMS_FILTERS}
-          stats={VMS_STATS}
+          stats={vmsStats}
           activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+          onFilterChange={(filter) => {
+            setActiveFilter(filter)
+            if (filter === 'in-warranty' || filter === 'expired') {
+              dispatch(setSearchVMSList({
+                ...vms_list.search,
+                status_name: undefined,
+                warranty_name: filter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
+                page: 1,
+              }))
+            } else {
+              dispatch(setSearchVMSList({
+                ...vms_list.search,
+                status_name: filter === 'all' ? undefined : filter,
+                warranty_name: undefined,
+                page: 1,
+              }))
+            }
+          }}
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
-          formSearch={<FormSearchVMS />}
+          formSearch={<FormSearchVMS onSearch={onSearch} />}
         />
       </section>
-      <section className='mt-5'>{renderContent}</section>
+      <section className='mt-5'>
+        {renderContent}
+      </section>
     </div>
   )
 }
