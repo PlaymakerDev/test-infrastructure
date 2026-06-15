@@ -1,7 +1,7 @@
 "use client"
 import { Button, ConfigProvider, Input } from "antd"
 import React, { useCallback } from "react"
-import { TbPlayerStopFilled, TbSend, TbTargetArrow } from "react-icons/tb"
+import { TbPlayerStopFilled, TbArrowUp, TbTargetArrow } from "react-icons/tb"
 import { useSmartSearchContext } from "../context"
 
 const MAX_RUNES = 500
@@ -38,8 +38,8 @@ const Composer: React.FC = () => {
 
   return (
     <div className="shrink-0">
-      <div className="mx-auto w-full max-w-5xl px-4 pb-4">
-        <div className="rounded-2xl bg-black border border-white/10 focus-within:border-(--yellow)/50 transition-colors px-4 py-3 shadow-lg shadow-black/30">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-6">
+        <div className="rounded-2xl bg-black border border-white/10 focus-within:border-(--yellow)/50 transition-colors px-4 py-2 shadow-lg shadow-black/30">
           <ConfigProvider
             theme={{ components: { Input: { colorTextPlaceholder: "#979797" } } }}
           >
@@ -54,7 +54,7 @@ const Composer: React.FC = () => {
             />
           </ConfigProvider>
 
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between mt-1">
             <button
               type="button"
               title="แม่นยำขึ้นสำหรับคำถามซับซ้อน (ช้าลงเล็กน้อย)"
@@ -83,22 +83,22 @@ const Composer: React.FC = () => {
                   onClick={stop}
                 />
               ) : (
-                <Button
-                  type="primary"
-                  shape="circle"
+                <button
+                  type="button"
                   aria-label="ส่ง"
-                  icon={<TbSend />}
                   disabled={!canSend}
                   onClick={handleSend}
-                />
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${canSend
+                    ? "bg-(--yellow) text-(--dark-black) hover:bg-(--yellow)/90"
+                    : "bg-[#3A3A3A] text-white/50 cursor-not-allowed"
+                    }`}
+                >
+                  <TbArrowUp size={18} />
+                </button>
               )}
             </div>
           </div>
         </div>
-
-        <p className="text-center fs-12 text-white/30 mt-2">
-          Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัดใหม่
-        </p>
       </div>
     </div>
   )

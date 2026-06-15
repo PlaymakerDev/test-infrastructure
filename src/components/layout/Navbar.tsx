@@ -149,7 +149,7 @@ export default function Navbar() {
             className={iconClassName}
           />
           <TbBrandGithubCopilot
-            className={iconClassName}
+            className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--default-blue)" : ""}`}
             onClick={() => router.push("/admin/smart-search")}
           />
           <TbBellRinging2
