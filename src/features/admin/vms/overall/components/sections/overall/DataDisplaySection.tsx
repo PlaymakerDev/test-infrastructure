@@ -1,13 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { TableVMSData, VMSList } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
-import FormSearchVMS from './FormSearchVMS'
-import { AxiosError } from 'axios'
-import { message } from 'antd'
+import FormSearchVMS, { FormValues } from './FormSearchVMS'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
-import { getVMSOverviewListData, setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
+import { setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { getVMSOverviewListAPI } from '@/services/routes/VMSService'
 
-interface Props { }
+
+interface Props {
+  deptId?: string | string[] | number
+}
 
 const VMS_FILTERS: FilterConfig[] = [
   {
@@ -61,34 +64,50 @@ const VMS_STATS: FilterStats = {
   expired: 92,
 }
 
-const DataDisplaySection: React.FC<Props> = () => {
+const DataDisplaySection: React.FC<Props> = (props) => {
+  const { deptId } = props
+  const dispatch = useAppDispatch()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
-  const dispatch = useAppDispatch()
   const { vms_list } = useAppSelector(state => state.vms_overview)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['vms_list', vms_list.search],
+    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData
+  })
 
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableVMSData />
+        return <TableVMSData data={data?.data} loading={isLoading} />
       case 'GRID':
-        return <VMSList />
+        return <VMSList data={data?.data} loading={isLoading} />
       default:
         return null
     }
-  }, [displayType])
+  }, [displayType, data, isLoading])
 
-  const onSearch = useCallback(async (data: string) => {
-    try {
-
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        message.error(error.response?.data?.message || 'เกิดข้อผิดพลาดในการค้นหา')
-      } else {
-        console.error(error)
-      }
+  const onSearch = useCallback((formData: FormValues) => {
+    if (activeFilter === 'in-warranty' || activeFilter === 'expired') {
+      dispatch(setSearchVMSList({
+        ...vms_list.search,
+        ...formData,
+        status_name: undefined,
+        warranty_name: activeFilter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
+        page: 1,
+      }))
+    } else {
+      dispatch(setSearchVMSList({
+        ...vms_list.search,
+        ...formData,
+        status_name: activeFilter === 'all' ? undefined : activeFilter,
+        warranty_name: undefined,
+        page: 1,
+      }))
     }
-  }, [])
+  }, [dispatch, vms_list.search, activeFilter])
 
   return (
     <div>
@@ -99,11 +118,25 @@ const DataDisplaySection: React.FC<Props> = () => {
           activeFilter={activeFilter}
           onFilterChange={(filter) => {
             setActiveFilter(filter)
-            onSearch(filter)
+            if (filter === 'in-warranty' || filter === 'expired') {
+              dispatch(setSearchVMSList({
+                ...vms_list.search,
+                status_name: undefined,
+                warranty_name: filter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
+                page: 1,
+              }))
+            } else {
+              dispatch(setSearchVMSList({
+                ...vms_list.search,
+                status_name: filter === 'all' ? undefined : filter,
+                warranty_name: undefined,
+                page: 1,
+              }))
+            }
           }}
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
-          formSearch={<FormSearchVMS />}
+          formSearch={<FormSearchVMS onSearch={onSearch} />}
         />
       </section>
       <section className='mt-5'>
