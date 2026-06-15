@@ -1,5 +1,5 @@
 "use client"
-import { Input, Skeleton, Tooltip } from "antd"
+import { ConfigProvider, Input, Skeleton, Tooltip } from "antd"
 import dayjs from "dayjs"
 import React, { useMemo, useState } from "react"
 import {
@@ -62,13 +62,34 @@ const HistorySidebar: React.FC = () => {
           }`}
       >
         <div className="w-[400px] h-full flex flex-col gap-3 bg-(--dark-black) rounded-tr-2xl pl-18 pr-9 py-6">
-          <Input
-            allowClear
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาประวัติ..."
-            prefix={<TbSearch className="text-(--yellow)" />}
-          />
+          <ConfigProvider
+            theme={{
+              token: {
+                // clear (×) icon — visible on the dark fill (default is too dim)
+                colorTextQuaternary: "rgba(255,255,255,0.5)",
+                colorTextTertiary: "#FFFFFF",
+              },
+              components: {
+                Input: {
+                  colorBgContainer: "#1F1F1F",
+                  colorBorder: "transparent",
+                  hoverBorderColor: "transparent",
+                  activeBorderColor: "var(--yellow)",
+                  colorTextPlaceholder: "#FCD11680",
+                  borderRadius: 10,
+                },
+              },
+            }}
+          >
+            <Input
+              allowClear
+              size="large"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ค้นหาประวัติ..."
+              prefix={<TbSearch className="text-(--yellow)" />}
+            />
+          </ConfigProvider>
 
           <div className="flex items-center justify-between">
             <p className="fs-12 text-[#66AEFF]">ประวัติการค้นหา</p>

@@ -19,6 +19,18 @@ export const theme: ConfigProviderProps = {
       },
       Button: {
         defaultGhostBorderColor: '#FCD116',
+        // No dark algorithm → default button is white bg + white text (invisible,
+        // e.g. Modal.confirm "Cancel"). Make it a solid grey button (like the
+        // danger button, neutral colour) — no yellow border/text.
+        defaultBg: "#333333",
+        defaultColor: "var(--white)",
+        defaultBorderColor: "transparent",
+        defaultHoverBg: "#404040",
+        defaultHoverColor: "var(--white)",
+        defaultHoverBorderColor: "transparent",
+        defaultActiveBg: "#2A2A2A",
+        defaultActiveColor: "var(--white)",
+        defaultActiveBorderColor: "transparent",
       },
       Drawer: {
         colorBgElevated: "var(--dark-black)",
@@ -151,6 +163,13 @@ export const theme: ConfigProviderProps = {
         itemBg: "transparent",
         itemSelectedBg: "#2A2A2A",
         itemSelectedColor: "var(--yellow)",
+      },
+      Message: {
+        // No dark algorithm → toast bg defaults to white + white text (invisible).
+        contentBg: "#333333",
+      },
+      Notification: {
+        colorBgElevated: "#333333",
       },
       Calendar: {
         // Container
