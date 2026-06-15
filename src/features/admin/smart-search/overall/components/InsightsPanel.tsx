@@ -36,18 +36,20 @@ const InsightCard: React.FC<{ insight: Insight }> = ({ insight }) => {
       type="button"
       disabled={isStreaming}
       onClick={() => send(insightToQuestion(insight))}
-      className={`text-left w-full rounded-lg border bg-white/5 px-4 py-3 transition-colors hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed ${accent}`}
+      className={`text-left w-full rounded-lg border bg-white/5 px-3 py-2.5 transition-colors hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed ${accent}`}
     >
-      <div className="flex items-center gap-2 mb-1">
-        <Icon size={18} />
-        <span className="fs-12 font-medium">{insight.metric}</span>
+      <div className="flex items-center gap-2 mb-0.5">
+        <Icon size={16} className="shrink-0" />
+        <span className="fs-12 font-medium truncate">{insight.metric}</span>
         {!isStatus && (
-          <span className="fs-12 ml-auto">
+          <span className="fs-12 ml-auto shrink-0">
             {isUp ? "▲" : "▼"} {Math.abs(insight.pct_change)}%
           </span>
         )}
       </div>
-      <p className="fs-12 text-white/70 leading-snug">{insight.summary}</p>
+      <p className="fs-12 text-white/60 leading-snug line-clamp-2">
+        {insight.summary}
+      </p>
     </button>
   )
 }
@@ -64,10 +66,11 @@ const InsightsPanel: React.FC = () => {
   }
   if (!insights.length) return null
 
-  // Status (offline) alerts first, then traffic movers.
-  const ordered = [...insights].sort((a, b) =>
-    a.type === "status" && b.type !== "status" ? -1 : 0,
-  )
+  // Status (offline) alerts first, then traffic movers — capped so the empty
+  // state stays scannable (the full set is reachable by asking).
+  const ordered = [...insights]
+    .sort((a, b) => (a.type === "status" && b.type !== "status" ? -1 : 0))
+    .slice(0, 4)
 
   return (
     <div className="w-full max-w-2xl">

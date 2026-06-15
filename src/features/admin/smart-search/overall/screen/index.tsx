@@ -7,7 +7,7 @@ const SmartSearchScreen: React.FC = () => {
     <SmartSearchProvider>
       <div className="main-screen flex flex-col h-[calc(100vh-var(--nav-offset))]">
         <TitleSection />
-        <div className="mt-4 flex-1 min-h-0 flex gap-4 px-3">
+        <div className="mt-4 flex-1 min-h-0 flex gap-4">
           <HistorySidebar />
           <section className="flex-1 min-w-0 flex flex-col min-h-0">
             <ChatWindow />

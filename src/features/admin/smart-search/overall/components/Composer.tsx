@@ -1,13 +1,7 @@
 "use client"
-import { Button, Input, Tooltip } from "antd"
+import { Button, ConfigProvider, Input } from "antd"
 import React, { useCallback } from "react"
-import {
-  TbPhotoPlus,
-  TbPlayerStopFilled,
-  TbScan,
-  TbSend,
-  TbTargetArrow,
-} from "react-icons/tb"
+import { TbPlayerStopFilled, TbSend, TbTargetArrow } from "react-icons/tb"
 import { useSmartSearchContext } from "../context"
 
 const MAX_RUNES = 500
@@ -20,6 +14,7 @@ const Composer: React.FC = () => {
 
   const length = runeLength(draft)
   const overLimit = length > MAX_RUNES
+  const showCounter = length > MAX_RUNES * 0.8
   const canSend = draft.trim().length > 0 && !overLimit && !isStreaming
 
   const handleSend = useCallback(() => {
@@ -42,82 +37,68 @@ const Composer: React.FC = () => {
   )
 
   return (
-    <div className="shrink-0 pt-3">
-      <div className="rounded-2xl bg-(--dark-black) border border-white/10 px-3 py-2.5">
-        {/* Disabled image/scan inputs — backend is text-only (text-to-SQL). */}
-        <div className="flex items-center gap-1 mb-1">
-          <Tooltip title="แนบรูปภาพ (เร็วๆ นี้)">
-            <Button
-              type="text"
-              size="small"
-              disabled
-              aria-label="แนบรูปภาพ (เร็วๆ นี้)"
-              icon={<TbPhotoPlus className="text-white/40" />}
+    <div className="shrink-0">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-4">
+        <div className="rounded-2xl bg-black border border-white/10 focus-within:border-(--yellow)/50 transition-colors px-4 py-3 shadow-lg shadow-black/30">
+          <ConfigProvider
+            theme={{ components: { Input: { colorTextPlaceholder: "#979797" } } }}
+          >
+            <Input.TextArea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="กรุณาป้อนคำสั่งหรือถามในสิ่งที่ต้องการทราบ เราจะประมวลผลอย่างถูกต้องและรวดเร็วที่สุด..."
+              autoSize={{ minRows: 1, maxRows: 8 }}
+              variant="borderless"
+              className="!px-0 !bg-transparent"
             />
-          </Tooltip>
-          <Tooltip title="สแกน (เร็วๆ นี้)">
-            <Button
-              type="text"
-              size="small"
-              disabled
-              aria-label="สแกน (เร็วๆ นี้)"
-              icon={<TbScan className="text-white/40" />}
-            />
-          </Tooltip>
-        </div>
+          </ConfigProvider>
 
-        <Input.TextArea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="กรุณาป้อนคำสั่งหรือถามในสิ่งที่ต้องการทราบ เราจะประมวลผลอย่างถูกต้องและรวดเร็วที่สุด..."
-          autoSize={{ minRows: 1, maxRows: 6 }}
-          variant="borderless"
-          className="!px-0"
-        />
-
-        <div className="flex items-center justify-between mt-1">
-          <Tooltip title="แม่นยำขึ้นสำหรับคำถามซับซ้อน (ช้าลงเล็กน้อย)">
+          <div className="flex items-center justify-between mt-2">
             <button
               type="button"
+              title="แม่นยำขึ้นสำหรับคำถามซับซ้อน (ช้าลงเล็กน้อย)"
               onClick={() => setMode(mode === "accurate" ? "fast" : "accurate")}
-              className={`flex items-center gap-1.5 fs-12 px-3 py-1 rounded-full border transition-colors ${
-                mode === "accurate"
-                  ? "border-(--yellow) text-(--yellow) bg-(--yellow)/10"
-                  : "border-white/20 text-white/60 hover:text-white"
-              }`}
+              className={`flex items-center gap-1.5 fs-12 px-3 py-1 rounded-full border transition-colors ${mode === "accurate"
+                ? "border-(--yellow) text-(--yellow) bg-(--yellow)/10"
+                : "border-white/15 text-white/50 hover:text-white/80 hover:border-white/30"
+                }`}
             >
               <TbTargetArrow /> แม่นยำ
             </button>
-          </Tooltip>
 
-          <div className="flex items-center gap-3">
-            <span
-              className={`fs-12 ${overLimit ? "text-red-400" : "text-white/40"}`}
-            >
-              {length}/{MAX_RUNES}
-            </span>
-            {isStreaming ? (
-              <Button
-                type="primary"
-                shape="circle"
-                danger
-                aria-label="หยุด"
-                icon={<TbPlayerStopFilled />}
-                onClick={stop}
-              />
-            ) : (
-              <Button
-                type="primary"
-                shape="circle"
-                aria-label="ส่ง"
-                icon={<TbSend />}
-                disabled={!canSend}
-                onClick={handleSend}
-              />
-            )}
+            <div className="flex items-center gap-3">
+              {showCounter && (
+                <span className={`fs-12 ${overLimit ? "text-red-400" : "text-white/40"}`}>
+                  {length}/{MAX_RUNES}
+                </span>
+              )}
+              {isStreaming ? (
+                <Button
+                  type="primary"
+                  shape="circle"
+                  danger
+                  aria-label="หยุด"
+                  icon={<TbPlayerStopFilled />}
+                  onClick={stop}
+                />
+              ) : (
+                <Button
+                  type="primary"
+                  shape="circle"
+                  aria-label="ส่ง"
+                  icon={<TbSend />}
+                  disabled={!canSend}
+                  onClick={handleSend}
+                />
+              )}
+            </div>
           </div>
         </div>
+
+        <p className="text-center fs-12 text-white/30 mt-2">
+          Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัดใหม่
+        </p>
       </div>
     </div>
   )

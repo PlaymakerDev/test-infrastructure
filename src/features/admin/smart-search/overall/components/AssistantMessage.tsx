@@ -50,12 +50,12 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
 
   return (
     <div className="flex gap-3">
-      <div className="shrink-0 w-8 h-8 rounded-full bg-(--yellow)/15 flex items-center justify-center">
+      <div className="shrink-0 w-8 h-8 rounded-full bg-(--yellow)/15 flex items-center justify-center mt-0.5">
         <TbBrandGithubCopilot className="text-(--yellow)" size={18} />
       </div>
-      <div className="flex-1 min-w-0 rounded-2xl rounded-tl-sm bg-(--dark-black) border border-white/5 px-4 py-3">
+      <div className="flex-1 min-w-0 pt-1">
         {status === "error" ? (
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-col items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
             <p className="text-red-400">
               {errorMessage ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"}
             </p>

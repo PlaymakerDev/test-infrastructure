@@ -128,6 +128,30 @@ export const theme: ConfigProviderProps = {
         footerBg: "var(--dark-black)",
         titleColor: "#FFFFFF",
       },
+      Tooltip: {
+        // Global colorTextLightSolid is dark (for text on the yellow primary
+        // button); Tooltip reuses it for its text → dark-on-dark = unreadable.
+        // Override just the tooltip to a dark surface with light text.
+        colorBgSpotlight: "#333333",
+        colorTextLightSolid: "#FFFFFF",
+      },
+      Dropdown: {
+        // No dark algorithm in this theme → popup defaults to white. Match the
+        // app's dark surfaces (mirrors Select/Modal overrides above).
+        colorBgElevated: "var(--dark-black)",
+        colorText: "var(--white)",
+        controlItemBgHover: "#2A2A2A",
+      },
+      Menu: {
+        colorBgElevated: "var(--dark-black)",
+        popupBg: "var(--dark-black)",
+        itemColor: "var(--white)",
+        itemHoverColor: "var(--white)",
+        itemHoverBg: "#2A2A2A",
+        itemBg: "transparent",
+        itemSelectedBg: "#2A2A2A",
+        itemSelectedColor: "var(--yellow)",
+      },
       Calendar: {
         // Container
         // colorBgContainer: "var(--dark-black)",

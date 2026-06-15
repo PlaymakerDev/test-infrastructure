@@ -35,18 +35,16 @@ const MessageList: React.FC<Props> = ({ turns }) => {
   }, [turns, atBottom, scrollToBottom])
 
   return (
-    <div className="relative flex-1 min-h-0">
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="h-full overflow-y-auto px-1 py-4 flex flex-col gap-6"
-      >
-        {turns.map((turn) => (
-          <div key={turn.id} className="flex flex-col gap-3">
-            <UserMessage question={turn.question} />
-            <AssistantMessage turn={turn} />
-          </div>
-        ))}
+    <div className="relative h-full">
+      <div ref={containerRef} onScroll={handleScroll} className="h-full overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 flex flex-col gap-8">
+          {turns.map((turn) => (
+            <div key={turn.id} className="flex flex-col gap-4">
+              <UserMessage question={turn.question} />
+              <AssistantMessage turn={turn} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {!atBottom && (
@@ -54,7 +52,7 @@ const MessageList: React.FC<Props> = ({ turns }) => {
           type="button"
           aria-label="เลื่อนไปข้อความล่าสุด"
           onClick={() => scrollToBottom("smooth")}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 fs-12 px-3 py-1.5 rounded-full bg-(--dark-black) border border-(--yellow)/40 text-(--yellow) shadow-lg"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 fs-12 px-3 py-1.5 rounded-full bg-(--dark-black) border border-(--yellow)/40 text-(--yellow) shadow-lg shadow-black/40 hover:bg-(--yellow)/10 transition-colors"
         >
           <TbArrowDown /> ล่าสุด
         </button>
