@@ -8,7 +8,7 @@ const TitleSection: React.FC = () => {
   const router = useRouter()
 
   return (
-    <div className="px-8 flex items-start gap-4">
+    <div className="px-4 md:px-8 flex items-start gap-3">
       <section className="flex items-start gap-3 shrink-0">
         <TbArrowBigLeftFilled
           className="fs-24 text-(--yellow) cursor-pointer mt-2"

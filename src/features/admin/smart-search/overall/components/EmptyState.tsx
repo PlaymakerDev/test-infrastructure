@@ -9,9 +9,9 @@ const EmptyState: React.FC = () => {
   const { send, isStreaming } = useSmartSearchContext()
 
   return (
-    <div className="h-full overflow-hidden">
-      <div className="h-full flex flex-col items-center justify-center text-center gap-4 px-6 py-4 max-w-5xl mx-auto">
-        <TbBrandGithubCopilot className="fs-24 cursor-pointertext-white/40" size={56} />
+    <div className="h-full overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center justify-center text-center gap-4 px-4 md:px-6 py-6 max-w-5xl mx-auto">
+        <TbBrandGithubCopilot className="text-white/40" size={56} />
         <div className="max-w-xl">
           <p className="text-white/80 text-lg">
             พิมพ์คำถามเกี่ยวกับข้อมูลจราจรหรือถนนเป็นภาษาไทยหรืออังกฤษ

@@ -1,5 +1,5 @@
 "use client"
-import { ConfigProvider, Input, Skeleton, Tooltip } from "antd"
+import { ConfigProvider, Drawer, Input, Skeleton, Tooltip } from "antd"
 import dayjs from "dayjs"
 import React, { useMemo, useState } from "react"
 import {
@@ -38,10 +38,15 @@ const groupByRecency = (list: ConversationSummary[]): Group[] => {
   return groups.filter((g) => g.items.length > 0)
 }
 
-const HistorySidebar: React.FC = () => {
+// Search box + grouped conversation list — shared by the desktop inline panel
+// and the mobile drawer. Each instance keeps its own query (only one is visible
+// per breakpoint), so they never fight over state.
+const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
+  className,
+  onNavigate,
+}) => {
   const { conversations, loadingList, conversationId, newChat } =
     useSmartSearchContext()
-  const [open, setOpen] = useState(true)
   const [query, setQuery] = useState("")
 
   const groups = useMemo(() => {
@@ -55,103 +60,153 @@ const HistorySidebar: React.FC = () => {
   const isEmpty = !loadingList && groups.length === 0
 
   return (
-    <div className="relative shrink-0 max-md:hidden h-full">
-      {/* Collapsible panel — animates width like control-vms */}
-      <div
-        className={`overflow-hidden transition-[width] duration-300 ease-in-out h-full ${open ? "w-[400px]" : "w-0"
-          }`}
+    <div className={`h-full flex flex-col gap-3 ${className ?? ""}`}>
+      <ConfigProvider
+        theme={{
+          token: {
+            // clear (×) icon — visible on the dark fill (default is too dim)
+            colorTextQuaternary: "rgba(255,255,255,0.5)",
+            colorTextTertiary: "#FFFFFF",
+          },
+          components: {
+            Input: {
+              colorBgContainer: "#1F1F1F",
+              colorBorder: "transparent",
+              hoverBorderColor: "transparent",
+              activeBorderColor: "var(--yellow)",
+              colorTextPlaceholder: "#FCD11680",
+              borderRadius: 10,
+            },
+          },
+        }}
       >
-        <div className="w-[400px] h-full flex flex-col gap-3 bg-(--dark-black) rounded-tr-2xl pl-18 pr-9 py-6">
-          <ConfigProvider
-            theme={{
-              token: {
-                // clear (×) icon — visible on the dark fill (default is too dim)
-                colorTextQuaternary: "rgba(255,255,255,0.5)",
-                colorTextTertiary: "#FFFFFF",
-              },
-              components: {
-                Input: {
-                  colorBgContainer: "#1F1F1F",
-                  colorBorder: "transparent",
-                  hoverBorderColor: "transparent",
-                  activeBorderColor: "var(--yellow)",
-                  colorTextPlaceholder: "#FCD11680",
-                  borderRadius: 10,
-                },
-              },
+        <Input
+          allowClear
+          size="large"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ค้นหาประวัติ..."
+          prefix={<TbSearch className="text-(--yellow)" />}
+        />
+      </ConfigProvider>
+
+      <div className="flex items-center justify-between">
+        <p className="fs-12 text-[#66AEFF]">ประวัติการค้นหา</p>
+        <Tooltip title="แชตใหม่">
+          <button
+            type="button"
+            aria-label="แชตใหม่"
+            onClick={() => {
+              newChat()
+              onNavigate?.()
             }}
+            className="text-white/50 hover:text-(--yellow) transition-colors p-1"
           >
-            <Input
-              allowClear
-              size="large"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหาประวัติ..."
-              prefix={<TbSearch className="text-(--yellow)" />}
-            />
-          </ConfigProvider>
-
-          <div className="flex items-center justify-between">
-            <p className="fs-12 text-[#66AEFF]">ประวัติการค้นหา</p>
-            <Tooltip title="แชตใหม่">
-              <button
-                type="button"
-                aria-label="แชตใหม่"
-                onClick={newChat}
-                className="text-white/50 hover:text-(--yellow) transition-colors p-1"
-              >
-                <TbPlus size={16} />
-              </button>
-            </Tooltip>
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
-            {loadingList && conversations.length === 0 ? (
-              <Skeleton active paragraph={{ rows: 6 }} title={false} />
-            ) : isEmpty ? (
-              <p className="fs-12 text-white/40">
-                {query ? "ไม่พบประวัติที่ตรงกับคำค้น" : "ยังไม่มีประวัติการค้นหา"}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {groups.map((group) => (
-                  <div key={group.label}>
-                    <p className="fs-12 text-white/40 mb-1 px-1 text-right">
-                      {group.label}
-                    </p>
-                    <div className="flex flex-col gap-0.5">
-                      {group.items.map((c) => (
-                        <ConversationItem
-                          key={c.id}
-                          conversation={c}
-                          active={c.id === conversationId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+            <TbPlus size={16} />
+          </button>
+        </Tooltip>
       </div>
 
-      {/* Collapse / expand toggle — floats on the panel's right edge */}
-      <Tooltip title={open ? "ซ่อนประวัติ" : "แสดงประวัติ"}>
-        <button
-          type="button"
-          aria-label={open ? "ซ่อนประวัติ" : "แสดงประวัติ"}
-          onClick={() => setOpen((prev) => !prev)}
-          className="absolute top-6 -right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-colors"
-        >
-          {open ? (
-            <TbLayoutSidebarLeftCollapse size={18} />
-          ) : (
-            <TbLayoutSidebarLeftExpand size={18} />
-          )}
-        </button>
-      </Tooltip>
+      <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
+        {loadingList && conversations.length === 0 ? (
+          <Skeleton active paragraph={{ rows: 6 }} title={false} />
+        ) : isEmpty ? (
+          <p className="fs-12 text-white/40">
+            {query ? "ไม่พบประวัติที่ตรงกับคำค้น" : "ยังไม่มีประวัติการค้นหา"}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {groups.map((group) => (
+              <div key={group.label}>
+                <p className="fs-12 text-white/40 mb-1 px-1 text-right">
+                  {group.label}
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {group.items.map((c) => (
+                    <ConversationItem
+                      key={c.id}
+                      conversation={c}
+                      active={c.id === conversationId}
+                      onAfterOpen={onNavigate}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+const HistorySidebar: React.FC = () => {
+  const { historyOpen, setHistoryOpen } = useSmartSearchContext()
+  const [open, setOpen] = useState(true)
+
+  return (
+    <>
+      {/* Desktop: inline collapsible panel */}
+      <div className="relative shrink-0 hidden md:block h-full">
+        <div
+          className={`overflow-hidden transition-[width] duration-300 ease-in-out h-full ${open ? "w-[400px]" : "w-0"
+            }`}
+        >
+          <PanelBody className="w-[400px] bg-(--dark-black) rounded-tr-2xl pl-18 pr-9 py-6" />
+        </div>
+
+        {/* Collapse / expand toggle — floats on the panel's right edge */}
+        <Tooltip title={open ? "ซ่อนประวัติ" : "แสดงประวัติ"}>
+          <button
+            type="button"
+            aria-label={open ? "ซ่อนประวัติ" : "แสดงประวัติ"}
+            onClick={() => setOpen((prev) => !prev)}
+            className="absolute top-6 -right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-colors"
+          >
+            {open ? (
+              <TbLayoutSidebarLeftCollapse size={18} />
+            ) : (
+              <TbLayoutSidebarLeftExpand size={18} />
+            )}
+          </button>
+        </Tooltip>
+      </div>
+
+      {/* Mobile: floating toggle. Like the desktop one it hugs the panel's
+          edge — so it slides to the drawer's right edge when open (z above the
+          drawer) and sits at the screen's left edge when closed. */}
+      <button
+        type="button"
+        aria-label={historyOpen ? "ซ่อนประวัติ" : "แสดงประวัติ"}
+        onClick={() => setHistoryOpen(!historyOpen)}
+        style={{ left: historyOpen ? 302 : -16 }}
+        className="md:hidden fixed top-1/2 -translate-y-1/2 z-[1100] w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-[left] duration-300 ease-in-out"
+      >
+        {historyOpen ? (
+          <TbLayoutSidebarLeftCollapse size={18} />
+        ) : (
+          <TbLayoutSidebarLeftExpand size={18} />
+        )}
+      </button>
+
+      {/* Mobile: history as a left drawer */}
+      <Drawer
+        placement="left"
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        closable={false}
+        destroyOnHidden
+        className="md:hidden"
+        styles={{
+          wrapper: { width: 320 },
+          body: { padding: 0, background: "var(--dark-black)" },
+          section: { background: "var(--dark-black)" },
+          header: { display: "none" },
+        }}
+      >
+        <PanelBody className="px-5 py-6" onNavigate={() => setHistoryOpen(false)} />
+      </Drawer>
+    </>
   )
 }
 

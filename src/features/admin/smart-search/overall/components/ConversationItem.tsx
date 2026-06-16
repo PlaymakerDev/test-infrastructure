@@ -8,12 +8,19 @@ import { useSmartSearchContext } from "../context"
 interface Props {
   conversation: ConversationSummary
   active: boolean
+  // Called after the conversation is opened — lets the mobile drawer close.
+  onAfterOpen?: () => void
 }
 
-const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
+const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }) => {
   const { openConversation, prefetchConversation, renameConversation, deleteConversation } =
     useSmartSearchContext()
   const { modal, message } = App.useApp()
+
+  const open = useCallback(() => {
+    openConversation(conversation.id)
+    onAfterOpen?.()
+  }, [openConversation, conversation.id, onAfterOpen])
 
   const [editing, setEditing] = useState(false)
   const [draftTitle, setDraftTitle] = useState(conversation.title)
@@ -84,9 +91,9 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => openConversation(conversation.id)}
+      onClick={open}
       onKeyDown={(e) => {
-        if (e.key === "Enter") openConversation(conversation.id)
+        if (e.key === "Enter") open()
       }}
       onMouseEnter={() => prefetchConversation(conversation.id)}
       className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"

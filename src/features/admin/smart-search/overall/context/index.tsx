@@ -43,6 +43,10 @@ export interface SmartSearchContextProps {
   prefetchConversation: (id: string) => void
   renameConversation: (id: string, title: string) => Promise<void>
   deleteConversation: (id: string) => Promise<void>
+  // Mobile-only: the history drawer's open state (trigger lives in the header,
+  // the drawer in the sidebar — shared here).
+  historyOpen: boolean
+  setHistoryOpen: (open: boolean) => void
 }
 
 export interface PageProviderProps {
@@ -70,6 +74,7 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
 
   const chat = useAskStream(handlePersisted)
   const [draft, setDraft] = useState("")
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   // Initial sidebar load.
   useEffect(() => {
@@ -127,6 +132,8 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
         prefetchConversation: conversations.prefetch,
         renameConversation: conversations.rename,
         deleteConversation,
+        historyOpen,
+        setHistoryOpen,
       }}
     >
       {children}
