@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
+import { thaiDayName } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -56,7 +57,7 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = () => {
       }
       const date = dayjs(d.date).locale('th')
       return {
-        weekday: `วัน${d.day}`,
+        weekday: `วัน${thaiDayName(d.day)}`,
         date: date.format('D MMM BBBB').replace(/(\d+)/, (s) => s),
         values,
         total: d.total_pcu,

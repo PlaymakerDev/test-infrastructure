@@ -80,10 +80,11 @@ export interface TrafficSolutionCamera {
 export type APIResponseTrafficSolutionCameras = TrafficSolutionCamera[]
 
 // ── 13. GET /traffic/details/graph/{id} ───────────────────────────────────────
-// Charts for Tab 1 bottom row:
+// Charts for Tab 1 bottom row (per OpenAPI `GraphTrafficResponse`):
 //   • `traffic_pcu` — 24h volume per phase
-//   • `efficiency.graph` — real-time efficiency per phase per hour
-//   • `efficiency.saving` — ET rate / time saved / CO2 saved per hour
+//   • `efficentcy.graph` — real-time efficiency per phase per hour (note typo)
+//   • `saving.graph` — ET rate / time saved / CO2 saved per hour (TOP-LEVEL,
+//      not nested under efficentcy as our old type assumed)
 
 export interface TrafficGraphPcuPoint {
   phases_no: number
@@ -117,14 +118,20 @@ export interface TrafficEfficiencyData {
   graph: TrafficEfficiencyGraphPoint[]
   phases_label: string[]
   phases_avg: number[]
+  /** Legacy nested location — kept for backward compat. Prefer the top-level
+   *  `APIResponseTrafficGraph.saving` matching the current OpenAPI spec. */
   saving?: TrafficEfficiencySaving
 }
 
 export interface APIResponseTrafficGraph {
   traffic_pcu: TrafficGraphPcuPoint[]
-  // Note: backend typo (`efficientcy`) — accept both for safety.
-  efficientcy?: TrafficEfficiencyData
+  /** Note: backend uses the typo `efficentcy` (without the second `i`). The
+   *  alternate spelling is here for older snapshots that used `efficiency`. */
+  efficentcy?: TrafficEfficiencyData
   efficiency?: TrafficEfficiencyData
+  /** Top-level per OpenAPI spec. Some older payloads nested this inside
+   *  `efficentcy.saving` — the charts read both for safety. */
+  saving?: TrafficEfficiencySaving
 }
 
 // ── 14. GET /traffic/details/summary/{id}?date=YYYY-MM-DD ─────────────────────

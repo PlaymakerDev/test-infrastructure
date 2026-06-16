@@ -83,6 +83,45 @@ export interface TrafficOverviewListItem {
   is_warranty: boolean
 }
 
+// ── 3b. GET /traffic/departments/{deptId}/overview/central/list ───────────────
+// Nested bureau → sub-departments → solutions tree. Returns a richer per-row
+// payload than the flat `/list` endpoint (adds `project.project_name` and
+// camera online/offline counts), which is why we prefer it for the overall
+// page table.
+
+export interface TrafficOverviewCentralProject extends TrafficProject {
+  project_name: string
+}
+
+export interface TrafficOverviewCentralSolution {
+  road: TrafficRoad
+  project: TrafficOverviewCentralProject
+  solution: TrafficSolution
+  traffic: {
+    controller_mode: string
+    total_pcu: number
+    total_phases: number
+    is_online: boolean
+  }
+  is_warranty: boolean
+  online_count: number
+  offline_count: number
+}
+
+export interface TrafficOverviewCentralDept {
+  department_id: number
+  department_short_name: string
+  solutions: TrafficOverviewCentralSolution[]
+}
+
+export interface TrafficOverviewCentralItem {
+  department_id: number
+  department_short_name: string
+  sub_department: TrafficOverviewCentralDept[]
+}
+
+export type APIResponseTrafficCentralList = TrafficOverviewCentralItem[]
+
 export interface APIResponseTrafficList {
   res_data: TrafficOverviewListItem[]
   meta_data: MetaData
@@ -154,6 +193,37 @@ export interface APIResponseTrafficCameraList {
   res_data: TrafficCameraListGroup[]
   meta_data: MetaData
 }
+
+// ── 6b. GET /traffic/departments/{deptId}/cameras/central/list ────────────────
+// Nested bureau → sub-dept → solutions[] (each with cameras + counts).
+// Used as the data source for the detail-page title bar (road code, solution
+// name, anydesk*) — `anydesk` field is documented as TODO by backend, will
+// appear here once they add it.
+
+export interface TrafficCameraCentralSolution {
+  road: TrafficRoad
+  solution: TrafficSolution & { traffic_id?: number }
+  traffic_camera: TrafficCameraEntry[]
+  online_count: number
+  offline_count: number
+  /** Optional — BE will populate this in a follow-up; we keep it undefined
+   *  until then so the anydesk button stays hidden gracefully. */
+  anydesk?: number | string | null
+}
+
+export interface TrafficCameraCentralDept {
+  department_id: number
+  department_short_name: string
+  solutions: TrafficCameraCentralSolution[]
+}
+
+export interface TrafficCameraCentralItem {
+  department_id: number
+  department_short_name: string
+  sub_department: TrafficCameraCentralDept[]
+}
+
+export type APIResponseTrafficCameraCentralList = TrafficCameraCentralItem[]
 
 // ── 7. GET /traffic/departments/{deptId}/cameras/dropdowns ────────────────────
 
