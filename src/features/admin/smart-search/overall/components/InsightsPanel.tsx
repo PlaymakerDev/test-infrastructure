@@ -36,7 +36,7 @@ const InsightCard: React.FC<{ insight: Insight }> = ({ insight }) => {
       type="button"
       disabled={isStreaming}
       onClick={() => send(insightToQuestion(insight))}
-      className={`text-left w-full rounded-lg border bg-white/5 px-3 py-2.5 transition-colors hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed ${accent}`}
+      className={`text-left w-full rounded-lg border bg-white/5 px-3 py-2.5 transition-colors hover:bg-white/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${accent}`}
     >
       <div className="flex items-center gap-2 mb-0.5">
         <Icon size={16} className="shrink-0" />

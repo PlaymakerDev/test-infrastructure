@@ -20,7 +20,7 @@ const SuggestionChips: React.FC<Props> = ({ questions }) => {
           type="button"
           disabled={isStreaming}
           onClick={() => send(q)}
-          className="fs-12 px-3 py-1.5 rounded-full border border-(--yellow)/40 text-white/80 hover:border-(--yellow) hover:text-(--yellow) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="fs-12 px-3 py-1.5 rounded-full border border-(--yellow)/40 text-white/80 hover:border-(--yellow) hover:text-(--yellow) transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {q}
         </button>

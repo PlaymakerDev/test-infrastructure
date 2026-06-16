@@ -11,7 +11,7 @@ const EmptyState: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center text-center gap-4 px-4 md:px-6 py-6 max-w-5xl mx-auto">
-        <TbBrandGithubCopilot className="text-white/40" size={56} />
+        <TbBrandGithubCopilot className="text-white" size={56} />
         <div className="max-w-xl">
           <p className="text-white/80 text-lg">
             พิมพ์คำถามเกี่ยวกับข้อมูลจราจรหรือถนนเป็นภาษาไทยหรืออังกฤษ
@@ -28,7 +28,7 @@ const EmptyState: React.FC = () => {
               type="button"
               disabled={isStreaming}
               onClick={() => send(prompt)}
-              className="fs-14 px-4 py-2 rounded-full border border-(--yellow)/40 text-white/80 hover:border-(--yellow) hover:text-(--yellow) transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="fs-14 px-4 py-2 rounded-full border border-(--yellow)/40 text-white/80 hover:border-(--yellow) hover:text-(--yellow) transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {prompt}
             </button>

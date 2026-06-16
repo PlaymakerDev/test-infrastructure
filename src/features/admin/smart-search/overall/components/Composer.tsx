@@ -59,7 +59,7 @@ const Composer: React.FC = () => {
               type="button"
               title="แม่นยำขึ้นสำหรับคำถามซับซ้อน (ช้าลงเล็กน้อย)"
               onClick={() => setMode(mode === "accurate" ? "fast" : "accurate")}
-              className={`flex items-center gap-1.5 fs-12 px-3 py-1 rounded-full border transition-colors ${mode === "accurate"
+              className={`flex items-center gap-1.5 fs-12 px-3 py-1 rounded-full border transition-colors cursor-pointer ${mode === "accurate"
                 ? "border-(--yellow) text-(--yellow) bg-(--yellow)/10"
                 : "border-white/15 text-white/50 hover:text-white/80 hover:border-white/30"
                 }`}
@@ -89,7 +89,7 @@ const Composer: React.FC = () => {
                   disabled={!canSend}
                   onClick={handleSend}
                   className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${canSend
-                    ? "bg-(--yellow) text-(--dark-black) hover:bg-(--yellow)/90"
+                    ? "bg-(--yellow) text-(--dark-black) hover:bg-(--yellow)/90 cursor-pointer"
                     : "bg-[#3A3A3A] text-white/50 cursor-not-allowed"
                     }`}
                 >

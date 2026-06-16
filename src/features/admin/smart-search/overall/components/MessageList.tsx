@@ -52,7 +52,7 @@ const MessageList: React.FC<Props> = ({ turns }) => {
           type="button"
           aria-label="เลื่อนไปข้อความล่าสุด"
           onClick={() => scrollToBottom("smooth")}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 fs-12 px-3 py-1.5 rounded-full bg-(--dark-black) border border-(--yellow)/40 text-(--yellow) shadow-lg shadow-black/40 hover:bg-(--yellow)/10 transition-colors"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 fs-12 px-3 py-1.5 rounded-full bg-(--dark-black) border border-(--yellow)/40 text-(--yellow) shadow-lg shadow-black/40 hover:bg-(--yellow)/10 transition-colors cursor-pointer"
         >
           <TbArrowDown /> ล่าสุด
         </button>

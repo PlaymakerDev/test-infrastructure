@@ -100,7 +100,7 @@ const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
               newChat()
               onNavigate?.()
             }}
-            className="text-white/50 hover:text-(--yellow) transition-colors p-1"
+            className="text-white/50 hover:text-(--yellow) transition-colors p-1 cursor-pointer"
           >
             <TbPlus size={16} />
           </button>
@@ -161,7 +161,7 @@ const HistorySidebar: React.FC = () => {
             type="button"
             aria-label={open ? "ซ่อนประวัติ" : "แสดงประวัติ"}
             onClick={() => setOpen((prev) => !prev)}
-            className="absolute top-6 -right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-colors"
+            className="absolute top-6 -right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-colors cursor-pointer"
           >
             {open ? (
               <TbLayoutSidebarLeftCollapse size={18} />
@@ -180,7 +180,7 @@ const HistorySidebar: React.FC = () => {
         aria-label={historyOpen ? "ซ่อนประวัติ" : "แสดงประวัติ"}
         onClick={() => setHistoryOpen(!historyOpen)}
         style={{ left: historyOpen ? 302 : -16 }}
-        className="md:hidden fixed top-1/2 -translate-y-1/2 z-[1100] w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-[left] duration-300 ease-in-out"
+        className="md:hidden fixed top-1/2 -translate-y-1/2 z-[1100] w-9 h-9 rounded-full flex items-center justify-center bg-[#2F6FED] hover:bg-[#2a63d4] text-white shadow-lg transition-[left] duration-300 ease-in-out cursor-pointer"
       >
         {historyOpen ? (
           <TbLayoutSidebarLeftCollapse size={18} />
