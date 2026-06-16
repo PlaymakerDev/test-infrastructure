@@ -169,7 +169,7 @@ const SidebarContent: React.FC = () => {
                                     <motion.div
                                       key={solution.solution_type_id}
                                       variants={solutionItemVariants}
-                                      onClick={() => route && router.push(`${route.path}?dept_id=${dept.department_id}&solution_id=${solution.solution_type_id}`)}
+                                      onClick={() => route && router.push(`${route.path}?dept_id=${dept.department_id}`)}
                                       className={`pl-10 py-3 pr-3 flex items-center justify-between mb-2 rounded-md transition-colors ${route ? 'cursor-pointer' : 'cursor-default opacity-50'} ${isActive ? 'bg-(--yellow)' : 'bg-(--light-black) hover:bg-(--mid-gray)'}`}
                                     >
                                       <div className="flex items-center gap-2">

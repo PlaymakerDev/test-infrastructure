@@ -97,52 +97,40 @@ const OverallSection: React.FC = () => {
 
   return (
     <div className='flex flex-col gap-5'>
-      {/* ── Map + overlay panels ── */}
-      <section className='relative -mx-10 overflow-x-hidden xl:overflow-hidden xl:h-180'>
-
-        {/* Map — fills full height on desktop */}
-        <div
-          className='relative w-full xl:absolute xl:inset-0'
-          style={{ minHeight: 340 }}
-        >
-          <MapSectionCctv edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
-        </div>
-
-        {/* Mobile / tablet: stacks below map */}
-        <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
-          <CameraListCctv cameras={randomOnlineCameras} />
-          <StatsSectionCctv totals={totals} />
-        </div>
-
-        {/* Desktop xl+: left overlay — camera preview list */}
-        <aside className='hidden xl:flex flex-col absolute z-10 pl-10 pointer-events-none top-5 left-0 w-72'>
-          <div className='pointer-events-auto'>
+      {/* ── Top area — 3-column layout (matches traffic-signal LocationTrafficSignal):
+           LEFT: random camera previews · CENTER: map · RIGHT: search + stat cards.
+           Stacks vertically on mobile via row-start ordering. ── */}
+      <section>
+        <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
+          {/* LEFT — Camera preview list */}
+          <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
             <CameraListCctv cameras={randomOnlineCameras} />
           </div>
-        </aside>
 
-        {/* Desktop xl+: right overlay — search + stats */}
-        <aside className='hidden xl:flex flex-col gap-4 absolute z-10 items-end pr-10 pointer-events-auto top-5 right-0 w-80'>
+          {/* CENTER — Map */}
+          <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
+            <MapSectionCctv edgeFade={{ all: 20 }} />
+          </div>
 
-          {/* Search button */}
-          <button
-            type='button'
-            onClick={() => router.push('/admin/cctv/search')}
-            className='w-full rounded-full font-medium cursor-pointer'
-            style={{
-              background: '#FCD116',
-              border: 'none',
-              color: '#212121',
-              fontSize: 16,
-              padding: '14px 24px',
-            }}
-          >
-            ค้นหากล้อง CCTV รายสายทาง
-          </button>
-
-          {/* Stats cards */}
-          <StatsSectionCctv totals={totals} />
-        </aside>
+          {/* RIGHT — Search + stat cards */}
+          <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+            <button
+              type='button'
+              onClick={() => router.push('/admin/cctv/search')}
+              className='w-full rounded-full font-medium cursor-pointer'
+              style={{
+                background: '#FCD116',
+                border: 'none',
+                color: '#212121',
+                fontSize: 16,
+                padding: '14px 24px',
+              }}
+            >
+              ค้นหากล้อง CCTV รายสายทาง
+            </button>
+            <StatsSectionCctv totals={totals} />
+          </div>
+        </div>
       </section>
 
       {/* ── Filter bar ── */}

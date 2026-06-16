@@ -17,7 +17,7 @@ const StatCard: React.FC<StatCardProps> = ({
   icon, label, value, unit, sub, color, tint,
 }) => (
   <div
-    className='flex flex-col gap-1 sm:gap-1.5 p-3 sm:p-4 w-full xl:w-70 h-40 sm:h-44 xl:h-42.5'
+    className='flex flex-col gap-1 sm:gap-1.5 p-3 sm:p-4 w-full lg:w-70 h-40 sm:h-44 lg:h-42.5'
     style={{
       borderRadius: 20,
       background: tint
@@ -54,7 +54,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
   const warranty = totals?.warranty
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-3'>
+    <div className='grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3'>
       <StatCard
         icon={<TbVideo />}
         label='กล้อง CCTV ในระบบทั้งหมด'

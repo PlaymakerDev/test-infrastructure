@@ -4,7 +4,7 @@ import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useTrafficRandomCameras } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 
-interface Props {}
+interface Props { }
 
 /** Left rail — live CCTV camera previews for traffic-signal intersections.
  *  Data: `GET /traffic/departments/{deptId}/cameras/random-online?limit=3`

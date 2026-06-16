@@ -4,37 +4,14 @@ import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvRandomOnlineCamera } from '@/types/cctv'
 
 const CameraCard: React.FC<{ camera: CctvRandomOnlineCamera }> = ({ camera }) => (
-  <div
-    style={{
-      background: 'rgba(0,0,0,0.75)',
-      border: '1px solid #1f2d3d',
-      borderRadius: 12,
-      overflow: 'hidden',
-      backdropFilter: 'blur(6px)',
-    }}
-  >
+  <div className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'>
     <HLSLivePlayer
+      figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
       hlsUrl={camera.hls_url}
       cameraId={camera.id}
-      showLiveBadge
-      enableViewportPause
-      style={{ height: 120, display: 'block' }}
     />
-    <div style={{ padding: '8px 12px 10px' }}>
-      <p
-        style={{
-          color: '#66AEFF',
-          fontSize: 11,
-          lineHeight: 1.5,
-          wordBreak: 'break-all',
-        }}
-      >
-        {camera.camera_name}
-      </p>
-      <p style={{ color: '#6b7280', fontSize: 10, marginTop: 2 }}>
-        {camera.road_code}
-      </p>
-    </div>
+    <h4 className='camera-code'>{camera.camera_name}</h4>
+    <p className='camera-location'>{camera.road_code}</p>
   </div>
 )
 
@@ -43,7 +20,7 @@ interface Props {
 }
 
 const CameraListCctv: React.FC<Props> = ({ cameras }) => (
-  <div className='flex flex-col gap-3'>
+  <div className='h-full flex flex-col gap-4'>
     {cameras.map((cam) => (
       <CameraCard key={cam.id} camera={cam} />
     ))}
