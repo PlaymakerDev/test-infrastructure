@@ -1,7 +1,7 @@
 "use client"
 import { App, Dropdown, Input, type InputRef, type MenuProps } from "antd"
 import React, { useCallback, useRef, useState } from "react"
-import { TbDots, TbPencil, TbTrash } from "react-icons/tb"
+import { TbDotsVertical, TbPencil, TbTrash } from "react-icons/tb"
 import type { ConversationSummary } from "@/types/chat"
 import { useSmartSearchContext } from "../context"
 
@@ -89,9 +89,8 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
         if (e.key === "Enter") openConversation(conversation.id)
       }}
       onMouseEnter={() => prefetchConversation(conversation.id)}
-      className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${
-        active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
-      }`}
+      className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
+        }`}
     >
       <span
         className="flex-1 min-w-0 truncate fs-14 select-none"
@@ -112,9 +111,9 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
           type="button"
           aria-label="ตัวเลือก"
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+          className="shrink-0 -mr-2 h-7 w-7 inline-flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
         >
-          <TbDots />
+          <TbDotsVertical />
         </button>
       </Dropdown>
     </div>
