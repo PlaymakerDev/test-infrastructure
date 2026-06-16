@@ -8,14 +8,14 @@ import SearchBar, {
 import FormSearchTrafficSignal from './FormSearchTrafficSignal'
 import TableTrafficSignal from './TableTrafficSignal'
 import SummaryTableTrafficSignal from './SummaryTableTrafficSignal'
-import { useTrafficList } from '@/hooks/queries/traffic-signal'
+import { useTrafficCentralList, useTrafficTotals } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type {
   TrafficSignalProject,
   SignalPhase,
   OperatingMode,
 } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
-import type { TrafficOverviewListItem } from '@/types/traffic-signal/overview-api'
+import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/overview-api'
 
 interface Props {}
 
@@ -52,34 +52,33 @@ const TRAFFIC_SIGNAL_FILTERS: FilterConfig[] = [
   },
 ]
 
-/** Adapter: map an API list row to the UI's TrafficSignalProject shape.
- *  Fields not present in the list endpoint use placeholders so the existing
- *  tables render without breaking. Replace placeholders with real data once
- *  backend exposes them (or wire up secondary endpoints). */
-const apiItemToProject = (item: TrafficOverviewListItem): TrafficSignalProject => ({
-  // `solution.id` is the canonical solution_id — same value `/traffic/details/{id}`
-  // and the rest of the solution-scoped detail endpoints expect. `project.id`
-  // is the contract-level id (different entity) used by `/manage/contract/`.
+/** Adapter: central-list solution row → UI `TrafficSignalProject`.
+ *  Central endpoint carries every field the table needs (project_name +
+ *  camera online/offline counts) so no placeholders are required. The bureau
+ *  label is filled by the caller because it lives one level up in the
+ *  nested response. */
+const apiSolutionToProject = (
+  item: TrafficOverviewCentralSolution,
+  bureau: string,
+): TrafficSignalProject => ({
   id: String(item.solution.id),
   roadCode: item.road.code_name,
-  // Backend list doesn't expose project_name/install_point separately.
-  // Use solution_name as the closest match for both display fields.
-  projectName: item.solution.solution_name,
+  projectName: item.project.project_name,
   installPoint: item.solution.solution_name,
   contractNo: item.project.contract_no,
   warranty: item.is_warranty ? 'in-warranty' : 'expired',
   connection: item.traffic.is_online ? 'online' : 'offline',
-  stream: item.traffic.is_online,
+  // Stream is the *camera* health, not the controller heartbeat — a signal
+  // can still stream from its cameras even when its controller drops, and
+  // vice-versa. Treat any online camera as "stream connected".
+  stream: item.online_count > 0,
   phase: (item.traffic.total_phases === 3 ? 3 : 4) as SignalPhase,
   operatingMode: item.traffic.controller_mode as OperatingMode,
-  // Bureau grouping not in API — use a sentinel so the table renders without
-  // exploding into N empty groups. Future: pull from contract endpoint.
-  bureau: '-',
+  bureau,
   coord: [0, 0],
-  // Camera counts not in list endpoint — show PCU as placeholder.
-  totalCameras: item.traffic.total_pcu,
-  onlineCameras: item.traffic.is_online ? item.traffic.total_pcu : 0,
-  offlineCameras: item.traffic.is_online ? 0 : item.traffic.total_pcu,
+  totalCameras: item.online_count + item.offline_count,
+  onlineCameras: item.online_count,
+  offlineCameras: item.offline_count,
 })
 
 const DataDisplayTrafficSignal: React.FC<Props> = () => {
@@ -88,27 +87,46 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  // Fetch all (large limit) so we can filter/search client-side without
-  // round-trips per filter chip. Backend pagination kicks in for very large
-  // departments — adjust limit when that becomes a concern.
-  const { data } = useTrafficList(deptId, { page: 1, limit: 100 })
+  // Bureau-aware list — single round-trip, no pagination, carries every
+  // field the table needs (project name + camera counts + sub-dept grouping).
+  const { data } = useTrafficCentralList(deptId)
+  // Authoritative stats from backend.
+  const { data: totals } = useTrafficTotals(deptId)
 
-  // Map API items → UI shape once per fetch.
-  const projects: TrafficSignalProject[] = useMemo(
-    () => (data?.res_data ?? []).map(apiItemToProject),
-    [data]
-  )
+  // Flatten the bureau → sub-dept → solutions tree, tagging each row with its
+  // sub-dept short name so the table groups by bureau out of the box.
+  const projects: TrafficSignalProject[] = useMemo(() => {
+    const out: TrafficSignalProject[] = []
+    for (const bureau of data ?? []) {
+      for (const subDept of bureau.sub_department) {
+        for (const sol of subDept.solutions) {
+          out.push(apiSolutionToProject(sol, subDept.department_short_name))
+        }
+      }
+    }
+    return out
+  }, [data])
 
-  const stats: FilterStats = useMemo(
-    () => ({
+  // Stats prefer backend totals (whole-dept count, immune to pagination).
+  // Falls back to client-side counting if totals haven't loaded yet.
+  const stats: FilterStats = useMemo(() => {
+    if (totals) {
+      return {
+        all: totals.solution.total,
+        online: totals.solution.online,
+        offline: totals.solution.offline,
+        inWarranty: totals.warranty.active,
+        expired: totals.warranty.expired,
+      }
+    }
+    return {
       all: projects.length,
       online: projects.filter((p) => p.connection === 'online').length,
       offline: projects.filter((p) => p.connection === 'offline').length,
       inWarranty: projects.filter((p) => p.warranty === 'in-warranty').length,
       expired: projects.filter((p) => p.warranty === 'expired').length,
-    }),
-    [projects]
-  )
+    }
+  }, [totals, projects])
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()

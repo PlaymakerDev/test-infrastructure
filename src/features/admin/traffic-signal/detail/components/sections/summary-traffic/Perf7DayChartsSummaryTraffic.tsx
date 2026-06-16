@@ -4,6 +4,8 @@ import { Col, Row } from 'antd'
 import dayjs from 'dayjs'
 import BarChart, { type BarChartDataPoint } from '@/components/chart/Barchart'
 import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
+import { fmtNumber } from '@/utils/formatNumber'
+import { thaiDayShort } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -14,11 +16,10 @@ const COLOR_ET = '#8C66FF'
 const COLOR_TIME_SAVED = '#CA66FF'
 
 /** Format weekday + DD/MM Thai abbreviation for x-axis label.
- *  e.g., `2026-04-14` → "อ.\n14/04" */
+ *  e.g., `Tuesday` + `2026-04-14` → "อ.\n14/04" */
 const formatDayLabel = (dateStr: string, dayStr: string) => {
   const date = dayjs(dateStr)
-  const dayShort = dayStr.length > 0 ? dayStr.charAt(0) + '.' : ''
-  return `${dayShort}\n${date.format('DD/MM')}`
+  return `${thaiDayShort(dayStr)}\n${date.format('DD/MM')}`
 }
 
 const AvgFooter: React.FC<{ value: string; label: string; color: string }> = ({
@@ -86,7 +87,7 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = () => {
           accentColor={COLOR_PCU}
           data={days}
           bars={[{ dataKey: 'pcu', color: COLOR_PCU, label: 'PCU' }]}
-          footer={<AvgFooter value={avgs.pcu.toLocaleString(undefined, { maximumFractionDigits: 1 })} label='Avg Daily PCU' color={COLOR_PCU} />}
+          footer={<AvgFooter value={fmtNumber(avgs.pcu, 1)} label='Avg Daily PCU' color={COLOR_PCU} />}
         />
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={6}>
@@ -97,7 +98,7 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = () => {
           data={days}
           bars={[{ dataKey: 'efficiency', color: COLOR_EFFICIENCY, label: 'Efficiency' }]}
           yAxisTicks={[0, 20, 40, 60, 80, 100]}
-          footer={<AvgFooter value={`${avgs.efficiency.toFixed(0)}%`} label='Avg Efficiency' color={COLOR_EFFICIENCY} />}
+          footer={<AvgFooter value={`${fmtNumber(avgs.efficiency, 0)}%`} label='Avg Efficiency' color={COLOR_EFFICIENCY} />}
         />
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={6}>
@@ -108,7 +109,7 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = () => {
           data={days}
           bars={[{ dataKey: 'et', color: COLOR_ET, label: 'ET Rate' }]}
           yAxisTicks={[0, 20, 40, 60, 80, 100]}
-          footer={<AvgFooter value={`${avgs.et.toFixed(0)}%`} label='Avg ET Rate' color={COLOR_ET} />}
+          footer={<AvgFooter value={`${fmtNumber(avgs.et, 0)}%`} label='Avg ET Rate' color={COLOR_ET} />}
         />
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={6}>
@@ -118,7 +119,7 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = () => {
           accentColor={COLOR_TIME_SAVED}
           data={days}
           bars={[{ dataKey: 'timeSaved', color: COLOR_TIME_SAVED, label: 'ชั่วโมง' }]}
-          footer={<AvgFooter value={`${avgs.timeSaved.toFixed(1)}h`} label='Total Time Saved' color={COLOR_TIME_SAVED} />}
+          footer={<AvgFooter value={`${fmtNumber(avgs.timeSaved, 1)}h`} label='Total Time Saved' color={COLOR_TIME_SAVED} />}
         />
       </Col>
     </Row>

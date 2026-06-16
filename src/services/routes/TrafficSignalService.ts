@@ -5,12 +5,14 @@ import type {
   APIResponseTrafficTotals,
   APIRequestTrafficList,
   APIResponseTrafficList,
+  APIResponseTrafficCentralList,
   APIRequestTrafficOverviewDropdowns,
   APIResponseTrafficOverviewDropdowns,
   APIRequestTrafficRandomCameras,
   APIResponseTrafficRandomCameras,
   APIRequestTrafficCameraList,
   APIResponseTrafficCameraList,
+  APIResponseTrafficCameraCentralList,
   APIRequestTrafficCameraDropdowns,
   APIResponseTrafficCameraDropdowns,
 } from '@/types/traffic-signal/overview-api'
@@ -45,9 +47,12 @@ export const getTrafficOverviewAPI = (
     params: params.solution_id ? { solution_id: params.solution_id } : undefined,
   })
 
+// Use the `/central/` variant — when the dept is a bureau (department_type=1)
+// it aggregates totals across every sub-dept in the bureau's group, which is
+// what the overall page needs. Falls back to the dept's own scope otherwise.
 export const getTrafficTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseTrafficTotals>({
-    url: `${trafficDeptBase(deptId)}/overview/totals`,
+    url: `${trafficDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
   })
 
@@ -59,6 +64,15 @@ export const getTrafficListAPI = (
     url: `${trafficDeptBase(deptId)}/overview/list`,
     method: 'GET',
     params,
+  })
+
+// Bureau-aware list — returns nested bureau → sub-dept → solutions and carries
+// extra fields (`project.project_name`, per-solution camera online/offline
+// counts) the flat `/list` endpoint omits.
+export const getTrafficCentralListAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseTrafficCentralList>({
+    url: `${trafficDeptBase(deptId)}/overview/central/list`,
+    method: 'GET',
   })
 
 export const getTrafficOverviewDropdownsAPI = (
@@ -89,6 +103,14 @@ export const getTrafficCameraListAPI = (
     url: `${trafficDeptBase(deptId)}/cameras/list`,
     method: 'GET',
     params,
+  })
+
+// Bureau-aware camera list — nested bureau → sub-dept → solutions[] with
+// cameras + online/offline counts (and eventually `anydesk` per solution).
+export const getTrafficCameraCentralListAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseTrafficCameraCentralList>({
+    url: `${trafficDeptBase(deptId)}/cameras/central/list`,
+    method: 'GET',
   })
 
 export const getTrafficCameraDropdownsAPI = (

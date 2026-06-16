@@ -4,7 +4,7 @@
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'
 export type SignalPhase = 3 | 4
-export type OperatingMode = 'FixedTime' | 'Adaptive_ET' | 'Flashing24Hr'
+export type OperatingMode = 'FixedTime' | 'Adaptive_ET' | 'Auto' | 'Flashing24Hr'
 
 /** Shared phase color palette — used by the cycle donut, phase timing card,
  *  charts (24h volume, real-time bars), 7-day daily cards, and the summary
@@ -24,6 +24,14 @@ export interface PhaseTimingConfig {
   greenSec: number
   /** Red-light duration before next phase (seconds) */
   redSec: number
+  /** Whether this phase is the currently active one (green) per the live API.
+   *  Exactly one phase should have this true at any time. Undefined on mock
+   *  data — the component falls back to a local simulation in that case. */
+  isActive?: boolean
+  /** ISO timestamp at which this phase became active. Used to compute the
+   *  elapsed time in this phase (now − timestamp) so the countdown survives
+   *  page refresh / navigation. */
+  timestamp?: string
 }
 
 export interface TrafficSignalProject {

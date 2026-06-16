@@ -31,16 +31,21 @@ export interface CameraEntry {
 
 /** Adapter: API camera → in-grid CameraEntry shape (used by tile + table).
  *  Note: backend uses 'StopLine' (S+L capital); we normalise to 'Stopline'
- *  for the in-app type — UI styling still discriminates on the value. */
-const apiCameraToEntry = (cam: TrafficSolutionCamera): CameraEntry => ({
+ *  for the in-app type — UI styling still discriminates on the value.
+ *
+ *  `greenTime` is derived by looking up the camera's monitored phase in the
+ *  `phaseTiming` map — the cameras endpoint doesn't carry green_time itself.
+ */
+const apiCameraToEntry = (
+  cam: TrafficSolutionCamera,
+  greenSecByPhase: Map<number, number>,
+): CameraEntry => ({
   id: cam.camera_id,
   code: cam.camera_name,
   ipAddress: cam.ip_address,
   phase: cam.phases_no,
   detectionMode: cam.camera_type === 'Counting' ? 'Counting' : 'Stopline',
-  // Green time not in cameras endpoint — Phase Timing card holds the source
-  // of truth. For tile display we leave 0 unless the backend adds it.
-  greenTime: 0,
+  greenTime: greenSecByPhase.get(cam.phases_no) ?? 0,
   volume: cam.total_count,
   connection: cam.is_online ? 'online' : 'offline',
   hlsUrl: cam.hls_url ?? '',
@@ -116,9 +121,17 @@ const CamerasGridTrafficSignal: React.FC = () => {
   // Cameras for this signal come from a dedicated endpoint — Counting/StopLine
   // split is derived from `camera_type`.
   const { data: apiCameras } = useTrafficSolutionCameras(project.id)
+  // Build a phase → greenSec lookup once per project change. Cameras are
+  // tagged with the phase they monitor (`phases_no`), so the matching green
+  // duration lives on the project's phase timing config.
+  const greenSecByPhase = useMemo(() => {
+    const m = new Map<number, number>()
+    for (const p of project.phaseTiming ?? []) m.set(p.phase, p.greenSec)
+    return m
+  }, [project.phaseTiming])
   const allCameras = useMemo(
-    () => (apiCameras ?? []).map(apiCameraToEntry),
-    [apiCameras]
+    () => (apiCameras ?? []).map((c) => apiCameraToEntry(c, greenSecByPhase)),
+    [apiCameras, greenSecByPhase]
   )
 
   const openLive = (cam: CameraEntry) => {

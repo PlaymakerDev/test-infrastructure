@@ -8,6 +8,7 @@ import BarChart, {
 } from '@/components/chart/Barchart'
 import { PHASE_COLORS } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
+import { fmtNumber } from '@/utils/formatNumber'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -26,27 +27,33 @@ const ChartRealtimePerformanceTrafficSignal: React.FC<Props> = () => {
   const bars = useMemo(() => ALL_BARS.slice(0, project.phase), [project.phase])
 
   // `efficiency.graph` returns one row per (phase, hour) — group by hour to
-  // form grouped bars `{ label, p1, p2, ... }`.
+  // form grouped bars `{ label, p1, p2, ... }`. Sort by timestamp first; key
+  // the Map by full ISO timestamp so cross-day data (15:00 today vs 15:00
+  // yesterday) doesn't collapse into one bucket.
   const hours = useMemo<BarChartDataPoint[]>(() => {
-    const eff = data?.efficiency ?? data?.efficientcy
-    const points = eff?.graph ?? []
+    const eff = data?.efficentcy ?? data?.efficiency
+    const points = [...(eff?.graph ?? [])].sort(
+      (a, b) =>
+        new Date(a.hour_timestamp).getTime() - new Date(b.hour_timestamp).getTime(),
+    )
     const byHour = new Map<string, BarChartDataPoint>()
     for (const p of points) {
-      const label = dayjs(p.hour_timestamp).format('HH:mm')
       const phaseNo = p.phase_no ?? p.phases_no
       if (!phaseNo) continue
-      const existing = byHour.get(label) ?? { label }
+      const existing = byHour.get(p.hour_timestamp) ?? {
+        label: dayjs(p.hour_timestamp).format('HH:mm'),
+      }
       existing[`p${phaseNo}`] = p.efficiency
-      byHour.set(label, existing)
+      byHour.set(p.hour_timestamp, existing)
     }
     return Array.from(byHour.values())
   }, [data])
 
   const stats: BarChartStat[] = useMemo(() => {
-    const eff = data?.efficiency ?? data?.efficientcy
+    const eff = data?.efficentcy ?? data?.efficiency
     const avgs = eff?.phases_avg ?? []
     return ALL_BARS.slice(0, project.phase).map((bar, i) => ({
-      value: `${(avgs[i] ?? 0).toFixed(0)}%`,
+      value: `${fmtNumber(avgs[i], 0)}%`,
       label: bar.label,
       color: bar.color,
     }))

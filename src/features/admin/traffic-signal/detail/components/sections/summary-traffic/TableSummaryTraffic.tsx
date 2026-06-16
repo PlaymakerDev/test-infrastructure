@@ -6,6 +6,8 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficReports } from '@/hooks/queries/traffic-signal'
+import { fmtNumber } from '@/utils/formatNumber'
+import { thaiDayName } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -27,12 +29,32 @@ const TableSummaryTraffic: React.FC<Props> = () => {
   const { project } = useDetailContext()
   const phaseCount = project.phase
 
+  // Default to the last 7 days. Without these explicit dates the backend
+  // returns only today's rows, so the table heading ("ย้อนหลัง 7 วัน") would
+  // lie. Pre-compute once so the param object stays stable between renders.
+  const dateRange = useMemo(() => {
+    const today = dayjs()
+    return {
+      start_date: today.subtract(6, 'day').format('YYYY-MM-DD'),
+      end_date: today.format('YYYY-MM-DD'),
+    }
+  }, [])
+
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: phaseCount * 3, // 3 days per page so date rowSpan doesn't split.
+    // 3 days per page so date rowSpan doesn't split. Bump page size via the
+    // table's `showSizeChanger` to see more at once.
+    pageSize: phaseCount * 3,
   })
 
-  const { data } = useTrafficReports(project.id, pagination)
+  // Fetch the full 7-day window in one request — backend pagination is
+  // unreliable across pages (page=2 sometimes returns empty), and the data
+  // is small (≤ 7 days × ~6 phases) so client-side slicing is fine.
+  const { data } = useTrafficReports(project.id, {
+    page: 1,
+    limit: 100,
+    ...dateRange,
+  })
 
   /** Flatten 7-day API response into per-phase rows + compute rowSpan for
    *  the date column. Backend already slices by phase; we just lay them out. */
@@ -40,7 +62,7 @@ const TableSummaryTraffic: React.FC<Props> = () => {
     const out: RowData[] = []
     for (const day of data?.res_data ?? []) {
       const phasesForDay = day.data.slice(0, phaseCount)
-      const dateLabel = `วัน${day.day}\n${dayjs(day.date).locale('th').format('D MMM BBBB')}`
+      const dateLabel = `วัน${thaiDayName(day.day)}\n${dayjs(day.date).locale('th').format('D MMM BBBB')}`
       phasesForDay.forEach((p, i) => {
         out.push({
           id: `${day.date}-${p.phases_no}`,
@@ -101,28 +123,28 @@ const TableSummaryTraffic: React.FC<Props> = () => {
       key: 'pcu',
       align: 'center',
       width: 140,
-      render: (_, row) => phaseCell(row, row.pcu.toFixed(2)),
+      render: (_, row) => phaseCell(row, fmtNumber(row.pcu, 2)),
     },
     {
       title: 'ประสิทธิภาพ (%)',
       key: 'efficiency',
       align: 'center',
       width: 160,
-      render: (_, row) => phaseCell(row, `${row.efficiency.toFixed(2)} %`),
+      render: (_, row) => phaseCell(row, `${fmtNumber(row.efficiency, 2)} %`),
     },
     {
       title: 'ประหยัดเวลา (m)',
       key: 'timeSaved',
       align: 'center',
       width: 160,
-      render: (_, row) => phaseCell(row, row.timeSaved.toFixed(2)),
+      render: (_, row) => phaseCell(row, fmtNumber(row.timeSaved, 2)),
     },
     {
       title: 'ลดปริมาณ CO2 (kg)',
       key: 'co2',
       align: 'center',
       width: 180,
-      render: (_, row) => phaseCell(row, row.co2.toFixed(2)),
+      render: (_, row) => phaseCell(row, fmtNumber(row.co2, 2)),
     },
   ]
 
@@ -133,13 +155,14 @@ const TableSummaryTraffic: React.FC<Props> = () => {
       dataSource={rows}
       pagination={{
         current: pagination.page,
-        pageSize: pagination.limit,
-        total: data?.meta_data.count ?? 0,
+        pageSize: pagination.pageSize,
+        // Client-side pagination — AntD slices `rows` based on current/pageSize
+        // and uses `rows.length` as total automatically (no `total` override).
         showSizeChanger: true,
         pageSizeOptions: [10, 20, 50, 100],
         showTotal: (total, range) =>
           `${range[1] - range[0] + 1} จาก ${total}`,
-        onChange: (page, limit) => setPagination({ page, limit }),
+        onChange: (page, pageSize) => setPagination({ page, pageSize }),
       }}
       size='middle'
       scroll={{ x: 1300 }}
