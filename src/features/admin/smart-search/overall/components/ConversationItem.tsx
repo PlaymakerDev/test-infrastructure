@@ -22,7 +22,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
   const startEditing = useCallback(() => {
     setDraftTitle(conversation.title)
     setEditing(true)
-    requestAnimationFrame(() => inputRef.current?.focus())
+    requestAnimationFrame(() => inputRef.current?.focus({ cursor: "all" }))
   }, [conversation.title])
 
   const commitRename = useCallback(async () => {
@@ -68,7 +68,6 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
     return (
       <Input
         ref={inputRef}
-        size="small"
         value={draftTitle}
         onChange={(e) => setDraftTitle(e.target.value)}
         onPressEnter={commitRename}
@@ -76,6 +75,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
         onKeyDown={(e) => {
           if (e.key === "Escape") setEditing(false)
         }}
+        className="fs-14"
       />
     )
   }
@@ -89,11 +89,20 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
         if (e.key === "Enter") openConversation(conversation.id)
       }}
       onMouseEnter={() => prefetchConversation(conversation.id)}
-      className={`group flex items-center gap-1 rounded-md px-2.5 py-2 cursor-pointer transition-colors ${
+      className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${
         active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
       }`}
     >
-      <span className="flex-1 min-w-0 truncate fs-14">{conversation.title}</span>
+      <span
+        className="flex-1 min-w-0 truncate fs-14 select-none"
+        title="ดับเบิลคลิกเพื่อเปลี่ยนชื่อ"
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          startEditing()
+        }}
+      >
+        {conversation.title}
+      </span>
       <Dropdown
         menu={{ items: menuItems, onClick: onMenuClick }}
         trigger={["click"]}
@@ -103,7 +112,7 @@ const ConversationItem: React.FC<Props> = ({ conversation, active }) => {
           type="button"
           aria-label="ตัวเลือก"
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 text-white/60 hover:text-white px-1"
+          className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
         >
           <TbDots />
         </button>
