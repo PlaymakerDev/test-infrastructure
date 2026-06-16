@@ -1,5 +1,6 @@
-import { MetaData } from "../shared";
+import { SharedProject, SharedRoad, SharedSolution, SharedVMS, SharedWarranty } from "../shared";
 
+// LIST
 export interface APIRequestVMSList {
   road_code?: string;
   contract_no?: string;
@@ -12,24 +13,31 @@ export interface APIRequestVMSList {
   limit: number;
 }
 
-export interface APIResponseVMSList {
-  res_data: ListResData[];
-  meta_data: MetaData;
+export type APIResponseVMSList = VMSList[]
+
+export interface VMSList {
+  department_id: number
+  department_short_name: string
+  sub_department: ListSubDepartment[]
 }
 
-export interface ListResData {
-  road: Road
-  project: Project
-  solution: Solution
-  vms: Vms
-  warranty: ListWarranty
+export interface ListSubDepartment {
+  department_id: number
+  department_short_name: string
+  solutions: ListSolution[]
 }
 
-export interface ListWarranty {
-  is_warranty: boolean
-  name: string
+export interface ListSolution {
+  road: SharedRoad
+  project: SharedProject
+  solution: SharedSolution
+  vms: SharedVMS
+  warranty: SharedWarranty
+  online_count: number
+  offline_count: number
 }
 
+// TOTAL
 export interface APIResponseVMSTotal {
   solution: TotalSolution
   warranty: TotalWarranty
@@ -46,54 +54,28 @@ export interface TotalWarranty {
   expired: number
 }
 
+// RANDOM ONLINE
 export interface APIRequestVMSRandomOnline {
   limit: number
 }
 
 export interface APIResponseVMSRandomOnline {
-  solution: Solution
-  road: Road
-  project: Project
-  vms: Vms
+  solution: SharedSolution
+  road: SharedRoad
+  project: SharedProject
+  vms: SharedVMS
 }
 
+// OVERVIEW
 export interface APIResponseVMSOverview {
   locations: Location[]
   centroid: number[]
 }
 
 export interface Location {
-  solution: Solution
-  road: Road
-  vms: Vms
+  solution: SharedSolution
+  road: SharedRoad
+  vms: SharedVMS
   GeometryPoint: number[]
 }
 
-export interface Solution {
-  id: number
-  solution_name: string
-}
-
-export interface Road {
-  id: number
-  code_name: string
-}
-
-export interface Vms {
-  anydesk: string
-  last_connected: string
-  desktop_screen: string
-  hls_url: string
-  status: Status
-}
-
-export interface Status {
-  is_online: boolean
-  name: string
-}
-
-export interface Project {
-  id: number
-  budget_year: number
-  contract_no: string
-}

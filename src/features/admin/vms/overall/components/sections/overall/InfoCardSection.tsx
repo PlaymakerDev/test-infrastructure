@@ -1,8 +1,10 @@
 import { getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
+import { useAppDispatch } from '@/stores/hooks'
+import { setVMSTotalData } from '@/stores/reducers/vms/vmsOverviewSlice'
 // import { useAppSelector } from '@/stores/hooks'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Col, Row, Skeleton } from 'antd'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { TbDeviceDesktop, TbShield } from 'react-icons/tb'
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
 const InfoCardSection: React.FC<Props> = (props) => {
   const { deptId } = props
   // const { vms_total } = useAppSelector(state => state.vms_overview)
+  const dispatch = useAppDispatch()
 
   const { data, isLoading } = useQuery({
     queryKey: ['vms_total'],
@@ -19,6 +22,12 @@ const InfoCardSection: React.FC<Props> = (props) => {
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
+
+  useEffect(() => {
+    if (!isLoading && data) {
+      dispatch(setVMSTotalData(data.data))
+    }
+  }, [isLoading, data, dispatch])
 
   const renderTotalVMS = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 3 }} />
