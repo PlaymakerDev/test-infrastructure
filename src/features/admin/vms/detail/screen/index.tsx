@@ -1,23 +1,43 @@
-import React, { useMemo, useState } from 'react'
-import { TitleSection, OverallSection, ControlSection } from '../components'
+import React from 'react'
+import { TitleSection, OverallSection } from '../components'
 import { DetailProvider } from '../context'
+import { keepPreviousData, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { getVMSDetailAPI } from '@/services/routes/VMSService'
+import { Skeleton } from 'antd'
+
+const queryClient = new QueryClient()
 
 interface Props {
   id?: string | string[]
 }
 
 const VMSDetailScreen: React.FC<Props> = (props) => {
-  const { } = props
+  const { id } = props
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['vms_detail'],
+    queryFn: () => getVMSDetailAPI(Number(id)!),
+    enabled: !!id,
+    placeholderData: keepPreviousData
+  })
+
+  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
 
   return (
-    <DetailProvider>
-      <div className='main-screen'>
-        <TitleSection />
-        <section className='mt-8'>
-          <OverallSection />
-        </section>
-      </div>
-    </DetailProvider>
+    <QueryClientProvider client={queryClient}>
+      <DetailProvider>
+        <div className='main-screen'>
+          <TitleSection
+            data={data?.data}
+          />
+          <section className='mt-8'>
+            <OverallSection
+              data={data?.data}
+            />
+          </section>
+        </div>
+      </DetailProvider>
+    </QueryClientProvider>
   )
 }
 

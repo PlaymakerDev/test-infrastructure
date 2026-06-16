@@ -1,49 +1,75 @@
-﻿"use client"
+"use client"
 import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useRouter } from 'next/navigation'
-import { APIResponseVMSList, ListResData } from '@/types/vms/overview-api'
+import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 
 interface Props {
   data?: APIResponseVMSList
   loading?: boolean
 }
 
-interface Row {
-  id: number
-  roadCodeRowSpan: number
-  contractRowSpan: number
-  data: ListResData
+type HeaderRow = {
+  type: 'header'
+  id: string
+  label: string
+  count: number
 }
 
-const buildRows = (items: ListResData[]): Row[] => {
+type DataRow = {
+  type: 'data'
+  id: number
+  roadCodeRowSpan: number
+  projectRowSpan: number
+  data: ListSolution
+}
+
+type Row = HeaderRow | DataRow
+
+const TOTAL_COLS = 9
+
+const buildRows = (apiData: APIResponseVMSList): Row[] => {
   const rows: Row[] = []
-  let i = 0
-  while (i < items.length) {
-    const currentRoadId = items[i].road.id
-    let roadEnd = i + 1
-    while (roadEnd < items.length && items[roadEnd].road.id === currentRoadId) roadEnd++
 
-    let j = i
-    while (j < roadEnd) {
-      const currentProjectId = items[j].project.id
-      let contractEnd = j + 1
-      while (contractEnd < roadEnd && items[contractEnd].project.id === currentProjectId) contractEnd++
+  for (const dept of apiData) {
+    const allSolutions = dept.sub_department.flatMap(sub => sub.solutions)
 
-      for (let k = j; k < contractEnd; k++) {
-        rows.push({
-          id: items[k].solution.id,
-          roadCodeRowSpan: k === i ? roadEnd - i : 0,
-          contractRowSpan: k === j ? contractEnd - j : 0,
-          data: items[k],
-        })
+    rows.push({
+      type: 'header',
+      id: `dept-${dept.department_id}`,
+      label: dept.department_short_name,
+      count: allSolutions.length,
+    })
+
+    let i = 0
+    while (i < allSolutions.length) {
+      const currentRoadId = allSolutions[i].road.id
+      let roadEnd = i + 1
+      while (roadEnd < allSolutions.length && allSolutions[roadEnd].road.id === currentRoadId) roadEnd++
+
+      let j = i
+      while (j < roadEnd) {
+        const currentProjectId = allSolutions[j].project.id
+        let projectEnd = j + 1
+        while (projectEnd < roadEnd && allSolutions[projectEnd].project.id === currentProjectId) projectEnd++
+
+        for (let k = j; k < projectEnd; k++) {
+          rows.push({
+            type: 'data',
+            id: allSolutions[k].solution.id,
+            roadCodeRowSpan: k === i ? roadEnd - i : 0,
+            projectRowSpan: k === j ? projectEnd - j : 0,
+            data: allSolutions[k],
+          })
+        }
+        j = projectEnd
       }
-      j = contractEnd
+      i = roadEnd
     }
-    i = roadEnd
   }
+
   return rows
 }
 
@@ -110,88 +136,170 @@ const StatusDot: React.FC<{ isOnline: boolean }> = ({ isOnline }) => (
   />
 )
 
-const VMSList: React.FC<Props> = (props) => {
-  const { data, loading } = props
-  const rows = useMemo(() => buildRows(data?.res_data ?? []), [data])
+const VMSList: React.FC<Props> = ({ data, loading }) => {
+  const rows = useMemo(() => buildRows(data ?? []), [data])
   const router = useRouter()
 
   const columns: ColumnsType<Row> = useMemo(() => [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
-      width: 160,
-      onCell: (row) => ({ rowSpan: row.roadCodeRowSpan }),
-      render: (_: unknown, row: Row) => (
-        <span className='font-medium'>{row.data.road.code_name}</span>
-      ),
+      width: 150,
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: TOTAL_COLS }
+        return { rowSpan: row.roadCodeRowSpan }
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') {
+          return (
+            <div className='flex items-center gap-3'>
+              <span className='font-semibold text-sm'>{row.label}</span>
+              <span className='text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full'>
+                {row.count} โครงการ
+              </span>
+            </div>
+          )
+        }
+        return <span className='font-medium'>{row.data.road.code_name}</span>
+      },
+    },
+    {
+      title: 'ชื่อโครงการ',
+      key: 'projectName',
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return { rowSpan: row.projectRowSpan }
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <span className='text-sm'>{row.data.project.name || '-'}</span>
+      },
+    },
+    {
+      title: 'เลขที่สัญญา',
+      key: 'contractNo',
+      width: 200,
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return { rowSpan: row.projectRowSpan }
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        const { contract_no, budget_year } = row.data.project
+        return (
+          <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
+            {contract_no || budget_year || '-'}
+            <TbInfoSquareRoundedFilled
+              size={18}
+              className='text-white/50 cursor-pointer hover:text-(--yellow)'
+            />
+          </span>
+        )
+      },
     },
     {
       title: 'การค้ำประกัน',
       key: 'warranty',
-      width: 140,
+      width: 130,
       align: 'center',
-      render: (_: unknown, row: Row) => (
-        <GuaranteePill
-          name={row.data.warranty.name}
-          isWarranty={row.data.warranty.is_warranty}
-        />
-      ),
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return (
+          <GuaranteePill
+            name={row.data.warranty.name}
+            isWarranty={row.data.warranty.is_warranty}
+          />
+        )
+      },
     },
     {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
-      render: (_: unknown, row: Row) => row.data.solution.solution_name,
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <span>{row.data.solution.solution_name}</span>
+      },
     },
     {
       title: 'สถานะ',
       key: 'status',
       width: 140,
       align: 'center',
-      render: (_: unknown, row: Row) => (
-        <StatusPill isOnline={row.data.vms.status.is_online} />
-      ),
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <StatusPill isOnline={row.data.vms.status.is_online} />
+      },
     },
     {
       title: 'Stream',
       key: 'stream',
       width: 130,
       align: 'center',
-      render: (_: unknown, row: Row) => (
-        <StreamButton url={row.data.vms.hls_url} />
-      ),
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <StreamButton url={row.data.vms.hls_url} />
+      },
     },
     {
       title: 'กล้อง',
       key: 'camera',
       width: 140,
       align: 'center',
-      render: (_: unknown, row: Row) => (
-        <CameraButton url={row.data.vms.desktop_screen} />
-      ),
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <CameraButton url={row.data.vms.desktop_screen} />
+      },
     },
     {
       title: '',
       key: 'dot',
       width: 40,
       align: 'center',
-      render: (_: unknown, row: Row) => (
-        <StatusDot isOnline={row.data.vms.status.is_online} />
-      ),
+      onCell: (row) => {
+        if (row.type === 'header') return { colSpan: 0 }
+        return {}
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <StatusDot isOnline={row.data.vms.status.is_online} />
+      },
     },
   ], [])
 
   return (
     <Table<Row>
-      rowKey='id'
+      rowKey={(row) => String(row.id)}
       columns={columns}
       dataSource={rows}
       loading={loading}
       pagination={false}
       size='middle'
-      scroll={{ x: 1200 }}
+      scroll={{ x: 1400 }}
       onRow={(row) => ({
-        onClick: () => router.push(`/admin/vms/detail/${row.data.solution.id}`),
-        className: 'cursor-pointer',
+        onClick: () => {
+          if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}`)
+        },
+        className: row.type === 'data' ? 'cursor-pointer' : '',
       })}
     />
   )

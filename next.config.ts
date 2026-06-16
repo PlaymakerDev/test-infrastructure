@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       {
         source: '/',
         destination: '/auth/login',
+        // destination: '/atlas/auth/login',
         permanent: false
       }
     ]

@@ -25,15 +25,7 @@ const initialState: VMSOverviewState = {
       page: 1,
       limit: 10
     },
-    data: {
-      res_data: [],
-      meta_data: {
-        count: 0,
-        page: 1,
-        limit: 10,
-        total_pages: 0
-      }
-    }
+    data: []
   },
   task_schedules: {
     vms_overview: {
@@ -88,6 +80,12 @@ const vmsOverviewSlice = createSlice({
     },
     resetSearchVMSList: (state) => {
       state.vms_list.search = initialState.vms_list.search
+    },
+    setVMSTotalData: (state, action) => {
+      state.vms_total = action.payload
+    },
+    resetVMSTotalData: (state) => {
+      state.vms_total = initialState.vms_total
     },
   },
   extraReducers: (builder) => {
@@ -152,8 +150,10 @@ const vmsOverviewSlice = createSlice({
 })
 
 export const {
-  resetSearchVMSList,
   setSearchVMSList,
+  resetSearchVMSList,
+  setVMSTotalData,
+  resetVMSTotalData,
 } = vmsOverviewSlice.actions
 
 export default vmsOverviewSlice.reducer

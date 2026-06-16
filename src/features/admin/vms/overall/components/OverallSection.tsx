@@ -10,7 +10,9 @@ const OverallSection: React.FC<Props> = (props) => {
   return (
     <div>
       <section>
-        <LocationSection />
+        <LocationSection
+          deptId={deptId!}
+        />
       </section>
       <section className='mt-5'>
         <DataDisplaySection

@@ -1,15 +1,18 @@
-import SwapButton from '@/components/swap-button/SwapButton'
-import { Badge, Button, ConfigProvider } from 'antd'
+import { APIResponseVMSDetail } from '@/types/vms/detail-api'
+import { Button, ConfigProvider } from 'antd'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import { TbAppWindow, TbArrowBigLeftFilled, TbInfoSquareRoundedFilled, TbWifi } from 'react-icons/tb'
 
 interface Props {
+  data?: APIResponseVMSDetail
 }
 
 const TitleSection: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
   const router = useRouter()
+
+  console.log(data)
 
   return (
     <div className='px-3'>
@@ -19,10 +22,10 @@ const TitleSection: React.FC<Props> = (props) => {
           onClick={() => router.back()}
         />
         <div className='flex-1 min-w-0'>
-          <h1 className='text-(--yellow)'>VMS : สายทาง กค.1001</h1>
+          <h1 className='text-(--yellow)'>VMS : สายทาง {data?.solution.solution_location.project_roads.road.road_code || '-'}</h1>
           <div className='flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2'>
             <div className='flex items-center gap-2'>
-              <p className='text-(--yellow)'>{'VMS >> กค.1001 - จุดที่ 3 กม.6+300'}</p>
+              <p>{`VMS >> ${data?.solution.solution_name}` || '-'}</p>
               <TbInfoSquareRoundedFilled
                 size={24}
                 className='text-white/50 cursor-pointer hover:text-(--yellow)'
@@ -40,7 +43,7 @@ const TitleSection: React.FC<Props> = (props) => {
                 icon={<TbAppWindow />}
                 className='w-full sm:w-auto'
               >
-                <p className='fs-12'>Anydesk : 1194336831</p>
+                <p className='fs-12'>Anydesk : {data?.solution.anydesk || '-'}</p>
               </Button>
             </ConfigProvider>
             <ConfigProvider theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}>
@@ -49,6 +52,7 @@ const TitleSection: React.FC<Props> = (props) => {
                 size='middle'
                 shape='round'
                 className='w-full sm:w-auto'
+                onClick={() => window.open(`https://maps.google.com/?q=${data?.solution.geometry_point[1]},${data?.solution.geometry_point[0]}`, '_blank')}
               >
                 <p>Google Map</p>
               </Button>
