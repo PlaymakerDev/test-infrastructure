@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { TbShield, TbTrafficLights } from 'react-icons/tb'
 import { useTrafficTotals } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {}
 
@@ -43,7 +44,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
             <span className='fs-24 font-bold'>{stats.total.toLocaleString()}</span> จุดติดตั้ง
           </p>
           <p className='fs-11 text-gray-400'>
-            Active : {stats.online} ({stats.totalPct.toFixed(1)}%)
+            Active : {fmtNumber(stats.online, 0)} ({fmtNumber(stats.totalPct, 1)}%)
           </p>
         </div>
       </Col>
@@ -54,7 +55,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>{stats.inWarrantyPct.toFixed(1)}%</p>
+          <p className='fs-11 text-gray-400'>{fmtNumber(stats.inWarrantyPct, 1)}%</p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
@@ -64,7 +65,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>{stats.expiredPct.toFixed(1)}%</p>
+          <p className='fs-11 text-gray-400'>{fmtNumber(stats.expiredPct, 1)}%</p>
         </div>
       </Col>
     </Row>

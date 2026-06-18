@@ -89,6 +89,10 @@ export interface LineChartProps {
   // ── Tooltip extras ────────────────────────────────────────────────────────
   /** วันที่แสดงตรงบนสุดของ tooltip (เช่น "20 เม.ย. 2569"). ถ้าไม่ส่งจะไม่แสดง */
   tooltipDate?: string
+  /** อ่านวันที่ต่อจุดจาก field นี้ใน data point (ใช้กับ multi-day data ที่
+   *  แต่ละจุดมีวันที่ต่างกัน). ถ้าทั้ง `tooltipDate` และ `tooltipDateKey`
+   *  ถูกตั้ง — `tooltipDateKey` (per-point) ชนะ. */
+  tooltipDateKey?: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") — ใช้เป็น default ถ้า LineConfig.unit ว่าง */
   tooltipUnit?: string
   /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
@@ -132,6 +136,7 @@ const LineChart: React.FC<LineChartProps> = ({
   iconCircle = true,
   // Tooltip extras
   tooltipDate,
+  tooltipDateKey,
   tooltipUnit,
   tooltipShowDot = false,
   tooltipExtras,
@@ -190,9 +195,17 @@ const LineChart: React.FC<LineChartProps> = ({
         // with a colored "●" matching the series color. When `tooltipUnit` is
         // provided, append it after each value.
         formatter: (params: TooltipParam[]) => {
-          const header = tooltipDate
+          const dataIdxForHeader = params[0]?.dataIndex
+          // Prefer per-point date (`tooltipDateKey`) when provided; fall back
+          // to the static `tooltipDate` string.
+          const perPointDate =
+            tooltipDateKey && dataIdxForHeader !== undefined
+              ? data[dataIdxForHeader]?.[tooltipDateKey]
+              : undefined
+          const headerDate = perPointDate ?? tooltipDate
+          const header = headerDate
             ? `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;">
-                 <div style="color:#fff;font-size:13px;font-weight:600;">${tooltipDate}</div>
+                 <div style="color:#fff;font-size:13px;font-weight:600;">${headerDate}</div>
                  <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''} น.</div>
                </div>`
             : ''
@@ -255,7 +268,7 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot, tooltipExtras])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipUnit, tooltipShowDot, tooltipExtras])
 
   return (
     <div

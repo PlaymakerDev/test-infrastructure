@@ -29,12 +29,16 @@ export const trafficSignalKeys = {
       [...trafficSignalKeys.overview.root(deptId), 'totals'] as const,
     list: (deptId: string | number, params: APIRequestTrafficList) =>
       [...trafficSignalKeys.overview.root(deptId), 'list', params] as const,
+    centralList: (deptId: string | number) =>
+      [...trafficSignalKeys.overview.root(deptId), 'central-list'] as const,
     dropdowns: (deptId: string | number, params: APIRequestTrafficOverviewDropdowns) =>
       [...trafficSignalKeys.overview.root(deptId), 'dropdowns', params] as const,
     randomCameras: (deptId: string | number, limit: number) =>
       [...trafficSignalKeys.overview.root(deptId), 'random-cameras', limit] as const,
     cameraList: (deptId: string | number, params: APIRequestTrafficCameraList) =>
       [...trafficSignalKeys.overview.root(deptId), 'camera-list', params] as const,
+    cameraCentralList: (deptId: string | number) =>
+      [...trafficSignalKeys.overview.root(deptId), 'camera-central-list'] as const,
     cameraDropdowns: (deptId: string | number, params: APIRequestTrafficCameraDropdowns) =>
       [...trafficSignalKeys.overview.root(deptId), 'camera-dropdowns', params] as const,
   },

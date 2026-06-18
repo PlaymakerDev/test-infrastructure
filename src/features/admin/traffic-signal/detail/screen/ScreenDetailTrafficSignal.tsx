@@ -9,6 +9,7 @@ import {
   useTrafficDetails,
   useTrafficPhaseDetails,
   useTrafficOverview,
+  useTrafficCameraCentralList,
 } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type {
@@ -38,6 +39,10 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   // `solution_id` filter to fetch this signal's GeometryPoint. Cache shared
   // with the overall page when the user came from there.
   const overview = useTrafficOverview(deptId, { solution_id: id })
+  // Bureau-wide camera tree — used as the eventual source for `anydesk`
+  // (BE will add that field). Cached once per dept so it's effectively free
+  // after the first hit.
+  const cameraCentral = useTrafficCameraCentralList(deptId)
 
   // Combine multi-endpoint data into the legacy `TrafficSignalProject` shape
   // so existing components (which read fields off context.project) keep
@@ -62,6 +67,8 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       phase: p.phase_no,
       greenSec: p.green_time,
       redSec: p.waiting_time,
+      isActive: p.is_active,
+      timestamp: p.timestamp,
     }))
 
     // No `is_online` on the detail endpoint — infer from any phase being
@@ -77,11 +84,34 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       warranty = !isNaN(endDate) && endDate >= Date.now() ? 'in-warranty' : 'expired'
     }
 
+    // Road code + solution name live on the overview endpoint (not on the
+    // detail endpoints), so reuse the same overview fetch.
+    const overviewLoc = overview.data?.locations[0]
+    const roadCode = overviewLoc?.road.code_name ?? '-'
+    const installPoint = overviewLoc?.solution.solution_name ?? contract?.project_name ?? '-'
+
+    // Find this solution in the bureau-wide camera tree to read `anydesk`
+    // (and any future per-solution fields). Falls back to the legacy
+    // /manage/solution/details endpoint while BE rolls out the field.
+    let centralSolution: { anydesk?: number | string | null } | undefined
+    for (const bureau of cameraCentral.data ?? []) {
+      for (const subDept of bureau.sub_department) {
+        const found = subDept.solutions.find((s) => String(s.solution.id) === id)
+        if (found) {
+          centralSolution = found
+          break
+        }
+      }
+      if (centralSolution) break
+    }
+    const anydeskRaw = centralSolution?.anydesk ?? solution?.anydesk
+    const anydeskId = anydeskRaw ? String(anydeskRaw) : undefined
+
     return {
       id,
-      roadCode: '-', // not in API — fill from list cache if available later
-      projectName: contract?.project_name ?? '-',
-      installPoint: contract?.project_name ?? '-',
+      roadCode,
+      projectName: contract?.project_name ?? installPoint,
+      installPoint,
       contractNo: contract?.contract_no ?? '-',
       warranty,
       connection: isOnline ? 'online' : 'offline',
@@ -94,14 +124,14 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       onlineCameras: isOnline ? detailItem.total_pcu : 0,
       offlineCameras: isOnline ? 0 : detailItem.total_pcu,
       // Detail-page-only fields
-      anydeskId: solution?.anydesk ? String(solution.anydesk) : undefined,
+      anydeskId,
       efficiency: detailItem.efficiency,
       dailyPCU: detailItem.total_pcu,
       peakHourTraffic: detailItem.max_active_time,
       peakPhase: detailItem.max_active_phase,
       phaseTiming,
     }
-  }, [id, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data])
+  }, [id, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data, cameraCentral.data])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {

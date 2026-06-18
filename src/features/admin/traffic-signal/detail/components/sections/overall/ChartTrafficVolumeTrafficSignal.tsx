@@ -16,17 +16,26 @@ const ALL_LINES = [
   { dataKey: 'p4', color: PHASE_COLORS[3], label: 'Phase 4' },
 ]
 
-/** Group 24h PCU points (flat array from API) into per-hour series, one entry
- *  per `phases_no`. The chart's data shape requires `{ label, p1, p2, ... }`. */
+/** Group PCU points (flat array from API) into per-hour series, one entry per
+ *  `phases_no`. The chart's data shape requires `{ label, p1, p2, ... }`.
+ *  Sorts by timestamp first — backend doesn't guarantee order — and keys the
+ *  Map by full ISO timestamp so cross-day data (e.g. 15:00 today vs 15:00
+ *  yesterday) doesn't collapse into one bucket. */
 const buildHourSeries = (
   points: { phases_no: number; hour_timestamp: string; total_pcu: number }[]
 ): LineChartDataPoint[] => {
+  const sorted = [...points].sort(
+    (a, b) =>
+      new Date(a.hour_timestamp).getTime() - new Date(b.hour_timestamp).getTime(),
+  )
   const byHour = new Map<string, LineChartDataPoint>()
-  for (const p of points) {
-    const label = dayjs(p.hour_timestamp).format('HH.mm')
-    const existing = byHour.get(label) ?? { label }
+  for (const p of sorted) {
+    const existing = byHour.get(p.hour_timestamp) ?? {
+      label: dayjs(p.hour_timestamp).format('HH.mm'),
+      dateLabel: dayjs(p.hour_timestamp).format('D MMM YYYY'),
+    }
     existing[`p${p.phases_no}`] = p.total_pcu
-    byHour.set(label, existing)
+    byHour.set(p.hour_timestamp, existing)
   }
   return Array.from(byHour.values())
 }
@@ -70,7 +79,7 @@ const ChartTrafficVolumeTrafficSignal: React.FC<Props> = () => {
       stats={stats}
       height={260}
       yAxisTicks={[0, 200, 400, 600, 800]}
-      tooltipDate={dayjs().format('D MMM YYYY')}
+      tooltipDateKey='dateLabel'
       tooltipUnit='PCU'
       tooltipShowDot
     />
