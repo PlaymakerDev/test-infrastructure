@@ -85,3 +85,11 @@ body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last
   display: none !important;
   box-shadow: none !important;
 }
+
+/* Event log table (traffic-lighting detail) — natural height, no inner vertical scroll.
+ * Horizontal overflow is handled by the outer wrapper on narrow viewports only. */
+body .event-log-table .ant-table-content,
+body .event-log-table .ant-table-body {
+  overflow-y: visible !important;
+  max-height: none !important;
+}

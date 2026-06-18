@@ -1,0 +1,96 @@
+"use client"
+import React, { useMemo } from 'react'
+import {
+  TbCalendarEvent,
+  TbClipboardList,
+  TbHourglassHigh,
+  TbLock,
+  TbUser,
+  TbUserShield,
+} from 'react-icons/tb'
+import ProjectInfoModal, {
+  type ProjectInfoField,
+} from '@/components/project-info-modal/ProjectInfoModal'
+import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
+
+interface Props {
+  project: TrafficLightingProject | null
+  onClose: () => void
+}
+
+const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
+  const rows: ProjectInfoField[][] = useMemo(() => {
+    if (!project) return []
+    return [
+      [
+        {
+          icon: <TbLock size={30} />,
+          label: 'รหัสโครงการ',
+          value: `MT${project.id.replace(/[^\d]/g, '').padStart(5, '0')}`,
+        },
+        {
+          icon: <TbClipboardList size={30} />,
+          label: 'เลขที่สัญญา',
+          value: project.contractNo,
+        },
+        {
+          icon: <TbUserShield size={30} />,
+          label: 'หน่วยงานรับผิดชอบ',
+          value: project.bureau,
+        },
+        {
+          icon: <TbUser size={30} />,
+          label: 'ผู้ว่าจ้าง',
+          value: 'สำนักอำนวยความปลอดภัย',
+        },
+      ],
+      [
+        {
+          icon: <TbCalendarEvent size={30} />,
+          label: 'เริ่มต้นการรับประกัน',
+          value: '25 พ.ค. 2568',
+        },
+        {
+          icon: <TbCalendarEvent size={30} />,
+          label: 'สิ้นสุดการรับประกัน',
+          value: '26 พ.ค. 2570',
+        },
+        {
+          icon: <TbHourglassHigh size={30} color='#05F2DB' />,
+          label: 'ระยะเวลาที่เหลือ',
+          value: <span style={{ color: '#05F2DB' }}>106 วัน</span>,
+        },
+        {
+          icon: <TbUser size={30} />,
+          label: 'ผู้รับจ้าง',
+          value: (
+            <>
+              FTD
+              <br />
+              บริษัท เฟิร์สเทค ดีไซน์ จำกัด
+            </>
+          ),
+        },
+      ],
+    ]
+  }, [project])
+
+  return (
+    <ProjectInfoModal
+      open={project !== null}
+      onClose={onClose}
+      title='ข้อมูลโครงการ'
+      badge={
+        project?.warranty === 'in-warranty'
+          ? { text: 'ในค้ำ', color: '#05F2DB' }
+          : project
+            ? { text: 'หมดค้ำ', color: '#979797' }
+            : undefined
+      }
+      description={project?.projectName}
+      rows={rows}
+    />
+  )
+}
+
+export default React.memo(ModalInfoTrafficLighting)
