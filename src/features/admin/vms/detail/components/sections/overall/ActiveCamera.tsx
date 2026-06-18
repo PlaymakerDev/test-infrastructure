@@ -6,13 +6,17 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 interface Props {
   data?: APIResponseVMSDetail
 }
 
-const ActiveCamera: React.FC<Props> = ({ data }) => {
+const ActiveCamera: React.FC<Props> = (props) => {
+  const { data } = props
   const cameras = data?.vms_camera ?? []
+  const dispatch = useAppDispatch()
 
   return (
     <div className='flex-1 min-h-0 flex flex-col bg-black/40 backdrop-blur-xs rounded-lg p-5'>
@@ -29,7 +33,9 @@ const ActiveCamera: React.FC<Props> = ({ data }) => {
               cameraId={String(item.camera.id)}
               hlsUrl={item.camera.hls_url}
               enableViewportPause
-              figureClassName='figure-extra-large lg:h-60! lg:min-h-0! lg:max-h-none! w-full mb-2 rounded-lg overflow-hidden'
+              figureClassName='figure-extra-large lg:h-60! lg:min-h-0! lg:max-h-none! w-full mb-2 rounded-lg overflow-hidden cursor-pointer'
+              onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.camera_id }))}
+
             />
             <h4 className='text-blue-500 truncate'>{item.camera.camera_name || '-'}</h4>
             <p className='fs-12 text-gray-400'>IP Address : {item.camera.ip_address || '-'}</p>

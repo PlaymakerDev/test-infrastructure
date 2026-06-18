@@ -4,6 +4,8 @@ import { OverallSection, TitleSection } from '../components'
 import { OverallProvider } from '../context'
 import { useSearchParams } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
+
 
 const queryClient = new QueryClient()
 
@@ -25,6 +27,8 @@ const VMSScreen: React.FC<Props> = (props) => {
             />
           </section>
         </div>
+        <CCTVModal />
+        <ProjectInfoModal />
       </OverallProvider>
     </QueryClientProvider>
   )

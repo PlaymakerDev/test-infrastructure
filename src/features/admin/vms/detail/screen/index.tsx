@@ -4,6 +4,8 @@ import { DetailProvider } from '../context'
 import { keepPreviousData, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { getVMSDetailAPI } from '@/services/routes/VMSService'
 import { Skeleton } from 'antd'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
+import { useSearchParams } from 'next/navigation'
 
 const queryClient = new QueryClient()
 
@@ -13,6 +15,9 @@ interface Props {
 
 const VMSDetailScreen: React.FC<Props> = (props) => {
   const { id } = props
+  const searchParams = useSearchParams()
+  const isWarranty = searchParams.get('is_warranty')
+  const isOnline = searchParams.get('is_online')
 
   const { data, isLoading } = useQuery({
     queryKey: ['vms_detail'],
@@ -29,6 +34,8 @@ const VMSDetailScreen: React.FC<Props> = (props) => {
         <div className='main-screen'>
           <TitleSection
             data={data?.data}
+            isWarranty={isWarranty === 'true'}
+            isOnline={isOnline === 'true'}
           />
           <section className='mt-8'>
             <OverallSection
@@ -36,6 +43,8 @@ const VMSDetailScreen: React.FC<Props> = (props) => {
             />
           </section>
         </div>
+        <CCTVModal />
+        <ProjectInfoModal />
       </DetailProvider>
     </QueryClientProvider>
   )
