@@ -1,13 +1,9 @@
 "use client"
 import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import type { CctvCamera } from '@/features/admin/cctv/overall/data/cctvData'
+import type { CctvRandomOnlineCamera } from '@/types/cctv'
 
-interface CameraCardProps {
-  camera: CctvCamera
-}
-
-const CameraCard: React.FC<CameraCardProps> = ({ camera }) => (
+const CameraCard: React.FC<{ camera: CctvRandomOnlineCamera }> = ({ camera }) => (
   <div
     style={{
       background: 'rgba(0,0,0,0.75)',
@@ -17,16 +13,13 @@ const CameraCard: React.FC<CameraCardProps> = ({ camera }) => (
       backdropFilter: 'blur(6px)',
     }}
   >
-    {/* HLS player */}
     <HLSLivePlayer
-      hlsUrl={camera.hlsUrl}
+      hlsUrl={camera.hls_url}
       cameraId={camera.id}
       showLiveBadge
       enableViewportPause
       style={{ height: 120, display: 'block' }}
     />
-
-    {/* Info */}
     <div style={{ padding: '8px 12px 10px' }}>
       <p
         style={{
@@ -36,17 +29,17 @@ const CameraCard: React.FC<CameraCardProps> = ({ camera }) => (
           wordBreak: 'break-all',
         }}
       >
-        {camera.name}
+        {camera.camera_name}
       </p>
       <p style={{ color: '#6b7280', fontSize: 10, marginTop: 2 }}>
-        IP Address : {camera.ip}
+        {camera.road_code}
       </p>
     </div>
   </div>
 )
 
 interface Props {
-  cameras: CctvCamera[]
+  cameras: CctvRandomOnlineCamera[]
 }
 
 const CameraListCctv: React.FC<Props> = ({ cameras }) => (

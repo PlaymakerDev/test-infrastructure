@@ -12,6 +12,8 @@ import ModalLiveStreamTrafficSignal, {
 } from '../../ModalLiveStreamTrafficSignal'
 import TableCameraTrafficSignal from './TableCameraTrafficSignal'
 import { useDetailContext } from '../../../context'
+import { useTrafficSolutionCameras } from '@/hooks/queries/traffic-signal'
+import type { TrafficSolutionCamera } from '@/types/traffic-signal/detail-api'
 
 export interface CameraEntry {
   id: string
@@ -22,23 +24,32 @@ export interface CameraEntry {
   greenTime: number
   volume: number
   connection: 'online' | 'offline'
+  /** HLS playlist URL — passed to `HLSLivePlayer`. Empty string ⇒ no stream
+   *  available, tile renders a placeholder instead of triggering HLS errors. */
+  hlsUrl: string
 }
 
-/** Mock 8 cameras per signal (4 Counting top + 4 Stopline bottom).
- *  In production the backend supplies the per-project list. */
-const COUNTING: CameraEntry[] = [
-  { id: 'tf001', code: '68SET-CCO4050-TF001-วราจรจุดที่1-กม.5+680-มุ่งหน้าโชติทรัพย์', ipAddress: '10.101.27.5', phase: 1, detectionMode: 'Counting', greenTime: 60, volume: 2174, connection: 'online' },
-  { id: 'tf002', code: '68SET-CCO4050-TF002-วราจรจุดที่1-กม.5+680-มุ่งหน้าตลาดอุดมโชค', ipAddress: '10.101.27.6', phase: 2, detectionMode: 'Counting', greenTime: 60, volume: 2045, connection: 'online' },
-  { id: 'tf003', code: '68SET-CCO4050-TF003-วราจรจุดที่1-กม.5+680-มุ่งหน้าอาคารธีระเขื่อม', ipAddress: '10.101.27.7', phase: 3, detectionMode: 'Counting', greenTime: 30, volume: 1923, connection: 'online' },
-  { id: 'tf004', code: '68SET-CCO4050-TF004-วราจรจุดที่1-กม.5+680-มุ่งหน้าโชติทรัพย์', ipAddress: '10.101.27.8', phase: 4, detectionMode: 'Counting', greenTime: 20, volume: 1023, connection: 'online' },
-]
-
-const STOPLINE: CameraEntry[] = [
-  { id: 'tf005', code: '68SET-CCO4050-TF005-วราจรจุดที่1-กม.5+680-มุ่งหน้าโชติทรัพย์', ipAddress: '10.101.27.5', phase: 1, detectionMode: 'Stopline', greenTime: 0, volume: 0, connection: 'online' },
-  { id: 'tf006', code: '68SET-CCO4050-TF006-วราจรจุดที่1-กม.5+680-มุ่งหน้า7-Eleven', ipAddress: '10.101.27.6', phase: 2, detectionMode: 'Stopline', greenTime: 0, volume: 0, connection: 'online' },
-  { id: 'tf007', code: '68SET-CCO4050-TF007-วราจรจุดที่1-กม.5+680-มุ่งหน้าจุดเชื่อมต่อแยก', ipAddress: '10.101.27.7', phase: 3, detectionMode: 'Stopline', greenTime: 0, volume: 0, connection: 'offline' },
-  { id: 'tf008', code: '68SET-CCO4050-TF008-วราจรจุดที่1-กม.5+680-มุ่งหน้าโชติทรัพย์', ipAddress: '10.101.27.8', phase: 4, detectionMode: 'Stopline', greenTime: 0, volume: 0, connection: 'online' },
-]
+/** Adapter: API camera → in-grid CameraEntry shape (used by tile + table).
+ *  Note: backend uses 'StopLine' (S+L capital); we normalise to 'Stopline'
+ *  for the in-app type — UI styling still discriminates on the value.
+ *
+ *  `greenTime` is derived by looking up the camera's monitored phase in the
+ *  `phaseTiming` map — the cameras endpoint doesn't carry green_time itself.
+ */
+const apiCameraToEntry = (
+  cam: TrafficSolutionCamera,
+  greenSecByPhase: Map<number, number>,
+): CameraEntry => ({
+  id: cam.camera_id,
+  code: cam.camera_name,
+  ipAddress: cam.ip_address,
+  phase: cam.phases_no,
+  detectionMode: cam.camera_type === 'Counting' ? 'Counting' : 'Stopline',
+  greenTime: greenSecByPhase.get(cam.phases_no) ?? 0,
+  volume: cam.total_count,
+  connection: cam.is_online ? 'online' : 'offline',
+  hlsUrl: cam.hls_url ?? '',
+})
 
 const FILTERS: FilterConfig[] = [
   {
@@ -74,7 +85,11 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
       role='button'
       tabIndex={0}
     >
-      <HLSLivePlayer figureClassName='aspect-video rounded-lg' />
+      <HLSLivePlayer
+        figureClassName='aspect-video rounded-lg'
+        hlsUrl={cam.hlsUrl}
+        cameraId={cam.id}
+      />
       <span
         className='absolute top-2 right-2 fs-12 font-semibold px-2 py-0.5 rounded'
         style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
@@ -103,10 +118,22 @@ const CamerasGridTrafficSignal: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
   const [liveCamera, setLiveCamera] = useState<TrafficSignalCameraDetail | null>(null)
 
-  const allCameras = useMemo(() => [...COUNTING, ...STOPLINE], [])
+  // Cameras for this signal come from a dedicated endpoint — Counting/StopLine
+  // split is derived from `camera_type`.
+  const { data: apiCameras } = useTrafficSolutionCameras(project.id)
+  // Build a phase → greenSec lookup once per project change. Cameras are
+  // tagged with the phase they monitor (`phases_no`), so the matching green
+  // duration lives on the project's phase timing config.
+  const greenSecByPhase = useMemo(() => {
+    const m = new Map<number, number>()
+    for (const p of project.phaseTiming ?? []) m.set(p.phase, p.greenSec)
+    return m
+  }, [project.phaseTiming])
+  const allCameras = useMemo(
+    () => (apiCameras ?? []).map((c) => apiCameraToEntry(c, greenSecByPhase)),
+    [apiCameras, greenSecByPhase]
+  )
 
-  // Map an in-grid CameraEntry to the modal's richer shape.
-  // Pulls `installPoint` from the project context as the camera's "จุดติดตั้ง".
   const openLive = (cam: CameraEntry) => {
     setLiveCamera({
       id: cam.id,
@@ -117,8 +144,9 @@ const CamerasGridTrafficSignal: React.FC = () => {
       greenTime: cam.greenTime,
       volume: cam.volume,
       connection: cam.connection,
+      hlsUrl: cam.hlsUrl,
       location: project.installPoint,
-      lastUpdated: '30 เม.ย. 2569 09:35:29',
+      lastUpdated: '-',
       functions: cam.detectionMode === 'Counting' ? ['CCTV', 'Volume', 'Traffic'] : ['CCTV', 'Traffic'],
       efficiency: cam.connection === 'online' ? 100 : 0,
       roadType: 'ถนนสายหลัก',
@@ -135,13 +163,14 @@ const CamerasGridTrafficSignal: React.FC = () => {
   )
 
   const filtered = useMemo(() => {
-    const filterFn = (cams: CameraEntry[]) =>
-      cams.filter((c) => {
-        if (activeFilter === 'all') return true
-        return c.connection === activeFilter
-      })
-    return { counting: filterFn(COUNTING), stopline: filterFn(STOPLINE) }
-  }, [activeFilter])
+    const inMode = (mode: CameraEntry['detectionMode']) =>
+      allCameras.filter(
+        (c) =>
+          c.detectionMode === mode &&
+          (activeFilter === 'all' || c.connection === activeFilter)
+      )
+    return { counting: inMode('Counting'), stopline: inMode('Stopline') }
+  }, [activeFilter, allCameras])
 
   return (
     <div>

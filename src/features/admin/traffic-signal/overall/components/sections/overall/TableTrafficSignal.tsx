@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
 import ModalInfoTrafficSignal from '@/features/admin/traffic-signal/overall/components/ModalInfoTrafficSignal'
+import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
@@ -37,14 +38,19 @@ type Row =
       roadCodeSpan: number
     }
 
+// One color per controller mode so the table is easy to scan at a glance.
+// `Auto` and `Flashing24Hr` share the "default" white pill — they're neutral
+// states that don't need to pop visually.
 const MODE_COLORS: Record<TrafficSignalProject['operatingMode'], string> = {
-  FixedTime: '#05F2DB',
-  Adaptive_ET: '#05F2DB',
-  Flashing24Hr: '#FCD116',
+  FixedTime: '#05F2DB',     // cyan
+  Adaptive_ET: '#FCD116',   // amber (highlight: smartest mode)
+  Auto: '#FFFFFF',          // white
+  Flashing24Hr: '#FFFFFF',  // white
 }
 
 const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
+  const deptId = useDeptId()
   const [infoProject, setInfoProject] = useState<TrafficSignalProject | null>(null)
   // ── Build a flat list interleaving bureau dividers + project rows.
   // Within each bureau, consecutive rows that share a roadCode are merged
@@ -174,7 +180,9 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
             <span
               className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
               onClick={() =>
-                router.push(`/admin/traffic-signal/detail/${row.project.id}`)
+                router.push(
+                  `/admin/traffic-signal/detail/${row.project.id}?dept_id=${deptId}`,
+                )
               }
               role='link'
               tabIndex={0}
@@ -230,10 +238,12 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
+          // Fall back to white border for unknown modes so the pill always
+          // renders consistently — never plain text.
           return (
             <Pill
               text={row.project.operatingMode}
-              color={MODE_COLORS[row.project.operatingMode]}
+              color={MODE_COLORS[row.project.operatingMode] ?? '#FFFFFF'}
             />
           )
         },

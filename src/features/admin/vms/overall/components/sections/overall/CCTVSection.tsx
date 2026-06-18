@@ -1,27 +1,54 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import { useAppSelector } from '@/stores/hooks'
+import { getVMSOverviewRandomOnlineAPI } from '@/services/routes/VMSService'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 
-interface Props { }
+interface Props {
+  deptId?: string | string[] | number
+}
 
-const CCTVSection: React.FC<Props> = () => {
-  const { vms_random_online } = useAppSelector(state => state.vms_overview)
+const CCTVSection: React.FC<Props> = (props) => {
+  const { deptId } = props
+  const dispatch = useAppDispatch()
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['random_cctv'],
+    queryFn: () => getVMSOverviewRandomOnlineAPI(Number(deptId)!, { limit: 3 }),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData
+  })
 
   const renderCameraList = useMemo(() => {
-    return vms_random_online.map((item) => (
+    if (isLoading) {
+      // return <Skeleton loading={isLoading} active paragraph={{ rows: 3 }} />
+      return Array.from({ length: 3 }).map((_, idx) => (
+        <div
+          key={idx}
+          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+        >
+          <Skeleton loading={isLoading} active paragraph={{ rows: 3 }} />
+        </div>
+      ))
+    }
+
+    return data?.data.map((item, idx) => (
       <div
-        key={item.solution.id}
+        key={item.vms.camera?.id ?? idx}
         className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
       >
         <HLSLivePlayer
-          figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
+          figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg cursor-pointer'
           hlsUrl={item.vms.hls_url}
+          onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.vms.camera?.id }))}
         />
-        <h4 className='camera-code'>{item.solution.solution_name}</h4>
-        <p className='camera-location'>เชื่อมต่อล่าสุด :{item.vms.last_connected}</p>
+        <h4 className='camera-code'>{item.vms.camera?.camera_name || '-'}</h4>
+        <p className='camera-location'>IP Address : {item.vms.camera?.ip_address || '-'}</p>
       </div>
     ))
-  }, [vms_random_online])
+  }, [data?.data, isLoading, dispatch])
 
   return (
     <div className='h-full flex flex-col gap-4'>

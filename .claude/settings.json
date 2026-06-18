@@ -41,7 +41,16 @@
       "Bash(grep -oE \"mapboxgl-scroll-zoom-blocker[^,{]*\" /d/www/react/drr-its-new/node_modules/mapbox-gl/dist/mapbox-gl.css)",
       "Bash(grep -oE \"[^{},]*mapboxgl-scroll-zoom-blocker[^{},]*\\\\{[^}]*\\\\}\" /d/www/react/drr-its-new/node_modules/mapbox-gl/dist/mapbox-gl.css)",
       "Bash(cat /c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/bla78k5py.output 2>/dev/null)",
-      "Read(//c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/**)"
+      "Read(//c/Users/Admin/AppData/Local/Temp/claude/d--www-react-drr-its-new/d2b151a7-1b63-4e16-9d71-11a5444dc4c8/tasks/**)",
+      "Bash(ls /d/www/react/drr-cm-fe/ 2>/dev/null | head -30)",
+      "Read(//d/www/react/drr-cm-fe//**)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('deps:', Object.keys\\(p.dependencies\\).length, '| devDeps:', Object.keys\\(p.devDependencies\\).length\\)\")",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/traffic\" -L --max-time 15)",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/traffic\" -L --max-time 15)",
+      "Bash(python -c \"import sys, json; d=json.load\\(sys.stdin\\); [print\\(p\\) for p in d.get\\('paths', {}\\).keys\\(\\)]\")",
+      "Bash(python -c ' *)",
+      "Bash(grep -rn \"\\\\.day\\\\|day\\\\.day\\\\|วัน\\\\${\\\\|day:\" d:/www/react/drr-its-new/src/features/admin/traffic-signal --include=\"*.tsx\")",
+      "Bash(grep -rn \"วัน\\\\${day.day}\\\\|day.day}\\\\|formatDayLabel\" d:/www/react/drr-its-new/src/features/admin/traffic-signal --include=\"*.tsx\")"
     ],
     "additionalDirectories": [
       "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"

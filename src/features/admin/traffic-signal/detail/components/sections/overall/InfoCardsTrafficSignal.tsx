@@ -6,6 +6,7 @@ import {
   TbTruck,
   TbWaveSine,
 } from 'react-icons/tb'
+import { fmtNumber } from '@/utils/formatNumber'
 import { useDetailContext } from '../../../context'
 
 interface CardProps {
@@ -69,7 +70,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
       <Card
         icon={<TbShieldCheckFilled />}
         label='ประสิทธิภาพของระบบ'
-        value={`${(project.efficiency ?? 0).toFixed(1)}%`}
+        value={`${fmtNumber(project.efficiency, 1)}%`}
         color='#FCD116'
       />
       <Card
@@ -77,7 +78,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
         label='PCU ประจำวัน'
         value={
           <>
-            {(project.dailyPCU ?? 0).toLocaleString()}{' '}
+            {fmtNumber(project.dailyPCU, 0)}{' '}
             <span className='fs-14 font-normal'>PCU</span>
           </>
         }
@@ -86,12 +87,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
       <Card
         icon={<TbWaveSine />}
         label='การจราจรช่วงเวลาเร่งด่วน'
-        value={
-          <>
-            {(project.peakHourTraffic ?? 0).toLocaleString()}{' '}
-            <span className='fs-14 font-normal'>คัน</span>
-          </>
-        }
+        value={fmtNumber(project.peakHourTraffic, 0)}
         sublabel={`Phase ${project.peakPhase ?? '-'} : Peak`}
         color='#7CFC00'
       />

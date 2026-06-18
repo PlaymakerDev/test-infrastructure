@@ -8,6 +8,15 @@ const initialState: LayoutState = {
   drawer: {
     open: false
   },
+  project_info_modal: {
+    open: false,
+    project_id: null,
+    road_id: null
+  },
+  cctv_modal: {
+    open: false,
+    camera_id: null
+  },
   sidebar: [],
   task_schedules: {
     sidebar: {
@@ -40,6 +49,21 @@ const layoutSlice = createSlice({
     },
     resetDrawerOpen: (state) => {
       state.drawer.open = initialState.drawer.open
+    },
+    setProjectInfoModalOpen: (state, action) => {
+      state.project_info_modal.open = action.payload.open
+      state.project_info_modal.project_id = action.payload.project_id
+      state.project_info_modal.road_id = action.payload.road_id
+    },
+    resetProjectInfoModalOpen: (state) => {
+      state.project_info_modal = initialState.project_info_modal
+    },
+    setCCTVModalOpen: (state, action) => {
+      state.cctv_modal.open = action.payload.open
+      state.cctv_modal.camera_id = action.payload.camera_id
+    },
+    resetCCTVModalOpen: (state) => {
+      state.cctv_modal = initialState.cctv_modal
     }
   },
   extraReducers: (builder) => {
@@ -64,7 +88,11 @@ export const {
   setLoading,
   setFullscreenLoading,
   setDrawerOpen,
-  resetDrawerOpen
+  resetDrawerOpen,
+  setCCTVModalOpen,
+  resetCCTVModalOpen,
+  setProjectInfoModalOpen,
+  resetProjectInfoModalOpen
 } = layoutSlice.actions
 
 export default layoutSlice.reducer

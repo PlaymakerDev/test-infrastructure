@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { getVMSOverviewAPI, getVMSOverviewRandomOnlineAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService';
+import { getVMSOverviewAPI, getVMSOverviewListAPI, getVMSOverviewRandomOnlineAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService';
 import { VMSOverviewState } from '@/types/vms/overview-redux';
-import { APIRequestVMSRandomOnline } from '@/types/vms/overview-api';
+import { APIRequestVMSList, APIRequestVMSRandomOnline } from '@/types/vms/overview-api';
 
 const initialState: VMSOverviewState = {
   vms_overview: {
@@ -20,6 +20,13 @@ const initialState: VMSOverviewState = {
       expired: 0
     }
   },
+  vms_list: {
+    search: {
+      page: 1,
+      limit: 10
+    },
+    data: []
+  },
   task_schedules: {
     vms_overview: {
       loading: false,
@@ -30,6 +37,10 @@ const initialState: VMSOverviewState = {
       status: 'IDLE'
     },
     vms_total: {
+      loading: false,
+      status: 'IDLE'
+    },
+    vms_list: {
       loading: false,
       status: 'IDLE'
     }
@@ -54,11 +65,28 @@ export const getVMSOverviewTotalData = createAsyncThunk(SLICE_NAME + '/apiGetVMS
   return response.data
 })
 
+export const getVMSOverviewListData = createAsyncThunk(SLICE_NAME + '/apiGetVMSOverviewList', async (params: { deptId: string | number, requestParams: APIRequestVMSList }) => {
+  const response = await getVMSOverviewListAPI(params.deptId, params.requestParams)
+  return response.data
+})
+
 
 const vmsOverviewSlice = createSlice({
   name: `${SLICE_NAME}/vmsOverview`,
   initialState,
   reducers: {
+    setSearchVMSList: (state, action) => {
+      state.vms_list.search = action.payload
+    },
+    resetSearchVMSList: (state) => {
+      state.vms_list.search = initialState.vms_list.search
+    },
+    setVMSTotalData: (state, action) => {
+      state.vms_total = action.payload
+    },
+    resetVMSTotalData: (state) => {
+      state.vms_total = initialState.vms_total
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -104,11 +132,28 @@ const vmsOverviewSlice = createSlice({
         state.task_schedules.vms_total.loading = false
         state.task_schedules.vms_total.status = "FAILED"
       })
+      // List
+      .addCase(getVMSOverviewListData.fulfilled, (state, action) => {
+        state.vms_list.data = action.payload
+        state.task_schedules.vms_list.loading = false
+        state.task_schedules.vms_list.status = "SUCCESS"
+      })
+      .addCase(getVMSOverviewListData.pending, (state) => {
+        state.task_schedules.vms_list.loading = true
+        state.task_schedules.vms_list.status = "LOADING"
+      })
+      .addCase(getVMSOverviewListData.rejected, (state) => {
+        state.task_schedules.vms_list.loading = false
+        state.task_schedules.vms_list.status = "FAILED"
+      })
   }
 })
 
 export const {
-
+  setSearchVMSList,
+  resetSearchVMSList,
+  setVMSTotalData,
+  resetVMSTotalData,
 } = vmsOverviewSlice.actions
 
 export default vmsOverviewSlice.reducer

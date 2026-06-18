@@ -2,8 +2,10 @@
 import BaseMap from '@/components/map/BaseMap'
 import { useMap } from '@/components/map/hooks/useMap'
 import MarkerLayer from '@/components/map/primitives/MarkerLayer'
-import { useAppSelector } from '@/stores/hooks'
+import { getVMSOverviewAPI } from '@/services/routes/VMSService'
+// import { useAppSelector } from '@/stores/hooks'
 import { Location } from '@/types/vms/overview-api'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import React, { useEffect, useMemo } from 'react'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
@@ -104,16 +106,26 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
 
 // ─── MapSection ───────────────────────────────────────────────────────────────
 
-interface Props { }
+interface Props {
+  deptId?: string | string[] | number
+}
 
-const MapSection: React.FC<Props> = () => {
-  const { vms_overview, task_schedules } = useAppSelector(state => state.vms_overview)
-  const { loading, status } = task_schedules.vms_overview
-  const isReady = status === 'SUCCESS'
+const MapSection: React.FC<Props> = (props) => {
+  const { deptId } = props
+  // const { vms_overview, task_schedules } = useAppSelector(state => state.vms_overview)
+  // const { loading, status } = task_schedules.vms_overview
+  // const isReady = status === 'SUCCESS'
 
-  const centroidValid = vms_overview.centroid[0] !== 0 || vms_overview.centroid[1] !== 0
+  const { data, isLoading, isSuccess } = useQuery({
+    queryKey: ['vms_overview'],
+    queryFn: () => getVMSOverviewAPI(Number(deptId)!),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData
+  })
+
+  const centroidValid = data?.data.centroid[0] !== 0 || data?.data.centroid[1] !== 0
   const initialCenter = centroidValid
-    ? (vms_overview.centroid as [number, number])
+    ? (data?.data.centroid as [number, number])
     : FALLBACK_CENTER
 
   return (
@@ -123,13 +135,13 @@ const MapSection: React.FC<Props> = () => {
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
         <VmsMarkerLayer
-          locations={vms_overview.locations}
-          centroid={vms_overview.centroid}
-          isReady={isReady}
+          locations={data?.data.locations || []}
+          centroid={data?.data.centroid || [0, 0]}
+          isReady={isSuccess}
         />
       </BaseMap>
 
-      {loading && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10 rounded-lg">
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />

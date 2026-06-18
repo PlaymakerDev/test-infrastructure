@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import ModalInfoTrafficSignal from '@/features/admin/traffic-signal/overall/components/ModalInfoTrafficSignal'
+import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
@@ -62,6 +63,7 @@ type Row =
 
 const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
+  const deptId = useDeptId()
   const [infoProject, setInfoProject] = useState<TrafficSignalProject | null>(null)
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficSignalProject[]>()
@@ -187,7 +189,9 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
             <span
               className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
               onClick={() =>
-                router.push(`/admin/traffic-signal/detail/${row.project.id}`)
+                router.push(
+                  `/admin/traffic-signal/detail/${row.project.id}?dept_id=${deptId}`,
+                )
               }
               role='link'
               tabIndex={0}

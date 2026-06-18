@@ -1,16 +1,23 @@
 import React from 'react'
 import { DataDisplaySection, LocationSection } from '../components'
 
-interface Props {}
+interface Props {
+  deptId?: string | string[] | number
+}
 
-const OverallSection: React.FC<Props> = () => {
+const OverallSection: React.FC<Props> = (props) => {
+  const { deptId } = props
   return (
     <div>
       <section>
-        <LocationSection />
+        <LocationSection
+          deptId={deptId!}
+        />
       </section>
       <section className='mt-5'>
-        <DataDisplaySection />
+        <DataDisplaySection
+          deptId={deptId!}
+        />
       </section>
     </div>
   )

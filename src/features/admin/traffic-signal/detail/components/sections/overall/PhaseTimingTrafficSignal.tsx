@@ -1,47 +1,119 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import { TbAffiliate } from 'react-icons/tb'
-import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import {
+  getPhaseColor,
+  type PhaseTimingConfig,
+} from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useDetailContext } from '../../../context'
 
-/** Phase Timing card — auto-cycles through configured phases at 1s tick.
- *  Adapts to 3- or 4-phase configurations from the API. */
+/** Compute the active phase + elapsed seconds in that phase from the API.
+ *
+ *  Uses `isActive` to pick the phase and `timestamp` (when this phase became
+ *  active) to seed the countdown. This keeps the UI in sync with the real
+ *  signal across page refreshes.
+ *
+ *  When `timestamp` is missing or older than one full cycle (greenSec +
+ *  redSec), we treat it as stale and skip the countdown — the UI shows the
+ *  configured green time instead of falling off the end into "Red Time : 0s". */
+const computeApiState = (phases: PhaseTimingConfig[]) => {
+  const apiActiveIdx = phases.findIndex((p) => p.isActive)
+  const activeIdx = apiActiveIdx >= 0 ? apiActiveIdx : 0
+  const active = phases[activeIdx]
+  if (!active) {
+    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  }
+  if (!active.timestamp) {
+    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  }
+  const startMs = new Date(active.timestamp).getTime()
+  if (isNaN(startMs)) {
+    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  }
+  const elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000))
+  // Timestamp older than the configured cycle is treated as stale — the
+  // backend hasn't pushed an update in a full cycle so we can't trust it.
+  const cycle = active.greenSec + active.redSec
+  if (cycle > 0 && elapsed > cycle) {
+    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  }
+  return { activeIdx, elapsedInPhase: elapsed, hasValidTimestamp: true }
+}
+
+/** Phase Timing card — shows the currently-active phase and live countdown,
+ *  driven by `is_active` + `timestamp` from the phase_details API. */
 const PhaseTimingTrafficSignal: React.FC = () => {
   const { project } = useDetailContext()
   const phases = project.phaseTiming ?? []
 
-  const cycleTotal = useMemo(
-    () => phases.reduce((sum, p) => sum + p.greenSec + p.redSec, 0),
-    [phases]
-  )
-  const [elapsed, setElapsed] = useState(0)
+  // Seed from API on every refetch (phases reference changes when TanStack
+  // Query returns new data). `tick` advances the countdown smoothly between
+  // refetches; reset to 0 when phases change so the new API state takes over.
+  const apiSeed = useMemo(() => computeApiState(phases), [phases])
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    if (cycleTotal === 0) return
-    const id = window.setInterval(() => {
-      setElapsed((e) => (e + 1) % cycleTotal)
-    }, 1000)
+    setTick(0)
+    if (phases.length === 0) return
+    const id = window.setInterval(() => setTick((t) => t + 1), 1000)
     return () => window.clearInterval(id)
-  }, [cycleTotal])
+  }, [phases])
 
   const { activeIdx, inGreen, remaining } = useMemo(() => {
-    let acc = 0
-    for (let i = 0; i < phases.length; i++) {
-      const p = phases[i]
-      const greenEnd = acc + p.greenSec
-      const redEnd = greenEnd + p.redSec
-      if (elapsed < greenEnd) {
-        return { activeIdx: i, inGreen: true, remaining: greenEnd - elapsed }
-      }
-      if (elapsed < redEnd) {
-        return { activeIdx: i, inGreen: false, remaining: redEnd - elapsed }
-      }
-      acc = redEnd
+    if (phases.length === 0) {
+      return { activeIdx: 0, inGreen: true, remaining: 0 }
     }
-    return { activeIdx: 0, inGreen: true, remaining: phases[0]?.greenSec ?? 0 }
-  }, [elapsed, phases])
+    const active = phases[apiSeed.activeIdx]
+    // No valid timestamp from API — show the configured green time without a
+    // countdown. Avoids the misleading "Red Time : 0s" when timestamps are
+    // stale or missing.
+    if (!apiSeed.hasValidTimestamp) {
+      return {
+        activeIdx: apiSeed.activeIdx,
+        inGreen: true,
+        remaining: active.greenSec,
+      }
+    }
+    const elapsed = apiSeed.elapsedInPhase + tick
+    // Display green while elapsed < green_time, then "red" wait before the
+    // next phase. After both elapse, hold at 0 until the next refetch.
+    if (elapsed < active.greenSec) {
+      return {
+        activeIdx: apiSeed.activeIdx,
+        inGreen: true,
+        remaining: active.greenSec - elapsed,
+      }
+    }
+    if (elapsed < active.greenSec + active.redSec) {
+      return {
+        activeIdx: apiSeed.activeIdx,
+        inGreen: false,
+        remaining: active.greenSec + active.redSec - elapsed,
+      }
+    }
+    return { activeIdx: apiSeed.activeIdx, inGreen: false, remaining: 0 }
+  }, [phases, apiSeed, tick])
 
-  if (phases.length === 0) return null
+  // Empty state — render the card shell with a placeholder so the page
+  // layout stays consistent. Hits when the API returns no phase data yet.
+  if (phases.length === 0) {
+    return (
+      <div
+        className='relative rounded-2xl p-4 w-full h-full overflow-hidden flex flex-col'
+        style={{ background: '#191919CC', border: '1px solid #1f2d3d' }}
+      >
+        <div className='relative flex items-center gap-2 mb-2'>
+          <TbAffiliate size={22} color='#66AEFF' />
+          <h4 className='mb-0' style={{ color: '#66AEFF', fontSize: 16, fontWeight: 600 }}>
+            Phase Timing
+          </h4>
+        </div>
+        <div className='relative flex-1 flex items-center justify-center'>
+          <p className='text-white/40 text-sm mb-0'>ไม่มีข้อมูล Phase Timing</p>
+        </div>
+      </div>
+    )
+  }
 
   const activePhase = phases[activeIdx]
   const activeColor = getPhaseColor(activePhase.phase)

@@ -3,22 +3,30 @@ import React, { useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
 
-interface Props {}
+interface Props {
+  onSearch: (data: FormValues) => void
+}
 
-interface FormValues {
+export interface FormValues {
   search: string
 }
 
 let timeout: NodeJS.Timeout
 
-const FormSearchVMS: React.FC<Props> = () => {
+const FormSearchVMS: React.FC<Props> = (props) => {
+  const { onSearch } = props
   const submitRef = useRef<HTMLButtonElement>(null)
-  const { control, handleSubmit } = useForm<FormValues>({
-    defaultValues: { search: '' },
+
+  const form = useForm<FormValues>({
+    defaultValues: {
+      search: ''
+    },
   })
 
+  const { control, handleSubmit } = form
+
   return (
-    <form onSubmit={handleSubmit((v) => console.log('submit', v))}>
+    <form onSubmit={handleSubmit(onSearch)}>
       <Controller
         control={control}
         name='search'

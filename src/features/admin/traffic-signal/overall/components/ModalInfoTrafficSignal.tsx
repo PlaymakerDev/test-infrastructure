@@ -4,7 +4,6 @@ import {
   TbCalendarEvent,
   TbClipboardList,
   TbHourglassHigh,
-  TbLock,
   TbUser,
   TbUserShield,
 } from 'react-icons/tb'
@@ -31,11 +30,6 @@ const ModalInfoTrafficSignal: React.FC<Props> = ({ project, onClose }) => {
     return [
       [
         {
-          icon: <TbLock size={30} />,
-          label: 'รหัสโครงการ',
-          value: `MT${project.id.replace(/[^\d]/g, '').padStart(5, '0')}`,
-        },
-        {
           icon: <TbClipboardList size={30} />,
           label: 'เลขที่สัญญา',
           value: project.contractNo,
@@ -45,12 +39,15 @@ const ModalInfoTrafficSignal: React.FC<Props> = ({ project, onClose }) => {
           label: 'หน่วยงานรับผิดชอบ',
           value: project.bureau,
         },
+        // TODO: backend to expose "ผู้ว่าจ้าง" — currently hardcoded.
         {
           icon: <TbUser size={30} />,
           label: 'ผู้ว่าจ้าง',
           value: 'สำนักอำนวยความปลอดภัย',
         },
       ],
+      // TODO: wire warranty dates + contractor from `/manage/contract/{id}`
+      // once backend confirms the ID mapping (project.id from central list).
       [
         {
           icon: <TbCalendarEvent size={30} />,
