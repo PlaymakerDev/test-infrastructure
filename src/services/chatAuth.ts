@@ -22,6 +22,7 @@ const LOCAL_AUTH = process.env.NEXT_PUBLIC_CHAT_LOCAL_AUTH === "true"
 const tokenSource = DEV_TOKEN ? "dev-token" : LOCAL_AUTH ? "local-auth" : "session"
 
 let refreshInFlight: Promise<boolean> | null = null
+let tokenInFlight: Promise<string | null> | null = null
 
 export function isTokenExpired(resCode: unknown): boolean {
   return typeof resCode === "number" && TOKEN_EXPIRED_CODES.includes(resCode)
@@ -40,16 +41,27 @@ export function debugChatAuth(context: string, info: Record<string, unknown>): v
 }
 
 // Resolve the Bearer token for every chat request (chatHttp + chatStream).
+// Concurrent callers (e.g. the initial insights + conversations fetches) are
+// coalesced into a single in-flight request so we don't hit the auth endpoint
+// twice at once. Once it settles, the next request fetches fresh (no stale
+// caching across calls).
 export async function getChatAccessToken(): Promise<string | null> {
   if (DEV_TOKEN) return DEV_TOKEN
+  if (tokenInFlight) return tokenInFlight
+
   const endpoint = LOCAL_AUTH ? "/api/chat-auth" : "/api/auth/session"
-  try {
-    const res = await fetch(endpoint)
-    const { access_token } = await res.json()
-    return access_token ?? null
-  } catch {
-    return null
-  }
+  tokenInFlight = (async () => {
+    try {
+      const res = await fetch(endpoint)
+      const { access_token } = await res.json()
+      return access_token ?? null
+    } catch {
+      return null
+    } finally {
+      tokenInFlight = null
+    }
+  })()
+  return tokenInFlight
 }
 
 // Recover from an expired token. Local-auth mode re-mints via the dev route;
