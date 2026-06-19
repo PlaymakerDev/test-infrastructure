@@ -58,6 +58,14 @@ export interface SharedCamera {
 }
 
 // API RESPONSE
+// Backend returns the status as a Thai label that doubles as the badge text.
+export type WarrantyStatusString =
+  | 'ในค้ำ'
+  | 'หมดค้ำ'
+  | 'ก่อนค้ำ'
+  // Fall-through for any future status the backend introduces.
+  | (string & {})
+
 export interface APIResponseContactDetail {
   id: number
   project_name: string
@@ -65,6 +73,11 @@ export interface APIResponseContactDetail {
   department_name: string
   warranty_start_date: string
   warranty_end_date: string
+  /** Remaining days as computed by the backend. 0 when expired or
+   *  before warranty starts. Use this instead of parsing dates on the FE. */
+  warranty_date: number
+  /** Status enum from backend — drives badge color + label. */
+  warranty_status: WarrantyStatusString
   company_name: string
 }
 

@@ -39,6 +39,13 @@ export interface TrafficSignalProject {
    *  of the solution-scoped detail endpoints. Comes from `solution.id` on
    *  the list endpoint. */
   id: string
+  /** Project / contract entity id — used by `/manage/contract/{project_id}`
+   *  (Project Info modal). Comes from `project.id` on the list endpoint. */
+  projectId?: string
+  /** Road entity id — used by `/manage/departments/by-road?road_id={road_id}`
+   *  (resolves the responsible department in Project Info modal). Comes from
+   *  `road.id` on the list endpoint. */
+  roadId?: string
   /** รหัสสายทาง เช่น "กท.1001" */
   roadCode: string
   /** ชื่อโครงการเต็ม */
