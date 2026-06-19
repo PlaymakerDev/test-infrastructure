@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import React from 'react'
 import VMSScreen from '@/features/admin/vms/overall/screen'
 

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import MaintenanceDetailScreen from '@/features/admin/maintenance/detail/screen'
 
 interface Props {

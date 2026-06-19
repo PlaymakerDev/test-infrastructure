@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import React from 'react'
 import CrosswalkScreen from '@/features/admin/crosswalk/overall/screen'
 
