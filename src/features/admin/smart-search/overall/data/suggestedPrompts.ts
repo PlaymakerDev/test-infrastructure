@@ -1,8 +1,8 @@
 // Example questions shown on the empty state to reduce the blank-page fear.
 // These mirror the kinds of questions the text-to-SQL backend answers well.
 export const SUGGESTED_PROMPTS: string[] = [
-  "ภาคเหนือมีถนนกี่สาย",
-  "สายทางไหนมีปริมาณ PCU มากที่สุด",
-  "กล้อง CCTV ที่ออฟไลน์มีกี่ตัว",
-  "ไฟส่องสว่างออฟไลน์มีกี่จุด",
+  "จังหวัดเชียงใหม่มีจุดสัญญาณไฟจราจรกี่จุด",
+  "จังหวัดเชียงใหม่มีกล้อง CCTV กี่ตัว",
+  "มีทางม้าลายกี่แห่ง",
+  "ภาคที่มีกล้อง CCTV เยอะสุด มีจุดสัญญาณไฟกี่จุด",
 ]
