@@ -18,7 +18,7 @@ interface VehicleStatus {
 
 const VEHICLE_STATUSES: VehicleStatus[] = [
   {
-    img: '/images/vehicles/status/green_vehicle.png',
+    img: '/atlas/images/vehicles/status/green_vehicle.png',
     label: 'รถเคลื่อนที่',
     color: 'lime',
     labelClass: 'text-lime-500',
@@ -26,7 +26,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     count: 0,
   },
   {
-    img: '/images/vehicles/status/orange_vehicle.png',
+    img: '/atlas/images/vehicles/status/orange_vehicle.png',
     label: 'รถจอด',
     color: 'orange',
     labelClass: 'text-orange-500',
@@ -34,7 +34,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     count: 0,
   },
   {
-    img: '/images/vehicles/status/red_vehicle.png',
+    img: '/atlas/images/vehicles/status/red_vehicle.png',
     label: 'รถน้ำหนักเกิน',
     color: 'red',
     labelClass: 'text-red-500',

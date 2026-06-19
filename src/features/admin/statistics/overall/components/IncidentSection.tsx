@@ -141,10 +141,10 @@ const INCIDENT_SUMMARY_BADGES: SummaryBadge[] = [
 ]
 
 const INCIDENT_CARDS: StatCard[] = [
-  { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '599', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
-  { borderColor: '#05F2DB', icon: '/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: '67', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
-  { borderColor: '#B2FF00', icon: '/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: '45', unit: 'หน่วยงาน', sub: 'แขวงทางหลวงชนบทขอนแก่น (1,081 เหตุการณ์)' },
-  { borderColor: '#FCD116', icon: '/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: 'รถจอดไหล่ทาง', sub: '3,580 เหตุการณ์ (59.6%)' },
+  { borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '599', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
+  { borderColor: '#05F2DB', icon: '/atlas/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: '67', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
+  { borderColor: '#B2FF00', icon: '/atlas/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: '45', unit: 'หน่วยงาน', sub: 'แขวงทางหลวงชนบทขอนแก่น (1,081 เหตุการณ์)' },
+  { borderColor: '#FCD116', icon: '/atlas/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: 'รถจอดไหล่ทาง', sub: '3,580 เหตุการณ์ (59.6%)' },
 ]
 
 const IncidentSection: React.FC = () => {

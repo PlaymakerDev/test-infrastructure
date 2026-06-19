@@ -9,7 +9,14 @@ declare module "axios" {
 
 const TOKEN_EXPIRED_CODE = 40199
 const TOKEN_INVALID_CODE = 40100
-const LOGIN_PATH = "/auth/login"
+
+// Next.js basePath. fetch/axios/window.location do NOT auto-prepend basePath like
+// Next.js Link/router does, so we must prepend it here for every internal-API call.
+const BASE_PATH = "/atlas"
+const LOGIN_PATH = `${BASE_PATH}/auth/login`
+const SESSION_PATH = `${BASE_PATH}/api/auth/session`
+const LOGOUT_PATH = `${BASE_PATH}/api/auth/logout`
+const REFRESH_PATH = `${BASE_PATH}/api/auth/refresh`
 
 // ---- Session cache: dedupe concurrent /api/auth/session fetches ----
 type SessionJSON = { access_token?: string | null; refresh_token?: string | null }
@@ -31,7 +38,7 @@ async function fetchSessionJSON(): Promise<SessionJSON> {
 	sessionCacheAt = now
 	sessionPromise = (async () => {
 		try {
-			const res = await fetch("/api/auth/session")
+			const res = await fetch(SESSION_PATH)
 			if (!res.ok) return {}
 			if (!res.headers.get("content-type")?.includes("application/json")) return {}
 			return (await res.json()) as SessionJSON
@@ -76,7 +83,7 @@ BaseService.interceptors.request.use(
 
 const logout = async () => {
 	try {
-		await axios.post("/api/auth/logout", {})
+		await axios.post(LOGOUT_PATH, {})
 	} catch {
 		// ignore API failure — always redirect
 	}
@@ -103,7 +110,7 @@ async function handleTokenExpired(error: AxiosError) {
 	isRefreshing = true
 	try {
 		const { refresh_token } = await fetchSessionJSON()
-		await axios.post("/api/auth/refresh", { refresh_token })
+		await axios.post(REFRESH_PATH, { refresh_token })
 		invalidateSessionCache()
 		isRefreshing = false
 		notifyRefreshed()

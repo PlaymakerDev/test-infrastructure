@@ -36,7 +36,7 @@ const StatusDetailContent: React.FC = () => {
             <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
               {detail || '67 - ชม.3028(31) ป้าย 1 : กม.0+300'}
             </p>
-            <img src="/images/statistics/icbt.png" alt="" width={25} height={25} />
+            <img src="/atlas/images/statistics/icbt.png" alt="" width={25} height={25} />
             <div style={{
               height: 22, borderRadius: 88,
               border: '1px solid #05F2DB',
@@ -53,7 +53,7 @@ const StatusDetailContent: React.FC = () => {
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src="/images/statistics/iconconnect.png" alt="" width={12} height={12} />
+              <img src="/atlas/images/statistics/iconconnect.png" alt="" width={12} height={12} />
               <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
                 ออนไลน์
               </span>
@@ -74,7 +74,7 @@ const StatusDetailContent: React.FC = () => {
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src="/images/statistics/icand.png" alt="" width={12} height={12} />
+              <img src="/atlas/images/statistics/icand.png" alt="" width={12} height={12} />
               <span style={{ fontSize: 10, fontWeight: 500, color: '#000000' }}>
                 Anydesk : 1194336831
               </span>
@@ -100,7 +100,7 @@ const StatusDetailContent: React.FC = () => {
         <div className="flex flex-col flex-1 gap-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4" style={{ alignContent: 'start' }}>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #66AEFF' }}>
-              <img src="/images/statistics/icc1.png" alt="" width={40} height={40} />
+              <img src="/atlas/images/statistics/icc1.png" alt="" width={40} height={40} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#66AEFF', marginTop: 8 }}>สถานะการทำงานของป้าย</p>
               <p style={{ fontSize: 32, fontWeight: 700, color: '#FFFFFF', marginTop: 4 }}>ทำงานปกติ</p>
             </div>
@@ -111,25 +111,25 @@ const StatusDetailContent: React.FC = () => {
               <p style={{ fontSize: 10, fontWeight: 400, color: '#999999' }}>อัพเดรตล่าสุด : 20 เม.ย. 2569 13:32:30</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E98B4C' }}>
-              <img src="/images/statistics/icc3.png" alt="" width={40} height={40} />
+              <img src="/atlas/images/statistics/icc3.png" alt="" width={40} height={40} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E98B4C', marginTop: 8 }}>Traffic Camera</p>
               <p style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 4 }}>Connect</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E9D44C' }}>
-              <img src="/images/statistics/icc4.png" alt="" width={40} height={40} />
+              <img src="/atlas/images/statistics/icc4.png" alt="" width={40} height={40} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E9D44C', marginTop: 8 }}>Number Of Formats</p>
               <p style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Inter', color: '#FFFFFF', marginTop: 4 }}>5</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #AFE94C' }}>
-              <img src="/images/statistics/icc5.png" alt="" width={40} height={40} />
+              <img src="/atlas/images/statistics/icc5.png" alt="" width={40} height={40} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#AFE94C', marginTop: 8 }}>VMS Format</p>
               <p style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Inter', color: '#FFFFFF', marginTop: 4 }}>MP4</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <img src="/images/statistics/card1.png" alt="" style={{ flex: 1, borderRadius: 12, minWidth: 0 }} />
+            <img src="/atlas/images/statistics/card1.png" alt="" style={{ flex: 1, borderRadius: 12, minWidth: 0 }} />
             <div style={{ flex: 1, borderRadius: 12, position: 'relative', minWidth: 0 }}>
-              <img src="/images/statistics/card2.png" alt="" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
+              <img src="/atlas/images/statistics/card2.png" alt="" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
               <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 600, borderRadius: 8, backgroundColor: '#000000CC', padding: '8px 12px' }}>
                 <p style={{ fontSize: 12, fontWeight: 400, color: '#FFFFFF' }}>
                   67FTD-CMI3035-P001-จุดที่11Wim-กม.7+580-มุ่งหน้า อ.เมืองเชียงใหม่

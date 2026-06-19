@@ -96,10 +96,10 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   className='inline-flex items-center gap-1.5 text-[14px] font-normal whitespace-nowrap'
                   style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #FCD116', color: '#FCD116', minWidth: 70, textAlign: 'center' }}
                 >
-                  <img src='/images/Maintenance/icrpyellow.png' alt='' width={15} height={15} />
+                  <img src='/atlas/images/Maintenance/icrpyellow.png' alt='' width={15} height={15} />
                   <span style={{ marginTop: 2 }}>5</span>
                 </span>
-                <img src='/images/statistics/icbt.png' alt='' width={30} height={30} className='shrink-0' />
+                <img src='/atlas/images/statistics/icbt.png' alt='' width={30} height={30} className='shrink-0' />
                 <button
                   className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
                   style={{ background: '#66AEFF', color: '#0A0A0A' }}
@@ -219,38 +219,38 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               <div style={{ display: 'flex', gap: 16, height: 200 }}>
                 <div style={{ flex: 55, backgroundColor: '#191919', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+                    <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
                     <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลโครงการ</p>
                   </div>
                   <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>GS - CCTV+AI สะพานสมเด็จพระเจ้าตากสินมหาราช เขตคลองสาน, สาทร, บางรัก กทม.</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ผู้รับจ้าง</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>FTD</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>หน่วยงานรับผิดชอบ</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>บทช.กัลปพฤกษ์</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เลขที่สัญญา</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>สบธ.88/2566</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เริ่มต้นการรับประกัน</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>22 ก.พ. 2566</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สิ้นสุดการรับประกัน</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>22 มิ.ย. 2568</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สถานะค้ำประกัน</p>
                       <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>หมดค้ำ</p>
                     </div>
@@ -258,33 +258,33 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 </div>
                 <div style={{ flex: 45, backgroundColor: '#191919', borderRadius: 12, padding: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+                    <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
                     <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลอุปกรณ์</p>
                   </div>
                   <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>{selectedRecord.hostname}</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ประเภทอุปกรณ์</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>CCTV</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จุดติดตั้ง / สายทาง</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>สะพานตากสิน</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>IP Address</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>192.168.3.170</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>วันที่เริ่มออฟไลน์</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>26 ก.พ. 2569</p>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                      <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                       <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จำนวนวันออฟไลน์</p>
                       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>58 วัน</p>
                     </div>
@@ -371,8 +371,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   <div style={{ marginBottom: 16 }}>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>ก่อนซ่อม</p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <img src='/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
-                      <img src='/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
+                      <img src='/atlas/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
+                      <img src='/atlas/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
                       <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                         <TbFileText size={24} color='#000000' />
                         <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
@@ -383,8 +383,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   <div>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>หลังซ่อม</p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <img src='/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
-                      <img src='/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
+                      <img src='/atlas/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
+                      <img src='/atlas/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
                     </div>
                   </div>
                 </div>

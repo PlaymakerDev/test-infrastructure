@@ -27,8 +27,8 @@ export interface ThailandMaskLayerProps {
  * Province dim/highlight is hidden until `highlightedProvinceCode` is provided.
  */
 const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
-  thailandUrl = '/data/thailand.geojson',
-  provincesUrl = '/data/th-provinces.geojson',
+  thailandUrl = '/atlas/data/thailand.geojson',
+  provincesUrl = '/atlas/data/th-provinces.geojson',
   highlightedProvinceCode,
   maskColor = '#0E0D0D',
   maskOpacity = 0.8,

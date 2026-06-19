@@ -48,10 +48,10 @@ const COMPARISON_MOCK_DATA: ComparisonRecord[] = [
 ]
 
 const STATUS_CARDS: StatCard[] = [
-  { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '53', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
-  { borderColor: '#666BFF', icon: '/images/statistics/c2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#666BFF', value: '16', unit: 'เหตุการณ์', sub: 'สทช. 10 (เชียงใหม่) (72.1%)' },
-  { borderColor: '#C300FF', icon: '/images/statistics/c3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#C300FF', value: '45', unit: 'หน่วยงาน', sub: 'แขวงทางหลวงชนบทเชียงใหม่ (4 เหตุการณ์)' },
-  { borderColor: '#FC1691', icon: '/images/statistics/c4.png', label: 'หมวดหมู่ยอดนิยม', labelColor: '#FC1691', value: 'การท่องเที่ยว', sub: 'การท่องเที่ยว · 36 จุดติดตั้ง' },
+  { borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '53', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
+  { borderColor: '#666BFF', icon: '/atlas/images/statistics/c2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#666BFF', value: '16', unit: 'เหตุการณ์', sub: 'สทช. 10 (เชียงใหม่) (72.1%)' },
+  { borderColor: '#C300FF', icon: '/atlas/images/statistics/c3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#C300FF', value: '45', unit: 'หน่วยงาน', sub: 'แขวงทางหลวงชนบทเชียงใหม่ (4 เหตุการณ์)' },
+  { borderColor: '#FC1691', icon: '/atlas/images/statistics/c4.png', label: 'หมวดหมู่ยอดนิยม', labelColor: '#FC1691', value: 'การท่องเที่ยว', sub: 'การท่องเที่ยว · 36 จุดติดตั้ง' },
 ]
 
 const StatusSection: React.FC = () => {

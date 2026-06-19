@@ -34,7 +34,7 @@ const AlertDetailContent: React.FC = () => {
             <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
               {detail || '67 - ชม.3028(31) ป้าย 1 : กม.0+300'}
             </p>
-            <img src="/images/statistics/icbt.png" alt="" width={25} height={25} />
+            <img src="/atlas/images/statistics/icbt.png" alt="" width={25} height={25} />
             <div style={{
               height: 22, borderRadius: 88,
               border: '1px solid #05F2DB',
@@ -51,7 +51,7 @@ const AlertDetailContent: React.FC = () => {
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src="/images/statistics/iconconnect.png" alt="" width={12} height={12} />
+              <img src="/atlas/images/statistics/iconconnect.png" alt="" width={12} height={12} />
               <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
                 ออนไลน์
               </span>
@@ -100,35 +100,35 @@ const AlertDetailContent: React.FC = () => {
               <p style={{ fontSize: 10, fontWeight: 400, color: '#999999', marginTop: 2 }}>อัพเดรตล่าสุด : 20 เม.ย. 2569 13:32:30</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E98B4C' }}>
-              <img src="/images/statistics/ct2.png" alt="" width={30} height={30} />
+              <img src="/atlas/images/statistics/ct2.png" alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E98B4C', marginTop: 8 }}>Line Check</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>FAIL</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E9D44C' }}>
-              <img src="/images/statistics/ct3.png" alt="" width={30} height={30} />
+              <img src="/atlas/images/statistics/ct3.png" alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E9D44C', marginTop: 8 }}>Circuit</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>OK</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #AFE94C' }}>
-              <img src="/images/statistics/ct4.png" alt="" width={30} height={30} />
+              <img src="/atlas/images/statistics/ct4.png" alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#AFE94C', marginTop: 8 }}>Volt / Amp</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>OK</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #4CE99A' }}>
-              <img src="/images/statistics/ct5.png" alt="" width={30} height={30} />
+              <img src="/atlas/images/statistics/ct5.png" alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#4CE99A', marginTop: 8 }}>สถานะสาย</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>Connect</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #4CD1E9' }}>
-              <img src="/images/statistics/ct6.png" alt="" width={30} height={30} />
+              <img src="/atlas/images/statistics/ct6.png" alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#4CD1E9', marginTop: 8 }}>สถานะวงจร</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>Disconnect</span>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <img src="/images/statistics/c1ex.png" alt="" style={{ flex: 1, borderRadius: 12, minWidth: 0 }} />
+            <img src="/atlas/images/statistics/c1ex.png" alt="" style={{ flex: 1, borderRadius: 12, minWidth: 0 }} />
             <div style={{ flex: 1, borderRadius: 12, position: 'relative', minWidth: 0 }}>
-              <img src="/images/statistics/c2ex.png" alt="" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
+              <img src="/atlas/images/statistics/c2ex.png" alt="" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
             </div>
           </div>
           <AlertDetailTable />

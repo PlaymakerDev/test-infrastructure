@@ -326,7 +326,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             {/* รูป */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src={selectedDevice?.warranty === 'ในค้ำ' ? '/images/Maintenance/icmd2.png' : '/images/Maintenance/icmd1.png'}
+                src={selectedDevice?.warranty === 'ในค้ำ' ? '/atlas/images/Maintenance/icmd2.png' : '/atlas/images/Maintenance/icmd1.png'}
                 alt='maintenance'
                 style={{ width: 100, height: 100, objectFit: 'contain' }}
               />

@@ -41,7 +41,7 @@ const AuthScreen: React.FC<Props> = (props) => {
       loading: true
     }))
     try {
-      const response = await axios.post('/api/auth/login', value)
+      const response = await axios.post('/atlas/api/auth/login', value)
       if (response.status === 200) {
         // UPON FINISH
         const path = menu["ADMIN"]

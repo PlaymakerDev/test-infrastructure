@@ -285,7 +285,7 @@ const RepairRecordsSection: React.FC = () => {
       className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
       style={{ padding: '2px 12px', borderRadius: 9999, border: `1px solid ${color}`, color, minWidth: 70, textAlign: 'center' }}
     >
-      <img src={`/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
+      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
       <span style={{ marginTop: 2 }}>{count}</span>
     </span>
   )

@@ -43,19 +43,19 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle }) => {
               >
                 หมดค้ำ
               </span>
-              <img src='/images/statistics/icbt.png' alt='' width={30} height={30} className='shrink-0' />
+              <img src='/atlas/images/statistics/icbt.png' alt='' width={30} height={30} className='shrink-0' />
               <span
                 className='inline-flex items-center gap-1.5 text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 70, textAlign: 'center' }}
               >
-                <img src='/images/Maintenance/icrpblue.png' alt='' width={15} height={15} />
+                <img src='/atlas/images/Maintenance/icrpblue.png' alt='' width={15} height={15} />
                 <span style={{ marginTop: 2 }}>49</span>
               </span>
               <span
                 className='inline-flex items-center gap-1.5 text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 70, textAlign: 'center' }}
               >
-                <img src='/images/Maintenance/icrpred.png' alt='' width={15} height={15} />
+                <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={15} height={15} />
                 <span style={{ marginTop: 2 }}>30</span>
               </span>
               <button

@@ -384,7 +384,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingTop: 8 }}>
-                <img src='/images/Maintenance/iccf.png' alt='' width={30} height={30} />
+                <img src='/atlas/images/Maintenance/iccf.png' alt='' width={30} height={30} />
                 <div>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: 0 }}>บันทึกแจ้งซ่อม</p>
                   <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: 0, marginTop: -4 }}>เพิ่มรายละเอียดปัญหาหรือสาเหตุที่พบ แนบรูปภาพหรือวิดีโอ</p>
@@ -456,7 +456,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                       placeholder='กรุณาเลือกวันที่...'
                       format='DD MMM BBBB'
                       style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10 }}
-                      suffixIcon={<img src='/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
+                      suffixIcon={<img src='/atlas/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
                       value={formData.reportDate ? dayjs(formData.reportDate, 'DD MMM BBBB', 'th') : null}
                       onChange={(date) => setFormData(prev => ({ ...prev, reportDate: date ? date.format('DD MMM BBBB') : '' }))}
                     />
@@ -467,7 +467,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                       placeholder='กรุณาเลือกวันที่...'
                       format='DD MMM BBBB'
                       style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10 }}
-                      suffixIcon={<img src='/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
+                      suffixIcon={<img src='/atlas/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
                       value={formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th') : null}
                       onChange={(date) => setFormData(prev => ({ ...prev, inspectDate: date ? date.format('DD MMM BBBB') : '' }))}
                     />
@@ -493,7 +493,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
               >
-                <img src='/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
+                <img src='/atlas/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
@@ -506,7 +506,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                       style={{ background: '#2A2A2A' }}
                     >
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
+                        <img src='/atlas/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
                       </div>
                       <div
                         className={styles.imagePreviewOverlay}
@@ -531,7 +531,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
               >
-                <img src='/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
+                <img src='/atlas/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
@@ -544,7 +544,7 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
                       style={{ background: '#2A2A2A' }}
                     >
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
+                        <img src='/atlas/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
                       </div>
                       <div
                         className={styles.imagePreviewOverlay}
@@ -637,38 +637,38 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+              <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลโครงการ</p>
             </div>
             <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{project.projectName}</p>
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ผู้รับจ้าง</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{project.contractor}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>หน่วยงานรับผิดชอบ</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{project.agency}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เลขที่สัญญา</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{project.contractNo}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เริ่มต้นการรับประกัน</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{project.warrantyStart}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สิ้นสุดการรับประกัน</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{project.warrantyEnd}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สถานะค้ำประกัน</p>
                 <p style={{ color: project.warrantyStatus === 'expired' ? '#E94C4C' : '#66AEFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>
                   {project.warrantyStatus === 'expired' ? 'หมดค้ำ' : 'ในค้ำ'}
@@ -684,40 +684,40 @@ const MaintenanceCaseScreen: React.FC<Props> = ({ id }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+              <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลอุปกรณ์</p>
             </div>
             <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{device.deviceName}</p>
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ประเภทอุปกรณ์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{device.deviceType}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จุดติดตั้ง / สายทาง</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{device.installPoint}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>IP Address</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{device.ipAddress}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>วันที่เริ่มออฟไลน์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{device.offlineDate || '-'}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src='/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จำนวนวันออฟไลน์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>{device.offlineDays > 0 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>
               {device.hasLive && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                    <img src='/images/Maintenance/iclive.png' alt='' width={30} height={30} />
+                    <img src='/atlas/images/Maintenance/iclive.png' alt='' width={30} height={30} />
                     <p style={{ color: '#000000', fontWeight: 400, fontSize: 14, margin: 0 }}>Live</p>
                   </div>
                 </div>

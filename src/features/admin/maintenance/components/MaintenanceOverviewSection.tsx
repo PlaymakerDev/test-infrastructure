@@ -52,7 +52,7 @@ const MaintenanceOverviewSection: React.FC = () => {
     <div className="mt-6 grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
         <div className="rounded-[20px] bg-[#191919] p-5 self-start">
           <div className="flex items-center gap-2">
-            <img src="/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} />
+            <img src="/atlas/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} />
             <h2 className="text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
           <p className="text-xs font-normal text-[#979797] mt-1">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
@@ -82,7 +82,7 @@ const MaintenanceOverviewSection: React.FC = () => {
         </div>
         <div className="rounded-[20px] bg-[#191919] p-5 lg:row-span-3">
           <div className="flex items-center gap-2">
-            <img src="/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} />
+            <img src="/atlas/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} />
             <h2 className="text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
           </div>
           <div className="mt-5 flex items-center gap-2">
@@ -143,20 +143,20 @@ const MaintenanceOverviewSection: React.FC = () => {
         </div>
       <div className="rounded-[20px] bg-[#191919] p-5 self-start">
         <div className="flex items-center gap-2">
-          <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} />
+          <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} />
           <h2 className="text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
         </div>
         <p className="text-xs font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
         <div className="mt-2 flex">
           {[
-            { value: '173', label: 'โครงการ', icon: '/images/Maintenance/icc1.png' },
-            { value: '1,093', label: 'จุดติดตั้ง', icon: '/images/Maintenance/icc2.png' },
-            { value: '6,113', label: 'อุปกรณ์', icon: '/images/Maintenance/icc3.png' },
-            { value: '4,191', label: 'ออนไลน์', icon: '/images/statistics/iconconnect.png', color: '#66AEFF' },
-            { value: '1,922', label: 'ออฟไลน์', icon: '/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-            { value: '253', label: 'เปิด Case', icon: '/images/Maintenance/icc6.png', color: '#FF9D00' },
-            { value: '126', label: 'กำลังดำเนินการ', icon: '/images/Maintenance/icc7.png', color: '#B2FF00' },
-            { value: '26', label: 'ปิด Case', icon: '/images/Maintenance/icc8.png', color: '#05F2DB' },
+            { value: '173', label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
+            { value: '1,093', label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
+            { value: '6,113', label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
+            { value: '4,191', label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
+            { value: '1,922', label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
+            { value: '253', label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
+            { value: '126', label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
+            { value: '26', label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
           ].map((item, i, arr) => (
             <div
               key={item.label}
@@ -174,20 +174,20 @@ const MaintenanceOverviewSection: React.FC = () => {
       </div>
       <div className="rounded-[20px] bg-[#191919] p-5 self-start">
         <div className="flex items-center gap-2">
-          <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} />
+          <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} />
           <h2 className="text-[32px] font-bold text-[#05F2DB]">งานหมดค้ำ</h2>
         </div>
         <p className="text-xs font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
         <div className="mt-2 flex">
           {[
-            { value: '173', label: 'โครงการ', icon: '/images/Maintenance/icc1.png' },
-            { value: '1,093', label: 'จุดติดตั้ง', icon: '/images/Maintenance/icc2.png' },
-            { value: '6,113', label: 'อุปกรณ์', icon: '/images/Maintenance/icc3.png' },
-            { value: '4,191', label: 'ออนไลน์', icon: '/images/statistics/iconconnect.png', color: '#66AEFF' },
-            { value: '1,922', label: 'ออฟไลน์', icon: '/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-            { value: '253', label: 'เปิด Case', icon: '/images/Maintenance/icc6.png', color: '#FF9D00' },
-            { value: '126', label: 'กำลังดำเนินการ', icon: '/images/Maintenance/icc7.png', color: '#B2FF00' },
-            { value: '26', label: 'ปิด Case', icon: '/images/Maintenance/icc8.png', color: '#05F2DB' },
+            { value: '173', label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
+            { value: '1,093', label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
+            { value: '6,113', label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
+            { value: '4,191', label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
+            { value: '1,922', label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
+            { value: '253', label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
+            { value: '126', label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
+            { value: '26', label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
           ].map((item, i, arr) => (
             <div
               key={item.label}

@@ -4,7 +4,7 @@ import React from 'react'
 
 interface Props { }
 
-const TRUCK_IMG = '/images/vehicles/placeholder/truck-icon.svg'
+const TRUCK_IMG = '/atlas/images/vehicles/placeholder/truck-icon.svg'
 
 const CardDailyOverweight: React.FC<Props> = (props) => {
   const { } = props
