@@ -29,7 +29,8 @@ const Content = (props: ContentProps) => {
 
   const warrantyDays = (() => {
     if (!data?.warranty_start_date || !data?.warranty_end_date) return null
-    const diff = dayjs(data.warranty_end_date).diff(dayjs(data.warranty_start_date), 'day')
+    const diff = dayjs(data.warranty_end_date, 'DD MMMM YYYY').diff(dayjs(data.warranty_start_date, 'DD MMMM YYYY'), 'day')
+    if (diff <= 0) return "สิ้นสุดการรับประกัน"
     return isNaN(diff) ? null : diff
   })()
 
@@ -83,10 +84,10 @@ const Content = (props: ContentProps) => {
         </div>
 
         <div className='flex flex-col items-center text-center'>
-          <TbHourglass className='fs-22 text-teal-400 mb-2' />
+          <TbHourglass className={`fs-22 ${(warrantyDays !== "สิ้นสุดการรับประกัน" && warrantyDays !== null) ? 'text-teal-400' : 'text-red-400'} mb-2`} />
           <p className='fs-11 text-gray-400 mb-0.5'>ระยะเวลาที่เหลือ</p>
-          <p className='fs-12 text-teal-400 mb-0'>
-            {warrantyDays !== null ? `${warrantyDays} วัน` : '-'}
+          <p className={`fs-12 ${(warrantyDays !== "สิ้นสุดการรับประกัน" && warrantyDays !== null) ? 'text-teal-400' : 'text-red-400'} mb-0`}>
+            {warrantyDays !== null ? `${warrantyDays} วัน` : warrantyDays === "สิ้นสุดการรับประกัน" ? "สิ้นสุดการรับประกัน" : '-'}
           </p>
         </div>
 

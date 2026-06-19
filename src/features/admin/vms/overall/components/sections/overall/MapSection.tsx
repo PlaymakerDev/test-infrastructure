@@ -3,10 +3,15 @@ import BaseMap from '@/components/map/BaseMap'
 import { useMap } from '@/components/map/hooks/useMap'
 import MarkerLayer from '@/components/map/primitives/MarkerLayer'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
-// import { useAppSelector } from '@/stores/hooks'
 import { Location } from '@/types/vms/overview-api'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo } from 'react'
+import { Button, ConfigProvider } from 'antd'
+import { theme } from '@/configs/antd/themeConfig'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
@@ -22,32 +27,61 @@ const toGeoJSON = (locations: Location[]): VmsFeatureCollection => {
         solution_name: loc.solution.solution_name,
         code_name: loc.road.code_name,
         is_online: loc.vms.status.is_online,
+        is_warranty: loc.warranty.is_warranty,
         status_name: loc.vms.status.name,
         last_connected: loc.vms.last_connected,
+        hls_url: loc.vms.hls_url,
+        anydesk: loc.vms.anydesk,
+        camera_id: loc.vms.camera?.id ?? null,
+        camera_hls_url: loc.vms.camera?.hls_url ?? null,
       },
       geometry: { type: 'Point', coordinates: loc.GeometryPoint },
     })),
   }
 }
 
-const VMSPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean }> = ({ feature, isOnline }) => {
+interface VMSPopupProps {
+  feature: GeoJSON.Feature
+  isOnline: boolean
+  dispatch: ReturnType<typeof useAppDispatch>
+  onNavigate: (path: string) => void
+}
+
+const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, dispatch, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${isOnline ? 'border-cyan-400' : 'border-red-500'}`}>
-      <p className={`fs-11 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
-        VMS · {String(p.code_name)}
-      </p>
-      <p className="fs-14 font-semibold text-white leading-snug mt-0.5">
-        {String(p.solution_name)}
-      </p>
-      <p className={`fs-11 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
-        ● {String(p.status_name)}
-      </p>
-      {!!p.last_connected && (
-        <p className="fs-11 text-slate-500 mt-0.5">
-          เชื่อมต่อล่าสุด: {String(p.last_connected)}
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${isOnline ? 'border-cyan-400' : 'border-red-500'}`}>
+      <section>
+        <HLSLivePlayer
+          cameraId={String(p.camera_id ?? p.id)}
+          hlsUrl={String(p.camera_hls_url ?? p.hls_url)}
+          enableViewportPause
+          figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: String(p.camera_id) }))}
+        />
+      </section>
+      <section className='mt-1.5'>
+        <h5>{String(p.solution_name)}</h5>
+        <p className='fs-11 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
+        <p className={`fs-11 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
+          ● {String(p.status_name)}
         </p>
-      )}
+        <p className="fs-11 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
+      </section>
+      <section className='mt-1.5'>
+        <ConfigProvider theme={{ ...theme.theme }}>
+          <Button
+            htmlType='button'
+            type='primary'
+            size='small'
+            shape='round'
+            block
+            onClick={() => onNavigate(`/admin/vms/detail/${p.id}?is_warranty=${p.is_warranty}&is_online=${p.is_online}`)}
+          >
+            <p className='fs-11'>ดูเพิ่มเติม</p>
+          </Button>
+        </ConfigProvider>
+      </section>
     </div>
   )
 }
@@ -62,6 +96,8 @@ interface MarkerLayerGroupProps {
 
 const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, isReady }) => {
   const { map, isLoaded } = useMap()
+  const dispatch = useAppDispatch()
+  const router = useRouter()
 
   useEffect(() => {
     if (!map || !isLoaded || !isReady) return
@@ -88,7 +124,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
         cluster
         color="#22d3ee"
         size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={true} />}
+        popup={(f) => <VMSPopup feature={f} isOnline={true} dispatch={dispatch} onNavigate={router.push} />}
         popupOptions={{ offset: 10, closeButton: false }}
       />
       <MarkerLayer
@@ -97,7 +133,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
         cluster
         color="#ef4444"
         size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={false} />}
+        popup={(f) => <VMSPopup feature={f} isOnline={false} dispatch={dispatch} onNavigate={router.push} />}
         popupOptions={{ offset: 10, closeButton: false }}
       />
     </>
@@ -112,9 +148,6 @@ interface Props {
 
 const MapSection: React.FC<Props> = (props) => {
   const { deptId } = props
-  // const { vms_overview, task_schedules } = useAppSelector(state => state.vms_overview)
-  // const { loading, status } = task_schedules.vms_overview
-  // const isReady = status === 'SUCCESS'
 
   const { data, isLoading, isSuccess } = useQuery({
     queryKey: ['vms_overview'],
