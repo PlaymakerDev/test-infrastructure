@@ -1,10 +1,11 @@
-import { Image } from 'antd'
 import React from 'react'
 import { TbLayoutGrid } from 'react-icons/tb'
 import { useControlVMSContext } from '../../../context'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { ModalVMSScreen } from '../../../components'
 
 const DetailVMSSign: React.FC = () => {
-  const { bureauSign } = useControlVMSContext()
+  const { bureauSign, setOpenVMSScreen } = useControlVMSContext()
 
   return (
     <div className="h-full bg-(--gray) rounded-lg p-5">
@@ -16,21 +17,23 @@ const DetailVMSSign: React.FC = () => {
         </div>
       </div>
 
-      {bureauSign?.vms_img ? (
+      {bureauSign?.desktop_screen ? (
         <figure className='figure-large rounded-lg overflow-hidden'>
-          <Image
-            src={bureauSign.vms_img}
-            alt={bureauSign.name}
-            width={"100%"}
-            height={"100%"}
-            className='object-cover object-center'
+          <HLSLivePlayer
+            hlsUrl={bureauSign.desktop_screen}
+            figureClassName='w-full h-full cursor-pointer'
+            showLiveBadge={true}
+            enableViewportPause={true}
+            cameraId={String(bureauSign.solution_id)}
+            onClick={() => setOpenVMSScreen({ open: true, data: bureauSign })}
           />
         </figure>
       ) : (
         <div className='figure-large rounded-lg bg-(--mid-gray) flex items-center justify-center'>
-          <p className='text-gray-500 fs-12'>ไม่มีรูปภาพ</p>
+          <p className='text-gray-500 fs-12'>ไม่มีสตรีม</p>
         </div>
       )}
+      <ModalVMSScreen />
     </div>
   )
 }

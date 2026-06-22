@@ -1,7 +1,7 @@
 import { Button } from 'antd'
 import React from 'react'
 import { TbLayoutGrid } from 'react-icons/tb'
-import { DetailTabContent } from '../../../components'
+import { DetailTabContent, ModalDetailItemStorage } from '../../../components'
 import { useControlVMSContext } from '../../../context'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 
 const DetailItemStorage: React.FC<Props> = (props) => {
   const { } = props
-  const { isAddMode } = useControlVMSContext()
+  const { isAddMode, setOpenMediaModal } = useControlVMSContext()
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -23,7 +23,7 @@ const DetailItemStorage: React.FC<Props> = (props) => {
           </div>
         </div>
         {!isAddMode && (
-          <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!'>
+          <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setOpenMediaModal({ open: true })}>
             <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         )}
@@ -34,12 +34,13 @@ const DetailItemStorage: React.FC<Props> = (props) => {
       {isAddMode && (
         <section className='mt-5'>
           <div className='text-center'>
-            <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!'>
+            <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setOpenMediaModal({ open: true })}>
               <p className='fs-12'>ดูเพิ่มเติม</p>
             </Button>
           </div>
         </section>
       )}
+      <ModalDetailItemStorage />
     </div>
   )
 }

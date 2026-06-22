@@ -1,7 +1,7 @@
 "use client"
 import { Button, Empty } from 'antd'
 import React, { useMemo, useState } from 'react'
-import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
+import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from 'react-icons/tb'
 import { DetailSection, DrawerSearchSection, MapAndDetailSection, SearchSection } from '../components'
 import { useControlVMSContext } from '../context'
 
@@ -11,14 +11,14 @@ const VMSSection: React.FC = () => {
   const { bureauSign } = useControlVMSContext()
 
   const renderDetailSection = useMemo(() => {
-    if (!bureauSign?.id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
+    if (!bureauSign?.solution_id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
     return <DetailSection />
-  }, [bureauSign?.id])
+  }, [bureauSign?.solution_id])
 
   const renderMapAndDetailSection = useMemo(() => {
-    if (!bureauSign?.id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
+    if (!bureauSign?.solution_id) return <Empty description='ไม่พบข้อมูลป้าย VMS' />
     return <MapAndDetailSection />
-  }, [bureauSign?.id])
+  }, [bureauSign?.solution_id])
 
   return (
     <>

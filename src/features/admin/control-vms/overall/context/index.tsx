@@ -3,6 +3,7 @@ import { BureauItem, BureauRoute, BureauSign, BureauState } from '@/components/l
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
+  // BUREAU
   mediaExpanded: boolean;
   setMediaExpanded: (v: boolean) => void;
   bureau: BureauItem | null;
@@ -15,6 +16,24 @@ export interface ContextProps {
   setBureauSign: (s: BureauSign | null) => void;
   isAddMode: boolean;
   setAddMode: (v: boolean) => void;
+  // VMS SCREEN
+  openVMSScreen: ModalVMSScreenProps
+  setOpenVMSScreen: React.Dispatch<React.SetStateAction<ModalVMSScreenProps>>
+  // VMS ID LIST
+  vmsIdList: number[]
+  setVMSIdList: React.Dispatch<React.SetStateAction<number[]>>
+  // VMS MEDIA
+  openMediaModal: ModalMediaProps
+  setOpenMediaModal: React.Dispatch<React.SetStateAction<ModalMediaProps>>
+}
+
+export interface ModalVMSScreenProps {
+  open: boolean
+  data?: BureauSign | null
+}
+
+export interface ModalMediaProps {
+  open: boolean
 }
 
 export interface PageProviderProps {
@@ -23,46 +42,79 @@ export interface PageProviderProps {
 
 export const ControlVMSContext = createContext<ContextProps | null>(null)
 
+export const INIT_VMS_SCREEN: ModalVMSScreenProps = {
+  open: false,
+  data: {
+    vms_id: 0,
+    solution_id: 0,
+    solution_name: '',
+    desktop_screen: '',
+    last_connected: '',
+    camera_online_count: 0,
+    camera_offline_count: 0,
+    anydesk: '',
+    geo_point: [],
+    is_online: false,
+    project: {
+      budget_year: 0,
+      contract_no: '',
+      id: 0,
+      name: '',
+      project_name: ''
+    }
+  }
+}
+
+export const INIT_MEDIA_MODAL: ModalMediaProps = {
+  open: false
+}
+
 export const ControlVMSProvider = (props: PageProviderProps) => {
   const { children } = props
   const [mediaExpanded, setMediaExpanded] = useState(false)
   const [bureau, setBureau] = useState<BureauItem | null>({
-    id: '',
-    title: '',
-    total_active: 0,
-    total_inactive: 0,
-    latitude: 0,
-    longitude: 0,
-    state: []
+    department_id: 0,
+    department_short_name: '',
+    camera_online_count: 0,
+    camera_offline_count: 0,
+    sub_department: []
   })
   const [bureauState, setBureauState] = useState<BureauState | null>({
-    id: '',
-    title: '',
-    total_active: 0,
-    total_inactive: 0,
-    latitude: 0,
-    longitude: 0,
-    route: []
+    department_id: 0,
+    department_short_name: '',
+    camera_online_count: 0,
+    camera_offline_count: 0,
+    roads: []
   })
   const [bureauRoute, setBureauRoute] = useState<BureauRoute | null>({
-    id: '',
-    title: '',
-    total_active: 0,
-    total_inactive: 0,
-    latitude: 0,
-    longitude: 0,
-    sign: []
+    road_id: 0,
+    road_name: '',
+    road_code: '',
+    solution: []
   })
   const [bureauSign, setBureauSign] = useState<BureauSign | null>({
-    id: '',
-    name: '',
+    vms_id: 0,
+    solution_id: 0,
+    solution_name: '',
+    desktop_screen: '',
+    last_connected: '',
+    camera_online_count: 0,
+    camera_offline_count: 0,
     anydesk: '',
-    is_active: false,
-    latitude: 0,
-    longitude: 0,
-    vms_img: ''
+    geo_point: [],
+    is_online: false,
+    project: {
+      budget_year: 0,
+      contract_no: '',
+      id: 0,
+      name: '',
+      project_name: ''
+    }
   })
   const [isAddMode, setAddMode] = useState<boolean>(false)
+  const [openVMSScreen, setOpenVMSScreen] = useState<ModalVMSScreenProps>(INIT_VMS_SCREEN)
+  const [vmsIdList, setVMSIdList] = useState<number[]>([])
+  const [openMediaModal, setOpenMediaModal] = useState<ModalMediaProps>(INIT_MEDIA_MODAL)
 
   return (
     <ControlVMSContext.Provider
@@ -78,7 +130,13 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         bureauSign,
         setBureauSign,
         isAddMode,
-        setAddMode
+        setAddMode,
+        openVMSScreen,
+        setOpenVMSScreen,
+        vmsIdList,
+        setVMSIdList,
+        openMediaModal,
+        setOpenMediaModal
       }}
     >
       {children}

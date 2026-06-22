@@ -21,10 +21,10 @@ const Content = (props: ContentProps) => {
   const { data, roadId } = props
 
   const { data: roadData, isLoading: roadLoading, isError: roadError } = useQuery({
-    queryKey: ['road_detail'],
+    queryKey: ['road_detail', roadId],
     queryFn: () => getDepartmentByRoadAPI({ road_id: Number(roadId)! }),
     enabled: !!roadId,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   const warrantyDays = (() => {
@@ -107,10 +107,10 @@ const ProjectInfoModal: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['contact_detail'],
+    queryKey: ['contact_detail', project_id],
     queryFn: () => getContactDetailAPI(String(project_id)!),
     enabled: !!project_id,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   const renderContent = useMemo(() => {

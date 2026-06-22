@@ -1,9 +1,16 @@
 import { CloudUploadOutlined } from '@ant-design/icons'
-import { Button, Col, ConfigProvider, DatePicker, Input, Radio, Row, Select, Upload, UploadFile } from 'antd'
+import { Button, Col, ConfigProvider, DatePicker, Image, Input, message, Radio, Row, Select, Upload, UploadFile } from 'antd'
 import React, { useCallback } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { TbCopyPlus } from 'react-icons/tb'
 import { useControlVMSContext } from '../../../context'
+import { useAppSelector } from '@/stores/hooks'
+import { APIRequestPostVMSMedia } from '@/types/control-vms/vms-api'
+import dayjs from 'dayjs'
+import { postUploadVMSAPI } from '@/services/routes/SharedService'
+import { postVMSMediaAPI } from '@/services/routes/ControlVMSService'
+import { AxiosError } from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Props {
 
@@ -11,40 +18,95 @@ interface Props {
 
 interface FormValues {
   name: string
-  category: string
+  category: string | null
   display_range: string
   start_date: string
   end_date: string
   display_type: string
   file: UploadFile[]
+  file_url: string
+  text: string
 }
+
 
 const FormAddDetail: React.FC<Props> = (props) => {
   const { } = props
-  const { setAddMode } = useControlVMSContext()
+  const { setAddMode, vmsIdList } = useControlVMSContext()
+  const { media_type } = useAppSelector(state => state.control_vms)
+  const queryClient = useQueryClient()
 
   const form = useForm<FormValues>({
     defaultValues: {
       name: '',
-      category: '',
+      category: null,
       display_range: '',
       start_date: '',
       end_date: '',
-      display_type: '',
-      file: []
+      display_type: 'IMAGE_VIDEO',
+      file: [],
+      file_url: '',
+      text: ''
     }
   })
 
   const {
     control,
+    setValue,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = form
 
-  const onSubmit = useCallback((data: FormValues) => {
-    console.log(data)
-    setAddMode(false)
-  }, [setAddMode])
+  const displayType = useWatch({ control, name: 'display_type' })
+  const fileUrl = useWatch({ control, name: 'file_url' })
+
+  const onSubmit = useCallback(async (data: FormValues) => {
+    const body: APIRequestPostVMSMedia = {
+      media_url: data.display_type === 'IMAGE_VIDEO' ? data.file_url : '',
+      message: data.display_type === 'TEXT' ? data.text : '',
+      setting_type_id: Number(data.category),
+      since: dayjs(data.start_date).format(),
+      to: dayjs(data.end_date).format(),
+      type_name: data.name,
+      vms_ids: vmsIdList.length ? vmsIdList : []  // if no VMS selected, send empty array to avoid error
+    }
+    try {
+      const response = await postVMSMediaAPI(body)
+      if (response.status === 200) {
+        message.success('บันทึกข้อมูลสำเร็จ')
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['setting_type'] }),
+          queryClient.invalidateQueries({ queryKey: ['media_list'] }),
+        ])
+        setAddMode(false)
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
+      } else {
+        console.error(error)
+      }
+    }
+  }, [vmsIdList, setAddMode, queryClient])
+
+  const uploadFile = useCallback(async (file: UploadFile[]) => {
+    setValue('file', [{ ...file[0], status: 'uploading' }])
+    try {
+      const response = await postUploadVMSAPI({ upload: file[0].originFileObj! as unknown as ArrayBuffer })
+      if (response.status === 200) {
+        const path = response.data?.path || ''
+        const fullUrl = `${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${path}`
+        setValue('file_url', path)
+        setValue('file', [{ ...file[0], status: 'done', url: fullUrl, thumbUrl: fullUrl }])
+      }
+    } catch (error) {
+      setValue('file', [{ ...file[0], status: 'error' }])
+      if (error instanceof Error) {
+        message.error(error.message)
+      } else {
+        console.log(error)
+      }
+    }
+  }, [setValue])
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -100,12 +162,14 @@ const FormAddDetail: React.FC<Props> = (props) => {
                         {...field}
                         placeholder='กรุณาเลือกหมวดหมู่...'
                         size='large'
-                        options={[
-                          { label: 'หมวดหมู่ที่ 1', value: 'category1' },
-                          { label: 'หมวดหมู่ที่ 2', value: 'category2' },
-                          { label: 'หมวดหมู่ที่ 3', value: 'category3' },
-                        ]}
+                        options={media_type}
+                        fieldNames={{
+                          label: 'name',
+                          value: 'id'
+                        }}
                         className='w-full'
+                        showSearch
+                        allowClear
                       />
                       {!!errors.category &&
                         <p className='text-red-500'>{errors.category.message}</p>
@@ -120,7 +184,7 @@ const FormAddDetail: React.FC<Props> = (props) => {
 
         <section className='mt-5'>
           <h4 className='mb-3'>ระยะเวลา</h4>
-          <Row gutter={[16, 16]} className='mb-5!'>
+          {/* <Row gutter={[16, 16]} className='mb-5!'>
             <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
               <Controller
                 control={control}
@@ -151,7 +215,7 @@ const FormAddDetail: React.FC<Props> = (props) => {
                 }}
               />
             </Col>
-          </Row>
+          </Row> */}
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
               <Controller
@@ -233,40 +297,118 @@ const FormAddDetail: React.FC<Props> = (props) => {
                 }}
               />
             </Col>
-            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
-              <Controller
-                name="file"
-                control={control}
-                rules={{
-                  required: 'กรุณาอัปโหลดไฟล์'
-                }}
-                render={({ field: { value, onChange, name: fieldName } }) => {
-                  return (
-                    <fieldset>
-                      <label>อัปโหลดไฟล์ <span className='text-red-500'>*</span></label>
-                      <p className='fs-12 text-gray-400 mb-2'>ลากและวางไฟล์ที่นี่เพื่อดำเนินการต่อ</p>
-                      <Upload.Dragger
-                        name={fieldName}
-                        fileList={value}
-                        onChange={({ fileList }) => onChange(fileList)}
-                        beforeUpload={() => false}
-                      >
-                        <p className="ant-upload-drag-icon">
-                          <CloudUploadOutlined />
-                        </p>
-                        <h3>ลากหรือวางไฟล์</h3>
-                        <p className="fs-12 text-gray-400">
-                          ไฟล์วิดีโอรูปแบบ MP4, AVI, MOV หรือไฟล์รูปภาพรูปแบบ JPG, PNG, GIF
-                        </p>
-                      </Upload.Dragger>
-                      {!!errors.file &&
-                        <p className='text-red-500'>{errors.file.message}</p>
-                      }
-                    </fieldset>
-                  )
-                }}
-              />
-            </Col>
+            {displayType === 'IMAGE_VIDEO' ?
+              <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+                <Controller
+                  name="file"
+                  control={control}
+                  rules={{
+                    required: 'กรุณาอัปโหลดไฟล์'
+                  }}
+                  render={({ field: { value, onChange, name: fieldName } }) => {
+                    return (
+                      <fieldset>
+                        <label>อัปโหลดไฟล์ <span className='text-red-500'>*</span></label>
+                        <p className='fs-12 text-gray-400 mb-2'>ลากและวางไฟล์ที่นี่เพื่อดำเนินการต่อ</p>
+                        <Upload.Dragger
+                          name={fieldName}
+                          fileList={value}
+                          listType='picture'
+                          className={value.length ? '[&_.ant-upload]:hidden! [&_.ant-upload]:p-0!' : ''}
+                          maxCount={1}
+                          accept='image/jpeg,image/jpg,image/png,image/gif,video/mp4,video/avi,video/x-msvideo,video/quicktime'
+                          beforeUpload={(file) => {
+                            const allowList = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime']
+                            const isVideo = file.type.startsWith('video/')
+                            const maxFileSize = isVideo ? 200 * 1024 * 1024 : 10 * 1024 * 1024
+                            if (!allowList.includes(file.type)) {
+                              message.error('ประเภทไฟล์ไม่ถูกต้อง')
+                              return Upload.LIST_IGNORE
+                            }
+                            if (file.size > maxFileSize) {
+                              message.error(`ไม่สามารถอัปโหลดไฟล์ได้ ไฟล์ที่อัปโหลดมีขนาดเกิน ${isVideo ? '200 MB' : '10 MB'}`)
+                              return Upload.LIST_IGNORE
+                            }
+                            return false
+                          }}
+                          onChange={({ fileList }) => {
+                            if (!fileList.length) {
+                              onChange([])
+                              setValue('file_url', '')
+                              return
+                            }
+                            const withStatus = fileList.map(f => ({ ...f, status: 'uploading' as const }))
+                            onChange(withStatus)
+                            uploadFile(fileList)
+                          }}
+                        >
+                          {value.length ? null : (
+                            <>
+                              <p className="ant-upload-drag-icon">
+                                <CloudUploadOutlined />
+                              </p>
+                              <h3>ลากหรือวางไฟล์</h3>
+                              <p className="fs-12 text-gray-400">
+                                ไฟล์วิดีโอรูปแบบ MP4, AVI, MOV หรือไฟล์รูปภาพรูปแบบ JPG, PNG, GIF
+                              </p>
+                            </>
+                          )}
+                        </Upload.Dragger>
+                        {!!fileUrl && (
+                          <figure className='figure-extra-large overflow-hidden rounded-lg mt-1.5'>
+                            {value[0]?.type?.startsWith('video/') ? (
+                              <video
+                                src={`${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`}
+                                controls
+                                className='w-full h-full object-cover'
+                              />
+                            ) : (
+                              <Image
+                                src={`${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`}
+                                alt="preview"
+                                width={'100%'}
+                                height={'100%'}
+                                className='object-center object-cover'
+                              />
+                            )}
+                          </figure>
+                        )}
+                        {!!errors.file &&
+                          <p className='text-red-500'>{errors.file.message}</p>
+                        }
+                      </fieldset>
+                    )
+                  }}
+                />
+              </Col>
+              :
+              <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+                <Controller
+                  control={control}
+                  name="text"
+                  rules={{
+                    required: 'กรุณากรอกข้อความ'
+                  }}
+                  render={({ field }) => {
+                    return (
+                      <fieldset>
+                        <label className='text-(--yellow)'>ข้อความ <span className='text-red-500'>*</span></label>
+                        <Input.TextArea
+                          {...field}
+                          name={field.name}
+                          placeholder='กรุณากรอกข้อความ...'
+                          size='large'
+                          rows={4}
+                        />
+                        {!!errors.text &&
+                          <p className='text-red-500'>{errors.text.message}</p>
+                        }
+                      </fieldset>
+                    )
+                  }}
+                />
+              </Col>
+            }
           </Row>
         </section>
 

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useControlVMSContext } from '../../../context';
 import BaseMap from '@/components/map/BaseMap';
+import HTMLMarker from '@/components/map/primitives/HTMLMarker';
 import { TbMapPin } from 'react-icons/tb';
 import { Button, ConfigProvider } from 'antd';
 
@@ -14,27 +15,31 @@ const formatCoords = (lat: number, lng: number): string => {
 
 const MapSection: React.FC<Props> = (props) => {
   const { } = props;
-  const { bureau, bureauRoute, bureauSign } = useControlVMSContext()
+  const { bureauRoute, bureauSign } = useControlVMSContext()
 
-  const hasCoords = bureauSign?.latitude != null && bureauSign?.longitude != null
+  const hasCoords = bureauSign!.geo_point![1]! != null && bureauSign!.geo_point![0]! != null
   const googleMapsUrl = hasCoords
-    ? `https://www.google.com/maps?q=${bureauSign!.latitude},${bureauSign!.longitude}`
+    ? `https://www.google.com/maps?q=${bureauSign!.geo_point![1]},${bureauSign!.geo_point![0]}`
     : 'https://www.google.com/maps'
 
-  const coords = hasCoords ? formatCoords(bureauSign!.latitude!, bureauSign!.longitude!) : null
+  const coords = hasCoords ? formatCoords(bureauSign!.geo_point![1]!, bureauSign!.geo_point![0]!) : null
 
   return (
     <div className='relative h-80 xl:h-96 2xl:h-104 rounded-xl overflow-hidden'>
       <BaseMap
-        initialCenter={hasCoords ? [bureauSign!.longitude!, bureauSign!.latitude!] : undefined}
+        initialCenter={hasCoords ? [bureauSign!.geo_point![0]!, bureauSign!.geo_point![1]!] : undefined}
         initialZoom={15}
         initialPitch={45}
-      />
-
-      {/* Centered pin */}
-      <div className='absolute inset-0 flex items-center justify-center pointer-events-none z-10'>
-        <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
-      </div>
+      >
+        {hasCoords && (
+          <HTMLMarker
+            lngLat={[bureauSign!.geo_point![0]!, bureauSign!.geo_point![1]!]}
+            anchor='bottom'
+          >
+            <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
+          </HTMLMarker>
+        )}
+      </BaseMap>
 
       {/* Google Map button */}
       <ConfigProvider theme={{ token: { colorPrimary: '#1A73E8', colorTextLightSolid: '#FFFFFF' } }}>
@@ -59,8 +64,8 @@ const MapSection: React.FC<Props> = (props) => {
             </div>
             <h5 className='text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</h5>
           </div>
-          <p className='text-white leading-snug fs-11'>TrafficSign: {bureauSign?.name || '-'}</p>
-          <p className='text-white leading-snug fs-11'>รหัสสายทาง: {bureauRoute?.title || '-'}</p>
+          <p className='text-white leading-snug fs-11'>TrafficSign: {bureauSign?.solution_name || '-'}</p>
+          <p className='text-white leading-snug fs-11'>รหัสสายทาง: {bureauRoute?.road_code || '-'}</p>
           {coords && <p className='fs-11 text-white/60'>{coords}</p>}
         </div>
       )}

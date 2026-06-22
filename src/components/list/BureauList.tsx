@@ -1,58 +1,25 @@
 "use client"
-import { Badge, Checkbox, Image } from 'antd'
+import { Badge, Checkbox } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TbChevronDown, TbChevronRight } from 'react-icons/tb'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import type { VMSDepartmentList, SubDepartment, Road, Solution } from '@/types/control-vms/vms-api'
 
 // ---------------------------------------------------------------------------
-// Data types
+// Re-export API types under the old names so context / detail components
+// import the same identifiers they already reference.
 // ---------------------------------------------------------------------------
 
-export interface BureauSign {
-  id: string
-  name: string
-  anydesk: string
-  is_active: boolean
-  latitude: number | null
-  longitude: number | null
-  vms_img: string
-}
-
-export interface BureauRoute {
-  id: string
-  title: string
-  total_active: number
-  total_inactive: number
-  latitude?: number | null
-  longitude?: number | null
-  sign?: BureauSign[]
-}
-
-export interface BureauState {
-  id: string
-  title: string
-  total_active: number
-  total_inactive: number
-  latitude?: number | null
-  longitude?: number | null
-  route?: BureauRoute[]
-}
-
-export interface BureauItem {
-  id: string
-  title: string
-  total_active: number
-  total_inactive: number
-  latitude?: number | null
-  longitude?: number | null
-  state?: BureauState[]
-}
+export type BureauItem = VMSDepartmentList
+export type BureauState = SubDepartment
+export type BureauRoute = Road
+export type BureauSign = Solution
 
 // ---------------------------------------------------------------------------
 // Selection type — resolved objects for each level
 // ---------------------------------------------------------------------------
 
 export interface BureauSelection {
-  /** All checked compound keys. */
   keys: string[]
   bureaus: BureauItem[]
   states: BureauState[]
@@ -67,36 +34,36 @@ export interface BureauSelection {
 export interface BureauListProps {
   data: BureauItem[]
 
-  // --- Selection callbacks ---
-  /** Fires whenever the checked set changes. Receives resolved objects per level. */
   onSelectionChange?: (selection: BureauSelection) => void
-  /** Fires when select mode is toggled on or off. */
   onSelectModeChange?: (active: boolean) => void
-
-  // --- Selection defaults ---
-  /** Pre-checked compound keys on mount. */
   defaultCheckedKeys?: string[]
-  /** Start the component already in select mode. */
   defaultSelectMode?: boolean
-
-  // --- Expand / collapse ---
-  /** Expand all bureaus, states, and routes on mount. */
   defaultExpandAll?: boolean
 
-  // --- Item click callbacks ---
-  /** Called when a bureau row is clicked (expand/collapse toggle). */
   onBureauClick?: (bureau: BureauItem) => void
-  /** Called when a state row is clicked (expand/collapse toggle). */
   onStateClick?: (state: BureauState, bureau: BureauItem) => void
-  /** Called when a route row is clicked (expand/collapse toggle). */
   onRouteClick?: (route: BureauRoute, state: BureauState, bureau: BureauItem) => void
-  /** Called when a sign card is clicked outside of select mode. */
   onSignClick?: (sign: BureauSign) => void
 
-  // --- UI ---
-  /** Show the เลือก / เลือกทั้งหมด header row. Defaults to true. */
   showControls?: boolean
 }
+
+// ---------------------------------------------------------------------------
+// Key helpers — all IDs are numbers in the API; convert to strings for sets
+// ---------------------------------------------------------------------------
+
+const bureauKey = (b: BureauItem) => String(b.department_id)
+const stateKey = (b: BureauItem, s: BureauState) =>
+  `${bureauKey(b)}-${s.department_id}`
+const routeKey = (b: BureauItem, s: BureauState, r: BureauRoute) =>
+  `${stateKey(b, s)}-${r.road_id}`
+const signKey = (b: BureauItem, s: BureauState, r: BureauRoute, sol: BureauSign) =>
+  `${routeKey(b, s, r)}-${sol.solution_id}`
+
+const routeOnline = (r: BureauRoute) =>
+  r.solution.reduce((sum, s) => sum + s.camera_online_count, 0)
+const routeOffline = (r: BureauRoute) =>
+  r.solution.reduce((sum, s) => sum + s.camera_offline_count, 0)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -113,15 +80,15 @@ const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id
 const getAllKeys = (data: BureauItem[]): Set<string> => {
   const keys = new Set<string>()
   for (const bureau of data) {
-    keys.add(bureau.id)
-    for (const state of bureau.state || []) {
-      const sk = `${bureau.id}-${state.id}`
+    keys.add(bureauKey(bureau))
+    for (const state of bureau.sub_department || []) {
+      const sk = stateKey(bureau, state)
       keys.add(sk)
-      for (const route of state.route || []) {
-        const rk = `${sk}-${route.id}`
+      for (const route of state.roads || []) {
+        const rk = routeKey(bureau, state, route)
         keys.add(rk)
-        for (const sign of route.sign || []) {
-          keys.add(`${rk}-${sign.id}`)
+        for (const sign of route.solution || []) {
+          keys.add(signKey(bureau, state, route, sign))
         }
       }
     }
@@ -134,12 +101,12 @@ const getExpandKeys = (data: BureauItem[]) => {
   const stateKeys = new Set<string>()
   const routeKeys = new Set<string>()
   for (const bureau of data) {
-    bureauKeys.add(bureau.id)
-    for (const state of bureau.state || []) {
-      const sk = `${bureau.id}-${state.id}`
+    bureauKeys.add(bureauKey(bureau))
+    for (const state of bureau.sub_department || []) {
+      const sk = stateKey(bureau, state)
       stateKeys.add(sk)
-      for (const route of state.route || []) {
-        routeKeys.add(`${sk}-${route.id}`)
+      for (const route of state.roads || []) {
+        routeKeys.add(routeKey(bureau, state, route))
       }
     }
   }
@@ -152,15 +119,15 @@ const buildSelection = (data: BureauItem[], checkedKeys: Set<string>): BureauSel
   const routes: BureauRoute[] = []
   const signs: BureauSign[] = []
   for (const bureau of data) {
-    if (checkedKeys.has(bureau.id)) bureaus.push(bureau)
-    for (const state of bureau.state || []) {
-      const sk = `${bureau.id}-${state.id}`
+    if (checkedKeys.has(bureauKey(bureau))) bureaus.push(bureau)
+    for (const state of bureau.sub_department || []) {
+      const sk = stateKey(bureau, state)
       if (checkedKeys.has(sk)) states.push(state)
-      for (const route of state.route || []) {
-        const rk = `${sk}-${route.id}`
+      for (const route of state.roads || []) {
+        const rk = routeKey(bureau, state, route)
         if (checkedKeys.has(rk)) routes.push(route)
-        for (const sign of route.sign || []) {
-          if (checkedKeys.has(`${rk}-${sign.id}`)) signs.push(sign)
+        for (const sign of route.solution || []) {
+          if (checkedKeys.has(signKey(bureau, state, route, sign))) signs.push(sign)
         }
       }
     }
@@ -200,13 +167,12 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     return getExpandKeys(data).routeKeys
   })
 
-  const [selectedSign, setSelectedSign] = useState<string | null>(null)
+  const [selectedSign, setSelectedSign] = useState<number | null>(null)
   const [selectMode, setSelectMode] = useState(defaultSelectMode)
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(defaultCheckedKeys ?? [])
   )
 
-  // Fire callbacks only after mount
   const mounted = useRef(false)
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return }
@@ -238,18 +204,18 @@ const BureauList: React.FC<BureauListProps> = (props) => {
 
   // ---------------------------------------------------------------------------
 
-  const renderSignItem = useCallback((signItem: BureauSign[], parentKey: string) => {
-    if (!signItem || signItem.length === 0) return null
+  const renderSignItem = useCallback((signs: BureauSign[], parentBureau: BureauItem, parentState: BureauState, parentRoute: BureauRoute) => {
+    if (!signs || signs.length === 0) return null
 
-    return signItem.map((sign) => {
-      const signKey = `${parentKey}-${sign.id}`
-      const isSelected = selectedSign === sign.id
+    return signs.map((sign) => {
+      const key = signKey(parentBureau, parentState, parentRoute, sign)
+      const isSelected = selectedSign === sign.solution_id
       return (
         <div
-          key={signKey}
+          key={key}
           onClick={() => {
             if (selectMode) return
-            setSelectedSign(prev => prev === sign.id ? null : sign.id)
+            setSelectedSign(prev => prev === sign.solution_id ? null : sign.solution_id)
             onSignClick?.(sign)
           }}
           className={`p-3 bg-(--mid-gray) rounded-md mb-3 cursor-pointer hover:bg-(--mid-gray)/80 transition-colors border ${isSelected ? 'border-(--yellow)' : 'border-transparent'}`}
@@ -257,25 +223,25 @@ const BureauList: React.FC<BureauListProps> = (props) => {
           <div className='flex gap-3 items-center'>
             {selectMode && (
               <Checkbox
-                checked={checkedKeys.has(signKey)}
+                checked={checkedKeys.has(key)}
                 onClick={e => e.stopPropagation()}
-                onChange={() => toggleCheck(signKey)}
+                onChange={() => toggleCheck(key)}
               />
             )}
             <div className='shrink-0 w-28'>
-              <Image
-                src={sign.vms_img} alt={sign.name}
-                width="100%"
-                height="100%"
-                className='rounded-md object-cover object-center'
-                preview={false}
+              <HLSLivePlayer
+                hlsUrl={sign.desktop_screen}
+                figureClassName='rounded-md w-full aspect-video'
+                showLiveBadge={false}
+                enableViewportPause={true}
+                cameraId={String(sign.solution_id)}
               />
             </div>
             <div className='flex-1 min-w-0'>
-              <h5>{sign.name}</h5>
+              <h5>{sign.solution_name}</h5>
               <div className='flex items-center gap-2'>
                 <p className='fs-12'>Anydesk: {sign.anydesk || '-'}</p>
-                <Badge color={sign.is_active ? 'blue' : 'red'} />
+                <Badge color={sign.is_online ? "blue" : "red"} />
               </div>
             </div>
           </div>
@@ -284,12 +250,14 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     })
   }, [selectedSign, selectMode, checkedKeys, toggleCheck, onSignClick])
 
-  const renderRouteItem = useCallback((routeItem: BureauRoute[], parentKey: string, parentState: BureauState, parentBureau: BureauItem) => {
-    if (!routeItem || routeItem.length === 0) return null
+  const renderRouteItem = useCallback((routes: BureauRoute[], parentBureau: BureauItem, parentState: BureauState) => {
+    if (!routes || routes.length === 0) return null
 
-    return routeItem.map((route) => {
-      const key = `${parentKey}-${route.id}`
+    return routes.map((route) => {
+      const key = routeKey(parentBureau, parentState, route)
       const isOpen = openRoutes.has(key)
+      const online = routeOnline(route)
+      const offline = routeOffline(route)
       return (
         <React.Fragment key={key}>
           <div
@@ -309,34 +277,34 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   ? <TbChevronDown className='text-(--yellow) fs-18' />
                   : <TbChevronRight className='text-(--yellow) fs-18' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{route.title}</h5>
+                <h5 className='font-normal! text-(--yellow)'>{route.road_name || route.road_code}</h5>
               </div>
               <div className='flex items-center gap-3'>
-                {route.total_active > 0 && (
+                {online > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={route.total_active} />
+                    <Badge color='blue' text={online} />
                   </span>
                 )}
-                {route.total_inactive > 0 && (
+                {offline > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={route.total_inactive} />
+                    <Badge color='red' text={offline} />
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {isOpen && renderSignItem(route.sign || [], key)}
+          {isOpen && renderSignItem(route.solution || [], parentBureau, parentState, route)}
         </React.Fragment>
       )
     })
   }, [openRoutes, renderSignItem, selectMode, checkedKeys, toggleCheck, onRouteClick])
 
-  const renderStateItem = useCallback((stateItem: BureauState[], parentKey: string, parentBureau: BureauItem) => {
-    if (!stateItem || stateItem.length === 0) return null
+  const renderStateItem = useCallback((states: BureauState[], parentBureau: BureauItem) => {
+    if (!states || states.length === 0) return null
 
-    return stateItem.map((state) => {
-      const key = `${parentKey}-${state.id}`
+    return states.map((state) => {
+      const key = stateKey(parentBureau, state)
       const isOpen = openStates.has(key)
       return (
         <React.Fragment key={key}>
@@ -357,24 +325,24 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   ? <TbChevronDown className='text-(--yellow) fs-18' />
                   : <TbChevronRight className='text-(--yellow) fs-18' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{state.title}</h5>
+                <h5 className='font-normal! text-(--yellow)'>{state.department_short_name}</h5>
               </div>
               <div className='flex items-center gap-3'>
-                {state.total_active > 0 && (
+                {state.camera_online_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={state.total_active} />
+                    <Badge color='blue' text={state.camera_online_count} />
                   </span>
                 )}
-                {state.total_inactive > 0 && (
+                {state.camera_offline_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={state.total_inactive} />
+                    <Badge color='red' text={state.camera_offline_count} />
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {isOpen && renderRouteItem(state.route || [], key, state, parentBureau)}
+          {isOpen && renderRouteItem(state.roads || [], parentBureau, state)}
         </React.Fragment>
       )
     })
@@ -382,44 +350,45 @@ const BureauList: React.FC<BureauListProps> = (props) => {
 
   const renderBureauItem = useMemo(() => {
     return data.map((item) => {
-      const isOpen = openBureaus.has(item.id)
+      const key = bureauKey(item)
+      const isOpen = openBureaus.has(key)
       return (
-        <React.Fragment key={item.id}>
+        <React.Fragment key={key}>
           <div
-            onClick={() => { toggleSet(setOpenBureaus, item.id); onBureauClick?.(item) }}
+            onClick={() => { toggleSet(setOpenBureaus, key); onBureauClick?.(item) }}
             className={`p-3 bg-(--light-gray) rounded-md mb-3 cursor-pointer hover:bg-(--light-gray)/80 transition-colors border ${isOpen ? 'border-(--yellow)' : 'border-transparent'}`}
           >
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 {selectMode && (
                   <Checkbox
-                    checked={checkedKeys.has(item.id)}
+                    checked={checkedKeys.has(key)}
                     onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(item.id)}
+                    onChange={() => toggleCheck(key)}
                   />
                 )}
                 {isOpen
                   ? <TbChevronDown className='text-(--yellow) fs-18' />
                   : <TbChevronRight className='text-(--yellow) fs-18' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{item.title}</h5>
+                <h5 className='font-normal! text-(--yellow)'>{item.department_short_name}</h5>
               </div>
               <div className='flex items-center gap-3'>
-                {item.total_active > 0 && (
+                {item.camera_online_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={item.total_active} />
+                    <Badge color='blue' text={item.camera_online_count} />
                   </span>
                 )}
-                {item.total_inactive > 0 && (
+                {item.camera_offline_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={item.total_inactive} />
+                    <Badge color='red' text={item.camera_offline_count} />
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {isOpen && renderStateItem(item.state || [], item.id, item)}
+          {isOpen && renderStateItem(item.sub_department || [], item)}
         </React.Fragment>
       )
     })
