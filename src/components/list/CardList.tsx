@@ -1,7 +1,7 @@
 "use client"
 import { Image } from 'antd'
-import { AnimatePresence, motion } from 'framer-motion'
-import type { Transition } from 'framer-motion'
+import { AnimatePresence, motion } from 'motion/react'
+import type { Transition } from 'motion/react'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import type { Swiper as SwiperClass } from 'swiper'

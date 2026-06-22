@@ -30,6 +30,7 @@ export interface SharedVMS {
   desktop_screen: string
   hls_url: string
   status: SharedStatus
+  camera: SharedCamera | null
 }
 
 export interface SharedStatus {
@@ -47,4 +48,55 @@ export interface SharedProject {
 export interface SharedWarranty {
   is_warranty: boolean
   name: string
+}
+
+export interface SharedCamera {
+  id: string
+  camera_name: string
+  ip_address: string
+  hls_url: string
+}
+
+// API RESPONSE
+// Backend returns the status as a Thai label that doubles as the badge text.
+export type WarrantyStatusString =
+  | 'ในค้ำ'
+  | 'หมดค้ำ'
+  | 'ก่อนค้ำ'
+  // Fall-through for any future status the backend introduces.
+  | (string & {})
+
+export interface APIResponseContactDetail {
+  id: number
+  project_name: string
+  contract_no: string
+  department_name: string
+  warranty_start_date: string
+  warranty_end_date: string
+  /** Remaining days as computed by the backend. 0 when expired or
+   *  before warranty starts. Use this instead of parsing dates on the FE. */
+  warranty_date: number
+  /** Status enum from backend — drives badge color + label. */
+  warranty_status: WarrantyStatusString
+  company_name: string
+}
+
+export interface APIRequestDepartmentByRoad {
+  road_id?: number
+}
+
+export interface APIResponseDepartmentByRoad {
+  id: number
+  department_group: number
+  province: string
+  department_office_no: number
+  department_name: string
+  department_short_name: string
+  is_external: number
+  province_id: number
+  line_token: string
+  line_group_token: string
+  is_urban: number
+  department_type: number
+  region_id: number
 }

@@ -19,11 +19,12 @@ import {
   TbCarCrash,
   TbChevronRight,
 } from "react-icons/tb";
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
 import menu from '@/configs/menu'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAppSelector } from '@/stores/hooks';
+// import { useAppSelector } from '@/stores/hooks';
+import { APIResponseSidebar } from '@/types/layout/api';
 
 const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "Dashboard": TbLayoutDashboard,
@@ -59,12 +60,17 @@ const solutionItemVariants = {
 
 type RouteEntry = { path: string; path_active: string; path_list: string[] }
 
-const SidebarContent: React.FC = () => {
+interface Props {
+  data?: APIResponseSidebar
+}
+
+const SidebarContent: React.FC<Props> = (props) => {
+  const { data } = props
   const [openGroups, setOpenGroups] = useState<Set<number>>(new Set())
   const [openDepts, setOpenDepts] = useState<Set<string>>(new Set())
   const router = useRouter()
   const pathname = usePathname()
-  const { sidebar } = useAppSelector(state => state.layout)
+  // const { sidebar } = useAppSelector(state => state.layout)
 
   const pathMap = useMemo<Record<string, RouteEntry>>(() => {
     const map: Record<string, RouteEntry> = {}
@@ -92,7 +98,7 @@ const SidebarContent: React.FC = () => {
 
   return (
     <div>
-      {sidebar.map((group, groupIndex) => {
+      {data?.map((group, groupIndex) => {
         const isGroupOpen = openGroups.has(groupIndex)
         return (
           <React.Fragment key={groupIndex}>

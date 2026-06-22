@@ -5,6 +5,8 @@ import type { ColumnsType } from 'antd/es/table'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 interface Props {
   data?: APIResponseVMSList
@@ -76,6 +78,7 @@ const buildRows = (apiData: APIResponseVMSList): Row[] => {
 const TableVMSData: React.FC<Props> = ({ data, loading }) => {
   const rows = useMemo(() => buildRows(data ?? []), [data])
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
   const columns: ColumnsType<Row> = useMemo(
     () => [
@@ -134,6 +137,10 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
               <TbInfoSquareRoundedFilled
                 size={18}
                 className='text-white/50 cursor-pointer hover:text-(--yellow)'
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dispatch(setProjectInfoModalOpen({ open: true, project_id: row.data.project.id, road_id: row.data.road.id }))
+                }}
               />
             </span>
           )
@@ -221,7 +228,7 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         },
       },
     ],
-    [],
+    [dispatch],
   )
 
   return (
@@ -235,7 +242,7 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
       scroll={{ x: 1200 }}
       onRow={(row) => ({
         onClick: () => {
-          if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}`)
+          if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
         },
         className: row.type === 'data' ? 'cursor-pointer' : '',
       })}

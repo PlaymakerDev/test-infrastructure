@@ -2,12 +2,18 @@
 import { useEffect, useRef } from 'react'
 import type {
   CircleLayerSpecification,
+  ExpressionSpecification,
   GeoJSONSource,
   GeoJSONSourceSpecification,
   MapMouseEvent,
   PopupOptions,
   SymbolLayerSpecification,
 } from 'mapbox-gl'
+
+/** Color may be a static string (most cases) or a Mapbox data-driven
+ *  expression (e.g. `['case', ['get', 'is_online'], '#22d3ee', '#ef4444']`)
+ *  when colour needs to be derived from a feature's properties. */
+export type MarkerColor = string | ExpressionSpecification
 import { useMap } from '../hooks/useMap'
 import { showReactPopup } from './popupHelper'
 
@@ -32,8 +38,9 @@ export interface MarkerLayerProps {
   clusterMaxZoom?: number
   clusterRadius?: number
 
-  /** Circle marker color (also used for cluster bubble) */
-  color: string
+  /** Circle marker color (also used for cluster bubble). Accepts a plain hex
+   *  string OR a Mapbox expression for data-driven colouring. */
+  color: MarkerColor
   /** Circle radius for unclustered points (default 16) */
   size?: number
   /** Stroke around circle (default white 2px for unclustered, 2.5px for cluster) */

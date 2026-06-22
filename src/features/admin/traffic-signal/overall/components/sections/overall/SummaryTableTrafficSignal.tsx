@@ -1,10 +1,11 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import ModalInfoTrafficSignal from '@/features/admin/traffic-signal/overall/components/ModalInfoTrafficSignal'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
@@ -64,7 +65,7 @@ type Row =
 const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const deptId = useDeptId()
-  const [infoProject, setInfoProject] = useState<TrafficSignalProject | null>(null)
+  const dispatch = useAppDispatch()
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficSignalProject[]>()
     for (const p of projects) {
@@ -164,7 +165,17 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
                 size={18}
                 className='text-white cursor-pointer hover:text-(--yellow)'
                 title='ดูข้อมูลโครงการ'
-                onClick={() => setInfoProject(row.project)}
+                onClick={() =>
+                  dispatch(
+                    setProjectInfoModalOpen({
+                      open: true,
+                      project_id: row.project.projectId
+                        ? Number(row.project.projectId)
+                        : null,
+                      road_id: row.project.roadId ? Number(row.project.roadId) : null,
+                    }),
+                  )
+                }
               />
             </span>
           )
@@ -188,11 +199,12 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
           return (
             <span
               className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() =>
-                router.push(
-                  `/admin/traffic-signal/detail/${row.project.id}?dept_id=${deptId}`,
-                )
-              }
+              onClick={() => {
+                const params = new URLSearchParams({ dept_id: deptId })
+                if (row.project.projectId) params.set('project_id', row.project.projectId)
+                if (row.project.roadId) params.set('road_id', row.project.roadId)
+                router.push(`/admin/traffic-signal/detail/${row.project.id}?${params}`)
+              }}
               role='link'
               tabIndex={0}
             >
@@ -271,7 +283,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         scroll={{ x: 1300 }}
         className='bridge-projects-table'
       />
-      <ModalInfoTrafficSignal project={infoProject} onClose={() => setInfoProject(null)} />
     </>
   )
 }

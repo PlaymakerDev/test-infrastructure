@@ -5,6 +5,8 @@ import type { ColumnsType } from 'antd/es/table'
 import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 interface Props {
   data?: APIResponseVMSList
@@ -139,6 +141,7 @@ const StatusDot: React.FC<{ isOnline: boolean }> = ({ isOnline }) => (
 const VMSList: React.FC<Props> = ({ data, loading }) => {
   const rows = useMemo(() => buildRows(data ?? []), [data])
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
   const columns: ColumnsType<Row> = useMemo(() => [
     {
@@ -192,6 +195,11 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
             <TbInfoSquareRoundedFilled
               size={18}
               className='text-white/50 cursor-pointer hover:text-(--yellow)'
+              onClick={(e) => {
+                console.log("===", row.data.project.id)
+                e.stopPropagation()
+                dispatch(setProjectInfoModalOpen({ open: true, project_id: row.data.project.id, road_id: row.data.road.id }))
+              }}
             />
           </span>
         )
@@ -284,7 +292,7 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
         return <StatusDot isOnline={row.data.vms.status.is_online} />
       },
     },
-  ], [])
+  ], [dispatch])
 
   return (
     <Table<Row>

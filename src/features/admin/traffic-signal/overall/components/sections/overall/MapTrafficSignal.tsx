@@ -94,38 +94,38 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
     map.flyTo({ center: centroid, zoom: 10, duration: 1200 })
   }, [map, isLoaded, isReady, centroid])
 
-  const onlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => l.traffic.is_online)),
-    [locations]
-  )
-  const offlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => !l.traffic.is_online)),
-    [locations]
-  )
+  // One source for all markers — lets Mapbox cluster across online/offline
+  // when two signals are geographically close (e.g. solutions 1557 and 2480
+  // are ~25m apart). Separate layers would never cluster together.
+  const allData = useMemo(() => toGeoJSON(locations), [locations])
 
   if (!isReady) return null
 
   return (
-    <>
-      <MarkerLayer
-        id='traffic-signal-online'
-        data={onlineData}
-        cluster
-        color='#22d3ee'
-        size={14}
-        popup={(f) => <TrafficSignalPopup feature={f} isOnline />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-      <MarkerLayer
-        id='traffic-signal-offline'
-        data={offlineData}
-        cluster
-        color='#ef4444'
-        size={14}
-        popup={(f) => <TrafficSignalPopup feature={f} isOnline={false} />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-    </>
+    <MarkerLayer
+      id='traffic-signal'
+      data={allData}
+      cluster
+      // Tri-state color: yellow brand color for clusters (so users know to
+      // zoom in), cyan for online, red for offline. Cluster features don't
+      // carry `is_online`, so the `has point_count` branch must come first.
+      color={[
+        'case',
+        ['has', 'point_count'],
+        '#FCD116',
+        ['==', ['get', 'is_online'], true],
+        '#22d3ee',
+        '#ef4444',
+      ]}
+      size={14}
+      popup={(f) => (
+        <TrafficSignalPopup
+          feature={f}
+          isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+        />
+      )}
+      popupOptions={{ offset: 10, closeButton: false }}
+    />
   )
 }
 
