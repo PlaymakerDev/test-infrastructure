@@ -92,10 +92,6 @@ export interface APIResponseDepartmentByRoad {
 }
 
 // UPLOAD
-export interface UploadRequest {
-  upload: ArrayBuffer
-}
-
 export interface UploadResponse {
   path: string;
 }

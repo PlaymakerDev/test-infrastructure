@@ -1,47 +1,38 @@
 import React from 'react'
-import { useControlVMSContext } from '../../../context';
-import BaseMap from '@/components/map/BaseMap';
-import HTMLMarker from '@/components/map/primitives/HTMLMarker';
-import { TbMapPin } from 'react-icons/tb';
-import { Button, ConfigProvider } from 'antd';
+import { useControlVMSContext } from '../../../context'
+import BaseMap from '@/components/map/BaseMap'
+import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { TbMapPin } from 'react-icons/tb'
+import { Button, ConfigProvider } from 'antd'
 
-interface Props {
+const formatCoords = (lat: number, lng: number): string =>
+  `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
 
-}
-
-const formatCoords = (lat: number, lng: number): string => {
-  return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
-}
-
-const MapSection: React.FC<Props> = (props) => {
-  const { } = props;
+const MapSection: React.FC = () => {
   const { bureauRoute, bureauSign } = useControlVMSContext()
 
-  const hasCoords = bureauSign!.geo_point![1]! != null && bureauSign!.geo_point![0]! != null
+  const [lng, lat] = bureauSign?.geo_point ?? []
+  const hasCoords = lat != null && lng != null
+  const center: [number, number] | undefined = hasCoords ? [lng, lat] : undefined
   const googleMapsUrl = hasCoords
-    ? `https://www.google.com/maps?q=${bureauSign!.geo_point![1]},${bureauSign!.geo_point![0]}`
+    ? `https://www.google.com/maps?q=${lat},${lng}`
     : 'https://www.google.com/maps'
-
-  const coords = hasCoords ? formatCoords(bureauSign!.geo_point![1]!, bureauSign!.geo_point![0]!) : null
+  const coords = hasCoords ? formatCoords(lat, lng) : null
 
   return (
     <div className='relative h-80 xl:h-96 2xl:h-104 rounded-xl overflow-hidden'>
       <BaseMap
-        initialCenter={hasCoords ? [bureauSign!.geo_point![0]!, bureauSign!.geo_point![1]!] : undefined}
+        initialCenter={center}
         initialZoom={15}
         initialPitch={45}
       >
         {hasCoords && (
-          <HTMLMarker
-            lngLat={[bureauSign!.geo_point![0]!, bureauSign!.geo_point![1]!]}
-            anchor='bottom'
-          >
+          <HTMLMarker lngLat={center!} anchor='bottom'>
             <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
           </HTMLMarker>
         )}
       </BaseMap>
 
-      {/* Google Map button */}
       <ConfigProvider theme={{ token: { colorPrimary: '#1A73E8', colorTextLightSolid: '#FFFFFF' } }}>
         <Button
           type='primary'
@@ -55,7 +46,6 @@ const MapSection: React.FC<Props> = (props) => {
         </Button>
       </ConfigProvider>
 
-      {/* Location overlay */}
       {hasCoords && (
         <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
           <div className='flex items-center gap-2'>
@@ -73,4 +63,4 @@ const MapSection: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(MapSection)
+export default React.memo(MapSection)

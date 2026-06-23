@@ -1,16 +1,12 @@
 import { Button } from 'antd'
-import React from 'react'
+import React, { useState } from 'react'
 import { TbLayoutGrid } from 'react-icons/tb'
 import { DetailTabContent, ModalDetailItemStorage } from '../../../components'
 import { useControlVMSContext } from '../../../context'
 
-interface Props {
-
-}
-
-const DetailItemStorage: React.FC<Props> = (props) => {
-  const { } = props
-  const { isAddMode, setOpenMediaModal } = useControlVMSContext()
+const DetailItemStorage: React.FC = () => {
+  const { isAddMode } = useControlVMSContext()
+  const [mediaOpen, setMediaOpen] = useState(false)
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -22,27 +18,16 @@ const DetailItemStorage: React.FC<Props> = (props) => {
             <p className='fs-12 text-gray-400 mb-0'>รวบรวมรูปภาพและวิดีโอที่มีการแสดงผลในปัจจุบัน</p>
           </div>
         </div>
-        {!isAddMode && (
-          <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setOpenMediaModal({ open: true })}>
-            <p className='fs-12'>ดูเพิ่มเติม</p>
-          </Button>
-        )}
+        <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setMediaOpen(true)}>
+          <p className='fs-12'>ดูเพิ่มเติม</p>
+        </Button>
       </div>
       <section className='mt-5'>
         <DetailTabContent />
       </section>
-      {isAddMode && (
-        <section className='mt-5'>
-          <div className='text-center'>
-            <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setOpenMediaModal({ open: true })}>
-              <p className='fs-12'>ดูเพิ่มเติม</p>
-            </Button>
-          </div>
-        </section>
-      )}
-      <ModalDetailItemStorage />
+      <ModalDetailItemStorage open={mediaOpen} onClose={() => setMediaOpen(false)} />
     </div>
   )
 }
 
-export default React.memo<Props>(DetailItemStorage)
+export default React.memo(DetailItemStorage)

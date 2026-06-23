@@ -3,29 +3,10 @@ import { Badge, Checkbox } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TbChevronDown, TbChevronRight } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import type { VMSDepartmentList, SubDepartment, Road, Solution } from '@/types/control-vms/vms-api'
+import type { BureauItem, BureauState, BureauRoute, BureauSign, BureauSelection } from '@/types/control-vms/bureau'
 
-// ---------------------------------------------------------------------------
-// Re-export API types under the old names so context / detail components
-// import the same identifiers they already reference.
-// ---------------------------------------------------------------------------
-
-export type BureauItem = VMSDepartmentList
-export type BureauState = SubDepartment
-export type BureauRoute = Road
-export type BureauSign = Solution
-
-// ---------------------------------------------------------------------------
-// Selection type — resolved objects for each level
-// ---------------------------------------------------------------------------
-
-export interface BureauSelection {
-  keys: string[]
-  bureaus: BureauItem[]
-  states: BureauState[]
-  routes: BureauRoute[]
-  signs: BureauSign[]
-}
+// Re-export so consumers importing from '@/components/list' keep working.
+export type { BureauItem, BureauState, BureauRoute, BureauSign, BureauSelection }
 
 // ---------------------------------------------------------------------------
 // Props

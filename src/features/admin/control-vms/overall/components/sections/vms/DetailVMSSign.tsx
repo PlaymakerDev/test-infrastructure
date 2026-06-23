@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { TbLayoutGrid } from 'react-icons/tb'
 import { useControlVMSContext } from '../../../context'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { ModalVMSScreen } from '../../../components'
+import type { BureauSign } from '@/types/control-vms/bureau'
 
 const DetailVMSSign: React.FC = () => {
-  const { bureauSign, setOpenVMSScreen } = useControlVMSContext()
+  const { bureauSign } = useControlVMSContext()
+  const [modalData, setModalData] = useState<BureauSign | null>(null)
 
   return (
     <div className="h-full bg-(--gray) rounded-lg p-5">
@@ -25,7 +27,7 @@ const DetailVMSSign: React.FC = () => {
             showLiveBadge={true}
             enableViewportPause={true}
             cameraId={String(bureauSign.solution_id)}
-            onClick={() => setOpenVMSScreen({ open: true, data: bureauSign })}
+            onClick={() => setModalData(bureauSign)}
           />
         </figure>
       ) : (
@@ -33,7 +35,11 @@ const DetailVMSSign: React.FC = () => {
           <p className='text-gray-500 fs-12'>ไม่มีสตรีม</p>
         </div>
       )}
-      <ModalVMSScreen />
+      <ModalVMSScreen
+        open={modalData !== null}
+        data={modalData}
+        onClose={() => setModalData(null)}
+      />
     </div>
   )
 }

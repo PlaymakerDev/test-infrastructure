@@ -1,37 +1,24 @@
 import React, { useMemo } from 'react'
-import { TbCalendarEvent, TbClipboard, TbClipboardCopy, TbFileDescription, TbHourglass, TbLock, TbUserCircle } from 'react-icons/tb'
+import { TbCalendarEvent, TbClipboard, TbFileDescription, TbHourglass, TbUserCircle } from 'react-icons/tb'
 import { useControlVMSContext } from '../../../context'
-import { useQuery } from '@tanstack/react-query'
-import { getContactDetailAPI } from '@/services/routes/SharedService'
 import { Empty, Skeleton } from 'antd'
 import { WARRANTY_STATUS } from '@/constants'
+import { useContactDetail } from '../../../hooks/useContactDetail'
 
-interface Props {
+const DEFAULT_WARRANTY = { text: '-', color: '--light-gray-2' } as const
 
-}
-
-const VMSDetail: React.FC<Props> = (props) => {
-  const { } = props
+const VMSDetail: React.FC = () => {
   const { bureauSign } = useControlVMSContext()
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['contact_detail', bureauSign?.project.id],
-    queryFn: () => getContactDetailAPI(String(bureauSign?.project.id)!),
-    enabled: !!bureauSign?.project.id,
-    // placeholderData: keepPreviousData
-  })
+  const { data, isLoading, isError } = useContactDetail(bureauSign?.project.id)
+
+  const warranty = WARRANTY_STATUS[data?.data.warranty_status as keyof typeof WARRANTY_STATUS] ?? DEFAULT_WARRANTY
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูลโครงการ" />
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4'>
-        {/* <div className='flex flex-col items-center text-center'>
-          <TbLock className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>รหัสโครงการ</p>
-          <p className='text-white mb-0'>MT25029</p>
-        </div> */}
-
         <div className='flex flex-col items-center text-center'>
           <TbFileDescription className='fs-22 text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
@@ -57,15 +44,18 @@ const VMSDetail: React.FC<Props> = (props) => {
         </div>
 
         <div className='flex flex-col items-center text-center'>
-          <TbHourglass className={`fs-22 text-(${WARRANTY_STATUS[data?.data.warranty_status as keyof typeof WARRANTY_STATUS]?.color}) mb-2`} />
+          <TbHourglass
+            className='fs-22 mb-2'
+            style={{ color: `var(${warranty.color})` }}
+          />
           <p className='fs-12 text-gray-400 mb-0.5'>ระยะเวลาที่เหลือ</p>
-          <p className={`text-(${WARRANTY_STATUS[data?.data.warranty_status as keyof typeof WARRANTY_STATUS]?.color}) mb-0`}>
+          <p className='mb-0' style={{ color: `var(${warranty.color})` }}>
             {data?.data.warranty_date || 0} วัน
           </p>
         </div>
       </div>
     )
-  }, [isLoading, isError, data])
+  }, [isLoading, isError, data, warranty])
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -83,4 +73,4 @@ const VMSDetail: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(VMSDetail)
+export default React.memo(VMSDetail)
