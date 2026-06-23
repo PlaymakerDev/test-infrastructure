@@ -1,3 +1,4 @@
+import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingSchedule, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -8,6 +9,7 @@ import {
   APIResponsePostVMSMedia
 } from "@/types/control-vms/vms-api"
 
+// VMS
 export const getVMSDepartmentAPI = async () => {
   return ApiService.fetchData<APIResponseVMSDepartment>({
     url: `/vms/settings/departments`,
@@ -35,5 +37,36 @@ export const postVMSMediaAPI = async (data: APIRequestPostVMSMedia) => {
     url: '/vms/settings/media',
     method: 'POST',
     data: { ...data },
+  })
+}
+
+// DISPLAY
+export const getVMSSettingUpcomingSummaryAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSUpcomingSummary>({
+    url: `/vms/settings/upcoming-summary`,
+    method: 'GET',
+  })
+}
+
+export const getVMSSettingByRoadAPI = async (params: APIRequestVMSSettingByRoad) => {
+  return ApiService.fetchData<APIResponseVMSSettingByRoad, APIRequestVMSSettingByRoad>({
+    url: `/vms/settings/by-road`,
+    method: 'GET',
+    params: { ...params }
+  })
+}
+
+export const getVMSSettingScheduleAPI = async (params: APIRequestVMSSettingSchedule) => {
+  return ApiService.fetchData<APIResponseVMSSettingSchedule, APIRequestVMSSettingSchedule>({
+    url: `/vms/settings/schedule`,
+    method: 'GET',
+    params: { ...params }
+  })
+}
+
+export const getVMSMediaByIDAPI = async (id: string | number) => {
+  return ApiService.fetchData<APIResponseVMSMediaById>({
+    url: `/vms/settings/media/${id}`,
+    method: 'GET',
   })
 }

@@ -1,5 +1,6 @@
 "use client"
 import type { BureauItem, BureauRoute, BureauSign, BureauState } from '@/types/control-vms/bureau'
+import { APIRequestVMSSettingByRoad } from '@/types/control-vms/display-api'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
@@ -15,6 +16,8 @@ export interface ContextProps {
   setAddMode: (v: boolean) => void
   vmsIdList: number[]
   setVMSIdList: React.Dispatch<React.SetStateAction<number[]>>
+  searchText: APIRequestVMSSettingByRoad | null
+  setSearchText: (s: APIRequestVMSSettingByRoad | null) => void
 }
 
 export interface PageProviderProps {
@@ -31,6 +34,7 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [bureauSign, setBureauSign] = useState<BureauSign | null>(null)
   const [isAddMode, setAddMode] = useState<boolean>(false)
   const [vmsIdList, setVMSIdList] = useState<number[]>([])
+  const [searchText, setSearchText] = useState<APIRequestVMSSettingByRoad | null>(null)
 
   return (
     <ControlVMSContext.Provider
@@ -47,6 +51,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         setAddMode,
         vmsIdList,
         setVMSIdList,
+        searchText,
+        setSearchText,
       }}
     >
       {children}
