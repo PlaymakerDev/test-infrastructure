@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import CCTVScreen from "@/features/admin/cctv/overall/screen"
 
 export default function CCTVPage() {

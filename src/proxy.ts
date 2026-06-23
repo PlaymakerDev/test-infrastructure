@@ -3,6 +3,11 @@ import { getIronSession } from 'iron-session'
 import { SessionData, sessionOptions } from '@/lib/defaultSession'
 import menu from './configs/menu'
 
+// `new URL('/foo', request.url)` strips basePath; manually prepend so deploys under /atlas keep their prefix.
+const BASE_PATH = '/atlas'
+const withBase = (p: string, requestUrl: string) =>
+  new URL(`${BASE_PATH}${p}`, requestUrl)
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const response = NextResponse.next()
@@ -15,14 +20,14 @@ export async function proxy(request: NextRequest) {
   // Authenticated user on /auth/login → send to dashboard
   if (isAuthenticated && pathname.startsWith('/auth/login')) {
     if (path && path.length > 0) {
-      return NextResponse.redirect(new URL(path[0].path, request.url))
+      return NextResponse.redirect(withBase(path[0].path, request.url))
     }
-    return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.redirect(withBase('/', request.url))
   }
 
   // Unauthenticated user on a protected route (not /auth/login) → send to login
   if (!isAuthenticated && !pathname.startsWith('/auth/login')) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    return NextResponse.redirect(withBase('/auth/login', request.url))
   }
 
   return response

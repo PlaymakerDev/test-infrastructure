@@ -95,7 +95,7 @@ const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = fals
         {/* รูป */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
           <img
-            src={isClosingCase ? '/images/Maintenance/icmd4.png' : '/images/Maintenance/icmd3.png'}
+            src={isClosingCase ? '/atlas/images/Maintenance/icmd4.png' : '/atlas/images/Maintenance/icmd3.png'}
             alt='maintenance'
             style={{ width: 100, height: 100, objectFit: 'contain' }}
           />

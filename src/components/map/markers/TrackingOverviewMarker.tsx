@@ -10,9 +10,9 @@ import {
 // SVG icons live in /public/images/icon-marker/ — referenced by URL.
 // Each icon is 43x46 with the pin tip at (21, 27) and shadow extending below.
 const ICON_URL_BY_TYPE: Record<TrackingStationType, string> = {
-  wim:     '/images/icon-marker/Wim.svg',
-  mobile:  '/images/icon-marker/Moving.svg',
-  station: '/images/icon-marker/Station.svg',
+  wim:     '/atlas/images/icon-marker/Wim.svg',
+  mobile:  '/atlas/images/icon-marker/Moving.svg',
+  station: '/atlas/images/icon-marker/Station.svg',
 }
 const ICON_WIDTH = 43
 const ICON_HEIGHT = 46

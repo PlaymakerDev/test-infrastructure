@@ -17,7 +17,7 @@ const SidebarFooter: React.FC<Props> = (props) => {
 
   const onLogout = useCallback(async () => {
     try {
-      const response = await axios.post('/api/auth/logout', {})
+      const response = await axios.post('/atlas/api/auth/logout', {})
       if (response.status === 200) {
         dispatch(resetDrawerOpen())
 

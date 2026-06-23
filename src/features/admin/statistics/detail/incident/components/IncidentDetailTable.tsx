@@ -87,7 +87,7 @@ const IncidentDetailTable: React.FC<Props> = ({ data = INCIDENT_MOCK_DATA, loadi
           backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto', border: '1px solid #333',
         }}>
-          <img src="/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src="/atlas/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       ),
     },

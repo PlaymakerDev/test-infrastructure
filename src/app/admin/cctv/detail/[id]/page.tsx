@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import CctvDetailScreen from "@/features/admin/cctv/detail/screen"
 
 interface Props {

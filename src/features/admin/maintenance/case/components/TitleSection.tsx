@@ -62,7 +62,7 @@ const TitleSection: React.FC<Props> = ({ caseId }) => {
               className='inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[12px] font-normal'
               style={{ border: `1px solid ${mockData.status === 'ออนไลน์' ? '#66AEFF' : '#E94C4C'}`, color: mockData.status === 'ออนไลน์' ? '#66AEFF' : '#E94C4C' }}
             >
-              <img src={`/images/statistics/${mockData.status === 'ออนไลน์' ? 'iconconnect' : 'iconnoconnect'}.png`} alt="" width={14} height={14} />
+              <img src={`/atlas/images/statistics/${mockData.status === 'ออนไลน์' ? 'iconconnect' : 'iconnoconnect'}.png`} alt="" width={14} height={14} />
               {mockData.status}
             </span>
           </div>

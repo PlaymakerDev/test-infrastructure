@@ -128,17 +128,17 @@ const COMPARISON_MOCK_DATA: ComparisonRecord[] = [
 
 const ALERT_SUMMARY_BADGES: SummaryBadge[] = [
   { label: '599 จุดติดตั้ง', color: '#66AEFF' },
-  { label: '98 ออฟไลน์', color: '#E94C4C', icon: '/images/statistics/iconnoconnect.png.png' },
+  { label: '98 ออฟไลน์', color: '#E94C4C', icon: '/atlas/images/statistics/iconnoconnect.png.png' },
   { label: '243 Line Check', color: '#F29F05' },
   { label: '72 Circuit', color: '#FCD116' },
   { label: '72 Volt / Amp', color: '#83F205' },
 ]
 
 const ALERT_CARDS: StatCard[] = [
-  { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '53', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
-  { borderColor: '#E94C4C', icon: '/images/statistics/ce2.png', label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: '244', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
-  { borderColor: '#E99A4C', icon: '/images/statistics/ce3.png', label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: '70', unit: 'เหตุการณ์', sub: 'สทช. 3 (ชลบุรี) (57.9%)' },
-  { borderColor: '#FCD116', icon: '/images/statistics/ce4.png', label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: '81.6%', sub: 'แจ้งเตือน 544 เหตุการณ์' },
+  { borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '53', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
+  { borderColor: '#E94C4C', icon: '/atlas/images/statistics/ce2.png', label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: '244', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
+  { borderColor: '#E99A4C', icon: '/atlas/images/statistics/ce3.png', label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: '70', unit: 'เหตุการณ์', sub: 'สทช. 3 (ชลบุรี) (57.9%)' },
+  { borderColor: '#FCD116', icon: '/atlas/images/statistics/ce4.png', label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: '81.6%', sub: 'แจ้งเตือน 544 เหตุการณ์' },
 ]
 
 const AlertSection: React.FC = () => {

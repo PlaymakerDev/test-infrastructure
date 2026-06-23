@@ -160,9 +160,9 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                             {sub.connected ? (
-                              <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
+                              <img src="/atlas/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
                             ) : (
-                              <img src="/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
+                              <img src="/atlas/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
                             )}
                           </div>
                         </div>

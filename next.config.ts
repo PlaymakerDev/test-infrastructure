@@ -2,8 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  basePath: '/atlas',
+  assetPrefix: '/atlas',
   reactCompiler: true,
   devIndicators: false,
+  poweredByHeader: false,
+  typescript: { ignoreBuildErrors: true },
   redirects: () => {
     return [
       {

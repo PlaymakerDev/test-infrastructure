@@ -141,7 +141,7 @@ export const ImageMarker: Story = {
     title: 'WIM Station',
     children: (
       <img
-        src="/images/icon-marker/Wim.svg"
+        src="/atlas/images/icon-marker/Wim.svg"
         alt=""
         width={43}
         height={46}
@@ -163,7 +163,7 @@ export const WithPopup: Story = {
     offset: [0, 19],
     title: 'Click me',
     children: (
-      <img src="/images/icon-marker/Station.svg" alt="" width={43} height={46} />
+      <img src="/atlas/images/icon-marker/Station.svg" alt="" width={43} height={46} />
     ),
     popup: () => (
       <div
