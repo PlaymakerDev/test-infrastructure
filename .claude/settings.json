@@ -50,10 +50,26 @@
       "Bash(python -c \"import sys, json; d=json.load\\(sys.stdin\\); [print\\(p\\) for p in d.get\\('paths', {}\\).keys\\(\\)]\")",
       "Bash(python -c ' *)",
       "Bash(grep -rn \"\\\\.day\\\\|day\\\\.day\\\\|วัน\\\\${\\\\|day:\" d:/www/react/drr-its-new/src/features/admin/traffic-signal --include=\"*.tsx\")",
-      "Bash(grep -rn \"วัน\\\\${day.day}\\\\|day.day}\\\\|formatDayLabel\" d:/www/react/drr-its-new/src/features/admin/traffic-signal --include=\"*.tsx\")"
+      "Bash(grep -rn \"วัน\\\\${day.day}\\\\|day.day}\\\\|formatDayLabel\" d:/www/react/drr-its-new/src/features/admin/traffic-signal --include=\"*.tsx\")",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/traffic\" -L --max-time 15 -o /tmp/traffic.json)",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/traffic\" -L --max-time 15 > /tmp/traffic.json && ls -la /tmp/traffic.json 2>&1)",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/traffic\" -L --max-time 15 -o \"d:/temp_traffic_openapi.json\")",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/manage\" -L --max-time 15 -o \"d:/temp_manage_openapi.json\")",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs\" -L --max-time 10)",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/all\" -L --max-time 15 -o \"d:/temp_all_oapi.json\")",
+      "Bash(curl -s https://its.drr.go.th/api-v2/traffic/departments/50/overview/central/list -H 'x-api-key: yVbmGxwNvqxtPJDUtJCtFXnfupqsHnhWCkVABhqd' --max-time 15)",
+      "Bash(curl -s https://its.drr.go.th/api-v2/traffic/departments/50/overview/central/list -H 'x-api-key: yVbmGxwNvqxtPJDUtJCtFXnfupqsHnhWCkVABhqd' --max-time 15 -o d:/temp_central.json)",
+      "Read(//d//**)",
+      "Bash(curl -s \"http://localhost:3000/api/auth/session\" --max-time 5)",
+      "Bash(curl -s -i https://its.drr.go.th/api-v2/manage/contract/162 -H 'x-api-key: yVbmGxwNvqxtPJDUtJCtFXnfupqsHnhWCkVABhqd' --max-time 10)",
+      "Bash(curl -s http://localhost:3000/api/auth/session -H 'Cookie: DRR_ITS=Fe26.2*1*d7e915b7729f861c1ab2b7712750d8fac018cc2be213aefa8a1fbd79b281d9f7*uZb-JSJTy7EsuXRXgFtDvA*rOnY84JxlvToxmgQ6DCzozOSb6tr-Ribl69vXEXMz_urwAllz4MkepsIFCk2a4OtHVwLgHFjNKOMefnEoluN1aleDuyVVEvuY5Y2fEP8XZ0SADG7qCHJBft6Nxmwhp_ViX1ZVDMVvB7rqhVdFGSEV74_CHP7jtVGekC7Q1udI9tc9tyWk_n-KFpBkG80vnV_mVEc9-DsWG5XHu4BFieNcgPh67ivg1wxN5p_ZH6R0icgM2eYBtMkPd7jWaZadTdVXfCUIytl5azplRMXj_l_W5S64ZX57SdwuyPdYglaQZBSkIGpal-bcteqOpTbeqylA_WX7N-S4qAfutJdgZsFueErDNlvjJGgwKq-kIU61q-fZiwqK3mXLycHDx6IUgseC9HPQPxhhoV9uTCa3fBVoGdWEYL5bD71rfc1I8CmLW1LU7aiJNzdSOR9GYeeuYttGt15A4SMfsDTG2oC9V4FEjrDhPtxrRV0fSV1091kz9DFr8X908NFPJl2M05as0ox3DkdD3fmBmR8VECiVvmiSyC6FX5F8RB5_UCT1SkupLQ9-XnpgYxryMyycN8QsBcrEKoZXV8RW6mH18vb_rZ5z4a7duGKn_JT-OeLCJ_Z8xGMVCQp2-obQjYTKvdsarlkcRKXAXdJZ5r3RgM2lCtMNGCQeQzY4k2v6jSVIal3ep7ceFR3Jheyr5laKPgecICvT7iyArx_fruQyGsAWtw8sM8y_GTYPtPj1Hl__TQ3zB-wc46Oj2LKSkF5Q_HRhdjPJ0UnqxPNLoH-ukh4ajID7fOw7yJJURusmlqaID5GdV6KdYfQWpXYRGs5DA4zeF_jQc7G2j_AjPhortKoz0fvCmsGX5DK_Rwsnwc5jBLjbeQhrU4WPnKvpdTkOBf3XHYvpYI67fhW0YnDJNoQ6mpHeyAa3E9H90OwxWX9fu6J1A1SAa2YtRpk5uQnlhQm-mr8*1783090626237*e959e9793faa0eef2cdd32a524f5814fbe2be6bad2ede7d0e49abf5c966e8153*3mkR-DmtS30KSTqHE6Xc7GIQOkYJ5_JsxJXXP4V191w~2' --max-time 10)",
+      "Bash(curl -s https://its.drr.go.th/api-v2/traffic/departments/50/overview/central/list -H 'x-api-key: yVbmGxwNvqxtPJDUtJCtFXnfupqsHnhWCkVABhqd' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' --max-time 15 -o d:/temp_central.json)",
+      "Bash(curl -s https://its.drr.go.th/api-v2/manage/departments/central/side_menu -H 'x-api-key: yVbmGxwNvqxtPJDUtJCtFXnfupqsHnhWCkVABhqd' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' --max-time 15 -o d:/temp_sidemenu.json)",
+      "Bash(curl -s \"https://its.drr.go.th/api-v2/docs/openapi/vms\" -L --max-time 15 -o \"d:/temp_vms_oapi.json\")"
     ],
     "additionalDirectories": [
-      "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail"
+      "D:\\www\\react\\drr-its-new\\src\\app\\admin\\bridge-lighting\\detail",
+      "\\tmp"
     ]
   }
 }

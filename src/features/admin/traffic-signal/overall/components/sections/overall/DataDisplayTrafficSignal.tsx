@@ -62,6 +62,8 @@ const apiSolutionToProject = (
   bureau: string,
 ): TrafficSignalProject => ({
   id: String(item.solution.id),
+  projectId: String(item.project.id),
+  roadId: String(item.road.id),
   roadCode: item.road.code_name,
   projectName: item.project.project_name,
   installPoint: item.solution.solution_name,
