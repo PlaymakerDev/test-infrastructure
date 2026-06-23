@@ -179,13 +179,14 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
+      width: 400,
       onCell: (row) => {
         if (row.type === 'header') return { colSpan: 0 }
         return { rowSpan: row.projectRowSpan }
       },
       render: (_: unknown, row: Row) => {
         if (row.type === 'header') return null
-        return <span className='text-sm'>{row.data.project.name || '-'}</span>
+        return <span className='text-sm'>{row.data.project.project_name || '-'}</span>
       },
     },
     {
