@@ -26,7 +26,15 @@ const DetailTitle: React.FC<Props> = (props) => {
           {bureauSign?.is_online ? 'Online' : 'Offline'} <Badge color={bureauSign?.is_online ? "green" : "red"} />
         </span>
         <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-          <Button type="primary" htmlType="submit" size="middle" shape="round" icon={<TbAppWindow />} className='w-full! sm:w-auto!'>
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="middle"
+            shape="round"
+            icon={<TbAppWindow />}
+            className='w-full! sm:w-auto!'
+            onClick={() => window.open(bureauSign?.anydesk ? `https://remote.anydesk.com/${bureauSign?.anydesk}` : '#', '_blank')}
+          >
             <p className='fs-12'>Anydesk : {bureauSign?.anydesk || '-'}</p>
           </Button>
         </ConfigProvider>

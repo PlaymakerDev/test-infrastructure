@@ -1,15 +1,22 @@
 import { CloudUploadOutlined } from '@ant-design/icons'
-import { Button, Col, ConfigProvider, DatePicker, Image, Input, message, Radio, Row, Select, Upload, UploadFile } from 'antd'
+import { Button, Col, ConfigProvider, Image, Input, message, Radio, Row, Select, Upload, UploadFile } from 'antd'
+import thTH from 'antd/locale/th_TH'
 import { AxiosError } from 'axios'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import th from 'dayjs/locale/th'
 import React, { useCallback } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { TbCopyPlus } from 'react-icons/tb'
-import { useControlVMSContext } from '../../../context'
+import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { APIRequestPostVMSMedia } from '@/types/control-vms/vms-api'
-import dayjs from 'dayjs'
 import { postUploadVMSAPI } from '@/services/routes/SharedService'
 import { usePostVMSMedia } from '../../../hooks/usePostVMSMedia'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
+import { useControlVMSContext } from '../../../context'
+
+dayjs.extend(buddhistEra)
+dayjs.locale(th)
 
 interface Props { }
 
@@ -136,54 +143,58 @@ const FormAddDetail: React.FC<Props> = () => {
 
         <section className='mt-5'>
           <h4 className='mb-3'>ระยะเวลา</h4>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
-              <Controller
-                name="start_date"
-                control={control}
-                rules={{ required: 'กรุณาเลือกวันที่และเวลาเริ่มต้น' }}
-                render={({ field }) => (
-                  <fieldset>
-                    <label>เริ่มต้นการแสดงผล <span className='text-red-500'>*</span></label>
-                    <DatePicker
-                      {...field}
-                      placeholder='กรุณาเลือกวันที่และเวลาเริ่มต้น...'
-                      className='w-full'
-                      format='DD/MM/YYYY'
-                      size='large'
-                    />
-                    {!!errors.start_date && <p className='text-red-500'>{errors.start_date.message}</p>}
-                  </fieldset>
-                )}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
-              <Controller
-                name="end_date"
-                control={control}
-                rules={{
-                  required: 'กรุณาเลือกวันที่และเวลาสิ้นสุด',
-                  validate: (v, form) =>
-                    !form.start_date || !v || dayjs(v).isAfter(dayjs(form.start_date))
-                      ? true
-                      : 'วันที่สิ้นสุดต้องมาหลังวันที่เริ่มต้น',
-                }}
-                render={({ field }) => (
-                  <fieldset>
-                    <label>สิ้นสุดการแสดงผล <span className='text-red-500'>*</span></label>
-                    <DatePicker
-                      {...field}
-                      placeholder='กรุณาเลือกวันที่และเวลาสิ้นสุด...'
-                      className='w-full'
-                      format='DD/MM/YYYY'
-                      size='large'
-                    />
-                    {!!errors.end_date && <p className='text-red-500'>{errors.end_date.message}</p>}
-                  </fieldset>
-                )}
-              />
-            </Col>
-          </Row>
+          <ConfigProvider locale={thTH}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  name="start_date"
+                  control={control}
+                  rules={{ required: 'กรุณาเลือกวันที่และเวลาเริ่มต้น' }}
+                  render={({ field }) => (
+                    <fieldset>
+                      <label>เริ่มต้นการแสดงผล <span className='text-red-500'>*</span></label>
+                      <BuddhistDatePicker
+                        {...field}
+                        placeholder='กรุณาเลือกวันที่และเวลาเริ่มต้น...'
+                        className='w-full'
+                        format='DD MMMM BBBB HH:mm:ss'
+                        size='large'
+                        showTime
+                      />
+                      {!!errors.start_date && <p className='text-red-500'>{errors.start_date.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  name="end_date"
+                  control={control}
+                  rules={{
+                    required: 'กรุณาเลือกวันที่และเวลาสิ้นสุด',
+                    validate: (v, form) =>
+                      !form.start_date || !v || dayjs(v).isAfter(dayjs(form.start_date))
+                        ? true
+                        : 'วันที่สิ้นสุดต้องมาหลังวันที่เริ่มต้น',
+                  }}
+                  render={({ field }) => (
+                    <fieldset>
+                      <label>สิ้นสุดการแสดงผล <span className='text-red-500'>*</span></label>
+                      <BuddhistDatePicker
+                        {...field}
+                        placeholder='กรุณาเลือกวันที่และเวลาสิ้นสุด...'
+                        className='w-full'
+                        format='DD MMMM BBBB HH:mm:ss'
+                        size='large'
+                        showTime
+                      />
+                      {!!errors.end_date && <p className='text-red-500'>{errors.end_date.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+            </Row>
+          </ConfigProvider>
         </section>
 
         <section className='mt-5'>
@@ -267,7 +278,7 @@ const FormAddDetail: React.FC<Props> = () => {
                             <video
                               src={`${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`}
                               controls
-                              className='w-full h-full object-cover'
+                              className='w-full h-full object-contain'
                             />
                           ) : (
                             <Image
@@ -275,7 +286,7 @@ const FormAddDetail: React.FC<Props> = () => {
                               alt="preview"
                               width={'100%'}
                               height={'100%'}
-                              className='object-center object-cover'
+                              className='object-center object-contain'
                             />
                           )}
                         </figure>
