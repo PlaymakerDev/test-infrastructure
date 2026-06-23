@@ -1,7 +1,8 @@
 "use client"
 import React from 'react'
 import { TbVideo, TbShield } from 'react-icons/tb'
-import { CctvDeptOverviewTotals } from '@/types/cctv'
+import type { APIResponseCCTVOverviewTotals } from '@/types/cctv/overview-api'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface StatCardProps {
   icon: React.ReactNode
@@ -46,7 +47,7 @@ const StatCard: React.FC<StatCardProps> = ({
 )
 
 interface Props {
-  totals: CctvDeptOverviewTotals | null
+  totals: APIResponseCCTVOverviewTotals | null
 }
 
 const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
@@ -60,7 +61,11 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
         label='กล้อง CCTV ในระบบทั้งหมด'
         value={camera?.total ?? 0}
         unit='ตัว'
-        // sub={camera ? `ออนไลน์ ${camera.online} / ออฟไลน์ ${camera.offline}` : undefined}
+        sub={
+          camera
+            ? `ออนไลน์ ${fmtNumber(camera.online, 0)} / ออฟไลน์ ${fmtNumber(camera.offline, 0)}`
+            : undefined
+        }
         color='#FCD116'
         tint='rgba(252,209,22,0.15)'
       />
@@ -68,7 +73,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
         icon={<TbShield />}
         label='ในค้ำ'
         value={warranty?.active ?? 0}
-        unit='ตัว'
+        unit='จุด'
         color='#05F2DB'
         tint='rgba(5,242,219,0.15)'
       />
@@ -76,7 +81,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
         icon={<TbShield />}
         label='หมดค้ำ'
         value={warranty?.expired ?? 0}
-        unit='ตัว'
+        unit='จุด'
         color='#979797'
       />
     </div>

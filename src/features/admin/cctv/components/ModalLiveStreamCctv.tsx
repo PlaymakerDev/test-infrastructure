@@ -4,10 +4,10 @@ import {
   TbMapPin, TbRss, TbScan, TbVideo, TbFileDescription, TbRefresh,
 } from 'react-icons/tb'
 import LiveStreamModal, {
-  OutlinePill,
   StatusPill,
   type LiveStreamInfoCell,
 } from '@/components/modal-live-stream/LiveStreamModal'
+import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,19 +30,6 @@ interface Props {
   camera: CctvCameraDetail | null
 }
 
-// CCTV-specific colors for function tags (CCTV/Incident/Volume/Traffic).
-const TAG_COLORS: Record<string, { color: string; filled?: boolean }> = {
-  CCTV:     { color: '#f97316' },
-  Incident: { color: '#22c55e', filled: true },
-  Volume:   { color: '#a3e635' },
-  Traffic:  { color: '#a3e635' },
-}
-
-const FunctionTag: React.FC<{ tag: string }> = ({ tag }) => {
-  const cfg = TAG_COLORS[tag] ?? { color: '#888' }
-  return <OutlinePill text={tag} color={cfg.color} filled={cfg.filled} />
-}
-
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 /** CCTV-specific Live Stream modal — wraps the central LiveStreamModal and
@@ -61,7 +48,7 @@ const ModalLiveStreamCctv: React.FC<Props> = ({ open, onClose, camera }) => {
         icon: <TbRss />,
         label: 'ประเภทอุปกรณ์',
         content: (
-          <>{camera.functions.map((fn) => <FunctionTag key={fn} tag={fn} />)}</>
+          <>{camera.functions.map((fn) => <CameraFunctionTag key={fn} tag={fn} />)}</>
         ),
       },
       {

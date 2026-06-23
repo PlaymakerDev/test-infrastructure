@@ -1,13 +1,17 @@
 "use client"
 import React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useQueries } from '@tanstack/react-query'
 import {
   TbGridDots,
   TbWifi,
   TbWifiOff,
   TbInfoSquareRoundedFilled,
 } from 'react-icons/tb'
-import type { CctvDeptOverviewListItem } from '@/types/cctv'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
+import type { CCTVOverviewListItem, CCTVOverviewRow } from '@/types/cctv/overview-api'
 
 // ── Pill badge ───────────────────────────────────────────────────────────────
 
@@ -22,22 +26,34 @@ const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
 
 // ── Single camera card ────────────────────────────────────────────────────────
 
-const CctvCard: React.FC<{ item: CctvDeptOverviewListItem }> = ({ item }) => {
+const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }> = ({
+  item,
+  departmentName,
+}) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const dispatch = useAppDispatch()
   const warrantyColor = item.is_warranty ? '#05F2DB' : '#979797'
   const warrantyText = item.is_warranty ? 'ในค้ำ' : 'หมดค้ำ'
+
+  const goToDetail = () => {
+    const deptId = searchParams.get('dept_id')
+    router.push(`/admin/cctv/detail/${item.solution.id}${deptId ? `?dept_id=${deptId}` : ''}`)
+  }
 
   return (
     <div
       className='flex flex-col gap-4 rounded-2xl p-5'
       style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
     >
-      {/* Title */}
+      {/* Title — project name (ชื่อโครงการ). Clamped so long names don't make
+        * cards wildly different heights; full text on hover. */}
       <h4
-        className='text-base font-semibold leading-snug mb-0'
+        className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
         style={{ color: 'var(--yellow)' }}
+        title={item.project.project_name}
       >
-        {item.solution.solution_name}
+        {item.project.project_name}
       </h4>
 
       {/* Badges row */}
@@ -46,19 +62,28 @@ const CctvCard: React.FC<{ item: CctvDeptOverviewListItem }> = ({ item }) => {
         <Pill text={warrantyText} color={warrantyColor} />
         <TbInfoSquareRoundedFilled
           size={32}
-          className='cursor-pointer'
+          className='cursor-pointer hover:text-(--yellow)'
           style={{ color: '#ffffff' }}
-          title='ดูรายละเอียดสัญญา'
+          title='ดูข้อมูลโครงการ'
+          onClick={() =>
+            dispatch(
+              setProjectInfoModalOpen({
+                open: true,
+                project_id: item.project.id,
+                road_id: item.road.id,
+              })
+            )
+          }
         />
       </div>
 
       {/* Info rows */}
       <div className='flex flex-col gap-1.5 text-sm'>
         <div className='flex gap-2'>
-          <span className='text-white/50 whitespace-nowrap shrink-0'>ชื่อโครงการ :</span>
+          <span className='text-white/50 whitespace-nowrap shrink-0'>จุดติดตั้ง :</span>
           <span
             className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-            onClick={() => router.push(`/admin/cctv/detail/${item.solution.id}`)}
+            onClick={goToDetail}
             role='link'
             tabIndex={0}
           >
@@ -70,8 +95,8 @@ const CctvCard: React.FC<{ item: CctvDeptOverviewListItem }> = ({ item }) => {
           <span className='text-white'>{item.project.contract_no}</span>
         </div>
         <div className='flex gap-2'>
-          <span className='text-white/50 whitespace-nowrap shrink-0'>ปีงบประมาณ :</span>
-          <span className='font-medium' style={{ color: 'var(--yellow)' }}>{item.project.budget_year}</span>
+          <span className='text-white/50 whitespace-nowrap shrink-0'>หน่วยงานที่รับผิดชอบ :</span>
+          <span className='text-white'>{departmentName ?? '-'}</span>
         </div>
       </div>
 
@@ -122,13 +147,48 @@ const CctvCard: React.FC<{ item: CctvDeptOverviewListItem }> = ({ item }) => {
   )
 }
 
-// ── Grid ──────────────────────────────────────────────────────────────────────
+// ── Grid (grouped by แขวง) ──────────────────────────────────────────────────────
 
 interface Props {
-  items: CctvDeptOverviewListItem[]
+  items: CCTVOverviewRow[]
 }
 
 const CardGridCctv: React.FC<Props> = ({ items }) => {
+  // Group cards by bureau (แขวง) so the grid mirrors the table's grouping.
+  const groups = React.useMemo(() => {
+    const map = new Map<string, CCTVOverviewRow[]>()
+    for (const it of items) {
+      const list = map.get(it.bureau) ?? []
+      list.push(it)
+      map.set(it.bureau, list)
+    }
+    return Array.from(map.entries())
+  }, [items])
+
+  // "หน่วยงานที่รับผิดชอบ" comes from the same source as the Project Info modal
+  // (/manage/departments/by-road) — it isn't on the overview list. Fetch once
+  // per DISTINCT road (deduped, cached forever since it's static reference
+  // data). This component only mounts in card view, so the calls stay lazy.
+  const roadIds = React.useMemo(
+    () => Array.from(new Set(items.map((i) => i.road.id))),
+    [items]
+  )
+  const deptQueries = useQueries({
+    queries: roadIds.map((roadId) => ({
+      queryKey: ['department_by_road', roadId],
+      queryFn: () => getDepartmentByRoadAPI({ road_id: roadId }).then((r) => r.data.department_name),
+      enabled: !!roadId,
+      staleTime: Infinity,
+    })),
+  })
+  const deptByRoad = React.useMemo(() => {
+    const map = new Map<number, string>()
+    roadIds.forEach((roadId, i) => {
+      const name = deptQueries[i]?.data
+      if (name) map.set(roadId, name)
+    })
+    return map
+  }, [roadIds, deptQueries])
 
   if (items.length === 0) {
     return (
@@ -137,9 +197,34 @@ const CardGridCctv: React.FC<Props> = ({ items }) => {
   }
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-      {items.map((item) => (
-        <CctvCard key={item.solution.id} item={item} />
+    <div className='flex flex-col gap-6'>
+      {groups.map(([bureau, rows]) => (
+        <section key={bureau} className='flex flex-col gap-3'>
+          {/* Bureau header — matches the table's divider style */}
+          <div
+            className='flex items-center gap-3 px-4 py-2.5 rounded-lg'
+            style={{ background: '#2a2a2a' }}
+          >
+            <span className='text-white font-bold'>{bureau}</span>
+            <span
+              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+              style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+            >
+              {rows.length} โครงการ
+            </span>
+          </div>
+
+          {/* Cards for this bureau */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+            {rows.map((item) => (
+              <CctvCard
+                key={item.solution.id}
+                item={item}
+                departmentName={deptByRoad.get(item.road.id)}
+              />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   )

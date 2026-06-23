@@ -1,8 +1,16 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
+import { Select } from 'antd'
 import { TbSearch, TbRoad, TbVideo, TbList } from 'react-icons/tb'
 import CameraDetailTableCctv from './sections/overall/CameraDetailTableCctv'
-import MapSection from './sections/overall/MapSection'
+import MapSection, { type SearchMapCamera } from './sections/overall/MapSection'
+import type { InstallGroup, CameraRow } from './sections/overall/CameraGridView'
+import { useCctvCameraCentralList, useCctvOverviewCentralList } from '@/hooks/queries/cctv'
+import { extractCameraFunctions } from '@/features/admin/cctv/components/cameraFunctions'
+
+interface Props {
+  deptId?: string | null
+}
 
 // ── Pill badge ────────────────────────────────────────────────────────────────
 
@@ -11,7 +19,7 @@ const Pill: React.FC<{ count: number; label: string; color: string }> = ({ count
     className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
-    <span className='font-semibold'>{count}</span>
+    <span className='font-semibold'>{count.toLocaleString()}</span>
     <span>{label}</span>
   </span>
 )
@@ -36,10 +44,84 @@ const InfoCard: React.FC<{
   </div>
 )
 
-// ── Main component ────────────────────────────────────────────────────────────
+const OverallSection: React.FC<Props> = ({ deptId }) => {
+  // `selectedRoad` (id + label) drives the camera central list.
+  const [selectedRoad, setSelectedRoad] = useState<{ id: number; label: string } | null>(null)
 
-const OverallSection: React.FC = () => {
-  const [searchValue, setSearchValue] = useState('')
+  // Dropdown lists ONLY roads that actually have CCTV — sourced from the same
+  // overview the overall page uses. (NOT /manage/roads, which returns every
+  // road the department administers; most have no camera, so picking one would
+  // show an empty result.) Cache is shared with the overall page.
+  const { data: centralRoads, isLoading: roadsLoading } = useCctvOverviewCentralList(deptId)
+
+  // Distinct (road_id → road_code) across every CCTV solution. road_code is
+  // unique within a department, so it alone labels the option.
+  const roadOptions = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const bureau of centralRoads ?? []) {
+      for (const sub of bureau.sub_department) {
+        for (const sol of sub.solutions) {
+          map.set(sol.road.id, sol.road.code_name)
+        }
+      }
+    }
+    return Array.from(map, ([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'th'))
+  }, [centralRoads])
+
+  // Effective road = the user's explicit pick, else the first CCTV road so the
+  // page shows cameras by default (no empty state). Derived, not effect-driven.
+  const effectiveRoad = useMemo(() => {
+    if (selectedRoad) return selectedRoad
+    const first = roadOptions[0]
+    return first ? { id: first.value, label: first.label } : null
+  }, [selectedRoad, roadOptions])
+
+  const { data: central } = useCctvCameraCentralList(effectiveRoad?.id)
+
+  const lists = useMemo(() => central?.lists ?? [], [central?.lists])
+  const meta = central?.metadata
+
+  // Group cameras by install point (solution_location) for the table layout.
+  const groups = useMemo<InstallGroup[]>(
+    () =>
+      lists.map((item) => ({
+        id: String(item.solution_location_id),
+        // Group label = solution name + install-point name.
+        label: [item.solution_name, item.solution_location_name].filter(Boolean).join(' '),
+        warranty: item.project.is_warranty ? 'in-warranty' : 'expired',
+        projectId: item.project.project_id,
+        roadId: effectiveRoad?.id,
+        cameras: item.cameras.map<CameraRow>((c) => ({
+          id: c.id,
+          name: c.camera_name,
+          km: c.sta,
+          functions: extractCameraFunctions(c),
+          ip: c.ip_address,
+          hlsUrl: c.hls_url,
+          streamStatus: c.is_online ? 'connect' : 'disconnect',
+          deviceStatus: c.is_online ? 'connect' : 'disconnect',
+        })),
+      })),
+    [lists, effectiveRoad?.id]
+  )
+
+  // Flatten cameras with coords for the map markers.
+  const mapCameras = useMemo<SearchMapCamera[]>(
+    () =>
+      lists
+        .flatMap((item) => item.cameras)
+        .filter((c) => c.geometry_point)
+        .map((c) => ({
+          id: c.id,
+          name: c.camera_name,
+          online: c.is_online,
+          coord: c.geometry_point as [number, number],
+        })),
+    [lists]
+  )
+
+  const cameraTotal = (meta?.camera_online_count ?? 0) + (meta?.camera_offline_count ?? 0)
 
   return (
     <>
@@ -50,7 +132,7 @@ const OverallSection: React.FC = () => {
       >
         {/* Mapbox — fills entire section */}
         <div className='absolute inset-0'>
-          <MapSection edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
+          <MapSection cameras={mapCameras} edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
         </div>
 
         {/* Right overlay — search + info cards */}
@@ -58,27 +140,47 @@ const OverallSection: React.FC = () => {
           className='absolute z-10 top-5 right-5 flex flex-col gap-3 pointer-events-auto'
           style={{ width: 320 }}
         >
-          {/* Search input */}
+          {/* Road search (autocomplete from /manage/roads) */}
           <div
-            className='flex items-center gap-2 px-4 py-3 rounded-2xl'
+            className='flex items-center gap-2 px-3 py-1.5 rounded-2xl'
             style={{ background: '#1a1a1a', border: '1px solid #333' }}
           >
             <TbSearch size={18} style={{ color: '#666', flexShrink: 0 }} />
-            <input
-              type='text'
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder='ค้นหาสายทาง เช่น ฉซ.3001...'
-              className='flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none'
+            <Select
+              showSearch
+              allowClear
+              value={effectiveRoad?.id}
+              onChange={(value, option) => {
+                if (!value) {
+                  setSelectedRoad(null)
+                  return
+                }
+                const label = Array.isArray(option) ? '' : (option?.label as string) ?? ''
+                setSelectedRoad({ id: Number(value), label })
+              }}
+              options={roadOptions}
+              filterOption={(input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              loading={roadsLoading}
+              notFoundContent={roadsLoading ? 'กำลังโหลด...' : 'ไม่พบสายทางที่มีกล้อง'}
+              placeholder='ค้นหาสายทาง เช่น ลป.1003...'
+              variant='borderless'
+              className='flex-1'
+              style={{ width: '100%' }}
             />
           </div>
 
           {/* Card 1 — สายทาง */}
           <InfoCard icon={<TbRoad size={18} />} label='สายทาง' accentColor='#FCD116'>
             <div className='flex flex-col gap-0.5'>
-              <span className='text-lg font-bold text-white'>ฉซ.3001</span>
+              <span className='text-lg font-bold text-white'>
+                {effectiveRoad ? effectiveRoad.label : 'เลือกสายทาง'}
+              </span>
               <span className='text-xs' style={{ color: '#aaa' }}>
-                อำนวย 3 โครงการ, กล้อง CCTV 21 ตัว
+                {effectiveRoad
+                  ? `${meta?.project_count ?? 0} โครงการ, กล้อง CCTV ${cameraTotal.toLocaleString()} ตัว`
+                  : 'ค้นหาและเลือกสายทางเพื่อแสดงกล้อง'}
               </span>
             </div>
           </InfoCard>
@@ -86,18 +188,18 @@ const OverallSection: React.FC = () => {
           {/* Card 2 — สถานะกล้อง */}
           <InfoCard icon={<TbVideo size={18} />} label='สถานะกล้อง'>
             <div className='flex flex-wrap gap-2'>
-              <Pill count={21} label='ทั้งหมด' color='#fff' />
-              <Pill count={16} label='ออนไลน์' color='#66AEFF' />
-              <Pill count={5}  label='ออฟไลน์' color='#E94C4C' />
+              <Pill count={cameraTotal} label='ทั้งหมด' color='#fff' />
+              <Pill count={meta?.camera_online_count ?? 0} label='ออนไลน์' color='#66AEFF' />
+              <Pill count={meta?.camera_offline_count ?? 0} label='ออฟไลน์' color='#E94C4C' />
             </div>
           </InfoCard>
 
           {/* Card 3 — โครงการทั้งหมด */}
           <InfoCard icon={<TbList size={18} />} label='โครงการทั้งหมด'>
             <div className='flex flex-wrap gap-2'>
-              <Pill count={3} label='ทั้งหมด' color='#fff' />
-              <Pill count={1} label='ในค้ำ'   color='#05F2DB' />
-              <Pill count={2} label='หมดค้ำ'  color='#979797' />
+              <Pill count={meta?.project_count ?? 0} label='ทั้งหมด' color='#fff' />
+              <Pill count={meta?.in_warranty_count ?? 0} label='ในค้ำ' color='#05F2DB' />
+              <Pill count={meta?.out_warranty_count ?? 0} label='หมดค้ำ' color='#979797' />
             </div>
           </InfoCard>
         </aside>
@@ -105,10 +207,10 @@ const OverallSection: React.FC = () => {
 
       {/* ── Camera detail table ── */}
       <section className='mt-8'>
-        <CameraDetailTableCctv />
+        <CameraDetailTableCctv groups={groups} />
       </section>
     </>
   )
 }
 
-export default React.memo(OverallSection)
+export default React.memo<Props>(OverallSection)

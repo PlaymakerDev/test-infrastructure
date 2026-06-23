@@ -134,8 +134,12 @@ export interface PanelCamera {
   name: string
   ip: string
   online: boolean
+  /** Station / km marker, e.g. "7+900" (from camera `sta`). */
+  km?: string
   hlsUrl?: string
   functions?: string[]
+  /** [lng, lat] — used to plot the camera on the detail map. */
+  coord?: [number, number]
 }
 
 export interface CctvInstallDetail {
@@ -146,6 +150,9 @@ export interface CctvInstallDetail {
   projectName: string
   contractNo: string
   warrantyStatus: WarrantyStatus
+  /** project.id / road.id — feed the central Project Info modal (ⓘ in header). */
+  projectId?: number
+  roadId?: number
   googleMapUrl?: string
   coord: [number, number]
   totalCameras: number

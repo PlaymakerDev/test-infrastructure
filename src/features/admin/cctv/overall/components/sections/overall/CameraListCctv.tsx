@@ -1,9 +1,9 @@
 "use client"
 import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import type { CctvRandomOnlineCamera } from '@/types/cctv'
+import type { CCTVRandomOnlineCamera } from '@/types/cctv/camera-api'
 
-const CameraCard: React.FC<{ camera: CctvRandomOnlineCamera }> = ({ camera }) => (
+const CameraCard: React.FC<{ camera: CCTVRandomOnlineCamera }> = ({ camera }) => (
   <div
     style={{
       background: 'rgba(0,0,0,0.75)',
@@ -39,7 +39,7 @@ const CameraCard: React.FC<{ camera: CctvRandomOnlineCamera }> = ({ camera }) =>
 )
 
 interface Props {
-  cameras: CctvRandomOnlineCamera[]
+  cameras: CCTVRandomOnlineCamera[]
 }
 
 const CameraListCctv: React.FC<Props> = ({ cameras }) => (

@@ -1,6 +1,6 @@
 import { APIResponseCCTVDetail } from "@/types/cctv/shared-api"
 import ApiService from "../ApiService"
-import { APIRequestDepartmentByRoad, APIResponseContactDetail, APIResponseDepartmentByRoad } from "@/types/shared"
+import { APIRequestDepartmentByRoad, APIRequestRoadList, APIResponseContactDetail, APIResponseDepartmentByRoad, APIResponseRoadList } from "@/types/shared"
 
 export const getCCTVDetailAPI = async (cameraId: string | number) => {
   return ApiService.fetchData<APIResponseCCTVDetail>({
@@ -21,5 +21,13 @@ export const getDepartmentByRoadAPI = async (params: APIRequestDepartmentByRoad)
     url: `/manage/departments/by-road`,
     method: 'GET',
     params: { ...params }
+  })
+}
+
+export const getRoadListAPI = async (params: APIRequestRoadList) => {
+  return ApiService.fetchData<APIResponseRoadList, APIRequestRoadList>({
+    url: `/manage/roads`,
+    method: 'GET',
+    params: { is_exist: true, ...params }
   })
 }
