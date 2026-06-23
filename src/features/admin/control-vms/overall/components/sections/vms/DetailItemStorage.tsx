@@ -18,13 +18,22 @@ const DetailItemStorage: React.FC = () => {
             <p className='fs-12 text-gray-400 mb-0'>รวบรวมรูปภาพและวิดีโอที่มีการแสดงผลในปัจจุบัน</p>
           </div>
         </div>
-        <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setMediaOpen(true)}>
-          <p className='fs-12'>ดูเพิ่มเติม</p>
-        </Button>
+        {!isAddMode && (
+          <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setMediaOpen(true)}>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
+          </Button>
+        )}
       </div>
       <section className='mt-5'>
         <DetailTabContent />
       </section>
+      {isAddMode && (
+        <div className='text-center'>
+          <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setMediaOpen(true)}>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
+          </Button>
+        </div>
+      )}
       <ModalDetailItemStorage open={mediaOpen} onClose={() => setMediaOpen(false)} />
     </div>
   )
