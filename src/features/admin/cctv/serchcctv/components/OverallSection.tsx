@@ -3,8 +3,11 @@ import React, { useMemo, useState } from 'react'
 import { Select } from 'antd'
 import { TbSearch, TbRoad, TbVideo, TbList } from 'react-icons/tb'
 import CameraDetailTableCctv from './sections/overall/CameraDetailTableCctv'
-import MapSection, { type SearchMapCamera } from './sections/overall/MapSection'
+import CctvLocationMap from '@/features/admin/cctv/detail/components/sections/CctvLocationMap'
+import type { PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import type { InstallGroup, CameraRow } from './sections/overall/CameraGridView'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useCctvCameraCentralList, useCctvOverviewCentralList } from '@/hooks/queries/cctv'
 import { extractCameraFunctions } from '@/features/admin/cctv/components/cameraFunctions'
 
@@ -45,6 +48,8 @@ const InfoCard: React.FC<{
 )
 
 const OverallSection: React.FC<Props> = ({ deptId }) => {
+  const dispatch = useAppDispatch()
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
   // `selectedRoad` (id + label) drives the camera central list.
   const [selectedRoad, setSelectedRoad] = useState<{ id: number; label: string } | null>(null)
 
@@ -106,20 +111,31 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
     [lists, effectiveRoad?.id]
   )
 
-  // Flatten cameras with coords for the map markers.
-  const mapCameras = useMemo<SearchMapCamera[]>(
+  // Flatten cameras with coords into the same `PanelCamera` shape the detail
+  // page uses — lets us share `CctvLocationMap` for the marker grouping,
+  // popup-on-overlap, and HLS thumbnail logic.
+  const mapCameras = useMemo<PanelCamera[]>(
     () =>
       lists
         .flatMap((item) => item.cameras)
         .filter((c) => c.geometry_point)
-        .map((c) => ({
+        .map<PanelCamera>((c) => ({
           id: c.id,
           name: c.camera_name,
+          ip: c.ip_address,
           online: c.is_online,
+          km: c.sta,
+          hlsUrl: c.hls_url,
+          functions: extractCameraFunctions(c),
           coord: c.geometry_point as [number, number],
         })),
     [lists]
   )
+
+  // Map centre = first camera with a coord on the selected road, else a sane
+  // fallback (Bangkok); CctvLocationMap also frames all markers via fitBounds.
+  const mapCenter: [number, number] =
+    mapCameras[0]?.coord ?? [100.5018, 13.7563]
 
   const cameraTotal = (meta?.camera_online_count ?? 0) + (meta?.camera_offline_count ?? 0)
 
@@ -130,9 +146,17 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
         className='relative -mx-10 mt-6 overflow-hidden'
         style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}
       >
-        {/* Mapbox — fills entire section */}
+        {/* Mapbox — fills entire section. Reuses the same map the detail page
+          * uses so behaviour is consistent: cameras sharing a coordinate merge
+          * into one pin with a count badge + popup picker; clicking a pin opens
+          * the central Live Stream modal (via Redux). */}
         <div className='absolute inset-0'>
-          <MapSection cameras={mapCameras} edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
+          <CctvLocationMap
+            cameras={mapCameras}
+            center={mapCenter}
+            onSelectCamera={(cam) => openCamera(cam.id)}
+            edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
+          />
         </div>
 
         {/* Right overlay — search + info cards */}

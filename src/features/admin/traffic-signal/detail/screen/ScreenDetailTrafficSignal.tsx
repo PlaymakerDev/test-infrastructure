@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TitleSection, OverallSection, SummaryTrafficSection } from '../components'
 import { DetailProvider } from '../context'
-import { ProjectInfoModal } from '@/components/modal'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import {
   useTrafficContractInfo,
   useTrafficSolutionDetail,
@@ -74,6 +74,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       redSec: p.waiting_time,
       isActive: p.is_active,
       timestamp: p.timestamp,
+      isMainRoad: p.is_main_road,
     }))
 
     // Prefer the overview endpoint's `is_online` (authoritative — matches
@@ -260,6 +261,9 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
         {/* Global Project Info modal — fires when ⓘ icon in title bar is
           * clicked. Reads project_id/road_id from URL search params. */}
         <ProjectInfoModal />
+        {/* Central Live Stream modal — opened via Redux from camera tiles/table;
+          * Traffic-specific phase/PCU cells are passed as extra_cells. */}
+        <CCTVModal />
       </div>
     </DetailProvider>
   )

@@ -1,10 +1,9 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
 import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { setCCTVModalOpen, setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 // Same shape as the CCTV detail camera grid, EXCEPT each camera carries an
@@ -42,17 +41,6 @@ const parseKm = (km: string): number => {
   const [main, sub] = km.split('+')
   return (parseInt(main ?? '0', 10) * 1000) + parseInt(sub ?? '0', 10)
 }
-
-const toModalCamera = (cam: CameraRow, location: string): CctvCameraDetail => ({
-  id: cam.id,
-  name: cam.name,
-  hlsUrl: cam.hlsUrl,
-  location,
-  functions: cam.functions,
-  streamStatus: cam.streamStatus,
-  deviceStatus: cam.deviceStatus,
-  ip: cam.ip,
-})
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -149,7 +137,7 @@ interface Props {
 
 const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
   const dispatch = useAppDispatch()
-  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 
   const kmSorted = useMemo(() => {
     if (mode !== 'km') return []
@@ -168,7 +156,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
               key={cam.id}
               camera={cam}
               showKm
-              onSelect={() => setModalCamera(toModalCamera(cam, `กม. ${cam.km}`))}
+              onSelect={() => openCamera(cam.id)}
             />
           ))}
         </div>
@@ -209,7 +197,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
                   <CameraCard
                     key={cam.id}
                     camera={cam}
-                    onSelect={() => setModalCamera(toModalCamera(cam, group.label))}
+                    onSelect={() => openCamera(cam.id)}
                   />
                 ))}
               </div>
@@ -218,12 +206,6 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
           ))}
         </div>
       )}
-
-      <ModalLiveStreamCctv
-        open={!!modalCamera}
-        onClose={() => setModalCamera(null)}
-        camera={modalCamera}
-      />
     </>
   )
 }

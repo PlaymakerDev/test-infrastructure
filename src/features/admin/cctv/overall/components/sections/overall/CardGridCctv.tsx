@@ -35,6 +35,13 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
   const dispatch = useAppDispatch()
   const warrantyColor = item.is_warranty ? '#05F2DB' : '#979797'
   const warrantyText = item.is_warranty ? 'ในค้ำ' : 'หมดค้ำ'
+  // No contract → show the budget year (พ.ศ.) and disable the project ⓘ.
+  const hasContract = !!(item.project.contract_no && item.project.contract_no.trim())
+  const contractText = hasContract
+    ? item.project.contract_no
+    : item.project.budget_year
+      ? `ปีงบประมาณ ${item.project.budget_year}`
+      : '-'
 
   const goToDetail = () => {
     const deptId = searchParams.get('dept_id')
@@ -62,17 +69,20 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
         <Pill text={warrantyText} color={warrantyColor} />
         <TbInfoSquareRoundedFilled
           size={32}
-          className='cursor-pointer hover:text-(--yellow)'
-          style={{ color: '#ffffff' }}
-          title='ดูข้อมูลโครงการ'
-          onClick={() =>
-            dispatch(
-              setProjectInfoModalOpen({
-                open: true,
-                project_id: item.project.id,
-                road_id: item.road.id,
-              })
-            )
+          className={hasContract ? 'cursor-pointer hover:text-(--yellow)' : 'cursor-not-allowed'}
+          style={{ color: hasContract ? '#ffffff' : '#555' }}
+          title={hasContract ? 'ดูข้อมูลโครงการ' : 'ไม่มีข้อมูลโครงการ'}
+          onClick={
+            hasContract
+              ? () =>
+                  dispatch(
+                    setProjectInfoModalOpen({
+                      open: true,
+                      project_id: item.project.id,
+                      road_id: item.road.id,
+                    })
+                  )
+              : undefined
           }
         />
       </div>
@@ -92,7 +102,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
         </div>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>เลขที่สัญญา :</span>
-          <span className='text-white'>{item.project.contract_no}</span>
+          <span className='text-white'>{contractText}</span>
         </div>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>หน่วยงานที่รับผิดชอบ :</span>

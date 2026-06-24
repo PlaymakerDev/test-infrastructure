@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from 'antd'
 import { TitleSection, OverallSection } from '../components'
-import { ProjectInfoModal } from '@/components/modal'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import type { InstallGroup, CameraRow } from '../components/sections/CameraGridView'
 import {
   useCctvCameraCentralList,
@@ -166,6 +166,9 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
       {/* Global Project Info modal — fires when the ⓘ icon in the title bar or
         * a group header is clicked. Reads project_id/road_id from Redux. */}
       <ProjectInfoModal />
+      {/* Central Live Stream modal — opened (via Redux) from the map, side
+        * panel, grid + table; fetches /cctv/cameras/{id} for complete info. */}
+      <CCTVModal />
     </div>
   )
 }

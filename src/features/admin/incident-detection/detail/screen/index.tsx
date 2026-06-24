@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 import { TitleSection, OverallSection, EventSection } from '../components'
 import { DetailProvider } from '../context'
-import { ProjectInfoModal } from '@/components/modal'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 
 interface Props {
   id?: string | string[]
@@ -30,6 +30,9 @@ const IncidentDetectionDetailScreen: React.FC<Props> = (props) => {
         {/* Global Project Info modal — opened from the ⓘ on each camera-table
           * group header (and the title bar once wired). */}
         <ProjectInfoModal />
+        {/* Central Live Stream modal — opened (via Redux) from camera cards;
+          * fetches /cctv/cameras/{id} so "ประเภทอุปกรณ์" is complete (like VMS). */}
+        <CCTVModal />
       </div>
     </DetailProvider>
   )

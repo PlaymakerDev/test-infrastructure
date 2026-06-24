@@ -3,9 +3,8 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff, TbShieldFilled } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { TbWifi, TbWifiOff, TbShieldFilled } from 'react-icons/tb'
+import { ContractInfoCell } from '@/components/modal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/incident-detection/components/LicenseModal'
@@ -71,7 +70,6 @@ const TOTAL_COLS = 10
 const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
   const router = useRouter()
   const deptId = useDeptId()
-  const dispatch = useAppDispatch()
   const [licenseSolution, setLicenseSolution] = useState<LicenseModalSolution | null>(null)
 
   const openLicense = useCallback((r: IncidentRow) => {
@@ -154,28 +152,15 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       width: 190,
       align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => {
-        if (row.kind !== 'project') return null
-        return (
-          <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-            {row.item.contractNo}
-            <TbInfoSquareRoundedFilled
-              size={18}
-              className='text-white cursor-pointer hover:text-(--yellow)'
-              title='ดูข้อมูลโครงการ'
-              onClick={() =>
-                dispatch(
-                  setProjectInfoModalOpen({
-                    open: true,
-                    project_id: row.item.projectId ? Number(row.item.projectId) : null,
-                    road_id: row.item.roadId ? Number(row.item.roadId) : null,
-                  })
-                )
-              }
-            />
-          </span>
-        )
-      },
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <ContractInfoCell
+            contractNo={row.item.contractNo}
+            budgetYear={row.item.budgetYear}
+            projectId={row.item.projectId}
+            roadId={row.item.roadId}
+          />
+        ) : null,
     },
     {
       title: 'การค้ำประกัน',
@@ -260,7 +245,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
     },
-  ], [goToDetail, openLicense, dispatch])
+  ], [goToDetail, openLicense])
 
   return (
     <>

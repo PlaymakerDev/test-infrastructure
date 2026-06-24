@@ -3,9 +3,7 @@ import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { ContractInfoCell } from '@/components/modal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
@@ -65,7 +63,6 @@ type Row =
 const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const deptId = useDeptId()
-  const dispatch = useAppDispatch()
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficSignalProject[]>()
     for (const p of projects) {
@@ -156,30 +153,15 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         key: 'contractNo',
         width: 200,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span className='inline-flex items-center gap-1.5'>
-              {row.project.contractNo}
-              <TbInfoSquareRoundedFilled
-                size={18}
-                className='text-white cursor-pointer hover:text-(--yellow)'
-                title='ดูข้อมูลโครงการ'
-                onClick={() =>
-                  dispatch(
-                    setProjectInfoModalOpen({
-                      open: true,
-                      project_id: row.project.projectId
-                        ? Number(row.project.projectId)
-                        : null,
-                      road_id: row.project.roadId ? Number(row.project.roadId) : null,
-                    }),
-                  )
-                }
-              />
-            </span>
-          )
-        },
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.project.contractNo}
+              budgetYear={row.project.budgetYear}
+              projectId={row.project.projectId}
+              roadId={row.project.roadId}
+            />
+          ) : null,
       },
       {
         title: 'การค้ำประกัน',

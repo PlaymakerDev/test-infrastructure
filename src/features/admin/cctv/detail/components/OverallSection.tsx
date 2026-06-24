@@ -6,7 +6,8 @@ import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvInstallDetail, PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import CameraInstallTable from './CameraInstallTable'
 import type { InstallGroup } from './sections/CameraGridView'
-import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import CctvLocationMap from './sections/CctvLocationMap'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
@@ -59,19 +60,9 @@ interface Props {
 }
 
 const OverallSection: React.FC<Props> = ({ detail, groups }) => {
+  const dispatch = useAppDispatch()
   const [panelFilter, setPanelFilter] = useState<string>('all')
-  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
-
-  const toModal = (cam: PanelCamera): CctvCameraDetail => ({
-    id: cam.id,
-    name: cam.name,
-    hlsUrl: cam.hlsUrl,
-    location: detail.location,
-    functions: cam.functions ?? [],
-    streamStatus: cam.online ? 'connect' : 'disconnect',
-    deviceStatus: cam.online ? 'connect' : 'disconnect',
-    ip: cam.ip,
-  })
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 
   const displayedCameras = panelFilter === 'online'
     ? detail.cameras.filter((c) => c.online)
@@ -97,7 +88,7 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
           <CctvLocationMap
             cameras={detail.cameras}
             center={detail.coord}
-            onSelectCamera={(cam) => setModalCamera(toModal(cam))}
+            onSelectCamera={(cam) => openCamera(cam.id)}
             edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
           />
         </div>
@@ -142,7 +133,7 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
           <div className='flex-1 overflow-y-auto no-scrollbar'>
             <div className='flex flex-col gap-3 p-3'>
               {displayedCameras.map((cam) => (
-                <CameraCardList key={cam.id} camera={cam} onSelect={() => setModalCamera(toModal(cam))} />
+                <CameraCardList key={cam.id} camera={cam} onSelect={() => openCamera(cam.id)} />
               ))}
             </div>
           </div>
@@ -154,13 +145,6 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
       <section className='mt-8'>
         <CameraInstallTable groups={groups} />
       </section>
-
-      <ModalLiveStreamCctv
-        open={!!modalCamera}
-        onClose={() => setModalCamera(null)}
-        camera={modalCamera}
-      />
-
     </>
   )
 }

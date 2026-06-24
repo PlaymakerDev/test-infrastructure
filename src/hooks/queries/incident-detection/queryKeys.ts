@@ -7,7 +7,6 @@ import type {
 import type {
   APIRequestIncidentDaily,
   APIRequestIncidentTransactions,
-  IncidentDashboardType,
 } from '@/types/incident-detection/details-api'
 
 export const incidentKeys = {
@@ -47,8 +46,8 @@ export const incidentKeys = {
       [...incidentKeys.details.root(), 'daily', params] as const,
     transactions: (params: APIRequestIncidentTransactions) =>
       [...incidentKeys.details.root(), 'transactions', params] as const,
-    dashboard: (deptId: string | number, type: IncidentDashboardType) =>
-      [...incidentKeys.details.root(), 'dashboard', deptId, type] as const,
+    peakHour: (solutionId: string | number) =>
+      [...incidentKeys.details.root(), 'peak-hour', solutionId] as const,
   },
 
   // License is keyed by solution_id only (endpoint is not department-scoped).

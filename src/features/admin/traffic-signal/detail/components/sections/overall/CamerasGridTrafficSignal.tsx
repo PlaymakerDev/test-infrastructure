@@ -7,13 +7,14 @@ import SearchBar, {
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
-import ModalLiveStreamTrafficSignal, {
-  type TrafficSignalCameraDetail,
-} from '../../ModalLiveStreamTrafficSignal'
 import TableCameraTrafficSignal from './TableCameraTrafficSignal'
 import { useDetailContext } from '../../../context'
 import { useTrafficSolutionCameras } from '@/hooks/queries/traffic-signal'
 import type { TrafficSolutionCamera } from '@/types/traffic-signal/detail-api'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import type { CCTVModalExtraCell } from '@/types/layout'
 
 export interface CameraEntry {
   id: string
@@ -114,9 +115,9 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
 
 const CamerasGridTrafficSignal: React.FC = () => {
   const { project } = useDetailContext()
+  const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
-  const [liveCamera, setLiveCamera] = useState<TrafficSignalCameraDetail | null>(null)
 
   // Cameras for this signal come from a dedicated endpoint — Counting/StopLine
   // split is derived from `camera_type`.
@@ -129,28 +130,37 @@ const CamerasGridTrafficSignal: React.FC = () => {
     for (const p of project.phaseTiming ?? []) m.set(p.phase, p.greenSec)
     return m
   }, [project.phaseTiming])
+  // phase → is_main_road lookup (drives the Live Stream modal's road-type cell).
+  const isMainRoadByPhase = useMemo(() => {
+    const m = new Map<number, boolean>()
+    for (const p of project.phaseTiming ?? []) {
+      if (p.isMainRoad !== undefined) m.set(p.phase, p.isMainRoad)
+    }
+    return m
+  }, [project.phaseTiming])
   const allCameras = useMemo(
     () => (apiCameras ?? []).map((c) => apiCameraToEntry(c, greenSecByPhase)),
     [apiCameras, greenSecByPhase]
   )
 
+  // Open the central CCTVModal (device-type/status/IP come from /cctv/cameras/{id});
+  // pass Traffic-Signal-specific cells (phase / mode / PCU / green time / road
+  // type) as extra cells so they show as a 2nd row. "Efficiency" was removed —
+  // not used. "ประเภทถนน" reads `is_main_road` from /traffic/details/phase_details
+  // looked up by the camera's monitored phase; falls back to "-" when the phase
+  // isn't in the timing payload (e.g. phase config not yet loaded).
   const openLive = (cam: CameraEntry) => {
-    setLiveCamera({
-      id: cam.id,
-      code: cam.code,
-      ipAddress: cam.ipAddress,
-      phase: cam.phase,
-      detectionMode: cam.detectionMode,
-      greenTime: cam.greenTime,
-      volume: cam.volume,
-      connection: cam.connection,
-      hlsUrl: cam.hlsUrl,
-      location: project.installPoint,
-      lastUpdated: '-',
-      functions: cam.detectionMode === 'Counting' ? ['CCTV', 'Volume', 'Traffic'] : ['CCTV', 'Traffic'],
-      efficiency: cam.connection === 'online' ? 100 : 0,
-      roadType: 'ถนนสายหลัก',
-    })
+    const mainRoad = isMainRoadByPhase.get(cam.phase)
+    const roadType =
+      mainRoad === undefined ? '-' : mainRoad ? 'ถนนสายหลัก' : 'ถนนสายรอง'
+    const extra_cells: CCTVModalExtraCell[] = [
+      { iconKey: 'phase', label: 'แยกจราจร', value: `Phase ${cam.phase}`, color: getPhaseColor(cam.phase) },
+      { iconKey: 'mode', label: 'การทำงาน', value: cam.detectionMode, color: cam.detectionMode === 'Counting' ? '#FCD116' : '#ffffff', pill: true },
+      { iconKey: 'pcu', label: 'ปริมาณ PCU', value: cam.volume.toLocaleString(), color: '#ffffff' },
+      { iconKey: 'green', label: 'Green Time', value: `${cam.greenTime}s`, color: '#ffffff' },
+      { iconKey: 'road', label: 'ประเภทถนน', value: roadType, color: '#ffffff' },
+    ]
+    dispatch(setCCTVModalOpen({ open: true, camera_id: cam.id, extra_cells }))
   }
 
   const stats: FilterStats = useMemo(
@@ -218,11 +228,6 @@ const CamerasGridTrafficSignal: React.FC = () => {
           </>
         )}
       </section>
-
-      <ModalLiveStreamTrafficSignal
-        camera={liveCamera}
-        onClose={() => setLiveCamera(null)}
-      />
     </div>
   )
 }

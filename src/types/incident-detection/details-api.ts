@@ -87,14 +87,15 @@ export interface APIResponseIncidentTransactions {
   summary: IncidentTransactionsSummary
 }
 
-// ── GET /analytic/details/{department_id}/dashboard?type= ─────────────────────
-// Bucketed event counts. For type=daily → 24 hourly buckets ("00:00"–"23:00").
+// ── GET /analytic/details/peak-hour?solution_id= ──────────────────────────────
+// The 1-hour window with the most events for ONE solution (today) + its share
+// of the day's total. Backend computes it — replaces the old FE calc over the
+// dept-level dashboard buckets. Verified live 2026-06-24.
 
-export type IncidentDashboardType = 'daily' | 'weekly' | 'monthly' | 'yearly'
-
-export interface IncidentDashboardBucket {
-  label: string
+export interface APIResponseIncidentPeakHour {
+  /** Pre-formatted hour window, e.g. "08:00 - 09:00". */
+  label: string | null
   count: number
+  /** Share (%) of the day's events that fell in this window (0–100). */
+  percentage: number
 }
-
-export type APIResponseIncidentDashboard = IncidentDashboardBucket[]

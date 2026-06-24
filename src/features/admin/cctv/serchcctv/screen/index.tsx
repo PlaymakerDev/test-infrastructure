@@ -2,7 +2,7 @@
 import React from 'react'
 import { useSearchParams } from 'next/navigation'
 import { TitleSection, OverallSection } from '../components'
-import { ProjectInfoModal } from '@/components/modal'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 
 const SerchCctvScreen: React.FC = () => {
   const searchParams = useSearchParams()
@@ -16,6 +16,8 @@ const SerchCctvScreen: React.FC = () => {
       </section>
       {/* Global Project Info modal — opened via Redux from group ⓘ icons. */}
       <ProjectInfoModal />
+      {/* Central Live Stream modal — opened via Redux from camera cards. */}
+      <CCTVModal />
     </div>
   )
 }

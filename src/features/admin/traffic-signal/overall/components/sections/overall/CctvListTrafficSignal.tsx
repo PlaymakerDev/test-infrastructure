@@ -8,14 +8,7 @@ interface Props {}
 
 /** Left rail — live CCTV camera previews for traffic-signal intersections.
  *  Data: `GET /traffic/departments/{deptId}/cameras/random-online?limit=3`
- *
- *  ⚠ Backend `random-online` response is missing fields the design needs:
- *  `ip_address`, `phases_no`, `camera_type`. We render "-" placeholders for
- *  now. To remove the placeholders, ask backend to extend the response with:
- *    camera.ip_address: string
- *    camera.phases_no:  number
- *    camera.camera_type: 'Counting' | 'StopLine' | null
- */
+ *  (the response carries ip_address / phases_no / camera_type). */
 const CctvListTrafficSignal: React.FC<Props> = () => {
   const deptId = useDeptId()
   const { data, isLoading } = useTrafficRandomCameras(deptId, 3)
@@ -44,15 +37,8 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
   return (
     <div className='h-full flex flex-col gap-4'>
       {cameras.map((entry) => {
-        // Pull extended fields if backend has added them; fall back to '-'.
-        // Once `random-online` includes these, types should be updated to
-        // make them non-optional.
-        const cam = entry.camera as typeof entry.camera & {
-          ip_address?: string
-          phases_no?: number
-          camera_type?: 'Counting' | 'StopLine' | null
-        }
-        const ipAddress = cam.ip_address ?? '-'
+        const cam = entry.camera
+        const ipAddress = cam.ip_address || '-'
         const phaseCount = cam.phases_no
         const cameraType = cam.camera_type
         // Counting → yellow accent, StopLine → white, default → muted.

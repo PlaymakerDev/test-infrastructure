@@ -21,8 +21,7 @@ import type {
   APIResponseIncidentDaily,
   APIRequestIncidentTransactions,
   APIResponseIncidentTransactions,
-  APIResponseIncidentDashboard,
-  IncidentDashboardType,
+  APIResponseIncidentPeakHour,
 } from '@/types/incident-detection/details-api'
 
 // Incident Detection (เดิมชื่อ "Analytic") service. Backend namespace `/analytic`
@@ -138,15 +137,12 @@ export const getIncidentTransactionsAPI = (params: APIRequestIncidentTransaction
     params,
   })
 
-/** Hourly/daily/weekly/monthly bucketed counts. daily = 24 hourly buckets. */
-export const getIncidentDashboardAPI = (
-  deptId: string | number,
-  type: IncidentDashboardType
-) =>
-  ApiService.fetchData<APIResponseIncidentDashboard>({
-    url: `/analytic/details/${deptId}/dashboard`,
+/** Peak event hour for ONE solution (today) + its share of the day's events. */
+export const getIncidentPeakHourAPI = (solutionId: string | number) =>
+  ApiService.fetchData<APIResponseIncidentPeakHour>({
+    url: `/analytic/details/peak-hour`,
     method: 'GET',
-    params: { type },
+    params: { solution_id: solutionId },
   })
 
 // ── License ─────────────────────────────────────────────────────────────────

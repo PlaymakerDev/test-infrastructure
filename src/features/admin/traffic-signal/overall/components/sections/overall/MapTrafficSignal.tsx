@@ -6,7 +6,6 @@ import MarkerLayer from '@/components/map/primitives/MarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
-import { useSolutionId } from '@/hooks/useSolutionId'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
 interface Props {}
@@ -144,11 +143,11 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 const MapTrafficSignal: React.FC<Props> = () => {
   const deptId = useDeptId()
-  const solutionId = useSolutionId()
-  const { data, isLoading, isSuccess } = useTrafficOverview(
-    deptId,
-    solutionId ? { solution_id: solutionId } : {}
-  )
+  // Overall map shows EVERY signal in the department — same approach as the
+  // cctv / incident-detection overall maps. (Earlier this read `solution_id`
+  // from the URL and filtered the request, which made the markers disappear
+  // when the deep-link param was carried over from another menu.)
+  const { data, isLoading, isSuccess } = useTrafficOverview(deptId)
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

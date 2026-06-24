@@ -29,7 +29,9 @@ const EventTrendSection: React.FC = () => {
   // only those become lines. Skipping zeros avoids 9 flat-zero lines crowding
   // the chart on quiet days.
   const { chartData, lines, yMax } = useMemo(() => {
-    const buckets = data ?? []
+    // API returns buckets newest-first; sort ascending by date so the latest
+    // day sits on the RIGHT of the x-axis (oldest → newest, left → right).
+    const buckets = [...(data ?? [])].sort((a, b) => a.date.localeCompare(b.date))
     // typeId → row dataKey (`t-${id}`) → highest count seen.
     const activeTypes = new Map<number, { label: string; maxCount: number }>()
     for (const bucket of buckets) {
@@ -50,7 +52,13 @@ const EventTrendSection: React.FC = () => {
       label: info.label,
     }))
     const rows: LineChartDataPoint[] = buckets.map((bucket) => {
-      const row: LineChartDataPoint = { label: bucket.date_label || bucket.date }
+      // `label` = day name on the axis; `dateText` = full BE date shown in the
+      // tooltip header (e.g. "24/06/2569").
+      const d = dayjs(bucket.date)
+      const row: LineChartDataPoint = {
+        label: bucket.date_label || bucket.date,
+        dateText: d.isValid() ? `${d.format('DD/MM/')}${d.year() + 543}` : bucket.date,
+      }
       for (const item of bucket.data) {
         row[`t-${item.analytic_type_id}`] = item.count
       }
@@ -87,6 +95,9 @@ const EventTrendSection: React.FC = () => {
       yAxisTicks={yAxisTicks}
       height={180}
       tooltipShowDot
+      // Show the full date in the tooltip header (axis label stays the day name).
+      tooltipDateKey='dateText'
+      tooltipDateSuffix=''
     />
   )
 }

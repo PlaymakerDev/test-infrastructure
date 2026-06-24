@@ -4,21 +4,41 @@ import { STCH_UNITS } from '@/features/admin/dashboard/data/units'
 import { useMap } from '../hooks/useMap'
 import HTMLMarker from '../primitives/HTMLMarker'
 
+export interface StchSummary {
+  /** Total devices in this สทช. */
+  count: number
+  /** Mean [lng, lat] of every device in this สทช. — places the marker on the
+   *  actual device cluster, NOT the สทช. HQ in mock data. Also used as the
+   *  flyTo target so clicking always lands on real markers. */
+  centroid: [number, number]
+}
+
 export interface StchSummaryMarkerProps {
-  /** Map of stch number → device count */
-  counts: Record<number, number>
+  /** Map of stch number → summary (count + centroid from live data). */
+  summaries: Record<number, StchSummary>
   /** Hide markers when zoom is at/above this value (default 6.5) */
   hideAtZoom?: number
   /** flyTo zoom on click (default 9.5) */
   zoomOnClick?: number
 }
 
+/** Friendly name lookup — falls back to a generic label for stch numbers that
+ *  the local units.ts mock doesn't know (BE has stch 0/20/21 too). */
+const stchLabel = (stch: number): string => {
+  const u = STCH_UNITS.find((x) => x.stch === stch)
+  if (u) return u.name
+  if (stch === 0) return 'ทช.ส่วนกลาง'
+  return `สำนักงานทางหลวงชนบทที่ ${stch}`
+}
+
 /**
- * 18 yellow circular HTML markers — one per สทช. — showing aggregated device count.
+ * Yellow circular HTML markers — one per สทช. — showing aggregated device count.
  * Used at country-level zoom; auto-hides when user zooms into province level.
+ * The marker is placed on the live device centroid (NOT the mock HQ coord) so
+ * clicking it always brings the user to where the devices actually are.
  */
 const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
-  counts,
+  summaries,
   hideAtZoom = 6.5,
   zoomOnClick = 9.5,
 }) => {
@@ -37,17 +57,18 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
 
   return (
     <>
-      {STCH_UNITS.map((unit) => {
-        const count = counts[unit.stch!] ?? 0
+      {Object.entries(summaries).map(([stchStr, info]) => {
+        const stch = Number(stchStr)
+        if (!info || info.count === 0) return null
         return (
           <HTMLMarker
-            key={unit.id}
-            lngLat={unit.center}
+            key={stch}
+            lngLat={info.centroid}
             visible={visible}
-            title={`${unit.name} · ${count} อุปกรณ์`}
+            title={`${stchLabel(stch)} · ${info.count} อุปกรณ์`}
             onClick={() => {
               map?.flyTo({
-                center: unit.center,
+                center: info.centroid,
                 zoom: zoomOnClick,
                 pitch: 35,
                 duration: 1500,
@@ -74,7 +95,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
                   fontFamily: 'ui-sans-serif, system-ui',
                 }}
               >
-                {count}
+                {info.count}
               </div>
             </div>
           </HTMLMarker>

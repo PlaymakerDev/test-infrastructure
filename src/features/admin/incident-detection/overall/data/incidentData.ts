@@ -12,6 +12,8 @@ export interface IncidentRow {
   roadCode: string
   projectName: string
   contractNo: string
+  /** ปีงบประมาณ (พ.ศ.) — shown in the เลขที่สัญญา column when contractNo is empty. */
+  budgetYear?: number
   warranty: WarrantyStatus
   /** solution.solution_name (จุดติดตั้ง). */
   installPoint: string

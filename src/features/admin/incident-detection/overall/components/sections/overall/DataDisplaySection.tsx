@@ -45,6 +45,7 @@ const DataDisplaySection: React.FC = () => {
             roadCode: sol.road.code_name,
             projectName: sol.project.project_name,
             contractNo: sol.project.contract_no,
+            budgetYear: sol.project.budget_year,
             warranty: sol.is_warranty ? 'in-warranty' : 'expired',
             installPoint: sol.solution.solution_name,
             bureau: sub.department_short_name,

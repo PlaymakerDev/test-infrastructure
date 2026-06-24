@@ -3,9 +3,7 @@ import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { ContractInfoCell } from '@/components/modal'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 
 /** Count cell — the filled box appears only for single-state rows (all online
@@ -58,7 +56,6 @@ interface Props {
 const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const dispatch = useAppDispatch()
 
   const goToDetail = useCallback(
     (solutionId: number) => {
@@ -154,28 +151,15 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
       width: 220,
       align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => {
-        if (row.kind !== 'project') return null
-        return (
-          <span className='inline-flex items-center gap-1.5'>
-            {row.item.project.contract_no}
-            <TbInfoSquareRoundedFilled
-              size={18}
-              className='text-white cursor-pointer hover:text-(--yellow)'
-              title='ดูข้อมูลโครงการ'
-              onClick={() =>
-                dispatch(
-                  setProjectInfoModalOpen({
-                    open: true,
-                    project_id: row.item.project.id,
-                    road_id: row.item.road.id,
-                  })
-                )
-              }
-            />
-          </span>
-        )
-      },
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <ContractInfoCell
+            contractNo={row.item.project.contract_no}
+            budgetYear={row.item.project.budget_year}
+            projectId={row.item.project.id}
+            roadId={row.item.road.id}
+          />
+        ) : null,
     },
     {
       title: 'การค้ำประกัน',
@@ -220,7 +204,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
         return <CountBadge value={row.item.camera.offline} color='#E94C4C' highlight={single} />
       },
     },
-  ], [goToDetail, dispatch])
+  ], [goToDetail])
 
   return (
     <Table<Row>

@@ -5,9 +5,8 @@ import dayjs from 'dayjs'
 import { TbCarCrash, TbHourglass } from 'react-icons/tb'
 import {
   useIncidentTransactions,
-  useIncidentDashboard,
+  useIncidentPeakHour,
 } from '@/hooks/queries/incident-detection'
-import { useDeptId } from '@/hooks/useDeptId'
 import { getEventTypeLabel } from '@/features/admin/incident-detection/components/eventTypes'
 
 // Overlay tint over a solid dark base — readable when floating over the map.
@@ -15,7 +14,6 @@ const CARD_BG = 'linear-gradient(#66AEFF1A, #66AEFF1A), #0e0e0e'
 
 /** 2 compact summary cards (most-frequent event + peak hour) — overlay on map. */
 const EventStatsSection: React.FC = () => {
-  const deptId = useDeptId()
   const params = useParams()
   const solutionId = Array.isArray(params.id) ? params.id[0] : params.id
 
@@ -28,8 +26,8 @@ const EventStatsSection: React.FC = () => {
     limit: 1,
   })
 
-  // Hourly buckets for the whole department (today) — peak hour comes from this.
-  const { data: dashboard } = useIncidentDashboard(deptId, 'daily')
+  // Peak hour for THIS solution (today) — backend-computed (label + %).
+  const { data: peak } = useIncidentPeakHour(solutionId)
 
   // Card 1 — "เหตุการณ์เกิดขึ้นมากที่สุด"
   const topType = useMemo(() => {
@@ -43,20 +41,11 @@ const EventStatsSection: React.FC = () => {
     }
   }, [tx?.summary])
 
-  // Card 2 — "ช่วงเวลาที่มีเหตุการณ์มากที่สุด"
+  // Card 2 — "ช่วงเวลาที่มีเหตุการณ์มากที่สุด" — solution-level, from the API.
   const peakHour = useMemo(() => {
-    const buckets = dashboard ?? []
-    if (buckets.length === 0) return null
-    const sum = buckets.reduce((acc, b) => acc + b.count, 0)
-    if (sum === 0) return null
-    const top = buckets.reduce((a, b) => (b.count > a.count ? b : a))
-    // Daily buckets are hourly like "12:00" → render the 1-hour window.
-    const startNum = parseInt(top.label.split(':')[0] ?? '0', 10)
-    const next = (startNum + 1) % 24
-    const endLabel = `${String(next).padStart(2, '0')}:00`
-    const pct = sum > 0 ? Math.round((top.count / sum) * 1000) / 10 : 0
-    return { range: `${top.label} - ${endLabel} น.`, pct }
-  }, [dashboard])
+    if (!peak || !peak.label || peak.count === 0) return null
+    return { range: `${peak.label} น.`, pct: peak.percentage }
+  }, [peak])
 
   return (
     <div className='flex flex-col gap-3'>
