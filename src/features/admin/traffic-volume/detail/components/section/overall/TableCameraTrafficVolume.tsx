@@ -2,7 +2,9 @@
 import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useQuery } from '@tanstack/react-query'
 import { StatusPill } from '@/components/modal-live-stream/LiveStreamModal'
+import { getCCTVDetailAPI } from '@/services/routes/SharedService'
 import type { CameraEntry } from './CamerasGridTrafficVolume'
 
 interface Props {
@@ -13,6 +15,24 @@ interface Props {
 
 interface CameraRow extends CameraEntry {
   seq: number
+}
+
+/** Per-row IP cell. Shares the `['cctv_detail', id]` cache key with the
+ *  Live Stream modal and the GRID tile, so the value is already warm
+ *  whenever the user has touched any of those views first. */
+const IPAddressCell: React.FC<{ id: string; fallback?: string }> = ({
+  id,
+  fallback,
+}) => {
+  const { data: cctv } = useQuery({
+    queryKey: ['cctv_detail', id],
+    queryFn: () => getCCTVDetailAPI(id),
+    enabled: !!id,
+  })
+  const ip = cctv?.data?.ip_address ?? fallback
+  return (
+    <span className='text-white/80 text-sm font-mono'>{ip ?? '-'}</span>
+  )
 }
 
 const TableCameraTrafficVolume: React.FC<Props> = ({ cameras, onOpen }) => {
@@ -38,21 +58,13 @@ const TableCameraTrafficVolume: React.FC<Props> = ({ cameras, onOpen }) => {
       render: (code: string) => <span className='text-white text-sm'>{code}</span>,
     },
     {
-      title: 'พิกัด',
-      key: 'coord',
-      width: 220,
+      title: 'IP Address',
+      key: 'ip',
+      width: 200,
       align: 'center',
-      render: (_, row) => {
-        if (!row.geometryPoint) {
-          return <span className='text-white/40 text-sm'>-</span>
-        }
-        const [lng, lat] = row.geometryPoint
-        return (
-          <span className='text-white/80 text-sm font-mono'>
-            {lat.toFixed(5)}, {lng.toFixed(5)}
-          </span>
-        )
-      },
+      render: (_, row) => (
+        <IPAddressCell id={row.id} fallback={row.ipAddress} />
+      ),
     },
     {
       title: 'สถานะ',

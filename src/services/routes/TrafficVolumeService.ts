@@ -27,6 +27,8 @@ import type {
   APIResponseTrafficVolumeSpeedPercentile,
   APIRequestTrafficVolumeAnalyticGraph,
   APIResponseTrafficVolumeAnalyticGraph,
+  APIRequestTrafficVolumeReportSummary,
+  APIResponseTrafficVolumeReportSummary,
 } from '@/types/traffic-volume/detail-api'
 
 const countingDeptBase = (deptId: string | number) =>
@@ -196,5 +198,25 @@ export const getTrafficVolumeSummaryDailyAPI = (
     params: {
       solution_id: params.solution_id,
       ...(params.date ? { date: params.date } : {}),
+    },
+  })
+
+// Report-mode rollup (daily/hour/month/year/vehicle_type) — drives the
+// รายงานการนับปริมาณจราจร tab tables. `camera_id` is forwarded only when set
+// so the URL stays clean for the all-cameras case.
+export const getTrafficVolumeReportSummaryAPI = (
+  params: APIRequestTrafficVolumeReportSummary
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeReportSummary>({
+    url: `/counting/reports/summary`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      start_date: params.start_date,
+      end_date: params.end_date,
+      report_type: params.report_type,
+      ...(params.camera_id ? { camera_id: params.camera_id } : {}),
+      ...(params.page !== undefined ? { page: params.page } : {}),
+      ...(params.limit !== undefined ? { limit: params.limit } : {}),
     },
   })

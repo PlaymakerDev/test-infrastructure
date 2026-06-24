@@ -17,3 +17,5 @@ export { useTrafficVolumeSolutionDetail } from './useTrafficVolumeSolutionDetail
 export { useTrafficVolumeAnalyticSummary } from './useTrafficVolumeAnalyticSummary'
 export { useTrafficVolumeSpeedPercentile } from './useTrafficVolumeSpeedPercentile'
 export { useTrafficVolumeAnalyticGraph } from './useTrafficVolumeAnalyticGraph'
+export { useTrafficVolumeReportSummary } from './useTrafficVolumeReportSummary'
+export { useTrafficVolumeReportSummaryInfinite } from './useTrafficVolumeReportSummaryInfinite'

@@ -350,3 +350,113 @@ export interface APIResponseTrafficVolumeCameras {
   /** [lng, lat] — average position of the cameras; used to center the map. */
   centroid: [number, number] | null
 }
+
+// ── GET /counting/reports/summary?solution_id={id}&start_date=&end_date=… ───
+// Aggregated report rows for the รายงานการนับปริมาณจราจร tab. The shape of
+// each row depends on `report_type`; the daily/month/year/vehicle_type modes
+// all share the same flat row contract below. `camera_id` narrows the rollup
+// to a single camera when set (empty string = all cameras).
+// Unlike the other counting endpoints, the response is enveloped:
+//   { res_data: { data: [...] } }
+
+export type CountingReportType =
+  | 'daily'
+  | 'hour'
+  | 'month'
+  | 'year'
+  | 'vehicle_type'
+
+export interface APIRequestTrafficVolumeReportSummary {
+  solution_id: string | number
+  /** YYYY-MM-DD inclusive lower bound. */
+  start_date: string
+  /** YYYY-MM-DD inclusive upper bound. */
+  end_date: string
+  report_type: CountingReportType
+  /** Empty string / undefined = aggregate across all cameras. */
+  camera_id?: string | number
+  /** 1-indexed page. Defaults backend-side. */
+  page?: number
+  /** Rows per page. Defaults backend-side. */
+  limit?: number
+}
+
+/** One row of the report. Field meanings:
+ *  • `date`  — ISO 8601 timestamp (e.g. "2026-06-24T00:00:00Z") for daily,
+ *              hour-bucketed for hourly ("2026-06-24T20:00:00+07:00"), etc.
+ *  • `label` — Thai weekday for daily ("วันพุธ"); hour string for hourly
+ *              ("20:00"); month/year report types may reuse for their labels.
+ *  • `camera_name` — present only on `report_type=hour`; lets the UI group
+ *                    rows under their source camera in the hourly table.
+ *  • `percent_truck` — share in the **0–1** range (0.06 = 6%), NOT 0–100. */
+export interface CountingReportSummaryRow {
+  date: string
+  label: string
+  camera_name?: string
+  bike_count: number
+  car_count: number
+  truck_count: number
+  bus_count: number
+  taxi_count: number
+  pickup_count: number
+  trailer_count: number
+  total_count: number
+  total_pcu: number
+  percent_truck: number
+  peak_pcu: number
+}
+
+/** Pre-aggregated per-vehicle-type row returned by the report endpoint
+ *  when `report_type=vehicle_type`. Unlike the date/hour-bucketed rows,
+ *  this shape has no `date` — each entry summarises one vehicle category
+ *  across the requested date range.
+ *
+ *  Field meanings:
+ *  • `vehicle_type` — Thai label, e.g. "จักรยานยนต์" (sometimes without
+ *    the "รถ" prefix the rest of the UI uses).
+ *  • `percent` — share in the **0–100** range (NOT 0–1 like
+ *    `percent_truck` on the bucketed row shape).
+ *  • `avg_hour` / `peak_hour` — PCU per hour (mean / max) for that
+ *    vehicle category. */
+export interface CountingVehicleTypeAggRow {
+  vehicle_type: string
+  total_count: number
+  total_pcu: number
+  pcu_factor: number
+  percent: number
+  avg_hour: number
+  peak_hour: number
+}
+
+/** Either row shape the `/counting/reports/summary` endpoint returns,
+ *  depending on `report_type`. Callers narrow with a type-guard. */
+export type CountingReportRow =
+  | CountingReportSummaryRow
+  | CountingVehicleTypeAggRow
+
+/** Pre-computed KPI strip the backend returns alongside `data` on the
+ *  vehicle-type report. Currently observed only for `report_type=vehicle_type`;
+ *  other modes omit it. Field meanings:
+ *  • `count` — number of vehicle-type rows in `data` (matches the table
+ *    "จำนวนรายการ" cell).
+ *  • `main_vehicle_type_percent` / `percent_normal_vehicle` /
+ *    `percent_truck_vehicle` — all in **0–100** range. */
+export interface CountingVehicleTypeAPISummary {
+  count: number
+  total_count: number
+  total_pcu: number
+  main_vehicle_type: string
+  main_vehicle_type_percent: number
+  percent_normal_vehicle: number
+  percent_truck_vehicle: number
+  truck_count: number
+}
+
+export interface APIResponseTrafficVolumeReportSummary {
+  res_data: {
+    data: CountingReportRow[]
+    /** Present on `report_type=vehicle_type`; absent on date-bucketed
+     *  modes (which roll up client-side from the row data). */
+    summary?: CountingVehicleTypeAPISummary
+  }
+}

@@ -11,6 +11,7 @@ import type {
   APIRequestTrafficVolumeAnalyticSummary,
   APIRequestTrafficVolumeSpeedPercentile,
   APIRequestTrafficVolumeAnalyticGraph,
+  APIRequestTrafficVolumeReportSummary,
 } from '@/types/traffic-volume/detail-api'
 
 export const trafficVolumeKeys = {
@@ -89,6 +90,19 @@ export const trafficVolumeKeys = {
         ...trafficVolumeKeys.detail.all(params.solution_id),
         'analytic-graph',
         params.date ?? 'today',
+      ] as const,
+    /** Report-mode rollup. The cache key folds in report_type + date range +
+     *  camera so each toolbar combination keeps its own slot. */
+    reportSummary: (params: APIRequestTrafficVolumeReportSummary) =>
+      [
+        ...trafficVolumeKeys.detail.all(params.solution_id),
+        'report-summary',
+        params.report_type,
+        params.start_date,
+        params.end_date,
+        params.camera_id ?? 'all',
+        params.page ?? 1,
+        params.limit ?? 'default',
       ] as const,
   },
 } as const
