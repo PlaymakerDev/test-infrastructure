@@ -38,14 +38,18 @@ const Content = (props: ContentProps) => {
   })
 
   const checkStatus = useCallback((status: string) => checkStatusRef.current(status), [])
-  const solutionName =
+  // Prefer the device's own `camera_name` over the parent solution's name —
+  // the modal is per-camera so the camera identifier is the more useful label
+  // for both the header and the "จุดติดตั้ง" cell. Solution names remain as
+  // fallback for devices that don't expose a top-level camera_name.
+  const cameraName =
+    data?.camera_name ??
     data?.vms?.solution_name ??
     data?.wim_camera?.solution_name ??
     data?.counting?.solution_name ??
     data?.analytic?.solution_name ??
     data?.traffic?.solution_name ??
     data?.crosswalk?.solution_name ??
-    data?.camera_name ??
     '-'
 
   const solutionBadges = SOLUTION_BADGE_MAP.filter(s => data?.[s.key as keyof typeof data])
@@ -78,7 +82,7 @@ const Content = (props: ContentProps) => {
   return (
     <div>
       <section>
-        <p className='text-(--default-blue)'>{solutionName}</p>
+        <p className='text-(--default-blue)'>{cameraName}</p>
       </section>
       <section className='mt-2'>
         <HLSLivePlayer
@@ -96,7 +100,7 @@ const Content = (props: ContentProps) => {
             <div className='flex flex-col items-center justify-center text-center gap-1'>
               <TbMapPin className='fs-24' />
               <h5 className='font-normal text-gray-400/50'>จุดติดตั้ง</h5>
-              <p className='fs-12'>{solutionName}</p>
+              <p className='fs-12'>{cameraName}</p>
             </div>
           </Col>
           <Col xs={24} sm={12} md={8} lg={4} xl={4} xxl={4} xxxl={4}>
@@ -156,7 +160,11 @@ const CCTVModal: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['cctv_detail'],
+    // Include camera_id in the key — without it TanStack Query reuses the
+    // first clicked camera's result for every subsequent click (cache
+    // collision) and `placeholderData: keepPreviousData` masks the bug by
+    // keeping stale data visible. Same fix pattern as ProjectInfoModal.
+    queryKey: ['cctv_detail', camera_id],
     queryFn: () => getCCTVDetailAPI(String(camera_id)!),
     enabled: !!camera_id,
     placeholderData: keepPreviousData
@@ -165,8 +173,10 @@ const CCTVModal: React.FC<Props> = (props) => {
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูลกล้องวงจรปิด" />
-    return <Content data={data?.data} />
-  }, [isLoading, isError, data])
+    // `key` forces a fresh Content mount per camera so the internal
+    // `connectionStatus` log resets between cameras.
+    return <Content key={String(camera_id)} data={data?.data} />
+  }, [isLoading, isError, data, camera_id])
 
   return (
     <ConfigProvider

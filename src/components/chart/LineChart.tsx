@@ -13,6 +13,11 @@ export interface LineConfig {
   label: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "%", "kg") — override `tooltipUnit` */
   unit?: string
+  /** เมื่อ true จะ render เป็นเส้นปะ. Default = false (solid). */
+  dashed?: boolean
+  /** เมื่อ true จะไม่แสดง row ของ series นี้ใน tooltip (ใช้กับ reference
+   *  line ที่ไม่ควรปรากฏใน tooltip). Default = false. */
+  hideInTooltip?: boolean
 }
 
 /** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
@@ -100,6 +105,9 @@ export interface LineChartProps {
   /** Extra rows shown in tooltip but NOT rendered as visible lines.
    *  Reads values from each data point via `dataKey`. */
   tooltipExtras?: TooltipExtra[]
+  /** ข้อความ HTML footer ที่จะ append ใต้ rows + extras ใน tooltip. รับ
+   *  `dataIdx` ของจุดที่ hover เพื่อให้ caller สร้าง description per-point. */
+  tooltipFooter?: (dataIdx: number) => string
 }
 
 interface TooltipParam {
@@ -140,6 +148,7 @@ const LineChart: React.FC<LineChartProps> = ({
   tooltipUnit,
   tooltipShowDot = false,
   tooltipExtras,
+  tooltipFooter,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -212,6 +221,8 @@ const LineChart: React.FC<LineChartProps> = ({
           const rows = params
             .map((p) => {
               const cfg = lines[p.seriesIndex]
+              // Reference / decorative lines opt out of the tooltip rows.
+              if (cfg?.hideInTooltip) return ''
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
               const value = Number(p.value).toLocaleString()
@@ -246,19 +257,27 @@ const LineChart: React.FC<LineChartProps> = ({
             })
             .join('')
 
-          return header + rows + extras
+          const footer = tooltipFooter && dataIdx !== undefined ? tooltipFooter(dataIdx) : ''
+          return header + rows + extras + footer
         },
       },
       series: lines.map((line) => ({
         name: line.label,
         type: 'line',
         smooth: true,
-        data: data.map((d) => d[line.dataKey] ?? 0),
+        // `?? null` keeps gaps in the series as gaps in the rendered line
+        // (ECharts breaks the line at `null`). Missing data should NOT be
+        // visualized as zero — that produces misleading "drops" in sparse
+        // datasets (e.g. an hourly chart for a day that's still in progress).
+        data: data.map((d) => d[line.dataKey] ?? null),
         lineStyle: {
           color: line.color,
-          width: 3,
-          shadowBlur: 12,
+          width: line.dashed ? 2 : 3,
+          // Dashed series get a thinner stroke + no glow so the reference
+          // line reads as decorative rather than as primary data.
+          shadowBlur: line.dashed ? 0 : 12,
           shadowColor: line.color + '60',
+          type: line.dashed ? 'dashed' : 'solid',
         },
         itemStyle: { color: line.color },
         symbol: 'circle',
@@ -268,7 +287,7 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipUnit, tooltipShowDot, tooltipExtras])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter])
 
   return (
     <div

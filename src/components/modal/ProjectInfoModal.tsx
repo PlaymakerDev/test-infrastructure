@@ -77,7 +77,9 @@ const Content = (props: ContentProps) => {
         <div className='flex flex-col items-center text-center'>
           <TbUserShield className='fs-22 text-white mb-2' />
           <p className='fs-11 text-gray-400 mb-0.5'>หน่วยงานรับผิดชอบ</p>
-          <p className='fs-12 text-white mb-0'>{renderDepartmentName}</p>
+          {/* div, not p — Skeleton renders an <h3> internally and <h3> can
+            * not be a descendant of <p> (causes a hydration error). */}
+          <div className='fs-12 text-white mb-0'>{renderDepartmentName}</div>
         </div>
 
         <div className='flex flex-col items-center text-center'>

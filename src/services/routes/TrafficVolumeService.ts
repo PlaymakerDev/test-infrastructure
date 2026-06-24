@@ -1,0 +1,200 @@
+import ApiService from '../ApiService'
+import type {
+  APIRequestTrafficVolumeCentralList,
+  APIResponseTrafficVolumeCentralList,
+  APIRequestTrafficVolumeOverview,
+  APIResponseTrafficVolumeOverview,
+  APIRequestTrafficVolumeRandomCameras,
+  APIResponseTrafficVolumeRandomCameras,
+  APIResponseTrafficVolumeTotals,
+} from '@/types/traffic-volume/overview-api'
+import type {
+  APIResponseTrafficVolumeDetails,
+  APIRequestTrafficVolumeGraph,
+  APIResponseTrafficVolumeGraph,
+  APIRequestTrafficVolumeCameras,
+  APIResponseTrafficVolumeCameras,
+  APIRequestTrafficVolumeCountHour,
+  APIResponseTrafficVolumeCountHour,
+  APIRequestTrafficVolumeCountPrevious,
+  APIResponseTrafficVolumeCountPrevious,
+  APIRequestTrafficVolumeSummaryDaily,
+  APIResponseTrafficVolumeSummaryDaily,
+  APIResponseTrafficVolumeSolutionDetail,
+  APIRequestTrafficVolumeAnalyticSummary,
+  APIResponseTrafficVolumeAnalyticSummary,
+  APIRequestTrafficVolumeSpeedPercentile,
+  APIResponseTrafficVolumeSpeedPercentile,
+  APIRequestTrafficVolumeAnalyticGraph,
+  APIResponseTrafficVolumeAnalyticGraph,
+} from '@/types/traffic-volume/detail-api'
+
+const countingDeptBase = (deptId: string | number) =>
+  `/counting/departments/${deptId}`
+
+// ── Overall page ──────────────────────────────────────────────────────────────
+
+// Map markers + centroid for the overall page map. `solution_id` narrows the
+// response to a single solution when set (deep-link style).
+export const getTrafficVolumeOverviewAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficVolumeOverview = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeOverview>({
+    url: `${countingDeptBase(deptId)}/overview`,
+    method: 'GET',
+    params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+  })
+
+// Bureau-aware list — returns nested bureau → sub-dept → solutions tree.
+// Backend defaults are page=1, limit=100; both are forwarded only when set
+// so the URL stays clean for the common "all rows" case.
+export const getTrafficVolumeCentralListAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficVolumeCentralList = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeCentralList>({
+    url: `${countingDeptBase(deptId)}/overview/central/list`,
+    method: 'GET',
+    params,
+  })
+
+// Random online cameras for the left-rail CCTV preview list. Defaults to 3
+// to match the design (3 stacked cards).
+export const getTrafficVolumeRandomCamerasAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficVolumeRandomCameras = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeRandomCameras>({
+    url: `${countingDeptBase(deptId)}/cameras/random-online`,
+    method: 'GET',
+    params: { limit: params.limit ?? 3 },
+  })
+
+// Aggregated counters for the InfoCard right rail — camera + warranty totals.
+export const getTrafficVolumeTotalsAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseTrafficVolumeTotals>({
+    url: `${countingDeptBase(deptId)}/overview/totals`,
+    method: 'GET',
+  })
+
+// ── Detail page (placeholder until backend spec lands) ────────────────────────
+
+export const getTrafficVolumeDetailsAPI = (id: string | number) =>
+  ApiService.fetchData<APIResponseTrafficVolumeDetails>({
+    url: `/counting/details/${id}`,
+    method: 'GET',
+  })
+
+// Solution-level admin metadata — shared `/manage` namespace endpoint, also
+// used by traffic-signal. Drives the AnyDesk button on the detail title bar.
+export const getTrafficVolumeSolutionDetailAPI = (id: string | number) =>
+  ApiService.fetchData<APIResponseTrafficVolumeSolutionDetail>({
+    url: `/manage/solution/details/${id}`,
+    method: 'GET',
+  })
+
+// Daily analytic rollup — feeds the 4 stat cards on the วิเคราะห์ปริมาณจราจร
+// tab. `date` defaults to today on the backend when omitted.
+export const getTrafficVolumeAnalyticSummaryAPI = (
+  params: APIRequestTrafficVolumeAnalyticSummary
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeAnalyticSummary>({
+    url: `/counting/analytic/summary`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      ...(params.date ? { date: params.date } : {}),
+    },
+  })
+
+// Cumulative speed-distribution curve — drives the 85th-percentile chart on
+// the วิเคราะห์ปริมาณจราจร tab. `date` defaults to today when omitted.
+export const getTrafficVolumeSpeedPercentileAPI = (
+  params: APIRequestTrafficVolumeSpeedPercentile
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeSpeedPercentile>({
+    url: `/counting/analytic/speed_percentile`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      ...(params.date ? { date: params.date } : {}),
+    },
+  })
+
+// Hourly volume + 3h MA reference — drives the วิเคราะห์รูปแบบการจราจร
+// chart on the วิเคราะห์ปริมาณจราจร tab. `date` defaults to today when omitted.
+export const getTrafficVolumeAnalyticGraphAPI = (
+  params: APIRequestTrafficVolumeAnalyticGraph
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeAnalyticGraph>({
+    url: `/counting/analytic/graph`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      ...(params.date ? { date: params.date } : {}),
+    },
+  })
+
+// Per-solution camera list — drives both the CCTV grid AND the detail map's
+// per-camera markers. Backend returns `{ counting: [...], centroid: [...] }`.
+export const getTrafficVolumeSolutionCamerasAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficVolumeCameras = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeCameras>({
+    url: `${countingDeptBase(deptId)}/cameras`,
+    method: 'GET',
+    params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+  })
+
+export const getTrafficVolumeGraphAPI = (
+  id: string | number,
+  params: APIRequestTrafficVolumeGraph = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeGraph>({
+    url: `/counting/details/graph/${id}`,
+    method: 'GET',
+    params,
+  })
+
+// Hourly counts + PCU breakdown — drives the hourly line chart. `date` is
+// optional; backend defaults to today when omitted.
+export const getTrafficVolumeCountHourAPI = (
+  params: APIRequestTrafficVolumeCountHour
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeCountHour>({
+    url: `/counting/details/count_hour`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      ...(params.date ? { date: params.date } : {}),
+    },
+  })
+
+// Daily totals for the last N days — drives the 7-day comparison bar chart.
+export const getTrafficVolumeCountPreviousAPI = (
+  params: APIRequestTrafficVolumeCountPrevious
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeCountPrevious>({
+    url: `/counting/details/count_previous`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      last: params.last ?? 7,
+    },
+  })
+
+// Aggregated daily numbers (total_count / total_pcu / avg_speed / aadt / etc.)
+// — drives the right-rail InfoCards on the detail page.
+export const getTrafficVolumeSummaryDailyAPI = (
+  params: APIRequestTrafficVolumeSummaryDaily
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeSummaryDaily>({
+    url: `/counting/details/summary_daily`,
+    method: 'GET',
+    params: {
+      solution_id: params.solution_id,
+      ...(params.date ? { date: params.date } : {}),
+    },
+  })
