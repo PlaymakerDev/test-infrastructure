@@ -20,8 +20,8 @@ const WARRANTY_STATE: Record<
   string,
   { badge: string; remainingClass: string }
 > = {
-  ในค้ำ:   { badge: '#05F2DB', remainingClass: 'text-sky-400' },
-  หมดค้ำ:  { badge: '#979797', remainingClass: 'text-red-400' },
+  ในค้ำ: { badge: '#05F2DB', remainingClass: 'text-sky-400' },
+  หมดค้ำ: { badge: '#979797', remainingClass: 'text-red-400' },
   ก่อนค้ำ: { badge: '#FCD116', remainingClass: 'text-white' },
 }
 
@@ -48,7 +48,7 @@ const Content = (props: ContentProps) => {
     queryKey: ['road_detail', roadId],
     queryFn: () => getDepartmentByRoadAPI({ road_id: Number(roadId)! }),
     enabled: !!roadId,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   // Backend computes `warranty_date` (remaining days) + `warranty_status`
@@ -150,7 +150,7 @@ const ProjectInfoModal: React.FC<Props> = (props) => {
     queryKey: ['contact_detail', project_id],
     queryFn: () => getContactDetailAPI(String(project_id)!),
     enabled: !!project_id,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   const renderContent = useMemo(() => {

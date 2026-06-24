@@ -1,12 +1,61 @@
-import React from 'react'
-import { TbCalendarEvent, TbClipboard, TbClipboardCopy, TbFileDescription, TbHourglass, TbLock, TbUserCircle } from 'react-icons/tb'
+import React, { useMemo } from 'react'
+import { TbCalendarEvent, TbClipboard, TbFileDescription, TbHourglass, TbUserCircle } from 'react-icons/tb'
+import { useControlVMSContext } from '../../../context'
+import { Empty, Skeleton } from 'antd'
+import { WARRANTY_STATUS } from '@/constants'
+import { useContactDetail } from '../../../hooks/useContactDetail'
 
-interface Props {
+const DEFAULT_WARRANTY = { text: '-', color: '--light-gray-2' } as const
 
-}
+const VMSDetail: React.FC = () => {
+  const { bureauSign } = useControlVMSContext()
 
-const VMSDetail: React.FC<Props> = (props) => {
-  const { } = props
+  const { data, isLoading, isError } = useContactDetail(bureauSign?.project.id)
+
+  const warranty = WARRANTY_STATUS[data?.data.warranty_status as keyof typeof WARRANTY_STATUS] ?? DEFAULT_WARRANTY
+
+  const renderContent = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
+    if (isError) return <Empty description="ไม่พบข้อมูลโครงการ" />
+    return (
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4'>
+        <div className='flex flex-col items-center text-center'>
+          <TbFileDescription className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
+          <p className='text-white mb-0'>{data?.data.contract_no || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbUserCircle className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
+          <p className='text-white mb-0'>{data?.data.company_name || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbCalendarEvent className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
+          <p className='text-white mb-0'>{data?.data.warranty_start_date || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbCalendarEvent className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
+          <p className='text-white mb-0'>{data?.data.warranty_end_date || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbHourglass
+            className='fs-22 mb-2'
+            style={{ color: `var(${warranty.color})` }}
+          />
+          <p className='fs-12 text-gray-400 mb-0.5'>ระยะเวลาที่เหลือ</p>
+          <p className='mb-0' style={{ color: `var(${warranty.color})` }}>
+            {data?.data.warranty_date || 0} วัน
+          </p>
+        </div>
+      </div>
+    )
+  }, [isLoading, isError, data, warranty])
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -16,50 +65,12 @@ const VMSDetail: React.FC<Props> = (props) => {
       </div>
 
       <div className='mb-5'>
-        <p className='fs-12'>
-          จ้างก่อสร้างโครงการปรับปรุงทางเพื่อความปลอดภัย ถนนสาย ฉช.4050 แยกทางหลวงหมายเลข 3200 - บ้านบางขนาก อ.เมืองฉะเชิงเทรา, คลองเขื่อน, บางน้ำเปรี้ยว จ.ฉะเชิงเทรา 1 แห่ง
-        </p>
+        <p className='fs-12'>{bureauSign?.project.project_name || '-'}</p>
       </div>
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4'>
-        <div className='flex flex-col items-center text-center'>
-          <TbLock className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>รหัสโครงการ</p>
-          <p className='text-white mb-0'>MT25029</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbFileDescription className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
-          <p className='text-white mb-0'>สอป.67/2568</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbUserCircle className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
-          <p className='text-white mb-0'>MST</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
-          <p className='text-white mb-0'>25 พ.ค. 2568</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
-          <p className='text-white mb-0'>26 พ.ค. 2570</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbHourglass className='fs-22 text-teal-400 mb-2' />
-          <p className='fs-12 text-gray-400 mb-0.5'>ระยะเวลาที่เหลือ</p>
-          <p className='text-teal-400 mb-0'>416 วัน</p>
-        </div>
-      </div>
+      {renderContent}
     </div>
   )
 }
 
-export default React.memo<Props>(VMSDetail)
+export default React.memo(VMSDetail)

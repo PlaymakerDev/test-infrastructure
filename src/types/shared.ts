@@ -41,6 +41,7 @@ export interface SharedStatus {
 export interface SharedProject {
   id: number
   name?: string
+  project_name?: string
   budget_year: number
   contract_no: string
 }
@@ -130,4 +131,15 @@ export interface APIResponseDepartmentByRoad {
   is_urban: number
   department_type: number
   region_id: number
+}
+
+// UPLOAD
+export interface UploadResponse {
+  path: string;
+}
+
+// API POST RESPONSE
+export interface APIResponsePost {
+  res_code: number
+  res_data: string
 }

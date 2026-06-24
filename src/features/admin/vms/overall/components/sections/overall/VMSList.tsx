@@ -75,8 +75,18 @@ const buildRows = (apiData: APIResponseVMSList): Row[] => {
   return rows
 }
 
-const GuaranteePill: React.FC<{ name: string; isWarranty: boolean }> = ({ name, isWarranty }) => {
+const GuaranteePill: React.FC<{ name: string; isWarranty: boolean | null }> = ({ name, isWarranty }) => {
   const color = isWarranty ? '#05F2DB' : '#979797'
+  if (isWarranty === null) {
+    return (
+      <span
+        className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+        style={{ border: `1px solid var(--yellow)`, color: 'var(--yellow)' }}
+      >
+        ก่อนค้ำ
+      </span>
+    )
+  }
   return (
     <span
       className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
@@ -169,13 +179,14 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
+      width: 400,
       onCell: (row) => {
         if (row.type === 'header') return { colSpan: 0 }
         return { rowSpan: row.projectRowSpan }
       },
       render: (_: unknown, row: Row) => {
         if (row.type === 'header') return null
-        return <span className='text-sm'>{row.data.project.name || '-'}</span>
+        return <span className='text-sm'>{row.data.project.project_name || '-'}</span>
       },
     },
     {

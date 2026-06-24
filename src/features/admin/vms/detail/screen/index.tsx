@@ -20,10 +20,10 @@ const VMSDetailScreen: React.FC<Props> = (props) => {
   const isOnline = searchParams.get('is_online')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['vms_detail'],
+    queryKey: ['vms_detail', id],
     queryFn: () => getVMSDetailAPI(Number(id)!),
     enabled: !!id,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />

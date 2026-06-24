@@ -1,0 +1,1267 @@
+[
+  {
+    "department_id": 0,
+    "department_short_name": "ทช. ส่วนกลาง",
+    "camera_online_count": 21,
+    "camera_offline_count": 6,
+    "sub_department": [
+      {
+        "department_id": 95,
+        "department_short_name": "บทช.กัลปพฤกษ์",
+        "camera_online_count": 3,
+        "camera_offline_count": 4,
+        "roads": [
+          {
+            "road_id": 1,
+            "road_name": "ถนนราชพฤกษ์",
+            "road_code": "นบ.3021",
+            "solution": [
+              {
+                "solution_id": 2638,
+                "solution_name": "VMS >> นบ.3021: กม.2+970-LT",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021_bts_taratphu_03/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 5,
+            "road_name": "ถนนกัลปพฤกษ์",
+            "road_code": "กท.1001",
+            "solution": [
+              {
+                "solution_id": 2558,
+                "solution_name": "กท.1001 - จุดที่ 3 กม.6+300 กินกันจัง",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_kt1001_03_01/stream.m3u8",
+                "last_connected": "17/06/2569 11:47:56",
+                "camera_online_count": 0,
+                "camera_offline_count": 2
+              },
+              {
+                "solution_id": 2560,
+                "solution_name": "กท.1001 - จุดที่ 2 กม.5+800 เมโทรทาวน์",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_kt1001_02_01/stream.m3u8",
+                "last_connected": "21/06/2569 06:13:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 2
+              }
+            ]
+          },
+          {
+            "road_id": 3316,
+            "road_name": "สะพานตากสิน",
+            "road_code": "สะพานตากสิน",
+            "solution": [
+              {
+                "solution_id": 2566,
+                "solution_name": "VMS >>สะพานตากสิน จุดที่ 1",
+                "desktop_screen": "https://68mst-tsvms1.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2567,
+                "solution_name": "VMS >>สะพานตากสิน จุดที่ 2",
+                "desktop_screen": "https://68mst-tssv2.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 96,
+        "department_short_name": "บทช.นครอินทร์",
+        "camera_online_count": 2,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 3303,
+            "road_name": "นครอินทร์",
+            "road_code": "นบ.1020 (นครอินทร์) ",
+            "solution": [
+              {
+                "solution_id": 2603,
+                "solution_name": "TrafficSign : นบ.1020 (นครอินทร์)  - จุดที่ 1",
+                "desktop_screen": "https://stream-server-iwz.transcode.co.th/UojVcoshVQiKMKdVR9nf9watlR8cHA/hls/RHSxhbrMjV/NdgPV04qJb/s.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2604,
+                "solution_name": "TrafficSign : นบ.1020 (นครอินทร์)  - จุดที่ 2",
+                "desktop_screen": "https://stream-server-iwz.transcode.co.th/UojVcoshVQiKMKdVR9nf9watlR8cHA/hls/RHSxhbrMjV/3imkYBlkNu/s.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 97,
+        "department_short_name": "บทช.ราชพฤกษ์",
+        "camera_online_count": 12,
+        "camera_offline_count": 2,
+        "roads": [
+          {
+            "road_id": 1,
+            "road_name": "ถนนราชพฤกษ์",
+            "road_code": "นบ.3021",
+            "solution": [
+              {
+                "solution_id": 2613,
+                "solution_name": "TrafficSign : นบ.3021 - จุดที่ 9 กม.9+950",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021_09_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2614,
+                "solution_name": "TrafficSign : นบ.3021 - จุดที่ 10 กม.10+800",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021_10_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2615,
+                "solution_name": "TrafficSign : นบ.3021 - จุดที่ 11 กม.12+400",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_nb3021-11_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2,
+            "road_name": "เชื่อมสะพานมหาเจษฎาบดินทรานุสรณ์ - ถนนราชพฤกษ์",
+            "road_code": "นบ.5038",
+            "solution": [
+              {
+                "solution_id": 2588,
+                "solution_name": "TrafficSign : นบ.5038 - จุดที่ 2 กม.2+250",
+                "desktop_screen": "https://server2.streamtraffic.net:443/np5038_03/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 10017,
+            "road_name": "",
+            "road_code": "กท.1003",
+            "solution": [
+              {
+                "solution_id": 2593,
+                "solution_name": "TrafficSign : กท.1003 - จุดที่ 1 กม.0+700",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1003-01_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2594,
+                "solution_name": "TrafficSign : กท.1003 - จุดที่ 2 กม.3+150",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1003-02_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2595,
+                "solution_name": "TrafficSign : กท.1003 - จุดที่ 3 กม.9+500",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1003-03_01/stream.m3u8",
+                "last_connected": "10/06/2569 17:27:48",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          },
+          {
+            "road_id": 10020,
+            "road_name": "ถนนเลียบทางรถไฟ ฝั่งเหนือ",
+            "road_code": "กท.1002",
+            "solution": [
+              {
+                "solution_id": 2590,
+                "solution_name": "TrafficSign : กท.1002 - จุดที่ 2 กม.3+750",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1002-02_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2591,
+                "solution_name": "TrafficSign : กท.1002 - จุดที่ 3 กม.8+000",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1002-03_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2592,
+                "solution_name": "TrafficSign : กท.1002 - จุดที่ 1 กม.1+400",
+                "desktop_screen": "https://server2.streamtraffic.net:443/kt1002-01_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 98,
+        "department_short_name": "บทช.ชัยพฤกษ์",
+        "camera_online_count": 4,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 3302,
+            "road_name": "ชัยพฤกษ์",
+            "road_code": "นบ.3030 (ชัยพฤกษ์)",
+            "solution": [
+              {
+                "solution_id": 2571,
+                "solution_name": "นบ.3030 (ชัยพฤกษ์) - 1 กม.2+200",
+                "desktop_screen": "https://server2.streamtraffic.net:443/np3030_03/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 3307,
+            "road_name": "สะพานพระราม 4",
+            "road_code": "สะพานพระราม 4",
+            "solution": [
+              {
+                "solution_id": 2568,
+                "solution_name": "สะพานพระราม 4 - 1",
+                "desktop_screen": "https://server2.streamtraffic.net:443/pharam4_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 1,
+    "department_short_name": "สทช.1 (ปทุมธานี)",
+    "camera_online_count": 18,
+    "camera_offline_count": 2,
+    "sub_department": [
+      {
+        "department_id": 2,
+        "department_short_name": "ขทช.ปทุมธานี",
+        "camera_online_count": 0,
+        "camera_offline_count": 2,
+        "roads": [
+          {
+            "road_id": 7,
+            "road_name": "บ้านสวนสัก",
+            "road_code": "ปท.3004",
+            "solution": [
+              {
+                "solution_id": 2656,
+                "solution_name": "TrafficSign : ปท.3004 - จุดที่ 1",
+                "desktop_screen": "https://drr3004.rayoflight.co.th/live/172.16.3.61.stream/playlist.m3u8",
+                "last_connected": "18/06/2569 17:17:48",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              },
+              {
+                "solution_id": 2657,
+                "solution_name": "TrafficSign : ปท.3004 - จุดที่ 2",
+                "desktop_screen": "https://drr3004.rayoflight.co.th/live/172.16.3.61.stream/playlist.m3u8",
+                "last_connected": "18/06/2569 17:17:48",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          },
+          {
+            "road_id": 114,
+            "road_name": "บ้านวิสัย",
+            "road_code": "สป.2001",
+            "solution": [
+              {
+                "solution_id": 2523,
+                "solution_name": "VMS >> สป.2001 กม.0+020",
+                "desktop_screen": "",
+                "last_connected": "21/06/2569 17:37:04",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2524,
+                "solution_name": "VMS >> สป.2001 กม.1+120",
+                "desktop_screen": "",
+                "last_connected": "21/03/2569 20:26:43",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2525,
+                "solution_name": "VMS >> สป.2001 กม.1+347",
+                "desktop_screen": "",
+                "last_connected": "21/03/2569 20:28:29",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2526,
+                "solution_name": "VMS >> สป.2001 กม.1+547",
+                "desktop_screen": "",
+                "last_connected": "21/03/2569 20:28:23",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 3,
+        "department_short_name": "ขทช.สมุทรปราการ",
+        "camera_online_count": 3,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 116,
+            "road_name": "เชื่อมทางหลวงท้องถิ่นบางเสาธง - บ้านช้างตาย",
+            "road_code": "สป.5003",
+            "solution": [
+              {
+                "solution_id": 2658,
+                "solution_name": "TrafficSign : สป.5003 - จุดติดตั้งกล้องวงจรปิด สป.5003",
+                "desktop_screen": "https://stream.aimer-psc.tech/SPK5003/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2659,
+                "solution_name": "TrafficSign : สป.5003 - จุดที่ 2",
+                "desktop_screen": "https://stream.aimer-psc.tech/SPK5003/_definst_/VMS-02.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 122,
+            "road_name": "บ้านปากน้ำปราณบุรี",
+            "road_code": "สป.4009",
+            "solution": [
+              {
+                "solution_id": 2664,
+                "solution_name": "TrafficSign : สป.4009 - จุดติดตั้งกล้องวงจรปิด สป.4009",
+                "desktop_screen": "https://stream.aimer-psc.tech/SPK4009/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 6,
+        "department_short_name": "ขทช.นนทบุรี",
+        "camera_online_count": 15,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 44,
+            "road_name": "แยก ทล. 9 (กม.ที่ 31+100) - แยก ทช. นฐ.3004 (กม.ที่ 26+700)",
+            "road_code": "นบ.1011",
+            "solution": [
+              {
+                "solution_id": 2542,
+                "solution_name": "นบ.1011 - VMS-SPEED-01",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-SPEED-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2543,
+                "solution_name": "นบ.1011 - VMS-SPEED-02",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-SPEED-02.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2544,
+                "solution_name": "นบ.1011 - VMS-SPEED-03",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-SPEED-03.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2545,
+                "solution_name": "นบ.1011 - VMS-SPEED-04",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-SPEED-04.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2546,
+                "solution_name": "นบ.1011 - VMS-01",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2547,
+                "solution_name": "นบ.1011 - VMS-02",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-02.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2548,
+                "solution_name": "นบ.1011 - VMS-03",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-03.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2549,
+                "solution_name": "นบ.1011 - VMS-04",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-04.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2550,
+                "solution_name": "นบ.1011 - VMS-05",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-05.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2551,
+                "solution_name": "นบ.1011 - VMS-06",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-06.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2552,
+                "solution_name": "นบ.1011 - VMS-07",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-07.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2553,
+                "solution_name": "นบ.1011 - VMS-08",
+                "desktop_screen": "https://stream.aimer-psc.tech/NBI1011/_definst_/VMS-08.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:33:45",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 3303,
+            "road_name": "นครอินทร์",
+            "road_code": "นบ.1020 (นครอินทร์) ",
+            "solution": [
+              {
+                "solution_id": 2676,
+                "solution_name": "TrafficSign : นบ.1020 (นครอินทร์)  - จุดที่ 1",
+                "desktop_screen": "",
+                "last_connected": "01/01/2513 07:00:00",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2677,
+                "solution_name": "TrafficSign : นบ.1020 (นครอินทร์)  - จุดที่ 2",
+                "desktop_screen": "",
+                "last_connected": "01/01/2513 07:00:00",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 12,
+    "department_short_name": "สทช.3 (ชลบุรี)",
+    "camera_online_count": 2,
+    "camera_offline_count": 1,
+    "sub_department": [
+      {
+        "department_id": 13,
+        "department_short_name": "ขทช.ชลบุรี",
+        "camera_online_count": 1,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 423,
+            "road_name": "บ้านแขยง",
+            "road_code": "ชบ.2081",
+            "solution": [
+              {
+                "solution_id": 2574,
+                "solution_name": "ชบ.2081 OverHang",
+                "desktop_screen": "https://68set-cbiipc014.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 15,
+        "department_short_name": "ขทช.ระยอง",
+        "camera_online_count": 1,
+        "camera_offline_count": 1,
+        "roads": [
+          {
+            "road_id": 555,
+            "road_name": "บ้านโคกข้าวเหนียว",
+            "road_code": "รย.4058",
+            "solution": [
+              {
+                "solution_id": 2679,
+                "solution_name": "VMS >> รย.4058 จุดที่ 1",
+                "desktop_screen": "https://69ktm-rygipc005-4058.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              },
+              {
+                "solution_id": 2680,
+                "solution_name": "VMS >> รย.4058 จุดที่ 2",
+                "desktop_screen": "https://69ktm-rygipc021-4058.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 17,
+    "department_short_name": "สทช.4 (เพชรบุรี)",
+    "camera_online_count": 3,
+    "camera_offline_count": 1,
+    "sub_department": [
+      {
+        "department_id": 18,
+        "department_short_name": "ขทช.เพชรบุรี",
+        "camera_online_count": 3,
+        "camera_offline_count": 1,
+        "roads": [
+          {
+            "road_id": 696,
+            "road_name": "บ้านกุบังปะโหลด",
+            "road_code": "สส.2021",
+            "solution": [
+              {
+                "solution_id": 2541,
+                "solution_name": "VMS >> สส.2021 ",
+                "desktop_screen": "https://68ftd-pbiipc006.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 3372,
+            "road_name": "",
+            "road_code": "พบ.2050",
+            "solution": [
+              {
+                "solution_id": 2584,
+                "solution_name": "TrafficSign : พบ.2050 - จุดที่ 6",
+                "desktop_screen": "https://drr2049.rayoflight.co.th/live/192.168.42.51.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2585,
+                "solution_name": "TrafficSign : พบ.2050 - จุดที่ 9",
+                "desktop_screen": "https://drr2049.rayoflight.co.th/live/192.168.42.59.stream/playlist.m3u8",
+                "last_connected": "29/03/2569 11:01:50",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              },
+              {
+                "solution_id": 2586,
+                "solution_name": "TrafficSign : พบ.2050 - จุดที่ 13",
+                "desktop_screen": "https://drr2049.rayoflight.co.th/live/192.168.46.52.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 23,
+    "department_short_name": "สทช.5 (นครราชสีมา)",
+    "camera_online_count": 1,
+    "camera_offline_count": 0,
+    "sub_department": [
+      {
+        "department_id": 24,
+        "department_short_name": "ขทช.นครราชสีมา",
+        "camera_online_count": 1,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 790,
+            "road_name": "บ้านงิ้วงาม",
+            "road_code": "นม.1016",
+            "solution": [
+              {
+                "solution_id": 2554,
+                "solution_name": "VMS >> นม.1016 จุดที่ 1",
+                "desktop_screen": "",
+                "last_connected": "21/06/2569 17:37:46",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 28,
+    "department_short_name": "สทช.6 (ขอนแก่น)",
+    "camera_online_count": 0,
+    "camera_offline_count": 0,
+    "sub_department": [
+      {
+        "department_id": 29,
+        "department_short_name": "ขทช.ขอนแก่น",
+        "camera_online_count": 0,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 992,
+            "road_name": "บ้านกุดกระสู้",
+            "road_code": "ขก.1027",
+            "solution": [
+              {
+                "solution_id": 2575,
+                "solution_name": "ขก.1027 - 1",
+                "desktop_screen": "https://stream.aimer-psc.tech/KKN1027/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2576,
+                "solution_name": "ขก.1027 - 2",
+                "desktop_screen": "https://stream.aimer-psc.tech/KKN1027/_definst_/VMS-02.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2577,
+                "solution_name": "ขก.1027 - 3",
+                "desktop_screen": "https://stream.aimer-psc.tech/KKN1027/_definst_/VMS-03.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 1030,
+            "road_name": "บ้านดวนใหญ่",
+            "road_code": "ขก.4003",
+            "solution": [
+              {
+                "solution_id": 2602,
+                "solution_name": "TrafficSign : ขก.4003 - ขก.4003",
+                "desktop_screen": "https://stream.aimer-psc.tech/KKN4003/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 49,
+    "department_short_name": "สทช.10 (เชียงใหม่)",
+    "camera_online_count": 6,
+    "camera_offline_count": 4,
+    "sub_department": [
+      {
+        "department_id": 50,
+        "department_short_name": "ขทช.เชียงใหม่",
+        "camera_online_count": 5,
+        "camera_offline_count": 3,
+        "roads": [
+          {
+            "road_id": 1771,
+            "road_name": "บ้านหนองแวงฮี",
+            "road_code": "ชม.3038",
+            "solution": [
+              {
+                "solution_id": 2685,
+                "solution_name": "VMS >> ชม.3038",
+                "desktop_screen": "https://69ftd-cmiipc007-3038.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          },
+          {
+            "road_id": 1807,
+            "road_name": "ถนนราชพฤกษ์เชียงใหม่",
+            "road_code": "ชม.3028",
+            "solution": [
+              {
+                "solution_id": 2507,
+                "solution_name": "67 - ชม.3028(31) ป้าย 1: กม.0+300",
+                "desktop_screen": "https://67lpc-cmi3028vms1.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2508,
+                "solution_name": "67 - ชม.3028(31) ป้าย 2: กม.2+300",
+                "desktop_screen": "https://67lpc-cmi3028vms2.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 1808,
+            "road_name": "ถนนสมโภชเชียงใหม่ 700 ปี",
+            "road_code": "ชม.3029",
+            "solution": [
+              {
+                "solution_id": 2499,
+                "solution_name": "ชม.3029: อุโมงค์ทางลอดรวมโชคมีชัย",
+                "desktop_screen": "https://67ftd-cmivms1-3029.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2500,
+                "solution_name": "ชม.3029: อุโมงค์ทางลอดรวมโชคมีชัย",
+                "desktop_screen": "https://67ftd-cmivms2-3029.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2501,
+                "solution_name": "ชม.3029: อุโมงค์ทางลอดแม่คาวสะอาดใส",
+                "desktop_screen": "https://67ftd-cmivms3-3029.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 1809,
+            "road_name": "บ้านป่าแดง",
+            "road_code": "ชม.3035",
+            "solution": [
+              {
+                "solution_id": 2504,
+                "solution_name": "ชม.3035: อุโมงค์ทางลอดต้นเกว๋นป้าย 1 - กม.1+800 (ขาออก)",
+                "desktop_screen": "https://67ftd-cmiipc008-3035.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              },
+              {
+                "solution_id": 2505,
+                "solution_name": "ชม.3035: อุโมงค์ทางลอดต้นเกว๋นป้าย 2 - กม.1+800 (ขาเข้า)",
+                "desktop_screen": "https://67ftd-cmiipc009-3035.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "03/06/2569 10:06:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 51,
+        "department_short_name": "ขทช.ลำพูน",
+        "camera_online_count": 1,
+        "camera_offline_count": 1,
+        "roads": [
+          {
+            "road_id": 3387,
+            "road_name": "",
+            "road_code": "ลพ.3083",
+            "solution": [
+              {
+                "solution_id": 2686,
+                "solution_name": "VMS >> ลพ.3083 จุดที่ 1",
+                "desktop_screen": "https://69lpc-lpnipc003-3083.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2687,
+                "solution_name": "VMS >> ลพ.3083 จุดที่ 2",
+                "desktop_screen": "https://69lpc-lpnipc011-3083.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 65,
+    "department_short_name": "สทช.13 (ฉะเชิงเทรา)",
+    "camera_online_count": 10,
+    "camera_offline_count": 3,
+    "sub_department": [
+      {
+        "department_id": 66,
+        "department_short_name": "ขทช.ฉะเชิงเทรา",
+        "camera_online_count": 9,
+        "camera_offline_count": 2,
+        "roads": [
+          {
+            "road_id": 2313,
+            "road_name": "บ้านอุโมงค์",
+            "road_code": "ฉช.3005",
+            "solution": [
+              {
+                "solution_id": 2621,
+                "solution_name": "TrafficSign : ฉช.3005 - จุดที่ 9",
+                "desktop_screen": "https://drr3005.rayoflight.co.th/live/192.168.16.57.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2622,
+                "solution_name": "TrafficSign : ฉช.3005 - จุดที่ 12",
+                "desktop_screen": "https://drr3005.rayoflight.co.th/live/192.168.16.70.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2623,
+                "solution_name": "TrafficSign : ฉช.3005 - จุดที่ 1-2",
+                "desktop_screen": "https://drr3005.rayoflight.co.th/live/192.168.15.56.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2624,
+                "solution_name": "TrafficSign : ฉช.3005 - จุดที่ 1-1",
+                "desktop_screen": "https://drr3005.rayoflight.co.th/live/192.168.15.55.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2322,
+            "road_name": "บ้านวังมะเดื่อ",
+            "road_code": "ฉช.4023",
+            "solution": [
+              {
+                "solution_id": 2650,
+                "solution_name": "TrafficSign : ฉช.4023 - จุดที่ 2",
+                "desktop_screen": "https://68twp-ccoipc039.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2651,
+                "solution_name": "TrafficSign : ฉช.4023 - จุดที่ 16",
+                "desktop_screen": "https://68twp-ccoipc053.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2329,
+            "road_name": "บ้านควายเขาหัก",
+            "road_code": "ฉช.4050",
+            "solution": [
+              {
+                "solution_id": 2556,
+                "solution_name": "VMS >> ฉช.4050 จุดที่ 1",
+                "desktop_screen": "https://68set-ccoipc011.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "20/06/2569 17:44:11",
+                "camera_online_count": 0,
+                "camera_offline_count": 2
+              },
+              {
+                "solution_id": 2557,
+                "solution_name": "VMS >> ฉช.4050 จุดที่ 2",
+                "desktop_screen": "https://68set-ccoipc015.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2645,
+                "solution_name": "ฉช.4050 - VMS จุดที่ 2",
+                "desktop_screen": "https://stream.mastersign-smarttraffic.com/CCO4050/_definst_/VMS-02.stream/playlist.m3u8",
+                "last_connected": "19/06/2569 17:18:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2646,
+                "solution_name": "ฉช.4050 - VMS จุดที่ 1",
+                "desktop_screen": "https://stream.mastersign-smarttraffic.com/CCO4050/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "19/06/2569 17:18:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2647,
+                "solution_name": "ฉช.4050 - VMS จุดที่ 3",
+                "desktop_screen": "https://stream.mastersign-smarttraffic.com/CCO4050/_definst_/VMS-03.stream/playlist.m3u8",
+                "last_connected": "19/06/2569 17:18:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2648,
+                "solution_name": "ฉช.4050 - VMS จุดที่ 4",
+                "desktop_screen": "https://stream.mastersign-smarttraffic.com/CCO4050/_definst_/VMS-04.stream/playlist.m3u8",
+                "last_connected": "19/06/2569 17:18:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2649,
+                "solution_name": "ฉช.4050 - VMS จุดที่ 5",
+                "desktop_screen": "https://stream.mastersign-smarttraffic.com/CCO4050/_definst_/VMS-05.stream/playlist.m3u8",
+                "last_connected": "19/06/2569 17:18:35",
+                "camera_online_count": 0,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2336,
+            "road_name": "บ้านหนองเสือ",
+            "road_code": "ฉช.3017",
+            "solution": [
+              {
+                "solution_id": 2640,
+                "solution_name": "VMS >> ฉช.3017 - จุดที่ 1",
+                "desktop_screen": "https://68twp-ccoipc028.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:33:45",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 69,
+        "department_short_name": "ขทช.นครนายก",
+        "camera_online_count": 1,
+        "camera_offline_count": 1,
+        "roads": [
+          {
+            "road_id": 2342,
+            "road_name": "บ้านห้วยกวางจริง",
+            "road_code": "นย.2003",
+            "solution": [
+              {
+                "solution_id": 2502,
+                "solution_name": "นย.2003 จุดที่ 1 VMS",
+                "desktop_screen": "",
+                "last_connected": "31/05/2569 21:02:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              },
+              {
+                "solution_id": 2503,
+                "solution_name": "นย.2003 จุดที่ 2 VMS",
+                "desktop_screen": "",
+                "last_connected": "31/05/2569 21:07:32",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 70,
+    "department_short_name": "สทช.14 (กระบี่)",
+    "camera_online_count": 10,
+    "camera_offline_count": 0,
+    "sub_department": [
+      {
+        "department_id": 72,
+        "department_short_name": "ขทช.ภูเก็ต",
+        "camera_online_count": 8,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 2608,
+            "road_name": "บ้านมูหลง",
+            "road_code": "ภก.4010",
+            "solution": [
+              {
+                "solution_id": 2688,
+                "solution_name": "TrafficSign : ภก.4010 - จุดที่ 2",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_phuket4010_rt_02_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2689,
+                "solution_name": "TrafficSign : ภก.4010 - จุดที่ 3",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_phuket4010_rt_01_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2690,
+                "solution_name": "TrafficSign : ภก.4010 - จุดที่ 1",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_phuket4010_lt_03_01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2609,
+            "road_name": "บ้านบาซากาจิ",
+            "road_code": "ภก.3015",
+            "solution": [
+              {
+                "solution_id": 2555,
+                "solution_name": "VMS >> ภก.3015 ",
+                "desktop_screen": "",
+                "last_connected": "21/06/2569 17:37:19",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          },
+          {
+            "road_id": 2619,
+            "road_name": "บ้านยะรัง",
+            "road_code": "ภก.3033",
+            "solution": [
+              {
+                "solution_id": 2633,
+                "solution_name": "VMS >> ภก.3033 - จุดที่ 1",
+                "desktop_screen": "https://68set-pktipc005.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:36:36",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2634,
+                "solution_name": "VMS >> ภก.3033 - จุดที่ 2",
+                "desktop_screen": "https://68set-pktipc013.enixma.net/live/vms.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:36:29",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "department_id": 75,
+        "department_short_name": "ขทช.พัทลุง",
+        "camera_online_count": 2,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 2579,
+            "road_name": "ถนนเฉลิมพระเกียรติ  ๘๐ พรรษา  ๕  ธันวาคม  ๒๕๕๐",
+            "road_code": "พท.5050",
+            "solution": [
+              {
+                "solution_id": 2596,
+                "solution_name": "TrafficSign : พท.5050 - จุดที่ 5",
+                "desktop_screen": "https://drr5050.rayoflight.co.th/live/192.168.33.52.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2597,
+                "solution_name": "TrafficSign : พท.5050 - จุดที่ 10",
+                "desktop_screen": "https://drr5050.rayoflight.co.th/live/192.168.37.52.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 81,
+    "department_short_name": "สทช.16 (กาฬสินธุ์)",
+    "camera_online_count": 3,
+    "camera_offline_count": 1,
+    "sub_department": [
+      {
+        "department_id": 82,
+        "department_short_name": "ขทช.กาฬสินธุ์",
+        "camera_online_count": 3,
+        "camera_offline_count": 1,
+        "roads": [
+          {
+            "road_id": 2784,
+            "road_name": "บ้านธาตุกลางน้อย",
+            "road_code": "กส.4036",
+            "solution": [
+              {
+                "solution_id": 2660,
+                "solution_name": "TrafficSign : กส.4036 - จุดติดตั้งกล้องวงจรปิด กส.4036",
+                "desktop_screen": "https://stream.aimer-psc.tech/KSN4036/_definst_/VMS-01.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2661,
+                "solution_name": "TrafficSign : กส.4036 - จุดที่ 2",
+                "desktop_screen": "https://stream.aimer-psc.tech/KSN4036/_definst_/VMS-02.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2662,
+                "solution_name": "TrafficSign : กส.4036 - จุดที่ 3",
+                "desktop_screen": "https://stream.aimer-psc.tech/KSN4036/_definst_/VMS-03.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 1,
+                "camera_offline_count": 0
+              },
+              {
+                "solution_id": 2663,
+                "solution_name": "TrafficSign : กส.4036 - จุดที่ 4",
+                "desktop_screen": "https://stream.aimer-psc.tech/KSN4036/_definst_/VMS-04.stream/playlist.m3u8",
+                "last_connected": "21/06/2569 17:45:22",
+                "camera_online_count": 0,
+                "camera_offline_count": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "department_id": 91,
+    "department_short_name": "สทช.18 (สุพรรณบุรี)",
+    "camera_online_count": 2,
+    "camera_offline_count": 0,
+    "sub_department": [
+      {
+        "department_id": 93,
+        "department_short_name": "ขทช.นครปฐม",
+        "camera_online_count": 2,
+        "camera_offline_count": 0,
+        "roads": [
+          {
+            "road_id": 3245,
+            "road_name": "บ้านไร่ด่าน",
+            "road_code": "นฐ.3004",
+            "solution": [
+              {
+                "solution_id": 2620,
+                "solution_name": "TrafficSign : นฐ.3004 - จุดที่ 6 กม.20+900 RT",
+                "desktop_screen": "https://server2.streamtraffic.net:443/vms_nt3004_06-01/stream.m3u8",
+                "last_connected": "21/06/2569 17:45:12",
+                "camera_online_count": 2,
+                "camera_offline_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -55,10 +55,10 @@ src/
 ### API Layer
 
 All HTTP calls go through `src/services/BaseService.ts` (Axios instance), which:
-- Fetches `access_token` from `/api/auth/session` on **every request** (known latency issue — do not add more inline `fetch()` calls in components)
+- Fetches `access_token` from `/api/auth/session`, cached ~5s via a promise-cache that dedupes concurrent requests (do not add inline `fetch()` calls in components)
 - Injects `Authorization: Bearer <token>` and `x-api-key` on every request
-- On `40199` (token expired): shows a modal asking the user to refresh, then retries the original request
-- On `40100` or `401`: auto-logs the user out
+- On `40199` (expired) or a bare HTTP `401`: silently refreshes the token (single-flight — concurrent failures share one refresh) and retries the original request; logs out if the refresh itself fails
+- On `40100` (invalid token): shows one guarded error modal then logs out (with a null-modal fallback that logs out directly, so requests never hang)
 
 `src/services/ApiService.ts` wraps BaseService with a generic Promise interface. Feature-specific services live in `src/services/routes/` (e.g., `AdminService.ts`).
 
@@ -114,14 +114,16 @@ Do not create new Context providers with empty `value={{}}` — they add overhea
 
 ## Data Fetching
 
-All feature data is currently **mock/static** — hardcoded in `src/features/**/data/*.ts` files or inline in components. The only real backend call is `GET /auth/me` via `src/services/routes/AdminService.ts`.
+Most feature data is still **mock/static** — hardcoded in `src/features/**/data/*.ts` files or inline in components. Backend-integrated so far:
+- `GET /auth/me` via `src/services/routes/AdminService.ts`
+- **`control-vms/overall`** — the first feature wired to the real backend (VMS departments, setting types, paginated media list, media create, file upload, contract detail). Services: `src/services/routes/ControlVMSService.ts` + `SharedService.ts`. Reads/writes use **TanStack Query** (`useQuery` / `useInfiniteQuery` / `useMutation`), **not** Redux. It is the canonical reference pattern — see full details in the section below.
 
-When connecting a feature to the real backend:
+Canonical pattern when connecting a feature to the real backend:
 1. Add a typed service function to `src/services/routes/<Feature>Service.ts` using `ApiService.fetchData<ResponseType>()`
-2. Use `createAsyncThunk` or RTK Query endpoint (after fixing `RtkQueryService.ts`) — do NOT fetch directly in `screen/index.tsx`
-3. Define the API response type in `src/types/<feature>.ts`
+2. Fetch via **TanStack Query** in a co-located hook — `useQuery`/`useInfiniteQuery` for reads, `useMutation` for writes. Do NOT fetch in `screen/index.tsx`, do NOT call `fetch()` in components, and do NOT mirror server data into Redux.
+3. Define the API response type in `src/types/<feature>/`
 
-Do not add `fetch()` calls inside React components or screens directly.
+`ApiService.fetchData<T>()` returns `Promise<AxiosResponse<T>>`, so TanStack's `data` is the AxiosResponse — unwrap the payload with `.data`.
 
 ## Naming Conventions
 
@@ -158,18 +160,48 @@ These are **confirmed issues** from a full architecture review (2026-06-05). Avo
 - `src/features/manager/` and `src/features/user/` — empty placeholder directories.
 
 ### Known bugs (do not use until fixed)
-- **`src/services/RtkQueryService.ts:19`** — `axiosBaseQuery` does `const response = BaseService(request)` without `await` inside `try`, so the `catch` block can never run. Fix: add `await` before using.
-- **`src/services/BaseService.ts` token-expiry handler (`40199`, lines 50–78) — request can hang forever.** The branch returns `new Promise((resolve, reject) => getGlobalModal()?.confirm({...}))`. `getGlobalModal()` (`src/utils/hooks/useTimeoutModal.ts`) is `null` during the init window before `ModalRegistrar`'s `useEffect` runs (`src/components/provider/AntdAppProvider.tsx`), so the optional chain short-circuits and **neither `resolve` nor `reject` is ever called** — the awaiting request never settles. Any fix MUST settle the promise even when the modal is null. Related: there is no single-flight refresh lock, so concurrent `40199`/`401` failures each open a modal and each fire `/api/auth/refresh` (modals stack, refreshes race). A designed (not yet implemented) fix — session-fetch promise-cache + single-flight refresh + silent auto-refresh + null-modal fallback — is captured in memory (`baseservice-refactor-plan`). An untracked reference candidate exists at `test/BaseService.ts` (right mechanisms, but imports a nonexistent `AuthService`, uninstalled `sweetalert2`, static antd `Modal`, and `/login` — do NOT drop it in verbatim; adapt only the mechanisms).
+- **`src/services/RtkQueryService.ts:19`** — `axiosBaseQuery` does `const response = BaseService(request)` without `await` inside `try`, so the `catch` block can never run. Fix: add `await` before using. (Still unfixed, but RTK Query isn't wired to the store anyway — TanStack Query is used for server state.)
+
+> **BaseService was hardened (~2026-06-22, committed)** — the former "request hangs forever on `40199`" bug is fixed. `src/services/BaseService.ts` now has a 5s session promise-cache, a single-flight refresh lock, silent auto-refresh on `40199`/bare-401 (`_retry` guard, no confirm modal), and a `40100` guarded error modal with a null-modal→logout fallback. An untracked reference candidate remains at `test/BaseService.ts` — **ignore it** (imports a nonexistent `AuthService`, uninstalled `sweetalert2`, static antd `Modal`, and `/login`; the real bindings are `getGlobalModal()` + `/auth/login`).
 
 ### Logging in production path
-- **`src/services/BaseService.ts:28`** — `console.log("[REQ]", ...)` fires on every API request. Remove before going to production.
-- `src/app/api/auth/[...all]/route.ts:84` — `console.log("===", error)` leaks error details server-side.
+- `src/app/api/auth/[...all]/route.ts:84` — `console.log("===", error)` leaks error details server-side. Remove before production. (The former per-request `BaseService.ts` log was removed in the 2026-06-22 hardening.)
 
 ### Missing route boundaries
 No `error.tsx`, `loading.tsx`, or `not-found.tsx` exist anywhere in the app. Add these per-route when implementing a feature properly (App Router requires them for good UX and error isolation).
 
 ### Redux scaffolding
 `getAdminData` thunk (`src/stores/reducers/admin/adminSlice.ts`) is defined but never dispatched anywhere. The `admin` and `auth` slices have no real consumers. Do not build on top of them without first wiring them up.
+
+### control-vms/overall — reference implementation (fully refactored 2026-06-23)
+The first backend-integrated feature. Canonical template for all future backend work. Key patterns:
+
+**Data fetching**
+- **Query key factory** at `features/admin/control-vms/overall/data/queryKeys.ts` (`controlVmsKeys`) — use this pattern for every new backend-integrated feature.
+- **Co-located hooks** at `features/admin/control-vms/overall/hooks/` — 5 hooks: `useVMSSettingTypes`, `usePostVMSMedia`, `useVMSDepartments`, `useVMSMediaList`, `useContactDetail`. Components are purely declarative; all query/mutation logic lives in hooks.
+- **No server data in Redux** — the former `control_vms` Redux slice was deleted. Setting types are shared via the TanStack Query cache.
+
+**Writes**
+- **`useMutation` for writes** — submit button binds `loading={isPending} disabled={isPending}` to prevent double-submit.
+- **`mutate(body, { onSuccess })` pattern** — do NOT use `mutateAsync` (unhandled rejection risk); use `mutate` with callback so form closes only on success and stays open (retryable) on error.
+- **File upload via `FormData`** — `postUploadVMSAPI(form: FormData)` with no manual `Content-Type` header; axios sets the boundary automatically. Use `AxiosError` (not `Error`) for upload catch to surface `error.response?.data?.message`.
+
+**State & modals**
+- **Modal state is local** — components own `useState<Data | null>` and pass `open={data !== null}`, `onClose={() => setData(null)}` as props; no modal state in Context.
+- **Context inits to `null`** — bureau/bureauState/bureauRoute/bureauSign start as `null`; VMSSection gates rendering on `bureauSign !== null`.
+- **Bureau type aliases** live in `src/types/control-vms/bureau.ts`; re-exported from `components/list/BureauList.tsx` for backward compat.
+
+**Media display**
+- **Video vs image detection** — use `isVideoUrl(url)` from `overall/data/media.ts` (single source of truth for `VIDEO_EXTENSIONS`). Do NOT re-declare the regex in components.
+- **`VMSMedia` component** — `components/sections/vms/VMSMedia.tsx` owns the branch: `variant='thumbnail'` → `<video preload="metadata" muted>` with `#t=0.1` fragment for a static first-frame poster (no autoplay, no decode loop); `variant='player'` → `<video controls autoPlay>` for full playback. Both fall back to antd `<Image>` for non-video URLs.
+- **`HLSLivePlayer` is for live HLS CCTV only** — do NOT use it for stored VOD files (.mp4/.avi/.mov). It has no `controls` attribute, calls `play()` unmuted (blocked by browser autoplay policy), and runs reconnect/capture timers indefinitely.
+- **Grid card branching** — `ContentSetting` branches by `isVideoUrl`: video → `<figure onClick={onCardClick}><VMSMedia variant='thumbnail'></figure>` (click → `ModalMediaPreview`); image → `<figure><Image></figure>` with no `preview={false}` so antd's built-in lightbox handles the click natively. Do NOT put `onClick` on the image figure.
+- **Media preview modal** — `ModalMediaPreview` accepts `open`, `data: VMSMediaList | null`, `onClose`; uses `VMSMedia variant='player'` + `destroyOnHidden` to stop playback on close. Used for **video only** — images use antd Image's own preview.
+
+**Null safety**
+- Nested array guards: `(arr ?? []).reduce(...)` / `(arr ?? []).filter(...)` for any backend-sourced tree (mirrors how `BureauList` guards its render).
+
+**Unresolved data-contract questions** — verify with backend: does `GET /vms/settings/departments` return `Solution.vms_id`? (mock only has `solution_id`); and what `res_code` value means POST success?
 
 ## Environment Variables
 

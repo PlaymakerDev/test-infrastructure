@@ -1,4 +1,16 @@
-const admin = [
+export interface AdminMenuItem {
+  key: string
+  title: string
+  label: string
+  label_key: string
+  icon: string
+  default_color_icon: string
+  path: string
+  path_active: string
+  path_list: string[]
+}
+
+const admin: AdminMenuItem[] = [
   {
     key: '1',
     title: 'Dashboard',
@@ -120,6 +132,7 @@ const admin = [
     path_active: "/admin/tracking",
     path_list: [],
   },
+  // SETTING
   {
     key: '12',
     title: 'Control VMS',
@@ -136,7 +149,7 @@ const admin = [
     title: 'Statistic',
     label: "Statistic",
     label_key: "statistic",
-    icon: "",
+    icon: "TbChartColumn",
     default_color_icon: '',
     path: "/admin/statistics",
     path_active: "/admin/statistics",
@@ -151,6 +164,51 @@ const admin = [
     default_color_icon: '',
     path: "/admin/maintenance",
     path_active: "/admin/maintenance",
+    path_list: [],
+  },
+  // MANAGEMENT
+  {
+    key: '15',
+    title: 'จัดการโครงการ',
+    label: "จัดการโครงการ",
+    label_key: "project_management",
+    icon: "TbSettings",
+    default_color_icon: '',
+    path: "/admin/manage/project",
+    path_active: "/admin/manage/project",
+    path_list: [],
+  },
+  {
+    key: '16',
+    title: 'จัดการผู้รับจ้าง',
+    label: "จัดการผู้รับจ้าง",
+    label_key: "contact_management",
+    icon: "TbUserSquare",
+    default_color_icon: '',
+    path: "/admin/manage/contact",
+    path_active: "/admin/manage/contact",
+    path_list: [],
+  },
+  {
+    key: '17',
+    title: 'จัดการสายทาง',
+    label: "จัดการสายทาง",
+    label_key: "route_management",
+    icon: "TbMapPin",
+    default_color_icon: '',
+    path: "/admin/manage/route",
+    path_active: "/admin/manage/route",
+    path_list: [],
+  },
+  {
+    key: '18',
+    title: 'จัดการผู้ใช้งาน',
+    label: "จัดการผู้ใช้งาน",
+    label_key: "user_management",
+    icon: "TbUser",
+    default_color_icon: '',
+    path: "/admin/manage/user",
+    path_active: "/admin/manage/user",
     path_list: [],
   },
 ]

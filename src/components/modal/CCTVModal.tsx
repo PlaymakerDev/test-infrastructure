@@ -206,7 +206,7 @@ const CCTVModal: React.FC<Props> = (props) => {
     queryKey: ['cctv_detail', String(camera_id ?? '')],
     queryFn: () => getCCTVDetailAPI(String(camera_id)!),
     enabled: !!camera_id,
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   const renderContent = useMemo(() => {

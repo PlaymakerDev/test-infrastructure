@@ -28,8 +28,6 @@ const ModalVMSScreen: React.FC<Props> = (props) => {
   const { openVMSScreen, setOpenVMSScreen } = useDetailContext()
   const { open, data } = openVMSScreen
 
-  console.log("===openVMSScreen===", openVMSScreen)
-
   return (
     <ConfigProvider
       theme={{

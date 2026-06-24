@@ -1,7 +1,8 @@
 import { Input } from 'antd'
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
+import { useControlVMSContext } from '../../../context'
 
 interface Props {
 
@@ -11,8 +12,12 @@ interface FormValues {
   search: ""
 }
 
+let timeout: NodeJS.Timeout
+
 const FormSearchDisplay: React.FC<Props> = (props) => {
   const { } = props
+  const { setSearchText } = useControlVMSContext()
+  const submitRef = useRef<HTMLButtonElement>(null)
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -26,8 +31,10 @@ const FormSearchDisplay: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((values: FormValues) => {
-    console.log(values)
-  }, [])
+    setSearchText({
+      road_code: values.search
+    })
+  }, [setSearchText])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -44,11 +51,19 @@ const FormSearchDisplay: React.FC<Props> = (props) => {
                 className='rounded-lg'
                 suffix={<TbSearch />}
                 size='large'
+                onChange={(e) => {
+                  field.onChange(e)
+                  if (timeout) clearTimeout(timeout)
+                  timeout = setTimeout(() => {
+                    submitRef.current?.click()
+                  }, 700)
+                }}
               />
             </fieldset>
           )
         }}
       />
+      <button ref={submitRef} type='submit' hidden />
     </form>
   )
 }
