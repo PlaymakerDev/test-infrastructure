@@ -15,6 +15,7 @@ import type {
   ChatErrorKind,
   DonePayload,
   ExportPayload,
+  Provenance,
   ResultPayload,
 } from "@/types/chat"
 import {
@@ -33,6 +34,7 @@ export interface AskStreamHandlers {
   onChart?: (payload: ChartHint) => void
   onToken?: (text: string) => void
   onSuggestions?: (questions: string[]) => void
+  onProvenance?: (payload: Provenance) => void
   onExport?: (payload: ExportPayload) => void
   onError?: (message: string, kind: ChatErrorKind) => void
   onDone?: (payload: DonePayload) => void
@@ -93,6 +95,9 @@ function dispatchFrame(frame: RawFrame, handlers: AskStreamHandlers): boolean {
       return false
     case "suggestions":
       handlers.onSuggestions?.((data as { questions?: string[] }).questions ?? [])
+      return false
+    case "provenance":
+      handlers.onProvenance?.(data as Provenance)
       return false
     case "export":
       handlers.onExport?.(data as ExportPayload)

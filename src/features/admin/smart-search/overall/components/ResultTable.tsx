@@ -6,11 +6,11 @@ import type { Cell, ResultPayload } from "@/types/chat"
 
 interface Props {
   result: ResultPayload
+  // From `provenance.truncated` (§6) — the result hit the ~200-row cap, so
+  // there may be more. Authoritative flag from the backend (replaces the old
+  // row_count>=200 guess). Absent for re-rendered history turns.
+  truncated?: boolean
 }
-
-// `/ask` caps results at ~200 rows (LLM_MAX_ROWS) with no truncation flag, so
-// hitting the cap means there may be more — nudge the user toward export.
-const LLM_MAX_ROWS = 200
 
 const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
 
@@ -41,8 +41,8 @@ const formatCell = (value: Cell): React.ReactNode => {
   return value
 }
 
-const ResultTable: React.FC<Props> = ({ result }) => {
-  const { columns: columnNames, rows, row_count } = result
+const ResultTable: React.FC<Props> = ({ result, truncated }) => {
+  const { columns: columnNames, rows } = result
 
   // A column is numeric only if every present cell is a number → right-align it.
   const numericCols = useMemo(
@@ -83,9 +83,9 @@ const ResultTable: React.FC<Props> = ({ result }) => {
         scroll={{ x: "max-content", y: 360 }}
         sticky
       />
-      {row_count >= LLM_MAX_ROWS && (
+      {truncated && (
         <p className="fs-12 text-white/50 mt-2">
-          แสดงผลสูงสุด ~{LLM_MAX_ROWS} แถวแรก — ผลลัพธ์จริงอาจมีมากกว่านี้
+          แสดงเพียงบางส่วน — ผลลัพธ์จริงมีมากกว่านี้
           ใช้ปุ่มดาวน์โหลดเพื่อดูข้อมูลทั้งหมด
         </p>
       )}

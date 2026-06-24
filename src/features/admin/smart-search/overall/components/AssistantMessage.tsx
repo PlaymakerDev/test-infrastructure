@@ -5,10 +5,10 @@ import { TbBrandGithubCopilot, TbDatabaseOff, TbLogin2 } from "react-icons/tb"
 import { reloginChat } from "@/services/chatAuth"
 import type { ChatTurn } from "@/types/chat"
 import AnswerText from "./AnswerText"
-import ChartView from "./ChartView"
 import ConfidenceBadge from "./ConfidenceBadge"
 import MessageActions from "./MessageActions"
-import ResultTable from "./ResultTable"
+import ProvenanceBadge from "./ProvenanceBadge"
+import ResultViews from "./ResultViews"
 import SuggestionChips from "./SuggestionChips"
 
 interface Props {
@@ -39,7 +39,7 @@ const NoDataCard: React.FC = () => (
 // Composite assistant turn. Render order follows the result spec:
 // table (chart in a later step) → streamed answer → confidence.
 const AssistantMessage: React.FC<Props> = ({ turn }) => {
-  const { answer, status, errorMessage, errorKind, result, chart, suggestions, confidence } = turn
+  const { answer, status, errorMessage, errorKind, result, chart, suggestions, confidence, provenance } = turn
   const isStreaming = status === "streaming"
   const isDone = status === "done"
   const waitingForFirstToken = isStreaming && !answer
@@ -48,11 +48,9 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
   // turns get a result/chart and which chart type to use.
   const hasResult = !!result && result.row_count > 0
   const isEmptyResult = !!result && result.row_count === 0
-  // Only bar/line get a chart. metric (single value) → answered as text only.
-  const showChart =
-    hasResult && !!chart && (chart.type === "bar" || chart.type === "line")
-  // metric → text only (no 1-row table); otherwise render the table when present.
-  const showTable = hasResult && chart?.type !== "metric"
+  // metric (single value) → answered as text only (no result frame anyway).
+  // Otherwise render the result viewer (table ↔ chart ↔ map toggle).
+  const showResult = hasResult && chart?.type !== "metric"
 
   return (
     <div className="flex gap-3">
@@ -78,8 +76,13 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
           </div>
         ) : (
           <>
-            {showChart && chart && <ChartView chart={chart} result={result} />}
-            {showTable && <ResultTable result={result} />}
+            {showResult && (
+              <ResultViews
+                chart={chart}
+                result={result}
+                truncated={provenance?.truncated}
+              />
+            )}
             {isEmptyResult && <NoDataCard />}
 
             {waitingForFirstToken ? (
@@ -93,6 +96,8 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
                 <ConfidenceBadge confidence={confidence} />
               </div>
             )}
+
+            {provenance && <ProvenanceBadge provenance={provenance} />}
 
             {isDone && suggestions && <SuggestionChips questions={suggestions} />}
 

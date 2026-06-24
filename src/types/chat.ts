@@ -32,7 +32,8 @@ export interface ResultPayload {
 }
 
 // ── Chart hint — x/y are column names within result.columns ──
-export type ChartType = "metric" | "bar" | "line" | "table"
+// "map" → choropleth by province/region (x = area column, y = value column).
+export type ChartType = "metric" | "bar" | "line" | "map" | "table"
 
 export interface ChartHint {
   type: ChartType
@@ -58,6 +59,15 @@ export interface ErrorPayload {
 export interface DonePayload {
   confidence: Confidence
   message_id: string
+}
+
+// ── Provenance (§1) — data lineage shown under an answer. Live-only: emitted as
+// a `provenance` frame (and in the JSON AskResult); NOT persisted in history, so
+// re-rendered old turns won't carry it. `truncated` = result hit the ~200 cap.
+export interface Provenance {
+  source_views: string[]
+  row_count: number
+  truncated: boolean
 }
 
 // ── Feedback (§4) — references a turn by message_id; backend resolves SQL ──
@@ -122,6 +132,16 @@ export interface InsightsResponse {
   insights: Insight[]
 }
 
+// ── Map scope (§5.1) — the provinces/regions a user is responsible for (RLS).
+// Fetched once and cached; used to draw/fit the choropleth to the user's area
+// (incl. provinces with zero devices, which never appear in `result`).
+// `scoped:false` = admin/unscoped → whole country.
+export interface ScopeResponse {
+  scoped: boolean
+  provinces: string[] // full Thai names = th.provinces.name_th (match GeoJSON)
+  regions: string[]
+}
+
 // ── Error classification for a turn (drives the error UI) ──
 export type ChatErrorKind = "auth" | "rate_limit" | "generic"
 
@@ -135,6 +155,7 @@ export interface ChatTurn {
   suggestions?: string[]
   exportHint?: ExportPayload
   confidence?: Confidence
+  provenance?: Provenance // live-only data lineage (not in history)
   messageId?: string // from `done` frame — used for feedback
   status: "streaming" | "done" | "error"
   errorMessage?: string

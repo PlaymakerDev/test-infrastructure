@@ -4,6 +4,7 @@ import type {
   ConversationSummary,
   FeedbackRequest,
   InsightsResponse,
+  ScopeResponse,
 } from "@/types/chat"
 
 // Some endpoints may wrap the body in the { res_code, res_data } envelope
@@ -67,4 +68,10 @@ export async function submitFeedback(body: FeedbackRequest): Promise<void> {
 export async function fetchInsights(): Promise<InsightsResponse> {
   const res = await chatHttp.get("/insights")
   return unwrap<InsightsResponse>(res.data)
+}
+
+// ── Map scope (§5.1) — the user's provinces/regions, for bounding the map ──
+export async function fetchScope(): Promise<ScopeResponse> {
+  const res = await chatHttp.get("/scope")
+  return unwrap<ScopeResponse>(res.data)
 }

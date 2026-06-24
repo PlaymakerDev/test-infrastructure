@@ -93,6 +93,7 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
               scheduleFlush()
             },
             onSuggestions: (q) => patchTurn(turnId, { suggestions: q }),
+            onProvenance: (p) => patchTurn(turnId, { provenance: p }),
             onExport: (p) => patchTurn(turnId, { exportHint: p }),
             onError: (msg, kind) => {
               flushTokens()
