@@ -71,16 +71,31 @@ const ChartView: React.FC<Props> = ({ chart, result }) => {
   }, [chart, result])
 
   if (!model) return null
+  // Chat charts get arbitrary, often-long category labels (full road names) —
+  // keep them horizontal but truncate with … so they don't overlap; the full
+  // text shows in the tooltip on hover.
   if (model.kind === "line") {
     return (
       <div className="my-2">
-        <LineChart title={model.title} data={model.data} lines={model.series} height={220} />
+        <LineChart
+          title={model.title}
+          data={model.data}
+          lines={model.series}
+          height={220}
+          xAxisLabelMaxWidth={80}
+        />
       </div>
     )
   }
   return (
     <div className="my-2">
-      <BarChart title={model.title} data={model.data} bars={model.series} height={220} />
+      <BarChart
+        title={model.title}
+        data={model.data}
+        bars={model.series}
+        height={220}
+        xAxisLabelMaxWidth={80}
+      />
     </div>
   )
 }

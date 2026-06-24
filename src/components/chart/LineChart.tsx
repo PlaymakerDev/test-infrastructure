@@ -73,6 +73,10 @@ export interface LineChartProps {
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
   yAxisDomain?: [number | 'auto', number | 'auto']
+  /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
+  xAxisLabelRotate?: number
+  /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
+  xAxisLabelMaxWidth?: number
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
   /** สี title + icon accent (default `#FCD116`) */
@@ -124,6 +128,8 @@ const LineChart: React.FC<LineChartProps> = ({
   height = 260,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  xAxisLabelRotate = 0,
+  xAxisLabelMaxWidth,
   // Theme overrides — defaults match the original look
   accentColor = '#FCD116',
   cardBackground = '#00000080',
@@ -156,7 +162,14 @@ const LineChart: React.FC<LineChartProps> = ({
         data: data.map((d) => d.label),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#8a9ab5', fontSize: 11 },
+        axisLabel: {
+          color: '#8a9ab5',
+          fontSize: 11,
+          ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
+          ...(typeof xAxisLabelMaxWidth === 'number'
+            ? { width: xAxisLabelMaxWidth, overflow: 'truncate' }
+            : {}),
+        },
         splitLine: { show: false },
         boundaryGap: false,
       },
@@ -195,7 +208,10 @@ const LineChart: React.FC<LineChartProps> = ({
                  <div style="color:#fff;font-size:13px;font-weight:600;">${tooltipDate}</div>
                  <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''} น.</div>
                </div>`
-            : ''
+            : // When labels are truncated, surface the full category in the tooltip.
+              typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
+              ? `<div style="color:#fff;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
+              : ''
           const rows = params
             .map((p) => {
               const cfg = lines[p.seriesIndex]
@@ -255,7 +271,7 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot, tooltipExtras])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipUnit, tooltipShowDot, tooltipExtras, xAxisLabelRotate, xAxisLabelMaxWidth])
 
   return (
     <div
