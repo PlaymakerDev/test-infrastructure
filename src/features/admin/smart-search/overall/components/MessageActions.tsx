@@ -4,6 +4,8 @@ import React, { useState } from "react"
 import {
   TbCopy,
   TbDownload,
+  TbPin,
+  TbPinFilled,
   TbReload,
   TbThumbDown,
   TbThumbDownFilled,
@@ -20,7 +22,15 @@ interface Props {
 }
 
 const MessageActions: React.FC<Props> = ({ turn }) => {
-  const { conversationId, send, isStreaming } = useSmartSearchContext()
+  const {
+    conversationId,
+    send,
+    isStreaming,
+    pinQuestion,
+    unpinQuestion,
+    isQuestionPinned,
+    dashboardPins,
+  } = useSmartSearchContext()
   const { exporting, exportFile } = useExport()
   const { submitting, submit } = useFeedback()
   const { message } = App.useApp()
@@ -29,6 +39,18 @@ const MessageActions: React.FC<Props> = ({ turn }) => {
 
   const canExport = (turn.result && turn.result.row_count > 0) || !!turn.exportHint
   const canFeedback = !!conversationId && !!turn.messageId
+  const pinned = isQuestionPinned(turn.question)
+
+  const handlePin = () => {
+    if (pinned) {
+      const pin = dashboardPins.find((p) => p.question === turn.question)
+      if (pin) unpinQuestion(pin.id)
+      message.success("เอาออกจากแดชบอร์ดแล้ว")
+    } else {
+      pinQuestion(turn.question, turn.mode)
+      message.success("ปักหมุดขึ้นแดชบอร์ดแล้ว")
+    }
+  }
 
   const handleCopy = async () => {
     try {
@@ -106,6 +128,17 @@ const MessageActions: React.FC<Props> = ({ turn }) => {
           disabled={isStreaming}
           icon={<TbReload />}
           onClick={() => send(turn.question, { mode: turn.mode })}
+        />
+      </Tooltip>
+
+      <Tooltip title={pinned ? "เอาออกจากแดชบอร์ด" : "ปักหมุดขึ้นแดชบอร์ด"}>
+        <Button
+          type="text"
+          size="small"
+          icon={
+            pinned ? <TbPinFilled className="text-(--yellow)" /> : <TbPin />
+          }
+          onClick={handlePin}
         />
       </Tooltip>
     </div>

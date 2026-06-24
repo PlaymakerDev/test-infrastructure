@@ -1,5 +1,7 @@
 import chatHttp from "../chatHttp"
 import type {
+  AskMode,
+  AskResult,
   ConversationDetail,
   ConversationSummary,
   FeedbackRequest,
@@ -74,4 +76,13 @@ export async function fetchInsights(): Promise<InsightsResponse> {
 export async function fetchScope(): Promise<ScopeResponse> {
   const res = await chatHttp.get("/scope")
   return unwrap<ScopeResponse>(res.data)
+}
+
+// ── One-shot ask (stream:false) — for dashboard cards & compare panes ──
+export async function askOnce(
+  message: string,
+  mode: AskMode = "fast",
+): Promise<AskResult> {
+  const res = await chatHttp.post("/ask", { message, stream: false, mode })
+  return unwrap<AskResult>(res.data)
 }

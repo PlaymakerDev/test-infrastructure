@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { useAskStream } from "../hooks/useAskStream"
 import { useConversations } from "../hooks/useConversations"
+import { type DashboardPin, useDashboardPins } from "../hooks/useDashboardPins"
 import type {
   AskMode,
   ChatTurn,
@@ -10,6 +11,9 @@ import type {
 } from "@/types/chat"
 
 const DRAFT_KEY = "smart-search:draft"
+
+// Which main view is showing (Future #1 dashboard, #3 compare).
+export type ViewMode = "chat" | "dashboard" | "compare"
 
 // Re-hydrate a persisted message into a UI turn (full fidelity, already done).
 const messageToTurn = (message: ConversationMessage): ChatTurn => ({
@@ -43,10 +47,21 @@ export interface SmartSearchContextProps {
   prefetchConversation: (id: string) => void
   renameConversation: (id: string, title: string) => Promise<void>
   deleteConversation: (id: string) => Promise<void>
+  // Pin/star conversations (Future #6) — client-only.
+  pinnedIds: ReadonlySet<string>
+  togglePin: (id: string) => void
+  conversationMatches: (id: string, query: string) => boolean
   // Mobile-only: the history drawer's open state (trigger lives in the header,
   // the drawer in the sidebar — shared here).
   historyOpen: boolean
   setHistoryOpen: (open: boolean) => void
+  // View mode + dashboard pins (Future #1).
+  viewMode: ViewMode
+  setViewMode: (mode: ViewMode) => void
+  dashboardPins: DashboardPin[]
+  pinQuestion: (question: string, mode: AskMode) => void
+  unpinQuestion: (id: string) => void
+  isQuestionPinned: (question: string) => boolean
 }
 
 export interface PageProviderProps {
@@ -73,8 +88,10 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
   )
 
   const chat = useAskStream(handlePersisted)
+  const dashboardPins = useDashboardPins()
   const [draft, setDraft] = useState("")
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>("chat")
 
   // Initial sidebar load.
   useEffect(() => {
@@ -108,6 +125,7 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
   const deleteConversation = useCallback(
     async (id: string) => {
       await conversations.remove(id)
+      conversations.removePin(id) // drop any pin for the deleted chat
       if (chat.conversationId === id) chat.newChat()
     },
     [conversations, chat],
@@ -132,8 +150,17 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
         prefetchConversation: conversations.prefetch,
         renameConversation: conversations.rename,
         deleteConversation,
+        pinnedIds: conversations.pinnedIds,
+        togglePin: conversations.togglePin,
+        conversationMatches: conversations.contentMatches,
         historyOpen,
         setHistoryOpen,
+        viewMode,
+        setViewMode,
+        dashboardPins: dashboardPins.pins,
+        pinQuestion: dashboardPins.addPin,
+        unpinQuestion: dashboardPins.removePin,
+        isQuestionPinned: dashboardPins.isPinned,
       }}
     >
       {children}

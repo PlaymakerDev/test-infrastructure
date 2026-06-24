@@ -5,7 +5,7 @@ import type { BarChartDataPoint } from "@/components/chart/Barchart"
 import type { Cell, ChartHint, ResultPayload } from "@/types/chat"
 import { useSmartSearchContext } from "../context"
 import { REGION_NAMES, REGION_TO_PROVINCES } from "../data/regionProvinces"
-import type { MapPoint } from "./MapView"
+import type { MapLayer, MapPoint } from "./MapView"
 import { PROVINCE_NAMES } from "./MapView"
 
 // Code-split the ECharts wrappers — they (and ECharts) load only when a turn
@@ -83,29 +83,35 @@ const ChartView: React.FC<Props> = ({ chart, result }) => {
     const title = yCols.length === 1 ? yCols[0] : "กราฟเปรียบเทียบ"
 
     if (chart.type === "map") {
-      const yc = yCols[0]
-      const ycIdx = columns.indexOf(yc)
+      const areaIsProvince = rows.some((r) =>
+        PROVINCE_NAMES.has(String(r[xIdx] ?? "").trim()),
+      )
+      const areaIsRegion = rows.some((r) =>
+        REGION_TO_PROVINCES[String(r[xIdx] ?? "").trim()],
+      )
 
-      // Province rows → one point per province.
-      const provincePoints: MapPoint[] = rows
-        .map((row) => ({
-          name: String(row[xIdx] ?? "").trim(),
-          value: toNumber(row[ycIdx]),
-        }))
-        .filter((p) => PROVINCE_NAMES.has(p.name))
-      if (provincePoints.length > 0)
-        return { kind: "map" as const, mapData: provincePoints, title: yc }
-
-      // Region rows → expand each region to its provinces (all share the value).
-      const regionPoints: MapPoint[] = rows.flatMap((row) => {
-        const region = String(row[xIdx] ?? "").trim()
-        const provinces = REGION_TO_PROVINCES[region]
-        if (!provinces) return []
-        const value = toNumber(row[ycIdx])
-        return provinces.map((name) => ({ name, value, groupName: region }))
-      })
-      if (regionPoints.length > 0)
-        return { kind: "map" as const, mapData: regionPoints, title: yc }
+      if (areaIsProvince || areaIsRegion) {
+        // One selectable layer per numeric column (e.g. CCTV / lighting).
+        const layers: MapLayer[] = yCols.map((yc) => {
+          const ycIdx = columns.indexOf(yc)
+          const points: MapPoint[] = areaIsProvince
+            ? rows
+                .map((row) => ({
+                  name: String(row[xIdx] ?? "").trim(),
+                  value: toNumber(row[ycIdx]),
+                }))
+                .filter((p) => PROVINCE_NAMES.has(p.name))
+            : rows.flatMap((row) => {
+                const region = String(row[xIdx] ?? "").trim()
+                const provinces = REGION_TO_PROVINCES[region]
+                if (!provinces) return []
+                const value = toNumber(row[ycIdx])
+                return provinces.map((name) => ({ name, value, groupName: region }))
+              })
+          return { key: yc, label: yc, data: points }
+        })
+        return { kind: "map" as const, layers }
+      }
 
       // Neither province nor region (no geometry) → fall back to bar.
       return { kind: "bar" as const, data, series, title }
@@ -120,13 +126,12 @@ const ChartView: React.FC<Props> = ({ chart, result }) => {
     return (
       <div className="my-2">
         <MapView
-          title={model.title}
-          data={model.mapData}
+          layers={model.layers}
           onSelectArea={(name) =>
             send(
               REGION_NAMES.has(name)
-                ? `ขอรายละเอียด${model.title}ของ${name}`
-                : `ขอรายละเอียด${model.title}ของจังหวัด${name}`,
+                ? `ขอรายละเอียดของ${name}`
+                : `ขอรายละเอียดของจังหวัด${name}`,
             )
           }
         />

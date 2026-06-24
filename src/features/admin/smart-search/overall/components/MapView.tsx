@@ -13,9 +13,15 @@ export interface MapPoint {
   groupName?: string
 }
 
-interface Props {
-  title: string
+// A metric the map can color by (Future #5: toggle CCTV vs lighting on one map).
+export interface MapLayer {
+  key: string
+  label: string
   data: MapPoint[]
+}
+
+interface Props {
+  layers: MapLayer[]
   /** Clicking an area asks a follow-up about it (drill-down) — province or region. */
   onSelectArea?: (name: string) => void
 }
@@ -100,9 +106,17 @@ const Skeleton = () => (
 
 // Choropleth of Thai provinces (§6 map). FE only renders here when the backend
 // signals chart.type === "map". The map is bounded to the user's scope (§5.1).
-const MapView: React.FC<Props> = ({ title, data, onSelectArea }) => {
+const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
   const { scope, loaded: scopeLoaded } = useScope()
   const [mapName, setMapName] = useState<string | null>(null)
+  const [activeKey, setActiveKey] = useState<string>(() => layers[0]?.key ?? "")
+
+  const active = useMemo(
+    () => layers.find((l) => l.key === activeKey) ?? layers[0],
+    [layers, activeKey],
+  )
+  const data = useMemo(() => active?.data ?? [], [active])
+  const title = active?.label ?? ""
 
   useEffect(() => {
     if (!scopeLoaded) return
@@ -181,12 +195,32 @@ const MapView: React.FC<Props> = ({ title, data, onSelectArea }) => {
       className="relative rounded-2xl pt-5 px-5 pb-3 w-full overflow-hidden"
       style={{ background: "#00000080", border: "1px solid #1f2d3d" }}
     >
-      <h2
-        className="font-semibold leading-tight mb-2"
-        style={{ color: "#FCD116", fontSize: 16 }}
-      >
-        {title}
-      </h2>
+      <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+        <h2
+          className="font-semibold leading-tight"
+          style={{ color: "#FCD116", fontSize: 16 }}
+        >
+          {title}
+        </h2>
+        {layers.length > 1 && (
+          <div className="inline-flex items-center gap-1 rounded-lg bg-white/5 p-1">
+            {layers.map((l) => (
+              <button
+                key={l.key}
+                type="button"
+                onClick={() => setActiveKey(l.key)}
+                className={`fs-12 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                  active?.key === l.key
+                    ? "bg-(--yellow) text-(--dark-black) font-medium"
+                    : "text-white/55 hover:text-white"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {option ? (
         <ReactECharts
           option={option}

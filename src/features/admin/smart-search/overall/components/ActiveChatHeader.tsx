@@ -1,5 +1,5 @@
 "use client"
-import { App, ConfigProvider, Dropdown, Input, type MenuProps } from "antd"
+import { App, Dropdown, Input, type MenuProps } from "antd"
 import React, { useMemo, useState } from "react"
 import { TbChevronDown, TbPencil, TbTrash } from "react-icons/tb"
 import { useSmartSearchContext } from "../context"

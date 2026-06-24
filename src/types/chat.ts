@@ -82,6 +82,20 @@ export interface FeedbackRequest {
 
 export type ExportFormat = "xlsx" | "html"
 
+// ── Non-streaming /ask result (stream:false) — used by the dashboard and the
+// compare view, where a one-shot answer is simpler than a stream. ──
+export interface AskResult {
+  message_id: string
+  answer: string
+  result?: ResultPayload
+  chart?: ChartHint
+  suggestions?: string[]
+  confidence?: Confidence
+  provenance?: Provenance
+  action?: "export"
+  format?: ExportFormat
+}
+
 // ── Conversation history (sidebar) ──
 export interface ConversationSummary {
   id: string

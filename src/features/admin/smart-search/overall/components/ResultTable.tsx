@@ -1,7 +1,8 @@
 "use client"
 import { Table } from "antd"
 import type { ColumnsType } from "antd/es/table"
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
+import { TbDownload, TbSearch } from "react-icons/tb"
 import type { Cell, ResultPayload } from "@/types/chat"
 
 interface Props {
@@ -41,17 +42,44 @@ const formatCell = (value: Cell): React.ReactNode => {
   return value
 }
 
+// Plain-text form of a cell — what the user sees — used for search + sort.
+const cellText = (value: Cell): string => {
+  if (value === null || value === undefined) return ""
+  if (typeof value === "number") return value.toLocaleString("en-US")
+  if (typeof value === "boolean") return value ? "ใช่" : "ไม่ใช่"
+  return String(value)
+}
+
+const compareCells = (a: Cell, b: Cell, numeric: boolean): number => {
+  // Nulls sort last regardless of direction's base order.
+  const an = a === null || a === undefined
+  const bn = b === null || b === undefined
+  if (an && bn) return 0
+  if (an) return 1
+  if (bn) return -1
+  if (numeric) return Number(a) - Number(b)
+  return cellText(a).localeCompare(cellText(b), "th")
+}
+
+// CSV cell — raw values (no thousands separators), quoted when needed.
+const csvCell = (value: Cell): string => {
+  if (value === null || value === undefined) return ""
+  const s = typeof value === "boolean" ? (value ? "ใช่" : "ไม่ใช่") : String(value)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 const ResultTable: React.FC<Props> = ({ result, truncated }) => {
   const { columns: columnNames, rows } = result
+  const [query, setQuery] = useState("")
 
-  // A column is numeric only if every present cell is a number → right-align it.
+  // A column is numeric only if every present cell is a number → right-align +
+  // sort numerically.
   const numericCols = useMemo(
     () =>
-      columnNames.map((_, colIdx) =>
-        rows.some((r) => typeof r[colIdx] === "number") &&
-        rows.every(
-          (r) => r[colIdx] === null || typeof r[colIdx] === "number",
-        ),
+      columnNames.map(
+        (_, colIdx) =>
+          rows.some((r) => typeof r[colIdx] === "number") &&
+          rows.every((r) => r[colIdx] === null || typeof r[colIdx] === "number"),
       ),
     [columnNames, rows],
   )
@@ -62,18 +90,62 @@ const ResultTable: React.FC<Props> = ({ result, truncated }) => {
         title: name,
         key: String(colIdx),
         align: numericCols[colIdx] ? "right" : "left",
+        sorter: (a: RowRecord, b: RowRecord) =>
+          compareCells(a.cells[colIdx], b.cells[colIdx], numericCols[colIdx]),
+        sortDirections: ["ascend", "descend"] as const,
         render: (_: unknown, record: RowRecord) => formatCell(record.cells[colIdx]),
       })),
     [columnNames, numericCols],
   )
 
-  const dataSource: RowRecord[] = useMemo(
-    () => rows.map((cells, key) => ({ key, cells })),
-    [rows],
-  )
+  const dataSource: RowRecord[] = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return rows
+      .map((cells, key) => ({ key, cells }))
+      .filter(
+        (r) =>
+          !q || r.cells.some((c) => cellText(c).toLowerCase().includes(q)),
+      )
+  }, [rows, query])
+
+  const downloadCsv = () => {
+    const header = columnNames.map((n) => csvCell(n)).join(",")
+    const lines = rows.map((r) => r.map(csvCell).join(","))
+    // BOM so Excel reads Thai (UTF-8) correctly.
+    const csv = "﻿" + [header, ...lines].join("\r\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "result.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="my-2">
+      {rows.length > 0 && (
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1 w-56 max-w-full">
+            <TbSearch className="text-white/40 shrink-0" size={14} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ค้นหาในตาราง..."
+              className="bg-transparent outline-none border-none fs-12 text-white placeholder-white/40 w-full"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={downloadCsv}
+            title="ดาวน์โหลดเป็น CSV"
+            className="shrink-0 inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded-md text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <TbDownload size={14} /> CSV
+          </button>
+        </div>
+      )}
+
       <Table<RowRecord>
         columns={columns}
         dataSource={dataSource}

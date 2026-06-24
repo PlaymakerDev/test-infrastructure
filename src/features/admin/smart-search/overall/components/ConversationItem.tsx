@@ -1,7 +1,7 @@
 "use client"
 import { App, Dropdown, Input, type InputRef, type MenuProps } from "antd"
 import React, { useCallback, useRef, useState } from "react"
-import { TbDotsVertical, TbPencil, TbTrash } from "react-icons/tb"
+import { TbDotsVertical, TbPencil, TbPin, TbPinFilled, TbTrash } from "react-icons/tb"
 import type { ConversationSummary } from "@/types/chat"
 import { useSmartSearchContext } from "../context"
 
@@ -13,9 +13,16 @@ interface Props {
 }
 
 const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }) => {
-  const { openConversation, prefetchConversation, renameConversation, deleteConversation } =
-    useSmartSearchContext()
+  const {
+    openConversation,
+    prefetchConversation,
+    renameConversation,
+    deleteConversation,
+    pinnedIds,
+    togglePin,
+  } = useSmartSearchContext()
   const { modal, message } = App.useApp()
+  const pinned = pinnedIds.has(conversation.id)
 
   const open = useCallback(() => {
     openConversation(conversation.id)
@@ -61,13 +68,19 @@ const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }
   }, [modal, conversation.id, conversation.title, deleteConversation, message])
 
   const menuItems: MenuProps["items"] = [
+    {
+      key: "pin",
+      label: pinned ? "เลิกปักหมุด" : "ปักหมุด",
+      icon: pinned ? <TbPinFilled /> : <TbPin />,
+    },
     { key: "rename", label: "เปลี่ยนชื่อ", icon: <TbPencil /> },
     { key: "delete", label: "ลบ", icon: <TbTrash />, danger: true },
   ]
 
   const onMenuClick: MenuProps["onClick"] = ({ key, domEvent }) => {
     domEvent.stopPropagation()
-    if (key === "rename") startEditing()
+    if (key === "pin") togglePin(conversation.id)
+    else if (key === "rename") startEditing()
     else if (key === "delete") confirmDelete()
   }
 
@@ -99,6 +112,9 @@ const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }
       className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
         }`}
     >
+      {pinned && (
+        <TbPinFilled className="shrink-0 text-(--yellow)/70" size={12} />
+      )}
       <span
         className="flex-1 min-w-0 truncate fs-14 select-none"
         title="ดับเบิลคลิกเพื่อเปลี่ยนชื่อ"

@@ -45,17 +45,33 @@ const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
   className,
   onNavigate,
 }) => {
-  const { conversations, loadingList, conversationId, newChat } =
-    useSmartSearchContext()
+  const {
+    conversations,
+    loadingList,
+    conversationId,
+    newChat,
+    pinnedIds,
+    conversationMatches,
+  } = useSmartSearchContext()
   const [query, setQuery] = useState("")
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
+    // Search matches the title or (for already-opened chats) their content.
     const filtered = q
-      ? conversations.filter((c) => c.title.toLowerCase().includes(q))
+      ? conversations.filter(
+          (c) =>
+            c.title.toLowerCase().includes(q) || conversationMatches(c.id, q),
+        )
       : conversations
-    return groupByRecency(filtered)
-  }, [conversations, query])
+    // Pinned chats float to the top in their own group; the rest by recency.
+    const pinned = filtered.filter((c) => pinnedIds.has(c.id))
+    const rest = filtered.filter((c) => !pinnedIds.has(c.id))
+    const result = pinned.length
+      ? [{ label: "ปักหมุด", items: pinned }, ...groupByRecency(rest)]
+      : groupByRecency(rest)
+    return result
+  }, [conversations, query, pinnedIds, conversationMatches])
 
   const isEmpty = !loadingList && groups.length === 0
 
