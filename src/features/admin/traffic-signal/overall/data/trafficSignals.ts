@@ -1,6 +1,8 @@
 // Mock data — โครงการสัญญาณไฟจราจรในระบบ
 // Used by the Traffic Signal screen (camera list + map markers + table).
 
+import type { WarrantyStatusString } from '@/types/shared'
+
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'
 export type SignalPhase = 3 | 4
@@ -55,6 +57,10 @@ export interface TrafficSignalProject {
   /** เลขที่สัญญา */
   contractNo: string
   warranty: WarrantyStatus
+  /** BE's authoritative warranty status — three states (ในค้ำ / หมดค้ำ / ก่อนค้ำ).
+   *  Source for the detail-page warranty pill so the "ก่อนค้ำ" yellow state
+   *  isn't lost behind the boolean `warranty` flag (which only encodes 2). */
+  warrantyStatus?: WarrantyStatusString
   connection: ConnectionStatus
   stream: boolean
   phase: SignalPhase

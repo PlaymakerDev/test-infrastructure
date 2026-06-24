@@ -1,89 +1,90 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
 import { TbVideo, TbShield } from 'react-icons/tb'
 import type { APIResponseCCTVOverviewTotals } from '@/types/cctv/overview-api'
+import { useCctvOverviewCentralList } from '@/hooks/queries/cctv'
+import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
-
-interface StatCardProps {
-  icon: React.ReactNode
-  label: string
-  value: number
-  unit: string
-  sub?: string
-  color: string
-  tint?: string
-}
-
-const StatCard: React.FC<StatCardProps> = ({
-  icon, label, value, unit, sub, color, tint,
-}) => (
-  <div
-    className='flex flex-col gap-1 sm:gap-1.5 p-3 sm:p-4 w-full xl:w-70 h-40 sm:h-44 xl:h-42.5'
-    style={{
-      borderRadius: 20,
-      background: tint
-        ? `linear-gradient(135deg, ${tint} 0%, rgba(0,0,0,0.55) 70%)`
-        : 'rgba(0,0,0,0.55)',
-      border: `2px solid ${color}`,
-      backdropFilter: 'blur(5px)',
-    }}
-  >
-    <div className='text-2xl sm:text-3xl xl:text-[40px]' style={{ color }}>
-      {icon}
-    </div>
-    <p className='font-semibold text-xs sm:text-sm leading-tight' style={{ color }}>
-      {label}
-    </p>
-    <div className='flex items-baseline gap-1.5 sm:gap-2'>
-      <span className='font-bold text-3xl sm:text-4xl tabular-nums leading-none text-white'>
-        {value.toLocaleString()}
-      </span>
-      <span className='text-white/70 text-[11px] sm:text-xs'>{unit}</span>
-    </div>
-    {sub && (
-      <p className='text-white/50 text-[11px] sm:text-xs mt-auto'>{sub}</p>
-    )}
-  </div>
-)
 
 interface Props {
   totals: APIResponseCCTVOverviewTotals | null
 }
 
+/** Right-rail stat cards — visual style matches Traffic Signal and Incident
+ *  Detection (solid tint + colored border + min-h floor). Active sub-lines on
+ *  cards 2 & 3 derive from `/overview/central/list` (same cache as the table —
+ *  no extra request). Active = solutions with ≥1 online camera. */
 const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
+  const deptId = useDeptId()
+  const { data: central } = useCctvOverviewCentralList(deptId)
+
   const camera = totals?.camera
   const warranty = totals?.warranty
 
-  return (
-    <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-3'>
-      <StatCard
-        icon={<TbVideo />}
-        label='กล้อง CCTV ในระบบทั้งหมด'
-        value={camera?.total ?? 0}
-        unit='ตัว'
-        sub={
-          camera
-            ? `ออนไลน์ ${fmtNumber(camera.online, 0)} / ออฟไลน์ ${fmtNumber(camera.offline, 0)}`
-            : undefined
+  const active = useMemo(() => {
+    let inWarrantyActive = 0
+    let expiredActive = 0
+    for (const bureau of central ?? []) {
+      for (const sub of bureau.sub_department) {
+        for (const sol of sub.solutions) {
+          if ((sol.camera.online ?? 0) > 0) {
+            if (sol.is_warranty) inWarrantyActive++
+            else expiredActive++
+          }
         }
-        color='#FCD116'
-        tint='rgba(252,209,22,0.15)'
-      />
-      <StatCard
-        icon={<TbShield />}
-        label='ในค้ำ'
-        value={warranty?.active ?? 0}
-        unit='จุด'
-        color='#05F2DB'
-        tint='rgba(5,242,219,0.15)'
-      />
-      <StatCard
-        icon={<TbShield />}
-        label='หมดค้ำ'
-        value={warranty?.expired ?? 0}
-        unit='จุด'
-        color='#979797'
-      />
+      }
+    }
+    return { inWarrantyActive, expiredActive }
+  }, [central])
+
+  const cameraPct = camera && camera.total > 0 ? (camera.online / camera.total) * 100 : 0
+  const inWarrantyTotal = warranty?.active ?? 0
+  const expiredTotal = warranty?.expired ?? 0
+  const inWarrantyPct = inWarrantyTotal > 0 ? (active.inWarrantyActive / inWarrantyTotal) * 100 : 0
+  const expiredPct = expiredTotal > 0 ? (active.expiredActive / expiredTotal) * 100 : 0
+
+  // `min-h-40` floors each card to card 1's natural size — keeps the 3 cards
+  // visually identical even though cards 2 & 3 have fewer text lines.
+  // backdrop-blur softens the map content behind the 10% see-through gap.
+  const cardClass = 'min-h-40 border-2 rounded-[20px] p-5 backdrop-blur-sm'
+  /** Layered: tint over a 90%-opaque dark base. Lets the map peek through
+   *  slightly while keeping the card readable as an overlay. */
+  const cardBg = (tintHex: string) => ({
+    background: `linear-gradient(${tintHex}, ${tintHex}), rgba(14,14,14,0.9)`,
+  })
+
+  return (
+    <div className='flex flex-col gap-4 md:grid md:grid-cols-3 xl:flex xl:flex-col'>
+      <div className={`${cardClass} border-(--yellow)`} style={cardBg('#FFB1001A')}>
+        <TbVideo className='fs-24 text-(--yellow) mb-1' />
+        <h3 className='text-(--yellow)'>กล้อง CCTV ในระบบทั้งหมด</h3>
+        <p>
+          <span className='fs-24 font-bold'>{fmtNumber(camera?.total ?? 0, 0)}</span> ตัว
+        </p>
+        <p className='fs-11 text-gray-400'>
+          Active : {fmtNumber(camera?.online ?? 0, 0)} ({fmtNumber(cameraPct, 1)}%)
+        </p>
+      </div>
+      <div className={`${cardClass} border-teal-500`} style={cardBg('#05F2DB1A')}>
+        <TbShield className='fs-24 text-teal-500 mb-1' />
+        <h3 className='text-teal-500'>ในค้ำ</h3>
+        <p>
+          <span className='fs-24 font-bold'>{fmtNumber(inWarrantyTotal, 0)}</span> จุด
+        </p>
+        <p className='fs-11 text-gray-400'>
+          Active : {fmtNumber(active.inWarrantyActive, 0)} ({fmtNumber(inWarrantyPct, 1)}%)
+        </p>
+      </div>
+      <div className={`${cardClass} border-gray-500`} style={cardBg('#9797971A')}>
+        <TbShield className='fs-24 text-gray-400 mb-1' />
+        <h3 className='text-gray-400'>หมดค้ำ</h3>
+        <p>
+          <span className='fs-24 font-bold'>{fmtNumber(expiredTotal, 0)}</span> จุด
+        </p>
+        <p className='fs-11 text-gray-400'>
+          Active : {fmtNumber(active.expiredActive, 0)} ({fmtNumber(expiredPct, 1)}%)
+        </p>
+      </div>
     </div>
   )
 }

@@ -181,6 +181,9 @@ const LineChart: React.FC<LineChartProps> = ({
       },
       tooltip: {
         trigger: 'axis',
+        // Render tooltip in <body> so it escapes the card's `overflow: hidden`
+        // (otherwise hover near the card edge gets clipped).
+        appendToBody: true,
         backgroundColor: '#1e2533',
         borderColor: '#2e3a4e',
         borderWidth: 1,

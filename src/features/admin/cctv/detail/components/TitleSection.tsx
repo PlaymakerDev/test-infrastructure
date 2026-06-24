@@ -58,7 +58,7 @@ const TitleSection: React.FC<Props> = ({ detail }) => {
               <p className='text-white mb-0 truncate'>{detail.location}</p>
               <TbInfoSquareRoundedFilled
                 size={24}
-                className='text-white/50 cursor-pointer hover:text-(--yellow) shrink-0'
+                className='text-white cursor-pointer hover:text-(--yellow) shrink-0'
                 title='ดูข้อมูลโครงการ'
                 onClick={() =>
                   dispatch(

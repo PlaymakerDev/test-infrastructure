@@ -1,9 +1,12 @@
+"use client"
 import React, { useMemo, useState } from 'react'
-import { TableIncidentDetectionData, IncidentDetectionList } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchIncidentDetection from './FormSearchIncidentDetection'
-
-interface Props {}
+import SummaryTableIncidentDetection from './SummaryTableIncidentDetection'
+import TableIncidentDetectionData from './TableIncidentDetectionData'
+import { useIncidentCentralList, useIncidentCentralTotals } from '@/hooks/queries/incident-detection'
+import { useDeptId } from '@/hooks/useDeptId'
+import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 
 const ID_FILTERS: FilterConfig[] = [
   { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
@@ -13,28 +16,105 @@ const ID_FILTERS: FilterConfig[] = [
   { key: 'expired', label: 'หมดค้ำ', colorPrimary: '#979797', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#4a4a4a] text-white', badgeIdleClass: 'bg-[#979797]/20 text-[#979797]' },
 ]
 
-const ID_STATS: FilterStats = { all: 795, online: 485, offline: 310, inWarranty: 582, expired: 213 }
-
-const DataDisplaySection: React.FC<Props> = () => {
+const DataDisplaySection: React.FC = () => {
+  const deptId = useDeptId()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [search, setSearch] = useState('')
 
-  const renderContent = useMemo(() => {
-    switch (displayType) {
-      case 'TABLE': return <TableIncidentDetectionData />
-      case 'GRID': return <IncidentDetectionList />
-      default: return null
+  const { data: central, isLoading } = useIncidentCentralList(deptId)
+  const { data: totals } = useIncidentCentralTotals(deptId)
+
+  // Flatten bureau → sub-dept(แขวง) → solutions, tagging each row with its แขวง
+  // so both tables group by bureau. The central-list `camera` object is
+  // inconsistent — some solutions omit online_count, some omit offline_count —
+  // so derive whichever is missing from `total` (avoids NaN).
+  const allRows = useMemo<IncidentRow[]>(() => {
+    const rows: IncidentRow[] = []
+    for (const bureau of central ?? []) {
+      for (const sub of bureau.sub_department) {
+        for (const sol of sub.solutions) {
+          const cam = sol.camera
+          const total = cam.total ?? 0
+          const online = cam.online_count ?? (cam.offline_count != null ? total - cam.offline_count : 0)
+          const offline = cam.offline_count ?? (cam.online_count != null ? total - cam.online_count : 0)
+          rows.push({
+            id: String(sol.solution.id),
+            projectId: String(sol.project.id),
+            roadId: String(sol.road.id),
+            roadCode: sol.road.code_name,
+            projectName: sol.project.project_name,
+            contractNo: sol.project.contract_no,
+            warranty: sol.is_warranty ? 'in-warranty' : 'expired',
+            installPoint: sol.solution.solution_name,
+            bureau: sub.department_short_name,
+            totalCameras: total,
+            onlineCameras: Math.max(0, online),
+            offlineCameras: Math.max(0, offline),
+            events: cam.events_count,
+          })
+        }
+      }
     }
-  }, [displayType])
+    return rows
+  }, [central])
+
+  // Chip counts are SOLUTION-level so they match what each filter shows (a chip
+  // filters rows, not cameras). all/ในค้ำ/หมดค้ำ come from central/totals
+  // (authoritative, same scope as the table). online/offline stay row-derived:
+  // the analytic totals API only exposes camera-level online/offline, not
+  // per-solution status, so counting rows is the only way to match the filter.
+  const stats: FilterStats = useMemo(
+    () => ({
+      all: totals ? totals.warranty.active + totals.warranty.expired : allRows.length,
+      online: allRows.filter((r) => r.onlineCameras > 0).length,
+      offline: allRows.filter((r) => r.offlineCameras > 0).length,
+      inWarranty: totals?.warranty.active ?? allRows.filter((r) => r.warranty === 'in-warranty').length,
+      expired: totals?.warranty.expired ?? allRows.filter((r) => r.warranty === 'expired').length,
+    }),
+    [totals, allRows]
+  )
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return allRows.filter((r) => {
+      switch (activeFilter) {
+        case 'online': if (r.onlineCameras === 0) return false; break
+        case 'offline': if (r.offlineCameras === 0) return false; break
+        case 'in-warranty': if (r.warranty !== 'in-warranty') return false; break
+        case 'expired': if (r.warranty !== 'expired') return false; break
+      }
+      if (term) {
+        const hay = `${r.roadCode} ${r.projectName} ${r.installPoint} ${r.contractNo} ${r.bureau}`.toLowerCase()
+        if (!hay.includes(term)) return false
+      }
+      return true
+    })
+  }, [allRows, activeFilter, search])
 
   return (
     <div>
       <section>
-        <SearchBar filters={ID_FILTERS} stats={ID_STATS} activeFilter={activeFilter} onFilterChange={setActiveFilter} defaultViewMode={displayType} onViewModeChange={setDisplayType} formSearch={<FormSearchIncidentDetection />} />
+        <SearchBar
+          filters={ID_FILTERS}
+          stats={stats}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          defaultViewMode={displayType}
+          onViewModeChange={setDisplayType}
+          formSearch={<FormSearchIncidentDetection onSearchChange={setSearch} />}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
+        />
       </section>
-      <section className='mt-5'>{renderContent}</section>
+      <section className='mt-5'>
+        {displayType === 'TABLE' ? (
+          <SummaryTableIncidentDetection rows={filtered} loading={isLoading} />
+        ) : (
+          <TableIncidentDetectionData rows={filtered} loading={isLoading} />
+        )}
+      </section>
     </div>
   )
 }
 
-export default React.memo<Props>(DataDisplaySection)
+export default React.memo(DataDisplaySection)

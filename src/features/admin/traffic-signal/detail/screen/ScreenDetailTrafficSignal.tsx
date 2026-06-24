@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { TitleSection, OverallSection, SummaryTrafficSection } from '../components'
 import { DetailProvider } from '../context'
 import { ProjectInfoModal } from '@/components/modal'
@@ -25,13 +25,18 @@ interface Props {
 
 const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const deptId = useDeptId()
   const [currentTab, setCurrentTab] = useState('OVERALL')
 
-  // All detail endpoints take the same id (the legacy-style solution_id =
-  // `project.id` from the list endpoint). TanStack Query dedupes shared keys
-  // across components.
-  const contractInfo = useTrafficContractInfo(id)
+  // `/manage/contract/{id}` is PROJECT-scoped, not solution-scoped. Passing
+  // solution_id here returns an empty body, which made the title-bar warranty
+  // pill always default to "หมดค้ำ" (same data the ProjectInfoModal already
+  // uses correctly). Read project_id from URL — passed by the overall list
+  // page when navigating to detail.
+  const projectIdParam = searchParams.get('project_id')
+  const contractInfo = useTrafficContractInfo(projectIdParam)
+  // The rest are solution-scoped — keep the path `id`.
   const solutionDetail = useTrafficSolutionDetail(id)
   const details = useTrafficDetails(id)
   const phaseDetails = useTrafficPhaseDetails(id)
@@ -79,13 +84,13 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
     const isOnline =
       overviewOnline ?? phases.some((p) => p.is_active)
 
-    // Warranty is derived from dates — compare to today. Without contract
-    // data we can't know, so default to "expired".
-    let warranty: 'in-warranty' | 'expired' = 'expired'
-    if (contract?.warranty_end_date) {
-      const endDate = new Date(contract.warranty_end_date).getTime()
-      warranty = !isNaN(endDate) && endDate >= Date.now() ? 'in-warranty' : 'expired'
-    }
+    // Warranty: trust BE's `warranty_status` (handles 3 states including
+    // "ก่อนค้ำ"). Collapse to the 2-state `warranty` boolean used by tables /
+    // cards elsewhere; the 3-state string lives on `warrantyStatus` for the
+    // detail pill. Defaults to "expired" until contract loads.
+    const warrantyStatus = contract?.warranty_status
+    const warranty: 'in-warranty' | 'expired' =
+      warrantyStatus === 'ในค้ำ' ? 'in-warranty' : 'expired'
 
     // `road.code_name` only lives on the overview endpoint.
     const overviewLoc = overview.data?.locations[0]
@@ -112,6 +117,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       installPoint,
       contractNo: contract?.contract_no ?? '-',
       warranty,
+      warrantyStatus,
       connection: isOnline ? 'online' : 'offline',
       stream: isOnline,
       phase: (detailItem.total_phases === 3 ? 3 : 4) as SignalPhase,

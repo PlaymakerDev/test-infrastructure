@@ -25,7 +25,7 @@ const LocationTrafficSignal: React.FC<Props> = () => {
       </div>
 
       {/* RIGHT — Info cards */}
-      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:h-full min-h-0 flex flex-col'>
         <InfoCardTrafficSignal />
       </div>
     </div>

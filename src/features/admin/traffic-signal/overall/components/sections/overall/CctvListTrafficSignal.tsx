@@ -19,7 +19,9 @@ interface Props {}
 const CctvListTrafficSignal: React.FC<Props> = () => {
   const deptId = useDeptId()
   const { data, isLoading } = useTrafficRandomCameras(deptId, 3)
-  const cameras = data?.data ?? []
+  // BE `random-online` may backfill with offline cameras when there aren't
+  // enough online ones — keep the preview true to its name.
+  const cameras = (data?.data ?? []).filter((c) => c.camera.is_online)
 
   if (isLoading && cameras.length === 0) {
     return (
@@ -27,6 +29,14 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 animate-pulse' />
         ))}
+      </div>
+    )
+  }
+
+  if (!isLoading && cameras.length === 0) {
+    return (
+      <div className='h-full flex items-center justify-center text-gray-500 fs-12 p-4'>
+        ไม่มีกล้องออนไลน์ในขณะนี้
       </div>
     )
   }
