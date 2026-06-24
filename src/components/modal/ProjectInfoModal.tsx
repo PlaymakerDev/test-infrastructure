@@ -2,7 +2,7 @@ import { getContactDetailAPI, getDepartmentByRoadAPI } from '@/services/routes/S
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { APIResponseContactDetail } from '@/types/shared'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { TbCalendarEvent, TbClipboard, TbFileDescription, TbHourglass, TbUser, TbUserShield } from 'react-icons/tb'
