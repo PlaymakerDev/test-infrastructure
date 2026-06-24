@@ -13,11 +13,6 @@ export interface LineConfig {
   label: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "%", "kg") — override `tooltipUnit` */
   unit?: string
-  /** เมื่อ true จะ render เป็นเส้นปะ. Default = false (solid). */
-  dashed?: boolean
-  /** เมื่อ true จะไม่แสดง row ของ series นี้ใน tooltip (ใช้กับ reference
-   *  line ที่ไม่ควรปรากฏใน tooltip). Default = false. */
-  hideInTooltip?: boolean
 }
 
 /** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
@@ -98,6 +93,9 @@ export interface LineChartProps {
    *  แต่ละจุดมีวันที่ต่างกัน). ถ้าทั้ง `tooltipDate` และ `tooltipDateKey`
    *  ถูกตั้ง — `tooltipDateKey` (per-point) ชนะ. */
   tooltipDateKey?: string
+  /** ข้อความต่อท้ายบรรทัดที่ 2 ของ header tooltip (axisValue) — default ' น.'
+   *  (เหมาะกราฟรายชั่วโมง). ตั้ง '' สำหรับแกนที่เป็นชื่อวัน/หมวด */
+  tooltipDateSuffix?: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") — ใช้เป็น default ถ้า LineConfig.unit ว่าง */
   tooltipUnit?: string
   /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
@@ -105,9 +103,6 @@ export interface LineChartProps {
   /** Extra rows shown in tooltip but NOT rendered as visible lines.
    *  Reads values from each data point via `dataKey`. */
   tooltipExtras?: TooltipExtra[]
-  /** ข้อความ HTML footer ที่จะ append ใต้ rows + extras ใน tooltip. รับ
-   *  `dataIdx` ของจุดที่ hover เพื่อให้ caller สร้าง description per-point. */
-  tooltipFooter?: (dataIdx: number) => string
 }
 
 interface TooltipParam {
@@ -145,10 +140,10 @@ const LineChart: React.FC<LineChartProps> = ({
   // Tooltip extras
   tooltipDate,
   tooltipDateKey,
+  tooltipDateSuffix = ' น.',
   tooltipUnit,
   tooltipShowDot = false,
   tooltipExtras,
-  tooltipFooter,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -170,7 +165,15 @@ const LineChart: React.FC<LineChartProps> = ({
         data: data.map((d) => d.label),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#8a9ab5', fontSize: 11 },
+        axisLabel: {
+          color: '#8a9ab5',
+          fontSize: 11,
+          // Keep the line flush to both edges (boundaryGap:false) while stopping
+          // the first/last category labels from overflowing past the card edge:
+          // align the first label to the left and the last to the right.
+          alignMinLabel: 'left',
+          alignMaxLabel: 'right',
+        },
         splitLine: { show: false },
         boundaryGap: false,
       },
@@ -190,6 +193,9 @@ const LineChart: React.FC<LineChartProps> = ({
       },
       tooltip: {
         trigger: 'axis',
+        // Render tooltip in <body> so it escapes the card's `overflow: hidden`
+        // (otherwise hover near the card edge gets clipped).
+        appendToBody: true,
         backgroundColor: '#1e2533',
         borderColor: '#2e3a4e',
         borderWidth: 1,
@@ -215,14 +221,12 @@ const LineChart: React.FC<LineChartProps> = ({
           const header = headerDate
             ? `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;">
                  <div style="color:#fff;font-size:13px;font-weight:600;">${headerDate}</div>
-                 <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''} น.</div>
+                 <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''}${tooltipDateSuffix}</div>
                </div>`
             : ''
           const rows = params
             .map((p) => {
               const cfg = lines[p.seriesIndex]
-              // Reference / decorative lines opt out of the tooltip rows.
-              if (cfg?.hideInTooltip) return ''
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
               const value = Number(p.value).toLocaleString()
@@ -257,27 +261,19 @@ const LineChart: React.FC<LineChartProps> = ({
             })
             .join('')
 
-          const footer = tooltipFooter && dataIdx !== undefined ? tooltipFooter(dataIdx) : ''
-          return header + rows + extras + footer
+          return header + rows + extras
         },
       },
       series: lines.map((line) => ({
         name: line.label,
         type: 'line',
         smooth: true,
-        // `?? null` keeps gaps in the series as gaps in the rendered line
-        // (ECharts breaks the line at `null`). Missing data should NOT be
-        // visualized as zero — that produces misleading "drops" in sparse
-        // datasets (e.g. an hourly chart for a day that's still in progress).
-        data: data.map((d) => d[line.dataKey] ?? null),
+        data: data.map((d) => d[line.dataKey] ?? 0),
         lineStyle: {
           color: line.color,
-          width: line.dashed ? 2 : 3,
-          // Dashed series get a thinner stroke + no glow so the reference
-          // line reads as decorative rather than as primary data.
-          shadowBlur: line.dashed ? 0 : 12,
+          width: 3,
+          shadowBlur: 12,
           shadowColor: line.color + '60',
-          type: line.dashed ? 'dashed' : 'solid',
         },
         itemStyle: { color: line.color },
         symbol: 'circle',
@@ -287,7 +283,7 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras])
 
   return (
     <div

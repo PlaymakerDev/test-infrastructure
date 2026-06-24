@@ -1,11 +1,20 @@
 "use client"
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from 'antd'
 import { TitleSection, OverallSection } from '../components'
-import { useAppDispatch, useAppSelector } from '@/stores/hooks'
-import { getCctvDeptCamerasData, getCctvDeptOverviewListData, resetDetailCameras } from '@/stores/reducers/cctv/cctvSlice'
-import type { CctvInstallDetail, PanelCamera, CctvInstallPin } from '@/features/admin/cctv/overall/data/cctvData'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
+import type { InstallGroup, CameraRow } from '../components/sections/CameraGridView'
+import {
+  useCctvCameraCentralList,
+  useCctvOverviewList,
+} from '@/hooks/queries/cctv'
+import { extractCameraFunctions } from '@/features/admin/cctv/components/cameraFunctions'
+import type {
+  CctvInstallDetail,
+  PanelCamera,
+  CctvInstallPin,
+} from '@/features/admin/cctv/overall/data/cctvData'
 
 interface Props {
   id: string
@@ -14,62 +23,115 @@ interface Props {
 
 const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
   const router = useRouter()
-  const dispatch = useAppDispatch()
 
-  const { detailCameras, overviewList, task_schedules } = useAppSelector((s) => s.cctv)
-  const loading = task_schedules.detailCameras.loading
-
-  useEffect(() => {
-    if (!deptId) return
-    dispatch(getCctvDeptCamerasData({ deptId, solutionId: id }))
-    if (!overviewList) {
-      dispatch(getCctvDeptOverviewListData({ deptId, page: 1, limit: 100 }))
-    }
-    return () => { dispatch(resetDetailCameras()) }
-  }, [dispatch, deptId, id])
+  // Solution-level metadata (road code, contract, warranty, project/road ids).
+  // Cache shared with the overall page when the user navigated from there.
+  // `road.id` from the matching row keys the road-scoped camera query below.
+  const overviewList = useCctvOverviewList(deptId, { page: 1, limit: 100 })
 
   const listItem = useMemo(
-    () => overviewList?.res_data.find((item) => String(item.solution.id) === id),
-    [overviewList, id]
+    () => overviewList.data?.res_data.find((item) => String(item.solution.id) === id),
+    [overviewList.data, id]
+  )
+  const roadId = listItem?.road.id
+
+  // Cameras for the road, grouped by install point (solution_location) — the
+  // SAME endpoint the search page uses. One call returns geometry + online
+  // status + ip + sta + per-camera function tags (so the map can plot each
+  // camera and the table can group + tag them). It returns the whole road; we
+  // filter to the clicked solution below.
+  const central = useCctvCameraCentralList(roadId)
+
+  const loading = overviewList.isLoading || (!!roadId && central.isLoading)
+
+  // central/list returns EVERY solution on the road (keyed by road_id). The
+  // overall page links here by the clicked `solution.id`, so scope down to just
+  // that solution — otherwise the detail shows the whole road's cameras (e.g.
+  // 26) instead of the clicked install point's (e.g. 8). Other solutions on the
+  // same road each have their own overall row → their own detail page.
+  const solutionLists = useMemo(
+    () => (central.data?.lists ?? []).filter((l) => String(l.solution_id) === id),
+    [central.data, id]
   )
 
+  // Camera groups (one per install point of THIS solution) — same shape as search.
+  const groups = useMemo<InstallGroup[]>(() => {
+    return solutionLists.map((item) => ({
+      id: String(item.solution_location_id),
+      label: [item.solution_name, item.solution_location_name].filter(Boolean).join(' '),
+      warranty: item.project.is_warranty ? 'in-warranty' : 'expired',
+      projectId: item.project.project_id,
+      roadId,
+      cameras: item.cameras.map<CameraRow>((c) => ({
+        id: c.id,
+        name: c.camera_name,
+        km: c.sta,
+        functions: extractCameraFunctions(c),
+        ip: c.ip_address,
+        hlsUrl: c.hls_url,
+        streamStatus: c.is_online ? 'connect' : 'disconnect',
+        deviceStatus: c.is_online ? 'connect' : 'disconnect',
+      })),
+    }))
+  }, [solutionLists, roadId])
+
   const detail = useMemo<CctvInstallDetail | null>(() => {
-    const cameras = detailCameras?.cctv ?? []
-    if (cameras.length === 0 && task_schedules.detailCameras.status !== 'SUCCESS') return null
+    // `solutionLists` is already scoped to the clicked solution (NOT the whole
+    // road), so its cameras match the overall row's count.
+    const clicked = solutionLists[0]
+    // Nothing to show until the solution row resolves (gives us the road code)
+    // or the cameras arrive.
+    if (!listItem && solutionLists.length === 0) return null
 
-    const firstCoord = cameras[0]?.geometry_point ?? [100.5, 13.75]
+    const allCams = solutionLists.flatMap((l) => l.cameras)
 
-    const panelCameras: PanelCamera[] = cameras.map((c) => ({
+    // Flat camera list for the right-side preview panel + map markers.
+    const panelCameras: PanelCamera[] = allCams.map((c) => ({
       id: c.id,
       name: c.camera_name,
-      ip: '',
-      online: true,
+      ip: c.ip_address,
+      online: c.is_online,
+      km: c.sta,
       hlsUrl: c.hls_url,
-      functions: [],
+      functions: extractCameraFunctions(c),
+      coord: c.geometry_point ?? undefined,
     }))
 
-    const pins: CctvInstallPin[] = cameras.map((c) => ({
-      id: c.id,
-      coord: c.geometry_point,
-      online: true,
-    }))
+    // Map pins — only cameras that have a coordinate.
+    const pins: CctvInstallPin[] = allCams
+      .filter((c) => c.geometry_point)
+      .map((c) => ({ id: c.id, coord: c.geometry_point as [number, number], online: c.is_online }))
+
+    // Centre the map on the first camera (of this solution) with a coordinate.
+    const coord =
+      allCams.find((c) => c.geometry_point)?.geometry_point ?? [100.5, 13.75]
+
+    // Counts from the overall row (authoritative — matches the overall page);
+    // fall back to counting the fetched cameras.
+    const onlineCount = listItem?.camera.online ?? allCams.filter((c) => c.is_online).length
+    const offlineCount = listItem?.camera.offline ?? allCams.filter((c) => !c.is_online).length
+    const totalCount = listItem?.camera.total ?? (onlineCount + offlineCount)
+    const roadCode = listItem?.road.code_name ?? ''
 
     return {
       id,
-      roadCode: listItem?.road.code_name ?? '',
-      title: listItem?.solution.solution_name ?? `Solution #${id}`,
-      location: listItem?.road.code_name ?? '',
-      projectName: listItem?.solution.solution_name ?? '',
+      roadCode,
+      title: listItem?.solution.solution_name ?? clicked?.solution_name ?? `Solution #${id}`,
+      location: listItem?.solution.solution_name ?? clicked?.solution_name ?? roadCode,
+      projectName: listItem?.solution.solution_name ?? clicked?.solution_name ?? '',
       contractNo: listItem?.project.contract_no ?? '',
-      warrantyStatus: listItem?.is_warranty ? 'in-warranty' : 'expired',
-      coord: firstCoord as [number, number],
-      totalCameras: listItem?.camera.total ?? cameras.length,
-      onlineCameras: listItem?.camera.online ?? cameras.length,
-      offlineCameras: listItem?.camera.offline ?? 0,
+      warrantyStatus:
+        (listItem?.is_warranty ?? clicked?.project.is_warranty) ? 'in-warranty' : 'expired',
+      projectId: listItem?.project.id ?? clicked?.project.project_id,
+      roadId,
+      coord: coord as [number, number],
+      totalCameras: totalCount,
+      onlineCameras: onlineCount,
+      offlineCameras: offlineCount,
       pins,
       cameras: panelCameras,
     }
-  }, [detailCameras, listItem, id, task_schedules.detailCameras.status])
+  }, [solutionLists, listItem, roadId, id])
 
   if (!deptId) {
     return (
@@ -99,8 +161,14 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
     <div className='main-screen'>
       <TitleSection detail={detail} />
       <section className='mt-5 px-10'>
-        <OverallSection detail={detail} />
+        <OverallSection detail={detail} groups={groups} />
       </section>
+      {/* Global Project Info modal — fires when the ⓘ icon in the title bar or
+        * a group header is clicked. Reads project_id/road_id from Redux. */}
+      <ProjectInfoModal />
+      {/* Central Live Stream modal — opened (via Redux) from the map, side
+        * panel, grid + table; fetches /cctv/cameras/{id} for complete info. */}
+      <CCTVModal />
     </div>
   )
 }

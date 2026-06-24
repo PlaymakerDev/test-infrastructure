@@ -1,6 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Skeleton } from 'antd'
 import SearchBar, {
   type FilterConfig,
   type FilterStats,
@@ -11,8 +12,16 @@ import StatsSectionCctv from './sections/overall/StatsSectionCctv'
 import CameraListCctv from './sections/overall/CameraListCctv'
 import CamerasTableCctv from './sections/overall/CamerasTableCctv'
 import CardGridCctv from './sections/overall/CardGridCctv'
-import { useAppSelector } from '@/stores/hooks'
-import { Skeleton } from 'antd'
+import {
+  useCctvOverviewCentralList,
+  useCctvOverviewTotals,
+  useCctvRandomOnline,
+} from '@/hooks/queries/cctv'
+import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
+
+interface Props {
+  deptId?: string | null
+}
 
 const CCTV_FILTERS: FilterConfig[] = [
   {
@@ -58,23 +67,42 @@ const CCTV_FILTERS: FilterConfig[] = [
   },
 ]
 
-const OverallSection: React.FC = () => {
+const OverallSection: React.FC<Props> = ({ deptId }) => {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
-  const [search, setSearch] = useState('')
+  const [search] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
+  // Bureau-aware list — nested bureau → sub-department (แขวง) → solutions.
+  // Flatten into rows tagged with their แขวง so the table can group by it
+  // (like traffic-signal). No pagination — returns the whole department.
+  const { data: centralData, isLoading: listLoading } = useCctvOverviewCentralList(deptId)
+  const { data: totals } = useCctvOverviewTotals(deptId)
+  const { data: randomOnlineRes } = useCctvRandomOnline(deptId, 3)
+  const randomOnline = randomOnlineRes?.data ?? []
 
-  const { overview, overviewList, totals, randomOnlineCameras, task_schedules: { overview: { loading } } } = useAppSelector(state => state.cctv)
-  const allItems = useMemo(() => overviewList?.res_data ?? [], [overviewList?.res_data])
+  const allItems = useMemo<CCTVOverviewRow[]>(() => {
+    const rows: CCTVOverviewRow[] = []
+    for (const bureau of centralData ?? []) {
+      for (const sub of bureau.sub_department) {
+        for (const sol of sub.solutions) {
+          rows.push({ ...sol, bureau: sub.department_short_name })
+        }
+      }
+    }
+    return rows
+  }, [centralData])
 
-  const stats: FilterStats = useMemo(() => ({
-    all: allItems.length,
-    online: allItems.filter((i) => i.camera.online > 0).length,
-    offline: allItems.filter((i) => i.camera.offline > 0).length,
-    inWarranty: allItems.filter((i) => i.is_warranty).length,
-    expired: allItems.filter((i) => !i.is_warranty).length,
-  }), [allItems])
+  const stats: FilterStats = useMemo(
+    () => ({
+      all: allItems.length,
+      online: allItems.filter((i) => i.camera.online > 0).length,
+      offline: allItems.filter((i) => i.camera.offline > 0).length,
+      inWarranty: allItems.filter((i) => i.is_warranty).length,
+      expired: allItems.filter((i) => !i.is_warranty).length,
+    }),
+    [allItems]
+  )
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -93,44 +121,56 @@ const OverallSection: React.FC = () => {
     })
   }, [allItems, activeFilter, search])
 
-  if (loading) return <Skeleton loading={loading} />
+  if (listLoading) return <Skeleton active paragraph={{ rows: 8 }} />
 
   return (
     <div className='flex flex-col gap-5'>
-      {/* ── Top area — 3-column layout (matches traffic-signal LocationTrafficSignal):
-           LEFT: random camera previews · CENTER: map · RIGHT: search + stat cards.
-           Stacks vertically on mobile via row-start ordering. ── */}
-      <section>
-        <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
-          {/* LEFT — Camera preview list */}
-          <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
-            <CameraListCctv cameras={randomOnlineCameras} />
-          </div>
+      {/* ── Map + overlay panels ── */}
+      <section className='relative -mx-10 overflow-x-hidden xl:overflow-hidden xl:h-180'>
 
-          {/* CENTER — Map */}
-          <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-            <MapSectionCctv edgeFade={{ all: 20 }} />
-          </div>
-
-          {/* RIGHT — Search + stat cards */}
-          <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
-            <button
-              type='button'
-              onClick={() => router.push('/admin/cctv/search')}
-              className='w-full rounded-full font-medium cursor-pointer'
-              style={{
-                background: '#FCD116',
-                border: 'none',
-                color: '#212121',
-                fontSize: 16,
-                padding: '14px 24px',
-              }}
-            >
-              ค้นหากล้อง CCTV รายสายทาง
-            </button>
-            <StatsSectionCctv totals={totals} />
-          </div>
+        {/* Map — fills full height on desktop */}
+        <div
+          className='relative w-full xl:absolute xl:inset-0'
+          style={{ minHeight: 340 }}
+        >
+          <MapSectionCctv deptId={deptId} edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
         </div>
+
+        {/* Mobile / tablet: stacks below map */}
+        <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
+          <CameraListCctv cameras={randomOnline} />
+          <StatsSectionCctv totals={totals ?? null} />
+        </div>
+
+        {/* Desktop xl+: left overlay — camera preview list */}
+        <aside className='hidden xl:flex flex-col absolute z-10 pl-10 pointer-events-none top-5 left-0 w-72'>
+          <div className='pointer-events-auto'>
+            <CameraListCctv cameras={randomOnline} />
+          </div>
+        </aside>
+
+        {/* Desktop xl+: right overlay — search + stats */}
+        <aside className='hidden xl:flex flex-col gap-4 absolute z-10 items-end pr-10 pointer-events-auto top-5 right-0 w-80'>
+
+          {/* Search button */}
+          <button
+            type='button'
+            onClick={() => router.push(`/admin/cctv/search${deptId ? `?dept_id=${deptId}` : ''}`)}
+            className='w-full rounded-full font-medium cursor-pointer'
+            style={{
+              background: '#FCD116',
+              border: 'none',
+              color: '#212121',
+              fontSize: 16,
+              padding: '14px 24px',
+            }}
+          >
+            ค้นหากล้อง CCTV รายสายทาง
+          </button>
+
+          {/* Stats cards */}
+          <StatsSectionCctv totals={totals ?? null} />
+        </aside>
       </section>
 
       {/* ── Filter bar ── */}
@@ -140,9 +180,6 @@ const OverallSection: React.FC = () => {
           stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
-          // searchPlaceholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-          // search={search}
-          // onSearchChange={setSearch}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => alert('TODO: นำออกเอกสาร')}
@@ -152,7 +189,7 @@ const OverallSection: React.FC = () => {
       {/* ── Table / Card grid ── */}
       <section>
         {viewMode === 'TABLE' ? (
-          <CamerasTableCctv items={filtered} />
+          <CamerasTableCctv items={filtered} loading={listLoading} />
         ) : (
           <CardGridCctv items={filtered} />
         )}
@@ -161,4 +198,4 @@ const OverallSection: React.FC = () => {
   )
 }
 
-export default React.memo(OverallSection)
+export default React.memo<Props>(OverallSection)

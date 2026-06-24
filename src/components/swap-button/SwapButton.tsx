@@ -9,12 +9,20 @@ interface Props {
   }[];
   setLabelValue: (value: string) => void;
   defaultActive?: string;
+  /** Controlled mode — when set, overrides internal state so the parent can
+   *  programmatically switch tabs (e.g. a "ดูเพิ่มเติม" button that jumps to
+   *  another tab). Omit for the uncontrolled `defaultActive`-only behaviour. */
+  activeValue?: string;
   size?: 'small' | 'middle' | 'large';
 }
 
 const SwapButton: React.FC<Props> = (props) => {
-  const { options, setLabelValue, defaultActive, size = 'large' } = props
-  const [active, setActive] = useState(defaultActive)
+  const { options, setLabelValue, defaultActive, activeValue, size = 'large' } = props
+  const [internalActive, setInternalActive] = useState(defaultActive)
+  // Controlled value wins; otherwise fall back to internal state. The
+  // controlled prop is the source of truth — internal state still tracks click
+  // events for the uncontrolled case.
+  const active = activeValue ?? internalActive
 
   const renderButton = useMemo(() => {
     return options.map((item, index) => (
@@ -26,14 +34,14 @@ const SwapButton: React.FC<Props> = (props) => {
         type={active === item.value ? 'primary' : 'default'}
         className='shrink-0'
         onClick={() => {
-          setActive(item.value)
+          setInternalActive(item.value)
           setLabelValue(item.value)
         }}
       >
         <p className='whitespace-nowrap'>{item.label}</p>
       </Button>
     ))
-  }, [options, setLabelValue, active])
+  }, [options, setLabelValue, active, size])
 
   return (
     <div className='flex items-center gap-2 sm:gap-3 w-full flex-wrap sm:flex-nowrap sm:overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' style={{ WebkitOverflowScrolling: 'touch' }}>

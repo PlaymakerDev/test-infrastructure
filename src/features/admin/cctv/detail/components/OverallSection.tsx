@@ -1,12 +1,13 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { TbChevronDown } from 'react-icons/tb'
 
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvInstallDetail, PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import CameraInstallTable from './CameraInstallTable'
-import type { InstallGroup, CameraRow } from './sections/CameraGridView'
-import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
+import type { InstallGroup } from './sections/CameraGridView'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import CctvLocationMap from './sections/CctvLocationMap'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
@@ -53,38 +54,15 @@ const CameraCardList: React.FC<{ camera: PanelCamera; onSelect: () => void }> = 
 
 interface Props {
   detail: CctvInstallDetail
+  /** Camera groups (one per install point on the road) — built from the
+   *  central/list endpoint in the screen, shared with the search page shape. */
+  groups: InstallGroup[]
 }
 
-const OverallSection: React.FC<Props> = ({ detail }) => {
+const OverallSection: React.FC<Props> = ({ detail, groups }) => {
+  const dispatch = useAppDispatch()
   const [panelFilter, setPanelFilter] = useState<string>('all')
-  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
-
-  const groups = useMemo<InstallGroup[]>(() => [{
-    id: 'cameras',
-    label: `จุดติดตั้ง : ${detail.location || detail.title}`,
-    warranty: detail.warrantyStatus,
-    cameras: detail.cameras.map<CameraRow>((cam) => ({
-      id: cam.id,
-      name: cam.name,
-      km: '',
-      functions: (cam.functions ?? []) as CameraRow['functions'],
-      ip: cam.ip,
-      hlsUrl: cam.hlsUrl,
-      streamStatus: cam.online ? 'connect' : 'disconnect',
-      deviceStatus: cam.online ? 'connect' : 'disconnect',
-    })),
-  }], [detail])
-
-  const toModal = (cam: PanelCamera): CctvCameraDetail => ({
-    id: cam.id,
-    name: cam.name,
-    hlsUrl: cam.hlsUrl,
-    location: detail.location,
-    functions: cam.functions ?? [],
-    streamStatus: cam.online ? 'connect' : 'disconnect',
-    deviceStatus: cam.online ? 'connect' : 'disconnect',
-    ip: cam.ip,
-  })
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 
   const displayedCameras = panelFilter === 'online'
     ? detail.cameras.filter((c) => c.online)
@@ -107,7 +85,12 @@ const OverallSection: React.FC<Props> = ({ detail }) => {
       >
         {/* Mapbox — fills entire section */}
         <div className='absolute inset-0'>
-          <CctvLocationMap detail={detail} edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
+          <CctvLocationMap
+            cameras={detail.cameras}
+            center={detail.coord}
+            onSelectCamera={(cam) => openCamera(cam.id)}
+            edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
+          />
         </div>
 
         {/* ── Right camera panel ── */}
@@ -150,7 +133,7 @@ const OverallSection: React.FC<Props> = ({ detail }) => {
           <div className='flex-1 overflow-y-auto no-scrollbar'>
             <div className='flex flex-col gap-3 p-3'>
               {displayedCameras.map((cam) => (
-                <CameraCardList key={cam.id} camera={cam} onSelect={() => setModalCamera(toModal(cam))} />
+                <CameraCardList key={cam.id} camera={cam} onSelect={() => openCamera(cam.id)} />
               ))}
             </div>
           </div>
@@ -162,13 +145,6 @@ const OverallSection: React.FC<Props> = ({ detail }) => {
       <section className='mt-8'>
         <CameraInstallTable groups={groups} />
       </section>
-
-      <ModalLiveStreamCctv
-        open={!!modalCamera}
-        onClose={() => setModalCamera(null)}
-        camera={modalCamera}
-      />
-
     </>
   )
 }

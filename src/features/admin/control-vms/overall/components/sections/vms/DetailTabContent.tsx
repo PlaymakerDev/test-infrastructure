@@ -1,40 +1,37 @@
 "use client"
-import { Empty, Tabs } from 'antd'
+import { Empty, Skeleton, Tabs } from 'antd'
 import type { TabsProps } from 'antd'
-import React, { useState } from 'react'
+import React, { useMemo } from 'react'
+import { ContentSetting } from '../../../components'
+import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 
 const DetailTabContent: React.FC = () => {
-  const [tabKey, setTabKey] = useState('1')
+  const { data, isLoading, isError } = useVMSSettingTypes()
 
-  const items: TabsProps['items'] = [
-    {
-      key: '1',
-      label: 'ทั้งหมด',
-      children: <Empty description='ไม่มีข้อมูล' />,
-    },
-    {
-      key: '2',
-      label: 'ซ่อมแซมถนน',
-      children: <Empty description='ไม่มีข้อมูล' />,
-    },
-    {
-      key: '3',
-      label: 'เทศกาล',
-      children: <Empty description='ไม่มีข้อมูล' />,
-    },
-    {
-      key: '4',
-      label: 'แผ่นดินไหว',
-      children: <Empty description='ไม่มีข้อมูล' />,
-    },
-  ]
+  const items: TabsProps['items'] = useMemo(() => {
+    return [
+      {
+        key: 'all',
+        label: 'ทั้งหมด',
+        children: <ContentSetting settingTypeId={undefined} />,
+      },
+      ...(data?.data ?? []).map((item) => ({
+        key: String(item.id),
+        label: item.name,
+        children: <ContentSetting settingTypeId={item.id} />,
+      }))
+    ]
+  }, [data?.data])
+
+  if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
+  if (isError) return <Empty description="ไม่พบข้อมูล" />
 
   return (
     <Tabs
-      defaultActiveKey={tabKey}
+      defaultActiveKey='all'
       items={items}
-      onChange={(key) => setTabKey(key)}
       indicator={{ align: 'center' }}
+      destroyOnHidden
     />
   )
 }

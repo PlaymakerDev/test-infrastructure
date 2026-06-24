@@ -3,9 +3,8 @@ import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
+import { ContractInfoCell } from '@/components/modal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
@@ -52,7 +51,6 @@ const MODE_COLORS: Record<TrafficSignalProject['operatingMode'], string> = {
 const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const deptId = useDeptId()
-  const dispatch = useAppDispatch()
   // ── Build a flat list interleaving bureau dividers + project rows.
   // Within each bureau, consecutive rows that share a roadCode are merged
   // via `rowSpan` so the route code is shown once per group.
@@ -141,30 +139,15 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
         key: 'contractNo',
         width: 180,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span className='inline-flex items-center gap-1.5'>
-              {row.project.contractNo}
-              <TbInfoSquareRoundedFilled
-                size={18}
-                className='text-white cursor-pointer hover:text-(--yellow)'
-                title='ดูข้อมูลโครงการ'
-                onClick={() =>
-                  dispatch(
-                    setProjectInfoModalOpen({
-                      open: true,
-                      project_id: row.project.projectId
-                        ? Number(row.project.projectId)
-                        : null,
-                      road_id: row.project.roadId ? Number(row.project.roadId) : null,
-                    }),
-                  )
-                }
-              />
-            </span>
-          )
-        },
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.project.contractNo}
+              budgetYear={row.project.budgetYear}
+              projectId={row.project.projectId}
+              roadId={row.project.roadId}
+            />
+          ) : null,
       },
       {
         title: 'การค้ำประกัน',

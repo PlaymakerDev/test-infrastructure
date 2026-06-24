@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react'
 import DisplayTableData from './DisplayTableData'
 import routeScheduleData from '@/mock/route-schedule.json'
+import { APIResponseVMSSettingByRoad } from '@/types/control-vms/display-api'
+import { Empty } from 'antd'
 
 interface Props {
-
+  data?: APIResponseVMSSettingByRoad
 }
 
 export interface VMSScheduleRecord {
@@ -29,22 +31,22 @@ export interface RouteSchedule {
 }
 
 const DisplayTableList: React.FC<Props> = (props) => {
-  const { } = props
-  const data = useMemo(() => routeScheduleData as RouteSchedule[], [])
+  const { data } = props
+  // const data = useMemo(() => routeScheduleData as RouteSchedule[], [])
 
   const renderTableList = useMemo(() => {
-    if (!data.length) return
+    if (!data?.length) return <Empty description="ไม่พบข้อมูล" />
 
-    return data.map((route) => (
-      <div key={route.id} className='bg-(--dark-black) rounded-lg p-5'>
+    return data.map((route, index) => (
+      <div key={index} className='bg-(--dark-black) rounded-lg p-5'>
         <div className='mb-4'>
-          <h3 className='mb-0.5 text-(--yellow)'>{route.routeCode}</h3>
+          <h3 className='mb-0.5 text-(--yellow)'>{route.road_code || '-'}</h3>
           <p className='fs-12 text-gray-400 mb-0'>
-            {route.district} &bull; {route.region} &bull; {route.startDate} - {route.endDate}
+            {route.department_short_name || '-'}
           </p>
         </div>
         <DisplayTableData
-          data={route.schedules}
+          data={route.settings || []}
         />
       </div>
     ))

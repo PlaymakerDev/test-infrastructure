@@ -1,12 +1,15 @@
 import { Col, Row } from 'antd'
 import React from 'react'
 import {
+  DataDisplaySection,
   DisplayStatCard,
   DisplayTableList,
   DisplayTitle,
   FormSearchCalendar,
   ScheduleSection
 } from '../components'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { getVMSSettingByRoadAPI } from '@/services/routes/ControlVMSService'
 
 interface Props {
 
@@ -14,6 +17,8 @@ interface Props {
 
 const DisplaySection: React.FC<Props> = (props) => {
   const { } = props
+
+
 
   return (
     <div>
@@ -23,11 +28,8 @@ const DisplaySection: React.FC<Props> = (props) => {
             <section>
               <DisplayStatCard />
             </section>
-            <section className='mt-5'>
-              <DisplayTitle />
-            </section>
-            <section className='mt-5'>
-              <DisplayTableList />
+            <section>
+              <DataDisplaySection />
             </section>
           </div>
         </Col>

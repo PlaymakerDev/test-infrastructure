@@ -69,14 +69,11 @@ export interface DeviceClusterMarkerProps {
   popup?: ((device: Device, color: string) => React.ReactNode) | null
 }
 
-/** Default popup body — same look as before. Exported so other pages can reuse. */
+/** Default popup body — same look as before, minus the per-device online/
+ *  fault/offline pill (the `/manage/solution/{dept}/position` endpoint
+ *  doesn't carry per-device status, so we can't show it without per-feature
+ *  cross-lookups). Re-add if/when BE includes `is_online` on each row. */
 export function DefaultDevicePopup({ device, color }: { device: Device; color: string }) {
-  const statusColor =
-    device.status === 'online'
-      ? '#34d399'
-      : device.status === 'fault'
-        ? '#fbbf24'
-        : '#ef4444'
   return (
     <div
       style={{
@@ -90,13 +87,10 @@ export function DefaultDevicePopup({ device, color }: { device: Device; color: s
     >
       <div style={{ fontSize: 10, color, fontWeight: 700, letterSpacing: 0.5 }}>{device.type}</div>
       <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 3 }}>{device.id}</div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>
-        {device.road} · {device.km}
-      </div>
-      <div style={{ fontSize: 11, color: '#94a3b8' }}>{device.landmark}</div>
-      <div style={{ fontSize: 10, color: statusColor, marginTop: 6, fontWeight: 600 }}>
-        ● {device.status.toUpperCase()}
-      </div>
+      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>{device.road}</div>
+      {device.landmark && (
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>{device.landmark}</div>
+      )}
     </div>
   )
 }
@@ -149,8 +143,8 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
         .map((d) => ({
           type: 'Feature' as const,
           properties: {
-            id: d.id, type: d.type, road: d.road, km: d.km,
-            landmark: d.landmark, status: d.status, unitId: d.unitId,
+            id: d.id, type: d.type, road: d.road, landmark: d.landmark,
+            unitId: d.unitId, stch: d.stch,
           },
           geometry: { type: 'Point' as const, coordinates: d.coord },
         }))
