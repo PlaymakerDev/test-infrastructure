@@ -9,9 +9,6 @@ import type {
   APIResponseTrafficVolumeTotals,
 } from '@/types/traffic-volume/overview-api'
 import type {
-  APIResponseTrafficVolumeDetails,
-  APIRequestTrafficVolumeGraph,
-  APIResponseTrafficVolumeGraph,
   APIRequestTrafficVolumeCameras,
   APIResponseTrafficVolumeCameras,
   APIRequestTrafficVolumeCountHour,
@@ -80,13 +77,7 @@ export const getTrafficVolumeTotalsAPI = (deptId: string | number) =>
     method: 'GET',
   })
 
-// ── Detail page (placeholder until backend spec lands) ────────────────────────
-
-export const getTrafficVolumeDetailsAPI = (id: string | number) =>
-  ApiService.fetchData<APIResponseTrafficVolumeDetails>({
-    url: `/counting/details/${id}`,
-    method: 'GET',
-  })
+// ── Detail page ───────────────────────────────────────────────────────────────
 
 // Solution-level admin metadata — shared `/manage` namespace endpoint, also
 // used by traffic-signal. Drives the AnyDesk button on the detail title bar.
@@ -148,16 +139,6 @@ export const getTrafficVolumeSolutionCamerasAPI = (
     url: `${countingDeptBase(deptId)}/cameras`,
     method: 'GET',
     params: params.solution_id ? { solution_id: params.solution_id } : undefined,
-  })
-
-export const getTrafficVolumeGraphAPI = (
-  id: string | number,
-  params: APIRequestTrafficVolumeGraph = {}
-) =>
-  ApiService.fetchData<APIResponseTrafficVolumeGraph>({
-    url: `/counting/details/graph/${id}`,
-    method: 'GET',
-    params,
   })
 
 // Hourly counts + PCU breakdown — drives the hourly line chart. `date` is

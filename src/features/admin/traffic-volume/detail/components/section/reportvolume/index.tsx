@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import { TbArrowLeft, TbArrowRight } from 'react-icons/tb'
-import dayjs, { type Dayjs } from 'dayjs'
+import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import FilterBarReport, { type DateRange } from './FilterBarReport'
 import ReportStatsRow, { type ReportStatsUnit } from './ReportStatsRow'
 import VehicleTypeStatsRow from './VehicleTypeStatsRow'
@@ -16,6 +16,11 @@ import {
 } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
+import {
+  buildPageList,
+  computeReportSummary,
+  groupByCamera,
+} from '@/features/admin/traffic-volume/shared/utils/reportSummary'
 import type {
   CountingReportSummaryRow,
   CountingReportRow,
@@ -26,8 +31,8 @@ import type {
 import {
   type DailyReportRow,
   type DailyReportSummary,
-  type HourlyReportRow,
   type HourlyReportCameraGroup,
+  type HourlyReportRow,
   type MonthlyReportRow,
   type YearlyReportRow,
   type VehicleTypeReportRow,
@@ -48,27 +53,21 @@ const DEFAULT_RANGE: DateRange = [dayjs().subtract(6, 'day'), dayjs()]
 const ALL_DATA_START = '2000-01-01'
 const ALL_DATA_END = '2099-12-31'
 
-/** Year report locks the range to a fixed calendar year so the backend
- *  always rolls up the full year regardless of what the user previously
- *  picked. 2026 matches the year the project is operating in. */
-const YEAR_FIXED_RANGE: DateRange = [
-  dayjs('2026-01-01'),
-  dayjs('2026-12-31'),
-]
-
-/** Empty placeholder summary while the API is loading / disabled — keeps
- *  the stats row laid out so the user sees the skeleton instead of layout
- *  jump when data arrives. */
-const EMPTY_SUMMARY: DailyReportSummary = {
-  daysCount: 0,
-  totalVehicles: 0,
-  totalPCU: 0,
-  avgVehiclesPerDay: 0,
-  avgPCUPerDay: 0,
-  maxVehiclesPerDay: 0,
-  maxPCUPerDay: 0,
-  truckPercent: 0,
+/** Year report locks the range to the current calendar year so the
+ *  backend always rolls up the full year regardless of what the user
+ *  previously picked. Derived from `dayjs()` so the value tracks the
+ *  active year automatically (was hardcoded to 2026 before). */
+const buildYearFixedRange = (): DateRange => {
+  const year = dayjs().year()
+  return [dayjs(`${year}-01-01`), dayjs(`${year}-12-31`)]
 }
+
+/** Soft cap on how many pages the infinite-query auto-walks. At 10 rows
+ *  per backend page that's 500 rows — comfortably above a year of daily
+ *  rows (~365) but a hard ceiling against a user picking 2000→2099 and
+ *  triggering hundreds of HTTP requests in a row. The "show more" CTA
+ *  could be added on the table footer if a higher ceiling is needed. */
+const MAX_AUTO_PAGES = 50
 
 const fmtDate = (d: Dayjs | null): string | undefined =>
   d ? d.format('YYYY-MM-DD') : undefined
@@ -191,100 +190,6 @@ const EMPTY_VEHICLE_TYPE_SUMMARY: VehicleTypeReportSummary = {
   truckPercent: 0,
 }
 
-/** Convert one API row → HourlyReportRow consumed by HourlyReportTable.
- *  Mirrors `toDailyRow` minus the `maxPCUPerHour` column (hourly view's per-
- *  row "peak" doesn't make sense — it'd just equal the row's own PCU). */
-const toHourlyRow = (r: CountingReportSummaryRow): HourlyReportRow => ({
-  hourTimestamp: r.date,
-  motorcycle: r.bike_count,
-  car: r.car_count,
-  pickup: r.pickup_count,
-  taxi: r.taxi_count,
-  bus: r.bus_count,
-  truck: r.truck_count,
-  trailer: r.trailer_count,
-  totalVehicles: r.total_count,
-  totalPCU: r.total_pcu,
-  truckPercent: r.percent_truck * 100,
-})
-
-/** Group hour-mode rows by their source camera so the table can render one
- *  header + N hour rows per group. Map keeps insertion order so cameras
- *  appear in the same order the API returned them.
- *
- *  Two defenses against bad input:
- *  • Rows without a `camera_name` are dropped — backend can emit total /
- *    aggregate rows that don't belong under any single-camera header, and
- *    rendering them as orphans confuses the per-camera pagination.
- *  • Rows are deduped by `(camera_name, date)` — both the backend and the
- *    infinite-fetch loop can occasionally surface the same hour bucket
- *    twice; the table is "first wins" so we keep the first occurrence. */
-const groupByCamera = (
-  rows: CountingReportSummaryRow[]
-): HourlyReportCameraGroup[] => {
-  const groups = new Map<string, CountingReportSummaryRow[]>()
-  const seen = new Set<string>()
-  for (const r of rows) {
-    const cam = r.camera_name?.trim()
-    if (!cam) continue
-    const dedupKey = `${cam}|${r.date}`
-    if (seen.has(dedupKey)) continue
-    seen.add(dedupKey)
-    if (!groups.has(cam)) groups.set(cam, [])
-    groups.get(cam)!.push(r)
-  }
-  return Array.from(groups.entries()).map(([cameraName, items]) => ({
-    cameraName,
-    hoursCollected: items.length,
-    rows: items.map(toHourlyRow),
-  }))
-}
-
-/** Compute the 8-KPI summary directly from wire rows. Shared by daily and
- *  hourly modes — the field shape is identical, only the count semantics
- *  differ ("จำนวนวัน" vs "จำนวนรายการ"). */
-const computeSummary = (
-  rows: CountingReportSummaryRow[]
-): DailyReportSummary => {
-  if (rows.length === 0) return EMPTY_SUMMARY
-  const totalVehicles = rows.reduce((s, r) => s + r.total_count, 0)
-  const totalPCU = rows.reduce((s, r) => s + r.total_pcu, 0)
-  const maxVehicles = rows.reduce((m, r) => Math.max(m, r.total_count), 0)
-  const maxPCU = rows.reduce((m, r) => Math.max(m, r.total_pcu), 0)
-  // percent_truck arrives in 0–1, rescale to 0–100 once at the end.
-  const truckPercent =
-    (rows.reduce((s, r) => s + r.percent_truck, 0) / rows.length) * 100
-  return {
-    daysCount: rows.length,
-    totalVehicles,
-    totalPCU,
-    avgVehiclesPerDay: totalVehicles / rows.length,
-    avgPCUPerDay: totalPCU / rows.length,
-    maxVehiclesPerDay: maxVehicles,
-    maxPCUPerDay: maxPCU,
-    truckPercent,
-  }
-}
-
-/** Compute the visible page list with ellipses inserted around the current
- *  page — mirrors the design's "1 2 3 4 5 …" pattern. Returns a mix of
- *  page numbers and the sentinel string `'...'` for the rendered ellipsis. */
-const buildPageList = (
-  current: number,
-  total: number
-): Array<number | '...'> => {
-  if (total <= 6) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-  // Window of 5 page numbers around the current page, clamped to [1, total].
-  const start = Math.max(1, Math.min(current - 2, total - 4))
-  const end = Math.min(total, start + 4)
-  const pages: Array<number | '...'> = []
-  for (let i = start; i <= end; i++) pages.push(i)
-  if (end < total) pages.push('...')
-  return pages
-}
-
 interface BluePaginationProps {
   current: number
   total: number
@@ -399,11 +304,32 @@ const ReportVolume: React.FC<Props> = () => {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
   const [cameraId, setCameraId] = useState<string>('all')
 
-  // Year mode pins the range to the full 2026 calendar regardless of what
-  // the user previously selected — the picker is also disabled in that
-  // mode so this override stays authoritative.
+  // Year mode pins the range to the current calendar year regardless of
+  // what the user previously selected — the picker is also disabled in
+  // that mode so this override stays authoritative. Memoised so the
+  // dayjs bounds aren't reallocated on every render and infinite query
+  // keys stay stable across renders within the same year.
+  const yearFixedRange = useMemo(() => buildYearFixedRange(), [])
+
+  // Month mode aggregates rows by month, so the picked day range needs
+  // to widen to the month boundaries before being sent to the backend —
+  // picking Jun 10–15 should roll up ALL of June (Jun 1 → Jun 30), not
+  // just the 6 picked days. Empty endpoints stay null and fall through
+  // to ALL_DATA_* below.
+  const monthExpandedRange = useMemo<DateRange>(() => {
+    const [start, end] = range
+    return [
+      start ? start.startOf('month') : null,
+      end ? end.endOf('month') : null,
+    ]
+  }, [range])
+
   const effectiveRange: DateRange =
-    reportType === 'year' ? YEAR_FIXED_RANGE : range
+    reportType === 'year'
+      ? yearFixedRange
+      : reportType === 'month'
+        ? monthExpandedRange
+        : range
   // Empty endpoints (user hasn't picked a range) fall back to the wide
   // ALL_DATA_* bounds so the report shows every available row instead of
   // disabling the API call.
@@ -472,17 +398,21 @@ const ReportVolume: React.FC<Props> = () => {
   })
 
   // Auto-walk every page once enabled — the user shouldn't have to click
-  // "load more". Deps deliberately exclude the `reportInfinite` object
-  // itself (new ref each render → would fire continuously); the
-  // destructured primitive fields detect a next-page transition fine.
+  // "load more". Capped at `MAX_AUTO_PAGES` so a wide-open date range
+  // (e.g. user cleared the picker → ALL_DATA_*) can't trigger hundreds
+  // of HTTP requests in a row. Deps deliberately exclude the
+  // `reportInfinite` object itself (new ref each render → would fire
+  // continuously); the destructured primitive fields detect a next-page
+  // transition fine.
   const fetchNextPage = reportInfinite.fetchNextPage
   const hasNextPage = reportInfinite.hasNextPage
   const isFetchingNextPage = reportInfinite.isFetchingNextPage
+  const pagesFetched = reportInfinite.data?.pages.length ?? 0
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+    if (!hasNextPage || isFetchingNextPage) return
+    if (pagesFetched >= MAX_AUTO_PAGES) return
+    fetchNextPage()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, pagesFetched])
 
   // Flatten all fetched pages into a single mixed-shape array. The
   // endpoint returns either date-bucketed rows or pre-aggregated
@@ -674,7 +604,7 @@ const ReportVolume: React.FC<Props> = () => {
   // collapses the KPIs to just that camera.
   const apiSummary = useMemo(
     () =>
-      computeSummary(
+      computeReportSummary(
         reportType === 'hour' ? filteredHourRows : allApiRows
       ),
     [reportType, filteredHourRows, allApiRows]

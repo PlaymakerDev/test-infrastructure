@@ -20,7 +20,9 @@ interface Props {
   date?: string
 }
 
-// Reference Y level for the dashed yellow line (85th-percentile design line).
+// Reference Y level (%) for the dashed yellow guideline on the cumulative
+// speed-distribution chart. Visual-only reference, not the actual 85th
+// percentile value — that comes from `percentiles.p85` in the API.
 const REFERENCE_PCT = 90
 
 /** API point → LineChart data row. Only `speed` (X-axis) and `percentage`
@@ -40,17 +42,6 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
     solution_id: id,
     date,
   })
-
-  // TEMP DEBUG — remove once we've confirmed the discrepancy source.
-  // Open DevTools → Console to see what solution_id is queried and what
-  // `stats` / `percentiles` the frontend actually receives.
-  if (typeof window !== 'undefined') {
-    console.log('[PercentileSpeedPanel]', {
-      solution_id: id,
-      stats: apiData?.stats,
-      percentiles: apiData?.percentiles,
-    })
-  }
 
   const data = useMemo<LineChartDataPoint[]>(() => {
     // API wraps the points under `cdf[0].points` — flatten to a single
@@ -229,9 +220,9 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
         </div>
         <div className='grid grid-cols-2 md:grid-cols-4 gap-3 text-center'>
           {[
-            { tone: '#22C55E', label: 'ความเร็วต่ำ (15th)',   value: fmtPct(percentiles?.p15), share: '15% ของรถ' },
-            { tone: '#06B6D4', label: 'ความเร็วปกติ (50th)',  value: fmtPct(percentiles?.p50), share: '50% ของรถ' },
-            { tone: '#F59E0B', label: 'ความเร็วสูง (85th)',   value: fmtPct(percentiles?.p85), share: '85% ของรถ' },
+            { tone: '#22C55E', label: 'ความเร็วต่ำ (15th)', value: fmtPct(percentiles?.p15), share: '15% ของรถ' },
+            { tone: '#06B6D4', label: 'ความเร็วปกติ (50th)', value: fmtPct(percentiles?.p50), share: '50% ของรถ' },
+            { tone: '#F59E0B', label: 'ความเร็วสูง (85th)', value: fmtPct(percentiles?.p85), share: '85% ของรถ' },
             { tone: '#F97316', label: 'ความเร็วสูงสุด (95th)', value: fmtPct(percentiles?.p95), share: '95% ของรถ' },
           ].map((c) => (
             <div key={c.label} className='flex flex-col items-center'>

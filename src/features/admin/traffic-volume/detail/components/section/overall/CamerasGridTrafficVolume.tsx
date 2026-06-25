@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { Col, Row } from 'antd'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries } from '@tanstack/react-query'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import SearchBar, {
   type FilterConfig,
@@ -63,42 +63,32 @@ const FILTERS: FilterConfig[] = [
 
 const CameraTile: React.FC<{
   cam: CameraEntry
+  /** Resolved IP from the parent's batched useQueries lookup; falls back
+   *  to `cam.ipAddress` (the value carried on the cameras-list row). */
+  ip?: string
   onOpen: (cam: CameraEntry) => void
-}> = ({ cam, onOpen }) => {
-  // IP comes from the shared CCTV detail endpoint (same source the modal
-  // uses). Reuses the modal's exact `['cctv_detail', id]` query key so
-  // clicking the tile to open the modal is an instant cache hit — no
-  // refetch.
-  const { data: cctv } = useQuery({
-    queryKey: ['cctv_detail', cam.id],
-    queryFn: () => getCCTVDetailAPI(cam.id),
-    enabled: !!cam.id,
-  })
-  const ip = cctv?.data?.ip_address ?? cam.ipAddress
-
-  return (
-    // Outer gray card matches the overall-page CCTV tile so both pages share
-    // the same layered card-on-card visual language. Inner frame uses
-    // `bg-black/40` (matching traffic-signal) so the HLSLivePlayer's own
-    // loading-state background reads cleanly through without double-darkening.
-    <div
-      className='bg-(--mid-gray) p-3 rounded-lg flex flex-col cursor-pointer'
-      onClick={() => onOpen(cam)}
-      role='button'
-      tabIndex={0}
-    >
-      <div className='relative rounded-lg overflow-hidden bg-black/40 mb-2'>
-        <HLSLivePlayer
-          figureClassName='aspect-video rounded-lg'
-          hlsUrl={cam.hlsUrl}
-          cameraId={cam.id}
-        />
-      </div>
-      <h4 className='text-blue-400 mb-0 fs-12'>{cam.code}</h4>
-      <p className='fs-12 text-gray-400 mb-0'>IP Address : {ip ?? '-'}</p>
+}> = ({ cam, ip, onOpen }) => (
+  // Outer gray card matches the overall-page CCTV tile so both pages share
+  // the same layered card-on-card visual language. Inner frame uses
+  // `bg-black/40` (matching traffic-signal) so the HLSLivePlayer's own
+  // loading-state background reads cleanly through without double-darkening.
+  <div
+    className='bg-(--mid-gray) p-3 rounded-lg flex flex-col cursor-pointer'
+    onClick={() => onOpen(cam)}
+    role='button'
+    tabIndex={0}
+  >
+    <div className='relative rounded-lg overflow-hidden bg-black/40 mb-2'>
+      <HLSLivePlayer
+        figureClassName='aspect-video rounded-lg'
+        hlsUrl={cam.hlsUrl}
+        cameraId={cam.id}
+      />
     </div>
-  )
-}
+    <h4 className='text-blue-400 mb-0 fs-12'>{cam.code}</h4>
+    <p className='fs-12 text-gray-400 mb-0'>IP Address : {ip ?? cam.ipAddress ?? '-'}</p>
+  </div>
+)
 
 const CamerasGridTrafficVolume: React.FC = () => {
   const deptId = useDeptId()
@@ -115,14 +105,35 @@ const CamerasGridTrafficVolume: React.FC = () => {
     [data]
   )
 
-  const stats: FilterStats = useMemo(
-    () => ({
-      all: allCameras.length,
-      online: allCameras.filter((c) => c.connection === 'online').length,
-      offline: allCameras.filter((c) => c.connection === 'offline').length,
-    }),
-    [allCameras]
-  )
+  // Batch IP lookups in ONE hook call. Each query reuses the modal's
+  // `['cctv_detail', id]` key so opening the modal from any tile is a
+  // cache hit. Previously every grid tile + every table row spawned its
+  // own `useQuery`; with 10 cameras this collapses 10+10 hook calls per
+  // render down to a single useQueries call that returns 10 results.
+  const cctvDetailResults = useQueries({
+    queries: allCameras.map((cam) => ({
+      queryKey: ['cctv_detail', cam.id] as const,
+      queryFn: () => getCCTVDetailAPI(cam.id),
+      enabled: !!cam.id,
+    })),
+  })
+  const ipByCameraId = useMemo(() => {
+    const m = new Map<string, string | undefined>()
+    allCameras.forEach((cam, i) => {
+      m.set(cam.id, cctvDetailResults[i]?.data?.data?.ip_address)
+    })
+    return m
+  }, [allCameras, cctvDetailResults])
+
+  const stats: FilterStats = useMemo(() => {
+    let online = 0
+    let offline = 0
+    for (const c of allCameras) {
+      if (c.connection === 'online') online++
+      else offline++
+    }
+    return { all: allCameras.length, online, offline }
+  }, [allCameras])
 
   const filtered = useMemo(
     () =>
@@ -158,12 +169,20 @@ const CamerasGridTrafficVolume: React.FC = () => {
 
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
-          <TableCameraTrafficVolume cameras={filtered} onOpen={openLive} />
+          <TableCameraTrafficVolume
+            cameras={filtered}
+            ipByCameraId={ipByCameraId}
+            onOpen={openLive}
+          />
         ) : (
           <Row gutter={[16, 16]}>
             {filtered.map((cam) => (
               <Col key={cam.id} xs={24} sm={12} md={12} lg={8}>
-                <CameraTile cam={cam} onOpen={openLive} />
+                <CameraTile
+                  cam={cam}
+                  ip={ipByCameraId.get(cam.id)}
+                  onOpen={openLive}
+                />
               </Col>
             ))}
           </Row>

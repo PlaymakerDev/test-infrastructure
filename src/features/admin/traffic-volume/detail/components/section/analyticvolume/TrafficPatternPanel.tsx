@@ -4,14 +4,10 @@ import { TbBolt, TbCar, TbGridDots } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import MiniStatCard from './MiniStatCard'
 import InfoListBox from './InfoListBox'
-import dayjs from 'dayjs'
-import 'dayjs/locale/th'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { useTrafficVolumeAnalyticGraph } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { CountingAnalyticGraphPoint } from '@/types/traffic-volume/detail-api'
-
-dayjs.extend(buddhistEra)
 
 interface Props {
   /** YYYY-MM-DD — selected by the FilterBarAnalytic. Forwarded to the

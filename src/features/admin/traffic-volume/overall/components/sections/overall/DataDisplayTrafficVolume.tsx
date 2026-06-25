@@ -64,6 +64,7 @@ const apiSolutionToProject = (
     projectName: item.project.project_name,
     installPoint: item.solution.solution_name,
     contractNo: item.project.contract_no,
+    budgetYear: item.project.budget_year,
     warranty: item.is_warranty ? 'in-warranty' : 'expired',
     connection: item.camera.is_online ? 'online' : 'offline',
     // Treat any online camera as "stream connected" — mirrors traffic-signal.

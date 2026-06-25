@@ -1,6 +1,6 @@
 "use client"
 import { Input } from 'antd'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
 
@@ -14,15 +14,26 @@ interface FormValues {
   search: string
 }
 
-let timeout: NodeJS.Timeout
+const DEBOUNCE_MS = 700
 
 /** Search form for the Traffic Value overall page — plugs into the central
- *  `<SearchBar>` via the `formSearch` prop. */
+ *  `<SearchBar>` via the `formSearch` prop. Debounces every keystroke and
+ *  fires `onSearchChange` once typing stops. */
 const FormSearchTrafficVolume: React.FC<Props> = ({
   onSearchChange,
   placeholder = 'ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...',
 }) => {
-  const submitRef = useRef<HTMLButtonElement>(null)
+  // Per-instance timer so multiple mounts of this form (e.g. tab switching)
+  // never share or overwrite each other's pending callbacks. Cleared on
+  // unmount so a debounce never fires after we're gone.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    []
+  )
 
   const { control, handleSubmit } = useForm<FormValues>({
     defaultValues: { search: '' },
@@ -51,16 +62,16 @@ const FormSearchTrafficVolume: React.FC<Props> = ({
               size='large'
               onChange={(e) => {
                 field.onChange(e)
-                if (timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                  submitRef.current?.click()
-                }, 700)
+                const value = e.target.value
+                if (timerRef.current) clearTimeout(timerRef.current)
+                timerRef.current = setTimeout(() => {
+                  onSearchChange?.(value)
+                }, DEBOUNCE_MS)
               }}
             />
           </fieldset>
         )}
       />
-      <button ref={submitRef} type='submit' hidden />
     </form>
   )
 }

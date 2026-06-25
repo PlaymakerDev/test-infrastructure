@@ -2,12 +2,8 @@
 import React, { useState } from 'react'
 import { Button, ConfigProvider, DatePicker, Select } from 'antd'
 import thTH from 'antd/locale/th_TH'
-import dayjs, { type Dayjs } from 'dayjs'
-import 'dayjs/locale/th'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { TbCalendar, TbChevronDown, TbPrinter } from 'react-icons/tb'
-
-dayjs.extend(buddhistEra)
 
 const { RangePicker } = DatePicker
 
