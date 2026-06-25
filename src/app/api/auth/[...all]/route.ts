@@ -3,6 +3,12 @@ import axios from "axios";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  username: z.string().min(1, 'username is required'),
+  password: z.string().min(1, 'password is required'),
+});
 
 // GET /api/auth/session — used by BaseService client-side to retrieve token
 export const GET = async (
@@ -16,7 +22,6 @@ export const GET = async (
     if (all.includes('session')) {
       return NextResponse.json({
         access_token: session.access_token ?? null,
-        refresh_token: session.refresh_token ?? null,
       }, { status: 200 })
     }
 
@@ -36,7 +41,11 @@ export const POST = async (
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     // LOGIN
     if (all.includes('login')) {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/login`, body, {
+      const parsed = loginSchema.safeParse(body)
+      if (!parsed.success) {
+        return NextResponse.json({ message: 'Invalid request body' }, { status: 400 })
+      }
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/login`, parsed.data, {
         headers: { ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '' }
       })
       if (response.status === 200) {
@@ -60,28 +69,27 @@ export const POST = async (
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })
     }
-    // REFRESH
+    // REFRESH — uses server-side session.refresh_token; never reads from client body
     if (all.includes('refresh')) {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/refresh`, body, {
-        headers: {
-          ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
-          "Authorization": `Bearer ${session.access_token}`
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/refresh`,
+        { refresh_token: session.refresh_token },
+        {
+          headers: {
+            ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
+            "Authorization": `Bearer ${session.access_token}`
+          }
         }
-      })
+      )
       if (response.status === 200) {
         session.access_token = response.data.access_token;
         session.refresh_token = response.data.refresh_token;
         await session.save();
       }
-      return NextResponse.json({
-        access_token: response.data.access_token,
-        refresh_token: response.data.refresh_token,
-      }, { status: 200 })
+      return NextResponse.json({ message: 'success' }, { status: 200 })
     }
     return NextResponse.json({ message: 'Bad request' }, { status: 400 })
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.log("===", error)
       const status = error.response?.status ?? 500
       const data = error.response?.data ?? { message: 'Internal server error' }
       return NextResponse.json(data, { status })

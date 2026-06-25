@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
 
   const path = menu[session.role as keyof typeof menu]
 
-  // Authenticated user on /auth/login → send to dashboard
+  // Authenticated user on /auth/login → send to their dashboard
   if (isAuthenticated && pathname.startsWith('/auth/login')) {
     if (path && path.length > 0) {
       return NextResponse.redirect(new URL(path[0].path, request.url))
@@ -20,9 +20,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Unauthenticated user on a protected route (not /auth/login) → send to login
+  // Unauthenticated user on a protected route → send to login
   if (!isAuthenticated && !pathname.startsWith('/auth/login')) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  // Authenticated but wrong role trying to access /admin/* → send to their own landing
+  if (isAuthenticated && pathname.startsWith('/admin') && session.role !== 'ADMIN') {
+    if (path && path.length > 0) {
+      return NextResponse.redirect(new URL(path[0].path, request.url))
+    }
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return response
