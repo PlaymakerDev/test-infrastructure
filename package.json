@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "vitest run --project unit"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.1",
@@ -36,7 +37,8 @@
     "react-map-gl": "^8.1.0",
     "react-redux": "^9.2.0",
     "recharts": "^3.8.1",
-    "swiper": "^12.1.4"
+    "swiper": "^12.1.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.0.1",
