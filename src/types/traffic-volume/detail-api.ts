@@ -1,23 +1,6 @@
 // Traffic Volume — Detail page API types
 // Verified against the counting backend where noted.
 
-// ── GET /counting/details/{id} (placeholder — endpoint not finalised) ────────
-
-export interface APIResponseTrafficVolumeDetails {
-  id: number
-  // TODO: real fields once backend ships /counting/details/{id}
-}
-
-// ── GET /counting/details/graph/{id} (placeholder) ───────────────────────────
-
-export interface APIRequestTrafficVolumeGraph {
-  period?: string
-}
-
-export interface APIResponseTrafficVolumeGraph {
-  series: Array<{ label: string; value: number }>
-}
-
 // ── GET /counting/details/count_hour?solution_id={id}&date={YYYY-MM-DD} ──────
 // Hourly counts + PCU breakdown by vehicle type for a single solution. Drives
 // the hourly line chart on the detail page (ภาพรวม tab).

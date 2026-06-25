@@ -4,14 +4,16 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import {
-  TbInfoSquareRoundedFilled,
   TbShieldCheckFilled,
   TbWifi,
   TbWifiOff,
 } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { ContractInfoCell } from '@/components/modal'
 import { useDeptId } from '@/hooks/useDeptId'
+import {
+  groupByBureau,
+  type BureauGroupedRow,
+} from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 
 interface Props {
@@ -34,56 +36,12 @@ const Pill: React.FC<{
   </span>
 )
 
-type Row =
-  | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | {
-    kind: 'project'
-    id: string
-    project: TrafficVolumeProject
-    roadCodeSpan: number
-  }
+type Row = BureauGroupedRow<TrafficVolumeProject>
 
 const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
-  const dispatch = useAppDispatch()
   const deptId = useDeptId()
-  const data = useMemo<Row[]>(() => {
-    const groups = new Map<string, TrafficVolumeProject[]>()
-    for (const p of projects) {
-      const list = groups.get(p.bureau) ?? []
-      list.push(p)
-      groups.set(p.bureau, list)
-    }
-    const out: Row[] = []
-    for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
-
-      let i = 0
-      while (i < items.length) {
-        const code = items[i].roadCode
-        let span = 1
-        while (i + span < items.length && items[i + span].roadCode === code) {
-          span++
-        }
-        out.push({
-          kind: 'project',
-          id: items[i].id,
-          project: items[i],
-          roadCodeSpan: span,
-        })
-        for (let j = 1; j < span; j++) {
-          out.push({
-            kind: 'project',
-            id: items[i + j].id,
-            project: items[i + j],
-            roadCodeSpan: 0,
-          })
-        }
-        i += span
-      }
-    }
-    return out
-  }, [projects])
+  const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
   const TOTAL_COLS = 10
 
@@ -130,34 +88,17 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'เลขที่สัญญา',
         key: 'contractNo',
-        width: 160,
+        width: 180,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span className='inline-flex items-center gap-1.5'>
-              {row.project.contractNo}
-              <TbInfoSquareRoundedFilled
-                size={18}
-                className='text-white cursor-pointer hover:text-(--yellow)'
-                title='ดูข้อมูลโครงการ'
-                onClick={() =>
-                  dispatch(
-                    setProjectInfoModalOpen({
-                      open: true,
-                      project_id: row.project.projectId
-                        ? Number(row.project.projectId)
-                        : null,
-                      road_id: row.project.roadId
-                        ? Number(row.project.roadId)
-                        : null,
-                    })
-                  )
-                }
-              />
-            </span>
-          )
-        },
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.project.contractNo}
+              budgetYear={row.project.budgetYear}
+              projectId={row.project.projectId}
+              roadId={row.project.roadId}
+            />
+          ) : null,
       },
       {
         title: 'การค้ำประกัน',
@@ -281,7 +222,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
-  }, [router, dispatch, deptId])
+  }, [router, deptId])
 
   return (
     <Table<Row>

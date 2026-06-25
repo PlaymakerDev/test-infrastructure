@@ -13,6 +13,10 @@ export interface LineConfig {
   label: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "%", "kg") — override `tooltipUnit` */
   unit?: string
+  /** วาดเส้นเป็นเส้นประ (default `false`) */
+  dashed?: boolean
+  /** ซ่อนเส้นนี้จาก tooltip rows (เส้นยังคงวาดบนกราฟ) */
+  hideInTooltip?: boolean
 }
 
 /** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
@@ -103,6 +107,8 @@ export interface LineChartProps {
   /** Extra rows shown in tooltip but NOT rendered as visible lines.
    *  Reads values from each data point via `dataKey`. */
   tooltipExtras?: TooltipExtra[]
+  /** HTML ที่ต่อท้าย tooltip rows + extras — รับ `dataIndex` ของจุดที่ hover */
+  tooltipFooter?: (dataIndex: number) => string
 }
 
 interface TooltipParam {
@@ -144,6 +150,7 @@ const LineChart: React.FC<LineChartProps> = ({
   tooltipUnit,
   tooltipShowDot = false,
   tooltipExtras,
+  tooltipFooter,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -227,6 +234,7 @@ const LineChart: React.FC<LineChartProps> = ({
           const rows = params
             .map((p) => {
               const cfg = lines[p.seriesIndex]
+              if (cfg?.hideInTooltip) return ''
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
               const value = Number(p.value).toLocaleString()
@@ -261,7 +269,10 @@ const LineChart: React.FC<LineChartProps> = ({
             })
             .join('')
 
-          return header + rows + extras
+          const footer =
+            tooltipFooter && dataIdx !== undefined ? tooltipFooter(dataIdx) : ''
+
+          return header + rows + extras + footer
         },
       },
       series: lines.map((line) => ({
@@ -274,6 +285,7 @@ const LineChart: React.FC<LineChartProps> = ({
           width: 3,
           shadowBlur: 12,
           shadowColor: line.color + '60',
+          type: line.dashed ? 'dashed' : 'solid',
         },
         itemStyle: { color: line.color },
         symbol: 'circle',
@@ -283,7 +295,7 @@ const LineChart: React.FC<LineChartProps> = ({
         areaStyle: null,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter])
 
   return (
     <div

@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, ConfigProvider } from 'antd'
 import {
@@ -45,22 +45,17 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
 
   // Warranty + online flags come from the central-list response — cached
   // when the user navigated in from the overall page, so this is free.
+  // No useMemo: React Compiler auto-memoizes when `reactCompiler: true`
+  // (next.config.ts). Manual useMemo with nested for-loops + early return
+  // blocked the compiler ("could not preserve existing memoization").
   const { data: centralData } = useTrafficVolumeCentralList(deptId)
-  const status = useMemo(() => {
-    for (const bureau of centralData ?? []) {
-      for (const subDept of bureau.sub_department) {
-        for (const sol of subDept.solutions) {
-          if (String(sol.solution.id) === String(id)) {
-            return {
-              isOnline: sol.camera.is_online,
-              isWarranty: sol.is_warranty,
-            }
-          }
-        }
-      }
-    }
-    return null
-  }, [centralData, id])
+  const match = (centralData ?? [])
+    .flatMap((bureau) => bureau.sub_department)
+    .flatMap((subDept) => subDept.solutions)
+    .find((sol) => String(sol.solution.id) === String(id))
+  const status = match
+    ? { isOnline: match.camera.is_online, isWarranty: match.is_warranty }
+    : null
 
   // AnyDesk lives on the shared `/manage/solution/details/{id}` endpoint.
   const { data: solDetail } = useTrafficVolumeSolutionDetail(id)
@@ -118,19 +113,32 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>
 
-            {/* Anydesk button — always renders; `undefined` (no endpoint
-              * data) hides it, empty string shows a muted "-". */}
+            {/* Anydesk button — mirrors traffic-signal: always renders, with
+              * `opacity + cursor` instead of antd's `disabled` (disabled turns
+              * the blue button into a dark-gray pill that's hard to read on
+              * the page background). Opacity-50 keeps the blue + "-" readable
+              * while still signalling "not clickable". */}
             {anydeskId !== undefined && (
               <ConfigProvider
                 theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
               >
                 <Button
                   type='primary'
-                  htmlType='submit'
                   size='middle'
                   shape='round'
                   icon={<TbAppWindow />}
                   className='w-full! sm:w-auto!'
+                  style={{
+                    opacity: anydeskId ? 1 : 0.5,
+                    cursor: anydeskId ? 'pointer' : 'not-allowed',
+                  }}
+                  title={anydeskId ? `เปิด AnyDesk : ${anydeskId}` : 'ไม่มีรหัส AnyDesk'}
+                  onClick={() => {
+                    if (!anydeskId) return
+                    // `anydesk:` protocol opens the installed desktop client.
+                    // Use location.href to avoid a Chrome blank-tab race.
+                    window.location.href = `anydesk:${anydeskId}`
+                  }}
                 >
                   <p className='fs-12'>Anydesk : {anydeskId || '-'}</p>
                 </Button>

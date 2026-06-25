@@ -2,13 +2,9 @@
 import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
-import 'dayjs/locale/th'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { fmtNumber } from '@/utils/formatNumber'
 import type { MonthlyReportRow } from './data/reportMock'
-
-dayjs.extend(buddhistEra)
 
 interface Props {
   rows: MonthlyReportRow[]

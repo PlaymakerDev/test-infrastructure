@@ -2,14 +2,11 @@
 import React, { useState } from 'react'
 import { Button, ConfigProvider, DatePicker } from 'antd'
 import thTH from 'antd/locale/th_TH'
-import dayjs, { type Dayjs } from 'dayjs'
-import 'dayjs/locale/th'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { TbCalendar, TbPrinter } from 'react-icons/tb'
 
-// Buddhist Era plugin adds the `BBBB` format token (2026 → 2569). Combined
-// with `dayjs/locale/th`, `D MMM BBBB` outputs "20 เม.ย. 2569".
-dayjs.extend(buddhistEra)
+// `dayjsThai` extends the Buddhist Era plugin globally; combined with
+// the Thai locale, `D MMM BBBB` outputs "20 เม.ย. 2569".
 
 interface Props {
   /** Camera dropdown options — `value: 'all'` means "all cameras". */

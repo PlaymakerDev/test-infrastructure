@@ -21,15 +21,3 @@ export const VEHICLE_TYPES: VehicleTypeConfig[] = [
   { key: 'truck',      label: 'รถบรรทุก',      color: '#FFC800', pcuFactor: 2.5 },
   { key: 'trailer',    label: 'รถพ่วง',        color: '#FF5E00', pcuFactor: 2.5 },
 ]
-
-/** Mock per-type counts matching the design screenshot. Swap with API once
- *  a `/counting/details/{id}/vehicle-types` endpoint exists. */
-export const MOCK_VEHICLE_COUNTS: Record<string, number> = {
-  motorcycle: 107,
-  car: 1901,
-  pickup: 947,
-  taxi: 0,
-  bus: 10,
-  truck: 2578,
-  trailer: 209,
-}
