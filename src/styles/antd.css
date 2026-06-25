@@ -85,3 +85,13 @@ body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last
   display: none !important;
   box-shadow: none !important;
 }
+
+/* ── Vehicle breakdown table — traffic-volume detail page.
+ * Composes on top of `.bridge-projects-table`. The card on the right of the
+ * pie chart needs the 9-row table to fill its container so it visually
+ * balances against the donut. We bump cell padding so each row is taller. */
+body .vehicle-breakdown-table .ant-table-thead > tr > th,
+body .vehicle-breakdown-table .ant-table-tbody > tr > td {
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+}

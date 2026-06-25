@@ -82,6 +82,37 @@ export interface APIResponseContactDetail {
   company_name: string
 }
 
+// ── GET /manage/roads ─────────────────────────────────────────────────────────
+// Paginated road list — used by the CCTV search autocomplete (pick a road →
+// fetch its cameras).
+
+export interface Road {
+  id: number
+  road_code: string
+  road_name: string
+  department_id: number
+  distance: number
+  district: string
+  province: string
+  start_sta: string
+  end_sta: string
+  subdistrict: string
+}
+
+export interface APIRequestRoadList {
+  department_id?: number
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: string
+}
+
+export interface APIResponseRoadList {
+  res_data: Road[]
+  meta_data: MetaData
+}
+
 export interface APIRequestDepartmentByRoad {
   road_id?: number
 }

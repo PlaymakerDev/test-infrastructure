@@ -2,6 +2,7 @@
 import React from 'react'
 import { OverallSection, TitleSection } from '../components'
 import { OverallProvider } from '../context'
+import { ProjectInfoModal } from '@/components/modal'
 
 const IncidentDetectionScreen = () => {
   return (
@@ -12,6 +13,8 @@ const IncidentDetectionScreen = () => {
           <OverallSection />
         </section>
       </div>
+      {/* Global Project Info modal — opened via Redux from any row's ⓘ icon. */}
+      <ProjectInfoModal />
     </OverallProvider>
   )
 }

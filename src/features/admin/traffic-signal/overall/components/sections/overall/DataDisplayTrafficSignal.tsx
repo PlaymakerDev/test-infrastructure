@@ -68,6 +68,7 @@ const apiSolutionToProject = (
   projectName: item.project.project_name,
   installPoint: item.solution.solution_name,
   contractNo: item.project.contract_no,
+  budgetYear: item.project.budget_year,
   warranty: item.is_warranty ? 'in-warranty' : 'expired',
   connection: item.traffic.is_online ? 'online' : 'offline',
   // Stream is the *camera* health, not the controller heartbeat — a signal

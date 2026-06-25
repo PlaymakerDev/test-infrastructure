@@ -8,6 +8,9 @@ import SearchBar, {
   type ViewMode,
 } from '@/components/searchable/SearchBar'
 import CameraGridView, { type InstallGroup, type CameraRow } from './CameraGridView'
+import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -18,7 +21,6 @@ const parseKm = (km: string): number => {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type FunctionTag = 'CCTV' | 'Incident' | 'Volume'
 type ConnectStatus = 'connect' | 'disconnect'
 type WarrantyStatus = 'in-warranty' | 'expired'
 
@@ -26,66 +28,7 @@ type Row =
   | { kind: 'group'; id: string; group: InstallGroup }
   | { kind: 'camera'; id: string; seq: number; camera: CameraRow }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
-
-const MOCK_GROUPS: InstallGroup[] = [
-  {
-    id: 'g1',
-    label: 'จุดติดตั้ง 1 : ฉซ.3001 กม.16+300 - 16+650',
-    warranty: 'in-warranty',
-    cameras: [
-      { id: 'c1-1', name: '67MST-CCO3001-FAI001-จุดที่1-กม.16+650-มุ่งหน้าอะเชิงเกรา',  km: '16+650', functions: ['CCTV', 'Incident'], ip: '10.101.27.1', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c1-2', name: '67MST-CCO3001-FAI002-จุดที่1-กม.16+650-มุ่งหน้าแยกไฟแดง',   km: '16+650', functions: ['CCTV', 'Incident'], ip: '10.101.27.2', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'c1-3', name: '67MST-CCO3001-FAI003-จุดที่1-กม.16+650-มุ่งหน้าอะเชิงเกรา',  km: '16+650', functions: ['CCTV', 'Volume'],   ip: '10.101.27.3', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c1-4', name: '67MST-CCO3001-FAI004-จุดที่2-กม.16+300-มุ่งหน้าบางนา-ตราด', km: '16+300', functions: ['CCTV', 'Incident'], ip: '10.101.27.4', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c1-5', name: '67MST-CCO3001-FAI005-จุดที่2-กม.16+300-มุ่งหน้าแยกไฟแดง',   km: '16+300', functions: ['CCTV', 'Volume'],   ip: '10.101.27.5', streamStatus: 'connect',    deviceStatus: 'connect' },
-    ],
-  },
-  {
-    id: 'g2',
-    label: 'จุดติดตั้ง 2 : ฉซ.3001 แยกจราจรเกาะไร่ กม.7+900',
-    warranty: 'expired',
-    cameras: [
-      { id: 'c2-1', name: '68MST-CCO3001-FAI001-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าลาดกระบัง', km: '7+900', functions: ['CCTV'], ip: '10.131.22.1', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'c2-2', name: '68MST-CCO3001-FAI002-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าแยก',   km: '7+900', functions: ['CCTV'], ip: '10.131.22.2', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'c2-3', name: '68MST-CCO3001-FAI003-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าบางนา-ตราด', km: '7+900', functions: ['CCTV'], ip: '10.131.22.3', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'c2-4', name: '68MST-CCO3001-FAI004-จรารสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าแยก',   km: '7+900', functions: ['CCTV'], ip: '10.131.22.4', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-    ],
-  },
-  {
-    id: 'g3',
-    label: 'จุดติดตั้ง 3 : ฉซ.3001 กม.3+000 - 20+000',
-    warranty: 'expired',
-    cameras: [
-      { id: 'c3-1', name: '68FTD-CCO3001-FAI001-จุดที่1-กม.3+000-มุ่งหน้าฟาร์มไม้ไก่', km: '3+000', functions: ['CCTV', 'Incident'], ip: '10.131.1.1', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c3-2', name: '68FTD-CCO3001-FAI002-จุดที่1-กม.3+000-มุ่งหน้ากา.314',       km: '3+000', functions: ['CCTV', 'Incident'], ip: '10.131.1.2', streamStatus: 'disconnect', deviceStatus: 'disconnect' },
-      { id: 'c3-3', name: '68FTD-CCO3001-FAI003-จุดที่2-กม.3+150-มุ่งหน้าฟาร์มไม้ไก่', km: '3+150', functions: ['CCTV', 'Volume'],   ip: '10.131.1.3', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c3-4', name: '68FTD-CCO3001-FAI004-จุดที่2-กม.3+150-มุ่งหน้ากา.314',       km: '3+150', functions: ['CCTV'],             ip: '10.131.1.4', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c3-5', name: '68FTD-CCO3001-FAI005-จุดที่2-กม.3+200-มุ่งหน้าฟาร์มไม้ไก่', km: '3+200', functions: ['CCTV', 'Volume'],   ip: '10.131.1.5', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c3-6', name: '68FTD-CCO3001-FAI007-จุดที่4-กม.3+400-มุ่งหน้าฟาร์มไม้ไก่', km: '3+400', functions: ['CCTV'],             ip: '10.131.1.6', streamStatus: 'connect',    deviceStatus: 'connect' },
-      { id: 'c3-7', name: '68FTD-CCO3001-FAI009-จุดที่5-กม.6+000-มุ่งที่ทำการกำนันตำบลสะเทรา', km: '6+000', functions: ['CCTV'], ip: '10.131.1.7', streamStatus: 'connect',    deviceStatus: 'connect' },
-    ],
-  },
-]
-
 // ── Sub-components (table-specific) ──────────────────────────────────────────
-
-const FunctionTag: React.FC<{ tag: FunctionTag }> = ({ tag }) => {
-  const cfg: Record<FunctionTag, { bg: string; border: string; color: string }> = {
-    CCTV:     { bg: 'transparent', border: '#f97316', color: '#f97316' },
-    Incident: { bg: '#22c55e',     border: '#22c55e', color: '#fff' },
-    Volume:   { bg: 'transparent', border: '#a3e635', color: '#a3e635' },
-  }
-  const { bg, border, color } = cfg[tag]
-  return (
-    <span
-      className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap'
-      style={{ background: bg, border: `1px solid ${border}`, color }}
-    >
-      {tag}
-    </span>
-  )
-}
 
 const StatusPill: React.FC<{ status: ConnectStatus }> = ({ status }) => {
   const connected = status === 'connect'
@@ -119,7 +62,7 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
-  groups?: InstallGroup[]
+  groups: InstallGroup[]
 }
 
 const VIEW_TABS = ['โครงการ', 'กม.'] as const
@@ -127,7 +70,8 @@ type ViewTab = typeof VIEW_TABS[number]
 
 const TOTAL_COLS = 7
 
-const CameraDetailTableCctv: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
+const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
+  const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState<ViewTab>('โครงการ')
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
@@ -187,7 +131,21 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
           return (
             <div className='flex items-center gap-3'>
               <span className='text-white font-semibold text-sm'>{row.group.label}</span>
-              <TbInfoSquareRoundedFilled size={18} className='cursor-pointer' style={{ color: '#fff' }} title='ดูรายละเอียด' />
+              <TbInfoSquareRoundedFilled
+                size={18}
+                className='cursor-pointer hover:text-(--yellow)'
+                style={{ color: '#fff' }}
+                title='ดูข้อมูลโครงการ'
+                onClick={() =>
+                  dispatch(
+                    setProjectInfoModalOpen({
+                      open: true,
+                      project_id: row.group.projectId ?? null,
+                      road_id: row.group.roadId ?? null,
+                    })
+                  )
+                }
+              />
               <WarrantyPill warranty={row.group.warranty} />
             </div>
           )
@@ -222,7 +180,7 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
         row.kind === 'camera'
           ? (
             <div className='flex flex-wrap gap-1'>
-              {row.camera.functions.map((fn) => <FunctionTag key={fn} tag={fn} />)}
+              {row.camera.functions.map((fn) => <CameraFunctionTag key={fn} tag={fn} />)}
             </div>
           )
           : null,
@@ -253,7 +211,7 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups = MOCK_GROUPS }) => {
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
     },
-  ], [])
+  ], [dispatch])
 
   return (
     <div className='flex flex-col gap-4'>

@@ -14,6 +14,11 @@ export interface APIResponseTrafficContractInfo {
   warranty_start_date: string
   warranty_end_date: string
   company_name: string
+  /** 3-state warranty label from BE — e.g. "ในค้ำ" | "หมดค้ำ" | "ก่อนค้ำ".
+   *  Verified live (GET /manage/contract/{id}) 2026-06-23. */
+  warranty_status: string
+  /** Pre-formatted warranty period string for display. */
+  warranty_date: string
 }
 
 // ── 9. GET /manage/solution/details/{id} ──────────────────────────────────────

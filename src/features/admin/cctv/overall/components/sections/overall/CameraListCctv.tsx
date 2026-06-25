@@ -1,53 +1,49 @@
 "use client"
 import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import type { CctvRandomOnlineCamera } from '@/types/cctv'
-
-const CameraCard: React.FC<{ camera: CctvRandomOnlineCamera }> = ({ camera }) => (
-  <div
-    style={{
-      background: 'rgba(0,0,0,0.75)',
-      border: '1px solid #1f2d3d',
-      borderRadius: 12,
-      overflow: 'hidden',
-      backdropFilter: 'blur(6px)',
-    }}
-  >
-    <HLSLivePlayer
-      hlsUrl={camera.hls_url}
-      cameraId={camera.id}
-      showLiveBadge
-      enableViewportPause
-      style={{ height: 120, display: 'block' }}
-    />
-    <div style={{ padding: '8px 12px 10px' }}>
-      <p
-        style={{
-          color: '#66AEFF',
-          fontSize: 11,
-          lineHeight: 1.5,
-          wordBreak: 'break-all',
-        }}
-      >
-        {camera.camera_name}
-      </p>
-      <p style={{ color: '#6b7280', fontSize: 10, marginTop: 2 }}>
-        {camera.road_code}
-      </p>
-    </div>
-  </div>
-)
+import type { CCTVRandomOnlineCamera } from '@/types/cctv/camera-api'
 
 interface Props {
-  cameras: CctvRandomOnlineCamera[]
+  cameras: CCTVRandomOnlineCamera[]
 }
 
-const CameraListCctv: React.FC<Props> = ({ cameras }) => (
-  <div className='flex flex-col gap-3'>
-    {cameras.map((cam) => (
-      <CameraCard key={cam.id} camera={cam} />
-    ))}
-  </div>
-)
+/** Left-rail live preview — up to 3 ONLINE CCTV cameras.
+ *
+ *  ⚠ Backend `random-online` backfills with offline cameras when there aren't
+ *  enough online ones, so an `is_online` filter is required to keep the
+ *  preview true to its name. Card visual matches Traffic Signal / Incident
+ *  Detection (bg-(--mid-gray) + camera-code / camera-location classes). */
+const CameraListCctv: React.FC<Props> = ({ cameras }) => {
+  const onlineCameras = cameras.filter((c) => c.is_online)
+
+  if (onlineCameras.length === 0) {
+    return (
+      <div className='h-full flex items-center justify-center text-gray-500 fs-12 p-4'>
+        ไม่มีกล้องออนไลน์ในขณะนี้
+      </div>
+    )
+  }
+
+  return (
+    <div className='h-full flex flex-col gap-4'>
+      {onlineCameras.map((cam) => (
+        <div
+          key={cam.id}
+          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+        >
+          <HLSLivePlayer
+            figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
+            hlsUrl={cam.hls_url}
+            cameraId={cam.id}
+            showLiveBadge
+            enableViewportPause
+          />
+          <h4 className='camera-code'>{cam.camera_name}</h4>
+          <p className='camera-location'>{cam.road_code}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default React.memo<Props>(CameraListCctv)

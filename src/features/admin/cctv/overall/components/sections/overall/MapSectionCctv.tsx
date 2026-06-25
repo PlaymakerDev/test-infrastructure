@@ -1,61 +1,83 @@
 "use client"
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import MarkerLayer from '@/components/map/primitives/MarkerLayer'
-import { useMap } from '@/components/map/hooks/useMap'
-import { useAppSelector } from '@/stores/hooks'
-
-const CentroidEffect: React.FC<{ centroid: [number, number] | undefined }> = ({ centroid }) => {
-  const { map, isLoaded } = useMap()
-  useEffect(() => {
-    if (!map || !isLoaded || !centroid) return
-    map.flyTo({ center: centroid, zoom: 8, duration: 1000 })
-  }, [map, isLoaded, centroid])
-  return null
-}
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import { useCctvOverview } from '@/hooks/queries/cctv'
 
 interface Props {
+  deptId?: string | null
   edgeFade?: MapEdgeFadeProps
 }
 
-const MapSectionCctv: React.FC<Props> = ({ edgeFade }) => {
-  const overview = useAppSelector((s) => s.cctv.overview)
+const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
+  const { data: overview } = useCctvOverview(deptId)
+
+  // Every solution location with a coordinate — the map frames all of them
+  // (bureau → แขวง → สายทาง) instead of a fixed centroid zoom.
+  const coords = useMemo<[number, number][]>(
+    () =>
+      (overview?.locations ?? [])
+        .filter((loc) => Array.isArray(loc.geometry_point) && loc.geometry_point.length === 2)
+        .map((loc) => loc.geometry_point as [number, number]),
+    [overview?.locations]
+  )
+
+  // Reserve space for the left camera-list + right stats overlays on xl screens
+  // so markers don't end up hidden behind them. Below xl the overlays stack
+  // under the map, so a small uniform padding is enough.
+  const fitPadding = useMemo(
+    () =>
+      typeof window !== 'undefined' && window.innerWidth >= 1280
+        ? { top: 60, right: 350, bottom: 60, left: 320 }
+        : 56,
+    []
+  )
 
   const data = useMemo(() => ({
     type: 'FeatureCollection' as const,
-    features: (overview?.locations ?? []).map((loc) => ({
-      type: 'Feature' as const,
-      properties: {
-        codeName: loc.road.code_name,
-        solutionName: loc.solution.solution_name,
-        totalCameras: loc.total_cameras,
-      },
-      geometry: { type: 'Point' as const, coordinates: loc.geometry_point },
-    })),
+    // Drop locations without coords — a single feature with `coordinates: null`
+    // makes Mapbox reject the whole GeoJSON source (→ no markers render at all).
+    features: (overview?.locations ?? [])
+      .filter((loc) => Array.isArray(loc.geometry_point) && loc.geometry_point.length === 2)
+      .map((loc) => ({
+        type: 'Feature' as const,
+        properties: {
+          codeName: loc.road.code_name,
+          solutionName: loc.solution.solution_name,
+          totalCameras: loc.total_cameras,
+          onlineCount: loc.online_count,
+          offlineCount: loc.offline_count,
+        },
+        geometry: { type: 'Point' as const, coordinates: loc.geometry_point as [number, number] },
+      })),
   }), [overview?.locations])
 
   return (
     <BaseMap initialZoom={5.4} edgeFade={edgeFade}>
-      <CentroidEffect centroid={overview?.centroid} />
+      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={12} />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
       <MarkerLayer
         id='cctv-locations'
         data={data}
+        cluster
         color='#FCD116'
-        size={22}
+        size={16}
         strokeColor='#ffffff'
-        onClick={(e, f) => {
-          if (f.geometry.type === 'Point') {
-            e.target.flyTo({ center: f.geometry.coordinates as [number, number], zoom: 9, duration: 800 })
-          }
-        }}
+        popupOptions={{ offset: 10, closeButton: false }}
         popup={(f) => (
-          <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: '1px solid #FCD116', fontFamily: 'ui-sans-serif,system-ui', minWidth: 160 }}>
+          <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: '1px solid #FCD116', fontFamily: 'ui-sans-serif,system-ui', minWidth: 170 }}>
             <div style={{ fontSize: 10, color: '#FCD116', fontWeight: 700 }}>CCTV</div>
             <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{Number(f.properties?.totalCameras).toLocaleString()} กล้อง</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              ทั้งหมด {Number(f.properties?.totalCameras).toLocaleString()} กล้อง
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 3, fontSize: 11, fontWeight: 600 }}>
+              <span style={{ color: '#66AEFF' }}>● ออนไลน์ {Number(f.properties?.onlineCount ?? 0).toLocaleString()}</span>
+              <span style={{ color: '#E94C4C' }}>● ออฟไลน์ {Number(f.properties?.offlineCount ?? 0).toLocaleString()}</span>
+            </div>
           </div>
         )}
       />

@@ -1,54 +1,148 @@
 import ApiService from '../ApiService'
-import { CctvCameraEntry, CctvDeptCamerasResponse, CctvDeptOverview, CctvDeptOverviewListParams, CctvDeptOverviewListResponse, CctvDeptOverviewTotals, CctvRandomOnlineResponse, CctvStats } from '@/types/cctv'
+import type {
+  APIRequestCCTVOverviewList,
+  APIResponseCCTVOverview,
+  APIResponseCCTVOverviewList,
+  APIResponseCCTVOverviewTotals,
+  APIRequestCCTVOverviewDropdowns,
+  APIResponseCCTVOverviewDropdowns,
+  APIResponseCCTVOverviewCentralList,
+  APIResponseCCTVOverviewCentralTotals,
+} from '@/types/cctv/overview-api'
+import type {
+  APIRequestCCTVCameras,
+  APIResponseCCTVCameras,
+  APIRequestCCTVCameraList,
+  APIResponseCCTVCameraList,
+  APIRequestCCTVCameraTotals,
+  APIResponseCCTVCameraTotals,
+  APIRequestCCTVCameraDropdowns,
+  APIResponseCCTVCameraDropdowns,
+  APIResponseCCTVRandomOnline,
+  APIRequestCCTVUptime,
+  APIResponseCCTVUptimeStatistics,
+  APIResponseCCTVCameraCentralList,
+} from '@/types/cctv/camera-api'
 
-export const getCctvListAPI = async () => {
-  return ApiService.fetchData<CctvCameraEntry[]>({
-    url: '/admin/cctv/cameras',
+// URL prefix helper — keeps `/cctv/departments/{deptId}` DRY.
+const cctvDeptBase = (deptId: string | number) => `/cctv/departments/${deptId}`
+
+// ── Overview (solution/route-level) ─────────────────────────────────────────────
+
+/** Map markers (one per solution) + centroid. */
+export const getCctvOverviewAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseCCTVOverview>({
+    url: `${cctvDeptBase(deptId)}/overview`,
     method: 'GET',
   })
-}
 
-export const getCctvStatsAPI = async () => {
-  return ApiService.fetchData<CctvStats>({
-    url: '/admin/cctv/stats',
+export const getCctvOverviewListAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVOverviewList = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVOverviewList>({
+    url: `${cctvDeptBase(deptId)}/overview/list`,
+    method: 'GET',
+    params,
+  })
+
+export const getCctvOverviewTotalsAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseCCTVOverviewTotals>({
+    url: `${cctvDeptBase(deptId)}/overview/totals`,
     method: 'GET',
   })
-}
 
-export const getCctvDeptOverviewAPI = async (deptId: string) => {
-  return ApiService.fetchData<CctvDeptOverview>({
-    url: `/cctv/departments/${deptId}/overview`,
+export const getCctvOverviewDropdownsAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVOverviewDropdowns = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVOverviewDropdowns>({
+    url: `${cctvDeptBase(deptId)}/overview/dropdowns`,
+    method: 'GET',
+    params,
+  })
+
+/** Bureau-aware nested list (bureau → sub-departments → solutions). No paging. */
+export const getCctvOverviewCentralListAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseCCTVOverviewCentralList>({
+    url: `${cctvDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
   })
-}
 
-export const getCctvDeptOverviewListAPI = async ({ deptId, page = 1, limit = 100 }: CctvDeptOverviewListParams) => {
-  return ApiService.fetchData<CctvDeptOverviewListResponse>({
-    url: `/cctv/departments/${deptId}/overview/list`,
-    method: 'GET',
-    params: { page, limit },
-  })
-}
-
-export const getCctvDeptOverviewTotalsAPI = async (deptId: string) => {
-  return ApiService.fetchData<CctvDeptOverviewTotals>({
-    url: `/cctv/departments/${deptId}/overview/totals`,
+export const getCctvOverviewCentralTotalsAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseCCTVOverviewCentralTotals>({
+    url: `${cctvDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
   })
-}
 
-export const getCctvDeptCamerasAPI = async (deptId: string, solutionId: string) => {
-  return ApiService.fetchData<CctvDeptCamerasResponse>({
-    url: `/cctv/departments/${deptId}/cameras`,
+// ── Camera-level ────────────────────────────────────────────────────────────────
+
+/** Map markers (one per camera) + centroid. */
+export const getCctvCamerasAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVCameras = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVCameras>({
+    url: `${cctvDeptBase(deptId)}/cameras`,
     method: 'GET',
-    params: { solution_id: solutionId },
+    params,
   })
-}
 
-export const getCctvRandomOnlineCamerasAPI = async (deptId: string, limit: number) => {
-  return ApiService.fetchData<CctvRandomOnlineResponse>({
-    url: `/cctv/departments/${deptId}/cameras/random-online`,
+export const getCctvCameraListAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVCameraList = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVCameraList>({
+    url: `${cctvDeptBase(deptId)}/cameras/list`,
+    method: 'GET',
+    params,
+  })
+
+export const getCctvCameraTotalsAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVCameraTotals = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVCameraTotals>({
+    url: `${cctvDeptBase(deptId)}/cameras/totals`,
+    method: 'GET',
+    params,
+  })
+
+export const getCctvCameraDropdownsAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVCameraDropdowns = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVCameraDropdowns>({
+    url: `${cctvDeptBase(deptId)}/cameras/dropdowns`,
+    method: 'GET',
+    params,
+  })
+
+export const getCctvRandomOnlineAPI = (
+  deptId: string | number,
+  limit: number
+) =>
+  ApiService.fetchData<APIResponseCCTVRandomOnline>({
+    url: `${cctvDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
     params: { limit },
   })
-}
+
+export const getCctvUptimeStatisticsAPI = (
+  deptId: string | number,
+  params: APIRequestCCTVUptime = {}
+) =>
+  ApiService.fetchData<APIResponseCCTVUptimeStatistics>({
+    url: `${cctvDeptBase(deptId)}/cameras/uptime-statistics`,
+    method: 'GET',
+    params,
+  })
+
+/** Cameras for ONE road, grouped by project/solution_location/solution.
+ *  Powers the CCTV search page. Not department-scoped — keyed by `road_id`. */
+export const getCctvCameraCentralListAPI = (roadId: string | number) =>
+  ApiService.fetchData<APIResponseCCTVCameraCentralList>({
+    url: `/cctv/cameras/central/list`,
+    method: 'GET',
+    params: { road_id: roadId },
+  })

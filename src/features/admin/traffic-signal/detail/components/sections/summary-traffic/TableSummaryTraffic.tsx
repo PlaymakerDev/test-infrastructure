@@ -10,7 +10,12 @@ import { fmtNumber } from '@/utils/formatNumber'
 import { thaiDayName } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
-interface Props { }
+interface Props {
+  /** Inclusive start of date range (YYYY-MM-DD). */
+  startDate: string
+  /** Inclusive end of date range (YYYY-MM-DD). */
+  endDate: string
+}
 
 interface RowData {
   id: string
@@ -25,20 +30,9 @@ interface RowData {
   co2: number
 }
 
-const TableSummaryTraffic: React.FC<Props> = () => {
+const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
   const { project } = useDetailContext()
   const phaseCount = project.phase
-
-  // Default to the last 7 days. Without these explicit dates the backend
-  // returns only today's rows, so the table heading ("ย้อนหลัง 7 วัน") would
-  // lie. Pre-compute once so the param object stays stable between renders.
-  const dateRange = useMemo(() => {
-    const today = dayjs()
-    return {
-      start_date: today.subtract(6, 'day').format('YYYY-MM-DD'),
-      end_date: today.format('YYYY-MM-DD'),
-    }
-  }, [])
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -47,13 +41,14 @@ const TableSummaryTraffic: React.FC<Props> = () => {
     pageSize: phaseCount * 3,
   })
 
-  // Fetch the full 7-day window in one request — backend pagination is
+  // Fetch the full selected window in one request — backend pagination is
   // unreliable across pages (page=2 sometimes returns empty), and the data
-  // is small (≤ 7 days × ~6 phases) so client-side slicing is fine.
+  // is small enough (≤ ~7 days × phases) for client-side slicing.
   const { data } = useTrafficReports(project.id, {
     page: 1,
     limit: 100,
-    ...dateRange,
+    start_date: startDate,
+    end_date: endDate,
   })
 
   /** Flatten 7-day API response into per-phase rows + compute rowSpan for

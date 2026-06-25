@@ -151,6 +151,10 @@ export interface TrafficRandomCamera {
     name: string
     hls_url: string
     is_online: boolean
+    /** Backend added these 2026-06-24 — power the side-rail preview pills. */
+    ip_address: string
+    phases_no: number
+    camera_type: 'Counting' | 'StopLine' | null
   }
   road: TrafficRoad
 }

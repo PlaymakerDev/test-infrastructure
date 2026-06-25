@@ -7,7 +7,11 @@ import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
 import { thaiDayName } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
-interface Props { }
+interface Props {
+  /** End date of the 7-day window (YYYY-MM-DD). Backend returns 7 entries
+   *  ending at this date. */
+  endDate: string
+}
 
 /** Single horizontal phase bar — colored fill + numeric label. */
 const PhaseBar: React.FC<{ phase: number; value: number; max: number }> = ({
@@ -38,10 +42,9 @@ const PhaseBar: React.FC<{ phase: number; value: number; max: number }> = ({
   )
 }
 
-const DailyVolumeCardsSummaryTraffic: React.FC<Props> = () => {
+const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
   const { project } = useDetailContext()
-  const today = dayjs().format('YYYY-MM-DD')
-  const { data } = useTrafficSummary(project.id, { date: today })
+  const { data } = useTrafficSummary(project.id, { date: endDate })
 
   const phaseNumbers = useMemo(
     () => Array.from({ length: project.phase }, (_, i) => i + 1),

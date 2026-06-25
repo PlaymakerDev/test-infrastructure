@@ -23,13 +23,25 @@ const OPTIONS = [
   { label: 'สรุปข้อมูลแยกจราจร', value: 'SUMMARY' },
 ]
 
+// Same color map as ProjectInfoModal — keeps the warranty pill consistent
+// across the detail header + the modal + the overall tables.
+const WARRANTY_COLOR: Record<string, string> = {
+  ในค้ำ: '#05F2DB',
+  หมดค้ำ: '#979797',
+  ก่อนค้ำ: '#FCD116',
+}
+
 const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
   const { project } = useDetailContext()
   const isOnline = project.connection === 'online'
-  const isInWarranty = project.warranty === 'in-warranty'
+  // BE-driven Thai status (3 values). Fall back to the boolean when contract
+  // data hasn't loaded yet, so the pill still renders something sensible.
+  const warrantyLabel: string =
+    project.warrantyStatus ?? (project.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ')
+  const warrantyColor = WARRANTY_COLOR[warrantyLabel] ?? '#979797'
   // Pull project_id + road_id from URL — the overall list page passes both
   // when navigating to detail. Without them the Project Info modal can't
   // fetch contract data (no fallback inside detail's own endpoints).
@@ -67,14 +79,13 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
                 }
               />
             </div>
+            {/* Same colors as ProjectInfoModal + overall tables — 3 states
+              * (ในค้ำ / หมดค้ำ / ก่อนค้ำ) driven by BE's `warranty_status`. */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isInWarranty
-                  ? 'border-emerald-500 text-emerald-500'
-                  : 'border-gray-500 text-gray-400'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{ borderColor: warrantyColor, color: warrantyColor }}
             >
-              {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
+              {warrantyLabel}
             </span>
             {/* Anydesk + Google Map buttons — mirror the VMS detail header so
               * both features share visual language. Buttons always render; an
@@ -84,11 +95,25 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
             >
               <Button
                 type='primary'
-                htmlType='submit'
                 size='middle'
                 shape='round'
                 icon={<TbAppWindow />}
                 className='w-full! sm:w-auto!'
+                // `opacity + cursor` instead of antd's `disabled` — disabled
+                // turns the blue button into a dark-gray pill that's hard to
+                // read on the page background. Opacity-50 keeps the blue + "-"
+                // readable while still signalling "not clickable".
+                style={{
+                  opacity: project.anydeskId ? 1 : 0.5,
+                  cursor: project.anydeskId ? 'pointer' : 'not-allowed',
+                }}
+                title={project.anydeskId ? `เปิด AnyDesk : ${project.anydeskId}` : 'ไม่มีรหัส AnyDesk'}
+                onClick={() => {
+                  if (!project.anydeskId) return
+                  // `anydesk:` protocol opens the installed desktop client.
+                  // Use location.href to avoid a Chrome blank-tab race.
+                  window.location.href = `anydesk:${project.anydeskId}`
+                }}
               >
                 <p className='fs-12'>Anydesk : {project.anydeskId || '-'}</p>
               </Button>
