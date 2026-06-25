@@ -1,6 +1,8 @@
 "use client"
 import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CCTVRandomOnlineCamera } from '@/types/cctv/camera-api'
 
 interface Props {
@@ -14,6 +16,8 @@ interface Props {
  *  preview true to its name. Card visual matches Traffic Signal / Incident
  *  Detection (bg-(--mid-gray) + camera-code / camera-location classes). */
 const CameraListCctv: React.FC<Props> = ({ cameras }) => {
+  const dispatch = useAppDispatch()
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
   const onlineCameras = cameras.filter((c) => c.is_online)
 
   if (onlineCameras.length === 0) {
@@ -29,7 +33,10 @@ const CameraListCctv: React.FC<Props> = ({ cameras }) => {
       {onlineCameras.map((cam) => (
         <div
           key={cam.id}
-          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col cursor-pointer'
+          onClick={() => openCamera(cam.id)}
+          role='button'
+          tabIndex={0}
         >
           <HLSLivePlayer
             figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
@@ -37,6 +44,7 @@ const CameraListCctv: React.FC<Props> = ({ cameras }) => {
             cameraId={cam.id}
             showLiveBadge
             enableViewportPause
+            style={{ pointerEvents: 'none' }}
           />
           <h4 className='camera-code'>{cam.camera_name}</h4>
           <p className='camera-location'>{cam.road_code}</p>

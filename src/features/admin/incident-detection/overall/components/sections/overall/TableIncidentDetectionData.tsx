@@ -3,8 +3,9 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbWifi, TbWifiOff, TbShieldFilled } from 'react-icons/tb'
+import { TbWifi, TbWifiOff, TbShieldCheckFilled } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/incident-detection/components/LicenseModal'
@@ -54,9 +55,10 @@ const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
 }
 
 /** License action icon — opens the License modal, which fetches the solution's
- *  license keys on demand from /analytic/license/{solution_id}. */
-const LicenseIcon: React.FC = () => (
-  <TbShieldFilled size={20} style={{ color: '#66AEFF' }} />
+ *  license keys on demand from /analytic/license/{solution_id}. Same glyph +
+ *  warranty-colored style as traffic-volume overall (yellow active / gray not). */
+const LicenseIcon: React.FC<{ active: boolean }> = ({ active }) => (
+  <TbShieldCheckFilled size={20} style={{ color: active ? '#FCD116' : '#979797' }} />
 )
 
 type TableRow =
@@ -132,7 +134,11 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
             </div>
           )
         }
-        return row.item.roadCode
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.roadCode}
+          </DetailLinkText>
+        )
       },
     },
     {
@@ -140,11 +146,26 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       key: 'projectName',
       align: 'center',
       ellipsis: true,
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item), style: { cursor: 'pointer' } },
-      render: (_, row) => (row.kind === 'project' ? row.item.projectName : null),
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.projectName}
+          </DetailLinkText>
+        ) : null,
+    },
+    {
+      title: 'จุดติดตั้ง',
+      key: 'installPoint',
+      width: 240,
+      align: 'center',
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.installPoint}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'เลขที่สัญญา',
@@ -169,20 +190,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
-    },
-    {
-      title: 'จุดติดตั้ง',
-      key: 'installPoint',
-      width: 240,
-      align: 'center',
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item), style: { cursor: 'pointer' } },
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <span className='hover:text-(--yellow) hover:underline'>{row.item.installPoint}</span>
-        ) : null,
     },
     {
       title: 'กล้องวิเคราะห์',
@@ -225,7 +232,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
             className='cursor-pointer hover:opacity-80'
             title='ดูข้อมูล License'
           >
-            <LicenseIcon />
+            <LicenseIcon active={row.item.warranty === 'in-warranty'} />
           </button>
         ) : null,
     },

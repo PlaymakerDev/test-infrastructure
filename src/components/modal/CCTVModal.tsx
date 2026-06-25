@@ -12,7 +12,7 @@ import {
   TbTrafficLights, TbCurlyLoop, TbTruck, TbVector, TbRoad,
 } from 'react-icons/tb'
 import dayjs from 'dayjs'
-import { SOLUTION_BADGE_MAP, TEXT_CAMERA_STATUS } from '@/constants'
+import { DEVICE_BADGE, SOLUTION_BADGE_MAP, TEXT_CAMERA_STATUS } from '@/constants'
 
 interface Props {
 
@@ -69,10 +69,13 @@ const Content = (props: ContentProps) => {
   // solution name, so the display is unchanged there.
   const cameraName = data?.camera_name ?? solutionName
 
-  const solutionBadges = SOLUTION_BADGE_MAP.filter(s => data?.[s.key as keyof typeof data])
-  const deviceTypeBadges = solutionBadges.length > 0
-    ? solutionBadges
-    : [{ label: 'CCTV', color: '#F97316' }]
+  // CCTV is the base type — every device here is a camera, so it always leads
+  // the list; any extra solution types the camera participates in follow.
+  // Mirrors `extractCameraFunctions` (cctv first) so modal + table/grid agree.
+  const deviceTypeBadges = [
+    { ...DEVICE_BADGE.cctv },
+    ...SOLUTION_BADGE_MAP.filter(s => data?.[s.key as keyof typeof data]),
+  ]
 
   const renderStatusBadge = useMemo(() => {
     return (

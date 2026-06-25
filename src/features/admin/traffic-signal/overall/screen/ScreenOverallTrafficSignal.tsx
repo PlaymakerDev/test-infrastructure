@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { ProjectInfoModal } from '@/components/modal'
+import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import { TitleSection, OverallSection } from '../components'
 
 const ScreenOverallTrafficSignal = () => {
@@ -13,6 +13,8 @@ const ScreenOverallTrafficSignal = () => {
       {/* Single global Project Info modal — triggered via Redux from any
         * row's info icon. Rendered once here so we don't mount duplicates. */}
       <ProjectInfoModal />
+      {/* Global Live Stream modal — opened via Redux from any camera preview. */}
+      <CCTVModal />
     </div>
   )
 }

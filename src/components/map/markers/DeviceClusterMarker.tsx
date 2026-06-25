@@ -85,7 +85,7 @@ export function DefaultDevicePopup({ device, color }: { device: Device; color: s
         borderRadius: 10,
       }}
     >
-      <div style={{ fontSize: 10, color, fontWeight: 700, letterSpacing: 0.5 }}>{device.type}</div>
+      <div style={{ fontSize: 10, color, fontWeight: 700, letterSpacing: 0.5 }}>{SYSTEMS[device.type].label}</div>
       <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 3 }}>{device.id}</div>
       <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>{device.road}</div>
       {device.landmark && (

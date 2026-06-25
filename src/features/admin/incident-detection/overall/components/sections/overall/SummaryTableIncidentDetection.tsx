@@ -4,6 +4,7 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 
@@ -113,7 +114,11 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
             </div>
           )
         }
-        return row.item.roadCode
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.roadCode}
+          </DetailLinkText>
+        )
       },
     },
     {
@@ -121,11 +126,26 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       key: 'projectName',
       align: 'center',
       ellipsis: true,
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item), style: { cursor: 'pointer' } },
-      render: (_, row) => (row.kind === 'project' ? row.item.projectName : null),
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.projectName}
+          </DetailLinkText>
+        ) : null,
+    },
+    {
+      title: 'จุดติดตั้ง',
+      key: 'installPoint',
+      width: 260,
+      align: 'center',
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.installPoint}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'เลขที่สัญญา',
@@ -150,20 +170,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
-    },
-    {
-      title: 'จุดติดตั้ง',
-      key: 'installPoint',
-      width: 260,
-      align: 'center',
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item), style: { cursor: 'pointer' } },
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <span className='hover:text-(--yellow) hover:underline'>{row.item.installPoint}</span>
-        ) : null,
     },
     {
       title: 'กล้องทั้งหมด',

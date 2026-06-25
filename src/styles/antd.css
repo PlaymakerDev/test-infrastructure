@@ -86,6 +86,16 @@ body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last
   box-shadow: none !important;
 }
 
+/* ── Detail-link cells (รหัสสายทาง / ชื่อโครงการ / จุดติดตั้ง) — marked with
+ * `.detail-link` by the shared DetailLinkText component. Hovering ANYWHERE on a
+ * row lights up all three link cells together (yellow + underline) so they read
+ * as one clickable group / yellow bar. Only our overall list tables carry
+ * `.detail-link`, so bridge-lighting tables (same wrapper class) are unaffected. */
+body .bridge-projects-table .ant-table-tbody > tr:hover .detail-link {
+  color: #FCD116;
+  text-decoration: underline;
+}
+
 /* ── Vehicle breakdown table — traffic-volume detail page.
  * Composes on top of `.bridge-projects-table`. The card on the right of the
  * pie chart needs the 9-row table to fill its container so it visually

@@ -122,6 +122,7 @@ const settingByRoadItemSchema = z.object({
 const vmsSettingByRoadSchema = z.object({
   department_short_name: z.string(),
   road_code: z.string(),
+  region_name: z.string(),
   settings: z.array(settingByRoadItemSchema),
 })
 
