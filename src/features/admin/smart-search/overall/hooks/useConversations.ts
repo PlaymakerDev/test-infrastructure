@@ -99,18 +99,14 @@ export function useConversations() {
     detailCache.current.delete(id)
   }, [])
 
-  // Best-effort content match for the sidebar search: title always; plus any
-  // already-cached conversation detail (questions/answers) so opened chats are
-  // searchable by content too. (Full content search needs a backend endpoint.)
-  const contentMatches = useCallback((id: string, query: string): boolean => {
-    const detail = detailCache.current.get(id)
-    if (!detail) return false
-    return detail.messages.some(
-      (m) =>
-        m.question.toLowerCase().includes(query) ||
-        m.answer.toLowerCase().includes(query),
-    )
-  }, [])
+  // Server-side content search (§2) — searches title + every turn's
+  // question/answer in the DB, scoped to the user. Returns matches with a
+  // `snippet`. Replaces the old cached-only client match.
+  const search = useCallback(
+    (query: string): Promise<ConversationSummary[]> =>
+      fetchConversations(query).catch(() => []),
+    [],
+  )
 
   const removePin = useCallback((id: string) => {
     setPinnedIds((prev) => {
@@ -128,7 +124,7 @@ export function useConversations() {
     pinnedIds,
     togglePin,
     removePin,
-    contentMatches,
+    search,
     refresh,
     getDetail,
     prefetch,

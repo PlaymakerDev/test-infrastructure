@@ -102,6 +102,7 @@ export interface ConversationSummary {
   title: string
   updated_at: string // RFC3339
   message_count: number
+  snippet?: string // present on content-search results (§2) — the matched text
 }
 
 // A persisted turn returned by GET /conversations/:id — full fidelity

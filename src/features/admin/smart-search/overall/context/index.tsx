@@ -50,7 +50,7 @@ export interface SmartSearchContextProps {
   // Pin/star conversations (Future #6) — client-only.
   pinnedIds: ReadonlySet<string>
   togglePin: (id: string) => void
-  conversationMatches: (id: string, query: string) => boolean
+  searchConversations: (query: string) => Promise<ConversationSummary[]>
   // Mobile-only: the history drawer's open state (trigger lives in the header,
   // the drawer in the sidebar — shared here).
   historyOpen: boolean
@@ -152,7 +152,7 @@ export const SmartSearchProvider = (props: PageProviderProps) => {
         deleteConversation,
         pinnedIds: conversations.pinnedIds,
         togglePin: conversations.togglePin,
-        conversationMatches: conversations.contentMatches,
+        searchConversations: conversations.search,
         historyOpen,
         setHistoryOpen,
         viewMode,

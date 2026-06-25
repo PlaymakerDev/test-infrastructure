@@ -18,8 +18,14 @@ function unwrap<T>(payload: unknown): T {
   return payload as T
 }
 
-export async function fetchConversations(): Promise<ConversationSummary[]> {
-  const res = await chatHttp.get("/conversations")
+// With `q` → content search (title + every turn's question/answer, server-side,
+// returns a `snippet` per match). Without → the full list (newest first).
+export async function fetchConversations(
+  q?: string,
+): Promise<ConversationSummary[]> {
+  const res = await chatHttp.get("/conversations", {
+    params: q ? { q } : undefined,
+  })
   const data = unwrap<{ conversations: ConversationSummary[] }>(res.data)
   return data.conversations ?? []
 }

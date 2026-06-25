@@ -1,7 +1,7 @@
 "use client"
 import { ConfigProvider, Drawer, Input, Skeleton, Tooltip } from "antd"
 import dayjs from "dayjs"
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import {
   TbLayoutSidebarLeftCollapse,
   TbLayoutSidebarLeftExpand,
@@ -51,29 +51,45 @@ const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
     conversationId,
     newChat,
     pinnedIds,
-    conversationMatches,
+    searchConversations,
   } = useSmartSearchContext()
   const [query, setQuery] = useState("")
+  const [results, setResults] = useState<ConversationSummary[] | null>(null)
+  const [searching, setSearching] = useState(false)
+
+  // Debounced server-side content search (§2). Empty query → show the full list.
+  useEffect(() => {
+    const q = query.trim()
+    const t = setTimeout(() => {
+      if (!q) {
+        setResults(null)
+        setSearching(false)
+        return
+      }
+      setSearching(true)
+      searchConversations(q).then((r) => {
+        setResults(r)
+        setSearching(false)
+      })
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query, searchConversations])
+
+  const searchMode = query.trim().length > 0
 
   const groups = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    // Search matches the title or (for already-opened chats) their content.
-    const filtered = q
-      ? conversations.filter(
-          (c) =>
-            c.title.toLowerCase().includes(q) || conversationMatches(c.id, q),
-        )
-      : conversations
+    const list = searchMode ? (results ?? []) : conversations
     // Pinned chats float to the top in their own group; the rest by recency.
-    const pinned = filtered.filter((c) => pinnedIds.has(c.id))
-    const rest = filtered.filter((c) => !pinnedIds.has(c.id))
-    const result = pinned.length
+    const pinned = list.filter((c) => pinnedIds.has(c.id))
+    const rest = list.filter((c) => !pinnedIds.has(c.id))
+    return pinned.length
       ? [{ label: "ปักหมุด", items: pinned }, ...groupByRecency(rest)]
       : groupByRecency(rest)
-    return result
-  }, [conversations, query, pinnedIds, conversationMatches])
+  }, [conversations, results, searchMode, pinnedIds])
 
-  const isEmpty = !loadingList && groups.length === 0
+  const isEmpty = searchMode
+    ? !searching && (results?.length ?? 0) === 0
+    : !loadingList && groups.length === 0
 
   return (
     <div className={`h-full flex flex-col gap-3 ${className ?? ""}`}>
@@ -124,11 +140,12 @@ const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
-        {loadingList && conversations.length === 0 ? (
+        {(searchMode && searching && !results) ||
+        (!searchMode && loadingList && conversations.length === 0) ? (
           <Skeleton active paragraph={{ rows: 6 }} title={false} />
         ) : isEmpty ? (
           <p className="fs-12 text-white/40">
-            {query ? "ไม่พบประวัติที่ตรงกับคำค้น" : "ยังไม่มีประวัติการค้นหา"}
+            {searchMode ? "ไม่พบประวัติที่ตรงกับคำค้น" : "ยังไม่มีประวัติการค้นหา"}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
@@ -144,6 +161,8 @@ const PanelBody: React.FC<{ className?: string; onNavigate?: () => void }> = ({
                       conversation={c}
                       active={c.id === conversationId}
                       onAfterOpen={onNavigate}
+                      snippet={searchMode ? c.snippet : undefined}
+                      highlight={searchMode ? query : undefined}
                     />
                   ))}
                 </div>

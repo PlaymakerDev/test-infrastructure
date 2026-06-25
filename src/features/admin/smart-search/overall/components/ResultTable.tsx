@@ -20,6 +20,18 @@ interface RowRecord {
   cells: Cell[]
 }
 
+// Status-like string values get a colored pill so status reads at a glance
+// (#12). Conservative: only short values, matched against a known whitelist of
+// status terms — purely FE, derived from the cell value.
+const STATUS_STYLES: { test: RegExp; className: string }[] = [
+  { test: /(ออฟไลน์|offline|ไม่เชื่อมต่อ|หมดค้ำ|ชำรุด|เสีย|ผิดปกติ)/i, className: "bg-red-500/15 text-red-400" },
+  { test: /(ใกล้หมด|รอ|กำลัง|ปานกลาง|warning)/i, className: "bg-orange-500/15 text-orange-400" },
+  { test: /(ออนไลน์|online|ปกติ|อยู่ในค้ำ|เชื่อมต่อ|ใช้งาน)/i, className: "bg-emerald-500/15 text-emerald-400" },
+]
+
+const statusStyle = (text: string): string | null =>
+  STATUS_STYLES.find((s) => s.test.test(text))?.className ?? null
+
 const formatCell = (value: Cell): React.ReactNode => {
   if (value === null || value === undefined) {
     return <span className="text-white/30">—</span>
@@ -38,6 +50,15 @@ const formatCell = (value: Cell): React.ReactNode => {
         timeStyle: "short",
       })
     }
+  }
+  // Short status values → colored pill (offline=red, warning=orange, ok=green).
+  const status = value.length <= 20 ? statusStyle(value) : null
+  if (status) {
+    return (
+      <span className={`inline-block px-2 py-0.5 rounded-full fs-12 ${status}`}>
+        {value}
+      </span>
+    )
   }
   return value
 }

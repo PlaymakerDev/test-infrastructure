@@ -10,9 +10,42 @@ interface Props {
   active: boolean
   // Called after the conversation is opened — lets the mobile drawer close.
   onAfterOpen?: () => void
+  // Matched text from a content search (§2) — shown under the title.
+  snippet?: string
+  // The search term to emphasize inside the snippet.
+  highlight?: string
 }
 
-const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }) => {
+// Wrap occurrences of `term` (case-insensitive) in an accent span.
+const emphasize = (text: string, term?: string): React.ReactNode => {
+  const t = term?.trim().toLowerCase()
+  if (!t) return text
+  const lower = text.toLowerCase()
+  const out: React.ReactNode[] = []
+  let i = 0
+  let idx = lower.indexOf(t)
+  let key = 0
+  while (idx !== -1) {
+    if (idx > i) out.push(text.slice(i, idx))
+    out.push(
+      <span key={key++} className="text-(--yellow) font-medium">
+        {text.slice(idx, idx + t.length)}
+      </span>,
+    )
+    i = idx + t.length
+    idx = lower.indexOf(t, i)
+  }
+  if (i < text.length) out.push(text.slice(i))
+  return out
+}
+
+const ConversationItem: React.FC<Props> = ({
+  conversation,
+  active,
+  onAfterOpen,
+  snippet,
+  highlight,
+}) => {
   const {
     openConversation,
     prefetchConversation,
@@ -109,22 +142,29 @@ const ConversationItem: React.FC<Props> = ({ conversation, active, onAfterOpen }
         if (e.key === "Enter") open()
       }}
       onMouseEnter={() => prefetchConversation(conversation.id)}
-      className={`group flex items-center gap-1 h-8 rounded-md px-[11px] cursor-pointer transition-colors ${active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
+      className={`group flex items-center gap-1 min-h-8 py-1 rounded-md px-[11px] cursor-pointer transition-colors ${active ? "bg-(--yellow)/15 text-(--yellow)" : "text-white/70 hover:bg-white/5"
         }`}
     >
       {pinned && (
         <TbPinFilled className="shrink-0 text-(--yellow)/70" size={12} />
       )}
-      <span
-        className="flex-1 min-w-0 truncate fs-14 select-none"
-        title="ดับเบิลคลิกเพื่อเปลี่ยนชื่อ"
-        onDoubleClick={(e) => {
-          e.stopPropagation()
-          startEditing()
-        }}
-      >
-        {conversation.title}
-      </span>
+      <div className="flex-1 min-w-0">
+        <span
+          className="block truncate fs-14 select-none"
+          title="ดับเบิลคลิกเพื่อเปลี่ยนชื่อ"
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            startEditing()
+          }}
+        >
+          {conversation.title}
+        </span>
+        {snippet && (
+          <span className="block truncate fs-12 text-white/40 mt-0.5">
+            {emphasize(snippet, highlight)}
+          </span>
+        )}
+      </div>
       <Dropdown
         menu={{ items: menuItems, onClick: onMenuClick }}
         trigger={["click"]}
