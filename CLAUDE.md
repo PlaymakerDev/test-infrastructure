@@ -218,7 +218,8 @@ The first backend-integrated feature. Canonical template for all future backend 
 
 **Data fetching**
 - **Query key factory** at `features/admin/control-vms/overall/data/queryKeys.ts` (`controlVmsKeys`) — use this pattern for every new backend-integrated feature.
-- **Co-located hooks** at `features/admin/control-vms/overall/hooks/` — 12 hooks. Reads: `useVMSSettingTypes`, `useVMSDepartments`, `useVMSMediaList` (`useInfiniteQuery`), `useContactDetail`, `useUpcomingSummary`, `useVMSSettingByRoad`, `useVMSSchedule`, `useVMSSettingListInfinite` (`useInfiniteQuery`, drives the จุดติดตั้ง picker; `useVMSSettingList` is the non-infinite variant). Writes: `usePostVMSMedia`, `usePutVMSMedia`, `useDeleteVMSMedia`. Components are purely declarative; all query/mutation logic lives in hooks.
+- **Co-located hooks** at `features/admin/control-vms/overall/hooks/` — 12 hooks. Reads: `useVMSSettingTypes`, `useVMSDepartments`, `useVMSMediaList` (`useInfiniteQuery`), `useContactDetail`, `useUpcomingSummary`, `useVMSSettingByRoad`, `useVMSSchedule`, `useVMSSettingListInfinite` (`useInfiniteQuery`, drives the จุดติดตั้ง picker), `useVMSMediaById` (wraps `getVMSMediaByIDAPI`, enabled-guarded, uses `controlVmsKeys.mediaDetail(id)`). Writes: `usePostVMSMedia`, `usePutVMSMedia`, `useDeleteVMSMedia`. `useVMSSettingList` was deleted (0 consumers — use `useVMSSettingListInfinite`). Components are purely declarative; all query/mutation logic lives in hooks.
+- **Shared invalidation helper** `hooks/invalidateVmsMediaWrites.ts` — invalidates `media()`, `upcomingSummary()`, `settingByRoad()`, `schedule()`, `settingList()` prefix keys in one call. All 3 write hooks use this helper. `useDeleteVMSMedia` additionally calls `removeQueries({ queryKey: mediaDetail(id) })` before invalidation.
 - **No server data in Redux** — the former `control_vms` Redux slice was deleted. Setting types are shared via the TanStack Query cache.
 
 **Writes**
@@ -252,11 +253,19 @@ The first backend-integrated feature. Canonical template for all future backend 
 
 **Ant Design Calendar — `onSelect` fires before `onChange`** (`FormSearchCalendar`): when a date cell is clicked, `onSelect` fires first (before `onChange` commits the new value to React Hook Form). Always call `field.onChange(date)` inside `onSelect` before triggering the submit — do NOT rely on the Calendar's `onChange` prop having already updated the RHF field. Also: `dayjs().month()` is 0-indexed — add `+1` before sending to the backend.
 
-**Media preview URL** — backend `media_url` is a full URL (e.g. `https://api-go.enixma.net/api/upload/...`); the upload API (`postUploadVMSAPI`) returns a relative `path`. When building a preview src, branch on `url.startsWith('http')` — use the URL directly if absolute, else prepend `${NEXT_PUBLIC_HOST_BACKEND}/upload`. Do NOT unconditionally prepend the host.
+**Media preview URL** — `postUploadVMSAPI` returns a full URL in `path`; store it directly as `file_url` and use as `previewSrc` without prepending the host. Backend `media_url` in GET responses is also a full URL. Do NOT prepend `NEXT_PUBLIC_HOST_BACKEND` to either.
+
+**Ant Design `Radio.Group` + React Hook Form** — `field.onChange` for custom Ant Design components must receive the **value**, not the event object. Use `field.onChange(e.target.value)` (or the extracted `next` const), NOT `field.onChange(e)`. Passing the full `RadioChangeEvent` stores the event object as the field value, causing `useWatch` to return an object and `[object Object]` to appear in dependent inputs.
+
+**Switching `display_type`** — on every Radio.Group `onChange`, clear all three: `setValue('text', ''); setValue('file_url', ''); setValue('file', [])`. This clears both the RHF state (`file_url`) and the Upload component's own fileList state (`file`). Without clearing `file`, the Upload preview remains visible in EDIT mode even after switching away.
+
+**`SettingByRoad.setting_id`** — optional field `setting_id?: number` added to the interface. `DisplayTableData` uses it as `rowKey` when present, falling back to `solution_name-since-to` composite. Add `setting_id` if the backend `/vms/settings/by-road` endpoint returns it (avoids duplicate-key React warnings when the same VMS appears in multiple schedule slots).
+
+**`VMSSettingByRoad`** now includes `region_name: string` (confirmed 2026-06-25).
 
 **Unresolved data-contract questions** — verify with backend: does `GET /vms/settings/departments` return `Solution.vms_id`? (mock only has `solution_id`); and what `res_code` value means POST success?
 
-**Pending audit (2026-06-25, plan: `mellow-tumbling-map.md`)** — a 54-agent correctness audit found 17 issues (build currently breaks if `APIResponseVMSMediaById` lacks the rich fields above). Notable open fixes: upload-in-flight submit can POST empty `media_url` (`FormAddDetail`/`FormUpdateSchedule`); `FormUpdateSchedule` Radio.Group `onChange` reads stale `field.value` (use `e.target.value`); `ModalUpdateSchedule` uses a raw `['vms_setting_schedule', id, type]` key outside the factory. See the plan for the full G1–G6 list.
+**Audit complete (2026-06-25)** — the 54-agent correctness audit (17 issues, plan `mellow-tumbling-map.md`) is fully resolved. Build is clean (`npx tsc --noEmit` exits 0, 62 unit tests pass). All G1–G6 items addressed: API contract comments (H1), upload-in-flight guard (M1), badge dedup (M2), Radio.Group stale value (L2), `mediaDetail` key in factory + `useVMSMediaById` hook (L3), `invalidateVmsMediaWrites` helper (L4/L5), rowKey (L6), inner null guards (L7), road_code omit-when-empty (L8), `useRef` debounce per-instance (L9), `isVideoUrl` for preview (L10), optional-chain in VMSDetail (L12), `ModalVMSScreen` null guard (L13), `ModalUpdateSchedule` fallback Empty (L15), dead code removed (L17a–e).
 
 ## Environment Variables
 
