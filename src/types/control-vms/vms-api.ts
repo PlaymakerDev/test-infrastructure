@@ -53,9 +53,6 @@ export interface APIRequestVMSMedia {
   setting_type_id?: number | string
   limit?: number
   page?: number
-  sort?: 'ASC' | 'DESC'
-  field?: string
-  search?: string
 }
 
 export interface APIResponseVMSMedia {
@@ -89,3 +86,18 @@ export interface APIRequestPostVMSMedia {
 }
 
 export type APIResponsePostVMSMedia = APIResponsePost
+
+// PUT
+export interface APIRequestPutVMSMedia {
+  media_url: string
+  message: string
+  setting_type_id: number
+  since: string
+  to: string
+  type_name: string
+}
+
+export type APIResponsePutVMSMedia = APIResponsePost
+
+// DELETE
+export type APIResponseDeleteVMSMedia = APIResponsePost

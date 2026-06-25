@@ -509,8 +509,7 @@ const RepairRecordsSection: React.FC = () => {
                 <span style={{ fontSize: 16, fontWeight: 400, color: '#FCD116' }}>{filter.label}</span>
                 <Select
                   placeholder={filter.placeholder}
-                  style={{ width: filter.width, height: 40 }}
-                  styles={{ selector: { borderRadius: 10, border: '1px solid #FCD116' } }}
+                  style={{ width: filter.width, height: 40, borderRadius: 10, border: '1px solid #FCD116' }}
                   suffixIcon={<TbChevronDown size={16} color='#FCD116' />}
                   options={[{ label: 'ตัวอย่าง', value: 'example' }]}
                 />

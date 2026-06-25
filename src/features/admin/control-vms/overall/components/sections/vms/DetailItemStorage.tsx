@@ -28,7 +28,7 @@ const DetailItemStorage: React.FC = () => {
         <DetailTabContent />
       </section>
       {isAddMode && (
-        <div className='text-center'>
+        <div className='mt-3 text-center'>
           <Button type="primary" size="middle" shape="round" className='w-full! sm:w-auto!' onClick={() => setMediaOpen(true)}>
             <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>

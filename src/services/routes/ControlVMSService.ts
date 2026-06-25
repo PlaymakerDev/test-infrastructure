@@ -1,4 +1,4 @@
-import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingSchedule, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestVMSSettingByRoad, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingList, APIResponseVMSSettingSchedule, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -6,7 +6,10 @@ import {
   APIRequestVMSMedia,
   APIResponseVMSMedia,
   APIRequestPostVMSMedia,
-  APIResponsePostVMSMedia
+  APIResponsePostVMSMedia,
+  APIRequestPutVMSMedia,
+  APIResponsePutVMSMedia,
+  APIResponseDeleteVMSMedia
 } from "@/types/control-vms/vms-api"
 
 // VMS
@@ -64,9 +67,36 @@ export const getVMSSettingScheduleAPI = async (params: APIRequestVMSSettingSched
   })
 }
 
+// `id` accepts schedule.setting_id — backend aliases it for GET/PUT/DELETE /vms/settings/media/{id}
 export const getVMSMediaByIDAPI = async (id: string | number) => {
   return ApiService.fetchData<APIResponseVMSMediaById>({
     url: `/vms/settings/media/${id}`,
     method: 'GET',
+  })
+}
+
+// LIST
+export const getVMSSettingListAPI = async (params: APIRequestVMSSettingList) => {
+  return ApiService.fetchData<APIResponseVMSSettingList, APIRequestVMSSettingList>({
+    url: `/vms/settings/list`,
+    method: 'GET',
+    params: { ...params }
+  })
+}
+
+// `id` accepts schedule.setting_id — same alias as GET above
+export const putVMSMediaAPI = async (id: string | number, data: APIRequestPutVMSMedia) => {
+  return ApiService.fetchData<APIResponsePutVMSMedia, APIRequestPutVMSMedia>({
+    url: `/vms/settings/media/${id}`,
+    method: 'PUT',
+    data: { ...data },
+  })
+}
+
+// `id` accepts schedule.setting_id — same alias as GET above
+export const deleteVMSMediaAPI = async (id: string | number) => {
+  return ApiService.fetchData<APIResponseDeleteVMSMedia>({
+    url: `/vms/settings/media/${id}`,
+    method: 'DELETE',
   })
 }

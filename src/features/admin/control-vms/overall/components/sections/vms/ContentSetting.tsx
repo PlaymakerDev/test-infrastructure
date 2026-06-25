@@ -72,7 +72,7 @@ const ContentSetting: React.FC<Props> = ({ settingTypeId }) => {
   }, [hasNextPage, fetchNextPage])
 
   const allItems = useMemo(
-    () => data?.pages.flatMap(p => p.data.res_data) ?? [],
+    () => data?.pages.flatMap(p => p.data.res_data ?? []) ?? [],
     [data]
   )
 

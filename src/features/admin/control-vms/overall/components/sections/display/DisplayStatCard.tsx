@@ -1,8 +1,7 @@
-import { getVMSSettingUpcomingSummaryAPI } from '@/services/routes/ControlVMSService';
-import { useQuery } from '@tanstack/react-query';
-import { Card, Col, Empty, Row, Skeleton, Tag } from 'antd'
+import { Col, Empty, Row, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
-import { TbCalendarStats, TbCircleCheck, TbCommand, TbFlag, TbGavel, TbTruck, TbUserShield, TbVideo } from "react-icons/tb";
+import { TbCalendarStats, TbCommand } from "react-icons/tb";
+import { useUpcomingSummary } from '../../../hooks/useUpcomingSummary';
 
 interface Props {
 
@@ -11,10 +10,7 @@ interface Props {
 const DisplayStatCard: React.FC<Props> = (props) => {
   const { } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['upcoming_summary'],
-    queryFn: () => getVMSSettingUpcomingSummaryAPI(),
-  })
+  const { data, isLoading, isError } = useUpcomingSummary()
 
   const renderSummary = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />

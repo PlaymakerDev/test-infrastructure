@@ -9,14 +9,17 @@ interface Props {
   onClose: () => void
 }
 
-const Content: React.FC<{ data: BureauSign | null }> = ({ data }) => (
-  <HLSLivePlayer
-    cameraId={String(data?.solution_id)}
-    hlsUrl={data?.desktop_screen}
-    enableViewportPause
-    figureClassName='figure-extra-large min-h-0 overflow-hidden rounded-lg'
-  />
-)
+const Content: React.FC<{ data: BureauSign | null }> = ({ data }) => {
+  if (!data) return null
+  return (
+    <HLSLivePlayer
+      cameraId={String(data.solution_id)}
+      hlsUrl={data.desktop_screen}
+      enableViewportPause
+      figureClassName='figure-extra-large min-h-0 overflow-hidden rounded-lg'
+    />
+  )
+}
 
 const ModalVMSScreen: React.FC<Props> = ({ open, data, onClose }) => (
   <ConfigProvider

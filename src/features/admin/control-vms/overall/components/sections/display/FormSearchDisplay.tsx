@@ -1,5 +1,5 @@
 import { Input } from 'antd'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
 import { useControlVMSContext } from '../../../context'
@@ -12,12 +12,17 @@ interface FormValues {
   search: ""
 }
 
-let timeout: NodeJS.Timeout
-
 const FormSearchDisplay: React.FC<Props> = (props) => {
   const { } = props
   const { setSearchText } = useControlVMSContext()
   const submitRef = useRef<HTMLButtonElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -32,7 +37,7 @@ const FormSearchDisplay: React.FC<Props> = (props) => {
 
   const onSubmit = useCallback((values: FormValues) => {
     setSearchText({
-      road_code: values.search
+      road_code: values.search.trim() || undefined
     })
   }, [setSearchText])
 
@@ -53,8 +58,8 @@ const FormSearchDisplay: React.FC<Props> = (props) => {
                 size='large'
                 onChange={(e) => {
                   field.onChange(e)
-                  if (timeout) clearTimeout(timeout)
-                  timeout = setTimeout(() => {
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                  timeoutRef.current = setTimeout(() => {
                     submitRef.current?.click()
                   }, 700)
                 }}

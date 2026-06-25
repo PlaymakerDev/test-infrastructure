@@ -1,4 +1,4 @@
-import { VMSSettingType } from "./vms-api"
+import { MetaData, SharedProject } from "../shared"
 
 // UPCOMING SUMMARY
 export interface APIResponseVMSUpcomingSummary {
@@ -26,12 +26,14 @@ export interface APIRequestVMSSettingByRoad {
 export type APIResponseVMSSettingByRoad = VMSSettingByRoad[]
 
 export interface VMSSettingByRoad {
-  department_short_name: string
   road_code: string
+  department_short_name: string
+  region_name: string
   settings: SettingByRoad[]
 }
 
 export interface SettingByRoad {
+  setting_id?: number
   display_hour: string
   is_online: boolean
   setting_type_name: string
@@ -50,12 +52,14 @@ export interface APIRequestVMSSettingSchedule {
 export type APIResponseVMSSettingSchedule = VMSSettingSchedule[]
 
 export interface VMSSettingSchedule {
-  date_count: string
-  is_online: boolean
   setting_id: number
-  since: string
   solution_name: string
+  road_code: string
+  anydesk: string
+  since: string
   to: string
+  is_online: boolean
+  date_count: string
 }
 
 // MEDIA BY ID
@@ -68,17 +72,39 @@ export interface APIResponseVMSMediaById {
   to: string
   message: string
   setting_type_id: number
+  setting_type_name: string
+  solution_name: string
+  department_id: number
+  department_short_name: string
+  stch: number
+  date_count: string
   created_at: string
-  created_by: string
-  setting_type: VMSSettingType
 }
 
-// PUT MEDIA BY ID BODY
-export interface APIPutVMSMediaById {
-  media_url: string
-  message: string
-  setting_type_id: number
-  since: string
-  to: string
-  type_name: string
+// LIST
+export interface APIRequestVMSSettingList {
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: 'ASC' | 'DESC'
+}
+
+export type APIResponseVMSSettingList = {
+  meta_data: MetaData
+  res_data: VMSSettingList[]
+}
+
+export interface VMSSettingList {
+  anydesk: string
+  camera_offline_count: number
+  camera_online_count: number
+  desktop_screen: string
+  geo_point: number[]
+  is_online: boolean
+  last_connected: string
+  project: SharedProject
+  solution_id: number
+  solution_name: string
+  vms_id: number
 }

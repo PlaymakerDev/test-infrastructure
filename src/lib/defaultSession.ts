@@ -12,8 +12,19 @@ export const defaultSession: SessionData = {
   role: "",
 };
 
+const getSessionPassword = (): string => {
+  const secret = process.env.TOKEN_SECRET
+  if (secret) return secret
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[defaultSession] TOKEN_SECRET environment variable must be set in production')
+  }
+  // Development only — set TOKEN_SECRET in .env.local to silence this warning
+  console.warn('[defaultSession] TOKEN_SECRET is not set — using insecure dev fallback. Add TOKEN_SECRET to .env.local')
+  return 'dev-only-insecure-fallback-set-TOKEN_SECRET-in-env-local-32chars'
+}
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.TOKEN_SECRET || 'a7b9c3d2e8f1g4h6i9j2k5l7m0n3p6q8',
+  password: getSessionPassword(),
   cookieName: "DRR_ITS",
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production', // true in production, false in dev

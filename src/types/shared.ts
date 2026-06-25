@@ -80,8 +80,6 @@ export interface APIResponseContactDetail {
   /** Status enum from backend — drives badge color + label. */
   warranty_status: WarrantyStatusString
   company_name: string
-  warranty_status: string
-  warranty_date: number
 }
 
 export interface APIRequestDepartmentByRoad {

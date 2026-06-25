@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { CctvState } from '@/types/cctv'
-import { getCctvListAPI, getCctvStatsAPI, getCctvDeptOverviewAPI, getCctvDeptOverviewListAPI, getCctvDeptOverviewTotalsAPI, getCctvDeptCamerasAPI, getCctvRandomOnlineCamerasAPI } from '@/services/routes/CCTVService'
+import { getCctvDeptOverviewAPI, getCctvDeptOverviewListAPI, getCctvDeptOverviewTotalsAPI, getCctvDeptCamerasAPI, getCctvRandomOnlineCamerasAPI } from '@/services/routes/CCTVService'
 import { CctvDeptOverviewListParams } from '@/types/cctv'
 
 const initialState: CctvState = {
@@ -30,16 +30,6 @@ const initialState: CctvState = {
 }
 
 export const SLICE_NAME = 'cctvSlice'
-
-export const getCctvListData = createAsyncThunk(SLICE_NAME + '/API_GET_CCTV_LIST', async () => {
-  const response = await getCctvListAPI()
-  return response.data
-})
-
-export const getCctvStatsData = createAsyncThunk(SLICE_NAME + '/API_GET_CCTV_STATS', async () => {
-  const response = await getCctvStatsAPI()
-  return response.data
-})
 
 export const getCctvDeptOverviewData = createAsyncThunk(SLICE_NAME + '/API_GET_CCTV_DEPT_OVERVIEW', async (deptId: string) => {
   const response = await getCctvDeptOverviewAPI(deptId)
@@ -76,53 +66,12 @@ const cctvSlice = createSlice({
   name: `${SLICE_NAME}/cctv`,
   initialState,
   reducers: {
-    resetList: (state) => {
-      state.list = initialState.list
-    },
-    resetStats: (state) => {
-      state.stats = initialState.stats
-    },
-    resetOverview: (state) => {
-      state.overview = initialState.overview
-    },
-    resetOverviewList: (state) => {
-      state.overviewList = initialState.overviewList
-    },
-    resetTotals: (state) => {
-      state.totals = initialState.totals
-    },
     resetDetailCameras: (state) => {
       state.detailCameras = initialState.detailCameras
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getCctvListData.fulfilled, (state, action) => {
-        state.list = action.payload
-        state.task_schedules.list.loading = false
-        state.task_schedules.list.status = 'SUCCESS'
-      })
-      .addCase(getCctvListData.pending, (state) => {
-        state.task_schedules.list.loading = true
-        state.task_schedules.list.status = 'LOADING'
-      })
-      .addCase(getCctvListData.rejected, (state) => {
-        state.task_schedules.list.loading = false
-        state.task_schedules.list.status = 'FAILED'
-      })
-      .addCase(getCctvStatsData.fulfilled, (state, action) => {
-        state.stats = action.payload
-        state.task_schedules.stats.loading = false
-        state.task_schedules.stats.status = 'SUCCESS'
-      })
-      .addCase(getCctvStatsData.pending, (state) => {
-        state.task_schedules.stats.loading = true
-        state.task_schedules.stats.status = 'LOADING'
-      })
-      .addCase(getCctvStatsData.rejected, (state) => {
-        state.task_schedules.stats.loading = false
-        state.task_schedules.stats.status = 'FAILED'
-      })
       .addCase(getCctvDeptOverviewData.fulfilled, (state, action) => {
         state.overview = action.payload
         state.task_schedules.overview.loading = false
@@ -191,6 +140,6 @@ const cctvSlice = createSlice({
   },
 })
 
-export const { resetList, resetStats, resetOverview, resetOverviewList, resetTotals, resetDetailCameras } = cctvSlice.actions
+export const { resetDetailCameras } = cctvSlice.actions
 
 export default cctvSlice.reducer

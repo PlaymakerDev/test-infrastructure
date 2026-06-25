@@ -24,9 +24,12 @@ export const getDepartmentByRoadAPI = async (params: APIRequestDepartmentByRoad)
   })
 }
 
-export const postUploadVMSAPI = async (form: FormData) =>
+export const postUploadVMSAPI = async (form: FormData, full_url?: boolean) =>
   ApiService.fetchData<UploadResponse, FormData>({
     url: '/upload/vms',
     method: 'POST',
     data: form,
+    params: {
+      full_url: full_url
+    }
   })

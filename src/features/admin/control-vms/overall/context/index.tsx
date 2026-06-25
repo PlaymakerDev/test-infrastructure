@@ -1,6 +1,6 @@
 "use client"
 import type { BureauItem, BureauRoute, BureauSign, BureauState } from '@/types/control-vms/bureau'
-import { APIRequestVMSSettingByRoad } from '@/types/control-vms/display-api'
+import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSSettingSchedule } from '@/types/control-vms/display-api'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
@@ -18,10 +18,27 @@ export interface ContextProps {
   setVMSIdList: React.Dispatch<React.SetStateAction<number[]>>
   searchText: APIRequestVMSSettingByRoad | null
   setSearchText: (s: APIRequestVMSSettingByRoad | null) => void
+  searchDate: APIRequestVMSSettingSchedule | null
+  setSearchDate: (s: APIRequestVMSSettingSchedule | null) => void
+  updateScheduleState: UpdateScheduleState
+  setUpdateScheduleState: React.Dispatch<React.SetStateAction<UpdateScheduleState>>
 }
 
 export interface PageProviderProps {
   children: React.ReactNode
+}
+
+export interface UpdateScheduleState {
+  open: boolean
+  id?: string | number | null
+  type: 'CREATE' | 'EDIT' | 'DELETE'
+  vmsOption?: VMSSettingSchedule
+}
+
+export const INIT_UPDATE_SCHEDULE: UpdateScheduleState = {
+  open: false,
+  id: null,
+  type: 'CREATE'
 }
 
 export const ControlVMSContext = createContext<ContextProps | null>(null)
@@ -35,6 +52,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [isAddMode, setAddMode] = useState<boolean>(false)
   const [vmsIdList, setVMSIdList] = useState<number[]>([])
   const [searchText, setSearchText] = useState<APIRequestVMSSettingByRoad | null>(null)
+  const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>(null)
+  const [updateScheduleState, setUpdateScheduleState] = useState<UpdateScheduleState>(INIT_UPDATE_SCHEDULE)
 
   return (
     <ControlVMSContext.Provider
@@ -53,6 +72,10 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         setVMSIdList,
         searchText,
         setSearchText,
+        searchDate,
+        setSearchDate,
+        updateScheduleState,
+        setUpdateScheduleState,
       }}
     >
       {children}

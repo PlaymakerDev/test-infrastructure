@@ -12,7 +12,7 @@ const TOKEN_INVALID_CODE = 40100
 const LOGIN_PATH = "/auth/login"
 
 // ---- Session cache: dedupe concurrent /api/auth/session fetches ----
-type SessionJSON = { access_token?: string | null; refresh_token?: string | null }
+type SessionJSON = { access_token?: string | null }
 
 let sessionPromise: Promise<SessionJSON> | null = null
 let sessionCacheAt = 0
@@ -102,8 +102,7 @@ async function handleTokenExpired(error: AxiosError) {
 
 	isRefreshing = true
 	try {
-		const { refresh_token } = await fetchSessionJSON()
-		await axios.post("/api/auth/refresh", { refresh_token })
+		await axios.post("/api/auth/refresh", {})
 		invalidateSessionCache()
 		isRefreshing = false
 		notifyRefreshed()
