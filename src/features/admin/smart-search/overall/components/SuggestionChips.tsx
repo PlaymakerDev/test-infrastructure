@@ -10,11 +10,13 @@ interface Props {
 const SuggestionChips: React.FC<Props> = ({ questions }) => {
   const { send, isStreaming } = useSmartSearchContext()
 
-  if (!questions.length) return null
+  // The backend can repeat a suggestion — drop duplicates (also keeps keys unique).
+  const unique = Array.from(new Set(questions))
+  if (!unique.length) return null
 
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {questions.map((q) => (
+      {unique.map((q) => (
         <button
           key={q}
           type="button"

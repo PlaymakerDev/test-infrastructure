@@ -125,7 +125,7 @@ const PinnedDashboard: React.FC = () => {
         <TbLayoutDashboard className="text-white/30" size={56} />
         <p className="text-white/70">ยังไม่มีการ์ดที่ปักหมุด</p>
         <p className="fs-14 text-white/45 max-w-md">
-          กดปุ่มปักหมุด (📌) ใต้คำตอบในแชต เพื่อนำผลลัพธ์มาติดตามแบบเรียลไทม์ที่นี่
+          กดปุ่มหัวใจ (♡) ใต้คำตอบในแชต เพื่อนำผลลัพธ์มาติดตามแบบเรียลไทม์ที่นี่
           — การ์ดจะรีเฟรชอัตโนมัติทุก 1 นาที
         </p>
       </div>
@@ -133,7 +133,7 @@ const PinnedDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto px-2 pb-4">
+    <div className="h-full overflow-y-auto pb-4 pr-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         {dashboardPins.map((pin) => (
           <PinnedCard

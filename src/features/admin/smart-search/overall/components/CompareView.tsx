@@ -15,7 +15,10 @@ interface PaneState {
   error?: boolean
 }
 
-const ComparePane: React.FC<{ placeholder: string }> = ({ placeholder }) => {
+const ComparePane: React.FC<{ placeholder: string; className?: string }> = ({
+  placeholder,
+  className,
+}) => {
   const [query, setQuery] = useState("")
   const [state, setState] = useState<PaneState>({ loading: false })
 
@@ -34,7 +37,7 @@ const ComparePane: React.FC<{ placeholder: string }> = ({ placeholder }) => {
   const { loading, result, error } = state
 
   return (
-    <div className="flex flex-col gap-3 min-w-0 h-full">
+    <div className={`flex flex-col gap-3 min-w-0 min-h-0 ${className ?? ""}`}>
       <div className="shrink-0 rounded-xl bg-black border border-white/10 focus-within:border-(--yellow)/50 transition-colors px-3 py-2 flex items-center gap-2">
         <input
           value={query}
@@ -60,7 +63,7 @@ const ComparePane: React.FC<{ placeholder: string }> = ({ placeholder }) => {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         {loading ? (
           <Skeleton active paragraph={{ rows: 4 }} />
         ) : error ? (
@@ -94,9 +97,9 @@ const ComparePane: React.FC<{ placeholder: string }> = ({ placeholder }) => {
 // domain's comparison questions ("เทียบจังหวัด A กับ B").
 const CompareView: React.FC = () => {
   return (
-    <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-4 px-2 pb-2">
-      <ComparePane placeholder="คำถามที่ 1..." />
-      <ComparePane placeholder="คำถามที่ 2..." />
+    <div className="h-full min-h-0 flex flex-col md:flex-row gap-4 pb-2">
+      <ComparePane className="flex-1 min-w-0 min-h-0" placeholder="คำถามที่ 1..." />
+      <ComparePane className="flex-1 min-w-0 min-h-0" placeholder="คำถามที่ 2..." />
     </div>
   )
 }

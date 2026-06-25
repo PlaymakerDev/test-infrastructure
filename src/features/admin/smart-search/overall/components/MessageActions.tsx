@@ -4,8 +4,8 @@ import React, { useState } from "react"
 import {
   TbCopy,
   TbDownload,
-  TbPin,
-  TbPinFilled,
+  TbHeart,
+  TbHeartFilled,
   TbReload,
   TbThumbDown,
   TbThumbDownFilled,
@@ -131,12 +131,12 @@ const MessageActions: React.FC<Props> = ({ turn }) => {
         />
       </Tooltip>
 
-      <Tooltip title={pinned ? "เอาออกจากแดชบอร์ด" : "ปักหมุดขึ้นแดชบอร์ด"}>
+      <Tooltip title={pinned ? "เอาออกจากแดชบอร์ด" : "บันทึกขึ้นแดชบอร์ด"}>
         <Button
           type="text"
           size="small"
           icon={
-            pinned ? <TbPinFilled className="text-(--yellow)" /> : <TbPin />
+            pinned ? <TbHeartFilled className="text-(--yellow)" /> : <TbHeart />
           }
           onClick={handlePin}
         />
