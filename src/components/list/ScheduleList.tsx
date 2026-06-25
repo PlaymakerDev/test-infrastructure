@@ -92,7 +92,7 @@ const ScheduleList: React.FC<ScheduleListProps> = (props) => {
               <p className='fs-12'>จุดติดตั้ง : {item.solution_name || '-'}</p>
               {item.anydesk && (
                 <p className='fs-12 text-gray-400'>
-                  Anydesk : {item.anydesk || '-'} <Badge color='blue' />
+                  Anydesk : {item.anydesk || '-'} <Badge color={item.is_online ? 'blue' : 'red'} />
                 </p>
               )}
             </div>
