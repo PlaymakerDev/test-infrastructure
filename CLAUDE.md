@@ -12,10 +12,11 @@ This is a Next.js 16 ITS (Intelligent Transportation System) dashboard for Thail
 npm run dev          # Start development server
 npm run build        # Production build
 npm run lint         # ESLint
+npm run test         # Run unit tests (vitest, node environment)
 npm run storybook    # Storybook component explorer on port 6006
 ```
 
-There is no `npm test` script. Vitest runs through Storybook only (`npm run storybook` then the addon-vitest panel). There is also no `typecheck` script — run `npx tsc --noEmit` manually to type-check.
+Unit tests live at `src/**/*.test.ts`. Run `npm run test` (vitest `unit` project — Node, no browser). Storybook interaction tests use `npm run storybook` → addon-vitest panel (browser project). There is no `typecheck` script — run `npx tsc --noEmit` manually to type-check.
 
 ## Architecture
 
@@ -89,7 +90,7 @@ Redux Toolkit via `src/stores/`. Always use the typed helpers:
 Do NOT add server-fetched data to Redux slices. When connecting to the real backend, use `RtkQueryService.ts` (after fixing the `await` bug — see Pitfalls) or TanStack Query.
 
 **Context:** Most feature contexts are empty boilerplate (`value={{}}`). Only these have real state:
-- `control-vms/overall` — bureau / sign / route / isAddMode
+- `control-vms/overall` — bureau / sign / route / isAddMode / searchText / searchDate
 - `statistics/overall` — currentTab / activePeriod
 - `statistics/detail/alert|incident|status` — detail view state
 - `tracking/detail/gps` and `tracking/detail/license` — search/compare state
@@ -147,7 +148,12 @@ When creating a component that sounds like it might already exist (TitleSection,
 These are **confirmed issues** from a full architecture review (2026-06-05). Avoid making them worse.
 
 ### Do NOT copy-paste feature section components
-`TitleSection` (22 copies), `OverallSection` (18), `MapSection` (10), `DataDisplaySection` (8), `InfoCardSection` (7) already exist as near-identical copies per feature. When you need one of these, propose a shared component in `src/components/` that accepts props/config instead of adding another copy.
+Shared primitives now exist in `src/components/section/` — use them instead of creating new per-feature copies:
+- **`TitleSection`** (`components/section/TitleSection.tsx`) — accepts `title`, `subtitle`, optional `tabOptions`/`defaultTab`/`onTabChange`, `className`. 8 simple/tab feature copies migrated to thin wrappers; 14 detail-page variants (with back-button + feature-specific device data) remain as-is.
+- **`StatCardRow` + `StatCard`** (`components/section/StatCard.tsx`) — accepts a `cards` array of `{icon, title, count, unit, activeLabel, color}`. Replaces the yellow/teal/gray 3-card layout used by bridge-lighting, crosswalk, incident-detection (3/7 InfoCardSection copies migrated). Remaining 4 have structurally different layouts.
+- **`FeatureSectionLayout`** (`components/section/FeatureSectionLayout.tsx`) — accepts `top`, optional `middle`, optional `bottom` ReactNode props; renders 2 or 3 stacked sections. 13/18 OverallSection copies migrated. Remaining 5 have feature-specific logic (collapsible panels, Redux/context hooks, absolute-positioned overlays, multi-column grids) that cannot be safely abstracted.
+
+`MapSection` (10 copies) and `DataDisplaySection` (8 copies) are too feature-divergent to extract — leave as-is.
 
 ### Unused / duplicate dependencies
 - **`recharts`** — installed but used 0 times. Use ECharts wrappers in `src/components/chart/` instead.
@@ -155,30 +161,64 @@ These are **confirmed issues** from a full architecture review (2026-06-05). Avo
 - **`better-auth`** — installed but not configured as auth layer. Do not `import` from it for new code.
 
 ### Placeholder files (not yet implemented)
-- `src/utils/allowAdmin.ts` — **empty file** (0 bytes). RBAC not implemented.
 - `src/app/page.tsx` — still the create-next-app default template. Redirect is handled in `next.config.ts`.
-- `src/features/manager/` and `src/features/user/` — empty placeholder directories.
 
-### Known bugs (do not use until fixed)
-- **`src/services/RtkQueryService.ts:19`** — `axiosBaseQuery` does `const response = BaseService(request)` without `await` inside `try`, so the `catch` block can never run. Fix: add `await` before using. (Still unfixed, but RTK Query isn't wired to the store anyway — TanStack Query is used for server state.)
+### Known bugs / tech debt
+- **`src/services/RtkQueryService.ts:19`** — `axiosBaseQuery` was missing `await` on `BaseService(request)` (fixed 2026-06-24). RTK Query is still not wired to the store — TanStack Query is used for server state instead.
 
-> **BaseService was hardened (~2026-06-22, committed)** — the former "request hangs forever on `40199`" bug is fixed. `src/services/BaseService.ts` now has a 5s session promise-cache, a single-flight refresh lock, silent auto-refresh on `40199`/bare-401 (`_retry` guard, no confirm modal), and a `40100` guarded error modal with a null-modal→logout fallback. An untracked reference candidate remains at `test/BaseService.ts` — **ignore it** (imports a nonexistent `AuthService`, uninstalled `sweetalert2`, static antd `Modal`, and `/login`; the real bindings are `getGlobalModal()` + `/auth/login`).
+### Accepted Security Risks — documented 2026-06-24
 
-### Logging in production path
-- `src/app/api/auth/[...all]/route.ts:84` — `console.log("===", error)` leaks error details server-side. Remove before production. (The former per-request `BaseService.ts` log was removed in the 2026-06-22 hardening.)
+These risks are **explicitly accepted** for the current deployment context (internal government dashboard, no public internet exposure). Each entry states the risk, current mitigations, and the fix trigger.
 
-### Missing route boundaries
-No `error.tsx`, `loading.tsx`, or `not-found.tsx` exist anywhere in the app. Add these per-route when implementing a feature properly (App Router requires them for good UX and error isolation).
+#### RISK-01 — Client-accessible bearer token (Medium)
 
-### Redux scaffolding
-`getAdminData` thunk (`src/stores/reducers/admin/adminSlice.ts`) is defined but never dispatched anywhere. The `admin` and `auth` slices have no real consumers. Do not build on top of them without first wiring them up.
+**Risk:** `GET /api/auth/session` returns `access_token` as JSON so `BaseService.ts` can inject it as `Authorization: Bearer`. A successful XSS attack could exfiltrate the token and impersonate the user until it expires.
+
+**Current mitigations:**
+- Session cookie is `HttpOnly` + `SameSite=Strict` (iron-session) — XSS cannot steal the session itself
+- `refresh_token` is never exposed to client JS
+- Token auto-rotates on `40199` expiry
+- RBAC enforced at the edge (`proxy.ts`) — stolen token grants no privilege escalation beyond what the user already has
+- `TOKEN_SECRET` is production-safe (throws if not set)
+
+**Fix path:** Move all backend API calls to Next.js route handlers (`app/api/…`). `BaseService.ts` becomes a thin server-side fetch helper that reads the session cookie directly via `getIronSession`, never passing the token to the browser. This is a full architectural refactor (~2–4 sprint weeks).
+
+**Trigger:** Before public internet exposure, or if a Content Security Policy audit surfaces a viable XSS vector.
+
+#### RISK-02 — API key in browser bundle (Low)
+
+**Risk:** `NEXT_PUBLIC_API_KEY` is injected into the client bundle and visible in DevTools. An attacker who knows the key can call the backend directly.
+
+**Current mitigations:** Backend also requires a valid `Authorization: Bearer` token (which requires a session). The API key alone is insufficient for authenticated API calls.
+
+**Fix path:** Same as RISK-01 — proxying all backend calls server-side makes the key server-only. Can also rotate the key on a schedule as a short-term mitigation.
+
+**Trigger:** Before public internet exposure.
+
+> **BaseService was hardened (~2026-06-22, committed)** — `src/services/BaseService.ts` now has a 5s session promise-cache, single-flight refresh lock, silent auto-refresh on `40199`/bare-401, and a `40100` guarded error modal with null-modal→logout fallback.
+
+> **`test/BaseService.ts` is excluded from tsconfig** (2026-06-24) — it imports nonexistent `AuthService` and uninstalled `sweetalert2`. Do not add new test files to `test/`; use Storybook/Vitest instead.
+
+### Route boundaries — added 2026-06-24
+`src/app/admin/error.tsx`, `loading.tsx`, and `not-found.tsx` now exist (Ant Design Result/Spin). Add feature-level boundaries (e.g. `src/app/admin/cctv/error.tsx`) when implementing a feature properly.
+
+### Dead code — cleaned 2026-06-24
+- `src/features/admin/control-vms/detail/` — deleted (UI prototype, no route, no API calls)
+- `src/features/manager/` and `src/features/user/` — empty placeholder dirs deleted
+- `src/stores/reducers/admin/adminSlice.ts` and `authSlice.ts` — deleted (never dispatched; auth slice also stored `refresh_token` in client-side Redux state)
+- `test/BaseService.ts` — excluded from tsconfig (unresolvable imports)
+
+### RBAC and session security — resolved 2026-06-24
+- `src/utils/allowAdmin.ts` — implemented (reads iron-session role)
+- `src/proxy.ts` — gates `/admin/*` routes by `session.role === 'ADMIN'`
+- `src/lib/defaultSession.ts` — `TOKEN_SECRET` now throws in production if not set; dev warns with a safe dev-only fallback (no hardcoded secret in source)
 
 ### control-vms/overall — reference implementation (fully refactored 2026-06-23)
 The first backend-integrated feature. Canonical template for all future backend work. Key patterns:
 
 **Data fetching**
 - **Query key factory** at `features/admin/control-vms/overall/data/queryKeys.ts` (`controlVmsKeys`) — use this pattern for every new backend-integrated feature.
-- **Co-located hooks** at `features/admin/control-vms/overall/hooks/` — 5 hooks: `useVMSSettingTypes`, `usePostVMSMedia`, `useVMSDepartments`, `useVMSMediaList`, `useContactDetail`. Components are purely declarative; all query/mutation logic lives in hooks.
+- **Co-located hooks** at `features/admin/control-vms/overall/hooks/` — 12 hooks. Reads: `useVMSSettingTypes`, `useVMSDepartments`, `useVMSMediaList` (`useInfiniteQuery`), `useContactDetail`, `useUpcomingSummary`, `useVMSSettingByRoad`, `useVMSSchedule`, `useVMSSettingListInfinite` (`useInfiniteQuery`, drives the จุดติดตั้ง picker; `useVMSSettingList` is the non-infinite variant). Writes: `usePostVMSMedia`, `usePutVMSMedia`, `useDeleteVMSMedia`. Components are purely declarative; all query/mutation logic lives in hooks.
 - **No server data in Redux** — the former `control_vms` Redux slice was deleted. Setting types are shared via the TanStack Query cache.
 
 **Writes**
@@ -189,6 +229,7 @@ The first backend-integrated feature. Canonical template for all future backend 
 **State & modals**
 - **Modal state is local** — components own `useState<Data | null>` and pass `open={data !== null}`, `onClose={() => setData(null)}` as props; no modal state in Context.
 - **Context inits to `null`** — bureau/bureauState/bureauRoute/bureauSign start as `null`; VMSSection gates rendering on `bureauSign !== null`.
+- **Context also holds filter state** — `searchText: APIRequestVMSSettingByRoad | null` and `searchDate: APIRequestVMSSettingSchedule | null` consumed by the DISPLAY tab (`DataDisplaySection`, `ScheduleDisplaySection`).
 - **Bureau type aliases** live in `src/types/control-vms/bureau.ts`; re-exported from `components/list/BureauList.tsx` for backward compat.
 
 **Media display**
@@ -201,7 +242,21 @@ The first backend-integrated feature. Canonical template for all future backend 
 **Null safety**
 - Nested array guards: `(arr ?? []).reduce(...)` / `(arr ?? []).filter(...)` for any backend-sourced tree (mirrors how `BureauList` guards its render).
 
+**DISPLAY section — standardized (resolved 2026-06-24):** `DisplayStatCard`, `DataDisplaySection`, and `ScheduleDisplaySection` now use co-located hooks (`useUpcomingSummary`, `useVMSSettingByRoad`, `useVMSSchedule`) backed by `controlVmsKeys` factory keys. `usePostVMSMedia` invalidation was expanded to cover `upcomingSummary()`, `settingByRoad()`, and `schedule()` prefix keys so the DISPLAY tab refreshes after any write. The `settingByRoad()/settingByRoadList(roadCode)` and `schedule()/scheduleList(month,year)` key pairs mirror the `media()/mediaList(id)` prefix-invalidation pattern.
+
+**Schedule update/delete flow (DISPLAY tab)** — the ScheduleList row's edit/delete icons dispatch `setUpdateScheduleState({ open, id, type: 'EDIT'|'DELETE', vmsOption: item })` where `item` is the full `VMSSettingSchedule`. `ModalUpdateSchedule` reads the media record via `getVMSMediaByIDAPI(id)` and renders `FormUpdateSchedule` (CREATE/EDIT) or `ContentDeleteSchedule` (DELETE), passing `vmsOption` so the form can pre-seed the disabled จุดติดตั้ง Select label without waiting for the paginated list to load that page.
+
+**`setting_id` IS accepted as the media `{id}`** (confirmed with backend 2026-06-25) — schedule rows expose `setting_id` (no separate media id); the backend aliases it so `GET/PUT/DELETE /vms/settings/media/{id}` work when called with `schedule.setting_id`. Do NOT "fix" this as an id-space mismatch. `GET /vms/settings/media/{id}` returns a rich detail shape (`solution_name`, `setting_type_name`, `department_short_name`, `date_count`, `since`, `to`, `media_url`, `message`, `setting_type`, …) — keep `APIResponseVMSMediaById` in sync with what the endpoint actually returns.
+
+**Ant Design 6 `Select` — `filterOption` / `onSearch` are deprecated as flat props** — use the `showSearch` config object instead: `showSearch={{ filterOption: false, onSearch: handler }}` (type `SearchConfig`). For server-side search, pair with `onPopupScroll` for infinite scroll and a debounced `onSearch` (400ms via `useRef` timer, no external lib).
+
+**Ant Design Calendar — `onSelect` fires before `onChange`** (`FormSearchCalendar`): when a date cell is clicked, `onSelect` fires first (before `onChange` commits the new value to React Hook Form). Always call `field.onChange(date)` inside `onSelect` before triggering the submit — do NOT rely on the Calendar's `onChange` prop having already updated the RHF field. Also: `dayjs().month()` is 0-indexed — add `+1` before sending to the backend.
+
+**Media preview URL** — backend `media_url` is a full URL (e.g. `https://api-go.enixma.net/api/upload/...`); the upload API (`postUploadVMSAPI`) returns a relative `path`. When building a preview src, branch on `url.startsWith('http')` — use the URL directly if absolute, else prepend `${NEXT_PUBLIC_HOST_BACKEND}/upload`. Do NOT unconditionally prepend the host.
+
 **Unresolved data-contract questions** — verify with backend: does `GET /vms/settings/departments` return `Solution.vms_id`? (mock only has `solution_id`); and what `res_code` value means POST success?
+
+**Pending audit (2026-06-25, plan: `mellow-tumbling-map.md`)** — a 54-agent correctness audit found 17 issues (build currently breaks if `APIResponseVMSMediaById` lacks the rich fields above). Notable open fixes: upload-in-flight submit can POST empty `media_url` (`FormAddDetail`/`FormUpdateSchedule`); `FormUpdateSchedule` Radio.Group `onChange` reads stale `field.value` (use `e.target.value`); `ModalUpdateSchedule` uses a raw `['vms_setting_schedule', id, type]` key outside the factory. See the plan for the full G1–G6 list.
 
 ## Environment Variables
 
