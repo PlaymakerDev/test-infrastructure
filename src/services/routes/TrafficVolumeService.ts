@@ -27,6 +27,7 @@ import type {
   APIRequestTrafficVolumeReportSummary,
   APIResponseTrafficVolumeReportSummary,
 } from '@/types/traffic-volume/detail-api'
+import type { APIResponseTrafficVolumeLicense } from '@/types/traffic-volume/license-api'
 
 const countingDeptBase = (deptId: string | number) =>
   `/counting/departments/${deptId}`
@@ -74,6 +75,14 @@ export const getTrafficVolumeRandomCamerasAPI = (
 export const getTrafficVolumeTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseTrafficVolumeTotals>({
     url: `${countingDeptBase(deptId)}/overview/totals`,
+    method: 'GET',
+  })
+
+// Camera license keys for ONE solution. `{id}` = solution_id. Not dept-scoped.
+// Same shape as the analytic license endpoint — powers the License modal.
+export const getTrafficVolumeLicenseAPI = (solutionId: string | number) =>
+  ApiService.fetchData<APIResponseTrafficVolumeLicense>({
+    url: `/counting/license/${solutionId}`,
     method: 'GET',
   })
 

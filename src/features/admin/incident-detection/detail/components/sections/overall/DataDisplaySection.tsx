@@ -64,8 +64,9 @@ const TOTAL_COLS = 7
 const toCameraRow = (item: IncidentCameraListItem): CameraRow => {
   const online = item.camera.status?.is_online ?? false
   const events = item.events?.reduce((sum, e) => sum + (e.events_count ?? 0), 0) ?? 0
-  const functions: string[] = ['Analytic']
-  if (item.camera.hls_url) functions.unshift('CCTV')
+  // DEVICE_BADGE keys — resolved to label + color by CameraFunctionTag.
+  const functions: string[] = ['analytic']
+  if (item.camera.hls_url) functions.unshift('cctv')
   return {
     id: item.camera.id,
     name: item.camera.camera_name,

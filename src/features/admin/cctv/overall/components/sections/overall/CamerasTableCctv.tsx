@@ -4,6 +4,7 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 
 /** Count cell — the filled box appears only for single-state rows (all online
@@ -120,7 +121,11 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
             </div>
           )
         }
-        return row.item.road.code_name
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.road.code_name}
+          </DetailLinkText>
+        )
       },
     },
     {
@@ -128,22 +133,26 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
       key: 'projectName',
       align: 'center',
       ellipsis: true,
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item.solution.id), style: { cursor: 'pointer' } },
-      render: (_, row) => (row.kind === 'project' ? row.item.project.project_name : null),
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.project.project_name}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
       width: 280,
       align: 'center',
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: 0 }
-          : { onClick: () => goToDetail(row.item.solution.id), style: { cursor: 'pointer' } },
-      render: (_, row) => (row.kind === 'project' ? row.item.solution.solution_name : null),
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.solution.solution_name}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'เลขที่สัญญา',

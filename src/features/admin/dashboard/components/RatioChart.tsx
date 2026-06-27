@@ -24,8 +24,8 @@ const STATIC_DONUTS = {
   cctv: { color: '#ef4444', label: 'CCTV' },
   lighting: { color: '#f97316', label: 'Lighting' },
   vms: { color: '#a3e635', label: 'VMS' },
-  wim: { color: '#22c55e', label: 'WIM' },
-  crosswalk: { color: '#14b8a6', label: 'CrossWalk' },
+  wim: { color: '#22c55e', label: 'Tracking' },
+  crosswalk: { color: '#14b8a6', label: 'Crosswalk' },
   bridge: { color: '#3b82f6', label: 'Bridge Lighting' },
   tunnel: { color: '#a855f7', label: 'Tunnel' },
 } as const

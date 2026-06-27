@@ -180,7 +180,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
                   e.stopPropagation()
                   showPopup(d)
                 }}
-                title={`${d.type} · ${d.id}`}
+                title={`${SYSTEMS[d.type].label} · ${d.id}`}
                 style={{
                   position: 'absolute',
                   left: '50%',

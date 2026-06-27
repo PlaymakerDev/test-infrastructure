@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
@@ -9,6 +9,8 @@ import {
   TbWifiOff,
 } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
+import LicenseModal, { type LicenseModalSolution } from '@/features/admin/traffic-volume/components/LicenseModal'
 import { useDeptId } from '@/hooks/useDeptId'
 import {
   groupByBureau,
@@ -41,6 +43,20 @@ type Row = BureauGroupedRow<TrafficVolumeProject>
 const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
   const deptId = useDeptId()
+  const [licenseSolution, setLicenseSolution] = useState<LicenseModalSolution | null>(null)
+  // Pass project_id + road_id (+ dept_id) so the detail page can open the
+  // central Project Info modal without re-fetching.
+  const goToDetail = useCallback((project: TrafficVolumeProject) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (project.projectId) params.set('project_id', project.projectId)
+    if (project.roadId) params.set('road_id', project.roadId)
+    router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
+  }, [router, deptId])
+  // Open the License modal — fetches the solution's camera license keys on
+  // demand from /counting/license/{solution_id} (mirrors incident-detection).
+  const openLicense = useCallback((project: TrafficVolumeProject) => {
+    setLicenseSolution({ id: project.id, name: project.installPoint, roadId: project.roadId ?? '' })
+  }, [])
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
   const TOTAL_COLS = 10
@@ -74,7 +90,11 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
               </div>
             )
           }
-          return row.project.roadCode
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.roadCode}
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -83,7 +103,25 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? (row.project.projectName ?? '-') : null,
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.projectName ?? '-'}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 260,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.kind !== 'project') return null
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.installPoint}
+            </DetailLinkText>
+          )
+        },
       },
       {
         title: 'เลขที่สัญญา',
@@ -111,36 +149,6 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
             <Pill text='ในค้ำ' color='#05F2DB' />
           ) : (
             <Pill text='หมดค้ำ' color='#979797' />
-          )
-        },
-      },
-      {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 260,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span
-              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() => {
-                // Pass project_id + road_id (+ dept_id) so the detail page can
-                // open the central Project Info modal without re-fetching.
-                const params = new URLSearchParams({ dept_id: deptId })
-                if (row.project.projectId)
-                  params.set('project_id', row.project.projectId)
-                if (row.project.roadId)
-                  params.set('road_id', row.project.roadId)
-                router.push(
-                  `/admin/traffic-volume/detail/${row.project.id}?${params}`
-                )
-              }}
-              role='link'
-              tabIndex={0}
-            >
-              {row.project.installPoint}
-            </span>
           )
         },
       },
@@ -184,12 +192,18 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
           if (row.kind !== 'project') return null
           const active = row.project.warranty === 'in-warranty'
           return (
-            <TbShieldCheckFilled
-              size={20}
-              className='inline-block'
-              style={{ color: active ? '#FCD116' : '#979797' }}
-              title={active ? 'License Active' : 'License Inactive'}
-            />
+            <button
+              type='button'
+              onClick={() => openLicense(row.project)}
+              className='cursor-pointer hover:opacity-80'
+              title='ดูข้อมูล License'
+            >
+              <TbShieldCheckFilled
+                size={20}
+                className='inline-block'
+                style={{ color: active ? '#FCD116' : '#979797' }}
+              />
+            </button>
           )
         },
       },
@@ -222,20 +236,27 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
-  }, [router, deptId])
+  }, [goToDetail, openLicense])
 
   return (
-    <Table<Row>
-      rowKey='id'
-      columns={columns}
-      dataSource={data}
-      pagination={false}
-      size='middle'
-      loading={loading}
-      scroll={{ x: 1500 }}
-      className='bridge-projects-table'
-      rowClassName={(row) => (row.kind === 'project' ? 'project-row' : '')}
-    />
+    <>
+      <Table<Row>
+        rowKey='id'
+        columns={columns}
+        dataSource={data}
+        pagination={false}
+        size='middle'
+        loading={loading}
+        scroll={{ x: 1500 }}
+        className='bridge-projects-table'
+        rowClassName={(row) => (row.kind === 'project' ? 'project-row' : '')}
+      />
+      <LicenseModal
+        open={!!licenseSolution}
+        solution={licenseSolution}
+        onClose={() => setLicenseSolution(null)}
+      />
+    </>
   )
 }
 

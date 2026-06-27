@@ -17,6 +17,10 @@ import type {
 export const trafficVolumeKeys = {
   all: ['traffic-volume'] as const,
 
+  // License is keyed by solution_id only (endpoint is not department-scoped).
+  license: (solutionId: string | number) =>
+    [...trafficVolumeKeys.all, 'license', solutionId] as const,
+
   overview: {
     root: (deptId: string | number) =>
       [...trafficVolumeKeys.all, 'overview', deptId] as const,

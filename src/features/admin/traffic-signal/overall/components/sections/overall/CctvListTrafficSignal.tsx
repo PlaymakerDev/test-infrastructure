@@ -1,6 +1,8 @@
 "use client"
 import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTrafficRandomCameras } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 
@@ -11,6 +13,8 @@ interface Props { }
  *  (the response carries ip_address / phases_no / camera_type). */
 const CctvListTrafficSignal: React.FC<Props> = () => {
   const deptId = useDeptId()
+  const dispatch = useAppDispatch()
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
   const { data, isLoading } = useTrafficRandomCameras(deptId, 3)
   // BE `random-online` may backfill with offline cameras when there aren't
   // enough online ones — keep the preview true to its name.
@@ -53,12 +57,16 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
         return (
           <div
             key={cam.id}
-            className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+            className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col cursor-pointer'
+            onClick={() => openCamera(cam.id)}
+            role='button'
+            tabIndex={0}
           >
             <HLSLivePlayer
               figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
               hlsUrl={cam.hls_url}
               cameraId={cam.id}
+              style={{ pointerEvents: 'none' }}
             />
             <h4 className='camera-code'>{cam.name}</h4>
             <p className='camera-location'>IP Address : {ipAddress}</p>

@@ -25,6 +25,7 @@ import {
 import { useIncidentCameraList } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
+import { DEVICE_BADGE } from '@/constants'
 
 interface Props {
   open: boolean
@@ -199,7 +200,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
               {event ? fmtThaiDateTime(event.date_time) : '-'}
             </InfoCell>
             <InfoCell icon={<TbHierarchy3 />} label='การทำงาน'>
-              <Pill color='#ffffff'>Incident</Pill>
+              <Pill color={DEVICE_BADGE.analytic.color}>{DEVICE_BADGE.analytic.label}</Pill>
             </InfoCell>
             <InfoCell icon={<TbId />} label='IP Address'>
               {event?.camera.ip_address || '-'}

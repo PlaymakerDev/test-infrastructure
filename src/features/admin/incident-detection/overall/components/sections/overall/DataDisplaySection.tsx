@@ -1,9 +1,10 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchIncidentDetection from './FormSearchIncidentDetection'
-import SummaryTableIncidentDetection from './SummaryTableIncidentDetection'
 import TableIncidentDetectionData from './TableIncidentDetectionData'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import { useIncidentCentralList, useIncidentCentralTotals } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
@@ -18,9 +19,17 @@ const ID_FILTERS: FilterConfig[] = [
 
 const DataDisplaySection: React.FC = () => {
   const deptId = useDeptId()
+  const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+
+  const goToDetail = useCallback((r: IncidentRow) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (r.projectId) params.set('project_id', r.projectId)
+    if (r.roadId) params.set('road_id', r.roadId)
+    router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
+  }, [router, deptId])
 
   const { data: central, isLoading } = useIncidentCentralList(deptId)
   const { data: totals } = useIncidentCentralTotals(deptId)
@@ -93,6 +102,27 @@ const DataDisplaySection: React.FC = () => {
     })
   }, [allRows, activeFilter, search])
 
+  const cardItems = useMemo<ProjectCardItem[]>(
+    () =>
+      filtered.map((r) => ({
+        key: r.id,
+        roadId: Number(r.roadId),
+        projectId: r.projectId,
+        roadCode: r.roadCode,
+        projectName: r.projectName,
+        installPoint: r.installPoint,
+        contractNo: r.contractNo,
+        budgetYear: r.budgetYear,
+        isWarranty: r.warranty === 'in-warranty',
+        bureau: r.bureau,
+        total: r.totalCameras,
+        online: r.onlineCameras,
+        offline: r.offlineCameras,
+        onDetail: () => goToDetail(r),
+      })),
+    [filtered, goToDetail]
+  )
+
   return (
     <div>
       <section>
@@ -109,9 +139,9 @@ const DataDisplaySection: React.FC = () => {
       </section>
       <section className='mt-5'>
         {displayType === 'TABLE' ? (
-          <SummaryTableIncidentDetection rows={filtered} loading={isLoading} />
-        ) : (
           <TableIncidentDetectionData rows={filtered} loading={isLoading} />
+        ) : (
+          <ProjectCardGrid items={cardItems} />
         )}
       </section>
     </div>

@@ -1,9 +1,10 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import {
   groupByBureau,
@@ -59,6 +60,12 @@ type Row = BureauGroupedRow<TrafficVolumeProject>
 const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
   const deptId = useDeptId()
+  const goToDetail = useCallback((project: TrafficVolumeProject) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (project.projectId) params.set('project_id', project.projectId)
+    if (project.roadId) params.set('road_id', project.roadId)
+    router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
+  }, [router, deptId])
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
   const TOTAL_COLS = 8
@@ -95,7 +102,11 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
               </div>
             )
           }
-          return row.project.roadCode
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.roadCode}
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -104,7 +115,25 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? row.project.projectName : null,
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.projectName}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 280,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.kind !== 'project') return null
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.installPoint}
+            </DetailLinkText>
+          )
+        },
       },
       {
         title: 'เลขที่สัญญา',
@@ -130,36 +159,6 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
           row.kind === 'project' ? (
             <WarrantyPill warranty={row.project.warranty} />
           ) : null,
-      },
-      {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 280,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span
-              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() => {
-                // Pass project_id + road_id (+ dept_id) so the detail page can
-                // open the central Project Info modal without re-fetching.
-                const params = new URLSearchParams({ dept_id: deptId })
-                if (row.project.projectId)
-                  params.set('project_id', row.project.projectId)
-                if (row.project.roadId)
-                  params.set('road_id', row.project.roadId)
-                router.push(
-                  `/admin/traffic-volume/detail/${row.project.id}?${params}`
-                )
-              }}
-              role='link'
-              tabIndex={0}
-            >
-              {row.project.installPoint}
-            </span>
-          )
-        },
       },
       {
         title: 'อุปกรณ์ทั้งหมด',
@@ -213,7 +212,7 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
-  }, [router, deptId])
+  }, [goToDetail])
 
   return (
     <Table<Row>

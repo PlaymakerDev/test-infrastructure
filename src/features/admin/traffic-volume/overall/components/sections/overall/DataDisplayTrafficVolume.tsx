@@ -1,5 +1,6 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import SearchBar, {
   type FilterConfig,
   type FilterStats,
@@ -7,7 +8,7 @@ import SearchBar, {
 } from '@/components/searchable/SearchBar'
 import FormSearchTrafficVolume from './FormSearchTrafficVolume'
 import TableTrafficVolume from './TableTrafficVolume'
-import SummaryTableTrafficVolume from './SummaryTableTrafficVolume'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import { useTrafficVolumeCentralList } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
@@ -80,9 +81,17 @@ const apiSolutionToProject = (
 
 const DataDisplayTrafficVolume: React.FC<Props> = () => {
   const deptId = useDeptId()
+  const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+
+  const goToDetail = useCallback((p: TrafficVolumeProject) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (p.projectId) params.set('project_id', p.projectId)
+    if (p.roadId) params.set('road_id', p.roadId)
+    router.push(`/admin/traffic-volume/detail/${p.id}?${params}`)
+  }, [router, deptId])
 
   // Backend defaults are page=1, limit=100; pin them here so the URL is stable
   // for cache key + matches the Postman sample we verified against.
@@ -134,6 +143,27 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
     })
   }, [activeFilter, search, projects])
 
+  const cardItems = useMemo<ProjectCardItem[]>(
+    () =>
+      filtered.map((p) => ({
+        key: p.id,
+        roadId: Number(p.roadId),
+        projectId: p.projectId,
+        roadCode: p.roadCode,
+        projectName: p.projectName ?? '-',
+        installPoint: p.installPoint,
+        contractNo: p.contractNo,
+        budgetYear: p.budgetYear,
+        isWarranty: p.warranty === 'in-warranty',
+        bureau: p.bureau,
+        total: p.totalDevices,
+        online: p.onlineDevices,
+        offline: p.offlineDevices,
+        onDetail: () => goToDetail(p),
+      })),
+    [filtered, goToDetail]
+  )
+
   return (
     <div>
       <section>
@@ -152,7 +182,7 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
         {viewMode === 'TABLE' ? (
           <TableTrafficVolume projects={filtered} loading={isLoading} />
         ) : (
-          <SummaryTableTrafficVolume projects={filtered} loading={isLoading} />
+          <ProjectCardGrid items={cardItems} totalLabel='อุปกรณ์ทั้งหมด' />
         )}
       </section>
     </div>

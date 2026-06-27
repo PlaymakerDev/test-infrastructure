@@ -2,6 +2,9 @@
 
 export { trafficVolumeKeys } from './queryKeys'
 
+// License
+export { useTrafficVolumeLicense } from './useTrafficVolumeLicense'
+
 // Overview
 export { useTrafficVolumeOverview } from './useTrafficVolumeOverview'
 export { useTrafficVolumeCentralList } from './useTrafficVolumeCentralList'
