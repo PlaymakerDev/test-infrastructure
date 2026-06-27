@@ -1,14 +1,21 @@
 "use client"
-import FeatureSectionLayout from '@/components/section/FeatureSectionLayout'
 import React from 'react'
 import LocationTrafficSignal from './sections/overall/LocationTrafficSignal'
 import DataDisplayTrafficSignal from './sections/overall/DataDisplayTrafficSignal'
 
-const OverallSection: React.FC = () => (
-  <FeatureSectionLayout
-    top={<LocationTrafficSignal />}
-    bottom={<DataDisplayTrafficSignal />}
-  />
-)
+interface Props {}
 
-export default React.memo(OverallSection)
+const OverallSection: React.FC<Props> = () => {
+  return (
+    <div>
+      <section>
+        <LocationTrafficSignal />
+      </section>
+      <section className='mt-5'>
+        <DataDisplayTrafficSignal />
+      </section>
+    </div>
+  )
+}
+
+export default React.memo<Props>(OverallSection)

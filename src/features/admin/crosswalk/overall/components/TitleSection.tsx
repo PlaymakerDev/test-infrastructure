@@ -1,9 +1,21 @@
 "use client"
-import SharedTitleSection from '@/components/section/TitleSection'
+import SwapButton from '@/components/swap-button/SwapButton'
 import React from 'react'
 
-const TitleSection: React.FC = () => (
-  <SharedTitleSection title="Crosswalk" subtitle="ระบบสัญญาณไฟทางข้ามอัจฉริยะ" />
-)
+interface Props {
+}
 
-export default React.memo(TitleSection)
+const TitleSection: React.FC<Props> = (props) => {
+  const { } = props
+
+  return (
+    <div>
+      <section>
+        <h1 className='text-(--yellow)'>Crosswalk</h1>
+        <p className='text-(--yellow)'>ระบบสัญญาณไฟทางข้ามอัจฉริยะ</p>
+      </section>
+    </div>
+  )
+}
+
+export default React.memo<Props>(TitleSection)

@@ -1,9 +1,15 @@
 "use client"
-import SharedTitleSection from '@/components/section/TitleSection'
 import React from 'react'
 
-const TitleSection: React.FC = () => (
-  <SharedTitleSection title="Bridge Lighting" subtitle="ระบบควบคุมแสงสว่างไฟประดับสะพาน" />
-)
+interface Props { }
 
-export default React.memo(TitleSection)
+const TitleSection: React.FC<Props> = () => {
+  return (
+    <section>
+      <h1 className='text-(--yellow)'>Bridge Lighting</h1>
+      <p className='text-(--yellow)'>ระบบควบคุมแสงสว่างไฟประดับสะพาน</p>
+    </section>
+  )
+}
+
+export default React.memo<Props>(TitleSection)

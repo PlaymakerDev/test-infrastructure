@@ -6,6 +6,13 @@ export { default as OverallSection } from './OverallSection'
 export { default as OverallLocationSection } from './sections/overall/LocationSection'
 export { default as VehicleStatSection } from './sections/overall/VehicleStatSection'
 export { default as ChartSection } from './sections/overall/ChartSection'
+export { default as ChartMobile } from './sections/overall/ChartMobile'
+export { default as ChartWIM } from './sections/overall/ChartWIM'
+export { default as ChartStation } from './sections/overall/ChartStation'
+export { default as ChartPredictWeighing } from './sections/overall/ChartPredictWeighing'
+export { default as ChartPredictAccident } from './sections/overall/ChartPredictAccident'
+export { default as CCTVSection } from './sections/overall/CCTVSection'
+export { default as MapSection } from './sections/overall/MapSection'
 
 // STATION
 export { default as StationSection } from './StationSection'

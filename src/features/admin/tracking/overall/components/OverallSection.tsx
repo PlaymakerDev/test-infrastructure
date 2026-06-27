@@ -1,13 +1,30 @@
-import FeatureSectionLayout from '@/components/section/FeatureSectionLayout'
 import React from 'react'
-import { ChartSection, OverallLocationSection, VehicleStatSection } from '.'
+import {
+  OverallLocationSection,
+  VehicleStatSection,
+  ChartSection
+} from '../components'
 
-const OverallSection: React.FC = () => (
-  <FeatureSectionLayout
-    top={<OverallLocationSection />}
-    middle={<VehicleStatSection />}
-    bottom={<ChartSection />}
-  />
-)
+interface Props {
 
-export default React.memo(OverallSection)
+}
+
+const OverallSection: React.FC<Props> = (props) => {
+  const { } = props
+
+  return (
+    <div>
+      <section>
+        <OverallLocationSection />
+      </section>
+      <section className='mt-5'>
+        <VehicleStatSection />
+      </section>
+      <section className='mt-5'>
+        <ChartSection />
+      </section>
+    </div>
+  )
+}
+
+export default React.memo<Props>(OverallSection)

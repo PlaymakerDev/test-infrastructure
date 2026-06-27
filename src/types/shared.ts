@@ -143,3 +143,12 @@ export interface APIResponsePost {
   res_code: number
   res_data: string
 }
+
+export interface WIMMetaData {
+  has_next_page: boolean
+  has_previous_page: boolean
+  page: number
+  page_count: number
+  page_size: number
+  total: number
+}

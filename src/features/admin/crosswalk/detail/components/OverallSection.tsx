@@ -1,13 +1,26 @@
-import FeatureSectionLayout from '@/components/section/FeatureSectionLayout'
 import React from 'react'
 import { ChartSection, DataDisplaySection, LocationSection } from '../components'
 
-const OverallSection: React.FC = () => (
-  <FeatureSectionLayout
-    top={<LocationSection />}
-    middle={<DataDisplaySection />}
-    bottom={<ChartSection />}
-  />
-)
+interface Props {
 
-export default React.memo(OverallSection)
+}
+
+const OverallSection: React.FC<Props> = (props) => {
+  const { } = props
+
+  return (
+    <div>
+      <section>
+        <LocationSection />
+      </section>
+      <section className='mt-5'>
+        <DataDisplaySection />
+      </section>
+      <section className='mt-5'>
+        <ChartSection />
+      </section>
+    </div>
+  )
+}
+
+export default React.memo<Props>(OverallSection)
