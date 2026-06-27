@@ -22,6 +22,8 @@ export const GET = async (
     if (all.includes('session')) {
       return NextResponse.json({
         access_token: session.access_token ?? null,
+        refresh_at: session.refresh_at ?? 0,
+        expires_at: session.expires_at ?? 0,
       }, { status: 200 })
     }
 
@@ -49,24 +51,29 @@ export const POST = async (
         headers: { ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '' }
       })
       if (response.status === 200) {
+        const now = Date.now()
         session.access_token = response.data.access_token;
         session.refresh_token = response.data.refresh_token;
         session.role = "ADMIN"; // Set role based on your application's logic
+        session.refresh_at = now + 12 * 60 * 1000;          // now + 12 min
+        session.expires_at = now + 30 * 24 * 60 * 60 * 1000; // now + 30 days
         await session.save();
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })
     }
-    // LOGOUT
+    // LOGOUT — always destroy session even if backend rejects the token
     if (all.includes('logout')) {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/logout`, {}, {
-        headers: {
-          ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
-          "Authorization": `Bearer ${session.access_token}`
-        }
-      })
-      if (response.status === 200) {
-        session.destroy()
+      try {
+        await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/logout`, {}, {
+          headers: {
+            ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
+            "Authorization": `Bearer ${session.access_token}`
+          }
+        })
+      } catch {
+        // backend rejected the token (already invalid/expired) — still clear the session
       }
+      await session.destroy()
       return NextResponse.json({ message: 'success' }, { status: 200 })
     }
     // REFRESH — uses server-side session.refresh_token; never reads from client body
@@ -81,8 +88,11 @@ export const POST = async (
         }
       )
       if (response.status === 200) {
+        const now = Date.now()
         session.access_token = response.data.access_token;
         session.refresh_token = response.data.refresh_token;
+        session.refresh_at = now + 12 * 60 * 1000;          // now + 12 min
+        session.expires_at = now + 30 * 24 * 60 * 60 * 1000; // now + 30 days
         await session.save();
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })
