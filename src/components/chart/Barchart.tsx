@@ -71,6 +71,7 @@ export interface BarChartProps {
   iconCircle?: boolean
   /** รูปแบบการแสดงผล bar: solid = สีทึบ, gradient = ไล่สีจากบนลงล่าง (default `'solid'`) */
   barFill?: 'solid' | 'gradient'
+  /** คำอธิบายบรรทัดที่ 3 ใต้ subtitle เช่น "ข้อมูล 7 วันล่าสุด" */
   /** Optional content rendered inside the card, below the chart. Useful for
    *  putting an average/summary footer inside the same border as the chart. */
   footer?: React.ReactNode
