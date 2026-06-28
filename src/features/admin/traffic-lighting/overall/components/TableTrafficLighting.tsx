@@ -5,6 +5,7 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
+import { useOverallContext } from '../context'
 
 interface Props {
   projects: TrafficLightingProject[]
@@ -45,6 +46,8 @@ const CIRCUIT_STATUS_LABELS = {
 
 const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
+  const { deptId } = useOverallContext()
+  const deptQuery = deptId ? `?dept_id=${deptId}` : ''
 
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficLightingProject[]>()
@@ -212,7 +215,12 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
       rowKey='id'
       columns={columns}
       dataSource={data}
-      pagination={false}
+      pagination={{
+        pageSize: 10,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50'],
+        showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
+      }}
       size='middle'
       // Horizontal scroll inside the table on narrow viewports.
       scroll={{ x: 1400 }}
@@ -221,8 +229,21 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
       onRow={(row) =>
         row.kind === 'project'
           ? {
-              onClick: () =>
-                router.push(`/admin/traffic-lighting/detail/${row.project.id}`),
+              onClick: () => {
+                const { id, equipment, roadCode, projectName, installPoint, bureau, coord, warranty, connection } = row.project
+                // Stash row context in sessionStorage (same pattern as
+                // maintenance) so the detail page can render the header.
+                sessionStorage.setItem('lighting_detail_type', equipment.type ?? '')
+                sessionStorage.setItem('lighting_detail_imei', id)
+                sessionStorage.setItem('lighting_detail_row', JSON.stringify({
+                  roadCode, projectName, installPoint, bureau, coord, warranty, connection,
+                }))
+                // Route by equipment type — lamp has its own page, phase shares one.
+                const base = equipment.type === 'lamp'
+                  ? `/admin/traffic-lighting/detail/lamp/${id}`
+                  : `/admin/traffic-lighting/detail/${id}`
+                router.push(`${base}${deptQuery}`)
+              },
               style: { cursor: 'pointer' },
             }
           : {}

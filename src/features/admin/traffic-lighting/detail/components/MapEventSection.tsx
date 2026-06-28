@@ -1,89 +1,122 @@
 "use client"
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbMapPin } from 'react-icons/tb'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { getLightingAlertsAPI } from '@/services/routes/LightingService'
+import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
-import {
-  EVENT_LOGS,
-  EVENT_LOG_SUMMARY,
-  type EventLogLevel,
-  type EventLogLineStatus,
-  type EventLogRecord,
-} from '../data/eventLogs'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 const SUMMARY_STATS = [
-  { label: 'ทั้งหมด', value: EVENT_LOG_SUMMARY.total, color: '#FCD116', variant: 'filled' as const },
-  { label: 'UP', value: EVENT_LOG_SUMMARY.up, color: '#66AEFF', variant: 'outlined' as const },
-  { label: 'DOWN', value: EVENT_LOG_SUMMARY.down, color: '#E94C4C', variant: 'outlined' as const },
+  { label: 'ทั้งหมด', color: '#FCD116', variant: 'filled' as const },
+  { label: 'UP', color: '#66AEFF', variant: 'outlined' as const },
+  { label: 'DOWN', color: '#E94C4C', variant: 'outlined' as const },
 ]
 
-const LevelBadge = ({ label }: { label: EventLogLevel }) => {
-  const color = label === 'Warning' ? '#FF9D00' : '#E94C4C'
+// Detect the alert level from the equipment_id prefix.
+const levelOf = (equipmentId: string): 'Warning' | 'Alert' => {
+  if (/^alert/i.test(equipmentId)) return 'Alert'
+  return 'Warning'
+}
+
+const LevelBadge = ({ equipmentId }: { equipmentId: string }) => {
+  const level = levelOf(equipmentId)
+  const color = level === 'Warning' ? '#FF9D00' : '#E94C4C'
   return (
     <span
       className='inline-block px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
-      {label}
+      {level}
     </span>
   )
 }
 
-const LineStatusBadge = ({ label }: { label: EventLogLineStatus }) => {
-  const color = label === 'UP' ? '#66AEFF' : '#E94C4C'
+const LineStatusBadge = ({ status }: { status: string }) => {
+  const color = status === 'UP' ? '#66AEFF' : '#E94C4C'
   return (
     <span
       className='inline-block px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
-      {label}
+      {status}
     </span>
   )
 }
 
-/** Map (left) + event log table (right) below the example cards row. */
+/** Map (left) + event log table (right) below the charts row. The table is
+ *  fed by /imei/{imei}/alerts. */
 const MapEventSection: React.FC = () => {
-  const { project } = useDetailContext()
+  const { project, imei } = useDetailContext()
+  const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [loaded, setLoaded] = useState(false)
 
-  const columns: ColumnsType<EventLogRecord> = React.useMemo(
+  useEffect(() => {
+    let active = true
+    if (!imei) {
+      setLoaded(true)
+      return
+    }
+    getLightingAlertsAPI(imei, { limit: 100, sort: 'DESC' })
+      .then((res) => { if (active) setAlerts(res.data?.res_data ?? []) })
+      .catch((err) => console.error('alerts failed:', err))
+      .finally(() => { if (active) setLoaded(true) })
+    return () => { active = false }
+  }, [imei])
+
+  const total = alerts.length
+  const upCount = alerts.filter((a) => a.status === 'UP').length
+  const downCount = alerts.filter((a) => a.status === 'DOWN').length
+  const summary = [
+    { ...SUMMARY_STATS[0], value: total },
+    { ...SUMMARY_STATS[1], value: upCount },
+    { ...SUMMARY_STATS[2], value: downCount },
+  ]
+
+  const columns: ColumnsType<AlertItem> = useMemo(
     () => [
       {
         title: 'วันที่และเวลา',
-        dataIndex: 'datetime',
-        key: 'datetime',
+        dataIndex: 'timestamp',
+        key: 'timestamp',
         align: 'center',
         width: 180,
+        render: (t: string) => (
+          <span className='text-white'>
+            {t ? dayjs(t).format('D MMM BBBB HH:mm:ss') : '-'}
+          </span>
+        ),
       },
       {
         title: 'อุปกรณ์',
-        dataIndex: 'device',
-        key: 'device',
+        dataIndex: 'equipment_id',
+        key: 'equipment_id',
         align: 'center',
-        width: 140,
-        render: (_value: string, record: EventLogRecord) => (
-          <LevelBadge label={record.level} />
-        ),
+        width: 200,
+        render: (eid: string) => <LevelBadge equipmentId={eid} />,
       },
       {
         title: 'เหตุการณ์',
-        dataIndex: 'event',
-        key: 'event',
+        dataIndex: 'incident',
+        key: 'incident',
         align: 'center',
-        width: 220,
-        render: (value: string) => (
-          <span style={{ color: '#66AEFF' }}>{value}</span>
-        ),
+        render: (v: string) => <span style={{ color: '#66AEFF' }}>{v}</span>,
       },
       {
         title: 'สถานะ',
-        dataIndex: 'lineStatus',
-        key: 'lineStatus',
+        dataIndex: 'status',
+        key: 'status',
         align: 'center',
         width: 100,
-        render: (value: EventLogLineStatus) => <LineStatusBadge label={value} />,
+        render: (s: string) => <LineStatusBadge status={s} />,
       },
     ],
     [],
@@ -127,7 +160,7 @@ const MapEventSection: React.FC = () => {
         </h3>
 
         <div className='flex flex-row flex-wrap items-center gap-2'>
-          {SUMMARY_STATS.map((stat) => (
+          {summary.map((stat) => (
             <div
               key={stat.label}
               className='box-border flex flex-row items-center justify-between rounded-[10px] px-2 w-[calc(50%-4px)] min-w-[110px] max-w-[130px] sm:w-[130px] h-[46px]'
@@ -153,18 +186,18 @@ const MapEventSection: React.FC = () => {
                     : { background: stat.color, color: '#212121' }),
                 }}
               >
-                {stat.value}
+                {loaded ? stat.value : '-'}
               </span>
             </div>
           ))}
         </div>
 
         <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
-          <Table<EventLogRecord>
-            rowKey='key'
+          <Table<AlertItem>
+            rowKey={(r) => `${r.imei}-${r.timestamp}`}
             columns={columns}
-            dataSource={EVENT_LOGS}
-            pagination={false}
+            dataSource={alerts}
+            pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t} รายการ` }}
             size='middle'
             className='bridge-projects-table event-log-table'
             locale={{ emptyText: 'ไม่พบข้อมูล' }}

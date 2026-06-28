@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Button, Col, ConfigProvider, DatePicker, Row, Segmented, Table } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
@@ -8,20 +8,17 @@ import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TbBolt, TbPrinter } from 'react-icons/tb'
 import BarChart from '@/components/chart/Barchart'
-import useIsMobile from '@/utils/hooks/useIsMobile'
+import type { BarChartDataPoint } from '@/components/chart/Barchart'
+import { getLightingElectricityAPI } from '@/services/routes/LightingService'
+import type { ElectricityAggItem } from '@/types/lighting'
 import {
-  AMP_AVG,
-  AMP_BARS,
-  AMP_CHART_DATA,
   COLOR_AMP_ORANGE,
   COLOR_VOLTAGE_CYAN,
-  VOLTAGE_AMP_TABLE_AVERAGES,
-  VOLTAGE_AMP_TABLE_ROWS,
-  VOLTAGE_AVG,
-  VOLTAGE_BARS,
-  VOLTAGE_CHART_DATA,
+  COLOR_PHASE_GREEN,
+  COLOR_PHASE_YELLOW,
   type VoltageAmpTableRow,
 } from '../data/voltageAmpReport'
+import { useDetailContext } from '../context'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -29,8 +26,14 @@ dayjs.locale('th')
 const { RangePicker } = DatePicker
 
 type ReportPeriod = 'HOURLY' | 'DAILY' | 'MONTHLY' | 'YEARLY'
+const REPORT_TYPE_MAP: Record<ReportPeriod, 'hourly' | 'daily' | 'monthly' | 'yearly'> = {
+  HOURLY: 'hourly',
+  DAILY: 'daily',
+  MONTHLY: 'monthly',
+  YEARLY: 'yearly',
+}
 
-const DEFAULT_DATE_RANGE: [Dayjs, Dayjs] = [dayjs('2026-04-20'), dayjs('2026-04-26')]
+const DEFAULT_DATE_RANGE: [Dayjs, Dayjs] = [dayjs().subtract(7, 'day'), dayjs()]
 
 const REPORT_PERIOD_OPTIONS: { label: string; value: ReportPeriod }[] = [
   { label: 'รายชั่วโมง', value: 'HOURLY' },
@@ -54,7 +57,6 @@ const SHARED_CHART_PROPS = {
   cardBackground: '#00000080',
   cardBorderColor: '#1f2d3d',
   height: 220,
-  yAxisTicks: [0, 65, 130, 195, 260] as number[],
 } as const
 
 const AMP_CHART_PROPS = {
@@ -62,13 +64,25 @@ const AMP_CHART_PROPS = {
   yAxisTicks: [0, 1, 2, 3, 4] as number[],
 }
 
+const VOLTAGE_BARS = [
+  { dataKey: 'p1', color: COLOR_VOLTAGE_CYAN, label: 'Phase 1' },
+  { dataKey: 'p2', color: COLOR_PHASE_GREEN, label: 'Phase 2' },
+  { dataKey: 'p3', color: COLOR_PHASE_YELLOW, label: 'Phase 3' },
+] as const
+
+const AMP_BARS = [
+  { dataKey: 'p1', color: COLOR_VOLTAGE_CYAN, label: 'Phase 1' },
+  { dataKey: 'p2', color: COLOR_PHASE_GREEN, label: 'Phase 2' },
+  { dataKey: 'p3', color: COLOR_AMP_ORANGE, label: 'Phase 3' },
+] as const
+
 const AvgFooter: React.FC<{ value: string; label: string; color: string }> = ({
   value,
   label,
   color,
 }) => (
   <div
-    className='py-2 px-3 rounded-lg text-center'
+    className='py-2 px-3 rounded-lg text-center mt-3'
     style={{ background: '#00000080', border: `1px solid ${color}` }}
   >
     <p className='text-2xl font-bold mb-0' style={{ color }}>
@@ -83,9 +97,97 @@ const cyanCell = (value: string | number) => (
 )
 
 const SummaryReportSection: React.FC = () => {
-  const isMobile = useIsMobile()
+  const { imei } = useDetailContext()
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(DEFAULT_DATE_RANGE)
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('DAILY')
+  const [rows, setRows] = useState<ElectricityAggItem[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    if (!imei) {
+      setLoaded(true)
+      return
+    }
+    const start = dateRange?.[0]?.format('YYYY-MM-DD')
+    const end = dateRange?.[1]?.format('YYYY-MM-DD')
+    getLightingElectricityAPI(imei, {
+      start_date: start,
+      end_date: end,
+      report_type: REPORT_TYPE_MAP[reportPeriod],
+      sort: 'ASC',
+    })
+      .then((res) => { if (active) setRows(res.data?.res_data ?? []) })
+      .catch((err) => console.error('electricity failed:', err))
+      .finally(() => { if (active) setLoaded(true) })
+    return () => { active = false }
+  }, [imei, dateRange, reportPeriod])
+
+  // Derive chart + table data from the API rows. Each row has a `phases[]`
+  // array (phase 1/2/3); we flatten to per-row {p1, p2, p3} for the charts
+  // and average the phases for the table row.
+  const voltageChartData: BarChartDataPoint[] = useMemo(
+    () => rows.map((r) => {
+      const p1 = r.phases.find((p) => p.phase === '1')
+      const p2 = r.phases.find((p) => p.phase === '2')
+      const p3 = r.phases.find((p) => p.phase === '3')
+      return {
+        label: r.label,
+        p1: p1?.voltage ?? 0,
+        p2: p2?.voltage ?? 0,
+        p3: p3?.voltage ?? 0,
+      }
+    }),
+    [rows],
+  )
+  const ampChartData: BarChartDataPoint[] = useMemo(
+    () => rows.map((r) => {
+      const p1 = r.phases.find((p) => p.phase === '1')
+      const p2 = r.phases.find((p) => p.phase === '2')
+      const p3 = r.phases.find((p) => p.phase === '3')
+      return {
+        label: r.label,
+        p1: p1?.amplitude ?? 0,
+        p2: p2?.amplitude ?? 0,
+        p3: p3?.amplitude ?? 0,
+      }
+    }),
+    [rows],
+  )
+
+  const tableRows: VoltageAmpTableRow[] = useMemo(
+    () => rows.map((r, i) => {
+      // Average across phases for the headline numbers.
+      const avg = (sel: (p: typeof r.phases[number]) => number) => {
+        if (!r.phases.length) return 0
+        return r.phases.reduce((s, p) => s + sel(p), 0) / r.phases.length
+      }
+      return {
+        key: `${r.label}-${i}`,
+        date: r.label,
+        voltage: avg((p) => p.voltage),
+        amp: avg((p) => p.amplitude),
+        watt: avg((p) => p.watt),
+        powerFactor: avg((p) => p.power_factor),
+        kwh: 0, // not provided by the aggregated API
+        frequency: avg((p) => p.frequency),
+      }
+    }),
+    [rows],
+  )
+
+  const averages = useMemo(() => {
+    const avg = (sel: (r: VoltageAmpTableRow) => number) =>
+      tableRows.length ? tableRows.reduce((s, r) => s + sel(r), 0) / tableRows.length : 0
+    return {
+      voltage: avg((r) => r.voltage),
+      amp: avg((r) => r.amp),
+      watt: avg((r) => r.watt),
+      powerFactor: avg((r) => r.powerFactor),
+      kwh: avg((r) => r.kwh),
+      frequency: avg((r) => r.frequency),
+    }
+  }, [tableRows])
 
   const columns: ColumnsType<VoltageAmpTableRow> = useMemo(
     () => [
@@ -135,7 +237,7 @@ const SummaryReportSection: React.FC = () => {
         key: 'kwh',
         align: 'center',
         width: 170,
-        render: (value: number) => cyanCell(value.toFixed(2)),
+        render: (value: number) => cyanCell(value === 0 ? '-' : value.toFixed(2)),
       },
       {
         title: 'ความถี่ (Hz)',
@@ -150,7 +252,6 @@ const SummaryReportSection: React.FC = () => {
   )
 
   const tableSummary = () => {
-    const avg = VOLTAGE_AMP_TABLE_AVERAGES
     const white = { color: '#FFFFFF', fontWeight: 600 } as const
     return (
       <Table.Summary.Row style={{ background: '#191919' }}>
@@ -158,22 +259,22 @@ const SummaryReportSection: React.FC = () => {
           <span style={white}>รวมเฉลี่ย</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={1} align='center'>
-          <span style={white}>{avg.voltage.toFixed(2)}</span>
+          <span style={white}>{loaded ? averages.voltage.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={2} align='center'>
-          <span style={white}>{avg.amp.toFixed(2)}</span>
+          <span style={white}>{loaded ? averages.amp.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={3} align='center'>
-          <span style={white}>{avg.watt.toFixed(2)}</span>
+          <span style={white}>{loaded ? averages.watt.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={4} align='center'>
-          <span style={white}>{avg.powerFactor.toFixed(2)}</span>
+          <span style={white}>{loaded ? averages.powerFactor.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={5} align='center'>
-          <span style={white}>{avg.kwh.toFixed(2)}</span>
+          <span style={white}>-</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={6} align='center'>
-          <span style={white}>{avg.frequency.toFixed(2)}</span>
+          <span style={white}>{loaded ? averages.frequency.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
       </Table.Summary.Row>
     )
@@ -192,11 +293,11 @@ const SummaryReportSection: React.FC = () => {
             title='แผนภูมิแสดงค่าการทำงานของตู้ควบคุมไฟ (Volt)'
             icon={<TbBolt size={18} />}
             accentColor={COLOR_VOLTAGE_CYAN}
-            data={VOLTAGE_CHART_DATA}
+            data={voltageChartData}
             bars={[...VOLTAGE_BARS]}
             footer={
               <AvgFooter
-                value={`${VOLTAGE_AVG.toFixed(2)} V`}
+                value={loaded ? `${averages.voltage.toFixed(2)} V` : '-'}
                 label='Avg Voltage'
                 color={COLOR_VOLTAGE_CYAN}
               />
@@ -209,11 +310,11 @@ const SummaryReportSection: React.FC = () => {
             title='แผนภูมิแสดงค่าการทำงานของตู้ควบคุมไฟ (Amp)'
             icon={<TbBolt size={18} />}
             accentColor={COLOR_AMP_ORANGE}
-            data={AMP_CHART_DATA}
+            data={ampChartData}
             bars={[...AMP_BARS]}
             footer={
               <AvgFooter
-                value={`${AMP_AVG.toFixed(2)} A`}
+                value={loaded ? `${averages.amp.toFixed(2)} A` : '-'}
                 label='Avg Current'
                 color={COLOR_AMP_ORANGE}
               />
@@ -318,11 +419,11 @@ const SummaryReportSection: React.FC = () => {
         <Table<VoltageAmpTableRow>
           rowKey='key'
           columns={columns}
-          dataSource={VOLTAGE_AMP_TABLE_ROWS}
+          dataSource={tableRows}
           pagination={false}
           size='middle'
           className='bridge-projects-table event-log-table'
-          locale={{ emptyText: 'ไม่พบข้อมูล' }}
+          locale={{ emptyText: loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...' }}
           summary={tableSummary}
         />
       </div>

@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Button, ConfigProvider, DatePicker, Segmented, Table } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
@@ -7,23 +7,37 @@ import dayjs, { type Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TbPrinter } from 'react-icons/tb'
-import useIsMobile from '@/utils/hooks/useIsMobile'
+import { getLightingLogs4gAPI } from '@/services/routes/LightingService'
+import type { Logs4gRecord } from '@/types/lighting'
+import { useDetailContext } from '../context'
 import Pill from './Pill'
-import {
-  CONTROL_CABINET_LOGS,
-  EVENT_TYPE_COLORS,
-  type CabinetLogEventCategory,
-  type ControlCabinetLogRecord,
-} from '../data/controlCabinetLogs'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
 
-const { RangePicker } = DatePicker
+// Map each backend data_type to a display label + color, matching the
+// original MonitorSection event-type colors.
+const DATA_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  'line-check': { label: 'Line Check', color: '#FCD116' },
+  FMTS: { label: 'FMTS', color: '#E94C4C' },
+  UPS1: { label: 'UPS1', color: '#E94C4C' },
+  UPS2: { label: 'UPS2', color: '#E94C4C' },
+  'volt_amp': { label: 'Volt/Amp', color: '#66AEFF' },
+  circuit: { label: 'Circuit', color: '#05F2DB' },
+}
+
+// eventCategory for the segmented filter — derived from data_type.
+type EventCategory = 'ALL' | 'line-check' | 'volt_amp' | 'circuit' | 'UPS' | 'FMTS'
+const EVENT_TYPE_OPTIONS: { label: string; value: EventCategory }[] = [
+  { label: 'ทั้งหมด', value: 'ALL' },
+  { label: 'Line Check', value: 'line-check' },
+  { label: 'Volt/Amp', value: 'volt_amp' },
+  { label: 'Circuit', value: 'circuit' },
+  { label: 'UPS', value: 'UPS' },
+  { label: 'FMTS', value: 'FMTS' },
+]
 
 type PeriodFilter = 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'THIS_YEAR' | 'ALL'
-type EventTypeFilter = 'ALL' | CabinetLogEventCategory
-
 const PERIOD_OPTIONS: { label: string; value: PeriodFilter }[] = [
   { label: 'วันนี้', value: 'TODAY' },
   { label: 'เมื่อวาน', value: 'YESTERDAY' },
@@ -33,126 +47,129 @@ const PERIOD_OPTIONS: { label: string; value: PeriodFilter }[] = [
   { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const EVENT_TYPE_OPTIONS: { label: string; value: EventTypeFilter }[] = [
-  { label: 'ทั้งหมด', value: 'ALL' },
-  { label: 'Circuit', value: 'CIRCUIT' },
-  { label: 'Line Check', value: 'LINE_CHECK' },
-  { label: 'Volt/Amp', value: 'VOLT_AMP' },
-  { label: 'อื่นๆ', value: 'OTHER' },
-]
-
-const DEFAULT_DATE = dayjs('2026-04-20')
-
-const FILTER_LABEL_CLASS = 'block fs-12 text-(--yellow)'
-const FILTER_BOX_CLASS =
-  'monitor-filter-box box-border flex items-center rounded-[10px] border border-(--yellow) bg-[#1A1A1A] px-1 py-0.5 h-[40px]'
-const SEGMENTED_CLASS_NAMES = {
-  root: 'min-w-max border-0! shadow-none! bg-transparent! p-0!',
-} as const
-const FILTER_SCROLL_CLASS =
-  'overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-
 const STATUS_BADGE_CLASS =
-  'inline-flex items-center justify-center w-[45px] h-[20px] rounded-[88px] border box-border text-[10px] whitespace-nowrap'
+  'inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs whitespace-nowrap border box-border'
 
-const OkPill = ({ label }: { label: string }) => (
-  <span
-    className={`${STATUS_BADGE_CLASS} font-medium`}
-    style={{ borderColor: '#4CE99A', color: '#4CE99A' }}
-  >
-    {label}
-  </span>
-)
-
-const CircuitBadge = ({
-  label,
-  color,
-  variant,
-}: {
-  label: string
-  color: string
-  variant: 'outline' | 'filled'
-}) => (
-  <span
-    className={`${STATUS_BADGE_CLASS} font-semibold`}
-    style={
-      variant === 'filled'
-        ? { background: color, borderColor: color, color: '#212121' }
-        : { borderColor: color, color }
-    }
-  >
-    {label}
-  </span>
-)
-
-const StatusCell = ({ status }: { status: ControlCabinetLogRecord['status'] }) => {
-  switch (status.kind) {
-    case 'ok_pills':
+// Render a status cell per data_type. line-check → ok/fail pills; others →
+// the key values (f/g/h) joined; volt_amp shows Volt/Amp.
+const renderStatus = (r: Logs4gRecord) => {
+  switch (r.data_type) {
+    case 'line-check': {
+      const checks = [r.line_detect1, r.line_detect2, r.line_detect3, r.line_detect4,
+      r.line_detect5, r.line_detect6, r.line_detect7, r.line_detect8]
+      const ok = checks.filter((c) => c === 'ok').length
+      const fail = checks.filter((c) => c === 'fail').length
       return (
         <div className='flex flex-wrap items-center justify-center gap-1'>
-          {status.labels.map((label, i) => (
-            <OkPill key={`${label}-${i}`} label={label} />
-          ))}
+          {ok > 0 && <span className={STATUS_BADGE_CLASS} style={{ borderColor: '#4CE99A', color: '#4CE99A' }}>OK ×{ok}</span>}
+          {fail > 0 && <span className={STATUS_BADGE_CLASS} style={{ borderColor: '#E94C4C', color: '#E94C4C' }}>Fail ×{fail}</span>}
         </div>
       )
-    case 'voltage':
-      return <span className='text-[#FCD116]'>{status.value}</span>
-    case 'circuit_badges':
+    }
+    case 'volt_amp':
       return (
-        <div className='flex flex-wrap items-center justify-center gap-1 max-w-[360px] mx-auto'>
-          {status.badges.map((badge) => (
-            <CircuitBadge
-              key={badge.label}
-              label={badge.label}
-              color={badge.color}
-              variant={badge.variant}
-            />
-          ))}
-        </div>
+        <span style={{ color: '#66AEFF' }}>
+          {r.f}V / {r.g}A
+        </span>
       )
-    case 'empty':
-      return null
+    case 'circuit':
+      return <span style={{ color: '#05F2DB' }}>{r.f} / {r.g}</span>
+    case 'FMTS':
+      return <span style={{ color: '#E94C4C' }}>Err: {r.i}</span>
+    case 'UPS1':
+    case 'UPS2':
+      return <span className='text-white'>{r.f} {r.g}</span>
     default:
-      return null
+      return <span className='text-white/70'>{r.f} {r.g}</span>
   }
 }
 
-const DataCell = ({ data }: { data: ControlCabinetLogRecord['data'] }) => (
-  <span style={{ color: data.color === 'yellow' ? '#FCD116' : '#FFFFFF' }}>{data.value}</span>
-)
-
 const MonitorSection: React.FC = () => {
-  const isMobile = useIsMobile()
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>([
-    DEFAULT_DATE,
-    DEFAULT_DATE,
-  ])
-  const [period, setPeriod] = useState<PeriodFilter>('TODAY')
-  const [eventType, setEventType] = useState<EventTypeFilter>('ALL')
+  const { imei } = useDetailContext()
+  const [records, setRecords] = useState<Logs4gRecord[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [eventType, setEventType] = useState<EventCategory>('ALL')
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
+  const [period, setPeriod] = useState<PeriodFilter>('ALL')
 
-  const filteredLogs = useMemo(() => {
-    if (eventType === 'ALL') return CONTROL_CABINET_LOGS
-    return CONTROL_CABINET_LOGS.filter((row) => row.eventCategory === eventType)
-  }, [eventType])
+  useEffect(() => {
+    let active = true
+    if (!imei) {
+      setLoaded(true)
+      return
+    }
+    getLightingLogs4gAPI(imei)
+      .then((res) => { if (active) setRecords(res.data ?? []) })
+      .catch((err) => console.error('logs4g failed:', err))
+      .finally(() => { if (active) setLoaded(true) })
+    return () => { active = false }
+  }, [imei])
 
-  const columns: ColumnsType<ControlCabinetLogRecord> = useMemo(
+  // Filter by data_type + date range + period (client-side — the API only
+  //  returns today, so older periods simply yield nothing).
+  const filteredRecords = useMemo(() => {
+    let out = records
+    if (eventType !== 'ALL') {
+      out = eventType === 'UPS'
+        ? out.filter((r) => r.data_type === 'UPS1' || r.data_type === 'UPS2')
+        : out.filter((r) => r.data_type === eventType)
+    }
+    // date_time is "DD/MM/YYYY HH:mm:ss" (Buddhist era). Parse to a comparable.
+    const toDayjs = (s: string) => {
+      const m = s?.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+      if (!m) return null
+      const [, dd, mm, yyyy] = m
+      return dayjs(`${yyyy}-${mm}-${dd}`, 'YYYY-MM-DD')
+    }
+    if (dateRange && (dateRange[0] || dateRange[1])) {
+      out = out.filter((r) => {
+        const d = toDayjs(r.date_time)
+        if (!d) return false
+        if (dateRange[0] && d.isBefore(dateRange[0], 'day')) return false
+        if (dateRange[1] && d.isAfter(dateRange[1], 'day')) return false
+        return true
+      })
+    }
+    if (period !== 'ALL') {
+      const now = dayjs()
+      const bounds: [Dayjs, Dayjs] | null =
+        period === 'TODAY' ? [now.startOf('day'), now.endOf('day')]
+        : period === 'YESTERDAY' ? [now.subtract(1, 'day').startOf('day'), now.subtract(1, 'day').endOf('day')]
+        : period === 'LAST_7_DAYS' ? [now.subtract(6, 'day').startOf('day'), now.endOf('day')]
+        : period === 'THIS_MONTH' ? [now.startOf('month'), now.endOf('month')]
+        : period === 'THIS_YEAR' ? [now.startOf('year'), now.endOf('year')]
+        : null
+      if (bounds) {
+        out = out.filter((r) => {
+          const d = toDayjs(r.date_time)
+          if (!d) return false
+          return !d.isBefore(bounds[0], 'day') && !d.isAfter(bounds[1], 'day')
+        })
+      }
+    }
+    return out
+  }, [records, eventType, dateRange, period])
+
+  const columns: ColumnsType<Logs4gRecord> = useMemo(
     () => [
       {
         title: 'วันที่และเวลา',
-        dataIndex: 'datetime',
-        key: 'datetime',
+        dataIndex: 'date_time',
+        key: 'date_time',
         align: 'center',
         width: 180,
+        render: (t: string) => <span className='text-white'>{t}</span>,
       },
       {
         title: 'ประเภท',
-        dataIndex: 'eventType',
-        key: 'eventType',
+        dataIndex: 'data_type',
+        key: 'data_type',
         align: 'center',
-        width: 110,
-        render: (value: string) => (
-          <Pill text={value} color={EVENT_TYPE_COLORS[value] ?? '#979797'} />
-        ),
+        width: 120,
+        render: (dt: string) => {
+          const meta = DATA_TYPE_LABELS[dt] ?? { label: dt, color: '#979797' }
+          return <Pill text={meta.label} color={meta.color} />
+        },
       },
       {
         title: 'Phase',
@@ -160,27 +177,35 @@ const MonitorSection: React.FC = () => {
         key: 'phase',
         align: 'center',
         width: 70,
-        render: (value: string) => <span className='text-white'>{value}</span>,
+        render: (p: number) => <span className='text-white'>{p}</span>,
       },
       {
         title: 'สถานะ',
-        dataIndex: 'status',
         key: 'status',
         align: 'center',
-        width: 300,
-        render: (status: ControlCabinetLogRecord['status']) => <StatusCell status={status} />,
+        width: 280,
+        render: (_: unknown, r: Logs4gRecord) => renderStatus(r),
       },
       {
         title: 'Data 1-2',
-        dataIndex: 'data',
         key: 'data',
         align: 'center',
-        width: 180,
-        render: (data: ControlCabinetLogRecord['data']) => <DataCell data={data} />,
+        width: 160,
+        render: (_: unknown, r: Logs4gRecord) => (
+          <span style={{ color: '#FCD116' }}>{r.h} {r.i}</span>
+        ),
       },
     ],
     [],
   )
+
+  const FILTER_BOX_CLASS =
+    'monitor-filter-box box-border flex items-center rounded-[10px] border border-(--yellow) bg-[#1A1A1A] px-1 py-0.5 h-[40px]'
+  const FILTER_SCROLL_CLASS =
+    'overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+  const SEGMENTED_CLASS_NAMES = {
+    root: 'min-w-max border-0! shadow-none! bg-transparent! p-0!',
+  } as const
 
   return (
     <div className='flex flex-col gap-4 pb-5'>
@@ -201,50 +226,35 @@ const MonitorSection: React.FC = () => {
           color: #ffffff !important;
           font-size: 14px !important;
         }
-        .monitor-filter-date .ant-picker-active-bar {
-          display: none !important;
-        }
-        .monitor-filter-date .ant-picker-suffix {
-          color: #fcd116 !important;
-          margin-inline-start: 4px;
-        }
+        .monitor-filter-date .ant-picker-active-bar { display: none !important; }
+        .monitor-filter-date .ant-picker-suffix { color: #fcd116 !important; margin-inline-start: 4px; }
         .monitor-filter-segmented .ant-segmented {
           border: none !important;
           box-shadow: none !important;
           background: transparent !important;
           padding: 0 !important;
         }
-        .monitor-filter-segmented .ant-segmented-group {
-          gap: 4px;
-        }
-        .monitor-filter-segmented .ant-segmented-item {
-          border-radius: 5px !important;
-        }
-        .monitor-filter-segmented .ant-segmented-item-selected {
-          border-radius: 5px !important;
-        }
-        .monitor-filter-segmented .ant-segmented-thumb {
-          border-radius: 5px !important;
-        }
+        .monitor-filter-segmented .ant-segmented-group { gap: 4px; }
+        .monitor-filter-segmented .ant-segmented-item { border-radius: 5px !important; }
+        .monitor-filter-segmented .ant-segmented-item-selected { border-radius: 5px !important; }
+        .monitor-filter-segmented .ant-segmented-thumb { border-radius: 5px !important; }
         .monitor-filter-segmented .ant-segmented-item-label {
-          min-height: 32px !important;
-          line-height: 32px !important;
-          padding: 0 10px !important;
-          font-size: 14px !important;
+          min-height: 32px !important; line-height: 32px !important;
+          padding: 0 10px !important; font-size: 14px !important;
         }
       `}</style>
 
       <div className={`flex items-end gap-4 flex-nowrap ${FILTER_SCROLL_CLASS}`}>
         <div className='flex flex-col gap-1 shrink-0'>
-          <span className={FILTER_LABEL_CLASS}>วันที่แสดงข้อมูล</span>
+          <span className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</span>
           <div className={`${FILTER_BOX_CLASS} monitor-filter-date w-[268px] shrink-0`}>
             <ConfigProvider locale={thTH}>
-              <RangePicker
+              <DatePicker.RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates)}
                 format='D MMM BBBB'
                 size='middle'
-                allowClear={false}
+                allowClear
                 className='w-full!'
                 placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
               />
@@ -253,7 +263,7 @@ const MonitorSection: React.FC = () => {
         </div>
 
         <div className='flex flex-col gap-1 shrink-0'>
-          <span className={FILTER_LABEL_CLASS}>ช่วงเวลา</span>
+          <span className='block fs-12 text-(--yellow)'>ช่วงเวลา</span>
           <div className={`${FILTER_BOX_CLASS} monitor-filter-segmented`}>
             <Segmented
               value={period}
@@ -267,11 +277,11 @@ const MonitorSection: React.FC = () => {
 
         <div className='flex items-end gap-3 shrink-0'>
           <div className='flex flex-col gap-1'>
-            <span className={FILTER_LABEL_CLASS}>ประเภทเหตุการณ์</span>
+            <span className='block fs-12 text-(--yellow)'>ประเภทเหตุการณ์</span>
             <div className={`${FILTER_BOX_CLASS} monitor-filter-segmented`}>
               <Segmented
                 value={eventType}
-                onChange={(value) => setEventType(value as EventTypeFilter)}
+                onChange={(value) => setEventType(value as EventCategory)}
                 options={EVENT_TYPE_OPTIONS}
                 size='middle'
                 classNames={SEGMENTED_CLASS_NAMES}
@@ -294,14 +304,14 @@ const MonitorSection: React.FC = () => {
       </div>
 
       <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
-        <Table<ControlCabinetLogRecord>
-          rowKey='key'
+        <Table<Logs4gRecord>
+          rowKey={(r) => `${r.date_time}-${r.data_type}-${r.e ?? ''}`}
           columns={columns}
-          dataSource={filteredLogs}
-          pagination={false}
+          dataSource={filteredRecords}
+          pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ` }}
           size='middle'
           className='bridge-projects-table event-log-table'
-          locale={{ emptyText: 'ไม่พบข้อมูล' }}
+          locale={{ emptyText: loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...' }}
         />
       </div>
     </div>
