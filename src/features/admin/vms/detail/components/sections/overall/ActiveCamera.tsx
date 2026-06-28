@@ -35,7 +35,6 @@ const ActiveCamera: React.FC<Props> = (props) => {
               enableViewportPause
               figureClassName='figure-extra-large lg:h-60! lg:min-h-0! lg:max-h-none! w-full mb-2 rounded-lg overflow-hidden cursor-pointer'
               onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.camera_id }))}
-
             />
             <h4 className='text-blue-500 truncate'>{item.camera.camera_name || '-'}</h4>
             <p className='fs-12 text-gray-400'>IP Address : {item.camera.ip_address || '-'}</p>

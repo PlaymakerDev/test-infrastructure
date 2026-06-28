@@ -14,14 +14,37 @@ export interface APIResponseTrafficContractInfo {
   warranty_start_date: string
   warranty_end_date: string
   company_name: string
+  /** 3-state warranty label from BE — e.g. "ในค้ำ" | "หมดค้ำ" | "ก่อนค้ำ".
+   *  Verified live (GET /manage/contract/{id}) 2026-06-23. */
+  warranty_status: string
+  /** Pre-formatted warranty period string for display. */
+  warranty_date: string
 }
 
 // ── 9. GET /manage/solution/details/{id} ──────────────────────────────────────
-// Solution-level metadata. We only need AnyDesk ID for the title bar button.
+// Solution-level metadata — the canonical "what is this solution?" record.
+// Feeds the title bar (anydesk button, solution name) and the detail map
+// (`geometry_point` is the source of truth for coordinates).
 
 export interface APIResponseTrafficSolutionDetail {
-  anydesk: number | null
-  // Other fields present but unused — left untyped intentionally.
+  id: number
+  solution_location_id: number
+  solution_type_id: number
+  /** Station/km marker, e.g. "7+200" */
+  sta: string
+  /** Full display name, e.g. "ชม.3038 กม. 7+200" */
+  solution_name: string
+  ip_address: string
+  zt_ip_address: string
+  /** [lng, lat] — coordinates for the detail-page map marker. */
+  geometry_point: [number, number] | null
+  remarks: string
+  /** Empty string means "no AnyDesk configured" — render no button. */
+  anydesk: number | string | null
+  created_at: string
+  created_by: string
+  updated_at: string
+  updated_by: string | null
 }
 
 // ── 10. GET /traffic/details/{id} ─────────────────────────────────────────────

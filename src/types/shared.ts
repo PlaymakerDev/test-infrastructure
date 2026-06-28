@@ -41,6 +41,7 @@ export interface SharedStatus {
 export interface SharedProject {
   id: number
   name?: string
+  project_name?: string
   budget_year: number
   contract_no: string
 }
@@ -58,6 +59,14 @@ export interface SharedCamera {
 }
 
 // API RESPONSE
+// Backend returns the status as a Thai label that doubles as the badge text.
+export type WarrantyStatusString =
+  | 'ในค้ำ'
+  | 'หมดค้ำ'
+  | 'ก่อนค้ำ'
+  // Fall-through for any future status the backend introduces.
+  | (string & {})
+
 export interface APIResponseContactDetail {
   id: number
   project_name: string
@@ -65,7 +74,43 @@ export interface APIResponseContactDetail {
   department_name: string
   warranty_start_date: string
   warranty_end_date: string
+  /** Remaining days as computed by the backend. 0 when expired or
+   *  before warranty starts. Use this instead of parsing dates on the FE. */
+  warranty_date: number
+  /** Status enum from backend — drives badge color + label. */
+  warranty_status: WarrantyStatusString
   company_name: string
+}
+
+// ── GET /manage/roads ─────────────────────────────────────────────────────────
+// Paginated road list — used by the CCTV search autocomplete (pick a road →
+// fetch its cameras).
+
+export interface Road {
+  id: number
+  road_code: string
+  road_name: string
+  department_id: number
+  distance: number
+  district: string
+  province: string
+  start_sta: string
+  end_sta: string
+  subdistrict: string
+}
+
+export interface APIRequestRoadList {
+  department_id?: number
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: string
+}
+
+export interface APIResponseRoadList {
+  res_data: Road[]
+  meta_data: MetaData
 }
 
 export interface APIRequestDepartmentByRoad {
@@ -86,4 +131,24 @@ export interface APIResponseDepartmentByRoad {
   is_urban: number
   department_type: number
   region_id: number
+}
+
+// UPLOAD
+export interface UploadResponse {
+  path: string;
+}
+
+// API POST RESPONSE
+export interface APIResponsePost {
+  res_code: number
+  res_data: string
+}
+
+export interface WIMMetaData {
+  has_next_page: boolean
+  has_previous_page: boolean
+  page: number
+  page_count: number
+  page_size: number
+  total: number
 }

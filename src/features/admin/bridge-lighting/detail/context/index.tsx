@@ -15,7 +15,8 @@ export interface PageProviderProps {
 export const DetailContext = createContext<ContextProps | null>(null)
 
 export const DetailProvider = ({ id, children }: PageProviderProps) => {
-  const bridge = getBridgeProjectById(id)
+  const resolvedId = Array.isArray(id) ? id[0] : id
+  const bridge = getBridgeProjectById(resolvedId ?? '')
   if (!bridge) return null
   return (
     <DetailContext.Provider value={{ bridge }}>

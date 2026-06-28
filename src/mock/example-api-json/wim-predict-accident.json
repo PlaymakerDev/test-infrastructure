@@ -1,0 +1,81 @@
+{
+  "all_sum": {
+    "plan_total": 2240,
+    "result_total": 1409
+  },
+  "item": [
+    {
+      "month": "ต.ค.",
+      "plan": 98,
+      "result": 71,
+      "year": "2568"
+    },
+    {
+      "month": "พ.ย.",
+      "plan": 270,
+      "result": 198,
+      "year": "2568"
+    },
+    {
+      "month": "ธ.ค.",
+      "plan": 448,
+      "result": 344,
+      "year": "2568"
+    },
+    {
+      "month": "ม.ค.",
+      "plan": 635,
+      "result": 490,
+      "year": "2569"
+    },
+    {
+      "month": "ก.พ.",
+      "plan": 825,
+      "result": 670,
+      "year": "2569"
+    },
+    {
+      "month": "มี.ค.",
+      "plan": 1010,
+      "result": 841,
+      "year": "2569"
+    },
+    {
+      "month": "เม.ย.",
+      "plan": 1210,
+      "result": 974,
+      "year": "2569"
+    },
+    {
+      "month": "พ.ค.",
+      "plan": 1458,
+      "result": 1175,
+      "year": "2569"
+    },
+    {
+      "month": "มิ.ย.",
+      "plan": 1700,
+      "result": 1409,
+      "year": "2569"
+    },
+    {
+      "month": "ก.ค.",
+      "plan": 1913,
+      "result": 1409,
+      "year": "2569"
+    },
+    {
+      "month": "ส.ค.",
+      "plan": 2099,
+      "result": 1409,
+      "year": "2569"
+    },
+    {
+      "month": "ก.ย.",
+      "plan": 2240,
+      "result": 1409,
+      "year": "2569"
+    }
+  ],
+  "plan_year": "2568"
+}

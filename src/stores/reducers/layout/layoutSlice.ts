@@ -15,7 +15,8 @@ const initialState: LayoutState = {
   },
   cctv_modal: {
     open: false,
-    camera_id: null
+    camera_id: null,
+    extra_cells: []
   },
   sidebar: [],
   task_schedules: {
@@ -61,6 +62,8 @@ const layoutSlice = createSlice({
     setCCTVModalOpen: (state, action) => {
       state.cctv_modal.open = action.payload.open
       state.cctv_modal.camera_id = action.payload.camera_id
+      // Optional feature-specific cells (e.g. Traffic Signal's phase/PCU row).
+      state.cctv_modal.extra_cells = action.payload.extra_cells ?? []
     },
     resetCCTVModalOpen: (state) => {
       state.cctv_modal = initialState.cctv_modal

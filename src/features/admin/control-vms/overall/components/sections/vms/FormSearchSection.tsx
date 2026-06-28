@@ -1,56 +1,20 @@
 import { Input } from 'antd'
-import React, { useCallback } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import React from 'react'
 import { TbSearch } from 'react-icons/tb'
 
 interface Props {
-
+  onSearch?: (value: string) => void
 }
 
-interface FormValues {
-  search: ""
-}
-
-const FormSearchSection: React.FC<Props> = (props) => {
-  const { } = props
-
-  const form = useForm<FormValues>({
-    defaultValues: {
-      search: ""
-    },
-  })
-
-  const {
-    control,
-    handleSubmit,
-  } = form
-
-  const onSubmit = useCallback((values: FormValues) => {
-    console.log(values)
-  }, [])
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        control={control}
-        name="search"
-        render={({ field }) => {
-          return (
-            <fieldset>
-              <Input
-                {...field}
-                name={field.name}
-                placeholder="ค้นหาสายทาง..."
-                className='rounded-lg'
-                suffix={<TbSearch />}
-                size='large'
-              />
-            </fieldset>
-          )
-        }}
-      />
-    </form>
-  )
-}
+const FormSearchSection: React.FC<Props> = ({ onSearch }) => (
+  <Input
+    placeholder="ค้นหาสายทาง, ป้าย VMS..."
+    className='rounded-lg'
+    suffix={<TbSearch />}
+    size='large'
+    allowClear
+    onChange={(e) => onSearch?.(e.target.value)}
+  />
+)
 
 export default React.memo<Props>(FormSearchSection)

@@ -3,7 +3,7 @@ import {
   OverallLocationSection,
   VehicleStatSection,
   ChartSection
-} from '.'
+} from '../components'
 
 interface Props {
 

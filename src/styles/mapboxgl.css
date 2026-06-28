@@ -11,6 +11,7 @@
   padding: 0 !important;
   box-shadow: none !important;
   border-radius: 0 !important;
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
 }
 
 .react-popup .mapboxgl-popup-tip {

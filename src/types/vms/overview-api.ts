@@ -76,6 +76,7 @@ export interface Location {
   solution: SharedSolution
   road: SharedRoad
   vms: SharedVMS
+  warranty: SharedWarranty
   GeometryPoint: number[]
 }
 

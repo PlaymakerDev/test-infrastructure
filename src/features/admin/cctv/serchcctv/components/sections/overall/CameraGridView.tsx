@@ -1,19 +1,20 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import ModalLiveStreamCctv, { type CctvCameraDetail } from '@/features/admin/cctv/components/ModalLiveStreamCctv'
+import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen, setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type FunctionTag = 'CCTV' | 'Incident' | 'Volume'
 type WarrantyStatus = 'in-warranty' | 'expired'
 
 export interface CameraRow {
   id: string
   name: string
   km: string
-  functions: FunctionTag[]
+  functions: string[]
   ip: string
   streamStatus: 'connect' | 'disconnect'
   deviceStatus: 'connect' | 'disconnect'
@@ -25,6 +26,9 @@ export interface InstallGroup {
   label: string
   warranty: WarrantyStatus
   cameras: CameraRow[]
+  /** Contract/road ids — power the central Project Info modal on the ⓘ icon. */
+  projectId?: number
+  roadId?: number
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -34,35 +38,7 @@ const parseKm = (km: string): number => {
   return (parseInt(main ?? '0', 10) * 1000) + parseInt(sub ?? '0', 10)
 }
 
-const toModalCamera = (cam: CameraRow, location: string): CctvCameraDetail => ({
-  id:           cam.id,
-  name:         cam.name,
-  hlsUrl:       cam.hlsUrl,
-  location,
-  functions:    cam.functions,
-  streamStatus: cam.streamStatus,
-  deviceStatus: cam.deviceStatus,
-  ip:           cam.ip,
-})
-
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-const FunctionTag: React.FC<{ tag: FunctionTag }> = ({ tag }) => {
-  const cfg: Record<FunctionTag, { bg: string; border: string; color: string }> = {
-    CCTV:     { bg: 'transparent', border: '#f97316', color: '#f97316' },
-    Incident: { bg: '#22c55e',     border: '#22c55e', color: '#fff'    },
-    Volume:   { bg: 'transparent', border: '#a3e635', color: '#a3e635' },
-  }
-  const { bg, border, color } = cfg[tag]
-  return (
-    <span
-      className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap'
-      style={{ background: bg, border: `1px solid ${border}`, color }}
-    >
-      {tag}
-    </span>
-  )
-}
 
 const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
   const cfg = warranty === 'in-warranty'
@@ -98,6 +74,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     >
       <HLSLivePlayer
         cameraId={camera.id}
+        hlsUrl={camera.hlsUrl}
         showLiveBadge
         enableViewportPause
         style={{ height: 160, display: 'block', pointerEvents: 'none' }}
@@ -111,7 +88,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     )}
 
     <p
-      className='text-sm font-medium leading-snug truncate cursor-pointer hover:underline'
+      className='text-xs font-medium leading-snug truncate cursor-pointer hover:underline'
       style={{ color: '#66AEFF' }}
       title={camera.name}
       onClick={onSelect}
@@ -124,7 +101,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
         IP : {camera.ip}
       </span>
       <div className='flex items-center gap-1 flex-wrap justify-end shrink-0'>
-        {camera.functions.map((fn) => <FunctionTag key={fn} tag={fn} />)}
+        {camera.functions.map((fn) => <CameraFunctionTag key={fn} tag={fn} />)}
       </div>
     </div>
   </div>
@@ -140,7 +117,17 @@ interface Props {
 }
 
 const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
-  const [modalCamera, setModalCamera] = useState<CctvCameraDetail | null>(null)
+  const dispatch = useAppDispatch()
+  const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
+
+  const openProjectInfo = (group: InstallGroup) =>
+    dispatch(
+      setProjectInfoModalOpen({
+        open: true,
+        project_id: group.projectId ?? null,
+        road_id: group.roadId ?? null,
+      })
+    )
 
   const kmSorted = useMemo(() => {
     if (mode !== 'km') return []
@@ -159,7 +146,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
               key={cam.id}
               camera={cam}
               showKm
-              onSelect={() => setModalCamera(toModalCamera(cam, `กม. ${cam.km}`))}
+              onSelect={() => openCamera(cam.id)}
             />
           ))}
         </div>
@@ -175,7 +162,13 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
               >
                 <span className='text-white font-semibold text-sm flex-1 min-w-0 wrap-break-word'>{group.label}</span>
                 <div className='flex items-center gap-2 shrink-0'>
-                  <TbInfoSquareRoundedFilled size={18} className='cursor-pointer' style={{ color: '#fff' }} />
+                  <TbInfoSquareRoundedFilled
+                    size={18}
+                    className='cursor-pointer hover:text-(--yellow)'
+                    style={{ color: '#fff' }}
+                    title='ดูข้อมูลโครงการ'
+                    onClick={() => openProjectInfo(group)}
+                  />
                   <WarrantyPill warranty={group.warranty} />
                 </div>
               </div>
@@ -186,7 +179,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
                   <CameraCard
                     key={cam.id}
                     camera={cam}
-                    onSelect={() => setModalCamera(toModalCamera(cam, group.label))}
+                    onSelect={() => openCamera(cam.id)}
                   />
                 ))}
               </div>
@@ -195,12 +188,6 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
           ))}
         </div>
       )}
-
-      <ModalLiveStreamCctv
-        open={!!modalCamera}
-        onClose={() => setModalCamera(null)}
-        camera={modalCamera}
-      />
     </>
   )
 }

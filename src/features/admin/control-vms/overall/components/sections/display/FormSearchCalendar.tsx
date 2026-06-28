@@ -8,6 +8,7 @@ dayjs.extend(buddhistEra)
 import React, { useCallback, useRef } from 'react'
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import { Controller, useForm } from 'react-hook-form'
+import { useControlVMSContext } from '../../../context'
 
 
 interface Props {
@@ -21,6 +22,7 @@ interface FormValues {
 const FormSearchCalendar: React.FC<Props> = (props) => {
   const { } = props;
   const submitRef = useRef<HTMLButtonElement>(null)
+  const { setSearchDate } = useControlVMSContext()
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -34,11 +36,11 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((value: FormValues) => {
-    const body = {
-      date: value.date?.format('YYYY-MM-DD') ?? null,
-    }
-    console.log(body)
-  }, [])
+    setSearchDate({
+      month: value.date != null ? value.date.month() + 1 : undefined,
+      year: value.date != null ? value.date.year() : undefined,
+    })
+  }, [setSearchDate])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -76,7 +78,10 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
                     </div>
                   )
                 }}
-                onSelect={() => submitRef.current?.click()}
+                onSelect={(date) => {
+                  field.onChange(date)
+                  submitRef.current?.click()
+                }}
               />
             </ConfigProvider>
           )

@@ -11,6 +11,7 @@ import {
 } from '../components'
 import { useRouter } from 'next/navigation'
 import { OverallProvider } from '../context'
+import { CCTVModal } from '@/components/modal'
 
 const TrackingScreen = () => {
   const [currentTab, setCurrentTab] = useState('OVERALL')
@@ -48,6 +49,7 @@ const TrackingScreen = () => {
           {renderContent}
         </section>
       </div>
+      <CCTVModal />
     </OverallProvider>
   )
 }

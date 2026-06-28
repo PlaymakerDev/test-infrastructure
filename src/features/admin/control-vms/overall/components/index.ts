@@ -3,6 +3,7 @@ export { default as TitleSection } from './TitleSection'
 
 // VMS
 export { default as VMSSection } from './VMSSection'
+export { default as ContentSetting } from './sections/vms/ContentSetting'
 export { default as DetailItemStorage } from './sections/vms/DetailItemStorage'
 export { default as DetailSection } from './sections/vms/DetailSection'
 export { default as DetailTabContent } from './sections/vms/DetailTabContent'
@@ -13,6 +14,8 @@ export { default as FormAddDetail } from './sections/vms/FormAddDetail'
 export { default as FormSearchSection } from './sections/vms/FormSearchSection'
 export { default as MapAndDetailSection } from './sections/vms/MapAndDetailSection'
 export { default as MapSection } from './sections/vms/MapSection'
+export { default as ModalDetailItemStorage } from './sections/vms/ModalDetailItemStorage'
+export { default as ModalVMSScreen } from './sections/vms/ModalVMSScreen'
 export { default as SearchSection } from './sections/vms/SearchSection'
 export { default as VMSDetail } from './sections/vms/VMSDetail'
 
@@ -25,5 +28,8 @@ export { default as DisplayTableList } from './sections/display/DisplayTableList
 export { default as DisplayTitle } from './sections/display/DisplayTitle'
 export { default as FormSearchCalendar } from './sections/display/FormSearchCalendar'
 export { default as FormSearchDisplay } from './sections/display/FormSearchDisplay'
+export { default as FormUpdateSchedule } from './sections/display/FormUpdateSchedule'
+export { default as ScheduleDisplaySection } from './sections/display/ScheduleDisplaySection'
 export { default as ScheduleSection } from './sections/display/ScheduleSection'
+export { default as ModalUpdateSchedule } from './sections/display/ModalUpdateSchedule'
 

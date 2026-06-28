@@ -3,21 +3,29 @@ import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import type { CctvDeptOverviewListItem } from '@/types/cctv'
-import { useAppSelector } from '@/stores/hooks'
+import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
+import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 
-
-const CountBadge: React.FC<{ value: number; color: string }> = ({ value, color }) => {
+/** Count cell — the filled box appears only for single-state rows (all online
+ *  OR all offline). A mixed row shows plain coloured numbers. */
+const CountBadge: React.FC<{ value: number; color: string; highlight?: boolean }> = ({
+  value,
+  color,
+  highlight,
+}) => {
   if (value === 0) return <span style={{ color }}>{value}</span>
-  return (
-    <span
-      className='inline-flex items-center justify-center min-w-8 px-2 py-0.5 rounded'
-      style={{ background: color, color: '#212121', fontWeight: 600 }}
-    >
-      {value}
-    </span>
-  )
+  if (highlight) {
+    return (
+      <span
+        className='inline-flex items-center justify-center min-w-8 px-2 py-0.5 rounded'
+        style={{ background: color, color: '#212121', fontWeight: 600 }}
+      >
+        {value}
+      </span>
+    )
+  }
+  return <span style={{ color, fontWeight: 600 }}>{value}</span>
 }
 
 const WarrantyPill: React.FC<{ isWarranty: boolean }> = ({ isWarranty }) => {
@@ -34,14 +42,21 @@ const WarrantyPill: React.FC<{ isWarranty: boolean }> = ({ isWarranty }) => {
   )
 }
 
+/** Table row — a bureau (แขวง) divider header or a real solution row. */
+type Row =
+  | { kind: 'bureau'; id: string; bureau: string; count: number }
+  | { kind: 'project'; id: string; item: CCTVOverviewRow; roadCodeSpan: number }
+
+const TOTAL_COLS = 8
+
 interface Props {
-  items: CctvDeptOverviewListItem[]
+  items: CCTVOverviewRow[]
+  loading?: boolean
 }
 
-const CamerasTableCctv: React.FC<Props> = ({ items }) => {
+const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const loading = useAppSelector((s) => s.cctv.task_schedules.overviewList.loading)
 
   const goToDetail = useCallback(
     (solutionId: number) => {
@@ -52,86 +67,164 @@ const CamerasTableCctv: React.FC<Props> = ({ items }) => {
     [router, searchParams]
   )
 
-  const columns: ColumnsType<CctvDeptOverviewListItem> = useMemo(() => [
+  // Build a flat list interleaving bureau dividers + solution rows. Within a
+  // bureau, consecutive rows sharing a road code merge via rowSpan so the code
+  // shows once per group (same pattern as traffic-signal).
+  const data = useMemo<Row[]>(() => {
+    const groups = new Map<string, CCTVOverviewRow[]>()
+    for (const it of items) {
+      const list = groups.get(it.bureau) ?? []
+      list.push(it)
+      groups.set(it.bureau, list)
+    }
+    const out: Row[] = []
+    for (const [bureau, rows] of groups) {
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: rows.length })
+      let i = 0
+      while (i < rows.length) {
+        const code = rows[i].road.code_name
+        let span = 1
+        while (i + span < rows.length && rows[i + span].road.code_name === code) span++
+        out.push({ kind: 'project', id: String(rows[i].solution.id), item: rows[i], roadCodeSpan: span })
+        for (let j = 1; j < span; j++) {
+          out.push({ kind: 'project', id: String(rows[i + j].solution.id), item: rows[i + j], roadCodeSpan: 0 })
+        }
+        i += span
+      }
+    }
+    return out
+  }, [items])
+
+  const columns: ColumnsType<Row> = useMemo(() => [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
       align: 'center',
       width: 160,
-      onCell: (row) => ({ onClick: () => goToDetail(row.solution.id), style: { cursor: 'pointer' } }),
-      render: (_, row) => row.road.code_name,
+      onCell: (row) => {
+        if (row.kind === 'bureau') {
+          return { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
+        }
+        return { rowSpan: row.roadCodeSpan }
+      },
+      render: (_, row) => {
+        if (row.kind === 'bureau') {
+          return (
+            <div className='flex items-center gap-3'>
+              <span className='text-white font-bold'>{row.bureau}</span>
+              <span
+                className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+              >
+                {row.count} โครงการ
+              </span>
+            </div>
+          )
+        }
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.road.code_name}
+          </DetailLinkText>
+        )
+      },
     },
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
       align: 'center',
       ellipsis: true,
-      onCell: (row) => ({ onClick: () => goToDetail(row.solution.id), style: { cursor: 'pointer' } }),
-      render: (_, row) => row.solution.solution_name,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.project.project_name}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
       width: 280,
       align: 'center',
-      onCell: (row) => ({ onClick: () => goToDetail(row.solution.id), style: { cursor: 'pointer' } }),
-      render: (_, row) => row.solution.solution_name,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item.solution.id)}>
+            {row.item.solution.solution_name}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'เลขที่สัญญา',
       key: 'contractNo',
       width: 220,
       align: 'center',
-      render: (_, row) => (
-        <span className='inline-flex items-center gap-1.5'>
-          {row.project.contract_no}
-          <TbInfoSquareRoundedFilled
-            size={18}
-            className='text-white cursor-pointer hover:text-(--yellow)'
-            title='ดูรายละเอียดสัญญา'
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <ContractInfoCell
+            contractNo={row.item.project.contract_no}
+            budgetYear={row.item.project.budget_year}
+            projectId={row.item.project.id}
+            roadId={row.item.road.id}
           />
-        </span>
-      ),
+        ) : null,
     },
     {
       title: 'การค้ำประกัน',
       key: 'warranty',
       align: 'center',
       width: 130,
-      render: (_, row) => <WarrantyPill isWarranty={row.is_warranty} />,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => (row.kind === 'project' ? <WarrantyPill isWarranty={row.item.is_warranty} /> : null),
     },
     {
       title: 'กล้องทั้งหมด',
       key: 'total',
       align: 'center',
       width: 120,
-      render: (_, row) => <span className='text-white font-semibold'>{row.camera.total}</span>,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <span className='text-white font-semibold'>{row.item.camera.total}</span>
+        ) : null,
     },
     {
       title: 'ออนไลน์',
       key: 'online',
       align: 'center',
       width: 110,
-      render: (_, row) => <CountBadge value={row.camera.online} color='#66AEFF' />,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => {
+        if (row.kind !== 'project') return null
+        const single = !(row.item.camera.online > 0 && row.item.camera.offline > 0)
+        return <CountBadge value={row.item.camera.online} color='#66AEFF' highlight={single} />
+      },
     },
     {
       title: 'ออฟไลน์',
       key: 'offline',
       align: 'center',
       width: 110,
-      render: (_, row) => <CountBadge value={row.camera.offline} color='#E94C4C' />,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => {
+        if (row.kind !== 'project') return null
+        const single = !(row.item.camera.online > 0 && row.item.camera.offline > 0)
+        return <CountBadge value={row.item.camera.offline} color='#E94C4C' highlight={single} />
+      },
     },
   ], [goToDetail])
 
   return (
-    <Table<CctvDeptOverviewListItem>
-      rowKey={(row) => String(row.solution.id)}
+    <Table<Row>
+      rowKey='id'
       columns={columns}
-      dataSource={items}
+      dataSource={data}
       loading={loading}
       pagination={false}
       size='middle'
       scroll={{ x: 1350 }}
+      className='bridge-projects-table'
     />
   )
 }

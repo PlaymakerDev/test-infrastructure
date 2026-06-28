@@ -155,3 +155,23 @@ body .bridge-projects-table .ant-pagination-options .ant-select-selector {
 body .bridge-projects-table .ant-pagination-options .ant-select-arrow {
   color: #FFFFFF;
 }
+
+/* ── Detail-link cells (รหัสสายทาง / ชื่อโครงการ / จุดติดตั้ง) — marked with
+ * `.detail-link` by the shared DetailLinkText component. Hovering ANYWHERE on a
+ * row lights up all three link cells together (yellow + underline) so they read
+ * as one clickable group / yellow bar. Only our overall list tables carry
+ * `.detail-link`, so bridge-lighting tables (same wrapper class) are unaffected. */
+body .bridge-projects-table .ant-table-tbody > tr:hover .detail-link {
+  color: #FCD116;
+  text-decoration: underline;
+}
+
+/* ── Vehicle breakdown table — traffic-volume detail page.
+ * Composes on top of `.bridge-projects-table`. The card on the right of the
+ * pie chart needs the 9-row table to fill its container so it visually
+ * balances against the donut. We bump cell padding so each row is taller. */
+body .vehicle-breakdown-table .ant-table-thead > tr > th,
+body .vehicle-breakdown-table .ant-table-tbody > tr > td {
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+}

@@ -1,42 +1,13 @@
-import { Col, Row } from 'antd'
+import { StatCardRow } from '@/components/section/StatCard'
 import React from 'react'
-import { TbNavigation, TbPlayerPauseFilled, TbShield, TbTruck, TbTruckDelivery, TbWalk, TbWeight } from 'react-icons/tb'
+import { TbShield, TbWalk } from 'react-icons/tb'
 
-interface Props {
+const CARDS = [
+  { icon: <TbWalk />,   title: 'ทางข้ามในระบบทั้งหมด', count: 20, activeLabel: 'Active : 8 (38.9%)',   color: 'yellow' as const },
+  { icon: <TbShield />, title: 'ในค้ำ',                  count: 5,  activeLabel: 'Active : 5 (100.0%)', color: 'teal'   as const },
+  { icon: <TbShield />, title: 'อัตรารถบนสายทาง',         count: 15, activeLabel: 'Active : 3 (24.5%)', color: 'gray'   as const },
+]
 
-}
+const InfoCardSection: React.FC = () => <StatCardRow cards={CARDS} />
 
-const InfoCardSection: React.FC<Props> = (props) => {
-  const { } = props
-
-  return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className="h-full bg-[#FFB1001A] border-2 rounded-lg p-5 border-(--yellow)">
-          <TbWalk className='fs-24 text-(--yellow) mb-1' />
-          <h3 className='text-(--yellow)'>ทางข้ามในระบบทั้งหมด</h3>
-          <p><span className='fs-24 font-bold'>20</span> จุดติดตั้ง</p>
-          <p className='fs-11 text-gray-400'>Active : 8 (38.9%)</p>
-        </div>
-      </Col>
-      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className="h-full bg-[#05F2DB1A] border-2 rounded-lg p-5 border-teal-500">
-          <TbShield className='fs-24 text-teal-500 mb-1' />
-          <h3 className='text-teal-500'>ในค้ำ</h3>
-          <p><span className='fs-24 font-bold'>5</span> จุดติดตั้ง</p>
-          <p className='fs-11 text-gray-400'>Active : 5 (100.0%)</p>
-        </div>
-      </Col>
-      <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className="h-full bg-[#9797971A] border-2 rounded-lg p-5 border-gray-500">
-          <TbShield className='fs-24 text-gray-500 mb-1' />
-          <h3 className='text-gray-500'>อัตรารถบนสายทาง</h3>
-          <p><span className='fs-24 font-bold'>15</span> จุดติดตั้ง</p>
-          <p className='fs-11 text-gray-400'>Active : 3 (24.5%)</p>
-        </div>
-      </Col>
-    </Row>
-  )
-}
-
-export default React.memo<Props>(InfoCardSection)
+export default React.memo(InfoCardSection)

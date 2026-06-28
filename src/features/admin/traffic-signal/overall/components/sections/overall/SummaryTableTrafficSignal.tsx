@@ -1,10 +1,10 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
-import ModalInfoTrafficSignal from '@/features/admin/traffic-signal/overall/components/ModalInfoTrafficSignal'
+import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
@@ -64,7 +64,12 @@ type Row =
 const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const deptId = useDeptId()
-  const [infoProject, setInfoProject] = useState<TrafficSignalProject | null>(null)
+  const goToDetail = useCallback((project: TrafficSignalProject) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (project.projectId) params.set('project_id', project.projectId)
+    if (project.roadId) params.set('road_id', project.roadId)
+    router.push(`/admin/traffic-signal/detail/${project.id}?${params}`)
+  }, [router, deptId])
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficSignalProject[]>()
     for (const p of projects) {
@@ -139,7 +144,11 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
               </div>
             )
           }
-          return row.project.roadCode
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.roadCode}
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -148,35 +157,11 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? row.project.projectName : null,
-      },
-      {
-        title: 'เลขที่สัญญา',
-        key: 'contractNo',
-        width: 200,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          return (
-            <span className='inline-flex items-center gap-1.5'>
-              {row.project.contractNo}
-              <TbInfoSquareRoundedFilled
-                size={18}
-                className='text-white cursor-pointer hover:text-(--yellow)'
-                title='ดูข้อมูลโครงการ'
-                onClick={() => setInfoProject(row.project)}
-              />
-            </span>
-          )
-        },
-      },
-      {
-        title: 'การค้ำประกัน',
-        key: 'warranty',
-        width: 140,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? <WarrantyPill warranty={row.project.warranty} /> : null,
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.projectName}
+            </DetailLinkText>
+          ) : null,
       },
       {
         title: 'จุดติดตั้ง',
@@ -186,20 +171,34 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
           return (
-            <span
-              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() =>
-                router.push(
-                  `/admin/traffic-signal/detail/${row.project.id}?dept_id=${deptId}`,
-                )
-              }
-              role='link'
-              tabIndex={0}
-            >
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
               {row.project.installPoint}
-            </span>
+            </DetailLinkText>
           )
         },
+      },
+      {
+        title: 'เลขที่สัญญา',
+        key: 'contractNo',
+        width: 200,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.project.contractNo}
+              budgetYear={row.project.budgetYear}
+              projectId={row.project.projectId}
+              roadId={row.project.roadId}
+            />
+          ) : null,
+      },
+      {
+        title: 'การค้ำประกัน',
+        key: 'warranty',
+        width: 140,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? <WarrantyPill warranty={row.project.warranty} /> : null,
       },
       {
         title: 'กล้องทั้งหมด',
@@ -255,7 +254,7 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         },
       },
     ]
-  }, [router])
+  }, [goToDetail])
 
   return (
     <>
@@ -271,7 +270,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
         scroll={{ x: 1300 }}
         className='bridge-projects-table'
       />
-      <ModalInfoTrafficSignal project={infoProject} onClose={() => setInfoProject(null)} />
     </>
   )
 }

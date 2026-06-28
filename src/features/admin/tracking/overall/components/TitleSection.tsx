@@ -16,7 +16,7 @@ const OPTIONS = [
     value: 'STATION'
   },
   {
-    label: 'WIM (Weight-In-Motion)',
+    label: 'WIM (Weigh-In-Motion)',
     value: 'WIM'
   },
   {

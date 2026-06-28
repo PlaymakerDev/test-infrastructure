@@ -5,7 +5,7 @@ import { useGPSContext } from '../../../context'
 import Image from 'next/image'
 import { Button } from 'antd'
 import type { ButtonColorType } from 'antd/es/button/buttonHelpers'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 interface VehicleStatus {
   img: string
