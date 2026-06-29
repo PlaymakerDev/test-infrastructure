@@ -18,6 +18,7 @@ import {
   TbShieldHalf,
   TbCarCrash,
   TbChevronRight,
+  TbBrandGithubCopilot,
 } from "react-icons/tb";
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
@@ -41,6 +42,7 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "Control VMS": TbAdjustmentsHorizontal,
   "Statistic": TbBriefcase,
   "Maintenance": TbShieldHalf,
+  "Smart Search": TbBrandGithubCopilot,
 }
 
 const collapseVariants = {

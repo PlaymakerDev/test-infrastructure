@@ -57,6 +57,10 @@ export interface BarChartProps {
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
   yAxisDomain?: [number | 'auto', number | 'auto']
+  /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
+  xAxisLabelRotate?: number
+  /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
+  xAxisLabelMaxWidth?: number
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
   /** สี title + icon accent (default `#FCD116`) */
@@ -102,6 +106,8 @@ const BarChart: React.FC<BarChartProps> = ({
   height = 280,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  xAxisLabelRotate = 0,
+  xAxisLabelMaxWidth,
   accentColor = '#FCD116',
   cardBackground = '#00000080',
   cardBorderColor = '#1f2d3d',
@@ -125,9 +131,19 @@ const BarChart: React.FC<BarChartProps> = ({
     const yMax = yAxisTicks ? yAxisTicks[yAxisTicks.length - 1] : yAxisDomain[1] === 'auto' ? undefined : yAxisDomain[1]
     const yInterval = yAxisTicks && yAxisTicks.length >= 2 ? yAxisTicks[1] - yAxisTicks[0] : undefined
 
+    const truncate = typeof xAxisLabelMaxWidth === 'number'
+
     return {
       backgroundColor: 'transparent',
-      grid: { top: 16, right: 8, bottom: 44, left: 40, containLabel: false },
+      grid: {
+        top: 16,
+        right: 8,
+        // Rotated labels need more vertical room than the default 44 — near
+        // vertical (≥60°) needs the full truncated label length.
+        bottom: xAxisLabelRotate >= 60 ? 100 : xAxisLabelRotate ? 80 : 44,
+        left: 40,
+        containLabel: false,
+      },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -138,6 +154,8 @@ const BarChart: React.FC<BarChartProps> = ({
           fontSize: 11,
           lineHeight: 16,
           interval: 0,
+          ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
+          ...(truncate ? { width: xAxisLabelMaxWidth, overflow: 'truncate' } : {}),
         },
         splitLine: { show: false },
       },
@@ -161,9 +179,10 @@ const BarChart: React.FC<BarChartProps> = ({
         formatter: (
           params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string }[]
         ) => {
-          // Header — date/time/category label (axisValue of first param).
+          // Header — full category (axisValue is the data value, not the
+          // possibly-truncated axis label, so it shows the full name).
           const header = params[0]?.axisValue
-            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;">${params[0].axisValue}</div>`
+            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
             : ''
           // For "(X%)" suffix, percent base = sum of all series at this column.
           const total = tooltipShowPercent
@@ -218,7 +237,7 @@ const BarChart: React.FC<BarChartProps> = ({
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelMaxWidth])
 
   return (
     <div
