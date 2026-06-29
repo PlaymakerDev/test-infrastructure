@@ -82,6 +82,10 @@ export interface PieChartProps {
   centerLabelColor?: string
   /** สี centerUnit (bottom) (default `#8a9ab5`) */
   centerUnitColor?: string
+  /** ขนาด font ของ centerLabel (default 12) */
+  centerLabelSize?: number
+  /** ขนาด font ของ centerUnit (default 14) */
+  centerUnitSize?: number
 
   // ── Legend / outer labels ─────────────────────────────────────────────────
   /** Show right-side legend list (default `true` when no `outerLabels`, else `false`) */
@@ -90,6 +94,9 @@ export interface PieChartProps {
   outerLabels?: PieChartOuterLabel[]
   /** Radius (px from donut center) for outer labels. Default `donutSize/2 + 20`. */
   outerLabelRadius?: number
+  /** Cap legend height (px) and enable internal scroll — keeps the card compact
+   *  when there are many entries (e.g. 10+ event types on one road). */
+  legendMaxHeight?: number
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -127,11 +134,14 @@ const PieChart: React.FC<PieChartProps> = ({
   centerValueSize = 30,
   centerLabelColor = '#8a9ab5',
   centerUnitColor = '#8a9ab5',
+  centerLabelSize = 12,
+  centerUnitSize = 14,
 
   // layout
   showLegend,
   outerLabels,
   outerLabelRadius,
+  legendMaxHeight,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -171,6 +181,9 @@ const PieChart: React.FC<PieChartProps> = ({
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
+      // Render tooltip in <body> so it escapes the card's `overflow: hidden`
+      // (otherwise hover near the card edge gets clipped).
+      appendToBody: true,
       backgroundColor: '#1e2533',
       borderColor: '#2e3a4e',
       borderWidth: 1,
@@ -236,12 +249,14 @@ const PieChart: React.FC<PieChartProps> = ({
             iconCircle ? (
               <div
                 className='flex items-center justify-center w-9 h-9 rounded-full shrink-0'
-                style={{ background: 'rgba(234,179,8,0.15)' }}
+                style={{ background: 'rgba(234,179,8,0.15)', color: titleColor }}
               >
                 {icon}
               </div>
             ) : (
-              <span className='flex items-center shrink-0'>{icon}</span>
+              <span className='flex items-center shrink-0' style={{ color: titleColor }}>
+                {icon}
+              </span>
             )
           )}
           <h2 className='font-semibold' style={{ color: titleColor, fontSize: titleSize }}>
@@ -294,7 +309,7 @@ const PieChart: React.FC<PieChartProps> = ({
             {centerLabel && (
               <p
                 className='leading-snug mb-1'
-                style={{ color: centerLabelColor, fontSize: 12 }}
+                style={{ color: centerLabelColor, fontSize: centerLabelSize }}
               >
                 {centerLabel}
               </p>
@@ -308,7 +323,7 @@ const PieChart: React.FC<PieChartProps> = ({
                 : total.toLocaleString()}
             </p>
             {centerUnit && (
-              <p className='mt-1' style={{ color: centerUnitColor, fontSize: 14 }}>
+              <p className='mt-1' style={{ color: centerUnitColor, fontSize: centerUnitSize }}>
                 {centerUnit}
               </p>
             )}
@@ -359,7 +374,18 @@ const PieChart: React.FC<PieChartProps> = ({
 
         {/* Legend (right side) */}
         {shouldShowLegend && (
-          <div className='flex-1 min-w-0 flex flex-col gap-3'>
+          <div
+            // `no-scrollbar` keeps the legend clean even when many event types
+            // make it overflow — users can still mouse-wheel/touch through it.
+            // `pr-2` gives the right-edge "%" digits some breathing room so
+            // they don't get clipped against the card border.
+            className={`flex-1 min-w-0 flex flex-col gap-3 pr-2 ${legendMaxHeight ? 'no-scrollbar' : ''}`}
+            style={
+              legendMaxHeight
+                ? { maxHeight: legendMaxHeight, overflowY: 'auto' }
+                : undefined
+            }
+          >
             {data.map((entry, i) => {
               const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0'
               return (

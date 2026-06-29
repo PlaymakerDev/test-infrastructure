@@ -2,6 +2,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { TbX } from 'react-icons/tb'
+import styles from '../screen/maintenance-case.module.css'
 
 interface Props {
   open: boolean
@@ -25,75 +26,31 @@ const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = fals
 
   const handleConfirm = () => {
     onClose()
-    router.push('/admin/maintenance/detail/1001-1?title=สะพานตากสิน&subtitle=GS%20-%20CCTV%20ถนนกัลปพฤกษ์%20เขตบางแค')
+    const detailId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_id') : ''
+    if (detailId) {
+      router.push(`/admin/maintenance/detail/${detailId}`)
+    } else {
+      router.push('/admin/maintenance')
+    }
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onClose}
-    >
-      {/* Overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          zIndex: 1,
-        }}
-      />
-
-      {/* Modal Content */}
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          width: 800,
-          minHeight: 560,
-          borderRadius: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-          padding: '24px 32px',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ปิด */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div className={styles.saveModalOverlay} onClick={onClose}>
+      <div className={styles.saveModalBg} />
+      <div className={styles.saveModalContent} onClick={(e) => e.stopPropagation()}>
+        {/* Close */}
+        <div className='flex justify-end'>
           <button
             onClick={onClose}
-            style={{
-              width: 32,
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-            }}
+            className='flex items-center justify-center rounded-full border-none bg-transparent cursor-pointer'
+            style={{ width: 32, height: 32 }}
           >
             <TbX size={20} color='#999' />
           </button>
         </div>
 
-        {/* รูป */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        {/* Image */}
+        <div className='flex justify-center mb-4'>
           <img
             src={isClosingCase ? '/atlas/images/Maintenance/icmd4.png' : '/atlas/images/Maintenance/icmd3.png'}
             alt='maintenance'
@@ -101,20 +58,16 @@ const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = fals
           />
         </div>
 
-        {/* หัวข้อ */}
-        <h3 style={{ fontSize: 24, fontWeight: 700, color: '#525252', margin: '0 0 8px 0', textAlign: 'center' }}>
+        {/* Title */}
+        <h3 className='text-center m-0 mb-2' style={{ fontSize: 24, fontWeight: 700, color: '#525252' }}>
           {isClosingCase ? 'บันทึกและปิด Case เสร็จสิ้น' : 'บันทึกการแจ้งซ่อมเสร็จสิ้น'}
         </h3>
 
-        {/* เนื้อหา */}
+        {/* Info */}
         <div
+          className='flex flex-col gap-1.5 p-4 rounded-xl'
           style={{
             fontSize: 14,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            padding: 16,
-            borderRadius: 12,
             backgroundColor: isClosingCase ? '#05F2DB33' : '#FCD11633',
             border: `2px solid ${isClosingCase ? '#05F2DB' : '#FCD116'}`,
           }}
@@ -126,43 +79,30 @@ const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = fals
           <div><span style={{ color: '#979797' }}>วันที่แจ้งซ่อม : </span><span style={{ color: '#212121' }}>{data.repairDate}</span></div>
         </div>
 
-        {/* ปุ่ม */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 12,
-            marginTop: 'auto',
-            paddingTop: 32,
-          }}
-        >
+        {/* Buttons */}
+        <div className='flex items-center justify-end gap-3 mt-auto pt-8'>
           <button
             onClick={onClose}
+            className='border-none rounded-[88px] cursor-pointer'
             style={{
               padding: '8px 20px',
-              borderRadius: 88,
               fontSize: 14,
               fontWeight: 500,
-              border: 'none',
               backgroundColor: '#C4C4C4',
               color: '#000000',
-              cursor: 'pointer',
             }}
           >
             ย้อนกลับ
           </button>
           <button
             onClick={handleConfirm}
+            className='border-none rounded-[88px] cursor-pointer'
             style={{
               padding: '8px 20px',
-              borderRadius: 88,
               fontSize: 14,
               fontWeight: 500,
-              border: 'none',
               backgroundColor: '#FCD116',
               color: '#212121',
-              cursor: 'pointer',
             }}
           >
             รับทราบ

@@ -1,151 +1,114 @@
 "use client"
-import React from 'react'
-import { Image, Table } from 'antd'
+import React, { useMemo } from 'react'
+import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import {
+  getEventTypeColor,
+  getEventTypeLabel,
+} from '@/features/admin/incident-detection/components/eventTypes'
+import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
+import { EventSnapshot, fmtThaiDate, fmtTime } from './EventGridView'
 
-interface Props {}
-
-type EventType = 'ขับรถย้อนศร' | 'รถจอดกีดขวาง' | 'อุบัติเหตุ'
-
-interface EventRecord {
-  key: string;
-  no: number;
-  date: string;
-  time: string;
-  eventType: EventType;
-  camera: string;
-  ipAddress: string;
-  image: string;
+interface Props {
+  events: IncidentTransactionItem[]
+  loading?: boolean
+  /** Open the event-detail modal for this row (snapshot click). */
+  onSelect?: (ev: IncidentTransactionItem) => void
+  /** Server-side pagination (the API is paginated — total comes from meta_data.count). */
+  page: number
+  pageSize: number
+  total: number
+  onPageChange: (page: number, pageSize: number) => void
 }
 
-const EVENT_CLASS: Record<EventType, string> = {
-  'ขับรถย้อนศร': 'border-red-500 text-red-500',
-  'รถจอดกีดขวาง': 'border-orange-500 text-orange-500',
-  'อุบัติเหตุ': 'border-yellow-500 text-yellow-500',
+/** Event-type pill — outlined, colored by the shared event-type palette. */
+const EventTypePill: React.FC<{ id: number; label: string }> = ({ id, label }) => {
+  const color = getEventTypeColor(id)
+  return (
+    <span
+      className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border'
+      style={{ borderColor: color, color }}
+    >
+      {label}
+    </span>
+  )
 }
 
-const PLACEHOLDER = 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg'
-
-const mockData: EventRecord[] = [
-  {
-    key: '1',
-    no: 1,
-    date: '20 เม.ย. 2569',
-    time: '18:14:21 น.',
-    eventType: 'ขับรถย้อนศร',
-    camera: '68SET-CCO4050-FAI012-จุดที่8-กม.10+550',
-    ipAddress: '10.12.7.3',
-    image: PLACEHOLDER,
-  },
-  {
-    key: '2',
-    no: 2,
-    date: '20 เม.ย. 2569',
-    time: '12:48:02 น.',
-    eventType: 'รถจอดกีดขวาง',
-    camera: '68FTD-NPM3015-FAI052-จุดที่26-กม.13+850',
-    ipAddress: '10.12.2.1',
-    image: PLACEHOLDER,
-  },
-  {
-    key: '3',
-    no: 3,
-    date: '20 เม.ย. 2569',
-    time: '12:10:58 น.',
-    eventType: 'รถจอดกีดขวาง',
-    camera: '68SET-CCO4050-FAI012-จุดที่8-กม.10+550',
-    ipAddress: '10.12.7.3',
-    image: PLACEHOLDER,
-  },
-  {
-    key: '4',
-    no: 4,
-    date: '20 เม.ย. 2569',
-    time: '10:22:15 น.',
-    eventType: 'อุบัติเหตุ',
-    camera: '68FTD-NPM3015-FAI052-จุดที่26-กม.13+850',
-    ipAddress: '10.12.2.1',
-    image: PLACEHOLDER,
-  },
-]
-
-const TableEventData: React.FC<Props> = () => {
-  const columns: ColumnsType<EventRecord> = [
-    {
-      title: 'ลำดับ',
-      dataIndex: 'no',
-      key: 'no',
-      align: 'center',
-      width: 80,
-    },
+/** Table view — flat list of events (Tab2 "table" mode). Pagination is handled
+ *  by the parent (server-side), so this table itself never paginates. */
+const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, pageSize, total, onPageChange }) => {
+  const columns: ColumnsType<IncidentTransactionItem> = useMemo(() => [
     {
       title: 'วันที่และเวลา',
       key: 'datetime',
       align: 'center',
-      width: 160,
+      width: 180,
       render: (_, r) => (
         <div>
-          <p className='mb-0'>{r.date}</p>
-          <p className='mb-0 text-white/60'>{r.time}</p>
+          <p className='mb-0'>{fmtThaiDate(r.date_time)}</p>
+          <p className='mb-0 text-white/60'>{fmtTime(r.date_time)}</p>
         </div>
       ),
     },
     {
       title: 'ประเภทเหตุการณ์',
-      dataIndex: 'eventType',
-      key: 'eventType',
+      key: 'type',
       align: 'center',
       width: 200,
-      render: (t: EventType) => (
-        <span className={`inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border ${EVENT_CLASS[t]}`}>
-          {t}
-        </span>
+      render: (_, r) => (
+        <EventTypePill
+          id={r.analytic_type_info.id}
+          label={getEventTypeLabel(r.analytic_type_info.id, r.analytic_type_info.analytic_type_name_th)}
+        />
       ),
     },
     {
-      title: 'กล้อง',
-      dataIndex: 'camera',
+      title: 'ชื่อกล้อง',
       key: 'camera',
-      width: 400,
+      width: 420,
+      render: (_, r) => <span className='text-white'>{r.camera.camera_name}</span>,
     },
     {
       title: 'IP Address',
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
+      key: 'ip',
       align: 'center',
-      width: 140,
+      width: 160,
+      render: (_, r) => <span className='text-white/70 font-mono'>{r.camera.ip_address}</span>,
     },
     {
-      title: 'ภาพเหตุการณ์',
-      dataIndex: 'image',
+      title: 'ภาพขณะเกิดเหตุ',
       key: 'image',
       align: 'center',
       width: 140,
       fixed: 'right',
-      render: (src: string) => (
-        <Image
-          src={src}
-          width={100}
-          height={60}
-          className='rounded object-cover'
-          alt='event'
+      render: (_, r) => (
+        <EventSnapshot
+          url={r.image_path}
+          className='inline-block w-25 h-15 rounded'
+          onClick={onSelect ? () => onSelect(r) : undefined}
         />
       ),
     },
-  ]
+  ], [onSelect])
 
   return (
-    <Table<EventRecord>
+    <Table<IncidentTransactionItem>
       columns={columns}
-      dataSource={mockData}
-      pagination={{
-        pageSize: 10,
-        total: 77,
-        showTotal: (total, range) => `${range[1] - range[0] + 1} จาก ${total}`,
-      }}
+      dataSource={events}
+      rowKey='id'
       size='middle'
-      rowKey='key'
-      scroll={{ x: 'max-content' }}
+      loading={loading}
+      scroll={{ x: 1100 }}
+      className='bridge-projects-table'
+      pagination={{
+        current: page,
+        pageSize,
+        total,
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+        onChange: onPageChange,
+      }}
     />
   )
 }

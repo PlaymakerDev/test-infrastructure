@@ -1,6 +1,13 @@
 import { APIResponseCCTVDetail } from "@/types/cctv/shared-api"
 import ApiService from "../ApiService"
-import { APIRequestDepartmentByRoad, APIResponseContactDetail, APIResponseDepartmentByRoad, UploadResponse } from "@/types/shared"
+import {
+  APIRequestDepartmentByRoad,
+  APIRequestRoadList,
+  APIResponseContactDetail,
+  APIResponseDepartmentByRoad,
+  APIResponseRoadList,
+  UploadResponse,
+} from "@/types/shared"
 
 export const getCCTVDetailAPI = async (cameraId: string | number) => {
   return ApiService.fetchData<APIResponseCCTVDetail>({
@@ -24,9 +31,20 @@ export const getDepartmentByRoadAPI = async (params: APIRequestDepartmentByRoad)
   })
 }
 
-export const postUploadVMSAPI = async (form: FormData) =>
+export const postUploadVMSAPI = async (form: FormData, full_url?: boolean) =>
   ApiService.fetchData<UploadResponse, FormData>({
     url: '/upload/vms',
     method: 'POST',
     data: form,
+    params: {
+      full_url: full_url
+    }
   })
+
+export const getRoadListAPI = async (params: APIRequestRoadList) => {
+  return ApiService.fetchData<APIResponseRoadList, APIRequestRoadList>({
+    url: `/manage/roads`,
+    method: 'GET',
+    params: { is_exist: true, ...params }
+  })
+}

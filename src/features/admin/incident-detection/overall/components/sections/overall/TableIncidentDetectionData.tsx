@@ -1,184 +1,126 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useRouter } from 'next/navigation'
+import { TbWifi, TbWifiOff, TbShieldCheckFilled } from 'react-icons/tb'
+import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
+import { useDeptId } from '@/hooks/useDeptId'
+import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
+import LicenseModal, { type LicenseModalSolution } from '@/features/admin/incident-detection/components/LicenseModal'
 
-interface Props {}
-
-type GuaranteeType = 'ไม่ค้ำ' | 'หมดค้ำ'
-type StatusType = 'ออนไลน์' | 'ออฟไลน์'
-
-interface IDEntry {
-  id: string;
-  bureau: string;
-  roadCode: string;
-  projectName: string;
-  contractNo: string;
-  guarantee: GuaranteeType;
-  installPoint: string;
-  analysisCameras: number;
-  events: number;
-  license: number;
-  status: StatusType;
-  onlineCount: number;
-  offlineCount: number;
+interface Props {
+  rows: IncidentRow[]
+  loading?: boolean
 }
 
-const rawData: IDEntry[] = [
-  {
-    id: 'nu3021-1',
-    bureau: 'ส่วนกลาง',
-    roadCode: 'นบ.3021',
-    projectName: 'โครงการงานบำรุงรักษาสาย นบ.3021 กมน.ราษฎร์บูรณะ อ.เมือง จ.นนทบุรีจำนวน 1 แห่ง',
-    contractNo: 'สอ.47/2567',
-    guarantee: 'ไม่ค้ำ',
-    installPoint: 'นบ.3021 กม.33+200 – 35+510',
-    analysisCameras: 2,
-    events: 77,
-    license: 0,
-    status: 'ออนไลน์',
-    onlineCount: 2,
-    offlineCount: 0,
-  },
-  {
-    id: 'nu3021-2',
-    bureau: 'ส่วนกลาง',
-    roadCode: 'นบ.3021',
-    projectName: 'โครงการงานบำรุงรักษาสาย นบ.3021 กมน.ราษฎร์บูรณะ อ.เมือง จ.นนทบุรีจำนวน 1 แห่ง',
-    contractNo: 'สอ.6/2567',
-    guarantee: 'ไม่ค้ำ',
-    installPoint: 'นบ.3021 กม.29+400 – 42+200',
-    analysisCameras: 128,
-    events: 0,
-    license: 0,
-    status: 'ออนไลน์',
-    onlineCount: 128,
-    offlineCount: 0,
-  },
-  {
-    id: 'cc3017-1',
-    bureau: 'สทช.13 ฉะเชิงเทรา',
-    roadCode: 'ฉช.3017',
-    projectName: 'งานบำรุงรักษาถนน ถนนสาย ฉช.3017 แยกทางหลวงหมายเลข 331 – บ้านน้ำอ้อม ต.สาบน้ำ อ.พนมสารคาม สทช.ฉะเชิงเทรา',
-    contractNo: 'กทจ.13/67/2565',
-    guarantee: 'ไม่ค้ำ',
-    installPoint: 'ฉช.3017 กม.0+450',
-    analysisCameras: 2,
-    events: 0,
-    license: 0,
-    status: 'ออนไลน์',
-    onlineCount: 2,
-    offlineCount: 0,
-  },
-  {
-    id: 'cc3017-2',
-    bureau: 'สทช.13 ฉะเชิงเทรา',
-    roadCode: 'ฉช.3017',
-    projectName: 'งานบำรุงรักษาถนน ถนนสาย ฉช.3017 แยกทางหลวงหมายเลข 331 – บ้านน้ำอ้อม ต.สาบน้ำ อ.พนมสารคาม สทช.ฉะเชิงเทรา',
-    contractNo: 'กทจ.13/67/2565',
-    guarantee: 'ไม่ค้ำ',
-    installPoint: 'ฉช.3017 กม.2+650',
-    analysisCameras: 3,
-    events: 4,
-    license: 0,
-    status: 'ออนไลน์',
-    onlineCount: 3,
-    offlineCount: 0,
-  },
-  {
-    id: 'cc4023-1',
-    bureau: 'สทช.13 ฉะเชิงเทรา',
-    roadCode: 'ฉช.4023',
-    projectName: 'ว่าจ้างก่อสร้างโครงการปรับปรุงสะพาน ถนนสาย ฉช.4023 แยกทางหลวงหมายเลข 3200 – บ้านหนองขันหมาก อ.สนามชัยเขต จ.ฉะเชิงเทรา',
-    contractNo: 'สอ.67/2568',
-    guarantee: 'ไม่ค้ำ',
-    installPoint: 'ฉช.4023 จุด 6 กม.5+680',
-    analysisCameras: 8,
-    events: 0,
-    license: 0,
-    status: 'ออฟไลน์',
-    onlineCount: 0,
-    offlineCount: 8,
-  },
-]
-
-const TOTAL_COLS = 11
-
-type Row =
-  | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | { kind: 'entry'; id: string; entry: IDEntry; roadCodeRowSpan: number }
-
-const buildRows = (entries: IDEntry[]): Row[] => {
-  const groups = new Map<string, IDEntry[]>()
-  for (const e of entries) {
-    const list = groups.get(e.bureau) ?? []
-    list.push(e)
-    groups.set(e.bureau, list)
-  }
-  const rows: Row[] = []
-  for (const [bureau, items] of groups) {
-    rows.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
-    let i = 0
-    while (i < items.length) {
-      const currentCode = items[i].roadCode
-      let span = 1
-      while (i + span < items.length && items[i + span].roadCode === currentCode) span++
-      for (let j = 0; j < span; j++) {
-        rows.push({
-          kind: 'entry',
-          id: items[i + j].id,
-          entry: items[i + j],
-          roadCodeRowSpan: j === 0 ? span : 0,
-        })
-      }
-      i += span
-    }
-  }
-  return rows
-}
-
-const GuaranteePill: React.FC<{ g: GuaranteeType }> = ({ g }) => {
-  const color = g === 'ไม่ค้ำ' ? '#05F2DB' : '#979797'
+const WarrantyPill: React.FC<{ warranty: IncidentRow['warranty'] }> = ({ warranty }) => {
+  const cfg = warranty === 'in-warranty'
+    ? { text: 'ในค้ำ', color: '#05F2DB' }
+    : { text: 'หมดค้ำ', color: '#979797' }
   return (
     <span
       className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
-      style={{ border: `1px solid ${color}`, color }}
+      style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
     >
-      {g}
+      {cfg.text}
     </span>
   )
 }
 
-const StatusPill: React.FC<{ s: StatusType }> = ({ s }) => {
-  const isOnline = s === 'ออนไลน์'
-  const color = isOnline ? '#66AEFF' : '#E94C4C'
+const StatusPill: React.FC<{ online: boolean }> = ({ online }) => {
+  const color = online ? '#66AEFF' : '#E94C4C'
   return (
     <span
       className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
-      {isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
-      {s}
+      {online ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+      {online ? 'ออนไลน์' : 'ออฟไลน์'}
     </span>
   )
 }
 
-const TableIncidentDetectionData: React.FC<Props> = () => {
-  const data = useMemo(() => buildRows(rawData), [])
-  const router = useRouter()
+const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
+  const color = online ? '#66AEFF' : '#E94C4C'
+  return (
+    <span
+      className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      style={{ border: `1px solid ${color}`, color }}
+    >
+      {online ? 'Connect' : 'Disconnect'}
+    </span>
+  )
+}
 
-  const columns: ColumnsType<Row> = useMemo(() => [
+/** License action icon — opens the License modal, which fetches the solution's
+ *  license keys on demand from /analytic/license/{solution_id}. Same glyph +
+ *  warranty-colored style as traffic-volume overall (yellow active / gray not). */
+const LicenseIcon: React.FC<{ active: boolean }> = ({ active }) => (
+  <TbShieldCheckFilled size={20} style={{ color: active ? '#FCD116' : '#979797' }} />
+)
+
+type TableRow =
+  | { kind: 'bureau'; id: string; bureau: string; count: number }
+  | { kind: 'project'; id: string; item: IncidentRow; roadCodeSpan: number }
+
+const TOTAL_COLS = 10
+
+/** Tab 2 — detail view. Columns after จุดติดตั้ง: กล้องวิเคราะห์ · เหตุการณ์ ·
+ *  License · สถานะ · Stream (the incident-specific columns). */
+const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
+  const router = useRouter()
+  const deptId = useDeptId()
+  const [licenseSolution, setLicenseSolution] = useState<LicenseModalSolution | null>(null)
+
+  const openLicense = useCallback((r: IncidentRow) => {
+    setLicenseSolution({ id: r.id, name: r.installPoint, roadId: r.roadId })
+  }, [])
+
+  const data = useMemo<TableRow[]>(() => {
+    const groups = new Map<string, IncidentRow[]>()
+    for (const r of rows) {
+      const list = groups.get(r.bureau) ?? []
+      list.push(r)
+      groups.set(r.bureau, list)
+    }
+    const out: TableRow[] = []
+    for (const [bureau, items] of groups) {
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      let i = 0
+      while (i < items.length) {
+        const code = items[i].roadCode
+        let span = 1
+        while (i + span < items.length && items[i + span].roadCode === code) span++
+        out.push({ kind: 'project', id: items[i].id, item: items[i], roadCodeSpan: span })
+        for (let j = 1; j < span; j++) {
+          out.push({ kind: 'project', id: items[i + j].id, item: items[i + j], roadCodeSpan: 0 })
+        }
+        i += span
+      }
+    }
+    return out
+  }, [rows])
+
+  const goToDetail = useCallback((r: IncidentRow) => {
+    const params = new URLSearchParams({ dept_id: deptId })
+    if (r.projectId) params.set('project_id', r.projectId)
+    if (r.roadId) params.set('road_id', r.roadId)
+    router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
+  }, [router, deptId])
+
+  const columns: ColumnsType<TableRow> = useMemo(() => [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
-      width: 130,
+      width: 150,
+      align: 'center',
       onCell: (row) =>
         row.kind === 'bureau'
           ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
-          : { rowSpan: row.roadCodeRowSpan },
-      render: (_: unknown, row: Row) => {
+          : { rowSpan: row.roadCodeSpan },
+      render: (_, row) => {
         if (row.kind === 'bureau') {
           return (
             <div className='flex items-center gap-3'>
@@ -192,132 +134,144 @@ const TableIncidentDetectionData: React.FC<Props> = () => {
             </div>
           )
         }
-        return <span className='font-medium'>{row.entry.roadCode}</span>
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.roadCode}
+          </DetailLinkText>
+        )
       },
     },
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? r.entry.projectName : null,
-    },
-    {
-      title: 'เลขที่สัญญา',
-      key: 'contractNo',
-      width: 180,
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) => {
-        if (r.kind !== 'entry') return null
-        return (
-          <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-            {r.entry.contractNo}
-            <TbInfoSquareRoundedFilled
-              size={18}
-              className='text-white/50 cursor-pointer hover:text-(--yellow)'
-            />
-          </span>
-        )
-      },
-    },
-    {
-      title: 'การค้ำประกัน',
-      key: 'guarantee',
-      width: 120,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? <GuaranteePill g={r.entry.guarantee} /> : null,
+      ellipsis: true,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.projectName}
+          </DetailLinkText>
+        ) : null,
     },
     {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
-      width: 220,
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? r.entry.installPoint : null,
+      width: 240,
+      align: 'center',
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <DetailLinkText onClick={() => goToDetail(row.item)}>
+            {row.item.installPoint}
+          </DetailLinkText>
+        ) : null,
+    },
+    {
+      title: 'เลขที่สัญญา',
+      key: 'contractNo',
+      width: 190,
+      align: 'center',
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <ContractInfoCell
+            contractNo={row.item.contractNo}
+            budgetYear={row.item.budgetYear}
+            projectId={row.item.projectId}
+            roadId={row.item.roadId}
+          />
+        ) : null,
+    },
+    {
+      title: 'การค้ำประกัน',
+      key: 'warranty',
+      width: 120,
+      align: 'center',
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
     },
     {
       title: 'กล้องวิเคราะห์',
       key: 'analysisCameras',
       width: 120,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? <span className='font-semibold'>{r.entry.analysisCameras}</span> : null,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? <span className='text-white font-semibold'>{row.item.totalCameras}</span> : null,
     },
     {
       title: 'เหตุการณ์',
       key: 'events',
       width: 100,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? <span className='font-semibold'>{r.entry.events}</span> : null,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => {
+        if (row.kind !== 'project') return null
+        return (
+          <span
+            className='font-semibold'
+            style={{ color: row.item.events > 0 ? '#FCD116' : '#ffffff40' }}
+          >
+            {row.item.events}
+          </span>
+        )
+      },
     },
     {
       title: 'License',
       key: 'license',
       width: 100,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? <span className='font-semibold'>{r.entry.license}</span> : null,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) =>
+        row.kind === 'project' ? (
+          <button
+            type='button'
+            onClick={() => openLicense(row.item)}
+            className='cursor-pointer hover:opacity-80'
+            title='ดูข้อมูล License'
+          >
+            <LicenseIcon active={row.item.warranty === 'in-warranty'} />
+          </button>
+        ) : null,
     },
     {
       title: 'สถานะ',
       key: 'status',
       width: 140,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? <StatusPill s={r.entry.status} /> : null,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => (row.kind === 'project' ? <StatusPill online={row.item.onlineCameras > 0} /> : null),
     },
     {
       title: 'Stream',
       key: 'stream',
-      width: 110,
+      width: 120,
       align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) => {
-        if (r.kind !== 'entry') return null
-        return (
-          <span
-            className={`inline-block py-0.5 px-3 rounded-full text-xs border ${r.entry.onlineCount > 0 ? 'border-blue-400 text-blue-400' : 'border-red-500 text-red-500'}`}
-          >
-            {r.entry.onlineCount > 0 ? 'Connect' : 'Disconnect'}
-          </span>
-        )
-      },
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
     },
-    {
-      title: 'ออฟไลน์',
-      key: 'offlineCount',
-      width: 100,
-      align: 'center',
-      onCell: (r) => (r.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, r: Row) =>
-        r.kind === 'entry' ? (
-          <span className={r.entry.offlineCount > 0 ? 'text-red-400 font-semibold' : 'text-white/30'}>
-            {r.entry.offlineCount}
-          </span>
-        ) : null,
-    },
-  ], [])
+  ], [goToDetail, openLicense])
 
   return (
-    <Table<Row>
-      rowKey='id'
-      columns={columns}
-      dataSource={data}
-      pagination={false}
-      size='middle'
-      scroll={{ x: 1600 }}
-      onRow={() => ({
-        onClick: () => router.push('/admin/incident-detection/detail/EXAMPLE_ID'),
-        className: 'cursor-pointer',
-      })}
-    />
+    <>
+      <Table<TableRow>
+        rowKey='id'
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        pagination={false}
+        size='middle'
+        scroll={{ x: 1500 }}
+        className='bridge-projects-table'
+      />
+      <LicenseModal
+        open={!!licenseSolution}
+        solution={licenseSolution}
+        onClose={() => setLicenseSolution(null)}
+      />
+    </>
   )
 }
 

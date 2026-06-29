@@ -1,15 +1,44 @@
 import React, { useMemo } from 'react'
-import { Button } from 'antd'
+import { Button, Empty } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import ScheduleList from '@/components/list/ScheduleList'
-import MOCK_DATA from '@/mock/display-schedule.json'
+import { APIResponseVMSSettingSchedule } from '@/types/control-vms/display-api'
+import { useControlVMSContext } from '../../../context'
 
-const ScheduleSection: React.FC = () => {
+interface Props {
+  data?: APIResponseVMSSettingSchedule
+}
+
+const ScheduleSection: React.FC<Props> = (props) => {
+  const { data } = props
+  const { setUpdateScheduleState } = useControlVMSContext()
+
   const totalLocations = useMemo(
-    () => new Set(MOCK_DATA.map((i) => i.installation_point)).size,
-    []
+    () => new Set((data ?? []).map(d => d.solution_name)).size,
+    [data]
   )
-  const totalSchedules = MOCK_DATA.length
+  const totalSchedules = data?.length || 0
+
+  const renderSchdeuleList = useMemo(() => {
+    if (!data?.length) return <Empty description="ไม่พบข้อมูล" />
+    return (
+      <ScheduleList
+        data={data || []}
+        cols={{
+          default: 1,
+          sm: 1,
+          md: 2,
+          lg: 3,
+          xl: 4,
+          xxl: 1
+        }}
+        onUpdateClick={{
+          onEdit: (item) => setUpdateScheduleState({ open: true, id: item.setting_id, type: 'EDIT', vmsOption: item }),
+          onDelete: (item) => setUpdateScheduleState({ open: true, id: item.setting_id, type: 'DELETE', vmsOption: item })
+        }}
+      />
+    )
+  }, [data, setUpdateScheduleState])
 
   return (
     <div>
@@ -22,23 +51,19 @@ const ScheduleSection: React.FC = () => {
           <span className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border border-yellow-500 text-yellow-500'>
             {totalSchedules} คำสั่ง
           </span>
-          <Button type='primary' size='middle' shape='round' icon={<PlusOutlined />}>
+          <Button
+            type='primary'
+            size='middle'
+            shape='round'
+            icon={<PlusOutlined />}
+            onClick={() => setUpdateScheduleState({ open: true, id: null, type: 'CREATE' })}
+          >
             <p className='fs-12'>เพิ่มคำสั่ง</p>
           </Button>
         </div>
       </section>
       <section className='mt-5'>
-        <ScheduleList
-          data={MOCK_DATA}
-          cols={{
-            default: 1,
-            sm: 1,
-            md: 2,
-            lg: 3,
-            xl: 4,
-            xxl: 1
-          }}
-        />
+        {renderSchdeuleList}
       </section>
     </div>
   )

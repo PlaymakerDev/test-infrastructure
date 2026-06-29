@@ -1,22 +1,21 @@
 "use client"
-import React, { Suspense, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input, Segmented, Table } from 'antd'
+import { Input, Segmented, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbArrowBigLeftFilled, TbFileText, TbPrinter, TbSearch, TbX } from 'react-icons/tb'
+import { getMaintenanceSolutionAPI, getMaintenanceCasesAPI, getMaintenanceHistoryAPI } from '@/services/routes/MaintenanceService'
+import type { CaseHistoryItem, SolutionDetailResponse, HistoryCase } from '@/types/maintenance'
+import useIsMobile from '@/utils/hooks/useIsMobile'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 
-interface RepairHistoryRecord {
-  key: string
-  caseNo: string
-  repairCount: number
-  type: string
-  hostname: string
-  ipAddress: string
-  problemCategory: string
-  agency: string
-  repairDate: string
-  inspectDate: string
-  closeDate: string
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
+
+interface Props {
+  id: string
 }
 
 const PERIOD_OPTIONS = [
@@ -27,50 +26,88 @@ const PERIOD_OPTIONS = [
   { label: 'ปีที่ผ่านมา', value: 'LAST_YEAR' },
 ]
 
-const MOCK_DATA: RepairHistoryRecord[] = [
-  { key: '1', caseNo: 'C-20260331-0050', repairCount: 3, type: 'CCTV', hostname: 'CCTV-TAKSIN-01', ipAddress: '192.168.1.101', problemCategory: 'ภาพเบลอ', agency: 'หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์', repairDate: '2026-03-31', inspectDate: '2026-04-01', closeDate: '2026-04-03' },
-  { key: '2', caseNo: 'C-20260315-0022', repairCount: 1, type: 'CCTV', hostname: 'CCTV-TAKSIN-02', ipAddress: '192.168.1.102', problemCategory: 'ไม่ตอบสนอง', agency: 'หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์', repairDate: '2026-03-15', inspectDate: '2026-03-16', closeDate: '2026-03-18' },
-  { key: '3', caseNo: 'C-20260228-0015', repairCount: 2, type: 'AI Camera', hostname: 'AI-TAKSIN-01', ipAddress: '192.168.1.103', problemCategory: 'สายสัญญาณขาด', agency: 'หมวดบำรุงทางหลวงชนบทสาทร', repairDate: '2026-02-28', inspectDate: '2026-03-01', closeDate: '2026-03-05' },
-  { key: '4', caseNo: 'C-20260210-0008', repairCount: 1, type: 'NVR', hostname: 'NVR-TAKSIN-01', ipAddress: '192.168.1.200', problemCategory: 'Power Supply เสีย', agency: 'หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์', repairDate: '2026-02-10', inspectDate: '2026-02-11', closeDate: '2026-02-15' },
-  { key: '5', caseNo: 'C-20260115-0003', repairCount: 4, type: 'CCTV', hostname: 'CCTV-TAKSIN-03', ipAddress: '192.168.1.104', problemCategory: 'ภาพมืดตอนกลางคืน', agency: 'หมวดบำรุงทางหลวงชนบทบางรัก', repairDate: '2026-01-15', inspectDate: '2026-01-16', closeDate: '2026-01-20' },
-]
-
-interface Props {
-  id: string
-}
-
 const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const subtitle = searchParams.get('subtitle') || ''
-  const warranty = searchParams.get('warranty') || 'ในค้ำ'
+  const isMobile = useIsMobile()
+  const warrantyParam = searchParams.get('warranty') || ''
+  const storedSubtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
+
+  const [loading, setLoading] = useState(true)
+  const [solutionData, setSolutionData] = useState<SolutionDetailResponse | null>(null)
+  const [cases, setCases] = useState<CaseHistoryItem[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<RepairHistoryRecord | null>(null)
+  const [selectedRecord, setSelectedRecord] = useState<CaseHistoryItem | null>(null)
+  // case_no → HistoryCase lookup (history API has device/project fields the cases API lacks)
+  const [historyMap, setHistoryMap] = useState<Record<string, HistoryCase>>({})
+
+  // Derived from API
+  const warranty = warrantyParam || (solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ')
+  const onlineCount = solutionData?.online_count ?? 0
+  const offlineCount = solutionData?.offline_count ?? 0
+  // HistoryCase for the selected record (carries device/project fields the cases API lacks)
+  const historyCase = selectedRecord ? historyMap[selectedRecord.case_no] : undefined
+  const agencyText = historyCase?.department_name || selectedRecord?.responsible || '-'
+  const deviceTypeText = historyCase?.solution_type || '-'
+  const installPointText = historyCase ? [historyCase.location_name, historyCase.road_name].filter(Boolean).join(' - ') || '-' : '-'
+  const offlineSinceText = selectedRecord?.reported_at ? dayjs(selectedRecord.reported_at).format('DD MMM BBBB') : '-'
+  const offlineDaysText = historyCase?.offline_days ? `${historyCase.offline_days} วัน` : '-'
+
+  const fetchData = useCallback(async () => {
+    const numericId = Number(id)
+    if (!numericId) return
+    try {
+      setLoading(true)
+      const [solutionRes, casesRes, historyRes] = await Promise.all([
+        getMaintenanceSolutionAPI(numericId),
+        getMaintenanceCasesAPI(numericId),
+        getMaintenanceHistoryAPI({ status: 'all' }),
+      ])
+      setSolutionData(solutionRes.data)
+      setCases(casesRes.data ?? [])
+      // Build case_no → HistoryCase map for the modal's project/device fields
+      const map: Record<string, HistoryCase> = {}
+        ; (historyRes.data ?? []).forEach((region) => {
+          region.cases.forEach((c) => { map[c.case_no] = c })
+        })
+      setHistoryMap(map)
+    } catch (err) {
+      console.error('Error fetching repair history:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back()
-    } else {
-      router.push(`/admin/maintenance/detail/${id}`)
-    }
+    router.push(`/admin/maintenance/detail/${id}`)
   }
 
-  const columns: ColumnsType<RepairHistoryRecord> = [
-    { title: 'Case No.', dataIndex: 'caseNo', key: 'caseNo', width: 180 },
-    { title: 'จำนวนครั้งซ่อมแซม', dataIndex: 'repairCount', key: 'repairCount', width: 160, align: 'center' },
-    { title: 'ประเภท', dataIndex: 'type', key: 'type', width: 120 },
-    { title: 'Hostname', dataIndex: 'hostname', key: 'hostname', width: 160 },
-    { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140 },
-    { title: 'หมวดหมู่ของปัญหาที่พบ', dataIndex: 'problemCategory', key: 'problemCategory', width: 200 },
-    { title: 'หน่วยงานรับผิดชอบ', dataIndex: 'agency', key: 'agency', width: 250 },
-    { title: 'วันที่แจ้งซ่อม', dataIndex: 'repairDate', key: 'repairDate', width: 140 },
-    { title: 'วันที่ตรวจสอบ', dataIndex: 'inspectDate', key: 'inspectDate', width: 140 },
-    { title: 'วันที่ปิด Case', dataIndex: 'closeDate', key: 'closeDate', width: 140 },
+  const columns: ColumnsType<CaseHistoryItem> = [
+    { title: 'Case No.', dataIndex: 'case_no', key: 'case_no', width: 180 },
+    { title: 'ชื่ออุปกรณ์', dataIndex: 'camera_name', key: 'camera_name', width: 200 },
+    { title: 'IP Address', dataIndex: 'camera_ip', key: 'camera_ip', width: 140 },
+    { title: 'หมวดหมู่ของปัญหาที่พบ', dataIndex: 'problem', key: 'problem', width: 200 },
+    { title: 'หน่วยงานรับผิดชอบ', dataIndex: 'responsible', key: 'responsible', width: 250 },
+    { title: 'วันที่แจ้งซ่อม', dataIndex: 'reported_at', key: 'reported_at', width: 140 },
+    { title: 'วันที่ตรวจสอบ', dataIndex: 'inspection_date', key: 'inspection_date', width: 140 },
+    { title: 'วันที่ปิด Case', dataIndex: 'closed_at', key: 'closed_at', width: 140 },
   ]
+
+  if (loading) {
+    return (
+      <div className='main-screen flex items-center justify-center h-64'>
+        <Spin size='large' />
+      </div>
+    )
+  }
 
   return (
     <div className='main-screen'>
-      <div className='px-10 pt-3'>
+      <div className='px-4 sm:px-10 pt-3'>
         <section className='flex items-start gap-3'>
           <TbArrowBigLeftFilled
             className='text-[24px] cursor-pointer mt-1.5 shrink-0'
@@ -78,66 +115,76 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
             onClick={handleBack}
           />
           <div>
-            <h1 className='text-[24px] font-bold' style={{ color: '#FCD116' }}>
+            <h1 className='text-[20px] sm:text-[24px] font-bold' style={{ color: '#FCD116' }}>
               ประวัติการซ่อม
             </h1>
-            {subtitle && (
-              <div className='flex items-center gap-2 mt-1 flex-wrap'>
-                <p className='text-[14px] font-normal' style={{ color: '#FFFFFF' }}>
-                  {subtitle}
+            <div className='flex items-center gap-2 mt-2 flex-wrap'>
+              {(storedSubtitle || solutionData?.solution_name) && (
+                <p className='text-[13px] sm:text-[14px] font-normal' style={{ color: '#FFFFFF' }}>
+                  {storedSubtitle || solutionData?.solution_name}
                 </p>
-                <span
-                  className='inline-flex items-center px-3 py-1 rounded-full text-[14px] font-normal whitespace-nowrap'
-                  style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
-                >
-                  {warranty}
-                </span>
-                <span
-                  className='inline-flex items-center gap-1.5 text-[14px] font-normal whitespace-nowrap'
-                  style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #FCD116', color: '#FCD116', minWidth: 70, textAlign: 'center' }}
-                >
-                  <img src='/atlas/images/Maintenance/icrpyellow.png' alt='' width={15} height={15} />
-                  <span style={{ marginTop: 2 }}>5</span>
-                </span>
-                <img src='/atlas/images/statistics/icbt.png' alt='' width={30} height={30} className='shrink-0' />
-                <button
-                  className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-                  style={{ background: '#66AEFF', color: '#0A0A0A' }}
-                  type='button'
-                >
-                  <TbPrinter size={14} />
-                  นำออกเอกสาร
-                </button>
-              </div>
-            )}
+              )}
+              <span
+                className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
+              >
+                {warranty}
+              </span>
+              <span
+                className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
+              >
+                <img src='/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
+                <span style={{ marginTop: 2 }}>{onlineCount}</span>
+              </span>
+              <span
+                className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
+              >
+                <img src='/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
+                <span style={{ marginTop: 2 }}>{offlineCount}</span>
+              </span>
+              <img src='/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
+              <button
+                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+                style={{ background: '#66AEFF', color: '#0A0A0A' }}
+                type='button'
+              >
+                <TbPrinter size={14} />
+                นำออกเอกสาร
+              </button>
+            </div>
           </div>
         </section>
       </div>
-      <section className='mt-5 px-10'>
-        <div className='flex items-end gap-4 mb-4'>
-          <div>
+      <section className='mt-5 px-4 sm:px-10'>
+        <div className='flex flex-col sm:flex-row sm:items-end gap-3 mb-4'>
+          <div className='w-full sm:w-auto'>
             <p className='text-[16px] font-normal mb-1' style={{ color: '#FCD116' }}>ค้นหา</p>
             <Input
               placeholder='ค้นหา Case No. หรือชื่ออุปกรณ์...'
               suffix={<TbSearch size={18} color='#FCD116' />}
               size='middle'
-              style={{ width: 320, height: 40, borderRadius: 10 }}
+              style={{ width: isMobile ? '100%' : 360, height: 40, borderRadius: 10 }}
             />
           </div>
           <div>
             <p className='text-[16px] font-normal mb-1' style={{ color: '#FCD116' }}>ปิด Case สำเร็จ</p>
-            <Segmented
-              options={PERIOD_OPTIONS}
-              defaultValue='THIS_MONTH'
-              size='large'
-              classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
-            />
+            <div className='overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+              <Segmented
+                options={PERIOD_OPTIONS}
+                defaultValue='THIS_MONTH'
+                size={isMobile ? 'middle' : 'large'}
+                classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+              />
+            </div>
           </div>
         </div>
         <Table
           columns={columns}
-          dataSource={MOCK_DATA}
-          pagination={false}
+          dataSource={cases}
+          rowKey='case_no'
+          pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ` }}
           scroll={{ x: 'max-content' }}
           size='middle'
           onRow={(record) => ({
@@ -153,238 +200,136 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
       {/* Modal */}
       {isModalOpen && selectedRecord && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setIsModalOpen(false)}
         >
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.65)', zIndex: 1 }} />
           <div
             style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.65)',
-              zIndex: 1,
-            }}
-          />
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 2,
-              width: 1630,
-              height: 870,
-              borderRadius: 20,
-              backgroundColor: '#333333',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-              padding: '24px 32px',
-              display: 'flex',
-              flexDirection: 'column',
+              position: 'relative', zIndex: 2,
+              width: 'calc(100% - 32px)', maxWidth: 1630, minHeight: 400, maxHeight: '90vh',
+              borderRadius: 20, backgroundColor: '#333333', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+              padding: '24px 32px', display: 'flex', flexDirection: 'column', overflow: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontSize: 16, fontWeight: 400, margin: 0 }}>
                 <span style={{ color: '#FCD116' }}>Case No.</span>
-                <span style={{ color: '#FFFFFF', marginLeft: 8 }}>{selectedRecord.caseNo}</span>
+                <span style={{ color: '#FFFFFF', marginLeft: 8 }}>{selectedRecord.case_no}</span>
               </p>
               <button
                 onClick={() => setIsModalOpen(false)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                }}
+                style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer' }}
               >
                 <TbX size={20} color='#66AEFF' />
               </button>
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Row 1 */}
-              <div style={{ display: 'flex', gap: 16, height: 200 }}>
-                <div style={{ flex: 55, backgroundColor: '#191919', borderRadius: 12, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
-                    <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลโครงการ</p>
-                  </div>
-                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>GS - CCTV+AI สะพานสมเด็จพระเจ้าตากสินมหาราช เขตคลองสาน, สาทร, บางรัก กทม.</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ผู้รับจ้าง</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>FTD</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>หน่วยงานรับผิดชอบ</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>บทช.กัลปพฤกษ์</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เลขที่สัญญา</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>สบธ.88/2566</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>เริ่มต้นการรับประกัน</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>22 ก.พ. 2566</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สิ้นสุดการรับประกัน</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>22 มิ.ย. 2568</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>สถานะค้ำประกัน</p>
-                      <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>หมดค้ำ</p>
-                    </div>
+              {/* Row: ข้อมูลโครงการ + ข้อมูลอุปกรณ์ */}
+              <div className='flex flex-col lg:flex-row gap-4'>
+                {/* Card: ข้อมูลโครงการ */}
+                <div className='flex-1 lg:flex-[55] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
+                  <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: '0 0 4px 0' }}>ข้อมูลโครงการ</p>
+                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>
+                    {storedSubtitle || solutionData?.solution_name || '-'}
+                  </p>
+                  <div className='grid grid-cols-3 lg:grid-cols-6 gap-4'>
+                    {([
+                      { label: 'ผู้รับจ้าง', value: '-', icon: 'icsc1.png' },
+                      { label: 'หน่วยงานรับผิดชอบ', value: agencyText, icon: 'icsc2.png' },
+                      { label: 'เลขที่สัญญา', value: '-', icon: 'icsc3.png' },
+                      { label: 'เริ่มต้นการรับประกัน', value: '-', icon: 'icsc4-5.png' },
+                      { label: 'สิ้นสุดการรับประกัน', value: '-', icon: 'icsc4-5.png' },
+                      { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
+                    ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
+                      <div key={label} className='flex flex-col items-center'>
+                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
+                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div style={{ flex: 45, backgroundColor: '#191919', borderRadius: 12, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
-                    <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลอุปกรณ์</p>
-                  </div>
-                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>{selectedRecord.hostname}</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>ประเภทอุปกรณ์</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>CCTV</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จุดติดตั้ง / สายทาง</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>สะพานตากสิน</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>IP Address</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>192.168.3.170</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>วันที่เริ่มออฟไลน์</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>26 ก.พ. 2569</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                      <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0 }}>จำนวนวันออฟไลน์</p>
-                      <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0' }}>58 วัน</p>
-                    </div>
+
+                {/* Card: ข้อมูลอุปกรณ์ */}
+                <div className='flex-1 lg:flex-[45] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
+                  <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: '0 0 4px 0' }}>ข้อมูลอุปกรณ์</p>
+                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>
+                    {selectedRecord.camera_name || '-'}
+                  </p>
+                  <div className='flex flex-wrap justify-between gap-4'>
+                    {([
+                      { label: 'ประเภทอุปกรณ์', value: deviceTypeText, icon: 'icsc2.1.png' },
+                      { label: 'จุดติดตั้ง / สายทาง', value: installPointText, icon: 'icsc2.2.png' },
+                      { label: 'IP Address', value: selectedRecord.camera_ip || '-', icon: 'icsc3.png' },
+                      { label: 'วันที่เร่มออฟไลน์', value: offlineSinceText, icon: 'icsc4-5.png' },
+                      { label: 'จำนวนวันออฟไลน์', value: offlineDaysText, icon: 'icsc6.png' },
+                    ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
+                      <div key={label} className='flex flex-col items-center' style={{ flex: '1 1 0', minWidth: 90 }}>
+                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
+                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-              {/* Row 2 */}
-              <div style={{ display: 'flex', gap: 16, flex: 1 }}>
-                <div style={{ flex: 55, backgroundColor: '#191919', borderRadius: 12, padding: 20 }}>
-                  <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '0 0 12px 0' }}>ข้อมูลการแจ้งซ่อม</p>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ flex: 1 }}>
+
+              {/* Row 1 */}
+              <div className='flex flex-col lg:flex-row gap-4'>
+                <div className='flex-1 lg:flex-[55] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
+                  <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 12px 0' }}>ข้อมูลการแจ้งซ่อม</p>
+                  <div className='flex flex-col sm:flex-row gap-4'>
+                    <div className='flex-1'>
                       <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หมวดหมู่ของปัญหาที่พบ</p>
-                      <Input
-                        value={selectedRecord.problemCategory}
-                        readOnly
-                        style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                      />
+                      <Input value={historyCase?.category || '-'} readOnly style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หน่วยงานรับผิดชอบ</p>
-                      <Input
-                        value={selectedRecord.agency}
-                        readOnly
-                        style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                      />
+                    <div className='flex-1'>
+                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หน่วยงานรับผิดชอบหรือมอบหมาย</p>
+                      <Input value={agencyText} readOnly style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }} />
                     </div>
                   </div>
-                  <div style={{ marginTop: 12 }}>
+                  <div className='mt-3'>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>ปัญหาที่พบ</p>
-                    <Input.TextArea
-                      value={selectedRecord.problemCategory}
-                      readOnly
-                      rows={3}
-                      style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }}
-                    />
+                    <Input.TextArea value={selectedRecord.problem || '-'} readOnly autoSize={{ minRows: 2, maxRows: 4 }} style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }} />
                   </div>
-                  <div style={{ marginTop: 12 }}>
-                    <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>การดำเนินการหรือวิธีการแก้ไข<span style={{ color: '#E94C4C' }}>*</span></p>
-                    <Input.TextArea
-                      value='เปลี่ยนหลอด LED ใหม่ 5 จุด ตรวจสอบสายไฟ'
-                      readOnly
-                      rows={3}
-                      style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }}
-                    />
+                  <div className='mt-3'>
+                    <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>การดำเนินการหรือวิธีการแก้ไข</p>
+                    <Input.TextArea value={'-'} readOnly autoSize={{ minRows: 2, maxRows: 4 }} style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }} />
                   </div>
-                  <div style={{ marginTop: 12 }}>
-                    <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>ระยะเวลา</p>
-                    <Input
-                      value='3 วัน'
-                      readOnly
-                      style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>วันที่แจ้งซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
-                      <Input
-                        value={selectedRecord.repairDate}
-                        readOnly
-                        style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                      />
+                  <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '16px 0 6px 0' }}>ระยะเวลา</p>
+                  <div className='flex flex-col sm:flex-row gap-4'>
+                    <div className='flex-1'>
+                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>วันที่แจ้งซ่อม</p>
+                      <Input value={selectedRecord.reported_at || '-'} readOnly style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>วันที่ตรวจสอบ<span style={{ color: '#E94C4C' }}>*</span></p>
-                      <Input
-                        value={selectedRecord.inspectDate}
-                        readOnly
-                        style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                      />
+                    <div className='flex-1'>
+                      <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>วันที่ตรวจสอบ</p>
+                      <Input value={selectedRecord.inspection_date || '-'} readOnly style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }} />
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div className='flex-1'>
                       <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>วันที่ปิด Case</p>
-                      <Input
-                        value={selectedRecord.closeDate}
-                        readOnly
-                        style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }}
-                      />
+                      <Input value={selectedRecord.closed_at || '-'} readOnly style={{ width: '100%', height: 40, borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF' }} />
                     </div>
                   </div>
                 </div>
-                <div style={{ flex: 45, backgroundColor: '#191919', borderRadius: 12, padding: 20, overflow: 'auto' }}>
+                <div className='flex-1 lg:flex-[45] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
                   <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '0 0 16px 0' }}>รายละเอียดรูปแบบไฟล์</p>
-                  <div style={{ marginBottom: 16 }}>
+                  <div className='mb-4'>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>ก่อนซ่อม</p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <img src='/atlas/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
-                      <img src='/atlas/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
-                      <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                        <TbFileText size={24} color='#000000' />
-                        <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
-                        <span style={{ fontSize: 8, color: '#000000' }}>5.9 MB</span>
+                    <div className='flex gap-2 flex-wrap'>
+                      <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TbFileText size={40} color='#555' />
                       </div>
                     </div>
                   </div>
                   <div>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>หลังซ่อม</p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <img src='/atlas/images/Maintenance/icmd1.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
-                      <img src='/atlas/images/Maintenance/icmd2.png' alt='' style={{ width: 160, height: 160, borderRadius: 8, objectFit: 'cover' }} />
+                    <div className='flex gap-2 flex-wrap'>
+                      <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TbFileText size={40} color='#555' />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -399,7 +344,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
 
 const RepairHistoryScreen: React.FC<Props> = ({ id }) => {
   return (
-    <Suspense>
+    <Suspense fallback={<div className='flex items-center justify-center h-64'><Spin size='large' /></div>}>
       <RepairHistoryContent id={id} />
     </Suspense>
   )

@@ -28,5 +28,8 @@ export { default as DisplayTableList } from './sections/display/DisplayTableList
 export { default as DisplayTitle } from './sections/display/DisplayTitle'
 export { default as FormSearchCalendar } from './sections/display/FormSearchCalendar'
 export { default as FormSearchDisplay } from './sections/display/FormSearchDisplay'
+export { default as FormUpdateSchedule } from './sections/display/FormUpdateSchedule'
+export { default as ScheduleDisplaySection } from './sections/display/ScheduleDisplaySection'
 export { default as ScheduleSection } from './sections/display/ScheduleSection'
+export { default as ModalUpdateSchedule } from './sections/display/ModalUpdateSchedule'
 

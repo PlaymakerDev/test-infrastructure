@@ -85,3 +85,93 @@ body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last
   display: none !important;
   box-shadow: none !important;
 }
+
+/* Event log table (traffic-lighting detail) — natural height, no inner vertical scroll.
+ * Horizontal overflow is handled by the outer wrapper on narrow viewports only. */
+body .event-log-table .ant-table-content,
+body .event-log-table .ant-table-body {
+  overflow-y: visible !important;
+  max-height: none !important;
+}
+
+/* ── Dark-theme pagination for the bridge/projects tables.
+ * Antd ships a light pagination by default, which clashes with the dark
+ * table surface. Scope it under .bridge-projects-table so only these tables
+ * are affected. Uses the project's yellow (#FCD116) as the active accent. */
+body .bridge-projects-table .ant-pagination {
+  color: #FFFFFF;
+  margin-top: 16px;
+}
+
+body .bridge-projects-table .ant-pagination-total-text,
+body .bridge-projects-table .ant-pagination-options {
+  color: #FFFFFF;
+}
+
+/* Inactive page buttons — transparent with a subtle border */
+body .bridge-projects-table .ant-pagination .ant-pagination-item {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+body .bridge-projects-table .ant-pagination .ant-pagination-item a {
+  color: #FFFFFF;
+}
+body .bridge-projects-table .ant-pagination .ant-pagination-item:hover {
+  border-color: #FCD116;
+}
+body .bridge-projects-table .ant-pagination .ant-pagination-item:hover a {
+  color: #FCD116;
+}
+
+/* Active page button — yellow background, dark text */
+body .bridge-projects-table .ant-pagination .ant-pagination-item-active {
+  background: #FCD116;
+  border-color: #FCD116;
+}
+body .bridge-projects-table .ant-pagination .ant-pagination-item-active a {
+  color: #212121;
+  font-weight: 700;
+}
+
+/* Prev/Next arrow icons */
+body .bridge-projects-table .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+body .bridge-projects-table .ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+body .bridge-projects-table .ant-pagination .ant-pagination-prev:hover .ant-pagination-item-link,
+body .bridge-projects-table .ant-pagination .ant-pagination-next:hover .ant-pagination-item-link {
+  border-color: #FCD116;
+  color: #FCD116;
+}
+
+/* Page-size selector ("10 / page" dropdown) */
+body .bridge-projects-table .ant-pagination-options .ant-select-selector {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+}
+body .bridge-projects-table .ant-pagination-options .ant-select-arrow {
+  color: #FFFFFF;
+}
+
+/* ── Detail-link cells (รหัสสายทาง / ชื่อโครงการ / จุดติดตั้ง) — marked with
+ * `.detail-link` by the shared DetailLinkText component. Hovering ANYWHERE on a
+ * row lights up all three link cells together (yellow + underline) so they read
+ * as one clickable group / yellow bar. Only our overall list tables carry
+ * `.detail-link`, so bridge-lighting tables (same wrapper class) are unaffected. */
+body .bridge-projects-table .ant-table-tbody > tr:hover .detail-link {
+  color: #FCD116;
+  text-decoration: underline;
+}
+
+/* ── Vehicle breakdown table — traffic-volume detail page.
+ * Composes on top of `.bridge-projects-table`. The card on the right of the
+ * pie chart needs the 9-row table to fill its container so it visually
+ * balances against the donut. We bump cell padding so each row is taller. */
+body .vehicle-breakdown-table .ant-table-thead > tr > th,
+body .vehicle-breakdown-table .ant-table-tbody > tr > td {
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+}

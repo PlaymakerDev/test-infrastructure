@@ -1,8 +1,10 @@
 "use client"
-import { createContext, useContext } from 'react'
+import { APIRequestTrackingPosition } from '@/types/tracking/overall-api';
+import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
-  text?: string;
+  searchPosition: APIRequestTrackingPosition | null
+  setSearchPosition: (s: APIRequestTrackingPosition | null) => void
 }
 
 export interface PageProviderProps {
@@ -13,10 +15,14 @@ export const OverallContext = createContext<ContextProps | null>(null)
 
 export const OverallProvider = (props: PageProviderProps) => {
   const { children } = props
+  const [searchPosition, setSearchPosition] = useState<APIRequestTrackingPosition | null>(null)
 
   return (
     <OverallContext.Provider
-      value={{}}
+      value={{
+        searchPosition,
+        setSearchPosition
+      }}
     >
       {children}
     </OverallContext.Provider>

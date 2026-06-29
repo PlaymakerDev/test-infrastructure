@@ -80,8 +80,37 @@ export interface APIResponseContactDetail {
   /** Status enum from backend — drives badge color + label. */
   warranty_status: WarrantyStatusString
   company_name: string
-  warranty_status: string
-  warranty_date: number
+}
+
+// ── GET /manage/roads ─────────────────────────────────────────────────────────
+// Paginated road list — used by the CCTV search autocomplete (pick a road →
+// fetch its cameras).
+
+export interface Road {
+  id: number
+  road_code: string
+  road_name: string
+  department_id: number
+  distance: number
+  district: string
+  province: string
+  start_sta: string
+  end_sta: string
+  subdistrict: string
+}
+
+export interface APIRequestRoadList {
+  department_id?: number
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: string
+}
+
+export interface APIResponseRoadList {
+  res_data: Road[]
+  meta_data: MetaData
 }
 
 export interface APIRequestDepartmentByRoad {
@@ -113,4 +142,13 @@ export interface UploadResponse {
 export interface APIResponsePost {
   res_code: number
   res_data: string
+}
+
+export interface WIMMetaData {
+  has_next_page: boolean
+  has_previous_page: boolean
+  page: number
+  page_count: number
+  page_size: number
+  total: number
 }

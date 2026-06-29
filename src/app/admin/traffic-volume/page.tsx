@@ -1,6 +1,8 @@
-export const dynamic = "force-dynamic";
-import TrafficVolumeScreen from '@/features/admin/traffic-volume/screen'
+import React from 'react'
+import ScreenOverallTrafficVolume from '@/features/admin/traffic-volume/overall/screen'
 
-export default function TrafficVolumePage() {
-  return <TrafficVolumeScreen />
+const TrafficVolumePage = () => {
+  return <ScreenOverallTrafficVolume />
 }
+
+export default React.memo(TrafficVolumePage)

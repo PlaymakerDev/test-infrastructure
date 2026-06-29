@@ -1,198 +1,112 @@
 "use client"
-import React, { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Table } from 'antd'
+import React, { Suspense, useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
 import { TitleSection } from '../components'
+import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI } from '@/services/routes/MaintenanceService'
+import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 
 interface Props {
   id: string
 }
 
-interface DeviceRecord {
+interface TableRow {
   key: string
-  status: string
-  caseNo: string
-  type: string
+  status: 'online' | 'offline'
+  cameraName: string
+  ipAddress: string
+  caseNo: string | null
+  cameraId: string
+  category: string
   brand: string
   model: string
   hostname: string
-  ipAddress: string
   anydesk: string
   zerotier: string
   username: string
   password: string
-  warranty: 'ในค้ำ' | 'หมดค้ำ'
 }
 
-const MOCK_DATA: DeviceRecord[] = [
-  {
-    key: '1',
-    status: 'online',
-    caseNo: 'C-20260331-0050',
-    type: 'CCTV',
-    brand: 'Hikvision',
-    model: 'DS-2CD2T47G2-L',
-    hostname: 'CCTV-TAKSIN-01',
-    ipAddress: '192.168.1.101',
-    anydesk: '123456789',
-    zerotier: 'zt-001',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-  {
-    key: '2',
-    status: 'online',
-    caseNo: '',
-    type: 'CCTV',
-    brand: 'Hikvision',
-    model: 'DS-2CD2T47G2-L',
-    hostname: 'CCTV-TAKSIN-02',
-    ipAddress: '192.168.1.102',
-    anydesk: '123456790',
-    zerotier: 'zt-002',
-    username: 'admin',
-    password: '********',
-    warranty: 'หมดค้ำ',
-  },
-  {
-    key: '3',
-    status: 'offline',
-    caseNo: 'C-20260330-0012',
-    type: 'AI Camera',
-    brand: 'Dahua',
-    model: 'IPC-HFW5442T-ASE',
-    hostname: 'AI-TAKSIN-01',
-    ipAddress: '192.168.1.103',
-    anydesk: '123456791',
-    zerotier: 'zt-003',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-  {
-    key: '4',
-    status: 'online',
-    caseNo: '',
-    type: 'Switch',
-    brand: 'Cisco',
-    model: 'C9200L-24P-4G',
-    hostname: 'SW-TAKSIN-01',
-    ipAddress: '192.168.1.1',
-    anydesk: '123456792',
-    zerotier: 'zt-004',
-    username: 'admin',
-    password: '********',
-    warranty: 'หมดค้ำ',
-  },
-  {
-    key: '5',
-    status: 'online',
-    caseNo: 'C-20260329-0088',
-    type: 'NVR',
-    brand: 'Hikvision',
-    model: 'DS-7616NI-K2',
-    hostname: 'NVR-TAKSIN-01',
-    ipAddress: '192.168.1.200',
-    anydesk: '123456793',
-    zerotier: 'zt-005',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-  {
-    key: '6',
-    status: 'offline',
-    caseNo: '',
-    type: 'CCTV',
-    brand: 'Hikvision',
-    model: 'DS-2CD2T47G2-L',
-    hostname: 'CCTV-TAKSIN-03',
-    ipAddress: '192.168.1.104',
-    anydesk: '123456794',
-    zerotier: 'zt-006',
-    username: 'admin',
-    password: '********',
-    warranty: 'หมดค้ำ',
-  },
-  {
-    key: '7',
-    status: 'online',
-    caseNo: 'C-20260328-0015',
-    type: 'AI Camera',
-    brand: 'Dahua',
-    model: 'IPC-HFW5442T-ASE',
-    hostname: 'AI-TAKSIN-02',
-    ipAddress: '192.168.1.105',
-    anydesk: '123456795',
-    zerotier: 'zt-007',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-  {
-    key: '8',
-    status: 'online',
-    caseNo: '',
-    type: 'Switch',
-    brand: 'Cisco',
-    model: 'C9200L-48P-4G',
-    hostname: 'SW-TAKSIN-02',
-    ipAddress: '192.168.1.2',
-    anydesk: '123456796',
-    zerotier: 'zt-008',
-    username: 'admin',
-    password: '********',
-    warranty: 'หมดค้ำ',
-  },
-  {
-    key: '9',
-    status: 'offline',
-    caseNo: 'C-20260327-0042',
-    type: 'NVR',
-    brand: 'Dahua',
-    model: 'NVR5216-16P-I',
-    hostname: 'NVR-TAKSIN-02',
-    ipAddress: '192.168.1.201',
-    anydesk: '123456797',
-    zerotier: 'zt-009',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-  {
-    key: '10',
-    status: 'online',
-    caseNo: '',
-    type: 'CCTV',
-    brand: 'Dahua',
-    model: 'IPC-HDW5442TM-ASE',
-    hostname: 'CCTV-TAKSIN-04',
-    ipAddress: '192.168.1.106',
-    anydesk: '123456798',
-    zerotier: 'zt-010',
-    username: 'admin',
-    password: '********',
-    warranty: 'ในค้ำ',
-  },
-]
+/** Wrapper อ่าน title/subtitle จาก sessionStorage แล้วส่งเข้า TitleSection */
+const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null }> = ({ id, data }) => {
+  // title/subtitle มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
+  const title = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_title') || data?.solution_name || id) : (data?.solution_name || id)
+  const subtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
+  const onlineCount = data?.online_count ?? 0
+  const offlineCount = data?.offline_count ?? 0
+  const warranty = data?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ'
+  return (
+    <TitleSection
+      id={id}
+      title={title}
+      subtitle={subtitle}
+      onlineCount={onlineCount}
+      offlineCount={offlineCount}
+      warranty={warranty}
+    />
+  )
+}
 
 const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const title = searchParams.get('title') || id
-  const subtitle = searchParams.get('subtitle') || ''
+  const { modal } = App.useApp()
+  const [solutionData, setSolutionData] = useState<SolutionDetailResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedDevice, setSelectedDevice] = useState<DeviceRecord | null>(null)
+  const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const columns: ColumnsType<DeviceRecord> = [
+  // Fetch solution detail
+  const fetchSolution = useCallback(async () => {
+    const numericId = Number(id)
+    if (!numericId) return
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await getMaintenanceSolutionAPI(numericId)
+      setSolutionData(res.data)
+    } catch (err) {
+      console.error('Error fetching solution detail:', err)
+      setError('ไม่สามารถโหลดข้อมูลได้')
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => {
+    fetchSolution()
+  }, [fetchSolution])
+
+  // Map API data to table rows
+  const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
+    key: item.camera_id,
+    status: item.status ? 'online' : 'offline',
+    cameraName: item.camera_name,
+    ipAddress: item.camera_ip,
+    caseNo: item.case_no ?? null,
+    cameraId: item.camera_id,
+    category: item.category ?? '-',
+    brand: item.brand ?? '-',
+    model: item.model ?? '-',
+    hostname: item.hostname ?? '-',
+    anydesk: item.anydesk ?? '-',
+    zerotier: item.zerotier ?? '-',
+    username: item.username ?? '-',
+    password: item.password ?? '-',
+  }))
+
+  const warranty = solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ'
+
+  const columns: ColumnsType<TableRow> = [
     {
       title: 'สถานะ',
       dataIndex: 'status',
       key: 'status',
       width: 120,
+      align: 'center',
       render: (status: string) => {
         const isOnline = status === 'online'
         return (
@@ -210,13 +124,16 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
       title: 'Case No.',
       dataIndex: 'caseNo',
       key: 'caseNo',
-      width: 180,
+      width: 160,
       align: 'center',
-      render: (text: string, record: DeviceRecord) =>
+      render: (text: string | null, record: TableRow) =>
         text ? (
           <span
             style={{ color: '#FCD116', cursor: 'pointer' }}
-            onClick={() => router.push(`/admin/maintenance/case/${text}`)}
+            onClick={() => {
+              sessionStorage.setItem('maintenance_detail_id', id)
+              router.push(`/admin/maintenance/case/${text}`)
+            }}
           >
             {text}
           </span>
@@ -226,7 +143,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
             style={{ background: '#FCD116', color: '#212121' }}
             onClick={() => {
-              setSelectedDevice(record)
+              setSelectedRow(record)
               setIsModalOpen(true)
             }}
           >
@@ -234,28 +151,138 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
           </button>
         ),
     },
-    { title: 'ประเภท', dataIndex: 'type', key: 'type', width: 120 },
-    { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120 },
-    { title: 'รุ่น', dataIndex: 'model', key: 'model', width: 180 },
-    { title: 'Hostname', dataIndex: 'hostname', key: 'hostname', width: 160 },
-    { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140 },
-    { title: 'Anydesk', dataIndex: 'anydesk', key: 'anydesk', width: 120 },
-    { title: 'ZeroTier', dataIndex: 'zerotier', key: 'zerotier', width: 120 },
-    { title: 'Username', dataIndex: 'username', key: 'username', width: 120 },
-    { title: 'Password', dataIndex: 'password', key: 'password', width: 120 },
+    { title: 'ประเภท', dataIndex: 'category', key: 'category', width: 120, align: 'center' },
+    { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120, align: 'center' },
+    { title: 'รุ่น', dataIndex: 'model', key: 'model', width: 120, align: 'center' },
+    { title: 'ชื่ออุปกรณ์', dataIndex: 'cameraName', key: 'cameraName', width: 200 },
+    { title: 'Hostname', dataIndex: 'hostname', key: 'hostname', width: 140, align: 'center' },
+    { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140, align: 'center' },
+    { title: 'Anydesk', dataIndex: 'anydesk', key: 'anydesk', width: 130, align: 'center' },
+    { title: 'ZeroTier', dataIndex: 'zerotier', key: 'zerotier', width: 130, align: 'center' },
+    { title: 'Username', dataIndex: 'username', key: 'username', width: 120, align: 'center' },
+    { title: 'Password', dataIndex: 'password', key: 'password', width: 120, align: 'center' },
   ]
+
+  if (loading) {
+    return (
+      <div className='main-screen flex items-center justify-center h-64'>
+        <Spin size='large' />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='main-screen flex items-center justify-center h-64 text-[#E94C4C]'>
+        {error}
+      </div>
+    )
+  }
 
   return (
     <div className='main-screen'>
-      <TitleSection id={id} title={title} subtitle={subtitle} />
-      <section className='mt-5 px-10'>
-        <Table
-          columns={columns}
-          dataSource={MOCK_DATA}
-          pagination={false}
-          scroll={{ x: 'max-content' }}
-          size='middle'
-        />
+      <style>{`
+        /* ─── Pagination dark theme ─── */
+        .maintenance-detail-pagination .ant-pagination-item {
+          background: rgba(255,255,255,0.06) !important;
+          border: 1px solid #3c3e4e !important;
+          border-radius: 20px !important;
+          min-width: 32px !important;
+          height: 32px !important;
+          line-height: 30px !important;
+          transition: all 0.2s ease !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-item a {
+          color: #c2c2d3 !important;
+          font-size: 13px !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-item:hover {
+          border-color: #FCD116 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-item:hover a {
+          color: #FCD116 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-item-active {
+          background: #FCD116 !important;
+          border-color: #FCD116 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-item-active,
+        .maintenance-detail-pagination .ant-pagination-item-active a,
+        .maintenance-detail-pagination .ant-pagination-item-active span,
+        .maintenance-detail-pagination .ant-pagination-item-active div {
+          color: #212121 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-prev .ant-pagination-item-link,
+        .maintenance-detail-pagination .ant-pagination-next .ant-pagination-item-link {
+          background: rgba(255,255,255,0.06) !important;
+          border: 1px solid #3c3e4e !important;
+          border-radius: 20px !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-prev button,
+        .maintenance-detail-pagination .ant-pagination-next button {
+          color: #c2c2d3 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover .ant-pagination-item-link,
+        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover .ant-pagination-item-link {
+          border-color: #FCD116 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover button,
+        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover button {
+          color: #FCD116 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-disabled .ant-pagination-item-link {
+          opacity: 0.3 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-disabled button {
+          color: #555 !important;
+        }
+        .maintenance-detail-pagination .ant-pagination-total-text {
+          color: #979797 !important;
+          font-size: 13px !important;
+        }
+        .maintenance-detail-pagination .ant-select-selector {
+          background: rgba(255,255,255,0.06) !important;
+          border: 1px solid #3c3e4e !important;
+          border-radius: 20px !important;
+          color: #c2c2d3 !important;
+          padding: 0 8px !important;
+          height: 32px !important;
+        }
+        .maintenance-detail-pagination .ant-select-selection-item {
+          color: #c2c2d3 !important;
+          line-height: 30px !important;
+        }
+        .maintenance-detail-pagination .ant-select-arrow {
+          color: #979797 !important;
+        }
+      `}</style>
+      <TitleSectionWithData id={id} data={solutionData} />
+      <section className='maintenance-detail-pagination mt-5 px-3 sm:px-10'>
+        <ConfigProvider
+          theme={{
+            token: { colorPrimary: '#FCD116', colorBgContainer: '#2a2a2a', colorText: '#c2c2d3' },
+            components: {
+              Select: {
+                optionActiveBg: '#FCD11620',
+                optionSelectedBg: '#FCD11640',
+                colorBgElevated: '#2a2a2a',
+              },
+            },
+          }}
+        >
+          <Table
+            columns={columns}
+            dataSource={tableData}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
+            }}
+            scroll={{ x: 'max-content' }}
+            size='middle'
+          />
+        </ConfigProvider>
       </section>
 
       {/* Custom White Modal */}
@@ -292,14 +319,15 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             style={{
               position: 'relative',
               zIndex: 2,
-              width: 800,
-              minHeight: 560,
+              width: 'calc(100% - 32px)',
+              maxWidth: 800,
+              minHeight: 400,
               borderRadius: 20,
               display: 'flex',
               flexDirection: 'column',
               backgroundColor: '#FFFFFF',
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-              padding: '24px 32px',
+              padding: '20px 24px',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -326,7 +354,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             {/* รูป */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src={selectedDevice?.warranty === 'ในค้ำ' ? '/atlas/images/Maintenance/icmd2.png' : '/atlas/images/Maintenance/icmd1.png'}
+                src='/images/Maintenance/icmd1.png'
                 alt='maintenance'
                 style={{ width: 100, height: 100, objectFit: 'contain' }}
               />
@@ -349,16 +377,13 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 gap: 6,
                 padding: 16,
                 borderRadius: 12,
-                backgroundColor: selectedDevice?.warranty === 'ในค้ำ' ? '#66AEFF33' : '#E94C4C33',
-                border: `2px solid ${selectedDevice?.warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C'}`,
+                backgroundColor: '#E94C4C33',
+                border: '2px solid #E94C4C',
               }}
             >
-              <div><span style={{ color: '#979797' }}>ชื่อโครงการ : </span><span style={{ color: '#212121' }}>GS - CCTV+AI สะพานสมเด็จพระเจ้าตากสินมหาราช เขตคลองสาน, สาทร, บางรัก กทม.</span></div>
-              <div><span style={{ color: '#979797' }}>ผู้รับจ้าง : </span><span style={{ color: '#212121' }}>Firsttech Design Co., Ltd.</span></div>
-              <div><span style={{ color: '#979797' }}>หน่วยงานรับผิดชอบ : </span><span style={{ color: '#212121' }}>หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์</span></div>
-              <div><span style={{ color: '#979797' }}>เลขที่สัญญา : </span><span style={{ color: '#212121' }}>สบธ.88/2566</span></div>
-              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: selectedDevice?.warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C', fontWeight: 700, fontSize: 14 }}>{selectedDevice?.warranty || 'ในค้ำ'}</span></div>
-              <div><span style={{ color: '#979797' }}>วันที่เริ่มต้น - สิ้นสุดการค้ำประกัน : </span><span style={{ color: '#212121' }}>22 ก.พ. 2566 - 22 มิ.ย. 2568 (2 ปี)</span></div>
+              <div><span style={{ color: '#979797' }}>ชื่ออุปกรณ์ : </span><span style={{ color: '#212121' }}>{selectedRow?.cameraName || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>IP Address : </span><span style={{ color: '#212121' }}>{selectedRow?.ipAddress || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: '#E94C4C', fontWeight: 700, fontSize: 14 }}>{warranty}</span></div>
             </div>
 
             {/* ปุ่ม */}
@@ -388,21 +413,44 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
-                  setIsModalOpen(false)
+                onClick={async () => {
+                  if (!selectedRow || submitting) return
+                  try {
+                    setSubmitting(true)
+                    await createMaintenanceCaseAPI({ camera_id: selectedRow.cameraId })
+                    setIsModalOpen(false)
+                    await fetchSolution()
+                    modal.success({
+                      title: 'เปิด Case สำเร็จ',
+                      content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
+                      okText: 'ตกลง',
+                      centered: true,
+                    })
+                  } catch (err) {
+                    console.error('Error creating case:', err)
+                    modal.error({
+                      title: 'ไม่สามารถเปิด Case ได้',
+                      content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+                      okText: 'ตกลง',
+                      centered: true,
+                    })
+                  } finally {
+                    setSubmitting(false)
+                  }
                 }}
+                disabled={submitting}
                 style={{
                   padding: '8px 20px',
                   borderRadius: 88,
                   fontSize: 14,
                   fontWeight: 500,
                   border: 'none',
-                  backgroundColor: '#FCD116',
+                  backgroundColor: submitting ? '#C4C4C4' : '#FCD116',
                   color: '#212121',
-                  cursor: 'pointer',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
                 }}
               >
-                เปิด Case
+                {submitting ? 'กำลังสร้าง...' : 'เปิด Case'}
               </button>
             </div>
           </div>
@@ -414,7 +462,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
 const MaintenanceDetailScreen: React.FC<Props> = ({ id }) => {
   return (
-    <Suspense>
+    <Suspense fallback={<div className='flex items-center justify-center h-64'><Spin size='large' /></div>}>
       <DetailContent id={id} />
     </Suspense>
   )

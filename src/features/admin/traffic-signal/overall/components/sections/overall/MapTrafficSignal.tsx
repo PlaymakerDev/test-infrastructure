@@ -1,12 +1,11 @@
 "use client"
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import MarkerLayer from '@/components/map/primitives/MarkerLayer'
-import { useMap } from '@/components/map/hooks/useMap'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
-import { useSolutionId } from '@/hooks/useSolutionId'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
 interface Props {}
@@ -18,10 +17,21 @@ type TrafficFeatureCollection = GeoJSON.FeatureCollection<
   Record<string, unknown>
 >
 
-/** Convert raw API locations → GeoJSON FeatureCollection for MarkerLayer. */
+/** A usable coordinate — guards against null / missing / [0,0]. A single bad
+ *  point with `coordinates: null` makes Mapbox reject the WHOLE GeoJSON source
+ *  (→ no markers at all) and would crash fitBounds, so we drop them. NOTE:
+ *  signals the backend has no lat/lon for simply can't be plotted — they appear
+ *  in the table (central/list) but never on the map. */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  (g[0] !== 0 || g[1] !== 0)
+
+/** Convert raw API locations → GeoJSON FeatureCollection for MarkerLayer.
+ *  Locations without a usable coordinate are dropped. */
 const toGeoJSON = (locations: TrafficLocation[]): TrafficFeatureCollection => ({
   type: 'FeatureCollection',
-  features: locations.map((loc) => ({
+  features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => ({
     type: 'Feature',
     properties: {
       id: loc.solution.id,
@@ -76,56 +86,56 @@ const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean
 
 interface MarkerLayerGroupProps {
   locations: TrafficLocation[]
-  centroid: [number, number] | null
   isReady: boolean
 }
 
 const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   locations,
-  centroid,
   isReady,
 }) => {
-  const { map, isLoaded } = useMap()
-
-  // Fly to centroid once API resolves so the map zooms to actual data area.
-  useEffect(() => {
-    if (!map || !isLoaded || !isReady || !centroid) return
-    if (centroid[0] === 0 && centroid[1] === 0) return
-    map.flyTo({ center: centroid, zoom: 10, duration: 1200 })
-  }, [map, isLoaded, isReady, centroid])
-
   // One source for all markers — lets Mapbox cluster across online/offline
   // when two signals are geographically close (e.g. solutions 1557 and 2480
   // are ~25m apart). Separate layers would never cluster together.
   const allData = useMemo(() => toGeoJSON(locations), [locations])
 
+  // Frame EVERY plottable signal marker in view (instead of a fixed centroid
+  // zoom) so all สำนัก/แขวง/สายทาง points are visible at once. Uses the same
+  // coord guard as the markers, so map framing matches what's rendered.
+  const coords = useMemo<[number, number][]>(
+    () => locations.map((l) => l.GeometryPoint).filter(isValidCoord),
+    [locations]
+  )
+
   if (!isReady) return null
 
   return (
-    <MarkerLayer
-      id='traffic-signal'
-      data={allData}
-      cluster
-      // Tri-state color: yellow brand color for clusters (so users know to
-      // zoom in), cyan for online, red for offline. Cluster features don't
-      // carry `is_online`, so the `has point_count` branch must come first.
-      color={[
-        'case',
-        ['has', 'point_count'],
-        '#FCD116',
-        ['==', ['get', 'is_online'], true],
-        '#22d3ee',
-        '#ef4444',
-      ]}
-      size={14}
-      popup={(f) => (
-        <TrafficSignalPopup
-          feature={f}
-          isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
-        />
-      )}
-      popupOptions={{ offset: 10, closeButton: false }}
-    />
+    <>
+      <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
+      <MarkerLayer
+        id='traffic-signal'
+        data={allData}
+        cluster
+        // Tri-state color: yellow brand color for clusters (so users know to
+        // zoom in), cyan for online, red for offline. Cluster features don't
+        // carry `is_online`, so the `has point_count` branch must come first.
+        color={[
+          'case',
+          ['has', 'point_count'],
+          '#FCD116',
+          ['==', ['get', 'is_online'], true],
+          '#22d3ee',
+          '#ef4444',
+        ]}
+        size={14}
+        popup={(f) => (
+          <TrafficSignalPopup
+            feature={f}
+            isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+          />
+        )}
+        popupOptions={{ offset: 10, closeButton: false }}
+      />
+    </>
   )
 }
 
@@ -133,11 +143,11 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 const MapTrafficSignal: React.FC<Props> = () => {
   const deptId = useDeptId()
-  const solutionId = useSolutionId()
-  const { data, isLoading, isSuccess } = useTrafficOverview(
-    deptId,
-    solutionId ? { solution_id: solutionId } : {}
-  )
+  // Overall map shows EVERY signal in the department — same approach as the
+  // cctv / incident-detection overall maps. (Earlier this read `solution_id`
+  // from the URL and filtered the request, which made the markers disappear
+  // when the deep-link param was carried over from another menu.)
+  const { data, isLoading, isSuccess } = useTrafficOverview(deptId)
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)
@@ -151,7 +161,6 @@ const MapTrafficSignal: React.FC<Props> = () => {
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         <TrafficSignalMarkerLayer
           locations={data?.locations ?? []}
-          centroid={data?.centroid ?? null}
           isReady={isSuccess}
         />
       </BaseMap>

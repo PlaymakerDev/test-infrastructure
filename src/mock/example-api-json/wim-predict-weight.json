@@ -1,0 +1,191 @@
+{
+  "data": {
+    "data": [
+      {
+        "all_total": 895576,
+        "arrest_total": 92103,
+        "judge_total": 0,
+        "note": null,
+        "plan_total": 1401,
+        "result_total": 351,
+        "spot_check_total": 674,
+        "station_total": 52916,
+        "way_id_total": 232,
+        "wim_total": 841986,
+        "year_total": 2569
+      },
+      {
+        "all_total": 3071692,
+        "arrest_total": 158480,
+        "judge_total": 0,
+        "note": null,
+        "plan_total": 1434,
+        "result_total": 1420,
+        "spot_check_total": 2122,
+        "station_total": 315592,
+        "way_id_total": 670,
+        "wim_total": 2753978,
+        "year_total": 2568
+      },
+      {
+        "all_total": 1054048,
+        "arrest_total": 65062,
+        "judge_total": 0,
+        "note": null,
+        "plan_total": 2756,
+        "result_total": 3416,
+        "spot_check_total": 6652,
+        "station_total": 170314,
+        "way_id_total": 1173,
+        "wim_total": 877082,
+        "year_total": 2567
+      },
+      {
+        "all_total": 2530458,
+        "arrest_total": 291169,
+        "judge_total": 0,
+        "note": null,
+        "plan_total": 3563,
+        "result_total": 3841,
+        "spot_check_total": 7772,
+        "station_total": 533609,
+        "way_id_total": 1179,
+        "wim_total": 1989077,
+        "year_total": 2566
+      },
+      {
+        "all_total": 1646291,
+        "arrest_total": 242385,
+        "judge_total": 0,
+        "note": "ปรับ 0  บาท",
+        "plan_total": 2367,
+        "result_total": 3401,
+        "spot_check_total": 9795,
+        "station_total": 586832,
+        "way_id_total": 1051,
+        "wim_total": 1049664,
+        "year_total": 2565
+      },
+      {
+        "all_total": 976339,
+        "arrest_total": 31173,
+        "judge_total": 0,
+        "note": "ปรับ 0  บาท",
+        "plan_total": 2636,
+        "result_total": 2580,
+        "spot_check_total": 7282,
+        "station_total": 549117,
+        "way_id_total": 943,
+        "wim_total": 419940,
+        "year_total": 2564
+      },
+      {
+        "all_total": 429077,
+        "arrest_total": 421,
+        "judge_total": 0,
+        "note": "ปรับ 0  บาท",
+        "plan_total": 4056,
+        "result_total": 3320,
+        "spot_check_total": 10127,
+        "station_total": 414008,
+        "way_id_total": 1147,
+        "wim_total": 4942,
+        "year_total": 2563
+      },
+      {
+        "all_total": 235534,
+        "arrest_total": 30,
+        "judge_total": 6,
+        "note": "ปรับ 30,000  บาท",
+        "plan_total": 4234,
+        "result_total": 4115,
+        "spot_check_total": 12542,
+        "station_total": 222992,
+        "way_id_total": 3092,
+        "wim_total": 0,
+        "year_total": 2562
+      },
+      {
+        "all_total": 201219,
+        "arrest_total": 57,
+        "judge_total": 3,
+        "note": "ปรับ 15,000  บาท",
+        "plan_total": 4159,
+        "result_total": 4433,
+        "spot_check_total": 17758,
+        "station_total": 183461,
+        "way_id_total": 1792,
+        "wim_total": 0,
+        "year_total": 2561
+      },
+      {
+        "all_total": 263519,
+        "arrest_total": 83,
+        "judge_total": 10,
+        "note": "ปรับ 29,000 บาท",
+        "plan_total": 4068,
+        "result_total": 4151,
+        "spot_check_total": 19152,
+        "station_total": 244367,
+        "way_id_total": 3891,
+        "wim_total": 0,
+        "year_total": 2560
+      },
+      {
+        "all_total": 190274,
+        "arrest_total": 78,
+        "judge_total": 10,
+        "note": "ปรับ 50,000 บาท",
+        "plan_total": 3658,
+        "result_total": 3712,
+        "spot_check_total": 12176,
+        "station_total": 178098,
+        "way_id_total": 2661,
+        "wim_total": 0,
+        "year_total": 2559
+      },
+      {
+        "all_total": 294811,
+        "arrest_total": 54,
+        "judge_total": 16,
+        "note": "ปรับ 72,250 บาท",
+        "plan_total": 3305,
+        "result_total": 3378,
+        "spot_check_total": 10588,
+        "station_total": 284223,
+        "way_id_total": 2928,
+        "wim_total": 0,
+        "year_total": 2558
+      },
+      {
+        "all_total": 12337,
+        "arrest_total": 76,
+        "judge_total": 39,
+        "note": "ปรับ 165,000 บาท",
+        "plan_total": 3189,
+        "result_total": 3189,
+        "spot_check_total": 12337,
+        "station_total": 0,
+        "way_id_total": 2761,
+        "wim_total": 0,
+        "year_total": 2557
+      }
+    ],
+    "summary": [
+      {
+        "all_total": "11801175",
+        "arrest_total": "881171",
+        "judge_total": "84",
+        "note": "-",
+        "plan_total": "40826",
+        "result_total": "41307",
+        "spot_check_total": "128977",
+        "station_total": "3735529",
+        "way_id_total": "23520",
+        "wim_total": "7936669",
+        "year_total": "รวม"
+      }
+    ]
+  },
+  "success": true
+}

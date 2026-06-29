@@ -6,6 +6,7 @@ import React from 'react'
 
 dayjs.extend(buddhistEra)
 import { TbHourglassHigh, TbPencilMinus, TbTrash, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { APIResponseVMSSettingSchedule, VMSSettingSchedule } from '@/types/control-vms/display-api'
 
 dayjs.locale('th')
 
@@ -21,8 +22,8 @@ export interface ScheduleItem {
 }
 
 export interface ScheduleUpdateClick {
-  onEdit?: (item: ScheduleItem) => void
-  onDelete?: (item: ScheduleItem) => void
+  onEdit?: (item: VMSSettingSchedule) => void
+  onDelete?: (item: VMSSettingSchedule) => void
 }
 
 type ColCount = 1 | 2 | 3 | 4
@@ -37,7 +38,7 @@ export interface ScheduleListCols {
 }
 
 export interface ScheduleListProps {
-  data: ScheduleItem[]
+  data: APIResponseVMSSettingSchedule
   onUpdateClick?: ScheduleUpdateClick
   cols?: ScheduleListCols
 }
@@ -53,22 +54,23 @@ const buildGridClass = (cols?: ScheduleListCols): string => {
   const c = cols ?? { default: 1 }
   return [
     colsMap[c.default ?? 1].default,
-    c.sm  && colsMap[c.sm].sm,
-    c.md  && colsMap[c.md].md,
-    c.lg  && colsMap[c.lg].lg,
-    c.xl  && colsMap[c.xl].xl,
+    c.sm && colsMap[c.sm].sm,
+    c.md && colsMap[c.md].md,
+    c.lg && colsMap[c.lg].lg,
+    c.xl && colsMap[c.xl].xl,
     c.xxl && colsMap[c.xxl].xxl,
   ].filter(Boolean).join(' ')
 }
 
-const formatThaiDate = (isoDate: string) =>
-  dayjs(isoDate).format('DD MMM BBBB')
+// const formatThaiDate = (isoDate: string) =>
+//   dayjs(isoDate).format('DD MMM BBBB')
 
-const ScheduleList: React.FC<ScheduleListProps> = ({ data, onUpdateClick, cols }) => {
+const ScheduleList: React.FC<ScheduleListProps> = (props) => {
+  const { data, onUpdateClick, cols } = props
   return (
     <div className={`grid gap-3 ${buildGridClass(cols)}`}>
       {data.map((item) => (
-        <div key={item.id} className='relative bg-background py-6.5 px-5 rounded-lg'>
+        <div key={item.setting_id} className='relative bg-background py-6.5 px-5 rounded-lg'>
           <div className='absolute top-3 right-3 flex items-center gap-2'>
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
@@ -80,17 +82,17 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ data, onUpdateClick, cols }
             />
           </div>
           <div className='text-center'>
-            <h3 className='text-(--yellow)'>{item.display_range}</h3>
-            <p className='text-gray-400'>{formatThaiDate(item.on_date)}</p>
+            <h3 className='text-(--yellow)'>{dayjs(item.since).format('HH:mm')} - {dayjs(item.to).format('HH:mm')}</h3>
+            <p className='text-gray-400'>{dayjs(item.since).format('DD MMM BBBB')} - {dayjs(item.to).format('DD MMM BBBB')}</p>
           </div>
           <hr className='my-3 border-gray-500/20' />
           <div className='text-center'>
             <div className='mb-2'>
-              <p className='fs-12'>สายทาง : {item.route}</p>
-              <p className='fs-12'>จุดติดตั้ง : {item.installation_point}</p>
+              <p className='fs-12'>สายทาง : {item.road_code || '-'}</p>
+              <p className='fs-12'>จุดติดตั้ง : {item.solution_name || '-'}</p>
               {item.anydesk && (
                 <p className='fs-12 text-gray-400'>
-                  Anydesk : {item.anydesk} <Badge color='blue' />
+                  Anydesk : {item.anydesk || '-'} <Badge color={item.is_online ? 'blue' : 'red'} />
                 </p>
               )}
             </div>
@@ -102,7 +104,7 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ data, onUpdateClick, cols }
               </span>
               <span className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border border-yellow-500 text-yellow-500'>
                 <TbHourglassHigh />
-                {item.day_remaining} วัน
+                {item.date_count || '0 วัน'}
               </span>
             </div>
           </div>

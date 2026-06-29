@@ -1,19 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { postVMSMediaAPI } from '@/services/routes/ControlVMSService'
-import { message } from 'antd'
+import { App } from 'antd'
 import { AxiosError } from 'axios'
-import { controlVmsKeys } from '../data/queryKeys'
+import { invalidateVmsMediaWrites } from './invalidateVmsMediaWrites'
 
 export function usePostVMSMedia() {
+  const { message } = App.useApp()
   const qc = useQueryClient()
   return useMutation({
     mutationFn: postVMSMediaAPI,
     onSuccess: async () => {
       message.success('บันทึกข้อมูลสำเร็จ')
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: controlVmsKeys.settingTypes() }),
-        qc.invalidateQueries({ queryKey: controlVmsKeys.media() }),
-      ])
+      await invalidateVmsMediaWrites(qc)
     },
     onError: (error) => {
       if (error instanceof AxiosError) {

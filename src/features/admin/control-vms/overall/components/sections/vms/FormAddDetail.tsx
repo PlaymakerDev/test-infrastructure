@@ -1,5 +1,5 @@
 import { CloudUploadOutlined } from '@ant-design/icons'
-import { Button, Col, ConfigProvider, Image, Input, message, Radio, Row, Select, Upload, UploadFile } from 'antd'
+import { App, Button, Col, ConfigProvider, Image, Input, Radio, Row, Select, Upload, UploadFile } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
@@ -14,6 +14,7 @@ import { postUploadVMSAPI } from '@/services/routes/SharedService'
 import { usePostVMSMedia } from '../../../hooks/usePostVMSMedia'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 import { useControlVMSContext } from '../../../context'
+import { isVideoUrl } from '../../../data/media'
 
 dayjs.extend(buddhistEra)
 dayjs.locale(th)
@@ -32,6 +33,7 @@ interface FormValues {
 }
 
 const FormAddDetail: React.FC<Props> = () => {
+  const { message } = App.useApp()
   const { setAddMode, vmsIdList } = useControlVMSContext()
   const { data: settingTypesData } = useVMSSettingTypes()
   const postMedia = usePostVMSMedia()
@@ -53,10 +55,20 @@ const FormAddDetail: React.FC<Props> = () => {
 
   const displayType = useWatch({ control, name: 'display_type' })
   const fileUrl = useWatch({ control, name: 'file_url' })
+  // const previewSrc = fileUrl.startsWith('http')
+  //   ? fileUrl
+  //   : fileUrl.startsWith('/upload')
+  //     ? `${process.env.NEXT_PUBLIC_HOST_BACKEND}${fileUrl}`
+  //     : `${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`
+  const previewSrc = fileUrl
 
   const onSubmit = useCallback((data: FormValues) => {
     if (!vmsIdList.length) {
       message.warning('กรุณาเลือกป้าย VMS อย่างน้อย 1 ป้าย')
+      return
+    }
+    if (data.display_type === 'IMAGE_VIDEO' && !data.file_url) {
+      message.warning('กรุณารอการอัปโหลดให้เสร็จก่อนบันทึก')
       return
     }
     const body: APIRequestPostVMSMedia = {
@@ -69,23 +81,24 @@ const FormAddDetail: React.FC<Props> = () => {
       vms_ids: vmsIdList,
     }
     postMedia.mutate(body, { onSuccess: () => setAddMode(false) })
-  }, [vmsIdList, setAddMode, postMedia])
+  }, [vmsIdList, setAddMode, postMedia, message])
 
   const uploadFile = useCallback(async (file: UploadFile[]) => {
     setValue('file', [{ ...file[0], status: 'uploading' }])
     try {
       const fd = new FormData()
       fd.append('upload', file[0].originFileObj as File)
-      const response = await postUploadVMSAPI(fd)
+      const response = await postUploadVMSAPI(fd, true)
       const path = response.data?.path || ''
-      const fullUrl = `${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${path}`
+      // const fullUrl = `${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${path}`
+      const fullUrl = path
       setValue('file_url', path)
       setValue('file', [{ ...file[0], status: 'done', url: fullUrl, thumbUrl: fullUrl }])
     } catch (error) {
       setValue('file', [{ ...file[0], status: 'error' }])
       message.error(error instanceof AxiosError ? (error.response?.data?.message ?? 'อัปโหลดไม่สำเร็จ') : 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์')
     }
-  }, [setValue])
+  }, [setValue, message])
 
   return (
     <div className="h-full bg-(--dark-black) rounded-lg p-5">
@@ -213,6 +226,12 @@ const FormAddDetail: React.FC<Props> = () => {
                         { label: 'รูปภาพหรือวิดิโอ', value: 'IMAGE_VIDEO' },
                         { label: 'ข้อความ', value: 'TEXT' },
                       ]}
+                      onChange={(e) => {
+                        field.onChange(e.target.value as string)
+                        setValue('text', '')
+                        setValue('file_url', '')
+                        setValue('file', [])
+                      }}
                     />
                   </fieldset>
                 )}
@@ -274,15 +293,15 @@ const FormAddDetail: React.FC<Props> = () => {
                       </Upload.Dragger>
                       {!!fileUrl && (
                         <figure className='figure-extra-large overflow-hidden rounded-lg mt-1.5'>
-                          {value[0]?.type?.startsWith('video/') ? (
+                          {value[0]?.type?.startsWith('video/') || isVideoUrl(fileUrl) ? (
                             <video
-                              src={`${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`}
+                              src={previewSrc}
                               controls
                               className='w-full h-full object-contain'
                             />
                           ) : (
                             <Image
-                              src={`${process.env.NEXT_PUBLIC_HOST_BACKEND}/upload${fileUrl}`}
+                              src={previewSrc}
                               alt="preview"
                               width={'100%'}
                               height={'100%'}

@@ -3,76 +3,96 @@ import React from 'react'
 import { Table, Badge } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff } from 'react-icons/tb'
-import { VMSScheduleRecord } from './DisplayTableList'
+import { SettingByRoad } from '@/types/control-vms/display-api'
+import dayjs from 'dayjs'
 
 interface Props {
-  data: VMSScheduleRecord[];
+  data: SettingByRoad[];
 }
 
-const columns: ColumnsType<VMSScheduleRecord> = [
+const columns: ColumnsType<SettingByRoad> = [
   {
     title: 'จุดติดตั้ง',
-    dataIndex: 'location',
-    key: 'location',
+    dataIndex: 'solution_name',
+    key: 'solution_name',
     width: 260,
+    render: (value) => {
+      if (value) return value
+      return '-'
+    }
   },
   {
     title: 'หมวดหมู่',
-    dataIndex: 'category',
-    key: 'category',
+    dataIndex: 'setting_type_name',
+    key: 'setting_type_name',
     align: 'center',
     width: 130,
+    render: (value) => {
+      if (value) return value
+      return '-'
+    }
   },
   {
     title: 'ประเภทเนื้อหา',
-    dataIndex: 'contentType',
-    key: 'contentType',
+    dataIndex: 'settings_content',
+    key: 'settings_content',
     align: 'center',
     width: 140,
+    render: (value) => {
+      if (value) return value
+      return '-'
+    }
   },
   {
     title: 'วันที่และเวลาเริ่มต้น',
-    dataIndex: 'startDate',
-    key: 'startDate',
+    dataIndex: 'since',
+    key: 'since',
     align: 'center',
     width: 170,
-    render: (value: string) => (
-      <span className='whitespace-pre-line'>{value}</span>
-    ),
+    render: (value: string) => {
+      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB HH:mm')} น.</span>
+      return '-'
+    },
   },
   {
     title: 'วันที่และเวลาสิ้นสุด',
-    dataIndex: 'endDate',
-    key: 'endDate',
+    dataIndex: 'to',
+    key: 'to',
     align: 'center',
     width: 170,
-    render: (value: string) => (
-      <span className='whitespace-pre-line'>{value}</span>
-    ),
+    render: (value: string) => {
+      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB HH:mm')} น.</span>
+      return '-'
+    },
   },
   {
     title: 'แสดงผล',
-    dataIndex: 'duration',
-    key: 'duration',
+    dataIndex: 'display_hour',
+    key: 'display_hour',
     align: 'center',
     width: 120,
-    render: (value: string) => (
-      <span className='text-(--yellow)'>{value}</span>
-    ),
+    render: (value: string) => {
+      if (value) return <span className='text-(--yellow)'>{value}</span>
+      return '-'
+    },
   },
   {
     title: 'สถานะ',
-    key: 'status',
+    dataIndex: 'is_online',
+    key: 'is_online',
     align: 'center',
     width: 130,
     fixed: 'right',
-    render: (_: unknown, record: VMSScheduleRecord) => (
-      <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${record.isOnline ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}>
-        {record.isOnline ? <TbWifi /> : <TbWifiOff />}
-        {record.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
-        <Badge color={record.isOnline ? 'green' : 'red'} />
-      </span>
-    ),
+    render: (_: unknown, record: SettingByRoad) => {
+      if (record) return (
+        <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${record.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}>
+          {record.is_online ? <TbWifi /> : <TbWifiOff />}
+          {record.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
+          <Badge color={record.is_online ? 'green' : 'red'} />
+        </span>
+      )
+      return '-'
+    },
   },
 ]
 
@@ -80,12 +100,12 @@ const DisplayTableData: React.FC<Props> = (props) => {
   const { data } = props
 
   return (
-    <Table<VMSScheduleRecord>
+    <Table<SettingByRoad>
       columns={columns}
       dataSource={data}
       pagination={false}
       size="middle"
-      rowKey="key"
+      rowKey={(record) => record.setting_id != null ? String(record.setting_id) : `${record.solution_name}-${record.since}-${record.to}`}
       scroll={{ x: 'max-content' }}
     />
   )

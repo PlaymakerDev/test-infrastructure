@@ -10,7 +10,7 @@ const DEFAULT_WARRANTY = { text: '-', color: '--light-gray-2' } as const
 const VMSDetail: React.FC = () => {
   const { bureauSign } = useControlVMSContext()
 
-  const { data, isLoading, isError } = useContactDetail(bureauSign?.project.id)
+  const { data, isLoading, isError } = useContactDetail(bureauSign?.project?.id)
 
   const warranty = WARRANTY_STATUS[data?.data.warranty_status as keyof typeof WARRANTY_STATUS] ?? DEFAULT_WARRANTY
 
@@ -65,7 +65,7 @@ const VMSDetail: React.FC = () => {
       </div>
 
       <div className='mb-5'>
-        <p className='fs-12'>{bureauSign?.project.project_name || '-'}</p>
+        <p className='fs-12'>{bureauSign?.project?.project_name || bureauSign?.project?.name || '-'}</p>
       </div>
 
       {renderContent}

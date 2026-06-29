@@ -8,7 +8,10 @@ import { fmtNumber } from '@/utils/formatNumber'
 import { thaiDayShort } from '@/utils/formatDate'
 import { useDetailContext } from '../../../context'
 
-interface Props { }
+interface Props {
+  /** End date of the 7-day summary window (YYYY-MM-DD). */
+  endDate: string
+}
 
 const COLOR_PCU = '#66AEFF'
 const COLOR_EFFICIENCY = '#6680FF'
@@ -42,11 +45,11 @@ const SHARED_CHART_PROPS = {
   height: 220,
 } as const
 
-const Perf7DayChartsSummaryTraffic: React.FC<Props> = () => {
+const Perf7DayChartsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
   const { project } = useDetailContext()
-  // 7-day summary, end-dated today. Backend returns up to 7 entries.
-  const today = dayjs().format('YYYY-MM-DD')
-  const { data } = useTrafficSummary(project.id, { date: today })
+  // Backend returns 7 entries ending at `endDate`. Driven by the user's
+  // RangePicker end so the bars always reflect the current selection.
+  const { data } = useTrafficSummary(project.id, { date: endDate })
 
   const days = useMemo<BarChartDataPoint[]>(() => {
     return (data ?? []).map((d) => ({

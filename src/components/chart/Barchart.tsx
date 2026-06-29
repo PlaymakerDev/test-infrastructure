@@ -71,9 +71,18 @@ export interface BarChartProps {
   iconCircle?: boolean
   /** รูปแบบการแสดงผล bar: solid = สีทึบ, gradient = ไล่สีจากบนลงล่าง (default `'solid'`) */
   barFill?: 'solid' | 'gradient'
+  /** คำอธิบายบรรทัดที่ 3 ใต้ subtitle เช่น "ข้อมูล 7 วันล่าสุด" */
   /** Optional content rendered inside the card, below the chart. Useful for
    *  putting an average/summary footer inside the same border as the chart. */
   footer?: React.ReactNode
+  /** When `true`, all bar series share the same stack group — each X column
+   *  becomes a single stacked bar instead of N side-by-side bars. */
+  stacked?: boolean
+  /** When `true`, the tooltip appends a "(X%)" suffix per row, computed as
+   *  the row's share of the column total. Pairs well with `stacked` mode. */
+  tooltipShowPercent?: boolean
+  /** Optional unit suffix shown after each value in the tooltip (e.g. "คัน"). */
+  tooltipUnit?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -100,6 +109,9 @@ const BarChart: React.FC<BarChartProps> = ({
   iconCircle = true,
   barFill = 'solid',
   footer,
+  stacked = false,
+  tooltipShowPercent = false,
+  tooltipUnit,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -146,20 +158,44 @@ const BarChart: React.FC<BarChartProps> = ({
         borderWidth: 1,
         padding: [10, 16],
         textStyle: { color: '#ffffff', fontSize: 12 },
-        formatter: (params: { seriesIndex: number; value: number; seriesName: string }[]) =>
-          params
+        formatter: (
+          params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string }[]
+        ) => {
+          // Header — date/time/category label (axisValue of first param).
+          const header = params[0]?.axisValue
+            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;">${params[0].axisValue}</div>`
+            : ''
+          // For "(X%)" suffix, percent base = sum of all series at this column.
+          const total = tooltipShowPercent
+            ? params.reduce((s, p) => s + Number(p.value || 0), 0)
+            : 0
+          const rows = params
             .map((p) => {
               const cfg = bars[p.seriesIndex]
+              const value = Number(p.value)
+              const pct =
+                tooltipShowPercent && total > 0
+                  ? ` <span style="color:rgba(255,255,255,0.5)">(${((value / total) * 100).toFixed(1)}%)</span>`
+                  : ''
               return `<div style="display:flex;justify-content:space-between;gap:24px">
-                <span style="color:${cfg?.color}">${cfg?.label ?? p.seriesName}</span>
-                <span style="color:${cfg?.color};font-weight:700">${Number(p.value).toLocaleString()}</span>
+                <span style="color:${cfg?.color};display:inline-flex;align-items:center;gap:6px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cfg?.color};"></span>
+                  ${cfg?.label ?? p.seriesName}
+                </span>
+                <span style="color:#fff;font-weight:700">${value.toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}${pct}</span>
               </div>`
             })
-            .join(''),
+            .join('')
+          return header + rows
+        },
       },
-      series: bars.map((bar) => ({
+      series: bars.map((bar, idx) => ({
         name: bar.label,
         type: 'bar',
+        // Sharing a `stack` group glues all series into one bar per column.
+        // Only the last (top) series gets a top border-radius; the rest stay
+        // square so segments meet cleanly.
+        stack: stacked ? 'total' : undefined,
         data: data.map((d) => d[bar.dataKey] ?? 0),
         itemStyle: {
           color: barFill === 'gradient'
@@ -172,13 +208,17 @@ const BarChart: React.FC<BarChartProps> = ({
               ],
             }
             : bar.color,
-          borderRadius: [3, 3, 0, 0],
+          borderRadius: stacked
+            ? idx === bars.length - 1
+              ? [3, 3, 0, 0]
+              : [0, 0, 0, 0]
+            : [3, 3, 0, 0],
         },
         barMaxWidth: 32,
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit])
 
   return (
     <div

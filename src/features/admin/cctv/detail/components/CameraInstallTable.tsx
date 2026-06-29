@@ -9,11 +9,12 @@ import SearchBar, {
   type ViewMode,
 } from '@/components/searchable/SearchBar'
 import CameraGridView, { type InstallGroup, type CameraRow } from './sections/CameraGridView'
-import { useAppSelector } from '@/stores/hooks'
+import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 // ── Types (local) ─────────────────────────────────────────────────────────────
 
-type FunctionTag = 'CCTV' | 'Incident' | 'Volume'
 type ConnectStatus = 'connect' | 'disconnect'
 type WarrantyStatus = 'in-warranty' | 'expired'
 
@@ -22,23 +23,6 @@ type Row =
   | { kind: 'camera'; id: string; seq: number; camera: CameraRow }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-const FunctionTagPill: React.FC<{ tag: FunctionTag }> = ({ tag }) => {
-  const cfg: Record<FunctionTag, { bg: string; border: string; color: string }> = {
-    CCTV:     { bg: 'transparent', border: '#f97316', color: '#f97316' },
-    Incident: { bg: '#22c55e',     border: '#22c55e', color: '#fff'    },
-    Volume:   { bg: 'transparent', border: '#a3e635', color: '#a3e635' },
-  }
-  const { bg, border, color } = cfg[tag]
-  return (
-    <span
-      className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap'
-      style={{ background: bg, border: `1px solid ${border}`, color }}
-    >
-      {tag}
-    </span>
-  )
-}
 
 const StatusPill: React.FC<{ status: ConnectStatus }> = ({ status }) => {
   const connected = status === 'connect'
@@ -83,10 +67,11 @@ const TOTAL_COLS = 7
 
 interface Props {
   groups: InstallGroup[]
+  loading?: boolean
 }
 
-const CameraInstallTable: React.FC<Props> = ({ groups }) => {
-  const loading = useAppSelector((s) => s.cctv.task_schedules.detailCameras.loading)
+const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
+  const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode]         = useState<ViewMode>('GRID')
 
@@ -135,7 +120,21 @@ const CameraInstallTable: React.FC<Props> = ({ groups }) => {
           return (
             <div className='flex items-center gap-3'>
               <span className='text-white font-semibold text-sm'>{row.group.label}</span>
-              <TbInfoSquareRoundedFilled size={18} className='cursor-pointer' style={{ color: '#fff' }} title='ดูรายละเอียด' />
+              <TbInfoSquareRoundedFilled
+                size={18}
+                className='cursor-pointer hover:text-(--yellow)'
+                style={{ color: '#fff' }}
+                title='ดูข้อมูลโครงการ'
+                onClick={() =>
+                  dispatch(
+                    setProjectInfoModalOpen({
+                      open: true,
+                      project_id: row.group.projectId ?? null,
+                      road_id: row.group.roadId ?? null,
+                    })
+                  )
+                }
+              />
               <WarrantyPill warranty={row.group.warranty} />
             </div>
           )
@@ -168,7 +167,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups }) => {
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera'
-          ? <div className='flex flex-wrap gap-1'>{row.camera.functions.map((fn) => <FunctionTagPill key={fn} tag={fn as FunctionTag} />)}</div>
+          ? <div className='flex flex-wrap gap-1'>{row.camera.functions.map((fn) => <CameraFunctionTag key={fn} tag={fn} />)}</div>
           : null,
     },
     {
@@ -197,7 +196,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups }) => {
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
     },
-  ], [])
+  ], [dispatch])
 
   return (
     <div className='flex flex-col gap-4'>
