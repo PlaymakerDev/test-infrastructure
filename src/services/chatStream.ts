@@ -18,6 +18,7 @@ import type {
   Provenance,
   ResultPayload,
 } from "@/types/chat"
+import { CHAT_BASE } from "./chatBase"
 import {
   debugChatAuth,
   getChatAccessToken,
@@ -26,7 +27,6 @@ import {
   refreshChatSession,
 } from "./chatAuth"
 
-const CHAT_BASE = (process.env.NEXT_PUBLIC_CHAT_API ?? "").replace(/\/+$/, "")
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY
 
 export interface AskStreamHandlers {
@@ -151,7 +151,7 @@ async function runStream(
     return
   }
 
-  const url = `${CHAT_BASE}/api/chat/ask`
+  const url = `${CHAT_BASE}/ask`
   const token = await getChatAccessToken()
 
   const res = await fetch(url, {

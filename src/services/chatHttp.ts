@@ -9,6 +9,7 @@
 // separate service, so its auth errors never log the user out of the whole app.
 import axios from "axios"
 import type { InternalAxiosRequestConfig } from "axios"
+import { CHAT_BASE } from "./chatBase"
 import {
   debugChatAuth,
   getChatAccessToken,
@@ -18,12 +19,11 @@ import {
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
-const CHAT_BASE = (process.env.NEXT_PUBLIC_CHAT_API ?? "").replace(/\/+$/, "")
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY
 
 const chatHttp = axios.create({
   timeout: 60000,
-  baseURL: `${CHAT_BASE}/api/chat`,
+  baseURL: CHAT_BASE, // already includes the chat prefix (/api/chat or /chat)
 })
 
 chatHttp.interceptors.request.use(async (config) => {

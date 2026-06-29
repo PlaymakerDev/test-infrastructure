@@ -109,6 +109,8 @@ const Skeleton = () => (
 const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
   const { scope, loaded: scopeLoaded } = useScope()
   const [mapName, setMapName] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0) // bump to retry a failed GeoJSON load
   const [activeKey, setActiveKey] = useState<string>(() => layers[0]?.key ?? "")
 
   const active = useMemo(
@@ -123,12 +125,18 @@ const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
     let alive = true
     const provinces = scope?.scoped ? scope.provinces : null
     ensureMap(provinces).then((name) => {
-      if (alive) setMapName(name)
+      if (!alive) return
+      if (name) {
+        setMapName(name)
+        setFailed(false)
+      } else {
+        setFailed(true) // GeoJSON fetch failed — offer a retry
+      }
     })
     return () => {
       alive = false
     }
-  }, [scopeLoaded, scope])
+  }, [scopeLoaded, scope, attempt])
 
   const option = useMemo(() => {
     if (!mapName) return null
@@ -240,6 +248,20 @@ const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
             },
           }}
         />
+      ) : failed ? (
+        <div className="h-[380px] flex flex-col items-center justify-center gap-3 text-center">
+          <p className="fs-14 text-white/50">โหลดแผนที่ไม่สำเร็จ</p>
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(false)
+              setAttempt((a) => a + 1)
+            }}
+            className="fs-12 px-3 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors cursor-pointer"
+          >
+            ลองใหม่
+          </button>
+        </div>
       ) : (
         <Skeleton />
       )}

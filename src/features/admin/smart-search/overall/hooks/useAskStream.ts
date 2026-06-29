@@ -1,5 +1,5 @@
 "use client"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { streamAsk } from "@/services/chatStream"
 import type { AskMode, ChatTurn } from "@/types/chat"
 
@@ -25,11 +25,23 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
   const [mode, setMode] = useState<AskMode>("fast")
 
   const abortRef = useRef<AbortController | null>(null)
+  // Synchronous in-flight guard — `isStreaming` is async state, so a rapid
+  // second send() (before re-render) would otherwise start a parallel stream.
+  const inFlightRef = useRef(false)
 
   // ── Token batching (rAF) ──
   const tokenBufferRef = useRef("")
   const rafRef = useRef<number | null>(null)
   const activeTurnIdRef = useRef<string | null>(null)
+
+  // Abort the stream + cancel any pending flush when the component unmounts
+  // (e.g. navigating away mid-answer) — no leaked fetch or setState-after-unmount.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
 
   const patchTurn = useCallback((id: string, patch: Partial<ChatTurn>) => {
     setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
@@ -59,7 +71,8 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
   const send = useCallback(
     async (rawText: string, opts?: { mode?: AskMode }) => {
       const text = rawText.trim()
-      if (!text || isStreaming) return
+      if (!text || inFlightRef.current) return
+      inFlightRef.current = true
 
       // Lazy conversation: client generates the uuid on the first turn.
       let convId = conversationId
@@ -126,11 +139,12 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
       } finally {
         flushTokens()
         setIsStreaming(false)
+        inFlightRef.current = false
         abortRef.current = null
         activeTurnIdRef.current = null
       }
     },
-    [conversationId, isStreaming, mode, patchTurn, scheduleFlush, flushTokens],
+    [conversationId, mode, patchTurn, scheduleFlush, flushTokens],
   )
 
   const stop = useCallback(() => {
@@ -139,6 +153,7 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
 
   const newChat = useCallback(() => {
     abortRef.current?.abort()
+    inFlightRef.current = false
     setConversationId(null)
     setTurns([])
     setIsStreaming(false)
@@ -148,6 +163,7 @@ export function useAskStream(onPersisted?: (conversationId: string) => void) {
   const loadConversation = useCallback(
     (id: string, loadedTurns: ChatTurn[]) => {
       abortRef.current?.abort()
+      inFlightRef.current = false
       setConversationId(id)
       setTurns(loadedTurns)
       setIsStreaming(false)

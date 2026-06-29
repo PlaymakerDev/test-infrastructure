@@ -1,6 +1,6 @@
 "use client"
 import { Skeleton } from "antd"
-import React, { useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { TbArrowUp } from "react-icons/tb"
 import { askOnce } from "@/services/routes/ChatService"
 import type { AskResult } from "@/types/chat"
@@ -22,15 +22,24 @@ const ComparePane: React.FC<{ placeholder: string; className?: string }> = ({
   const [query, setQuery] = useState("")
   const [state, setState] = useState<PaneState>({ loading: false })
 
+  // Don't setState after unmount (e.g. switching away from compare mid-request).
+  const aliveRef = useRef(true)
+  useEffect(() => {
+    aliveRef.current = true
+    return () => {
+      aliveRef.current = false
+    }
+  }, [])
+
   const run = async () => {
     const q = query.trim()
     if (!q || state.loading) return
     setState({ loading: true })
     try {
       const result = await askOnce(q)
-      setState({ loading: false, result })
+      if (aliveRef.current) setState({ loading: false, result })
     } catch {
-      setState({ loading: false, error: true })
+      if (aliveRef.current) setState({ loading: false, error: true })
     }
   }
 
