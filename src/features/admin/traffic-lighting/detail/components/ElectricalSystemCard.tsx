@@ -45,11 +45,11 @@ const ElectricalSystemCard: React.FC = () => {
         aria-label='ดูรายละเอียดระบบไฟฟ้า'
         className='absolute top-3 right-3 z-10 border-0 cursor-pointer hover:brightness-110 transition-all p-0 bg-transparent'
       >
-        <img src='/images/Lighting/arrowdown.png' alt='' width={32} height={32} className='shrink-0' />
+        <img src='/atlas/images/Lighting/arrowdown.png' alt='' width={32} height={32} className='shrink-0' />
       </button>
 
       <div className='relative z-10 flex flex-row items-start gap-2 pr-10'>
-        <img src='/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
+        <img src='/atlas/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
         <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
       </div>
 

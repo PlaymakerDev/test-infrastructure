@@ -9,10 +9,10 @@ import { APIResponseTrackingPosition, PositionMobile, PositionStation, PositionW
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { theme } from '@/configs/antd/themeConfig'
 
-const STATION_ICON = '/images/icon-marker/Station.svg'
-const WIM_ICON = '/images/icon-marker/Wim.svg'
-const MOBILE_ICON = '/images/icon-marker/Moving.svg'
-const OFFLINE_ICON = '/images/icon-marker/Offline.svg'
+const STATION_ICON = '/atlas/images/icon-marker/Station.svg'
+const WIM_ICON = '/atlas/images/icon-marker/Wim.svg'
+const MOBILE_ICON = '/atlas/images/icon-marker/Moving.svg'
+const OFFLINE_ICON = '/atlas/images/icon-marker/Offline.svg'
 
 interface Props {
 

@@ -196,7 +196,7 @@ const MaintenanceOverviewSection: React.FC<{
         {/* Solution Overview */}
         <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+            <img src="/atlas/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
           <p className="text-xs font-normal text-[#979797] mt-1 hidden sm:block">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
@@ -232,20 +232,20 @@ const MaintenanceOverviewSection: React.FC<{
         {/* งานในค้ำ */}
         <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+            <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
           </div>
           <p className="text-xs font-normal text-[#9E9CA8] mt-0.5 hidden sm:block">{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(inWarranty ? [
-              { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/images/Maintenance/icc1.png' },
-              { value: inWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/images/Maintenance/icc2.png' },
-              { value: inWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/images/Maintenance/icc3.png' },
-              { value: inWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/images/statistics/iconconnect.png', color: '#66AEFF' },
-              { value: inWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-              { value: inWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/images/Maintenance/icc6.png', color: '#FF9D00' },
-              { value: inWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/images/Maintenance/icc7.png', color: '#B2FF00' },
-              { value: inWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/images/Maintenance/icc8.png', color: '#05F2DB' },
+              { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
+              { value: inWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
+              { value: inWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
+              { value: inWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
+              { value: inWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
+              { value: inWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
+              { value: inWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
+              { value: inWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
             ] : []).map((item, i) => (
               <div
                 key={item.label}
@@ -264,20 +264,20 @@ const MaintenanceOverviewSection: React.FC<{
         {/* งานหมดค้ำ */}
         <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+            <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานหมดค้ำ</h2>
           </div>
           <p className="text-xs font-normal text-[#9E9CA8] mt-0.5 hidden sm:block">{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(outWarranty ? [
-              { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/images/Maintenance/icc1.png' },
-              { value: outWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/images/Maintenance/icc2.png' },
-              { value: outWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/images/Maintenance/icc3.png' },
-              { value: outWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/images/statistics/iconconnect.png', color: '#66AEFF' },
-              { value: outWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-              { value: outWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/images/Maintenance/icc6.png', color: '#FF9D00' },
-              { value: outWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/images/Maintenance/icc7.png', color: '#B2FF00' },
-              { value: outWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/images/Maintenance/icc8.png', color: '#05F2DB' },
+              { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
+              { value: outWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
+              { value: outWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
+              { value: outWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
+              { value: outWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
+              { value: outWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
+              { value: outWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
+              { value: outWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
             ] : []).map((item, i) => (
               <div
                 key={item.label}
@@ -297,7 +297,7 @@ const MaintenanceOverviewSection: React.FC<{
       {/* Right Column: สายทางดับทุกจุดติดตั้ง */}
       <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5 xl:sticky xl:top-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <img src="/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+          <img src="/atlas/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
           <h2 className="text-lg sm:text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
         </div>
         <div className="mt-3 sm:mt-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -383,11 +383,10 @@ const MaintenanceOverviewSection: React.FC<{
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${
-                    currentPage === pageNum
+                  className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${currentPage === pageNum
                       ? 'bg-[#FCD116] text-[#191919]'
                       : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
-                  }`}
+                    }`}
                 >
                   {pageNum}
                 </button>

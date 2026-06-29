@@ -243,7 +243,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               style={{ background: '#191919' }}
             >
               <div className='flex items-start gap-2 pt-2'>
-                <img src='/images/Maintenance/iccf.png' alt='' width={30} height={30} />
+                <img src='/atlas/images/Maintenance/iccf.png' alt='' width={30} height={30} />
                 <div>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: 0 }}>บันทึกแจ้งซ่อม</p>
                   <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: 0, marginTop: -4 }}>เพิ่มรายละเอียดปัญหาหรือสาเหตุที่พบ แนบรูปภาพหรือวิดีโอ</p>
@@ -498,38 +498,38 @@ const CaseContent: React.FC<Props> = ({ id }) => {
             style={{ background: '#191919' }}
           >
             <div className='flex items-center gap-2'>
-              <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+              <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลโครงการ</p>
             </div>
             <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{project.projectName}</p>
             <div className='mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4'>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>ผู้รับจ้าง</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractor}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>หน่วยงานรับผิดชอบ</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.agency}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>เลขที่สัญญา</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractNo}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>เริ่มต้นการรับประกัน</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyStart}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>สิ้นสุดการรับประกัน</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyEnd}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>สถานะค้ำประกัน</p>
                 <p style={{ color: project.warrantyStatus === 'expired' ? '#E94C4C' : '#66AEFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>
                   {project.warrantyStatus === 'expired' ? 'หมดค้ำ' : 'ในค้ำ'}
@@ -544,33 +544,33 @@ const CaseContent: React.FC<Props> = ({ id }) => {
             style={{ background: '#191919' }}
           >
             <div className='flex items-center gap-2'>
-              <img src='/images/Maintenance/icf1.png' alt='' width={30} height={30} />
+              <img src='/atlas/images/Maintenance/icf1.png' alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลอุปกรณ์</p>
             </div>
             <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{device.deviceName}</p>
             <div className='mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4'>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.1.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>ประเภทอุปกรณ์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.deviceType}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc2.2.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จุดติดตั้ง / สายทาง</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.installPoint}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc3.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>IP Address</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.ipAddress}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>วันที่เริ่มออฟไลน์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDate || '-'}</p>
               </div>
               <div className='flex flex-col items-center'>
-                <img src='/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays > 0 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>

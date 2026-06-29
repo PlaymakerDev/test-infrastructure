@@ -257,7 +257,8 @@ const RepairRecordsSection: React.FC = () => {
     { title: 'หมวดหมู่ปัญหา', dataIndex: 'problemCategory', key: 'problemCategory', width: 160 },
     { title: 'อุปกรณ์', dataIndex: 'device', key: 'device', width: 180 },
     { title: 'วันที่แจ้งซ่อม', dataIndex: 'repairDate', key: 'repairDate', width: 130 },
-    { title: 'จำนวนวันออฟไลน์', dataIndex: 'offlineDays', key: 'offlineDays', width: 150, align: 'center',
+    {
+      title: 'จำนวนวันออฟไลน์', dataIndex: 'offlineDays', key: 'offlineDays', width: 150, align: 'center',
       render: (days: number) => <span style={{ color: days > 10 ? '#E94C4C' : '#FFFFFF' }}>{days} วัน</span>,
     },
     {

@@ -300,7 +300,8 @@ const RepairRecordsSection: React.FC = () => {
     { title: 'หมวดหมู่ปัญหา', dataIndex: 'problemCategory', key: 'problemCategory', width: 160 },
     { title: 'อุปกรณ์', dataIndex: 'device', key: 'device', width: 180 },
     { title: 'วันที่แจ้งซ่อม', dataIndex: 'repairDate', key: 'repairDate', width: 130 },
-    { title: 'จำนวนวันออฟไลน์', dataIndex: 'offlineDays', key: 'offlineDays', width: 150, align: 'center',
+    {
+      title: 'จำนวนวันออฟไลน์', dataIndex: 'offlineDays', key: 'offlineDays', width: 150, align: 'center',
       render: (days: number) => <span style={{ color: days > 10 ? '#E94C4C' : '#FFFFFF' }}>{days} วัน</span>,
     },
     {
@@ -328,7 +329,7 @@ const RepairRecordsSection: React.FC = () => {
       className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
       style={{ padding: '2px 12px', borderRadius: 9999, border: `1px solid ${color}`, color, minWidth: 70, textAlign: 'center' }}
     >
-      <img src={`/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
+      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
       <span style={{ marginTop: 2 }}>{count}</span>
     </span>
   )

@@ -354,7 +354,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             {/* รูป */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src='/images/Maintenance/icmd1.png'
+                src='/atlas/images/Maintenance/icmd1.png'
                 alt='maintenance'
                 style={{ width: 100, height: 100, objectFit: 'contain' }}
               />

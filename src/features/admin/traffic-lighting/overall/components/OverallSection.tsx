@@ -68,7 +68,7 @@ const OverallSection: React.FC = () => {
               style={{ background: '#191919CC' }}
             >
               <div className='flex flex-row items-start gap-2 shrink-0'>
-                <img src='/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
+                <img src='/atlas/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
                 <p className='text-[14px] sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
               </div>
               <div className='flex flex-col items-center justify-center text-center py-3 sm:py-4 lg:py-5 xl:flex-1 xl:justify-end xl:pb-8 min-h-[64px] sm:min-h-[72px]'>
@@ -198,8 +198,8 @@ const OverallSection: React.FC = () => {
             allowClear
           />
           <div className='flex flex-row items-center gap-2 w-full sm:w-auto'>
-            <img src='/images/Lighting/icbar1.png' alt='' width={30} height={30} className='shrink-0' />
-            <img src='/images/Lighting/icbar2.png' alt='' width={30} height={30} className='shrink-0' />
+            <img src='/atlas/images/Lighting/icbar1.png' alt='' width={30} height={30} className='shrink-0' />
+            <img src='/atlas/images/Lighting/icbar2.png' alt='' width={30} height={30} className='shrink-0' />
             <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
               <Button
                 type='primary'

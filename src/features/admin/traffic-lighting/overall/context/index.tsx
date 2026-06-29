@@ -40,8 +40,8 @@ const LEFT_PANEL_ITEMS = [
 ] as const
 
 const LEFT_BOTTOM_CARDS = [
-  { border: '#6666FF', icon: '/images/Lighting/icel1.png', titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
-  { border: '#B066FF', icon: '/images/Lighting/icel2.png', titleColor: '#B066FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
+  { border: '#6666FF', icon: '/atlas/images/Lighting/icel1.png', titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
+  { border: '#B066FF', icon: '/atlas/images/Lighting/icel2.png', titleColor: '#B066FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
 ] as const
 
 const PHASE_METRICS = [
@@ -222,10 +222,10 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const statCards = useMemo(() => {
     const base = [
-      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/images/Lighting/icc1.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'โคมไฟในระบบทั้งหมด', icon: '/images/Lighting/icc2.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'ในค้ำ', icon: '/images/Lighting/icc3.png', titleColor: '#05F2DB', bg: '#05F2DB1A', border: '2px solid #05F2DB' },
-      { title: 'หมดค้ำ', icon: '/images/Lighting/icc4.png', titleColor: '#979797', bg: '#9797971A', border: '0px solid #979797' },
+      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc1.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
+      { title: 'โคมไฟในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc2.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
+      { title: 'ในค้ำ', icon: '/atlas/images/Lighting/icc3.png', titleColor: '#05F2DB', bg: '#05F2DB1A', border: '2px solid #05F2DB' },
+      { title: 'หมดค้ำ', icon: '/atlas/images/Lighting/icc4.png', titleColor: '#979797', bg: '#9797971A', border: '0px solid #979797' },
     ]
     if (!markersLoaded) {
       return base.map((s) => ({ ...s, value: 0, active: '-' }))

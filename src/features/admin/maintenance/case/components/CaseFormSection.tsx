@@ -45,7 +45,7 @@ const ImageUploadPanel: React.FC<{
       className='maintenance-upload-dragger'
       accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
     >
-      <img src='/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
+      <img src='/atlas/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
       <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
       <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
     </Upload.Dragger>
@@ -54,7 +54,7 @@ const ImageUploadPanel: React.FC<{
         {Array.from({ length: count }).map((_, index) => (
           <div key={index} className={styles.imagePreviewItem} style={{ background: '#2A2A2A' }}>
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src='/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
+              <img src='/atlas/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
             </div>
             <div className={styles.imagePreviewOverlay} onClick={() => onDelete(index)}>
               <TbTrash size={24} color='#FFFFFF' />
@@ -110,7 +110,7 @@ const CaseFormSection: React.FC<Props> = ({ formData, closeCaseAfterSave, onForm
         {/* Left: form fields */}
         <div style={{ flex: `0 0 calc(70% - 16px * 0.3)`, borderRadius: 16, background: '#191919', padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingTop: 8 }}>
-            <img src='/images/Maintenance/iccf.png' alt='' width={30} height={30} />
+            <img src='/atlas/images/Maintenance/iccf.png' alt='' width={30} height={30} />
             <div>
               <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: 0 }}>บันทึกแจ้งซ่อม</p>
               <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: 0, marginTop: -4 }}>เพิ่มรายละเอียดปัญหาหรือสาเหตุที่พบ แนบรูปภาพหรือวิดีโอ</p>
@@ -170,7 +170,7 @@ const CaseFormSection: React.FC<Props> = ({ formData, closeCaseAfterSave, onForm
                   placeholder='กรุณาเลือกวันที่...'
                   format='DD MMM BBBB'
                   style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10 }}
-                  suffixIcon={<img src='/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
+                  suffixIcon={<img src='/atlas/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
                   value={formData.reportDate ? dayjs(formData.reportDate, 'DD MMM BBBB', 'th') : null}
                   onChange={(date) => onFormChange({ reportDate: date ? date.format('DD MMM BBBB') : '' })}
                 />
@@ -181,7 +181,7 @@ const CaseFormSection: React.FC<Props> = ({ formData, closeCaseAfterSave, onForm
                   placeholder='กรุณาเลือกวันที่...'
                   format='DD MMM BBBB'
                   style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10 }}
-                  suffixIcon={<img src='/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
+                  suffixIcon={<img src='/atlas/images/Maintenance/icdate.png' alt='' width={24} height={24} />}
                   value={formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th') : null}
                   onChange={(date) => onFormChange({ inspectDate: date ? date.format('DD MMM BBBB') : '' })}
                 />

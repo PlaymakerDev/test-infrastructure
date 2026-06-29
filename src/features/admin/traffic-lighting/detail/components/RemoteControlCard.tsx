@@ -17,7 +17,7 @@ const RemoteControlCard: React.FC = () => {
         }}
       >
         <div className='flex items-center gap-2 text-white text-xs font-semibold'>
-          <img src='/images/Lighting/ictl1.png' alt='' width={30} height={30} className='shrink-0' />
+          <img src='/atlas/images/Lighting/ictl1.png' alt='' width={30} height={30} className='shrink-0' />
           สถานะการทำงาน
         </div>
         <h2 className='text-white font-bold text-[22px] leading-tight m-0'>
@@ -42,7 +42,7 @@ const RemoteControlCard: React.FC = () => {
             aria-label='เปิดคำสั่งเปิด-ปิดระยะไกล'
             className='border-0 cursor-pointer hover:brightness-110 transition-all p-0 bg-transparent'
           >
-            <img src='/images/Lighting/arrowdown.png' alt='' width={40} height={40} className='shrink-0' />
+            <img src='/atlas/images/Lighting/arrowdown.png' alt='' width={40} height={40} className='shrink-0' />
           </button>
         </div>
       </div>

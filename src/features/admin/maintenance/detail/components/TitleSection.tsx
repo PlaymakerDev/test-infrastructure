@@ -43,19 +43,19 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
             >
               {warranty}
             </span>
-            <img src='/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0 sm:w-7.5 sm:h-7.5' />
+            <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0 sm:w-7.5 sm:h-7.5' />
             <span
               className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
             >
-              <img src='/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
+              <img src='/atlas/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{onlineCount}</span>
             </span>
             <span
               className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
             >
-              <img src='/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
+              <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{offlineCount}</span>
             </span>
             <button

@@ -134,17 +134,17 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
               >
-                <img src='/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
+                <img src='/atlas/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{onlineCount}</span>
               </span>
               <span
                 className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
               >
-                <img src='/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
+                <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{offlineCount}</span>
               </span>
-              <img src='/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
+              <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
               <button
                 className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
                 style={{ background: '#66AEFF', color: '#0A0A0A' }}
@@ -244,7 +244,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
-                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>
@@ -267,7 +267,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'จำนวนวันออฟไลน์', value: offlineDaysText, icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center' style={{ flex: '1 1 0', minWidth: 90 }}>
-                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>

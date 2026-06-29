@@ -23,7 +23,7 @@ const StatusCardsColumn: React.FC = () => {
         titleColor='#6666FF'
         title='สถานะการเชื่อมต่อ'
         status={connectionStatus}
-        icon='/images/Lighting/icel1.png'
+        icon='/atlas/images/Lighting/icel1.png'
         subtitle={`IMEI : ${imei || '-'}`}
       />
 
@@ -32,7 +32,7 @@ const StatusCardsColumn: React.FC = () => {
         titleColor='#B066FF'
         title='สถานะวงจร'
         status={circuitStatus}
-        icon='/images/Lighting/icel2.png'
+        icon='/atlas/images/Lighting/icel2.png'
       />
 
       <StatusInfoCard
@@ -40,7 +40,7 @@ const StatusCardsColumn: React.FC = () => {
         titleColor='#66AEFF'
         title='สถานะสายไฟด้านซ้าย'
         status={leftOk}
-        icon='/images/Lighting/irs4.png'
+        icon='/atlas/images/Lighting/irs4.png'
       />
 
       <StatusInfoCard
@@ -48,7 +48,7 @@ const StatusCardsColumn: React.FC = () => {
         titleColor='#E94C4C'
         title='สถานะสายไฟด้านขวา'
         status={rightOk}
-        icon='/images/Lighting/irs5.png'
+        icon='/atlas/images/Lighting/irs5.png'
       />
     </div>
   )
