@@ -149,6 +149,11 @@ export const theme: ConfigProviderProps = {
         colorHighlight: "#FCD116",
         // Cell borders / splits
         colorSplit: "#333333",
+      },
+      Pagination: {
+        itemActiveBg: "var(--default-blue)",
+        itemActiveColor: "var(--black)",
+        itemBg: "transparent",
       }
     }
   },

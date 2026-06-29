@@ -1,56 +1,20 @@
-import { Input } from 'antd';
-import React, { useCallback } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-import { TbSearch } from 'react-icons/tb';
+import { Input } from 'antd'
+import React from 'react'
+import { TbSearch } from 'react-icons/tb'
 
 interface Props {
-
+  onSearch?: (value: string) => void
 }
 
-interface FormValues {
-  search: string;
-}
-
-const FormSearchWIM: React.FC<Props> = (props) => {
-  const { } = props
-
-  const form = useForm<FormValues>({
-    defaultValues: {
-      search: ""
-    }
-  })
-
-  const {
-    control,
-    handleSubmit,
-  } = form
-
-  const onSubmit = useCallback((value: FormValues) => {
-    console.log(value)
-  }, [])
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        control={control}
-        name='search'
-        render={({ field }) => {
-          return (
-            <fieldset>
-              <Input
-                {...field}
-                name={field.name}
-                placeholder="ค้นหาสถานี WIM (Weight-In-Motion)..."
-                className='rounded-lg'
-                suffix={<TbSearch />}
-                size='medium'
-              />
-            </fieldset>
-          )
-        }}
-      />
-    </form>
-  )
-}
+const FormSearchWIM: React.FC<Props> = ({ onSearch }) => (
+  <Input
+    placeholder="ค้นหาสถานี WIM (Weight-In-Motion)..."
+    className='rounded-lg'
+    suffix={<TbSearch />}
+    // size='large'
+    allowClear
+    onChange={(e) => onSearch?.(e.target.value)}
+  />
+)
 
 export default React.memo<Props>(FormSearchWIM)

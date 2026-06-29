@@ -7,11 +7,11 @@ interface Props {
   data?: SumStation[]
   isLoading?: boolean
   isError?: boolean
+  onSearch?: (value: string) => void
 }
 
 const StationSearchPanel: React.FC<Props> = (props) => {
-  const { data, isLoading, isError } = props
-
+  const { data, isLoading, isError, onSearch } = props
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
@@ -22,7 +22,7 @@ const StationSearchPanel: React.FC<Props> = (props) => {
   return (
     <div>
       <section>
-        <FormSearchStation />
+        <FormSearchStation onSearch={onSearch} />
       </section>
       <section className='mt-5'>
         {renderContent}

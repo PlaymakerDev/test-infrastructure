@@ -44,7 +44,7 @@ const SwapButton: React.FC<Props> = (props) => {
   }, [options, setLabelValue, active, size])
 
   return (
-    <div className='flex items-center gap-2 sm:gap-3 w-full flex-wrap sm:flex-nowrap sm:overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className='flex items-center gap-2 sm:gap-3 w-full flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' style={{ WebkitOverflowScrolling: 'touch' }}>
       {renderButton}
     </div>
   )

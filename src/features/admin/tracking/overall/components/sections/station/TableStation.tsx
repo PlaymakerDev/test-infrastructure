@@ -1,9 +1,11 @@
 "use client"
 import React from 'react'
-import { Table, Button } from 'antd'
+import { Table, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { SumStation } from '@/types/tracking/overall-api'
+import { STATION_STATUS } from '@/constants'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   data?: SumStation[]
@@ -11,99 +13,11 @@ interface Props {
   isError?: boolean
 }
 
-interface StationProjectRecord {
-  key: string
-  no: number
-  routeCode: string
-  province: string
-  unit: string
-  integration: string | null
-  startTime: string
-  endTime: string | null
-  totalVehicles: number
-  normalWeight: number
-  overweight: number
-  overweight10: number
-}
-
 const TableStation: React.FC<Props> = (props) => {
   const { data, isLoading, isError } = props;
   const router = useRouter()
 
-  const mockData: StationProjectRecord[] = [
-    {
-      key: '1',
-      no: 1,
-      routeCode: 'ชย.3002',
-      province: 'ชัยภูมิ',
-      unit: 'ขทช.ชัยภูมิ',
-      integration: 'อส.ทช',
-      startTime: '16:02',
-      endTime: null,
-      totalVehicles: 8,
-      normalWeight: 5,
-      overweight: 3,
-      overweight10: 1,
-    },
-    {
-      key: '2',
-      no: 2,
-      routeCode: 'อบ.4041',
-      province: 'อุบลราชธานี',
-      unit: 'สทช.7 (อุบลราชธานี)',
-      integration: 'กช.',
-      startTime: '14:48',
-      endTime: '16:03',
-      totalVehicles: 12,
-      normalWeight: 12,
-      overweight: 0,
-      overweight10: 0,
-    },
-    {
-      key: '3',
-      no: 3,
-      routeCode: 'มห.4012',
-      province: 'มุกดาหาร',
-      unit: 'ขทช.มุกดาหาร',
-      integration: null,
-      startTime: '12:25',
-      endTime: '14:30',
-      totalVehicles: 4,
-      normalWeight: 4,
-      overweight: 0,
-      overweight10: 0,
-    },
-    {
-      key: '4',
-      no: 4,
-      routeCode: 'กพ.4020',
-      province: 'กำแพงเพชร',
-      unit: 'ขทช.กำแพงเพชร',
-      integration: 'ตำรวจ',
-      startTime: '10:25',
-      endTime: '14:30',
-      totalVehicles: 25,
-      normalWeight: 22,
-      overweight: 3,
-      overweight10: 1,
-    },
-    {
-      key: '5',
-      no: 5,
-      routeCode: 'ปก.3020',
-      province: 'ปทุมราน',
-      unit: 'สทช.1 (ปทุมธานี)',
-      integration: null,
-      startTime: '09:15',
-      endTime: '12:06',
-      totalVehicles: 9,
-      normalWeight: 9,
-      overweight: 0,
-      overweight10: 0,
-    },
-  ]
-
-  const columns: ColumnsType<StationProjectRecord> = [
+  const columns: ColumnsType<SumStation> = [
     {
       title: 'ลำดับ',
       dataIndex: 'no',
@@ -111,127 +25,155 @@ const TableStation: React.FC<Props> = (props) => {
       align: 'center',
       width: 70,
       fixed: 'left',
+      render: (_, __, index) => {
+        return index + 1
+      }
     },
     {
-      title: 'รหัสสายทาง',
-      dataIndex: 'routeCode',
-      key: 'routeCode',
+      title: 'สถานี',
+      dataIndex: 'name',
+      key: 'name',
       align: 'center',
-      width: 120,
-    },
-    {
-      title: 'จังหวัด',
-      dataIndex: 'province',
-      key: 'province',
-      align: 'center',
-      width: 140,
-    },
-    {
-      title: 'หน่วยที่จัดตั้ง',
-      dataIndex: 'unit',
-      key: 'unit',
-      align: 'center',
-      width: 200,
-    },
-    {
-      title: 'บูรณาการ',
-      dataIndex: 'integration',
-      key: 'integration',
-      align: 'center',
-      width: 160,
-      render: (value: string | null) =>
-        value ? (
-          <span>{value}</span>
-        ) : (
-          <span style={{ color: '#FFFFFF50' }}>ไม่ร่วมบูรณาการ</span>
-        ),
-    },
-    {
-      title: 'เวลาตั้งด่าน',
-      dataIndex: 'startTime',
-      key: 'startTime',
-      align: 'center',
-      width: 120,
-    },
-    {
-      title: 'เวลาสิ้นสุด',
-      dataIndex: 'endTime',
-      key: 'endTime',
-      align: 'center',
-      width: 140,
-      render: (value: string | null) =>
-        value ? (
-          <span>{value}</span>
-        ) : (
-          <span style={{ color: '#FFA940' }}>ยังไม่สิ้นสุด</span>
-        ),
+      width: 300,
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'จำนวนรถเข้าชั่ง',
-      dataIndex: 'totalVehicles',
-      key: 'totalVehicles',
+      dataIndex: 'total',
+      key: 'total',
       align: 'center',
+      sorter: (a, b) => (Number(a.total || 0) - Number(b.total || 0)),
       width: 150,
+      render: (item) => {
+        if (item) return fmtNumber(Number(item))
+        return '-'
+      }
     },
     {
       title: 'จำนวนรถน้ำหนักปกติ',
-      dataIndex: 'normalWeight',
-      key: 'normalWeight',
+      dataIndex: 'normal',
+      key: 'normal',
       align: 'center',
-      width: 170,
-      render: (value: number) => <span style={{ color: '#66AEFF' }}>{value}</span>,
+      width: 150,
+      sorter: (a, b) => (Number(a.total || 0) - Number(a.over || 0)) - (Number(b.total || 0) - Number(b.over || 0)),
+      render: (_, record) => {
+        const normalCount = Number(record.total) - Number(record.over);
+        if (!!normalCount) return <p className='fs-12 text-(--default-blue)'>{fmtNumber(normalCount)}</p>
+        return <p className='fs-12 text-(--default-blue)'>-</p>
+      },
     },
     {
       title: 'จำนวนรถน้ำหนักเกิน',
-      dataIndex: 'overweight',
-      key: 'overweight',
+      dataIndex: 'over',
+      key: 'over',
       align: 'center',
-      width: 170,
-      render: (value: number) => (
-        <span style={{ color: value > 0 ? '#FF7A45' : '#FFFFFF50' }}>{value}</span>
-      ),
+      width: 150,
+      sorter: (a, b) => (Number(a.over) || 0) - (Number(b.over) || 0),
+      render: (item) => {
+        if (item) return <p className='fs-12 text-red-500'>{fmtNumber(item)}</p>
+        return <p className='fs-12 text-red-500'>-</p>
+      }
     },
     {
       title: 'จำนวนรถน้ำหนักเกิน 10%',
-      dataIndex: 'overweight10',
-      key: 'overweight10',
+      dataIndex: 'over_10',
+      key: 'over_10',
       align: 'center',
-      width: 190,
-      render: (value: number) => (
-        <span style={{ color: value > 0 ? '#FF7A45' : '#FFFFFF50' }}>{value}</span>
-      ),
+      width: 150,
+      render: (item) => {
+        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
+        return <p className='fs-12 text-(--yellow)'>-</p>
+      }
+    },
+    {
+      title: 'กล้อง CCTV',
+      dataIndex: 'total_cctv',
+      key: 'total_cctv',
+      align: 'center',
+      width: 150,
+      sorter: (a, b) => (Number(a.total_cctv || 0)) - (Number(b.total_cctv || 0)),
+      render: (item, record) => {
+        const totalCCTV = Number(item || 0);
+        const inactiveCCTV = Number(record.offline_cctv || 0);
+        const activeCCTV = totalCCTV - inactiveCCTV;
+
+        if (!!totalCCTV) return <p className='fs-12'><span className={activeCCTV > 0 ? 'text-green-500' : 'text-red-500'}>{fmtNumber(activeCCTV)}</span>/<span className='text-(--yellow)'>{fmtNumber(totalCCTV)}</span></p>
+        return <p className='fs-12 text-white/50'>ไม่มีกล้อง</p>
+      }
+    },
+    {
+      title: 'ปีที่ส่งมอบ',
+      dataIndex: 'delivery_year',
+      key: 'delivery_year',
+      align: 'center',
+      width: 150,
+      sorter: (a, b) => (a.delivery_year || '').localeCompare(b.delivery_year || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
+    },
+    {
+      title: 'เลขที่สัญญา',
+      dataIndex: 'contract_number',
+      key: 'contract_number',
+      align: 'center',
+      width: 150,
+      sorter: (a, b) => (a.contract_number || '').localeCompare(b.contract_number || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'สถานะ',
+      dataIndex: 'total_cctv',
       key: 'status',
       align: 'center',
-      width: 120,
+      width: 150,
       fixed: 'right',
-      render: () => (
-        <Button
-          size="small"
-          type="primary"
-          ghost
-          // style={{ minWidth: 80, borderRadius: 20 }}
-          className='min-w-20! rounded-3xl!'
-        >
-          เปิดด่าน
-        </Button>
-      ),
+      render: (item, record) => {
+        const totalCCTV = Number(item || 0);
+        const inactiveCCTV = Number(record.offline_cctv || 0);
+        const activeCCTV = totalCCTV - inactiveCCTV;
+
+        let status = ''
+
+        if (totalCCTV > 0) status = 'เปิดปกติ'
+        if (totalCCTV === 0 && activeCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        if (totalCCTV === 0 && activeCCTV === 0) status = 'ระบบขัดข้อง'
+
+        return (
+          <div className='flex justify-center items-center'>
+            <div className={`bg-[#66AEFF1A] border border-(${STATION_STATUS[status as keyof typeof STATION_STATUS].color}) px-3 py-1 rounded-3xl w-full lg:w-24`}>
+              <p className={`fs-12 text-(${STATION_STATUS[status as keyof typeof STATION_STATUS].color}) mb-0`}>{STATION_STATUS[status as keyof typeof STATION_STATUS].text}</p>
+            </div>
+          </div>
+        )
+      },
     },
   ]
 
+  if (isError) return <Empty description="ไม่พบข้อมูล" />
+
   return (
-    <Table<StationProjectRecord>
+    <Table<SumStation>
       columns={columns}
-      dataSource={mockData}
-      pagination={false}
+      dataSource={data}
+      pagination={{
+        locale: { items_per_page: "/ หน้า" },
+      }}
       size="middle"
-      rowKey="key"
+      rowKey="station_id"
       scroll={{ x: 'max-content' }}
-      onRow={() => {
+      loading={isLoading}
+      onRow={(record) => {
         return {
-          onClick: () => router.push(`/admin/tracking/detail/station/EXAMPLE_STATION_ID`),
+          onClick: () => router.push(`/admin/tracking/detail/station/${record.station_id}`),
           className: 'cursor-pointer',
         }
       }}
