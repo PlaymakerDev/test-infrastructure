@@ -1,4 +1,4 @@
-import { APIRequestTrackingCCTVList, APIRequestTrackingDailySum, APIRequestTrackingPosition, APIRequestTrackingSumWeightYearV2, APIRequestTrackingTotalStation, APIRequestTrackingViewSumPlanChart, APIRequestTrackingWeightInspection, APIResponseTrackingCCTVList, APIResponseTrackingDailySum, APIResponseTrackingPosition, APIResponseTrackingSumWeightYearV2, APIResponseTrackingTotalStation, APIResponseTrackingViewSumPlanChart, APIResponseTrackingWeightInspection, ProvinceData } from "@/types/tracking/overall-api"
+import { APIRequestTrackingCCTVList, APIRequestTrackingDailySum, APIRequestTrackingPosition, APIRequestTrackingSumMobile, APIRequestTrackingSumStation, APIRequestTrackingSumWeightYearV2, APIRequestTrackingSumWim, APIRequestTrackingTotalStation, APIRequestTrackingViewSumPlanChart, APIRequestTrackingWeightInspection, APIResponseTrackingCCTVList, APIResponseTrackingDailySum, APIResponseTrackingPosition, APIResponseTrackingSumMobile, APIResponseTrackingSumStation, APIResponseTrackingSumWeightYearV2, APIResponseTrackingSumWim, APIResponseTrackingTotalStation, APIResponseTrackingViewSumPlanChart, APIResponseTrackingWeightInspection, ProvinceData } from "@/types/tracking/overall-api"
 import ApiService from "../ApiService"
 
 const DEFAULT_TRACKING_API_URL = '/wim/redirect'
@@ -63,5 +63,29 @@ export const getTrackingPositionProvinceAPI = async () => {
   return ApiService.fetchData<ProvinceData[]>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/position/province`,
     method: 'GET',
+  })
+}
+
+export const getTrackingSumStationAPI = async (params: APIRequestTrackingSumStation) => {
+  return ApiService.fetchData<APIResponseTrackingSumStation, APIRequestTrackingSumStation>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/daily_weighed_vehicles_sum_station`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingSumWIMAPI = async (params: APIRequestTrackingSumWim) => {
+  return ApiService.fetchData<APIResponseTrackingSumWim, APIRequestTrackingSumWim>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/daily_weighed_vehicles_sum_wim`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingSumMobileAPI = async (params: APIRequestTrackingSumMobile) => {
+  return ApiService.fetchData<APIResponseTrackingSumMobile, APIRequestTrackingSumMobile>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/daily_weighed_vehicles_sum_spot`,
+    method: 'GET',
+    params,
   })
 }

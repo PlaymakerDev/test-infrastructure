@@ -231,3 +231,79 @@ export interface ProvinceData {
   ProvinceID: string
   ProvinceName: string
 }
+
+// SUM STATION
+export type APIRequestTrackingSumStation = APIRequestTrackingDailySum
+
+export interface APIResponseTrackingSumStation {
+  success: boolean
+  data: SumStation[]
+}
+
+export interface SumStation {
+  station_id: number
+  name: string
+  station_type: number
+  delivery_year: string
+  update_year: any
+  kilometer_position: any
+  contract_number: any
+  contractor_name: any
+  station_type_desc: string
+  station_type_eng: string
+  create_date: string
+  total: string
+  over: string
+  total_cctv: string
+  offline_cctv: string
+}
+
+// SUM WIM
+export interface APIRequestTrackingSumWim {
+  date?: string
+  owner?: string
+}
+
+export interface APIResponseTrackingSumWim {
+  success: boolean
+  data: SumWim[]
+}
+
+export interface SumWim {
+  station_id: number
+  name: string
+  station_type: number
+  delivery_year?: string
+  update_year?: string
+  kilometer_position?: string
+  contract_number?: string
+  contractor_name?: string
+  station_type_desc: string
+  station_type_eng: string
+  create_date: string
+  total: string
+  over: string
+  over_10percent: string
+  total_cctv: string
+  offline_cctv: string
+}
+
+// SUM MOBILE
+export type APIRequestTrackingSumMobile = APIRequestTrackingDailySum
+
+export interface APIResponseTrackingSumMobile {
+  success: boolean
+  data: SumMobile[]
+}
+
+export interface SumMobile {
+  name: string
+  department_id: number
+  contract_number: any
+  station_type: string
+  create_date: string
+  station_type_desc: string
+  station_type_eng: string
+  total: string
+  over: string
+}

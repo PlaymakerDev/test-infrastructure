@@ -5,7 +5,7 @@ interface Props {
 
 }
 
-const WIMSearchPanel: React.FC<Props> = (props) => {
+const StationSearchPanel: React.FC<Props> = (props) => {
   const { } = props
 
   return (
@@ -20,4 +20,4 @@ const WIMSearchPanel: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(WIMSearchPanel)
+export default React.memo<Props>(StationSearchPanel)
