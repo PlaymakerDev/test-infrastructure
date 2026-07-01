@@ -1,4 +1,4 @@
-import { APIRequestVMSSettingByRoad, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingList, APIResponseVMSSettingSchedule, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingList, APIResponseVMSSettingSchedule, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -98,5 +98,39 @@ export const deleteVMSMediaAPI = async (id: string | number) => {
   return ApiService.fetchData<APIResponseDeleteVMSMedia>({
     url: `/vms/settings/media/${id}`,
     method: 'DELETE',
+  })
+}
+
+// SETTING BY STATUS
+export const getVMSSettingByStatusAPI = async (params: APIRequestVMSSettingByStatus) => {
+  return ApiService.fetchData<APIResponseVMSSettingByStatus, APIRequestVMSSettingByStatus>({
+    url: `/vms/settings/by-status`,
+    method: 'GET',
+    params: { ...params }
+  })
+}
+
+// BATCH DELETE
+export const postVMSMediaBatchDeleteAPI = async (data: APIRequestPostVMSPatchDelete) => {
+  return ApiService.fetchData<APIResponsePostVMSPatchDelete, APIRequestPostVMSPatchDelete>({
+    url: '/vms/settings/schedules/batch-delete',
+    method: 'POST',
+    data: { ...data },
+  })
+}
+
+// STATUS COUNT
+export const getVMSSettingStatusCountAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSSettingStatusCount>({
+    url: `/vms/settings/status-count`,
+    method: 'GET',
+  })
+}
+
+// STATUS
+export const getVMSSettingStatusAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSSettingStatus>({
+    url: `/vms/settings/statuses`,
+    method: 'GET',
   })
 }

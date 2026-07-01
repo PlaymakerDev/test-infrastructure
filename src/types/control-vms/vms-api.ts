@@ -53,6 +53,9 @@ export interface APIRequestVMSMedia {
   setting_type_id?: number | string
   limit?: number
   page?: number
+  sort?: 'ASC' | 'DESC'
+  field?: string
+  search?: string
 }
 
 export interface APIResponseVMSMedia {
@@ -62,39 +65,60 @@ export interface APIResponseVMSMedia {
 
 export interface VMSMediaList {
   created_at: string
-  created_by: string
   crossing_master_index: string
+  date_since: string
+  date_to: string
+  id: number
+  is_all_day: boolean
+  schedules: MediaSchedule[]
+  setting_type: VMSSettingType
+  setting_type_id: number
+  status: VMSSettingType
+  status_updated_at: string
+  type_name: string
+}
+
+export interface MediaSchedule {
+  days_of_week: number[]
   id: number
   media_url: string
   message: string
-  setting_type: VMSSettingType
-  setting_type_id: number
-  since: string
-  to: string
-  type_name: string
+  schedule_name: string
+  time_since: string
+  time_to: string
 }
 
 // POST
 export interface APIRequestPostVMSMedia {
-  media_url: string
-  message: string
+  date_since: string
+  date_to: string
+  is_all_day: boolean
+  schedules: VMSMediaSchedule[]
   setting_type_id: number
-  since: string
-  to: string
   type_name: string
   vms_ids: number[]
+}
+
+export interface VMSMediaSchedule {
+  days_of_week: number[]
+  media_url: string
+  message: string
+  schedule_name: string
+  time_since: string
+  time_to: string
 }
 
 export type APIResponsePostVMSMedia = APIResponsePost
 
 // PUT
 export interface APIRequestPutVMSMedia {
-  media_url: string
-  message: string
+  date_since: string
+  date_to: string
+  is_all_day: boolean
+  schedules: VMSMediaSchedule[]
   setting_type_id: number
-  since: string
-  to: string
   type_name: string
+  vms_ids: number[]
 }
 
 export type APIResponsePutVMSMedia = APIResponsePost

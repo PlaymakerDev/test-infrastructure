@@ -1,4 +1,5 @@
-import { MetaData, SharedProject } from "../shared"
+import { APIResponsePost, MetaData, SharedProject } from "../shared"
+import { VMSSettingType } from "./vms-api"
 
 // UPCOMING SUMMARY
 export interface APIResponseVMSUpcomingSummary {
@@ -7,8 +8,10 @@ export interface APIResponseVMSUpcomingSummary {
 }
 
 export interface SettingCount {
+  disconnected_count: number
   most_bureau: string
   most_bureau_percent: number
+  playing_count: number
   settings_count: number
 }
 
@@ -26,21 +29,22 @@ export interface APIRequestVMSSettingByRoad {
 export type APIResponseVMSSettingByRoad = VMSSettingByRoad[]
 
 export interface VMSSettingByRoad {
-  road_code: string
   department_short_name: string
   region_name: string
+  road_code: string
   settings: SettingByRoad[]
 }
 
 export interface SettingByRoad {
-  setting_id?: number
   display_hour: string
+  end_date: string
   is_online: boolean
   setting_type_name: string
   settings_content: string
-  since: string
   solution_name: string
-  to: string
+  start_date: string
+  status: number
+  status_name: string
 }
 
 // SETTING SCHEDULE
@@ -64,21 +68,33 @@ export interface VMSSettingSchedule {
 
 // MEDIA BY ID
 export interface APIResponseVMSMediaById {
-  id: number
+  created_at: string
   crossing_master_index: string
-  type_name: string
-  media_url: string
-  since: string
-  to: string
-  message: string
+  date_count: string
+  date_since: string
+  date_to: string
+  department_id: number
+  department_short_name: string
+  id: number
+  is_all_day: boolean
+  schedules: MediaScheduleByID[]
   setting_type_id: number
   setting_type_name: string
   solution_name: string
-  department_id: number
-  department_short_name: string
+  status: number
+  status_updated_at: string
   stch: number
-  date_count: string
-  created_at: string
+  type_name: string
+}
+
+export interface MediaScheduleByID {
+  days_of_week: number[]
+  id: number
+  media_url: string
+  message: string
+  schedule_name: string
+  time_since: string
+  time_to: string
 }
 
 // LIST
@@ -108,3 +124,54 @@ export interface VMSSettingList {
   solution_name: string
   vms_id: number
 }
+
+// SETTING BY STATUS
+export interface APIRequestVMSSettingByStatus {
+  status_id?: number
+}
+
+export type APIResponseVMSSettingByStatus = VMSSettingByStatus[]
+
+export interface VMSSettingByStatus {
+  cameras: CameraByStatus[]
+  is_all_day: boolean
+  schedules: ScheduleByStatus[]
+  setting_id: number
+  status: number
+  status_name: string
+  type_name: string
+  vms_id: number
+}
+
+export interface CameraByStatus {
+  camera_id: string
+  camera_name: string
+  hls_url: string
+}
+
+export interface ScheduleByStatus {
+  days_of_week: number[]
+  schedule_id: number
+  schedule_name: string
+  time_since: string
+  time_to: string
+}
+
+// BATCH DELETE
+export interface APIRequestPostVMSPatchDelete {
+  schedule_ids: number[]
+}
+
+export type APIResponsePostVMSPatchDelete = APIResponsePost
+
+// STATUS COUNT
+export type APIResponseVMSSettingStatusCount = VMSSettingStatusCount[]
+
+export interface VMSSettingStatusCount {
+  count: number
+  status_id: number
+  status_name: string
+}
+
+// STATUS
+export type APIResponseVMSSettingStatus = VMSSettingType[]
