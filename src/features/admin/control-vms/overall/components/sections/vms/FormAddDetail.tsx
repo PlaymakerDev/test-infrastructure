@@ -104,7 +104,7 @@ const FormAddDetail: React.FC<Props> = () => {
     for (let i = 0; i < fields.length; i++) {
       setValue(`schedules.${i}.days`, availableDays, { shouldValidate: false })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableDays])
 
   const onSubmit = useCallback((data: FormValues) => {
@@ -126,8 +126,8 @@ const FormAddDetail: React.FC<Props> = () => {
         "media_url": item.media_type === 'IMAGE_VIDEO' ? item.file_url : '',
         "message": item.media_type === 'TEXT' ? item.text : '',
         "schedule_name": item.schedule_name,
-        "time_since": dayjs(item.start_time, 'HH:mm').format('HH:mm'),
-        "time_to": dayjs(item.end_time, 'HH:mm').format('HH:mm')
+        "time_since": data.display_type === 'ALL_DAY' ? '00:00' : dayjs(item.start_time, 'HH:mm').format('HH:mm'),
+        "time_to": data.display_type === 'ALL_DAY' ? '23:59' : dayjs(item.end_time, 'HH:mm').format('HH:mm')
       })),
       "setting_type_id": Number(data.category),
       "type_name": data.name,
@@ -490,7 +490,22 @@ const FormAddDetail: React.FC<Props> = () => {
                           <Controller
                             name={`schedules.${index}.start_time`}
                             control={control}
-                            rules={{ required: 'กรุณาเลือกเวลาเริ่มต้น' }}
+                            rules={{
+                              required: 'กรุณาเลือกเวลาเริ่มต้น',
+                              validate: (v, form) => {
+                                if (!v) return true
+                                const current = dayjs(v, 'HH:mm')
+                                for (const prev of (form.schedules ?? []).slice(0, index)) {
+                                  if (!prev.start_time || !prev.end_time) continue
+                                  const prevStart = dayjs(prev.start_time, 'HH:mm')
+                                  const prevEnd = dayjs(prev.end_time, 'HH:mm')
+                                  if (!current.isBefore(prevStart) && !current.isAfter(prevEnd)) {
+                                    return 'เวลาเริ่มต้นซ้ำซ้อนกับตารางเวลาก่อนหน้า'
+                                  }
+                                }
+                                return true
+                              },
+                            }}
                             render={({ field }) => (
                               <fieldset>
                                 <label className='text-(--yellow)'>เวลาเริ่มต้น <span className='text-red-500'>*</span></label>
@@ -515,10 +530,23 @@ const FormAddDetail: React.FC<Props> = () => {
                             control={control}
                             rules={{
                               required: 'กรุณาเลือกเวลาสิ้นสุด',
-                              validate: (v, form) =>
-                                !form.schedules?.[index]?.start_time || !v || dayjs(v, 'HH:mm').isAfter(dayjs(form.schedules[index].start_time, 'HH:mm'))
-                                  ? true
-                                  : 'เวลาสิ้นสุดต้องมาหลังเวลาเริ่มต้น',
+                              validate: (v, form) => {
+                                if (!v) return true
+                                const current = dayjs(v, 'HH:mm')
+                                const currentStart = form.schedules?.[index]?.start_time
+                                if (currentStart && !current.isAfter(dayjs(currentStart, 'HH:mm'))) {
+                                  return 'เวลาสิ้นสุดต้องมาหลังเวลาเริ่มต้น'
+                                }
+                                for (const prev of (form.schedules ?? []).slice(0, index)) {
+                                  if (!prev.start_time || !prev.end_time) continue
+                                  const prevStart = dayjs(prev.start_time, 'HH:mm')
+                                  const prevEnd = dayjs(prev.end_time, 'HH:mm')
+                                  if (!current.isBefore(prevStart) && !current.isAfter(prevEnd)) {
+                                    return 'เวลาสิ้นสุดซ้ำซ้อนกับตารางเวลาก่อนหน้า'
+                                  }
+                                }
+                                return true
+                              },
                             }}
                             render={({ field }) => (
                               <fieldset>

@@ -105,7 +105,7 @@ const DisplayTableData: React.FC<Props> = (props) => {
       dataSource={data}
       pagination={false}
       size="middle"
-      rowKey={(record) => record.setting_id != null ? String(record.setting_id) : `${record.solution_name}-${record.since}-${record.to}`}
+      rowKey={(record) => record.solution_name != null ? String(record.solution_name) : `${record.solution_name}-${record.start_date}-${record.end_date}`}
       scroll={{ x: 'max-content' }}
     />
   )
