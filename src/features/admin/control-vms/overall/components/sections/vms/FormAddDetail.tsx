@@ -5,7 +5,7 @@ import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import th from 'dayjs/locale/th'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { TbCopyPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
@@ -83,6 +83,29 @@ const FormAddDetail: React.FC<Props> = () => {
 
   const displayType = useWatch({ control, name: 'display_type' })
   const schedulesWatch = useWatch({ control, name: 'schedules' })
+  const watchStartDate = useWatch({ control, name: 'start_date' })
+  const watchEndDate = useWatch({ control, name: 'end_date' })
+
+  const availableDays = useMemo(() => {
+    if (!watchStartDate || !watchEndDate) return [1, 2, 3, 4, 5, 6, 7]
+    const start = dayjs(watchStartDate)
+    const end = dayjs(watchEndDate)
+    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return [1, 2, 3, 4, 5, 6, 7]
+    if (end.diff(start, 'day') >= 6) return [1, 2, 3, 4, 5, 6, 7]
+    const days = new Set<number>()
+    for (let i = 0; i <= end.diff(start, 'day'); i++) {
+      const d = start.add(i, 'day').day()
+      days.add(d === 0 ? 7 : d)
+    }
+    return Array.from(days).sort((a, b) => a - b)
+  }, [watchStartDate, watchEndDate])
+
+  useEffect(() => {
+    for (let i = 0; i < fields.length; i++) {
+      setValue(`schedules.${i}.days`, availableDays, { shouldValidate: false })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableDays])
 
   const onSubmit = useCallback((data: FormValues) => {
     if (!vmsIdList.length) {
@@ -454,9 +477,9 @@ const FormAddDetail: React.FC<Props> = () => {
                               <fieldset>
                                 <label className='text-(--yellow)'>เงื่อนไขการทำงานรายวัน <span className='text-red-500'>*</span></label>
                                 <DayList
-                                  {...field}
                                   value={field.value}
                                   onChange={(value) => field.onChange(value)}
+                                  disabledDate={(day) => !availableDays.includes(day)}
                                 />
                                 {!!errors.schedules?.[index]?.days && <p className='text-red-500'>{errors.schedules[index].days?.message}</p>}
                               </fieldset>
@@ -534,7 +557,7 @@ const FormAddDetail: React.FC<Props> = () => {
               htmlType='button'
               type='primary'
               icon={<PlusOutlined />}
-              onClick={() => append(INIT_SCHEDULE)}
+              onClick={() => append({ ...INIT_SCHEDULE, days: availableDays })}
             >
               เพิ่มคำสั่ง
             </Button>
