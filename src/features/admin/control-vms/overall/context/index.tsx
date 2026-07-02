@@ -1,6 +1,6 @@
 "use client"
 import type { BureauItem, BureauRoute, BureauSign, BureauState } from '@/types/control-vms/bureau'
-import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSSettingSchedule } from '@/types/control-vms/display-api'
+import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSScheduleByDate, VMSSettingSchedule } from '@/types/control-vms/display-api'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
@@ -32,7 +32,7 @@ export interface UpdateScheduleState {
   open: boolean
   id?: string | number | null
   type: 'CREATE' | 'EDIT' | 'DELETE'
-  vmsOption?: VMSSettingSchedule
+  vmsOption?: VMSScheduleByDate
 }
 
 export const INIT_UPDATE_SCHEDULE: UpdateScheduleState = {

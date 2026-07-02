@@ -6,7 +6,7 @@ import React from 'react'
 
 dayjs.extend(buddhistEra)
 import { TbHourglassHigh, TbPencilMinus, TbTrash, TbWifi, TbWifiOff } from 'react-icons/tb'
-import { APIResponseVMSSettingSchedule, VMSSettingSchedule } from '@/types/control-vms/display-api'
+import { VMSScheduleByDate } from '@/types/control-vms/display-api'
 
 dayjs.locale('th')
 
@@ -22,8 +22,8 @@ export interface ScheduleItem {
 }
 
 export interface ScheduleUpdateClick {
-  onEdit?: (item: VMSSettingSchedule) => void
-  onDelete?: (item: VMSSettingSchedule) => void
+  onEdit?: (item: VMSScheduleByDate) => void
+  onDelete?: (item: VMSScheduleByDate) => void
 }
 
 type ColCount = 1 | 2 | 3 | 4
@@ -38,7 +38,7 @@ export interface ScheduleListCols {
 }
 
 export interface ScheduleListProps {
-  data: APIResponseVMSSettingSchedule
+  data: VMSScheduleByDate[]
   onUpdateClick?: ScheduleUpdateClick
   cols?: ScheduleListCols
 }
@@ -69,7 +69,7 @@ const ScheduleList: React.FC<ScheduleListProps> = (props) => {
   const { data, onUpdateClick, cols } = props
   return (
     <div className={`grid gap-3 ${buildGridClass(cols)}`}>
-      {data.map((item) => (
+      {(data ?? []).map((item) => (
         <div key={item.setting_id} className='relative bg-background py-6.5 px-5 rounded-lg'>
           <div className='absolute top-3 right-3 flex items-center gap-2'>
             <TbPencilMinus
@@ -82,8 +82,8 @@ const ScheduleList: React.FC<ScheduleListProps> = (props) => {
             />
           </div>
           <div className='text-center'>
-            <h3 className='text-(--yellow)'>{dayjs(item.since).format('HH:mm')} - {dayjs(item.to).format('HH:mm')}</h3>
-            <p className='text-gray-400'>{dayjs(item.since).format('DD MMM BBBB')} - {dayjs(item.to).format('DD MMM BBBB')}</p>
+            <h3 className='text-(--yellow)'>{item.time_since} - {item.time_to}</h3>
+            <p className='text-gray-400'>{dayjs(item.date).format('DD MMM BBBB')}</p>
           </div>
           <hr className='my-3 border-gray-500/20' />
           <div className='text-center'>

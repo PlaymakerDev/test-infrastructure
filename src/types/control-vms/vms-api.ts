@@ -73,7 +73,7 @@ export interface VMSMediaList {
   schedules: MediaSchedule[]
   setting_type: VMSSettingType
   setting_type_id: number
-  status: VMSSettingType
+  status: number
   status_updated_at: string
   type_name: string
 }

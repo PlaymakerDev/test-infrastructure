@@ -2,7 +2,7 @@ import { VMSMediaList } from '@/types/control-vms/vms-api'
 import { Col, Empty, Image, Row, Skeleton } from 'antd'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useControlVMSContext } from '../../../context'
-import { isVideoUrl } from '../../../data/media'
+import { getPrimaryMediaUrl, isVideoUrl } from '../../../data/media'
 import { useVMSMediaList } from '../../../hooks/useVMSMediaList'
 import ModalMediaPreview from './ModalMediaPreview'
 import VMSMedia from './VMSMedia'
@@ -22,32 +22,39 @@ const Content: React.FC<ContentProps> = ({ items, isAddMode, onCardClick }) => {
 
   return (
     <Row gutter={[16, 16]}>
-      {items.map((item) => (
-        <Col
-          key={item.id}
-          xs={24} sm={24} md={12} lg={12}
-          xl={isAddMode ? 12 : 6} xxl={isAddMode ? 12 : 6} xxxl={isAddMode ? 12 : 6}
-        >
-          {isVideoUrl(item.media_url) ? (
-            <figure
-              className='h-52 overflow-hidden rounded-lg cursor-pointer'
-              onClick={() => onCardClick(item)}
-            >
-              <VMSMedia url={item.media_url} alt={item.type_name} variant='thumbnail' />
-            </figure>
-          ) : (
-            <figure className='h-52 overflow-hidden rounded-lg'>
-              <Image
-                src={item.media_url}
-                alt={item.type_name}
-                width={'100%'}
-                height={'100%'}
-                className='object-center object-cover'
-              />
-            </figure>
-          )}
-        </Col>
-      ))}
+      {items.map((item) => {
+        const mediaUrl = getPrimaryMediaUrl(item.schedules)
+        return (
+          <Col
+            key={item.id}
+            xs={24} sm={24} md={12} lg={12}
+            xl={isAddMode ? 12 : 6} xxl={isAddMode ? 12 : 6} xxxl={isAddMode ? 12 : 6}
+          >
+            {!mediaUrl ? (
+              <figure className='h-52 rounded-lg bg-(--dark-black) flex items-center justify-center'>
+                <Empty description="ข้อความ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              </figure>
+            ) : isVideoUrl(mediaUrl) ? (
+              <figure
+                className='h-52 overflow-hidden rounded-lg cursor-pointer'
+                onClick={() => onCardClick(item)}
+              >
+                <VMSMedia url={mediaUrl} alt={item.type_name} variant='thumbnail' />
+              </figure>
+            ) : (
+              <figure className='h-52 overflow-hidden rounded-lg'>
+                <Image
+                  src={mediaUrl}
+                  alt={item.type_name}
+                  width={'100%'}
+                  height={'100%'}
+                  className='object-center object-cover'
+                />
+              </figure>
+            )}
+          </Col>
+        )
+      })}
     </Row>
   )
 }

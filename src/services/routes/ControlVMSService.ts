@@ -1,4 +1,4 @@
-import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingList, APIResponseVMSSettingSchedule, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -60,7 +60,7 @@ export const getVMSSettingByRoadAPI = async (params: APIRequestVMSSettingByRoad)
 }
 
 export const getVMSSettingScheduleAPI = async (params: APIRequestVMSSettingSchedule) => {
-  return ApiService.fetchData<APIResponseVMSSettingSchedule, APIRequestVMSSettingSchedule>({
+  return ApiService.fetchData<APIResponseVMSScheduleByDate, APIRequestVMSSettingSchedule>({
     url: `/vms/settings/schedule`,
     method: 'GET',
     params: { ...params }

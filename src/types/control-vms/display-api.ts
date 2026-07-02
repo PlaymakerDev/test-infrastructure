@@ -66,25 +66,43 @@ export interface VMSSettingSchedule {
   date_count: string
 }
 
+// SETTING SCHEDULE BY DATE (keys are dynamic ISO date strings, e.g. "2026-07-01")
+export type APIResponseVMSScheduleByDate = Record<string, VMSScheduleByDate[]>
+
+export interface VMSScheduleByDate {
+  setting_id: number
+  date: string
+  time_since: string
+  time_to: string
+  solution_name: string
+  road_code: string
+  anydesk: string
+  date_count: string
+  status: number
+  status_name: string
+  is_online: boolean
+}
+
 // MEDIA BY ID
 export interface APIResponseVMSMediaById {
-  created_at: string
-  crossing_master_index: string
-  date_count: string
-  date_since: string
-  date_to: string
-  department_id: number
-  department_short_name: string
   id: number
-  is_all_day: boolean
-  schedules: MediaScheduleByID[]
+  crossing_master_index: string
+  type_name: string
+  status: number
+  status_name: string
+  status_updated_at: string
   setting_type_id: number
   setting_type_name: string
   solution_name: string
-  status: number
-  status_updated_at: string
+  department_id: number
+  department_short_name: string
   stch: number
-  type_name: string
+  date_since: string
+  date_to: string
+  is_all_day: boolean
+  date_count: string
+  created_at: string
+  schedules: MediaScheduleByID[]
 }
 
 export interface MediaScheduleByID {

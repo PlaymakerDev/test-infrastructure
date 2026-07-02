@@ -1,6 +1,7 @@
 import { ConfigProvider, Modal } from 'antd'
 import React from 'react'
 import type { VMSMediaList } from '@/types/control-vms/vms-api'
+import { getPrimaryMediaUrl } from '../../../data/media'
 import VMSMedia from './VMSMedia'
 
 interface Props {
@@ -11,9 +12,11 @@ interface Props {
 
 const Content: React.FC<{ data: VMSMediaList | null }> = ({ data }) => {
   if (!data) return null
+  const mediaUrl = getPrimaryMediaUrl(data.schedules)
+  if (!mediaUrl) return null
   return (
     <figure className='w-full overflow-hidden rounded-lg'>
-      <VMSMedia url={data.media_url} alt={data.type_name} variant='player' />
+      <VMSMedia url={mediaUrl} alt={data.type_name} variant='player' />
     </figure>
   )
 }
