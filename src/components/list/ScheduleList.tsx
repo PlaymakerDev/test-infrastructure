@@ -69,8 +69,8 @@ const ScheduleList: React.FC<ScheduleListProps> = (props) => {
   const { data, onUpdateClick, cols } = props
   return (
     <div className={`grid gap-3 ${buildGridClass(cols)}`}>
-      {(data ?? []).map((item) => (
-        <div key={item.setting_id} className='relative bg-background py-6.5 px-5 rounded-lg'>
+      {(data ?? []).map((item, index) => (
+        <div key={`${item.setting_id}-${item.date}-${item.time_since}-${item.time_to}-${index}`} className='relative bg-background py-6.5 px-5 rounded-lg'>
           <div className='absolute top-3 right-3 flex items-center gap-2'>
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
