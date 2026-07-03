@@ -118,7 +118,11 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
                   {r.crosswalk.timestamp} น.
                 </p>
               </div>
-              <figure className='flex-1 min-h-0 rounded-lg overflow-hidden mb-1.5 bg-black/40'>
+              {/* Fixed 16:9 aspect ratio — otherwise `flex-1` shrinks the
+                * figure on pages where every card is missing an image, so
+                * the "ไม่มีภาพเหตุการณ์" placeholder appears at different
+                * heights depending on whether siblings have images. */}
+              <figure className='aspect-video rounded-lg overflow-hidden mb-1.5 bg-black/40'>
                 {r.image_path ? (
                   <Image
                     src={r.image_path}

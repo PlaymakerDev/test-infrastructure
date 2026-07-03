@@ -9,16 +9,12 @@ import {
 import SearchBar, { ViewMode } from '@/components/searchable/SearchBar'
 import { defaultViolationFilter, type ViolationFilter } from './sections/violation/filter'
 
-interface Props {}
+interface Props { }
 
 const ViolationSection: React.FC<Props> = () => {
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
-  // Single source of truth for the filter — FormSearchViolation writes here
-  // via `onChange`, TableViolationData + ViolationStatCard read from here.
   const [filter, setFilter] = useState<ViolationFilter>(() => defaultViolationFilter())
 
-  // useCallback so FormSearchViolation's controlled inputs don't re-mount on
-  // every parent render (segmented widgets lose focus otherwise).
   const handleFilterChange = useCallback(
     (patch: Partial<ViolationFilter>) => {
       setFilter((prev) => ({ ...prev, ...patch }))
