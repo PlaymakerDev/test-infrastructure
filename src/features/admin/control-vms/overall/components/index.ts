@@ -18,6 +18,10 @@ export { default as ModalDetailItemStorage } from './sections/vms/ModalDetailIte
 export { default as ModalVMSScreen } from './sections/vms/ModalVMSScreen'
 export { default as SearchSection } from './sections/vms/SearchSection'
 export { default as VMSDetail } from './sections/vms/VMSDetail'
+export { default as ModalConfirmCreate } from './sections/vms/ModalConfirmCreate'
+export { default as ContentConfirmCreate } from './sections/vms/ContentConfirmCreate'
+export { default as ModalUpdateType } from './sections/vms/ModalUpdateType'
+export { default as FormUpdateType } from './sections/vms/FormUpdateType'
 
 // DISPLAY
 export { default as DisplaySection } from './DisplaySection'

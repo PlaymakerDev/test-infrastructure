@@ -1,4 +1,4 @@
-import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -9,7 +9,12 @@ import {
   APIResponsePostVMSMedia,
   APIRequestPutVMSMedia,
   APIResponsePutVMSMedia,
-  APIResponseDeleteVMSMedia
+  APIResponseDeleteVMSMedia,
+  APIRequestPostVMSSettingType,
+  APIResponsePostVMSSettingType,
+  APIRequestPutVMSSettingType,
+  APIResponsePutVMSSettingType,
+  APIResponseDeleteVMSSettingType
 } from "@/types/control-vms/vms-api"
 
 // VMS
@@ -20,10 +25,37 @@ export const getVMSDepartmentAPI = async () => {
   })
 }
 
+// GET SETTING TYPE
 export const getVMSSettingTypeAPI = async () => {
   return ApiService.fetchData<APIResponseVMSSettingType>({
     url: `/vms/settings/types`,
     method: 'GET',
+  })
+}
+
+// POST SETTING TYPE
+export const postVMSSettingTypeAPI = async (data: APIRequestPostVMSSettingType) => {
+  return ApiService.fetchData<APIResponsePostVMSSettingType, APIRequestPostVMSSettingType>({
+    url: '/vms/settings/types',
+    method: 'POST',
+    data: { ...data },
+  })
+}
+
+// PUT SETTING TYPE
+export const putVMSSettingTypeAPI = async (id: string | number, data: APIRequestPutVMSSettingType) => {
+  return ApiService.fetchData<APIResponsePutVMSSettingType, APIRequestPutVMSSettingType>({
+    url: `/vms/settings/types/${id}`,
+    method: 'PUT',
+    data: { ...data },
+  })
+}
+
+// DELETE SETTING TYPE
+export const deleteVMSSettingTypeAPI = async (id: string | number) => {
+  return ApiService.fetchData<APIResponseDeleteVMSSettingType>({
+    url: `/vms/settings/types/${id}`,
+    method: 'DELETE',
   })
 }
 
@@ -132,5 +164,17 @@ export const getVMSSettingStatusAPI = async () => {
   return ApiService.fetchData<APIResponseVMSSettingStatus>({
     url: `/vms/settings/statuses`,
     method: 'GET',
+  })
+}
+
+// BY VMS ID
+// vms_ids is repeated as bare `vms_ids=1&vms_ids=2` (not `vms_ids[]=1&vms_ids[]=2`) —
+// axios defaults array params to the `[]` suffix, so `indexes: null` is required to match this API.
+export const getVMSSettingByVMSIDAPI = async (params: APIRequestVMSSettingByVMSID) => {
+  return ApiService.fetchData<APIResponseVMSSettingByVMSID, APIRequestVMSSettingByVMSID>({
+    url: `/vms/settings/by-vms-ids`,
+    method: 'GET',
+    params: { ...params },
+    paramsSerializer: { indexes: null },
   })
 }

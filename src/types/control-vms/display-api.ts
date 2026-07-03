@@ -199,3 +199,24 @@ export interface VMSSettingStatusCount {
 
 // STATUS
 export type APIResponseVMSSettingStatus = VMSSettingType[]
+
+// BY VMS ID
+export interface APIRequestVMSSettingByVMSID {
+  vms_ids?: number[]
+}
+
+export type APIResponseVMSSettingByVMSID = VMSSettingByVMSID[]
+
+export interface VMSSettingByVMSID {
+  schedule: ScheduleByVMSID[]
+  solution_name: string
+  status: number
+  status_name: string
+}
+
+export interface ScheduleByVMSID {
+  duration: string
+  schedule_name: string
+  time_since: string
+  time_to: string
+}

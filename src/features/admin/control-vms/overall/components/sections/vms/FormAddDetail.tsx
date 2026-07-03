@@ -11,7 +11,6 @@ import { TbCopyPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { APIRequestPostVMSMedia } from '@/types/control-vms/vms-api'
 import { postUploadVMSAPI } from '@/services/routes/SharedService'
-import { usePostVMSMedia } from '../../../hooks/usePostVMSMedia'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 import { useControlVMSContext } from '../../../context'
 import { isVideoUrl } from '../../../data/media'
@@ -57,9 +56,8 @@ const INIT_SCHEDULE: ScheduleList = {
 
 const FormAddDetail: React.FC<Props> = () => {
   const { message } = App.useApp()
-  const { setAddMode, vmsIdList } = useControlVMSContext()
+  const { setAddMode, vmsIdList, setOpenConfirmCreate } = useControlVMSContext()
   const { data: settingTypesData } = useVMSSettingTypes()
-  const postMedia = usePostVMSMedia()
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -134,8 +132,8 @@ const FormAddDetail: React.FC<Props> = () => {
       "vms_ids": vmsIdList
     }
 
-    postMedia.mutate(body, { onSuccess: () => setAddMode(false) })
-  }, [vmsIdList, setAddMode, postMedia, message, schedulesWatch])
+    setOpenConfirmCreate({ open: true, ids: vmsIdList, body })
+  }, [vmsIdList, setOpenConfirmCreate, message, schedulesWatch])
 
   const uploadFile = useCallback(async (file: UploadFile[], index: number) => {
     setValue(`schedules.${index}.file`, [{ ...file[0], status: 'uploading' }])
@@ -601,7 +599,6 @@ const FormAddDetail: React.FC<Props> = () => {
                 shape='round'
                 className='w-full! sm:w-auto!'
                 onClick={() => setAddMode(false)}
-                disabled={postMedia.isPending}
               >
                 <p className='fs-12'>ยกเลิก</p>
               </Button>
@@ -611,8 +608,6 @@ const FormAddDetail: React.FC<Props> = () => {
               htmlType='submit'
               shape='round'
               className='w-full! sm:w-auto!'
-              loading={postMedia.isPending}
-              disabled={postMedia.isPending}
             >
               <p className='fs-12'>บันทึก</p>
             </Button>
