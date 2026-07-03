@@ -1,9 +1,9 @@
-import { getVMSSettingByStatusAPI } from '@/services/routes/ControlVMSService'
 import { VMSSettingStatusCount } from '@/types/control-vms/display-api'
-import { useQuery } from '@tanstack/react-query'
 import { Col, Empty, Row, Skeleton } from 'antd'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { StatusList } from '../../../components'
+import { useControlVMSContext } from '../../../context'
+import { useVMSSettingByStatus } from '../../../hooks/useVMSSettingByStatus'
 
 interface Props {
   item: VMSSettingStatusCount
@@ -11,20 +11,24 @@ interface Props {
 
 const StatusTabContent: React.FC<Props> = (props) => {
   const { item } = props
+  const { statusSearchText } = useControlVMSContext()
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['status_count', item.status_id],
-    queryFn: () => getVMSSettingByStatusAPI({
-      status_id: item.status_id
-    }),
-  })
+  const { data, isLoading, isError } = useVMSSettingByStatus(item.status_id)
+
+  const filteredData = useMemo(() => {
+    const list = data?.data ?? []
+    const search = statusSearchText.trim().toLowerCase()
+    if (!search) return list
+    return list.filter((setting) => setting.solution_name.toLowerCase().includes(search))
+  }, [data?.data, statusSearchText])
 
   if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
   if (isError) return <Empty description="ไม่พบข้อมูล" />
+  if (!filteredData.length) return <Empty description="ไม่พบข้อมูล" />
 
   return (
     <Row gutter={[16, 16]}>
-      {data?.data?.map((item, index) => (
+      {filteredData.map((item, index) => (
         <Col key={index} xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
           <StatusList item={item} />
         </Col>

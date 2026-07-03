@@ -7,12 +7,15 @@ import type {
   VMSSettingType,
 } from '@/types/control-vms/vms-api'
 import type {
+  APIResponsePostVMSPatchDelete,
   APIResponseVMSMediaById,
   APIResponseVMSSettingByRoad,
+  APIResponseVMSSettingByStatus,
   APIResponseVMSSettingSchedule,
+  APIResponseVMSSettingStatusCount,
   APIResponseVMSUpcomingSummary,
 } from '@/types/control-vms/display-api'
-import { metaDataSchema } from './shared'
+import { apiResponsePostSchema, metaDataSchema } from './shared'
 
 // ── Setting type ────────────────────────────────────────────────────────────
 export const vmsSettingTypeSchema = z.object({
@@ -185,3 +188,54 @@ export const apiResponseVMSMediaByIdSchema = z.object({
   stch: z.number(),
   type_name: z.string(),
 }) satisfies z.ZodType<APIResponseVMSMediaById>
+
+// ── Setting by status ────────────────────────────────────────────────────────
+const cameraByStatusSchema = z.object({
+  camera_id: z.string(),
+  camera_name: z.string(),
+  hls_url: z.string(),
+})
+
+const scheduleByStatusSchema = z.object({
+  days_of_week: z.array(z.number()),
+  schedule_id: z.number(),
+  schedule_name: z.string(),
+  time_since: z.string(),
+  time_to: z.string(),
+})
+
+const vmsSettingByStatusSchema = z.object({
+  vms_id: z.number(),
+  setting_id: z.number(),
+  type_name: z.string(),
+  status: z.number(),
+  status_name: z.string(),
+  is_all_day: z.boolean(),
+  is_online: z.boolean(),
+  start_date: z.string(),
+  end_date: z.string(),
+  road_code: z.string(),
+  solution_name: z.string(),
+  screen_capture_url: z.string(),
+  cameras: z.array(cameraByStatusSchema),
+  schedules: z.array(scheduleByStatusSchema),
+})
+
+export const apiResponseVMSSettingByStatusSchema = z.array(
+  vmsSettingByStatusSchema,
+) satisfies z.ZodType<APIResponseVMSSettingByStatus>
+
+// ── Setting status count ─────────────────────────────────────────────────────
+const vmsSettingStatusCountSchema = z.object({
+  count: z.number(),
+  status_id: z.number(),
+  status_name: z.string(),
+})
+
+export const apiResponseVMSSettingStatusCountSchema = z.array(
+  vmsSettingStatusCountSchema,
+) satisfies z.ZodType<APIResponseVMSSettingStatusCount>
+
+// ── Batch delete ─────────────────────────────────────────────────────────────
+// APIResponsePostVMSPatchDelete is a plain alias of the shared APIResponsePost shape.
+export const apiResponsePostVMSPatchDeleteSchema = apiResponsePostSchema satisfies z.ZodType<APIResponsePostVMSPatchDelete>

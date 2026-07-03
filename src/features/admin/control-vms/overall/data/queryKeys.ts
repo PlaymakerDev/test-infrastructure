@@ -18,4 +18,8 @@ export const controlVmsKeys = {
   settingList: () => [...controlVmsKeys.all, 'setting-list'] as const,
   settingListSearch: (search?: string) =>
     [...controlVmsKeys.settingList(), search ?? ''] as const,
+  byStatus: () => [...controlVmsKeys.all, 'by-status'] as const,
+  byStatusList: (statusId?: number) =>
+    [...controlVmsKeys.byStatus(), statusId ?? 'all'] as const,
+  statusCounts: () => [...controlVmsKeys.all, 'status-counts'] as const,
 }

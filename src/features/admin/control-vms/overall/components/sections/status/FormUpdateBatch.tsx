@@ -2,14 +2,11 @@ import { MediaScheduleByID } from '@/types/control-vms/display-api'
 import { Checkbox, ConfigProvider } from 'antd'
 import dayjs from 'dayjs'
 import React, { useCallback, useMemo } from 'react'
-import { Controller, useForm } from 'react-hook-form'
 
 interface Props {
   data?: MediaScheduleByID[]
-}
-
-interface FormUpdateBatchProps {
-  schedule_ids: number[]
+  value: number[]
+  onChange: (ids: number[]) => void
 }
 
 const DATE_LIST = [
@@ -51,14 +48,14 @@ const DATE_LIST = [
 ]
 
 const FormUpdateBatch: React.FC<Props> = (props) => {
-  const { data } = props
+  const { data, value, onChange } = props
 
   const renderMapDate = useCallback((dateList: number[]) => {
     const shortDates = DATE_LIST.filter((d) => dateList.includes(d.id))
     return (
       <div className='flex flex-wrap gap-1'>
         {shortDates.map((d) => (
-          <span key={d.id} className='py-1.5 px-3 text-black bg-red-500/80 rounded-lg'>{d.short_date}</span>
+          <span key={d.id} className='py-1.5 px-3 text-black bg-red-500/80 rounded-md'>{d.short_date}</span>
         ))}
       </div>
     )
@@ -80,22 +77,6 @@ const FormUpdateBatch: React.FC<Props> = (props) => {
     })
   }, [data, renderMapDate])
 
-  const form = useForm<FormUpdateBatchProps>({
-    defaultValues: {
-      schedule_ids: []
-    }
-  })
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = form
-
-  const onSubmit = useCallback((data: FormUpdateBatchProps) => {
-    console.log("data", data)
-  }, [])
-
   return (
     <ConfigProvider
       theme={{
@@ -107,24 +88,12 @@ const FormUpdateBatch: React.FC<Props> = (props) => {
         }
       }}
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Controller
-          control={control}
-          name="schedule_ids"
-          rules={{ required: 'กรุณาเลือกตารางเวลา' }}
-          render={({ field }) => (
-            <fieldset>
-              <Checkbox.Group
-                {...field}
-                name={field.name}
-                options={[...OPTIONS]}
-                className='flex flex-col'
-              />
-              {!!errors.schedule_ids && <p className='text-red-500'>{errors.schedule_ids.message}</p>}
-            </fieldset>
-          )}
-        />
-      </form>
+      <Checkbox.Group
+        value={value}
+        onChange={(checkedValues) => onChange(checkedValues as number[])}
+        options={OPTIONS}
+        className='flex flex-col gap-1.5'
+      />
     </ConfigProvider>
   )
 }

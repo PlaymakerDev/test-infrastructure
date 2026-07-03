@@ -24,6 +24,8 @@ export interface ContextProps {
   setUpdateScheduleState: React.Dispatch<React.SetStateAction<UpdateScheduleState>>
   openVMSScreen: OpenVMSScreenState
   setOpenVMSScreen: React.Dispatch<React.SetStateAction<OpenVMSScreenState>>
+  statusSearchText: string
+  setStatusSearchText: (s: string) => void
 }
 
 export interface PageProviderProps {
@@ -69,6 +71,7 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>(null)
   const [updateScheduleState, setUpdateScheduleState] = useState<UpdateScheduleState>(INIT_UPDATE_SCHEDULE)
   const [openVMSScreen, setOpenVMSScreen] = useState<OpenVMSScreenState>(INIT_OPEN_VMS_SCREEN)
+  const [statusSearchText, setStatusSearchText] = useState<string>('')
 
   return (
     <ControlVMSContext.Provider
@@ -93,6 +96,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         setUpdateScheduleState,
         openVMSScreen,
         setOpenVMSScreen,
+        statusSearchText,
+        setStatusSearchText,
       }}
     >
       {children}

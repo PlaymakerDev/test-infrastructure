@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  apiResponsePostVMSPatchDeleteSchema,
   apiResponseVMSDepartmentSchema,
   apiResponseVMSMediaByIdSchema,
   apiResponseVMSMediaSchema,
   apiResponseVMSSettingByRoadSchema,
+  apiResponseVMSSettingByStatusSchema,
   apiResponseVMSSettingScheduleSchema,
+  apiResponseVMSSettingStatusCountSchema,
   apiResponseVMSSettingTypeSchema,
   apiResponseVMSUpcomingSummarySchema,
   vmsMediaListSchema,
@@ -228,5 +231,55 @@ describe('apiResponseVMSMediaByIdSchema', () => {
   it('rejects missing required field', () => {
     const { solution_name: _, ...rest } = valid
     expect(apiResponseVMSMediaByIdSchema.safeParse(rest).success).toBe(false)
+  })
+})
+
+describe('apiResponseVMSSettingByStatusSchema', () => {
+  const valid = [{
+    vms_id: 1,
+    setting_id: 10,
+    type_name: 'ข้อความ',
+    status: 1,
+    status_name: 'กำลังแสดงผล',
+    is_all_day: false,
+    is_online: true,
+    start_date: '2026-01-01',
+    end_date: '2026-12-31',
+    road_code: 'RC-01',
+    solution_name: 'VMS-001',
+    screen_capture_url: 'https://example.com/screen.jpg',
+    cameras: [{ camera_id: 'CAM-1', camera_name: 'กล้อง 1', hls_url: 'https://example.com/live.m3u8' }],
+    schedules: [{ days_of_week: [1, 2], schedule_id: 1, schedule_name: 'ตารางที่ 1', time_since: '08:00', time_to: '18:00' }],
+  }]
+  it('parses a valid by-status response', () => {
+    expect(apiResponseVMSSettingByStatusSchema.safeParse(valid).success).toBe(true)
+  })
+  it('rejects non-array days_of_week', () => {
+    const broken = [{ ...valid[0], schedules: [{ ...valid[0].schedules[0], days_of_week: '1,2' }] }]
+    expect(apiResponseVMSSettingByStatusSchema.safeParse(broken).success).toBe(false)
+  })
+  it('rejects missing cameras field', () => {
+    const { cameras: _, ...rest } = valid[0]
+    expect(apiResponseVMSSettingByStatusSchema.safeParse([rest]).success).toBe(false)
+  })
+})
+
+describe('apiResponseVMSSettingStatusCountSchema', () => {
+  const valid = [{ count: 5, status_id: 1, status_name: 'กำลังแสดงผล' }]
+  it('parses a valid status count response', () => {
+    expect(apiResponseVMSSettingStatusCountSchema.safeParse(valid).success).toBe(true)
+  })
+  it('rejects string count', () => {
+    const broken = [{ ...valid[0], count: '5' }]
+    expect(apiResponseVMSSettingStatusCountSchema.safeParse(broken).success).toBe(false)
+  })
+})
+
+describe('apiResponsePostVMSPatchDeleteSchema', () => {
+  it('parses a valid batch-delete response', () => {
+    expect(apiResponsePostVMSPatchDeleteSchema.safeParse({ res_code: 200, res_data: 'success' }).success).toBe(true)
+  })
+  it('rejects missing res_code', () => {
+    expect(apiResponsePostVMSPatchDeleteSchema.safeParse({ res_data: 'success' }).success).toBe(false)
   })
 })
