@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { CCTVSection, InfoCardSection, MapSection } from '../../../components'
+import { CCTVSection, InfoCardSection, MapCrosswalk } from '../../../components'
 
 interface Props {
 
@@ -19,7 +19,7 @@ const LocationSection: React.FC<Props> = (props) => {
 
       {/* Map — row 1 on mobile (top), col 2 on desktop */}
       <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-        <MapSection />
+        <MapCrosswalk />
       </div>
 
       {/* Info panel — row 3 on mobile, col 3 on desktop */}

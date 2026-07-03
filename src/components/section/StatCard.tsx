@@ -23,7 +23,7 @@ const COLOR_MAP: Record<StatCardColor, { bg: string; border: string; text: strin
 const StatCard: React.FC<StatCardItem> = ({ icon, title, count, unit = 'จุดติดตั้ง', activeLabel, color, isLoading }) => {
   const c = COLOR_MAP[color]
   return (
-    <div className={`h-full ${c.bg} border-2 rounded-lg p-5 ${c.border}`}>
+    <div className={`h-full ${c.bg} border-2 rounded-[20px] p-5 ${c.border}`}>
       {isLoading ? (
         <Skeleton active paragraph={{ rows: 3 }} />
       ) : (

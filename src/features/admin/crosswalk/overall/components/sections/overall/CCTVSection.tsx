@@ -1,44 +1,62 @@
+"use client"
+import React from 'react'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import React, { useMemo } from 'react'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { useCrosswalkRandomCameras } from '@/hooks/queries/crosswalk'
+import { useDeptId } from '@/hooks/useDeptId'
+import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
 
-interface Props {
+interface Props { }
 
-}
+/** Left rail — live CCTV camera previews for crosswalk stations.
+ *  Data: `GET /crosswalk/departments/{deptId}/cameras/random-online?limit=3` */
+const CCTVSection: React.FC<Props> = () => {
+  const deptId = useDeptId()
+  const dispatch = useAppDispatch()
+  const openCamera = (id: string) =>
+    dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
+  const { data, isLoading } = useCrosswalkRandomCameras(deptId, 3)
+  const cameras = data?.data ?? []
 
-const mockCameras = [
-  {
-    id: 1,
-    code: '67FTD-CMI2025-FAI037-กม.00+400-มุ่งหน้าแจ่งศรีภูมิ',
-    location: 'IP Address : 192.168.30.119',
-  },
-  {
-    id: 2,
-    code: '67TRC-SPK4009-C007-Crosswalk2-ขาเข้ามุ่งหน้าถ.ศรีนครินทร์',
-    location: 'IP Address : 10.172.26.17',
-  },
-  {
-    id: 3,
-    code: '67TRC-SPK4009-C009-Crosswalk3-ขาออกมุ่งหน้า ถ.สุขุมวิท',
-    location: 'IP Address : 10.101.27.1',
-  },
-]
-
-const CCTVSection: React.FC<Props> = (props) => {
-  const { } = props
-
-  const renderCameraList = useMemo(() => {
-    return mockCameras.map((item) => (
-      <div key={item.id} className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'>
-        <HLSLivePlayer figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg' />
-        <h4 className='camera-code'>{item.code}</h4>
-        <p className='camera-location'>{item.location}</p>
+  if (isLoading && cameras.length === 0) {
+    return (
+      <div className='h-full flex flex-col gap-4'>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 animate-pulse'
+          />
+        ))}
       </div>
-    ))
-  }, [])
+    )
+  }
 
   return (
     <div className='h-full flex flex-col gap-4'>
-      {renderCameraList}
+      {cameras.map((entry) => {
+        const cam = entry.camera
+        return (
+          <div
+            key={cam.id}
+            className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col cursor-pointer'
+            onClick={() => openCamera(cam.id)}
+            role='button'
+            tabIndex={0}
+          >
+            <div className='bg-black/60 border border-white/5 rounded-lg overflow-hidden flex-1 min-h-0 mb-2'>
+              <HLSLivePlayer
+                figureClassName='w-full h-full rounded-lg'
+                hlsUrl={cam.hls_url}
+                cameraId={cam.id}
+                style={{ pointerEvents: 'none' }}
+              />
+            </div>
+            <h4 className='camera-code'>{cam.name}</h4>
+            <p className='camera-location'>IP Address : {extractIpFromHlsUrl(cam.hls_url)}</p>
+          </div>
+        )
+      })}
     </div>
   )
 }
