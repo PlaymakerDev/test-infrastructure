@@ -371,7 +371,8 @@ export interface APIRequestTrafficVolumeReportSummary {
  *              ("20:00"); month/year report types may reuse for their labels.
  *  • `camera_name` — present only on `report_type=hour`; lets the UI group
  *                    rows under their source camera in the hourly table.
- *  • `percent_truck` — share in the **0–1** range (0.06 = 6%), NOT 0–100. */
+ *  • `percent_truck` — share in the **0–100** range already (2.24 = 2.24%),
+ *                      display as-is without further multiplication. */
 export interface CountingReportSummaryRow {
   date: string
   label: string

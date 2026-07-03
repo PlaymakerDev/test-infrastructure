@@ -106,21 +106,23 @@ const ViolationStatCard: React.FC<Props> = ({ filter }) => {
           ],
   })
 
-  const totals = useMemo(() => {
-    let crossingTotal = 0
-    let buttonPressed = 0
-    let pedViolation = 0
-    let vehicleCount = 0
-    for (const q of queries) {
-      const d = q.data
-      if (!d) continue
-      crossingTotal += d.crossing?.total ?? 0
-      buttonPressed += d.crossing?.button_pressed ?? 0
-      pedViolation += d.crossing?.violation ?? 0
-      vehicleCount += d.counting?.total_count ?? 0
-    }
-    return { crossingTotal, buttonPressed, pedViolation, vehicleCount }
-  }, [queries])
+  // Plain inline aggregation — the `queries` array from `useQueries` gets a
+  // fresh reference each render, so `useMemo([queries])` never hits and just
+  // adds overhead. React Compiler (reactCompiler: true) will memoize this
+  // automatically based on the data it actually reads.
+  let crossingTotal = 0
+  let buttonPressed = 0
+  let pedViolation = 0
+  let vehicleCount = 0
+  for (const q of queries) {
+    const d = q.data
+    if (!d) continue
+    crossingTotal += d.crossing?.total ?? 0
+    buttonPressed += d.crossing?.button_pressed ?? 0
+    pedViolation += d.crossing?.violation ?? 0
+    vehicleCount += d.counting?.total_count ?? 0
+  }
+  const totals = { crossingTotal, buttonPressed, pedViolation, vehicleCount }
 
   // Show skeleton while ANY day is still loading — partial sums are misleading.
   const isLoading = queries.some((q) => q.isLoading)

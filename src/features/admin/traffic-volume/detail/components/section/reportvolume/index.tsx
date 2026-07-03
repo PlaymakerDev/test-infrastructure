@@ -73,8 +73,8 @@ const fmtDate = (d: Dayjs | null): string | undefined =>
   d ? d.format('YYYY-MM-DD') : undefined
 
 /** Convert one API row → DailyReportRow shape consumed by DailyReportTable.
- *  Field mapping mirrors the wire contract; `percent_truck` is rescaled from
- *  the 0–1 wire range into 0–100 used by the UI. */
+ *  Field mapping mirrors the wire contract; `percent_truck` already arrives
+ *  in 0–100 range so we pass it through as-is. */
 const toDailyRow = (r: CountingReportSummaryRow): DailyReportRow => ({
   date: r.date,
   motorcycle: r.bike_count,
@@ -87,7 +87,7 @@ const toDailyRow = (r: CountingReportSummaryRow): DailyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Convert one API row → MonthlyReportRow consumed by MonthlyReportTable.
@@ -109,7 +109,7 @@ const toMonthlyRow = (r: CountingReportSummaryRow): MonthlyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Convert one API row → YearlyReportRow consumed by YearlyReportTable.
@@ -129,7 +129,7 @@ const toYearlyRow = (r: CountingReportSummaryRow): YearlyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Backend's `vehicle_type` value → our internal key. The API sometimes
