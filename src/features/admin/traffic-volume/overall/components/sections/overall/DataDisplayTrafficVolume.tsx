@@ -88,8 +88,6 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
 
   const goToDetail = useCallback((p: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (p.projectId) params.set('project_id', p.projectId)
-    if (p.roadId) params.set('road_id', p.roadId)
     router.push(`/admin/traffic-volume/detail/${p.id}?${params}`)
   }, [router, deptId])
 

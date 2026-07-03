@@ -87,7 +87,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
   // Department lookup for "แขวง" sub-line. Same source as ProjectInfoModal.
   const { data: dept } = useQuery({
     queryKey: ['department_by_road', event?.camera.road_id],
-    queryFn: () => getDepartmentByRoadAPI({ road_id: event!.camera.road_id }),
+    queryFn: () => getDepartmentByRoadAPI({ road_id: event!.camera.road_id }).then((r) => r.data.department_name),
     enabled: open && !!event?.camera.road_id,
   })
 
@@ -291,10 +291,10 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
               </p>
               <p className='fs-12 text-white mb-0'>
                 {installPoint}
-                {dept?.data?.department_name && (
+                {dept && (
                   <>
                     <span className='text-gray-500 mx-1.5'>·</span>
-                    <span className='text-gray-300'>{dept.data.department_name}</span>
+                    <span className='text-gray-300'>{dept}</span>
                   </>
                 )}
               </p>

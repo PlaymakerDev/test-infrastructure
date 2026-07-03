@@ -29,7 +29,7 @@ const LicenseModal: React.FC<Props> = ({ open, solution, onClose }) => {
   // หน่วยงานที่รับผิดชอบ — same source/cache as the Project Info modal.
   const { data: dept } = useQuery({
     queryKey: ['department_by_road', solution?.roadId],
-    queryFn: () => getDepartmentByRoadAPI({ road_id: Number(solution!.roadId) }),
+    queryFn: () => getDepartmentByRoadAPI({ road_id: Number(solution!.roadId) }).then((r) => r.data.department_name),
     enabled: open && !!solution?.roadId,
   })
 
@@ -59,7 +59,7 @@ const LicenseModal: React.FC<Props> = ({ open, solution, onClose }) => {
         <p className='fs-12 text-gray-300 mb-4'>
           {data?.solution.name || solution?.name || '-'}
           <span className='text-gray-500 mx-1'>•</span>
-          {dept?.data.department_name ?? '-'}
+          {dept ?? '-'}
         </p>
 
         {isLoading ? (

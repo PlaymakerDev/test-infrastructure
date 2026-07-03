@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react'
-import { TbChevronDown } from 'react-icons/tb'
+import { Button, Select } from 'antd'
+import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from 'react-icons/tb'
 
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { CctvInstallDetail, PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
@@ -8,7 +9,8 @@ import CameraInstallTable from './CameraInstallTable'
 import type { InstallGroup } from './sections/CameraGridView'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import CctvLocationMap from './sections/CctvLocationMap'
+import CctvDetailMap, { type CamGroup } from './sections/CctvDetailMap'
+import CctvMarkerInfoPanel from './sections/CctvMarkerInfoPanel'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
 
@@ -62,6 +64,12 @@ interface Props {
 const OverallSection: React.FC<Props> = ({ detail, groups }) => {
   const dispatch = useAppDispatch()
   const [panelFilter, setPanelFilter] = useState<string>('all')
+  // A clicked map pin (its camera group). When set, the right rail shows that
+  // pin's camera info (dropdown to switch among cameras at the same coordinate)
+  // instead of the full list; clicking the pin again clears it + zooms out.
+  const [selected, setSelected] = useState<CamGroup | null>(null)
+  // Collapse/expand the right panel (mirrors control-vms) to free up the map.
+  const [panelOpen, setPanelOpen] = useState(true)
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 
   const displayedCameras = panelFilter === 'online'
@@ -85,47 +93,38 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
       >
         {/* Mapbox — fills entire section */}
         <div className='absolute inset-0'>
-          <CctvLocationMap
+          <CctvDetailMap
             cameras={detail.cameras}
             center={detail.coord}
-            onSelectCamera={(cam) => openCamera(cam.id)}
+            selectedKey={selected?.key ?? null}
+            onToggleGroup={setSelected}
             edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}
           />
         </div>
 
         {/* ── Right camera panel ── */}
         <aside
-          className='absolute z-10 top-3 bottom-3 right-3 flex flex-col rounded-2xl overflow-hidden'
+          className={`absolute z-10 top-3 bottom-3 right-3 flex flex-col rounded-2xl overflow-hidden transition-transform duration-300 ease-in-out ${panelOpen ? '' : 'translate-x-[calc(100%+0.75rem)]'}`}
           style={{ width: 370, background: '#151515' }}
         >
-          {/* Dropdown */}
+          {selected ? (
+            <CctvMarkerInfoPanel cameras={selected.cameras} onClose={() => setSelected(null)} onOpenLive={openCamera} />
+          ) : (
+            <>
+          {/* Dropdown — antd Select so the popup matches the trigger width and
+            * long labels wrap to 2 lines instead of overflowing the screen. */}
           <div className='p-3 shrink-0'>
-            <div className='relative' style={{ border: '1px solid #FCD116', borderRadius: 8, background: '#1a1a1a' }}>
-              <select
+            <div style={{ border: '1px solid #FCD116', borderRadius: 8, background: '#1a1a1a' }}>
+              <Select
                 value={panelFilter}
-                onChange={(e) => setPanelFilter(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: '#fff',
-                  padding: '9px 36px 9px 12px',
-                  fontSize: 13,
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                {filterOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} style={{ background: '#1a1a1a', color: '#fff' }}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <div className='absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none'>
-                <TbChevronDown size={16} style={{ color: '#FCD116' }} />
-              </div>
+                onChange={(v) => setPanelFilter(v)}
+                variant='borderless'
+                className='cctv-cam-select w-full'
+                popupClassName='cctv-cam-dropdown'
+                suffixIcon={<TbChevronDown size={16} style={{ color: '#FCD116' }} />}
+                options={filterOptions}
+                optionRender={(opt) => <span className='cctv-cam-option'>{opt.label}</span>}
+              />
             </div>
           </div>
 
@@ -137,8 +136,21 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
               ))}
             </div>
           </div>
-
+            </>
+          )}
         </aside>
+
+        {/* Collapse / expand the right panel (same pattern as control-vms) so
+          * the map can use the full width. */}
+        <Button
+          type='primary'
+          shape='circle'
+          title={panelOpen ? 'ซ่อนแผงข้อมูล' : 'แสดงแผงข้อมูล'}
+          icon={panelOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
+          onClick={() => setPanelOpen((v) => !v)}
+          className='absolute! z-20 top-6 w-10! h-10! shadow-lg'
+          style={{ right: panelOpen ? 374 : 12, transition: 'right 0.3s ease' }}
+        />
       </section>
 
       {/* ── Camera table ── */}

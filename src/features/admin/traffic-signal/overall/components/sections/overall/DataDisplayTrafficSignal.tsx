@@ -94,8 +94,6 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
 
   const goToDetail = useCallback((p: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (p.projectId) params.set('project_id', p.projectId)
-    if (p.roadId) params.set('road_id', p.roadId)
     router.push(`/admin/traffic-signal/detail/${p.id}?${params}`)
   }, [router, deptId])
 

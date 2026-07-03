@@ -1,31 +1,13 @@
 "use client"
 import React, { useMemo } from 'react'
 import { useParams } from 'next/navigation'
-import { TbMapPin } from 'react-icons/tb'
 import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import OverlapMarkers, { type OverlapMarkerItem } from '@/components/map/markers/OverlapMarkers'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useIncidentSolutionCameras } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentCameraMapItem } from '@/types/incident-detection/camera-api'
-
-/** Camera marker — same yellow disc style as the traffic-signal detail page. */
-const CameraMarker: React.FC = () => (
-  <div
-    className='flex items-center justify-center cursor-pointer'
-    style={{
-      width: 36,
-      height: 36,
-      borderRadius: '50%',
-      background: '#FCD116',
-      boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-      border: '2px solid #fff',
-    }}
-  >
-    <TbMapPin size={20} color='#212121' />
-  </div>
-)
 
 const CameraPopup: React.FC<{ cam: IncidentCameraMapItem }> = ({ cam }) => (
   <div
@@ -73,6 +55,20 @@ const MapSection: React.FC = () => {
   // Fall back to the response centroid if we have it, else a sane default.
   const center = data?.centroid ?? [100.5018, 13.7563]
 
+  // Group by coordinate so cameras sharing one lat/lon fan out (spider) and
+  // stay individually clickable instead of stacking on top of each other.
+  const markerItems = useMemo<OverlapMarkerItem[]>(
+    () =>
+      cameras.map((cam) => ({
+        id: cam.id,
+        coord: cam.geometry_point as [number, number],
+        title: cam.camera_name,
+        popup: <CameraPopup cam={cam} />,
+        popupOptions: { offset: 22, closeButton: true, maxWidth: '300px' },
+      })),
+    [cameras],
+  )
+
   // Reserve room for the Tab1 overlay rails (event list on the left, stat
   // cards + charts on the right) so route markers stay framed in the central
   // strip instead of hiding behind a panel — same approach as the CCTV detail
@@ -97,18 +93,7 @@ const MapSection: React.FC = () => {
       edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
     >
       <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={16} />
-      {cameras.map((cam) => (
-        <HTMLMarker
-          key={cam.id}
-          lngLat={cam.geometry_point as [number, number]}
-          anchor='bottom'
-          title={cam.camera_name}
-          popup={() => <CameraPopup cam={cam} />}
-          popupOptions={{ offset: 22, closeButton: true, maxWidth: '300px' }}
-        >
-          <CameraMarker />
-        </HTMLMarker>
-      ))}
+      <OverlapMarkers items={markerItems} />
     </BaseMap>
   )
 }

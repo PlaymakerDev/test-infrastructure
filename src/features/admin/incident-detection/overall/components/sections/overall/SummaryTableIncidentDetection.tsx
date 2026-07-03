@@ -85,8 +85,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
 
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (r.projectId) params.set('project_id', r.projectId)
-    if (r.roadId) params.set('road_id', r.roadId)
     router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
   }, [router, deptId])
 

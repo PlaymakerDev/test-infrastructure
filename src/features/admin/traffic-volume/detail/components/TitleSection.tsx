@@ -57,6 +57,13 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
     ? { isOnline: match.camera.is_online, isWarranty: match.is_warranty }
     : null
 
+  // project_id + road_id for the Project Info modal: prefer the URL params
+  // (passed by the overall table), else DERIVE from the matched central-list
+  // row — so arriving from the dashboard marker popup (which has no project_id
+  // in the URL) still opens a fully-populated ⓘ modal. Mirrors cctv detail.
+  const projectId = projectIdParam ? Number(projectIdParam) : match?.project.id ?? null
+  const roadId = roadIdParam ? Number(roadIdParam) : match?.road.id ?? null
+
   // AnyDesk lives on the shared `/manage/solution/details/{id}` endpoint.
   const { data: solDetail } = useTrafficVolumeSolutionDetail(id)
   // Preserve the empty-string case — title shows a muted "no number set"
@@ -94,8 +101,8 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
                   dispatch(
                     setProjectInfoModalOpen({
                       open: true,
-                      project_id: projectIdParam ? Number(projectIdParam) : null,
-                      road_id: roadIdParam ? Number(roadIdParam) : null,
+                      project_id: projectId,
+                      road_id: roadId,
                     })
                   )
                 }

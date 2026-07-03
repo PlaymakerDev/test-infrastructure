@@ -10,6 +10,7 @@ import {
   useTrafficDetails,
   useTrafficPhaseDetails,
   useTrafficOverview,
+  useTrafficCentralList,
 } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 import type {
@@ -29,13 +30,27 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   const deptId = useDeptId()
   const [currentTab, setCurrentTab] = useState('OVERALL')
 
-  // `/manage/contract/{id}` is PROJECT-scoped, not solution-scoped. Passing
-  // solution_id here returns an empty body, which made the title-bar warranty
-  // pill always default to "หมดค้ำ" (same data the ProjectInfoModal already
-  // uses correctly). Read project_id from URL — passed by the overall list
-  // page when navigating to detail.
+  // `/manage/contract/{id}` is PROJECT-scoped, not solution-scoped. We need
+  // the project_id. Prefer the URL param (passed by the overall table), else
+  // DERIVE it from the central-list row matched by solution id — so arriving
+  // from the dashboard marker popup (no project_id in URL) still loads the
+  // contract/warranty AND opens a populated ⓘ modal. Mirrors cctv detail.
+  const { data: central } = useTrafficCentralList(deptId)
+  const matchedSolution = useMemo(() => {
+    if (!central) return null
+    for (const bureau of central)
+      for (const sub of bureau.sub_department)
+        for (const sol of sub.solutions)
+          if (String(sol.solution.id) === String(id)) return sol
+    return null
+  }, [central, id])
   const projectIdParam = searchParams.get('project_id')
-  const contractInfo = useTrafficContractInfo(projectIdParam)
+  const roadIdParam = searchParams.get('road_id')
+  const resolvedProjectId =
+    projectIdParam ?? (matchedSolution ? String(matchedSolution.project.id) : null)
+  const resolvedRoadId =
+    roadIdParam ?? (matchedSolution ? String(matchedSolution.road.id) : null)
+  const contractInfo = useTrafficContractInfo(resolvedProjectId)
   // The rest are solution-scoped — keep the path `id`.
   const solutionDetail = useTrafficSolutionDetail(id)
   const details = useTrafficDetails(id)
@@ -113,6 +128,8 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
 
     return {
       id,
+      projectId: resolvedProjectId ?? undefined,
+      roadId: resolvedRoadId ?? undefined,
       roadCode,
       projectName: contract?.project_name ?? installPoint,
       installPoint,
@@ -136,7 +153,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       peakPhase: detailItem.max_active_phase,
       phaseTiming,
     }
-  }, [id, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data])
+  }, [id, resolvedProjectId, resolvedRoadId, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
