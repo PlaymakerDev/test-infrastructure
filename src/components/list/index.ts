@@ -16,3 +16,6 @@ export type { VehicleListProps, VehicleItem, WeightStatus, MoveStatus } from './
 export { default as ScheduleList } from './ScheduleList'
 export type { ScheduleListProps, ScheduleItem, ScheduleUpdateClick, ScheduleListCols } from './ScheduleList'
 
+export { default as DayList } from './DayList'
+export type { DayListProps } from './DayList'
+

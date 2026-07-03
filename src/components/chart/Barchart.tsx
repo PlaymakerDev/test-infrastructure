@@ -16,6 +16,9 @@ export interface BarConfig {
 export interface BarChartDataPoint {
   /** ชื่อบน X-axis รองรับ 2 บรรทัด โดยใช้ \n เช่น "จ.\n27/03" */
   label: string
+  /** ข้อความหัว tooltip (option) — ใส่ field `tooltipLabel` ในจุดข้อมูลเพื่อ
+   *  แทน label เช่นเวลาที่ซ้ำกันข้ามวันให้ระบุวันที่เต็มได้
+   *  ("29 มิ.ย. 2569 19:00"). อ่านผ่าน index signature; default = label. */
   [key: string]: string | number
 }
 
@@ -153,7 +156,11 @@ const BarChart: React.FC<BarChartProps> = ({
           color: '#8a9ab5',
           fontSize: 11,
           lineHeight: 16,
-          interval: 0,
+          // Force every label only when rotated (rotation is how we fit many
+          // labels); otherwise let ECharts auto-thin so dense time labels don't
+          // overlap into an unreadable blur. `hideOverlap` is the safety net.
+          interval: xAxisLabelRotate ? 0 : 'auto',
+          hideOverlap: true,
           ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
           ...(truncate ? { width: xAxisLabelMaxWidth, overflow: 'truncate' } : {}),
         },
@@ -177,12 +184,15 @@ const BarChart: React.FC<BarChartProps> = ({
         padding: [10, 16],
         textStyle: { color: '#ffffff', fontSize: 12 },
         formatter: (
-          params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string }[]
+          params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string; dataIndex?: number }[]
         ) => {
-          // Header — full category (axisValue is the data value, not the
-          // possibly-truncated axis label, so it shows the full name).
-          const header = params[0]?.axisValue
-            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
+          // Header — prefer the data point's `tooltipLabel` (e.g. a full date so
+          // repeated times across days are distinguishable), else the category
+          // value (axisValue = full data value, not the truncated axis label).
+          const dp = data[params[0]?.dataIndex ?? -1]
+          const headerText = (dp?.tooltipLabel as string | undefined) ?? params[0]?.axisValue
+          const header = headerText
+            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${headerText}</div>`
             : ''
           // For "(X%)" suffix, percent base = sum of all series at this column.
           const total = tooltipShowPercent

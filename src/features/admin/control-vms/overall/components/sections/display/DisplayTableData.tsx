@@ -44,24 +44,24 @@ const columns: ColumnsType<SettingByRoad> = [
     }
   },
   {
-    title: 'วันที่และเวลาเริ่มต้น',
-    dataIndex: 'since',
-    key: 'since',
+    title: 'วันที่เริ่มต้น',
+    dataIndex: 'start_date',
+    key: 'start_date',
     align: 'center',
     width: 170,
     render: (value: string) => {
-      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB HH:mm')} น.</span>
+      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB')}</span>
       return '-'
     },
   },
   {
-    title: 'วันที่และเวลาสิ้นสุด',
-    dataIndex: 'to',
-    key: 'to',
+    title: 'วันที่สิ้นสุด',
+    dataIndex: 'end_date',
+    key: 'end_date',
     align: 'center',
     width: 170,
     render: (value: string) => {
-      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB HH:mm')} น.</span>
+      if (value) return <span className='whitespace-pre-line'>{dayjs(value).format('DD MMM BBBB')}</span>
       return '-'
     },
   },
@@ -105,7 +105,7 @@ const DisplayTableData: React.FC<Props> = (props) => {
       dataSource={data}
       pagination={false}
       size="middle"
-      rowKey={(record) => record.setting_id != null ? String(record.setting_id) : `${record.solution_name}-${record.since}-${record.to}`}
+      rowKey={(record) => `${record.solution_name ?? ''}-${record.start_date ?? ''}-${record.end_date ?? ''}-${record.display_hour ?? ''}-${record.settings_content ?? ''}-${data.indexOf(record)}`}
       scroll={{ x: 'max-content' }}
     />
   )

@@ -62,8 +62,6 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const deptId = useDeptId()
   const goToDetail = useCallback((project: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (project.projectId) params.set('project_id', project.projectId)
-    if (project.roadId) params.set('road_id', project.roadId)
     router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
   }, [router, deptId])
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])

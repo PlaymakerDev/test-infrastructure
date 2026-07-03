@@ -7,6 +7,7 @@ import { useDeleteVMSMedia } from '../../../hooks/useDeleteVMSMedia'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
+import { FormUpdateBatch } from '../../../components'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -18,7 +19,7 @@ interface Props {
   vmsOption?: VMSScheduleByDate
 }
 
-const ContentDeleteSchedule: React.FC<Props> = (props) => {
+const ContentBatchDelete: React.FC<Props> = (props) => {
   const { id, data, vmsOption } = props
   const { setUpdateScheduleState } = useControlVMSContext()
   const deleteMedia = useDeleteVMSMedia()
@@ -47,7 +48,10 @@ const ContentDeleteSchedule: React.FC<Props> = (props) => {
           <p className='fs-12 text-(--light-gray)'>จุดติดตั้ง : <span className='text-black'>{data?.solution_name || '-'}</span></p>
           <p className='fs-12 text-(--light-gray)'>หมวดหมู่ : <span className='text-black'>{data?.setting_type_name || '-'}</span></p>
           <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
-          <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล : <span className='text-black'>{data?.date_since ? dayjs(data.date_since).format('DD MMM BBBB HH:mm') : '-'} น. – {data?.date_to ? dayjs(data.date_to).format('DD MMM BBBB HH:mm') : '-'} น. ({data?.date_count || '-'})</span></p>
+          <div>
+            <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล :</p>
+            <FormUpdateBatch data={data?.schedules} />
+          </div>
           <p className='fs-12 text-(--light-gray)'>สถานะการแสดงผล : <span className='text-red-500 font-bold'>{data?.status_name || '-'}</span></p>
         </div>
       </section>
@@ -85,4 +89,4 @@ const ContentDeleteSchedule: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(ContentDeleteSchedule)
+export default React.memo<Props>(ContentBatchDelete)

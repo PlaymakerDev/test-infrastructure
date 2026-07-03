@@ -15,8 +15,12 @@ export type Device = {
   stch: number
   /** [lng, lat] — BE `geometry_point`. */
   coord: [number, number]
-  /** Road code, e.g. "ชม.3035" (BE `road.road_code`). */
+  /** Road id (BE `road.id`) — passed as `road_id` to the detail link. */
+  roadId: number
+  /** Road code, e.g. "ชม.3035" (BE `road.road_code`) — popup "สายทาง" line. */
   road: string
-  /** Friendly road name (BE `road.road_name`) — shown in the popup subtitle. */
+  /** Friendly road name (BE `road.road_name`). */
   landmark: string
+  /** จุดติดตั้ง = solution name (BE `solution.solution_name`) — popup line. */
+  solutionName: string
 }

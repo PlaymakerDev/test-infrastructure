@@ -66,8 +66,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const deptId = useDeptId()
   const goToDetail = useCallback((project: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (project.projectId) params.set('project_id', project.projectId)
-    if (project.roadId) params.set('road_id', project.roadId)
     router.push(`/admin/traffic-signal/detail/${project.id}?${params}`)
   }, [router, deptId])
   const data = useMemo<Row[]>(() => {

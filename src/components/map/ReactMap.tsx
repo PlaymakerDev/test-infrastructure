@@ -54,8 +54,10 @@ const apiLocationToDevice = (loc: DashboardPositionLocation): Device | null => {
     unitId: loc.road.department_id ?? 0,
     stch: loc.road.stch ?? 0,
     coord: coord as [number, number],
+    roadId: loc.road.id,
     road: loc.road.road_code,
     landmark: loc.road.road_name,
+    solutionName: loc.solution.solution_name,
   }
 }
 

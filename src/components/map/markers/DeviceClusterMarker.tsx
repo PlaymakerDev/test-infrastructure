@@ -69,27 +69,82 @@ export interface DeviceClusterMarkerProps {
   popup?: ((device: Device, color: string) => React.ReactNode) | null
 }
 
-/** Default popup body — same look as before, minus the per-device online/
- *  fault/offline pill (the `/manage/solution/{dept}/position` endpoint
- *  doesn't carry per-device status, so we can't show it without per-feature
- *  cross-lookups). Re-add if/when BE includes `is_online` on each row. */
+/** Device type → overall feature route segment. Types with a standard
+ *  `/admin/{route}/detail/{solution_id}` page get a "ดูเพิ่มเติม" link; types
+ *  without one (WIM / Lighting / Tunnel) are omitted, so the popup just shows
+ *  the info lines for them. */
+const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
+  CCTV: 'cctv',
+  Analytic: 'incident-detection',
+  Counting: 'traffic-volume',
+  Traffic: 'traffic-signal',
+  VMS: 'vms',
+  CrossWalk: 'crosswalk',
+  BridgeLighting: 'bridge-lighting',
+}
+
+/** Default popup body — เมนู (device type) + จุดติดตั้ง + สายทาง, plus a
+ *  "ดูเพิ่มเติม" link into that install point's detail page when the type maps
+ *  to a known route. Data comes from `/manage/solution/{dept}/position`.
+ *  Rendered in a detached React root (mapbox popup), so we use a plain
+ *  `<a href>` (Next router context isn't available here) and read dept_id from
+ *  the current URL. */
 export function DefaultDevicePopup({ device, color }: { device: Device; color: string }) {
+  const route = DETAIL_ROUTE[device.type]
+  // Use the SOLUTION's own department (road.department_id) so the link lands on
+  // the right dept-scoped data even on the nationwide (dept_id=0) dashboard,
+  // where markers span many depts. Falls back to the dashboard's URL dept_id.
+  // Only dept_id is needed — the detail page self-derives project_id + road_id
+  // from its central list. Same format as the overall table links.
+  const deptId =
+    device.unitId ||
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('dept_id')
+      : null)
+  const detailUrl = route
+    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}` : ''}`
+    : null
+
   return (
     <div
       style={{
         padding: '10px 12px',
-        minWidth: 200,
+        minWidth: 210,
         fontFamily: 'ui-sans-serif,system-ui',
         background: 'rgba(5,13,26,0.96)',
         border: `1px solid ${color}`,
         borderRadius: 10,
       }}
     >
-      <div style={{ fontSize: 10, color, fontWeight: 700, letterSpacing: 0.5 }}>{SYSTEMS[device.type].label}</div>
-      <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 3 }}>{device.id}</div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>{device.road}</div>
-      {device.landmark && (
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>{device.landmark}</div>
+      {/* เมนู (device type) */}
+      <div style={{ fontSize: 12, color, fontWeight: 700, letterSpacing: 0.5 }}>
+        {SYSTEMS[device.type].label}
+      </div>
+      {/* จุดติดตั้ง */}
+      <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 7, lineHeight: 1.4 }}>
+        <span style={{ color: '#64748b' }}>จุดติดตั้ง: </span>
+        <span style={{ color: '#fff' }}>{device.solutionName || '-'}</span>
+      </div>
+      {/* สายทาง */}
+      <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 3, lineHeight: 1.4 }}>
+        <span style={{ color: '#64748b' }}>สายทาง: </span>
+        <span style={{ color: '#fff' }}>{device.road || '-'}</span>
+      </div>
+      {/* ดูเพิ่มเติม → install point detail page */}
+      {detailUrl && (
+        <a
+          href={detailUrl}
+          style={{
+            display: 'inline-block',
+            marginTop: 9,
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#FCD116',
+            textDecoration: 'none',
+          }}
+        >
+          ดูเพิ่มเติม →
+        </a>
       )}
     </div>
   )
@@ -144,7 +199,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
           type: 'Feature' as const,
           properties: {
             id: d.id, type: d.type, road: d.road, landmark: d.landmark,
-            unitId: d.unitId, stch: d.stch,
+            unitId: d.unitId, stch: d.stch, solutionName: d.solutionName,
           },
           geometry: { type: 'Point' as const, coordinates: d.coord },
         }))

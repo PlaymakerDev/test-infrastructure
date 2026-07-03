@@ -197,6 +197,14 @@ export const theme: ConfigProviderProps = {
         itemActiveBg: "var(--default-blue)",
         itemActiveColor: "var(--black)",
         itemBg: "transparent",
+      },
+      Tabs: {
+        // No dark algorithm → default inactive tab text is too dark on this bg.
+        itemColor: "rgba(255,255,255,0.55)",
+        itemHoverColor: "#FFFFFF",
+        itemActiveColor: "var(--yellow)",
+        itemSelectedColor: "var(--yellow)",
+        inkBarColor: "var(--yellow)",
       }
     }
   },

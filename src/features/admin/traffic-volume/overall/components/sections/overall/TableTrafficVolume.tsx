@@ -3,6 +3,7 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
+import { useQueries } from '@tanstack/react-query'
 import {
   TbShieldCheckFilled,
   TbWifi,
@@ -11,6 +12,8 @@ import {
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/traffic-volume/components/LicenseModal'
+import { getTrafficVolumeLicenseAPI } from '@/services/routes/TrafficVolumeService'
+import { trafficVolumeKeys } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import {
   groupByBureau,
@@ -48,8 +51,6 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   // central Project Info modal without re-fetching.
   const goToDetail = useCallback((project: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (project.projectId) params.set('project_id', project.projectId)
-    if (project.roadId) params.set('road_id', project.roadId)
     router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
   }, [router, deptId])
   // Open the License modal — fetches the solution's camera license keys on
@@ -57,6 +58,29 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const openLicense = useCallback((project: TrafficVolumeProject) => {
     setLicenseSolution({ id: project.id, name: project.installPoint, roadId: project.roadId ?? '' })
   }, [])
+
+  // Fetch each solution's license list so the column icon reflects ACTUAL
+  // license presence (not warranty). Counts are small (≤~50 solutions/dept)
+  // and cached forever. Icon is YELLOW by default; turns GRAY only once a
+  // query resolves with an empty license list.
+  const solutionIds = useMemo(() => projects.map((p) => p.id), [projects])
+  const licenseQueries = useQueries({
+    queries: solutionIds.map((id) => ({
+      queryKey: trafficVolumeKeys.license(id),
+      queryFn: () => getTrafficVolumeLicenseAPI(id).then((r) => r.data),
+      enabled: !!id,
+      staleTime: Infinity,
+    })),
+  })
+  const hasLicenseById = useMemo(() => {
+    const m = new Map<string, boolean>()
+    solutionIds.forEach((id, i) => {
+      const d = licenseQueries[i]?.data
+      if (d) m.set(id, (d.license?.length ?? 0) > 0)
+    })
+    return m
+  }, [solutionIds, licenseQueries])
+
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
   const TOTAL_COLS = 10
@@ -187,7 +211,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         // Mirrors `is_warranty` visually — yellow when active, gray when not.
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          const active = row.project.warranty === 'in-warranty'
+          const active = hasLicenseById.get(row.project.id) !== false
           return (
             <button
               type='button'
@@ -233,7 +257,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
-  }, [goToDetail, openLicense])
+  }, [goToDetail, openLicense, hasLicenseById])
 
   return (
     <>
