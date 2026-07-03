@@ -1,0 +1,92 @@
+import { APIResponseVMSMediaById, VMSScheduleByDate } from '@/types/control-vms/display-api'
+import { Button, ConfigProvider } from 'antd'
+import React from 'react'
+import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
+import { ExclamationCircleOutlined } from '@ant-design/icons'
+import { useDeleteVMSMedia } from '../../../hooks/useDeleteVMSMedia'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
+import { FormUpdateBatch } from '../../../components'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
+
+interface Props {
+  id?: string | number
+  type?: 'CREATE' | 'EDIT' | 'DELETE'
+  data?: APIResponseVMSMediaById
+  vmsOption?: VMSScheduleByDate
+}
+
+const ContentBatchDelete: React.FC<Props> = (props) => {
+  const { id, data, vmsOption } = props
+  const { setUpdateScheduleState } = useControlVMSContext()
+  const deleteMedia = useDeleteVMSMedia()
+
+  const handleConfirm = () => {
+    if (!id) return
+    deleteMedia.mutate(id, {
+      onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE),
+    })
+  }
+
+  return (
+    <div className='lg:px-8'>
+      <section>
+        <ExclamationCircleOutlined
+          className='text-red-500! text-9xl! mb-5! mx-auto! block!'
+        />
+        <div className='text-center mt-3'>
+          <h2 className='text-black'>ยืนยันลบคำสั่งนี้หรือไม่?</h2>
+          <p className='text-black'>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+        </div>
+      </section>
+
+      <section className='mt-5'>
+        <div className='h-full bg-red-500/20 border-2 rounded-lg px-4 py-2 lg:px-8 lg:py-4 border-red-500'>
+          <p className='fs-12 text-(--light-gray)'>จุดติดตั้ง : <span className='text-black'>{data?.solution_name || '-'}</span></p>
+          <p className='fs-12 text-(--light-gray)'>หมวดหมู่ : <span className='text-black'>{data?.setting_type_name || '-'}</span></p>
+          <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
+          <div>
+            <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล :</p>
+            <FormUpdateBatch data={data?.schedules} />
+          </div>
+          <p className='fs-12 text-(--light-gray)'>สถานะการแสดงผล : <span className='text-red-500 font-bold'>{data?.status_name || '-'}</span></p>
+        </div>
+      </section>
+
+      <section className='mt-3'>
+        <div className='flex flex-col sm:flex-row sm:justify-end gap-3'>
+          <ConfigProvider theme={{ token: { colorPrimary: '#6B6B6B', colorTextLightSolid: '#FFFFFF' } }}>
+            <Button
+              type='primary'
+              htmlType='button'
+              shape='round'
+              className='w-full! sm:w-auto!'
+              onClick={() => setUpdateScheduleState({ ...INIT_UPDATE_SCHEDULE, type: 'DELETE' })}
+              disabled={deleteMedia.isPending}
+            >
+              <p className='fs-12'>ยกเลิก</p>
+            </Button>
+          </ConfigProvider>
+          <ConfigProvider theme={{ token: { colorPrimary: '#ef4444', colorTextLightSolid: '#FFFFFF' } }}>
+            <Button
+              type='primary'
+              htmlType='button'
+              shape='round'
+              className='w-full! sm:w-auto!'
+              loading={deleteMedia.isPending}
+              disabled={deleteMedia.isPending}
+              onClick={handleConfirm}
+            >
+              <p className='fs-12'>ยืนยัน</p>
+            </Button>
+          </ConfigProvider>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default React.memo<Props>(ContentBatchDelete)
