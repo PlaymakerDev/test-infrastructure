@@ -22,6 +22,8 @@ export interface ContextProps {
   setSearchDate: (s: APIRequestVMSSettingSchedule | null) => void
   updateScheduleState: UpdateScheduleState
   setUpdateScheduleState: React.Dispatch<React.SetStateAction<UpdateScheduleState>>
+  openVMSScreen: OpenVMSScreenState
+  setOpenVMSScreen: React.Dispatch<React.SetStateAction<OpenVMSScreenState>>
 }
 
 export interface PageProviderProps {
@@ -31,7 +33,7 @@ export interface PageProviderProps {
 export interface UpdateScheduleState {
   open: boolean
   id?: string | number | null
-  type: 'CREATE' | 'EDIT' | 'DELETE'
+  type: 'CREATE' | 'EDIT' | 'DELETE' | 'BATCH_DELETE'
   vmsOption?: VMSScheduleByDate
 }
 
@@ -39,6 +41,18 @@ export const INIT_UPDATE_SCHEDULE: UpdateScheduleState = {
   open: false,
   id: null,
   type: 'CREATE'
+}
+
+export interface OpenVMSScreenState {
+  open: boolean
+  id: number | null
+  vms_url: string
+}
+
+export const INIT_OPEN_VMS_SCREEN: OpenVMSScreenState = {
+  open: false,
+  id: null,
+  vms_url: ''
 }
 
 export const ControlVMSContext = createContext<ContextProps | null>(null)
@@ -54,6 +68,7 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [searchText, setSearchText] = useState<APIRequestVMSSettingByRoad | null>(null)
   const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>(null)
   const [updateScheduleState, setUpdateScheduleState] = useState<UpdateScheduleState>(INIT_UPDATE_SCHEDULE)
+  const [openVMSScreen, setOpenVMSScreen] = useState<OpenVMSScreenState>(INIT_OPEN_VMS_SCREEN)
 
   return (
     <ControlVMSContext.Provider
@@ -76,6 +91,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         setSearchDate,
         updateScheduleState,
         setUpdateScheduleState,
+        openVMSScreen,
+        setOpenVMSScreen,
       }}
     >
       {children}

@@ -32,4 +32,15 @@ export { default as FormUpdateSchedule } from './sections/display/FormUpdateSche
 export { default as ScheduleDisplaySection } from './sections/display/ScheduleDisplaySection'
 export { default as ScheduleSection } from './sections/display/ScheduleSection'
 export { default as ModalUpdateSchedule } from './sections/display/ModalUpdateSchedule'
+export { default as ContentDeleteSchedule } from './sections/display/ContentDeleteSchedule'
 
+// STATUS
+export { default as StatusSection } from './StatusSection'
+export { default as ContentBatchDelete } from './sections/status/ContentBatchDelete'
+export { default as ContentTab } from './sections/status/ContentTab'
+export { default as FormSearchStatus } from './sections/status/FormSearchStatus'
+export { default as ModalStatusVMSScreen } from './sections/status/ModalVMSScreen'
+export { default as SearchStatusSection } from './sections/status/SearchStatusSection'
+export { default as StatusList } from './sections/status/StatusList'
+export { default as StatusTabContent } from './sections/status/StatusTabContent'
+export { default as FormUpdateBatch } from './sections/status/FormUpdateBatch'

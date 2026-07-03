@@ -151,14 +151,20 @@ export interface APIRequestVMSSettingByStatus {
 export type APIResponseVMSSettingByStatus = VMSSettingByStatus[]
 
 export interface VMSSettingByStatus {
-  cameras: CameraByStatus[]
-  is_all_day: boolean
-  schedules: ScheduleByStatus[]
+  vms_id: number
   setting_id: number
+  type_name: string
   status: number
   status_name: string
-  type_name: string
-  vms_id: number
+  is_all_day: boolean
+  is_online: boolean
+  start_date: string
+  end_date: string
+  road_code: string
+  solution_name: string
+  screen_capture_url: string
+  cameras: CameraByStatus[]
+  schedules: ScheduleByStatus[]
 }
 
 export interface CameraByStatus {

@@ -122,7 +122,7 @@ export const postVMSMediaBatchDeleteAPI = async (data: APIRequestPostVMSPatchDel
 // STATUS COUNT
 export const getVMSSettingStatusCountAPI = async () => {
   return ApiService.fetchData<APIResponseVMSSettingStatusCount>({
-    url: `/vms/settings/status-count`,
+    url: `/vms/settings/status-counts`,
     method: 'GET',
   })
 }

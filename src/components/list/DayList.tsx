@@ -1,4 +1,5 @@
 'use client'
+import { Tooltip } from 'antd'
 import React from 'react'
 
 const DAYS = [
@@ -18,6 +19,7 @@ export interface DayListProps {
   disabled?: boolean
   disabledDate?: (day: number) => boolean
   className?: string
+  getTooltip?: (day: number) => React.ReactNode
 }
 
 const DayList: React.FC<DayListProps> = ({
@@ -27,6 +29,7 @@ const DayList: React.FC<DayListProps> = ({
   disabled = false,
   disabledDate,
   className,
+  getTooltip,
 }) => {
   const toggle = (day: number) => {
     if (disabled || disabledDate?.(day) || !onChange) return
@@ -42,7 +45,7 @@ const DayList: React.FC<DayListProps> = ({
         {DAYS.map((d) => {
           const active = value.includes(d.value)
           const isDayDisabled = disabled || disabledDate?.(d.value)
-          return (
+          const button = (
             <button
               key={d.value}
               type="button"
@@ -60,6 +63,16 @@ const DayList: React.FC<DayListProps> = ({
             >
               {d.label}
             </button>
+          )
+
+          const tooltip = getTooltip?.(d.value)
+          if (!tooltip) return button
+
+          // wrap in a span so the tooltip still fires when the button itself is disabled
+          return (
+            <Tooltip key={d.value} title={tooltip}>
+              <span>{button}</span>
+            </Tooltip>
           )
         })}
       </div>

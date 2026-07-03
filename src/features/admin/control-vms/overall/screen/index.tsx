@@ -2,9 +2,11 @@ import React, { useMemo, useState } from 'react'
 import {
   TitleSection,
   VMSSection,
-  DisplaySection
+  DisplaySection,
+  StatusSection
 } from '../components'
 import { ControlVMSProvider } from '../context'
+import { CCTVModal } from '@/components/modal'
 
 interface Props {
 
@@ -20,6 +22,8 @@ const ControlVMSScreen: React.FC<Props> = (props) => {
         return <VMSSection />
       case 'DISPLAY':
         return <DisplaySection />
+      case 'STATUS':
+        return <StatusSection />
       default:
         return <VMSSection />
     }
@@ -33,6 +37,7 @@ const ControlVMSScreen: React.FC<Props> = (props) => {
           {renderContent}
         </section>
       </div>
+      <CCTVModal />
     </ControlVMSProvider>
   )
 }
