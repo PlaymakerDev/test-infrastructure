@@ -98,7 +98,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถจักรยานยนต์',
         key: 'motorcycle',
-        align: 'right',
         width: 130,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -107,7 +106,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถยนต์',
         key: 'car',
-        align: 'right',
         width: 110,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -116,7 +114,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถกระบะ',
         key: 'pickup',
-        align: 'right',
         width: 110,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -125,7 +122,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถแท็กซี่',
         key: 'taxi',
-        align: 'right',
         width: 110,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -134,7 +130,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถบัส',
         key: 'bus',
-        align: 'right',
         width: 100,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -143,7 +138,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถบรรทุก',
         key: 'truck',
-        align: 'right',
         width: 110,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -152,7 +146,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถพ่วง',
         key: 'trailer',
-        align: 'right',
         width: 100,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -161,7 +154,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รวมยานพาหนะ',
         key: 'totalVehicles',
-        align: 'right',
         width: 140,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -172,7 +164,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รวม PCU',
         key: 'totalPCU',
-        align: 'right',
         width: 120,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -183,7 +174,6 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
       {
         title: 'รถบรรทุก (%)',
         key: 'truckPercent',
-        align: 'right',
         width: 130,
         onCell: (row) => (row.kind === 'camera' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>

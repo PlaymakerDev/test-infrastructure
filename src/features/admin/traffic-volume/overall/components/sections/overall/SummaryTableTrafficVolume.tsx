@@ -163,7 +163,6 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'อุปกรณ์ทั้งหมด',
         key: 'totalDevices',
-        align: 'center',
         width: 140,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -176,7 +175,6 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'ออนไลน์',
         key: 'onlineDevices',
-        align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
@@ -195,7 +193,6 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'ออฟไลน์',
         key: 'offlineDevices',
-        align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
