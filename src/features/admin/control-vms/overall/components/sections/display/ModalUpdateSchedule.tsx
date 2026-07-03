@@ -1,10 +1,9 @@
 import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
-import FormUpdateSchedule from './FormUpdateSchedule'
 import { TbCopyPlus } from 'react-icons/tb'
 import { useVMSMediaById } from '../../../hooks/useVMSMediaById'
-import ContentDeleteSchedule from './ContentDeleteSchedule'
+import { ContentBatchDelete, ContentDeleteSchedule, FormUpdateSchedule } from '../../../components'
 
 interface Props {
 
@@ -14,10 +13,11 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
   const { } = props
   const { updateScheduleState, setUpdateScheduleState } = useControlVMSContext()
   const { open, id, type, vmsOption } = updateScheduleState
+  const isDeleteType = type === 'DELETE' || type === 'BATCH_DELETE'
 
   const { data, isLoading, isError } = useVMSMediaById(
     id,
-    (!!id && type === 'EDIT') || (!!id && type === 'DELETE'),
+    !!id && (type === 'EDIT' || isDeleteType),
   )
 
   const renderContent = useMemo(() => {
@@ -26,6 +26,7 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
 
     if (type === 'CREATE' || type === 'EDIT') return <FormUpdateSchedule id={id!} type={type} data={data?.data} vmsOption={vmsOption} />
     if (type === 'DELETE') return <ContentDeleteSchedule id={id!} data={data?.data} vmsOption={vmsOption} />
+    if (type === 'BATCH_DELETE') return <ContentBatchDelete id={id!} data={data?.data} vmsOption={vmsOption} />
     return <Empty description="ไม่พบข้อมูล" />
   }, [isLoading, isError, data, id, type, vmsOption])
 
@@ -34,7 +35,7 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
     let title: string = 'เพิ่มรูปแบบการแสดงผล'
     if (type === 'EDIT') title = 'แก้ไขรูปแบบการแสดงผล'
 
-    if (type === 'DELETE') return
+    if (isDeleteType) return
 
     return (
       <div className='flex items-start gap-2 mb-5'>
@@ -45,17 +46,17 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
         </div>
       </div>
     )
-  }, [type])
+  }, [type, isDeleteType])
 
   return (
     <ConfigProvider
       theme={{
         components: {
           Modal: {
-            colorIcon: type === 'DELETE' ? '#000000' : '#FFFFFF',
-            contentBg: type === 'DELETE' ? '#FFFFFF' : 'var(--dark-black)',
-            headerBg: type === 'DELETE' ? '#FFFFFF' : 'var(--dark-black)',
-            footerBg: type === 'DELETE' ? '#FFFFFF' : 'var(--dark-black)',
+            colorIcon: isDeleteType ? '#000000' : '#FFFFFF',
+            contentBg: isDeleteType ? '#FFFFFF' : 'var(--dark-black)',
+            headerBg: isDeleteType ? '#FFFFFF' : 'var(--dark-black)',
+            footerBg: isDeleteType ? '#FFFFFF' : 'var(--dark-black)',
           },
         }
       }}
@@ -68,7 +69,7 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
         onCancel={() => setUpdateScheduleState(INIT_UPDATE_SCHEDULE)}
         footer={null}
         destroyOnHidden
-        width={type === 'DELETE' ? 700 : 1000}
+        width={isDeleteType ? 700 : 1000}
       >
         {renderContent}
       </Modal>

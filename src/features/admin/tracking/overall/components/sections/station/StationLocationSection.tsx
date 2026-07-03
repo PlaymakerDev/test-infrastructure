@@ -7,10 +7,11 @@ interface Props {
   data?: SumStation[]
   isLoading?: boolean
   isError?: boolean
+  onSearch?: (value: string) => void
 }
 
 const StationLocationSection: React.FC<Props> = (props) => {
-  const { data, isLoading, isError } = props
+  const { data, isLoading, isError, onSearch } = props
 
   return (
     <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
@@ -31,6 +32,7 @@ const StationLocationSection: React.FC<Props> = (props) => {
           data={data || []}
           isLoading={isLoading}
           isError={isError}
+          onSearch={onSearch}
         />
       </div>
 

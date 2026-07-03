@@ -1,4 +1,4 @@
-import { APIResponseVMSMediaById, VMSSettingSchedule } from '@/types/control-vms/display-api'
+import { APIResponseVMSMediaById, VMSScheduleByDate } from '@/types/control-vms/display-api'
 import { Button, ConfigProvider } from 'antd'
 import React from 'react'
 import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
@@ -15,7 +15,7 @@ interface Props {
   id?: string | number
   type?: 'CREATE' | 'EDIT' | 'DELETE'
   data?: APIResponseVMSMediaById
-  vmsOption?: VMSSettingSchedule
+  vmsOption?: VMSScheduleByDate
 }
 
 const ContentDeleteSchedule: React.FC<Props> = (props) => {
@@ -47,7 +47,8 @@ const ContentDeleteSchedule: React.FC<Props> = (props) => {
           <p className='fs-12 text-(--light-gray)'>จุดติดตั้ง : <span className='text-black'>{data?.solution_name || '-'}</span></p>
           <p className='fs-12 text-(--light-gray)'>หมวดหมู่ : <span className='text-black'>{data?.setting_type_name || '-'}</span></p>
           <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
-          <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล : <span className='text-black'>{data?.since ? dayjs(data.since).format('DD MMM BBBB HH:mm') : '-'} น. – {data?.to ? dayjs(data.to).format('DD MMM BBBB HH:mm') : '-'} น. ({data?.date_count || '-'})</span></p>
+          <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล : <span className='text-black'>{data?.date_since ? dayjs(data.date_since).format('DD MMM BBBB HH:mm') : '-'} น. – {data?.date_to ? dayjs(data.date_to).format('DD MMM BBBB HH:mm') : '-'} น. ({data?.date_count || '-'})</span></p>
+          <p className='fs-12 text-(--light-gray)'>สถานะการแสดงผล : <span className='text-red-500 font-bold'>{data?.status_name || '-'}</span></p>
         </div>
       </section>
 

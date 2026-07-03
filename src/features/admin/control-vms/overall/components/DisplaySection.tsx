@@ -14,8 +14,6 @@ interface Props {
 const DisplaySection: React.FC<Props> = (props) => {
   const { } = props
 
-
-
   return (
     <div>
       <Row gutter={[16, 16]}>

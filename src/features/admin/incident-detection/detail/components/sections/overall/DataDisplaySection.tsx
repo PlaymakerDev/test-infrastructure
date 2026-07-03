@@ -11,6 +11,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import {
   useIncidentCameraList,
   useIncidentCameraTotals,
+  useIncidentCentralList,
 } from '@/hooks/queries/incident-detection'
 import type { IncidentCameraListItem } from '@/types/incident-detection/camera-api'
 import CameraGridView, { EventCountTag, type InstallGroup, type CameraRow } from './CameraGridView'
@@ -104,6 +105,24 @@ const DataDisplaySection: React.FC = () => {
   })
   const { data: totals } = useIncidentCameraTotals(deptId, { solution_id: solutionId })
 
+  // Resolve project_id + road_id for the group-header ⓘ: prefer URL params,
+  // else DERIVE from the central-list row matched by solution id (cctv pattern)
+  // so the Project Info modal stays populated when arriving without project_id
+  // (e.g. from the dashboard marker popup). Central list is cached from the
+  // overall page, so this is free on table navigation.
+  const { data: central } = useIncidentCentralList(deptId)
+  const matched = useMemo(() => {
+    if (!central || !solutionId) return null
+    const target = String(solutionId)
+    for (const bureau of central)
+      for (const sub of bureau.sub_department)
+        for (const sol of sub.solutions)
+          if (String(sol.solution.id) === target) return sol
+    return null
+  }, [central, solutionId])
+  const projectId = projectIdParam ? Number(projectIdParam) : matched?.project.id
+  const roadId = roadIdParam ? Number(roadIdParam) : matched?.road.id
+
   // Build a single install group from the API rows. Analytic-detail = one
   // solution, so we have exactly one group in the layout.
   const group: InstallGroup | null = useMemo(() => {
@@ -114,11 +133,11 @@ const DataDisplaySection: React.FC = () => {
       id: String(first.solution.id),
       label: first.solution.solution_name,
       warranty: first.solution.is_warranty ? 'in-warranty' : 'expired',
-      projectId: projectIdParam ? Number(projectIdParam) : undefined,
-      roadId: roadIdParam ? Number(roadIdParam) : undefined,
+      projectId,
+      roadId,
       cameras: rows.map(toCameraRow),
     }
-  }, [cameraList?.res_data, projectIdParam, roadIdParam])
+  }, [cameraList?.res_data, projectId, roadId])
 
   const allCameras = group?.cameras ?? []
 

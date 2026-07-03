@@ -56,8 +56,6 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   // so the detail page can open the central Project Info modal without re-fetching.
   const goToDetail = useCallback((project: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (project.projectId) params.set('project_id', project.projectId)
-    if (project.roadId) params.set('road_id', project.roadId)
     router.push(`/admin/traffic-signal/detail/${project.id}?${params}`)
   }, [router, deptId])
   // ── Build a flat list interleaving bureau dividers + project rows.

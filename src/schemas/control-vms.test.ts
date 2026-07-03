@@ -89,17 +89,28 @@ describe('apiResponseVMSDepartmentSchema', () => {
   })
 })
 
-const VALID_MEDIA_LIST_ITEM = {
-  created_at: '2026-01-01T00:00:00Z',
-  created_by: 'admin',
-  crossing_master_index: 'CMI-001',
+const VALID_MEDIA_SCHEDULE = {
+  days_of_week: [1, 2, 3],
   id: 1,
   media_url: 'https://example.com/media.jpg',
-  message: 'Test message',
+  message: '',
+  schedule_name: 'ตารางที่ 1',
+  time_since: '08:00',
+  time_to: '18:00',
+}
+
+const VALID_MEDIA_LIST_ITEM = {
+  created_at: '2026-01-01T00:00:00Z',
+  crossing_master_index: 'CMI-001',
+  date_since: '2026-01-01',
+  date_to: '2026-12-31',
+  id: 1,
+  is_all_day: false,
+  schedules: [VALID_MEDIA_SCHEDULE],
   setting_type: { id: 1, name: 'ข้อความ' },
   setting_type_id: 1,
-  since: '2026-01-01',
-  to: '2026-12-31',
+  status: 0,
+  status_updated_at: '2026-01-01T00:00:00Z',
   type_name: 'image',
 }
 
@@ -133,7 +144,7 @@ describe('apiResponseVMSMediaSchema', () => {
 
 describe('apiResponseVMSUpcomingSummarySchema', () => {
   const valid = {
-    count: { most_bureau: 'สทช.1', most_bureau_percent: 42.5, settings_count: 10 },
+    count: { disconnected_count: 2, most_bureau: 'สทช.1', most_bureau_percent: 42.5, playing_count: 8, settings_count: 10 },
     upcoming: { setting_type_id: 1, setting_type_name: 'ข้อความ', solution_name: 'VMS-001' },
   }
   it('parses a valid upcoming summary', () => {
@@ -149,14 +160,17 @@ describe('apiResponseVMSSettingByRoadSchema', () => {
   const valid = [{
     department_short_name: 'สทช.1',
     road_code: 'RC-01',
+    region_name: 'ภาคกลาง',
     settings: [{
       display_hour: '08:00-20:00',
+      end_date: '2026-12-31',
       is_online: true,
       setting_type_name: 'ข้อความ',
       settings_content: 'Hello',
-      since: '2026-01-01',
       solution_name: 'VMS-001',
-      to: '2026-12-31',
+      start_date: '2026-01-01',
+      status: 1,
+      status_name: 'กำลังแสดงผล',
     }],
   }]
   it('parses a valid by-road response', () => {
@@ -189,15 +203,18 @@ describe('apiResponseVMSMediaByIdSchema', () => {
     id: 1,
     crossing_master_index: 'CMI-001',
     type_name: 'image',
-    media_url: 'https://example.com/image.jpg',
-    since: '2026-01-01T00:00:00Z',
-    to: '2026-12-31T23:59:59Z',
-    message: 'Test',
+    date_since: '2026-01-01T00:00:00Z',
+    date_to: '2026-12-31T23:59:59Z',
+    is_all_day: false,
+    schedules: [VALID_MEDIA_SCHEDULE],
     setting_type_id: 1,
     setting_type_name: 'ข้อความ',
     solution_name: 'VMS-001',
     department_id: 1,
     department_short_name: 'สทช.1',
+    status: 1,
+    status_name: 'กำลังแสดงผล',
+    status_updated_at: '2026-01-01T00:00:00Z',
     stch: 0,
     date_count: '5 วัน',
     created_at: '2026-01-01T00:00:00Z',

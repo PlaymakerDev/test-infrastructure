@@ -16,6 +16,9 @@ export interface BarConfig {
 export interface BarChartDataPoint {
   /** ชื่อบน X-axis รองรับ 2 บรรทัด โดยใช้ \n เช่น "จ.\n27/03" */
   label: string
+  /** ข้อความหัว tooltip (option) — ใส่ field `tooltipLabel` ในจุดข้อมูลเพื่อ
+   *  แทน label เช่นเวลาที่ซ้ำกันข้ามวันให้ระบุวันที่เต็มได้
+   *  ("29 มิ.ย. 2569 19:00"). อ่านผ่าน index signature; default = label. */
   [key: string]: string | number
 }
 
@@ -57,6 +60,10 @@ export interface BarChartProps {
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
   yAxisDomain?: [number | 'auto', number | 'auto']
+  /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
+  xAxisLabelRotate?: number
+  /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
+  xAxisLabelMaxWidth?: number
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
   /** สี title + icon accent (default `#FCD116`) */
@@ -102,6 +109,8 @@ const BarChart: React.FC<BarChartProps> = ({
   height = 280,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  xAxisLabelRotate = 0,
+  xAxisLabelMaxWidth,
   accentColor = '#FCD116',
   cardBackground = '#00000080',
   cardBorderColor = '#1f2d3d',
@@ -125,9 +134,19 @@ const BarChart: React.FC<BarChartProps> = ({
     const yMax = yAxisTicks ? yAxisTicks[yAxisTicks.length - 1] : yAxisDomain[1] === 'auto' ? undefined : yAxisDomain[1]
     const yInterval = yAxisTicks && yAxisTicks.length >= 2 ? yAxisTicks[1] - yAxisTicks[0] : undefined
 
+    const truncate = typeof xAxisLabelMaxWidth === 'number'
+
     return {
       backgroundColor: 'transparent',
-      grid: { top: 16, right: 8, bottom: 44, left: 40, containLabel: false },
+      grid: {
+        top: 16,
+        right: 8,
+        // Rotated labels need more vertical room than the default 44 — near
+        // vertical (≥60°) needs the full truncated label length.
+        bottom: xAxisLabelRotate >= 60 ? 100 : xAxisLabelRotate ? 80 : 44,
+        left: 40,
+        containLabel: false,
+      },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -137,7 +156,13 @@ const BarChart: React.FC<BarChartProps> = ({
           color: '#8a9ab5',
           fontSize: 11,
           lineHeight: 16,
-          interval: 0,
+          // Force every label only when rotated (rotation is how we fit many
+          // labels); otherwise let ECharts auto-thin so dense time labels don't
+          // overlap into an unreadable blur. `hideOverlap` is the safety net.
+          interval: xAxisLabelRotate ? 0 : 'auto',
+          hideOverlap: true,
+          ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
+          ...(truncate ? { width: xAxisLabelMaxWidth, overflow: 'truncate' } : {}),
         },
         splitLine: { show: false },
       },
@@ -159,11 +184,15 @@ const BarChart: React.FC<BarChartProps> = ({
         padding: [10, 16],
         textStyle: { color: '#ffffff', fontSize: 12 },
         formatter: (
-          params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string }[]
+          params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string; dataIndex?: number }[]
         ) => {
-          // Header — date/time/category label (axisValue of first param).
-          const header = params[0]?.axisValue
-            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;">${params[0].axisValue}</div>`
+          // Header — prefer the data point's `tooltipLabel` (e.g. a full date so
+          // repeated times across days are distinguishable), else the category
+          // value (axisValue = full data value, not the truncated axis label).
+          const dp = data[params[0]?.dataIndex ?? -1]
+          const headerText = (dp?.tooltipLabel as string | undefined) ?? params[0]?.axisValue
+          const header = headerText
+            ? `<div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${headerText}</div>`
             : ''
           // For "(X%)" suffix, percent base = sum of all series at this column.
           const total = tooltipShowPercent
@@ -218,7 +247,7 @@ const BarChart: React.FC<BarChartProps> = ({
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelMaxWidth])
 
   return (
     <div

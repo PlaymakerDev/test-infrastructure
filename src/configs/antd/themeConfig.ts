@@ -19,6 +19,18 @@ export const theme: ConfigProviderProps = {
       },
       Button: {
         defaultGhostBorderColor: '#FCD116',
+        // No dark algorithm → default button is white bg + white text (invisible,
+        // e.g. Modal.confirm "Cancel"). Make it a solid grey button (like the
+        // danger button, neutral colour) — no yellow border/text.
+        defaultBg: "#333333",
+        defaultColor: "var(--white)",
+        defaultBorderColor: "transparent",
+        defaultHoverBg: "#404040",
+        defaultHoverColor: "var(--white)",
+        defaultHoverBorderColor: "transparent",
+        defaultActiveBg: "#2A2A2A",
+        defaultActiveColor: "var(--white)",
+        defaultActiveBorderColor: "transparent",
       },
       Drawer: {
         colorBgElevated: "var(--dark-black)",
@@ -128,6 +140,37 @@ export const theme: ConfigProviderProps = {
         footerBg: "var(--dark-black)",
         titleColor: "#FFFFFF",
       },
+      Tooltip: {
+        // Global colorTextLightSolid is dark (for text on the yellow primary
+        // button); Tooltip reuses it for its text → dark-on-dark = unreadable.
+        // Override just the tooltip to a dark surface with light text.
+        colorBgSpotlight: "#333333",
+        colorTextLightSolid: "#FFFFFF",
+      },
+      Dropdown: {
+        // No dark algorithm in this theme → popup defaults to white. Match the
+        // app's dark surfaces (mirrors Select/Modal overrides above).
+        colorBgElevated: "var(--dark-black)",
+        colorText: "var(--white)",
+        controlItemBgHover: "#2A2A2A",
+      },
+      Menu: {
+        colorBgElevated: "var(--dark-black)",
+        popupBg: "var(--dark-black)",
+        itemColor: "var(--white)",
+        itemHoverColor: "var(--white)",
+        itemHoverBg: "#2A2A2A",
+        itemBg: "transparent",
+        itemSelectedBg: "#2A2A2A",
+        itemSelectedColor: "var(--yellow)",
+      },
+      Message: {
+        // No dark algorithm → toast bg defaults to white + white text (invisible).
+        contentBg: "#333333",
+      },
+      Notification: {
+        colorBgElevated: "#333333",
+      },
       Calendar: {
         // Container
         // colorBgContainer: "var(--dark-black)",
@@ -149,6 +192,19 @@ export const theme: ConfigProviderProps = {
         colorHighlight: "#FCD116",
         // Cell borders / splits
         colorSplit: "#333333",
+      },
+      Pagination: {
+        itemActiveBg: "var(--default-blue)",
+        itemActiveColor: "var(--black)",
+        itemBg: "transparent",
+      },
+      Tabs: {
+        // No dark algorithm → default inactive tab text is too dark on this bg.
+        itemColor: "rgba(255,255,255,0.55)",
+        itemHoverColor: "#FFFFFF",
+        itemActiveColor: "var(--yellow)",
+        itemSelectedColor: "var(--yellow)",
+        inkBarColor: "var(--yellow)",
       }
     }
   },

@@ -3,12 +3,15 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
+import { useQueries } from '@tanstack/react-query'
 import { TbWifi, TbWifiOff, TbShieldCheckFilled } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/incident-detection/components/LicenseModal'
+import { getIncidentLicenseAPI } from '@/services/routes/AnalyticService'
+import { incidentKeys } from '@/hooks/queries/incident-detection/queryKeys'
 
 interface Props {
   rows: IncidentRow[]
@@ -78,6 +81,28 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
     setLicenseSolution({ id: r.id, name: r.installPoint, roadId: r.roadId })
   }, [])
 
+  // Fetch each solution's license list so the column icon reflects ACTUAL
+  // license presence (not warranty). Counts are small (≤~50 solutions/dept)
+  // and cached forever. Icon is YELLOW by default; turns GRAY only once a
+  // query resolves with an empty license list.
+  const solutionIds = useMemo(() => rows.map((r) => r.id), [rows])
+  const licenseQueries = useQueries({
+    queries: solutionIds.map((id) => ({
+      queryKey: incidentKeys.license(id),
+      queryFn: () => getIncidentLicenseAPI(id).then((r) => r.data),
+      enabled: !!id,
+      staleTime: Infinity,
+    })),
+  })
+  const hasLicenseById = useMemo(() => {
+    const m = new Map<string, boolean>()
+    solutionIds.forEach((id, i) => {
+      const d = licenseQueries[i]?.data
+      if (d) m.set(id, (d.license?.length ?? 0) > 0)
+    })
+    return m
+  }, [solutionIds, licenseQueries])
+
   const data = useMemo<TableRow[]>(() => {
     const groups = new Map<string, IncidentRow[]>()
     for (const r of rows) {
@@ -105,8 +130,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
 
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    if (r.projectId) params.set('project_id', r.projectId)
-    if (r.roadId) params.set('road_id', r.roadId)
     router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
   }, [router, deptId])
 
@@ -232,7 +255,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
             className='cursor-pointer hover:opacity-80'
             title='ดูข้อมูล License'
           >
-            <LicenseIcon active={row.item.warranty === 'in-warranty'} />
+            <LicenseIcon active={hasLicenseById.get(row.item.id) !== false} />
           </button>
         ) : null,
     },
@@ -252,7 +275,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
     },
-  ], [goToDetail, openLicense])
+  ], [goToDetail, openLicense, hasLicenseById])
 
   return (
     <>

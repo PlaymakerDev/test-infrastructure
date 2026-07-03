@@ -2,11 +2,11 @@ import React, { useMemo } from 'react'
 import { Button, Empty } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import ScheduleList from '@/components/list/ScheduleList'
-import { APIResponseVMSSettingSchedule } from '@/types/control-vms/display-api'
+import { APIResponseVMSScheduleByDate } from '@/types/control-vms/display-api'
 import { useControlVMSContext } from '../../../context'
 
 interface Props {
-  data?: APIResponseVMSSettingSchedule
+  data?: APIResponseVMSScheduleByDate
 }
 
 const ScheduleSection: React.FC<Props> = (props) => {
@@ -14,16 +14,16 @@ const ScheduleSection: React.FC<Props> = (props) => {
   const { setUpdateScheduleState } = useControlVMSContext()
 
   const totalLocations = useMemo(
-    () => new Set((data ?? []).map(d => d.solution_name)).size,
+    () => new Set(Object.values(data ?? {}).flat().map(d => d.solution_name)).size,
     [data]
   )
-  const totalSchedules = data?.length || 0
+  const totalSchedules = Object.values(data ?? {}).flat().length
 
   const renderSchdeuleList = useMemo(() => {
-    if (!data?.length) return <Empty description="ไม่พบข้อมูล" />
+    if (!data || Object.values(data).flat().length === 0) return <Empty description="ไม่พบข้อมูล" />
     return (
       <ScheduleList
-        data={data || []}
+        data={Object.values(data ?? {}).flat() || []}
         cols={{
           default: 1,
           sm: 1,

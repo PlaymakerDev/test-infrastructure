@@ -210,7 +210,6 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
   )
 }
 
-
 const MapSection: React.FC<Props> = (props) => {
   const { } = props
   const [activeFilter, setActiveFilter] = useState<FilterOption>('ทั้งหมด')

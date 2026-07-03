@@ -74,18 +74,31 @@ export const apiResponseVMSDepartmentSchema = z.array(
   vmsDepartmentListSchema,
 ) satisfies z.ZodType<APIResponseVMSDepartment>
 
-// ── Media list ───────────────────────────────────────────────────────────────
-export const vmsMediaListSchema = z.object({
-  created_at: z.string(),
-  created_by: z.string(),
-  crossing_master_index: z.string(),
+// ── Media schedule row (v2 API — a setting owns N of these) ──────────────────
+// Same shape as `MediaScheduleByID` (display-api.ts) — reused for both schemas below.
+const mediaScheduleSchema = z.object({
+  days_of_week: z.array(z.number()),
   id: z.number(),
   media_url: z.string(),
   message: z.string(),
+  schedule_name: z.string(),
+  time_since: z.string(),
+  time_to: z.string(),
+})
+
+// ── Media list ───────────────────────────────────────────────────────────────
+export const vmsMediaListSchema = z.object({
+  created_at: z.string(),
+  crossing_master_index: z.string(),
+  date_since: z.string(),
+  date_to: z.string(),
+  id: z.number(),
+  is_all_day: z.boolean(),
+  schedules: z.array(mediaScheduleSchema),
   setting_type: vmsSettingTypeSchema,
   setting_type_id: z.number(),
-  since: z.string(),
-  to: z.string(),
+  status: z.number(),
+  status_updated_at: z.string(),
   type_name: z.string(),
 }) satisfies z.ZodType<VMSMediaList>
 
@@ -97,8 +110,10 @@ export const apiResponseVMSMediaSchema = z.object({
 // ── Upcoming summary ─────────────────────────────────────────────────────────
 export const apiResponseVMSUpcomingSummarySchema = z.object({
   count: z.object({
+    disconnected_count: z.number(),
     most_bureau: z.string(),
     most_bureau_percent: z.number(),
+    playing_count: z.number(),
     settings_count: z.number(),
   }),
   upcoming: z.object({
@@ -111,12 +126,14 @@ export const apiResponseVMSUpcomingSummarySchema = z.object({
 // ── Setting by road ──────────────────────────────────────────────────────────
 const settingByRoadItemSchema = z.object({
   display_hour: z.string(),
+  end_date: z.string(),
   is_online: z.boolean(),
   setting_type_name: z.string(),
   settings_content: z.string(),
-  since: z.string(),
   solution_name: z.string(),
-  to: z.string(),
+  start_date: z.string(),
+  status: z.number(),
+  status_name: z.string(),
 })
 
 const vmsSettingByRoadSchema = z.object({
@@ -149,19 +166,22 @@ export const apiResponseVMSSettingScheduleSchema = z.array(
 // ── Media by ID ──────────────────────────────────────────────────────────────
 // `id` here is `setting_id` from a schedule row — backend aliases it for GET/PUT/DELETE /vms/settings/media/{id}
 export const apiResponseVMSMediaByIdSchema = z.object({
-  id: z.number(),
+  created_at: z.string(),
   crossing_master_index: z.string(),
-  type_name: z.string(),
-  media_url: z.string(),
-  since: z.string(),
-  to: z.string(),
-  message: z.string(),
+  date_count: z.string(),
+  date_since: z.string(),
+  date_to: z.string(),
+  department_id: z.number(),
+  department_short_name: z.string(),
+  id: z.number(),
+  is_all_day: z.boolean(),
+  schedules: z.array(mediaScheduleSchema),
   setting_type_id: z.number(),
   setting_type_name: z.string(),
   solution_name: z.string(),
-  department_id: z.number(),
-  department_short_name: z.string(),
+  status: z.number(),
+  status_name: z.string(),
+  status_updated_at: z.string(),
   stch: z.number(),
-  date_count: z.string(),
-  created_at: z.string(),
+  type_name: z.string(),
 }) satisfies z.ZodType<APIResponseVMSMediaById>

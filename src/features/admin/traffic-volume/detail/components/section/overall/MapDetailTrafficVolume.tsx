@@ -1,8 +1,7 @@
 "use client"
 import React, { useEffect, useMemo } from 'react'
-import { TbMapPin } from 'react-icons/tb'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import OverlapMarkers, { type OverlapMarkerItem } from '@/components/map/markers/OverlapMarkers'
 import { useMap } from '@/components/map/hooks/useMap'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useTrafficVolumeSolutionCameras } from '@/hooks/queries/traffic-volume'
@@ -100,34 +99,21 @@ const CamerasMarkerLayer: React.FC<{
     )
   }, [map, isLoaded, valid, centroid])
 
-  return (
-    <>
-      {valid.map((camera) => (
-        <HTMLMarker
-          key={camera.id}
-          lngLat={camera.geometry_point}
-          anchor='bottom'
-          title={camera.camera_name}
-          popup={() => <DetailCameraPopup camera={camera} />}
-          popupOptions={{ offset: 18, closeButton: false }}
-        >
-          <div
-            className='flex items-center justify-center cursor-pointer'
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: '#FCD116',
-              boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-              border: '2px solid #fff',
-            }}
-          >
-            <TbMapPin size={18} color='#212121' />
-          </div>
-        </HTMLMarker>
-      ))}
-    </>
+  // Group by coordinate so cameras sharing one lat/lon fan out (spider) and
+  // stay individually clickable instead of stacking on top of each other.
+  const markerItems = useMemo<OverlapMarkerItem[]>(
+    () =>
+      valid.map((camera) => ({
+        id: camera.id,
+        coord: camera.geometry_point,
+        title: camera.camera_name,
+        popup: <DetailCameraPopup camera={camera} />,
+        popupOptions: { offset: 18, closeButton: false },
+      })),
+    [valid],
   )
+
+  return <OverlapMarkers items={markerItems} />
 }
 
 /** Detail map — one yellow pin per camera (from the `/cameras` endpoint).

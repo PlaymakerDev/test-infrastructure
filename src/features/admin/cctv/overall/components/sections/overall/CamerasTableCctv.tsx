@@ -61,8 +61,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
   const goToDetail = useCallback(
     (solutionId: number) => {
       const deptId = searchParams.get('dept_id')
-      const query = deptId ? `?dept_id=${deptId}` : ''
-      router.push(`/admin/cctv/detail/${solutionId}${query}`)
+      router.push(`/admin/cctv/detail/${solutionId}${deptId ? `?dept_id=${deptId}` : ''}`)
     },
     [router, searchParams]
   )
