@@ -113,7 +113,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           }
           // Summary rows share a subtle darker background for visual grouping.
           if (row.kind === 'summary') {
-            return { style: { background: '#242424' } }
+            return { style: { background: '#191919' } }
           }
           return {}
         },
@@ -153,7 +153,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -168,7 +168,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -183,7 +183,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -198,7 +198,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -213,7 +213,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -228,7 +228,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -243,7 +243,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -258,7 +258,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -276,7 +276,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) =>
           row.kind === 'camera'
@@ -295,7 +295,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? { colSpan: 0 }
             : row.kind === 'summary'
-              ? { style: { background: '#242424' } }
+              ? { style: { background: '#191919' } }
               : {},
         render: (_: unknown, row: Row) => {
           if (row.kind === 'camera') return null

@@ -15,6 +15,22 @@
   border-radius: 3px;
 }
 
+/* Hide the horizontal (and vertical) scrollbar on any AntD table that
+ * carries `.hide-scrollbar`. Scrolling still works — the visual bar is
+ * just gone. Used by the traffic-volume hourly matrix, where the
+ * per-cell color heatmap wants a clean unbroken bottom edge. */
+.hide-scrollbar .ant-table-body::-webkit-scrollbar,
+.hide-scrollbar .ant-table-content::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+.hide-scrollbar .ant-table-body,
+.hide-scrollbar .ant-table-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 /* Thin scrollbar for the CCTV detail marker info panel (right rail). */
 .cctv-info-scroll::-webkit-scrollbar {
   width: 6px;

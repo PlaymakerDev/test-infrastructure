@@ -2,7 +2,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { TbArrowLeft, TbArrowRight } from 'react-icons/tb'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
-import FilterBarReport, { type DateRange } from './FilterBarReport'
+import FilterBarReport, {
+  type DateRange,
+  type HourView,
+} from './FilterBarReport'
+import HourlyMatrixTable from './HourlyMatrixTable'
 import ReportStatsRow, { type ReportStatsUnit } from './ReportStatsRow'
 import VehicleTypeStatsRow from './VehicleTypeStatsRow'
 import DailyReportTable from './DailyReportTable'
@@ -302,6 +306,10 @@ const ReportVolume: React.FC<Props> = () => {
   const [reportType, setReportType] = useState<string>('daily')
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
   const [cameraId, setCameraId] = useState<string>('all')
+  // Hour-view toggle (only exposed in the UI when reportType === 'hour').
+  // BY_TYPE = per-vehicle-type columns; MATRIX = camera × hour grid with
+  // color banding.
+  const [hourView, setHourView] = useState<HourView>('BY_TYPE')
 
   // Switching TO hour report snaps the date range to today (single-day) —
   // hour rollups only make sense for one day at a time. Other report types
@@ -566,8 +574,14 @@ const ReportVolume: React.FC<Props> = () => {
       case 'hour':
         // Hourly view has NO pagination — every camera's full hour list is
         // rendered so the per-group "รวมเฉลี่ย" total sums the whole day
-        // for each camera (not just the sliced page).
-        return <HourlyReportTable groups={filteredHourlyGroups} />
+        // for each camera (not just the sliced page). The `hourView` toggle
+        // decides between the per-vehicle-type layout and the color-banded
+        // camera × hour matrix.
+        return hourView === 'MATRIX' ? (
+          <HourlyMatrixTable rows={filteredHourRows} />
+        ) : (
+          <HourlyReportTable groups={filteredHourlyGroups} />
+        )
       case 'month':
         return (
           <div className='flex flex-col gap-3'>
@@ -637,6 +651,8 @@ const ReportVolume: React.FC<Props> = () => {
         cameraOptions={cameraOptions}
         defaultCamera={cameraId}
         onCameraChange={setCameraId}
+        hourView={hourView}
+        onHourViewChange={setHourView}
       />
       {renderStats()}
       {renderTable()}

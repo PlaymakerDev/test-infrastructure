@@ -202,7 +202,7 @@ const YearlyReportTable: React.FC<Props> = ({ rows }) => {
         scroll={{ x: 1500 }}
         className='bridge-projects-table'
         onRow={(row) =>
-          row._summary ? { style: { background: '#242424' } } : {}
+          row._summary ? { style: { background: '#191919' } } : {}
         }
       />
     </section>
