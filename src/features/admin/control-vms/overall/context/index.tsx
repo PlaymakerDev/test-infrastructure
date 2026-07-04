@@ -1,6 +1,6 @@
 "use client"
 import type { BureauItem, BureauRoute, BureauSign, BureauState } from '@/types/control-vms/bureau'
-import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSScheduleByDate, VMSSettingSchedule } from '@/types/control-vms/display-api'
+import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSScheduleByDate } from '@/types/control-vms/display-api'
 import { APIRequestPostVMSMedia } from '@/types/control-vms/vms-api'
 import { createContext, useContext, useState } from 'react'
 

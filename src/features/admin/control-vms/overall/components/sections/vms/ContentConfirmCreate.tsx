@@ -33,12 +33,13 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
     })
   }
 
-  const renderCurrentScheduleTime = useCallback((schedule: ScheduleByVMSID[]) => {
-    if (!schedule.length) return <li>-</li>
-    return schedule.map((item, index) => {
+  const renderCurrentScheduleTime = useCallback((schedule: ScheduleByVMSID[] | undefined) => {
+    const list = schedule ?? []
+    if (!list.length) return <li>-</li>
+    return list.map((item) => {
       const hours = Math.round(dayjs(item.time_to, 'HH:mm').diff(dayjs(item.time_since, 'HH:mm'), 'hour', true) * 100) / 100
       return (
-        <li key={index}>
+        <li key={`${item.schedule_name}-${item.time_since}`}>
           <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({hours} ชั่วโมง)</p>
         </li>
       )
@@ -47,10 +48,10 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
 
   const renderNewScheduleTime = useCallback((schedule: APIRequestPostVMSMedia | undefined) => {
     if (!schedule?.schedules?.length) return <li>-</li>
-    return schedule.schedules.map((item, index) => {
+    return schedule.schedules.map((item) => {
       const hours = Math.round(dayjs(item.time_to, 'HH:mm').diff(dayjs(item.time_since, 'HH:mm'), 'hour', true) * 100) / 100
       return (
-        <li key={index}>
+        <li key={`${item.schedule_name}-${item.time_since}`}>
           <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({schedule.is_all_day ? 'แสดงผลตลอดเวลา' : `${hours} ชั่วโมง`})</p>
         </li>
       )
@@ -58,11 +59,10 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
   }, [])
 
   const renderPopoverContent = useCallback((data: APIResponseVMSSettingByVMSID) => {
-    return data?.map((item, index) => {
-      if (index === 0) return
+    return (data ?? []).slice(1).map((item, index) => {
       return (
         <div
-          key={index}
+          key={`${item.solution_name}-${index}`}
           className='h-full bg-orange-500/20 border-2 rounded-lg px-4 py-2 lg:px-8 lg:py-4 border-orange-500 mb-3'
         >
           <h4 className='text-black'>คำสั่งเดิม</h4>
@@ -80,7 +80,7 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
   }, [renderCurrentScheduleTime])
 
   const renderCurrentSchedule = useMemo(() => {
-    if (!data) return <Empty description="ไม่พบข้อมูล" />
+    if (!data || data.length === 0) return <Empty description="ไม่พบข้อมูล" />
     return (
       <div
         className='h-full bg-orange-500/20 border-2 rounded-lg px-4 py-2 lg:px-8 lg:py-4 border-orange-500'

@@ -4,7 +4,6 @@ import {
   DetailVMSSign,
   DetailItemStorage,
   FormAddDetail,
-  ModalConfirmCreate,
 } from '../../../components'
 import { useControlVMSContext } from '../../../context'
 
@@ -27,7 +26,6 @@ const DetailSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         {isAddMode ? <FormAddDetail /> : <DetailItemStorage />}
       </section>
-      <ModalConfirmCreate />
     </div>
   )
 }

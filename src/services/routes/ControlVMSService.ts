@@ -1,4 +1,4 @@
-import { APIRequestPostVMSPatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSPatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSBatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSBatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -143,8 +143,8 @@ export const getVMSSettingByStatusAPI = async (params: APIRequestVMSSettingBySta
 }
 
 // BATCH DELETE
-export const postVMSMediaBatchDeleteAPI = async (data: APIRequestPostVMSPatchDelete) => {
-  return ApiService.fetchData<APIResponsePostVMSPatchDelete, APIRequestPostVMSPatchDelete>({
+export const postVMSMediaBatchDeleteAPI = async (data: APIRequestPostVMSBatchDelete) => {
+  return ApiService.fetchData<APIResponsePostVMSBatchDelete, APIRequestPostVMSBatchDelete>({
     url: '/vms/settings/schedules/batch-delete',
     method: 'POST',
     data: { ...data },

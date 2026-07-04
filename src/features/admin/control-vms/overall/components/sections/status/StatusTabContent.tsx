@@ -28,9 +28,9 @@ const StatusTabContent: React.FC<Props> = (props) => {
 
   return (
     <Row gutter={[16, 16]}>
-      {filteredData.map((item, index) => (
-        <Col key={index} xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
-          <StatusList item={item} />
+      {filteredData.map((setting) => (
+        <Col key={setting.setting_id} xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
+          <StatusList item={setting} />
         </Col>
       ))}
     </Row>

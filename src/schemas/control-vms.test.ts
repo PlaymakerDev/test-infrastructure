@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
-  apiResponsePostVMSPatchDeleteSchema,
+  apiResponseDeleteVMSSettingTypeSchema,
+  apiResponsePostVMSBatchDeleteSchema,
+  apiResponsePostVMSSettingTypeSchema,
+  apiResponsePutVMSSettingTypeSchema,
   apiResponseVMSDepartmentSchema,
   apiResponseVMSMediaByIdSchema,
   apiResponseVMSMediaSchema,
+  apiResponseVMSScheduleByDateSchema,
   apiResponseVMSSettingByRoadSchema,
   apiResponseVMSSettingByStatusSchema,
-  apiResponseVMSSettingScheduleSchema,
+  apiResponseVMSSettingByVMSIDSchema,
+  apiResponseVMSSettingListSchema,
   apiResponseVMSSettingStatusCountSchema,
   apiResponseVMSSettingTypeSchema,
   apiResponseVMSUpcomingSummarySchema,
@@ -181,23 +186,30 @@ describe('apiResponseVMSSettingByRoadSchema', () => {
   })
 })
 
-describe('apiResponseVMSSettingScheduleSchema', () => {
-  const valid = [{
+describe('apiResponseVMSScheduleByDateSchema', () => {
+  const validRow = {
     setting_id: 1,
+    date: '2026-07-01',
+    time_since: '08:00',
+    time_to: '18:00',
     solution_name: 'VMS-001',
     road_code: 'RC-01',
     anydesk: '123456',
-    since: '2026-01-01',
-    to: '2026-12-31',
-    is_online: true,
     date_count: '5',
-  }]
-  it('parses a valid schedule response', () => {
-    expect(apiResponseVMSSettingScheduleSchema.safeParse(valid).success).toBe(true)
+    status: 1,
+    status_name: 'กำลังแสดงผล',
+    is_online: true,
+  }
+  it('parses a valid schedule-by-date response', () => {
+    const result = apiResponseVMSScheduleByDateSchema.safeParse({ '2026-07-01': [validRow] })
+    expect(result.success).toBe(true)
+  })
+  it('parses an empty record', () => {
+    expect(apiResponseVMSScheduleByDateSchema.safeParse({}).success).toBe(true)
   })
   it('rejects non-boolean is_online', () => {
-    const broken = [{ ...valid[0], is_online: 'true' }]
-    expect(apiResponseVMSSettingScheduleSchema.safeParse(broken).success).toBe(false)
+    const broken = { '2026-07-01': [{ ...validRow, is_online: 'true' }] }
+    expect(apiResponseVMSScheduleByDateSchema.safeParse(broken).success).toBe(false)
   })
 })
 
@@ -275,11 +287,75 @@ describe('apiResponseVMSSettingStatusCountSchema', () => {
   })
 })
 
-describe('apiResponsePostVMSPatchDeleteSchema', () => {
+describe('apiResponsePostVMSBatchDeleteSchema', () => {
   it('parses a valid batch-delete response', () => {
-    expect(apiResponsePostVMSPatchDeleteSchema.safeParse({ res_code: 200, res_data: 'success' }).success).toBe(true)
+    expect(apiResponsePostVMSBatchDeleteSchema.safeParse({ res_code: 200, res_data: 'success' }).success).toBe(true)
   })
   it('rejects missing res_code', () => {
-    expect(apiResponsePostVMSPatchDeleteSchema.safeParse({ res_data: 'success' }).success).toBe(false)
+    expect(apiResponsePostVMSBatchDeleteSchema.safeParse({ res_data: 'success' }).success).toBe(false)
+  })
+})
+
+describe('apiResponseVMSSettingByVMSIDSchema', () => {
+  const valid = [{
+    schedule: [{ schedule_name: 'ตารางที่ 1', time_since: '08:00', time_to: '18:00' }],
+    solution_name: 'VMS-001',
+    status: 1,
+    status_name: 'กำลังแสดงผล',
+  }]
+  it('parses a valid by-vms-ids response', () => {
+    expect(apiResponseVMSSettingByVMSIDSchema.safeParse(valid).success).toBe(true)
+  })
+  it('parses an empty schedule array (VMS with no current command)', () => {
+    const broken = [{ ...valid[0], schedule: [] }]
+    expect(apiResponseVMSSettingByVMSIDSchema.safeParse(broken).success).toBe(true)
+  })
+  it('rejects non-number status', () => {
+    const broken = [{ ...valid[0], status: '1' }]
+    expect(apiResponseVMSSettingByVMSIDSchema.safeParse(broken).success).toBe(false)
+  })
+})
+
+describe('apiResponseVMSSettingListSchema', () => {
+  const validItem = {
+    anydesk: '123456',
+    camera_offline_count: 0,
+    camera_online_count: 2,
+    desktop_screen: '',
+    geo_point: [100.5, 13.7],
+    is_online: true,
+    last_connected: '2026-01-01T00:00:00Z',
+    project: { id: 1, budget_year: 2566, contract_no: 'CON-001' },
+    solution_id: 1,
+    solution_name: 'VMS-001',
+    vms_id: 1,
+  }
+  it('parses a valid setting-list response', () => {
+    const result = apiResponseVMSSettingListSchema.safeParse({
+      meta_data: { count: 1, page: 1, limit: 20, total_pages: 1 },
+      res_data: [validItem],
+    })
+    expect(result.success).toBe(true)
+  })
+  it('rejects non-array geo_point entries', () => {
+    const broken = { ...validItem, geo_point: ['100.5', 13.7] }
+    const result = apiResponseVMSSettingListSchema.safeParse({
+      meta_data: { count: 1, page: 1, limit: 20, total_pages: 1 },
+      res_data: [broken],
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('apiResponsePostVMSSettingTypeSchema / apiResponsePutVMSSettingTypeSchema / apiResponseDeleteVMSSettingTypeSchema', () => {
+  it('all three alias the shared APIResponsePost shape and parse a valid response', () => {
+    const valid = { res_code: 200, res_data: 'success' }
+    expect(apiResponsePostVMSSettingTypeSchema.safeParse(valid).success).toBe(true)
+    expect(apiResponsePutVMSSettingTypeSchema.safeParse(valid).success).toBe(true)
+    expect(apiResponseDeleteVMSSettingTypeSchema.safeParse(valid).success).toBe(true)
+  })
+  it('rejects a response missing res_data', () => {
+    const broken = { res_code: 200 }
+    expect(apiResponsePostVMSSettingTypeSchema.safeParse(broken).success).toBe(false)
   })
 })

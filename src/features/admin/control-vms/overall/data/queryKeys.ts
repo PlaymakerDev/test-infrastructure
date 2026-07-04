@@ -22,6 +22,7 @@ export const controlVmsKeys = {
   byStatusList: (statusId?: number) =>
     [...controlVmsKeys.byStatus(), statusId ?? 'all'] as const,
   statusCounts: () => [...controlVmsKeys.all, 'status-counts'] as const,
+  byVmsIdsPrefix: () => [...controlVmsKeys.all, 'by-vms-ids'] as const,
   byVmsIds: (vmsIds: number[]) =>
-    [...controlVmsKeys.all, 'by-vms-ids', [...vmsIds].sort((a, b) => a - b)] as const,
+    [...controlVmsKeys.byVmsIdsPrefix(), [...vmsIds].sort((a, b) => a - b)] as const,
 }

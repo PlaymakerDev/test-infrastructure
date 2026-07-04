@@ -1,6 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons'
 import { Button, Input } from 'antd'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { TbTrash } from 'react-icons/tb'
 import { VMSSettingType } from '@/types/control-vms/vms-api'
@@ -57,7 +57,7 @@ const FormUpdateType: React.FC<Props> = (props) => {
   }, [])
 
   // PICK UP NEWLY-CREATED/CHANGED SERVER ITEMS (AFTER A MUTATION INVALIDATES THE QUERY)
-  // WITHOUT CLOBBERING LOCAL DRAFT ROWS OR IN-PROGRESS EDITS
+  // WITHOUT CLOBBERING LOCAL DRAFT ROWS OR IN-PROGRESS EDITS, AND PRUNE ROWS DELETED ELSEWHERE
   useEffect(() => {
     const serverItems = data ?? []
     const current = getValues('setting_list') ?? []
@@ -69,10 +69,22 @@ const FormUpdateType: React.FC<Props> = (props) => {
         update(idx, { id: item.id, name: item.name, original: item.name })
       }
     })
+
+    const serverIds = new Set(serverItems.map((item) => item.id))
+    const afterSync = getValues('setting_list') ?? []
+    const staleIndices = afterSync
+      .map((row, idx) => (row.id !== null && !serverIds.has(row.id) ? idx : -1))
+      .filter((idx) => idx !== -1)
+    if (staleIndices.length) remove(staleIndices)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
+  // KEYED BY THE ROW'S STABLE FIELD KEY, NOT THE SUBMITTED VALUE — TWO DRAFT ROWS WITH
+  // IDENTICAL TEXT MUST NOT BOTH APPEAR PENDING WHEN ONLY ONE IS ACTUALLY IN FLIGHT
+  const [addingKey, setAddingKey] = useState<string | null>(null)
+
   const handleAdd = useCallback((key: string, name: string) => {
+    setAddingKey(key)
     postType.mutate({ name }, {
       onSuccess: () => {
         const idx = resolveIndex(key)
@@ -112,7 +124,7 @@ const FormUpdateType: React.FC<Props> = (props) => {
               const isDirty = trimmed !== field.original
               const showAction = isDirty && trimmed.length > 0
               const isPending = isNew
-                ? postType.isPending && postType.variables?.name === trimmed
+                ? postType.isPending && addingKey === field.key
                 : (putType.isPending && putType.variables?.id === field.id) || (deleteType.isPending && deleteType.variables === field.id)
 
               const commit = () => {

@@ -119,7 +119,7 @@ const FormAddDetail: React.FC<Props> = () => {
       "date_since": dayjs(data.start_date).format('YYYY-MM-DD'),
       "date_to": dayjs(data.end_date).format('YYYY-MM-DD'),
       "is_all_day": data.display_type === 'ALL_DAY' ? true : false,
-      "schedules": schedulesWatch.map(item => ({
+      "schedules": data.schedules.map(item => ({
         "days_of_week": item.days,
         "media_url": item.media_type === 'IMAGE_VIDEO' ? item.file_url : '',
         "message": item.media_type === 'TEXT' ? item.text : '',
@@ -133,7 +133,7 @@ const FormAddDetail: React.FC<Props> = () => {
     }
 
     setOpenConfirmCreate({ open: true, ids: vmsIdList, body })
-  }, [vmsIdList, setOpenConfirmCreate, message, schedulesWatch])
+  }, [vmsIdList, setOpenConfirmCreate, message])
 
   const uploadFile = useCallback(async (file: UploadFile[], index: number) => {
     setValue(`schedules.${index}.file`, [{ ...file[0], status: 'uploading' }])

@@ -1,5 +1,8 @@
 import { z } from 'zod'
 import type {
+  APIResponseDeleteVMSSettingType,
+  APIResponsePostVMSSettingType,
+  APIResponsePutVMSSettingType,
   APIResponseVMSDepartment,
   APIResponseVMSMedia,
   APIResponseVMSSettingType,
@@ -7,13 +10,18 @@ import type {
   VMSSettingType,
 } from '@/types/control-vms/vms-api'
 import type {
-  APIResponsePostVMSPatchDelete,
+  APIResponsePostVMSBatchDelete,
   APIResponseVMSMediaById,
+  APIResponseVMSScheduleByDate,
   APIResponseVMSSettingByRoad,
   APIResponseVMSSettingByStatus,
-  APIResponseVMSSettingSchedule,
+  APIResponseVMSSettingByVMSID,
+  APIResponseVMSSettingList,
   APIResponseVMSSettingStatusCount,
   APIResponseVMSUpcomingSummary,
+  ScheduleByVMSID,
+  VMSScheduleByDate,
+  VMSSettingList,
 } from '@/types/control-vms/display-api'
 import { apiResponsePostSchema, metaDataSchema } from './shared'
 
@@ -150,21 +158,25 @@ export const apiResponseVMSSettingByRoadSchema = z.array(
   vmsSettingByRoadSchema,
 ) satisfies z.ZodType<APIResponseVMSSettingByRoad>
 
-// ── Setting schedule ─────────────────────────────────────────────────────────
-const vmsSettingScheduleSchema = z.object({
+// ── Setting schedule by date (what GET /vms/settings/schedule actually returns) ──
+const vmsScheduleByDateSchema = z.object({
   setting_id: z.number(),
+  date: z.string(),
+  time_since: z.string(),
+  time_to: z.string(),
   solution_name: z.string(),
   road_code: z.string(),
   anydesk: z.string(),
-  since: z.string(),
-  to: z.string(),
-  is_online: z.boolean(),
   date_count: z.string(),
-})
+  status: z.number(),
+  status_name: z.string(),
+  is_online: z.boolean(),
+}) satisfies z.ZodType<VMSScheduleByDate>
 
-export const apiResponseVMSSettingScheduleSchema = z.array(
-  vmsSettingScheduleSchema,
-) satisfies z.ZodType<APIResponseVMSSettingSchedule>
+export const apiResponseVMSScheduleByDateSchema = z.record(
+  z.string(),
+  z.array(vmsScheduleByDateSchema),
+) satisfies z.ZodType<APIResponseVMSScheduleByDate>
 
 // ── Media by ID ──────────────────────────────────────────────────────────────
 // `id` here is `setting_id` from a schedule row — backend aliases it for GET/PUT/DELETE /vms/settings/media/{id}
@@ -237,5 +249,49 @@ export const apiResponseVMSSettingStatusCountSchema = z.array(
 ) satisfies z.ZodType<APIResponseVMSSettingStatusCount>
 
 // ── Batch delete ─────────────────────────────────────────────────────────────
-// APIResponsePostVMSPatchDelete is a plain alias of the shared APIResponsePost shape.
-export const apiResponsePostVMSPatchDeleteSchema = apiResponsePostSchema satisfies z.ZodType<APIResponsePostVMSPatchDelete>
+// APIResponsePostVMSBatchDelete is a plain alias of the shared APIResponsePost shape.
+export const apiResponsePostVMSBatchDeleteSchema = apiResponsePostSchema satisfies z.ZodType<APIResponsePostVMSBatchDelete>
+
+// ── By VMS ID ────────────────────────────────────────────────────────────────
+const scheduleByVMSIDSchema = z.object({
+  schedule_name: z.string(),
+  time_since: z.string(),
+  time_to: z.string(),
+}) satisfies z.ZodType<ScheduleByVMSID>
+
+const vmsSettingByVMSIDSchema = z.object({
+  schedule: z.array(scheduleByVMSIDSchema),
+  solution_name: z.string(),
+  status: z.number(),
+  status_name: z.string(),
+})
+
+export const apiResponseVMSSettingByVMSIDSchema = z.array(
+  vmsSettingByVMSIDSchema,
+) satisfies z.ZodType<APIResponseVMSSettingByVMSID>
+
+// ── Setting list ─────────────────────────────────────────────────────────────
+const vmsSettingListSchema = z.object({
+  anydesk: z.string(),
+  camera_offline_count: z.number(),
+  camera_online_count: z.number(),
+  desktop_screen: z.string(),
+  geo_point: z.array(z.number()),
+  is_online: z.boolean(),
+  last_connected: z.string(),
+  project: sharedProjectSchema,
+  solution_id: z.number(),
+  solution_name: z.string(),
+  vms_id: z.number(),
+}) satisfies z.ZodType<VMSSettingList>
+
+export const apiResponseVMSSettingListSchema = z.object({
+  meta_data: metaDataSchema,
+  res_data: z.array(vmsSettingListSchema),
+}) satisfies z.ZodType<APIResponseVMSSettingList>
+
+// ── Setting-type writes ──────────────────────────────────────────────────────
+// All three alias the shared APIResponsePost shape, same as batch delete above.
+export const apiResponsePostVMSSettingTypeSchema = apiResponsePostSchema satisfies z.ZodType<APIResponsePostVMSSettingType>
+export const apiResponsePutVMSSettingTypeSchema = apiResponsePostSchema satisfies z.ZodType<APIResponsePutVMSSettingType>
+export const apiResponseDeleteVMSSettingTypeSchema = apiResponsePostSchema satisfies z.ZodType<APIResponseDeleteVMSSettingType>

@@ -38,7 +38,7 @@ const ContentTab: React.FC<Props> = (props) => {
 
   return (
     <Tabs
-      defaultActiveKey='all'
+      defaultActiveKey={String(data?.data?.[0]?.status_id ?? '')}
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden
