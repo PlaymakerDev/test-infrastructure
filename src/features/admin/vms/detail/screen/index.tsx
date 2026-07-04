@@ -40,6 +40,8 @@ const VMSDetailScreen: React.FC<Props> = (props) => {
           <section className='mt-8'>
             <OverallSection
               data={data?.data}
+              isWarranty={isWarranty === 'true'}
+              isOnline={isOnline === 'true'}
             />
           </section>
         </div>
