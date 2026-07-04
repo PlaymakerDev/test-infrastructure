@@ -291,14 +291,21 @@ const LineChart: React.FC<LineChartProps> = ({
       series: lines.map((line) => ({
         name: line.label,
         type: 'line',
-        smooth: true,
+        // Flat reference/dashed guidelines look wrong when smoothed — the
+        // smoothing tries to curve a straight horizontal line into a spline
+        // and the shadow bleeds between dashes. Keep smoothing for real
+        // data lines only.
+        smooth: !line.dashed,
         data: data.map((d) => d[line.dataKey] ?? 0),
         lineStyle: {
           color: line.color,
           width: 3,
-          shadowBlur: 12,
+          // Glow shadow hides the gaps in a dashed line — disable it there.
+          shadowBlur: line.dashed ? 0 : 12,
           shadowColor: line.color + '60',
-          type: line.dashed ? 'dashed' : 'solid',
+          // Explicit dash pattern is more visible than echarts' default
+          // 'dashed' (which draws very short segments).
+          type: line.dashed ? [10, 6] : 'solid',
         },
         itemStyle: { color: line.color },
         symbol: 'circle',
@@ -306,6 +313,9 @@ const LineChart: React.FC<LineChartProps> = ({
         showSymbol: false,
         emphasis: { showSymbol: true, scale: 1.4 },
         areaStyle: null,
+        // Force dashed reference lines above the real data curve so they
+        // stay visible even when the curve crosses them.
+        z: line.dashed ? 3 : 2,
       })),
     }
   }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth])

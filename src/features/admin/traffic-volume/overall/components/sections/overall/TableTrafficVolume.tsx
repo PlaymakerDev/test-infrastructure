@@ -180,7 +180,6 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         title: 'กล้องนับรถ',
         key: 'totalDevices',
         width: 110,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
@@ -193,7 +192,6 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         title: 'ปริมาณจราจร',
         key: 'trafficVolume',
         width: 130,
-        align: 'right',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
@@ -209,7 +207,6 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         title: 'License',
         key: 'license',
         width: 90,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         // Mirrors `is_warranty` visually — yellow when active, gray when not.
         render: (_: unknown, row: Row) => {

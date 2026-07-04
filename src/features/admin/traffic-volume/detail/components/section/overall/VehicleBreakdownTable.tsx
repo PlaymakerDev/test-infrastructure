@@ -104,7 +104,6 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
       {
         title: 'จำนวน (คัน)',
         key: 'count',
-        align: 'right',
         width: 110,
         render: (_: unknown, row: Row) => (
           <span
@@ -119,7 +118,6 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
       {
         title: 'PCU Factor',
         key: 'pcuFactor',
-        align: 'right',
         width: 100,
         render: (_: unknown, row: Row) => (
           <span
@@ -134,7 +132,6 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
       {
         title: 'รวม PCU',
         key: 'totalPCU',
-        align: 'right',
         width: 100,
         render: (_: unknown, row: Row) => (
           <span
@@ -149,7 +146,6 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
       {
         title: 'สัดส่วน (%)',
         key: 'pct',
-        align: 'right',
         width: 110,
         render: (_: unknown, row: Row) => (
           <span

@@ -1,83 +1,124 @@
-import { Col, Row } from 'antd'
+"use client"
 import React from 'react'
+import { Col, Row, Skeleton } from 'antd'
+import dayjs from 'dayjs'
 import { TbHandClick, TbTruck, TbUser, TbUserX } from 'react-icons/tb'
+import { fmtNumber } from '@/utils/formatNumber'
+import { useCrosswalkSummaryDaily } from '@/hooks/queries/crosswalk'
+import { useDetailContext } from '../../../context'
 
-interface Props {
+interface Props {}
 
+interface CardProps {
+  icon: React.ReactNode
+  label: string
+  /** Border + label + icon tint. Use "white" for the un-tinted first card. */
+  color: 'white' | 'blue' | 'red' | 'orange' | 'yellow' | 'lime'
+  value: number
+  unit: string
+  isLoading?: boolean
 }
 
-const InfoCardSection: React.FC<Props> = (props) => {
-  const { } = props
+const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = {
+  white: { border: 'border-white', text: 'text-white' },
+  blue: { border: 'border-blue-500', text: 'text-blue-500' },
+  red: { border: 'border-red-500', text: 'text-red-500' },
+  orange: { border: 'border-orange-500', text: 'text-orange-500' },
+  yellow: { border: 'border-yellow-500', text: 'text-yellow-500' },
+  lime: { border: 'border-lime-400', text: 'text-lime-400' },
+}
+
+const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
+  const c = COLOR_MAP[color]
+  return (
+    <div className={`bg-[#66AEFF1A] border ${c.border} py-3 px-5 rounded-[20px]`}>
+      <div className='flex items-center gap-2 mb-2'>
+        <span className={`fs-22 shrink-0 ${c.text} flex items-center`}>{icon}</span>
+        <h4 className={`${c.text} mb-0`}>{label}</h4>
+      </div>
+      {isLoading ? (
+        <Skeleton active paragraph={false} title={{ width: 120 }} />
+      ) : (
+        <p className='mb-0.5'>
+          <span className='fs-18 font-bold'>{fmtNumber(value, unit === 'km/h' ? 2 : 0)}</span>{' '}
+          <span className='fs-14'>{unit}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
+const InfoCardSection: React.FC<Props> = () => {
+  const { id } = useDetailContext()
+  const { data, isLoading } = useCrosswalkSummaryDaily({
+    solution_id: id,
+    start_date: dayjs().format('YYYY-MM-DD'),
+  })
+
+  const crossing = data?.crossing
+  const counting = data?.counting
 
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-white py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbUser className='fs-22 text-white shrink-0' />
-            <h4 className='text-white mb-0'>คนข้ามทั้งหมด</h4>
-          </div>
-          <p className='mb-0.5'><span className='fs-18 font-bold'>26</span> <span className='fs-14'>คน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>เหตุการณ์ล่าสุด : 18:35:29 น. </p>
-        </div>
+        <Card
+          icon={<TbUser />}
+          label='คนข้ามทั้งหมด'
+          color='white'
+          value={crossing?.total ?? 0}
+          unit='คน'
+          isLoading={isLoading}
+        />
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-blue-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbHandClick className='fs-22 text-blue-500 shrink-0' />
-            <h4 className='text-blue-500 mb-0'>การกดปุ่ม</h4>
-          </div>
-          <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>13</span> <span className='fs-14'>ครั้ง</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>เหตุการณ์ล่าสุด : 10:19:07 น.  </p>
-          </div>
-        </div>
+        <Card
+          icon={<TbHandClick />}
+          label='การกดปุ่ม'
+          color='blue'
+          value={crossing?.button_pressed ?? 0}
+          unit='ครั้ง'
+          isLoading={isLoading}
+        />
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-red-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbUserX className='fs-22 text-red-500 shrink-0' />
-            <h4 className='text-red-500 mb-0'>คนข้ามฝ่าฝืนสัญญาณไฟ</h4>
-          </div>
-          <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>9</span> <span className='fs-14'>คน</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>เหตุการณ์ล่าสุด : 12:48:02 น. </p>
-          </div>
-        </div>
+        <Card
+          icon={<TbUserX />}
+          label='คนข้ามฝ่าฝืนสัญญาณไฟ'
+          color='red'
+          value={crossing?.violation ?? 0}
+          unit='คน'
+          isLoading={isLoading}
+        />
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-orange-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbTruck className='fs-22 text-orange-500 shrink-0' />
-            <h4 className='text-orange-500 mb-0'>รถข้ามฝ่าฝืนสัญญาณไฟ</h4>
-          </div>
-          <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>45</span> <span className='fs-14'>คัน</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>เหตุการณ์ล่าสุด : 18:14:21 น. </p>
-          </div>
-        </div>
+        <Card
+          icon={<TbTruck />}
+          label='รถข้ามฝ่าฝืนสัญญาณไฟ'
+          color='orange'
+          value={counting?.total_count ?? 0}
+          unit='คัน'
+          isLoading={isLoading}
+        />
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-yellow-500 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbTruck className='fs-22 text-yellow-500 shrink-0' />
-            <h4 className='text-yellow-500 mb-0'>ปริมาณจราจรประจำวัน</h4>
-          </div>
-          <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>4,972</span> <span className='fs-14'>คัน</span></p>
-          </div>
-        </div>
+        <Card
+          icon={<TbTruck />}
+          label='ปริมาณจราจรประจำวัน'
+          color='yellow'
+          value={counting?.total_pcu ?? 0}
+          unit='คัน'
+          isLoading={isLoading}
+        />
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <div className='bg-[#66AEFF1A] border border-lime-400 py-3 px-5 rounded-lg'>
-          <div className='flex items-center gap-2 mb-2'>
-            <TbTruck className='fs-22 text-lime-400 shrink-0' />
-            <h4 className='text-lime-400 mb-0'>ความเร็วเฉลี่ยประจำวัน</h4>
-          </div>
-          <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>67.03</span> <span className='fs-14'>km/h</span></p>
-          </div>
-        </div>
+        <Card
+          icon={<TbTruck />}
+          label='ความเร็วเฉลี่ยประจำวัน'
+          color='lime'
+          value={counting?.avg_speed ?? 0}
+          unit='km/h'
+          isLoading={isLoading}
+        />
       </Col>
     </Row>
   )

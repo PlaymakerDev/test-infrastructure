@@ -36,7 +36,6 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         dataIndex: 'seq',
         key: 'seq',
         width: 80,
-        align: 'center',
         render: (seq: number) => <span className='text-white/60'>{seq}</span>,
       },
       {
@@ -52,11 +51,10 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         title: 'IP Address',
         key: 'ip',
         width: 200,
-        align: 'center',
         render: (_: unknown, row: CameraRow) => {
           const ip = ipByCameraId.get(row.id) ?? row.ipAddress
           return (
-            <span className='text-white/80 text-sm font-mono'>{ip ?? '-'}</span>
+            <span className='text-white/80 text-sm'>{ip ?? '-'}</span>
           )
         },
       },
@@ -65,7 +63,6 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         dataIndex: 'connection',
         key: 'connection',
         width: 140,
-        align: 'center',
         render: (conn: 'online' | 'offline') => (
           <StatusPill status={conn === 'online' ? 'connect' : 'disconnect'} />
         ),

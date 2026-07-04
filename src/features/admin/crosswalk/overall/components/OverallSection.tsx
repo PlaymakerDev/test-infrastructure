@@ -1,4 +1,3 @@
-import { Col, Row } from 'antd'
 import React from 'react'
 import { DataDisplaySection, LocationSection } from '../components'
 
