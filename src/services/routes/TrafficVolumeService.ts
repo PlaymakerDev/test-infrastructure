@@ -11,6 +11,8 @@ import type {
 import type {
   APIRequestTrafficVolumeCameras,
   APIResponseTrafficVolumeCameras,
+  APIRequestTrafficVolumeCamerasList,
+  APIResponseTrafficVolumeCamerasList,
   APIRequestTrafficVolumeCountHour,
   APIResponseTrafficVolumeCountHour,
   APIRequestTrafficVolumeCountPrevious,
@@ -148,6 +150,24 @@ export const getTrafficVolumeSolutionCamerasAPI = (
     url: `${countingDeptBase(deptId)}/cameras`,
     method: 'GET',
     params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+  })
+
+// Richer per-solution camera list — drives the CCTV grid + table on the
+// detail page. Response envelope is `{ res_data: [...] }` and rows carry
+// `ip_address` / `status.is_online` inline, so the UI does not need a
+// per-camera follow-up fetch to render.
+export const getTrafficVolumeSolutionCamerasListAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficVolumeCamerasList = {}
+) =>
+  ApiService.fetchData<APIResponseTrafficVolumeCamerasList>({
+    url: `${countingDeptBase(deptId)}/cameras/list`,
+    method: 'GET',
+    params: {
+      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      page: params.page ?? 1,
+      limit: params.limit ?? 100,
+    },
   })
 
 // Hourly counts + PCU breakdown — drives the hourly line chart. `date` is

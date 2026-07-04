@@ -334,6 +334,69 @@ export interface APIResponseTrafficVolumeCameras {
   centroid: [number, number] | null
 }
 
+// ── GET /counting/departments/{deptId}/cameras/list ──────────────────────────
+// Richer per-solution camera list — drives the CCTV grid + table on the
+// detail page. Unlike the `/cameras` endpoint, rows carry `ip_address`,
+// `status.is_online`, `last_updated`, and vehicle metadata directly, so the
+// UI doesn't need a follow-up per-camera fetch for those fields.
+// Paginated with `page` / `limit`; response is enveloped as `{ res_data: [...] }`.
+
+export interface APIRequestTrafficVolumeCamerasList {
+  solution_id?: string | number
+  /** 1-indexed. Defaults backend-side (screenshot shows 1). */
+  page?: number
+  /** Rows per page. Screenshot shows 10; the FE passes a larger value to
+   *  fetch every camera in a single request since the grid renders all. */
+  limit?: number
+}
+
+export interface CountingCameraListRoad {
+  id: number
+  code_name: string
+}
+
+export interface CountingCameraListSolution {
+  id: number
+  solution_name: string
+  is_warranty: boolean
+}
+
+export interface CountingCameraListStatus {
+  is_online: boolean
+  /** Thai/EN status label — e.g. "Online". */
+  status_name: string
+}
+
+export interface CountingCameraListCamera {
+  id: string
+  camera_name: string
+  /** Kilometer-post string, e.g. "0+000". */
+  sta: string
+  ip_address: string
+  hls_url: string
+  /** Buddhist-calendar timestamp string, e.g. "04/07/2569 19:59:35". */
+  last_updated: string
+  status: CountingCameraListStatus
+  /** Cumulative vehicle count for the camera. */
+  count: number
+}
+
+export interface CountingCameraListMainVehicle {
+  id: number
+  vehicle_name: string
+}
+
+export interface CountingCameraListItem {
+  road: CountingCameraListRoad
+  solution: CountingCameraListSolution
+  camera: CountingCameraListCamera
+  main_vehicle: CountingCameraListMainVehicle
+}
+
+export interface APIResponseTrafficVolumeCamerasList {
+  res_data: CountingCameraListItem[]
+}
+
 // ── GET /counting/reports/summary?solution_id={id}&start_date=&end_date=… ───
 // Aggregated report rows for the รายงานการนับปริมาณจราจร tab. The shape of
 // each row depends on `report_type`; the daily/month/year/vehicle_type modes
