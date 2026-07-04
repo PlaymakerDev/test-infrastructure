@@ -1,7 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { Col, Row } from 'antd'
-import { useQueries } from '@tanstack/react-query'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import SearchBar, {
   type FilterConfig,
@@ -11,33 +10,29 @@ import SearchBar, {
 import TableCameraTrafficVolume from './TableCameraTrafficVolume'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import { useTrafficVolumeSolutionCameras } from '@/hooks/queries/traffic-volume'
+import { useTrafficVolumeSolutionCamerasList } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
-import { getCCTVDetailAPI } from '@/services/routes/SharedService'
 import { useDetailContext } from '../../../context'
-import type { CountingCameraItem } from '@/types/traffic-volume/detail-api'
+import type { CountingCameraListItem } from '@/types/traffic-volume/detail-api'
 
 export interface CameraEntry {
   id: string
   code: string
   /** Empty string ⇒ no stream available, tile renders a placeholder. */
   hlsUrl: string
-  /** Derived from `hls_url` presence — the endpoint doesn't expose
-   *  is_online directly, so treat "has stream URL" as online. */
+  /** Derived from the row's `status.is_online` flag. */
   connection: 'online' | 'offline'
-  /** [lng, lat] from the cameras endpoint — rendered in the table view. */
-  geometryPoint?: [number, number]
-  /** Optional — endpoint may not expose it yet; falls back to "-" in UI. */
+  /** IP address is now returned inline by the `/cameras/list` endpoint —
+   *  no follow-up fetch needed. Falls back to "-" in the UI when empty. */
   ipAddress?: string
 }
 
-const apiCameraToEntry = (cam: CountingCameraItem): CameraEntry => ({
-  id: cam.id,
-  code: cam.camera_name,
-  hlsUrl: cam.hls_url ?? '',
-  connection: cam.hls_url ? 'online' : 'offline',
-  geometryPoint: cam.geometry_point,
-  ipAddress: cam.ip_address,
+const apiRowToEntry = (row: CountingCameraListItem): CameraEntry => ({
+  id: row.camera.id,
+  code: row.camera.camera_name,
+  hlsUrl: row.camera.hls_url ?? '',
+  connection: row.camera.status?.is_online ? 'online' : 'offline',
+  ipAddress: row.camera.ip_address,
 })
 
 const FILTERS: FilterConfig[] = [
@@ -63,11 +58,8 @@ const FILTERS: FilterConfig[] = [
 
 const CameraTile: React.FC<{
   cam: CameraEntry
-  /** Resolved IP from the parent's batched useQueries lookup; falls back
-   *  to `cam.ipAddress` (the value carried on the cameras-list row). */
-  ip?: string
   onOpen: (cam: CameraEntry) => void
-}> = ({ cam, ip, onOpen }) => (
+}> = ({ cam, onOpen }) => (
   // Outer gray card matches the overall-page CCTV tile so both pages share
   // the same layered card-on-card visual language. Inner frame uses
   // `bg-black/40` (matching traffic-signal) so the HLSLivePlayer's own
@@ -86,7 +78,7 @@ const CameraTile: React.FC<{
       />
     </div>
     <h4 className='text-blue-400 mb-0 fs-12'>{cam.code}</h4>
-    <p className='fs-12 text-gray-400 mb-0'>IP Address : {ip ?? cam.ipAddress ?? '-'}</p>
+    <p className='fs-12 text-gray-400 mb-0'>IP Address : {cam.ipAddress || '-'}</p>
   </div>
 )
 
@@ -99,31 +91,13 @@ const CamerasGridTrafficVolume: React.FC = () => {
   // + status when the list icon is clicked.
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
 
-  const { data } = useTrafficVolumeSolutionCameras(deptId, id)
+  // Rich per-solution camera list — response carries `ip_address` and
+  // `status.is_online` inline, so no per-camera follow-up fetch is needed.
+  const { data } = useTrafficVolumeSolutionCamerasList(deptId, id)
   const allCameras = useMemo(
-    () => (data?.counting ?? []).map(apiCameraToEntry),
+    () => (data?.res_data ?? []).map(apiRowToEntry),
     [data]
   )
-
-  // Batch IP lookups in ONE hook call. Each query reuses the modal's
-  // `['cctv_detail', id]` key so opening the modal from any tile is a
-  // cache hit. Previously every grid tile + every table row spawned its
-  // own `useQuery`; with 10 cameras this collapses 10+10 hook calls per
-  // render down to a single useQueries call that returns 10 results.
-  const cctvDetailResults = useQueries({
-    queries: allCameras.map((cam) => ({
-      queryKey: ['cctv_detail', cam.id] as const,
-      queryFn: () => getCCTVDetailAPI(cam.id),
-      enabled: !!cam.id,
-    })),
-  })
-  const ipByCameraId = useMemo(() => {
-    const m = new Map<string, string | undefined>()
-    allCameras.forEach((cam, i) => {
-      m.set(cam.id, cctvDetailResults[i]?.data?.data?.ip_address)
-    })
-    return m
-  }, [allCameras, cctvDetailResults])
 
   const stats: FilterStats = useMemo(() => {
     let online = 0
@@ -171,7 +145,6 @@ const CamerasGridTrafficVolume: React.FC = () => {
         {viewMode === 'TABLE' ? (
           <TableCameraTrafficVolume
             cameras={filtered}
-            ipByCameraId={ipByCameraId}
             onOpen={openLive}
           />
         ) : (
@@ -180,7 +153,6 @@ const CamerasGridTrafficVolume: React.FC = () => {
               <Col key={cam.id} xs={24} sm={12} md={12} lg={8}>
                 <CameraTile
                   cam={cam}
-                  ip={ipByCameraId.get(cam.id)}
                   onOpen={openLive}
                 />
               </Col>

@@ -7,10 +7,6 @@ import type { CameraEntry } from './CamerasGridTrafficVolume'
 
 interface Props {
   cameras: CameraEntry[]
-  /** Map of `cameraId → ip_address` resolved by the parent's batched
-   *  `useQueries` lookup. Falls back to `cam.ipAddress` when the cache
-   *  hasn't filled yet, then to "-". */
-  ipByCameraId: Map<string, string | undefined>
   /** Called when a row is clicked — opens the Live Stream modal. */
   onOpen: (cam: CameraEntry) => void
 }
@@ -21,7 +17,6 @@ interface CameraRow extends CameraEntry {
 
 const TableCameraTrafficVolume: React.FC<Props> = ({
   cameras,
-  ipByCameraId,
   onOpen,
 }) => {
   const data = useMemo<CameraRow[]>(
@@ -51,12 +46,9 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         title: 'IP Address',
         key: 'ip',
         width: 200,
-        render: (_: unknown, row: CameraRow) => {
-          const ip = ipByCameraId.get(row.id) ?? row.ipAddress
-          return (
-            <span className='text-white/80 text-sm'>{ip ?? '-'}</span>
-          )
-        },
+        render: (_: unknown, row: CameraRow) => (
+          <span className='text-white/80 text-sm'>{row.ipAddress || '-'}</span>
+        ),
       },
       {
         title: 'สถานะ',
@@ -68,7 +60,7 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         ),
       },
     ],
-    [ipByCameraId]
+    []
   )
 
   return (

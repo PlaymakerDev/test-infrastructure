@@ -13,6 +13,7 @@ export { useTrafficVolumeRandomCameras } from './useTrafficVolumeRandomCameras'
 
 // Detail
 export { useTrafficVolumeSolutionCameras } from './useTrafficVolumeSolutionCameras'
+export { useTrafficVolumeSolutionCamerasList } from './useTrafficVolumeSolutionCamerasList'
 export { useTrafficVolumeCountHour } from './useTrafficVolumeCountHour'
 export { useTrafficVolumeCountPrevious } from './useTrafficVolumeCountPrevious'
 export { useTrafficVolumeSummaryDaily } from './useTrafficVolumeSummaryDaily'
