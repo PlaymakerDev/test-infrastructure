@@ -23,7 +23,7 @@ const ScheduleDisplaySection: React.FC<Props> = (props) => {
   return (
     <>
       <section>
-        <FormSearchCalendar />
+        <FormSearchCalendar scheduleData={data?.data} />
       </section>
       <section className='mt-5'>
         {renderContent}

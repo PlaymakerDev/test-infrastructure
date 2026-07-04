@@ -1,4 +1,4 @@
-import { Button, Calendar, ConfigProvider } from 'antd'
+import { Badge, Button, Calendar, ConfigProvider } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import dayjs, { Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -8,11 +8,12 @@ dayjs.extend(buddhistEra)
 import React, { useCallback, useRef } from 'react'
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import { Controller, useForm } from 'react-hook-form'
+import { APIResponseVMSScheduleByDate } from '@/types/control-vms/display-api'
 import { useControlVMSContext } from '../../../context'
 
 
 interface Props {
-
+  scheduleData?: APIResponseVMSScheduleByDate
 }
 
 interface FormValues {
@@ -20,9 +21,9 @@ interface FormValues {
 }
 
 const FormSearchCalendar: React.FC<Props> = (props) => {
-  const { } = props;
+  const { scheduleData } = props;
   const submitRef = useRef<HTMLButtonElement>(null)
-  const { setSearchDate } = useControlVMSContext()
+  const { setSearchDate, setScheduleDay } = useControlVMSContext()
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -40,7 +41,8 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
       month: value.date != null ? value.date.month() + 1 : undefined,
       year: value.date != null ? value.date.year() : undefined,
     })
-  }, [setSearchDate])
+    setScheduleDay(value.date != null ? value.date.format('DD') : null)
+  }, [setSearchDate, setScheduleDay])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -51,6 +53,7 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
           return (
             <ConfigProvider locale={thTH}>
               <Calendar
+                className="[&_.ant-picker-cell-inner]:h-10! [&_.ant-picker-calendar-date-value]:leading-6! [&_.ant-picker-calendar-date-content]:h-4! [&_.ant-picker-calendar-date-content]:flex! [&_.ant-picker-calendar-date-content]:items-center! [&_.ant-picker-calendar-date-content]:justify-center!"
                 value={field.value ?? dayjs()}
                 onChange={(date) => field.onChange(date)}
                 fullscreen={false}
@@ -81,6 +84,14 @@ const FormSearchCalendar: React.FC<Props> = (props) => {
                 onSelect={(date) => {
                   field.onChange(date)
                   submitRef.current?.click()
+                }}
+                cellRender={(current, info) => {
+                  if (info.type !== 'date') return null
+                  const dateKey = current.format('YYYY-MM-DD')
+                  const hasSchedule = (scheduleData?.[dateKey]?.length ?? 0) > 0
+                  if (!hasSchedule) return null
+                  const isSelected = current.isSame(field.value ?? dayjs(), 'day')
+                  return <Badge color={isSelected ? 'blue' : 'gold'} />
                 }}
               />
             </ConfigProvider>

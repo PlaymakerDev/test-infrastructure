@@ -2,6 +2,7 @@
 import type { BureauItem, BureauRoute, BureauSign, BureauState } from '@/types/control-vms/bureau'
 import { APIRequestVMSSettingByRoad, APIRequestVMSSettingSchedule, VMSScheduleByDate } from '@/types/control-vms/display-api'
 import { APIRequestPostVMSMedia } from '@/types/control-vms/vms-api'
+import dayjs from 'dayjs'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
@@ -21,6 +22,8 @@ export interface ContextProps {
   setSearchText: (s: APIRequestVMSSettingByRoad | null) => void
   searchDate: APIRequestVMSSettingSchedule | null
   setSearchDate: (s: APIRequestVMSSettingSchedule | null) => void
+  scheduleDay: string | null
+  setScheduleDay: (d: string | null) => void
   updateScheduleState: UpdateScheduleState
   setUpdateScheduleState: React.Dispatch<React.SetStateAction<UpdateScheduleState>>
   openVMSScreen: OpenVMSScreenState
@@ -88,6 +91,7 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [vmsIdList, setVMSIdList] = useState<number[]>([])
   const [searchText, setSearchText] = useState<APIRequestVMSSettingByRoad | null>(null)
   const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>(null)
+  const [scheduleDay, setScheduleDay] = useState<string | null>(dayjs().format('DD'))
   const [updateScheduleState, setUpdateScheduleState] = useState<UpdateScheduleState>(INIT_UPDATE_SCHEDULE)
   const [openVMSScreen, setOpenVMSScreen] = useState<OpenVMSScreenState>(INIT_OPEN_VMS_SCREEN)
   const [statusSearchText, setStatusSearchText] = useState<string>('')
@@ -113,6 +117,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
         setSearchText,
         searchDate,
         setSearchDate,
+        scheduleDay,
+        setScheduleDay,
         updateScheduleState,
         setUpdateScheduleState,
         openVMSScreen,

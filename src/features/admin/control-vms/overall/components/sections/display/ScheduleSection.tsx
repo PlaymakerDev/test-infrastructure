@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Button, Empty } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
 import ScheduleList from '@/components/list/ScheduleList'
 import { APIResponseVMSScheduleByDate } from '@/types/control-vms/display-api'
 import { useControlVMSContext } from '../../../context'
@@ -11,7 +12,7 @@ interface Props {
 
 const ScheduleSection: React.FC<Props> = (props) => {
   const { data } = props
-  const { setUpdateScheduleState } = useControlVMSContext()
+  const { setUpdateScheduleState, scheduleDay } = useControlVMSContext()
 
   const totalLocations = useMemo(
     () => new Set(Object.values(data ?? {}).flat().map(d => d.solution_name)).size,
@@ -19,11 +20,20 @@ const ScheduleSection: React.FC<Props> = (props) => {
   )
   const totalSchedules = Object.values(data ?? {}).flat().length
 
+  // FILTER TO THE SELECTED CALENDAR DAY (e.g. "05") ACROSS ALL DATE KEYS THIS MONTH
+  const filteredSchedules = useMemo(() => {
+    const entries = Object.entries(data ?? {})
+    const matched = scheduleDay
+      ? entries.filter(([dateKey]) => dayjs(dateKey).format('DD') === scheduleDay)
+      : entries
+    return matched.flatMap(([, items]) => items)
+  }, [data, scheduleDay])
+
   const renderSchdeuleList = useMemo(() => {
-    if (!data || Object.values(data).flat().length === 0) return <Empty description="ไม่พบข้อมูล" />
+    if (!filteredSchedules.length) return <Empty description="ไม่พบข้อมูล" />
     return (
       <ScheduleList
-        data={Object.values(data ?? {}).flat() || []}
+        data={filteredSchedules}
         cols={{
           default: 1,
           sm: 1,
@@ -38,7 +48,7 @@ const ScheduleSection: React.FC<Props> = (props) => {
         }}
       />
     )
-  }, [data, setUpdateScheduleState])
+  }, [filteredSchedules, setUpdateScheduleState])
 
   return (
     <div>
