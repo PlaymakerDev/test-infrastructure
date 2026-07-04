@@ -5,10 +5,12 @@ import { APIResponseVMSDetail } from '@/types/vms/detail-api'
 
 interface Props {
   data?: APIResponseVMSDetail
+  isWarranty?: boolean
+  isOnline?: boolean
 }
 
 const LocationSection: React.FC<Props> = (props) => {
-  const { data } = props
+  const { data, isWarranty, isOnline } = props
 
   const renderInfoCardSection = useMemo(() => {
     if (!Object.keys(data || {}).includes('vms_weather')) return
@@ -37,7 +39,11 @@ const LocationSection: React.FC<Props> = (props) => {
     <div className='flex flex-col gap-4 lg:block lg:relative'>
       {/* Map: full-width background, defines container height on desktop */}
       <div className='relative rounded-lg overflow-hidden h-[50dvh] lg:h-[75dvh]'>
-        <MapSection data={data} />
+        <MapSection
+          data={data}
+          isWarranty={isWarranty}
+          isOnline={isOnline}
+        />
       </div>
 
       {/* InfoCardSection: in flow on mobile, anchored top-left on desktop */}
