@@ -90,7 +90,10 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   const [isAddMode, setAddMode] = useState<boolean>(false)
   const [vmsIdList, setVMSIdList] = useState<number[]>([])
   const [searchText, setSearchText] = useState<APIRequestVMSSettingByRoad | null>(null)
-  const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>(null)
+  const [searchDate, setSearchDate] = useState<APIRequestVMSSettingSchedule | null>({
+    month: dayjs().month() + 1,
+    year: dayjs().year()
+  })
   const [scheduleDay, setScheduleDay] = useState<string | null>(dayjs().format('DD'))
   const [updateScheduleState, setUpdateScheduleState] = useState<UpdateScheduleState>(INIT_UPDATE_SCHEDULE)
   const [openVMSScreen, setOpenVMSScreen] = useState<OpenVMSScreenState>(INIT_OPEN_VMS_SCREEN)
