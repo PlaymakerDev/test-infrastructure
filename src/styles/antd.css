@@ -248,3 +248,41 @@ body .vehicle-breakdown-table .ant-table-tbody > tr > td {
   padding-top: 18px !important;
   padding-bottom: 18px !important;
 }
+
+/* ── RangePicker — dark-theme range/hover cells.
+ * AntD's default range-in / range-hover states paint a near-white background
+ * across every cell between start and end, which obliterates the day number
+ * on a dark theme (issue reported 2026-07-07). Repaint both states as a
+ * translucent yellow bar so the highlight is still visible but the digits stay
+ * readable. Applies to every RangePicker across the app. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+  background: rgba(252, 209, 22, 0.18) !important;
+}
+
+/* Preview bar shown while hovering to pick the end date — same tint as
+ * `in-range`, but the endpoints get a stronger tint so the drag anchor is
+ * still visually distinct. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end::before {
+  background: rgba(252, 209, 22, 0.28) !important;
+}
+
+/* Day-number text — keep it white/yellow on both selected + in-range cells so
+ * it never fades to gray on the tinted bar. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end .ant-picker-cell-inner {
+  color: #ffffff !important;
+}
+
+/* Start + end date pills — solid yellow with dark text (matches other primary
+ * elements). Reserved for the actual selected endpoints, not the preview. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background: #FCD116 !important;
+  color: #0A0A0A !important;
+}
