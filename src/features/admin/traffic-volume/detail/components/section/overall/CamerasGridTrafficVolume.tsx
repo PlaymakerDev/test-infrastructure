@@ -1,6 +1,5 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Col, Row } from 'antd'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import SearchBar, {
   type FilterConfig,
@@ -77,7 +76,7 @@ const CameraTile: React.FC<{
         cameraId={cam.id}
       />
     </div>
-    <h4 className='text-blue-400 mb-0 fs-12'>{cam.code}</h4>
+    <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</h4>
     <p className='fs-12 text-gray-400 mb-0'>IP Address : {cam.ipAddress || '-'}</p>
   </div>
 )
@@ -148,16 +147,18 @@ const CamerasGridTrafficVolume: React.FC = () => {
             onOpen={openLive}
           />
         ) : (
-          <Row gutter={[16, 16]}>
+          // Responsive auto-fill grid — 4 per row on a standard desktop
+          // (~1832px grid width), stepping up to 5-6 on wider monitors. The
+          // 360px minimum is tuned so 4 cards fit at this width but 5 don't.
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
             {filtered.map((cam) => (
-              <Col key={cam.id} xs={24} sm={12} md={12} lg={8}>
-                <CameraTile
-                  cam={cam}
-                  onOpen={openLive}
-                />
-              </Col>
+              <CameraTile
+                key={cam.id}
+                cam={cam}
+                onOpen={openLive}
+              />
             ))}
-          </Row>
+          </div>
         )}
       </section>
     </div>

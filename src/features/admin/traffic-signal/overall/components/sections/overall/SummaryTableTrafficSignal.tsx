@@ -133,8 +133,8 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
                 <span
                   className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
                   style={{
-                    border: '1px solid var(--yellow)',
-                    color: 'var(--yellow)',
+                    border: '1px solid #fff',
+                    color: '#fff',
                   }}
                 >
                   {row.count} โครงการ
@@ -201,7 +201,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
       {
         title: 'กล้องทั้งหมด',
         key: 'totalCameras',
-        align: 'center',
         width: 130,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -212,7 +211,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
       {
         title: 'ออนไลน์',
         key: 'onlineCameras',
-        align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
@@ -235,7 +233,6 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
       {
         title: 'ออฟไลน์',
         key: 'offlineCameras',
-        align: 'center',
         width: 110,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {

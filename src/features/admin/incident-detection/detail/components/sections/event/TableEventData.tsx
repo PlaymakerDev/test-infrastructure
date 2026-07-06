@@ -41,7 +41,6 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
     {
       title: 'วันที่และเวลา',
       key: 'datetime',
-      align: 'center',
       width: 180,
       render: (_, r) => (
         <div>
@@ -53,7 +52,6 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
     {
       title: 'ประเภทเหตุการณ์',
       key: 'type',
-      align: 'center',
       width: 200,
       render: (_, r) => (
         <EventTypePill
@@ -71,14 +69,12 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
     {
       title: 'IP Address',
       key: 'ip',
-      align: 'center',
       width: 160,
-      render: (_, r) => <span className='text-white/70 font-mono'>{r.camera.ip_address}</span>,
+      render: (_, r) => <span className='text-white/70'>{r.camera.ip_address}</span>,
     },
     {
       title: 'ภาพขณะเกิดเหตุ',
       key: 'image',
-      align: 'center',
       width: 140,
       fixed: 'right',
       render: (_, r) => (

@@ -107,7 +107,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
                   className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                  style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                  style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ
                 </span>

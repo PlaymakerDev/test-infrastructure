@@ -53,7 +53,7 @@ const CameraList: React.FC<Props> = () => {
                 cameraId={cam.id}
               />
             </div>
-            <h4 className='text-blue-400 mb-0 fs-12'>{cam.camera_name}</h4>
+            <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.camera_name}</h4>
             <p className='fs-12 text-gray-400 mb-0'>
               IP Address : {cam.ip_address ?? extractIpFromHlsUrl(cam.hls_url)}
             </p>

@@ -88,12 +88,12 @@ const MapSection: React.FC = () => {
     <BaseMap
       initialCenter={center}
       initialZoom={14}
-      initialPitch={45}
+      initialPitch={55}
       initialBearing={-10}
       edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
     >
-      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={16} />
-      <OverlapMarkers items={markerItems} />
+      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={16} pitch={55} />
+      <OverlapMarkers items={markerItems} variant='white' />
     </BaseMap>
   )
 }

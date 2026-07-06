@@ -145,7 +145,7 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
     <div
       className={`flex flex-col p-3 ${className}`}
       style={{
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(0,0,0,0.8)',
         borderRadius: 20,
         backdropFilter: 'blur(5px)',
       }}

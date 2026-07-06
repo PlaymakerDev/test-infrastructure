@@ -31,6 +31,26 @@ export type APIResponseDashboardLightingUptime = {
   percentage: number
   is_maintain: boolean
 }
+export type APIResponseDashboardTrafficUptime = {
+  traffic: { total: number; online: number; offline: number }
+  percentage: number
+  is_maintain: boolean
+}
+export type APIResponseDashboardWimUptime = {
+  wim: { total: number; online: number; offline: number }
+  percentage: number
+  is_maintain: boolean
+}
+export type APIResponseDashboardCrosswalkUptime = {
+  crosswalk: { total: number; online: number; offline: number }
+  percentage: number
+  is_maintain: boolean
+}
+export type APIResponseDashboardTunnelUptime = {
+  tunnel: { total: number; online: number; offline: number }
+  percentage: number
+  is_maintain: boolean
+}
 
 // ── /manage/solution/{deptId}/position — all-systems markers for the map ──────
 

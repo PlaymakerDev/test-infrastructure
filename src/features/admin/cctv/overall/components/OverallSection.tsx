@@ -12,6 +12,7 @@ import StatsSectionCctv from './sections/overall/StatsSectionCctv'
 import CameraListCctv from './sections/overall/CameraListCctv'
 import CamerasTableCctv from './sections/overall/CamerasTableCctv'
 import CardGridCctv from './sections/overall/CardGridCctv'
+import FormSearchCctv from './sections/overall/FormSearchCctv'
 import {
   useCctvOverviewCentralList,
   useCctvOverviewTotals,
@@ -70,7 +71,7 @@ const CCTV_FILTERS: FilterConfig[] = [
 const OverallSection: React.FC<Props> = ({ deptId }) => {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
-  const [search] = useState('')
+  const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
   // Bureau-aware list — nested bureau → sub-department (แขวง) → solutions.
@@ -114,7 +115,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
         case 'expired': if (item.is_warranty) return false; break
       }
       if (term) {
-        const haystack = `${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
+        const haystack = `${item.bureau} ${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
         if (!haystack.includes(term)) return false
       }
       return true
@@ -182,6 +183,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
+          formSearch={<FormSearchCctv onSearchChange={setSearch} />}
           onExport={() => alert('TODO: นำออกเอกสาร')}
         />
       </section>

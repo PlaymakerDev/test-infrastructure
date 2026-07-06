@@ -6,6 +6,7 @@ import BarChart, { type BarChartDataPoint } from '@/components/chart/Barchart'
 import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
 import { fmtNumber } from '@/utils/formatNumber'
 import { thaiDayShort } from '@/utils/formatDate'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 
 interface Props {
@@ -54,6 +55,9 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
   const days = useMemo<BarChartDataPoint[]>(() => {
     return (data ?? []).map((d) => ({
       label: formatDayLabel(d.date, d.day),
+      // Tooltip header shows the full Thai BE date (e.g. "29 มิ.ย. 2569"); the
+      // x-axis keeps the short "จ.\n29/06" label.
+      tooltipLabel: thaiDateBE(d.date),
       pcu: d.total_pcu,
       efficiency: d.avg_efficiency,
       et: d.avg_early_termination,

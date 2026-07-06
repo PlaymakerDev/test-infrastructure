@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import { TbBolt } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useTrafficVolumeCountHour } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { CountingHourBucket } from '@/types/traffic-volume/detail-api'
@@ -28,7 +29,7 @@ const COUNT_FIELD_BY_KEY: Record<
 
 const bucketToDataPoint = (b: CountingHourBucket): LineChartDataPoint => ({
   label: dayjs(b.hour_timestamp).format('HH.mm'),
-  dateLabel: dayjs(b.hour_timestamp).format('D MMM YYYY'),
+  dateLabel: thaiDateBE(b.hour_timestamp),
   total: b.total_count,
   bike: b.bike_count,
   car: b.car_count,

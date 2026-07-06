@@ -3,6 +3,10 @@ import type {
   APIResponseDashboardCctvUptime,
   APIResponseDashboardVmsUptime,
   APIResponseDashboardLightingUptime,
+  APIResponseDashboardTrafficUptime,
+  APIResponseDashboardWimUptime,
+  APIResponseDashboardCrosswalkUptime,
+  APIResponseDashboardTunnelUptime,
   APIResponseDashboardPosition,
   APIResponseDashboardAnalytic,
   APIResponseDashboardTraffic,
@@ -31,6 +35,33 @@ export const getDashboardVmsUptimeAPI = (deptId: string | number) =>
 export const getDashboardLightingUptimeAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseDashboardLightingUptime>({
     url: `/lighting/departments/${deptId}/overview/uptime-statistics`,
+    method: 'GET',
+  })
+
+// Traffic / WIM / Crosswalk / Tunnel — same `/overview/uptime-statistics`
+// pattern as vms + lighting (verified live 2026-07-05, response shape identical
+// with the key named after the feature).
+export const getDashboardTrafficUptimeAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseDashboardTrafficUptime>({
+    url: `/traffic/departments/${deptId}/overview/uptime-statistics`,
+    method: 'GET',
+  })
+
+export const getDashboardWimUptimeAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseDashboardWimUptime>({
+    url: `/wim/departments/${deptId}/overview/uptime-statistics`,
+    method: 'GET',
+  })
+
+export const getDashboardCrosswalkUptimeAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseDashboardCrosswalkUptime>({
+    url: `/crosswalk/departments/${deptId}/overview/uptime-statistics`,
+    method: 'GET',
+  })
+
+export const getDashboardTunnelUptimeAPI = (deptId: string | number) =>
+  ApiService.fetchData<APIResponseDashboardTunnelUptime>({
+    url: `/tunnel/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
   })
 

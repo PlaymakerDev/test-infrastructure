@@ -46,6 +46,46 @@ const YellowPin: React.FC<{ size?: number }> = ({ size = MARKER_SIZE }) => (
   </div>
 )
 
+/** White teardrop pin — the shared detail-map marker (crosswalk / incident /
+ *  traffic-volume / traffic-signal). Always white (never colored by status); an
+ *  optional count badge marks an overlap group. */
+export const WhiteTeardropPin: React.FC<{ count?: number }> = ({ count }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+    <div
+      style={{
+        width: MARKER_SIZE, height: MARKER_SIZE,
+        borderRadius: '50% 50% 50% 0',
+        transform: 'rotate(-45deg)',
+        background: '#ffffff',
+        boxShadow: '0 3px 12px rgba(0,0,0,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(0,0,0,0.25)', transform: 'rotate(45deg)' }} />
+    </div>
+    {count && count > 1 ? (
+      <div
+        style={{
+          position: 'absolute', top: -6, right: -8,
+          minWidth: 18, height: 18, borderRadius: 9,
+          background: '#FCD116', color: '#212121',
+          fontSize: 10, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 4px', boxShadow: '0 1px 4px rgba(0,0,0,0.4)', lineHeight: 1,
+        }}
+      >
+        {count}
+      </div>
+    ) : null}
+  </div>
+)
+
+type PinVariant = 'yellow' | 'white'
+
+/** Single pin for the given variant (no count badge). */
+const Pin: React.FC<{ variant: PinVariant }> = ({ variant }) =>
+  variant === 'white' ? <WhiteTeardropPin /> : <YellowPin />
+
 /** Thin SVG legs from the center badge to each fanned tip. */
 const FanLegs: React.FC<{ count: number; length: number }> = memo(function FanLegs({ count, length }) {
   const size = length * 2 + MARKER_SIZE + 12
@@ -77,7 +117,7 @@ const FanLegs: React.FC<{ count: number; length: number }> = memo(function FanLe
 /** Renders one coordinate group: a single pin, or a count badge that fans out
  *  into individually-clickable pins on click. Popups use the shared
  *  single-popup-per-map helper so opening one closes any other. */
-const Stack: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
+const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ items, variant }) => {
   const { map } = useMap()
   const [expanded, setExpanded] = useState(false)
   const center = items[0].coord
@@ -102,7 +142,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
     const it = items[0]
     return (
       <HTMLMarker lngLat={center} anchor='center' title={it.title} onClick={() => showPopup(it)}>
-        <YellowPin />
+        <Pin variant={variant} />
       </HTMLMarker>
     )
   }
@@ -113,32 +153,45 @@ const Stack: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
       <div style={{ position: 'relative', width: MARKER_SIZE, height: MARKER_SIZE, overflow: 'visible' }}>
         {expanded && <FanLegs count={n} length={LEG_PX} />}
 
-        {/* Center count badge — click toggles the fan. */}
-        <button
-          type='button'
-          onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
-          title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
-          style={{
-            width: MARKER_SIZE,
-            height: MARKER_SIZE,
-            borderRadius: '50%',
-            background: '#FCD116',
-            color: '#050d1a',
-            fontSize: 14,
-            fontWeight: 700,
-            border: '2px solid #fff',
-            boxShadow: '0 0 8px rgba(252,209,22,0.7), 0 2px 6px rgba(0,0,0,0.45)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-            position: 'relative',
-            zIndex: 2,
-          }}
-        >
-          {n}
-        </button>
+        {/* Center count badge — click toggles the fan. White variant shows the
+          * same teardrop pin (with a count badge) so grouped and single markers
+          * look identical; yellow keeps the filled count circle. */}
+        {variant === 'white' ? (
+          <button
+            type='button'
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+            title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
+            style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', zIndex: 2 }}
+          >
+            <WhiteTeardropPin count={n} />
+          </button>
+        ) : (
+          <button
+            type='button'
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+            title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
+            style={{
+              width: MARKER_SIZE,
+              height: MARKER_SIZE,
+              borderRadius: '50%',
+              background: '#FCD116',
+              color: '#050d1a',
+              fontSize: 14,
+              fontWeight: 700,
+              border: '2px solid #fff',
+              boxShadow: '0 0 8px rgba(252,209,22,0.7), 0 2px 6px rgba(0,0,0,0.45)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              position: 'relative',
+              zIndex: 2,
+            }}
+          >
+            {n}
+          </button>
+        )}
 
         {expanded &&
           items.map((it, i) => {
@@ -161,7 +214,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
                   zIndex: 3,
                 }}
               >
-                <YellowPin />
+                <Pin variant={variant} />
               </button>
             )
           })}
@@ -176,7 +229,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
  * that fans out (spider) so each item stays individually clickable. Mirrors the
  * dashboard's OverlapStackMarker UX, but generic over any popup content.
  */
-const OverlapMarkers: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => {
+const OverlapMarkers: React.FC<{ items: OverlapMarkerItem[]; variant?: PinVariant }> = ({ items, variant = 'yellow' }) => {
   const groups = useMemo(() => {
     const m = new Map<string, OverlapMarkerItem[]>()
     for (const it of items) {
@@ -191,7 +244,7 @@ const OverlapMarkers: React.FC<{ items: OverlapMarkerItem[] }> = ({ items }) => 
   return (
     <>
       {groups.map((g) => (
-        <Stack key={`${g[0].coord[0]},${g[0].coord[1]}`} items={g} />
+        <Stack key={`${g[0].coord[0]},${g[0].coord[1]}`} items={g} variant={variant} />
       ))}
     </>
   )

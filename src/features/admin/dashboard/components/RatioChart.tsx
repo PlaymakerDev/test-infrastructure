@@ -1,32 +1,40 @@
 "use client"
-import React, { memo, useMemo } from 'react'
+import React, { memo, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import {
   useDashboardCctvUptime,
   useDashboardVmsUptime,
   useDashboardLightingUptime,
+  useDashboardTrafficUptime,
+  useDashboardWimUptime,
+  useDashboardCrosswalkUptime,
+  useDashboardTunnelUptime,
 } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
+import SystemDetailCard from './SystemDetailCard'
+import { MOCK_SYSTEM_DETAIL } from '../data/systemDetailMock'
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false })
 
 interface DonutItem {
+  /** System id — matches STATIC_DONUTS key + MOCK_SYSTEM_DETAIL key. */
+  id: string
   pct: number
   color: string
   label: string
 }
 
-// Order matches the Figma rail. Each donut renders at 0% until its
-// `uptime-statistics` endpoint exists. Live now: CCTV / Lighting / VMS.
-// Pending BE: WIM / CrossWalk / Bridge Lighting / Tunnel — verified 404 on
-// 2026-06-24; wire them here as soon as the endpoints ship (do NOT hide them).
+// Order: CCTV / Traffic / Lighting / VMS / WIM / Crosswalk / Tunnel.
+// All 7 read a live `/{feature}/departments/{deptId}/overview/uptime-statistics`
+// endpoint (cctv uses `/cameras/...`). A 0% ring means the API genuinely
+// returned online=0 (real downtime), not a missing endpoint.
 const STATIC_DONUTS = {
   cctv: { color: '#ef4444', label: 'CCTV' },
+  traffic: { color: '#3b82f6', label: 'Traffic' },
   lighting: { color: '#f97316', label: 'Lighting' },
   vms: { color: '#a3e635', label: 'VMS' },
-  wim: { color: '#22c55e', label: 'Tracking' },
+  wim: { color: '#22c55e', label: 'WIM' },
   crosswalk: { color: '#14b8a6', label: 'Crosswalk' },
-  bridge: { color: '#3b82f6', label: 'Bridge Lighting' },
   tunnel: { color: '#a855f7', label: 'Tunnel' },
 } as const
 
@@ -59,7 +67,7 @@ const Donut = memo(function Donut(props: DonutProps) {
         },
         axisLine: {
           lineStyle: {
-            width: isSmall ? 10 : 14,
+            width: isSmall ? 14 : 18,
             color: [[1, '#0d1825']] as [number, string][],
           },
         },
@@ -118,20 +126,37 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   const { data: cctv } = useDashboardCctvUptime(deptId)
   const { data: lighting } = useDashboardLightingUptime(deptId)
   const { data: vms } = useDashboardVmsUptime(deptId)
+  const { data: traffic } = useDashboardTrafficUptime(deptId)
+  const { data: wim } = useDashboardWimUptime(deptId)
+  const { data: crosswalk } = useDashboardCrosswalkUptime(deptId)
+  const { data: tunnel } = useDashboardTunnelUptime(deptId)
 
   const items = useMemo<DonutItem[]>(
     () => [
-      { ...STATIC_DONUTS.cctv,      pct: cctv?.percentage     ?? 0 },
-      { ...STATIC_DONUTS.lighting,  pct: lighting?.percentage ?? 0 },
-      { ...STATIC_DONUTS.vms,       pct: vms?.percentage      ?? 0 },
-      // No uptime endpoint yet — show the donut at 0% as a visual placeholder.
-      { ...STATIC_DONUTS.wim,       pct: 0 },
-      { ...STATIC_DONUTS.crosswalk, pct: 0 },
-      { ...STATIC_DONUTS.bridge,    pct: 0 },
-      { ...STATIC_DONUTS.tunnel,    pct: 0 },
+      { id: 'cctv',      ...STATIC_DONUTS.cctv,      pct: cctv?.percentage      ?? 0 },
+      { id: 'traffic',   ...STATIC_DONUTS.traffic,   pct: traffic?.percentage   ?? 0 },
+      { id: 'lighting',  ...STATIC_DONUTS.lighting,  pct: lighting?.percentage  ?? 0 },
+      { id: 'vms',       ...STATIC_DONUTS.vms,       pct: vms?.percentage       ?? 0 },
+      { id: 'wim',       ...STATIC_DONUTS.wim,       pct: wim?.percentage       ?? 0 },
+      { id: 'crosswalk', ...STATIC_DONUTS.crosswalk, pct: crosswalk?.percentage ?? 0 },
+      { id: 'tunnel',    ...STATIC_DONUTS.tunnel,    pct: tunnel?.percentage    ?? 0 },
     ],
-    [cctv, lighting, vms],
+    [cctv, lighting, vms, traffic, wim, crosswalk, tunnel],
   )
+
+  // Click a donut → show that system's detail card; click the card → back.
+  const [selected, setSelected] = useState<string | null>(null)
+  const selectedItem = selected ? items.find((d) => d.id === selected) : null
+  if (selectedItem) {
+    return (
+      <SystemDetailCard
+        system={{ label: selectedItem.label, color: selectedItem.color }}
+        data={MOCK_SYSTEM_DETAIL[selectedItem.id]}
+        onBack={() => setSelected(null)}
+        size={cols ? 110 : 120}
+      />
+    )
+  }
 
   if (cols) {
     // mobile / grid layout
@@ -140,13 +165,20 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
         className='grid gap-y-3 py-4'
         style={{
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-          background: 'rgba(0,0,0,0.55)',
+          background: 'rgba(0,0,0,0.8)',
           borderRadius: 20,
           backdropFilter: 'blur(5px)',
         }}
       >
         {items.map((d) => (
-          <div key={d.label} className='flex justify-center'>
+          <div
+            key={d.label}
+            className='flex justify-center cursor-pointer'
+            role='button'
+            tabIndex={0}
+            title={`ดูรายละเอียด ${d.label}`}
+            onClick={() => setSelected(d.id)}
+          >
             <Donut pct={d.pct} color={d.color} label={d.label} size={size} />
           </div>
         ))}
@@ -159,13 +191,20 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
     <div
       className='flex items-center py-3 w-full'
       style={{
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(0,0,0,0.8)',
         borderRadius: 20,
         backdropFilter: 'blur(5px)',
       }}
     >
       {items.map((d) => (
-        <div key={d.label} className='flex-1 flex justify-center'>
+        <div
+          key={d.label}
+          className='flex-1 flex justify-center cursor-pointer'
+          role='button'
+          tabIndex={0}
+          title={`ดูรายละเอียด ${d.label}`}
+          onClick={() => setSelected(d.id)}
+        >
           <Donut pct={d.pct} color={d.color} label={d.label} size={size} />
         </div>
       ))}

@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useIncidentOverview } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -51,11 +51,11 @@ const MapSection: React.FC<Props> = () => {
     <BaseMap initialZoom={5.4} edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={12} />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-      <MarkerLayer
+      <DeviceMarkerLayer
+        type='Analytic'
         id='incident-locations'
         data={data}
         cluster
-        color='#FCD116'
         size={16}
         strokeColor='#ffffff'
         popupOptions={{ offset: 10, closeButton: false }}

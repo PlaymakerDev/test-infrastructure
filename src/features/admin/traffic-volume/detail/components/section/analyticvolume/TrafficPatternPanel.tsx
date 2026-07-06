@@ -4,7 +4,7 @@ import { TbBolt, TbCar, TbGridDots } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import MiniStatCard from './MiniStatCard'
 import InfoListBox from './InfoListBox'
-import { dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useTrafficVolumeAnalyticGraph } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { CountingAnalyticGraphPoint } from '@/types/traffic-volume/detail-api'
@@ -22,7 +22,7 @@ interface Props {
  *    stamps each hour with the Bangkok offset `+07:00`; parsing through
  *    dayjs would shift the hour to the browser's local timezone, which
  *    breaks the display for anyone outside +07:00).
- *  • `dateLabel` → "D MMM BBBB" Thai BE header for the tooltip. */
+ *  • `dateLabel` → "D ก.ค. 2569" Thai BE header for the tooltip (thaiDateBE). */
 const apiPointToDataPoint = (p: CountingAnalyticGraphPoint): LineChartDataPoint => {
   // ISO format is fixed at "YYYY-MM-DDTHH:mm:ss+ZZ:ZZ" — slice the
   // hour (chars 11-12) and date (chars 0-9) directly.
@@ -32,7 +32,7 @@ const apiPointToDataPoint = (p: CountingAnalyticGraphPoint): LineChartDataPoint 
     label: `${hh}.00`,
     actual: p.total_count,
     reference: Math.round(p.ma_3h_total * 100) / 100,
-    dateLabel: dayjs(dateStr).locale('th').format('D MMM BBBB'),
+    dateLabel: thaiDateBE(dateStr),
   }
 }
 

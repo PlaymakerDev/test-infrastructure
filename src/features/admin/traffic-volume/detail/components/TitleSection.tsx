@@ -109,13 +109,15 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               />
             </div>
 
-            {/* Warranty pill — mirrors traffic-signal styling. */}
+            {/* Warranty pill — same colors as every other menu (cyan #05F2DB
+              * in-warranty / gray #979797 expired), matching the overall tables
+              * + ProjectInfoModal. */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isInWarranty
-                  ? 'border-emerald-500 text-emerald-500'
-                  : 'border-gray-500 text-gray-400'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: isInWarranty ? '#05F2DB' : '#979797',
+                color: isInWarranty ? '#05F2DB' : '#979797',
+              }}
             >
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>

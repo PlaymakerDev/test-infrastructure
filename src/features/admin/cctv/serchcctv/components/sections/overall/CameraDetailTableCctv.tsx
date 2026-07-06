@@ -4,6 +4,7 @@ import { Segmented, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import SearchBar, {
+  type FilterConfig,
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
@@ -68,6 +69,16 @@ interface Props {
 const VIEW_TABS = ['โครงการ', 'กม.'] as const
 type ViewTab = typeof VIEW_TABS[number]
 
+// Same status filters as the CCTV detail table (CameraInstallTable). The stats +
+// filteredGroups machinery below already keys off these; without the filter
+// buttons the search page's filter/stats logic was dead (activeFilter stuck at
+// 'all'). online/offline map to `stats.online`/`stats.offline` via the key.
+const CAMERA_FILTERS: FilterConfig[] = [
+  { key: 'all',     label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
+  { key: 'online',  label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white', badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
+  { key: 'offline', label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white',   badgeIdleClass: 'bg-red-500/20 text-red-400'    },
+]
+
 const TOTAL_COLS = 7
 
 const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
@@ -121,7 +132,6 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
       title: 'ลำดับที่',
       key: 'seq',
       width: 80,
-      align: 'center' as const,
       onCell: (row) =>
         row.kind === 'group'
           ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
@@ -166,7 +176,6 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
       title: 'กม.ที่',
       key: 'km',
       width: 100,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <span className='text-white/80 text-sm'>{row.camera.km}</span> : null,
@@ -191,13 +200,12 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
       width: 140,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 text-sm font-mono'>{row.camera.ip}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/70 text-sm'>{row.camera.ip}</span> : null,
     },
     {
       title: 'Stream Status',
       key: 'streamStatus',
       width: 140,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.streamStatus} /> : null,
@@ -206,7 +214,6 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
       title: 'Device Status',
       key: 'deviceStatus',
       width: 140,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
@@ -233,7 +240,7 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
 
         <div className='min-w-0 flex-1'>
           <SearchBar
-            filters={[]}
+            filters={CAMERA_FILTERS}
             stats={stats}
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}

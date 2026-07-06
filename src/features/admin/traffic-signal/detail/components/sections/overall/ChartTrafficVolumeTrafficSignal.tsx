@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import { PHASE_COLORS } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -32,7 +33,7 @@ const buildHourSeries = (
   for (const p of sorted) {
     const existing = byHour.get(p.hour_timestamp) ?? {
       label: dayjs(p.hour_timestamp).format('HH.mm'),
-      dateLabel: dayjs(p.hour_timestamp).format('D MMM YYYY'),
+      dateLabel: thaiDateBE(p.hour_timestamp),
     }
     existing[`p${p.phases_no}`] = p.total_pcu
     byHour.set(p.hour_timestamp, existing)

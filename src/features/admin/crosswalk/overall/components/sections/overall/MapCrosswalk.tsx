@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
 import { useCrosswalkOverview } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -28,7 +28,9 @@ const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection =
       code_name: loc.road.code_name,
       crosswalk_total: loc.crosswalk.total,
       camera_total: loc.camera.total,
-      camera_online: loc.camera.online_count,
+      // NOTE: the `/overview` endpoint returns online_count/offline_count = 0
+      // (BE bug — the correct split only comes from `/overview/central/list`),
+      // so the popup shows total cameras only, not an online/offline split.
       is_active: loc.crosswalk.is_online,
     },
     geometry: { type: 'Point', coordinates: loc.GeometryPoint },
@@ -57,12 +59,11 @@ const CrosswalkPopup: React.FC<{
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-11 text-slate-500 mt-1.5'>
+      <p className='fs-11 text-white mt-1.5'>
         ทางข้าม: {Number(p.crosswalk_total ?? 0).toLocaleString()} จุด
       </p>
-      <p className='fs-11 text-slate-500'>
-        กล้อง: {Number(p.camera_online ?? 0).toLocaleString()}/
-        {Number(p.camera_total ?? 0).toLocaleString()} ออนไลน์
+      <p className='fs-11 text-white'>
+        กล้องทั้งหมด: {Number(p.camera_total ?? 0).toLocaleString()} กล้อง
       </p>
     </div>
   )
@@ -136,19 +137,11 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   if (!isReady) return null
 
   return (
-    <MarkerLayer
+    <DeviceMarkerLayer
+      type='CrossWalk'
       id='crosswalk'
       data={allData}
       cluster
-      // Cluster (yellow brand) → active (cyan) → offline (gray).
-      color={[
-        'case',
-        ['has', 'point_count'],
-        '#FCD116',
-        ['==', ['get', 'is_active'], true],
-        '#22d3ee',
-        '#979797',
-      ]}
       size={14}
       popup={(f) => (
         <CrosswalkPopup
