@@ -21,9 +21,9 @@ interface CardProps {
 }
 
 const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = {
-  white: { border: 'border-white', text: 'text-white' },
-  blue: { border: 'border-blue-500', text: 'text-blue-500' },
-  red: { border: 'border-red-500', text: 'text-red-500' },
+  white: { border: 'border-[#FFFFFF]', text: 'text-[#FFFFFF]' },
+  blue: { border: 'border-[#66AEFF]', text: 'text-[#66AEFF]' },
+  red: { border: 'border-[#E94C4C]', text: 'text-[#E94C4C]' },
   orange: { border: 'border-[#FF7B00]', text: 'text-[#FF7B00]' },
 }
 
