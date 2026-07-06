@@ -68,7 +68,8 @@ const CrosswalkDetailScreen: React.FC<Props> = ({ id }) => {
         <TitleSection setCurrentTab={setCurrentTab} />
         <section className='mt-8 px-10'>{renderContent}</section>
         {/* Global Project Info modal — fires when the ⓘ icon in the title
-          * bar is clicked. Reads project_id/road_id from URL search params. */}
+          * bar is clicked. project_id/road_id self-derive from the central list
+          * (URL param = fallback), so the modal works with a dept_id-only URL. */}
         <ProjectInfoModal />
         {/* Global CCTV modal — fires when a camera tile/row is clicked.
           * Reads camera_id from Redux (cctv_modal slice). */}

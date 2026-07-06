@@ -11,6 +11,14 @@ export interface APIRequestCrosswalkCameras {
   solution_id?: string | number
 }
 
+/** Per-camera solution participation returned on the crosswalk cameras
+ *  endpoint — a non-null field means the camera does that solution (drives the
+ *  การทำงาน badges). Note: uses `solution_id` (not `id` like SharedSolution). */
+export interface CrosswalkCameraSolution {
+  solution_id: number
+  solution_name: string
+}
+
 export interface CrosswalkCameraItem {
   id: string
   camera_name: string
@@ -19,6 +27,17 @@ export interface CrosswalkCameraItem {
   geometry_point: [number, number]
   /** Optional — backend may not expose it on this endpoint yet. */
   ip_address?: string
+  /** Online status (BE added 2026-07-03) — drives the Stream/Device status. */
+  is_online: boolean
+  // Solution participation flags (BE added 2026-07-03) — null when the camera
+  // doesn't do that solution. Replaces the old per-camera /cctv/cameras/{id}
+  // lookup for การทำงาน badges.
+  counting: CrosswalkCameraSolution | null
+  analytic: CrosswalkCameraSolution | null
+  traffic: CrosswalkCameraSolution | null
+  crosswalk: CrosswalkCameraSolution | null
+  wim_camera: CrosswalkCameraSolution | null
+  vms: CrosswalkCameraSolution | null
 }
 
 export interface APIResponseCrosswalkCameras {
@@ -48,6 +67,8 @@ export interface APIResponseCrosswalkSummaryDaily {
     total: number
     button_pressed: number
     violation: number
+    /** Vehicles that ran the red light at this crosswalk (BE added 2026-07-06). */
+    red_light_violation: number
   }
   counting: {
     total_count: number

@@ -4,11 +4,16 @@ import { useParams } from 'next/navigation'
 import dayjs from 'dayjs'
 import { TbCar } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
+import { thaiDateBE } from '@/utils/thaiDate'
 import {
   getEventTypeColor,
   getEventTypeLabel,
 } from '@/features/admin/incident-detection/components/eventTypes'
 import { useIncidentDaily } from '@/hooks/queries/incident-detection'
+
+/** Short Thai weekday (0=Sun) — keeps all 7 x-axis labels visible (full names
+ *  like "วันอาทิตย์" overlap and ECharts hides half of them). */
+const THAI_DAY_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
 
 /** "แนวโน้มเหตุการณ์รายวัน" — 7-day trend, one line per event type that
  *  actually occurred. Source: /analytic/details?solution_id=&start_date=&end_date=. */
@@ -52,12 +57,13 @@ const EventTrendSection: React.FC = () => {
       label: info.label,
     }))
     const rows: LineChartDataPoint[] = buckets.map((bucket) => {
-      // `label` = day name on the axis; `dateText` = full BE date shown in the
-      // tooltip header (e.g. "24/06/2569").
+      // `label` = day name on the axis; `dateText` = full Thai BE date shown in
+      // the tooltip header (e.g. "24 มิ.ย. 2569").
       const d = dayjs(bucket.date)
       const row: LineChartDataPoint = {
-        label: bucket.date_label || bucket.date,
-        dateText: d.isValid() ? `${d.format('DD/MM/')}${d.year() + 543}` : bucket.date,
+        // Short weekday on the axis so all 7 days fit; full BE date in tooltip.
+        label: d.isValid() ? THAI_DAY_SHORT[d.day()] : (bucket.date_label || bucket.date),
+        dateText: d.isValid() ? thaiDateBE(bucket.date) : bucket.date,
       }
       for (const item of bucket.data) {
         row[`t-${item.analytic_type_id}`] = item.count
@@ -72,13 +78,15 @@ const EventTrendSection: React.FC = () => {
     return { chartData: rows, lines: linesOut, yMax: max }
   }, [data])
 
-  // 0..max ticks (whole numbers). Cap to ~4 ticks so the y-axis stays compact.
+  // Evenly-spaced whole-number ticks (~4 steps). Round the TOP up to a multiple
+  // of the step so the last gap matches the others — appending the raw max
+  // produced an uneven final tick (e.g. …9,10 sitting cramped together).
   const yAxisTicks = useMemo(() => {
     if (yMax === 0) return [0, 1]
     const step = Math.max(1, Math.ceil(yMax / 4))
+    const top = Math.ceil(yMax / step) * step
     const ticks: number[] = []
-    for (let v = 0; v <= yMax; v += step) ticks.push(v)
-    if (ticks[ticks.length - 1] !== yMax) ticks.push(yMax)
+    for (let v = 0; v <= top; v += step) ticks.push(v)
     return ticks
   }, [yMax])
 
@@ -93,7 +101,11 @@ const EventTrendSection: React.FC = () => {
       data={chartData}
       lines={lines}
       yAxisTicks={yAxisTicks}
-      height={180}
+      height={146}
+      // Card has spare space — pull the plot down (default 28 leaves a big gap
+      // under the labels) and up closer to the title.
+      gridBottom={8}
+      gridTop={4}
       tooltipShowDot
       // Show the full date in the tooltip header (axis label stays the day name).
       tooltipDateKey='dateText'

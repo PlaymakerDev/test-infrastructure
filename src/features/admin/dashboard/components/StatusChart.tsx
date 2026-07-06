@@ -56,7 +56,7 @@ const StatusChart: React.FC<Props> = () => {
         >
           {icon}
         </div>
-        <div className='text-3xl font-bold' style={{ color: '#FCD116' }}>
+        <div className='text-3xl font-bold whitespace-nowrap tabular-nums' style={{ color: '#FCD116' }}>
           {value.toLocaleString()}
         </div>
         <div className='text-sm' style={{ color: '#FCD116' }}>

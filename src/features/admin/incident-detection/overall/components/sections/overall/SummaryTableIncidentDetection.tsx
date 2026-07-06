@@ -93,7 +93,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       title: 'รหัสสายทาง',
       key: 'roadCode',
       width: 160,
-      align: 'center',
       onCell: (row) =>
         row.kind === 'bureau'
           ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
@@ -105,7 +104,7 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
               <span className='text-white font-bold'>{row.bureau}</span>
               <span
                 className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                style={{ border: '1px solid #fff', color: '#fff' }}
               >
                 {row.count} โครงการ
               </span>
@@ -122,7 +121,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
-      align: 'center',
       ellipsis: true,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
@@ -136,7 +134,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
       width: 260,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -149,7 +146,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       title: 'เลขที่สัญญา',
       key: 'contractNo',
       width: 200,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -165,14 +161,12 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
       title: 'การค้ำประกัน',
       key: 'warranty',
       width: 130,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
     },
     {
       title: 'กล้องทั้งหมด',
       key: 'total',
-      align: 'center',
       width: 120,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
@@ -181,7 +175,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'ออนไลน์',
       key: 'online',
-      align: 'center',
       width: 110,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => {
@@ -193,7 +186,6 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'ออฟไลน์',
       key: 'offline',
-      align: 'center',
       width: 110,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => {

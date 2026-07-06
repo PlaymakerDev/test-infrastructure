@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useCctvOverview } from '@/hooks/queries/cctv'
 
@@ -58,11 +58,11 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
     <BaseMap initialZoom={5.4} edgeFade={edgeFade}>
       <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={12} />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-      <MarkerLayer
+      <DeviceMarkerLayer
+        type='CCTV'
         id='cctv-locations'
         data={data}
         cluster
-        color='#FCD116'
         size={16}
         strokeColor='#ffffff'
         popupOptions={{ offset: 10, closeButton: false }}

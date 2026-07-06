@@ -4,6 +4,7 @@ import { Col, Row } from 'antd'
 import dayjs from 'dayjs'
 import { TbWalk, TbX } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useCrosswalkGraph } from '@/hooks/queries/crosswalk'
 import { useDetailContext } from '../../../context'
 
@@ -14,7 +15,7 @@ const ChartSection: React.FC<Props> = () => {
   const startDate = dayjs().format('YYYY-MM-DD')
   const { data } = useCrosswalkGraph({ solution_id: id, start_date: startDate })
 
-  const dateLabel = dayjs(startDate).format('D MMM BBBB')
+  const dateLabel = thaiDateBE(startDate)
 
   // ── Chart 1 — crossing_stats (pedestrians + button presses) ─────────────
   const crossingData = useMemo<LineChartDataPoint[]>(

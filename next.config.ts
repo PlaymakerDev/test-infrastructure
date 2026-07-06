@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   assetPrefix: '/atlas',
   reactCompiler: true,
   devIndicators: false,
+  allowedDevOrigins: ["10.10.0.106", "localhost"],
   poweredByHeader: false,
   typescript: { ignoreBuildErrors: true },
   redirects: () => {

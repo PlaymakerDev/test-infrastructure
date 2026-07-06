@@ -182,7 +182,7 @@ const CrosswalkList: React.FC<Props> = () => {
               <span className='text-white font-bold'>{row.bureau}</span>
               <span
                 className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                style={{ border: '1px solid #fff', color: '#fff' }}
               >
                 {row.count} โครงการ
               </span>
@@ -197,6 +197,13 @@ const CrosswalkList: React.FC<Props> = () => {
       key: 'projectName',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) => row.kind === 'entry' ? row.entry.projectName : null,
+    },
+    {
+      title: 'จุดติดตั้ง',
+      key: 'installPoint',
+      width: 260,
+      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => row.kind === 'entry' ? row.entry.installPoint : null,
     },
     {
       title: 'เลขที่สัญญา',
@@ -217,22 +224,13 @@ const CrosswalkList: React.FC<Props> = () => {
       title: 'การค้ำประกัน',
       key: 'guarantee',
       width: 130,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) => row.kind === 'entry' ? <GuaranteePill guarantee={row.entry.guarantee} /> : null,
-    },
-    {
-      title: 'จุดติดตั้ง',
-      key: 'installPoint',
-      width: 260,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => row.kind === 'entry' ? row.entry.installPoint : null,
     },
     {
       title: 'สถานะ',
       key: 'status',
       width: 140,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) => row.kind === 'entry' ? <StatusPill status={row.entry.status} /> : null,
     },
@@ -240,7 +238,6 @@ const CrosswalkList: React.FC<Props> = () => {
       title: 'กล้องทั้งหมด',
       key: 'totalCameras',
       width: 120,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'entry' ? <span className='font-semibold'>{row.entry.totalCameras}</span> : null,
@@ -249,7 +246,6 @@ const CrosswalkList: React.FC<Props> = () => {
       title: 'ออนไลน์',
       key: 'onlineCount',
       width: 110,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'entry' ? <CountBadge value={row.entry.onlineCount} color='#66AEFF' /> : null,
@@ -258,7 +254,6 @@ const CrosswalkList: React.FC<Props> = () => {
       title: 'ออฟไลน์',
       key: 'offlineCount',
       width: 110,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'entry' ? <CountBadge value={row.entry.offlineCount} color='#E94C4C' /> : null,

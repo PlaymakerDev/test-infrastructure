@@ -4,7 +4,10 @@ import type { DashboardBucketType } from '@/types/dashboard/api'
 export const dashboardKeys = {
   all: ['dashboard'] as const,
 
-  uptime: (feature: 'cctv' | 'vms' | 'lighting', deptId: string | number) =>
+  uptime: (
+    feature: 'cctv' | 'vms' | 'lighting' | 'traffic' | 'wim' | 'crosswalk' | 'tunnel',
+    deptId: string | number,
+  ) =>
     [...dashboardKeys.all, 'uptime', feature, deptId] as const,
 
   position: (deptId: string | number) =>

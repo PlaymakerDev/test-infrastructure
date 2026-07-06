@@ -79,7 +79,12 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
   cam,
   onOpen,
 }) => (
-  <div className='flex flex-col gap-1.5'>
+  // Card wrapper — same as the other menus' camera tiles (dark bg + border +
+  // rounded + padding) so the camera cards look consistent across features.
+  <div
+    className='flex flex-col gap-1.5 rounded-2xl p-4'
+    style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}
+  >
     <div
       className='relative rounded-lg overflow-hidden bg-black/40 cursor-pointer'
       onClick={() => onOpen(cam)}
@@ -92,24 +97,31 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
         cameraId={cam.id}
       />
       <span
-        className='absolute top-2 right-2 fs-12 font-semibold px-2 py-0.5 rounded'
-        style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+        className='absolute top-2 right-2 text-[12px] px-2.5 py-1 rounded-full'
+        style={{
+          background: 'rgba(0,0,0,0.6)',
+          // Counting → yellow; Stopline stays white (per Figma).
+          color: cam.detectionMode === 'Counting' ? '#FCD116' : '#ffffff',
+        }}
       >
         P{cam.phase} - {cam.detectionMode}
       </span>
     </div>
-    <h4 className='text-blue-400 mb-0 fs-12'>{cam.code}</h4>
-    <p className='fs-12 text-gray-400 mb-0'>IP Address : {cam.ipAddress}</p>
-    {cam.detectionMode === 'Counting' && (
-      <div className='flex gap-2 mt-1'>
-        <span className='fs-12 border border-emerald-500 text-emerald-400 px-2 py-0.5 rounded-full'>
-          Green Time : {cam.greenTime}s
-        </span>
-        <span className='fs-12 border border-(--yellow) text-(--yellow) px-2 py-0.5 rounded-full'>
-          Volume : {cam.volume.toLocaleString()}
-        </span>
-      </div>
-    )}
+    <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</h4>
+    {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma. */}
+    <div className='flex items-center justify-between gap-2 flex-wrap mt-1'>
+      <p className='text-gray-400 mb-0' style={{ fontSize: 12 }}>IP Address : {cam.ipAddress}</p>
+      {cam.detectionMode === 'Counting' && (
+        <div className='flex gap-2 shrink-0'>
+          <span className='fs-12 border border-emerald-500 text-emerald-400 px-2 py-0.5 rounded-full'>
+            Green Time : {cam.greenTime}s
+          </span>
+          <span className='fs-12 border border-(--yellow) text-(--yellow) px-2 py-0.5 rounded-full'>
+            Volume : {cam.volume.toLocaleString()}
+          </span>
+        </div>
+      )}
+    </div>
   </div>
 )
 

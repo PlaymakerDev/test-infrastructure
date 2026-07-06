@@ -3,17 +3,18 @@ import type { AdminMenuItem } from '@/configs/menu/admin'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useCallback, useMemo } from 'react'
-import { TbAdjustmentsHorizontal, TbChartColumn, TbShieldHalf } from 'react-icons/tb'
+import { TbAdjustmentsHorizontal, TbChartColumn, TbShieldHalf, TbSettings } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 const mappingTransaction = {
   TbAdjustmentsHorizontal,
   TbChartColumn,
   TbShieldHalf,
+  TbSettings
 }
 
-const ALLOWED_KEYS: AdminMenuItem['label_key'][] = ['control_vms', 'statistic', 'maintenance']
+const ALLOWED_KEYS: AdminMenuItem['label_key'][] = ['control_vms', 'statistic', 'maintenance', 'settings']
 
 const SidebarSetting: React.FC<Props> = () => {
   const pathname = usePathname()

@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -111,21 +111,11 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   return (
     <>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
-      <MarkerLayer
+      <DeviceMarkerLayer
+        type='Traffic'
         id='traffic-signal'
         data={allData}
         cluster
-        // Tri-state color: yellow brand color for clusters (so users know to
-        // zoom in), cyan for online, red for offline. Cluster features don't
-        // carry `is_online`, so the `has point_count` branch must come first.
-        color={[
-          'case',
-          ['has', 'point_count'],
-          '#FCD116',
-          ['==', ['get', 'is_online'], true],
-          '#22d3ee',
-          '#ef4444',
-        ]}
         size={14}
         popup={(f) => (
           <TrafficSignalPopup

@@ -98,7 +98,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
-      align: 'center',
       width: 160,
       onCell: (row) => {
         if (row.kind === 'bureau') {
@@ -113,7 +112,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
               <span className='text-white font-bold'>{row.bureau}</span>
               <span
                 className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                style={{ border: '1px solid #fff', color: '#fff' }}
               >
                 {row.count} โครงการ
               </span>
@@ -130,7 +129,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
-      align: 'center',
       ellipsis: true,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
@@ -144,7 +142,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
       width: 280,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -157,7 +154,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
       title: 'เลขที่สัญญา',
       key: 'contractNo',
       width: 220,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -172,7 +168,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'การค้ำประกัน',
       key: 'warranty',
-      align: 'center',
       width: 130,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <WarrantyPill isWarranty={row.item.is_warranty} /> : null),
@@ -180,7 +175,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'กล้องทั้งหมด',
       key: 'total',
-      align: 'center',
       width: 120,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
@@ -191,7 +185,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'ออนไลน์',
       key: 'online',
-      align: 'center',
       width: 110,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => {
@@ -203,7 +196,6 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'ออฟไลน์',
       key: 'offline',
-      align: 'center',
       width: 110,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => {

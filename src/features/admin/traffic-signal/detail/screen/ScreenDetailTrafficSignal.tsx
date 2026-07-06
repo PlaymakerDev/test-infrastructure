@@ -247,7 +247,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
                         critical
                       </span>
                     )}
-                    <span className='text-white/90 font-mono'>{e.label}</span>
+                    <span className='text-white/90'>{e.label}</span>
                   </div>
                   <span className='text-white/40 pl-2'>↳ {e.purpose}</span>
                 </li>

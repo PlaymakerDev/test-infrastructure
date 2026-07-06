@@ -28,7 +28,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'seq',
       key: 'seq',
       width: 80,
-      align: 'center',
       render: (seq: number) => <span className='text-white/60'>{seq}</span>,
     },
     {
@@ -44,7 +43,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'phase',
       key: 'phase',
       width: 90,
-      align: 'center',
       render: (phase: number) => (
         <span className='font-semibold text-sm' style={{ color: getPhaseColor(phase) }}>
           P{phase}
@@ -56,7 +54,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'detectionMode',
       key: 'detectionMode',
       width: 130,
-      align: 'center',
       render: (mode: 'Counting' | 'Stopline') => (
         <OutlinePill
           text={mode}
@@ -69,9 +66,8 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       width: 140,
-      align: 'center',
       render: (ip: string) => (
-        <span className='text-white/80 text-sm font-mono'>{ip}</span>
+        <span className='text-white/80 text-sm'>{ip}</span>
       ),
     },
     {
@@ -79,7 +75,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'greenTime',
       key: 'greenTime',
       width: 120,
-      align: 'center',
       render: (gt: number, row) =>
         row.detectionMode === 'Counting' ? (
           <span className='text-emerald-400 text-sm font-semibold'>{gt}s</span>
@@ -92,7 +87,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'volume',
       key: 'volume',
       width: 120,
-      align: 'center',
       render: (v: number, row) =>
         row.detectionMode === 'Counting' ? (
           <span className='text-(--yellow) text-sm font-semibold'>
@@ -107,7 +101,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'connection',
       key: 'connection',
       width: 140,
-      align: 'center',
       render: (conn: 'online' | 'offline') => (
         <StatusPill status={conn === 'online' ? 'connect' : 'disconnect'} />
       ),

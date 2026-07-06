@@ -95,7 +95,8 @@ const CamerasMarkerLayer: React.FC<{
         [minLng, minLat],
         [maxLng, maxLat],
       ],
-      { padding: 60, maxZoom: 17, duration: 1000 }
+      // Keep the 3D tilt — fitBounds computes a top-down camera otherwise.
+      { padding: 60, maxZoom: 17, duration: 1000, pitch: 55 }
     )
   }, [map, isLoaded, valid, centroid])
 
@@ -113,7 +114,7 @@ const CamerasMarkerLayer: React.FC<{
     [valid],
   )
 
-  return <OverlapMarkers items={markerItems} />
+  return <OverlapMarkers items={markerItems} variant='white' />
 }
 
 /** Detail map — one yellow pin per camera (from the `/cameras` endpoint).

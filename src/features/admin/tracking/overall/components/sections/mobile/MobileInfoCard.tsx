@@ -1,13 +1,14 @@
-import { Card, Col, Row, Tag } from 'antd'
+import { MobileMasterData } from '@/types/tracking/overall-api';
+import { Col, Row } from 'antd'
 import React from 'react'
-import { TbChartAreaLine, TbFlag, TbTrafficCone, TbTruck, TbUserShield, TbVideo } from "react-icons/tb";
+import { TbChartAreaLine, TbTrafficCone, TbTruck, TbUserShield } from "react-icons/tb";
 
 interface Props {
-
+  data?: MobileMasterData[]
 }
 
 const MobileInfoCard: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
   return (
     <Row gutter={[16, 16]}>

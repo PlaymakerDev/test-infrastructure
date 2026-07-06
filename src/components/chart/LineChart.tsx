@@ -73,6 +73,12 @@ export interface LineChartProps {
   onPeriodChange?: (period: string) => void
   /** ความสูง chart (default 260) */
   height?: number
+  /** Extra padding (px) below the auto-contained x-axis labels. Default 28 —
+   *  lower it (e.g. 8) to pull the plot down when the card has spare space. */
+  gridBottom?: number
+  /** Padding (px) above the plot. Default 16 — lower it to pull the plot up
+   *  closer to the card title. */
+  gridTop?: number
   /** กำหนด ticks บน Y-axis */
   yAxisTicks?: number[]
   /** domain ของ Y-axis */
@@ -139,6 +145,8 @@ const LineChart: React.FC<LineChartProps> = ({
   defaultPeriod,
   onPeriodChange,
   height = 260,
+  gridBottom = 28,
+  gridTop = 16,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
   xAxisLabelRotate = 0,
@@ -172,14 +180,14 @@ const LineChart: React.FC<LineChartProps> = ({
 
     return {
       backgroundColor: 'transparent',
-      grid: { top: 16, right: 16, bottom: 28, left: 8, containLabel: true },
+      grid: { top: gridTop, right: 16, bottom: gridBottom, left: 8, containLabel: true },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          color: '#8a9ab5',
+          color: '#ffffff',
           fontSize: 11,
           // Keep the line flush to both edges (boundaryGap:false) while stopping
           // the first/last category labels from overflowing past the card edge:
@@ -202,7 +210,7 @@ const LineChart: React.FC<LineChartProps> = ({
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          color: '#8a9ab5',
+          color: '#ffffff',
           fontSize: 11,
           formatter: (v: number) => v >= 1000 ? `${v / 1000}K` : String(v),
         },
@@ -318,11 +326,11 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, gridBottom, gridTop])
 
   return (
     <div
-      className='relative rounded-2xl pt-5 px-5 pb-1 w-full h-full overflow-hidden'
+      className='relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden'
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (

@@ -1,12 +1,22 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { FormSearchMobile, MobileInfoCard } from '../../../components'
+import { MobileMasterData } from '@/types/tracking/overall-api'
+import { Empty, Skeleton } from 'antd'
 
 interface Props {
-
+  data?: MobileMasterData[]
+  isLoading?: boolean
+  isError?: boolean
 }
 
 const MobileSearchPanel: React.FC<Props> = (props) => {
-  const { } = props
+  const { data, isLoading, isError } = props
+
+  const renderContent = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
+    if (isError) return <Empty description="ไม่พบข้อมูล" />
+    return <MobileInfoCard data={data} />
+  }, [isLoading, isError, data])
 
   return (
     <div>
@@ -14,7 +24,7 @@ const MobileSearchPanel: React.FC<Props> = (props) => {
         <FormSearchMobile />
       </section>
       <section className='mt-5'>
-        <MobileInfoCard />
+        {renderContent}
       </section>
     </div>
   )

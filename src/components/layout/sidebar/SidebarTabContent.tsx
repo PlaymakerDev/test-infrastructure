@@ -3,7 +3,7 @@ import { Tabs, type TabsProps } from 'antd'
 import React from 'react'
 import SidebarContent from './SidebarContent'
 import SidebarSetting from './SidebarSetting'
-import SidebarManagement from './SidebarManagement'
+// import SidebarManagement from './SidebarManagement'
 
 interface Props {
   data?: APIResponseSidebar
@@ -20,14 +20,14 @@ const SidebarTabContent: React.FC<Props> = (props) => {
     },
     {
       key: 'SYSTEM_SETTINGS',
-      label: 'ตั้งค่าระบบ',
+      label: 'การจัดการ',
       children: <SidebarSetting />,
     },
-    {
-      key: 'MANAGEMENT',
-      label: 'การจัดการ',
-      children: <SidebarManagement />,
-    },
+    // {
+    //   key: 'MANAGEMENT',
+    //   label: 'การจัดการ',
+    //   children: <SidebarManagement />,
+    // },
   ]
 
   return (

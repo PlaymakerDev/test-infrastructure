@@ -218,7 +218,7 @@ const CardGridCctv: React.FC<Props> = ({ items }) => {
             <span className='text-white font-bold'>{bureau}</span>
             <span
               className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-              style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+              style={{ border: '1px solid #fff', color: '#fff' }}
             >
               {rows.length} โครงการ
             </span>

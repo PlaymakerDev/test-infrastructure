@@ -20,6 +20,7 @@ import {
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
+import { useRouter } from 'next/navigation'
 import { useMap } from '../hooks/useMap'
 import MarkerLayer from '../primitives/MarkerLayer'
 
@@ -86,10 +87,24 @@ const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
 /** Default popup body — เมนู (device type) + จุดติดตั้ง + สายทาง, plus a
  *  "ดูเพิ่มเติม" link into that install point's detail page when the type maps
  *  to a known route. Data comes from `/manage/solution/{dept}/position`.
- *  Rendered in a detached React root (mapbox popup), so we use a plain
- *  `<a href>` (Next router context isn't available here) and read dept_id from
- *  the current URL. */
-export function DefaultDevicePopup({ device, color }: { device: Device; color: string }) {
+ *
+ *  Rendered in a detached React root (mapbox popup) so Next's router context is
+ *  NOT available here. Navigation therefore comes in as an `onNavigate` prop
+ *  captured from `DeviceClusterMarker` (which IS inside the router provider) —
+ *  clicking runs a CLIENT-SIDE `router.push`, identical to the table detail
+ *  links. This matters on deploy: the app is served under a `basePath` (e.g.
+ *  `/atlas`), and `router.push` prepends it automatically. A raw `<a href>`
+ *  hard-navigation would drop the prefix and 404 (…/dashvue/error-404). The
+ *  `href` is kept only as a semantic/right-click fallback. */
+export function DefaultDevicePopup({
+  device,
+  color,
+  onNavigate,
+}: {
+  device: Device
+  color: string
+  onNavigate?: (url: string) => void
+}) {
   const route = DETAIL_ROUTE[device.type]
   // Use the SOLUTION's own department (road.department_id) so the link lands on
   // the right dept-scoped data even on the nationwide (dept_id=0) dashboard,
@@ -104,6 +119,10 @@ export function DefaultDevicePopup({ device, color }: { device: Device; color: s
   const detailUrl = route
     ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}` : ''}`
     : null
+  // basePath ('/atlas' in prod, '' in dev) — inlined by Next at build time. Only
+  // used for the href fallback so a middle-click / open-in-new-tab keeps the
+  // deploy prefix; left-click goes through onNavigate (router.push adds it too).
+  const basePath = process.env.__NEXT_ROUTER_BASEPATH ?? ''
 
   return (
     <div
@@ -130,10 +149,19 @@ export function DefaultDevicePopup({ device, color }: { device: Device; color: s
         <span style={{ color: '#64748b' }}>สายทาง: </span>
         <span style={{ color: '#fff' }}>{device.road || '-'}</span>
       </div>
-      {/* ดูเพิ่มเติม → install point detail page */}
+      {/* ดูเพิ่มเติม → install point detail page. Left-click navigates
+        * client-side via `onNavigate` (router.push) so the deploy basePath is
+        * preserved; ctrl/cmd/middle-click fall through to the href to open a
+        * new tab as usual. */}
       {detailUrl && (
         <a
-          href={detailUrl}
+          href={`${basePath}${detailUrl}`}
+          onClick={(e) => {
+            if (!onNavigate) return
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+            e.preventDefault()
+            onNavigate(detailUrl)
+          }}
           style={{
             display: 'inline-block',
             marginTop: 9,
@@ -163,6 +191,9 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
   popup,
 }) => {
   const { map, isLoaded } = useMap()
+  // Captured here (inside the App Router provider) so the detached-root popup
+  // can navigate client-side — see DefaultDevicePopup's note on basePath.
+  const router = useRouter()
   const [iconsReady, setIconsReady] = useState(false)
   const registeredRef = useRef(false)
 
@@ -229,6 +260,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
                   <DefaultDevicePopup
                     device={f.properties as Device}
                     color={color}
+                    onNavigate={(url) => router.push(url)}
                   />
                 )
 

@@ -26,8 +26,9 @@ interface CamGroup {
 
 // ── Teardrop pin ────────────────────────────────────────────────────────────────
 
-const CameraPin: React.FC<{ online: boolean; count: number }> = ({ online, count }) => {
-  const color = online ? '#ffffff' : '#E94C4C'
+const CameraPin: React.FC<{ online: boolean; count: number }> = ({ count }) => {
+  // Always white — offline is no longer shown red (color-only change per request).
+  const color = '#ffffff'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
       <div
@@ -44,7 +45,7 @@ const CameraPin: React.FC<{ online: boolean; count: number }> = ({ online, count
           style={{
             width: 10, height: 10,
             borderRadius: '50%',
-            background: online ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.6)',
+            background: 'rgba(0,0,0,0.25)',
             transform: 'rotate(45deg)',
           }}
         />

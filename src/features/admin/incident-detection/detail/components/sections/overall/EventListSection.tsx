@@ -138,7 +138,14 @@ const EventListSection: React.FC<Props> = ({ onShowAll }) => {
         {isLoading ? (
           <Skeleton active paragraph={{ rows: 4 }} />
         ) : events.length === 0 ? (
-          <div className='py-8 text-center text-gray-500 fs-12'>ยังไม่มีเหตุการณ์วันนี้</div>
+          // Wrap the empty message in the same card as an event row so it stays
+          // readable over the map (plain text was too low-contrast).
+          <div
+            className='flex items-center justify-center py-10 rounded-2xl'
+            style={{ background: CARD_BG, border: '2px solid transparent' }}
+          >
+            <span className='fs-13 text-gray-300'>ยังไม่มีเหตุการณ์วันนี้</span>
+          </div>
         ) : (
           events.map((ev) => (
             <EventCard key={ev.id} ev={ev} onOpenDetail={() => setSelected(ev)} />
