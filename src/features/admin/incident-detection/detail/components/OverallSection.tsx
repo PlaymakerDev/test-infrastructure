@@ -59,10 +59,13 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
           <div className='pointer-events-auto self-end xl:w-55 2xl:w-66.5'>
             <EventStatsSection />
           </div>
-          {/* Donut + line chart — full right-rail width, scroll internally if needed */}
+          {/* Donut + line chart — full right-rail width. `shrink-0` wrappers keep
+            * each card at its natural (content) height instead of h-full — the
+            * chart cards were being squeezed shorter than their content, clipping
+            * the line chart's x-axis at the bottom. Scrolls if they overflow. */}
           <div className='pointer-events-auto flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col gap-3'>
-            <EventDonutSection />
-            <EventTrendSection />
+            <div className='shrink-0'><EventDonutSection /></div>
+            <div className='shrink-0'><EventTrendSection /></div>
           </div>
         </aside>
       </section>

@@ -89,7 +89,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     )}
 
     <p
-      className='text-sm font-medium leading-snug truncate cursor-pointer hover:underline'
+      className='fs-12 font-normal leading-snug line-clamp-2 cursor-pointer hover:underline'
       style={{ color: '#66AEFF' }}
       title={camera.name}
       onClick={onSelect}

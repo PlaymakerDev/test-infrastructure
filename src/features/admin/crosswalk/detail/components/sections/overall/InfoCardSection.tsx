@@ -95,7 +95,7 @@ const InfoCardSection: React.FC<Props> = () => {
           icon={<TbTruck />}
           label='รถข้ามฝ่าฝืนสัญญาณไฟ'
           color='orange'
-          value={counting?.total_count ?? 0}
+          value={crossing?.red_light_violation ?? 0}
           unit='คัน'
           isLoading={isLoading}
         />
@@ -105,7 +105,7 @@ const InfoCardSection: React.FC<Props> = () => {
           icon={<TbTruck />}
           label='ปริมาณจราจรประจำวัน'
           color='yellow'
-          value={counting?.total_pcu ?? 0}
+          value={counting?.total_count ?? 0}
           unit='คัน'
           isLoading={isLoading}
         />

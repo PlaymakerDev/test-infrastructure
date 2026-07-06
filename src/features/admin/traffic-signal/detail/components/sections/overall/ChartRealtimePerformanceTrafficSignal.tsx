@@ -9,18 +9,17 @@ import BarChart, {
 import { PHASE_COLORS } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
 import { fmtNumber } from '@/utils/formatNumber'
+import { thaiDateTimeBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
-
-const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
 /** Full Thai date + time for the tooltip header — disambiguates repeated hours
  *  across days (e.g. 19:00 yesterday vs 19:00 today). พ.ศ. year. */
 const fmtThaiDateTime = (iso: string): string => {
   const d = dayjs(iso)
   if (!d.isValid()) return iso
-  return `${d.date()} ${THAI_MONTHS[d.month()]} ${d.year() + 543} ${d.format('HH:mm')} น.`
+  return thaiDateTimeBE(iso)
 }
 
 const ALL_BARS = [

@@ -82,7 +82,7 @@ const LicenseModal: React.FC<Props> = ({ open, solution, onClose }) => {
               >
                 <span className='fs-13 text-gray-400 text-center'>{i + 1}</span>
                 <span className='fs-13 text-white'>{lic.camera.name}</span>
-                <span className='fs-13 text-(--yellow) font-mono break-all'>{lic.key || '-'}</span>
+                <span className='fs-13 text-(--yellow) break-all'>{lic.key || '-'}</span>
                 <span className='fs-13 text-gray-300 text-center'>{lic.type || '-'}</span>
               </div>
             ))}

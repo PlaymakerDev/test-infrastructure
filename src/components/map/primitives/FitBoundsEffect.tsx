@@ -16,6 +16,9 @@ interface Props {
   /** Cap zoom-in so a single (or tightly-clustered) point doesn't go to street level. */
   maxZoom?: number
   duration?: number
+  /** Tilt (deg) to keep after framing. `fitBounds` computes a top-down (pitch 0)
+   *  camera, so detail maps that want the 3D look must pass this (e.g. 55). */
+  pitch?: number
 }
 
 /**
@@ -23,7 +26,7 @@ interface Props {
  * of a hard-coded center/zoom. Re-runs whenever the set of points changes.
  * A single point falls back to `flyTo` at `maxZoom`.
  */
-const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, duration = 900 }) => {
+const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, duration = 900, pitch }) => {
   const { map, isLoaded } = useMap()
   // Stable key from the coord set — identical points (new array ref each render)
   // must NOT re-trigger the camera animation.
@@ -33,7 +36,7 @@ const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, 
     if (!map || !isLoaded || coords.length === 0) return
 
     if (coords.length === 1) {
-      map.flyTo({ center: coords[0], zoom: maxZoom, duration })
+      map.flyTo({ center: coords[0], zoom: maxZoom, duration, ...(pitch !== undefined && { pitch }) })
       return
     }
 
@@ -64,7 +67,7 @@ const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, 
 
     map.fitBounds(
       [[minLng, minLat], [maxLng, maxLat]],
-      { padding: { top, bottom, left, right }, maxZoom, duration },
+      { padding: { top, bottom, left, right }, maxZoom, duration, ...(pitch !== undefined && { pitch }) },
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, isLoaded, key])

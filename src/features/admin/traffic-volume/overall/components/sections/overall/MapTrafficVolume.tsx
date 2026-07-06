@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
 import { useTrafficVolumeOverview } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -135,20 +135,11 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   if (!isReady) return null
 
   return (
-    <MarkerLayer
+    <DeviceMarkerLayer
+      type='Counting'
       id='traffic-volume'
       data={allData}
       cluster
-      // Cluster (yellow brand) → active (cyan) → idle/zero-count (gray).
-      // Cluster check must come first since cluster features lack `is_active`.
-      color={[
-        'case',
-        ['has', 'point_count'],
-        '#FCD116',
-        ['==', ['get', 'is_active'], true],
-        '#22d3ee',
-        '#979797',
-      ]}
       size={14}
       popup={(f) => (
         <TrafficVolumePopup

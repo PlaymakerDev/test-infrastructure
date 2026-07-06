@@ -148,13 +148,11 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       title: 'ลำดับ',
       dataIndex: 'seq',
       key: 'seq',
-      align: 'center',
       width: 80,
     },
     {
       title: 'วันที่และเวลา',
       key: 'datetime',
-      align: 'center',
       width: 200,
       render: (_, row) => {
         // Backend returns pre-formatted Thai date-time, e.g. "22/06/2569 16:24".
@@ -171,7 +169,6 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
     {
       title: 'ประเภทเหตุการณ์',
       key: 'eventType',
-      align: 'center',
       width: 260,
       render: (_, row) => (
         <span
@@ -190,7 +187,6 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
     {
       title: 'IP Address',
       key: 'ipAddress',
-      align: 'center',
       width: 140,
       render: (_, row) => {
         const ip = ipByCameraId.get(row.camera.id)
@@ -201,7 +197,6 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       title: 'ภาพเหตุการณ์',
       dataIndex: 'image_path',
       key: 'image',
-      align: 'center',
       width: 140,
       fixed: 'right',
       render: (src: string) =>

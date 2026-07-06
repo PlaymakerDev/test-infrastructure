@@ -48,12 +48,14 @@ const EventDonutSection: React.FC = () => {
       data={chartData}
       centerLabel='เหตุการณ์ทั้งหมด'
       centerUnit='เหตุการณ์'
-      donutSize={160}
-      height={200}
-      radius={['58%', '88%']}
-      centerValueSize={26}
+      donutSize={144}
+      height={170}
+      // Thicker ring — grow the OUTER radius (like the hover expand) while
+      // keeping the inner hole roughly the same so the center text still fits.
+      radius={['70%', '98%']}
+      centerValueSize={28}
       centerLabelSize={10}
-      centerUnitSize={11}
+      centerUnitSize={10}
       centerLabelColor='#ffffff'
       centerUnitColor='#ffffff'
       legendMaxHeight={160}

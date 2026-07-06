@@ -55,7 +55,7 @@ const EventStatsSection: React.FC = () => {
         style={{ background: CARD_BG, border: '2px solid #ffffff' }}
       >
         <div className='flex items-center gap-1.5 mb-1'>
-          <TbCarCrash className='fs-14 shrink-0' style={{ color: '#ffffff' }} />
+          <TbCarCrash size={24} className='shrink-0' style={{ color: '#ffffff' }} />
           <h4 className='mb-0 fs-11 font-semibold leading-tight' style={{ color: '#ffffff' }}>
             เหตุการณ์เกิดขึ้นมากที่สุด
           </h4>
@@ -74,7 +74,7 @@ const EventStatsSection: React.FC = () => {
         style={{ background: CARD_BG, border: '2px solid #FFB100' }}
       >
         <div className='flex items-center gap-1.5 mb-1'>
-          <TbHourglass className='fs-14 shrink-0' style={{ color: '#FFB100' }} />
+          <TbHourglass size={24} className='shrink-0' style={{ color: '#FFB100' }} />
           <h4 className='mb-0 fs-11 font-semibold leading-tight' style={{ color: '#FFB100' }}>
             ช่วงเวลาที่มีเหตุการณ์มากที่สุด
           </h4>

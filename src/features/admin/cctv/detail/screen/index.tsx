@@ -7,7 +7,7 @@ import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import type { InstallGroup, CameraRow } from '../components/sections/CameraGridView'
 import {
   useCctvCameraCentralList,
-  useCctvOverviewList,
+  useCctvOverviewCentralList,
 } from '@/hooks/queries/cctv'
 import { extractCameraFunctions } from '@/features/admin/cctv/components/cameraFunctions'
 import type {
@@ -25,14 +25,24 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
   const router = useRouter()
 
   // Solution-level metadata (road code, contract, warranty, project/road ids).
-  // Cache shared with the overall page when the user navigated from there.
-  // `road.id` from the matching row keys the road-scoped camera query below.
-  const overviewList = useCctvOverviewList(deptId, { page: 1, limit: 100 })
+  // Uses the SAME bureau-nested central list as the overall page (NO paging, the
+  // whole department) so the cache is shared on navigation AND every solution
+  // resolves. Previously this used the paginated overview list capped at
+  // `limit: 100`, so any solution past row 100 resolved to `undefined` → roadId
+  // undefined → the road-scoped camera query never fired → the page hung on the
+  // skeleton forever (e.g. /cctv/detail/2439). `road.id` keys the camera query.
+  const overviewList = useCctvOverviewCentralList(deptId)
 
-  const listItem = useMemo(
-    () => overviewList.data?.res_data.find((item) => String(item.solution.id) === id),
-    [overviewList.data, id]
-  )
+  const listItem = useMemo(() => {
+    for (const bureau of overviewList.data ?? []) {
+      for (const sub of bureau.sub_department) {
+        for (const sol of sub.solutions) {
+          if (String(sol.solution.id) === id) return sol
+        }
+      }
+    }
+    return undefined
+  }, [overviewList.data, id])
   const roadId = listItem?.road.id
 
   // Cameras for the road, grouped by install point (solution_location) — the
@@ -138,6 +148,24 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
       <div className='main-screen px-10 pt-10'>
         <h1 className='text-(--yellow)'>ไม่พบข้อมูลแขวงทางหลวงชนบท</h1>
         <p className='text-white/70 mt-2'>กรุณาเข้าถึงหน้านี้ผ่านรายการกล้อง CCTV</p>
+        <button
+          className='mt-4 px-4 py-2 rounded bg-(--yellow) text-black font-semibold'
+          onClick={() => router.back()}
+          type='button'
+        >
+          กลับ
+        </button>
+      </div>
+    )
+  }
+
+  // List finished loading but the solution isn't in this department — show a
+  // clear message instead of an infinite skeleton (e.g. wrong dept_id in the URL).
+  if (!overviewList.isLoading && !listItem) {
+    return (
+      <div className='main-screen px-10 pt-10'>
+        <h1 className='text-(--yellow)'>ไม่พบข้อมูลสายทางนี้</h1>
+        <p className='text-white/70 mt-2'>สายทางที่เลือกไม่อยู่ในแขวงทางหลวงชนบทนี้</p>
         <button
           className='mt-4 px-4 py-2 rounded bg-(--yellow) text-black font-semibold'
           onClick={() => router.back()}

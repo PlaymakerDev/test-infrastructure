@@ -29,7 +29,7 @@ const TrafficStat: React.FC<Props> = () => {
     <div
       className='p-4'
       style={{
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(0,0,0,0.8)',
         borderRadius: 20,
         backdropFilter: 'blur(5px)',
       }}

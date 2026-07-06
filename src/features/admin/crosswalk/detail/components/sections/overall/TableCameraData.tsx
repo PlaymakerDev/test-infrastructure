@@ -2,35 +2,52 @@
 import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
+import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
+import type { DeviceBadgeKey } from '@/constants/cctv'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkCameraItem } from '@/types/crosswalk/detail-api'
 
 interface Props {}
 
 type ConnectionStatus = 'Connect' | 'Disconnect'
-type FunctionTag = 'CCTV' | 'Incident' | 'Volume' | 'Traffic'
 
 interface CameraRow extends CrosswalkCameraItem {
   seq: number
   km: string
-  functions: FunctionTag[]
+  functions: DeviceBadgeKey[]
   ip: string
   status: ConnectionStatus
 }
 
-const FUNCTION_TAG_CLASS: Record<FunctionTag, string> = {
-  CCTV: 'border-yellow-500 text-yellow-500',
-  Incident: 'border-green-500 text-green-500',
-  Volume: 'border-emerald-400 text-emerald-400',
-  Traffic: 'border-teal-400 text-teal-400',
+// Thai status pills matching the other menus' overall tables (blue #66AEFF
+// online/connected, red #E94C4C offline/disconnected).
+const OnlinePill: React.FC<{ online: boolean }> = ({ online }) => {
+  const color = online ? '#66AEFF' : '#E94C4C'
+  return (
+    <span
+      className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      style={{ border: `1px solid ${color}`, color }}
+    >
+      {online ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+      {online ? 'ออนไลน์' : 'ออฟไลน์'}
+    </span>
+  )
 }
 
-const STATUS_CLASS: Record<ConnectionStatus, string> = {
-  Connect: 'border-blue-400 text-blue-400',
-  Disconnect: 'border-red-500 text-red-500',
+const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
+  const color = online ? '#66AEFF' : '#E94C4C'
+  return (
+    <span
+      className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      style={{ border: `1px solid ${color}`, color }}
+    >
+      {online ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ'}
+    </span>
+  )
 }
 
 /** Pull "กม.<n>+<m>" out of the camera name, which follows the
@@ -38,6 +55,20 @@ const STATUS_CLASS: Record<ConnectionStatus, string> = {
 const extractKm = (name: string): string => {
   const m = name.match(/กม\.\s*(\d+\+\d+)/)
   return m ? m[1] : '-'
+}
+
+/** "cctv" is the base type; append every solution the camera participates in
+ *  (non-null flag). Returns DEVICE_BADGE keys — same source & colors as every
+ *  other menu's การทำงาน column. */
+const deriveFunctions = (c: CrosswalkCameraItem): DeviceBadgeKey[] => {
+  const fns: DeviceBadgeKey[] = ['cctv']
+  if (c.counting) fns.push('counting')
+  if (c.analytic) fns.push('analytic')
+  if (c.traffic) fns.push('traffic')
+  if (c.crosswalk) fns.push('crosswalk')
+  if (c.wim_camera) fns.push('wim_camera')
+  if (c.vms) fns.push('vms')
+  return fns
 }
 
 const TableCameraData: React.FC<Props> = () => {
@@ -48,16 +79,18 @@ const TableCameraData: React.FC<Props> = () => {
     solution_id: id,
   })
 
+  // BE now returns `is_online` + the solution flags on this single endpoint,
+  // so the การทำงาน badges + status derive from the camera row directly — no
+  // more per-camera /cctv/cameras/{id} lookups.
   const rows = useMemo<CameraRow[]>(() => {
     const cameras = data?.cameras ?? []
     return cameras.map((c, i) => ({
       ...c,
       seq: i + 1,
       km: extractKm(c.camera_name),
-      functions: ['CCTV'],
+      functions: deriveFunctions(c),
       ip: c.ip_address ?? extractIpFromHlsUrl(c.hls_url),
-      // Endpoint doesn't expose is_online — treat presence of hls_url as online.
-      status: c.hls_url ? 'Connect' : 'Disconnect',
+      status: c.is_online ? 'Connect' : 'Disconnect',
     }))
   }, [data])
 
@@ -66,7 +99,6 @@ const TableCameraData: React.FC<Props> = () => {
       title: 'ลำดับที่',
       dataIndex: 'seq',
       key: 'seq',
-      align: 'center',
       width: 80,
     },
     {
@@ -79,24 +111,17 @@ const TableCameraData: React.FC<Props> = () => {
       title: 'กม.ที่',
       dataIndex: 'km',
       key: 'km',
-      align: 'center',
       width: 100,
     },
     {
       title: 'การทำงาน',
       dataIndex: 'functions',
       key: 'functions',
-      align: 'center',
       width: 220,
-      render: (tags: FunctionTag[]) => (
-        <div className='flex flex-wrap justify-center gap-1'>
+      render: (tags: DeviceBadgeKey[]) => (
+        <div className='flex flex-wrap gap-1'>
           {tags.map((tag) => (
-            <span
-              key={tag}
-              className={`inline-block py-0.5 px-2.5 rounded-full text-xs border ${FUNCTION_TAG_CLASS[tag]}`}
-            >
-              {tag}
-            </span>
+            <CameraFunctionTag key={tag} tag={tag} />
           ))}
         </div>
       ),
@@ -105,40 +130,22 @@ const TableCameraData: React.FC<Props> = () => {
       title: 'IP Address',
       dataIndex: 'ip',
       key: 'ip',
-      align: 'center',
       width: 140,
     },
     {
       title: 'Stream Status',
       dataIndex: 'status',
       key: 'streamStatus',
-      align: 'center',
       width: 140,
-      render: (status: ConnectionStatus) => (
-        <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${STATUS_CLASS[status]}`}>
-          {status}
-        </span>
-      ),
+      render: (status: ConnectionStatus) => <StreamPill online={status === 'Connect'} />,
     },
     {
       title: 'Device Status',
       dataIndex: 'status',
       key: 'deviceStatus',
-      align: 'center',
       width: 140,
       fixed: 'right',
-      render: (status: ConnectionStatus) => {
-        const isOnline = status === 'Connect'
-        return (
-          <span
-            className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${
-              isOnline ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'
-            }`}
-          >
-            {isOnline ? 'Online' : 'Offline'}
-          </span>
-        )
-      },
+      render: (status: ConnectionStatus) => <OnlinePill online={status === 'Connect'} />,
     },
   ], [])
 

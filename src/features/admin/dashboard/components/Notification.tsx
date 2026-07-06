@@ -51,15 +51,15 @@ const Notification: React.FC<Props> = (props) => {
       }}
     >
       <div
-        className="flex items-center gap-3 px-4 py-3"
+        className="flex items-center gap-3 px-4 py-2"
         style={{
           background: "rgba(10,14,26,0.95)",
           borderRadius: 19,
           backdropFilter: "blur(5px)",
         }}
       >
-        <div className="rounded-lg p-2" style={{ background: "rgba(245,200,66,0.12)" }}>
-          <TbAlertTriangle size={30} color="#f5c842" />
+        <div className="rounded-lg p-1.5" style={{ background: "rgba(245,200,66,0.12)" }}>
+          <TbAlertTriangle size={24} color="#f5c842" />
         </div>
         <div className="flex-1 leading-tight">
           <div className="text-white text-sm font-medium">{title}</div>

@@ -138,7 +138,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'รหัสสายทาง',
       key: 'roadCode',
       width: 150,
-      align: 'center',
       onCell: (row) =>
         row.kind === 'bureau'
           ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
@@ -150,7 +149,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
               <span className='text-white font-bold'>{row.bureau}</span>
               <span
                 className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                style={{ border: '1px solid #fff', color: '#fff' }}
               >
                 {row.count} โครงการ
               </span>
@@ -167,7 +166,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
-      align: 'center',
       ellipsis: true,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
@@ -181,7 +179,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'จุดติดตั้ง',
       key: 'installPoint',
       width: 240,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -194,7 +191,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'เลขที่สัญญา',
       key: 'contractNo',
       width: 190,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -210,7 +206,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'การค้ำประกัน',
       key: 'warranty',
       width: 120,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
     },
@@ -218,7 +213,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'กล้องวิเคราะห์',
       key: 'analysisCameras',
       width: 120,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? <span className='text-white font-semibold'>{row.item.totalCameras}</span> : null,
@@ -227,7 +221,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'เหตุการณ์',
       key: 'events',
       width: 100,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => {
         if (row.kind !== 'project') return null
@@ -245,7 +238,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'License',
       key: 'license',
       width: 100,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>
         row.kind === 'project' ? (
@@ -263,7 +255,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'สถานะ',
       key: 'status',
       width: 140,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <StatusPill online={row.item.onlineCameras > 0} /> : null),
     },
@@ -271,7 +262,6 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       title: 'Stream',
       key: 'stream',
       width: 120,
-      align: 'center',
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
     },

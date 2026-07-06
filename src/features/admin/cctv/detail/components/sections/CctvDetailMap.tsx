@@ -30,8 +30,9 @@ interface Props {
 
 // ── Teardrop pin ────────────────────────────────────────────────────────────────
 
-const CameraPin: React.FC<{ online: boolean; count: number; selected: boolean }> = ({ online, count, selected }) => {
-  const color = online ? '#ffffff' : '#E94C4C'
+const CameraPin: React.FC<{ online: boolean; count: number; selected: boolean }> = ({ count, selected }) => {
+  // Always white — offline is no longer shown red (color-only change per request).
+  const color = '#ffffff'
   return (
     <div
       style={{
@@ -56,7 +57,7 @@ const CameraPin: React.FC<{ online: boolean; count: number; selected: boolean }>
           style={{
             width: 10, height: 10,
             borderRadius: '50%',
-            background: online ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.6)',
+            background: 'rgba(0,0,0,0.25)',
             transform: 'rotate(45deg)',
           }}
         />
@@ -117,7 +118,7 @@ const SelectionEffect: React.FC<{
       // Deselected — zoom back out to frame all pins (the overview).
       wasSelected.current = false
       if (coords.length) {
-        map.fitBounds(boundsOf(coords), { padding: fitPadding, maxZoom: 16, duration: 1000 })
+        map.fitBounds(boundsOf(coords), { padding: fitPadding, maxZoom: 16, duration: 1000, pitch: 55 })
       }
     }
   }, [map, isLoaded, selectedKey, groups, coords, fitPadding])
@@ -156,11 +157,11 @@ const CctvDetailMap: React.FC<Props> = ({ cameras, center, selectedKey, onToggle
     <BaseMap
       initialCenter={center}
       initialZoom={14}
-      initialPitch={45}
+      initialPitch={55}
       initialBearing={-10}
       edgeFade={edgeFade}
     >
-      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={16} />
+      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={16} pitch={55} />
       <SelectionEffect groups={groups} selectedKey={selectedKey} coords={coords} fitPadding={fitPadding} />
       {groups.map((group) => {
         const selected = group.key === selectedKey

@@ -179,7 +179,6 @@ const DataDisplaySection: React.FC = () => {
       title: 'ลำดับที่',
       key: 'seq',
       width: 80,
-      align: 'center' as const,
       onCell: (row) =>
         row.kind === 'group'
           ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
@@ -224,7 +223,6 @@ const DataDisplaySection: React.FC = () => {
       title: 'กม.ที่',
       key: 'km',
       width: 100,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <span className='text-white/80 text-sm'>{row.camera.km}</span> : null,
@@ -233,7 +231,6 @@ const DataDisplaySection: React.FC = () => {
       title: 'เหตุการณ์',
       key: 'events',
       width: 140,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <EventCountTag count={row.camera.events} /> : null,
@@ -244,13 +241,12 @@ const DataDisplaySection: React.FC = () => {
       width: 140,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 text-sm font-mono'>{row.camera.ip}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/70 text-sm'>{row.camera.ip}</span> : null,
     },
     {
       title: 'Stream Status',
       key: 'streamStatus',
       width: 140,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.streamStatus} /> : null,
@@ -259,7 +255,6 @@ const DataDisplaySection: React.FC = () => {
       title: 'Device Status',
       key: 'deviceStatus',
       width: 140,
-      align: 'center' as const,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
