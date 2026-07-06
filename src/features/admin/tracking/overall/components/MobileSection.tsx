@@ -1,35 +1,34 @@
-import React, { useDeferredValue, useMemo, useState } from 'react'
+import React from 'react'
 import { MobileLocationSection, TableMobile } from '../components'
 import ChartMobileUnitPlan from './sections/mobile/ChartMobileUnitPlan'
-import { getTrackingSumMobileAPI } from '@/services/routes/TrackingService'
+import { getTrackingMobileMasterAPI } from '@/services/routes/TrackingService'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
+import { useOverallContext } from '../context'
 
 const MobileSection = () => {
-  const [searchText, setSearchText] = useState('')
-  const deferredSearch = useDeferredValue(searchText)
+  const { searchMobileMaster } = useOverallContext()
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_sum_wim'],
-    queryFn: () => getTrackingSumMobileAPI({ date: dayjs().format('YYYY-MM-DD') }),
+    queryKey: ['tracking_mobile_master', searchMobileMaster?.search],
+    queryFn: () => getTrackingMobileMasterAPI({
+      start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
+      end_date: dayjs().format('YYYY-MM-DD'),
+      page: 1,
+      page_size: 10,
+      ordering: 'asc',
+      search: searchMobileMaster?.search || ''
+    }),
     placeholderData: keepPreviousData,
   })
-
-  const filteredData = useMemo(() => {
-    const allData = data?.data.data ?? []
-    const q = deferredSearch.trim().toLowerCase()
-    if (!q) return allData
-    return allData.filter((s) => s.name?.toLowerCase().includes(q))
-  }, [data, deferredSearch])
 
   return (
     <div>
       <section>
         <MobileLocationSection
-          data={filteredData}
+          data={data?.data.data ?? []}
           isLoading={isLoading}
           isError={isError}
-          onSearch={setSearchText}
         />
       </section>
       <section className='mt-5'>
@@ -37,7 +36,7 @@ const MobileSection = () => {
       </section>
       <section className='mt-5'>
         <TableMobile
-          data={filteredData}
+          data={data?.data.data ?? []}
           isLoading={isLoading}
           isError={isError}
         />

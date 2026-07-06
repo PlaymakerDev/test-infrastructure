@@ -5,17 +5,16 @@ import {
   MobileSearchPanel,
   MobileStationData
 } from '@/features/admin/tracking/overall/components'
-import { SumMobile } from '@/types/tracking/overall-api'
+import { MobileMasterData } from '@/types/tracking/overall-api'
 
 interface Props {
-  data?: SumMobile[]
+  data?: MobileMasterData[]
   isLoading?: boolean
   isError?: boolean
-  onSearch?: (value: string) => void
 }
 
 const MobileLocationSection: React.FC<Props> = (props) => {
-  const { data, isLoading, isError, onSearch } = props
+  const { data, isLoading, isError } = props
   return (
     <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
 
@@ -35,7 +34,6 @@ const MobileLocationSection: React.FC<Props> = (props) => {
           data={data || []}
           isLoading={isLoading}
           isError={isError}
-          onSearch={onSearch}
         />
       </div>
 
