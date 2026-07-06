@@ -1,17 +1,16 @@
 import React, { useMemo } from 'react'
 import { FormSearchMobile, MobileInfoCard } from '../../../components'
-import { SumMobile } from '@/types/tracking/overall-api'
+import { MobileMasterData } from '@/types/tracking/overall-api'
 import { Empty, Skeleton } from 'antd'
 
 interface Props {
-  data?: SumMobile[]
+  data?: MobileMasterData[]
   isLoading?: boolean
   isError?: boolean
-  onSearch?: (value: string) => void
 }
 
 const MobileSearchPanel: React.FC<Props> = (props) => {
-  const { data, isLoading, isError, onSearch } = props
+  const { data, isLoading, isError } = props
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
@@ -22,7 +21,7 @@ const MobileSearchPanel: React.FC<Props> = (props) => {
   return (
     <div>
       <section>
-        <FormSearchMobile onSearch={onSearch} />
+        <FormSearchMobile />
       </section>
       <section className='mt-5'>
         {renderContent}

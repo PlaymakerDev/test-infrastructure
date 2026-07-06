@@ -3,10 +3,12 @@ import React from 'react'
 import { Table, Button, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { SumMobile } from '@/types/tracking/overall-api'
+import { MobileMasterData } from '@/types/tracking/overall-api'
+import { fmtNumber } from '@/utils/formatNumber'
+import { MOBILE_STATUS } from '@/constants'
 
 interface Props {
-  data?: SumMobile[]
+  data?: MobileMasterData[]
   isLoading?: boolean
   isError?: boolean
 }
@@ -103,7 +105,7 @@ const TableMobileData: React.FC<Props> = (props) => {
     },
   ]
 
-  const columns: ColumnsType<SumMobile> = [
+  const columns: ColumnsType<MobileMasterData> = [
     {
       title: 'ลำดับ',
       dataIndex: 'no',
@@ -111,120 +113,153 @@ const TableMobileData: React.FC<Props> = (props) => {
       align: 'center',
       width: 70,
       fixed: 'left',
+      render: (_, __, index) => {
+        return index + 1
+      }
     },
     {
       title: 'รหัสสายทาง',
-      dataIndex: 'routeCode',
-      key: 'routeCode',
+      dataIndex: 'WayID',
+      key: 'WayID',
       align: 'center',
       width: 120,
+      sorter: (a, b) => (a.WayID || '').localeCompare(b.WayID || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'จังหวัด',
-      dataIndex: 'province',
-      key: 'province',
+      dataIndex: 'Province',
+      key: 'Province',
       align: 'center',
       width: 140,
+      sorter: (a, b) => (a.Province || '').localeCompare(b.Province || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'หน่วยที่จัดตั้ง',
-      dataIndex: 'unit',
-      key: 'unit',
+      dataIndex: 'DeptName',
+      key: 'DeptName',
       align: 'center',
       width: 200,
+      sorter: (a, b) => (a.DeptName || '').localeCompare(b.DeptName || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'บูรณาการ',
-      dataIndex: 'integration',
-      key: 'integration',
+      dataIndex: 'Collaboration',
+      key: 'Collaboration',
       align: 'center',
       width: 160,
-      render: (value: string | null) =>
-        value ? (
-          <span>{value}</span>
-        ) : (
-          <span style={{ color: '#FFFFFF50' }}>ไม่ร่วมบูรณาการ</span>
-        ),
+      sorter: (a, b) => (a.Collaboration || '').localeCompare(b.Collaboration || ''),
+      render: (item) => {
+        if (item) return item
+        return <p className='fs-12 text-white/50'>ไม่ร่วมบูรณาการ</p>
+      }
     },
     {
       title: 'เวลาตั้งด่าน',
-      dataIndex: 'startTime',
-      key: 'startTime',
+      dataIndex: 'TimeFrom',
+      key: 'TimeFrom',
       align: 'center',
       width: 120,
+      sorter: (a, b) => (a.TimeFrom || '').localeCompare(b.TimeFrom || ''),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'เวลาสิ้นสุด',
-      dataIndex: 'endTime',
-      key: 'endTime',
+      dataIndex: 'TimeTo',
+      key: 'TimeTo',
       align: 'center',
       width: 140,
-      render: (value: string | null) =>
-        value ? (
-          <span>{value}</span>
-        ) : (
-          <span style={{ color: '#FFA940' }}>ยังไม่สิ้นสุด</span>
-        ),
+      sorter: (a, b) => (a.TimeTo || '').localeCompare(b.TimeTo || ''),
+      render: (item) => {
+        if (item) return item
+        return <p className='fs-12 text-orange-400'>ยังไม่สิ้นสุด</p>
+      }
     },
     {
       title: 'จำนวนรถเข้าชั่ง',
-      dataIndex: 'totalVehicles',
-      key: 'totalVehicles',
+      dataIndex: 'Total',
+      key: 'Total',
       align: 'center',
       width: 150,
+      sorter: (a, b) => (Number(a.Total || 0) - Number(b.Total || 0)),
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'จำนวนรถน้ำหนักปกติ',
-      dataIndex: 'normalWeight',
-      key: 'normalWeight',
+      dataIndex: 'TotalNormal',
+      key: 'TotalNormal',
       align: 'center',
       width: 170,
-      render: (value: number) => <span style={{ color: '#66AEFF' }}>{value}</span>,
+      sorter: (a, b) => (Number(a.Total || 0) - Number(a.TotalOver || 0)) - (Number(b.Total || 0) - Number(b.TotalOver || 0)),
+      render: (_, record) => {
+        const normalCount = Number(record.Total) - Number(record.TotalOver);
+        if (!!normalCount) return <p className='fs-12 text-(--default-blue)'>{fmtNumber(normalCount)}</p>
+        return <p className='fs-12 text-(--default-blue)'>-</p>
+      },
     },
     {
       title: 'จำนวนรถน้ำหนักเกิน',
-      dataIndex: 'overweight',
-      key: 'overweight',
+      dataIndex: 'TotalOver',
+      key: 'TotalOver',
       align: 'center',
       width: 170,
-      render: (value: number) => (
-        <span style={{ color: value > 0 ? '#FF7A45' : '#FFFFFF50' }}>{value}</span>
-      ),
+      sorter: (a, b) => (Number(a.TotalOver) || 0) - (Number(b.TotalOver) || 0),
+      render: (item) => {
+        if (item) return <p className='fs-12 text-red-500'>{fmtNumber(item)}</p>
+        return <p className='fs-12 text-red-500'>-</p>
+      }
     },
     {
       title: 'จำนวนรถน้ำหนักเกิน 10%',
-      dataIndex: 'overweight10',
-      key: 'overweight10',
+      dataIndex: 'TotalOver10Percent',
+      key: 'TotalOver10Percent',
       align: 'center',
       width: 190,
-      render: (value: number) => (
-        <span style={{ color: value > 0 ? '#FF7A45' : '#FFFFFF50' }}>{value}</span>
-      ),
+      render: (item) => {
+        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
+        return <p className='fs-12 text-(--yellow)'>-</p>
+      }
     },
     {
       title: 'สถานะ',
-      key: 'status',
+      dataIndex: 'IsOpen',
+      key: 'IsOpen',
       align: 'center',
       width: 120,
       fixed: 'right',
-      render: () => (
-        <Button
-          size="small"
-          type="primary"
-          ghost
-          // style={{ minWidth: 80, borderRadius: 20 }}
-          className='min-w-20! rounded-3xl!'
-        >
-          เปิดด่าน
-        </Button>
-      ),
+      render: (item) => {
+        return (
+          <div className='flex justify-center items-center'>
+            <div className={`bg-[#66AEFF1A] border border-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) px-3 py-1 rounded-3xl w-full lg:w-28`}>
+              <p className={`fs-12 text-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) mb-0`}>{MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].text}</p>
+            </div>
+          </div>
+        )
+      },
     },
   ]
 
   if (isError) return <Empty description="ไม่พบข้อมูล" />
 
   return (
-    <Table<SumMobile>
+    <Table<MobileMasterData>
       columns={columns}
       dataSource={data}
       pagination={{
@@ -236,7 +271,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       loading={isLoading}
       onRow={(record) => {
         return {
-          onClick: () => router.push(`/admin/tracking/detail/mobile/${record.department_id}`),
+          onClick: () => router.push(`/admin/tracking/detail/mobile/${record.TID}`),
           className: 'cursor-pointer',
         }
       }}

@@ -1,10 +1,10 @@
-import { SumMobile } from '@/types/tracking/overall-api';
+import { MobileMasterData } from '@/types/tracking/overall-api';
 import { Col, Row } from 'antd'
 import React from 'react'
 import { TbChartAreaLine, TbTrafficCone, TbTruck, TbUserShield } from "react-icons/tb";
 
 interface Props {
-  data?: SumMobile[]
+  data?: MobileMasterData[]
 }
 
 const MobileInfoCard: React.FC<Props> = (props) => {

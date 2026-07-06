@@ -307,3 +307,86 @@ export interface SumMobile {
   total: string
   over: string
 }
+
+// COLLABORATION
+export interface APIRequestTrackingCollaboration {
+  page?: number
+  page_size?: number
+  order?: 'ASC' | 'DESC'
+  start_date?: string
+  end_date?: string
+  department_id?: number
+  way_id?: number
+  collaboration?: string
+}
+
+export interface APIResponseTrackingCollaboration {
+  success: boolean
+  data: CollaborationData[]
+  meta: WIMMetaData
+}
+
+export interface CollaborationData {
+  uid: number
+  t_id: string
+  image_path1: string
+  image_path2: string
+  image_name1: string
+  image_name2: string
+  way_id: number
+  way_code: string
+  collaboration: string
+  department_id: number
+  department_name: string
+  department_province: string
+  department_name2: string
+  create_date: string
+}
+
+// MOBILE MASTER
+export interface APIRequestTrackingMobileMaster {
+  start_date?: string
+  end_date?: string
+  branch?: string
+  search?: string
+  is_join?: number
+  is_open?: number
+  page?: number
+  page_size?: number
+  ordering?: 'asc' | 'desc'
+}
+
+export interface APIResponseTrackingMobileMaster {
+  success: boolean
+  data: MobileMasterData[]
+  meta: WIMMetaData
+}
+
+export interface MobileMasterData {
+  TID: string
+  DeptID: number
+  DeptName: string
+  Collaboration: string
+  DeptProvince: string
+  WayID: string
+  WayName: string
+  Subdistrict: string
+  District: string
+  Province: string
+  CreateBy: string
+  Title: string
+  FirstName: string
+  LastName: string
+  image_name1?: string
+  image_path1?: string
+  image_name2?: string
+  image_path2?: string
+  CreateDate: string
+  TimeFrom: string
+  TimeTo: any
+  IsOpen: number
+  Total: string
+  TotalOver: string
+  KMFrom: string
+  KMTo: string
+}
