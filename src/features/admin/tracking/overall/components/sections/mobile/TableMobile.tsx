@@ -1,14 +1,16 @@
 "use client"
 import React from 'react'
-import { Table, Button, Empty } from 'antd'
+import { Table, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { MobileMasterData } from '@/types/tracking/overall-api'
 import { fmtNumber } from '@/utils/formatNumber'
 import { MOBILE_STATUS } from '@/constants'
+import { WIMMetaData } from '@/types/shared'
 
 interface Props {
   data?: MobileMasterData[]
+  meta?: WIMMetaData
   isLoading?: boolean
   isError?: boolean
 }
