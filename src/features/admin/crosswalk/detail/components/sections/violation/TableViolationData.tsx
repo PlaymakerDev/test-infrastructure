@@ -8,7 +8,11 @@ import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import { type ViolationFilter } from './filter'
 import BluePagination from './BluePagination'
-import { isVehicleViolation, useViolationRows } from './useViolationRows'
+import {
+  isVehicleViolation,
+  parseViolationTimestamp,
+  useViolationRows,
+} from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -58,11 +62,11 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       key: 'datetime',
       width: 200,
       render: (_, row) => {
-        const [datePart, timePart] = (row.crosswalk.timestamp ?? '').split(' ')
+        const { date, time } = parseViolationTimestamp(row.crosswalk.timestamp)
         return (
           <div>
-            <p className='mb-0'>{datePart || '-'}</p>
-            <p className='mb-0 text-white/60'>{timePart ? `${timePart} น.` : ''}</p>
+            <p className='mb-0'>{date || '-'}</p>
+            <p className='mb-0 text-white/60'>{time ? `${time} น.` : ''}</p>
           </div>
         )
       },

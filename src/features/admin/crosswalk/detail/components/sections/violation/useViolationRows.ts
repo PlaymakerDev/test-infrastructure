@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useCrosswalkViolationListInfinite } from '@/hooks/queries/crosswalk'
+import { THAI_MONTHS } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import type { ViolationFilter } from './filter'
@@ -11,6 +12,30 @@ const MAX_AUTO_PAGES = 100
 // but the Thai label always starts with "คน" (person) or "รถ" (vehicle).
 export const isVehicleViolation = (nameTh: string): boolean =>
   nameTh.trim().startsWith('รถ')
+
+// Backend timestamp is pre-formatted as "DD/MM/BBBB HH:mm" (Thai BE year).
+// Parse it manually — dayjs can't handle the BE year — and reformat the
+// date half as "D ก.ค. BBBB" so the whole app renders violation dates the
+// same way as chart/tooltip labels.
+export const parseViolationTimestamp = (
+  ts: string,
+): { date: string; time: string } => {
+  const [datePart = '', timePart = ''] = (ts ?? '').split(' ')
+  const [dd, mm, yyyy] = datePart.split('/')
+  const day = parseInt(dd, 10)
+  const monthIdx = parseInt(mm, 10) - 1
+  if (
+    Number.isNaN(day) ||
+    Number.isNaN(monthIdx) ||
+    monthIdx < 0 ||
+    monthIdx > 11 ||
+    !yyyy
+  ) {
+    return { date: datePart, time: timePart }
+  }
+  const ddPadded = day.toString().padStart(2, '0')
+  return { date: `${ddPadded} ${THAI_MONTHS[monthIdx]} ${yyyy}`, time: timePart }
+}
 
 interface UseViolationRowsResult {
   pageRows: CrosswalkViolationRow[]

@@ -6,7 +6,11 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
 import BluePagination from './BluePagination'
-import { isVehicleViolation, useViolationRows } from './useViolationRows'
+import {
+  isVehicleViolation,
+  parseViolationTimestamp,
+  useViolationRows,
+} from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -68,12 +72,18 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
               key={`${pageStart + i}-${r.camera.id}-${r.crosswalk.timestamp}`}
               className='p-5 bg-(--gray) rounded-lg h-full flex flex-col'
             >
-              <div className='mb-2'>
-                <h4 style={{ color }}>{r.crosswalk.name_th}</h4>
-                <p className='fs-12 text-gray-400 mb-0'>
-                  {r.crosswalk.timestamp} น.
-                </p>
-              </div>
+              {(() => {
+                const { date, time } = parseViolationTimestamp(r.crosswalk.timestamp)
+                return (
+                  <div className='mb-2'>
+                    <h4 style={{ color }}>{r.crosswalk.name_th}</h4>
+                    <p className='fs-12 text-gray-400 mb-0'>
+                      {date}
+                      {time ? ` ${time} น.` : ''}
+                    </p>
+                  </div>
+                )
+              })()}
               {/* Fixed 16:9 keeps the "no image" placeholder aligned across
                 * cards even when some siblings do have images. */}
               <figure className='aspect-video rounded-lg overflow-hidden mb-1.5 bg-black/40'>
