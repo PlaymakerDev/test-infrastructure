@@ -51,7 +51,7 @@ const PeakHourCards: React.FC<Props> = ({ date }) => {
           ? Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
-                className='rounded-lg p-4 h-[96px]'
+                className='rounded-[20px] p-4 h-[96px]'
                 style={{
                   background: '#66AEFF1A',
                   border: '1px solid #66AEFF',
@@ -64,7 +64,7 @@ const PeakHourCards: React.FC<Props> = ({ date }) => {
               return (
                 <div
                   key={hh}
-                  className='rounded-lg py-3 px-4 text-center'
+                  className='rounded-[20px] py-3 px-4 text-center'
                   style={{
                     background: '#66AEFF1A',
                     border: '1px solid #66AEFF',

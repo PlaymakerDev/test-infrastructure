@@ -287,7 +287,7 @@ const BarChart: React.FC<BarChartProps> = ({
             )
           )}
           <div>
-            <h2 className='font-semibold leading-tight' style={{ color: accentColor, fontSize: titleSize }}>
+            <h2 className='leading-tight' style={{ color: accentColor, fontSize: titleSize, fontWeight: 400 }}>
               {title}
             </h2>
             {subtitle && (

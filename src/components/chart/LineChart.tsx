@@ -73,6 +73,8 @@ export interface LineChartProps {
   onPeriodChange?: (period: string) => void
   /** ความสูง chart (default 260) */
   height?: number
+  /** ให้พื้นที่กราฟยืดเต็ม card แทนความสูงคงที่ (card ต้องมี h-full/height กำหนดจากภายนอก) */
+  fillHeight?: boolean
   /** Extra padding (px) below the auto-contained x-axis labels. Default 28 —
    *  lower it (e.g. 8) to pull the plot down when the card has spare space. */
   gridBottom?: number
@@ -145,6 +147,7 @@ const LineChart: React.FC<LineChartProps> = ({
   defaultPeriod,
   onPeriodChange,
   height = 260,
+  fillHeight = false,
   gridBottom = 28,
   gridTop = 16,
   yAxisTicks,
@@ -194,6 +197,11 @@ const LineChart: React.FC<LineChartProps> = ({
           // align the first label to the left and the last to the right.
           alignMinLabel: 'left',
           alignMaxLabel: 'right',
+          // Pin the endpoints and let ECharts thin out middle labels responsively
+          // (hideOverlap only works in auto-interval mode, so no explicit `interval`).
+          showMinLabel: true,
+          showMaxLabel: true,
+          hideOverlap: true,
           ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
           ...(typeof xAxisLabelMaxWidth === 'number'
             ? { width: xAxisLabelMaxWidth, overflow: 'truncate' }
@@ -212,7 +220,8 @@ const LineChart: React.FC<LineChartProps> = ({
         axisLabel: {
           color: '#ffffff',
           fontSize: 11,
-          formatter: (v: number) => v >= 1000 ? `${v / 1000}K` : String(v),
+          // Full integer with thousands separator — no `K` suffix.
+          formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
         },
         splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
       },
@@ -330,7 +339,7 @@ const LineChart: React.FC<LineChartProps> = ({
 
   return (
     <div
-      className='relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden'
+      className={`relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden${fillHeight ? ' flex flex-col' : ''}`}
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (
@@ -367,8 +376,8 @@ const LineChart: React.FC<LineChartProps> = ({
           )}
           <div>
             <h2
-              className='font-semibold leading-tight'
-              style={{ color: accentColor, fontSize: titleSize }}
+              className='leading-tight'
+              style={{ color: accentColor, fontSize: titleSize, fontWeight: 400 }}
             >
               {title}
             </h2>
@@ -423,10 +432,10 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className='relative'>
+      <div className={`relative${fillHeight ? ' flex-1 min-h-0' : ''}`}>
         <ReactECharts
           option={option}
-          style={{ height }}
+          style={{ height: fillHeight ? '100%' : height }}
           notMerge
           opts={{ renderer: 'svg' }}
         />

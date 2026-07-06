@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbBolt } from 'react-icons/tb'
+import { TbShare } from 'react-icons/tb'
 import BarChart, {
   type BarChartDataPoint,
   type BarConfig,
@@ -60,7 +60,7 @@ const StackedHourlyBarChart: React.FC<Props> = ({ date }) => {
   return (
     <BarChart
       title='แยกประเภทยานพาหนะรายชั่วโมง'
-      icon={<TbBolt size={22} />}
+      icon={<TbShare size={22} />}
       iconCircle={false}
       data={data}
       bars={bars}

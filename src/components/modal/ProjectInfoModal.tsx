@@ -67,7 +67,7 @@ const Content = (props: ContentProps) => {
         <p className='fs-12'>{data?.project_name || '-'}</p>
       </div>
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-3 gap-y-6 gap-x-4 mb-6 justify-items-center'>
         <div className='flex flex-col items-center text-center'>
           <TbFileDescription className='fs-22 text-white mb-2' />
           <p className='fs-11 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
@@ -87,7 +87,9 @@ const Content = (props: ContentProps) => {
           <p className='fs-11 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
           <p className='fs-12 text-white mb-0'>{data?.department_name || '-'}</p>
         </div>
+      </div>
 
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4'>
         <div className='flex flex-col items-center text-center'>
           <TbCalendarEvent className='fs-22 text-white mb-2' />
           <p className='fs-11 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
