@@ -1,10 +1,15 @@
 "use client"
 import React from 'react'
-import { Table, Button } from 'antd'
+import { Table, Button, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
+import { SumMobile } from '@/types/tracking/overall-api'
 
-interface Props { }
+interface Props {
+  data?: SumMobile[]
+  isLoading?: boolean
+  isError?: boolean
+}
 
 interface WIMProjectRecord {
   key: string
@@ -22,7 +27,7 @@ interface WIMProjectRecord {
 }
 
 const TableMobileData: React.FC<Props> = (props) => {
-  const { } = props;
+  const { data, isError, isLoading } = props;
   const router = useRouter()
 
   const mockData: WIMProjectRecord[] = [
@@ -98,7 +103,7 @@ const TableMobileData: React.FC<Props> = (props) => {
     },
   ]
 
-  const columns: ColumnsType<WIMProjectRecord> = [
+  const columns: ColumnsType<SumMobile> = [
     {
       title: 'ลำดับ',
       dataIndex: 'no',
@@ -216,17 +221,22 @@ const TableMobileData: React.FC<Props> = (props) => {
     },
   ]
 
+  if (isError) return <Empty description="ไม่พบข้อมูล" />
+
   return (
-    <Table<WIMProjectRecord>
+    <Table<SumMobile>
       columns={columns}
-      dataSource={mockData}
-      pagination={false}
+      dataSource={data}
+      pagination={{
+        locale: { items_per_page: "/ หน้า" },
+      }}
       size="middle"
-      rowKey="key"
+      rowKey="station_id"
       scroll={{ x: 'max-content' }}
-      onRow={() => {
+      loading={isLoading}
+      onRow={(record) => {
         return {
-          onClick: () => router.push(`/admin/tracking/detail/mobile/EXAMPLE_MOBILE_ID`),
+          onClick: () => router.push(`/admin/tracking/detail/mobile/${record.department_id}`),
           className: 'cursor-pointer',
         }
       }}
