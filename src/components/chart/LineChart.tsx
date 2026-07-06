@@ -49,8 +49,10 @@ export interface LineChartStat {
 }
 
 export interface LineChartProps {
+  /** class ของ card ด้านนอก (แทนที่ default ทั้งหมดถ้าส่งมา) — default: 'relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden' */
+  className?: string
   /** ชื่อหัวข้อ */
-  title: string
+  title?: string
   /** ขนาด font ของ title (px) */
   titleSize?: number
   /** คำอธิบายใต้ title */
@@ -133,6 +135,7 @@ interface TooltipParam {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const LineChart: React.FC<LineChartProps> = ({
+  className = 'relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden',
   title,
   titleSize = 16,
   subtitle,
@@ -249,7 +252,7 @@ const LineChart: React.FC<LineChartProps> = ({
                  <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''}${tooltipDateSuffix}</div>
                </div>`
             : // When labels are truncated, surface the full category in the tooltip.
-              typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
+            typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
               ? `<div style="color:#fff;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
               : ''
           const rows = params
@@ -330,7 +333,7 @@ const LineChart: React.FC<LineChartProps> = ({
 
   return (
     <div
-      className='relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden'
+      className={className}
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (
@@ -366,12 +369,14 @@ const LineChart: React.FC<LineChartProps> = ({
             )
           )}
           <div>
-            <h2
-              className='font-semibold leading-tight'
-              style={{ color: accentColor, fontSize: titleSize }}
-            >
-              {title}
-            </h2>
+            {title && (
+              <h2
+                className='font-semibold leading-tight'
+                style={{ color: accentColor, fontSize: titleSize }}
+              >
+                {title}
+              </h2>
+            )}
             {subtitle && (
               <p style={{ color: '#8a9ab5', fontSize: subtitleSize }}>{subtitle}</p>
             )}
