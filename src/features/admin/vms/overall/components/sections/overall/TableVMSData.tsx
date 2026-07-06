@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import DetailLinkText from '@/components/table/DetailLinkText'
 
 interface Props {
   data?: APIResponseVMSList
@@ -101,7 +102,15 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
               </div>
             )
           }
-          return <span className='font-medium'>{row.data.road.code_name}</span>
+          return (
+            <DetailLinkText
+              onClick={() => {
+                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
+              }}
+            >
+              <span className='font-medium'>{row.data.road.code_name}</span>
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -114,7 +123,15 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         },
         render: (_: unknown, row: Row) => {
           if (row.type === 'header') return null
-          return <span className='text-sm'>{row.data.project.project_name || '-'}</span>
+          return (
+            <DetailLinkText
+              onClick={() => {
+                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
+              }}
+            >
+              <span className='text-sm'>{row.data.project.project_name || '-'}</span>
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -127,14 +144,32 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         },
         render: (_: unknown, row: Row) => {
           if (row.type === 'header') return null
+
+          let text
+
+          if (row.data.project.contract_no) {
+            text = row.data.project.contract_no
+          } else if (!row.data.project.contract_no) {
+            text = row.data.project.budget_year
+          } else {
+            text = null
+          }
+
           return (
             <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-              {row.data.project.contract_no || '-'}
+              {/* {row.data.project.contract_no || '-'}
               {row.data.project.budget_year ? (
                 <span className='text-[10px] bg-yellow-400/15 text-yellow-300 px-1.5 py-0.5 rounded'>
                   {row.data.project.budget_year}
                 </span>
-              ) : null}
+              ) : null} */}
+              <DetailLinkText
+                onClick={() => {
+                  if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
+                }}
+              >
+                {text || '-'}
+              </DetailLinkText>
               <TbInfoSquareRoundedFilled
                 size={18}
                 className='text-white/50 cursor-pointer hover:text-(--yellow)'
@@ -189,7 +224,15 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         },
         render: (_: unknown, row: Row) => {
           if (row.type === 'header') return null
-          return <span>{row.data.solution.solution_name}</span>
+          return (
+            <DetailLinkText
+              onClick={() => {
+                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
+              }}
+            >
+              <span>{row.data.solution.solution_name}</span>
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -239,7 +282,7 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         },
       },
     ],
-    [dispatch],
+    [dispatch, router],
   )
 
   return (
@@ -251,12 +294,12 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
       pagination={false}
       size='middle'
       scroll={{ x: 1200 }}
-      onRow={(row) => ({
-        onClick: () => {
-          if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-        },
-        className: row.type === 'data' ? 'cursor-pointer' : '',
-      })}
+    // onRow={(row) => ({
+    //   onClick: () => {
+    //     if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
+    //   },
+    //   className: row.type === 'data' ? 'cursor-pointer' : '',
+    // })}
     />
   )
 }
