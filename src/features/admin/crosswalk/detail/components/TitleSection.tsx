@@ -35,10 +35,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
 
-  // Warranty + connection flags come from the central-list response — cached
-  // when the user navigated in from the overall page, so this is free.
-  // Crosswalk connection status uses `crosswalk.is_online` (the ทางข้าม
-  // device health), NOT the camera's online state.
+  // `crosswalk.is_online` = ทางข้ามอุปกรณ์ health (NOT the camera's online state).
   const { data: centralData } = useCrosswalkCentralList(deptId)
   const match = (centralData ?? [])
     .flatMap((bureau) => bureau.sub_department ?? [])
