@@ -2,7 +2,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { TbArrowLeft, TbArrowRight } from 'react-icons/tb'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
-import FilterBarReport, { type DateRange } from './FilterBarReport'
+import FilterBarReport, {
+  type DateRange,
+  type HourView,
+} from './FilterBarReport'
+import HourlyMatrixTable from './HourlyMatrixTable'
 import ReportStatsRow, { type ReportStatsUnit } from './ReportStatsRow'
 import VehicleTypeStatsRow from './VehicleTypeStatsRow'
 import DailyReportTable from './DailyReportTable'
@@ -32,7 +36,6 @@ import {
   type DailyReportRow,
   type DailyReportSummary,
   type HourlyReportCameraGroup,
-  type HourlyReportRow,
   type MonthlyReportRow,
   type YearlyReportRow,
   type VehicleTypeReportRow,
@@ -73,8 +76,8 @@ const fmtDate = (d: Dayjs | null): string | undefined =>
   d ? d.format('YYYY-MM-DD') : undefined
 
 /** Convert one API row → DailyReportRow shape consumed by DailyReportTable.
- *  Field mapping mirrors the wire contract; `percent_truck` is rescaled from
- *  the 0–1 wire range into 0–100 used by the UI. */
+ *  Field mapping mirrors the wire contract; `percent_truck` already arrives
+ *  in 0–100 range so we pass it through as-is. */
 const toDailyRow = (r: CountingReportSummaryRow): DailyReportRow => ({
   date: r.date,
   motorcycle: r.bike_count,
@@ -87,7 +90,7 @@ const toDailyRow = (r: CountingReportSummaryRow): DailyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Convert one API row → MonthlyReportRow consumed by MonthlyReportTable.
@@ -109,7 +112,7 @@ const toMonthlyRow = (r: CountingReportSummaryRow): MonthlyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Convert one API row → YearlyReportRow consumed by YearlyReportTable.
@@ -129,7 +132,7 @@ const toYearlyRow = (r: CountingReportSummaryRow): YearlyReportRow => ({
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
   maxPCUPerHour: r.peak_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Backend's `vehicle_type` value → our internal key. The API sometimes
@@ -303,6 +306,21 @@ const ReportVolume: React.FC<Props> = () => {
   const [reportType, setReportType] = useState<string>('daily')
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
   const [cameraId, setCameraId] = useState<string>('all')
+  // Hour-view toggle (only exposed in the UI when reportType === 'hour').
+  // BY_TYPE = per-vehicle-type columns; MATRIX = camera × hour grid with
+  // color banding.
+  const [hourView, setHourView] = useState<HourView>('BY_TYPE')
+
+  // Switching TO hour report snaps the date range to today (single-day) —
+  // hour rollups only make sense for one day at a time. Other report types
+  // keep whatever range the user last set.
+  const handleReportTypeChange = (next: string) => {
+    if (next === 'hour') {
+      const today = dayjs()
+      setRange([today, today])
+    }
+    setReportType(next)
+  }
 
   // Year mode pins the range to the current calendar year regardless of
   // what the user previously selected — the picker is also disabled in
@@ -363,15 +381,11 @@ const ReportVolume: React.FC<Props> = () => {
   // `react-hooks/set-state-in-effect` flags setState-in-useEffect as a
   // cascading render.
   // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  const [hourPage, setHourPage] = useState(1)
-  const [dailyPage, setDailyPage] = useState(1)
   const [monthlyPage, setMonthlyPage] = useState(1)
   const [yearlyPage, setYearlyPage] = useState(1)
   const resetKey = `${reportType}|${startDate ?? ''}|${endDate ?? ''}|${cameraId}`
   const [prevResetKey, setPrevResetKey] = useState(resetKey)
   if (prevResetKey !== resetKey) {
-    setHourPage(1)
-    setDailyPage(1)
     setMonthlyPage(1)
     setYearlyPage(1)
     setPrevResetKey(resetKey)
@@ -459,22 +473,13 @@ const ReportVolume: React.FC<Props> = () => {
     [allRawRows]
   )
 
-  // Daily — every fetched row mapped to the UI shape, then client-paginated
-  // at 10 per page.
-  const DAILY_PAGE_SIZE = 10
+  // Daily — every fetched row mapped to the UI shape. Rendered in one
+  // scroll (no pagination) so the trailing "รวมเฉลี่ย" total in
+  // DailyReportTable sums the whole filtered range, not just a page.
   const dailyRowsAll = useMemo<DailyReportRow[]>(
     () => allApiRows.map(toDailyRow),
     [allApiRows]
   )
-  const dailyRows = useMemo<DailyReportRow[]>(() => {
-    const start = (dailyPage - 1) * DAILY_PAGE_SIZE
-    return dailyRowsAll.slice(start, start + DAILY_PAGE_SIZE)
-  }, [dailyRowsAll, dailyPage])
-  const dailyTotalPages = Math.max(
-    1,
-    Math.ceil(dailyRowsAll.length / DAILY_PAGE_SIZE)
-  )
-  const showDailyPagination = reportType === 'daily' && dailyTotalPages > 1
 
   // Monthly — same shape as daily; client-paginated at 10 per page.
   const MONTHLY_PAGE_SIZE = 10
@@ -523,52 +528,6 @@ const ReportVolume: React.FC<Props> = () => {
     if (!selectedName) return allHourlyGroups
     return allHourlyGroups.filter((g) => g.cameraName === selectedName)
   }, [allHourlyGroups, cameraId, allCameras])
-  // 10 hour rows per pagination page. Camera headers re-appear above
-  // their rows on every page they show up on, so the user always knows
-  // which camera the visible hours belong to.
-  const HOUR_PAGE_SIZE = 10
-
-  // Flatten the camera-ordered hour rows into a single sequence we can
-  // paginate by row count. Each entry remembers which camera it came from
-  // so we can rebuild headers per page.
-  const hourFlat = useMemo(() => {
-    const out: { cameraName: string; row: HourlyReportRow }[] = []
-    for (const g of filteredHourlyGroups) {
-      for (const r of g.rows) out.push({ cameraName: g.cameraName, row: r })
-    }
-    return out
-  }, [filteredHourlyGroups])
-
-  // Total hours per camera — used to preserve the "เก็บข้อมูล N ชั่วโมง"
-  // count on the header even when the page only shows a slice of them.
-  const cameraHoursTotal = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const g of filteredHourlyGroups) m.set(g.cameraName, g.hoursCollected)
-    return m
-  }, [filteredHourlyGroups])
-
-  // Slice 10 hour rows for the current page, then rebuild groups so a
-  // camera header appears above its rows (and is re-emitted if the page
-  // crosses a camera boundary).
-  const hourlyGroups = useMemo<HourlyReportCameraGroup[]>(() => {
-    const start = (hourPage - 1) * HOUR_PAGE_SIZE
-    const slice = hourFlat.slice(start, start + HOUR_PAGE_SIZE)
-    const out: HourlyReportCameraGroup[] = []
-    let current: HourlyReportCameraGroup | null = null
-    for (const item of slice) {
-      if (!current || current.cameraName !== item.cameraName) {
-        current = {
-          cameraName: item.cameraName,
-          hoursCollected: cameraHoursTotal.get(item.cameraName) ?? 0,
-          rows: [],
-        }
-        out.push(current)
-      }
-      current.rows.push(item.row)
-    }
-    return out
-  }, [hourFlat, hourPage, cameraHoursTotal])
-
   // Camera-narrowed wire rows — used by both hour and vehicle_type modes
   // (both filter client-side because their rows carry `camera_name`).
   // "all" mode keeps the aggregate across every fetched camera.
@@ -610,29 +569,18 @@ const ReportVolume: React.FC<Props> = () => {
     [reportType, filteredHourRows, allApiRows]
   )
 
-  // Pagination state for hour mode — total = chunks of HOUR_PAGE_SIZE
-  // hour rows across the active selection. Hidden when there's only one
-  // page worth of data (≤10 rows).
-  const hourTotalPages = Math.max(
-    1,
-    Math.ceil(hourFlat.length / HOUR_PAGE_SIZE)
-  )
-  const showHourPagination = reportType === 'hour' && hourTotalPages > 1
-
   const renderTable = () => {
     switch (reportType) {
       case 'hour':
-        return (
-          <div className='flex flex-col gap-3'>
-            <HourlyReportTable groups={hourlyGroups} />
-            {showHourPagination && (
-              <BluePagination
-                current={hourPage}
-                total={hourTotalPages}
-                onChange={setHourPage}
-              />
-            )}
-          </div>
+        // Hourly view has NO pagination — every camera's full hour list is
+        // rendered so the per-group "รวมเฉลี่ย" total sums the whole day
+        // for each camera (not just the sliced page). The `hourView` toggle
+        // decides between the per-vehicle-type layout and the color-banded
+        // camera × hour matrix.
+        return hourView === 'MATRIX' ? (
+          <HourlyMatrixTable rows={filteredHourRows} />
+        ) : (
+          <HourlyReportTable groups={filteredHourlyGroups} />
         )
       case 'month':
         return (
@@ -664,18 +612,10 @@ const ReportVolume: React.FC<Props> = () => {
         return <VehicleTypeReportTable rows={vehicleTypeRows} />
       case 'daily':
       default:
-        return (
-          <div className='flex flex-col gap-3'>
-            <DailyReportTable rows={dailyRows} />
-            {showDailyPagination && (
-              <BluePagination
-                current={dailyPage}
-                total={dailyTotalPages}
-                onChange={setDailyPage}
-              />
-            )}
-          </div>
-        )
+        // Daily view intentionally has NO pagination — the user wants every
+        // filtered day visible in one scroll so the trailing "รวมเฉลี่ย"
+        // total covers the entire selected range (not just a page).
+        return <DailyReportTable rows={dailyRowsAll} />
     }
   }
 
@@ -707,10 +647,12 @@ const ReportVolume: React.FC<Props> = () => {
         onRangeChange={setRange}
         dateDisabled={reportType === 'year'}
         defaultReportType={reportType}
-        onReportTypeChange={setReportType}
+        onReportTypeChange={handleReportTypeChange}
         cameraOptions={cameraOptions}
         defaultCamera={cameraId}
         onCameraChange={setCameraId}
+        hourView={hourView}
+        onHourViewChange={setHourView}
       />
       {renderStats()}
       {renderTable()}

@@ -48,6 +48,21 @@ export interface VMSSettingType {
   name: string
 }
 
+// POST SETTING TYPE
+export interface APIRequestPostVMSSettingType {
+  name: string
+}
+
+export type APIResponsePostVMSSettingType = APIResponsePost
+
+// PUT SETTING TYPE
+export type APIRequestPutVMSSettingType = APIRequestPostVMSSettingType
+
+export type APIResponsePutVMSSettingType = APIResponsePost
+
+// DELETE SETTING TYPE
+export type APIResponseDeleteVMSSettingType = APIResponsePost
+
 // GET MEDIA
 export interface APIRequestVMSMedia {
   setting_type_id?: number | string

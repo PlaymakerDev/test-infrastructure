@@ -18,4 +18,11 @@ export const controlVmsKeys = {
   settingList: () => [...controlVmsKeys.all, 'setting-list'] as const,
   settingListSearch: (search?: string) =>
     [...controlVmsKeys.settingList(), search ?? ''] as const,
+  byStatus: () => [...controlVmsKeys.all, 'by-status'] as const,
+  byStatusList: (statusId?: number) =>
+    [...controlVmsKeys.byStatus(), statusId ?? 'all'] as const,
+  statusCounts: () => [...controlVmsKeys.all, 'status-counts'] as const,
+  byVmsIdsPrefix: () => [...controlVmsKeys.all, 'by-vms-ids'] as const,
+  byVmsIds: (vmsIds: number[]) =>
+    [...controlVmsKeys.byVmsIdsPrefix(), [...vmsIds].sort((a, b) => a - b)] as const,
 }

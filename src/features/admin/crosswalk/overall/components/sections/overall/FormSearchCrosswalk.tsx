@@ -1,66 +1,71 @@
+"use client"
 import { Input } from 'antd'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
 
 interface Props {
-
+  /** Called with the latest search string (debounced 700ms). */
+  onSearchChange?: (value: string) => void
+  placeholder?: string
 }
 
-interface FormSearchCrosswalkValues {
+interface FormValues {
   search: string
 }
 
-let timeout: NodeJS.Timeout
+const DEBOUNCE_MS = 700
 
-const FormSearchCrosswalk: React.FC<Props> = (props) => {
-  const { } = props
-  const submitRef = useRef<HTMLButtonElement>(null)
+const FormSearchCrosswalk: React.FC<Props> = ({
+  onSearchChange,
+  placeholder = 'ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...',
+}) => {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const form = useForm<FormSearchCrosswalkValues>({
-    defaultValues: {
-      search: ''
-    }
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  const { control, handleSubmit } = useForm<FormValues>({
+    defaultValues: { search: '' },
   })
 
-  const {
-    control,
-    handleSubmit,
-  } = form
-
-  const onSubmit = useCallback((value: FormSearchCrosswalkValues) => {
-    console.log('submit', value)
-  }, [])
+  const onSubmit = useCallback(
+    (values: FormValues) => {
+      onSearchChange?.(values.search)
+    },
+    [onSearchChange],
+  )
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Controller
         control={control}
-        name="search"
-        render={({ field }) => {
-          return (
-            <fieldset>
-              <Input
-                {...field}
-                name={field.name}
-                placeholder="ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ..."
-                className='rounded-lg'
-                suffix={<TbSearch />}
-                size='large'
-                onChange={(e) => {
-                  field.onChange(e)
-
-                  if (timeout) clearTimeout(timeout)
-                  timeout = setTimeout(() => {
-                    submitRef.current?.click()
-                  }, 700)
-                }}
-              />
-            </fieldset>
-          )
-        }}
+        name='search'
+        render={({ field }) => (
+          <fieldset>
+            <Input
+              {...field}
+              name={field.name}
+              placeholder={placeholder}
+              className='rounded-lg'
+              suffix={<TbSearch />}
+              size='large'
+              onChange={(e) => {
+                field.onChange(e)
+                const value = e.target.value
+                if (timerRef.current) clearTimeout(timerRef.current)
+                timerRef.current = setTimeout(() => {
+                  onSearchChange?.(value)
+                }, DEBOUNCE_MS)
+              }}
+            />
+          </fieldset>
+        )}
       />
-      <button ref={submitRef} type='submit' hidden />
     </form>
   )
 }

@@ -1,22 +1,24 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
+import { useDeptId } from '@/hooks/useDeptId'
+import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
+import { useDetailContext } from '../../../context'
+import type { CrosswalkCameraItem } from '@/types/crosswalk/detail-api'
 
-interface Props { }
+interface Props {}
 
 type ConnectionStatus = 'Connect' | 'Disconnect'
 type FunctionTag = 'CCTV' | 'Incident' | 'Volume' | 'Traffic'
 
-interface CameraRecord {
-  key: string
-  no: number
-  name: string
+interface CameraRow extends CrosswalkCameraItem {
+  seq: number
   km: string
   functions: FunctionTag[]
-  ipAddress: string
-  streamStatus: ConnectionStatus
-  deviceStatus: ConnectionStatus
+  ip: string
+  status: ConnectionStatus
 }
 
 const FUNCTION_TAG_CLASS: Record<FunctionTag, string> = {
@@ -31,29 +33,45 @@ const STATUS_CLASS: Record<ConnectionStatus, string> = {
   Disconnect: 'border-red-500 text-red-500',
 }
 
-const mockData: CameraRecord[] = [
-  { key: '1', no: 1, name: '68MST-CCO3001-FAI001-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าลาดกระบัง', km: '7+900', functions: ['CCTV', 'Incident'], ipAddress: '10.101.27.1', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '2', no: 2, name: '68MST-CCO3001-FAI002-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าแยก', km: '7+900', functions: ['CCTV'], ipAddress: '10.101.27.2', streamStatus: 'Disconnect', deviceStatus: 'Disconnect' },
-  { key: '3', no: 3, name: '68MST-CCO3001-FAI003-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าบางบา-ตราด', km: '7+900', functions: ['CCTV', 'Volume', 'Traffic'], ipAddress: '10.101.27.3', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '4', no: 4, name: '68MST-CCO3001-FAI004-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าแยก', km: '7+900', functions: ['CCTV'], ipAddress: '10.101.27.4', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '5', no: 5, name: '68MST-CCO3001-FAI005-จรารงสี่แยกเกาะไร่-กม.7+900 มุ่งหน้าเข้าแยก', km: '7+900', functions: ['CCTV', 'Volume', 'Traffic'], ipAddress: '10.101.27.5', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '6', no: 6, name: '68MST-CCO3001-FAI006-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าฉะเชิงเทรา', km: '7+900', functions: ['CCTV', 'Incident'], ipAddress: '10.101.27.6', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '7', no: 7, name: '68MST-CCO3001-FAI007-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้านิมบุรี', km: '7+900', functions: ['CCTV', 'Volume', 'Traffic'], ipAddress: '10.101.27.7', streamStatus: 'Connect', deviceStatus: 'Connect' },
-  { key: '8', no: 8, name: '68MST-CCO3001-FAI008-จรารงสี่แยกเกาะไร่-กม.7+900-มุ่งหน้าเข้าแยก', km: '7+900', functions: ['CCTV', 'Incident'], ipAddress: '10.101.27.8', streamStatus: 'Connect', deviceStatus: 'Connect' },
-]
+/** Pull "กม.<n>+<m>" out of the camera name, which follows the
+ *  "…-กม.0+700-…" convention. Returns "-" when no match. */
+const extractKm = (name: string): string => {
+  const m = name.match(/กม\.\s*(\d+\+\d+)/)
+  return m ? m[1] : '-'
+}
 
 const TableCameraData: React.FC<Props> = () => {
-  const columns: ColumnsType<CameraRecord> = [
+  const deptId = useDeptId()
+  const { id } = useDetailContext()
+
+  const { data, isLoading } = useCrosswalkCameras(deptId, {
+    solution_id: id,
+  })
+
+  const rows = useMemo<CameraRow[]>(() => {
+    const cameras = data?.cameras ?? []
+    return cameras.map((c, i) => ({
+      ...c,
+      seq: i + 1,
+      km: extractKm(c.camera_name),
+      functions: ['CCTV'],
+      ip: c.ip_address ?? extractIpFromHlsUrl(c.hls_url),
+      // Endpoint doesn't expose is_online — treat presence of hls_url as online.
+      status: c.hls_url ? 'Connect' : 'Disconnect',
+    }))
+  }, [data])
+
+  const columns: ColumnsType<CameraRow> = useMemo(() => [
     {
       title: 'ลำดับที่',
-      dataIndex: 'no',
-      key: 'no',
+      dataIndex: 'seq',
+      key: 'seq',
       align: 'center',
       width: 80,
     },
     {
       title: 'ชื่อกล้อง',
-      dataIndex: 'name',
+      dataIndex: 'camera_name',
       key: 'name',
       width: 480,
     },
@@ -73,7 +91,10 @@ const TableCameraData: React.FC<Props> = () => {
       render: (tags: FunctionTag[]) => (
         <div className='flex flex-wrap justify-center gap-1'>
           {tags.map((tag) => (
-            <span key={tag} className={`inline-block py-0.5 px-2.5 rounded-full text-xs border ${FUNCTION_TAG_CLASS[tag]}`}>
+            <span
+              key={tag}
+              className={`inline-block py-0.5 px-2.5 rounded-full text-xs border ${FUNCTION_TAG_CLASS[tag]}`}
+            >
               {tag}
             </span>
           ))}
@@ -82,14 +103,14 @@ const TableCameraData: React.FC<Props> = () => {
     },
     {
       title: 'IP Address',
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
+      dataIndex: 'ip',
+      key: 'ip',
       align: 'center',
       width: 140,
     },
     {
       title: 'Stream Status',
-      dataIndex: 'streamStatus',
+      dataIndex: 'status',
       key: 'streamStatus',
       align: 'center',
       width: 140,
@@ -101,26 +122,34 @@ const TableCameraData: React.FC<Props> = () => {
     },
     {
       title: 'Device Status',
-      dataIndex: 'deviceStatus',
+      dataIndex: 'status',
       key: 'deviceStatus',
       align: 'center',
       width: 140,
       fixed: 'right',
-      render: (status: ConnectionStatus) => (
-        <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${STATUS_CLASS[status]}`}>
-          {status}
-        </span>
-      ),
+      render: (status: ConnectionStatus) => {
+        const isOnline = status === 'Connect'
+        return (
+          <span
+            className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${
+              isOnline ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'
+            }`}
+          >
+            {isOnline ? 'Online' : 'Offline'}
+          </span>
+        )
+      },
     },
-  ]
+  ], [])
 
   return (
-    <Table<CameraRecord>
+    <Table<CameraRow>
       columns={columns}
-      dataSource={mockData}
+      dataSource={rows}
       pagination={false}
-      size="middle"
-      rowKey="key"
+      size='middle'
+      rowKey='id'
+      loading={isLoading}
       scroll={{ x: 'max-content' }}
     />
   )

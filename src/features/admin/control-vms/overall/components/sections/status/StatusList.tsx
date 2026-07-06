@@ -60,7 +60,7 @@ const StatusList: React.FC<Props> = (props) => {
   }, [item.is_all_day, activeDays, getDayTooltip])
 
   return (
-    <div className='rounded-lgh-full bg-(--light-gray-2) rounded-lg p-5'>
+    <div className='bg-(--light-gray-2) rounded-lg p-5'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <span className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border border-(--default-blue) text-(--default-blue)'>
           {item.road_code || '-'}

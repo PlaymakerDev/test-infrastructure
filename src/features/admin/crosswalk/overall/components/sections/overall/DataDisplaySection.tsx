@@ -1,18 +1,20 @@
-import React, { useMemo, useState } from 'react'
-import {
-  TableCrosswalkData,
-  CrosswalkList
-} from '../../../components'
+"use client"
+import React, { useMemo, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import SearchBar, {
   type FilterConfig,
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
 import FormSearchCrosswalk from './FormSearchCrosswalk'
+import TableCrosswalkData from './TableCrosswalkData'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import { useCrosswalkCentralList } from '@/hooks/queries/crosswalk'
+import { useDeptId } from '@/hooks/useDeptId'
+import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
+import type { CrosswalkCentralSolution } from '@/types/crosswalk/overview-api'
 
-interface Props {
-
-}
+interface Props { }
 
 const CROSSWALK_FILTERS: FilterConfig[] = [
   {
@@ -58,45 +60,138 @@ const CROSSWALK_FILTERS: FilterConfig[] = [
   },
 ]
 
-const CROSSWALK_STATS: FilterStats = {
-  all: 20,
-  online: 8,
-  offline: 12,
-  inWarranty: 5,
-  expired: 15,
-}
+/** Adapter: central-list solution row → UI `CrosswalkProject`. Bureau is
+ *  filled by the caller because it lives one level up in the nested response.
+ *  Crosswalk connection status comes from `crosswalk.is_online` (the ทางข้าม
+ *  device health), NOT from the camera's online state. */
+const apiSolutionToProject = (
+  item: CrosswalkCentralSolution,
+  bureau: string,
+): CrosswalkProject => ({
+  id: String(item.solution.id),
+  projectId: String(item.project.id),
+  roadId: String(item.road.id),
+  roadCode: item.road.code_name,
+  projectName: item.project.project_name,
+  installPoint: item.solution.solution_name,
+  contractNo: item.project.contract_no,
+  budgetYear: item.project.budget_year,
+  warranty: item.is_warranty ? 'in-warranty' : 'expired',
+  connection: item.crosswalk.is_online ? 'online' : 'offline',
+  bureau,
+  totalCameras: item.camera.total,
+  onlineCount: item.camera.online_count,
+  offlineCount: item.camera.offline_count,
+  totalCrosswalks: item.crosswalk.total,
+})
 
-const OverallDataDisplaySection: React.FC<Props> = (props) => {
-  const { } = props
-  const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
+const OverallDataDisplaySection: React.FC<Props> = () => {
+  const deptId = useDeptId()
+  const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  const renderContent = useMemo(() => {
-    switch (displayType) {
-      case 'TABLE':
-        return <TableCrosswalkData />
-      case 'GRID':
-        return <CrosswalkList />
-      default:
-        return null
+  // Backend defaults are page=1, limit=100; pin them here so the URL is stable
+  // for the cache key (mirrors traffic-volume).
+  const { data, isLoading } = useCrosswalkCentralList(deptId, {
+    page: 1,
+    limit: 100,
+  })
+
+  const goToDetail = useCallback(
+    (p: CrosswalkProject) => {
+      const params = new URLSearchParams({ dept_id: deptId })
+      if (p.projectId) params.set('project_id', p.projectId)
+      if (p.roadId) params.set('road_id', p.roadId)
+      router.push(`/admin/crosswalk/detail/${p.id}?${params}`)
+    },
+    [router, deptId],
+  )
+
+  // Flatten bureau → sub-dept → solutions, tagging each row with its
+  // sub-dept short name so the table groups by bureau out of the box.
+  const projects: CrosswalkProject[] = useMemo(() => {
+    const out: CrosswalkProject[] = []
+    for (const bureau of data ?? []) {
+      for (const subDept of bureau.sub_department ?? []) {
+        for (const sol of subDept.solutions ?? []) {
+          out.push(apiSolutionToProject(sol, subDept.department_short_name))
+        }
+      }
     }
-  }, [displayType])
+    return out
+  }, [data])
+
+  const stats: FilterStats = useMemo(
+    () => ({
+      all: projects.length,
+      online: projects.filter((p) => p.connection === 'online').length,
+      offline: projects.filter((p) => p.connection === 'offline').length,
+      inWarranty: projects.filter((p) => p.warranty === 'in-warranty').length,
+      expired: projects.filter((p) => p.warranty === 'expired').length,
+    }),
+    [projects],
+  )
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return projects.filter((p) => {
+      switch (activeFilter) {
+        case 'online': if (p.connection !== 'online') return false; break
+        case 'offline': if (p.connection !== 'offline') return false; break
+        case 'in-warranty': if (p.warranty !== 'in-warranty') return false; break
+        case 'expired': if (p.warranty !== 'expired') return false; break
+        case 'all': break
+      }
+      if (term) {
+        const haystack = `${p.roadCode} ${p.projectName ?? ''} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
+        if (!haystack.includes(term)) return false
+      }
+      return true
+    })
+  }, [activeFilter, search, projects])
+
+  const cardItems = useMemo<ProjectCardItem[]>(
+    () =>
+      filtered.map((p) => ({
+        key: p.id,
+        roadId: Number(p.roadId),
+        projectId: p.projectId,
+        roadCode: p.roadCode,
+        projectName: p.projectName ?? '-',
+        installPoint: p.installPoint,
+        contractNo: p.contractNo,
+        budgetYear: p.budgetYear,
+        isWarranty: p.warranty === 'in-warranty',
+        bureau: p.bureau,
+        total: p.totalCameras,
+        online: p.onlineCount,
+        offline: p.offlineCount,
+        onDetail: () => goToDetail(p),
+      })),
+    [filtered, goToDetail],
+  )
 
   return (
     <div>
       <section>
         <SearchBar
           filters={CROSSWALK_FILTERS}
-          stats={CROSSWALK_STATS}
+          stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
-          defaultViewMode={displayType}
-          onViewModeChange={setDisplayType}
-          formSearch={<FormSearchCrosswalk />}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
+          formSearch={<FormSearchCrosswalk onSearchChange={setSearch} />}
         />
       </section>
       <section className='mt-5'>
-        {renderContent}
+        {viewMode === 'TABLE' ? (
+          <TableCrosswalkData projects={filtered} loading={isLoading} />
+        ) : (
+          <ProjectCardGrid items={cardItems} totalLabel='กล้องทั้งหมด' />
+        )}
       </section>
     </div>
   )

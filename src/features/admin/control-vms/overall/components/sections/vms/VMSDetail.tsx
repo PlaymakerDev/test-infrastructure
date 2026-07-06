@@ -18,7 +18,7 @@ const VMSDetail: React.FC = () => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูลโครงการ" />
     return (
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4'>
         <div className='flex flex-col items-center text-center'>
           <TbFileDescription className='fs-22 text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>

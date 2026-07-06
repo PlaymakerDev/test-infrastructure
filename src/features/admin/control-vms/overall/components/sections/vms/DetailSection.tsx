@@ -3,7 +3,7 @@ import {
   DetailTitle,
   DetailVMSSign,
   DetailItemStorage,
-  FormAddDetail
+  FormAddDetail,
 } from '../../../components'
 import { useControlVMSContext } from '../../../context'
 

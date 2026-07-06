@@ -42,8 +42,8 @@ export const computeReportSummary = (
     totalPCU += r.total_pcu
     if (r.total_count > maxVehicles) maxVehicles = r.total_count
     if (r.total_pcu > maxPCU) maxPCU = r.total_pcu
-    // `percent_truck` arrives in 0–1; rescale to 0–100 once at the end
-    // after taking the mean so we accumulate at wire-scale.
+    // `percent_truck` arrives already in 0–100 (2.24 = 2.24%); accumulate
+    // and take the mean directly — no rescale needed.
     truckShareSum += r.percent_truck
   }
   const n = rows.length
@@ -55,7 +55,7 @@ export const computeReportSummary = (
     avgPCUPerDay: totalPCU / n,
     maxVehiclesPerDay: maxVehicles,
     maxPCUPerDay: maxPCU,
-    truckPercent: (truckShareSum / n) * 100,
+    truckPercent: truckShareSum / n,
   }
 }
 
@@ -91,7 +91,7 @@ const toHourlyRow = (r: CountingReportSummaryRow): HourlyReportRow => ({
   trailer: r.trailer_count,
   totalVehicles: r.total_count,
   totalPCU: r.total_pcu,
-  truckPercent: r.percent_truck * 100,
+  truckPercent: r.percent_truck,
 })
 
 /** Group hour-mode rows by their source camera so the table can render one

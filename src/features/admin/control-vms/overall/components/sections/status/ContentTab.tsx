@@ -1,8 +1,7 @@
-import { getVMSSettingStatusCountAPI } from '@/services/routes/ControlVMSService'
-import { useQuery } from '@tanstack/react-query'
 import { Empty, Skeleton, Tabs, TabsProps } from 'antd'
 import React, { useCallback, useMemo } from 'react'
 import { SearchStatusSection, StatusTabContent } from '../../../components'
+import { useVMSSettingStatusCount } from '../../../hooks/useVMSSettingStatusCount'
 
 interface Props {
 
@@ -11,10 +10,7 @@ interface Props {
 const ContentTab: React.FC<Props> = (props) => {
   const { } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['status_count'],
-    queryFn: () => getVMSSettingStatusCountAPI(),
-  })
+  const { data, isLoading, isError } = useVMSSettingStatusCount()
 
   const renderTabLabel = useCallback((statusName: string, count: number) => {
     return (
@@ -42,7 +38,7 @@ const ContentTab: React.FC<Props> = (props) => {
 
   return (
     <Tabs
-      defaultActiveKey='all'
+      defaultActiveKey={String(data?.data?.[0]?.status_id ?? '')}
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden

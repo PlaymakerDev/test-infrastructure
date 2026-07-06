@@ -12,7 +12,6 @@ import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { DayList } from '@/components/list'
 import { APIRequestPostVMSMedia, APIRequestPutVMSMedia, VMSMediaSchedule } from '@/types/control-vms/vms-api'
 import { postUploadVMSAPI } from '@/services/routes/SharedService'
-import { usePostVMSMedia } from '../../../hooks/usePostVMSMedia'
 import { usePutVMSMedia } from '../../../hooks/usePutVMSMedia'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 import { useVMSSettingListInfinite } from '../../../hooks/useVMSSettingListInfinite'
@@ -65,7 +64,7 @@ interface FormValues {
 const FormUpdateSchedule: React.FC<Props> = (props) => {
   const { id, type, data, vmsOption } = props
   const { message } = App.useApp()
-  const { setUpdateScheduleState } = useControlVMSContext()
+  const { setUpdateScheduleState, setOpenConfirmCreate } = useControlVMSContext()
   const { data: settingTypesData } = useVMSSettingTypes()
 
   const [settingSearch, setSettingSearch] = useState('')
@@ -99,7 +98,6 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  const postMedia = usePostVMSMedia()
   const putMedia = usePutVMSMedia()
 
   const form = useForm<FormValues>({
@@ -138,7 +136,7 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
   const schedulesWatch = useWatch({ control, name: 'schedules' })
   const watchStartDate = useWatch({ control, name: 'start_date' })
   const watchEndDate = useWatch({ control, name: 'end_date' })
-  const isPending = postMedia.isPending || putMedia.isPending
+  const isPending = putMedia.isPending
 
   const availableDays = useMemo(() => {
     if (!watchStartDate || !watchEndDate) return [1, 2, 3, 4, 5, 6, 7]
@@ -204,11 +202,9 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
       })
     } else {
       const body: APIRequestPostVMSMedia = basePayload
-      postMedia.mutate(body, {
-        onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE),
-      })
+      setOpenConfirmCreate({ open: true, ids: formData.vms_ids, body })
     }
-  }, [setUpdateScheduleState, postMedia, putMedia, id, type, message])
+  }, [setUpdateScheduleState, setOpenConfirmCreate, putMedia, id, type, message])
 
   const uploadFile = useCallback(async (file: UploadFile[], index: number) => {
     setValue(`schedules.${index}.file`, [{ ...file[0], status: 'uploading' }])

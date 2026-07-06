@@ -115,16 +115,31 @@ Do not create new Context providers with empty `value={{}}` — they add overhea
 
 ## Data Fetching
 
-Most feature data is still **mock/static** — hardcoded in `src/features/**/data/*.ts` files or inline in components. Backend-integrated so far:
-- `GET /auth/me` via `src/services/routes/AdminService.ts`
-- **`control-vms/overall`** — the first feature wired to the real backend (VMS departments, setting types, paginated media list, media create, file upload, contract detail). Services: `src/services/routes/ControlVMSService.ts` + `SharedService.ts`. Reads/writes use **TanStack Query** (`useQuery` / `useInfiniteQuery` / `useMutation`), **not** Redux. It is the canonical reference pattern — see full details in the section below.
+Backend integration has expanded well beyond `control-vms/overall` (surveyed 2026-07-04) — most admin features now call the real backend. **Four data-fetching patterns coexist**; know which one a feature already uses before touching it:
+
+1. **Feature-colocated hooks + query-key factory** — `features/admin/<feature>/overall/hooks/` + `overall/data/queryKeys.ts`. Used only by **`control-vms/overall`** (19 hooks — full canonical write-up below).
+2. **Shared top-level hooks + query-key factory** — `src/hooks/queries/<feature>/{queryKeys.ts, use*.ts}`. This is the more common pattern for everything wired up after control-vms. Used by **`cctv`** (13 hooks, `cctvKeys`), **`incident-detection`** (13 hooks, `incidentKeys`), **`traffic-signal`** (17 hooks, single `TrafficSignalService.ts`), **`crosswalk`** (10 hooks, `CrosswalkService.ts`), **`traffic-volume`** (14 hooks, `trafficVolumeKeys`), and **`dashboard`** (7 hooks defined directly in `index.ts` rather than one file per hook). `src/hooks/queries/shared/useRoadList.ts` is a cross-feature helper in the same location. **Default to this pattern for new features.**
+3. **Inline `useQuery` directly inside a component** — no extracted hook, no key factory, key written by hand at each call site. Used by `tracking/overall` (`TrackingService.ts`) and `vms/overall` (`VMSService.ts`, distinct from `ControlVMSService.ts`). Works, but don't replicate for new work — extract a hook per pattern 2 instead.
+4. **Raw `useEffect` + local `useState`, bypassing TanStack Query entirely** — the pre-TanStack legacy pattern. Used by `maintenance/*` (`MaintenanceService.ts`) and `traffic-lighting/*` (`LightingService.ts`, not to be confused with `bridge-lighting`, which is still pure mock — see Naming Conventions). Do NOT replicate; migrate to pattern 2 if you're already in one of these files for other reasons.
+
+Still pure mock/static (hardcoded in `data/*.ts` or inline): `bridge-lighting`, `statistics`, `smart-search`, and any feature not named above. `GET /auth/me` (`AdminService.ts`) is the only non-feature backend call.
+
+**No feature has Zod response validation except `control-vms` and `shared`** (`src/schemas/`). Every feature in pattern 2–4 above fetches typed-but-unvalidated responses — a real, un-tracked gap, not a deliberate omission.
 
 Canonical pattern when connecting a feature to the real backend:
 1. Add a typed service function to `src/services/routes/<Feature>Service.ts` using `ApiService.fetchData<ResponseType>()`
-2. Fetch via **TanStack Query** in a co-located hook — `useQuery`/`useInfiniteQuery` for reads, `useMutation` for writes. Do NOT fetch in `screen/index.tsx`, do NOT call `fetch()` in components, and do NOT mirror server data into Redux.
+2. Fetch via **TanStack Query** — put the hook in `src/hooks/queries/<feature>/` with a query-key factory (pattern 2) unless the feature already has feature-colocated hooks (pattern 1, control-vms only). `useQuery`/`useInfiniteQuery` for reads, `useMutation` for writes. Do NOT fetch in `screen/index.tsx`, do NOT call a service function inside a component's `useEffect`, and do NOT mirror server data into Redux.
 3. Define the API response type in `src/types/<feature>/`
+4. Add a Zod schema in `src/schemas/<feature>.ts` — every feature besides control-vms is missing this; don't compound the gap in new work if you can avoid it.
 
 `ApiService.fetchData<T>()` returns `Promise<AxiosResponse<T>>`, so TanStack's `data` is the AxiosResponse — unwrap the payload with `.data`.
+
+### Other backend-integrated features (surveyed 2026-07-04)
+
+None of these have control-vms's audit-level documentation — treat the source as ground truth, this is an orientation map only.
+- **`cctv`**, **`incident-detection`**, **`traffic-signal`** — camera lists/totals/dropdowns, central-list variants, overview, uptime/peak-hour/daily stats, contract/phase details, reports. Standard pattern-2 shape, nothing unusual found.
+- **`crosswalk`** — `crosswalk/overall/context/index.tsx` is still an empty `value={{}}` provider even though the feature is backend-integrated — delete it rather than "fixing" it if you're in that file (violates the "don't create empty Context" rule above).
+- **`traffic-volume`** (15 hooks as of 2026-07-04) — `detail/components/section/reportvolume/` (daily/hourly/monthly/yearly/vehicle-type tables + `HourlyMatrixTable.tsx`) is backend-integrated via `useTrafficVolumeReportSummaryInfinite`; a stale comment at `reportvolume/index.tsx:300-302` still claims month/year/vehicle-type use mocks — they don't, delete the comment if you touch that file. `CamerasGridTrafficVolume.tsx`/`TableCameraTrafficVolume.tsx` were migrated from a batched `useQueries` N+1 per-camera IP lookup (`getCCTVDetailAPI` called once per camera) to a single richer `useTrafficVolumeSolutionCamerasList` hook hitting `/cameras/list`, which returns `ip_address`/`status.is_online` inline — prefer this over adding a new per-item follow-up fetch if a future endpoint already carries the field you need.
 
 ## Naming Conventions
 
@@ -142,6 +157,11 @@ Canonical pattern when connecting a feature to the real backend:
 - `src/components/chart/ฺBarChart.stories.tsx` — leading Thai character U+0E3A in filename
 
 When creating a component that sounds like it might already exist (TitleSection, MapSection, InfoCardSection, etc.) — **search first**. These names appear 7–22 times across features.
+
+**Three similarly-named but unrelated features — do not confuse:**
+- `bridge-lighting/` — lighting fixtures mounted on bridges. Still pure mock/static.
+- `traffic-lighting/` — traffic-light-pole/signal-cabinet electrical monitoring (voltage/amp, lamp equipment). Backend-integrated via `LightingService.ts` (raw `useEffect` pattern — see Data Fetching).
+- `traffic-signal/` — traffic signal timing/phase control. Backend-integrated via `TrafficSignalService.ts` (`src/hooks/queries/traffic-signal/` hooks — see Data Fetching).
 
 ## Known Tech Debt & Pitfalls
 
@@ -162,6 +182,9 @@ Shared primitives now exist in `src/components/section/` — use them instead of
 
 ### Placeholder files (not yet implemented)
 - `src/app/page.tsx` — still the create-next-app default template. Redirect is handled in `next.config.ts`.
+
+### VMS detail status flags travel via URL query params (observed 2026-07-04)
+`vms/detail/screen/index.tsx` reads `is_warranty`/`is_online` via `useSearchParams()` instead of fetching them from the detail API itself. Direct navigation to the detail route without those params silently defaults to "expired warranty / offline". Always pass both params explicitly when linking to this route from new code; don't assume the detail page is self-sufficient.
 
 ### Known bugs / tech debt
 - **`src/services/RtkQueryService.ts:19`** — `axiosBaseQuery` was missing `await` on `BaseService(request)` (fixed 2026-06-24). RTK Query is still not wired to the store — TanStack Query is used for server state instead.
@@ -279,7 +302,7 @@ The VMS media/schedule contract changed from a **flat single-media model** to a 
 
 **`FormAddDetail.tsx`** (`sections/vms/FormAddDetail.tsx`, VMS-tab create form) is the canonical implementation of the new model — reference it before writing any other schedule-editing UI:
 - `useFieldArray({ name: 'schedules' })` manages N rows (`schedule_name`, `days`, `start_time`, `end_time`, `media_type`, `file_url`/`text`), each independently image/video or text.
-- **`DayList`** (`src/components/list/DayList.tsx`, new) — shared Mon–Sun day-of-week toggle, values `1`–`7`. Reuse this for any future day-picker instead of building a new one.
+- **`DayList`** (`src/components/list/DayList.tsx`, new) — shared Mon–Sun day-of-week toggle, values `1`–`7`. Reuse this for any future day-picker instead of building a new one. Extended 2026-07-03 with an optional `getTooltip?: (day: number) => React.ReactNode` prop — wraps that day's button in an antd `Tooltip`+`<span>` (works even in a read-only/no-`onChange` usage, since native `disabled` blocks hover events on the bare button). Used by the status section to show every schedule's time range for a given day.
 - `availableDays` is derived from the start/end date range (`useMemo`) and synced into every row's `days` via `useEffect`, disabling days outside the display window.
 - Cross-schedule time-overlap validation on `start_time`/`end_time` — a row's window must not overlap any earlier row's window.
 - `is_all_day` (`display_type === 'ALL_DAY'`) forces every row's `time_since`/`time_to` to `00:00`/`23:59` regardless of picked times.
@@ -294,6 +317,61 @@ The VMS media/schedule contract changed from a **flat single-media model** to a 
 Verified: `npx tsc --noEmit` clean for every control-vms file (only the 2 pre-existing, unrelated `MaintenanceService.ts` errors remain — untouched, different feature); ESLint clean on all touched files; all 62 unit tests pass (`control-vms.test.ts` now 19, up from 16); `next build`'s Turbopack compile step succeeds for the whole app (the build's separate full-project TS gate still fails only on the pre-existing `MaintenanceService.ts` error). **Not verified**: interactive browser click-through — no browser automation tool was available in this environment and the DISPLAY-tab route is RBAC/session-gated, so the CREATE/EDIT/DELETE flow has not been exercised end-to-end against a live backend.
 
 **EDIT-mode hazard (resolved above, kept for reference)**: `FormAddDetail`'s `availableDays` sync effect unconditionally overwrites every row's `days` — correct for CREATE (rows start empty) but would clobber seeded `days_of_week` on an EDIT form's mount. `FormUpdateSchedule` guards against this with a first-mount skip + prune-not-replace; keep this in mind if `FormAddDetail` is ever reused for editing.
+
+### status sub-module (2026-07-03) — canonicalized + batch-delete fixed — RESOLVED
+
+A new **STATUS** tab exists in `control-vms/overall`: `components/StatusSection.tsx` → `sections/status/ContentTab.tsx` → `StatusTabContent.tsx` → `StatusList.tsx`; `ModalStatusVMSScreen` (barrel alias for `sections/status/ModalVMSScreen.tsx`, a status-scoped near-duplicate of `sections/vms/ModalVMSScreen.tsx`); `ContentBatchDelete.tsx`/`FormUpdateBatch.tsx` (batch-cancel flow), reached via `updateScheduleState.type === 'BATCH_DELETE'` in the shared `ModalUpdateSchedule`.
+
+It was originally added with 4 endpoints wired ad-hoc — a 2026-07-03 3-agent audit found: inline `useQuery` in `StatusTabContent.tsx`/`ContentTab.tsx` sharing a raw, colliding key prefix (`['status_count']` / `['status_count', statusId]` for two *different* endpoints); `getVMSSettingStatusAPI` (`/vms/settings/statuses`) with zero consumers; and `postVMSMediaBatchDeleteAPI` (`POST /vms/settings/schedules/batch-delete`) defined but never called — instead, `ContentBatchDelete.tsx` collected `schedule_ids` via checkboxes but its confirm button called `useDeleteVMSMedia` (single `DELETE /vms/settings/media/{id}`), silently deleting the *entire* setting record regardless of selection.
+
+**Fixed same day**, per the audit's plan:
+- **`overall/data/queryKeys.ts`** — added `byStatus()`/`byStatusList(statusId)`/`statusCounts()` (prefix/leaf convention, matching every other domain).
+- **New hooks** `overall/hooks/useVMSSettingStatusCount.ts` and `useVMSSettingByStatus.ts` — replace the inline `useQuery` calls in `ContentTab.tsx`/`StatusTabContent.tsx`, eliminating the raw colliding key.
+- **`src/schemas/control-vms.ts`** — added `apiResponseVMSSettingByStatusSchema`, `apiResponseVMSSettingStatusCountSchema`, `apiResponsePostVMSPatchDeleteSchema` (the last reuses the shared `apiResponsePostSchema`); matching tests in `control-vms.test.ts` (62 → 69).
+- **New mutation `overall/hooks/usePostVMSBatchDelete.ts`** — wraps `postVMSMediaBatchDeleteAPI` for real, mirroring `useDeleteVMSMedia`'s toast/AxiosError/invalidation shape; additionally invalidates `mediaDetail(id)` for the parent setting so its remaining-schedules view refreshes.
+- **`invalidateVmsMediaWrites.ts`** — extended to also invalidate `byStatus()` and `statusCounts()`, so the STATUS tab refreshes after *any* control-vms write (create/edit/delete/batch-delete), not just status-scoped ones.
+- **`FormUpdateBatch.tsx`** — de-stubbed into a controlled presentational field (`value`/`onChange` props instead of owning its own `useForm`); **`ContentBatchDelete.tsx`** now owns the RHF form + `usePostVMSBatchDelete`, submitting only the checked `schedule_ids` to the real batch endpoint. `ModalUpdateSchedule.tsx`'s `BATCH_DELETE` branch simplified accordingly (dropped the unused `vmsOption` prop).
+
+**Context exception (unaffected by the above, still true)**: the status VMS-screen modal's `open`/`id`/`vms_url` state lives in `ControlVMSContext` (`openVMSScreen`/`setOpenVMSScreen`/`INIT_OPEN_VMS_SCREEN`), unlike every other control-vms/overall modal (which owns local `useState` — see "Modal state is local" above). Deliberate, mirrors `vms/detail`'s `DetailContext` pattern. Mounted once at `StatusSection.tsx`, not per-`StatusList`-card, since `StatusList` renders in a `.map()` and a per-card mount would stack duplicate modal overlays sharing the same context state.
+
+**Verified**: `npx tsc --noEmit` clean (only the pre-existing, unrelated `MaintenanceService.ts` errors remain); ESLint clean on all touched files; 69/69 unit tests pass; `next build`'s Turbopack compile step succeeds for the whole app (the build's separate full-project TS gate still fails only on the pre-existing `MaintenanceService.ts` error). **Not verified**: interactive browser click-through — no browser automation tool was available and the route is RBAC/session-gated.
+
+**`FormSearchStatus` search — wired 2026-07-03 (client-side filter, not a backend param)**: `APIRequestVMSSettingByStatus` only has `status_id` — no documented search/`solution_name` param on `/vms/settings/by-status` — so this is deliberately a client-side filter, not a speculative backend contract addition. `setStatusSearchText` (new `ControlVMSContext` state, `string`, default `''`) is set from `FormSearchStatus`'s existing 700ms-debounced submit; `StatusTabContent.tsx` filters its already-fetched by-status list with `setting.solution_name.toLowerCase().includes(search)` (memoized), falling back to `<Empty description="ไม่พบข้อมูล" />` when the filtered result is empty. Also fixed in the same file: `FormValues.search` was typed as the literal `""` instead of `string`.
+
+**Still explicitly deferred** (separate, smaller task, never in scope here): `SearchStatusSection`'s export button is unwired, `ContentTab`'s `defaultActiveKey='all'` never matches a real tab key (`String(status_id)`), `StatusList` has a `rounded-lgh-full` className typo, `StatusTabContent` uses an array-index React key. `getVMSSettingStatusAPI` (`/vms/settings/statuses`) still has no consumer — not wired speculatively.
+
+### confirm-create flow + จัดการประเภท manage-types (2026-07-04) — audited and canonicalized — RESOLVED
+
+Two more flows were added to `control-vms/overall`. A 27-agent canonical audit (read-only, adversarially verified) found 2 HIGH + 3 MEDIUM + ~16 LOW deviations from this file's own conventions. **All fixed same day** per plan `C:\Users\PorNe\.claude\plans\api-sub-groovy-parnas.md`.
+
+**Confirm-before-create.** `FormAddDetail`/`FormUpdateSchedule` no longer write directly — both call `setOpenConfirmCreate({ open: true, ids, body })` (context state), which opens `ModalConfirmCreate` → `ContentConfirmCreate`. That component fetches the VMS's *current* command via `GET /vms/settings/by-vms-ids` (`useVMSSettingByVMSID`, key `controlVmsKeys.byVmsIds(ids)`) and renders "คำสั่งเดิม" (current, about to be replaced) vs "คำสั่งใหม่" (pending) side by side; only on explicit confirm does it call `usePostVMSMedia`.
+**Fixed:** `ModalConfirmCreate` was mounted twice (`VMSSection.tsx` + child `DetailSection.tsx`) — the `DetailSection` mount was removed, keeping the single tab-root mount. `ContentConfirmCreate`'s `renderCurrentSchedule` now guards `if (!data || data.length === 0)` instead of just `if (!data)`, so an idle VMS (no current command — `by-vms-ids` returns `[]`, a normal case) no longer crashes; `renderCurrentScheduleTime` also tolerates an absent array via `(schedule ?? [])`. `renderPopoverContent` now uses `(data ?? []).slice(1).map(...)` instead of `if (index===0) return` (a `.map()` callback must never return `undefined`). Array-index React keys in `ContentConfirmCreate` replaced with `schedule_name`/`time_since`/`solution_name` composites. The dead `ScheduleByVMSID.duration` field (never read — hours were always recomputed from `time_since`/`time_to`) was removed from the type.
+`invalidateVmsMediaWrites` now also invalidates a new `controlVmsKeys.byVmsIdsPrefix()` key (added alongside the existing `byVmsIds(ids)` leaf, same prefix/leaf convention as `media()/mediaList(id)`) — previously a write never invalidated this read, so re-opening the confirm dialog for the same VMS within the 60s `staleTime` window could show a stale "คำสั่งเดิม".
+`FormAddDetail.onSubmit` now maps the validated `data.schedules` (the `handleSubmit` argument) instead of the `schedulesWatch` `useWatch` snapshot — matches how the canonical sibling `FormUpdateSchedule` does it; `schedulesWatch` is still used elsewhere in the file (media-section rendering), just no longer inside submit.
+
+**จัดการประเภท (manage setting types).** `DetailTabContent`'s "จัดการประเภท" button opens `ModalUpdateType` → `FormUpdateType`, an inline editable list backed by 3 mutation hooks — `usePostVMSSettingType` / `usePutVMSSettingType` / `useDeleteVMSSettingType` (`overall/hooks/`) — wrapping the `/vms/settings/types` POST/PUT/DELETE service fns that existed since 2026-06-23 but had **zero consumers** before this. Per-row UI rule (deliberate product spec — keep as-is, do not "fix" without asking): a row shows `TbTrash` (`fs-18 text-red-500`) while clean; the instant its text differs from what's saved, the icon swaps to an AntD `Button` — "แก้ไข" for an existing row, "เพิ่ม" for a still-unsaved draft row. Consequence, accepted: an existing row cannot be deleted while mid-edit without clearing the field first.
+**Fixed:** per-row pending state for a new/draft row is now keyed on the row's own stable field key (`addingKey` state, set right before `.mutate()`) instead of the submitted text value — previously two draft rows typed with identical text both showed loading when only one was actually in flight. The server-sync `useEffect` now also prunes local rows (`id !== null`) whose id is no longer present in the fetched list, so a type deleted elsewhere doesn't linger as a stale, actionable row.
+**Modal-state — investigated, kept as a second documented exception (not moved):** `openUpdateType` stays in `ControlVMSContext` rather than local `useState`. The audit's proposed fix (co-locate in `DetailTabContent`) doesn't fit: `DetailTabContent` itself renders from **two different parent trees** — inline in `DetailItemStorage`, and again nested inside `ModalDetailItemStorage`'s "ดูเพิ่มเติม" gallery modal — both of which can be mounted at once. Local state there would either duplicate the `ModalUpdateType` mount point or require prop-drilling the open/close callback through 3+ component levels to reach the one safe mount site (`VMSSection`). Context is the pragmatic, correct choice here for the same reason as the already-documented `openVMSScreen` exception (see "Modal state is local" above) — `openUpdateType` is now a second sanctioned exception to that rule, not a bug.
+
+**Schema/test coverage completed:** added `apiResponseVMSSettingByVMSIDSchema`, `apiResponseVMSSettingListSchema`, and `apiResponsePostVMSSettingTypeSchema`/`apiResponsePutVMSSettingTypeSchema`/`apiResponseDeleteVMSSettingTypeSchema` (all three alias `apiResponsePostSchema`, same as batch-delete) to `src/schemas/control-vms.ts` + matching tests (69 → 77). Also fixed a genuine type/schema mismatch unrelated to the two new flows: the only existing schedule schema validated `APIResponseVMSSettingSchedule` (a flat array type that **no service fn returns**), while `getVMSSettingScheduleAPI` actually returns `APIResponseVMSScheduleByDate` (a `Record<date, VMSScheduleByDate[]>`) — the orphan type + schema were removed and replaced with `apiResponseVMSScheduleByDateSchema` (`z.record(z.string(), z.array(...))`) matching the real contract.
+
+**Naming fixed:** the batch-delete request/response types and their zod schema were renamed from `...PatchDelete` to `...BatchDelete` (`APIRequestPostVMSBatchDelete`/`APIResponsePostVMSBatchDelete` in `display-api.ts`, `apiResponsePostVMSBatchDeleteSchema` in `schemas/control-vms.ts`) — the endpoint, service fn (`postVMSMediaBatchDeleteAPI`), and hook (`usePostVMSBatchDelete`) already said "Batch"; only the types/schema/test said "Patch". When naming a new request/response type, copy the endpoint's own wording exactly.
+
+**Hooks count: 19** in `overall/hooks/` (was 15 as of 2026-07-03) — `useVMSSettingByVMSID` (read) plus the 3 setting-type write hooks above.
+
+**Status-tab nits fixed in the same pass** (cheap, same audit): `ContentTab`'s `Tabs` now uses `defaultActiveKey={String(data?.data?.[0]?.status_id ?? '')}` instead of the never-matching literal `'all'`; `StatusList`'s dead `rounded-lgh-full` Tailwind class removed; `StatusTabContent`'s `.map()` now keys on `setting.setting_id` instead of the array index (the list is search-filtered and renders stateful `HLSLivePlayer`s, so index keys could reuse the wrong player as the filter narrowed).
+
+**Verified:** `npx tsc --noEmit` clean (only the 2 pre-existing, unrelated `MaintenanceService.ts` errors remain); ESLint clean on every touched file (only pre-existing warning patterns already used elsewhere — empty `Props` interfaces, `{ field: _, ...rest }` destructuring); 77/77 unit tests pass (up from 69); `next build`'s Turbopack compile step succeeds for the whole app (the build's separate full-project TS gate still fails only on the same untouched `MaintenanceService.ts` error). **Not verified:** interactive browser click-through — the route is RBAC/session-gated and no browser automation tool was available in this environment.
+
+**Still explicitly out of scope** (need a spec / backend confirmation, not fixed speculatively): `SearchStatusSection`'s `นำออกเอกสาร` export button is unwired; `getVMSSettingStatusAPI` (`/vms/settings/statuses`) still has no consumer.
+
+### ScheduleSection day-filter polish (2026-07-04) — RESOLVED
+
+The DISPLAY tab's day-filter calendar (`FormSearchCalendar` badges + click-to-filter) matches by day-of-month (`DD`) against `GET /vms/settings/schedule`'s `Record<YYYY-MM-DD, ...>` response. **Confirmed correct by design, not a bug**: the endpoint always takes `month`+`year`, so its response is always a single month — `DD` can't collide within one month. Do not change this to full-date matching.
+
+`ScheduleSection.tsx` fixes: `totalLocations`/`totalSchedules` now derive from `filteredSchedules` (the visible, day-filtered list) instead of the whole month, so the count badges always match what's rendered below them; the header shows `ตารางเวลาวันที่ {DD MMM BBBB}` when a day is selected, falling back to `ตารางเวลาเดือนนี้` when not (needs its own `buddhistEra`/`dayjs.locale('th')` — don't rely on `ScheduleList`'s import side effect); the empty state distinguishes `ไม่มีคำสั่งในวันที่เลือก` (day selected, none found) from `ไม่พบข้อมูล` (no day selected / error); `renderSchdeuleList` typo renamed to `renderScheduleList`. `ControlVMSContext`'s `searchDate` now initializes to `{ month, year }` for the current month instead of `null`, so the first fetch is explicit rather than relying on an assumed backend default.
+
+Verified: `npx tsc --noEmit` clean (only the pre-existing `MaintenanceService.ts` errors); ESLint clean; 77/77 tests pass (schemas untouched by this change); `next build` Turbopack compile succeeds.
 
 ## Environment Variables
 

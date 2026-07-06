@@ -57,6 +57,22 @@ export const trafficVolumeKeys = {
         'cameras',
         deptId,
       ] as const,
+    /** Richer camera list from `/cameras/list` — separate key from `cameras`
+     *  because the response envelope + row shape differ (no centroid, no
+     *  geometry_point; ip_address + is_online carried inline). */
+    cameraList: (
+      deptId: string | number,
+      solutionId: string | number,
+      page: number,
+      limit: number
+    ) =>
+      [
+        ...trafficVolumeKeys.detail.all(solutionId),
+        'camera-list',
+        deptId,
+        page,
+        limit,
+      ] as const,
     countHour: (params: APIRequestTrafficVolumeCountHour) =>
       [
         ...trafficVolumeKeys.detail.all(params.solution_id),

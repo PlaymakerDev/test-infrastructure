@@ -8,5 +8,8 @@ export async function invalidateVmsMediaWrites(qc: QueryClient) {
     qc.invalidateQueries({ queryKey: controlVmsKeys.settingByRoad() }),
     qc.invalidateQueries({ queryKey: controlVmsKeys.schedule() }),
     qc.invalidateQueries({ queryKey: controlVmsKeys.settingList() }),
+    qc.invalidateQueries({ queryKey: controlVmsKeys.byStatus() }),
+    qc.invalidateQueries({ queryKey: controlVmsKeys.statusCounts() }),
+    qc.invalidateQueries({ queryKey: controlVmsKeys.byVmsIdsPrefix() }),
   ])
 }

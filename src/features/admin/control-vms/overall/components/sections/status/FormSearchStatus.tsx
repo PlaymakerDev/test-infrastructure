@@ -2,17 +2,19 @@ import { Input } from 'antd'
 import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
+import { useControlVMSContext } from '../../../context'
 
 interface Props {
 
 }
 
 interface FormValues {
-  search: ""
+  search: string
 }
 
 const FormSearchStatus: React.FC<Props> = (props) => {
   const { } = props
+  const { setStatusSearchText } = useControlVMSContext()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -34,8 +36,8 @@ const FormSearchStatus: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((values: FormValues) => {
-    console.log(values)
-  }, [])
+    setStatusSearchText(values.search)
+  }, [setStatusSearchText])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

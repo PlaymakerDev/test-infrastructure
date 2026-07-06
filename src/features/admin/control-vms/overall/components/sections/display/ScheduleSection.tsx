@@ -1,9 +1,15 @@
 import React, { useMemo } from 'react'
 import { Button, Empty } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import ScheduleList from '@/components/list/ScheduleList'
 import { APIResponseVMSScheduleByDate } from '@/types/control-vms/display-api'
 import { useControlVMSContext } from '../../../context'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 interface Props {
   data?: APIResponseVMSScheduleByDate
@@ -11,19 +17,35 @@ interface Props {
 
 const ScheduleSection: React.FC<Props> = (props) => {
   const { data } = props
-  const { setUpdateScheduleState } = useControlVMSContext()
+  const { setUpdateScheduleState, scheduleDay } = useControlVMSContext()
 
+  // FILTER TO THE SELECTED CALENDAR DAY (e.g. "05") ACROSS ALL DATE KEYS THIS MONTH
+  const filteredSchedules = useMemo(() => {
+    const entries = Object.entries(data ?? {})
+    const matched = scheduleDay
+      ? entries.filter(([dateKey]) => dayjs(dateKey).format('DD') === scheduleDay)
+      : entries
+    return matched.flatMap(([, items]) => items)
+  }, [data, scheduleDay])
+
+  // COUNTS DERIVE FROM THE FILTERED (VISIBLE) LIST, NOT THE WHOLE MONTH — KEEPS THE BADGE IN SYNC WITH THE LIST BELOW IT
   const totalLocations = useMemo(
-    () => new Set(Object.values(data ?? {}).flat().map(d => d.solution_name)).size,
-    [data]
+    () => new Set(filteredSchedules.map(d => d.solution_name)).size,
+    [filteredSchedules]
   )
-  const totalSchedules = Object.values(data ?? {}).flat().length
+  const totalSchedules = filteredSchedules.length
 
-  const renderSchdeuleList = useMemo(() => {
-    if (!data || Object.values(data).flat().length === 0) return <Empty description="ไม่พบข้อมูล" />
+  const headerTitle = filteredSchedules[0]?.date
+    ? `ตารางเวลาวันที่ ${dayjs(filteredSchedules[0].date).format('DD MMM BBBB')}`
+    : 'ตารางเวลาเดือนนี้'
+
+  const renderScheduleList = useMemo(() => {
+    if (!filteredSchedules.length) {
+      return <Empty description={scheduleDay ? 'ไม่มีคำสั่งในวันที่เลือก' : 'ไม่พบข้อมูล'} />
+    }
     return (
       <ScheduleList
-        data={Object.values(data ?? {}).flat() || []}
+        data={filteredSchedules}
         cols={{
           default: 1,
           sm: 1,
@@ -38,12 +60,12 @@ const ScheduleSection: React.FC<Props> = (props) => {
         }}
       />
     )
-  }, [data, setUpdateScheduleState])
+  }, [filteredSchedules, scheduleDay, setUpdateScheduleState])
 
   return (
     <div>
       <section className='flex flex-wrap items-center justify-between gap-2'>
-        <h4 className='text-(--yellow) mb-0'>ตารางเวลาเดือนนี้</h4>
+        <h4 className='text-(--yellow) mb-0'>{headerTitle}</h4>
         <div className='flex flex-wrap items-center gap-2'>
           <span className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border border-emerald-500 text-emerald-500'>
             {totalLocations} จุดติดตั้ง
@@ -63,7 +85,7 @@ const ScheduleSection: React.FC<Props> = (props) => {
         </div>
       </section>
       <section className='mt-5'>
-        {renderSchdeuleList}
+        {renderScheduleList}
       </section>
     </div>
   )

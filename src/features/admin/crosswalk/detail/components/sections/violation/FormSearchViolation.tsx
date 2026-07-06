@@ -1,128 +1,113 @@
-import React, { useCallback } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-import dayjs, { Dayjs } from 'dayjs'
-import { Button, Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
-import { TbPrinter } from "react-icons/tb";
+"use client"
+import React from 'react'
+import dayjs, { type Dayjs } from 'dayjs'
+import { Col, DatePicker, Row, Segmented } from 'antd'
+import {
+  dateRangeForPeriod,
+  type ViolationFilter,
+  type ViolationPeriod,
+  type ViolationStatus,
+} from './filter'
 
 const { RangePicker } = DatePicker
 
-interface Props { }
-
-interface FormSearchValues {
-  date: [Dayjs | null, Dayjs | null] | null
-  period: 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'ALL'
-  status: 'ACTIVE' | 'INACTIVE' | 'NO_DATA' | 'ALL'
+interface Props {
+  value: ViolationFilter
+  onChange: (patch: Partial<ViolationFilter>) => void
 }
 
-const PERIOD_OPTIONS = [
-  { label: "วันนี้", value: "TODAY" },
-  { label: "เมื่อวานนี้", value: "YESTERDAY" },
-  { label: "7 วันที่ผ่านมา", value: "LAST_7_DAYS" },
-  { label: "เดือนนี้", value: "THIS_MONTH" },
-  { label: "ทั้งหมด", value: "ALL" },
+const PERIOD_OPTIONS: { label: string; value: ViolationPeriod }[] = [
+  { label: 'วันนี้', value: 'TODAY' },
+  { label: 'เมื่อวานนี้', value: 'YESTERDAY' },
+  { label: '7 วันที่ผ่านมา', value: 'LAST_7_DAYS' },
+  { label: 'เดือนนี้', value: 'THIS_MONTH' },
+  // { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const STATUS_OPTIONS = [
-  { label: "คนฝ่าฝืน", value: "PEDESTRIAN_VIOLATION" },
-  { label: "รถฝ่าฝืน", value: "VEHICLE_VIOLATION" },
-  { label: "ทั้งหมด", value: "ALL" },
+const STATUS_OPTIONS: { label: string; value: ViolationStatus }[] = [
+  { label: 'คนฝ่าฝืน', value: 'PEDESTRIAN_VIOLATION' },
+  { label: 'รถฝ่าฝืน', value: 'VEHICLE_VIOLATION' },
+  { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const FormSearchViolation: React.FC<Props> = (props) => {
-  const { } = props
-  const form = useForm<FormSearchValues>({
-    defaultValues: {
-      date: [dayjs(), dayjs()],
+const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
+  // RangePicker wants Dayjs objects; the filter stores strings. Convert on
+  // the fly — empty strings (ALL period) render as `null` for a blank picker.
+  const rangeValue: [Dayjs | null, Dayjs | null] = [
+    value.startDate ? dayjs(value.startDate) : null,
+    value.endDate ? dayjs(value.endDate) : null,
+  ]
+
+  const handleRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
+    const [start, end] = dates ?? [null, null]
+    // Manual date pick → clear the preset highlight (period becomes ALL, which
+    // is what the UI uses for "custom range").
+    onChange({
+      startDate: start ? start.format('YYYY-MM-DD') : '',
+      endDate: end ? end.format('YYYY-MM-DD') : '',
       period: 'ALL',
-      status: 'ALL',
-    }
-  })
+    })
+  }
 
-  const {
-    control,
-    handleSubmit,
-  } = form
+  const handlePeriodChange = (next: string | number) => {
+    const period = next as ViolationPeriod
+    onChange({ period, ...dateRangeForPeriod(period) })
+  }
 
-  const onSubmit = useCallback((data: FormSearchValues) => {
-    console.log('submit', data)
-  }, [])
+  const handleStatusChange = (next: string | number) => {
+    onChange({ status: next as ViolationStatus })
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Row gutter={[16, 16]} align={'bottom'}>
-        <Col xs={24} sm={24} md={24} lg={24} xl={8} xxl={6} xxxl={6}>
-          <Controller
-            control={control}
-            name='date'
-            render={({ field }) => {
-              return (
-                <fieldset>
-                  <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
-                  <RangePicker
-                    value={field.value}
-                    onChange={(dates) => field.onChange(dates)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
-                    format='DD/MM/YYYY'
-                    size='large'
-                    className='w-full!'
-                  />
-                </fieldset>
-              )
-            }}
+    <Row gutter={[16, 16]} align='bottom'>
+      <Col xs={24} sm={24} md={24} lg={24} xl={8} xxl={6} xxxl={6}>
+        <fieldset>
+          <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
+          <RangePicker
+            value={rangeValue}
+            onChange={handleRangeChange}
+            placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
+            format='DD/MM/YYYY'
+            size='large'
+            className='w-full!'
           />
-        </Col>
-        <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
-          <Controller
-            control={control}
-            name='period'
-            render={({ field }) => {
-              return (
-                <div>
-                  <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
-                  <div className='overflow-x-auto'>
-                    <Segmented
-                      block
-                      {...field}
-                      options={PERIOD_OPTIONS}
-                      size='large'
-                      classNames={{
-                        root: 'min-w-max border! border-(--yellow)!',
-                      }}
-                    />
-                  </div>
-                </div>
-              )
-            }}
-          />
-        </Col>
-        <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
-          <Controller
-            control={control}
-            name='status'
-            render={({ field }) => {
-              return (
-                <div>
-                  <label className='block fs-12 text-(--yellow)'>สถานะ</label>
-                  <div className='overflow-x-auto'>
-                    <Segmented
-                      block
-                      {...field}
-                      options={STATUS_OPTIONS}
-                      size='large'
-                      classNames={{
-                        root: 'min-w-max border! border-(--yellow)!',
-                      }}
-                    />
-                  </div>
-                </div>
-              )
-            }}
-          />
-        </Col>
-      </Row>
-    </form>
+        </fieldset>
+      </Col>
+      <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
+        <div>
+          <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
+          <div className='overflow-x-auto'>
+            <Segmented
+              block
+              value={value.period}
+              onChange={handlePeriodChange}
+              options={PERIOD_OPTIONS}
+              size='large'
+              classNames={{
+                root: 'min-w-max border! border-(--yellow)!',
+              }}
+            />
+          </div>
+        </div>
+      </Col>
+      <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
+        <div>
+          <label className='block fs-12 text-(--yellow)'>สถานะ</label>
+          <div className='overflow-x-auto'>
+            <Segmented
+              block
+              value={value.status}
+              onChange={handleStatusChange}
+              options={STATUS_OPTIONS}
+              size='large'
+              classNames={{
+                root: 'min-w-max border! border-(--yellow)!',
+              }}
+            />
+          </div>
+        </div>
+      </Col>
+    </Row>
   )
 }
 

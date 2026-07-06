@@ -1,12 +1,13 @@
 "use client"
 import React from 'react'
-import CrosswalkDetailScreen from '@/features/admin/crosswalk/detail/screen'
 import { useParams } from 'next/navigation'
+import CrosswalkDetailScreen from '@/features/admin/crosswalk/detail/screen'
 
 const CrosswalkDetailPage = () => {
   const params = useParams()
+  const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
 
-  return <CrosswalkDetailScreen id={params.id || 'ID_NOT_FOUND'} />
+  return <CrosswalkDetailScreen id={id} />
 }
 
 export default React.memo(CrosswalkDetailPage)

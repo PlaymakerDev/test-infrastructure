@@ -2,7 +2,7 @@
 import { Button, Empty } from 'antd'
 import React, { useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from 'react-icons/tb'
-import { DetailSection, DrawerSearchSection, MapAndDetailSection, SearchSection } from '../components'
+import { DetailSection, DrawerSearchSection, MapAndDetailSection, ModalConfirmCreate, ModalUpdateType, SearchSection } from '../components'
 import { useControlVMSContext } from '../context'
 
 const VMSSection: React.FC = () => {
@@ -49,6 +49,8 @@ const VMSSection: React.FC = () => {
         </div>
 
       </div>
+      <ModalConfirmCreate />
+      <ModalUpdateType />
     </>
   )
 }

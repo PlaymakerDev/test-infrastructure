@@ -10,25 +10,69 @@ interface Props {
   rows: MonthlyReportRow[]
 }
 
+/** Discriminates a normal data row from the trailing "รวมเฉลี่ย" summary row. */
 interface TableRow extends MonthlyReportRow {
   key: string
+  _summary?: true
+}
+
+/** Sum every numeric column across the visible rows — matches HourlyDataTable. */
+const sumRow = (
+  rows: MonthlyReportRow[],
+): Omit<MonthlyReportRow, 'year' | 'month'> => {
+  let daysCollected = 0
+  let motorcycle = 0, car = 0, pickup = 0, taxi = 0, bus = 0, truck = 0, trailer = 0
+  let totalVehicles = 0, totalPCU = 0, maxPCUPerHour = 0, truckPercent = 0
+  for (const r of rows) {
+    daysCollected += r.daysCollected
+    motorcycle += r.motorcycle
+    car += r.car
+    pickup += r.pickup
+    taxi += r.taxi
+    bus += r.bus
+    truck += r.truck
+    trailer += r.trailer
+    totalVehicles += r.totalVehicles
+    totalPCU += r.totalPCU
+    maxPCUPerHour += r.maxPCUPerHour
+    truckPercent += r.truckPercent
+  }
+  return {
+    daysCollected, motorcycle, car, pickup, taxi, bus, truck, trailer,
+    totalVehicles, totalPCU, maxPCUPerHour, truckPercent,
+  }
 }
 
 const MonthlyReportTable: React.FC<Props> = ({ rows }) => {
-  const data = useMemo<TableRow[]>(
-    () =>
-      rows.map((r) => ({
-        ...r,
-        key: `${r.year}-${r.month.toString().padStart(2, '0')}`,
-      })),
-    [rows]
-  )
+  const data = useMemo<TableRow[]>(() => {
+    const dataRows: TableRow[] = rows.map((r) => ({
+      ...r,
+      key: `${r.year}-${r.month.toString().padStart(2, '0')}`,
+    }))
+    if (dataRows.length === 0) return dataRows
+    dataRows.push({
+      ...sumRow(rows),
+      // Numeric placeholders — the first column renders via `_summary` flag.
+      year: 0,
+      month: 0,
+      key: '__summary__',
+      _summary: true,
+    })
+    return dataRows
+  }, [rows])
 
   const fmtCell = (
     val: number,
-    options?: { color?: string; decimals?: number }
+    options?: { color?: string; decimals?: number; isSummary?: boolean }
   ) => (
-    <span className='tabular-nums' style={{ color: options?.color ?? '#ffffff' }}>
+    <span
+      className={
+        options?.isSummary
+          ? 'tabular-nums font-semibold'
+          : 'tabular-nums'
+      }
+      style={{ color: options?.isSummary ? '#FCD116' : (options?.color ?? '#ffffff') }}
+    >
       {fmtNumber(val, options?.decimals ?? 0)}
     </span>
   )
@@ -40,6 +84,11 @@ const MonthlyReportTable: React.FC<Props> = ({ rows }) => {
         key: 'monthYear',
         width: 160,
         render: (_: unknown, row) => {
+          if (row._summary) {
+            return (
+              <span className='text-(--yellow) font-semibold'>รวมเฉลี่ย</span>
+            )
+          }
           // Build a date at the 1st of the month so dayjs can format month +
           // Buddhist Era year. Pad month to 2 digits for a stable ISO string.
           const d = dayjs(
@@ -61,90 +110,89 @@ const MonthlyReportTable: React.FC<Props> = ({ rows }) => {
         title: 'รถจักรยานยนต์',
         dataIndex: 'motorcycle',
         key: 'motorcycle',
-        align: 'right',
         width: 130,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถยนต์',
         dataIndex: 'car',
         key: 'car',
-        align: 'right',
         width: 110,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถกระบะ',
         dataIndex: 'pickup',
         key: 'pickup',
-        align: 'right',
         width: 110,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถแท็กซี่',
         dataIndex: 'taxi',
         key: 'taxi',
-        align: 'right',
         width: 110,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถบัส',
         dataIndex: 'bus',
         key: 'bus',
-        align: 'right',
         width: 100,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถบรรทุก',
         dataIndex: 'truck',
         key: 'truck',
-        align: 'right',
         width: 110,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รถพ่วง',
         dataIndex: 'trailer',
         key: 'trailer',
-        align: 'right',
         width: 100,
-        render: (v: number) => fmtCell(v),
+        render: (v: number, row) => fmtCell(v, { isSummary: row._summary }),
       },
       {
         title: 'รวมยานพาหนะ',
         dataIndex: 'totalVehicles',
         key: 'totalVehicles',
-        align: 'right',
         width: 140,
-        render: (v: number) => fmtCell(v, { color: '#66AEFF' }),
+        render: (v: number, row) =>
+          fmtCell(v, { color: '#66AEFF', isSummary: row._summary }),
       },
       {
         title: 'รวม PCU',
         dataIndex: 'totalPCU',
         key: 'totalPCU',
-        align: 'right',
         width: 120,
-        render: (v: number) => fmtCell(v, { color: '#00FF55', decimals: 1 }),
+        render: (v: number, row) =>
+          fmtCell(v, { color: '#00FF55', decimals: 1, isSummary: row._summary }),
       },
       {
         title: 'PCU สูงสุด / ชั่วโมง',
         dataIndex: 'maxPCUPerHour',
         key: 'maxPCUPerHour',
-        align: 'right',
         width: 160,
-        render: (v: number) => fmtCell(v, { color: '#FF9500' }),
+        render: (v: number, row) =>
+          fmtCell(v, { color: '#FF9500', isSummary: row._summary }),
       },
       {
         title: 'รถบรรทุก (%)',
         dataIndex: 'truckPercent',
         key: 'truckPercent',
-        align: 'right',
         width: 130,
-        render: (v: number) => (
-          <span className='tabular-nums' style={{ color: '#FF4444' }}>
+        render: (v: number, row) => (
+          <span
+            className={
+              row._summary
+                ? 'tabular-nums font-semibold'
+                : 'tabular-nums'
+            }
+            style={{ color: row._summary ? '#FCD116' : '#FF4444' }}
+          >
             {fmtNumber(v, 1)}%
           </span>
         ),
@@ -164,6 +212,9 @@ const MonthlyReportTable: React.FC<Props> = ({ rows }) => {
         size='middle'
         scroll={{ x: 1500 }}
         className='bridge-projects-table'
+        onRow={(row) =>
+          row._summary ? { style: { background: '#191919' } } : {}
+        }
       />
     </section>
   )

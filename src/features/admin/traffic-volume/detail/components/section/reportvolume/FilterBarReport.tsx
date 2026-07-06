@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react'
-import { Button, ConfigProvider, DatePicker, Select } from 'antd'
+import { Button, ConfigProvider, DatePicker, Segmented, Select } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { TbCalendar, TbChevronDown, TbPrinter } from 'react-icons/tb'
@@ -8,6 +8,11 @@ import { TbCalendar, TbChevronDown, TbPrinter } from 'react-icons/tb'
 const { RangePicker } = DatePicker
 
 export type DateRange = [Dayjs | null, Dayjs | null]
+
+/** Hour-report display modes — only relevant when `reportType === 'hour'`.
+ *  BY_TYPE = current per-vehicle-type columns; MATRIX = to-be-implemented
+ *  camera × hour grid. */
+export type HourView = 'BY_TYPE' | 'MATRIX'
 
 interface Props {
   /** Controlled range — when provided, the picker mirrors this value and
@@ -26,6 +31,10 @@ interface Props {
   cameraOptions?: { value: string; label: string }[]
   defaultCamera?: string
   onCameraChange?: (value: string) => void
+  /** Controlled hour display mode. Only rendered when `reportType === 'hour'`. */
+  hourView?: HourView
+  defaultHourView?: HourView
+  onHourViewChange?: (value: HourView) => void
   onExport?: () => void
 }
 
@@ -48,6 +57,9 @@ const FilterBarReport: React.FC<Props> = ({
   cameraOptions = [{ value: 'all', label: 'กล้องทั้งหมด' }],
   defaultCamera = 'all',
   onCameraChange,
+  hourView: controlledHourView,
+  defaultHourView = 'BY_TYPE',
+  onHourViewChange,
   onExport,
 }) => {
   const [internalRange, setInternalRange] = useState<DateRange>(
@@ -58,6 +70,8 @@ const FilterBarReport: React.FC<Props> = ({
   const range = controlledRange ?? internalRange
   const [reportType, setReportType] = useState<string>(defaultReportType)
   const [camera, setCamera] = useState<string>(defaultCamera)
+  const [internalHourView, setInternalHourView] = useState<HourView>(defaultHourView)
+  const hourView = controlledHourView ?? internalHourView
 
   return (
     <div className='flex flex-wrap items-end gap-3'>
@@ -112,6 +126,37 @@ const FilterBarReport: React.FC<Props> = ({
           suffixIcon={<TbChevronDown className='text-(--yellow)' size={18} />}
         />
       </div>
+
+      {/* Hour display mode — only shown for the hourly report. Matches the
+        * form-search violation section's segmented style (yellow outline +
+        * yellow-filled active option). Green dot after "Matrix" is a small
+        * "new / status" indicator per the design mock. */}
+      {reportType === 'hour' && (
+        <div className='flex flex-col gap-1'>
+          <span className='fs-12 text-(--yellow)'>การแสดงผล</span>
+          <Segmented
+            value={hourView}
+            onChange={(v) => {
+              const next = v as HourView
+              if (controlledHourView === undefined) setInternalHourView(next)
+              onHourViewChange?.(next)
+            }}
+            options={[
+              { label: 'แยกประเภทรถ', value: 'BY_TYPE' },
+              {
+                label: (
+                  <span className='inline-flex items-center gap-1.5'>
+                    Matrix
+                  </span>
+                ),
+                value: 'MATRIX',
+              },
+            ]}
+            size='large'
+            classNames={{ root: 'border! border-(--yellow)!' }}
+          />
+        </div>
+      )}
 
       {/* Export */}
       <ConfigProvider

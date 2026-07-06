@@ -1,12 +1,14 @@
 "use client"
-import { Empty, Skeleton, Tabs } from 'antd'
+import { Button, Empty, Skeleton, Tabs } from 'antd'
 import type { TabsProps } from 'antd'
 import React, { useMemo } from 'react'
 import { ContentSetting } from '../../../components'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
+import { useControlVMSContext } from '../../../context'
 
 const DetailTabContent: React.FC = () => {
   const { data, isLoading, isError } = useVMSSettingTypes()
+  const { setOpenUpdateType } = useControlVMSContext()
 
   const items: TabsProps['items'] = useMemo(() => {
     return [
@@ -32,6 +34,9 @@ const DetailTabContent: React.FC = () => {
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden
+      tabBarExtraContent={{
+        right: <Button htmlType='button' type='primary' onClick={() => setOpenUpdateType({ open: true })}>จัดการประเภท</Button>
+      }}
     />
   )
 }

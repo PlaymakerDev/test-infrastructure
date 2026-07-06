@@ -53,19 +53,6 @@ export interface APIRequestVMSSettingSchedule {
   year?: number
 }
 
-export type APIResponseVMSSettingSchedule = VMSSettingSchedule[]
-
-export interface VMSSettingSchedule {
-  setting_id: number
-  solution_name: string
-  road_code: string
-  anydesk: string
-  since: string
-  to: string
-  is_online: boolean
-  date_count: string
-}
-
 // SETTING SCHEDULE BY DATE (keys are dynamic ISO date strings, e.g. "2026-07-01")
 export type APIResponseVMSScheduleByDate = Record<string, VMSScheduleByDate[]>
 
@@ -182,11 +169,11 @@ export interface ScheduleByStatus {
 }
 
 // BATCH DELETE
-export interface APIRequestPostVMSPatchDelete {
+export interface APIRequestPostVMSBatchDelete {
   schedule_ids: number[]
 }
 
-export type APIResponsePostVMSPatchDelete = APIResponsePost
+export type APIResponsePostVMSBatchDelete = APIResponsePost
 
 // STATUS COUNT
 export type APIResponseVMSSettingStatusCount = VMSSettingStatusCount[]
@@ -199,3 +186,23 @@ export interface VMSSettingStatusCount {
 
 // STATUS
 export type APIResponseVMSSettingStatus = VMSSettingType[]
+
+// BY VMS ID
+export interface APIRequestVMSSettingByVMSID {
+  vms_ids?: number[]
+}
+
+export type APIResponseVMSSettingByVMSID = VMSSettingByVMSID[]
+
+export interface VMSSettingByVMSID {
+  schedule: ScheduleByVMSID[]
+  solution_name: string
+  status: number
+  status_name: string
+}
+
+export interface ScheduleByVMSID {
+  schedule_name: string
+  time_since: string
+  time_to: string
+}

@@ -1,15 +1,46 @@
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import { APIResponseVMSDetail } from '@/types/vms/detail-api'
+import { APIResponseVMSDetail, Solution } from '@/types/vms/detail-api'
+import { Image } from 'antd'
 import React, { useMemo } from 'react'
-import { TbMapPin } from 'react-icons/tb'
+
+const DEFAULT_ICON = '/images/icon-marker/Default.svg'
 
 interface Props {
   data?: APIResponseVMSDetail
+  isWarranty?: boolean
+  isOnline?: boolean
 }
 
-const MapSection: React.FC<Props> = ({ data }) => {
-  const point = data?.solution.geometry_point
+interface SolutionPopupProps {
+  data?: Solution;
+  isWarranty?: boolean;
+  isOnline?: boolean
+}
+
+const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
+  const { data, isWarranty, isOnline } = props
+
+  return (
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-green-400`}>
+      <section>
+        <p className='fs-11'>ชื่อสายทาง: <strong>{data?.solution_location?.project_roads?.road?.road_name || '-'}</strong></p>
+        <p className='fs-11'>รหัสสายทาง: <strong>{data?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
+        <p className='fs-11'>ชื่อจุดติดตั้ง: <strong>{data?.solution_name || '-'}</strong></p>
+      </section>
+      <hr className='my-3' />
+      <section className='mt-1.5'>
+        <p className='fs-11'>สถานะ: <strong>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+        <p className='fs-11'>การค้ำประกัน: <strong>{isWarranty ? 'อยู่ในค้ำ' : 'หมดค้ำ'}</strong></p>
+      </section>
+    </div>
+  )
+}
+
+const MapSection: React.FC<Props> = (props) => {
+  const { data, isWarranty, isOnline } = props
+
+  const point = data?.solution?.geometry_point
 
   const lngLat = useMemo<[number, number] | null>(() => {
     if (!point || point.length < 2) return null
@@ -27,28 +58,22 @@ const MapSection: React.FC<Props> = ({ data }) => {
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
         {lngLat && (
-          <HTMLMarker lngLat={lngLat} anchor='bottom'>
-            <div className='flex flex-col items-center'>
-              <div
-                className='w-9 h-9 rounded-full flex items-center justify-center'
-                style={{
-                  background: '#1a1a1a',
-                  border: '2px solid #FCD116',
-                  boxShadow: '0 0 0 4px rgba(252,209,22,0.2)',
-                }}
-              >
-                <TbMapPin size={18} color='#FCD116' />
-              </div>
-              <div
-                style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: '5px solid transparent',
-                  borderRight: '5px solid transparent',
-                  borderTop: '8px solid #FCD116',
-                }}
-              />
-            </div>
+          <HTMLMarker
+            key={data?.solution?.id}
+            lngLat={lngLat}
+            anchor="bottom"
+            offset={[0, 19]}
+            title={data?.solution?.solution_name}
+            popup={() => <SolutionPopup data={data?.solution} isWarranty={isWarranty} isOnline={isOnline} />}
+            popupOptions={{ offset: 10, closeButton: false }}
+          >
+            <Image
+              src={DEFAULT_ICON}
+              alt="station-pin"
+              width={52}
+              height={55}
+              preview={false}
+            />
           </HTMLMarker>
         )}
       </BaseMap>

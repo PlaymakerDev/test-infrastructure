@@ -1,9 +1,10 @@
-import { APIResponseVMSMediaById, VMSScheduleByDate } from '@/types/control-vms/display-api'
+import { APIResponseVMSMediaById } from '@/types/control-vms/display-api'
 import { Button, ConfigProvider } from 'antd'
 import React from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { useDeleteVMSMedia } from '../../../hooks/useDeleteVMSMedia'
+import { usePostVMSBatchDelete } from '../../../hooks/usePostVMSBatchDelete'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -14,25 +15,36 @@ dayjs.locale('th')
 
 interface Props {
   id?: string | number
-  type?: 'CREATE' | 'EDIT' | 'DELETE'
   data?: APIResponseVMSMediaById
-  vmsOption?: VMSScheduleByDate
+}
+
+interface FormValues {
+  schedule_ids: number[]
 }
 
 const ContentBatchDelete: React.FC<Props> = (props) => {
-  const { id, data, vmsOption } = props
+  const { id, data } = props
   const { setUpdateScheduleState } = useControlVMSContext()
-  const deleteMedia = useDeleteVMSMedia()
+  const batchDelete = usePostVMSBatchDelete()
 
-  const handleConfirm = () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: { schedule_ids: [] },
+  })
+
+  const onSubmit = (values: FormValues) => {
     if (!id) return
-    deleteMedia.mutate(id, {
-      onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE),
-    })
+    batchDelete.mutate(
+      { id, schedule_ids: values.schedule_ids },
+      { onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE) },
+    )
   }
 
   return (
-    <div className='lg:px-8'>
+    <form onSubmit={handleSubmit(onSubmit)} className='lg:px-8'>
       <section>
         <ExclamationCircleOutlined
           className='text-red-500! text-9xl! mb-5! mx-auto! block!'
@@ -50,7 +62,17 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
           <div>
             <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล :</p>
-            <FormUpdateBatch data={data?.schedules} />
+            <Controller
+              control={control}
+              name="schedule_ids"
+              rules={{ validate: (v) => v.length > 0 || 'กรุณาเลือกตารางเวลาที่ต้องการลบ' }}
+              render={({ field }) => (
+                <fieldset>
+                  <FormUpdateBatch data={data?.schedules} value={field.value} onChange={field.onChange} />
+                  {!!errors.schedule_ids && <p className='text-red-500 mt-2'>{errors.schedule_ids.message}</p>}
+                </fieldset>
+              )}
+            />
           </div>
           <p className='fs-12 text-(--light-gray)'>สถานะการแสดงผล : <span className='text-red-500 font-bold'>{data?.status_name || '-'}</span></p>
         </div>
@@ -64,8 +86,8 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
               htmlType='button'
               shape='round'
               className='w-full! sm:w-auto!'
-              onClick={() => setUpdateScheduleState({ ...INIT_UPDATE_SCHEDULE, type: 'DELETE' })}
-              disabled={deleteMedia.isPending}
+              onClick={() => setUpdateScheduleState(INIT_UPDATE_SCHEDULE)}
+              disabled={batchDelete.isPending}
             >
               <p className='fs-12'>ยกเลิก</p>
             </Button>
@@ -73,19 +95,18 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           <ConfigProvider theme={{ token: { colorPrimary: '#ef4444', colorTextLightSolid: '#FFFFFF' } }}>
             <Button
               type='primary'
-              htmlType='button'
+              htmlType='submit'
               shape='round'
               className='w-full! sm:w-auto!'
-              loading={deleteMedia.isPending}
-              disabled={deleteMedia.isPending}
-              onClick={handleConfirm}
+              loading={batchDelete.isPending}
+              disabled={batchDelete.isPending}
             >
               <p className='fs-12'>ยืนยัน</p>
             </Button>
           </ConfigProvider>
         </div>
       </section>
-    </div>
+    </form>
   )
 }
 

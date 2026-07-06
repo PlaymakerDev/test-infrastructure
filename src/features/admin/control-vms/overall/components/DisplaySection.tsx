@@ -3,6 +3,7 @@ import React from 'react'
 import {
   DataDisplaySection,
   DisplayStatCard,
+  ModalConfirmCreate,
   ModalUpdateSchedule,
   ScheduleDisplaySection
 } from '../components'
@@ -34,6 +35,7 @@ const DisplaySection: React.FC<Props> = (props) => {
         </Col>
       </Row>
       <ModalUpdateSchedule />
+      <ModalConfirmCreate />
     </div>
   )
 }

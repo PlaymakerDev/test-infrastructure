@@ -26,7 +26,7 @@ const ModalUpdateSchedule: React.FC<Props> = (props) => {
 
     if (type === 'CREATE' || type === 'EDIT') return <FormUpdateSchedule id={id!} type={type} data={data?.data} vmsOption={vmsOption} />
     if (type === 'DELETE') return <ContentDeleteSchedule id={id!} data={data?.data} vmsOption={vmsOption} />
-    if (type === 'BATCH_DELETE') return <ContentBatchDelete id={id!} data={data?.data} vmsOption={vmsOption} />
+    if (type === 'BATCH_DELETE') return <ContentBatchDelete id={id!} data={data?.data} />
     return <Empty description="ไม่พบข้อมูล" />
   }, [isLoading, isError, data, id, type, vmsOption])
 

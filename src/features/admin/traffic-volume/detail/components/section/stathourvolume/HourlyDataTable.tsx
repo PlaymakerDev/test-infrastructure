@@ -89,7 +89,6 @@ const HourlyDataTable: React.FC<Props> = ({ date }) => {
         title: t.label,
         dataIndex: t.key,
         key: t.key,
-        align: 'right' as const,
         width: 110,
         // Suppress the warning by reading from `COUNT_FIELD_BY_TYPE` (it's
         // imported here for the shared map and isn't actually used in the
@@ -118,7 +117,6 @@ const HourlyDataTable: React.FC<Props> = ({ date }) => {
         title: 'รวม',
         dataIndex: 'total',
         key: 'total',
-        align: 'right',
         width: 110,
         render: (val: number, row) => fmtCell(val, row.isSummary),
       },
@@ -126,7 +124,6 @@ const HourlyDataTable: React.FC<Props> = ({ date }) => {
         title: 'PCU',
         dataIndex: 'pcu',
         key: 'pcu',
-        align: 'right',
         width: 110,
         render: (val: number, row) => fmtCell(val, row.isSummary),
       },

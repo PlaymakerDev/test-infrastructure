@@ -228,7 +228,7 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
             <div key={c.label} className='flex flex-col items-center'>
               <span className='fs-11 text-white/55'>{c.label}</span>
               <span
-                className='fs-20 font-bold tabular-nums leading-tight mt-1'
+                className='fs-22 font-bold tabular-nums leading-tight mt-1'
                 style={{ color: c.tone }}
               >
                 {c.value}
