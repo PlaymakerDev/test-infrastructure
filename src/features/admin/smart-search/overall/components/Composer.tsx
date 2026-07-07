@@ -1,5 +1,5 @@
 "use client"
-import { Button, ConfigProvider, Input } from "antd"
+import { ConfigProvider, Input } from "antd"
 import React, { useCallback } from "react"
 import { TbPlayerStopFilled, TbArrowUp, TbTargetArrow } from "react-icons/tb"
 import { useSmartSearchContext } from "../context"
@@ -74,14 +74,14 @@ const Composer: React.FC = () => {
                 </span>
               )}
               {isStreaming ? (
-                <Button
-                  type="primary"
-                  shape="circle"
-                  danger
+                <button
+                  type="button"
                   aria-label="หยุด"
-                  icon={<TbPlayerStopFilled />}
                   onClick={stop}
-                />
+                  className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer bg-[#525252] text-white hover:bg-[#525252]/90"
+                >
+                  <TbPlayerStopFilled size={16} />
+                </button>
               ) : (
                 <button
                   type="button"
