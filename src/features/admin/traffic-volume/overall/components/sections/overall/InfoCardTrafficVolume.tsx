@@ -1,7 +1,7 @@
 "use client"
 import { Col, Row } from 'antd'
 import React, { useMemo } from 'react'
-import { TbChartBar, TbShield } from 'react-icons/tb'
+import { TbCar, TbShield } from 'react-icons/tb'
 import { useTrafficVolumeTotals } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
@@ -41,7 +41,7 @@ const InfoCardTrafficVolume: React.FC<Props> = () => {
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
         <div className={`h-full bg-[#FFB1001A] border-2 rounded-[20px] p-5 border-(--yellow) ${dim}`}>
-          <TbChartBar className='fs-24 text-(--yellow) mb-1' />
+          <TbCar className='fs-24 text-(--yellow) mb-1' />
           <h3 className='text-(--yellow)'>กล้องนับรถในระบบทั้งหมด</h3>
           <p>
             <span className='fs-24 font-bold'>{stats.cameraTotal.toLocaleString()}</span> กล้อง

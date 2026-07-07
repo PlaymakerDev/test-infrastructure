@@ -7,7 +7,7 @@ import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useIncidentOverview } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 
-interface Props {}
+interface Props { }
 
 /** Overview map — one marker per analytic solution. Frames all solutions that
  *  have a coordinate (bureau → แขวง → สายทาง) instead of a fixed centroid zoom. */
@@ -61,7 +61,7 @@ const MapSection: React.FC<Props> = () => {
         popupOptions={{ offset: 10, closeButton: false }}
         popup={(f) => (
           <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: '1px solid #FCD116', fontFamily: 'ui-sans-serif,system-ui', minWidth: 170 }}>
-            <div style={{ fontSize: 10, color: '#FCD116', fontWeight: 700 }}>วิเคราะห์เหตุการณ์</div>
+            <div style={{ fontSize: 10, color: '#FCD116', fontWeight: 700 }}>Incident Detection</div>
             <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
             <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: 11, fontWeight: 600 }}>

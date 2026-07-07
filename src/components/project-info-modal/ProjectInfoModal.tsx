@@ -85,74 +85,74 @@ const ProjectInfoModal: React.FC<ProjectInfoModalProps> = ({
           boxSizing: 'border-box',
         }}
       >
-      {/* Header — clipboard icon + title + optional pill + close */}
-      <div className='flex items-start justify-between mb-5'>
-        <div className='flex items-center gap-3'>
-          <TbClipboardText size={40} color='#66AEFF' />
-          <h2
-            className='leading-none m-0'
-            style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700 }}
-          >
-            {title}
-          </h2>
-          {badge && (
-            <span
-              className='inline-flex items-center justify-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
-              style={{ border: `1px solid ${badge.color}`, color: badge.color }}
+        {/* Header — clipboard icon + title + optional pill + close */}
+        <div className='flex items-start justify-between mb-5'>
+          <div className='flex items-center gap-3'>
+            <TbClipboardText size={40} color='#66AEFF' />
+            <h2
+              className='leading-none m-0'
+              style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700 }}
             >
-              {badge.text}
-            </span>
-          )}
-        </div>
-        <button
-          type='button'
-          onClick={onClose}
-          aria-label='ปิด'
-          className='text-white cursor-pointer hover:opacity-70 transition-opacity bg-transparent border-0 p-0 outline-none focus:outline-none'
-        >
-          <TbX size={24} />
-        </button>
-      </div>
-
-      {/* Description paragraph (optional) */}
-      {description && (
-        <p
-          className='mb-8'
-          style={{
-            color: '#B2D6F0',
-            fontSize: 16,
-            lineHeight: '22px',
-            margin: 0,
-            marginBottom: 32,
-          }}
-        >
-          {description}
-        </p>
-      )}
-
-      {/* Field rows */}
-      <div className='flex flex-col gap-7'>
-        {rows.map((row, i) => (
-          <div key={i} className='flex justify-between gap-6 flex-wrap'>
-            {row.map((field, j) => (
-              <div key={j} className='flex flex-col items-center gap-1.5 flex-1 min-w-30'>
-                <div className='text-white flex items-center justify-center h-7.5'>
-                  {field.icon}
-                </div>
-                <span style={{ color: '#979797', fontSize: 12, lineHeight: '15px' }}>
-                  {field.label}
-                </span>
-                <span
-                  className='text-center'
-                  style={{ color: '#fff', fontSize: 14, lineHeight: '17px' }}
-                >
-                  {field.value}
-                </span>
-              </div>
-            ))}
+              {title}
+            </h2>
+            {badge && (
+              <span
+                className='inline-flex items-center justify-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
+                style={{ border: `1px solid ${badge.color}`, color: badge.color }}
+              >
+                {badge.text}
+              </span>
+            )}
           </div>
-        ))}
-      </div>
+          <button
+            type='button'
+            onClick={onClose}
+            aria-label='ปิด'
+            className='text-white cursor-pointer hover:opacity-70 transition-opacity bg-transparent border-0 p-0 outline-none focus:outline-none'
+          >
+            <TbX size={24} />
+          </button>
+        </div>
+
+        {/* Description paragraph (optional) */}
+        {description && (
+          <p
+            className='mb-8'
+            style={{
+              color: '#B2D6F0',
+              fontSize: 16,
+              lineHeight: '22px',
+              margin: 0,
+              marginBottom: 32,
+            }}
+          >
+            {description}
+          </p>
+        )}
+
+        {/* Field rows */}
+        <div className='flex flex-col gap-7'>
+          {rows.map((row, i) => (
+            <div key={i} className='flex justify-between gap-6 flex-wrap'>
+              {row.map((field, j) => (
+                <div key={j} className='flex flex-col items-center gap-1.5 flex-1 min-w-30'>
+                  <div className='text-white flex items-center justify-center h-7.5'>
+                    {field.icon}
+                  </div>
+                  <span style={{ color: '#979797', fontSize: 12, lineHeight: '15px' }}>
+                    {field.label}
+                  </span>
+                  <span
+                    className='text-center'
+                    style={{ color: '#fff', fontSize: 14, lineHeight: '17px' }}
+                  >
+                    {field.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </Modal>
   )

@@ -1,23 +1,16 @@
 import React from 'react'
-import { DataDisplaySection, LocationSection } from '../components'
+import DataDisplaySection from './sections/overall/DataDisplaySection'
+import LocationSection from './sections/overall/LocationSection'
 
-interface Props {
+const OverallSection: React.FC = () => (
+  <div>
+    <section>
+      <LocationSection />
+    </section>
+    <section className='mt-5'>
+      <DataDisplaySection />
+    </section>
+  </div>
+)
 
-}
-
-const OverallSection: React.FC<Props> = (props) => {
-  const { } = props
-
-  return (
-    <div>
-      <section>
-        <LocationSection />
-      </section>
-      <section className='mt-5'>
-        <DataDisplaySection />
-      </section>
-    </div>
-  )
-}
-
-export default React.memo<Props>(OverallSection)
+export default React.memo(OverallSection)

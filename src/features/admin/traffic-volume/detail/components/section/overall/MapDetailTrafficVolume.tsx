@@ -30,7 +30,7 @@ const DetailCameraPopup: React.FC<{ camera: CountingCameraItem }> = ({
     style={{ width: 280 }}
   >
     <p className='fs-11 font-bold tracking-wide text-cyan-400'>
-      Camera
+      Traffic Volume
     </p>
     <p className='fs-14 font-semibold text-white leading-snug mt-0.5 mb-2'>
       {camera.camera_name}

@@ -9,9 +9,13 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
 import { useDetailContext } from '../../../context'
 
-interface Props {}
+interface Props {
+  /** 'all' | 'online' | 'offline' — filter cameras by connection status.
+   *  Defaults to 'all' when omitted. */
+  activeFilter?: string
+}
 
-const CameraList: React.FC<Props> = () => {
+const CameraList: React.FC<Props> = ({ activeFilter = 'all' }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
   const dispatch = useAppDispatch()
@@ -19,7 +23,11 @@ const CameraList: React.FC<Props> = () => {
   const { data, isLoading } = useCrosswalkCameras(deptId, {
     solution_id: id,
   })
-  const cameras = data?.cameras ?? []
+  const cameras = (data?.cameras ?? []).filter((c) => {
+    if (activeFilter === 'online') return c.is_online
+    if (activeFilter === 'offline') return !c.is_online
+    return true
+  })
 
   const openCamera = (cameraId: string) =>
     dispatch(setCCTVModalOpen({ open: true, camera_id: cameraId }))

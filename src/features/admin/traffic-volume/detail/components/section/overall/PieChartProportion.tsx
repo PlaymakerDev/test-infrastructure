@@ -8,7 +8,7 @@ import { useDetailContext } from '../../../context'
 import type { CountingDailyVehicleCount } from '@/types/traffic-volume/detail-api'
 import { VEHICLE_TYPES } from './data/vehicleTypes'
 
-interface Props {}
+interface Props { }
 
 /** Internal type key → API field key. Same mapping the breakdown table uses
  *  so both views stay in sync — the API uses `bike` for motorcycles while
@@ -73,26 +73,30 @@ const VehicleProportionChart: React.FC<Props> = () => {
     >
       <div className='flex items-center gap-2 mb-2'>
         <TbCar size={22} className='text-(--yellow)' />
-        <span className='fs-16 font-medium text-(--yellow)'>สัดส่วนยานพาหนะ</span>
+        <span className='fs-14 font-normal text-(--yellow)'>สัดส่วนยานพาหนะ</span>
       </div>
 
       {/* Donut — uses the central PieChart but with its card chrome disabled
-        * so it nests cleanly inside our outer card. */}
-      <PieChart
-        title=''
-        icon={null}
-        showGlow={false}
-        iconCircle={false}
-        cardBackground='transparent'
-        cardBorderColor='transparent'
-        data={pieData}
-        centerLabel='ปริมาณจราจรทั้งหมด'
-        centerValue={fmtNumber(total, 0)}
-        centerUnit='คัน'
-        height={280}
-        donutSize={280}
-        showLegend={false}
-      />
+        * so it nests cleanly inside our outer card. Negative `-mt-4` pulls
+        * the donut up against the section title. */}
+      <div className='-mt-6'>
+        <PieChart
+          title=''
+          icon={null}
+          showGlow={false}
+          iconCircle={false}
+          cardBackground='transparent'
+          cardBorderColor='transparent'
+          data={pieData}
+          centerLabel='ปริมาณจราจรทั้งหมด'
+          centerValue={fmtNumber(total, 0)}
+          centerUnit='คัน'
+          height={280}
+          donutSize={280}
+          showLegend={false}
+          tooltipUnit='คัน'
+        />
+      </div>
 
       {/* Legend list — name · count · percentage. Uses API-provided
         * `percentage` so legend numbers match the breakdown table exactly. */}
