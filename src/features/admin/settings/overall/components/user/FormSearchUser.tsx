@@ -6,6 +6,11 @@ import type { UserFilters, UserRole, UserStatus } from '../../types/user'
 
 const DEBOUNCE_MS = 500
 
+// NOTE: All three inputs feed CLIENT-SIDE filters in UserSection because
+// /api-v2/manage/general_user?search=… currently returns malformed JSON
+// (task #12) and the endpoint has no server-side role/status filter.
+// The search box debounces at 500ms so keystrokes don't thrash the
+// downstream memo; role/status dropdowns are cheap and fire immediately.
 interface Props {
   filters: UserFilters
   onChange: (patch: Partial<UserFilters>) => void
@@ -71,7 +76,7 @@ const FormSearchUser: React.FC<Props> = ({ filters, onChange }) => {
         <Input
           size='large'
           className='rounded-lg'
-          placeholder='ค้นหา username / ชื่อ / อีเมล...'
+          placeholder='ค้นหา username / ชื่อ...'
           suffix={<TbSearch />}
           defaultValue={filters.search}
           onChange={(e) => onSearchChange(e.target.value)}

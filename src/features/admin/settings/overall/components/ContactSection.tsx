@@ -1,101 +1,133 @@
 "use client"
-import { Button } from 'antd'
+import { App, Button } from 'antd'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
-import { MOCK_CONTRACTORS_DATA } from '../data/mockContractors'
+import { useContainerHeight } from '@/hooks/useContainerHeight'
+import {
+  useContractorsList,
+  useCreateContractor,
+  useDeleteContractor,
+  useProjectsList,
+  useUpdateContractor,
+} from '@/hooks/queries/manage'
+import type {
+  APIRequestRegisterContractor,
+  APIRequestUpdateContractor,
+} from '@/types/manage/contractor-api'
 import type {
   Contractor,
   ContractorFilters,
   ContractorFormValues,
 } from '../types/contractor'
+import { calcTableScrollY } from '../hooks/useTableScrollY'
+import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
 import ContactModal from './contact/ContactModal'
 import DeleteContactModal from './contact/DeleteContactModal'
 import FormSearchContact from './contact/FormSearchContact'
 import TableContact from './contact/TableContact'
 
-const DEFAULT_FILTERS: ContractorFilters = {
-  province: null,
-  search: '',
-}
+const DEFAULT_FILTERS: ContractorFilters = { search: '' }
+// The /manage/project endpoint offers no `?contractor_id=` filter, so to
+// compute a per-contractor project count we pull a wide slice on page 1 and
+// tally on the client. Real total is ~348; 1000 leaves ample headroom.
+const PROJECTS_FOR_COUNT_LIMIT = 1000
 
-const PAGE_SIZE = 20
-
-// Interface designed so a future teammate can swap `useMockContractors()` for
-// `useContractorsAPI()` in one place without touching the UI.
-const useMockContractors = () => {
-  const [contractors, setContractors] = useState<Contractor[]>(MOCK_CONTRACTORS_DATA)
-
-  const createContractor = useCallback((values: ContractorFormValues) => {
-    const created: Contractor = {
-      id: `c-${Math.floor(Math.random() * 1_000_000).toString(36)}`,
-      companyName: values.companyName,
-      taxId: values.taxId,
-      contactPerson: values.contactPerson,
-      phone: values.phone,
-      email: values.email,
-      address: values.address,
-      province: values.province,
-      registeredAt: new Date().toISOString(),
-      projectCount: 0,
+/** Best-effort extractor for the backend's Thai error message, which sits at
+ *  `error.response.data.message` when the request is enveloped by the shared
+ *  BaseService interceptor. Falls back to `error.message` for network errors. */
+const readErrorMessage = (error: unknown, fallback: string): string => {
+  if (error && typeof error === 'object') {
+    const withResponse = error as {
+      response?: { data?: { message?: string } }
+      message?: string
     }
-    setContractors((prev) => [created, ...prev])
-    return created
-  }, [])
-
-  const updateContractor = useCallback((id: string, values: ContractorFormValues) => {
-    setContractors((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              companyName: values.companyName,
-              taxId: values.taxId,
-              contactPerson: values.contactPerson,
-              phone: values.phone,
-              email: values.email,
-              address: values.address,
-              province: values.province,
-            }
-          : c,
-      ),
+    return (
+      withResponse.response?.data?.message ??
+      withResponse.message ??
+      fallback
     )
-  }, [])
-
-  const deleteContractor = useCallback((id: string) => {
-    setContractors((prev) => prev.filter((c) => c.id !== id))
-  }, [])
-
-  return { contractors, createContractor, updateContractor, deleteContractor }
+  }
+  return fallback
 }
 
 const ContactSection: React.FC = () => {
-  const { contractors, createContractor, updateContractor, deleteContractor } = useMockContractors()
+  const { message } = App.useApp()
 
+  // ── Local UI state ────────────────────────────────────────────────────────
   const [filters, setFiltersState] = useState<ContractorFilters>(DEFAULT_FILTERS)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [modalState, setModalState] = useState<{ open: boolean; editing: Contractor | null }>({
     open: false,
     editing: null,
   })
   const [deleteTarget, setDeleteTarget] = useState<Contractor | null>(null)
 
+  // Observed height of the outer card — drives the AntD `scroll.y` so the
+  // table body always fits the viewport slot allocated by the parent flex
+  // layout (screen shell → section slot → this card).
+  const [attachContainer, containerH] = useContainerHeight<HTMLDivElement>()
+
   const setFilters = useCallback((patch: Partial<ContractorFilters>) => {
     setFiltersState((prev) => ({ ...prev, ...patch }))
     setPage(1)
   }, [])
 
-  const filtered = useMemo(() => {
-    const q = filters.search.trim().toLowerCase()
-    return contractors.filter((c) => {
-      if (filters.province && c.province !== filters.province) return false
-      if (q) {
-        const hay = `${c.companyName} ${c.taxId} ${c.contactPerson}`.toLowerCase()
-        if (!hay.includes(q)) return false
-      }
-      return true
-    })
-  }, [contractors, filters])
+  // ── Server state ──────────────────────────────────────────────────────────
+  // /manage/contractor is server-paginated AND server-searched (verified). The
+  // hook cache-slots by (page, limit, search) so switching pages or typing a
+  // new query keeps prior results warm and avoids empty-state flashes.
+  const contractorsQuery = useContractorsList({
+    page,
+    limit: pageSize,
+    search: filters.search.trim(),
+  })
+  // Only used to derive `projectCount` per contractor — the API has no such
+  // field, so we count matching projects on the client. Pull a wide, unpaged
+  // slice so the tallies are complete (the section itself never displays
+  // this list — the value is only fed into the badge column).
+  const projectsQuery = useProjectsList({ page: 1, limit: PROJECTS_FOR_COUNT_LIMIT })
+  const createMutation = useCreateContractor()
+  const updateMutation = useUpdateContractor()
+  const deleteMutation = useDeleteContractor()
 
+  // ── Derive project counts per contractor uuid ────────────────────────────
+  const projectCountByContractorId = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const p of projectsQuery.data?.res_data ?? []) {
+      map.set(p.contractor_id, (map.get(p.contractor_id) ?? 0) + 1)
+    }
+    return map
+  }, [projectsQuery.data])
+
+  // ── Map API rows → UI Contractor shape ───────────────────────────────────
+  // No client-side text filtering — the server already applied `?search=`.
+  // (The /contractor endpoint offers no other filter fields — no province,
+  //  region, active-flag, etc. — so there is nothing to narrow further on
+  //  the client.)
+  const contractors = useMemo<Contractor[]>(() => {
+    const rows = contractorsQuery.data?.res_data ?? []
+    return rows.map<Contractor>((c) => ({
+      id: c.user_id,
+      companyName: c.company_name,
+      shortName: c.short_name,
+      contactPerson: c.name ?? '',
+      phone: c.phone ?? '',
+      address: c.address ?? '',
+      role: c.role ?? '',
+      registeredAt: c.created_at,
+      username: c.user?.username ?? '',
+      isActive: c.user?.is_active ?? true,
+      projectCount: projectCountByContractorId.get(c.user_id) ?? 0,
+    }))
+  }, [contractorsQuery.data, projectCountByContractorId])
+
+  // Server-reported total row count for the pagination footer. Falls back
+  // to the current page's length so the "1-N จาก N" label is still sensible
+  // during the initial load before meta_data arrives.
+  const total = contractorsQuery.data?.meta_data?.count ?? contractors.length
+
+  // ── Modal open/close ─────────────────────────────────────────────────────
   const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
   const openEdit = useCallback(
     (row: Contractor) => setModalState({ open: true, editing: row }),
@@ -103,31 +135,95 @@ const ContactSection: React.FC = () => {
   )
   const closeModal = useCallback(() => setModalState({ open: false, editing: null }), [])
 
+  // ── Create / update ──────────────────────────────────────────────────────
   const handleSubmit = useCallback(
-    (values: ContractorFormValues, editingId: string | null) => {
-      if (editingId) updateContractor(editingId, values)
-      else createContractor(values)
+    async (values: ContractorFormValues, editingId: string | null) => {
+      // Trim + normalise. Empty optional strings are dropped so the server
+      // sees `undefined` (schema treats those keys as omitted) rather than "".
+      const optional = <T extends string | undefined>(v: T): string | undefined => {
+        if (typeof v !== 'string') return undefined
+        const t = v.trim()
+        return t.length ? t : undefined
+      }
+
+      const companyName = values.companyName.trim()
+      const shortName = values.shortName.trim()
+
+      try {
+        if (editingId) {
+          const body: APIRequestUpdateContractor = {
+            company_name: companyName,
+            short_name: shortName,
+            name: optional(values.contactPerson),
+            phone: optional(values.phone),
+            address: optional(values.address),
+            role: optional(values.role),
+            password: optional(values.password),
+          }
+          await updateMutation.mutateAsync({ id: editingId, data: body })
+          message.success('แก้ไขข้อมูลผู้รับจ้างสำเร็จ')
+        } else {
+          // Backend requires password on create — the modal enforces this too.
+          const body: APIRequestRegisterContractor = {
+            company_name: companyName,
+            short_name: shortName,
+            password: (values.password ?? '').trim(),
+            name: optional(values.contactPerson),
+            phone: optional(values.phone),
+            address: optional(values.address),
+            role: optional(values.role),
+          }
+          await createMutation.mutateAsync(body)
+          message.success('เพิ่มผู้รับจ้างสำเร็จ')
+        }
+        closeModal()
+      } catch (error) {
+        message.error(
+          readErrorMessage(
+            error,
+            editingId
+              ? 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลผู้รับจ้าง'
+              : 'เกิดข้อผิดพลาดในการเพิ่มผู้รับจ้าง',
+          ),
+        )
+      }
     },
-    [createContractor, updateContractor],
+    [createMutation, updateMutation, closeModal, message],
   )
 
+  // ── Delete ───────────────────────────────────────────────────────────────
   const handleDeleteRequest = useCallback((row: Contractor) => {
     setDeleteTarget(row)
   }, [])
 
   const handleDeleteConfirm = useCallback(
-    (id: string) => {
-      deleteContractor(id)
+    async (id: string) => {
+      try {
+        await deleteMutation.mutateAsync(id)
+        message.success('ลบผู้รับจ้างสำเร็จ')
+        setDeleteTarget(null)
+      } catch (error) {
+        message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการลบผู้รับจ้าง'))
+      }
     },
-    [deleteContractor],
+    [deleteMutation, message],
   )
+
+  // AntD `Pagination.onShowSizeChange` fires with `(current, size)`. Reset to
+  // page 1 so the user isn't stranded on a page index that may no longer
+  // exist under the wider window.
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize)
+    setPage(1)
+  }, [])
 
   return (
     <div
-      className='rounded-2xl p-5'
+      ref={attachContainer}
+      className='rounded-2xl p-5 flex flex-col h-full'
       style={{ background: '#191919', border: '1px solid var(--light-gray-2)' }}
     >
-      <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
+      <div className='shrink-0 flex flex-col lg:flex-row lg:items-end gap-4'>
         <div className='flex-1 min-w-0'>
           <FormSearchContact filters={filters} onFiltersChange={setFilters} />
         </div>
@@ -162,12 +258,16 @@ const ContactSection: React.FC = () => {
         </div>
       </div>
 
-      <div className='mt-5'>
+      <div className='flex-1 min-h-0 mt-5'>
         <TableContact
-          data={filtered}
+          data={contractors}
+          loading={contractorsQuery.isLoading || projectsQuery.isLoading}
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
+          total={total}
+          scrollY={calcTableScrollY(containerH)}
           onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
           onEdit={openEdit}
           onDelete={handleDeleteRequest}
         />
@@ -176,12 +276,14 @@ const ContactSection: React.FC = () => {
       <ContactModal
         open={modalState.open}
         editing={modalState.editing}
+        submitting={createMutation.isPending || updateMutation.isPending}
         onClose={closeModal}
         onSubmit={handleSubmit}
       />
       <DeleteContactModal
         open={!!deleteTarget}
         contractor={deleteTarget}
+        deleting={deleteMutation.isPending}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
       />

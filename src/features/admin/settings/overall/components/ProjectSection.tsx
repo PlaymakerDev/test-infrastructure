@@ -2,7 +2,9 @@
 import { Button } from 'antd'
 import React, { useState } from 'react'
 import { TbLayoutGrid, TbList, TbPlus, TbPrinter } from 'react-icons/tb'
+import { useContainerHeight } from '@/hooks/useContainerHeight'
 import { useOverallContext } from '../context'
+import { calcTableScrollY } from '../hooks/useTableScrollY'
 import type { Project } from '../types/project'
 import DeleteProjectModal from './project/DeleteProjectModal'
 import FormSearchProject from './project/FormSearchProject'
@@ -16,6 +18,7 @@ const ProjectSection: React.FC = () => {
     editing: null,
   })
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null)
+  const [attachContainer, containerH] = useContainerHeight<HTMLDivElement>()
 
   const openCreate = () => setProjectModal({ open: true, editing: null })
   const openEdit = (project: Project) => setProjectModal({ open: true, editing: project })
@@ -23,10 +26,11 @@ const ProjectSection: React.FC = () => {
 
   return (
     <div
-      className='rounded-2xl p-5'
+      ref={attachContainer}
+      className='rounded-2xl p-5 flex flex-col h-full'
       style={{ background: '#191919', border: '1px solid var(--light-gray-2)' }}
     >
-      <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
+      <div className='shrink-0 flex flex-col lg:flex-row lg:items-end gap-4'>
         <div className='flex-1 min-w-0'>
           <FormSearchProject />
         </div>
@@ -79,8 +83,12 @@ const ProjectSection: React.FC = () => {
         </div>
       </div>
 
-      <div className='mt-5'>
-        <TableProject onEdit={openEdit} onDelete={setDeleteTarget} />
+      <div className='flex-1 min-h-0 mt-5'>
+        <TableProject
+          onEdit={openEdit}
+          onDelete={setDeleteTarget}
+          scrollY={calcTableScrollY(containerH)}
+        />
       </div>
 
       <ProjectModal open={projectModal.open} editing={projectModal.editing} onClose={closeProject} />

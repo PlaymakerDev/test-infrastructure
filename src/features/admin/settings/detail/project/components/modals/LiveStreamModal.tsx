@@ -1,8 +1,10 @@
 "use client"
 import { ConfigProvider, Modal } from 'antd'
 import dayjs from 'dayjs'
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 import { TbCamera, TbDeviceCctv, TbMapPin, TbNetwork, TbPlayerPlay, TbRefresh } from 'react-icons/tb'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
 import type { Equipment } from '../../types'
 
 interface Props {
@@ -16,9 +18,9 @@ const InfoStat: React.FC<{ icon: React.ReactNode; label: string; children: React
   icon, label, children,
 }) => (
   <div className='flex flex-col items-center gap-1'>
-    <span className='text-(--default-blue)'>{icon}</span>
-    <span className='text-white/60 text-xs'>{label}</span>
-    <div className='text-white text-sm'>{children}</div>
+    <span style={{ color: '#66AEFF' }}>{icon}</span>
+    <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>{label}</span>
+    <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>{children}</div>
   </div>
 )
 
@@ -32,42 +34,40 @@ const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
 )
 
 const LiveStreamModal: React.FC<Props> = ({ open, equipment, pointLabel, onClose }) => {
-  // NOTE: Real HLS playback requires hls.js — hooking it in is trivial once the
-  // backend hands us a genuine .m3u8 URL. For now show a placeholder frame so
-  // the layout matches Figma exactly.
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    // Placeholder — real HLS binding wires here.
-  }, [open])
-
   return (
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#0e0e0e', headerBg: '#0e0e0e', footerBg: '#0e0e0e', colorIcon: '#FFF', titleColor: '#FFF' },
+          Modal: { contentBg: '#1A1A1A', headerBg: '#1A1A1A', footerBg: '#1A1A1A', colorIcon: '#FFFFFF', titleColor: '#FFFFFF', borderRadiusLG: 16 },
         },
       }}
     >
-      <Modal open={open} onCancel={onClose} footer={null} destroyOnHidden width={900} title={null}>
-        <div className='mb-2 flex items-center gap-2 text-(--default-blue)'>
-          <TbPlayerPlay size={22} />
-          <h3 className='font-bold mb-0 text-white'>Live Stream</h3>
+      <Modal
+        wrapClassName='light-modal'
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        destroyOnHidden
+        width={900}
+        styles={{ container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' }, mask: { background: 'rgba(0,0,0,0.55)' } }}
+        title={null}
+      >
+        <div className='mb-1 flex items-center gap-2'>
+          <TbPlayerPlay size={22} style={{ color: '#66AEFF' }} />
+          <h3 style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 700, margin: 0 }}>Live Stream</h3>
         </div>
-        <p className='text-(--default-blue) text-sm break-words mb-3'>{equipment?.name}</p>
+        <p style={{ color: '#66AEFF', fontSize: 13, wordBreak: 'break-word', margin: 0, marginBottom: 16 }}>
+          {equipment?.name}
+        </p>
 
-        <div className='rounded-lg overflow-hidden bg-black' style={{ aspectRatio: '16/9' }}>
-          <video
-            ref={videoRef}
-            className='w-full h-full object-cover'
-            controls
-            poster='/next.svg'
-          />
-        </div>
+        <HLSLivePlayer
+          hlsUrl={equipment?.hlsUrl ?? ''}
+          cameraId={equipment?.id ?? 'unknown'}
+          figureClassName='aspect-video rounded-lg'
+        />
 
-        <div className='mt-4'>
-          <p className='text-(--default-blue) font-bold mb-2'>ข้อมูลอุปกรณ์</p>
+        <div className='mt-6'>
+          <p style={{ color: '#66AEFF', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>ข้อมูลอุปกรณ์</p>
           <div className='grid grid-cols-2 sm:grid-cols-6 gap-3'>
             <InfoStat icon={<TbMapPin size={20} />} label='จุดติดตั้ง'>
               {pointLabel ?? '-'}
@@ -90,7 +90,7 @@ const LiveStreamModal: React.FC<Props> = ({ open, equipment, pointLabel, onClose
               />
             </InfoStat>
             <InfoStat icon={<TbNetwork size={20} />} label='IP Address'>
-              {equipment?.ipAddress ?? '-'}
+              {equipment?.ipAddress ?? extractIpFromHlsUrl(equipment?.hlsUrl)}
             </InfoStat>
             <InfoStat icon={<TbRefresh size={20} />} label='อัพเดตล่าสุด'>
               {equipment ? dayjs(equipment.lastUpdated).format('DD MMM YYYY HH:mm:ss') : '-'}

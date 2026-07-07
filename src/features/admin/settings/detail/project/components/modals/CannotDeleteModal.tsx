@@ -16,37 +16,42 @@ const CannotDeleteModal: React.FC<Props> = ({ open, title, subtitleNode, bodyNod
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#FFFFFF', headerBg: '#FFFFFF', footerBg: '#FFFFFF', colorIcon: '#000' },
+          Modal: { contentBg: '#FFFFFF', headerBg: '#FFFFFF', footerBg: '#FFFFFF', colorIcon: '#000', borderRadiusLG: 16 },
         },
       }}
     >
-      <Modal open={open} onCancel={onClose} footer={null} destroyOnHidden width={620} closable={false}>
-        <div className='flex flex-col items-center gap-4 py-2'>
+      <Modal
+        wrapClassName='light-modal'
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        destroyOnHidden
+        width={620}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        styles={{ container: { padding: '36px 40px', borderRadius: 16 }, mask: { background: 'rgba(0,0,0,0.55)' } }}
+      >
+        <div className='flex flex-col items-center gap-4'>
           <div
-            className='w-16 h-16 rounded-full flex items-center justify-center'
-            style={{ border: '3px solid #F59E0B' }}
+            className='rounded-full flex items-center justify-center'
+            style={{ width: 56, height: 56, border: '2px solid #F97316' }}
           >
-            <TbAlertCircle size={40} color='#F59E0B' />
+            <TbAlertCircle size={36} color='#F97316' strokeWidth={2.5} />
           </div>
           <div className='text-center'>
-            <h3 className='text-black font-bold text-lg m-0'>{title}</h3>
-            <div className='text-gray-600 text-sm mt-1'>{subtitleNode}</div>
+            <h3 style={{ color: '#1F1F1F', fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h3>
+            <div style={{ color: '#8A8A8A', fontSize: 13, marginTop: 6 }}>{subtitleNode}</div>
           </div>
           <div
-            className='w-full rounded-xl p-4'
-            style={{ border: '1px solid #F59E0B', background: '#FFF7ED' }}
+            className='w-full rounded-xl'
+            style={{ border: '1px solid #F97316', background: '#FFEDD5', padding: '20px 24px', marginTop: 4 }}
           >
             {bodyNode}
           </div>
           <div className='flex justify-end w-full mt-2'>
             <Button
-              size='large'
               shape='round'
               onClick={onClose}
-              style={{
-                background: 'var(--yellow)', color: '#000',
-                borderColor: 'var(--yellow)', fontWeight: 700,
-              }}
+              style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', padding: '10px 32px', height: 'auto', fontWeight: 600 }}
             >
               รับทราบ
             </Button>

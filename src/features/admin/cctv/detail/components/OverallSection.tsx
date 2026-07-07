@@ -120,7 +120,7 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
                 onChange={(v) => setPanelFilter(v)}
                 variant='borderless'
                 className='cctv-cam-select w-full'
-                popupClassName='cctv-cam-dropdown'
+                classNames={{ popup: { root: 'cctv-cam-dropdown' } }}
                 suffixIcon={<TbChevronDown size={16} style={{ color: '#FCD116' }} />}
                 options={filterOptions}
                 optionRender={(opt) => <span className='cctv-cam-option'>{opt.label}</span>}

@@ -1,20 +1,50 @@
 "use client"
-import { Button, ConfigProvider, Form, Input, Modal, Select } from 'antd'
+import { Button, ConfigProvider, Form, Input, Modal } from 'antd'
 import React, { useEffect } from 'react'
 import { TbBuildingSkyscraper } from 'react-icons/tb'
-import { MOCK_PROVINCES } from '../../data/mockContractors'
 import type { Contractor, ContractorFormValues } from '../../types/contractor'
 
 interface Props {
   open: boolean
   editing: Contractor | null
+  submitting?: boolean
   onClose: () => void
   onSubmit: (values: ContractorFormValues, editingId: string | null) => void
 }
 
-const TAX_ID_PATTERN = /^\d{13}$/
+/** Figma design tokens for the white "add/edit" modal — kept in one const so
+ *  every field, label, and control stays visually aligned with frame 2. */
+const TOKENS = {
+  label: '#1F1F1F',
+  asterisk: '#FF3B3B',
+  border: '#E5E5E5',
+  borderFocus: '#FCD116',
+  placeholder: '#B8B8B8',
+  title: '#111111',
+  cancelBg: '#E5E5E5',
+  cancelText: '#4A4A4A',
+  confirmBg: '#FCD116',
+  confirmText: '#1A1A1A',
+} as const
 
-const ContactModal: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => {
+const requiredLabel = (text: string) => (
+  <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>
+    {text}
+    <span style={{ color: TOKENS.asterisk, marginLeft: 2 }}>*</span>
+  </span>
+)
+
+const plainLabel = (text: string) => (
+  <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>{text}</span>
+)
+
+/** Fields mirror the real /manage/contractor request bodies:
+ *   - create requires: company_name, short_name, password
+ *   - update requires: company_name, short_name (password optional; sent
+ *     only when the operator explicitly types a new one).
+ *  taxId / email / province from the mock UI were dropped — the backend has
+ *  no columns for them. */
+const ContactModal: React.FC<Props> = ({ open, editing, submitting, onClose, onSubmit }) => {
   const [form] = Form.useForm<ContractorFormValues>()
   const isEdit = !!editing
 
@@ -23,12 +53,14 @@ const ContactModal: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => 
     if (editing) {
       form.setFieldsValue({
         companyName: editing.companyName,
-        taxId: editing.taxId,
+        shortName: editing.shortName,
         contactPerson: editing.contactPerson,
         phone: editing.phone,
-        email: editing.email,
         address: editing.address,
-        province: editing.province,
+        role: editing.role,
+        // Password intentionally blank on edit — the API keeps the existing
+        // password when this field is omitted.
+        password: '',
       })
     } else {
       form.resetFields()
@@ -36,134 +68,182 @@ const ContactModal: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => 
   }, [open, editing, form])
 
   const handleFinish = (values: ContractorFormValues) => {
-    onSubmit(
-      {
-        companyName: values.companyName.trim(),
-        taxId: values.taxId.trim(),
-        contactPerson: values.contactPerson.trim(),
-        phone: values.phone.trim(),
-        email: (values.email || '').trim(),
-        address: (values.address || '').trim(),
-        province: values.province,
-      },
-      editing?.id ?? null,
-    )
-    onClose()
+    onSubmit(values, editing?.id ?? null)
   }
 
   return (
     <ConfigProvider
       theme={{
+        token: {
+          colorBorder: TOKENS.border,
+          colorPrimary: TOKENS.borderFocus,
+          colorTextPlaceholder: TOKENS.placeholder,
+          borderRadius: 8,
+        },
         components: {
           Modal: {
-            colorIcon: '#000000',
             contentBg: '#FFFFFF',
             headerBg: '#FFFFFF',
             footerBg: '#FFFFFF',
-            titleColor: '#000000',
+            titleColor: TOKENS.title,
+            borderRadiusLG: 16,
+            paddingContentHorizontalLG: 40,
+            paddingLG: 32,
           },
-          Form: { labelColor: '#000000' },
-          Input: { colorTextPlaceholder: '#B0B0B0' },
-          Select: { colorTextPlaceholder: '#B0B0B0' },
+          Form: { labelColor: TOKENS.label, itemMarginBottom: 16 },
+          Input: {
+            colorTextPlaceholder: TOKENS.placeholder,
+            borderRadius: 8,
+            controlHeight: 44,
+            paddingInline: 14,
+            activeBorderColor: TOKENS.borderFocus,
+            hoverBorderColor: TOKENS.borderFocus,
+          },
+          Select: {
+            colorTextPlaceholder: TOKENS.placeholder,
+            borderRadius: 8,
+            controlHeight: 44,
+          },
         },
       }}
     >
       <Modal
+        wrapClassName='light-modal'
         open={open}
         onCancel={onClose}
         footer={null}
         destroyOnHidden
         width={720}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        mask={{ closable: !submitting }}
+        keyboard={!submitting}
+        styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
         title={
-          <div className='flex items-center gap-2 text-black'>
-            <TbBuildingSkyscraper size={22} />
-            <span className='font-bold text-lg'>
+          <div className='flex items-center' style={{ gap: 12 }}>
+            <TbBuildingSkyscraper size={22} color={TOKENS.borderFocus} />
+            <span
+              style={{
+                color: TOKENS.title,
+                fontSize: 20,
+                fontWeight: 600,
+                lineHeight: 1.2,
+              }}
+            >
               {isEdit ? 'แก้ไขข้อมูลผู้รับจ้าง' : 'เพิ่มผู้รับจ้าง'}
             </span>
           </div>
         }
       >
-        <Form<ContractorFormValues> form={form} layout='vertical' onFinish={handleFinish}>
+        {isEdit && editing?.username ? (
+          <div
+            className='mb-4 rounded-lg px-3 py-2 text-xs'
+            style={{ background: '#F3F4F6', color: '#374151' }}
+          >
+            บัญชีผู้ใช้ (username):{' '}
+            <span className='font-semibold' style={{ color: TOKENS.title }}>
+              {editing.username}
+            </span>
+          </div>
+        ) : null}
+
+        <Form<ContractorFormValues>
+          form={form}
+          layout='vertical'
+          onFinish={handleFinish}
+          disabled={submitting}
+          requiredMark={false}
+        >
           <Form.Item
-            label={<span className='text-black'>ชื่อบริษัท<span className='text-red-500'>*</span></span>}
+            label={requiredLabel('ชื่อบริษัท')}
             name='companyName'
             rules={[{ required: true, message: 'กรุณาระบุชื่อบริษัท' }]}
           >
             <Input placeholder='กรุณาระบุชื่อบริษัท...' />
           </Form.Item>
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2' style={{ gap: 20 }}>
             <Form.Item
-              label={<span className='text-black'>เลขประจำตัวผู้เสียภาษี<span className='text-red-500'>*</span></span>}
-              name='taxId'
-              rules={[
-                { required: true, message: 'กรุณาระบุเลขประจำตัวผู้เสียภาษี' },
-                {
-                  pattern: TAX_ID_PATTERN,
-                  message: 'เลขประจำตัวผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก',
-                },
-              ]}
+              label={requiredLabel('ชื่อย่อ')}
+              name='shortName'
+              rules={[{ required: true, message: 'กรุณาระบุชื่อย่อ' }]}
             >
-              <Input maxLength={13} placeholder='เช่น 0105536012345' />
+              <Input placeholder='เช่น TPS' />
             </Form.Item>
-            <Form.Item
-              label={<span className='text-black'>จังหวัด<span className='text-red-500'>*</span></span>}
-              name='province'
-              rules={[{ required: true, message: 'กรุณาเลือกจังหวัด' }]}
-            >
-              <Select
-                showSearch
-                placeholder='กรุณาเลือกจังหวัด...'
-                options={MOCK_PROVINCES.map((p) => ({ label: p, value: p }))}
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
-                }
-              />
+            <Form.Item label={plainLabel('ตำแหน่ง / บทบาท')} name='role'>
+              <Input placeholder='เช่น ผู้จัดการโครงการ' />
             </Form.Item>
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
-            <Form.Item
-              label={<span className='text-black'>ผู้ติดต่อ<span className='text-red-500'>*</span></span>}
-              name='contactPerson'
-              rules={[{ required: true, message: 'กรุณาระบุผู้ติดต่อ' }]}
-            >
+          <div className='grid grid-cols-2' style={{ gap: 20 }}>
+            <Form.Item label={plainLabel('ผู้ติดต่อ')} name='contactPerson'>
               <Input placeholder='กรุณาระบุชื่อผู้ติดต่อ...' />
             </Form.Item>
-            <Form.Item
-              label={<span className='text-black'>เบอร์โทรศัพท์<span className='text-red-500'>*</span></span>}
-              name='phone'
-              rules={[{ required: true, message: 'กรุณาระบุเบอร์โทรศัพท์' }]}
-            >
+            <Form.Item label={plainLabel('เบอร์โทรศัพท์')} name='phone'>
               <Input placeholder='เช่น 02-123-4567' />
             </Form.Item>
           </div>
 
-          <Form.Item
-            label={<span className='text-black'>อีเมล</span>}
-            name='email'
-            rules={[{ type: 'email', message: 'รูปแบบอีเมลไม่ถูกต้อง' }]}
-          >
-            <Input placeholder='เช่น contact@company.co.th' />
-          </Form.Item>
-
-          <Form.Item label={<span className='text-black'>ที่อยู่</span>} name='address'>
+          <Form.Item label={plainLabel('ที่อยู่')} name='address'>
             <Input.TextArea rows={3} placeholder='กรุณาระบุที่อยู่...' />
           </Form.Item>
 
-          <div className='flex justify-end gap-2 mt-2'>
-            <Button size='large' shape='round' onClick={onClose}>
+          <Form.Item
+            label={
+              <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>
+                รหัสผ่าน
+                {isEdit ? (
+                  <span style={{ color: '#8A8A8A', fontSize: 12, marginLeft: 6 }}>
+                    (เว้นว่างหากไม่ต้องการเปลี่ยน)
+                  </span>
+                ) : (
+                  <span style={{ color: TOKENS.asterisk, marginLeft: 2 }}>*</span>
+                )}
+              </span>
+            }
+            name='password'
+            rules={
+              isEdit
+                ? []
+                : [{ required: true, message: 'กรุณาระบุรหัสผ่านสำหรับเข้าใช้งาน' }]
+            }
+          >
+            <Input.Password
+              placeholder={isEdit ? 'ปล่อยว่างเพื่อคงรหัสผ่านเดิม' : 'กรุณาระบุรหัสผ่าน...'}
+              autoComplete='new-password'
+            />
+          </Form.Item>
+
+          <div className='flex justify-end mt-2' style={{ gap: 12 }}>
+            <Button
+              onClick={onClose}
+              disabled={submitting}
+              style={{
+                background: TOKENS.cancelBg,
+                color: TOKENS.cancelText,
+                border: 'none',
+                borderRadius: 999,
+                padding: '10px 28px',
+                height: 'auto',
+                fontWeight: 500,
+              }}
+            >
               ยกเลิก
             </Button>
             <Button
-              size='large'
-              shape='round'
               htmlType='submit'
+              loading={submitting}
+              // Form's `disabled` prop above cascades to buttons via context —
+              // explicitly keep the submit control enabled so the loading
+              // spinner is visible and the click still fires validation.
+              disabled={false}
               style={{
-                background: 'var(--yellow)',
-                color: '#000',
-                borderColor: 'var(--yellow)',
-                fontWeight: 700,
+                background: TOKENS.confirmBg,
+                color: TOKENS.confirmText,
+                border: 'none',
+                borderRadius: 999,
+                padding: '10px 32px',
+                height: 'auto',
+                fontWeight: 600,
               }}
             >
               ยืนยัน

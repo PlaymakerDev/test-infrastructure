@@ -1,61 +1,114 @@
 "use client"
 import { Button, ConfigProvider, Form, Input, Modal, Radio, Select } from 'antd'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { TbUserCog } from 'react-icons/tb'
-import { DEPARTMENT_OPTIONS } from '../../data/mockUsers'
-import type { User, UserFormValues, UserRole, UserStatus } from '../../types/user'
+import { useDepartments } from '@/hooks/queries/manage'
+import type { User, UserFormValues } from '../../types/user'
 
 interface Props {
   open: boolean
   editing: User | null
+  submitting?: boolean
   onClose: () => void
-  onSubmit: (values: UserFormValues, editingId: string | null) => void
+  onSubmit: (values: UserFormValues, editing: User | null) => void
+  /** Opens the "change password" sub-modal from within the edit dialog.
+   *  Passed through instead of hard-wired so UserSection stays the single
+   *  owner of that modal's open state. */
+  onChangePassword?: (user: User) => void
 }
 
 interface FormShape {
   username: string
-  fullName: string
-  email: string
-  role: UserRole
-  department: string
-  phone: string
-  status: UserStatus
+  firstName: string
+  lastName: string
+  role: string
+  departmentId: number | null
+  password?: string
 }
 
-const UserModal: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => {
+// Figma design spec — kept alongside JSX so the intent is discoverable when
+// tweaking styles later. Hex values are mirrored verbatim from the spec brief.
+const RED_ASTERISK = '#FF3B3B'
+const LABEL_COLOR = '#1F1F1F'
+const BORDER_DEFAULT = '#E5E5E5'
+const BORDER_FOCUS = '#FCD116'
+const PLACEHOLDER = '#B8B8B8'
+const CANCEL_BG = '#E5E5E5'
+const CANCEL_TEXT = '#4A4A4A'
+const CONFIRM_BG = '#FCD116'
+const CONFIRM_TEXT = '#1A1A1A'
+
+const Asterisk: React.FC = () => (
+  <span style={{ color: RED_ASTERISK, marginLeft: 2 }}>*</span>
+)
+
+const UserModal: React.FC<Props> = ({
+  open,
+  editing,
+  submitting,
+  onClose,
+  onSubmit,
+  onChangePassword,
+}) => {
   const [form] = Form.useForm<FormShape>()
   const isEdit = !!editing
+  const isSubmitting = !!submitting
+
+  const { data: departments, isLoading: departmentsLoading } = useDepartments()
+
+  const departmentOptions = useMemo(() => {
+    const opts = (departments ?? []).map((d) => ({
+      label: d.department_short_name || d.department_name,
+      value: d.id,
+    }))
+    // Fallback: if the editing user's departmentId isn't in the fetched list
+    // (async race, deleted FK, or missing short_name), inject a synthetic
+    // option so the Select still renders the stored value instead of blanking.
+    if (editing?.departmentId != null && !opts.some((o) => o.value === editing.departmentId)) {
+      opts.push({ label: `#${editing.departmentId}`, value: editing.departmentId })
+    }
+    return opts
+  }, [departments, editing])
+
+  // See RouteModal for the rationale — initialValues + key on Form guarantees
+  // the value lands on Select fields at mount, avoiding the showSearch race
+  // where post-mount setFieldsValue can be swallowed.
+  const initialValues = useMemo<Partial<FormShape>>(
+    () =>
+      editing
+        ? {
+            username: editing.username,
+            firstName: editing.firstName,
+            lastName: editing.lastName,
+            role: editing.role || 'operator',
+            departmentId: editing.departmentId,
+          }
+        : { role: 'operator' },
+    [editing],
+  )
 
   useEffect(() => {
     if (!open) return
-    if (editing) {
-      form.setFieldsValue({
-        username: editing.username,
-        fullName: editing.fullName,
-        email: editing.email,
-        role: editing.role,
-        department: editing.department,
-        phone: editing.phone,
-        status: editing.status,
-      })
-    } else {
+    if (editing) form.setFieldsValue(initialValues)
+    else {
       form.resetFields()
-      form.setFieldsValue({ role: 'operator', status: 'active' })
+      form.setFieldsValue({ role: 'operator' })
     }
-  }, [open, editing, form])
+  }, [open, editing, form, initialValues])
 
   const handleFinish = (values: FormShape) => {
+    if (values.departmentId == null) return
     const payload: UserFormValues = {
       username: values.username.trim(),
-      fullName: values.fullName.trim(),
-      email: values.email.trim(),
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
       role: values.role,
-      department: values.department,
-      phone: (values.phone || '').trim(),
-      status: values.status,
+      departmentId: values.departmentId,
+      // Password is only meaningful on create — edit uses the dedicated
+      // "change password" flow via PATCH /general_user/{id}/password.
+      password: !isEdit ? values.password?.trim() || undefined : undefined,
     }
-    onSubmit(payload, editing?.id ?? null)
-    onClose()
+    onSubmit(payload, editing)
   }
 
   return (
@@ -63,124 +116,216 @@ const UserModal: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => {
       theme={{
         components: {
           Modal: {
-            colorIcon: '#000000',
+            colorIcon: LABEL_COLOR,
             contentBg: '#FFFFFF',
             headerBg: '#FFFFFF',
             footerBg: '#FFFFFF',
-            titleColor: '#000000',
+            titleColor: '#111111',
+            borderRadiusLG: 16,
+            paddingContentHorizontalLG: 40,
+            paddingMD: 32,
           },
-          Form: { labelColor: '#000000' },
-          Input: { colorTextPlaceholder: '#B0B0B0' },
-          Select: { colorTextPlaceholder: '#B0B0B0' },
+          Form: { labelColor: LABEL_COLOR },
+          Input: {
+            colorTextPlaceholder: PLACEHOLDER,
+            colorBorder: BORDER_DEFAULT,
+            activeBorderColor: BORDER_FOCUS,
+            hoverBorderColor: BORDER_FOCUS,
+            controlHeight: 44,
+            borderRadius: 8,
+            paddingInline: 14,
+            colorText: LABEL_COLOR,
+          },
+          Select: {
+            colorTextPlaceholder: PLACEHOLDER,
+            colorBorder: BORDER_DEFAULT,
+            controlHeight: 44,
+            borderRadius: 8,
+            colorText: LABEL_COLOR,
+          },
+          Radio: { colorText: LABEL_COLOR },
         },
       }}
     >
       <Modal
+        wrapClassName='light-modal'
         open={open}
         onCancel={onClose}
         footer={null}
         destroyOnHidden
         width={720}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        mask={{ closable: !isSubmitting }}
+        styles={{
+          mask: { background: 'rgba(0,0,0,0.55)' },
+          container: { padding: '32px 40px', borderRadius: 16 },
+          header: { marginBottom: 20 },
+        }}
         title={
-          <div className='flex items-center gap-2 text-black'>
-            <TbUserCog size={22} />
-            <span className='font-bold text-lg'>
+          <div className='flex items-center' style={{ gap: 12 }}>
+            <TbUserCog size={22} color={CONFIRM_BG} />
+            <span style={{ color: '#111', fontSize: 20, fontWeight: 600 }}>
               {isEdit ? 'แก้ไขข้อมูลผู้ใช้งาน' : 'เพิ่มผู้ใช้งาน'}
             </span>
           </div>
         }
       >
         <Form<FormShape>
+          key={editing?.id ?? 'new'}
           form={form}
           layout='vertical'
           onFinish={handleFinish}
-          initialValues={{ role: 'operator', status: 'active' }}
+          initialValues={initialValues}
+          disabled={isSubmitting}
         >
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2' style={{ gap: 20 }}>
             <Form.Item
-              label={<span className='text-black'>Username<span className='text-red-500'>*</span></span>}
+              label={
+                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  Username<Asterisk />
+                </span>
+              }
               name='username'
               rules={[
                 { required: true, message: 'กรุณาระบุ Username' },
                 { pattern: /^[a-zA-Z0-9._-]+$/, message: 'ใช้ได้เฉพาะ a-z, 0-9, . _ -' },
               ]}
+              style={{ marginBottom: 16 }}
             >
-              <Input placeholder='เช่น drr.admin' autoComplete='off' />
+              {/* Username can't be changed via PUT — real API rejects it. */}
+              <Input placeholder='เช่น drr.admin' autoComplete='off' disabled={isEdit || isSubmitting} />
             </Form.Item>
-            <Form.Item
-              label={<span className='text-black'>ชื่อ-นามสกุล<span className='text-red-500'>*</span></span>}
-              name='fullName'
-              rules={[{ required: true, message: 'กรุณาระบุชื่อ-นามสกุล' }]}
-            >
-              <Input placeholder='กรุณาระบุชื่อ-นามสกุล...' />
-            </Form.Item>
+            {!isEdit && (
+              <Form.Item
+                label={
+                  <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                    รหัสผ่าน<Asterisk />
+                  </span>
+                }
+                name='password'
+                rules={[
+                  { required: true, message: 'กรุณาระบุรหัสผ่าน' },
+                  { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
+                ]}
+                style={{ marginBottom: 16 }}
+              >
+                <Input.Password placeholder='รหัสผ่านเริ่มต้น' autoComplete='new-password' />
+              </Form.Item>
+            )}
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2' style={{ gap: 20 }}>
             <Form.Item
-              label={<span className='text-black'>อีเมล<span className='text-red-500'>*</span></span>}
-              name='email'
-              rules={[
-                { required: true, message: 'กรุณาระบุอีเมล' },
-                { type: 'email', message: 'รูปแบบอีเมลไม่ถูกต้อง' },
-              ]}
+              label={
+                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  ชื่อ<Asterisk />
+                </span>
+              }
+              name='firstName'
+              rules={[{ required: true, message: 'กรุณาระบุชื่อ' }]}
+              style={{ marginBottom: 16 }}
             >
-              <Input placeholder='name@drr.go.th' autoComplete='off' />
+              <Input placeholder='ชื่อ' />
             </Form.Item>
-            <Form.Item label={<span className='text-black'>เบอร์โทรศัพท์</span>} name='phone'>
-              <Input placeholder='08x-xxx-xxxx' />
+            <Form.Item
+              label={
+                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  นามสกุล<Asterisk />
+                </span>
+              }
+              name='lastName'
+              rules={[{ required: true, message: 'กรุณาระบุนามสกุล' }]}
+              style={{ marginBottom: 16 }}
+            >
+              <Input placeholder='นามสกุล' />
             </Form.Item>
           </div>
 
           <Form.Item
-            label={<span className='text-black'>หน่วยงาน<span className='text-red-500'>*</span></span>}
-            name='department'
+            label={
+              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                หน่วยงาน<Asterisk />
+              </span>
+            }
+            name='departmentId'
             rules={[{ required: true, message: 'กรุณาเลือกหน่วยงาน' }]}
+            style={{ marginBottom: 16 }}
           >
             <Select
               placeholder='กรุณาเลือกหน่วยงาน...'
-              options={DEPARTMENT_OPTIONS.map((d) => ({ label: d, value: d }))}
+              options={departmentOptions}
+              loading={departmentsLoading}
               showSearch
               optionFilterProp='label'
-            />
+            classNames={{ popup: { root: 'light-modal-popup' } }} />
           </Form.Item>
 
           <Form.Item
-            label={<span className='text-black'>บทบาท<span className='text-red-500'>*</span></span>}
+            label={
+              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                บทบาท<Asterisk />
+              </span>
+            }
             name='role'
             rules={[{ required: true, message: 'กรุณาเลือกบทบาท' }]}
+            style={{ marginBottom: 16 }}
           >
             <Radio.Group>
-              <Radio value='admin'>ผู้ดูแลระบบ</Radio>
-              <Radio value='operator'>ผู้ปฏิบัติงาน</Radio>
-              <Radio value='viewer'>ผู้ดูข้อมูล</Radio>
+              <Radio value='admin' style={{ color: LABEL_COLOR }}>ผู้ดูแลระบบ</Radio>
+              <Radio value='operator' style={{ color: LABEL_COLOR }}>ผู้ปฏิบัติงาน</Radio>
+              <Radio value='viewer' style={{ color: LABEL_COLOR }}>ผู้ดูข้อมูล</Radio>
             </Radio.Group>
           </Form.Item>
 
-          <Form.Item
-            label={<span className='text-black'>สถานะ<span className='text-red-500'>*</span></span>}
-            name='status'
-            rules={[{ required: true, message: 'กรุณาเลือกสถานะ' }]}
-          >
-            <Radio.Group>
-              <Radio value='active'>ใช้งาน</Radio>
-              <Radio value='inactive'>ปิดใช้งาน</Radio>
-            </Radio.Group>
-          </Form.Item>
+          {isEdit && (
+            <div
+              className='mb-4 flex items-center justify-between rounded-lg px-3 py-2'
+              style={{ background: '#F7F7F7', border: `1px solid ${BORDER_DEFAULT}` }}
+            >
+              <div className='text-sm'>
+                <div style={{ color: LABEL_COLOR, fontWeight: 500 }}>รหัสผ่าน</div>
+                <div style={{ color: '#8A8A8A', fontSize: 12 }}>
+                  แก้ไขได้ผ่านช่องเปลี่ยนรหัสผ่านโดยเฉพาะ
+                </div>
+              </div>
+              <Button
+                shape='round'
+                onClick={() => editing && onChangePassword?.(editing)}
+                disabled={isSubmitting}
+                style={{ background: '#66AEFF', color: '#000', borderColor: '#66AEFF', fontWeight: 600 }}
+              >
+                เปลี่ยนรหัสผ่าน
+              </Button>
+            </div>
+          )}
 
-          <div className='flex justify-end gap-2 mt-2'>
-            <Button size='large' shape='round' onClick={onClose}>
+          <div className='flex justify-end' style={{ gap: 12, marginTop: 8 }}>
+            <Button
+              shape='round'
+              onClick={onClose}
+              disabled={isSubmitting}
+              style={{
+                background: CANCEL_BG,
+                color: CANCEL_TEXT,
+                borderColor: CANCEL_BG,
+                padding: '10px 28px',
+                height: 'auto',
+                fontWeight: 500,
+              }}
+            >
               ยกเลิก
             </Button>
             <Button
-              size='large'
               shape='round'
               htmlType='submit'
+              loading={isSubmitting}
               style={{
-                background: 'var(--yellow)',
-                color: '#000',
-                borderColor: 'var(--yellow)',
-                fontWeight: 700,
+                background: CONFIRM_BG,
+                color: CONFIRM_TEXT,
+                borderColor: CONFIRM_BG,
+                fontWeight: 600,
+                padding: '10px 32px',
+                height: 'auto',
               }}
             >
               ยืนยัน

@@ -4,17 +4,40 @@ import type { ColumnsType } from 'antd/es/table'
 import React, { useMemo } from 'react'
 import { TbPencil, TbTrash } from 'react-icons/tb'
 import type { Route } from '../../types/route'
+import { PAGE_SIZE_OPTIONS } from '../../utils/paginationConfig'
 
 interface Props {
+  /** Current page rows (already filtered client-side for province + dept). */
   data: Route[]
+  /** 1-indexed current page from RouteSection. */
   page: number
   pageSize: number
-  onPageChange: (page: number) => void
+  /** Total row count from `meta_data.count` — drives pager length. */
+  total: number
+  /** Fires for page navigation (Ant `Pagination.onChange`). */
+  onPageChange: (page: number, pageSize: number) => void
+  /** Fires when the user picks a new page-size from the dropdown. */
+  onPageSizeChange?: (pageSize: number) => void
+  /** Measured px used for AntD `scroll.y` — table body scrolls inside container. */
+  scrollY: number
+  /** True while any /manage/roads fetch is inflight (initial or refetch). */
+  loading?: boolean
   onEdit: (route: Route) => void
   onDelete: (route: Route) => void
 }
 
-const TableRoute: React.FC<Props> = ({ data, page, pageSize, onPageChange, onEdit, onDelete }) => {
+const TableRoute: React.FC<Props> = ({
+  data,
+  page,
+  pageSize,
+  total,
+  onPageChange,
+  onPageSizeChange,
+  scrollY,
+  loading,
+  onEdit,
+  onDelete,
+}) => {
   const columns: ColumnsType<Route> = useMemo(
     () => [
       {
@@ -96,13 +119,23 @@ const TableRoute: React.FC<Props> = ({ data, page, pageSize, onPageChange, onEdi
       columns={columns}
       dataSource={data}
       size='middle'
-      scroll={{ x: 1200 }}
+      scroll={{ x: 1200, y: scrollY }}
+      loading={loading}
       pagination={{
         current: page,
         pageSize,
+        total,
         onChange: onPageChange,
-        showSizeChanger: false,
-        showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total.toLocaleString()}`,
+        // AntD calls onShowSizeChange with (currentPage, newSize) when the
+        // page-size dropdown changes. We forward only the size — the parent
+        // resets the page.
+        onShowSizeChange: (_p, ps) => onPageSizeChange?.(ps),
+        showSizeChanger: true,
+        pageSizeOptions: PAGE_SIZE_OPTIONS,
+        // Server owns pagination — total refers to full dataset, not
+        // `data.length` (which is only the current page after client filters).
+        showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t.toLocaleString()}`,
+        placement: ['bottomEnd'],
       }}
     />
   )
