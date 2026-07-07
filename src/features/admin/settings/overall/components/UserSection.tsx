@@ -2,6 +2,7 @@
 import { Alert, Button, message } from 'antd'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
+import SwapButton from '@/components/swap-button/SwapButton'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
 import {
   useCreateUser,
@@ -13,12 +14,14 @@ import {
 } from '@/hooks/queries/manage'
 import type { APIResponseGeneralUser } from '@/types/manage/general-user-api'
 import type { APIResponseDepartment } from '@/types/manage/department-api'
+import type { APIResponseSSOUser } from '@/types/manage/sso-search-api'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
 import type { User, UserFilters, UserFormValues } from '../types/user'
 import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
 import ChangePasswordModal from './user/ChangePasswordModal'
 import DeleteUserModal from './user/DeleteUserModal'
 import FormSearchUser from './user/FormSearchUser'
+import LDAPSearchModal from './user/LDAPSearchModal'
 import TableUser from './user/TableUser'
 import UserModal from './user/UserModal'
 
@@ -27,6 +30,14 @@ const initialFilters: UserFilters = {
   status: null,
   search: '',
 }
+
+// Sub-tab options rendered inside the User tab. Kept module-scope so the
+// SwapButton's `options` reference is stable across renders (matches the
+// pattern used by TitleSection for the top-level tabs).
+const SUB_TABS = [
+  { label: 'Local', value: 'local' },
+  { label: 'LDAP', value: 'ldap' },
+]
 
 /** Maps the raw /general_user row to the flat UI User type.
  *  Kept as a plain function (not a hook) so the memoized list projection
@@ -51,6 +62,9 @@ const toUser = (
     // without a nested `user` (defensive) default to inactive.
     status: row.user?.is_active ? 'active' : 'inactive',
     createdAt: row.created_at,
+    // `is_ldap` is verified present on the live payload; default to false
+    // just in case an older row is missing the field.
+    isLdap: row.is_ldap ?? false,
   }
 }
 
@@ -58,6 +72,10 @@ const UserSection: React.FC = () => {
   const [filters, setFiltersState] = useState<UserFilters>(initialFilters)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE)
+  // Local vs LDAP split — the endpoint has no `is_ldap` query param so the
+  // filter is applied client-side over the fetched rows. Phase 2 will wire
+  // this to the sub-tab UI; today it just gates the table via `filtered`.
+  const [subTab, setSubTab] = useState<'local' | 'ldap'>('local')
 
   // Container height drives the AntD table's internal scroll — we measure the
   // outer card and feed a numeric px value to `scroll.y` so the body scrolls
@@ -92,6 +110,11 @@ const UserSection: React.FC = () => {
   })
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [passwordTarget, setPasswordTarget] = useState<User | null>(null)
+  // LDAP create is a two-step flow: search modal first, then UserModal
+  // seeded from the picked AD row. `ldapSearchOpen` gates the search dialog,
+  // `ldapPrefill` survives the transition so UserModal can seed its form.
+  const [ldapSearchOpen, setLdapSearchOpen] = useState(false)
+  const [ldapPrefill, setLdapPrefill] = useState<APIResponseSSOUser | null>(null)
 
   const departmentsById = useMemo(() => {
     const m = new Map<number, APIResponseDepartment>()
@@ -112,10 +135,14 @@ const UserSection: React.FC = () => {
   }, [])
 
   // Client-side filter over the current page's rows — see workaround
-  // block above for why search is not sent to the server.
+  // block above for why search is not sent to the server. The subTab
+  // gate narrows to Local (`!isLdap`) or LDAP (`isLdap`) users; the
+  // backend has no `is_ldap` query param so this must stay client-side.
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase()
+    const wantLdap = subTab === 'ldap'
     return users.filter((u) => {
+      if (u.isLdap !== wantLdap) return false
       if (filters.role && u.role !== filters.role) return false
       if (filters.status && u.status !== filters.status) return false
       if (q) {
@@ -124,11 +151,27 @@ const UserSection: React.FC = () => {
       }
       return true
     })
-  }, [users, filters])
+  }, [users, filters, subTab])
 
-  const openCreate = useCallback(() => setUserModal({ open: true, editing: null }), [])
+  // Local create opens UserModal directly. LDAP create opens the search
+  // modal first — the picked row triggers the UserModal transition via
+  // `handleLdapPick` below.
+  const openCreate = useCallback(() => {
+    if (subTab === 'ldap') setLdapSearchOpen(true)
+    else setUserModal({ open: true, editing: null })
+  }, [subTab])
   const openEdit = useCallback((user: User) => setUserModal({ open: true, editing: user }), [])
-  const closeUser = useCallback(() => setUserModal({ open: false, editing: null }), [])
+  const closeUser = useCallback(() => {
+    setUserModal({ open: false, editing: null })
+    // Clear the AD prefill so a subsequent create doesn't accidentally
+    // reuse the previous pick (e.g. Local create after LDAP create).
+    setLdapPrefill(null)
+  }, [])
+  const handleLdapPick = useCallback((u: APIResponseSSOUser) => {
+    setLdapPrefill(u)
+    setLdapSearchOpen(false)
+    setUserModal({ open: true, editing: null })
+  }, [])
 
   // Reset to page 1 whenever the page size changes so we don't land on an
   // orphaned deep page (e.g. page 8 of a now-recomputed 3-page dataset).
@@ -208,6 +251,18 @@ const UserSection: React.FC = () => {
       style={{ background: '#191919', border: '1px solid var(--light-gray-2)' }}
     >
       <div className='shrink-0'>
+        {/* Sub-tab switch (Local vs LDAP). Rendered above the filters row —
+         *  same SwapButton component the top-level tabs use, but sized `middle`
+         *  so it reads as a nested control instead of a peer. `activeValue`
+         *  keeps it controlled off `subTab` so state stays canonical here. */}
+        <div className='mb-4'>
+          <SwapButton
+            options={SUB_TABS}
+            activeValue={subTab}
+            size='middle'
+            setLabelValue={(value) => setSubTab(value as 'local' | 'ldap')}
+          />
+        </div>
         <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
           <div className='flex-1 min-w-0'>
             <FormSearchUser filters={filters} onChange={setFilters} />
@@ -225,7 +280,7 @@ const UserSection: React.FC = () => {
                 fontWeight: 700,
               }}
             >
-              เพิ่มผู้ใช้งาน
+              {subTab === 'ldap' ? 'เพิ่มผู้ใช้งาน LDAP' : 'เพิ่มผู้ใช้งาน'}
             </Button>
             <Button
               size='large'
@@ -276,6 +331,11 @@ const UserSection: React.FC = () => {
         />
       </div>
 
+      <LDAPSearchModal
+        open={ldapSearchOpen}
+        onCancel={() => setLdapSearchOpen(false)}
+        onSelect={handleLdapPick}
+      />
       <UserModal
         open={userModal.open}
         editing={userModal.editing}
@@ -283,6 +343,10 @@ const UserSection: React.FC = () => {
         onClose={closeUser}
         onSubmit={handleSubmit}
         onChangePassword={setPasswordTarget}
+        // Edit: trust the row's own `isLdap` (the sub-tab could theoretically
+        // desync from the target row). Create: use the active sub-tab.
+        mode={userModal.editing ? (userModal.editing.isLdap ? 'ldap' : 'local') : subTab}
+        prefill={ldapPrefill}
       />
       <DeleteUserModal
         open={!!deleteTarget}

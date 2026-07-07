@@ -1,7 +1,7 @@
 "use client"
 import { Button, ConfigProvider, Form, Input, Modal } from 'antd'
 import React, { useEffect } from 'react'
-import { TbKey } from 'react-icons/tb'
+import { TbInfoCircle, TbKey } from 'react-icons/tb'
 import type { User } from '../../types/user'
 
 interface Props {
@@ -28,6 +28,15 @@ const CANCEL_TEXT = '#4A4A4A'
 const CONFIRM_BG = '#FCD116'
 const CONFIRM_TEXT = '#1A1A1A'
 
+// LDAP guard card — orange/red palette lifted from AntD's "warning" tone so
+// it's clearly not-actionable without being an outright error state.
+const LDAP_WARN_BG = '#FFF4E5'
+const LDAP_WARN_BORDER = '#FFB020'
+const LDAP_WARN_ICON = '#D97706'
+const LDAP_WARN_TEXT = '#8A4B00'
+const LDAP_WARN_COPY =
+  'ผู้ใช้ประเภท LDAP ไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้ — กรุณาแก้ไขที่ Active Directory (AD)'
+
 const Asterisk: React.FC = () => (
   <span style={{ color: RED_ASTERISK, marginLeft: 2 }}>*</span>
 )
@@ -38,13 +47,17 @@ const Asterisk: React.FC = () => (
 const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose, onConfirm }) => {
   const [form] = Form.useForm<FormShape>()
   const isSubmitting = !!submitting
+  // LDAP users' passwords live in Active Directory — the PATCH SSO endpoint
+  // rejects them server-side, so we short-circuit the form entirely and show
+  // a read-only info card instead of surfacing an error after submit.
+  const isLdap = !!user?.isLdap
 
   useEffect(() => {
     if (open) form.resetFields()
   }, [open, form])
 
   const handleFinish = ({ password }: FormShape) => {
-    if (!user) return
+    if (!user || isLdap) return
     onConfirm(user.id, password)
   }
 
@@ -108,82 +121,120 @@ const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose,
             </div>
           </div>
         )}
-        <Form<FormShape>
-          form={form}
-          layout='vertical'
-          onFinish={handleFinish}
-          disabled={isSubmitting}
-        >
-          <Form.Item
-            label={
-              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
-                รหัสผ่านใหม่<Asterisk />
+        {isLdap ? (
+          <>
+            <div
+              role='alert'
+              className='flex items-start'
+              style={{
+                gap: 12,
+                padding: '14px 16px',
+                marginBottom: 20,
+                background: LDAP_WARN_BG,
+                border: `1px solid ${LDAP_WARN_BORDER}`,
+                borderRadius: 10,
+              }}
+            >
+              <TbInfoCircle size={20} color={LDAP_WARN_ICON} style={{ flexShrink: 0, marginTop: 2 }} />
+              <span style={{ color: LDAP_WARN_TEXT, fontSize: 14, lineHeight: 1.55 }}>
+                {LDAP_WARN_COPY}
               </span>
-            }
-            name='password'
-            rules={[
-              { required: true, message: 'กรุณาระบุรหัสผ่านใหม่' },
-              { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
-            ]}
-            style={{ marginBottom: 16 }}
+            </div>
+            <div className='flex justify-end' style={{ marginTop: 8 }}>
+              <Button
+                shape='round'
+                onClick={onClose}
+                style={{
+                  background: CONFIRM_BG,
+                  color: CONFIRM_TEXT,
+                  borderColor: CONFIRM_BG,
+                  fontWeight: 600,
+                  padding: '10px 32px',
+                  height: 'auto',
+                }}
+              >
+                รับทราบ
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Form<FormShape>
+            form={form}
+            layout='vertical'
+            onFinish={handleFinish}
+            disabled={isSubmitting}
           >
-            <Input.Password placeholder='รหัสผ่านใหม่' autoComplete='new-password' />
-          </Form.Item>
-          <Form.Item
-            label={
-              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
-                ยืนยันรหัสผ่านใหม่<Asterisk />
-              </span>
-            }
-            name='confirm'
-            dependencies={['password']}
-            rules={[
-              { required: true, message: 'กรุณายืนยันรหัสผ่านใหม่' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) return Promise.resolve()
-                  return Promise.reject(new Error('รหัสผ่านไม่ตรงกัน'))
-                },
-              }),
-            ]}
-            style={{ marginBottom: 16 }}
-          >
-            <Input.Password placeholder='ยืนยันรหัสผ่านใหม่' autoComplete='new-password' />
-          </Form.Item>
+            <Form.Item
+              label={
+                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  รหัสผ่านใหม่<Asterisk />
+                </span>
+              }
+              name='password'
+              rules={[
+                { required: true, message: 'กรุณาระบุรหัสผ่านใหม่' },
+                { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
+              ]}
+              style={{ marginBottom: 16 }}
+            >
+              <Input.Password placeholder='รหัสผ่านใหม่' autoComplete='new-password' />
+            </Form.Item>
+            <Form.Item
+              label={
+                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  ยืนยันรหัสผ่านใหม่<Asterisk />
+                </span>
+              }
+              name='confirm'
+              dependencies={['password']}
+              rules={[
+                { required: true, message: 'กรุณายืนยันรหัสผ่านใหม่' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) return Promise.resolve()
+                    return Promise.reject(new Error('รหัสผ่านไม่ตรงกัน'))
+                  },
+                }),
+              ]}
+              style={{ marginBottom: 16 }}
+            >
+              <Input.Password placeholder='ยืนยันรหัสผ่านใหม่' autoComplete='new-password' />
+            </Form.Item>
 
-          <div className='flex justify-end' style={{ gap: 12, marginTop: 8 }}>
-            <Button
-              shape='round'
-              onClick={onClose}
-              disabled={isSubmitting}
-              style={{
-                background: CANCEL_BG,
-                color: CANCEL_TEXT,
-                borderColor: CANCEL_BG,
-                padding: '10px 28px',
-                height: 'auto',
-                fontWeight: 500,
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              shape='round'
-              htmlType='submit'
-              loading={isSubmitting}
-              style={{
-                background: CONFIRM_BG,
-                color: CONFIRM_TEXT,
-                borderColor: CONFIRM_BG,
-                fontWeight: 600,
-                padding: '10px 32px',
-                height: 'auto',
-              }}
-            >
-              ยืนยัน
-            </Button>
-          </div>
-        </Form>
+            <div className='flex justify-end' style={{ gap: 12, marginTop: 8 }}>
+              <Button
+                shape='round'
+                onClick={onClose}
+                disabled={isSubmitting}
+                style={{
+                  background: CANCEL_BG,
+                  color: CANCEL_TEXT,
+                  borderColor: CANCEL_BG,
+                  padding: '10px 28px',
+                  height: 'auto',
+                  fontWeight: 500,
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                shape='round'
+                htmlType='submit'
+                loading={isSubmitting}
+                style={{
+                  background: CONFIRM_BG,
+                  color: CONFIRM_TEXT,
+                  borderColor: CONFIRM_BG,
+                  fontWeight: 600,
+                  padding: '10px 32px',
+                  height: 'auto',
+                }}
+              >
+                ยืนยัน
+              </Button>
+            </div>
+          </Form>
+        )}
       </Modal>
     </ConfigProvider>
   )

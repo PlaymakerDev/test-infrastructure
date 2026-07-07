@@ -34,3 +34,6 @@ export { useUpdateUserPassword } from './useUpdateUserPassword'
 // Shared dropdowns
 export { useDepartments } from './useDepartments'
 export { useRegions } from './useRegions'
+
+// LDAP / SSO search
+export { useSsoSearch } from './useSsoSearch'

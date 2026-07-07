@@ -32,6 +32,17 @@ interface Props {
 
 const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
+// Small local pill — mirrors the outlined-chip pattern used by StatusPill/RoleBadge
+// so the "ประเภท" column reads visually consistent with its neighbours.
+const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
+  <span
+    className='inline-flex items-center justify-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    style={{ border: `1px solid ${color}`, color }}
+  >
+    {text}
+  </span>
+)
+
 const formatDate = (iso: string | null) => {
   if (!iso) return '-'
   const d = dayjs(iso)
@@ -74,6 +85,14 @@ const TableUser: React.FC<Props> = ({
         key: 'role',
         width: 160,
         render: (v: User['role']) => <RoleBadge role={v} />,
+      },
+      {
+        title: 'ประเภท',
+        dataIndex: 'isLdap',
+        key: 'isLdap',
+        width: 100,
+        render: (v: User['isLdap']) =>
+          v ? <Pill text='LDAP' color='#66AEFF' /> : <Pill text='Local' color='#8A8A8A' />,
       },
       {
         title: 'หน่วยงาน',
@@ -141,7 +160,7 @@ const TableUser: React.FC<Props> = ({
       dataSource={data}
       size='middle'
       loading={loading}
-      scroll={{ x: 1400, y: scrollY }}
+      scroll={{ x: 1500, y: scrollY }}
       pagination={{
         current: page,
         pageSize,

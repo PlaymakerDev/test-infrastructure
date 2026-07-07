@@ -12,6 +12,10 @@
 import ApiService from '../ApiService'
 import type { ListParams } from '@/types/manage/params'
 import type {
+  APIResponseSSOUser,
+  APIRequestSSOSearch,
+} from '@/types/manage/sso-search-api'
+import type {
   APIResponseProject,
   APIResponseProjectListEnvelope,
   APIResponseBudgetYearList,
@@ -227,3 +231,16 @@ export const getRegionsAPI = () =>
     url: '/manage/regions',
     method: 'GET',
   })
+
+// ── SSO / LDAP search ───────────────────────────────────────────────────────
+// Backend endpoint: GET /api-v2/auth/ldap?keyword=... — routes through the
+// authentication service, which owns the SSO bearer token and the upstream
+// URL. Returns a bare `APIResponseSSOUser[]` (no envelope). Uses the shared
+// ApiService so the request participates in the x-api-key / access-token /
+// refresh chain like every other /manage call.
+export const searchSSOUsersAPI = (body: APIRequestSSOSearch) =>
+  ApiService.fetchData<APIResponseSSOUser[]>({
+    url: '/auth/ldap',
+    method: 'GET',
+    params: { keyword: body.keyword },
+  }).then((r) => r.data)

@@ -30,6 +30,10 @@ export interface User {
   department: string
   status: UserStatus
   createdAt: string
+  /** Whether the account is linked to Active Directory (mapped from
+   *  `is_ldap` on the wire). LDAP users authenticate via AD and cannot
+   *  have their password changed through the SSO PATCH endpoint. */
+  isLdap: boolean
 }
 
 /** Values captured by UserModal. `password` is required on CREATE, absent on
@@ -42,6 +46,10 @@ export interface UserFormValues {
   role: string
   departmentId: number
   password?: string
+  /** Set by the modal to reflect which sub-tab mode was active when the
+   *  form was opened. LDAP mode omits the password field and creates the
+   *  user with `is_ldap: true` on POST /general_user. */
+  isLdap: boolean
 }
 
 export interface UserFilters {

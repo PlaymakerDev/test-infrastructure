@@ -55,4 +55,14 @@ export const manageKeys = {
     departments: () => [...manageKeys.dropdowns.all, 'departments'] as const,
     regions: () => [...manageKeys.dropdowns.all, 'regions'] as const,
   },
+
+  // LDAP AD search (via the backend `/api-v2/auth/ldap` endpoint). Keyed
+  // by the trimmed & lower-cased keyword so "Sit " and "sit" share the same
+  // cache slot; short/empty inputs are gated by the hook's `enabled` guard,
+  // not by the key.
+  sso: {
+    all: ['manage', 'sso'] as const,
+    search: (keyword: string) =>
+      [...manageKeys.sso.all, 'search', keyword.trim().toLowerCase()] as const,
+  },
 } as const
