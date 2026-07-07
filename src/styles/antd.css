@@ -288,8 +288,17 @@ body .project-info-modal .ant-modal-content::after {
  * 1. Header (`thead th`): no bottom border — the yellow header background
  *    already provides clear separation from the body, so the default Antd
  *    divider isn't needed.
- * 2. Body rows: yellow bottom border (= row separator).
- * 3. Last body row: no bottom border (avoids a dangling yellow line).
+ * 2. Body rows: yellow bottom border (= row separator), INCLUDING the last row
+ *    so the bottom edge always shows a complete full-width divider.
+ *
+ * Why the last row keeps its border: several of these tables merge the first
+ * column with `rowSpan` (date / road code shown once per group). A merged cell
+ * lives in the *first* `<tr>` of its group, not the last visual row, so a
+ * `tr:last-child > td { border: none }` rule can't reach it — the merged cell
+ * still drew its bottom border at the group's foot, leaving the last row with a
+ * yellow line under the merged column ONLY (looked like a half-width divider).
+ * Keeping the border on every row makes the bottom edge consistent for both
+ * merged and flat tables.
  *
  * Bureau divider rows carry their own dark bg via inline `style` on the
  * colSpan cell (`#2a2a2a`); no global cell background rule is set so that
@@ -300,10 +309,6 @@ body .bridge-projects-table .ant-table-thead > tr > th {
 
 body .bridge-projects-table .ant-table-tbody > tr > td {
   border-bottom: 1px solid #FCD116 !important;
-}
-
-body .bridge-projects-table .ant-table-tbody > tr:last-child > td {
-  border-bottom: none !important;
 }
 
 /* Antd 6 may add a scroll shadow on right-fixed columns when `scroll: { x }`

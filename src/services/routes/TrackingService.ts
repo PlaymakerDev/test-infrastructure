@@ -1,4 +1,4 @@
-import { APIRequestTrackingCCTVList, APIRequestTrackingDailySum, APIRequestTrackingPosition, APIRequestTrackingSumMobile, APIRequestTrackingSumStation, APIRequestTrackingSumWeightYearV2, APIRequestTrackingSumWim, APIRequestTrackingTotalStation, APIRequestTrackingViewSumPlanChart, APIRequestTrackingWeightInspection, APIResponseTrackingCCTVList, APIResponseTrackingDailySum, APIResponseTrackingPosition, APIResponseTrackingSumMobile, APIResponseTrackingSumStation, APIResponseTrackingSumWeightYearV2, APIResponseTrackingSumWim, APIResponseTrackingTotalStation, APIResponseTrackingViewSumPlanChart, APIResponseTrackingWeightInspection, ProvinceData } from "@/types/tracking/overall-api"
+import { APIRequestTrackingCCTVList, APIRequestTrackingCollaboration, APIRequestTrackingDailySum, APIRequestTrackingMobileMaster, APIRequestTrackingPosition, APIRequestTrackingSumMobile, APIRequestTrackingSumStation, APIRequestTrackingSumWeightYearV2, APIRequestTrackingSumWim, APIRequestTrackingTotalStation, APIRequestTrackingViewSumPlanChart, APIRequestTrackingWeightInspection, APIResponseTrackingCCTVList, APIResponseTrackingCollaboration, APIResponseTrackingDailySum, APIResponseTrackingMobileMaster, APIResponseTrackingPosition, APIResponseTrackingSumMobile, APIResponseTrackingSumStation, APIResponseTrackingSumWeightYearV2, APIResponseTrackingSumWim, APIResponseTrackingTotalStation, APIResponseTrackingViewSumPlanChart, APIResponseTrackingWeightInspection, ProvinceData } from "@/types/tracking/overall-api"
 import ApiService from "../ApiService"
 
 const DEFAULT_TRACKING_API_URL = '/wim/redirect'
@@ -85,6 +85,22 @@ export const getTrackingSumWIMAPI = async (params: APIRequestTrackingSumWim) => 
 export const getTrackingSumMobileAPI = async (params: APIRequestTrackingSumMobile) => {
   return ApiService.fetchData<APIResponseTrackingSumMobile, APIRequestTrackingSumMobile>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/daily_weighed_vehicles_sum_spot`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingCollaborationAPI = async (params: APIRequestTrackingCollaboration) => {
+  return ApiService.fetchData<APIResponseTrackingCollaboration, APIRequestTrackingCollaboration>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/info/collaboration`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingMobileMasterAPI = async (params: APIRequestTrackingMobileMaster) => {
+  return ApiService.fetchData<APIResponseTrackingMobileMaster, APIRequestTrackingMobileMaster>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/mobile_master`,
     method: 'GET',
     params,
   })

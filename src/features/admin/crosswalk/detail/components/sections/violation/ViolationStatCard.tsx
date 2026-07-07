@@ -113,16 +113,16 @@ const ViolationStatCard: React.FC<Props> = ({ filter }) => {
   let crossingTotal = 0
   let buttonPressed = 0
   let pedViolation = 0
-  let vehicleCount = 0
+  let redLightViolation = 0
   for (const q of queries) {
     const d = q.data
     if (!d) continue
     crossingTotal += d.crossing?.total ?? 0
     buttonPressed += d.crossing?.button_pressed ?? 0
     pedViolation += d.crossing?.violation ?? 0
-    vehicleCount += d.counting?.total_count ?? 0
+    redLightViolation += d.crossing?.red_light_violation ?? 0
   }
-  const totals = { crossingTotal, buttonPressed, pedViolation, vehicleCount }
+  const totals = { crossingTotal, buttonPressed, pedViolation, redLightViolation }
 
   // Show skeleton while ANY day is still loading — partial sums are misleading.
   const isLoading = queries.some((q) => q.isLoading)
@@ -164,7 +164,7 @@ const ViolationStatCard: React.FC<Props> = ({ filter }) => {
           icon={<TbTruck />}
           label='รถข้ามฝ่าฝืนสัญญาณไฟ'
           color='orange'
-          value={totals.vehicleCount}
+          value={totals.redLightViolation}
           unit='คัน'
           isLoading={isLoading}
         />

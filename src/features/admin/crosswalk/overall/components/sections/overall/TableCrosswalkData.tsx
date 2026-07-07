@@ -55,9 +55,9 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
 
   const goToDetail = useCallback(
     (project: CrosswalkProject) => {
+      // Same URL pattern as the other detail pages — dept_id only. The detail
+      // page self-derives project_id / road_id from the central list.
       const params = new URLSearchParams({ dept_id: deptId })
-      if (project.projectId) params.set('project_id', project.projectId)
-      if (project.roadId) params.set('road_id', project.roadId)
       router.push(`/admin/crosswalk/detail/${project.id}?${params}`)
     },
     [router, deptId],
@@ -87,7 +87,7 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
                   className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                  style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                  style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ
                 </span>
@@ -114,6 +114,18 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
           ) : null,
       },
       {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 260,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.installPoint}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
         title: 'เลขที่สัญญา',
         key: 'contractNo',
         width: 200,
@@ -132,7 +144,6 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
         title: 'การค้ำประกัน',
         key: 'warranty',
         width: 130,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
@@ -144,22 +155,9 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
         },
       },
       {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 260,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? (
-            <DetailLinkText onClick={() => goToDetail(row.project)}>
-              {row.project.installPoint}
-            </DetailLinkText>
-          ) : null,
-      },
-      {
         title: 'สถานะ',
         key: 'connection',
         width: 140,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
@@ -174,7 +172,6 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
         title: 'กล้องทั้งหมด',
         key: 'totalCameras',
         width: 120,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
@@ -185,7 +182,6 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
         title: 'ออนไลน์',
         key: 'onlineCount',
         width: 110,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
@@ -196,7 +192,6 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
         title: 'ออฟไลน์',
         key: 'offlineCount',
         width: 110,
-        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (

@@ -220,7 +220,7 @@ const AccidentChart: React.FC<Props> = () => {
     <div
       className='relative overflow-hidden p-3'
       style={{
-        background: 'rgba(0,0,0,0.55)',
+        background: 'rgba(0,0,0,0.8)',
         borderRadius: 20,
         backdropFilter: 'blur(5px)',
       }}

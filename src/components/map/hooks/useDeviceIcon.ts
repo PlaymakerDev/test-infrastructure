@@ -1,0 +1,80 @@
+"use client"
+import { createElement, useEffect, useState } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import type { IconType } from 'react-icons'
+import {
+  TbCamera,
+  TbDeviceDesktop,
+  TbWeight,
+  TbBolt,
+  TbBuildingBridge,
+  TbBuildingBridge2,
+  TbCar,
+  TbWalk,
+  TbChartBar,
+  TbTrafficLights,
+} from 'react-icons/tb'
+import type { SystemType } from '@/features/admin/dashboard/data/systems'
+import { useMap } from './useMap'
+
+/** Per-device-type icon — same mapping the dashboard markers use, so overall
+ *  maps render the identical glyph per menu. */
+const SYSTEM_ICONS: Record<SystemType, IconType> = {
+  CCTV: TbCamera,
+  VMS: TbDeviceDesktop,
+  WIM: TbWeight,
+  Lighting: TbBolt,
+  BridgeLighting: TbBuildingBridge,
+  Tunnel: TbBuildingBridge2,
+  Counting: TbCar,
+  CrossWalk: TbWalk,
+  Analytic: TbChartBar,
+  Traffic: TbTrafficLights,
+}
+
+/** Render a react-icon to a white SVG image usable by a Mapbox symbol layer. */
+function iconToImage(IconComp: IconType, size = 64): Promise<HTMLImageElement> {
+  const svg = renderToStaticMarkup(
+    createElement(IconComp, { size, color: '#ffffff', strokeWidth: 2.4 }),
+  )
+  const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+  return new Promise((resolve, reject) => {
+    const img = new Image(size, size)
+    img.onload = () => resolve(img)
+    img.onerror = (e) => reject(e)
+    img.src = url
+  })
+}
+
+/**
+ * Registers the given device type's icon on the current map (once) and returns
+ * the registered image name — or `undefined` until it's ready. Feed the result
+ * to `MarkerLayer`'s `iconImage` so the symbol layer draws the menu glyph.
+ * Must be called inside a `BaseMap` (MapContext).
+ */
+export function useDeviceIcon(type: SystemType): string | undefined {
+  const { map, isLoaded } = useMap()
+  const [ready, setReady] = useState(false)
+  const name = `device-icon-${type}`
+
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    if (map.hasImage(name)) {
+      setReady(true)
+      return
+    }
+    let cancelled = false
+    iconToImage(SYSTEM_ICONS[type], 64)
+      .then((img) => {
+        if (cancelled) return
+        if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 })
+        setReady(true)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [map, isLoaded, name, type])
+
+  return ready ? name : undefined
+}

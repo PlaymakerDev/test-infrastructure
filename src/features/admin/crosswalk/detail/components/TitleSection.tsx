@@ -35,12 +35,6 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
 
-  // Pull project_id + road_id from the URL — the overall list page passes
-  // both when navigating here so the Project Info modal can fetch contract
-  // data without needing a dedicated detail endpoint.
-  const projectIdParam = searchParams.get('project_id')
-  const roadIdParam = searchParams.get('road_id')
-
   // Warranty + connection flags come from the central-list response — cached
   // when the user navigated in from the overall page, so this is free.
   // Crosswalk connection status uses `crosswalk.is_online` (the ทางข้าม
@@ -50,6 +44,15 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
     .flatMap((bureau) => bureau.sub_department ?? [])
     .flatMap((subDept) => subDept.solutions ?? [])
     .find((sol) => String(sol.solution.id) === String(id))
+
+  // project_id + road_id for the Project Info modal. URL params take precedence
+  // (deep-links keep working), but fall back to the central-list match so the
+  // modal opens with full data when the URL only has ?dept_id= — same
+  // self-derive pattern as the other detail pages (cctv / incident / …).
+  const projectIdParam =
+    searchParams.get('project_id') ?? (match ? String(match.project.id) : null)
+  const roadIdParam =
+    searchParams.get('road_id') ?? (match ? String(match.road.id) : null)
   const status = match
     ? { isOnline: match.crosswalk.is_online, isWarranty: match.is_warranty }
     : null
@@ -94,13 +97,14 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               />
             </div>
 
-            {/* Warranty pill */}
+            {/* Warranty pill — same colors as every other menu (cyan #05F2DB
+              * in-warranty / gray #979797 expired). */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isInWarranty
-                  ? 'border-emerald-500 text-emerald-500'
-                  : 'border-gray-500 text-gray-400'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: isInWarranty ? '#05F2DB' : '#979797',
+                color: isInWarranty ? '#05F2DB' : '#979797',
+              }}
             >
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>

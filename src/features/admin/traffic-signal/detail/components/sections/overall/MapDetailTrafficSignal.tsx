@@ -1,8 +1,8 @@
 "use client"
 import React, { useEffect } from 'react'
-import { TbMapPin } from 'react-icons/tb'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { WhiteTeardropPin } from '@/components/map/markers/OverlapMarkers'
 import { useMap } from '@/components/map/hooks/useMap'
 import { useDetailContext } from '../../../context'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
@@ -75,19 +75,7 @@ const SignalMarker: React.FC<{ project: TrafficSignalProject }> = ({ project }) 
       popup={() => <DetailSignalPopup project={project} />}
       popupOptions={{ offset: 18, closeButton: false }}
     >
-      <div
-        className='flex items-center justify-center cursor-pointer'
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: '#FCD116',
-          boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-          border: '2px solid #fff',
-        }}
-      >
-        <TbMapPin size={20} color='#212121' />
-      </div>
+      <WhiteTeardropPin />
     </HTMLMarker>
   )
 }

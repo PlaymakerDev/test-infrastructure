@@ -153,7 +153,7 @@ const BarChart: React.FC<BarChartProps> = ({
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          color: '#8a9ab5',
+          color: '#ffffff',
           fontSize: 11,
           lineHeight: 16,
           // Force every label only when rotated (rotation is how we fit many
@@ -173,7 +173,7 @@ const BarChart: React.FC<BarChartProps> = ({
         ...(yInterval ? { interval: yInterval } : {}),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#8a9ab5', fontSize: 12 },
+        axisLabel: { color: '#ffffff', fontSize: 12 },
         splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
       },
       tooltip: {

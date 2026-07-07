@@ -4,6 +4,10 @@ import {
   getDashboardCctvUptimeAPI,
   getDashboardVmsUptimeAPI,
   getDashboardLightingUptimeAPI,
+  getDashboardTrafficUptimeAPI,
+  getDashboardWimUptimeAPI,
+  getDashboardCrosswalkUptimeAPI,
+  getDashboardTunnelUptimeAPI,
   getDashboardPositionAPI,
   getDashboardAnalyticAPI,
   getDashboardTrafficAPI,
@@ -35,6 +39,34 @@ export const useDashboardLightingUptime = (deptId: string | number | null | unde
   useQuery({
     queryKey: dashboardKeys.uptime('lighting', deptId ?? ''),
     queryFn: () => getDashboardLightingUptimeAPI(deptId!).then((r) => r.data),
+    enabled: !!deptId,
+  })
+
+export const useDashboardTrafficUptime = (deptId: string | number | null | undefined) =>
+  useQuery({
+    queryKey: dashboardKeys.uptime('traffic', deptId ?? ''),
+    queryFn: () => getDashboardTrafficUptimeAPI(deptId!).then((r) => r.data),
+    enabled: !!deptId,
+  })
+
+export const useDashboardWimUptime = (deptId: string | number | null | undefined) =>
+  useQuery({
+    queryKey: dashboardKeys.uptime('wim', deptId ?? ''),
+    queryFn: () => getDashboardWimUptimeAPI(deptId!).then((r) => r.data),
+    enabled: !!deptId,
+  })
+
+export const useDashboardCrosswalkUptime = (deptId: string | number | null | undefined) =>
+  useQuery({
+    queryKey: dashboardKeys.uptime('crosswalk', deptId ?? ''),
+    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!).then((r) => r.data),
+    enabled: !!deptId,
+  })
+
+export const useDashboardTunnelUptime = (deptId: string | number | null | undefined) =>
+  useQuery({
+    queryKey: dashboardKeys.uptime('tunnel', deptId ?? ''),
+    queryFn: () => getDashboardTunnelUptimeAPI(deptId!).then((r) => r.data),
     enabled: !!deptId,
   })
 

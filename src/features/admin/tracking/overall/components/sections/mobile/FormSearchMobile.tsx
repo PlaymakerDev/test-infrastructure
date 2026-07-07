@@ -1,7 +1,8 @@
 import { Input } from 'antd';
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb';
+import { useOverallContext } from '../../../context';
 
 interface Props {
 
@@ -13,6 +14,15 @@ interface FormValues {
 
 const FormSearchMobile: React.FC<Props> = (props) => {
   const { } = props
+  const { setSearchMobileMaster } = useOverallContext()
+  const submitRef = useRef<HTMLButtonElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -26,8 +36,10 @@ const FormSearchMobile: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((value: FormValues) => {
-    console.log(value)
-  }, [])
+    setSearchMobileMaster({
+      search: value.search.trim() || undefined
+    })
+  }, [setSearchMobileMaster])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -44,11 +56,19 @@ const FormSearchMobile: React.FC<Props> = (props) => {
                 className='rounded-lg'
                 suffix={<TbSearch />}
                 size='medium'
+                onChange={(e) => {
+                  field.onChange(e)
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                  timeoutRef.current = setTimeout(() => {
+                    submitRef.current?.click()
+                  }, 700)
+                }}
               />
             </fieldset>
           )
         }}
       />
+      <button ref={submitRef} type='submit' hidden />
     </form>
   )
 }

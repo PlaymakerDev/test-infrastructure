@@ -49,8 +49,7 @@ const Card: React.FC<CardProps> = ({
     className='py-3 px-5 rounded-[14px]'
     style={{
       border: `1.5px solid ${color}`,
-      background:
-        'linear-gradient(135deg, rgba(20,28,48,0.85) 0%, rgba(10,18,36,0.95) 100%)',
+      background: '#66AEFF1A',
     }}
   >
     <div className='flex items-center gap-2 mb-1'>
@@ -86,9 +85,14 @@ const Card: React.FC<CardProps> = ({
   </div>
 )
 
-const WHITE = '#ffffff'
-const YELLOW = '#FCD116'
-const GREEN = '#B5FF3B'
+// Per-card accent colors (border + label + unit), top→bottom per Figma:
+// white → yellow → lime → green → teal → cyan.
+const C_TOTAL = '#FFFFFF'
+const C_PCU = '#F6FF00'
+const C_AVG = '#C8FF00'
+const C_SPEED = '#00FF00'
+const C_AADT = '#00FFAA'
+const C_PEAK = '#00DDFF'
 
 /** Right-rail stat cards for the ภาพรวม tab.
  *  Data: `GET /counting/details/summary_daily?solution_id={id}`.
@@ -129,7 +133,7 @@ const InfoCardsTrafficVolume: React.FC = () => {
         label='รวมยานพาหนะประจำวัน'
         value={fmtNumber(data?.total_count ?? 0, 0)}
         unit='คัน'
-        color={WHITE}
+        color={C_TOTAL}
         colorLabel={false}
       />
       <Card
@@ -137,36 +141,35 @@ const InfoCardsTrafficVolume: React.FC = () => {
         label='PCU ประจำวัน'
         value={fmtNumber(data?.total_pcu ?? 0, 0)}
         unit='PCU'
-        color={YELLOW}
+        color={C_PCU}
       />
       <Card
         icon={<TbGauge />}
         label='ปริมาณจราจรเฉลี่ยรายชั่วโมง'
         value={fmtNumber(data?.avg_count_per_hour ?? 0, 0)}
         unit='คัน/ชั่วโมง'
-        color={GREEN}
+        color={C_AVG}
       />
       <Card
         icon={<TbClockHour4 />}
         label='ความเร็วเฉลี่ยรายชั่วโมง'
         value={fmtNumber(data?.avg_speed ?? 0, 0)}
         unit='กิโลเมตร/ชั่วโมง'
-        color={GREEN}
+        color={C_SPEED}
       />
       <Card
         icon={<TbCalendar />}
         label='AADT 7 วัน'
         value={fmtNumber(data?.aadt ?? 0, 0)}
         unit='คัน/วัน'
-        color={YELLOW}
+        color={C_AADT}
       />
       <Card
         icon={<TbHourglassHigh />}
         label='ช่วงเวลาปริมาณจราจรสูงสุด'
         value={peakHour?.range ?? '-'}
         sublabel={peakHour ? `(${fmtNumber(peakHour.pct, 1)}%)` : '(-)'}
-        color={WHITE}
-        colorLabel={false}
+        color={C_PEAK}
       />
     </div>
   )

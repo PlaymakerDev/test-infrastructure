@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
 import { fmtNumber } from '@/utils/formatNumber'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
@@ -29,12 +30,12 @@ const ChartETAnalysisTrafficSignal: React.FC<Props> = () => {
       (a, b) =>
         new Date(a.hour_timestamp).getTime() - new Date(b.hour_timestamp).getTime(),
     )
-    // Carry a per-point `dateLabel` (e.g. "16 มิ.ย. 2026") so the tooltip
+    // Carry a per-point `dateLabel` (e.g. "16 มิ.ย. 2569") so the tooltip
     // reflects the actual day of each point — the data window can span
-    // multiple days, so a single static date would be wrong.
+    // multiple days, so a single static date would be wrong. Thai month + พ.ศ.
     return points.map((p) => ({
       label: dayjs(p.hour_timestamp).format('HH.mm'),
-      dateLabel: dayjs(p.hour_timestamp).format('D MMM YYYY'),
+      dateLabel: thaiDateBE(p.hour_timestamp),
       et: p.early_termination_rate,
       time: p.total_time_saved,
       co2: p.carbon_saved,

@@ -26,17 +26,17 @@ const PhaseBar: React.FC<{ phase: number; value: number; max: number }> = ({
       <span className='fs-12 font-bold w-7' style={{ color }}>
         P{phase}
       </span>
-      <div
-        className='flex-1 h-5 rounded overflow-hidden relative'
-        style={{ background: '#1f2d3d' }}
-      >
-        <div className='h-full rounded' style={{ width: `${pct}%`, background: color }} />
-        <span
-          className='absolute inset-0 flex items-center justify-end pr-2 fs-12 font-semibold'
-          style={{ color: '#000000' }}
+      <div className='flex-1 h-5 rounded relative' style={{ background: '#1f2d3d' }}>
+        {/* Number lives INSIDE the colored fill, right-aligned — so it sits at
+         *  the right end of the bar (per Figma), not at the far right of the
+         *  track. `minWidth: min-content` keeps the label readable when the
+         *  fill would otherwise be too narrow to hold it. */}
+        <div
+          className='h-full rounded flex items-center justify-end px-2 fs-12 font-semibold whitespace-nowrap'
+          style={{ width: `${pct}%`, minWidth: 'min-content', background: color, color: '#000000' }}
         >
           {value.toLocaleString()}
-        </span>
+        </div>
       </div>
     </div>
   )
