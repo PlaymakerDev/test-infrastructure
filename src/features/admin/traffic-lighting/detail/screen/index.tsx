@@ -18,7 +18,7 @@ const TrafficLightingDetailScreen: React.FC<Props> = ({ id }) => {
 
   return (
     <DetailProvider project={project} imei={imei}>
-      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-6'>
+      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-32'>
         <PhaseLayout />
       </div>
     </DetailProvider>

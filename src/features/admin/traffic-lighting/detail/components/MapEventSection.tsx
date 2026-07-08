@@ -2,12 +2,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbMapPin } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
 import { getLightingAlertsAPI } from '@/services/routes/LightingService'
 import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
@@ -55,7 +53,7 @@ const LineStatusBadge = ({ status }: { status: string }) => {
 /** Map (left) + event log table (right) below the charts row. The table is
  *  fed by /imei/{imei}/alerts. */
 const MapEventSection: React.FC = () => {
-  const { project, imei } = useDetailContext()
+  const { project, imei, device } = useDetailContext()
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [loaded, setLoaded] = useState(false)
 
@@ -128,29 +126,14 @@ const MapEventSection: React.FC = () => {
       <div
         className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-[20px] overflow-hidden bg-[#212121]'
       >
-        <BaseMap
-          style={{ height: '100%', width: '100%' }}
-          initialCenter={project.coord}
-          initialZoom={16}
-          initialPitch={45}
-          edgeFade={{ all: 20 }}
-        >
-          <HTMLMarker lngLat={project.coord} anchor='bottom' title={project.installPoint}>
-            <div
-              className='flex items-center justify-center'
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: '#FCD116',
-                boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                border: '2px solid #fff',
-              }}
-            >
-              <TbMapPin size={20} color='#212121' />
-            </div>
-          </HTMLMarker>
-        </BaseMap>
+        <MapLightingDetail
+          coord={project.coord}
+          imei={imei}
+          isOnline={device?.is_online ?? project.connection === 'online'}
+          roadCode={project.roadCode}
+          installPoint={project.installPoint}
+          projectName={project.projectName}
+        />
       </div>
 
       {/* Event table */}
@@ -197,7 +180,7 @@ const MapEventSection: React.FC = () => {
             rowKey={(r) => `${r.imei}-${r.timestamp}`}
             columns={columns}
             dataSource={alerts}
-            pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t} รายการ` }}
+            pagination={false}
             size='middle'
             className='bridge-projects-table event-log-table'
             locale={{ emptyText: 'ไม่พบข้อมูล' }}

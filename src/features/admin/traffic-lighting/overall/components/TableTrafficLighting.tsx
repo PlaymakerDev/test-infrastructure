@@ -215,12 +215,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
       rowKey='id'
       columns={columns}
       dataSource={data}
-      pagination={{
-        pageSize: 10,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50'],
-        showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
-      }}
+      pagination={false}
       size='middle'
       // Horizontal scroll inside the table on narrow viewports.
       scroll={{ x: 1400 }}

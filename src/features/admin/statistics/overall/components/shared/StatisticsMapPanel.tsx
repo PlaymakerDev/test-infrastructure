@@ -272,9 +272,15 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                 <div className="flex flex-col gap-2 pb-3">
                   {statsCards.map((card, i) => (
                     <div key={i} className="w-[200px] sm:w-[250px] lg:w-[310px] h-[120px] sm:h-[145px] lg:h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
-                      <div className="flex flex-col gap-0.5 sm:gap-1">
-                        <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8" />
-                        <p className="text-[9px] sm:text-[10px] lg:text-sm font-bold m-0 leading-tight truncate" style={{ color: card.labelColor }}>{card.label}</p>
+                      <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
+                        <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
+                        <p
+                          lang="th"
+                          className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
+                          style={{ color: card.labelColor }}
+                        >
+                          {card.label}
+                        </p>
                       </div>
                       <div className="flex items-baseline gap-0.5 sm:gap-1">
                         <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
