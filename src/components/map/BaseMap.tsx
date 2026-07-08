@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import type { Map as MapboxMap } from 'mapbox-gl'
 import { MapContext } from './MapContext'
+import RoadLayer from './markers/RoadLayer'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -144,6 +145,9 @@ export interface BaseMapProps {
    *   <BaseMap edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }}>
    */
   edgeFade?: MapEdgeFadeProps
+  /** Render the DRR road network (yellow lines + greyed base roads). Default
+   *  true — every map shows ทช. roads. Set false to opt a map out. */
+  showRoads?: boolean
 }
 
 const DEFAULT_CENTER: [number, number] = [101.5, 14.0]
@@ -161,6 +165,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
   className,
   style,
   edgeFade,
+  showRoads = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -321,6 +326,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
           }}
         />
         {children}
+        {showRoads && <RoadLayer />}
         {edgeFade && <MapEdgeFade {...edgeFade} />}
 
         {/* Hint badge — message changes based on zoom state.

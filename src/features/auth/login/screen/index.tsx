@@ -16,6 +16,9 @@ import {
 import { MdOutlineMonitorHeart } from 'react-icons/md'
 import type { IconType } from 'react-icons'
 import menu from '@/configs/menu'
+import { getDepartmentsAPI } from '@/services/routes/ManageService'
+import { resolveHomeDeptId } from '@/hooks/queries/manage'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setLoading } from '@/stores/reducers/layout/layoutSlice'
 
@@ -81,6 +84,7 @@ const AuthScreen: React.FC<Props> = (props) => {
   const { message } = App.useApp()
   const [modal, contextHolder] = Modal.useModal()
   const [remember, setRemember] = useState(false)
+  const queryClient = useQueryClient()
 
   const form = useForm<FormLogin>({
     defaultValues: { username, password },
@@ -108,6 +112,9 @@ const AuthScreen: React.FC<Props> = (props) => {
       try {
         const response = await axios.post('/api/auth/login', value)
         if (response.status === 200) {
+          // Drop any cached data from a previous user so this session's
+          // token-scoped queries (departments, etc.) refetch fresh.
+          queryClient.clear()
           if (remember && value.username) {
             localStorage.setItem(REMEMBER_KEY, value.username)
           } else {
@@ -115,7 +122,16 @@ const AuthScreen: React.FC<Props> = (props) => {
           }
           const path = menu['ADMIN']
           message.success('เข้าสู่ระบบสำเร็จ')
-          router.push(path[0].path)
+          // Land on the user's own department (สำนัก → whole bureau, แขวง → that
+          // แขวง, ส่วนกลาง → 0). Falls back to the plain dashboard on failure.
+          let target = path[0].path
+          try {
+            const depts = await getDepartmentsAPI()
+            target = `${path[0].path}?dept_id=${resolveHomeDeptId(depts.data)}`
+          } catch {
+            // department lookup failed — keep the default landing
+          }
+          router.push(target)
         }
       } catch (error) {
         if (error instanceof AxiosError) {
@@ -135,7 +151,7 @@ const AuthScreen: React.FC<Props> = (props) => {
         dispatch(setLoading({ loading: false }))
       }
     },
-    [router, dispatch, modal, message, remember]
+    [router, dispatch, modal, message, remember, queryClient]
   )
 
   const onForgotPassword = useCallback(() => {
