@@ -26,8 +26,7 @@ const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorL
     className='py-3 px-5 rounded-[14px]'
     style={{
       border: `1.5px solid ${color}`,
-      background:
-        'linear-gradient(135deg, rgba(20,28,48,0.85) 0%, rgba(10,18,36,0.95) 100%)',
+      background: '#66AEFF1A',
     }}
   >
     <div className='flex items-center gap-2 mb-1'>
@@ -43,12 +42,12 @@ const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorL
     </div>
     <p
       className='mb-0 font-bold leading-none'
-      style={{ color, fontSize: 26 }}
+      style={{ color, fontSize: 24 }}
     >
       {value}
     </p>
     {sublabel && (
-      <p className='fs-12 mb-0 mt-1' style={{ color: '#9aa7b8' }}>
+      <p className='fs-11 mb-0 mt-1' style={{ color: '#9aa7b8' }}>
         {sublabel}
       </p>
     )}
@@ -79,7 +78,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
         value={
           <>
             {fmtNumber(project.dailyPCU, 0)}{' '}
-            <span className='fs-14 font-normal'>PCU</span>
+            <span className='fs-11 font-normal' style={{ color: '#9aa7b8' }}>PCU</span>
           </>
         }
         color='#B5FF3B'
@@ -87,7 +86,12 @@ const InfoCardsTrafficSignal: React.FC = () => {
       <Card
         icon={<TbWaveSine />}
         label='การจราจรช่วงเวลาเร่งด่วน'
-        value={fmtNumber(project.peakHourTraffic, 0)}
+        value={
+          <>
+            {fmtNumber(project.peakHourTraffic, 0)}{' '}
+            <span className='fs-11 font-normal' style={{ color: '#9aa7b8' }}>คัน</span>
+          </>
+        }
         sublabel={`Phase ${project.peakPhase ?? '-'} : Peak`}
         color='#7CFC00'
       />

@@ -148,8 +148,25 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
             >
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>
-            {/* Anydesk + Google Map buttons — same visual language as the
-              * Traffic Signal / VMS detail headers. */}
+            {/* Google Map + Anydesk buttons (Google Map first per Figma) —
+              * same visual language as the Traffic Signal / VMS detail headers. */}
+            <ConfigProvider
+              theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}
+            >
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                className='w-full! sm:w-auto!'
+                disabled={!coord}
+                onClick={() => {
+                  if (!coord) return
+                  window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+                }}
+              >
+                <p>Google Map</p>
+              </Button>
+            </ConfigProvider>
             <ConfigProvider
               theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
             >
@@ -179,27 +196,13 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
                 <p className='fs-12'>Anydesk : {anydeskId || '-'}</p>
               </Button>
             </ConfigProvider>
-            <ConfigProvider
-              theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}
-            >
-              <Button
-                type='primary'
-                size='middle'
-                shape='round'
-                className='w-full! sm:w-auto!'
-                disabled={!coord}
-                onClick={() => {
-                  if (!coord) return
-                  window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
-                }}
-              >
-                <p>Google Map</p>
-              </Button>
-            </ConfigProvider>
+            {/* Online = #66AEFF (per Figma); offline stays red. */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isOnline ? 'border-blue-500 text-blue-500' : 'border-red-500 text-red-500'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: isOnline ? '#66AEFF' : '#ef4444',
+                color: isOnline ? '#66AEFF' : '#ef4444',
+              }}
             >
               {isOnline ? <TbWifi /> : <TbWifiOff />}
               {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}

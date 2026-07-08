@@ -16,6 +16,7 @@ import {
 } from 'react-icons/tb'
 import {
   SYSTEMS,
+  SYSTEM_BRIGHT,
   SYSTEM_TYPES,
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
@@ -123,6 +124,9 @@ export function DefaultDevicePopup({
   // used for the href fallback so a middle-click / open-in-new-tab keeps the
   // deploy prefix; left-click goes through onNavigate (router.push adds it too).
   const basePath = process.env.__NEXT_ROUTER_BASEPATH ?? ''
+  // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
+  // a popup border/label on the dark map (per Figma: brighter).
+  const brightColor = SYSTEM_BRIGHT[device.type] ?? color
 
   return (
     <div
@@ -131,12 +135,12 @@ export function DefaultDevicePopup({
         minWidth: 210,
         fontFamily: 'ui-sans-serif,system-ui',
         background: 'rgba(5,13,26,0.96)',
-        border: `1px solid ${color}`,
+        border: `1px solid ${brightColor}`,
         borderRadius: 10,
       }}
     >
       {/* เมนู (device type) */}
-      <div style={{ fontSize: 12, color, fontWeight: 700, letterSpacing: 0.5 }}>
+      <div style={{ fontSize: 12, color: brightColor, fontWeight: 700, letterSpacing: 0.5 }}>
         {SYSTEMS[device.type].label}
       </div>
       {/* จุดติดตั้ง */}

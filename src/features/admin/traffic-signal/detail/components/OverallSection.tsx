@@ -39,7 +39,9 @@ const OverallSection: React.FC<Props> = () => {
           * Phase Timing pinned to h-71 to align with the Cycle overlay. */}
         <div className='flex flex-col gap-3 xl:h-full xl:pb-3'>
           <InfoCardsTrafficSignal />
-          <div className='xl:h-71'>
+          {/* `mt-auto` pins Phase Timing to the bottom so its top/bottom line up
+            * with the Traffic Signal Cycle overlay on the left (both h-71). */}
+          <div className='xl:h-71 xl:mt-auto'>
             <PhaseTimingTrafficSignal />
           </div>
         </div>

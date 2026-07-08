@@ -6,14 +6,15 @@ import {
   getEventTypeColor,
   getEventTypeLabel,
 } from '@/features/admin/incident-detection/components/eventTypes'
+import { thaiDateBE } from '@/utils/thaiDate'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 
 // ── Date helpers (shared by table + grid) ────────────────────────────────────
 
-/** ISO date_time → Buddhist-era date "23/06/2569". */
+/** ISO date_time → Buddhist-era date "6 ก.ค. 2569". */
 export const fmtThaiDate = (iso: string): string => {
   const d = dayjs(iso)
-  return d.isValid() ? `${d.format('DD/MM/')}${d.year() + 543}` : iso
+  return d.isValid() ? thaiDateBE(iso) : iso
 }
 
 /** ISO date_time → "15:47:03". */

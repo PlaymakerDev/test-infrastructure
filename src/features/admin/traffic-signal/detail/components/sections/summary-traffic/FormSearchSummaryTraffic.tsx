@@ -3,6 +3,7 @@ import React from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
 import { Button, Col, ConfigProvider, DatePicker, Row } from 'antd'
 import { TbPrinter } from 'react-icons/tb'
+import { thaiDateBE } from '@/utils/thaiDate'
 
 interface Props {
   /** Reference date — the parent treats this as the end of a fixed 7-day
@@ -13,8 +14,12 @@ interface Props {
 }
 
 const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
+  // The picked date is the END of a fixed 7-day window; start = end − 6 days.
+  // Show the resolved range so the user sees exactly which days are displayed
+  // (selection stays single-date per the design).
+  const rangeText = `${thaiDateBE(value.subtract(6, 'day').toDate())} – ${thaiDateBE(value.toDate())}`
   return (
-    <Row gutter={[16, 16]} align='bottom'>
+    <Row gutter={[16, 16]} align='top'>
       <Col xs={24} sm={24} md={12} lg={10} xl={8} xxl={6}>
         <fieldset>
           <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
@@ -33,23 +38,31 @@ const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
             size='large'
             className='w-full!'
           />
+          <p className='fs-11 text-gray-400 mt-1 mb-0'>
+            ช่วงข้อมูล : {rangeText}
+          </p>
         </fieldset>
       </Col>
       <Col xs={24} sm={24} md={12} lg={6} xl={4}>
-        <ConfigProvider
-          theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#FFFFFF' } }}
-        >
-          <Button
-            type='primary'
-            size='large'
-            shape='round'
-            icon={<TbPrinter />}
-            className='w-full!'
-            onClick={() => alert('TODO: นำออกเอกสาร')}
+        <fieldset>
+          {/* Invisible label spacer — matches the date field's label height so
+            * the button lines up with the date input row (not the helper text). */}
+          <label className='block fs-12' aria-hidden>&nbsp;</label>
+          <ConfigProvider
+            theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
           >
-            นำออกเอกสาร
-          </Button>
-        </ConfigProvider>
+            <Button
+              type='primary'
+              size='large'
+              shape='round'
+              icon={<TbPrinter />}
+              className='w-full! sm:w-auto! sm:min-w-45!'
+              onClick={() => alert('TODO: นำออกเอกสาร')}
+            >
+              <span>นำออกเอกสาร</span>
+            </Button>
+          </ConfigProvider>
+        </fieldset>
       </Col>
     </Row>
   )

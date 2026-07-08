@@ -36,6 +36,8 @@ export interface PieChartProps {
   centerLabel?: string
   /** หน่วยใต้ตัวเลข center */
   centerUnit?: string
+  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "s") — default ไม่มี */
+  tooltipUnit?: string
   /** ตัวเลือก tab period — ถ้าไม่ส่งจะไม่แสดง tab */
   periods?: string[]
   /** period ที่ active เริ่มต้น */
@@ -97,8 +99,6 @@ export interface PieChartProps {
   /** Cap legend height (px) and enable internal scroll — keeps the card compact
    *  when there are many entries (e.g. 10+ event types on one road). */
   legendMaxHeight?: number
-  /** หน่วยที่แสดงต่อท้ายค่าใน tooltip (เช่น "คัน") — default ไม่มีหน่วย */
-  tooltipUnit?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -110,6 +110,7 @@ const PieChart: React.FC<PieChartProps> = ({
   data,
   centerLabel,
   centerUnit,
+  tooltipUnit = '',
   periods,
   defaultPeriod,
   onPeriodChange,
@@ -144,7 +145,6 @@ const PieChart: React.FC<PieChartProps> = ({
   outerLabels,
   outerLabelRadius,
   legendMaxHeight,
-  tooltipUnit,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 

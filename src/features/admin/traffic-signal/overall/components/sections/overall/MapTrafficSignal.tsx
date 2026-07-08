@@ -53,14 +53,12 @@ const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean
   const p = feature.properties as Record<string, unknown>
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isOnline ? 'border-cyan-400' : 'border-red-500'
-      }`}
+      className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
+      style={{ borderColor: '#A3E635' }}
     >
       <p
-        className={`fs-11 font-bold tracking-wide ${
-          isOnline ? 'text-cyan-400' : 'text-red-400'
-        }`}
+        className='fs-11 font-bold tracking-wide'
+        style={{ color: '#A3E635' }}
       >
         Traffic Signal · {String(p.code_name)}
       </p>
