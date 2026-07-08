@@ -27,6 +27,7 @@ const MobileSection = () => {
       <section>
         <MobileLocationSection
           data={data?.data.data ?? []}
+          meta={data?.data.meta}
           isLoading={isLoading}
           isError={isError}
         />
@@ -37,6 +38,7 @@ const MobileSection = () => {
       <section className='mt-5'>
         <TableMobile
           data={data?.data.data ?? []}
+          meta={data?.data.meta}
           isLoading={isLoading}
           isError={isError}
         />

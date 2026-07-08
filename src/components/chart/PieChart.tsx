@@ -36,6 +36,8 @@ export interface PieChartProps {
   centerLabel?: string
   /** หน่วยใต้ตัวเลข center */
   centerUnit?: string
+  /** หน่วยต่อท้ายค่าใน tooltip (เช่น "s") — default ไม่มี */
+  tooltipUnit?: string
   /** ตัวเลือก tab period — ถ้าไม่ส่งจะไม่แสดง tab */
   periods?: string[]
   /** period ที่ active เริ่มต้น */
@@ -108,6 +110,7 @@ const PieChart: React.FC<PieChartProps> = ({
   data,
   centerLabel,
   centerUnit,
+  tooltipUnit = '',
   periods,
   defaultPeriod,
   onPeriodChange,
@@ -193,7 +196,7 @@ const PieChart: React.FC<PieChartProps> = ({
         `<div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.data.itemStyle.color}"></span>
           <span>${params.name}</span>
-          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}</span>
+          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}</span>
         </div>`,
     },
     series: [
@@ -221,7 +224,7 @@ const PieChart: React.FC<PieChartProps> = ({
         },
       },
     ],
-  }), [data, radius, startAngle, clockwise, segmentBorderColor, segmentBorderWidth])
+  }), [data, radius, startAngle, clockwise, segmentBorderColor, segmentBorderWidth, tooltipUnit])
 
   return (
     <div
@@ -259,7 +262,7 @@ const PieChart: React.FC<PieChartProps> = ({
               </span>
             )
           )}
-          <h2 className='font-semibold' style={{ color: titleColor, fontSize: titleSize }}>
+          <h2 style={{ color: titleColor, fontSize: titleSize, fontWeight: 400 }}>
             {title}
           </h2>
         </div>

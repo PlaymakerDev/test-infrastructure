@@ -11,7 +11,11 @@ import type { DeviceBadgeKey } from '@/constants/cctv'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkCameraItem } from '@/types/crosswalk/detail-api'
 
-interface Props {}
+interface Props {
+  /** 'all' | 'online' | 'offline' — filter rows by camera connection status.
+   *  Defaults to 'all' when omitted. */
+  activeFilter?: string
+}
 
 type ConnectionStatus = 'Connect' | 'Disconnect'
 
@@ -71,7 +75,7 @@ const deriveFunctions = (c: CrosswalkCameraItem): DeviceBadgeKey[] => {
   return fns
 }
 
-const TableCameraData: React.FC<Props> = () => {
+const TableCameraData: React.FC<Props> = ({ activeFilter = 'all' }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
 
@@ -84,7 +88,12 @@ const TableCameraData: React.FC<Props> = () => {
   // more per-camera /cctv/cameras/{id} lookups.
   const rows = useMemo<CameraRow[]>(() => {
     const cameras = data?.cameras ?? []
-    return cameras.map((c, i) => ({
+    const filtered = cameras.filter((c) => {
+      if (activeFilter === 'online') return c.is_online
+      if (activeFilter === 'offline') return !c.is_online
+      return true
+    })
+    return filtered.map((c, i) => ({
       ...c,
       seq: i + 1,
       km: extractKm(c.camera_name),
@@ -92,7 +101,7 @@ const TableCameraData: React.FC<Props> = () => {
       ip: c.ip_address ?? extractIpFromHlsUrl(c.hls_url),
       status: c.is_online ? 'Connect' : 'Disconnect',
     }))
-  }, [data])
+  }, [data, activeFilter])
 
   const columns: ColumnsType<CameraRow> = useMemo(() => [
     {

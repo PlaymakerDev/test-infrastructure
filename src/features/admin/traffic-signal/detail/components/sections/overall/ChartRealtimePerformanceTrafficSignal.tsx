@@ -71,6 +71,7 @@ const ChartRealtimePerformanceTrafficSignal: React.FC<Props> = () => {
 
   return (
     <BarChart
+      cardClassName='h-full'
       title='สถิติการวิเคราะห์ประสิทธิภาพแบบ Real-time'
       subtitle='เปรียบเทียบประสิทธิภาพการวิเคราะห์ของระบบตามช่วงเวลา'
       icon={<TbChartBar size={30} />}

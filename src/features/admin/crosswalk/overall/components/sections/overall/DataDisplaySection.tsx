@@ -92,12 +92,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  // Backend defaults are page=1, limit=100; pin them here so the URL is stable
-  // for the cache key (mirrors traffic-volume).
-  const { data, isLoading } = useCrosswalkCentralList(deptId, {
-    page: 1,
-    limit: 100,
-  })
+  const { data, isLoading } = useCrosswalkCentralList(deptId)
 
   const goToDetail = useCallback(
     (p: CrosswalkProject) => {

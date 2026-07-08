@@ -1,15 +1,29 @@
 "use client"
-import { Button } from 'antd'
+import { Alert, Button, message } from 'antd'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
-import { MOCK_USERS } from '../data/mockUsers'
+import SwapButton from '@/components/swap-button/SwapButton'
+import { useContainerHeight } from '@/hooks/useContainerHeight'
+import {
+  useCreateUser,
+  useDeleteUser,
+  useDepartments,
+  useUpdateUser,
+  useUpdateUserPassword,
+  useUsersList,
+} from '@/hooks/queries/manage'
+import type { APIResponseGeneralUser } from '@/types/manage/general-user-api'
+import type { APIResponseDepartment } from '@/types/manage/department-api'
+import type { APIResponseSSOUser } from '@/types/manage/sso-search-api'
+import { calcTableScrollY } from '../hooks/useTableScrollY'
 import type { User, UserFilters, UserFormValues } from '../types/user'
+import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
+import ChangePasswordModal from './user/ChangePasswordModal'
 import DeleteUserModal from './user/DeleteUserModal'
 import FormSearchUser from './user/FormSearchUser'
+import LDAPSearchModal from './user/LDAPSearchModal'
 import TableUser from './user/TableUser'
 import UserModal from './user/UserModal'
-
-const PAGE_SIZE = 10
 
 const initialFilters: UserFilters = {
   role: null,
@@ -17,128 +31,336 @@ const initialFilters: UserFilters = {
   search: '',
 }
 
-// Local ID generator — swap for API-provided id once backend CRUD lands.
-const genId = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+// Sub-tab options rendered inside the User tab. Kept module-scope so the
+// SwapButton's `options` reference is stable across renders (matches the
+// pattern used by TitleSection for the top-level tabs).
+const SUB_TABS = [
+  { label: 'Local', value: 'local' },
+  { label: 'LDAP', value: 'ldap' },
+]
+
+/** Maps the raw /general_user row to the flat UI User type.
+ *  Kept as a plain function (not a hook) so the memoized list projection
+ *  in UserSection only recomputes when its inputs change. */
+const toUser = (
+  row: APIResponseGeneralUser,
+  departmentsById: Map<number, APIResponseDepartment>,
+): User => {
+  const firstName = row.first_name ?? ''
+  const lastName = row.lastname ?? ''
+  const dept = row.department_id != null ? departmentsById.get(row.department_id) : undefined
+  return {
+    id: row.user_id,
+    username: row.user?.username ?? '',
+    firstName,
+    lastName,
+    fullName: `${firstName} ${lastName}`.trim() || '-',
+    role: row.role ?? '',
+    departmentId: row.department_id,
+    department: dept?.department_short_name || dept?.department_name || '-',
+    // Real API has no `status` field — infer from `user.is_active`. Rows
+    // without a nested `user` (defensive) default to inactive.
+    status: row.user?.is_active ? 'active' : 'inactive',
+    createdAt: row.created_at,
+    // `is_ldap` is verified present on the live payload; default to false
+    // just in case an older row is missing the field.
+    isLdap: row.is_ldap ?? false,
+  }
+}
 
 const UserSection: React.FC = () => {
-  // Local state — a future team member replaces this block with useUsersAPI().
-  const [users, setUsers] = useState<User[]>(MOCK_USERS)
   const [filters, setFiltersState] = useState<UserFilters>(initialFilters)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE)
+  // Local vs LDAP split — the endpoint has no `is_ldap` query param so the
+  // filter is applied client-side over the fetched rows. Phase 2 will wire
+  // this to the sub-tab UI; today it just gates the table via `filtered`.
+  const [subTab, setSubTab] = useState<'local' | 'ldap'>('local')
+
+  // Container height drives the AntD table's internal scroll — we measure the
+  // outer card and feed a numeric px value to `scroll.y` so the body scrolls
+  // inside the card instead of the whole viewport.
+  const [attachContainer, containerH] = useContainerHeight<HTMLDivElement>()
+
+  // ── SERVER-SEARCH BUG WORKAROUND (task #12) ─────────────────────────────
+  // /api-v2/manage/general_user?search=… returns malformed JSON on the
+  // backend, so we DO NOT forward `filters.search` to the API. The
+  // foundation hook (useUsersList) also strips `search` before hitting the
+  // wire as a belt-and-braces safeguard. Instead, search is applied
+  // client-side over `data.res_data` in the `filtered` memo below. The
+  // role + status dropdowns are also client-only (the endpoint has no
+  // server-side filter for them). Pagination stays server-side for
+  // consistency with the other Section tabs — the dataset is only ~6 rows
+  // today so it's effectively a single page, but the mechanism is here
+  // when the row count grows.
+  const { data, isLoading, isError, error, refetch } = useUsersList({
+    page,
+    limit: pageSize,
+  })
+  const { data: departments } = useDepartments()
+
+  const createMutation = useCreateUser()
+  const updateMutation = useUpdateUser()
+  const deleteMutation = useDeleteUser()
+  const passwordMutation = useUpdateUserPassword()
 
   const [userModal, setUserModal] = useState<{ open: boolean; editing: User | null }>({
     open: false,
     editing: null,
   })
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [passwordTarget, setPasswordTarget] = useState<User | null>(null)
+  // LDAP create is a two-step flow: search modal first, then UserModal
+  // seeded from the picked AD row. `ldapSearchOpen` gates the search dialog,
+  // `ldapPrefill` survives the transition so UserModal can seed its form.
+  const [ldapSearchOpen, setLdapSearchOpen] = useState(false)
+  const [ldapPrefill, setLdapPrefill] = useState<APIResponseSSOUser | null>(null)
+
+  const departmentsById = useMemo(() => {
+    const m = new Map<number, APIResponseDepartment>()
+    for (const d of departments ?? []) m.set(d.id, d)
+    return m
+  }, [departments])
+
+  const users: User[] = useMemo(
+    () => (data?.res_data ?? []).map((r) => toUser(r, departmentsById)),
+    [data, departmentsById],
+  )
+
+  const total = data?.meta_data?.count ?? 0
 
   const setFilters = useCallback((patch: Partial<UserFilters>) => {
     setFiltersState((prev) => ({ ...prev, ...patch }))
     setPage(1)
   }, [])
 
+  // Client-side filter over the current page's rows — see workaround
+  // block above for why search is not sent to the server. The subTab
+  // gate narrows to Local (`!isLdap`) or LDAP (`isLdap`) users; the
+  // backend has no `is_ldap` query param so this must stay client-side.
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase()
+    const wantLdap = subTab === 'ldap'
     return users.filter((u) => {
+      if (u.isLdap !== wantLdap) return false
       if (filters.role && u.role !== filters.role) return false
       if (filters.status && u.status !== filters.status) return false
       if (q) {
-        const haystack = `${u.username} ${u.fullName} ${u.email}`.toLowerCase()
+        const haystack = `${u.username} ${u.fullName}`.toLowerCase()
         if (!haystack.includes(q)) return false
       }
       return true
     })
-  }, [users, filters])
+  }, [users, filters, subTab])
 
-  const openCreate = useCallback(() => setUserModal({ open: true, editing: null }), [])
+  // Local create opens UserModal directly. LDAP create opens the search
+  // modal first — the picked row triggers the UserModal transition via
+  // `handleLdapPick` below.
+  const openCreate = useCallback(() => {
+    if (subTab === 'ldap') setLdapSearchOpen(true)
+    else setUserModal({ open: true, editing: null })
+  }, [subTab])
   const openEdit = useCallback((user: User) => setUserModal({ open: true, editing: user }), [])
-  const closeUser = useCallback(() => setUserModal({ open: false, editing: null }), [])
-
-  const handleSubmit = useCallback((values: UserFormValues, editingId: string | null) => {
-    setUsers((prev) => {
-      if (editingId) {
-        return prev.map((u) => (u.id === editingId ? { ...u, ...values } : u))
-      }
-      const now = new Date().toISOString()
-      const created: User = {
-        id: genId(),
-        ...values,
-        lastLoginAt: null,
-        createdAt: now,
-      }
-      return [created, ...prev]
-    })
+  const closeUser = useCallback(() => {
+    setUserModal({ open: false, editing: null })
+    // Clear the AD prefill so a subsequent create doesn't accidentally
+    // reuse the previous pick (e.g. Local create after LDAP create).
+    setLdapPrefill(null)
+  }, [])
+  const handleLdapPick = useCallback((u: APIResponseSSOUser) => {
+    setLdapPrefill(u)
+    setLdapSearchOpen(false)
+    setUserModal({ open: true, editing: null })
   }, [])
 
-  const handleDelete = useCallback((id: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id))
+  // Reset to page 1 whenever the page size changes so we don't land on an
+  // orphaned deep page (e.g. page 8 of a now-recomputed 3-page dataset).
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize)
+    setPage(1)
   }, [])
+
+  const handleSubmit = useCallback(
+    async (values: UserFormValues, editing: User | null) => {
+      try {
+        if (editing) {
+          await updateMutation.mutateAsync({
+            id: editing.id,
+            data: {
+              first_name: values.firstName,
+              last_name: values.lastName,
+              department_id: values.departmentId,
+              role: values.role,
+            },
+          })
+          message.success('บันทึกข้อมูลผู้ใช้งานแล้ว')
+        } else {
+          await createMutation.mutateAsync({
+            username: values.username,
+            first_name: values.firstName,
+            last_name: values.lastName,
+            department_id: values.departmentId,
+            role: values.role,
+            password: values.password,
+          })
+          message.success('เพิ่มผู้ใช้งานแล้ว')
+        }
+        closeUser()
+      } catch (err) {
+        // Server errors bubble via message; the modal stays open so the user
+        // can retry without re-entering the form.
+        const detail = err instanceof Error ? err.message : 'ไม่สามารถบันทึกข้อมูลได้'
+        message.error(detail)
+      }
+    },
+    [createMutation, updateMutation, closeUser],
+  )
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteMutation.mutateAsync(id)
+        message.success('ลบผู้ใช้งานแล้ว')
+        setDeleteTarget(null)
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : 'ไม่สามารถลบผู้ใช้งานได้'
+        message.error(detail)
+      }
+    },
+    [deleteMutation],
+  )
+
+  const handleChangePassword = useCallback(
+    async (id: string, password: string) => {
+      try {
+        await passwordMutation.mutateAsync({ id, data: { password } })
+        message.success('เปลี่ยนรหัสผ่านแล้ว')
+        setPasswordTarget(null)
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : 'ไม่สามารถเปลี่ยนรหัสผ่านได้'
+        message.error(detail)
+      }
+    },
+    [passwordMutation],
+  )
 
   return (
     <div
-      className='rounded-2xl p-5'
+      ref={attachContainer}
+      className='rounded-2xl p-5 flex flex-col h-full'
       style={{ background: '#191919', border: '1px solid var(--light-gray-2)' }}
     >
-      <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
-        <div className='flex-1 min-w-0'>
-          <FormSearchUser filters={filters} onChange={setFilters} />
+      <div className='shrink-0'>
+        {/* Sub-tab switch (Local vs LDAP). Rendered above the filters row —
+         *  same SwapButton component the top-level tabs use, but sized `middle`
+         *  so it reads as a nested control instead of a peer. `activeValue`
+         *  keeps it controlled off `subTab` so state stays canonical here. */}
+        <div className='mb-4'>
+          <SwapButton
+            options={SUB_TABS}
+            activeValue={subTab}
+            size='middle'
+            setLabelValue={(value) => setSubTab(value as 'local' | 'ldap')}
+          />
         </div>
-        <div className='flex items-center gap-2 flex-wrap'>
-          <Button
-            size='large'
-            shape='round'
-            icon={<TbPlus />}
-            onClick={openCreate}
-            style={{
-              background: 'var(--yellow)',
-              color: '#000',
-              borderColor: 'var(--yellow)',
-              fontWeight: 700,
-            }}
-          >
-            เพิ่มผู้ใช้งาน
-          </Button>
-          <Button
-            size='large'
-            shape='round'
-            icon={<TbPrinter />}
-            style={{
-              background: '#66AEFF',
-              color: '#000',
-              borderColor: '#66AEFF',
-              fontWeight: 600,
-            }}
-          >
-            นำออกเอกสาร
-          </Button>
+        <div className='flex flex-col lg:flex-row lg:items-end gap-4'>
+          <div className='flex-1 min-w-0'>
+            <FormSearchUser filters={filters} onChange={setFilters} />
+          </div>
+          <div className='flex items-center gap-2 flex-wrap'>
+            <Button
+              size='large'
+              shape='round'
+              icon={<TbPlus />}
+              onClick={openCreate}
+              style={{
+                background: 'var(--yellow)',
+                color: '#000',
+                borderColor: 'var(--yellow)',
+                fontWeight: 700,
+              }}
+            >
+              {subTab === 'ldap' ? 'เพิ่มผู้ใช้งาน LDAP' : 'เพิ่มผู้ใช้งาน'}
+            </Button>
+            <Button
+              size='large'
+              shape='round'
+              icon={<TbPrinter />}
+              style={{
+                background: '#66AEFF',
+                color: '#000',
+                borderColor: '#66AEFF',
+                fontWeight: 600,
+              }}
+            >
+              นำออกเอกสาร
+            </Button>
+          </div>
         </div>
+
+        {isError && (
+          <div className='mt-4'>
+            <Alert
+              type='error'
+              showIcon
+              message='ไม่สามารถโหลดข้อมูลผู้ใช้งานได้'
+              description={error instanceof Error ? error.message : undefined}
+              action={
+                <Button size='small' onClick={() => refetch()}>
+                  ลองอีกครั้ง
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
 
-      <div className='mt-5'>
+      <div className='flex-1 min-h-0 mt-5'>
         <TableUser
           data={filtered}
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
+          total={total}
+          loading={isLoading}
+          scrollY={calcTableScrollY(containerH)}
           onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
           onEdit={openEdit}
           onDelete={setDeleteTarget}
+          onChangePassword={setPasswordTarget}
         />
       </div>
 
+      <LDAPSearchModal
+        open={ldapSearchOpen}
+        onCancel={() => setLdapSearchOpen(false)}
+        onSelect={handleLdapPick}
+      />
       <UserModal
         open={userModal.open}
         editing={userModal.editing}
+        submitting={createMutation.isPending || updateMutation.isPending}
         onClose={closeUser}
         onSubmit={handleSubmit}
+        onChangePassword={setPasswordTarget}
+        // Edit: trust the row's own `isLdap` (the sub-tab could theoretically
+        // desync from the target row). Create: use the active sub-tab.
+        mode={userModal.editing ? (userModal.editing.isLdap ? 'ldap' : 'local') : subTab}
+        prefill={ldapPrefill}
       />
       <DeleteUserModal
         open={!!deleteTarget}
         user={deleteTarget}
+        submitting={deleteMutation.isPending}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+      />
+      <ChangePasswordModal
+        open={!!passwordTarget}
+        user={passwordTarget}
+        submitting={passwordMutation.isPending}
+        onClose={() => setPasswordTarget(null)}
+        onConfirm={handleChangePassword}
       />
     </div>
   )

@@ -171,7 +171,7 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
     >
       <div className='flex items-center gap-2 mb-2'>
         <TbCar size={22} className='text-(--yellow)' />
-        <span className='fs-16 font-medium text-(--yellow)'>
+        <span className='fs-14 font-normal text-(--yellow)'>
           ข้อมูลแยกประเภทยานพาหนะประจำวัน
         </span>
       </div>

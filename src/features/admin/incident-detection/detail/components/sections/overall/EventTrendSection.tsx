@@ -101,7 +101,7 @@ const EventTrendSection: React.FC = () => {
       data={chartData}
       lines={lines}
       yAxisTicks={yAxisTicks}
-      height={146}
+      height={132}
       // Card has spare space — pull the plot down (default 28 leaves a big gap
       // under the labels) and up closer to the title.
       gridBottom={8}

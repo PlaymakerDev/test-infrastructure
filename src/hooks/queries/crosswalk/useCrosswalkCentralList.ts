@@ -3,12 +3,16 @@ import { getCrosswalkCentralListAPI } from '@/services/routes/CrosswalkService'
 import type { APIRequestCrosswalkCentralList } from '@/types/crosswalk/overview-api'
 import { crosswalkKeys } from './queryKeys'
 
-/** Bureau-aware solution list — nested `bureau → sub_department → solutions`
- *  with per-row warranty status, camera online/offline counts, and
- *  crosswalk-device health. */
+// Shared param default so overall list + detail title use the same cache key
+// (React Query keys include params — mismatched params ⇒ duplicate fetches).
+export const CROSSWALK_CENTRAL_LIST_DEFAULT_PARAMS: APIRequestCrosswalkCentralList = {
+  page: 1,
+  limit: 100,
+}
+
 export const useCrosswalkCentralList = (
   deptId: string | number | null | undefined,
-  params: APIRequestCrosswalkCentralList = {}
+  params: APIRequestCrosswalkCentralList = CROSSWALK_CENTRAL_LIST_DEFAULT_PARAMS
 ) =>
   useQuery({
     queryKey: crosswalkKeys.overview.centralList(deptId ?? '', params),

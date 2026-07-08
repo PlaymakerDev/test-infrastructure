@@ -66,12 +66,12 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'อัตราการไหล',
-              value: ts ? `${fmtNumber(ts.traffic_flow, 2)} PCU / ชั่วโมง` : '-',
+              value: ts ? `${fmtNumber(ts.traffic_flow, 1)} PCU / ชั่วโมง` : '-',
               highlight: true,
             },
             {
               label: 'V/C Ratio',
-              value: ts ? fmtNumber(ts.vc_ratio, 3) : '-',
+              value: ts ? fmtNumber(ts.vc_ratio, 1) : '-',
             },
           ]}
         />
@@ -87,7 +87,7 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'PCU รวม',
-              value: ta ? `${fmtNumber(ta.total_pcu, 2)} PCU` : '-',
+              value: ta ? `${fmtNumber(ta.total_pcu, 1)} PCU` : '-',
             },
             {
               label: 'ปริมาณสูงสุด / ชั่วโมง',
@@ -96,7 +96,7 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'Peak Hour Factor',
-              value: ta ? fmtNumber(ta.peak_hour_factor, 2) : '-',
+              value: ta ? fmtNumber(ta.peak_hour_factor, 1) : '-',
             },
           ]}
         />
@@ -118,7 +118,7 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'PCU เฉลี่ย',
-              value: vd ? fmtNumber(vd.main_pcu_hour, 2) : '-',
+              value: vd ? fmtNumber(vd.main_pcu_hour, 1) : '-',
             },
           ]}
         />

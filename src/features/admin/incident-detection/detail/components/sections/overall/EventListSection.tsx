@@ -15,6 +15,7 @@ import {
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 import EventDetailModal from '@/features/admin/incident-detection/components/EventDetailModal'
+import { thaiDateBE } from '@/utils/thaiDate'
 
 const EventThumbnail: React.FC<{ url?: string; onClick?: () => void }> = ({ url, onClick }) => {
   const className = `w-full h-full ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`
@@ -46,11 +47,11 @@ const EventThumbnail: React.FC<{ url?: string; onClick?: () => void }> = ({ url,
 // Gradient border (#212121 → #66AEFF, 2px) — dual-background trick.
 const CARD_BG = 'linear-gradient(#1c1c1c, #1c1c1c) padding-box, linear-gradient(135deg, #212121, #66AEFF) border-box'
 
-/** Format ISO date_time (e.g. "2026-06-23T15:47:03+07:00") → "23/06/2569 15:47:03". */
+/** Format ISO date_time (e.g. "2026-06-23T15:47:03+07:00") → "23 มิ.ย. 2569 15:47:03". */
 const fmtThaiDateTime = (iso: string): string => {
   const d = dayjs(iso)
   if (!d.isValid()) return iso
-  return `${d.format('DD/MM/')}${d.year() + 543} ${d.format('HH:mm:ss')}`
+  return `${thaiDateBE(iso)} ${d.format('HH:mm:ss')}`
 }
 
 const EventCard: React.FC<{ ev: IncidentTransactionItem; onOpenDetail: () => void }> = ({ ev, onOpenDetail }) => {

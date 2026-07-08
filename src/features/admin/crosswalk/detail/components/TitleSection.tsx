@@ -35,10 +35,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
 
-  // Warranty + connection flags come from the central-list response — cached
-  // when the user navigated in from the overall page, so this is free.
-  // Crosswalk connection status uses `crosswalk.is_online` (the ทางข้าม
-  // device health), NOT the camera's online state.
+  // `crosswalk.is_online` = ทางข้ามอุปกรณ์ health (NOT the camera's online state).
   const { data: centralData } = useCrosswalkCentralList(deptId)
   const match = (centralData ?? [])
     .flatMap((bureau) => bureau.sub_department ?? [])
@@ -109,9 +106,32 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>
 
-            {/* AnyDesk button — mirrors traffic-volume: always renders when
-              * the field is present (even empty string), with opacity + cursor
-              * signalling clickability. */}
+            {/* Google Map + Anydesk buttons (Google Map first per Figma).
+              * Anydesk renders when the field is present (even empty string),
+              * with opacity + cursor signalling clickability. */}
+            {coord && (
+              <ConfigProvider
+                theme={{
+                  token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' },
+                }}
+              >
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  className='w-full! sm:w-auto!'
+                  onClick={() =>
+                    window.open(
+                      `https://maps.google.com/?q=${coord[1]},${coord[0]}`,
+                      '_blank'
+                    )
+                  }
+                >
+                  <p>Google Map</p>
+                </Button>
+              </ConfigProvider>
+            )}
+
             {anydeskId !== undefined && (
               <ConfigProvider
                 theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
@@ -137,34 +157,13 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               </ConfigProvider>
             )}
 
-            {coord && (
-              <ConfigProvider
-                theme={{
-                  token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' },
-                }}
-              >
-                <Button
-                  type='primary'
-                  size='middle'
-                  shape='round'
-                  className='w-full! sm:w-auto!'
-                  onClick={() =>
-                    window.open(
-                      `https://maps.google.com/?q=${coord[1]},${coord[0]}`,
-                      '_blank'
-                    )
-                  }
-                >
-                  <p>Google Map</p>
-                </Button>
-              </ConfigProvider>
-            )}
-
-            {/* Online / Offline pill — uses central-list `crosswalk.is_online`. */}
+            {/* Online = #66AEFF (per Figma); offline stays red. */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isOnline ? 'border-blue-500 text-blue-500' : 'border-red-500 text-red-500'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: isOnline ? '#66AEFF' : '#ef4444',
+                color: isOnline ? '#66AEFF' : '#ef4444',
+              }}
             >
               {isOnline ? <TbWifi /> : <TbWifiOff />}
               {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}

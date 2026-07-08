@@ -330,7 +330,7 @@ const HourlyMatrixTable: React.FC<Props> = ({ rows }) => {
         dataSource={data}
         pagination={false}
         size='small'
-        scroll={{ x: 1900 }}
+        scroll={{ x: 'max-content' }}
         className='bridge-projects-table hide-scrollbar'
       />
     </section>

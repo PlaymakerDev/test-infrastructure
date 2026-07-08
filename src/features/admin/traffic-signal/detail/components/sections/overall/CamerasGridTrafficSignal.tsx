@@ -107,10 +107,11 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
         P{cam.phase} - {cam.detectionMode}
       </span>
     </div>
-    <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</h4>
-    {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma. */}
-    <div className='flex items-center justify-between gap-2 flex-wrap mt-1'>
-      <p className='text-gray-400 mb-0' style={{ fontSize: 12 }}>IP Address : {cam.ipAddress}</p>
+    <p className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</p>
+    {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma.
+      * No flex-wrap: IP truncates (min-w-0) so the pills stay on the same line. */}
+    <div className='flex items-center justify-between gap-2 mt-1'>
+      <p className='text-gray-400 mb-0 fs-11 min-w-0 truncate'>IP Address : {cam.ipAddress}</p>
       {cam.detectionMode === 'Counting' && (
         <div className='flex gap-2 shrink-0'>
           <span className='fs-12 border border-emerald-500 text-emerald-400 px-2 py-0.5 rounded-full'>
@@ -186,11 +187,15 @@ const CamerasGridTrafficSignal: React.FC = () => {
 
   const filtered = useMemo(() => {
     const inMode = (mode: CameraEntry['detectionMode']) =>
-      allCameras.filter(
-        (c) =>
-          c.detectionMode === mode &&
-          (activeFilter === 'all' || c.connection === activeFilter)
-      )
+      allCameras
+        .filter(
+          (c) =>
+            c.detectionMode === mode &&
+            (activeFilter === 'all' || c.connection === activeFilter)
+        )
+        // Order by monitored phase (P1→P4) instead of the API's camera-name
+        // order, so both the grid and table read P1, P2, P3, P4.
+        .sort((a, b) => a.phase - b.phase)
     return { counting: inMode('Counting'), stopline: inMode('Stopline') }
   }, [activeFilter, allCameras])
 
@@ -217,12 +222,14 @@ const CamerasGridTrafficSignal: React.FC = () => {
             onOpen={openLive}
           />
         ) : (
-          /* GRID view — 4 Counting tiles on top + 4 Stopline tiles below. */
+          /* GRID view — Counting tiles on top + Stopline tiles below.
+           * A block with < 4 cameras fills the row evenly (3 → 3/row, 2 → 2/row);
+           * 4+ cameras use 4/row (lg=6). */
           <>
             {filtered.counting.length > 0 && (
               <Row gutter={[16, 16]} className='mb-4'>
                 {filtered.counting.map((cam) => (
-                  <Col key={cam.id} xs={24} sm={12} md={12} lg={6}>
+                  <Col key={cam.id} xs={24} sm={12} md={12} lg={filtered.counting.length < 4 ? 24 / filtered.counting.length : 6}>
                     <CameraTile cam={cam} onOpen={openLive} />
                   </Col>
                 ))}
@@ -231,7 +238,7 @@ const CamerasGridTrafficSignal: React.FC = () => {
             {filtered.stopline.length > 0 && (
               <Row gutter={[16, 16]}>
                 {filtered.stopline.map((cam) => (
-                  <Col key={cam.id} xs={24} sm={12} md={12} lg={6}>
+                  <Col key={cam.id} xs={24} sm={12} md={12} lg={filtered.stopline.length < 4 ? 24 / filtered.stopline.length : 6}>
                     <CameraTile cam={cam} onOpen={openLive} />
                   </Col>
                 ))}

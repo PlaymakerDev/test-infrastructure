@@ -20,12 +20,12 @@ interface CardProps {
 }
 
 const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = {
-  white: { border: 'border-white', text: 'text-white' },
-  blue: { border: 'border-blue-500', text: 'text-blue-500' },
-  red: { border: 'border-red-500', text: 'text-red-500' },
-  orange: { border: 'border-orange-500', text: 'text-orange-500' },
-  yellow: { border: 'border-yellow-500', text: 'text-yellow-500' },
-  lime: { border: 'border-lime-400', text: 'text-lime-400' },
+  white: { border: 'border-[#FFFFFF]', text: 'text-[#FFFFFF]' },
+  blue: { border: 'border-[#66AEFF]', text: 'text-[#66AEFF]' },
+  red: { border: 'border-[#E94C4C]', text: 'text-[#E94C4C]' },
+  orange: { border: 'border-[#FF7B00]', text: 'text-[#FF7B00]' },
+  yellow: { border: 'border-[#FCD116]', text: 'text-[#FCD116]' },
+  lime: { border: 'border-[#B2FF00]', text: 'text-[#B2FF00]' },
 }
 
 const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
