@@ -250,7 +250,7 @@ const AuthScreen: React.FC<Props> = (props) => {
             {FEATURES.map(({ icon: Icon, label }) => (
               <div key={label} className='flex flex-col items-center gap-3'>
                 <span
-                  className='w-[76px] h-[76px] rounded-full flex items-center justify-center backdrop-blur-sm'
+                  className='w-19 h-19 rounded-full flex items-center justify-center backdrop-blur-sm'
                   style={{
                     background:
                       'linear-gradient(to top right,rgba(151,151,151,0.22),rgba(60,60,60,0))',
@@ -268,10 +268,10 @@ const AuthScreen: React.FC<Props> = (props) => {
         </section>
 
         {/* RIGHT — login card */}
-        <section className='flex items-center justify-center w-full p-6 xl:w-auto xl:pr-16 2xl:pr-28'>
+        <section className='flex items-center justify-center w-full p-6 xl:w-auto xl:pr-16 2xl:pr-28 h-screen'>
           {/* gradient border wrapper (paint9: bottom-left #212121 → blue → yellow top-right) */}
           <div
-            className='w-full max-w-[580px] xl:w-120 2xl:w-145 rounded-[20px] p-0.5'
+            className='w-full max-w-145 xl:w-120 2xl:w-145 rounded-[20px] p-0.5'
             style={{
               background: `linear-gradient(to top right,#212121 11%,${BLUE} 72%,${YELLOW} 100%)`,
               boxShadow: '0 24px 60px -20px rgba(0,0,0,0.7)',
