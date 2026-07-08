@@ -261,3 +261,465 @@ export interface APIResponseVehicleCountHour {
   column: string[]
   value: string[]
 }
+
+// RECENTLY WEIGHT
+export interface APIRequestRecentlyWeight {
+  station_id?: string
+  limit?: number
+  station_type?: string
+}
+
+export type APIResponseRecentlyWeight = RecentlyWeightData[]
+
+export interface RecentlyWeightData {
+  TDID: string
+  license_plate: string
+  weight: string
+  VehicleClassDesc: string
+  VehicleClassID: number
+  status: number
+}
+
+// WEIGHT WIM LOG
+export interface APIRequestWeightWIMLog {
+  start_date?: string
+  end_date?: string
+  station?: number
+  page?: number
+  page_size?: number
+  is_over_weight?: string
+  ordering?: 'asc' | 'desc'
+}
+
+export interface APIResponseWeightWIMLog {
+  data: WeightWIMLogData[]
+  meta: WeightWIMLogMeta
+}
+
+export interface WeightWIMLogData {
+  td_id: string
+  t_id: string
+  time_stamp: string
+  time_stamp_date: string
+  time_stamp_time: string
+  today: string
+  enf_id: string
+  station_id: number
+  station_name: string
+  vehicle_class_id: number
+  metrial_name: any
+  lp_head_no: string
+  lp_head_province_id: string
+  province_name: string
+  lp_tail_no: any
+  lp_tail_province_id: any
+  gross_weight: string
+  gross_weight_over: string
+  legal_weight: string
+  over10percent: string
+  axle_left_01: any
+  axle_left_02: any
+  axle_left_03: any
+  axle_left_04: any
+  axle_left_05: any
+  axle_left_06: any
+  axle_left_07: any
+  axle_right_01: any
+  axle_right_02: any
+  axle_right_03: any
+  axle_right_04: any
+  axle_right_05: any
+  axle_right_06: any
+  axle_right_07: any
+  display_type: number
+  is_over_weight: string
+  driver_name: any
+  image_02_name: string
+  image_01_name: string
+  vehicle_class_desc2: string
+  vehicle_class_desc3: string
+  lp_head_province_name: string
+  lp_head_province_id_ppa: number
+  lp_tail_province_name: any
+  lp_tail_province_id_ppa: any
+  is_arrested: any
+  vehicle_class_name: string
+  vehicle_class_desc: string
+  vehicle_class_legal_weight: string
+  vehicle_class_legal_drive_shaft: string
+  vehicle_class_legal_drive_shaft_ref: string
+  vehicle_class_id_ref: number
+  axle_01_weight: any
+  axle_02_weight: any
+  axle_03_weight: any
+  axle_04_weight: any
+  axle_05_weight: any
+  axle_06_weight: any
+  axle_07_weight: any
+  axle_08_weight: any
+  axle_09_weight: any
+  axle_10_weight: any
+  axle_11_weight: any
+  axle_12_weight: any
+  axle_13_weight: any
+  axle_14_weight: any
+  axle_count: string
+  is_over_weight_desc: string
+}
+
+export interface WeightWIMLogMeta {
+  page: number
+  total: number
+  page_size: string
+  page_count: number
+  has_previous_page: boolean
+  has_next_page: boolean
+  summary: MetaSummary
+}
+
+export interface MetaSummary {
+  total: number
+  overweight: number
+  is_over_10_percent: number
+}
+
+// WEIGHT WIM LOG BY ID
+export interface APIRequestWeightWIMLogByID {
+  station_type?: string
+}
+
+export interface APIResponseWeightWIMLogByID {
+  success: boolean
+  data: WeightWIMLogByIDData
+}
+
+export interface WeightWIMLogByIDData {
+  over10percent: number
+  td_id: string
+  t_id: string
+  enf_id: string
+  station_id: number
+  time_stamp: string
+  vehicle_class_id: number
+  material_name: any
+  lp_head_no: string
+  lp_head_province_id: string
+  lp_tail_no: any
+  lp_tail_province_id: any
+  gross_weight: string
+  legal_weight: string
+  gross_weight_over: string
+  is_over_weight: string
+  driver_name: any
+  last_update: string
+  image_01_name: string
+  image_02_name: string
+  vehicle_number: any
+  axle_count: string
+  lane: string
+  speed: string
+  length: any
+  front_over_hang: any
+  rear_over_hang: any
+  esal: any
+  esal2: any
+  esal3: any
+  axle_01_seperation: any
+  axle_01_weight: any
+  axle_01_max: any
+  axle_01_group: any
+  axle_01_tire_code: any
+  axle_02_seperation: any
+  axle_02_weight: any
+  axle_02_max: any
+  axle_02_group: any
+  axle_02_tire_code: any
+  axle_03_seperation: any
+  axle_03_weight: any
+  axle_03_max: any
+  axle_03_group: any
+  axle_03_tire_code: any
+  axle_04_seperation: any
+  axle_04_weight: any
+  axle_04_max: any
+  axle_04_group: any
+  axle_04_tire_code: any
+  axle_05_seperation: any
+  axle_05_weight: any
+  axle_05_max: any
+  axle_05_group: any
+  axle_05_tire_code: any
+  axle_06_seperation: any
+  axle_06_weight: any
+  axle_06_max: any
+  axle_06_group: any
+  axle_06_tire_code: any
+  axle_07_seperation: any
+  axle_07_weight: any
+  axle_07_wax: any
+  axle_07_group: any
+  axle_07_tire_code: any
+  axle_08_seperation: any
+  axle_08_weight: any
+  axle_08_max: any
+  axle_08_group: any
+  axle_08_tire_code: any
+  axle_09_seperation: any
+  axle_09_weight: any
+  axle_09_max: any
+  axle_09_group: any
+  axle_09_tire_code: any
+  axle_10_seperation: any
+  axle_10_weight: any
+  axle_10_max: any
+  axle_10_group: any
+  axle_10_tire_code: any
+  axle_11_weight: any
+  axle_11_seperation: any
+  axle_11_max: any
+  axle_11_group: any
+  axle_11_tire_code: any
+  axle_12_seperation: any
+  axle_12_weight: any
+  axle_12_max: any
+  axle_12_group: any
+  axle_12_tire_code: any
+  axle_13_seperation: any
+  axle_13_weight: any
+  axle_13_max: any
+  axle_13_group: any
+  axle_13_tire_code: any
+  axle_14_seperation: any
+  axle_14_weight: any
+  axle_14_max: any
+  axle_14_group: any
+  axle_14_tire_code: any
+  axle_left_01: any
+  axle_right_01: any
+  axle_left_02: any
+  axle_right_02: any
+  axle_left_03: any
+  axle_right_03: any
+  axle_left_04: any
+  axle_right_04: any
+  axle_left_05: any
+  axle_right_05: any
+  axle_left_06: any
+  axle_right_06: any
+  axle_left_07: any
+  axle_right_07: any
+  axle_left_08: any
+  axle_right_08: any
+  axle_left_09: any
+  axle_right_09: any
+  axle_left_10: any
+  axle_right_10: any
+  axle_left_11: any
+  axle_right_11: any
+  axle_left_12: any
+  axle_right_12: any
+  axle_left_13: any
+  axle_right_13: any
+  axle_left_14: any
+  axle_right_14: any
+  display_type: number
+  is_arrested: any
+  wim: Wim
+  vehicle_class: VehicleClass
+  lp_head_province: LpHeadProvince
+  lp_tail_province: any
+  is_over_weight_desc: string
+  province_name: string
+  driver_shaft_over: any
+}
+
+export interface VehicleClass {
+  id: number
+  vehicle_class_id: number
+  vehicle_class_id_ref: number
+  vehicle_class_name: string
+  vehicle_class_desc: string
+  legal_weight: string
+  drive_shaft: string
+  drive_shaft_ref: string
+  vehicle_class_desc2: string
+  vehicle_class_desc3: string
+  is_deleted: any
+}
+
+export interface Wim {
+  station_id: number
+  station_name: string
+  station_description: string
+  location_description: string
+  station_type: number
+  province_id: number
+  latitude: string
+  longtitude: string
+  total: number
+  over: number
+  is_enable: number
+  enf_id: any
+  ip_address: any
+  last_update: string
+  owner: string
+  department_id: number
+  delivery_year: any
+  update_year: any
+  kilometer_position: any
+  side: any
+  contract_number: any
+  contractor_name: any
+  remark: any
+}
+
+export interface LpHeadProvince {
+  id: number
+  name: string
+  id_ppa: number
+}
+
+// WEIGHT STATION LOG
+export type APIRequestWeightStationLog = APIRequestWeightWIMLog
+
+export interface APIResponseWeightStationLog {
+  data: WeightStationLogData[]
+  meta: WeightWIMLogMeta
+}
+
+export interface WeightStationLogData {
+  td_id: string
+  t_id: string
+  time_stamp: string
+  enf_id: string
+  station_id: number
+  station_name: string
+  vehicle_class_id: number
+  meterial_name: any
+  lp_head_no: string
+  lp_head_province_id: string
+  province_name: string
+  lp_tail_no: any
+  lp_tail_province_id: any
+  gross_weight: string
+  grossweight_over: string
+  legal_weight: string
+  axle_left_01: any
+  axle_left_02: any
+  axle_left_03: any
+  axle_left_04: any
+  axle_left_05: any
+  axle_left_06: any
+  axle_left_07: any
+  axle_right_01: any
+  axle_right_02: any
+  axle_right_03: any
+  axle_right_04: any
+  axle_right_05: any
+  axle_right_06: any
+  axle_right_07: any
+  display_type: number
+  is_over_weight: string
+  drive_name: any
+  lp_head_province_name: string
+  lp_head_province_id_ppa: number
+  lp_tail_province_name: any
+  lp_tail_province_id_ppa: any
+  vehicle_class_name: string
+  vehicle_class_desc2: string
+  vehicle_class_desc3: string
+  vehicle_class_desc: string
+  vehicle_class_legal_weight: string
+  vehicle_class_legal_drive_shaft: string
+  vehicle_class_legal_drive_shaft_ref: string
+  vehicle_class_id_ref: number
+  is_over_weight_desc: string
+}
+
+// WEIGHT STATION LOG BY ID
+export interface APIResponseWeightStationLogByID {
+  success: boolean
+  data: WeightStationLogByIDData
+}
+export interface WeightStationLogByIDData {
+  td_id: string
+  t_id: string
+  enf_id: string
+  station_id: number
+  time_stamp: string
+  vehicle_class_id: number
+  material_name: any
+  image_01_name: string
+  image_02_name: string
+  lp_head_no: string
+  lp_head_province_id: string
+  lp_tail_no: any
+  lp_tail_province_id: any
+  gross_weight: string
+  gross_weight_over: string
+  legal_weight: string
+  is_over_weight: string
+  driver_name: any
+  last_update: string
+  axle_left_01: any
+  axle_right_01: any
+  axle_left_02: any
+  axle_right_02: any
+  axle_left_03: any
+  axle_right_03: any
+  axle_left_04: any
+  axle_right_04: any
+  axle_left_05: any
+  axle_right_05: any
+  axle_left_06: any
+  axle_right_06: any
+  axle_left_07: any
+  axle_right_07: any
+  axle_left_08: any
+  axle_right_08: any
+  axle_left_09: any
+  axle_right_09: any
+  axle_left_10: any
+  axle_right_10: any
+  axle_left_11: any
+  axle_right_11: any
+  axle_left_12: any
+  axle_right_12: any
+  axle_left_13: any
+  axle_right_13: any
+  axle_left_14: any
+  axle_right_14: any
+  display_type: number
+  is_arrested: any
+  station: Station
+  vehicle_class: VehicleClass
+  lp_head_province: LpHeadProvince
+  lp_tail_province: any
+  is_over_weight_desc: string
+  driver_shaft_over: any
+}
+
+export interface Station {
+  station_id: number
+  station_name: string
+  station_description: string
+  location_description: string
+  station_type: number
+  province_id: number
+  latitude: string
+  longtitude: string
+  total: number
+  over: number
+  is_enable: number
+  enf_id: any
+  ip_address: any
+  last_update: string
+  department_id: number
+  delivery_year: string
+  update_year: any
+  kilometer_position: any
+  side: any
+  contract_number: any
+  contractor_name: any
+  remark: any
+}

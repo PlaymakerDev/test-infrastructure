@@ -1,4 +1,4 @@
-import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestStationDaily, APIRequestVehicleCountHour, APIRequestWIMDaily, APIRequestWIMTodayStats, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseStationByID, APIResponseStationDaily, APIResponseVehicleCountHour, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
+import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestVehicleCountHour, APIRequestWIMDaily, APIRequestWIMTodayStats, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseVehicleCountHour, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
 import ApiService from "../ApiService"
 import { DEFAULT_TRACKING_API_URL } from "./TrackingService"
 
@@ -74,6 +74,14 @@ export const getTrackingLast7DaysAPI = async (params: APIRequestLast7Days) => {
 export const getTrackingVehicleCountHourAPI = async (params: APIRequestVehicleCountHour) => {
   return ApiService.fetchData<APIResponseVehicleCountHour, APIRequestVehicleCountHour>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/vehical_count_hour`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingRecentlyWeightAPI = async (params: APIRequestRecentlyWeight) => {
+  return ApiService.fetchData<APIResponseRecentlyWeight, APIRequestRecentlyWeight>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/recently_weight`,
     method: 'GET',
     params,
   })

@@ -97,7 +97,10 @@ const TableLatestStation: React.FC<Props> = (props) => {
       pagination={false}
       size="middle"
       rowKey="key"
-      scroll={{ x: 'max-content' }}
+      scroll={{
+        x: 'max-content',
+        y: 300
+      }}
     />
   )
 }
