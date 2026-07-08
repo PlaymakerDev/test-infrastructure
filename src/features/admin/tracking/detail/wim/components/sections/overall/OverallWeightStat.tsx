@@ -5,13 +5,14 @@ import {
   CardDailyWeight,
   CardDailyOverweight
 } from '@/features/admin/tracking/detail/wim/components'
+import { WIMTodayStatsData } from '@/types/tracking/detail-api'
 
 interface Props {
-
+  wimToday?: WIMTodayStatsData
 }
 
 const OverallWeightStat: React.FC<Props> = (props) => {
-  const { } = props
+  const { wimToday } = props
 
   return (
     <>
@@ -21,10 +22,10 @@ const OverallWeightStat: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
-            <CardDailyWeight />
+            <CardDailyWeight data={wimToday} />
           </Col>
           <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12} xxxl={12}>
-            <CardDailyOverweight />
+            <CardDailyOverweight data={wimToday} />
           </Col>
         </Row>
       </section>

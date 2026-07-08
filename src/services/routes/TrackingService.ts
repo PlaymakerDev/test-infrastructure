@@ -1,7 +1,7 @@
 import { APIRequestTrackingAllDepartment, APIRequestTrackingCCTVList, APIRequestTrackingCollaboration, APIRequestTrackingDailySum, APIRequestTrackingMobileMaster, APIRequestTrackingPosition, APIRequestTrackingSumMobile, APIRequestTrackingSumStation, APIRequestTrackingSumWeightYearV2, APIRequestTrackingSumWim, APIRequestTrackingTotalStation, APIRequestTrackingViewSumPlanChart, APIRequestTrackingWeightInspection, APIResponseTrackingAllDepartment, APIResponseTrackingCCTVList, APIResponseTrackingCollaboration, APIResponseTrackingDailySum, APIResponseTrackingMobileMaster, APIResponseTrackingPosition, APIResponseTrackingSumMobile, APIResponseTrackingSumStation, APIResponseTrackingSumWeightYearV2, APIResponseTrackingSumWim, APIResponseTrackingTotalStation, APIResponseTrackingViewSumPlanChart, APIResponseTrackingWeightInspection, ProvinceData } from "@/types/tracking/overall-api"
 import ApiService from "../ApiService"
 
-const DEFAULT_TRACKING_API_URL = '/wim/redirect'
+export const DEFAULT_TRACKING_API_URL = '/wim/redirect'
 
 export const getTrackingCCTVListAPI = async (params: APIRequestTrackingCCTVList) => {
   return ApiService.fetchData<APIResponseTrackingCCTVList, APIRequestTrackingCCTVList>({

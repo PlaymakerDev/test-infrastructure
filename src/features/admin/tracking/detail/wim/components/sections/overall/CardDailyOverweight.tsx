@@ -1,13 +1,17 @@
+import { WIMTodayStatsData } from '@/types/tracking/detail-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import Image from 'next/image'
 import React from 'react'
 
-interface Props { }
+interface Props {
+  data?: WIMTodayStatsData
+}
 
 const TRUCK_IMG = '/images/vehicles/placeholder/truck-icon.svg'
 
 const CardDailyOverweight: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
   return (
     <div className="flex h-full bg-[#E982821A] border-2 rounded-xl border-red-500 overflow-hidden min-h-32.5">
@@ -17,7 +21,7 @@ const CardDailyOverweight: React.FC<Props> = (props) => {
       <div className="flex flex-col justify-between p-4 flex-1 text-right">
         <h4 className="text-red-500 mb-0">รถบรรทุกน้ำหนักเกินวันนี้</h4>
         <p className="mb-0">
-          <span className="fs-22 font-bold">1,708</span>{' '}
+          <span className="fs-22 font-bold">{fmtNumber(data?.over) || 0}</span>{' '}
           <span className="fs-12 text-gray-300">คัน</span>
         </p>
         <section>

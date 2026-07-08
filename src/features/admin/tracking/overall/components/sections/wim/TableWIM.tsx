@@ -173,7 +173,7 @@ const TableWIM: React.FC<Props> = (props) => {
       loading={isLoading}
       onRow={(record) => {
         return {
-          onClick: () => router.push(`/admin/tracking/detail/wim/${record.station_id}`),
+          onClick: () => router.push(`/admin/tracking/detail/wim/${record.station_id}?station_type=WIM`),
           className: 'cursor-pointer',
         }
       }}
