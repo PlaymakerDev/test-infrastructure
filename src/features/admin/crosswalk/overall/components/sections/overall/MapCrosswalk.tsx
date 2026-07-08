@@ -40,19 +40,16 @@ const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection =
 /** Popup card shown on marker click — mirrors traffic-volume's popup style. */
 const CrosswalkPopup: React.FC<{
   feature: GeoJSON.Feature
-  isActive: boolean
-}> = ({ feature, isActive }) => {
+}> = ({ feature }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isActive ? 'border-cyan-400' : 'border-gray-500'
-      }`}
+      className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
+      style={{ borderColor: '#7C8CFF' }}
     >
       <p
-        className={`fs-11 font-bold tracking-wide ${
-          isActive ? 'text-cyan-400' : 'text-gray-400'
-        }`}
+        className='fs-11 font-bold tracking-wide'
+        style={{ color: '#7C8CFF' }}
       >
         Crosswalk · {String(p.code_name)}
       </p>
@@ -143,14 +140,7 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       data={allData}
       cluster
       size={14}
-      popup={(f) => (
-        <CrosswalkPopup
-          feature={f}
-          isActive={Boolean(
-            (f.properties as Record<string, unknown>)?.is_active
-          )}
-        />
-      )}
+      popup={(f) => <CrosswalkPopup feature={f} />}
       popupOptions={{ offset: 10, closeButton: false }}
     />
   )

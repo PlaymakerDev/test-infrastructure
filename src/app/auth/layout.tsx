@@ -1,21 +1,12 @@
 import React from 'react'
-import { LoginProvider } from '@/features/auth/login/context';
 
 interface Props {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 const Layout: React.FC<Props> = (props) => {
-  const {
-    children
-  } = props
-
-  return (
-    <LoginProvider>
-      <header>Login Page</header>
-      <main>{children}</main>
-    </LoginProvider>
-  )
+  const { children } = props
+  return <main className='min-h-dvh'>{children}</main>
 }
 
 export default React.memo<Props>(Layout)

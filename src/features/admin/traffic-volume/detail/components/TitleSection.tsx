@@ -122,11 +122,34 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               {isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
             </span>
 
-            {/* Anydesk button — mirrors traffic-signal: always renders, with
-              * `opacity + cursor` instead of antd's `disabled` (disabled turns
-              * the blue button into a dark-gray pill that's hard to read on
-              * the page background). Opacity-50 keeps the blue + "-" readable
-              * while still signalling "not clickable". */}
+            {/* Google Map + Anydesk buttons (Google Map first per Figma).
+              * Anydesk uses `opacity + cursor` instead of antd's `disabled`
+              * (disabled turns the blue button into a hard-to-read dark pill);
+              * opacity-50 keeps the blue + "-" readable while signalling
+              * "not clickable". */}
+            {coord && (
+              <ConfigProvider
+                theme={{
+                  token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' },
+                }}
+              >
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  className='w-full! sm:w-auto!'
+                  onClick={() =>
+                    window.open(
+                      `https://maps.google.com/?q=${coord[1]},${coord[0]}`,
+                      '_blank'
+                    )
+                  }
+                >
+                  <p>Google Map</p>
+                </Button>
+              </ConfigProvider>
+            )}
+
             {anydeskId !== undefined && (
               <ConfigProvider
                 theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
@@ -154,34 +177,13 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
               </ConfigProvider>
             )}
 
-            {coord && (
-              <ConfigProvider
-                theme={{
-                  token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' },
-                }}
-              >
-                <Button
-                  type='primary'
-                  size='middle'
-                  shape='round'
-                  className='w-full! sm:w-auto!'
-                  onClick={() =>
-                    window.open(
-                      `https://maps.google.com/?q=${coord[1]},${coord[0]}`,
-                      '_blank'
-                    )
-                  }
-                >
-                  <p>Google Map</p>
-                </Button>
-              </ConfigProvider>
-            )}
-
-            {/* Online / Offline pill — uses central-list `camera.is_online`. */}
+            {/* Online = #66AEFF (per Figma); offline stays red. */}
             <span
-              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${
-                isOnline ? 'border-blue-500 text-blue-500' : 'border-red-500 text-red-500'
-              }`}
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: isOnline ? '#66AEFF' : '#ef4444',
+                color: isOnline ? '#66AEFF' : '#ef4444',
+              }}
             >
               {isOnline ? <TbWifi /> : <TbWifiOff />}
               {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}

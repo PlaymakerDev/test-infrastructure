@@ -1,10 +1,9 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
 import { useAppDispatch } from '@/stores/hooks'
-import { setCCTVModalOpen, setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,20 +40,6 @@ const parseKm = (km: string): number => {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
-  const cfg = warranty === 'in-warranty'
-    ? { text: 'ในค้ำ', color: '#05F2DB' }
-    : { text: 'หมดค้ำ', color: '#979797' }
-  return (
-    <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
-      style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
-    >
-      {cfg.text}
-    </span>
-  )
-}
-
 // ── Camera card ───────────────────────────────────────────────────────────────
 
 interface CardProps {
@@ -70,15 +55,16 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
   >
     <div
       className='rounded-xl overflow-hidden cursor-pointer'
-      style={{ height: 160 }}
       onClick={onSelect}
     >
+      {/* 16:9 aspect box (matches Incident / traffic-volume grids). */}
       <HLSLivePlayer
+        figureClassName='aspect-video rounded-xl'
         cameraId={camera.id}
         hlsUrl={camera.hlsUrl}
         showLiveBadge
         enableViewportPause
-        style={{ height: 160, display: 'block', pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none' }}
       />
     </div>
 
@@ -132,7 +118,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
   return (
     <>
       {mode === 'km' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
           {kmSorted.map((cam) => (
             <CameraCard
               key={cam.id}
@@ -143,48 +129,15 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
           ))}
         </div>
       ) : (
-        <div className='flex flex-col gap-6'>
-          {groups.map((group) => (
-            <div key={group.id} className='flex flex-col gap-4'>
-
-              {/* Group header */}
-              <div
-                className='flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 rounded-xl'
-                style={{ background: '#2a2a2a' }}
-              >
-                <span className='text-white font-semibold text-sm flex-1 min-w-0 wrap-break-word'>{group.label}</span>
-                <div className='flex items-center gap-2 shrink-0'>
-                  <TbInfoSquareRoundedFilled
-                    size={18}
-                    className='cursor-pointer hover:text-(--yellow)'
-                    style={{ color: '#fff' }}
-                    title='ดูข้อมูลโครงการ'
-                    onClick={() =>
-                      dispatch(
-                        setProjectInfoModalOpen({
-                          open: true,
-                          project_id: group.projectId ?? null,
-                          road_id: group.roadId ?? null,
-                        })
-                      )
-                    }
-                  />
-                  <WarrantyPill warranty={group.warranty} />
-                </div>
-              </div>
-
-              {/* Camera grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {group.cameras.map((cam) => (
-                  <CameraCard
-                    key={cam.id}
-                    camera={cam}
-                    onSelect={() => openCamera(cam.id)}
-                  />
-                ))}
-              </div>
-
-            </div>
+        // Flat grid (no per-install-point header) — matches the Incident /
+        // traffic-volume detail layout: ~4 cards per row on desktop, responsive.
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+          {groups.flatMap((g) => g.cameras).map((cam) => (
+            <CameraCard
+              key={cam.id}
+              camera={cam}
+              onSelect={() => openCamera(cam.id)}
+            />
           ))}
         </div>
       )}

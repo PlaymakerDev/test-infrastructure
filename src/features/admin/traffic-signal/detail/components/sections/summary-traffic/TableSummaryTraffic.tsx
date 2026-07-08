@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
@@ -33,13 +33,6 @@ interface RowData {
 const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
   const { project } = useDetailContext()
   const phaseCount = project.phase
-
-  const [pagination, setPagination] = useState({
-    page: 1,
-    // 3 days per page so date rowSpan doesn't split. Bump page size via the
-    // table's `showSizeChanger` to see more at once.
-    pageSize: phaseCount * 3,
-  })
 
   // Fetch the full selected window in one request — backend pagination is
   // unreliable across pages (page=2 sometimes returns empty), and the data
@@ -102,13 +95,13 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
       title: 'ช่วงเวลาไฟเขียว (s)',
       key: 'green',
       width: 180,
-      render: (_, row) => phaseCell(row, String(row.greenSec)),
+      render: (_, row) => phaseCell(row, fmtNumber(row.greenSec, 2)),
     },
     {
       title: 'ช่วงเวลาไฟแดง (s)',
       key: 'red',
       width: 180,
-      render: (_, row) => phaseCell(row, String(row.redSec)),
+      render: (_, row) => phaseCell(row, fmtNumber(row.redSec, 2)),
     },
     {
       title: 'รวม PCU',
@@ -141,17 +134,8 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
       rowKey='id'
       columns={columns}
       dataSource={rows}
-      pagination={{
-        current: pagination.page,
-        pageSize: pagination.pageSize,
-        // Client-side pagination — AntD slices `rows` based on current/pageSize
-        // and uses `rows.length` as total automatically (no `total` override).
-        showSizeChanger: true,
-        pageSizeOptions: [10, 20, 50, 100],
-        showTotal: (total, range) =>
-          `${range[1] - range[0] + 1} จาก ${total}`,
-        onChange: (page, pageSize) => setPagination({ page, pageSize }),
-      }}
+      // Show the full 7-day window at once (no paging) — all rows down the page.
+      pagination={false}
       size='middle'
       scroll={{ x: 1300 }}
       className='bridge-projects-table'

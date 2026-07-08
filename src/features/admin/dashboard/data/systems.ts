@@ -27,3 +27,23 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
 }
 
 export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
+
+/**
+ * Bright variant of each system color — same hue as `SYSTEMS[type].color` but
+ * lightened for readability on the dark map. Use for map-popup borders + the
+ * popup's system-name text (the dark `SYSTEMS` colors are the legend/fill tone
+ * and read too dim as an outline). Mirrors DEVICE_BADGE's bright outline palette
+ * (src/constants/cctv.ts) and extends it to Lighting / Bridge / Tunnel.
+ */
+export const SYSTEM_BRIGHT: Record<SystemType, string> = {
+  CCTV:           "#4DA3FF", // ← #003F87
+  VMS:            "#FF9F45", // ← #874600
+  WIM:            "#E879DE", // ← #70196D
+  Lighting:       "#E8DF3D", // ← #878000
+  BridgeLighting: "#FF6B57", // ← #871000
+  Tunnel:         "#B57BFF", // ← #4D0087
+  Counting:       "#2DD4BF", // ← #007787
+  CrossWalk:      "#7C8CFF", // ← #001287
+  Analytic:       "#3DD68C", // ← #00873B
+  Traffic:        "#A3E635", // ← #518700
+}
