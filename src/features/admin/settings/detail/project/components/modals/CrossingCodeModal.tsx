@@ -53,14 +53,33 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#0e0e0e', headerBg: '#0e0e0e', footerBg: '#0e0e0e', colorIcon: '#FFF', titleColor: '#66AEFF' },
+          Modal: { contentBg: '#1A1A1A', headerBg: '#1A1A1A', footerBg: '#1A1A1A', colorIcon: '#FFF', titleColor: '#66AEFF', borderRadiusLG: 16 },
+          Table: {
+            headerBg: '#66AEFF',
+            headerColor: '#1A1A1A',
+            headerSplitColor: 'transparent',
+            colorBgContainer: 'transparent',
+            colorText: '#FFFFFF',
+            borderColor: 'rgba(102,174,255,0.25)',
+            rowHoverBg: 'rgba(255,255,255,0.04)',
+          },
         },
       }}
     >
-      <Modal open={open} onCancel={onClose} footer={null} destroyOnHidden width={900} title={null}>
-        <div className='mb-3'>
-          <h2 className='text-(--default-blue) font-bold mb-1'>CrossingCode</h2>
-          <p className='text-white/70 text-sm mb-0'>
+      <Modal
+        wrapClassName='light-modal'
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        destroyOnHidden
+        width={900}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        styles={{ container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' }, mask: { background: 'rgba(0,0,0,0.55)' } }}
+        title={null}
+      >
+        <div className='mb-4'>
+          <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>CrossingCode</h2>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, margin: 0 }}>
             {task ? `จุดติดตั้ง : ${task.pointName} • ${task.kind}` : ''}
           </p>
         </div>
@@ -73,15 +92,17 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
           size='middle'
         />
 
-        <div className='flex justify-end gap-2 mt-4'>
-          <Button size='large' shape='round' onClick={onClose}>ยกเลิก</Button>
+        <div className='flex justify-end gap-3 mt-6'>
           <Button
-            size='large'
             shape='round'
-            style={{
-              background: 'var(--yellow)', color: '#000',
-              borderColor: 'var(--yellow)', fontWeight: 700,
-            }}
+            onClick={onClose}
+            style={{ background: '#E5E5E5', color: '#4A4A4A', borderColor: '#E5E5E5', padding: '8px 28px', height: 'auto', fontWeight: 500 }}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            shape='round'
+            style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', padding: '8px 32px', height: 'auto', fontWeight: 600 }}
             onClick={onClose}
           >
             ยืนยัน

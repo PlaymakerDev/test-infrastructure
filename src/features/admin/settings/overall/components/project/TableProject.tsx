@@ -7,11 +7,13 @@ import React, { useCallback, useMemo } from 'react'
 import { TbPencil, TbTrash } from 'react-icons/tb'
 import { useOverallContext } from '../../context'
 import type { Project } from '../../types/project'
+import { PAGE_SIZE_OPTIONS } from '../../utils/paginationConfig'
 import StatusBadge from './StatusBadge'
 
 interface Props {
   onEdit: (project: Project) => void
   onDelete: (project: Project) => void
+  scrollY: number
 }
 
 const formatDate = (iso: string) => {
@@ -24,9 +26,19 @@ const formatDate = (iso: string) => {
   return `${d.date()} ${monthMap[d.month()]} ${buddhistYear.toString().slice(-4)}`
 }
 
-const TableProject: React.FC<Props> = ({ onEdit, onDelete }) => {
+const TableProject: React.FC<Props> = ({ onEdit, onDelete, scrollY }) => {
   const router = useRouter()
-  const { filtered, page, pageSize, setPage } = useOverallContext()
+  const {
+    filtered,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    total,
+    isLoading,
+    isError,
+    errorMessage,
+  } = useOverallContext()
 
   const goToDetail = useCallback(
     (project: Project) => {
@@ -135,20 +147,41 @@ const TableProject: React.FC<Props> = ({ onEdit, onDelete }) => {
   )
 
   return (
-    <Table<Project>
-      rowKey='id'
-      columns={columns}
-      dataSource={filtered}
-      size='middle'
-      scroll={{ x: 1500 }}
-      pagination={{
-        current: page,
-        pageSize,
-        onChange: setPage,
-        showSizeChanger: false,
-        showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total.toLocaleString()}`,
-      }}
-    />
+    <>
+      {isError && (
+        <div
+          className='mb-3 rounded-lg px-3 py-2 text-sm'
+          style={{ background: 'rgba(255,102,102,0.1)', color: '#FF6666', border: '1px solid #FF6666' }}
+        >
+          {errorMessage ?? 'ไม่สามารถโหลดข้อมูลโครงการได้'}
+        </div>
+      )}
+      <Table<Project>
+        rowKey='id'
+        columns={columns}
+        dataSource={filtered}
+        loading={isLoading}
+        size='middle'
+        scroll={{ x: 1500, y: scrollY }}
+        pagination={{
+          current: page,
+          pageSize,
+          // Server-side pagination: without `total`, AntD infers it from
+          // `dataSource.length` (the current page) and the pager thinks
+          // there's only one page.
+          total,
+          onChange: (p, ps) => {
+            setPage(p)
+            if (ps !== pageSize) setPageSize(ps)
+          },
+          onShowSizeChange: (_p, ps) => setPageSize(ps),
+          showSizeChanger: true,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+          showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t.toLocaleString()}`,
+          placement: ['bottomEnd'],
+        }}
+      />
+    </>
   )
 }
 

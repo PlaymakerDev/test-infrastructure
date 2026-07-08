@@ -1,8 +1,12 @@
 "use client"
 import { Input, Select } from 'antd'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { TbSearch } from 'react-icons/tb'
-import { MOCK_BUDGET_YEARS, MOCK_CONTRACTORS, MOCK_OWNERS } from '../../data/mockProjects'
+import {
+  useBudgetYears,
+  useDepartments,
+  useProjectContractors,
+} from '@/hooks/queries/manage'
 import { useOverallContext } from '../../context'
 
 const DEBOUNCE_MS = 500
@@ -10,6 +14,10 @@ const DEBOUNCE_MS = 500
 const FormSearchProject: React.FC = () => {
   const { filters, setFilters } = useOverallContext()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { data: budgetYears, isLoading: byLoading } = useBudgetYears()
+  const { data: departments, isLoading: deptLoading } = useDepartments()
+  const { data: contractors, isLoading: cLoading } = useProjectContractors()
 
   useEffect(
     () => () => {
@@ -26,6 +34,36 @@ const FormSearchProject: React.FC = () => {
     [setFilters],
   )
 
+  const yearOptions = useMemo(
+    () =>
+      (budgetYears ?? []).map((y) => ({
+        label: y.toString(),
+        value: y,
+      })),
+    [budgetYears],
+  )
+
+  // Filter matches `Project.owner` which is the mapped `department_short_name`,
+  // so we key options by the same string label rather than the numeric id.
+  const ownerOptions = useMemo(
+    () =>
+      (departments ?? []).map((d) => ({
+        label: d.department_short_name,
+        value: d.department_short_name,
+      })),
+    [departments],
+  )
+
+  // Same pattern — filter compares against the mapped `company_name`.
+  const contractorOptions = useMemo(
+    () =>
+      (contractors ?? []).map((c) => ({
+        label: c.company_name,
+        value: c.company_name,
+      })),
+    [contractors],
+  )
+
   return (
     <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
       <div>
@@ -36,7 +74,8 @@ const FormSearchProject: React.FC = () => {
           className='w-full'
           placeholder='ปีงบประมาณทั้งหมด...'
           value={filters.budgetYear ?? undefined}
-          options={MOCK_BUDGET_YEARS.map((y) => ({ label: y.toString(), value: y }))}
+          options={yearOptions}
+          loading={byLoading}
           onChange={(v) => setFilters({ budgetYear: v ?? null })}
         />
       </div>
@@ -45,10 +84,13 @@ const FormSearchProject: React.FC = () => {
         <Select
           size='large'
           allowClear
+          showSearch
+          optionFilterProp='label'
           className='w-full'
           placeholder='ผู้ว่าจ้างทั้งหมด...'
           value={filters.owner ?? undefined}
-          options={MOCK_OWNERS.map((o) => ({ label: o, value: o }))}
+          options={ownerOptions}
+          loading={deptLoading}
           onChange={(v) => setFilters({ owner: v ?? null })}
         />
       </div>
@@ -57,10 +99,13 @@ const FormSearchProject: React.FC = () => {
         <Select
           size='large'
           allowClear
+          showSearch
+          optionFilterProp='label'
           className='w-full'
           placeholder='ผู้รับจ้างทั้งหมด...'
           value={filters.contractor ?? undefined}
-          options={MOCK_CONTRACTORS.map((c) => ({ label: c, value: c }))}
+          options={contractorOptions}
+          loading={cLoading}
           onChange={(v) => setFilters({ contractor: v ?? null })}
         />
       </div>

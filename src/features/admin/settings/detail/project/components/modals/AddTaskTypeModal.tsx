@@ -63,111 +63,132 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
     onClose()
   }
 
+  const labelReq = (t: string) => (
+    <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+      {t}<span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
+    </span>
+  )
+  const labelOpt = (t: string) => (
+    <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>{t}</span>
+  )
+
   return (
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#FFFFFF', headerBg: '#FFFFFF', footerBg: '#FFFFFF', colorIcon: '#000', titleColor: '#000' },
+          Modal: { contentBg: '#FFFFFF', headerBg: '#FFFFFF', footerBg: '#FFFFFF', colorIcon: '#000', titleColor: '#1F1F1F', borderRadiusLG: 16 },
+          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Input: { colorBorder: '#E5E5E5', activeBorderColor: '#FCD116', hoverBorderColor: '#FCD116', colorTextPlaceholder: '#B8B8B8', borderRadius: 8, controlHeight: 44, paddingInline: 14 },
+          Select: { colorBorder: '#E5E5E5', activeBorderColor: '#FCD116', hoverBorderColor: '#FCD116', colorTextPlaceholder: '#B8B8B8', borderRadius: 8, controlHeight: 44 },
         },
       }}
     >
       <Modal
+        wrapClassName='light-modal'
         open={open}
         onCancel={onClose}
         footer={null}
         destroyOnHidden
         width={720}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        styles={{ container: { padding: '32px 40px', borderRadius: 16 }, mask: { background: 'rgba(0,0,0,0.55)' } }}
         title={
-          <div className='flex items-center gap-2 text-black'>
-            <TbNetwork size={22} />
-            <span className='font-bold text-lg'>เพิ่มประเภทงาน</span>
+          <div className='flex items-center gap-3' style={{ color: '#111' }}>
+            <TbNetwork size={22} style={{ color: 'var(--yellow)' }} />
+            <span style={{ fontSize: 20, fontWeight: 600, color: '#111' }}>เพิ่มประเภทงาน</span>
           </div>
         }
       >
-        <div className='mb-3 flex items-center justify-between rounded-lg px-4 py-3' style={{ background: '#111' }}>
-          <span className='text-white font-semibold'>{point?.name ?? ''}</span>
+        <div
+          className='mb-5 flex items-center justify-between'
+          style={{ background: '#111111', borderRadius: 10, padding: '14px 20px' }}
+        >
+          <span style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 600 }}>{point?.name ?? ''}</span>
           <span
-            className='inline-flex items-center px-3 py-1 rounded-full text-xs'
-            style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+            className='inline-flex items-center'
+            style={{ border: '1px solid #FCD116', color: '#FCD116', background: 'transparent', borderRadius: 999, padding: '4px 14px', fontSize: 13 }}
           >
             {route?.code}
           </span>
         </div>
 
-        <Form<FormShape> form={form} layout='vertical' onFinish={handleFinish}>
+        <Form<FormShape> form={form} layout='vertical' onFinish={handleFinish} requiredMark={false}>
           <Form.Item
-            label={<span className='text-black'>ชื่อจุดติดตั้ง<span className='text-red-500'>*</span></span>}
+            label={labelReq('ชื่อจุดติดตั้ง')}
             name='pointName'
             rules={[{ required: true, message: 'กรุณาระบุชื่อจุดติดตั้ง' }]}
           >
             <Input placeholder='กรุณาระบุชื่อจุดติดตั้ง...' />
           </Form.Item>
           <Form.Item
-            label={<span className='text-black'>ประเภทงาน<span className='text-red-500'>*</span></span>}
+            label={labelReq('ประเภทงาน')}
             name='kind'
             rules={[{ required: true, message: 'กรุณาเลือกประเภทงาน' }]}
           >
             <Select
               placeholder='กรุณาเลือกประเภทงาน...'
+              classNames={{ popup: { root: 'light-modal-popup' } }}
               options={KIND_OPTIONS.map((o) => ({
                 ...o,
                 disabled: usedKinds.has(o.value),
               }))}
             />
           </Form.Item>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2 gap-5'>
             <Form.Item
-              label={<span className='text-black'>Latitude<span className='text-red-500'>*</span></span>}
+              label={labelReq('Latitude')}
               name='latitude'
               rules={[{ required: true, message: 'กรุณาระบุ Latitude' }]}
             >
               <Input placeholder='กรุณาระบุ Latitude...' />
             </Form.Item>
             <Form.Item
-              label={<span className='text-black'>Longitude<span className='text-red-500'>*</span></span>}
+              label={labelReq('Longitude')}
               name='longitude'
               rules={[{ required: true, message: 'กรุณาระบุ Longitude' }]}
             >
               <Input placeholder='กรุณาระบุ Longitude...' />
             </Form.Item>
           </div>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2 gap-5'>
             <Form.Item
-              label={<span className='text-black'>กม.ที่<span className='text-red-500'>*</span></span>}
+              label={labelReq('กม.ที่')}
               name='km'
               rules={[{ required: true, message: 'กรุณาระบุ กม.ที่' }]}
             >
               <Input placeholder='กรุณาระบุเลขที่ กม....' />
             </Form.Item>
-            <Form.Item label={<span className='text-black'>Local IP Adress</span>} name='localIp'>
+            <Form.Item label={labelOpt('Local IP Adress')} name='localIp'>
               <Input placeholder='กรุณาระบุ Local IP Adress...' />
             </Form.Item>
           </div>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-2 gap-5'>
             <Form.Item
-              label={<span className='text-black'>Anydesk<span className='text-red-500'>*</span></span>}
+              label={labelReq('Anydesk')}
               name='anyDesk'
               rules={[{ required: true, message: 'กรุณาระบุ Anydesk' }]}
             >
               <Input placeholder='กรุณาระบุ Anydesk...' />
             </Form.Item>
-            <Form.Item label={<span className='text-black'>ZT IP Adress</span>} name='ztIp'>
+            <Form.Item label={labelOpt('ZT IP Adress')} name='ztIp'>
               <Input placeholder='กรุณาระบุ ZT IP Adress...' />
             </Form.Item>
           </div>
-          <Form.Item label={<span className='text-black'>หมายเหตุ</span>} name='note'>
+          <Form.Item label={labelOpt('หมายเหตุ')} name='note'>
             <Input.TextArea placeholder='กรุณาระบุหมายเหตุ...' rows={2} />
           </Form.Item>
-          <div className='flex justify-end gap-2'>
-            <Button size='large' shape='round' onClick={onClose}>ยกเลิก</Button>
+          <div className='flex justify-end gap-3 mt-2'>
             <Button
-              size='large'
+              shape='round'
+              onClick={onClose}
+              style={{ background: '#E5E5E5', color: '#4A4A4A', borderColor: '#E5E5E5', padding: '10px 28px', height: 'auto', fontWeight: 500 }}
+            >
+              ยกเลิก
+            </Button>
+            <Button
               shape='round'
               htmlType='submit'
-              style={{
-                background: 'var(--yellow)', color: '#000',
-                borderColor: 'var(--yellow)', fontWeight: 700,
-              }}
+              style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', padding: '10px 32px', height: 'auto', fontWeight: 600 }}
             >
               ยืนยัน
             </Button>

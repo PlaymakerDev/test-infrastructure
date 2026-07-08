@@ -481,11 +481,73 @@ const ReportVolume: React.FC<Props> = () => {
     [allApiRows]
   )
 
+  // Monthly + yearly aggregates omit `daysCollected`, so fire a parallel
+  // `report_type=daily` query on the same range and count days that
+  // reported >0 vehicles. Cache is shared with the main daily view — no
+  // duplicate fetch when the user visits it.
+  const needsDailyHelper = reportType === 'month' || reportType === 'year'
+  const dailyHelper = useTrafficVolumeReportSummaryInfinite({
+    solution_id: solutionId,
+    start_date: startDate,
+    end_date: endDate,
+    report_type: needsDailyHelper ? 'daily' : undefined,
+    camera_id: cameraId !== 'all' ? cameraId : undefined,
+  })
+
+  const dailyFetchNext = dailyHelper.fetchNextPage
+  const dailyHasNext = dailyHelper.hasNextPage
+  const dailyIsFetchingNext = dailyHelper.isFetchingNextPage
+  const dailyPagesFetched = dailyHelper.data?.pages.length ?? 0
+  useEffect(() => {
+    if (!needsDailyHelper) return
+    if (!dailyHasNext || dailyIsFetchingNext) return
+    if (dailyPagesFetched >= MAX_AUTO_PAGES) return
+    dailyFetchNext()
+  }, [
+    needsDailyHelper,
+    dailyHasNext,
+    dailyIsFetchingNext,
+    dailyFetchNext,
+    dailyPagesFetched,
+  ])
+
+  const dailyHelperRows = useMemo<CountingReportSummaryRow[]>(() => {
+    const rows = dailyHelper.data?.pages.flatMap((p) => p?.data ?? []) ?? []
+    return rows.filter(
+      (r): r is CountingReportSummaryRow =>
+        typeof (r as CountingReportSummaryRow).date === 'string' &&
+        (r as CountingReportSummaryRow).total_count > 0,
+    )
+  }, [dailyHelper.data])
+
+  const daysCollectedByMonth = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const r of dailyHelperRows) {
+      const key = r.date.slice(0, 7)
+      map.set(key, (map.get(key) ?? 0) + 1)
+    }
+    return map
+  }, [dailyHelperRows])
+
+  const daysCollectedByYear = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const r of dailyHelperRows) {
+      const key = r.date.slice(0, 4)
+      map.set(key, (map.get(key) ?? 0) + 1)
+    }
+    return map
+  }, [dailyHelperRows])
+
   // Monthly — same shape as daily; client-paginated at 10 per page.
   const MONTHLY_PAGE_SIZE = 10
   const monthlyRowsAll = useMemo<MonthlyReportRow[]>(
-    () => allApiRows.map(toMonthlyRow),
-    [allApiRows]
+    () =>
+      allApiRows.map((r) => {
+        const row = toMonthlyRow(r)
+        const key = r.date.slice(0, 7)
+        return { ...row, daysCollected: daysCollectedByMonth.get(key) ?? 0 }
+      }),
+    [allApiRows, daysCollectedByMonth]
   )
   const monthlyRows = useMemo<MonthlyReportRow[]>(() => {
     const start = (monthlyPage - 1) * MONTHLY_PAGE_SIZE
@@ -501,8 +563,13 @@ const ReportVolume: React.FC<Props> = () => {
   // Yearly — same shape as daily/monthly; client-paginated at 10 per page.
   const YEARLY_PAGE_SIZE = 10
   const yearlyRowsAll = useMemo<YearlyReportRow[]>(
-    () => allApiRows.map(toYearlyRow),
-    [allApiRows]
+    () =>
+      allApiRows.map((r) => {
+        const row = toYearlyRow(r)
+        const key = r.date.slice(0, 4)
+        return { ...row, daysCollected: daysCollectedByYear.get(key) ?? 0 }
+      }),
+    [allApiRows, daysCollectedByYear]
   )
   const yearlyRows = useMemo<YearlyReportRow[]>(() => {
     const start = (yearlyPage - 1) * YEARLY_PAGE_SIZE

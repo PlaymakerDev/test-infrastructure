@@ -90,7 +90,7 @@ const CctvMarkerInfoPanel: React.FC<Props> = ({ cameras, onClose, onOpenLive }) 
             disabled={cameras.length <= 1}
             variant='borderless'
             className='cctv-cam-select w-full'
-            popupClassName='cctv-cam-dropdown'
+            classNames={{ popup: { root: 'cctv-cam-dropdown' } }}
             suffixIcon={<TbChevronDown size={16} style={{ color: '#FCD116' }} />}
             options={cameras.map((c) => ({ value: c.id, label: c.name }))}
             optionRender={(opt) => <span className='cctv-cam-option'>{opt.label}</span>}

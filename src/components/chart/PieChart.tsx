@@ -97,6 +97,8 @@ export interface PieChartProps {
   /** Cap legend height (px) and enable internal scroll — keeps the card compact
    *  when there are many entries (e.g. 10+ event types on one road). */
   legendMaxHeight?: number
+  /** หน่วยที่แสดงต่อท้ายค่าใน tooltip (เช่น "คัน") — default ไม่มีหน่วย */
+  tooltipUnit?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -142,6 +144,7 @@ const PieChart: React.FC<PieChartProps> = ({
   outerLabels,
   outerLabelRadius,
   legendMaxHeight,
+  tooltipUnit,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
 
@@ -193,7 +196,7 @@ const PieChart: React.FC<PieChartProps> = ({
         `<div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.data.itemStyle.color}"></span>
           <span>${params.name}</span>
-          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}</span>
+          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}</span>
         </div>`,
     },
     series: [
@@ -221,7 +224,7 @@ const PieChart: React.FC<PieChartProps> = ({
         },
       },
     ],
-  }), [data, radius, startAngle, clockwise, segmentBorderColor, segmentBorderWidth])
+  }), [data, radius, startAngle, clockwise, segmentBorderColor, segmentBorderWidth, tooltipUnit])
 
   return (
     <div
@@ -259,7 +262,7 @@ const PieChart: React.FC<PieChartProps> = ({
               </span>
             )
           )}
-          <h2 className='font-semibold' style={{ color: titleColor, fontSize: titleSize }}>
+          <h2 style={{ color: titleColor, fontSize: titleSize, fontWeight: 400 }}>
             {title}
           </h2>
         </div>

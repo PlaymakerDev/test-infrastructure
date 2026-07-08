@@ -1,3 +1,165 @@
+/* ── Light-theme modal overrides ──────────────────────────────────────────
+ * App-wide AntD theme is DARK (token.colorText = #FFFFFF, Input.colorBgContainer
+ * = transparent). The Settings feature per Figma uses WHITE modals; nested
+ * ConfigProvider tokens don't always cascade cleanly (esp. into Select/DatePicker
+ * popup portals rendered OUTSIDE the modal DOM), so anything inside a modal
+ * carrying `.light-modal` is forced to the light palette here.
+ *
+ * IMPORTANT: `body .light-modal ...` prefix boosts specificity so these rules
+ * beat AntD v6's runtime CSS-in-JS injection (which applies Select.colorText
+ * = 'var(--white)' from the app-level ConfigProvider). Without the `body`
+ * prefix, the selected-value text ends up white-on-white — invisible. */
+body .light-modal .ant-input,
+body .light-modal .ant-input-affix-wrapper,
+body .light-modal .ant-input-affix-wrapper .ant-input,
+body .light-modal .ant-input-textarea textarea,
+body .light-modal .ant-input-number-input,
+body .light-modal .ant-select .ant-select-selector,
+body .light-modal .ant-select .ant-select-selection-item,
+body .light-modal .ant-select .ant-select-selection-item-content,
+body .light-modal .ant-select .ant-select-selection-search-input,
+body .light-modal .ant-select .ant-select-selection-overflow-item .ant-select-selection-item-content,
+body .light-modal .ant-picker,
+body .light-modal .ant-picker input {
+  color: #1F1F1F !important;
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+body .light-modal .ant-input::placeholder,
+body .light-modal .ant-input-affix-wrapper .ant-input::placeholder,
+body .light-modal .ant-input-textarea textarea::placeholder,
+body .light-modal .ant-select .ant-select-selection-placeholder,
+body .light-modal .ant-picker input::placeholder {
+  color: #B8B8B8 !important;
+}
+body .light-modal .ant-input:hover,
+body .light-modal .ant-input-affix-wrapper:hover,
+body .light-modal .ant-select:hover .ant-select-selector,
+body .light-modal .ant-picker:hover {
+  border-color: #FCD116 !important;
+}
+body .light-modal .ant-input:focus,
+body .light-modal .ant-input-affix-wrapper-focused,
+body .light-modal .ant-select-focused .ant-select-selector,
+body .light-modal .ant-picker-focused {
+  border-color: #FCD116 !important;
+  box-shadow: 0 0 0 2px rgba(252, 209, 22, 0.15) !important;
+}
+body .light-modal .ant-select .ant-select-arrow,
+body .light-modal .ant-picker .ant-picker-suffix {
+  color: #B8B8B8 !important;
+}
+/* Form labels — keep dark */
+body .light-modal .ant-form-item-label > label {
+  color: #1F1F1F !important;
+}
+/* Close X button — visible on white modal */
+body .light-modal .ant-modal-close {
+  color: #1F1F1F !important;
+}
+body .light-modal .ant-modal-close:hover {
+  color: #FCD116 !important;
+  background: transparent !important;
+}
+/* Ant Radio inside light modal — labels must be dark (default token = white) */
+body .light-modal .ant-radio-wrapper,
+body .light-modal .ant-radio-wrapper > span,
+body .light-modal .ant-checkbox-wrapper,
+body .light-modal .ant-checkbox-wrapper > span {
+  color: #1F1F1F !important;
+}
+/* Ant InputNumber — handler + value + placeholder */
+body .light-modal .ant-input-number .ant-input-number-input {
+  color: #1F1F1F !important;
+  background-color: #FFFFFF !important;
+}
+body .light-modal .ant-input-number {
+  background-color: #FFFFFF !important;
+  border-color: #E5E5E5 !important;
+}
+/* Popup portals (Select dropdown, DatePicker calendar, TimePicker) — rendered
+ * OUTSIDE modal DOM via portal, so scope via `classNames={{ popup: { root: 'light-modal-popup' } }}`
+ * that each Select/DatePicker in a Settings modal sets. Overrides the app-wide
+ * DARK popup theme (colorBgElevated=var(--dark-black), colorText=#FFFFFF). */
+
+/* Select popup — bg + options text */
+.light-modal-popup {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E5E5 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12) !important;
+}
+.light-modal-popup .rc-virtual-list-holder,
+.light-modal-popup .ant-select-item,
+.light-modal-popup .ant-select-item-empty {
+  background: #FFFFFF !important;
+  color: #1F1F1F !important;
+}
+.light-modal-popup .ant-select-item-option-content {
+  color: #1F1F1F !important;
+}
+.light-modal-popup .ant-select-item-option:hover:not(.ant-select-item-option-disabled),
+.light-modal-popup .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: #F5F5F5 !important;
+  color: #1F1F1F !important;
+}
+.light-modal-popup .ant-select-item-option-selected {
+  background: #FFF8CC !important;
+  color: #1F1F1F !important;
+  font-weight: 600;
+}
+.light-modal-popup .ant-select-item-option-disabled {
+  color: #B8B8B8 !important;
+}
+.light-modal-popup .ant-empty-description {
+  color: #8A8A8A !important;
+}
+
+/* DatePicker calendar popup — bg + header + cells */
+.light-modal-popup .ant-picker-panel-container,
+.light-modal-popup .ant-picker-panel,
+.light-modal-popup .ant-picker-header,
+.light-modal-popup .ant-picker-body,
+.light-modal-popup .ant-picker-footer {
+  background: #FFFFFF !important;
+  color: #1F1F1F !important;
+  border-color: #E5E5E5 !important;
+}
+.light-modal-popup .ant-picker-header,
+.light-modal-popup .ant-picker-header button,
+.light-modal-popup .ant-picker-header-view {
+  color: #1F1F1F !important;
+}
+.light-modal-popup .ant-picker-header button:hover {
+  color: #FCD116 !important;
+}
+.light-modal-popup .ant-picker-content th,
+.light-modal-popup .ant-picker-content td {
+  color: #1F1F1F !important;
+}
+.light-modal-popup .ant-picker-cell:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
+  color: #B8B8B8 !important;
+}
+.light-modal-popup .ant-picker-cell:hover:not(.ant-picker-cell-selected):not(.ant-picker-cell-disabled) .ant-picker-cell-inner {
+  background: #F5F5F5 !important;
+}
+.light-modal-popup .ant-picker-cell-selected .ant-picker-cell-inner {
+  background: #FCD116 !important;
+  color: #1A1A1A !important;
+  font-weight: 700;
+}
+.light-modal-popup .ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: #FCD116 !important;
+}
+.light-modal-popup .ant-picker-cell-disabled .ant-picker-cell-inner {
+  color: #D0D0D0 !important;
+}
+.light-modal-popup .ant-picker-footer,
+.light-modal-popup .ant-picker-ranges,
+.light-modal-popup .ant-picker-today-btn {
+  color: #FCD116 !important;
+}
+
 .ant-table-wrapper .ant-table-body::-webkit-scrollbar,
 .ant-table-wrapper .ant-table-content::-webkit-scrollbar {
   height: 6px;
@@ -247,4 +409,42 @@ body .vehicle-breakdown-table .ant-table-thead > tr > th,
 body .vehicle-breakdown-table .ant-table-tbody > tr > td {
   padding-top: 18px !important;
   padding-bottom: 18px !important;
+}
+
+/* ── RangePicker — dark-theme range/hover cells.
+ * AntD's default range-in / range-hover states paint a near-white background
+ * across every cell between start and end, which obliterates the day number
+ * on a dark theme (issue reported 2026-07-07). Repaint both states as a
+ * translucent yellow bar so the highlight is still visible but the digits stay
+ * readable. Applies to every RangePicker across the app. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+  background: rgba(252, 209, 22, 0.18) !important;
+}
+
+/* Preview bar shown while hovering to pick the end date — same tint as
+ * `in-range`, but the endpoints get a stronger tint so the drag anchor is
+ * still visually distinct. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end::before {
+  background: rgba(252, 209, 22, 0.28) !important;
+}
+
+/* Day-number text — keep it white/yellow on both selected + in-range cells so
+ * it never fades to gray on the tinted bar. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end .ant-picker-cell-inner {
+  color: #ffffff !important;
+}
+
+/* Start + end date pills — solid yellow with dark text (matches other primary
+ * elements). Reserved for the actual selected endpoints, not the preview. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background: #FCD116 !important;
+  color: #0A0A0A !important;
 }

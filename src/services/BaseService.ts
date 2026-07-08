@@ -16,7 +16,7 @@ type SessionJSON = { access_token?: string | null; refresh_at?: number; expires_
 
 let sessionPromise: Promise<SessionJSON> | null = null
 let sessionCacheAt = 0
-const SESSION_CACHE_TTL = 5000
+const SESSION_CACHE_TTL = 15_000
 
 function invalidateSessionCache() {
 	sessionPromise = null
@@ -30,24 +30,90 @@ async function fetchSessionJSON(): Promise<SessionJSON> {
 	}
 	sessionCacheAt = now
 	sessionPromise = (async () => {
-		try {
-			const res = await fetch("/api/auth/session")
-			if (!res.ok) { invalidateSessionCache(); return {} }
-			if (!res.headers.get("content-type")?.includes("application/json")) return {}
-			return (await res.json()) as SessionJSON
-		} catch {
-			invalidateSessionCache()
-			return {}
+		// Tolerate the dev-server rebuild race: if the /api/auth/session route is
+		// mid-recompile it may briefly return 500 or non-JSON. Retry once before
+		// giving up rather than invalidating the whole session view.
+		for (let attempt = 0; attempt < 2; attempt++) {
+			try {
+				const res = await fetch("/api/auth/session")
+				if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
+					return (await res.json()) as SessionJSON
+				}
+				// 5xx / non-JSON — likely Next.js recompiling. Pause briefly then retry.
+				if (attempt === 0) {
+					console.warn("[auth] /api/auth/session returned non-OK/non-JSON; retrying in 500ms")
+					await new Promise((r) => setTimeout(r, 500))
+					continue
+				}
+			} catch {
+				if (attempt === 0) {
+					console.warn("[auth] /api/auth/session fetch threw; retrying in 500ms")
+					await new Promise((r) => setTimeout(r, 500))
+					continue
+				}
+			}
 		}
+		invalidateSessionCache()
+		return {}
 	})()
 	return sessionPromise
+}
+
+// ---- Refresh error classification ----
+type RefreshErrorKind = "transient" | "invalid" | "unknown"
+
+function classifyRefreshError(err: unknown): RefreshErrorKind {
+	if (!err || typeof err !== "object") return "unknown"
+	const anyErr = err as {
+		response?: { status?: number; data?: { res_code?: number } }
+		code?: string
+	}
+	const status = anyErr.response?.status
+	const resCode = anyErr.response?.data?.res_code
+	// Real invalid — must force re-login
+	if (resCode === TOKEN_INVALID_CODE) return "invalid"
+	if (status === 401 && resCode !== TOKEN_EXPIRED_CODE) return "invalid"
+	// Transient — 5xx, network, or 40199 (a fresh refresh should succeed next attempt)
+	if (status && status >= 500) return "transient"
+	if (!status) return "transient" // no response = network error
+	if (resCode === TOKEN_EXPIRED_CODE) return "transient"
+	return "unknown"
+}
+
+// Retry-with-backoff wrapper around the /api/auth/refresh call.
+// Attempts: 3 total with delays [0ms, 800ms, 2000ms]. Fails fast on 'invalid'.
+async function refreshWithRetry(): Promise<void> {
+	const delays = [0, 800, 2000]
+	let lastErr: unknown
+	for (let i = 0; i < delays.length; i++) {
+		if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]))
+		try {
+			await axios.post("/api/auth/refresh", {})
+			return
+		} catch (err) {
+			lastErr = err
+			const kind = classifyRefreshError(err)
+			if (kind === "invalid") throw err // fail fast — real invalid token
+			const more = i + 1 < delays.length
+			console.warn(
+				`[auth] refresh attempt ${i + 1}/${delays.length} failed (${kind}); ${
+					more ? "retrying" : "giving up"
+				}`,
+			)
+		}
+	}
+	throw lastErr
 }
 
 // ---- Refresh lock: one refresh in flight; concurrent failures queue then retry ----
 let isRefreshing = false
 let isInvalidModalShown = false
 let isExpiredModalShown = false
-let proactiveRefreshFailed = false
+// Cooldown after a proactive refresh failure — instead of the old sticky
+// `proactiveRefreshFailed` boolean which killed proactive refresh for the
+// whole session on a single blip, we simply skip proactive refresh for 60s
+// and try again on the next request after that.
+let proactiveCooldownUntil = 0
 let subscribers: Array<{ resolve: () => void; reject: (e: unknown) => void }> = []
 
 const notifyRefreshed = () => {
@@ -126,9 +192,10 @@ BaseService.interceptors.request.use(
 							onOk: async () => {
 								try {
 									isRefreshing = true
-									await axios.post('/api/auth/refresh', {})
+									await refreshWithRetry()
 									invalidateSessionCache()
 									isRefreshing = false
+									proactiveCooldownUntil = 0
 									notifyRefreshed()
 									isExpiresModalPending = false
 									notifyExpiresResolved()
@@ -155,23 +222,38 @@ BaseService.interceptors.request.use(
 					await logout()
 					return Promise.reject(new Error('Session expired'))
 				}
-			// refresh_at: 12-min proactive silent refresh
-			// If the previous proactive attempt already failed, skip — let backend 40199 handle it
-			} else if (!proactiveRefreshFailed && session.refresh_at && session.refresh_at > 0 && now >= session.refresh_at) {
+			// refresh_at: 12-min proactive silent refresh.
+			// After a failure we honor a 60s cooldown before trying again rather
+			// than disabling proactive refresh for the entire session.
+			} else if (
+				now >= proactiveCooldownUntil &&
+				session.refresh_at && session.refresh_at > 0 && now >= session.refresh_at
+			) {
 				isRefreshing = true
 				try {
-					await axios.post('/api/auth/refresh', {})
+					await refreshWithRetry()
 					invalidateSessionCache()
 					isRefreshing = false
-					proactiveRefreshFailed = false
+					proactiveCooldownUntil = 0
 					notifyRefreshed()
-				} catch {
+				} catch (err) {
 					isRefreshing = false
-					notifyRefreshFailed(new Error('Proactive refresh failed'))
-					// Don't logout — current token may still be valid.
-					// Set flag so we stop retrying on every request; backend 40199 will trigger
-					// the proper modal flow when the token actually expires.
-					proactiveRefreshFailed = true
+					const kind = classifyRefreshError(err)
+					if (kind === "invalid") {
+						// Real invalid token — surface to callers so the reactive
+						// path / 40100 handler shows the correct modal.
+						notifyRefreshFailed(err)
+					} else {
+						// Transient/unknown — do NOT log the user out and do NOT
+						// notify subscribers as failed (they'd surface errors to
+						// callers). Just resolve them so the current request
+						// proceeds with the still-likely-valid access token; if
+						// the backend disagrees, the response interceptor will
+						// take over.
+						notifyRefreshed()
+						proactiveCooldownUntil = now + 60_000
+						console.warn('[auth] proactive refresh failed (transient); cooling down 60s')
+					}
 				}
 			}
 		}
@@ -202,31 +284,41 @@ async function handleTokenExpired(error: AxiosError) {
 
 	isRefreshing = true
 	try {
-		await axios.post("/api/auth/refresh", {})
+		await refreshWithRetry()
 		invalidateSessionCache()
 		isRefreshing = false
-		proactiveRefreshFailed = false
+		proactiveCooldownUntil = 0
 		notifyRefreshed()
 		return BaseService(config)
 	} catch (err) {
 		isRefreshing = false
 		notifyRefreshFailed(err)
-		// Show a modal before logging out so the user isn't silently kicked out
-		const modal = getGlobalModal()
-		if (modal && !isExpiredModalShown && !isInvalidModalShown) {
-			isExpiredModalShown = true
-			modal.error({
-				title: 'เซสชันหมดอายุ',
-				content: 'ไม่สามารถต่ออายุเซสชันได้ กรุณาเข้าสู่ระบบใหม่',
-				okText: 'เข้าสู่ระบบใหม่',
-				mask: { closable: false },
-				onOk: () => {
-					isExpiredModalShown = false
-					return logout()
-				},
-			})
-		} else if (!modal) {
-			await logout()
+		const kind = classifyRefreshError(err)
+		// Only prompt the user to re-login when the refresh failed because the
+		// token was genuinely invalid. Transient (5xx / network) failures should
+		// just fail the current request silently — the user can retry, and the
+		// next request will attempt refresh again.
+		if (kind === "invalid") {
+			const modal = getGlobalModal()
+			if (modal && !isExpiredModalShown && !isInvalidModalShown) {
+				isExpiredModalShown = true
+				modal.error({
+					title: 'เซสชันหมดอายุ',
+					content: 'ไม่สามารถต่ออายุเซสชันได้ กรุณาเข้าสู่ระบบใหม่',
+					okText: 'เข้าสู่ระบบใหม่',
+					mask: { closable: false },
+					onOk: () => {
+						isExpiredModalShown = false
+						return logout()
+					},
+				})
+			} else if (!modal) {
+				await logout()
+			}
+		} else {
+			// Transient/unknown — keep the session; just cool down proactive refresh briefly.
+			proactiveCooldownUntil = Date.now() + 60_000
+			console.warn('[auth] reactive refresh failed (transient); leaving session intact')
 		}
 		return Promise.reject(error)
 	}

@@ -25,22 +25,30 @@ const SwapButton: React.FC<Props> = (props) => {
   const active = activeValue ?? internalActive
 
   const renderButton = useMemo(() => {
-    return options.map((item, index) => (
-      <Button
-        key={index}
-        shape='round'
-        size={size}
-        ghost={active === item.value ? false : true}
-        type={active === item.value ? 'primary' : 'default'}
-        className='shrink-0'
-        onClick={() => {
-          setInternalActive(item.value)
-          setLabelValue(item.value)
-        }}
-      >
-        <p className='whitespace-nowrap'>{item.label}</p>
-      </Button>
-    ))
+    return options.map((item, index) => {
+      const isActive = active === item.value
+      // AntD's default ghost hover clears the border, causing the tab outline
+      // to flicker. Pin the yellow border + text on hover with `!` so the
+      // pill outline stays put; tint the background with #FCD1161A for feedback.
+      const inactiveHover =
+        'hover:border-(--yellow)! hover:text-(--yellow)! hover:bg-[#FCD1161A]!'
+      return (
+        <Button
+          key={index}
+          shape='round'
+          size={size}
+          ghost={!isActive}
+          type={isActive ? 'primary' : 'default'}
+          className={`shrink-0 ${isActive ? '' : inactiveHover}`}
+          onClick={() => {
+            setInternalActive(item.value)
+            setLabelValue(item.value)
+          }}
+        >
+          <p className='whitespace-nowrap'>{item.label}</p>
+        </Button>
+      )
+    })
   }, [options, setLabelValue, active, size])
 
   return (

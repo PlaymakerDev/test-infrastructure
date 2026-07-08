@@ -29,9 +29,14 @@ const SettingScreen = () => {
 
   return (
     <OverallProvider>
-      <div className='main-screen px-10'>
-        <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8'>
+      <div
+        className='main-screen px-10 flex flex-col'
+        style={{ height: 'calc(100vh - var(--nav-h))' }}
+      >
+        <div className='shrink-0'>
+          <TitleSection setCurrentTab={setCurrentTab} />
+        </div>
+        <section className='mt-6 flex-1 min-h-0'>
           {renderContent}
         </section>
       </div>

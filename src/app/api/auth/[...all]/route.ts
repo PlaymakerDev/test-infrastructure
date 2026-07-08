@@ -41,25 +41,32 @@ export const POST = async (
     const body = await request.json()
     const { all } = await params
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-    // LOGIN
+    // LOGIN — always via /api-v2/auth/login. The backend inspects the local
+    // user record: if is_ldap=true it delegates password verification to the
+    // upstream SSO endpoint, otherwise bcrypt-compares locally. Either way we
+    // get back a single api-v2-shaped JWT that works for subsequent /manage/*
+    // calls, so no client-side fallback is needed.
     if (all.includes('login')) {
       const parsed = loginSchema.safeParse(body)
       if (!parsed.success) {
         return NextResponse.json({ message: 'Invalid request body' }, { status: 400 })
       }
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/login`, parsed.data, {
-        headers: { ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '' }
-      })
-      if (response.status === 200) {
-        const now = Date.now()
-        session.access_token = response.data.access_token;
-        session.refresh_token = response.data.refresh_token;
-        session.role = "ADMIN"; // Set role based on your application's logic
-        session.refresh_at = now + 12 * 60 * 1000;          // now + 12 min
-        session.expires_at = now + 30 * 24 * 60 * 60 * 1000; // now + 30 days
-        await session.save();
+      const now = Date.now()
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/login`,
+        parsed.data,
+        { headers: { ['x-api-key']: process.env.NEXT_PUBLIC_API_KEY || '' } },
+      )
+      if (response.status === 200 && response.data?.access_token) {
+        session.access_token = response.data.access_token
+        session.refresh_token = response.data.refresh_token
+        session.role = 'ADMIN'
+        session.refresh_at = now + 12 * 60 * 1000
+        session.expires_at = now + 30 * 24 * 60 * 60 * 1000
+        await session.save()
+        return NextResponse.json({ message: 'success' }, { status: 200 })
       }
-      return NextResponse.json({ message: 'success' }, { status: 200 })
+      return NextResponse.json({ message: 'Invalid username or password' }, { status: 401 })
     }
     // LOGOUT — always destroy session even if backend rejects the token
     if (all.includes('logout')) {

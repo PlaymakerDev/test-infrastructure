@@ -51,7 +51,7 @@ const PeakHourCards: React.FC<Props> = ({ date }) => {
           ? Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
-                className='rounded-lg p-4 h-[96px]'
+                className='rounded-[20px] p-4 h-[96px]'
                 style={{
                   background: '#66AEFF1A',
                   border: '1px solid #66AEFF',
@@ -64,32 +64,28 @@ const PeakHourCards: React.FC<Props> = ({ date }) => {
               return (
                 <div
                   key={hh}
-                  className='rounded-lg py-3 px-4 text-center'
+                  className='rounded-[20px] py-3 px-4 text-center'
                   style={{
                     background: '#66AEFF1A',
                     border: '1px solid #66AEFF',
                   }}
                 >
                   <div
-                    className='fs-14 font-semibold'
+                    className='fs-16 font-semibold'
                     style={{ color: '#66AEFF' }}
                   >
                     {hh}:00 น.
                   </div>
-                  <div className='fs-12 text-white mt-1'>
+                  <div className='fs-14 mt-1' style={{ color: '#FFFFFF' }}>
                     {b.total_count.toLocaleString()} คัน{' '}
-                    <span className='text-white/55'>
+                    <span>
                       ({Math.round(b.total_pcu).toLocaleString()} PCU)
                     </span>
                   </div>
-                  <div className='fs-11 text-white/50 mt-0.5'>
+                  <div className='fs-12 mt-0.5' style={{ color: '#979797' }}>
                     {dom.type.label}{' '}
-                    <span className='text-white/70'>
-                      {dom.count.toLocaleString()} คัน
-                    </span>{' '}
-                    <span style={{ color: dom.type.color }}>
-                      ({dom.sharePct.toFixed(1)}%)
-                    </span>
+                    <span>{dom.count.toLocaleString()} คัน</span>{' '}
+                    <span>({dom.sharePct.toFixed(1)}%)</span>
                   </div>
                 </div>
               )
