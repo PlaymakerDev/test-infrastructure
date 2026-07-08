@@ -5,7 +5,7 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
 import { IncidentDetailProvider, useIncidentDetailContext } from '../context'
-import { IncidentDetailSidebar, IncidentDetailTable } from '../components'
+import { ChartElectricalIncident, IncidentDetailSidebar, IncidentDetailTable } from '../components'
 import { ROUTE_ITEMS } from '../../../data/routeItems'
 
 const { RangePicker } = DatePicker
@@ -95,12 +95,7 @@ const IncidentDetailContent: React.FC = () => {
       <section className="mt-6 flex flex-col lg:flex-row gap-4 lg:gap-6 items-stretch">
         <IncidentDetailSidebar />
         <div className="flex flex-col flex-1 gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <img src="/images/statistics/c1ex.png" alt="" style={{ flex: 1, borderRadius: 12, minWidth: 0 }} />
-            <div style={{ flex: 1, borderRadius: 12, position: 'relative', minWidth: 0 }}>
-              <img src="/images/statistics/c2ex.png" alt="" style={{ width: '100%', height: '100%', borderRadius: 12 }} />
-            </div>
-          </div>
+          <ChartElectricalIncident />
           <IncidentDetailTable />
         </div>
       </section>

@@ -21,6 +21,15 @@ import type {
   HistoryCase,
 } from '@/types/maintenance'
 
+// The detail API sorts every nested level (bureaus, departments, roads,
+// solution_location, ...) as plain strings — e.g. "สทช.10, สทช.11, ..., สทช.9"
+// and "จุดติดตั้งที่ 1, 10, 11, 2, 3, ...". `numeric: true` makes embedded
+// numbers compare by value instead of lexicographically, without disturbing
+// normal Thai alphabetical order for names that have no digits.
+const thCollator = new Intl.Collator('th', { numeric: true, sensitivity: 'base' })
+const sortByName = <T,>(items: T[], nameOf: (item: T) => string): T[] =>
+  [...items].sort((a, b) => thCollator.compare(nameOf(a), nameOf(b)))
+
 const SUB_TAB_OPTIONS = [
   { label: 'สรุป Solution', value: 'SOLUTION' },
   { label: 'งานซ่อมทั้งหมด', value: 'ALL_REPAIRS' },
@@ -461,107 +470,97 @@ const RepairRecordsSection: React.FC = () => {
                   <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{selectedSummary?.device_count.toLocaleString() ?? 0} อุปกรณ์</span>
                 </div>
 
-                {/* Tree Structure from API */}
-                {detailData.map((bureau) => (
-                  bureau.departments.map((dept) => (
-                    <React.Fragment key={dept.department_id}>
-                      {/* Department Level */}
-                      <div
-                        className="mt-3 px-3 py-2 rounded-[10px] cursor-pointer"
-                        style={{ background: '#292828' }}
-                        onClick={() => setExpandedDept(prev => prev === dept.department_id ? null : dept.department_id)}
-                      >
-                        <div className="flex items-center gap-4">
-                          <TbChevronDown
-                            className="text-[16px] shrink-0 transition-transform duration-200"
-                            style={{ color: '#FCD116', transform: expandedDept === dept.department_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                          />
-                          <span className="text-[14px] sm:text-[16px] font-normal" style={{ color: '#FCD116' }}>{dept.department_name}</span>
-                          <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.projects_count} โครงการ</span>
-                          <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.location_count} จุดติดตั้ง</span>
-                          <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.device_count} อุปกรณ์</span>
-                          <div className="hidden sm:flex items-center gap-2 ml-auto">
-                            {renderBadge(dept.online_count, '#66AEFF')}
-                            {renderBadge(dept.offline_count, '#E94C4C')}
+                {/* Tree Structure from API — bureau (plain label) > department > road > installation point.
+                    Project / solution_location / solution collapse into one leaf row per installation
+                    point (project name is a caption, not its own nesting level) — matches the design
+                    where a road's children are shown directly as "จุดติดตั้งที่ N" rows. */}
+                {sortByName(detailData, (b) => b.bureau_name).map((bureau) => (
+                  <React.Fragment key={bureau.bureau_id}>
+                    {/* Bureau Level — plain section label, always expanded (no card, no chevron).
+                        A blank bureau_name (see DetailBureau sample data) is HQ's implicit bucket. */}
+                    <div className="mt-4 flex items-center gap-4 flex-wrap px-1">
+                      <span className="text-[14px] sm:text-[16px] font-medium" style={{ color: '#FFFFFF' }}>{bureau.bureau_name || 'ส่วนกลาง'}</span>
+                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.projects_count} โครงการ</span>
+                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.location_count} จุดติดตั้ง</span>
+                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.device_count} อุปกรณ์</span>
+                    </div>
+
+                    {sortByName(bureau.departments, (d) => d.department_name).map((dept) => (
+                      <React.Fragment key={dept.department_id}>
+                        {/* Department Level */}
+                        <div
+                          className="mt-3 px-3 py-2 rounded-[10px] cursor-pointer"
+                          style={{ background: '#292828' }}
+                          onClick={() => setExpandedDept(prev => prev === dept.department_id ? null : dept.department_id)}
+                        >
+                          <div className="flex items-center gap-4">
+                            <TbChevronDown
+                              className="text-[16px] shrink-0 transition-transform duration-200"
+                              style={{ color: '#FCD116', transform: expandedDept === dept.department_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                            />
+                            <span className="text-[14px] sm:text-[16px] font-normal" style={{ color: '#FCD116' }}>{dept.department_name}</span>
+                            <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.projects_count} โครงการ</span>
+                            <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.location_count} จุดติดตั้ง</span>
+                            <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{dept.device_count} อุปกรณ์</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1 sm:hidden pl-7">
-                          {renderBadge(dept.online_count, '#66AEFF')}
-                          {renderBadge(dept.offline_count, '#E94C4C')}
-                        </div>
-                      </div>
 
-                      {/* Road Level */}
-                      {expandedDept === dept.department_id && dept.roads.map((road) => (
-                        <React.Fragment key={road.road_id}>
-                          <div
-                            className="mt-1 rounded-[10px] cursor-pointer"
-                            style={{
-                              background: '#151515',
-                              paddingLeft: 36,
-                              paddingRight: 12,
-                              paddingTop: 8,
-                              paddingBottom: 8,
-                              border: expandedRoad === road.road_id ? '1px solid #FCD116' : '1px solid transparent',
-                            }}
-                            onClick={() => setExpandedRoad(prev => prev === road.road_id ? null : road.road_id)}
-                          >
-                            <div className="flex items-center gap-4">
-                              <TbChevronDown
-                                className="text-[16px] shrink-0 transition-transform duration-200"
-                                style={{ color: '#FCD116', transform: expandedRoad === road.road_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                              />
-                              <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{road.road_name}</span>
-                              <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
-                              <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
-                              <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
-                              <div className="hidden sm:flex items-center gap-2 ml-auto">
-                                {renderBadge(road.online_count, '#66AEFF')}
-                                {renderBadge(road.offline_count, '#E94C4C')}
+                        {/* Road Level */}
+                        {expandedDept === dept.department_id && sortByName(dept.roads, (r) => r.road_name).map((road) => (
+                          <React.Fragment key={road.road_id}>
+                            <div
+                              className="mt-1 rounded-[10px] cursor-pointer"
+                              style={{
+                                background: '#151515',
+                                paddingLeft: 36,
+                                paddingRight: 12,
+                                paddingTop: 8,
+                                paddingBottom: 8,
+                                border: expandedRoad === road.road_id ? '1px solid #FCD116' : '1px solid transparent',
+                              }}
+                              onClick={() => setExpandedRoad(prev => prev === road.road_id ? null : road.road_id)}
+                            >
+                              <div className="flex items-center gap-4">
+                                <TbChevronDown
+                                  className="text-[16px] shrink-0 transition-transform duration-200"
+                                  style={{ color: '#FCD116', transform: expandedRoad === road.road_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                                />
+                                <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{road.road_name}</span>
+                                <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
+                                <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
+                                <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1 sm:hidden pl-7">
-                              {renderBadge(road.online_count, '#66AEFF')}
-                              {renderBadge(road.offline_count, '#E94C4C')}
-                            </div>
-                          </div>
 
-                          {/* Project Level — clickable to detail page */}
-                          {expandedRoad === road.road_id && road.projects.map((proj) => {
-                            const firstSolutionId = proj.solution_location?.[0]?.solution?.[0]?.solution_id
-                            return (
-                              <div
-                                key={proj.project_id}
-                                className="mt-1 rounded-[10px] cursor-pointer"
-                                style={{ background: '#151515', paddingLeft: 60, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
-                                onClick={() => {
-                                  if (firstSolutionId) {
-                                    sessionStorage.setItem('maintenance_detail_title', road.road_name)
-                                    sessionStorage.setItem('maintenance_detail_subtitle', proj.project_name)
-                                    router.push(`/admin/maintenance/detail/${firstSolutionId}`)
-                                  }
-                                }}
-                              >
-                                <div className="flex items-center gap-4">
-                                  <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{proj.project_name}</span>
-                                  <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{proj.location_count} จุดติดตั้ง</span>
-                                  <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{proj.device_count} อุปกรณ์</span>
-                                  <div className="hidden sm:flex items-center gap-2 ml-auto">
-                                    {renderBadge(proj.online_count, '#66AEFF')}
-                                    {renderBadge(proj.offline_count, '#E94C4C')}
+                            {/* Installation point leaf — one row per (project, solution_location) pair;
+                                a project trivially owns one location in almost every real case, so it
+                                never gets its own visible row — its name is just the row's caption. */}
+                            {expandedRoad === road.road_id && sortByName(road.projects, (p) => p.project_name).flatMap((proj) =>
+                              sortByName(proj.solution_location ?? [], (l) => l.solution_location_name).map((loc) => {
+                                const solutionId = loc.solution?.[0]?.solution_id
+                                return (
+                                  <div
+                                    key={loc.solution_location_id}
+                                    className="mt-1 rounded-[10px] cursor-pointer flex items-center gap-4"
+                                    style={{ background: '#151515', paddingLeft: 60, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
+                                    onClick={() => {
+                                      if (!solutionId) return
+                                      sessionStorage.setItem('maintenance_detail_title', road.road_name)
+                                      sessionStorage.setItem('maintenance_detail_subtitle', proj.project_name)
+                                      router.push(`/admin/maintenance/detail/${solutionId}`)
+                                    }}
+                                  >
+                                    <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{loc.solution_location_name}</span>
+                                    <span className="text-[12px] font-normal" style={{ color: '#FFFFFF' }}>{proj.project_name || 'โปรดระบุชื่อโครงการ'}</span>
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-2 mt-1 sm:hidden">
-                                  {renderBadge(proj.online_count, '#66AEFF')}
-                                  {renderBadge(proj.offline_count, '#E94C4C')}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </React.Fragment>
-                      ))}
-                    </React.Fragment>
-                  ))
+                                )
+                              })
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
                 ))}
               </>
             )}

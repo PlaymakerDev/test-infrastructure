@@ -28,12 +28,20 @@ const LampTitleSection: React.FC = () => {
   const isInWarranty = project.warranty === 'in-warranty'
   const [infoProject, setInfoProject] = useState<TrafficLightingProject | null>(null)
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/admin/traffic-lighting')
+    }
+  }
+
   return (
     <div>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
           className='fs-24 text-[#FCD116] cursor-pointer mt-2 shrink-0'
-          onClick={() => router.push('/admin/traffic-lighting')}
+          onClick={handleBack}
         />
         <div className='flex-1 min-w-0'>
           <h1 className='text-[20px] sm:text-[24px] font-bold text-[#FCD116] m-0'>
