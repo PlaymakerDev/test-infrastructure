@@ -1,5 +1,5 @@
 "use client"
-import { APIRequestTrackingMobileMaster, APIRequestTrackingPosition } from '@/types/tracking/overall-api';
+import { APIRequestTrackingMobileMaster, APIRequestTrackingPosition, APIRequestTrackingViewSumPlanChart } from '@/types/tracking/overall-api';
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
@@ -7,6 +7,8 @@ export interface ContextProps {
   setSearchPosition: (s: APIRequestTrackingPosition | null) => void
   searchMobileMaster: APIRequestTrackingMobileMaster | null
   setSearchMobileMaster: (s: APIRequestTrackingMobileMaster | null) => void
+  searchSumPlan: APIRequestTrackingViewSumPlanChart | null
+  setSearchSumPlan: (s: APIRequestTrackingViewSumPlanChart | null) => void
 }
 
 export interface PageProviderProps {
@@ -19,6 +21,7 @@ export const OverallProvider = (props: PageProviderProps) => {
   const { children } = props
   const [searchPosition, setSearchPosition] = useState<APIRequestTrackingPosition | null>(null)
   const [searchMobileMaster, setSearchMobileMaster] = useState<APIRequestTrackingMobileMaster | null>(null)
+  const [searchSumPlan, setSearchSumPlan] = useState<APIRequestTrackingViewSumPlanChart | null>(null)
 
   return (
     <OverallContext.Provider
@@ -26,7 +29,9 @@ export const OverallProvider = (props: PageProviderProps) => {
         searchPosition,
         setSearchPosition,
         searchMobileMaster,
-        setSearchMobileMaster
+        setSearchMobileMaster,
+        searchSumPlan,
+        setSearchSumPlan
       }}
     >
       {children}

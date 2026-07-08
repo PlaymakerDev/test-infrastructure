@@ -35,5 +35,8 @@ export { useUpdateUserPassword } from './useUpdateUserPassword'
 export { useDepartments } from './useDepartments'
 export { useRegions } from './useRegions'
 
+// Logged-in user's home department (menu links / post-login landing)
+export { useHomeDeptId, resolveHomeDeptId } from './useHomeDeptId'
+
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'

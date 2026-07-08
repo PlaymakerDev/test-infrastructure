@@ -12,8 +12,8 @@ import ActiveChatHeader from "./ActiveChatHeader"
 
 const MODES: { key: ViewMode; label: string; icon: React.ReactNode }[] = [
   { key: "chat", label: "แชต", icon: <TbMessage size={15} /> },
+  { key: "compare", label: "เปรียบเทียบ", icon: <TbColumns2 size={15} /> },
   { key: "dashboard", label: "แดชบอร์ด", icon: <TbLayoutDashboard size={15} /> },
-  { key: "compare", label: "เทียบ", icon: <TbColumns2 size={15} /> },
 ]
 
 const TitleSection: React.FC = () => {
@@ -46,11 +46,10 @@ const TitleSection: React.FC = () => {
                 key={m.key}
                 type="button"
                 onClick={() => setViewMode(m.key)}
-                className={`inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                  viewMode === m.key
+                className={`inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${viewMode === m.key
                     ? "bg-(--yellow) text-(--dark-black) font-medium"
                     : "text-white/55 hover:text-white"
-                }`}
+                  }`}
               >
                 {m.icon}
                 <span className="max-sm:hidden">{m.label}</span>

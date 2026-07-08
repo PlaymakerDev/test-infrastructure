@@ -18,6 +18,8 @@ export { default as OverallStatCard } from './sections/overall/OverallStatCard'
 export { default as OverallWeightStat } from './sections/overall/OverallWeightStat'
 export { default as OverallChartSection } from './sections/overall/OverallChartSection'
 export { default as TableOverallDailyWeight } from './sections/overall/TableOverallDailyWeight'
+export { default as TableLatestStation } from './sections/overall/TableLatestStation'
+export { default as TableLatestWIM } from './sections/overall/TableLatestWIM'
 export { default as TableOverallWeight } from './sections/overall/TableOverallWeight'
 
 // VEHICLE

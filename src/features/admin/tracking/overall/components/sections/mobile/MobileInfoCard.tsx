@@ -1,6 +1,6 @@
-import { getTrackingTotalStationAPI, getTrackingViewSumPlanChartAPI } from '@/services/routes/TrackingService';
+import { getTrackingTotalStationAPI } from '@/services/routes/TrackingService';
 import { WIMMetaData } from '@/types/shared';
-import { MobileMasterData } from '@/types/tracking/overall-api';
+import { APIResponseTrackingViewSumPlanChart, MobileMasterData } from '@/types/tracking/overall-api';
 import { fmtNumber } from '@/utils/formatNumber';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Col, Empty, Row, Skeleton } from 'antd'
@@ -11,6 +11,9 @@ import { TbChartAreaLine, TbTrafficCone, TbTruck, TbUserShield } from "react-ico
 interface Props {
   data?: MobileMasterData[]
   meta?: WIMMetaData
+  sumPlanData?: APIResponseTrackingViewSumPlanChart
+  isSumPlanLoading?: boolean
+  isSumPlanError?: boolean
 }
 
 const DEFAULT_COUNT = {
@@ -21,7 +24,7 @@ const DEFAULT_COUNT = {
 }
 
 const MobileInfoCard: React.FC<Props> = (props) => {
-  const { data, meta } = props
+  const { data, meta, sumPlanData, isSumPlanLoading, isSumPlanError } = props
 
   const {
     data: totalStationData,
@@ -32,16 +35,6 @@ const MobileInfoCard: React.FC<Props> = (props) => {
     queryFn: () => getTrackingTotalStationAPI({
       date: dayjs().format('YYYY-MM-DD')
     }),
-    placeholderData: keepPreviousData
-  })
-
-  const {
-    data: sumPlanData,
-    isLoading: isSumPlanLoading,
-    isError: isSumPlanError
-  } = useQuery({
-    queryKey: ['sum_plan', 'mobile'],
-    queryFn: () => getTrackingViewSumPlanChartAPI({}),
     placeholderData: keepPreviousData
   })
 
@@ -90,8 +83,8 @@ const MobileInfoCard: React.FC<Props> = (props) => {
     if (isSumPlanLoading) return <Skeleton loading={isSumPlanLoading} active paragraph={{ rows: 10 }} />
     if (isSumPlanError) return <Empty description="ไม่พบข้อมูล" />
 
-    const totalPlan = Number(sumPlanData?.data.all_sum.plan_total)
-    const totalResult = Number(sumPlanData?.data.all_sum.result_total)
+    const totalPlan = Number(sumPlanData?.all_sum.plan_total)
+    const totalResult = Number(sumPlanData?.all_sum.result_total)
     const totalDifference = totalPlan - totalResult
 
     return (

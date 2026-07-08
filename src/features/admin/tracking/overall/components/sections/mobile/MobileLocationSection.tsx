@@ -7,16 +7,20 @@ import {
 } from '@/features/admin/tracking/overall/components'
 import { MobileMasterData } from '@/types/tracking/overall-api'
 import { WIMMetaData } from '@/types/shared'
+import { APIResponseTrackingViewSumPlanChart } from '@/types/tracking/overall-api'
 
 interface Props {
   data?: MobileMasterData[]
   meta?: WIMMetaData
   isLoading?: boolean
   isError?: boolean
+  sumPlanData?: APIResponseTrackingViewSumPlanChart
+  isSumPlanLoading?: boolean
+  isSumPlanError?: boolean
 }
 
 const MobileLocationSection: React.FC<Props> = (props) => {
-  const { data, meta, isLoading, isError } = props
+  const { data, meta, isLoading, isError, sumPlanData, isSumPlanLoading, isSumPlanError } = props
   return (
     <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
 
@@ -37,6 +41,9 @@ const MobileLocationSection: React.FC<Props> = (props) => {
           meta={meta}
           isLoading={isLoading}
           isError={isError}
+          sumPlanData={sumPlanData}
+          isSumPlanLoading={isSumPlanLoading}
+          isSumPlanError={isSumPlanError}
         />
       </div>
 

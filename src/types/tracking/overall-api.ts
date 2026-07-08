@@ -390,3 +390,31 @@ export interface MobileMasterData {
   KMFrom: string
   KMTo: string
 }
+
+export interface APIRequestTrackingAllDepartment {
+  text_search?: string
+  type?: number
+  group?: number
+  group_drr?: number
+  office_no?: number
+}
+
+export interface APIResponseTrackingAllDepartment {
+  success: boolean
+  data: AllDepartmentData[]
+}
+
+export interface AllDepartmentData {
+  id: number
+  name: string
+  type: number
+  group: number
+  province: string
+  group_drr: number
+  station_id: any
+  office_no?: number
+  name2: string
+  contract_number: any
+  contractor_name: any
+  remark: any
+}

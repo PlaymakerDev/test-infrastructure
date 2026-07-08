@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import axios, { AxiosError } from 'axios'
 import { useAppDispatch } from '@/stores/hooks'
 import { resetDrawerOpen } from '@/stores/reducers/layout/layoutSlice'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Props {
 }
@@ -14,12 +15,15 @@ const SidebarFooter: React.FC<Props> = (props) => {
   const [modal, contextHolder] = Modal.useModal()
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const queryClient = useQueryClient()
 
   const onLogout = useCallback(async () => {
     try {
       const response = await axios.post('/atlas/api/auth/logout', {})
       if (response.status === 200) {
         dispatch(resetDrawerOpen())
+        // Drop this user's cached (token-scoped) data so the next login starts clean.
+        queryClient.clear()
 
         modal.success({
           title: 'Logout successful',
@@ -38,7 +42,7 @@ const SidebarFooter: React.FC<Props> = (props) => {
         })
       }
     }
-  }, [modal, router, dispatch])
+  }, [modal, router, dispatch, queryClient])
 
 
   return (
