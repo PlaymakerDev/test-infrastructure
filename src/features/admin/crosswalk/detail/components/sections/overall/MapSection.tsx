@@ -73,7 +73,7 @@ const SolutionFallbackPopup: React.FC<{ location: CrosswalkLocation }> = ({
  *  fan out (spider) into individually-clickable pins, each opening a popup with
  *  a live preview. All pins are white teardrops (`variant='white'`). Falls back
  *  to a single solution-level pin when the /cameras endpoint has no coords. */
-const MapSection: React.FC<Props> = ({ edgeFade }) => {
+const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
   const { data } = useCrosswalkCameras(deptId, { solution_id: id })
