@@ -45,14 +45,14 @@ const StatusChart: React.FC<Props> = () => {
       <div
         className='flex-1 flex flex-col items-center gap-3 py-5 px-3'
         style={{
-          background: 'rgba(184,205,181,0.2)',
+          background: '#191919CC',
           borderRadius: 20,
           backdropFilter: 'blur(5px)',
         }}
       >
         <div
           className='flex items-center justify-center text-(--yellow)'
-          style={{ width: 80, height: 80, background: '#191919', borderRadius: 10 }}
+          style={{ width: 80, height: 80, background: '#212121', borderRadius: 10 }}
         >
           {icon}
         </div>
