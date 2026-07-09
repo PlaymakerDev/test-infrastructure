@@ -195,7 +195,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
           />
 
           {/* Rows */}
-          <div className='flex flex-col'>
+          <div className={`flex flex-col ${tableRows.length > 6 ? 'max-h-60 overflow-y-auto pr-1' : ''}`}>
             {tableRows.map((row, i) => (
               <div
                 key={i}

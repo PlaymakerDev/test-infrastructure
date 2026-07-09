@@ -1,4 +1,4 @@
-import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestVehicleCountHour, APIRequestWIMDaily, APIRequestWIMTodayStats, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseVehicleCountHour, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
+import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestVehicleCountHour, APIRequestWeightStationLog, APIRequestWeightWIMLog, APIRequestWeightWIMLogByID, APIRequestWIMDaily, APIRequestWIMTodayStats, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseTrafficAvgSpeed, APIResponseVehicleCountHour, APIResponseWeightStationLog, APIResponseWeightStationLogByID, APIResponseWeightWIMLog, APIResponseWeightWIMLogByID, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
 import ApiService from "../ApiService"
 import { DEFAULT_TRACKING_API_URL } from "./TrackingService"
 
@@ -84,5 +84,43 @@ export const getTrackingRecentlyWeightAPI = async (params: APIRequestRecentlyWei
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/recently_weight`,
     method: 'GET',
     params,
+  })
+}
+
+export const getTrackingWeightWIMLogAPI = async (params: APIRequestWeightWIMLog) => {
+  return ApiService.fetchData<APIResponseWeightWIMLog, APIRequestWeightWIMLog>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_wim_log`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingWeightWIMLogByIDAPI = async (tdid: string | number, params: APIRequestWeightWIMLogByID) => {
+  return ApiService.fetchData<APIResponseWeightWIMLogByID, APIRequestWeightWIMLogByID>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_wim_log/${tdid}`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingWeightStationLogAPI = async (params: APIRequestWeightStationLog) => {
+  return ApiService.fetchData<APIResponseWeightStationLog, APIRequestWeightStationLog>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_station_log`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingWeightStationLogByIDAPI = async (tdid: string | number) => {
+  return ApiService.fetchData<APIResponseWeightStationLogByID>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_station_log/${tdid}`,
+    method: 'GET',
+  })
+}
+
+export const getTrackingTrafficAvgSpeedAPI = async (id: string | number) => {
+  return ApiService.fetchData<APIResponseTrafficAvgSpeed>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/masters/wim/traffic_avg_speed/${id}`,
+    method: 'GET',
   })
 }

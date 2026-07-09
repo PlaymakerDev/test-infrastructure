@@ -2,9 +2,8 @@ import SwapButton from '@/components/swap-button/SwapButton'
 import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
-import { useQuery } from '@tanstack/react-query';
-import { getTrackingStationByIDAPI, getTrackingWIMByIDAPI } from '@/services/routes/TrackingDetailService';
 import { Skeleton } from 'antd';
+import { useStationDetail } from '../hooks'
 
 interface Props {
   id: string[] | string | number | undefined;
@@ -33,35 +32,15 @@ const TitleSection: React.FC<Props> = (props) => {
   const { id, stationType, setCurrentTab } = props
   const router = useRouter()
 
-  const { data: wimData, isLoading: isWimLoading, isError: isWimError } = useQuery({
-    queryKey: ['tracking_wim_by_id', id],
-    queryFn: () => getTrackingWIMByIDAPI(id as string | number),
-    enabled: !!id && stationType === 'WIM',
-  })
-
-  const { data: stationData, isLoading: isStationLoading, isError: isStationError } = useQuery({
-    queryKey: ['tracking_station_by_id', id],
-    queryFn: () => getTrackingStationByIDAPI(id as string | number),
-    enabled: !!id && stationType === 'STATION',
-  })
-
-  const renderStationTitle = useMemo(() => {
-    if (isStationLoading) return <Skeleton loading={isStationLoading} active paragraph={{ rows: 1 }} />
-    if (isStationError) return '-'
-    return `สถานี : ${stationData?.data?.data.station_name}` || '-'
-  }, [isStationLoading, isStationError, stationData])
-
-  const renderWimTitle = useMemo(() => {
-    if (isWimLoading) return <Skeleton loading={isWimLoading} active paragraph={{ rows: 1 }} />
-    if (isWimError) return '-'
-    return `Weight in Motion (WIM) : ${wimData?.data?.data.station_name}` || '-'
-  }, [isWimLoading, isWimError, wimData])
+  const { data, isLoading, isError } = useStationDetail(id as string | number | undefined, stationType)
 
   const renderTitle = useMemo(() => {
-    if (stationType === 'WIM') return renderWimTitle
-    if (stationType === 'STATION') return renderStationTitle
-    return '-'
-  }, [stationType, renderWimTitle, renderStationTitle])
+    if (stationType !== 'WIM' && stationType !== 'STATION') return '-'
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} />
+    if (isError) return '-'
+    const label = stationType === 'STATION' ? 'สถานี' : 'Weight in Motion (WIM)'
+    return `${label} : ${data?.data.data.station_name}` || '-'
+  }, [stationType, isLoading, isError, data])
 
   return (
     <div className='px-3'>

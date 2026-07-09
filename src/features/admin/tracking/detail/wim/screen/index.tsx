@@ -4,7 +4,6 @@ import {
   OverallSection,
   VehicleSection
 } from '../components'
-import { WIMProvider } from '../context';
 import { useSearchParams } from 'next/navigation';
 
 interface Props {
@@ -31,18 +30,16 @@ const WIMDetailScreen: React.FC<Props> = (props) => {
   }, [currentTab, id, stationType])
 
   return (
-    <WIMProvider>
-      <div className='main-screen'>
-        <TitleSection
-          id={id}
-          stationType={stationType}
-          setCurrentTab={setCurrentTab}
-        />
-        <section className='mt-8 px-10'>
-          {renderContent}
-        </section>
-      </div>
-    </WIMProvider>
+    <div className='main-screen'>
+      <TitleSection
+        id={id}
+        stationType={stationType}
+        setCurrentTab={setCurrentTab}
+      />
+      <section className='mt-8 px-10'>
+        {renderContent}
+      </section>
+    </div>
   )
 }
 

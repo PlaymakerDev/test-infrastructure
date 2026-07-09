@@ -723,3 +723,14 @@ export interface Station {
   contractor_name: any
   remark: any
 }
+
+// TRAFFIC AVG SPEED
+export type APIResponseTrafficAvgSpeed = TrafficAvgSpeedData[]
+
+export interface TrafficAvgSpeedData {
+  pid: number
+  period: string
+  period_name: string
+  vehicle_count: string
+  avg_speed: string
+}

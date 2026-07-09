@@ -13,7 +13,7 @@ interface Props {
 
 const OverallCalibrateWeight: React.FC<Props> = (props) => {
   const { calibrationHistory } = props
-  console.log(calibrationHistory, "===")
+
   return (
     <div className="h-full bg-[#FFFFFF1A] border-2 rounded-lg p-5 border-white">
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6'>
