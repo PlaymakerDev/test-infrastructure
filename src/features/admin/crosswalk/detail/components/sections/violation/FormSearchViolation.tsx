@@ -69,7 +69,7 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
             placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
             format='DD/MM/YYYY'
             size='large'
-            className='w-full!'
+            className='w-full! rounded-xl!'
           />
         </fieldset>
       </Col>
@@ -84,7 +84,7 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
               options={PERIOD_OPTIONS}
               size='large'
               classNames={{
-                root: 'min-w-max border! border-(--yellow)!',
+                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
               }}
             />
           </div>
@@ -101,7 +101,7 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
               options={STATUS_OPTIONS}
               size='large'
               classNames={{
-                root: 'min-w-max border! border-(--yellow)!',
+                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
               }}
             />
           </div>
