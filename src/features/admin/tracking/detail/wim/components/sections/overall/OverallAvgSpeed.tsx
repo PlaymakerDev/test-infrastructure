@@ -1,30 +1,51 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import GaugeChart from '@/components/chart/GaugeChart'
 import { TbGauge } from 'react-icons/tb'
+import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
+import QueryBoundary from '@/components/common/QueryBoundary'
 
-interface Props { }
+interface Props {
+  stationId: string[] | string | number | undefined;
+  stationType: string | null | undefined;
+}
 
-const OverallAvgSpeed: React.FC<Props> = () => {
+const OverallAvgSpeed: React.FC<Props> = (props) => {
+  const { stationId, stationType } = props
+
+  const { data, isLoading, isError } = useTrafficAvgSpeed(
+    stationId as string | number | undefined,
+    stationType === 'WIM'
+  )
+
+  const tableRows = useMemo(() => {
+    return (data?.data ?? []).map((item, index) => ({
+      time: item.period_name,
+      value: Number(item.avg_speed),
+      highlighted: index === 0,
+    }))
+  }, [data?.data])
+
+  const avgSpeed = useMemo(() => {
+    const speeds = (data?.data ?? []).map(item => Number(item.avg_speed))
+    return speeds.length ? speeds.reduce((sum, value) => sum + value, 0) / speeds.length : 0
+  }, [data?.data])
+
   return (
-    <GaugeChart
-      title='ความเร็วเฉลี่ยวันนี้'
-      icon={<TbGauge className='fs-22 text-(--yellow) shrink-0' />}
-      value={76.59}
-      unit='กม./ชม.'
-      min={0}
-      max={120}
-      tableTitle='ความเร็วเฉลี่ยรายชั่วโมง'
-      tableTimeLabel='เวลา'
-      tableValueLabel='ความเร็วเฉลี่ย'
-      tableRows={[
-        { time: '12.00 น.', value: 79.00, unit: 'กม./ชม.', highlighted: true },
-        { time: '11.00 น.', value: 77.69, unit: 'กม./ชม.' },
-        { time: '10.00 น.', value: 78.79, unit: 'กม./ชม.' },
-        { time: '09.00 น.', value: 76.84, unit: 'กม./ชม.' },
-        { time: '08.00 น.', value: 74.84, unit: 'กม./ชม.' },
-      ]}
-      height={270}
-    />
+    <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={10}>
+      <GaugeChart
+        title='ความเร็วเฉลี่ยวันนี้'
+        icon={<TbGauge className='fs-22 text-(--yellow) shrink-0' />}
+        value={avgSpeed}
+        unit='กม./ชม.'
+        min={0}
+        max={120}
+        tableTitle='ความเร็วเฉลี่ยรายชั่วโมง'
+        tableTimeLabel='เวลา'
+        tableValueLabel='ความเร็วเฉลี่ย'
+        tableRows={tableRows}
+        height={270}
+      />
+    </QueryBoundary>
   )
 }
 
