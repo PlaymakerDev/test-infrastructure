@@ -36,7 +36,7 @@ export { useDepartments } from './useDepartments'
 export { useRegions } from './useRegions'
 
 // Logged-in user's home department (menu links / post-login landing)
-export { useHomeDeptId, resolveHomeDeptId } from './useHomeDeptId'
+export { useHomeDeptId, resolveHomeDeptId, deptQuery } from './useHomeDeptId'
 
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'

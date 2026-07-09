@@ -15,7 +15,7 @@ import CardGridCctv from './sections/overall/CardGridCctv'
 import FormSearchCctv from './sections/overall/FormSearchCctv'
 import {
   useCctvOverviewCentralList,
-  useCctvOverviewTotals,
+  useCctvOverviewCentralTotals,
   useCctvRandomOnline,
 } from '@/hooks/queries/cctv'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
@@ -78,7 +78,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
   // Flatten into rows tagged with their แขวง so the table can group by it
   // (like traffic-signal). No pagination — returns the whole department.
   const { data: centralData, isLoading: listLoading } = useCctvOverviewCentralList(deptId)
-  const { data: totals } = useCctvOverviewTotals(deptId)
+  const { data: totals } = useCctvOverviewCentralTotals(deptId)
   const { data: randomOnlineRes } = useCctvRandomOnline(deptId, 3)
   const randomOnline = randomOnlineRes?.data ?? []
 

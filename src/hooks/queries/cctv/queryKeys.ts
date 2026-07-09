@@ -27,8 +27,6 @@ export const cctvKeys = {
       [...cctvKeys.overview.root(deptId), 'map'] as const,
     list: (deptId: string | number, params: APIRequestCCTVOverviewList) =>
       [...cctvKeys.overview.root(deptId), 'list', params] as const,
-    totals: (deptId: string | number) =>
-      [...cctvKeys.overview.root(deptId), 'totals'] as const,
     dropdowns: (
       deptId: string | number,
       params: APIRequestCCTVOverviewDropdowns

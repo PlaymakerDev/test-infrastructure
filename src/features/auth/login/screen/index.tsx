@@ -17,7 +17,7 @@ import { MdOutlineMonitorHeart } from 'react-icons/md'
 import type { IconType } from 'react-icons'
 import menu from '@/configs/menu'
 import { getDepartmentsAPI } from '@/services/routes/ManageService'
-import { resolveHomeDeptId } from '@/hooks/queries/manage'
+import { resolveHomeDeptId, deptQuery } from '@/hooks/queries/manage'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setLoading } from '@/stores/reducers/layout/layoutSlice'
@@ -127,7 +127,7 @@ const AuthScreen: React.FC<Props> = (props) => {
           let target = path[0].path
           try {
             const depts = await getDepartmentsAPI()
-            target = `${path[0].path}?dept_id=${resolveHomeDeptId(depts.data)}`
+            target = `${path[0].path}?${deptQuery(resolveHomeDeptId(depts.data))}`
           } catch {
             // department lookup failed — keep the default landing
           }

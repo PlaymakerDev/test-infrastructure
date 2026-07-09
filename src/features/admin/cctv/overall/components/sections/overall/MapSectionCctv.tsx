@@ -4,7 +4,10 @@ import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useCctvOverview } from '@/hooks/queries/cctv'
+import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   deptId?: string | null
@@ -13,6 +16,10 @@ interface Props {
 
 const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
   const { data: overview } = useCctvOverview(deptId)
+  const router = useRouter()
+  // Guaranteed dept id for the popup's detail link (matches how the overall
+  // table navigates). The detail page self-derives project_id / road_id.
+  const navDeptId = useDeptId()
 
   // Every solution location with a coordinate — the map frames all of them
   // (bureau → แขวง → สายทาง) instead of a fixed centroid zoom.
@@ -44,6 +51,7 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
       .map((loc) => ({
         type: 'Feature' as const,
         properties: {
+          solutionId: loc.solution.id,
           codeName: loc.road.code_name,
           solutionName: loc.solution.solution_name,
           totalCameras: loc.total_cameras,
@@ -78,6 +86,14 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
               <span style={{ color: '#66AEFF' }}>● ออนไลน์ {Number(f.properties?.onlineCount ?? 0).toLocaleString()}</span>
               <span style={{ color: '#E94C4C' }}>● ออฟไลน์ {Number(f.properties?.offlineCount ?? 0).toLocaleString()}</span>
             </div>
+            {f.properties?.solutionId != null && (
+              <div>
+                <PopupDetailLink
+                  url={`/admin/cctv/detail/${f.properties?.solutionId}?dept_id=${navDeptId}`}
+                  onNavigate={(u) => router.push(u)}
+                />
+              </div>
+            )}
           </div>
         )}
       />

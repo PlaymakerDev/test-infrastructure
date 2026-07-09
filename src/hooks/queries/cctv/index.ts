@@ -6,7 +6,6 @@ export { cctvKeys } from './queryKeys'
 // Overview (solution-level)
 export { useCctvOverview } from './useCctvOverview'
 export { useCctvOverviewList } from './useCctvOverviewList'
-export { useCctvOverviewTotals } from './useCctvOverviewTotals'
 export { useCctvOverviewDropdowns } from './useCctvOverviewDropdowns'
 export { useCctvOverviewCentralList } from './useCctvOverviewCentralList'
 export { useCctvOverviewCentralTotals } from './useCctvOverviewCentralTotals'

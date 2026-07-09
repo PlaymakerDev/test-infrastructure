@@ -1,4 +1,5 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIRequestTrafficVolumeCentralList,
   APIResponseTrafficVolumeCentralList,
@@ -45,7 +46,10 @@ export const getTrafficVolumeOverviewAPI = (
   ApiService.fetchData<APIResponseTrafficVolumeOverview>({
     url: `${countingDeptBase(deptId)}/overview`,
     method: 'GET',
-    params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+    params: {
+      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...centralScope(deptId),
+    },
   })
 
 // Bureau-aware list — returns nested bureau → sub-dept → solutions tree.
@@ -58,7 +62,7 @@ export const getTrafficVolumeCentralListAPI = (
   ApiService.fetchData<APIResponseTrafficVolumeCentralList>({
     url: `${countingDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params,
+    params: { ...params, ...centralScope(deptId) },
   })
 
 // Random online cameras for the left-rail CCTV preview list. Defaults to 3
@@ -70,14 +74,17 @@ export const getTrafficVolumeRandomCamerasAPI = (
   ApiService.fetchData<APIResponseTrafficVolumeRandomCameras>({
     url: `${countingDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 3 },
+    params: { limit: params.limit ?? 3, ...centralScope(deptId) },
   })
 
 // Aggregated counters for the InfoCard right rail — camera + warranty totals.
+// Uses central/totals (bureau-aware, matches the central/list table + honours
+// scope=all at dept 0) so the cards agree with the list and the ส่วนกลาง view.
 export const getTrafficVolumeTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseTrafficVolumeTotals>({
-    url: `${countingDeptBase(deptId)}/overview/totals`,
+    url: `${countingDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 // Camera license keys for ONE solution. `{id}` = solution_id. Not dept-scoped.

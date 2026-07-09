@@ -1,4 +1,5 @@
 import ApiService from "../ApiService"
+import { centralScope } from "./scopeParam"
 import type {
   OverviewCentralItem,
   LightingOverviewResponse,
@@ -22,6 +23,7 @@ export const getLightingOverviewAPI = async (deptId: number) => {
   return ApiService.fetchData<LightingOverviewResponse>({
     url: `/lighting/departments/${deptId}/overview/`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 
@@ -31,6 +33,7 @@ export const getLightingCentralListAPI = async (deptId: number) => {
   return ApiService.fetchData<OverviewCentralItem[]>({
     url: `/lighting/departments/${deptId}/overview/central/list`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 
@@ -40,6 +43,7 @@ export const getLightingCentralTotalsAPI = async (deptId: number) => {
   return ApiService.fetchData<LightingOverviewTotals>({
     url: `/lighting/departments/${deptId}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 
@@ -49,6 +53,7 @@ export const getLightingRandomOnlineAPI = async (deptId: number) => {
   return ApiService.fetchData<DetailsResponse>({
     url: `/lighting/departments/${deptId}/overview/random-online`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 

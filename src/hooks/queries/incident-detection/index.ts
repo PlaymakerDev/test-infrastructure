@@ -1,7 +1,6 @@
 // Barrel for Incident Detection (/analytic) query hooks.
 export { incidentKeys } from './queryKeys'
 export { useIncidentOverview } from './useIncidentOverview'
-export { useIncidentTotals } from './useIncidentTotals'
 export { useIncidentCentralTotals } from './useIncidentCentralTotals'
 export { useIncidentCentralList } from './useIncidentCentralList'
 export { useIncidentSolutionCameras } from './useIncidentSolutionCameras'
