@@ -4,8 +4,10 @@ import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTrafficVolumeOverview } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 import type { CountingLocation } from '@/types/traffic-volume/overview-api'
 
 interface Props {}
@@ -38,7 +40,9 @@ const toGeoJSON = (locations: CountingLocation[]): TrafficVolumeFeatureCollectio
 /** Popup card shown on marker click — mirrors traffic-signal's popup style. */
 const TrafficVolumePopup: React.FC<{
   feature: GeoJSON.Feature
-}> = ({ feature }) => {
+  deptId: string
+  onNavigate: (url: string) => void
+}> = ({ feature, deptId, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
@@ -57,6 +61,12 @@ const TrafficVolumePopup: React.FC<{
       <p className='fs-11 text-slate-500 mt-1.5'>
         ปริมาณจราจร: {Number(p.total_count ?? 0).toLocaleString()} คัน
       </p>
+      {p.id != null && (
+        <PopupDetailLink
+          url={`/admin/traffic-volume/detail/${String(p.id)}?dept_id=${deptId}`}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }
@@ -75,6 +85,8 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   isReady,
 }) => {
   const { map, isLoaded } = useMap()
+  const router = useRouter()
+  const deptId = useDeptId()
 
   // Fit the map to all markers so the user sees the whole fleet at once.
   // Single-marker case can't form bounds → fall back to `flyTo` at a
@@ -138,7 +150,9 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       data={allData}
       cluster
       size={14}
-      popup={(f) => <TrafficVolumePopup feature={f} />}
+      popup={(f) => (
+        <TrafficVolumePopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
+      )}
       popupOptions={{ offset: 10, closeButton: false }}
     />
   )

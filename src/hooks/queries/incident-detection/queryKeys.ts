@@ -17,8 +17,6 @@ export const incidentKeys = {
       [...incidentKeys.all, 'overview', deptId] as const,
     map: (deptId: string | number) =>
       [...incidentKeys.overview.root(deptId), 'map'] as const,
-    totals: (deptId: string | number) =>
-      [...incidentKeys.overview.root(deptId), 'totals'] as const,
     centralTotals: (deptId: string | number) =>
       [...incidentKeys.overview.root(deptId), 'central-totals'] as const,
     centralList: (deptId: string | number) =>

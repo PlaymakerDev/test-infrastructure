@@ -71,7 +71,7 @@ const Card: React.FC<CardProps> = ({
       {unit && (
         <>
           {' '}
-          <span className='fs-12 font-normal' style={{ color }}>
+          <span className='fs-12 font-normal' style={{ color: '#979797' }}>
             {unit}
           </span>
         </>

@@ -4,8 +4,10 @@ import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useCrosswalkOverview } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
 interface Props {}
@@ -40,7 +42,9 @@ const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection =
 /** Popup card shown on marker click — mirrors traffic-volume's popup style. */
 const CrosswalkPopup: React.FC<{
   feature: GeoJSON.Feature
-}> = ({ feature }) => {
+  deptId: string
+  onNavigate: (url: string) => void
+}> = ({ feature, deptId, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
@@ -62,6 +66,12 @@ const CrosswalkPopup: React.FC<{
       <p className='fs-11 text-white'>
         กล้องทั้งหมด: {Number(p.camera_total ?? 0).toLocaleString()} กล้อง
       </p>
+      {p.id != null && (
+        <PopupDetailLink
+          url={`/admin/crosswalk/detail/${String(p.id)}?dept_id=${deptId}`}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }
@@ -80,6 +90,8 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   isReady,
 }) => {
   const { map, isLoaded } = useMap()
+  const router = useRouter()
+  const deptId = useDeptId()
 
   // Fit the map to all markers so the user sees the whole fleet at once.
   // Single-marker case can't form bounds → fall back to `flyTo` at a
@@ -140,7 +152,9 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       data={allData}
       cluster
       size={14}
-      popup={(f) => <CrosswalkPopup feature={f} />}
+      popup={(f) => (
+        <CrosswalkPopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
+      )}
       popupOptions={{ offset: 10, closeButton: false }}
     />
   )

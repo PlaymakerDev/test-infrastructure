@@ -26,3 +26,15 @@ export const useHomeDeptId = (): number => {
   const { data } = useDepartments()
   return useMemo(() => resolveHomeDeptId(data), [data])
 }
+
+/**
+ * Build the overall-page query string for a department.
+ *
+ * dept 0 = ส่วนกลาง — the central-list endpoints treat `id=0` as "the caller's
+ * own department group" unless `scope=all` is added, which returns every bureau
+ * the caller is permitted to see (all 18 for an unrestricted admin; still just
+ * their own for a restricted user — so it's always safe to send).
+ */
+export function deptQuery(deptId: number): string {
+  return deptId === 0 ? 'dept_id=0&scope=all' : `dept_id=${deptId}`
+}

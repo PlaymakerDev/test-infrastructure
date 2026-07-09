@@ -24,6 +24,7 @@ import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useRouter } from 'next/navigation'
 import { useMap } from '../hooks/useMap'
 import MarkerLayer from '../primitives/MarkerLayer'
+import PopupDetailLink from '../primitives/PopupDetailLink'
 
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
   CCTV: TbCamera,
@@ -92,11 +93,9 @@ const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
  *  Rendered in a detached React root (mapbox popup) so Next's router context is
  *  NOT available here. Navigation therefore comes in as an `onNavigate` prop
  *  captured from `DeviceClusterMarker` (which IS inside the router provider) —
- *  clicking runs a CLIENT-SIDE `router.push`, identical to the table detail
- *  links. This matters on deploy: the app is served under a `basePath` (e.g.
- *  `/atlas`), and `router.push` prepends it automatically. A raw `<a href>`
- *  hard-navigation would drop the prefix and 404 (…/dashvue/error-404). The
- *  `href` is kept only as a semantic/right-click fallback. */
+ *  clicking runs a CLIENT-SIDE `router.push` (via the shared `PopupDetailLink`
+ *  button), identical to the table detail links — and `router.push` prepends
+ *  the deploy `basePath` (e.g. `/atlas`) automatically. */
 export function DefaultDevicePopup({
   device,
   color,
@@ -120,10 +119,6 @@ export function DefaultDevicePopup({
   const detailUrl = route
     ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}` : ''}`
     : null
-  // basePath ('/atlas' in prod, '' in dev) — inlined by Next at build time. Only
-  // used for the href fallback so a middle-click / open-in-new-tab keeps the
-  // deploy prefix; left-click goes through onNavigate (router.push adds it too).
-  const basePath = process.env.__NEXT_ROUTER_BASEPATH ?? ''
   // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
   // a popup border/label on the dark map (per Figma: brighter).
   const brightColor = SYSTEM_BRIGHT[device.type] ?? color
@@ -153,31 +148,9 @@ export function DefaultDevicePopup({
         <span style={{ color: '#64748b' }}>สายทาง: </span>
         <span style={{ color: '#fff' }}>{device.road || '-'}</span>
       </div>
-      {/* ดูเพิ่มเติม → install point detail page. Left-click navigates
-        * client-side via `onNavigate` (router.push) so the deploy basePath is
-        * preserved; ctrl/cmd/middle-click fall through to the href to open a
-        * new tab as usual. */}
-      {detailUrl && (
-        <a
-          href={`${basePath}${detailUrl}`}
-          onClick={(e) => {
-            if (!onNavigate) return
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
-            e.preventDefault()
-            onNavigate(detailUrl)
-          }}
-          style={{
-            display: 'inline-block',
-            marginTop: 9,
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#FCD116',
-            textDecoration: 'none',
-          }}
-        >
-          ดูเพิ่มเติม →
-        </a>
-      )}
+      {/* ดูเพิ่มเติม → install point detail page. Shared button navigates
+        * client-side via `onNavigate` (router.push), preserving the basePath. */}
+      {detailUrl && <PopupDetailLink url={detailUrl} onNavigate={onNavigate} />}
     </div>
   )
 }

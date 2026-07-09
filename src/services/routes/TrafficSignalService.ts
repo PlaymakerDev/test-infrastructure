@@ -1,4 +1,5 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIRequestTrafficOverview,
   APIResponseTrafficOverview,
@@ -44,7 +45,10 @@ export const getTrafficOverviewAPI = (
     method: 'GET',
     // Only forward solution_id when present — keeps the URL clean for the
     // "show all" case.
-    params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+    params: {
+      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...centralScope(deptId),
+    },
   })
 
 // Use the `/central/` variant — when the dept is a bureau (department_type=1)
@@ -54,6 +58,7 @@ export const getTrafficTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseTrafficTotals>({
     url: `${trafficDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 export const getTrafficListAPI = (
@@ -73,6 +78,7 @@ export const getTrafficCentralListAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseTrafficCentralList>({
     url: `${trafficDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 export const getTrafficOverviewDropdownsAPI = (
@@ -92,7 +98,7 @@ export const getTrafficRandomCamerasAPI = (
   ApiService.fetchData<APIResponseTrafficRandomCameras>({
     url: `${trafficDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 4 },
+    params: { limit: params.limit ?? 4, ...centralScope(deptId) },
   })
 
 export const getTrafficCameraListAPI = (

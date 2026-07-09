@@ -1,4 +1,5 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIResponseIncidentOverview,
   APIResponseIncidentTotals,
@@ -35,13 +36,7 @@ export const getIncidentOverviewAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseIncidentOverview>({
     url: `${analyticBase(deptId)}/overview`,
     method: 'GET',
-  })
-
-/** Stat-card totals (flat dept scope — matches /overview & /overview/list, 41). */
-export const getIncidentTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseIncidentTotals>({
-    url: `${analyticBase(deptId)}/overview/totals`,
-    method: 'GET',
+    params: centralScope(deptId),
   })
 
 /** Bureau-scoped totals — same shape, but counts match `/overview/central/list`
@@ -51,6 +46,7 @@ export const getIncidentCentralTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseIncidentTotals>({
     url: `${analyticBase(deptId)}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging. */
@@ -58,6 +54,7 @@ export const getIncidentCentralListAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseIncidentCentralList>({
     url: `${analyticBase(deptId)}/overview/central/list`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 /** Flat paginated solution list (has offline_count directly). */
@@ -93,7 +90,7 @@ export const getIncidentRandomOnlineAPI = (
   ApiService.fetchData<APIResponseIncidentRandomOnline>({
     url: `${analyticBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit },
+    params: { limit, ...centralScope(deptId) },
   })
 
 /** Paginated per-camera list for ONE solution — detail Tab1 table. */

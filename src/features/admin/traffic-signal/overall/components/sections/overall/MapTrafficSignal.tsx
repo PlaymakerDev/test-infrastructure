@@ -4,8 +4,10 @@ import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
 interface Props {}
@@ -46,10 +48,12 @@ const toGeoJSON = (locations: TrafficLocation[]): TrafficFeatureCollection => ({
 })
 
 /** Popup card shown on marker click — matches VMS popup style for consistency. */
-const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean }> = ({
-  feature,
-  isOnline,
-}) => {
+const TrafficSignalPopup: React.FC<{
+  feature: GeoJSON.Feature
+  isOnline: boolean
+  deptId: string
+  onNavigate: (url: string) => void
+}> = ({ feature, isOnline, deptId, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
@@ -76,6 +80,12 @@ const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean
         PCU: {Number(p.total_pcu ?? 0).toLocaleString()} · Phase:{' '}
         {String(p.total_phases ?? '-')}
       </p>
+      {p.id != null && (
+        <PopupDetailLink
+          url={`/admin/traffic-signal/detail/${String(p.id)}?dept_id=${deptId}`}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }
@@ -91,6 +101,8 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   locations,
   isReady,
 }) => {
+  const router = useRouter()
+  const deptId = useDeptId()
   // One source for all markers — lets Mapbox cluster across online/offline
   // when two signals are geographically close (e.g. solutions 1557 and 2480
   // are ~25m apart). Separate layers would never cluster together.
@@ -119,6 +131,8 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
           <TrafficSignalPopup
             feature={f}
             isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+            deptId={deptId}
+            onNavigate={(u) => router.push(u)}
           />
         )}
         popupOptions={{ offset: 10, closeButton: false }}

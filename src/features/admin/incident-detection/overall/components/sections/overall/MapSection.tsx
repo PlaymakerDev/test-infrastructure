@@ -4,8 +4,10 @@ import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useIncidentOverview } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 
 interface Props { }
 
@@ -14,6 +16,7 @@ interface Props { }
 const MapSection: React.FC<Props> = () => {
   const deptId = useDeptId()
   const { data: overview } = useIncidentOverview(deptId)
+  const router = useRouter()
 
   // Only solutions with a valid [lng, lat]. A feature with `coordinates: null`
   // makes Mapbox reject the whole GeoJSON source (→ no markers render at all).
@@ -36,6 +39,7 @@ const MapSection: React.FC<Props> = () => {
       features: withCoord.map((l) => ({
         type: 'Feature' as const,
         properties: {
+          solutionId: l.solution.id,
           codeName: l.road.code_name,
           solutionName: l.solution.solution_name,
           totalCameras: l.camera.total,
@@ -68,6 +72,14 @@ const MapSection: React.FC<Props> = () => {
               <span style={{ color: '#66AEFF' }}>กล้อง {Number(f.properties?.totalCameras ?? 0).toLocaleString()}</span>
               <span style={{ color: '#FF5E00' }}>เหตุการณ์ {Number(f.properties?.eventsCount ?? 0).toLocaleString()}</span>
             </div>
+            {f.properties?.solutionId != null && (
+              <div>
+                <PopupDetailLink
+                  url={`/admin/incident-detection/detail/${f.properties?.solutionId}?dept_id=${deptId}`}
+                  onNavigate={(u) => router.push(u)}
+                />
+              </div>
+            )}
           </div>
         )}
       />

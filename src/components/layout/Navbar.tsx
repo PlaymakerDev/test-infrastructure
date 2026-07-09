@@ -40,7 +40,7 @@ import buddhistEra from 'dayjs/plugin/buddhistEra';
 import th from 'dayjs/locale/th';
 import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
-import { useHomeDeptId } from "@/hooks/queries/manage";
+import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import { Button, Dropdown, MenuProps } from "antd";
 
 // Feature systems — link to their overall page scoped to the logged-in user's
@@ -211,8 +211,9 @@ export default function Navbar() {
       // Tracking uses the design SVG; everything else uses its admin.ts icon.
       const OverrideIcon = item.label_key === "tracking" ? IconTracking : undefined
       // Owned menus land on the user's own department; others navigate plainly.
+      // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
       const href = DEPT_SCOPED_KEYS.has(item.label_key)
-        ? `${item.path}?dept_id=${homeDeptId}`
+        ? `${item.path}?${deptQuery(homeDeptId)}`
         : item.path
       return (
         <button
