@@ -2,13 +2,13 @@
 import React, { useMemo } from 'react'
 import { Col, Row } from 'antd'
 import dayjs from 'dayjs'
-import { TbWalk, TbX } from 'react-icons/tb'
+import { TbUsers, TbX } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import { thaiDateBE } from '@/utils/thaiDate'
 import { useCrosswalkGraph } from '@/hooks/queries/crosswalk'
 import { useDetailContext } from '../../../context'
 
-interface Props {}
+interface Props { }
 
 const ChartSection: React.FC<Props> = () => {
   const { id } = useDetailContext()
@@ -65,8 +65,11 @@ const ChartSection: React.FC<Props> = () => {
         <LineChart
           title='สถิติคนข้ามและการกดปุ่มประจำวัน'
           subtitle='เปรียบเทียบจำนวนคนข้ามและการกดปุ่มรายชั่วโมง'
-          icon={<TbWalk size={20} />}
-          accentColor='#ffffff'
+          icon={<TbUsers size={22} color='#66AEFF' />}
+          iconCircle={false}
+          accentColor='#66AEFF'
+          cardBackground='#00000080'
+          showGlow={false}
           data={crossingData}
           lines={[
             { dataKey: 'pedestrian', color: '#00E5CC', label: 'คนข้าม' },
@@ -84,16 +87,19 @@ const ChartSection: React.FC<Props> = () => {
         <LineChart
           title='สถิติการฝ่าฝืนสัญญาณไฟทางข้ามประจำวัน'
           subtitle='เปรียบเทียบจำนวนคน/รถฝ่าฝืนสัญญาณไฟรายชั่วโมง'
-          icon={<TbX size={20} />}
-          accentColor='#ffffff'
+          icon={<TbX size={22} color='#66AEFF' />}
+          iconCircle={false}
+          accentColor='#66AEFF'
+          cardBackground='#00000080'
+          showGlow={false}
           data={violationData}
           lines={[
-            { dataKey: 'person', color: '#FF6B9D', label: 'คนฝ่าฝืนสัญญาณไฟ' },
-            { dataKey: 'vehicle', color: '#FF7B00', label: 'รถฝ่าฝืนสัญญาณไฟ' },
+            { dataKey: 'person', color: '#E94C4C', label: 'คนฝ่าฝืนสัญญาณไฟ' },
+            { dataKey: 'vehicle', color: '#FFB100', label: 'รถฝ่าฝืนสัญญาณไฟ' },
           ]}
           stats={[
-            { value: violationStats.person, label: 'จำนวนคนฝ่าฝืนสัญญาณไฟทางข้าม', color: '#FF6B9D' },
-            { value: violationStats.vehicle, label: 'จำนวนรถฝ่าฝืนสัญญาณไฟทางข้าม', color: '#FF7B00' },
+            { value: violationStats.person, label: 'จำนวนคนฝ่าฝืนสัญญาณไฟทางข้าม', color: '#E94C4C' },
+            { value: violationStats.vehicle, label: 'จำนวนรถฝ่าฝืนสัญญาณไฟทางข้าม', color: '#FFB100' },
           ]}
           tooltipDate={dateLabel}
           tooltipShowDot

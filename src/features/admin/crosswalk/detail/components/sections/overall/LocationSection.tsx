@@ -18,7 +18,7 @@ const LocationSection: React.FC<Props> = (props) => {
       </div>
 
       {/* Info panel — row 2 on mobile, col 2 on desktop */}
-      <div className='lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+      <div className='lg:overflow-hidden lg:h-full flex flex-col gap-4'>
         <InfoCardSection />
       </div>
 
