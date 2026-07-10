@@ -14,7 +14,9 @@ import {
   APIResponsePostVMSSettingType,
   APIRequestPutVMSSettingType,
   APIResponsePutVMSSettingType,
-  APIResponseDeleteVMSSettingType
+  APIResponseDeleteVMSSettingType,
+  APIRequestVMSMediaUrl,
+  APIResponseVMSMediaUrl
 } from "@/types/control-vms/vms-api"
 
 // VMS
@@ -176,5 +178,14 @@ export const getVMSSettingByVMSIDAPI = async (params: APIRequestVMSSettingByVMSI
     method: 'GET',
     params: { ...params },
     paramsSerializer: { indexes: null },
+  })
+}
+
+// VMS MEDIA URL
+export const getVMSMediaUrlAPI = async (params: APIRequestVMSMediaUrl) => {
+  return ApiService.fetchData<APIResponseVMSMediaUrl, APIRequestVMSMediaUrl>({
+    url: `/vms/settings/media-urls`,
+    method: 'GET',
+    params: { ...params }
   })
 }

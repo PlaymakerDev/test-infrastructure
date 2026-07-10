@@ -32,7 +32,9 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
-    defaultValues: { schedule_ids: [] },
+    // Modal is `destroyOnHidden`, so this always mounts fresh with `data`
+    // already resolved — default every schedule to checked.
+    defaultValues: { schedule_ids: (data?.schedules ?? []).map((s) => s.id) },
   })
 
   const onSubmit = (values: FormValues) => {
@@ -50,8 +52,8 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           className='text-red-500! text-9xl! mb-5! mx-auto! block!'
         />
         <div className='text-center mt-3'>
-          <h2 className='text-black'>ยืนยันลบคำสั่งนี้หรือไม่?</h2>
-          <p className='text-black'>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+          <h2 className='text-black'>ยืนยันยกเลิกคำสั่งหรือไม่?</h2>
+          <p className='text-black'>ระบบจะยกเลิกคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
         </div>
       </section>
 

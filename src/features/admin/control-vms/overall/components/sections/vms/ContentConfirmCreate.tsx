@@ -4,6 +4,7 @@ import React, { useCallback, useMemo } from 'react'
 import { INIT_OPEN_CONFIRM_CREATE, INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { usePostVMSMedia } from '../../../hooks/usePostVMSMedia'
+import { usePutVMSMedia } from '../../../hooks/usePutVMSMedia'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -15,22 +16,29 @@ dayjs.locale('th')
 interface Props {
   data?: APIResponseVMSSettingByVMSID
   body?: APIRequestPostVMSMedia
+  /** Present when confirming an EDIT (routes to PUT); absent for CREATE (POST). */
+  id?: string | number
 }
 
 const ContentConfirmCreate: React.FC<Props> = (props) => {
-  const { data, body } = props
+  const { data, body, id } = props
   const { setOpenConfirmCreate, setAddMode, setUpdateScheduleState } = useControlVMSContext()
   const postMedia = usePostVMSMedia()
+  const putMedia = usePutVMSMedia()
+  const isPending = postMedia.isPending || putMedia.isPending
 
   const handleConfirm = () => {
     if (!body) return
-    postMedia.mutate(body, {
-      onSuccess: () => {
-        setOpenConfirmCreate(INIT_OPEN_CONFIRM_CREATE)
-        setAddMode(false)
-        setUpdateScheduleState(INIT_UPDATE_SCHEDULE)
-      },
-    })
+    const onSuccess = () => {
+      setOpenConfirmCreate(INIT_OPEN_CONFIRM_CREATE)
+      setAddMode(false)
+      setUpdateScheduleState(INIT_UPDATE_SCHEDULE)
+    }
+    if (id) {
+      putMedia.mutate({ id, data: body }, { onSuccess })
+    } else {
+      postMedia.mutate(body, { onSuccess })
+    }
   }
 
   const renderCurrentScheduleTime = useCallback((schedule: ScheduleByVMSID[] | undefined) => {
@@ -80,7 +88,8 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
   }, [renderCurrentScheduleTime])
 
   const renderCurrentSchedule = useMemo(() => {
-    if (!data || data.length === 0) return <Empty description="ไม่พบข้อมูล" />
+    // if (!data || data.length === 0) return <Empty description="ไม่พบข้อมูล" />
+    if (!data || data.length === 0) return
     return (
       <div
         className='h-full bg-orange-500/20 border-2 rounded-lg px-4 py-2 lg:px-8 lg:py-4 border-orange-500'
@@ -145,7 +154,7 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
               shape='round'
               className='w-full! sm:w-auto!'
               onClick={() => setOpenConfirmCreate(INIT_OPEN_CONFIRM_CREATE)}
-              disabled={postMedia.isPending}
+              disabled={isPending}
             >
               <p className='fs-12'>ยกเลิก</p>
             </Button>
@@ -155,8 +164,8 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
             htmlType='button'
             shape='round'
             className='w-full! sm:w-auto!'
-            loading={postMedia.isPending}
-            disabled={postMedia.isPending}
+            loading={isPending}
+            disabled={isPending}
             onClick={handleConfirm}
           >
             <p className='fs-12'>ยืนยัน</p>

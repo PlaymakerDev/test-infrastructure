@@ -33,7 +33,11 @@ const DetailTitle: React.FC<Props> = (props) => {
             shape="round"
             icon={<TbAppWindow />}
             className='w-full! sm:w-auto!'
-            onClick={() => window.open(bureauSign?.anydesk ? `https://remote.anydesk.com/${bureauSign?.anydesk}` : '#', '_blank')}
+            // onClick={() => window.open(bureauSign?.anydesk ? `https://remote.anydesk.com/${bureauSign?.anydesk}` : '#', '_blank')}
+            onClick={() => {
+              if (!bureauSign?.anydesk) return
+              window.location.href = `anydesk:${bureauSign.anydesk}`
+            }}
           >
             <p className='fs-12'>Anydesk : {bureauSign?.anydesk || '-'}</p>
           </Button>
