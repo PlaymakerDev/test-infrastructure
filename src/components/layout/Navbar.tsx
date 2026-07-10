@@ -138,7 +138,14 @@ export default function Navbar() {
   const homeDeptId = useHomeDeptId()
   // Global "focus the map" toggle — hides every card/panel on overall pages
   // that host a map. Bound to the TbZoomInArea button below.
-  const { isMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
+  const { isMapFocus, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
+
+  // Reset focus mode whenever the route changes — otherwise the toggle would
+  // persist across navigations and land the user on a page with panels
+  // already hidden.
+  useEffect(() => {
+    setMapFocus(false)
+  }, [pathname, setMapFocus])
 
   useEffect(() => {
     const interval = setInterval(() => {
