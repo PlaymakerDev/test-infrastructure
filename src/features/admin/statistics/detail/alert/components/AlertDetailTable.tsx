@@ -1,57 +1,48 @@
 "use client"
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useSearchParams } from 'next/navigation'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import { getLightingAlertsAPI } from '@/services/routes/LightingService'
+import type { AlertItem } from '@/types/lighting'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-export type AlertLevelType = 'Warning' | 'Alert'
-export type AlertLineStatusType = 'UP' | 'DOWN'
-
-export interface AlertSubRecord {
-  key: string
-  datetime: string
-  device: string
-  event: string
-  level: AlertLevelType
-  lineStatus: AlertLineStatusType
-}
-
-export interface AlertRecord {
-  key: string
-  datetime: string
-  device: string
-  event: string
-  level: AlertLevelType
-  lineStatus: AlertLineStatusType
-  children?: AlertSubRecord[]
-}
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 // ── Badges ─────────────────────────────────────────────────────────────────────
 
-const LevelBadge = ({ label }: { label: AlertLevelType }) => {
-  const color = label === 'Warning' ? '#FF9D00' : '#E94C4C'
+const levelOf = (equipmentId: string): 'Warning' | 'Alert' => {
+  if (/^alert/i.test(equipmentId)) return 'Alert'
+  return 'Warning'
+}
+
+const LevelBadge = ({ equipmentId }: { equipmentId: string }) => {
+  const level = levelOf(equipmentId)
+  const color = level === 'Warning' ? '#FF9D00' : '#E94C4C'
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
       fontSize: 12, whiteSpace: 'nowrap',
       border: `1px solid ${color}`, color,
     }}>
-      {label}
+      {level}
     </span>
   )
 }
 
-const LineStatusBadge = ({ label }: { label: AlertLineStatusType }) => {
-  const color = label === 'UP' ? '#66AEFF' : '#E94C4C'
+const LineStatusBadge = ({ status }: { status: string }) => {
+  const color = status === 'UP' ? '#66AEFF' : '#E94C4C'
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
       fontSize: 12, whiteSpace: 'nowrap',
       border: `1px solid ${color}`, color,
     }}>
-      {label}
+      {status}
     </span>
   )
 }
@@ -64,94 +55,78 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'DOWN', label: 'DOWN', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white', badgeIdleClass: 'bg-red-500/20 text-red-400' },
 ]
 
-// ── Props ──────────────────────────────────────────────────────────────────────
-
-interface Props {
-  data?: AlertRecord[]
-  loading?: boolean
-}
-
-// ── Mock data ──────────────────────────────────────────────────────────────────
-
-export const ALERT_MOCK_DATA: AlertRecord[] = [
-  { key: '1', datetime: '20 เม.ย. 2569 11:35:33', device: 'Warning Transformer เฟส 1 ตัว', event: 'อาจเกิดโอเวอร์โหลด / ซ่อมบำรุง', level: 'Warning', lineStatus: 'UP' },
-  { key: '2', datetime: '20 เม.ย. 2569 12:10:05', device: 'Warning Transformer เฟส 2 ตัว', event: 'อาจเกิดไฟช็อตในตู้ / ซ่อมบำรุง', level: 'Warning', lineStatus: 'DOWN' },
-  { key: '3', datetime: '20 เม.ย. 2569 13:22:18', device: 'Alert Transformer เฟส 3 ตัว', event: 'กลับมาใช้งานได้', level: 'Alert', lineStatus: 'UP' },
-  { key: '4', datetime: '19 เม.ย. 2569 09:45:10', device: 'Alert Line สาย A', event: 'อาจเกิดโอเวอร์โหลด / ซ่อมบำรุง', level: 'Alert', lineStatus: 'DOWN' },
-  { key: '5', datetime: '19 เม.ย. 2569 08:22:55', device: 'Warning Line สาย B', event: 'กลับมาใช้งานได้', level: 'Warning', lineStatus: 'UP' },
-  { key: '6', datetime: '18 เม.ย. 2569 17:05:44', device: 'Alert วงจรหลัก', event: 'อาจเกิดไฟช็อตในตู้ / ซ่อมบำรุง', level: 'Alert', lineStatus: 'DOWN' },
-  { key: '7', datetime: '18 เม.ย. 2569 14:30:20', device: 'Warning วงจรสำรอง', event: 'กลับมาใช้งานได้', level: 'Warning', lineStatus: 'UP' },
-  { key: '8', datetime: '17 เม.ย. 2569 11:10:05', device: 'Alert สายส่งไฟฟ้า', event: 'อาจเกิดโอเวอร์โหลด / ซ่อมบำรุง', level: 'Alert', lineStatus: 'DOWN' },
-]
-
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const AlertDetailTable: React.FC<Props> = ({ data = ALERT_MOCK_DATA, loading = false }) => {
-  const [activeTab, setActiveTab] = React.useState('ALL')
+const AlertDetailTable: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('ALL')
+  const searchParams = useSearchParams()
+  const imei = searchParams.get('detail') ?? ''
+  const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [loaded, setLoaded] = useState(false)
 
-  const columns: ColumnsType<AlertRecord> = React.useMemo(() => [
+  useEffect(() => {
+    let active = true
+    if (!imei) {
+      setLoaded(true)
+      return
+    }
+    getLightingAlertsAPI(imei, { limit: 100, sort: 'DESC' })
+      .then((res) => { if (active) setAlerts(res.data?.res_data ?? []) })
+      .catch((err) => console.error('alerts failed:', err))
+      .finally(() => { if (active) setLoaded(true) })
+    return () => { active = false }
+  }, [imei])
+
+  const columns: ColumnsType<AlertItem> = useMemo(() => [
     {
       title: 'วันที่และเวลา',
-      dataIndex: 'datetime',
-      key: 'datetime',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
       align: 'center',
       width: 200,
+      render: (t: string) => (
+        <span style={{ color: '#FFFFFF' }}>
+          {t ? dayjs(t).format('D MMM BBBB HH:mm:ss') : '-'}
+        </span>
+      ),
     },
     {
       title: 'อุปกรณ์',
-      dataIndex: 'device',
-      key: 'device',
+      dataIndex: 'equipment_id',
+      key: 'equipment_id',
       align: 'center',
       width: 260,
-      render: (value: string, record: AlertRecord) => (
-        <LevelBadge label={record.level} />
-      ),
+      render: (eid: string) => <LevelBadge equipmentId={eid} />,
     },
     {
       title: 'เหตุการณ์',
-      dataIndex: 'event',
-      key: 'event',
+      dataIndex: 'incident',
+      key: 'incident',
       align: 'center',
       width: 260,
-      render: (value: string) => (
-        <span style={{ color: '#FFFFFF' }}>{value}</span>
-      ),
+      render: (v: string) => <span style={{ color: '#66AEFF' }}>{v}</span>,
     },
     {
       title: 'สถานะ',
-      dataIndex: 'lineStatus',
-      key: 'lineStatus',
+      dataIndex: 'status',
+      key: 'status',
       align: 'center',
       width: 120,
       fixed: 'right',
-      render: (value: AlertLineStatusType) => <LineStatusBadge label={value} />,
+      render: (s: string) => <LineStatusBadge status={s} />,
     },
   ], [])
 
-  const flatData = React.useMemo(() => {
-    const all: AlertRecord[] = []
-    data.forEach((r) => {
-      all.push(r)
-      r.children?.forEach((c) => all.push(c as AlertRecord))
-    })
-    return all
-  }, [data])
+  const stats = useMemo(() => ({
+    ALL: alerts.length,
+    UP: alerts.filter((a) => a.status === 'UP').length,
+    DOWN: alerts.filter((a) => a.status === 'DOWN').length,
+  }), [alerts])
 
-  const stats = React.useMemo(() => ({
-    ALL: flatData.length,
-    UP: flatData.filter((r) => r.lineStatus === 'UP').length,
-    DOWN: flatData.filter((r) => r.lineStatus === 'DOWN').length,
-  }), [flatData])
-
-  const filteredData = React.useMemo(() => {
-    if (activeTab === 'ALL') return data
-    return data
-      .map((r) => ({
-        ...r,
-        children: r.children?.filter((c) => c.lineStatus === activeTab),
-      }))
-      .filter((r) => r.lineStatus === activeTab || (r.children && r.children.length > 0))
-  }, [activeTab, data])
+  const filteredData = useMemo(() => {
+    if (activeTab === 'ALL') return alerts
+    return alerts.filter((a) => a.status === activeTab)
+  }, [activeTab, alerts])
 
   return (
     <div>
@@ -163,18 +138,17 @@ const AlertDetailTable: React.FC<Props> = ({ data = ALERT_MOCK_DATA, loading = f
           onFilterChange={(key) => setActiveTab(key)}
         />
       </section>
-      <Table<AlertRecord>
+      <Table<AlertItem>
         columns={columns}
         dataSource={filteredData}
-        loading={loading}
+        loading={loaded ? false : true}
         pagination={false}
         size="middle"
-        rowKey="key"
+        rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
         scroll={{ x: 'max-content' }}
-        indentSize={24}
       />
     </div>
   )
 }
 
-export default React.memo<Props>(AlertDetailTable)
+export default React.memo(AlertDetailTable)

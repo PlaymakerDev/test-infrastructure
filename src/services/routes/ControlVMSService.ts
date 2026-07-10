@@ -1,4 +1,4 @@
-import { APIRequestPostVMSBatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSBatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSBatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSBatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingLatest, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -163,6 +163,14 @@ export const getVMSSettingStatusCountAPI = async () => {
 export const getVMSSettingStatusAPI = async () => {
   return ApiService.fetchData<APIResponseVMSSettingStatus>({
     url: `/vms/settings/statuses`,
+    method: 'GET',
+  })
+}
+
+// LATEST
+export const getVMSSettingLatestAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSSettingLatest>({
+    url: `/vms/settings/latest`,
     method: 'GET',
   })
 }

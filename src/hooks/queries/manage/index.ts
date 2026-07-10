@@ -37,3 +37,6 @@ export { useRegions } from './useRegions'
 
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'
+
+// Notifications
+export { useNotificationsSummary } from './useNotificationsSummary'

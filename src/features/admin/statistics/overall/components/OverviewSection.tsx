@@ -1,7 +1,51 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
+import dayjs from 'dayjs'
+import { useTopPowerRoads } from '@/hooks/queries/lighting'
+import { useNotificationsSummary } from '@/hooks/queries/manage'
+import { useVMSSettingLatest } from '@/features/admin/control-vms/overall/hooks/useVMSSettingLatest'
+import type { NotificationSourceType, NotificationSummaryItem } from '@/types/manage/notification-api'
 
-const CARDS = [
+// dept_id=0 is the "all departments" aggregate — confirmed against the live
+// API (its top result matches this card's original mock road, ฉช.3001).
+const TOP_POWER_ROADS_DEPT_ID = 0
+
+// Matches TitleSection.tsx's PERIOD_OPTIONS values exactly — that's the
+// component actually driving the `?period=` URL param this section reads.
+// Both card APIs require start_date/end_date, so "ALL" needs real (very wide)
+// bounds rather than omitted params.
+const ALL_TIME_START = '2000-01-01'
+const DATE_FORMAT = 'YYYY-MM-DD'
+
+const periodToRange = (period: string): { startDate: string; endDate: string } => {
+  const now = dayjs()
+  switch (period) {
+    case 'TODAY':
+      return { startDate: now.format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_7_DAYS':
+      return { startDate: now.subtract(6, 'day').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_MONTH':
+      return { startDate: now.startOf('month').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_YEAR':
+      return { startDate: now.startOf('year').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_YEAR': {
+      const lastYear = now.subtract(1, 'year')
+      return { startDate: lastYear.startOf('year').format(DATE_FORMAT), endDate: lastYear.endOf('year').format(DATE_FORMAT) }
+    }
+    case 'ALL':
+    default:
+      return { startDate: ALL_TIME_START, endDate: now.format(DATE_FORMAT) }
+  }
+}
+
+const pct = (part: number, total: number) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0.0')
+
+// "line_check" (the only literal the API sends for source_type=lighting) → "Line Check".
+const formatTypeName = (name: string) =>
+  name.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
+const BASE_CARDS = [
   {
     id: 1, src: '/images/statistics/Frame1.png', imageBg: true, value: '97,895',
     label: 'Incident Detection', glowColor: '#66AEFF',
@@ -23,6 +67,87 @@ const CARDS = [
 ]
 
 const OverviewSection: React.FC = () => {
+  const searchParams = useSearchParams()
+  const period = searchParams.get('period') || 'ALL'
+  const { startDate, endDate } = useMemo(() => periodToRange(period), [period])
+  const { data: topPowerRoads, isLoading: topPowerRoadsLoading } = useTopPowerRoads(TOP_POWER_ROADS_DEPT_ID, startDate, endDate, 1)
+  const topRoad = topPowerRoads?.[0]
+
+  const { data: notificationsSummary, isLoading: notificationsLoading } = useNotificationsSummary(startDate, endDate)
+  const bySource = useMemo(() => {
+    const map = {} as Record<NotificationSourceType, NotificationSummaryItem>
+    for (const item of notificationsSummary ?? []) map[item.source_type] = item
+    return map
+  }, [notificationsSummary])
+
+  const { data: vmsLatestRes, isLoading: vmsLatestLoading } = useVMSSettingLatest()
+  const vmsLatest = vmsLatestRes?.data
+
+  const CARDS = useMemo(() => BASE_CARDS.map((card) => {
+    if (card.id === 1) {
+      // Incident Detection
+      const s = bySource.analytic
+      return {
+        ...card,
+        detail1: {
+          ...card.detail1,
+          subtitle: notificationsLoading ? '-' : (s?.most_type?.name ?? '-'),
+          summary: notificationsLoading || !s?.most_type
+            ? '-'
+            : `${s.most_count.toLocaleString()} เหตุการณ์ (${pct(s.most_count, s.count)}%)`,
+        },
+        detail2: {
+          ...card.detail2,
+          subtitle: notificationsLoading ? '-' : (s?.most_department?.department_short_name ?? '-'),
+          summary: notificationsLoading || !s?.most_department
+            ? '-'
+            : `${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
+        },
+      }
+    }
+    if (card.id === 2) {
+      // Traffic Lighting — detail1 already wired to top-power-roads above.
+      const s = bySource.lighting
+      return {
+        ...card,
+        detail1: {
+          ...card.detail1,
+          subtitle: topPowerRoadsLoading ? '-' : (topRoad?.road.code_name ?? '-'),
+          summary: topPowerRoadsLoading || !topRoad
+            ? '-'
+            : `${topRoad.install_points} จุดติดตั้ง (${topRoad.total_kw.toFixed(1)} kW)`,
+        },
+        detail2: {
+          ...card.detail2,
+          subtitle: notificationsLoading ? '-' : (s?.most_type ? formatTypeName(s.most_type.name) : '-'),
+          summary: notificationsLoading || !s?.most_department
+            ? '-'
+            : `${s.most_department.department_short_name} ${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
+        },
+      }
+    }
+    // VMS
+    const s = bySource.vms_setting
+    return {
+      ...card,
+      value: notificationsLoading ? '-' : (s?.count.toLocaleString() ?? '0'),
+      detail1: {
+        ...card.detail1,
+        subtitle: notificationsLoading ? '-' : (s?.most_type?.name ?? '-'),
+        summary: notificationsLoading || !s?.most_type
+          ? '-'
+          : `${s.most_count.toLocaleString()} จุดติดตั้ง (${pct(s.most_count, s.count)}%)`,
+      },
+      detail2: {
+        ...card.detail2,
+        subtitle: vmsLatestLoading ? '-' : (vmsLatest?.type_name ?? '-'),
+        summary: vmsLatestLoading || !vmsLatest?.department
+          ? '-'
+          : vmsLatest.department.department_short_name,
+      },
+    }
+  }), [topPowerRoadsLoading, topRoad, notificationsLoading, bySource, vmsLatestLoading, vmsLatest])
+
   return (
     <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
       {CARDS.map(card => (

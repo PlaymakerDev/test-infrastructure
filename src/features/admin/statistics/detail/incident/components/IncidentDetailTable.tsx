@@ -2,9 +2,13 @@
 import React from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useSearchParams } from 'next/navigation'
 import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
+import { useIncidentDetailContext } from '../context'
+import dayjs from 'dayjs'
 
-export type IncidentStatusType = 'รถจอดไหล่ทาง' | 'งานก่อสร้าง' | 'ปิดกั้นทาง'
+export type IncidentStatusType = 'รถเกิดอุบัติเหตุ' | 'รถจอดเสีย' | 'รถจอดไหล่ทาง' | 'งานก่อสร้าง' | 'ปิดกั้นทาง' | 'รถย้อนเลน' | 'รถบรรทุกวิ่งเลนขวา' | 'รถความเร็วเกินกำหนด' | 'จราจรติดขัด'
 
 export interface IncidentRecord {
   key: string
@@ -18,11 +22,17 @@ export interface IncidentRecord {
 
 const StatusBadge = ({ label }: { label: IncidentStatusType }) => {
   const colorMap: Record<IncidentStatusType, string> = {
+    'รถเกิดอุบัติเหตุ': '#FF0000',
+    'รถจอดเสีย': '#FFA500',
     'รถจอดไหล่ทาง': '#00AEFF',
     'งานก่อสร้าง': '#B2FF00',
     'ปิดกั้นทาง': '#FF00F2',
+    'รถย้อนเลน': '#FF4444',
+    'รถบรรทุกวิ่งเลนขวา': '#FF8800',
+    'รถความเร็วเกินกำหนด': '#FFFF00',
+    'จราจรติดขัด': '#FF6600',
   }
-  const color = colorMap[label]
+  const color = colorMap[label] ?? '#979797'
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
@@ -41,26 +51,33 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'ปิดกั้นทาง', label: 'ปิดกั้นทาง', colorPrimary: '#FF00F2', colorTextLightSolid: '#0A0A0A', badgeActiveClass: 'bg-[#7a0075] text-white', badgeIdleClass: 'bg-[#FF00F2]/20 text-[#FF00F2]' },
 ]
 
-interface Props {
-  data?: IncidentRecord[]
-  loading?: boolean
-}
-
-export const INCIDENT_MOCK_DATA: IncidentRecord[] = [
-  { key: '1', datetime: '18/04/2569  13:28', eventType: 'รถจอดไหล่ทาง', cameraName: '68FTD-TAK3002-FAI010-จุดที่5-กม.1+830-มุ่งหน้าถนนทางหลวง ทล.105', ipAddress: '192.168.3.169', status: 'รถจอดไหล่ทาง' },
-  { key: '2', datetime: '18/04/2569  14:05', eventType: 'รถจอดไหล่ทาง', cameraName: '68FTD-TAK3005-FAI022-จุดที่2-กม.3+200-มุ่งหน้าทางหลวง ทล.12', ipAddress: '192.168.3.172', status: 'รถจอดไหล่ทาง' },
-  { key: '3', datetime: '18/04/2569  15:42', eventType: 'รถจอดไหล่ทาง', cameraName: '68FTD-TAK3008-FAI031-จุดที่1-กม.0+950-มุ่งหน้าถนนทางหลวง ทล.105', ipAddress: '192.168.3.178', status: 'รถจอดไหล่ทาง' },
-  { key: '4', datetime: '19/04/2569  08:15', eventType: 'รถจอดไหล่ทาง', cameraName: '68FTD-TAK3011-FAI044-จุดที่3-กม.5+100-มุ่งหน้าถนนทางหลวง ทล.1', ipAddress: '192.168.4.101', status: 'รถจอดไหล่ทาง' },
-  { key: '5', datetime: '19/04/2569  09:33', eventType: 'รถจอดไหล่ทาง', cameraName: '68FTD-TAK3014-FAI055-จุดที่1-กม.2+400-มุ่งหน้าถนนทางหลวง ทล.105', ipAddress: '192.168.4.115', status: 'รถจอดไหล่ทาง' },
-  { key: '6', datetime: '18/04/2569  17:05', eventType: 'งานก่อสร้าง', cameraName: '68FTD-TAK3016-FAI062-จุดที่4-กม.7+600-มุ่งหน้าถนนทางหลวง ทล.12', ipAddress: '192.168.4.122', status: 'งานก่อสร้าง' },
-  { key: '7', datetime: '18/04/2569  14:30', eventType: 'งานก่อสร้าง', cameraName: '68FTD-TAK3019-FAI073-จุดที่2-กม.9+200-มุ่งหน้าถนนทางหลวง ทล.105', ipAddress: '192.168.4.133', status: 'งานก่อสร้าง' },
-  { key: '8', datetime: '17/04/2569  11:10', eventType: 'งานก่อสร้าง', cameraName: '68FTD-TAK3022-FAI084-จุดที่6-กม.11+800-มุ่งหน้าถนนทางหลวง ทล.1', ipAddress: '192.168.5.101', status: 'งานก่อสร้าง' },
-  { key: '9', datetime: '17/04/2569  09:30', eventType: 'ปิดกั้นทาง', cameraName: '68FTD-TAK3025-FAI095-จุดที่3-กม.14+300-มุ่งหน้าถนนทางหลวง ทล.105', ipAddress: '192.168.5.108', status: 'ปิดกั้นทาง' },
-  { key: '10', datetime: '16/04/2569  15:55', eventType: 'ปิดกั้นทาง', cameraName: '68FTD-TAK3028-FAI106-จุดที่1-กม.16+700-มุ่งหน้าถนนทางหลวง ทล.12', ipAddress: '192.168.5.116', status: 'ปิดกั้นทาง' },
-]
-
-const IncidentDetailTable: React.FC<Props> = ({ data = INCIDENT_MOCK_DATA, loading = false }) => {
+const IncidentDetailTable: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('ALL')
+  const { dateRange } = useIncidentDetailContext()
+  const searchParams = useSearchParams()
+  const solutionId = searchParams.get('detail') ?? ''
+
+  const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
+  const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
+
+  const { data, isLoading } = useIncidentTransactions({
+    solution_id: solutionId,
+    start_date: startDate,
+    end_date: endDate,
+  })
+
+  const records: IncidentRecord[] = React.useMemo(() => {
+    const items = data?.res_data ?? []
+    return items.map((item) => ({
+      key: String(item.id),
+      datetime: dayjs(item.date_time).format('DD/MM/YYYY HH:mm'),
+      eventType: (item.analytic_type_info?.analytic_type_name_th ?? 'อื่นๆ') as IncidentStatusType,
+      cameraName: item.camera?.camera_name ?? '-',
+      ipAddress: item.camera?.ip_address ?? '-',
+      imageUrl: item.image_path,
+      status: (item.analytic_type_info?.analytic_type_name_th ?? 'อื่นๆ') as IncidentStatusType,
+    }))
+  }, [data])
 
   const columns: ColumnsType<IncidentRecord> = React.useMemo(() => [
     {
@@ -81,29 +98,36 @@ const IncidentDetailTable: React.FC<Props> = ({ data = INCIDENT_MOCK_DATA, loadi
     },
     {
       title: 'ภาพขณะเกิดเหตุ', dataIndex: 'imageUrl', key: 'imageUrl', align: 'center', width: 140,
-      render: () => (
+      render: (url?: string) => (
         <div style={{
           width: 100, height: 64, borderRadius: 6, overflow: 'hidden',
           backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto', border: '1px solid #333',
         }}>
-          <img src="/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {url
+            ? <img src={url} alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <img src="/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          }
         </div>
       ),
     },
   ], [])
 
-  const stats = React.useMemo(() => ({
-    ALL: data.length,
-    'รถจอดไหล่ทาง': data.filter((r) => r.status === 'รถจอดไหล่ทาง').length,
-    'งานก่อสร้าง': data.filter((r) => r.status === 'งานก่อสร้าง').length,
-    'ปิดกั้นทาง': data.filter((r) => r.status === 'ปิดกั้นทาง').length,
-  }), [data])
+  const stats = React.useMemo(() => {
+    const typeDetails = data?.summary?.type_details ?? []
+    const getCount = (names: string[]) => typeDetails.filter((t) => names.includes(t.type_name_th)).reduce((sum, t) => sum + t.count, 0)
+    return {
+      ALL: data?.summary?.total ?? records.length,
+      'รถจอดไหล่ทาง': getCount(['รถจอดไหล่ทาง']),
+      'งานก่อสร้าง': getCount(['งานก่อสร้าง']),
+      'ปิดกั้นทาง': getCount(['ปิดกั้นทาง']),
+    }
+  }, [data, records.length])
 
   const filteredData = React.useMemo(() => {
-    if (activeTab === 'ALL') return data
-    return data.filter((r) => r.status === activeTab)
-  }, [activeTab, data])
+    if (activeTab === 'ALL') return records
+    return records.filter((r) => r.status === activeTab)
+  }, [activeTab, records])
 
   return (
     <div>
@@ -118,7 +142,7 @@ const IncidentDetailTable: React.FC<Props> = ({ data = INCIDENT_MOCK_DATA, loadi
       <Table<IncidentRecord>
         columns={columns}
         dataSource={filteredData}
-        loading={loading}
+        loading={isLoading}
         pagination={false}
         size="middle"
         rowKey="key"
@@ -128,4 +152,4 @@ const IncidentDetailTable: React.FC<Props> = ({ data = INCIDENT_MOCK_DATA, loadi
   )
 }
 
-export default React.memo<Props>(IncidentDetailTable)
+export default React.memo(IncidentDetailTable)

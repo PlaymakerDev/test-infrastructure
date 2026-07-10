@@ -5,7 +5,10 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
 import { IncidentDetailProvider, useIncidentDetailContext } from '../context'
-import { ChartElectricalIncident, IncidentDetailSidebar, IncidentDetailTable } from '../components'
+import { IncidentDetailSidebar, IncidentDetailTable } from '../components'
+import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
+import EventDonutSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventDonutSection'
+import EventTrendSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventTrendSection'
 import { ROUTE_ITEMS } from '../../../data/routeItems'
 
 const { RangePicker } = DatePicker
@@ -16,8 +19,23 @@ const IncidentDetailContent: React.FC = () => {
   const route = searchParams.get('route') || ''
   const detail = searchParams.get('detail') || ''
   const { dateRange, setDateRange } = useIncidentDetailContext()
+  const { routeItems } = useLiveIncidentRouteItems()
 
-  const routeItem = ROUTE_ITEMS.find((r) => r.name === route)
+  const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
+  const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
+
+  // Lookup the real names from live data instead of showing raw IDs.
+  const routeItem = routeItems.find((r) => String(r.id) === route)
+  const routeName = routeItem?.name ?? route
+  const detailLabel = (() => {
+    for (const r of routeItems) {
+      for (const s of r.sub3) {
+        const found = s.detail.find((d) => (typeof d === 'string' ? d : String(d.id)) === detail)
+        if (found) return typeof found === 'string' ? found : found.label
+      }
+    }
+    return detail
+  })()
   const isExpired = (routeItem?.sub3.length ?? 0) >= 99
   const warrantyColor = isExpired ? '#979797' : '#05F2DB'
   const warrantyLabel = isExpired ? 'หมดค้ำ' : 'ในค้ำ'
@@ -35,10 +53,10 @@ const IncidentDetailContent: React.FC = () => {
           style={{ marginTop: 8 }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 className="text-(--yellow)">สายทาง {route || detail || '-'}</h1>
+          <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
             <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
-              {detail || '67 - ชม.3028(31) ป้าย 1 : กม.0+300'}
+              {detailLabel || '-'}
             </p>
             <img src="/images/statistics/icbt.png" alt="" width={25} height={25} />
             <div style={{
@@ -95,7 +113,10 @@ const IncidentDetailContent: React.FC = () => {
       <section className="mt-6 flex flex-col lg:flex-row gap-4 lg:gap-6 items-stretch">
         <IncidentDetailSidebar />
         <div className="flex flex-col flex-1 gap-4">
-          <ChartElectricalIncident />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 min-w-0"><EventDonutSection solutionId={detail} height={260} donutSize={260} legendMaxHeight={260} startDate={startDate} endDate={endDate} /></div>
+            <div className="flex-1 min-w-0"><EventTrendSection solutionId={detail} height={260} showPeakBadge startDate={startDate} endDate={endDate} /></div>
+          </div>
           <IncidentDetailTable />
         </div>
       </section>

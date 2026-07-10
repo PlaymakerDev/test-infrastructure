@@ -187,6 +187,28 @@ export interface VMSSettingStatusCount {
 // STATUS
 export type APIResponseVMSSettingStatus = VMSSettingType[]
 
+// LATEST
+export interface APIResponseVMSSettingLatest {
+  type_name: string
+  department: VMSSettingLatestDepartment
+}
+
+export interface VMSSettingLatestDepartment {
+  id: number
+  department_group: number
+  province: string
+  department_office_no: number
+  department_name: string
+  department_short_name: string
+  is_external: number
+  province_id: number
+  line_token: string
+  line_group_token: string
+  is_urban: number
+  department_type: number
+  region_id: number
+}
+
 // BY VMS ID
 export interface APIRequestVMSSettingByVMSID {
   vms_ids?: number[]

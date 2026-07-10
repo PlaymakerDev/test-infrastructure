@@ -155,3 +155,58 @@ export const ROUTE_ITEMS = [
     })),
   },
 ]
+
+// A leaf row is normally just its display string (the mock array below).
+// API-backed data additionally carries a compact `id` so navigation can send
+// `?detail=<id>` instead of URL-encoding the whole Thai label.
+export type RouteDetailEntry = string | {
+  label: string
+  id: string | number
+  connected?: boolean
+  is_online?: boolean
+  line_check_fail?: boolean
+  circuit_fail?: boolean
+  volt_amp_fail?: boolean
+}
+
+// `lngLat: null` is allowed so API-backed items (e.g. a bureau with no
+// solution carrying a geometry_point) can still appear in the search list
+// without a map marker — the mock array itself always supplies a real tuple.
+// `id` is likewise API-only — mock bureaus are identified by `name` alone.
+export type RouteItem = Omit<(typeof ROUTE_ITEMS)[number], 'lngLat' | 'sub3'> & {
+  id?: string | number
+  lngLat: [number, number] | null
+  sub3: { label: string; detail: RouteDetailEntry[]; connected: boolean; count?: string }[]
+  /** Sum of noti_count across all solutions under this bureau. */
+  notiTotal?: number
+}
+
+// Shared nav-key helpers — used everywhere a RouteItem/RouteDetailEntry is
+// turned into a `?route=`/`?detail=` URL param or a React list key, so the
+// overview map, its search list, and the detail-page sidebar all agree on
+// the same compact id (falling back to the display text for mock data,
+// which has no `id`).
+export const routeKey = (item: RouteItem) => String(item.id ?? item.name)
+export const detailLabel = (d: RouteDetailEntry) => (typeof d === 'string' ? d : d.label)
+export const detailKey = (d: RouteDetailEntry) => (typeof d === 'string' ? d : String(d.id))
+
+/** One real point per leaf (e.g. one per solution) — each carries its OWN
+ *  geometry_point, decoupled from the (coarser) search-list tree's RouteItem
+ *  grouping. `routeKey`/`detailKey` mirror the same `?route=`/`?detail=` nav
+ *  params the search-list leaves use, so clicking a marker and clicking its
+ *  matching list row navigate identically. */
+export interface MapMarkerItem {
+  routeKey: string
+  detailKey: string
+  lngLat: [number, number]
+  /** Numeric value shown on the point / summed on its cluster bubble. */
+  count: number
+  /** Online/offline status, when the underlying data has it (e.g. one IoT
+   *  device per point). When set (on every item in the list), it REPLACES
+   *  the default count-overflow-threshold color rule: offline points/
+   *  clusters get `markerItemOverflowColor`, online ones get
+   *  `markerItemColor` — matching the same online/offline convention as the
+   *  ค้นหาสายทาง sidebar counts. Omit when there's no per-point status (e.g.
+   *  incident solutions), which keeps the old threshold-based coloring. */
+  offline?: boolean
+}

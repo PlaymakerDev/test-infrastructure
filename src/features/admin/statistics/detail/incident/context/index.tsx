@@ -1,5 +1,6 @@
 "use client"
 import React, { createContext, useContext, useState } from 'react'
+import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 
 interface IncidentDetailContextType {
@@ -22,7 +23,8 @@ export const useIncidentDetailContext = () => {
 export const IncidentDetailProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [searchText, setSearchText] = useState('')
   const [searchOpen, setSearchOpen] = useState(true)
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
+  const today = dayjs()
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>([today.subtract(2, 'day').startOf('day'), today.endOf('day')])
 
   return (
     <IncidentDetailContext.Provider value={{ searchText, setSearchText, searchOpen, setSearchOpen, dateRange, setDateRange }}>

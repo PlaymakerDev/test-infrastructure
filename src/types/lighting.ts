@@ -104,6 +104,19 @@ export interface DetailsResponse {
   electricity: DetailsElectricityItem[]
 }
 
+/** GET /lighting/departments/{id}/overview/top-power-roads?start_date=&end_date=
+ *  → roads ranked by total power draw (kW) descending, for the given date
+ *  range (both params required by the backend). */
+export interface TopPowerRoadItem {
+  road: {
+    id: number
+    code_name: string
+    road_name: string
+  }
+  install_points: number
+  total_kw: number
+}
+
 /** GET /lighting/logs4g/graph/volt → [{ Period_Name, volt }]
  *  GET /lighting/logs4g/graph/amp  → [{ Period_Name, amp }]
  *  Period_Name is an hourly label "00:00".."23:00"; volt/amp null when no data. */

@@ -50,6 +50,32 @@ export interface MarkerLayerProps {
   /** Icon scale relative to the source 64px image (default 0.36 unclustered, ramps for cluster) */
   iconSize?: number
 
+  /** GeoJSON property (string or number) to show as text on UNCLUSTERED points
+   *  too, not just the cluster count badge. Omit to keep unclustered points
+   *  textless (default — matches every existing consumer). */
+  unclusteredCountProperty?: string
+  /** Numeric GeoJSON property to SUM across merged points and show as the
+   *  cluster bubble's text, instead of Mapbox's default `point_count`
+   *  (literally "how many points got merged here" — meaningless/inconsistent
+   *  when the same property is also shown per-item via
+   *  `unclusteredCountProperty`, e.g. "3 install points" on one marker vs
+   *  "4 markers merged" on a cluster). Omit to keep the default behavior. */
+  clusterSumProperty?: string
+  /** Numeric GeoJSON property (typically a 0/1 flag) to SUM across merged
+   *  points into a cluster property named "colorSum" — lets `color`'s
+   *  expression branch a cluster bubble by an aggregated condition (e.g.
+   *  "any offline device in this cluster") instead of always falling back
+   *  to a flat default, since Mapbox clusters don't otherwise inherit
+   *  arbitrary per-feature properties like `color`. Omit to skip. */
+  clusterColorSumProperty?: string
+  /** Text anchor for the count/label (default 'top', matching the
+   *  icon+badge-below-it layout). Pass 'center' for a plain circle+number
+   *  marker with no icon. */
+  textAnchor?: 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  textOffset?: [number, number]
+  textSize?: number
+  textColor?: string
+
   /** minzoom on all layers */
   minZoom?: number
   /** Toggle visibility (default true) */
@@ -80,6 +106,13 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   strokeColor = '#ffffff',
   iconImage,
   iconSize,
+  unclusteredCountProperty,
+  clusterSumProperty,
+  clusterColorSumProperty,
+  textAnchor = 'top',
+  textOffset = [0, 0.5],
+  textSize = 12,
+  textColor = '#ffffff',
   minZoom,
   visible = true,
   onClick,
@@ -110,7 +143,15 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     const sourceSpec: GeoJSONSourceSpecification = {
       type: 'geojson',
       data,
-      ...(cluster && { cluster: true, clusterMaxZoom, clusterRadius }),
+      ...(cluster && {
+        cluster: true, clusterMaxZoom, clusterRadius,
+        ...((clusterSumProperty || clusterColorSumProperty) && {
+          clusterProperties: {
+            ...(clusterSumProperty && { sum: ['+', ['get', clusterSumProperty]] }),
+            ...(clusterColorSumProperty && { colorSum: ['+', ['get', clusterColorSumProperty]] }),
+          },
+        }),
+      }),
     }
     map.addSource(sourceId, sourceSpec)
 
@@ -176,17 +217,17 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           'text-field': [
             'case',
             ['has', 'point_count'],
-            ['get', 'point_count_abbreviated'],
-            '',
+            clusterSumProperty ? ['to-string', ['get', 'sum']] : ['get', 'point_count_abbreviated'],
+            unclusteredCountProperty ? ['to-string', ['get', unclusteredCountProperty]] : '',
           ],
           'text-font': ['Arial Unicode MS Bold'],
-          'text-size': 12,
-          'text-anchor': 'top',
-          'text-offset': [0, 0.5],
+          'text-size': textSize,
+          'text-anchor': textAnchor,
+          'text-offset': textOffset,
           'text-allow-overlap': true,
           'text-ignore-placement': true,
         },
-        paint: { 'text-color': '#ffffff' },
+        paint: { 'text-color': textColor },
       }
       map.addLayer(symbolSpec)
     } else {
@@ -302,7 +343,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   }, [
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
     cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor,
-    iconImage, iconSize, minZoom,
+    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, textAnchor, textOffset, textSize, textColor, minZoom,
   ])
 
   // Update data without rebuilding layers

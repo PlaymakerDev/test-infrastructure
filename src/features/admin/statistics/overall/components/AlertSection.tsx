@@ -7,6 +7,8 @@ import SwapButton from '@/components/swap-button/SwapButton'
 import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
+import { useLiveAlertRouteItems } from '../../data/useLiveAlertRouteItems'
+import { useIotStatusSummary } from '@/hooks/queries/incident-detection'
 import type { ColumnsType } from 'antd/es/table'
 
 const useIsMobile = (breakpoint = 640) => {
@@ -134,13 +136,6 @@ const ALERT_SUMMARY_BADGES: SummaryBadge[] = [
   { label: '72 Volt / Amp', color: '#83F205' },
 ]
 
-const ALERT_CARDS: StatCard[] = [
-  { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '53', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
-  { borderColor: '#E94C4C', icon: '/images/statistics/ce2.png', label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: '244', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
-  { borderColor: '#E99A4C', icon: '/images/statistics/ce3.png', label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: '70', unit: 'เหตุการณ์', sub: 'สทช. 3 (ชลบุรี) (57.9%)' },
-  { borderColor: '#FCD116', icon: '/images/statistics/ce4.png', label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: '81.6%', sub: 'แจ้งเตือน 544 เหตุการณ์' },
-]
-
 const AlertSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -151,6 +146,23 @@ const AlertSection: React.FC = () => {
   const [searchText, setSearchText] = useState('')
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
+
+  // ค้นหาสายทาง + map markers — `markerItems` plots each device at its OWN
+  // real geometry_point (decoupled from the coarser bureau-level search tree).
+  const { routeItems: liveRouteItems, markerItems } = useLiveAlertRouteItems()
+
+  // Stat cards data — real API instead of mock.
+  const { data: summaryData } = useIotStatusSummary(0, { scope: 'all' })
+  const alertCards: StatCard[] = React.useMemo(() => {
+    const s = summaryData
+    const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
+    return [
+      { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: s ? `1 Phase ${s.installation_points.phase_1} / 3 Phase ${s.installation_points.phase_3}` : '-' },
+      { borderColor: '#E94C4C', icon: '/images/statistics/ce2.png', label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: String(fmt(s?.line_broken?.total)), unit: 'เหตุการณ์', sub: s ? `${s.line_broken.top_department.department_short_name} (${s.line_broken.top_department.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#E99A4C', icon: '/images/statistics/ce3.png', label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: String(fmt(s?.circuit_abnormal?.total)), unit: 'เหตุการณ์', sub: s ? `${s.circuit_abnormal.top_department.department_short_name} (${s.circuit_abnormal.top_department.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#FCD116', icon: '/images/statistics/ce4.png', label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: s ? `${s.normal.percentage.toFixed(1)}%` : '-', sub: s ? `แจ้งเตือน ${s.notifications.total} เหตุการณ์` : '-' },
+    ]
+  }, [summaryData])
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
@@ -182,13 +194,17 @@ const AlertSection: React.FC = () => {
       )}
       {activeSubTab === 'OVERVIEW' && (
         <StatisticsMapPanel
-          markerColorFn={(_item, index) => index % 2 === 0 ? '#FCD116' : '#E94C4C'}
-          markerLabelFn={(_item, index) => index + 1}
+          markerTextColor="#000000"
+          markerItemColor="#FCD116"
+          markerItemOverflowColor="#E94C4C"
+          useModernMarkers
           detailUrl="/admin/statistics/detail/alert"
           hideIndexBadge
           searchText={searchText}
           onSearchChange={setSearchText}
-          statsCards={ALERT_CARDS}
+          statsCards={alertCards}
+          routeItems={liveRouteItems}
+          markerItems={markerItems}
         />
       )}
       {activeSubTab === 'COMPARISON' && (

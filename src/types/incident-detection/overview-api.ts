@@ -62,6 +62,12 @@ export interface IncidentCentralSolution {
   solution: IncidentSolutionRef
   camera: { total: number; online_count?: number; offline_count?: number; events_count: number }
   is_warranty: boolean
+  /** [lng, lat] — null when this solution has no mapped coordinate. Verified
+   *  live 2026-07-09 (was previously missing; the map used a separate
+   *  /overview?scope=all call joined by solution.id — no longer needed). */
+  geometry_point: [number, number] | null
+  /** Notification count for this solution. Verified live 2026-07-09. */
+  noti_count: number
 }
 
 export interface IncidentCentralDept {

@@ -3,11 +3,15 @@ import React, { useState } from 'react'
 import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbLayoutSidebarRightCollapse, TbLayoutSidebarRightExpand } from 'react-icons/tb'
 import { Button, Collapse } from 'antd'
 import { useRouter } from 'next/navigation'
+import type { ExpressionSpecification } from 'mapbox-gl'
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import MarkerLayer, { type MarkerColor } from '@/components/map/primitives/MarkerLayer'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
-import { ROUTE_ITEMS } from '../../../data/routeItems'
+import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
 export interface StatCard {
   borderColor: string
@@ -25,15 +29,47 @@ export interface StatisticsMapPanelProps {
   markerTextColor?: string
   markerShadowColor?: string
   detailUrl?: string
-  onMarkerClick?: (item: (typeof ROUTE_ITEMS)[number]) => void
+  onMarkerClick?: (item: RouteItem) => void
   searchText?: string
   onSearchChange?: (value: string) => void
   statsCards?: StatCard[]
   hideIndexBadge?: boolean
   hideCount?: boolean
-  markerColorFn?: (item: (typeof ROUTE_ITEMS)[number], index: number) => string
-  markerLabelFn?: (item: (typeof ROUTE_ITEMS)[number], index: number) => string | number
-  badgeColorFn?: (item: (typeof ROUTE_ITEMS)[number], index: number) => string
+  markerColorFn?: (item: RouteItem, index: number) => string
+  markerLabelFn?: (item: RouteItem, index: number) => string | number
+  badgeColorFn?: (item: RouteItem, index: number) => string
+  /** Numeric count backing the DEFAULT marker color/label threshold (green
+   *  unless > 263, then red + "263+") AND the modern-marker cluster-bubble
+   *  sum. Defaults to `item.sub3.length` (right for the mock data, where
+   *  sub3 holds one entry per road/pole and its length is a meaningful
+   *  count) — override when `sub3` represents something else, e.g. live
+   *  incident data where sub3 is one entry per แขวง (org unit, 1-6) and the
+   *  actually-meaningful count is the total install points in `item.count`. */
+  markerCountFn?: (item: RouteItem, index: number) => number
+  /** Data source for both the ค้นหาสายทาง search list and the map markers.
+   *  Defaults to the static ROUTE_ITEMS mock — pass real API-backed data to
+   *  wire a tab up to the backend without touching the other (still-mock) tabs. */
+  routeItems?: RouteItem[]
+  /** Opt-in: render markers via the shared ThailandMaskLayer + clustered
+   *  MarkerLayer + FitBoundsEffect stack (same as the dashboard/CCTV maps)
+   *  instead of the legacy plain HTMLMarker-per-item loop. Default false
+   *  keeps Alert/Status (still mock) on the old rendering untouched. */
+  useModernMarkers?: boolean
+  /** Real per-point map markers (e.g. one per solution, each with its own
+   *  geometry_point) — decoupled from `routeItems`, which groups by the
+   *  coarser search-list unit (e.g. bureau) and may not have a single
+   *  representative coordinate. When provided (requires `useModernMarkers`),
+   *  markers are built from THIS list instead of `routeItems`; the search
+   *  list itself still renders from `routeItems` as usual. */
+  markerItems?: MapMarkerItem[]
+  /** Fill color for markerItems-path points/clusters below the 263 overflow
+   *  threshold. Only applies when `markerItems` is supplied (the modern
+   *  per-point marker path) — the legacy HTMLMarker loop uses `markerColor`
+   *  instead. Defaults to the original hardcoded green. */
+  markerItemColor?: string
+  /** Fill color for markerItems-path points/clusters ABOVE the 263 overflow
+   *  threshold. Defaults to the original hardcoded red. */
+  markerItemOverflowColor?: string
 }
 
 const renderCount = (count: string) => {
@@ -65,26 +101,122 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerColorFn,
   markerLabelFn,
   badgeColorFn,
+  markerCountFn,
+  routeItems = ROUTE_ITEMS,
+  useModernMarkers = false,
+  markerItems,
+  markerItemColor = '#B2FF00',
+  markerItemOverflowColor = '#E94C4C',
 }) => {
   const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(true)
   const [cardsOpen, setCardsOpen] = useState(true)
 
+  const getCount = (item: RouteItem, index: number) => markerCountFn ? markerCountFn(item, index) : item.sub3.length
+
   const filteredRoutes = React.useMemo(() => {
-    if (!searchText) return ROUTE_ITEMS
+    if (!searchText) return routeItems
     const keyword = searchText.toLowerCase()
-    return ROUTE_ITEMS.filter(
+    return routeItems.filter(
       (item) =>
         item.name.toLowerCase().includes(keyword) ||
-        item.sub3.some((sub) => sub.label.toLowerCase().includes(keyword) || sub.detail.some((d) => d.toLowerCase().includes(keyword)))
+        item.sub3.some((sub) => sub.label.toLowerCase().includes(keyword) || sub.detail.some((d) => detailLabel(d).toLowerCase().includes(keyword)))
     )
-  }, [searchText])
+  }, [searchText, routeItems])
 
-  const handleMarkerClick = (item: (typeof ROUTE_ITEMS)[number]) => {
+  // ── Modern marker stack (ThailandMaskLayer + clustered MarkerLayer +
+  // FitBoundsEffect) — only items with a real coordinate can be plotted.
+  const routableRoutes = React.useMemo(
+    () => filteredRoutes.filter((item): item is RouteItem & { lngLat: [number, number] } => item.lngLat !== null),
+    [filteredRoutes]
+  )
+
+  const itemByNavKey = React.useMemo(() => {
+    const map = new Map<string, RouteItem>()
+    for (const item of routableRoutes) map.set(routeKey(item), item)
+    return map
+  }, [routableRoutes])
+
+  // Same color/label rule the legacy per-item HTMLMarker loop used: green
+  // unless the item overflows the 263 threshold (then red + "263+"), or the
+  // caller's own markerColorFn/markerLabelFn override when provided.
+  // `countValue` (raw number) is also carried so cluster bubbles can SUM it
+  // via MarkerLayer's `clusterSumProperty` — showing a meaningful total
+  // instead of Mapbox's default "how many markers got merged here".
+  //
+  // When `markerItems` is supplied, markers come from that flat per-point
+  // list instead — each item already has its own real coordinate + count,
+  // so no per-item color/label override hooks apply (navigates directly via
+  // its own routeKey/detailKey instead of looking up a RouteItem).
+  // When every markerItem carries an `offline` flag (e.g. one IoT device per
+  // point), color is driven by online/offline status instead of the count
+  // overflow threshold — see MapMarkerItem.offline.
+  const hasOfflineInfo = React.useMemo(
+    () => (markerItems?.length ?? 0) > 0 && markerItems!.every((m) => m.offline !== undefined),
+    [markerItems]
+  )
+
+  const clusterGeoData = React.useMemo(() => {
+    if (markerItems) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: markerItems.map((m) => {
+          const isOverflow = m.count > 263
+          const color = m.offline !== undefined
+            ? (m.offline ? markerItemOverflowColor : markerItemColor)
+            : (isOverflow ? markerItemOverflowColor : markerItemColor)
+          return {
+            type: 'Feature' as const,
+            properties: {
+              navRoute: m.routeKey,
+              navDetail: m.detailKey,
+              color,
+              ...(m.offline !== undefined && { offlineFlag: m.offline ? 1 : 0 }),
+              countLabel: String(m.count),
+              countValue: m.count,
+            },
+            geometry: { type: 'Point' as const, coordinates: m.lngLat },
+          }
+        }),
+      }
+    }
+    return {
+      type: 'FeatureCollection' as const,
+      features: routableRoutes.map((item, index) => {
+        const count = getCount(item, index)
+        const isOverflow = count > 263
+        const color = markerColorFn ? markerColorFn(item, index) : (isOverflow ? '#E94C4C' : '#B2FF00')
+        const countLabel = markerLabelFn ? String(markerLabelFn(item, index)) : (isOverflow ? '263+' : String(count))
+        return {
+          type: 'Feature' as const,
+          properties: { navKey: routeKey(item), color, countLabel, countValue: count },
+          geometry: { type: 'Point' as const, coordinates: item.lngLat },
+        }
+      }),
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markerItems, routableRoutes, markerColorFn, markerLabelFn, markerCountFn, markerItemColor, markerItemOverflowColor])
+
+  const fitCoords = React.useMemo(
+    () => markerItems ? markerItems.map((m) => m.lngLat) : routableRoutes.map((item) => item.lngLat),
+    [markerItems, routableRoutes]
+  )
+
+  // Cluster bubbles don't carry arbitrary per-feature properties, so a plain
+  // `color` lookup would always fall back to a flat default. When items carry
+  // online/offline status, `colorSum` (summed via clusterColorSumProperty)
+  // lets a cluster bubble turn red if it contains ANY offline device;
+  // otherwise fall back to the per-feature `color` (or markerItemColor for a
+  // cluster with no properties at all).
+  const clusterColor: MarkerColor = hasOfflineInfo
+    ? ['case', ['>', ['coalesce', ['get', 'colorSum'], ['get', 'offlineFlag'], 0], 0], markerItemOverflowColor, markerItemColor] as ExpressionSpecification
+    : ['coalesce', ['get', 'color'], markerItemColor] as ExpressionSpecification
+
+  const handleMarkerClick = (item: RouteItem) => {
     if (onMarkerClick) {
       onMarkerClick(item)
     } else {
-      router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}`)
+      router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}`)
     }
   }
 
@@ -102,13 +234,14 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                       <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         {!hideIndexBadge && (() => {
+                          const noti = item.notiTotal ?? 0
                           const badgeColor = badgeColorFn
                             ? badgeColorFn(item, index)
-                            : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                            : noti === 0 ? '#979797' : '#FCD116'
                           return (
                             <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                               <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
-                              {item.sub3.length}
+                              {noti}
                             </span>
                           )
                         })()}
@@ -135,17 +268,18 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                             <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                               {!hideIndexBadge && (() => {
+                                const noti = item.notiTotal ?? 0
                                 const bc = badgeColorFn
                                   ? badgeColorFn(item, index)
-                                  : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                                  : noti === 0 ? '#979797' : '#FCD116'
                                 return (
                                   <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                                     <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
-                                    {item.sub3.length}
+                                    {noti}
                                   </span>
                                 )
                               })()}
-                              {!hideCount && renderCount(`${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
+                              {!hideCount && renderCount(item.count ?? `${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
                             </div>
                           </div>
                         ),
@@ -174,18 +308,21 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                               styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
                               children: (
                                 <div style={{ marginTop: 4 }}>
-                                  {sub.detail.map((d) => (
+                                  {sub.detail.map((d) => {
+                                    const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
+                                    return (
                                     <div
-                                      key={d}
-                                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
+                                      key={detailKey(d)}
+                                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
                                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
                                     >
-                                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
+                                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                        <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
+                                        <img src={isOnline ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
                                       </div>
                                     </div>
-                                  ))}
+                                    )
+                                  })}
                                 </div>
                               ),
                             }))}
@@ -233,31 +370,65 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         {/* ══ MAIN: map + stats cards ══ */}
         <div className='flex-1 min-w-0 relative overflow-hidden rounded-[20px]'>
           <BaseMap initialCenter={[102.0, 14.0]} initialZoom={4.8}>
-            {filteredRoutes.map((item, index) => {
-              const count = item.sub3.length
-              const isOverflow = count > 263
-              const bgColor = markerColorFn
-                ? markerColorFn(item, index)
-                : isOverflow ? '#E94C4C' : '#B2FF00'
-              const shadow = bgColor === '#E94C4C' ? 'rgba(233,76,76,0.5)' : bgColor === '#FCD116' ? 'rgba(252,209,22,0.5)' : 'rgba(178,255,0,0.5)'
-              return (
-                <HTMLMarker key={item.name} lngLat={item.lngLat}>
-                  <div
-                    onClick={() => handleMarkerClick(item)}
-                    style={{
-                      width: 50, height: 50, borderRadius: '50%',
-                      backgroundColor: bgColor,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13, fontWeight: 700, color: '#000000',
-                      boxShadow: `0 0 12px ${shadow}`,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {markerLabelFn ? markerLabelFn(item, index) : isOverflow ? '263+' : count}
-                  </div>
-                </HTMLMarker>
-              )
-            })}
+            {useModernMarkers ? (
+              <>
+                <ThailandMaskLayer />
+                <FitBoundsEffect coords={fitCoords} padding={48} maxZoom={12} />
+                <MarkerLayer
+                  id="statistics-route"
+                  data={clusterGeoData}
+                  cluster
+                  color={clusterColor}
+                  size={25}
+                  unclusteredCountProperty="countLabel"
+                  clusterSumProperty="countValue"
+                  clusterColorSumProperty={hasOfflineInfo ? 'offlineFlag' : undefined}
+                  textAnchor="center"
+                  textOffset={[0, 0]}
+                  textSize={13}
+                  textColor={markerTextColor}
+                  onClick={(_e, feature) => {
+                    const navRoute = feature.properties?.navRoute as string | undefined
+                    if (navRoute !== undefined) {
+                      const navDetail = feature.properties?.navDetail as string | undefined
+                      const query = navDetail ? `route=${encodeURIComponent(navRoute)}&detail=${encodeURIComponent(navDetail)}` : `route=${encodeURIComponent(navRoute)}`
+                      router.push(`${detailUrl}?${query}`)
+                      return
+                    }
+                    const navKey = feature.properties?.navKey as string | undefined
+                    const item = navKey ? itemByNavKey.get(navKey) : undefined
+                    if (item) handleMarkerClick(item)
+                  }}
+                />
+              </>
+            ) : (
+              filteredRoutes.map((item, index) => {
+                if (!item.lngLat) return null
+                const count = getCount(item, index)
+                const isOverflow = count > 263
+                const bgColor = markerColorFn
+                  ? markerColorFn(item, index)
+                  : isOverflow ? '#E94C4C' : '#B2FF00'
+                const shadow = bgColor === '#E94C4C' ? 'rgba(233,76,76,0.5)' : bgColor === '#FCD116' ? 'rgba(252,209,22,0.5)' : 'rgba(178,255,0,0.5)'
+                return (
+                  <HTMLMarker key={item.name} lngLat={item.lngLat}>
+                    <div
+                      onClick={() => handleMarkerClick(item)}
+                      style={{
+                        width: 50, height: 50, borderRadius: '50%',
+                        backgroundColor: bgColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700, color: '#000000',
+                        boxShadow: `0 0 12px ${shadow}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {markerLabelFn ? markerLabelFn(item, index) : isOverflow ? '263+' : count}
+                    </div>
+                  </HTMLMarker>
+                )
+              })
+            )}
           </BaseMap>
           {statsCards && statsCards.length > 0 && (
             <>

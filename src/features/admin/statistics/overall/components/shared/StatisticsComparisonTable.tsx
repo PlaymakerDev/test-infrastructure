@@ -88,10 +88,17 @@ export interface StatisticsComparisonTableProps {
   summaryBadges?: SummaryBadge[]
   columns?: ColumnsType<ComparisonRecord>
   useArrowExpand?: boolean
+  activePeriod?: string
+  onPeriodChange?: (value: string) => void
 }
 
-const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand }) => {
-  const [activePeriod, setActivePeriod] = React.useState('ALL')
+const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, activePeriod: activePeriodProp, onPeriodChange }) => {
+  const [internalPeriod, setInternalPeriod] = React.useState('TODAY')
+  const activePeriod = activePeriodProp ?? internalPeriod
+  const handlePeriodChange = (value: string) => {
+    setInternalPeriod(value)
+    onPeriodChange?.(value)
+  }
   const isMobile = useIsMobile()
 
   return (
@@ -123,7 +130,7 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
         </div>
         <Segmented
           value={activePeriod}
-          onChange={(value) => setActivePeriod(value as string)}
+          onChange={(value) => handlePeriodChange(value as string)}
           options={PERIOD_OPTIONS}
           size={isMobile ? 'middle' : 'large'}
           classNames={{ root: 'min-w-max border! border-(--yellow)!' }}

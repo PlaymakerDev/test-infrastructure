@@ -7,6 +7,8 @@ import SwapButton from '@/components/swap-button/SwapButton'
 import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
+import { useLiveIncidentRouteItems } from '../../data/useLiveIncidentRouteItems'
+import { useIncidentByDepartment, useIncidentSummary } from '@/hooks/queries/incident-detection'
 import type { ColumnsType } from 'antd/es/table'
 
 const useIsMobile = (breakpoint = 640) => {
@@ -158,6 +160,86 @@ const IncidentSection: React.FC = () => {
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
+  // ค้นหาสายทาง + map markers — shared with the detail-page sidebar so all
+  // three stay in sync. `markerItems` plots each solution at its OWN real
+  // geometry_point (decoupled from the coarser bureau-level search tree).
+  const { routeItems: liveRouteItems, markerItems } = useLiveIncidentRouteItems()
+
+  // Stat cards data — real API instead of mock.
+  const { data: summaryData } = useIncidentSummary(0, { scope: 'all' })
+  const incidentCards: StatCard[] = React.useMemo(() => {
+    const s = summaryData
+    const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
+    return [
+      { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: s ? `${s.installation_points.top_region.name_th} (${s.installation_points.top_region.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#05F2DB', icon: '/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: String(fmt(s?.incidents?.total)), unit: 'เหตุการณ์', sub: s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#B2FF00', icon: '/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: String(fmt(s?.incidents?.departments_with_incidents)), unit: 'หน่วยงาน', sub: s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.count} เหตุการณ์)` : '-' },
+      { borderColor: '#FCD116', icon: '/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: s?.top_incident_type?.name_th ?? '-', sub: s ? `${s.top_incident_type.count} เหตุการณ์ (${s.top_incident_type.percentage.toFixed(1)}%)` : '-' },
+    ]
+  }, [summaryData])
+
+  // Comparison table data — real API instead of mock.
+  const [comparisonPeriod, setComparisonPeriod] = useState('TODAY')
+  const comparisonDateRange = React.useMemo<{ start_date?: string; end_date?: string }>(() => {
+    const now = new Date()
+    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    switch (comparisonPeriod) {
+      case 'TODAY':
+        return { start_date: fmt(today), end_date: fmt(today) }
+      case 'LAST_7_DAYS': {
+        const start = new Date(today)
+        start.setDate(start.getDate() - 6)
+        return { start_date: fmt(start), end_date: fmt(today) }
+      }
+      case 'THIS_MONTH': {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1)
+        return { start_date: fmt(start), end_date: fmt(today) }
+      }
+      case 'THIS_YEAR': {
+        const start = new Date(now.getFullYear(), 0, 1)
+        return { start_date: fmt(start), end_date: fmt(today) }
+      }
+      case 'LAST_YEAR': {
+        const start = new Date(now.getFullYear() - 1, 0, 1)
+        const end = new Date(now.getFullYear() - 1, 11, 31)
+        return { start_date: fmt(start), end_date: fmt(end) }
+      }
+      default:
+        return {}
+    }
+  }, [comparisonPeriod])
+
+  const { data: byDeptData } = useIncidentByDepartment(0, comparisonDateRange)
+  const comparisonData: IncidentRow[] = React.useMemo(() => {
+    const rows = byDeptData?.rows ?? []
+    return rows.map((r, idx) => ({
+      key: `${r.department_id}-${idx}`,
+      agency: r.department_short_name,
+      accident: r.counts[0] ?? 0,
+      breakdown: r.counts[1] ?? 0,
+      shoulder: r.counts[2] ?? 0,
+      construction: r.counts[3] ?? 0,
+      blocked: r.counts[4] ?? 0,
+      wrongWay: r.counts[5] ?? 0,
+      rightLane: r.counts[6] ?? 0,
+      speeding: r.counts[7] ?? 0,
+      congestion: r.counts[8] ?? 0,
+      total: r.total,
+      isChild: r.parent_department_id != null,
+    }))
+  }, [byDeptData])
+
+  const comparisonBadges: SummaryBadge[] = React.useMemo(() => {
+    const s = byDeptData?.summary
+    const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
+    return [
+      { label: `${fmt(s?.departments_count)} หน่วยงาน`, color: '#B2FF00' },
+      { label: `${fmt(s?.installation_points_count)} จุดติดตั้ง`, color: '#66AEFF' },
+      { label: `${fmt(s?.incidents_count)} เหตุการณ์`, color: '#05F2DB' },
+    ]
+  }, [byDeptData])
+
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
       <section className="flex items-start gap-3 px-3">
@@ -192,15 +274,24 @@ const IncidentSection: React.FC = () => {
           markerAltColor="#E94C4C"
           markerTextColor="#000000"
           markerShadowColor="rgba(76, 233, 154, 0.5)"
+          useModernMarkers
           detailUrl="/admin/statistics/detail/incident"
           hideCount
           searchText={searchText}
           onSearchChange={setSearchText}
-          statsCards={INCIDENT_CARDS}
+          statsCards={incidentCards}
+          routeItems={liveRouteItems}
+          markerItems={markerItems}
         />
       )}
       {activeSubTab === 'COMPARISON' && (
-        <StatisticsComparisonTable data={COMPARISON_MOCK_DATA as unknown as import('./shared').ComparisonRecord[]} summaryBadges={INCIDENT_SUMMARY_BADGES} columns={INCIDENT_COMPARISON_COLUMNS as unknown as ColumnsType<import('./shared').ComparisonRecord>} />
+        <StatisticsComparisonTable
+          data={comparisonData as unknown as ComparisonRecord[]}
+          summaryBadges={comparisonBadges}
+          columns={INCIDENT_COMPARISON_COLUMNS as unknown as ColumnsType<ComparisonRecord>}
+          activePeriod={comparisonPeriod}
+          onPeriodChange={setComparisonPeriod}
+        />
       )}
     </div>
   )

@@ -65,4 +65,10 @@ export const manageKeys = {
     search: (keyword: string) =>
       [...manageKeys.sso.all, 'search', keyword.trim().toLowerCase()] as const,
   },
+
+  notifications: {
+    all: ['manage', 'notifications'] as const,
+    summary: (startDate: string, endDate: string) =>
+      [...manageKeys.notifications.all, 'summary', startDate, endDate] as const,
+  },
 } as const

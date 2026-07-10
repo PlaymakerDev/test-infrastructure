@@ -9,6 +9,7 @@ import type {
   PaginatedAlerts,
   PaginatedLogs4gCentral,
   PaginatedElectricityAgg,
+  TopPowerRoadItem,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -49,6 +50,26 @@ export const getLightingRandomOnlineAPI = async (deptId: number) => {
   return ApiService.fetchData<DetailsResponse>({
     url: `/lighting/departments/${deptId}/overview/random-online`,
     method: 'GET',
+  })
+}
+
+/** GET /lighting/departments/{id}/overview/top-power-roads?start_date=&end_date=&limit=
+ *  → roads ranked by total kW descending for the date range (both required).
+ *  NOTE: despite the endpoint's camelCase error keys ("startDate"/"endDate"),
+ *  the query params themselves must be snake_case — verified against the
+ *  live backend (camelCase params 400s with "required"). */
+export const getLightingTopPowerRoadsAPI = async (
+  deptId: number,
+  opts: { start_date: string; end_date: string; limit?: number },
+) => {
+  return ApiService.fetchData<TopPowerRoadItem[]>({
+    url: `/lighting/departments/${deptId}/overview/top-power-roads`,
+    method: 'GET',
+    params: {
+      start_date: opts.start_date,
+      end_date: opts.end_date,
+      ...(opts.limit ? { limit: opts.limit } : {}),
+    },
   })
 }
 
