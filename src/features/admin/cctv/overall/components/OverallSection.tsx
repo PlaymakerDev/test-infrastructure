@@ -19,6 +19,8 @@ import {
   useCctvRandomOnline,
 } from '@/hooks/queries/cctv'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
+import MapFocusGrid from '@/components/section/MapFocusGrid'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   deptId?: string | null
@@ -127,12 +129,15 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
   return (
     <div className='flex flex-col gap-5'>
       {/* ── Map + side rails — 3-column grid on desktop, stacked on mobile ── */}
-      <section className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
+      <MapFocusGrid>
 
         {/* LEFT — camera preview list */}
-        <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
+        <MapOverlayPanel
+          position='left'
+          className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+        >
           <CameraListCctv cameras={randomOnline} />
-        </div>
+        </MapOverlayPanel>
 
         {/* CENTER — Map */}
         <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
@@ -140,7 +145,10 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
         </div>
 
         {/* RIGHT — search button + stats cards */}
-        <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
+        <MapOverlayPanel
+          position='right'
+          className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+        >
           <button
             type='button'
             onClick={() => router.push(`/admin/cctv/search${deptId ? `?dept_id=${deptId}` : ''}`)}
@@ -156,8 +164,8 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
             ค้นหากล้อง CCTV รายสายทาง
           </button>
           <StatsSectionCctv totals={totals ?? null} />
-        </div>
-      </section>
+        </MapOverlayPanel>
+      </MapFocusGrid>
 
       {/* ── Filter bar ── */}
       <section>

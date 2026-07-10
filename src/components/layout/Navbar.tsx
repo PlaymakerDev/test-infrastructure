@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   TbMenu2,
   TbZoomInArea,
+  TbZoomReset,
   TbSearch,
   TbBellRinging2,
   TbGripHorizontal,
@@ -43,6 +44,7 @@ import buddhistEra from 'dayjs/plugin/buddhistEra';
 import th from 'dayjs/locale/th';
 import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
+import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import { Button, Dropdown, MenuProps } from "antd";
 import { motion } from "motion/react";
@@ -134,6 +136,9 @@ export default function Navbar() {
   const [locked, setLocked] = useState(false)
   // Department of the logged-in user — appended to the owned menus' links.
   const homeDeptId = useHomeDeptId()
+  // Global "focus the map" toggle — hides every card/panel on overall pages
+  // that host a map. Bound to the TbZoomInArea button below.
+  const { isMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -151,7 +156,27 @@ export default function Navbar() {
   const items: MenuProps['items'] = [
     {
       key: '1',
-      label: <TbZoomInArea className={iconClassName} />
+      label: (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={toggleMapFocus}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleMapFocus()
+            }
+          }}
+          className={`inline-flex ${isMapFocus ? 'text-(--yellow)' : ''}`}
+          aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
+          aria-pressed={isMapFocus}
+          title={isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
+        >
+          {isMapFocus
+            ? <TbZoomReset className={iconClassName} />
+            : <TbZoomInArea className={iconClassName} />}
+        </span>
+      ),
     },
     {
       key: '2',
@@ -233,9 +258,8 @@ export default function Navbar() {
         <button
           key={item.key}
           onClick={() => router.push(href)}
-          className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${
-            active ? "text-(--yellow)" : "text-white/70 hover:text-white"
-          }`}
+          className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-white"
+            }`}
           title={item.title}
         >
           <span>{OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}</span>
@@ -271,11 +295,10 @@ export default function Navbar() {
           onMouseLeave={() => setHovered(false)}
         >
           <div
-            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${
-              hovered || locked
+            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${hovered || locked
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 -translate-y-2"
-            }`}
+              }`}
             style={{ height: 72, width: "fit-content", maxWidth: "90vw" }}
           >
             {/* Background shape — trapezoid (height scaled to 60) */}
@@ -303,9 +326,8 @@ export default function Navbar() {
               type="button"
               onClick={() => setLocked((v) => !v)}
               title={locked ? "ปลดล็อก (ซ่อนเมนูอัตโนมัติ)" : "ล็อกเมนูให้แสดงตลอด"}
-              className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full shrink-0 cursor-pointer ${
-                locked ? "text-(--yellow)" : "text-white/70 hover:text-white"
-              }`}
+              className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-white"
+                }`}
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -316,15 +338,15 @@ export default function Navbar() {
                 animate={
                   locked
                     ? {
-                        rotate: 0,
-                        scale: 1,
-                        opacity: 1,
-                        filter: [
-                          "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
-                          "drop-shadow(0 0 7px rgba(252,209,22,1))",
-                          "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
-                        ],
-                      }
+                      rotate: 0,
+                      scale: 1,
+                      opacity: 1,
+                      filter: [
+                        "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
+                        "drop-shadow(0 0 7px rgba(252,209,22,1))",
+                        "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
+                      ],
+                    }
                     : { rotate: 0, scale: 1, opacity: 1, filter: "drop-shadow(0 0 0 rgba(0,0,0,0))" }
                 }
                 transition={{
@@ -340,9 +362,18 @@ export default function Navbar() {
           </div>
         </div>
         <div className="nav-side-menu">
-          <TbZoomInArea
-            className={iconClassName}
-          />
+          <button
+            type="button"
+            onClick={toggleMapFocus}
+            className={`inline-flex items-center justify-center cursor-pointer transition-colors ${isMapFocus ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+            aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
+            aria-pressed={isMapFocus}
+            title={isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
+          >
+            {isMapFocus
+              ? <TbZoomReset className={iconClassName} />
+              : <TbZoomInArea className={iconClassName} />}
+          </button>
           <TbSearch
             className={iconClassName}
           />
