@@ -7,6 +7,7 @@ import BarChart7day from './BarChart7day'
 import PieChartProportion from './PieChartProportion'
 import VehicleBreakdownTable from './VehicleBreakdownTable'
 import CamerasGridTrafficVolume from './CamerasGridTrafficVolume'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {}
 
@@ -23,9 +24,12 @@ const OverallTrafficVolume: React.FC<Props> = () => {
           />
         </div>
         {/* Info cards: in flow on mobile, anchored top-right on desktop */}
-        <div className='px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-4 xl:z-10 xl:w-90'>
+        <MapOverlayPanel
+          position='right'
+          className='px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-4 xl:z-10 xl:w-90'
+        >
           <InfoCardsTrafficVolume />
-        </div>
+        </MapOverlayPanel>
       </section>
 
       {/* ── Charts + breakdown row ────────────────────────────────────────────

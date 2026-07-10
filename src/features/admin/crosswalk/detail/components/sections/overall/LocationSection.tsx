@@ -1,6 +1,7 @@
 "use client"
 import React from 'react'
 import { InfoCardSection, MapSection } from '../../../components'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
 
@@ -18,9 +19,12 @@ const LocationSection: React.FC<Props> = (props) => {
       </div>
 
       {/* Info panel: in flow on mobile, anchored top-right on desktop */}
-      <div className='flex flex-col gap-4 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-70'>
+      <MapOverlayPanel
+        position='right'
+        className='flex flex-col gap-4 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-70'
+      >
         <InfoCardSection />
-      </div>
+      </MapOverlayPanel>
 
     </div>
   )

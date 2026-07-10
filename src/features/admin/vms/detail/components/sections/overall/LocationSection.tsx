@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react'
 import { InfoCardSection, MapSection, VMSScreen, ActiveCamera, ChartContent } from '../../../components'
 import { APIResponseVMSDetail } from '@/types/vms/detail-api'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   data?: APIResponseVMSDetail
@@ -15,18 +16,24 @@ const LocationSection: React.FC<Props> = (props) => {
   const renderInfoCardSection = useMemo(() => {
     if (!Object.keys(data || {}).includes('vms_weather')) return
     return (
-      <div className='px-10 lg:px-0 lg:absolute lg:top-0 lg:left-4 lg:z-10 lg:w-[clamp(26rem,28vw,48rem)]'>
+      <MapOverlayPanel
+        position='left'
+        className='px-10 lg:px-0 lg:absolute lg:top-0 lg:left-4 lg:z-10 lg:w-[clamp(26rem,28vw,48rem)]'
+      >
         <InfoCardSection data={data} />
-      </div>
+      </MapOverlayPanel>
     )
   }, [data])
 
   const renderWeatherChart = useMemo(() => {
     if (!Object.keys(data || {}).includes('vms_weather')) return
     return (
-      <div className='px-10 lg:px-0 lg:absolute lg:-bottom-6 lg:left-4 lg:z-10 lg:w-[clamp(32rem,45vw,52rem)]'>
+      <MapOverlayPanel
+        position='left'
+        className='px-10 lg:px-0 lg:absolute lg:-bottom-6 lg:left-4 lg:z-10 lg:w-[clamp(32rem,45vw,52rem)]'
+      >
         <ChartContent data={data} />
-      </div>
+      </MapOverlayPanel>
     )
   }, [data])
 
@@ -53,12 +60,15 @@ const LocationSection: React.FC<Props> = (props) => {
       {renderWeatherChart}
 
       {/* Right column: VMSScreen + ActiveCamera, spans full height on desktop */}
-      <div className='flex flex-col gap-4 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(26rem,28vw,48rem)]'>
+      <MapOverlayPanel
+        position='right'
+        className='flex flex-col gap-4 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(26rem,28vw,48rem)]'
+      >
         <VMSScreen
           data={data}
         />
         {renderActiveCamera}
-      </div>
+      </MapOverlayPanel>
     </div>
   )
 }
