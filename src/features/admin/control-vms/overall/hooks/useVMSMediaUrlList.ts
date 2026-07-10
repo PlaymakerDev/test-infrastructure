@@ -1,21 +1,19 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVMSMediaUrlAPI } from '@/services/routes/ControlVMSService'
 import { controlVmsKeys } from '../data/queryKeys'
 
-const PAGE_SIZE = 12
+export const MEDIA_URL_PAGE_SIZE = 8
 
-export function useVMSMediaUrlList(settingTypeId?: number) {
-  return useInfiniteQuery({
-    queryKey: controlVmsKeys.mediaUrlList(settingTypeId),
-    queryFn: ({ pageParam }) => getVMSMediaUrlAPI({
+export function useVMSMediaUrlList(settingTypeId?: number, page = 1, limit = MEDIA_URL_PAGE_SIZE) {
+  return useQuery({
+    queryKey: controlVmsKeys.mediaUrlList(settingTypeId, page, limit),
+    queryFn: () => getVMSMediaUrlAPI({
       ...(settingTypeId != null && { setting_type_id: settingTypeId }),
-      page: pageParam,
-      limit: PAGE_SIZE,
+      page,
+      limit,
     }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const { page, total_pages } = lastPage.data.meta_data
-      return page < total_pages ? page + 1 : undefined
-    },
+    // Keep the previous page's items on screen while the next page loads,
+    // so paging doesn't flash back to the loading skeleton every click.
+    placeholderData: keepPreviousData,
   })
 }

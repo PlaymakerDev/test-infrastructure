@@ -1,6 +1,6 @@
 import { VMSMediaUrlList } from '@/types/control-vms/vms-api'
-import { Col, ConfigProvider, Empty, Image, Row, Skeleton, Space } from 'antd'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Col, ConfigProvider, Empty, Image, Pagination, Row, Skeleton, Space } from 'antd'
+import React, { useState } from 'react'
 import { useControlVMSContext } from '../../../context'
 import { isVideoUrl } from '../../../data/media'
 import { useVMSMediaUrlList } from '../../../hooks/useVMSMediaUrlList'
@@ -94,40 +94,34 @@ const Content: React.FC<ContentProps> = ({ items, isAddMode, onCardClick, onSele
 const ContentSetting: React.FC<Props> = ({ settingTypeId, onSelect, inModal }) => {
   const { isAddMode } = useControlVMSContext()
   const gridIsAddMode = inModal ? false : isAddMode
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useVMSMediaUrlList(settingTypeId)
-
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasNextPage) return
-
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) fetchNextPage() },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, fetchNextPage])
-
-  const allItems = useMemo(
-    () => data?.pages.flatMap(p => p.data.res_data ?? []) ?? [],
-    [data]
-  )
+  const { data, isLoading, isError, isFetching } = useVMSMediaUrlList(settingTypeId, page)
 
   if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
   if (isError) return <Empty description="ไม่พบข้อมูล" />
 
+  const items = data?.data.res_data ?? []
+  const meta = data?.data.meta_data
+
   return (
     <div>
-      <Content items={allItems} isAddMode={gridIsAddMode} onCardClick={setPreviewUrl} onSelect={onSelect} />
+      <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+        <Content items={items} isAddMode={gridIsAddMode} onCardClick={setPreviewUrl} onSelect={onSelect} />
+      </div>
 
-      {/* Scroll sentinel */}
-      <div ref={sentinelRef} className='h-4' />
-
-      {isFetchingNextPage && (
-        <Skeleton active paragraph={{ rows: 3 }} className='mt-4' />
+      {meta && (
+        <div className='flex justify-center mt-4'>
+          <Pagination
+            current={meta.page}
+            pageSize={meta.limit}
+            total={meta.count}
+            showSizeChanger={false}
+            hideOnSinglePage
+            onChange={setPage}
+          />
+        </div>
       )}
 
       <ModalMediaPreview
