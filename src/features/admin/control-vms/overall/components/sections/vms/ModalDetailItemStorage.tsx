@@ -5,9 +5,12 @@ import { DetailTabContent } from '../../../components'
 interface Props {
   open: boolean
   onClose: () => void
+  /** When provided, opens in picker mode — selecting a card calls this with
+   *  the media_url and the caller is expected to close the modal. */
+  onSelect?: (url: string) => void
 }
 
-const ModalDetailItemStorage: React.FC<Props> = ({ open, onClose }) => (
+const ModalDetailItemStorage: React.FC<Props> = ({ open, onClose, onSelect }) => (
   <ConfigProvider
     theme={{
       components: {
@@ -16,7 +19,7 @@ const ModalDetailItemStorage: React.FC<Props> = ({ open, onClose }) => (
     }}
   >
     <Modal
-      title="คลังรูปภาพและวิดีโอ"
+      title={onSelect ? 'เลือกไฟล์จากคลังรูปภาพ' : 'คลังรูปภาพและวิดีโอ'}
       closable={{ 'aria-label': 'Custom Close Button' }}
       open={open}
       onOk={onClose}
@@ -29,7 +32,7 @@ const ModalDetailItemStorage: React.FC<Props> = ({ open, onClose }) => (
       }}
       width={1000}
     >
-      <DetailTabContent />
+      <DetailTabContent onSelect={onSelect} inModal />
     </Modal>
   </ConfigProvider>
 )

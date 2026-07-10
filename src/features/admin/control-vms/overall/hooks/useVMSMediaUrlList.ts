@@ -1,13 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { getVMSMediaAPI } from '@/services/routes/ControlVMSService'
+import { getVMSMediaUrlAPI } from '@/services/routes/ControlVMSService'
 import { controlVmsKeys } from '../data/queryKeys'
 
 const PAGE_SIZE = 12
 
-export function useVMSMediaList(settingTypeId?: number) {
+export function useVMSMediaUrlList(settingTypeId?: number) {
   return useInfiniteQuery({
-    queryKey: controlVmsKeys.mediaList(settingTypeId),
-    queryFn: ({ pageParam }) => getVMSMediaAPI({
+    queryKey: controlVmsKeys.mediaUrlList(settingTypeId),
+    queryFn: ({ pageParam }) => getVMSMediaUrlAPI({
       ...(settingTypeId != null && { setting_type_id: settingTypeId }),
       page: pageParam,
       limit: PAGE_SIZE,

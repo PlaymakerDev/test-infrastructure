@@ -6,6 +6,7 @@ import EventStatsSection from './sections/overall/EventStatsSection'
 import EventDonutSection from './sections/overall/EventDonutSection'
 import EventTrendSection from './sections/overall/EventTrendSection'
 import DataDisplaySection from './sections/overall/DataDisplaySection'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   /** Jumps to the EVENTS tab — wired to "ดูเพิ่มเติม" in the event list. */
@@ -42,24 +43,28 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
           * z-1 sits above the map (z-auto) but below the rails (z-10).
           * Customer hasn't decided cards-on-map vs cards-beside-map yet →
           * DELETE these two divs to revert to the original overlay look. */}
-        <div
-          aria-hidden
+        <MapOverlayPanel
+          position='left'
           className='hidden xl:block absolute inset-y-0 left-0 pointer-events-none xl:w-102 2xl:w-126'
           style={{
             zIndex: 1,
             background:
               'linear-gradient(to right, #212121, #212121 calc(100% - 48px), rgba(33,33,33,0))',
           }}
-        />
-        <div
-          aria-hidden
+        >
+          {null}
+        </MapOverlayPanel>
+        <MapOverlayPanel
+          position='right'
           className='hidden xl:block absolute inset-y-0 right-0 pointer-events-none xl:w-112 2xl:w-137'
           style={{
             zIndex: 1,
             background:
               'linear-gradient(to left, #212121, #212121 calc(100% - 48px), rgba(33,33,33,0))',
           }}
-        />
+        >
+          {null}
+        </MapOverlayPanel>
 
         {/* Mobile / tablet — every panel stacks BELOW the map. */}
         <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
@@ -72,17 +77,19 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
         {/* xl+ overlays. Widths scale with viewport (xl: compact / 2xl: full
           * Figma size) so the map keeps a usable area in the middle. */}
         {/* Left rail — event list */}
-        <aside
+        <MapOverlayPanel
+          position='left'
           className='hidden xl:flex flex-col absolute z-10 top-4 left-10 pointer-events-none xl:w-80 2xl:w-104'
           style={{ bottom: 16 }}
         >
           <div className='pointer-events-auto h-full min-h-0'>
             <EventListSection onShowAll={onShowAllEvents} />
           </div>
-        </aside>
+        </MapOverlayPanel>
 
         {/* Right rail — stat cards on top, donut + line chart below */}
-        <aside
+        <MapOverlayPanel
+          position='right'
           className='hidden xl:flex flex-col absolute z-10 top-4 right-10 gap-3 pointer-events-none xl:w-90 2xl:w-115'
           style={{ bottom: 16 }}
         >
@@ -98,7 +105,7 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
             <div className='shrink-0'><EventDonutSection /></div>
             <div className='shrink-0'><EventTrendSection /></div>
           </div>
-        </aside>
+        </MapOverlayPanel>
       </section>
 
       {/* Bottom — camera grid */}

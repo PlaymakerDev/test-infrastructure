@@ -19,6 +19,8 @@ import {
   useCctvRandomOnline,
 } from '@/hooks/queries/cctv'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
+import MapFocusGrid from '@/components/section/MapFocusGrid'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   deptId?: string | null
@@ -126,34 +128,27 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
 
   return (
     <div className='flex flex-col gap-5'>
-      {/* ── Map + overlay panels ── */}
-      <section className='relative -mx-10 overflow-x-hidden xl:overflow-hidden xl:h-180'>
+      {/* ── Map + side rails — 3-column grid on desktop, stacked on mobile ── */}
+      <MapFocusGrid>
 
-        {/* Map — fills full height on desktop */}
-        <div
-          className='relative w-full xl:absolute xl:inset-0'
-          style={{ minHeight: 340 }}
+        {/* LEFT — camera preview list */}
+        <MapOverlayPanel
+          position='left'
+          className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
         >
-          <MapSectionCctv deptId={deptId} edgeFade={{ left: 30, right: 30, top: 10, bottom: 10 }} />
-        </div>
-
-        {/* Mobile / tablet: stacks below map */}
-        <div className='flex flex-col gap-4 pt-4 px-10 xl:hidden'>
           <CameraListCctv cameras={randomOnline} />
-          <StatsSectionCctv totals={totals ?? null} />
+        </MapOverlayPanel>
+
+        {/* CENTER — Map */}
+        <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
+          <MapSectionCctv deptId={deptId} edgeFade={{ all: 20 }} />
         </div>
 
-        {/* Desktop xl+: left overlay — camera preview list */}
-        <aside className='hidden xl:flex flex-col absolute z-10 pl-10 pointer-events-none top-5 left-0 w-72'>
-          <div className='pointer-events-auto'>
-            <CameraListCctv cameras={randomOnline} />
-          </div>
-        </aside>
-
-        {/* Desktop xl+: right overlay — search + stats */}
-        <aside className='hidden xl:flex flex-col gap-4 absolute z-10 items-end pr-10 pointer-events-auto top-5 right-0 w-80'>
-
-          {/* Search button */}
+        {/* RIGHT — search button + stats cards */}
+        <MapOverlayPanel
+          position='right'
+          className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+        >
           <button
             type='button'
             onClick={() => router.push(`/admin/cctv/search${deptId ? `?dept_id=${deptId}` : ''}`)}
@@ -168,11 +163,9 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           >
             ค้นหากล้อง CCTV รายสายทาง
           </button>
-
-          {/* Stats cards */}
           <StatsSectionCctv totals={totals ?? null} />
-        </aside>
-      </section>
+        </MapOverlayPanel>
+      </MapFocusGrid>
 
       {/* ── Filter bar ── */}
       <section>

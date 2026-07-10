@@ -26,13 +26,13 @@ const LINES = [
 ]
 
 const ChartPreviousWeightVehicle: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+  const { stationId } = props
   const [period, setPeriod] = useState<Period>('วันนี้')
   const dateType = PERIOD_DATE_TYPE[period]
 
   // Endpoint is enabled for WIM stations only — mirrors the pre-existing
   // behavior for this component (not yet confirmed for STATION by backend).
-  const enabled = stationType === 'WIM'
+  // const enabled = stationType === 'WIM'
 
   const currentReferenceDate = dayjs().format('YYYY-MM-DD')
   // "previous" window is the same length, ending exactly one window before the current one.
@@ -46,7 +46,7 @@ const ChartPreviousWeightVehicle: React.FC<Props> = (props) => {
     station_id: stationId as string,
     date_type: dateType,
     reference_date: currentReferenceDate,
-  }, enabled)
+  })
 
   const {
     data: previous,
@@ -56,7 +56,7 @@ const ChartPreviousWeightVehicle: React.FC<Props> = (props) => {
     station_id: stationId as string,
     date_type: dateType,
     reference_date: previousReferenceDate,
-  }, enabled)
+  })
 
   const isLoading = isCurrentLoading || isPreviousLoading
   const isError = isCurrentError || isPreviousError
@@ -77,8 +77,8 @@ const ChartPreviousWeightVehicle: React.FC<Props> = (props) => {
         subtitle='แนวโน้มย้อนหลัง 7 วัน'
         icon={<TbCalendarMonth size={18} />}
         iconCircle={false}
-        accentColor='#FCD116'
-        cardBackground='#00000080'
+        // accentColor='#FCD116'
+        // cardBackground='#00000080'
         cardBorderColor='transparent'
         showGlow={false}
         data={chartData}

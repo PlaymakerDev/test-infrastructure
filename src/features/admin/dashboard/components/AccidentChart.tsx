@@ -157,10 +157,10 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
   )
 })
 
-interface Props {}
+interface Props { }
 
 const AccidentChart: React.FC<Props> = () => {
-  const [tab, setTab] = useState('เดือน')
+  const [tab, setTab] = useState('วันนี้')
   const deptId = useDeptId()
   const type = TAB_TO_TYPE[tab]
   const { data, isLoading } = useDashboardAnalytic(deptId, type)

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import ReactMap from '@/components/map/ReactMap'
 import { useAppDispatch } from '@/stores/hooks'
 import { getExampleData } from '@/stores/reducers/example/exampleSlice'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import {
   AccidentChart,
   Notification,
@@ -44,7 +45,8 @@ const DashboardScreen: React.FC<Props> = () => {
       {isDesktop === true && (
         <>
           {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
-          <aside
+          <MapOverlayPanel
+            position="left"
             className="absolute left-4 z-10 flex flex-col gap-3"
             style={{ top: 52, bottom: 180, width: 620 }}
           >
@@ -53,27 +55,29 @@ const DashboardScreen: React.FC<Props> = () => {
               <StatusChart />
             </div>
             <AccidentChart />
-          </aside>
+          </MapOverlayPanel>
 
           {/* DESKTOP: donut row */}
-          <div
+          <MapOverlayPanel
+            position="bottom"
             className="absolute left-4 z-10 flex"
             style={{ bottom: 16, width: 880 }}
           >
             <RatioChart size={110} />
-          </div>
+          </MapOverlayPanel>
 
           {/* DESKTOP: right absolute panel — top:48 sits right under the 48px navbar.
             * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
             * Notification + TrafficStat don't use → no empty gap at the bottom. */}
-          <aside
+          <MapOverlayPanel
+            position="right"
             className="absolute right-4 z-10 flex flex-col gap-2"
-            style={{ top: 64, bottom: 16, width: 408 }}
+            style={{ top: 64, bottom: 16, width: 380 }}
           >
             <Notification />
             <VehicleRatioChart className="flex-1 min-h-0" />
             <TrafficStat />
-          </aside>
+          </MapOverlayPanel>
         </>
       )}
 
@@ -81,12 +85,17 @@ const DashboardScreen: React.FC<Props> = () => {
         <>
           {/* MOBILE: notification — compact pill below the navbar (48px) so it
             * sits beside the centered filter pills + breadcrumb without covering them. */}
-          <div className="absolute z-20 right-3" style={{ top: 60 }}>
+          <MapOverlayPanel
+            position="top"
+            className="absolute z-20 right-3"
+            style={{ top: 60 }}
+          >
             <Notification compact />
-          </div>
+          </MapOverlayPanel>
 
           {/* MOBILE: scrollable column — map takes top 60vh, cards bottom 40vh */}
-          <div
+          <MapOverlayPanel
+            position="bottom"
             className="absolute left-0 right-0 overflow-y-auto z-10"
             style={{ top: "60vh", bottom: 0 }}
           >
@@ -99,7 +108,7 @@ const DashboardScreen: React.FC<Props> = () => {
               <RatioChart cols={4} size={90} />
               <TrafficStat />
             </div>
-          </div>
+          </MapOverlayPanel>
         </>
       )}
     </div>

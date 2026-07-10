@@ -1,57 +1,87 @@
-import { VMSMediaList } from '@/types/control-vms/vms-api'
-import { Col, Empty, Image, Row, Skeleton } from 'antd'
+import { VMSMediaUrlList } from '@/types/control-vms/vms-api'
+import { Col, ConfigProvider, Empty, Image, Row, Skeleton, Space } from 'antd'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useControlVMSContext } from '../../../context'
-import { isVideoUrl, ScheduleCard } from '../../../data/media'
-import { useVMSMediaList } from '../../../hooks/useVMSMediaList'
+import { isVideoUrl } from '../../../data/media'
+import { useVMSMediaUrlList } from '../../../hooks/useVMSMediaUrlList'
 import ModalMediaPreview from './ModalMediaPreview'
 import VMSMedia from './VMSMedia'
 
 interface Props {
   settingTypeId?: number
+  /** When provided, clicking any card picks it (instead of previewing) and
+   *  never opens ModalMediaPreview — used by the "เลือกไฟล์จากคลังรูปภาพ" picker. */
+  onSelect?: (url: string) => void
+  /** True when rendered inside a Modal (fixed width) — the isAddMode-based
+   *  column widening only makes sense for the inline (non-modal) embed. */
+  inModal?: boolean
 }
 
 interface ContentProps {
-  items: VMSMediaList[]
+  items: VMSMediaUrlList[]
   isAddMode: boolean
-  onCardClick: (card: ScheduleCard) => void
+  onCardClick: (url: string) => void
+  onSelect?: (url: string) => void
 }
 
-const Content: React.FC<ContentProps> = ({ items, isAddMode, onCardClick }) => {
-  const cards = items.flatMap((item) => item.schedules.map((schedule) => ({ item, schedule })))
-  if (!cards.length) return <Empty description="ไม่พบข้อมูล" className='w-full!' />
+const Content: React.FC<ContentProps> = ({ items, isAddMode, onCardClick, onSelect }) => {
+  if (!items.length) return <Empty description="ไม่พบข้อมูล" className='w-full!' />
 
   return (
     <Row gutter={[16, 16]}>
-      {cards.map(({ item, schedule }) => {
-        const mediaUrl = schedule.media_url
-        const alt = schedule.schedule_name || item.type_name
+      {items.map(({ media_url }, index) => {
+        if (!media_url) return null
+        const alt = `สื่อแสดงผล ${index + 1}`
         return (
           <Col
-            key={`${item.id}-${schedule.id}`}
+            key={`${index}-${media_url}`}
             xs={24} sm={24} md={12} lg={12}
             xl={isAddMode ? 12 : 6} xxl={isAddMode ? 12 : 6} xxxl={isAddMode ? 12 : 6}
           >
-            {!mediaUrl ? (
-              <figure className='h-52 rounded-lg bg-(--dark-black) flex items-center justify-center'>
-                <Empty description="ข้อความ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              </figure>
-            ) : isVideoUrl(mediaUrl) ? (
+            {isVideoUrl(media_url) ? (
               <figure
-                className='h-52 overflow-hidden rounded-lg cursor-pointer'
-                onClick={() => onCardClick({ item, schedule })}
+                className='group relative h-52 overflow-hidden rounded-lg cursor-pointer'
+                onClick={() => onSelect ? onSelect(media_url) : onCardClick(media_url)}
               >
-                <VMSMedia url={mediaUrl} alt={alt} variant='thumbnail' />
+                <VMSMedia url={media_url} alt={alt} variant='thumbnail' />
+                {onSelect && (
+                  <div className='absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100'>
+                    <Space vertical align="center">
+                      <span className='text-white'>เลือกวีดีโอ</span>
+                    </Space>
+                  </div>
+                )}
               </figure>
             ) : (
               <figure className='h-52 overflow-hidden rounded-lg'>
-                <Image
-                  src={mediaUrl}
-                  alt={alt}
-                  width={'100%'}
-                  height={'100%'}
-                  className='object-center object-cover'
-                />
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      colorTextLightSolid: '#FFFFFF'
+                    }
+                  }}
+                >
+                  <Image
+                    src={media_url}
+                    alt={alt}
+                    width={'100%'}
+                    height={'100%'}
+                    className='object-center object-cover'
+                    preview={onSelect ? {
+                      // Preview stays controlled + always closed — clicking the
+                      // image tries to open it, which this intercepts to select
+                      // instead, while still getting antd's native hover mask.
+                      open: false,
+                      onOpenChange: (open) => { if (open) onSelect(media_url) },
+                      mask: { blur: true },
+                      cover: (
+                        <Space vertical align="center">
+                          เลือกรูปภาพ
+                        </Space>
+                      ),
+                    } : true}
+                  />
+                </ConfigProvider>
               </figure>
             )}
           </Col>
@@ -61,12 +91,13 @@ const Content: React.FC<ContentProps> = ({ items, isAddMode, onCardClick }) => {
   )
 }
 
-const ContentSetting: React.FC<Props> = ({ settingTypeId }) => {
+const ContentSetting: React.FC<Props> = ({ settingTypeId, onSelect, inModal }) => {
   const { isAddMode } = useControlVMSContext()
+  const gridIsAddMode = inModal ? false : isAddMode
   const sentinelRef = useRef<HTMLDivElement>(null)
-  const [previewCard, setPreviewCard] = useState<ScheduleCard | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useVMSMediaList(settingTypeId)
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useVMSMediaUrlList(settingTypeId)
 
   useEffect(() => {
     const el = sentinelRef.current
@@ -90,7 +121,7 @@ const ContentSetting: React.FC<Props> = ({ settingTypeId }) => {
 
   return (
     <div>
-      <Content items={allItems} isAddMode={isAddMode} onCardClick={setPreviewCard} />
+      <Content items={allItems} isAddMode={gridIsAddMode} onCardClick={setPreviewUrl} onSelect={onSelect} />
 
       {/* Scroll sentinel */}
       <div ref={sentinelRef} className='h-4' />
@@ -100,9 +131,9 @@ const ContentSetting: React.FC<Props> = ({ settingTypeId }) => {
       )}
 
       <ModalMediaPreview
-        open={previewCard !== null}
-        data={previewCard}
-        onClose={() => setPreviewCard(null)}
+        open={previewUrl !== null}
+        url={previewUrl}
+        onClose={() => setPreviewUrl(null)}
       />
     </div>
   )

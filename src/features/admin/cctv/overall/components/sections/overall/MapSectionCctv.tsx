@@ -31,16 +31,9 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
     [overview?.locations]
   )
 
-  // Reserve space for the left camera-list + right stats overlays on xl screens
-  // so markers don't end up hidden behind them. Below xl the overlays stack
-  // under the map, so a small uniform padding is enough.
-  const fitPadding = useMemo(
-    () =>
-      typeof window !== 'undefined' && window.innerWidth >= 1280
-        ? { top: 60, right: 350, bottom: 60, left: 320 }
-        : 56,
-    []
-  )
+  // Uniform padding — the map sits in its own grid column now (no overlays),
+  // so no need to reserve extra space on left/right for overlay panels.
+  const fitPadding = 60
 
   const data = useMemo(() => ({
     type: 'FeatureCollection' as const,

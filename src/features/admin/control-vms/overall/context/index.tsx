@@ -63,6 +63,8 @@ export interface OpenConfirmCreateState {
   open: boolean
   ids: number[]
   body: APIRequestPostVMSMedia | null
+  /** Present when confirming an EDIT (routes to PUT); null/absent for CREATE (POST). */
+  id?: string | number | null
 }
 
 export interface OpenUpdateTypeState {
@@ -75,7 +77,7 @@ export const INIT_OPEN_VMS_SCREEN: OpenVMSScreenState = {
   vms_url: ''
 }
 
-export const INIT_OPEN_CONFIRM_CREATE: OpenConfirmCreateState = { open: false, ids: [], body: null }
+export const INIT_OPEN_CONFIRM_CREATE: OpenConfirmCreateState = { open: false, ids: [], body: null, id: null }
 
 export const INIT_OPEN_UPDATE_TYPE: OpenUpdateTypeState = { open: false }
 

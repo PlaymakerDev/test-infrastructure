@@ -60,7 +60,11 @@ const TitleSection: React.FC<Props> = (props) => {
                 shape='round'
                 icon={<TbAppWindow />}
                 className='w-full sm:w-auto'
-                onClick={() => window.open(data?.solution.anydesk ? `https://remote.anydesk.com/${data.solution.anydesk}` : '#', '_blank')}
+                // onClick={() => window.open(data?.solution.anydesk ? `https://remote.anydesk.com/${data.solution.anydesk}` : '#', '_blank')}
+                onClick={() => {
+                  if (!data?.solution.anydesk) return
+                  window.location.href = `anydesk:${data.solution.anydesk}`
+                }}
               >
                 <p className='fs-12'>Anydesk : {data?.solution.anydesk || '-'}</p>
               </Button>
