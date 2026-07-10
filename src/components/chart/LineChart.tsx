@@ -413,7 +413,7 @@ const LineChart: React.FC<LineChartProps> = ({
         {periods && periods.length > 0 && (
           <div
             className='flex gap-1 rounded-full p-1 text-sm'
-            style={{ background: '#3a2e00' }}
+            style={{ background: '#A2A2A233' }}
           >
             {periods.map((p) => (
               <button
