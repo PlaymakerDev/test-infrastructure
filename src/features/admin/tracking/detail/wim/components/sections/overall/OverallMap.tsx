@@ -12,7 +12,7 @@ interface PositionPopupProps {
   data?: PositionByIDData
 }
 
-const DEFAULT_ICON = '/images/icon-marker/Default.svg'
+const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
 
 const PositionPopup: React.FC<PositionPopupProps> = (props) => {
   const { data } = props

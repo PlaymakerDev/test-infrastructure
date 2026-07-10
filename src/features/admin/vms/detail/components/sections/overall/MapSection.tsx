@@ -4,7 +4,7 @@ import { APIResponseVMSDetail, Solution } from '@/types/vms/detail-api'
 import { Image } from 'antd'
 import React, { useMemo } from 'react'
 
-const DEFAULT_ICON = '/images/icon-marker/Default.svg'
+const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
 
 interface Props {
   data?: APIResponseVMSDetail
