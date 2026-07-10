@@ -26,7 +26,7 @@ const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorL
     className='py-3 px-5 rounded-[14px]'
     style={{
       border: `1.5px solid ${color}`,
-      background: '#66AEFF1A',
+      background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919',
     }}
   >
     <div className='flex items-center gap-2 mb-1'>

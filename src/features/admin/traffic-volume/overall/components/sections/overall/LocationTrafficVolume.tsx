@@ -15,7 +15,7 @@ const LocationTrafficVolume: React.FC<Props> = () => {
   return (
     <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
       {/* LEFT — Camera list */}
-      <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+      <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
         <CctvListTrafficVolume />
       </div>
 
@@ -25,7 +25,7 @@ const LocationTrafficVolume: React.FC<Props> = () => {
       </div>
 
       {/* RIGHT — Info cards */}
-      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
         <InfoCardTrafficVolume />
       </div>
     </div>

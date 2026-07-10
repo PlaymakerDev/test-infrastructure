@@ -14,14 +14,16 @@ interface Props {}
 const OverallTrafficVolume: React.FC<Props> = () => {
   return (
     <div className='flex flex-col gap-6'>
-      {/* ── Map + Info cards rail ─────────────────────────────────────────── */}
-      <section className='grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4'>
-        <div className='relative rounded-lg overflow-hidden h-[50dvh] xl:h-auto xl:min-h-180'>
+      {/* ── Map background + Info cards overlay ──────────────────────────── */}
+      <section className='flex flex-col gap-4 xl:block xl:relative'>
+        {/* Map: full-width background, defines container height on desktop */}
+        <div className='relative rounded-lg overflow-hidden h-[50dvh] xl:h-180'>
           <MapDetailTrafficVolume
             edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
           />
         </div>
-        <div>
+        {/* Info cards: in flow on mobile, anchored top-right on desktop */}
+        <div className='px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-4 xl:z-10 xl:w-90'>
           <InfoCardsTrafficVolume />
         </div>
       </section>

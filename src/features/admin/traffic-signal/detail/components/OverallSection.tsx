@@ -17,31 +17,34 @@ interface Props { }
 const OverallSection: React.FC<Props> = () => {
   return (
     <div className='flex flex-col gap-6'>
-      {/* ── Map area + right rail.
+      {/* ── Map background + overlays.
         * Layout per Figma:
-        *  • Left column = 3D map. Traffic Cycle donut is overlaid at the
-        *    bottom-right of the map (fixed width, not spanning full width).
-        *  • Right column = 4 info cards at top + Phase Timing pinned to the
-        *    bottom (mt-auto), so it visually aligns with the Cycle overlay. */}
-      <section className='grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4 xl:h-180'>
-        <div className='relative rounded-lg overflow-hidden h-[50dvh] xl:h-full'>
+        *  • Map = full-width background.
+        *  • Traffic Cycle donut overlaid at the bottom-right of the map.
+        *  • Right rail (4 info cards + Phase Timing pinned bottom via mt-auto)
+        *    absolute-positioned on top of the map on desktop, in-flow on mobile. */}
+      <section className='flex flex-col gap-4 xl:block xl:relative'>
+        {/* Map: full-width background, defines container height on desktop */}
+        <div className='relative rounded-lg overflow-hidden h-[50dvh] xl:h-180'>
           <MapDetailTrafficSignal edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }} />
 
-          {/* Cycle overlay — same height as Phase Timing (h-71) and bottom-3
-            * to mirror the right column's bottom padding. */}
-          <div className='hidden xl:block absolute bottom-3 right-3 w-115 xl:h-71 pointer-events-auto'>
+          {/* Cycle overlay — same height as Phase Timing (h-71) and bottom-3.
+            * `right-96` (24rem = 384px) clears the right rail below
+            * (`right-4` + `w-90` = 16 + 360 = 376px) with an 8px gap. */}
+          <div className='hidden xl:block absolute bottom-2 right-96 w-115 xl:h-71 pointer-events-auto'>
             <TrafficCycleTrafficSignal />
           </div>
         </div>
 
-        {/* Right column — `gap-3` between every card and `pb-3` at the bottom
-          * so the spacing matches the Cycle overlay's `bottom-3` offset.
-          * Phase Timing pinned to h-71 to align with the Cycle overlay. */}
-        <div className='flex flex-col gap-3 xl:h-full xl:pb-3'>
+        {/* Right rail — `gap-3` between every card. On desktop, absolute-positioned
+          * on top of the map. `xl:bottom-3` matches the Cycle overlay's `bottom-3`
+          * so Phase Timing's bottom edge aligns with the Cycle overlay's bottom. */}
+        <div className='flex flex-col gap-3 px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-3 xl:z-10 xl:w-90'>
           <InfoCardsTrafficSignal />
-          {/* `mt-auto` pins Phase Timing to the bottom so its top/bottom line up
-            * with the Traffic Signal Cycle overlay on the left (both h-71). */}
-          <div className='xl:h-71 xl:mt-auto'>
+          {/* `mt-auto` pins Phase Timing to the bottom. `shrink-0` guards against
+            * flex shrinkage when InfoCards is tall, so h-71 (284px) is always
+            * honored — matching the Cycle overlay's h-71 exactly. */}
+          <div className='xl:h-71 xl:mt-auto xl:shrink-0'>
             <PhaseTimingTrafficSignal />
           </div>
         </div>
