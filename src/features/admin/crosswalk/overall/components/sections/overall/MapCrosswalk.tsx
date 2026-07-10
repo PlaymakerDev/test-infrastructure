@@ -151,7 +151,7 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       id='crosswalk'
       data={allData}
       cluster
-      size={14}
+      size={18}
       popup={(f) => (
         <CrosswalkPopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
       )}

@@ -76,7 +76,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   clusterMaxZoom = 14,
   clusterRadius = 60,
   color,
-  size = 16,
+  size = 18,
   strokeColor = '#ffffff',
   iconImage,
   iconSize,
@@ -157,11 +157,15 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         layout: {
           ...(iconImage && {
             'icon-image': iconImage,
+            // Cluster glyph scales WITH the cluster circle (same breakpoints as
+            // circle-radius: 10/50/100) so the icon fills the badge ~consistently
+            // (~75%) instead of shrinking away inside the bigger cluster circles.
+            // Unclustered stays at the single-marker size (0.50).
             'icon-size': [
               'case',
               ['has', 'point_count'],
-              ['step', ['get', 'point_count'], iconSize ?? 0.32, 50, 0.36, 100, 0.4],
-              iconSize ?? 0.36,
+              ['step', ['get', 'point_count'], iconSize ?? 0.54, 10, 0.62, 50, 0.72, 100, 0.84],
+              iconSize ?? 0.50,
             ],
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
@@ -213,7 +217,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           ...(minZoom !== undefined && { minzoom: minZoom }),
           layout: {
             'icon-image': iconImage,
-            'icon-size': iconSize ?? 0.36,
+            'icon-size': iconSize ?? 0.50,
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
             'icon-anchor': 'center',

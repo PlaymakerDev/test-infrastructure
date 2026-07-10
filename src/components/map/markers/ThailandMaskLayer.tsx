@@ -68,7 +68,17 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
           },
         }
 
-        const firstSymbol = map.getStyle()?.layers?.find((l) => l.type === 'symbol')?.id
+        // Choose the beforeId so the mask/highlight layers ALWAYS render below
+        // markers. When this component's async fetch resolves AFTER the marker
+        // layers have already been added (typical since markers are sync but
+        // this fetches two geojsons), `firstSymbol` alone doesn't help — those
+        // marker symbols are ABOVE the base style's first symbol. Prefer the
+        // first `markerlayer-*` id so the mask sits underneath them; fall back
+        // to `firstSymbol` when no marker layer has mounted yet.
+        const style = map.getStyle()
+        const firstMarkerLayer = style?.layers?.find((l) => l.id.startsWith('markerlayer-'))?.id
+        const firstSymbol = style?.layers?.find((l) => l.type === 'symbol')?.id
+        const beforeId = firstMarkerLayer ?? firstSymbol
 
         if (!map.getSource('thailand-mask')) {
           map.addSource('thailand-mask', { type: 'geojson', data: maskFeature })
@@ -79,7 +89,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
               source: 'thailand-mask',
               paint: { 'fill-color': maskColor, 'fill-opacity': maskOpacity },
             },
-            firstSymbol
+            beforeId
           )
         }
 
@@ -94,7 +104,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
               filter: ['!=', ['get', 'code'], '__none__'],
               paint: { 'fill-color': '#000000', 'fill-opacity': 0.45 },
             },
-            firstSymbol
+            beforeId
           )
           map.addLayer(
             {
@@ -109,7 +119,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
                 'line-opacity': 0.8,
               },
             },
-            firstSymbol
+            beforeId
           )
         }
       } catch (e) {

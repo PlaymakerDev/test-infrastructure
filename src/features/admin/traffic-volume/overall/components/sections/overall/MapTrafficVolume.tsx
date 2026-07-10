@@ -149,7 +149,7 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       id='traffic-volume'
       data={allData}
       cluster
-      size={14}
+      size={18}
       popup={(f) => (
         <TrafficVolumePopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
       )}

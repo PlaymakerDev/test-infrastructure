@@ -120,7 +120,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
       id="vms"
       data={allData}
       cluster
-      size={14}
+      size={18}
       strokeColor='#ffffff'
       popup={(f) => (
         <VMSPopup
