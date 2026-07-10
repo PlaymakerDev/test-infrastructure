@@ -91,6 +91,14 @@ export interface LineChartProps {
   xAxisLabelRotate?: number
   /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
   xAxisLabelMaxWidth?: number
+  /** ระยะห่างของ label แกน X (จำนวน category ที่ข้าม).
+   *  - `undefined` (default) = auto — ECharts เลือกเองโดย `hideOverlap` + `showMaxLabel`
+   *    (label สุดท้ายถูกบังคับให้โชว์เสมอ อาจทำให้ระยะห่างไม่เท่ากัน)
+   *  - `0` = โชว์ทุก label
+   *  - `1` = โชว์ทุก label ที่ 2 (เช่น 00, 02, 04, …)
+   *  - `N` = โชว์ทุก label ที่ N+1
+   *  เมื่อกำหนดค่านี้ระบบจะปิด `showMaxLabel` อัตโนมัติเพื่อให้ระยะห่างเท่ากัน */
+  xAxisLabelInterval?: number
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
   /** สี title + icon accent (default `#FCD116`) */
@@ -157,6 +165,7 @@ const LineChart: React.FC<LineChartProps> = ({
   yAxisDomain = [0, 'auto'],
   xAxisLabelRotate = 0,
   xAxisLabelMaxWidth,
+  xAxisLabelInterval,
   // Theme overrides — defaults match the original look
   accentColor = '#FCD116',
   cardBackground = '#00000080',
@@ -198,13 +207,21 @@ const LineChart: React.FC<LineChartProps> = ({
           // Keep the line flush to both edges (boundaryGap:false) while stopping
           // the first/last category labels from overflowing past the card edge:
           // align the first label to the left and the last to the right.
-          alignMinLabel: 'left',
-          alignMaxLabel: 'right',
-          // Pin the endpoints and let ECharts thin out middle labels responsively
-          // (hideOverlap only works in auto-interval mode, so no explicit `interval`).
+          // BUT: alignMin/Max don't play nice with rotated labels — the rotation
+          // origin conflicts with the alignment and the first/last labels end
+          // up floating (e.g. "00.00" drifts up next to the y-axis). Only apply
+          // the alignment when labels are NOT rotated.
+          ...(xAxisLabelRotate
+            ? {}
+            : { alignMinLabel: 'left', alignMaxLabel: 'right' }),
+          // When `xAxisLabelInterval` is explicit → let it control spacing evenly
+          // (turn off showMaxLabel so the forced-last label doesn't break the
+          // uniform interval). Otherwise fall back to auto-thinning w/ hideOverlap.
           showMinLabel: true,
-          showMaxLabel: true,
-          hideOverlap: true,
+          showMaxLabel: xAxisLabelInterval === undefined,
+          ...(xAxisLabelInterval === undefined
+            ? { hideOverlap: true }
+            : { interval: xAxisLabelInterval }),
           ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
           ...(typeof xAxisLabelMaxWidth === 'number'
             ? { width: xAxisLabelMaxWidth, overflow: 'truncate' }
@@ -338,7 +355,7 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, gridBottom, gridTop])
 
   return (
     <div

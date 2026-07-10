@@ -9,7 +9,7 @@ import { useDetailContext } from '../../../context'
 import type { CountingHourBucket } from '@/types/traffic-volume/detail-api'
 import { VEHICLE_TYPES } from './data/vehicleTypes'
 
-interface Props {}
+interface Props { }
 
 /** Map our internal vehicle-type keys → the API's per-type `*_count` field
  *  on each hour bucket. Keeps the tooltip extras in lock-step with the
@@ -77,6 +77,9 @@ const LineChartHour: React.FC<Props> = () => {
       fillHeight
       tooltipDateKey='dateLabel'
       tooltipExtras={tooltipExtras}
+    // โชว์ทุกชั่วโมง 00.00–23.00 ไม่เว้น — หมุน 45° ให้ label ไม่ทับกัน
+    // xAxisLabelInterval={0}
+    // xAxisLabelRotate={45}
     />
   )
 }

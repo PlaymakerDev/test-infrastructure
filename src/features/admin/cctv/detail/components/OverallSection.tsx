@@ -11,6 +11,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import CctvDetailMap, { type CamGroup } from './sections/CctvDetailMap'
 import CctvMarkerInfoPanel from './sections/CctvMarkerInfoPanel'
+import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
 
@@ -70,6 +71,9 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
   const [selected, setSelected] = useState<CamGroup | null>(null)
   // Collapse/expand the right panel (mirrors control-vms) to free up the map.
   const [panelOpen, setPanelOpen] = useState(true)
+  // Global Map Focus Mode also force-hides the panel + its collapse button.
+  const { isMapFocus } = useMapFocusMode()
+  const railHidden = !panelOpen || isMapFocus
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 
   const displayedCameras = panelFilter === 'online'
@@ -104,8 +108,9 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
 
         {/* ── Right camera panel ── */}
         <aside
-          className={`absolute z-10 top-3 bottom-3 right-3 flex flex-col rounded-2xl overflow-hidden transition-transform duration-300 ease-in-out ${panelOpen ? '' : 'translate-x-[calc(100%+0.75rem)]'}`}
+          className={`absolute z-10 top-3 bottom-3 right-3 flex flex-col rounded-2xl overflow-hidden transition-transform duration-300 ease-in-out ${railHidden ? 'translate-x-[calc(100%+0.75rem)]' : ''}`}
           style={{ width: 370, background: '#151515' }}
+          aria-hidden={railHidden || undefined}
         >
           {selected ? (
             <CctvMarkerInfoPanel cameras={selected.cameras} onClose={() => setSelected(null)} onOpenLive={openCamera} />
@@ -141,16 +146,19 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
         </aside>
 
         {/* Collapse / expand the right panel (same pattern as control-vms) so
-          * the map can use the full width. */}
-        <Button
-          type='primary'
-          shape='circle'
-          title={panelOpen ? 'ซ่อนแผงข้อมูล' : 'แสดงแผงข้อมูล'}
-          icon={panelOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
-          onClick={() => setPanelOpen((v) => !v)}
-          className='absolute! z-20 top-6 w-10! h-10! shadow-lg'
-          style={{ right: panelOpen ? 374 : 12, transition: 'right 0.3s ease' }}
-        />
+          * the map can use the full width. Hidden while Map Focus Mode is
+          * on, since the panel is force-hidden globally by the navbar. */}
+        {!isMapFocus && (
+          <Button
+            type='primary'
+            shape='circle'
+            title={panelOpen ? 'ซ่อนแผงข้อมูล' : 'แสดงแผงข้อมูล'}
+            icon={panelOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
+            onClick={() => setPanelOpen((v) => !v)}
+            className='absolute! z-20 top-6 w-10! h-10! shadow-lg'
+            style={{ right: panelOpen ? 374 : 12, transition: 'right 0.3s ease' }}
+          />
+        )}
       </section>
 
       {/* ── Camera table ── */}

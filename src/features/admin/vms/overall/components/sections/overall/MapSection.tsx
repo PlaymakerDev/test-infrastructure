@@ -1,7 +1,8 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
 import { useMap } from '@/components/map/hooks/useMap'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
 import { Location } from '@/types/vms/overview-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -50,7 +51,7 @@ interface VMSPopupProps {
 const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, dispatch, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${isOnline ? 'border-cyan-400' : 'border-red-500'}`}>
+    <div className='min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)' style={{ borderColor: SYSTEM_BRIGHT.VMS }}>
       <section>
         <HLSLivePlayer
           cameraId={String(p.camera_id ?? p.id)}
@@ -105,38 +106,32 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
     map.flyTo({ center: centroid as [number, number], zoom: 10, duration: 1200 })
   }, [map, isLoaded, isReady, centroid])
 
-  const onlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => l.vms.status.is_online)),
-    [locations],
-  )
-  const offlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => !l.vms.status.is_online)),
-    [locations],
-  )
+  // Single VMS-typed marker layer — same icon/menu-color style as the other
+  // overall maps (yellow-pin glyph via DeviceMarkerLayer). Online/offline is no
+  // longer a marker color; the popup shows it (border stays the VMS accent, the
+  // ● status text stays green/red).
+  const allData = useMemo(() => toGeoJSON(locations), [locations])
 
   if (!isReady) return null
 
   return (
-    <>
-      <MarkerLayer
-        id="vms-online"
-        data={onlineData}
-        cluster
-        color="#22d3ee"
-        size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={true} dispatch={dispatch} onNavigate={router.push} />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-      <MarkerLayer
-        id="vms-offline"
-        data={offlineData}
-        cluster
-        color="#ef4444"
-        size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={false} dispatch={dispatch} onNavigate={router.push} />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-    </>
+    <DeviceMarkerLayer
+      type='VMS'
+      id="vms"
+      data={allData}
+      cluster
+      size={14}
+      strokeColor='#ffffff'
+      popup={(f) => (
+        <VMSPopup
+          feature={f}
+          isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+          dispatch={dispatch}
+          onNavigate={router.push}
+        />
+      )}
+      popupOptions={{ offset: 10, closeButton: false }}
+    />
   )
 }
 

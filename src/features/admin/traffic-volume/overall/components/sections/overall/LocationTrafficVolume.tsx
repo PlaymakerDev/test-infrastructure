@@ -3,6 +3,8 @@ import React from 'react'
 import CctvListTrafficVolume from './CctvListTrafficVolume'
 import MapTrafficVolume from './MapTrafficVolume'
 import InfoCardTrafficVolume from './InfoCardTrafficVolume'
+import MapFocusGrid from '@/components/section/MapFocusGrid'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {}
 
@@ -13,11 +15,14 @@ interface Props {}
  *  Stacks vertically on mobile. */
 const LocationTrafficVolume: React.FC<Props> = () => {
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
+    <MapFocusGrid>
       {/* LEFT — Camera list */}
-      <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
+      <MapOverlayPanel
+        position='left'
+        className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+      >
         <CctvListTrafficVolume />
-      </div>
+      </MapOverlayPanel>
 
       {/* CENTER — Map */}
       <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
@@ -25,10 +30,13 @@ const LocationTrafficVolume: React.FC<Props> = () => {
       </div>
 
       {/* RIGHT — Info cards */}
-      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'>
+      <MapOverlayPanel
+        position='right'
+        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+      >
         <InfoCardTrafficVolume />
-      </div>
-    </div>
+      </MapOverlayPanel>
+    </MapFocusGrid>
   )
 }
 
