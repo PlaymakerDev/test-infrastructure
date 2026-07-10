@@ -31,7 +31,10 @@ const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = 
 const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
   const c = COLOR_MAP[color]
   return (
-    <div className={`bg-[#66AEFF1A] border ${c.border} py-3 px-5 rounded-[20px]`}>
+    <div
+      className={`border ${c.border} py-3 px-5 rounded-[20px]`}
+      style={{ background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919' }}
+    >
       <div className='flex items-center gap-2 mb-2'>
         <span className={`fs-22 shrink-0 ${c.text} flex items-center`}>{icon}</span>
         <h4 className={`${c.text} mb-0`}>{label}</h4>
