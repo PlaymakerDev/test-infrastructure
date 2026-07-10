@@ -221,8 +221,9 @@ const DashboardMapContent: React.FC = () => {
         value={visibleTypes}
         onChange={setVisibleTypes}
         visible={!!province}
+        top={92}
       />
-      <BreadcrumbBanner province={province} onReset={resetView} />
+      <BreadcrumbBanner province={province} onReset={resetView} top={144} />
     </>
   )
 }

@@ -29,13 +29,13 @@ interface DonutItem {
 // endpoint (cctv uses `/cameras/...`). A 0% ring means the API genuinely
 // returned online=0 (real downtime), not a missing endpoint.
 const STATIC_DONUTS = {
-  cctv: { color: '#ef4444', label: 'CCTV' },
-  traffic: { color: '#3b82f6', label: 'Traffic' },
-  lighting: { color: '#f97316', label: 'Lighting' },
-  vms: { color: '#a3e635', label: 'VMS' },
-  wim: { color: '#22c55e', label: 'WIM' },
-  crosswalk: { color: '#14b8a6', label: 'Crosswalk' },
-  tunnel: { color: '#a855f7', label: 'Tunnel' },
+  cctv: { color: '#FF8566', label: 'CCTV' },
+  traffic: { color: '#FFC766', label: 'Traffic' },
+  lighting: { color: '#D9FF66', label: 'Lighting' },
+  vms: { color: '#70FF66', label: 'VMS' },
+  wim: { color: '#66FFB5', label: 'WIM' },
+  crosswalk: { color: '#66F0FF', label: 'Crosswalk' },
+  tunnel: { color: '#6685FF', label: 'Tunnel' },
 } as const
 
 interface DonutProps {

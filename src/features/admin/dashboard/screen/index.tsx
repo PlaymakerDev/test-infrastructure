@@ -68,7 +68,7 @@ const DashboardScreen: React.FC<Props> = () => {
             * Notification + TrafficStat don't use → no empty gap at the bottom. */}
           <aside
             className="absolute right-4 z-10 flex flex-col gap-2"
-            style={{ top: 64, bottom: 16, width: 408 }}
+            style={{ top: 64, bottom: 16, width: 380 }}
           >
             <Notification />
             <VehicleRatioChart className="flex-1 min-h-0" />
