@@ -28,6 +28,13 @@ interface Props {
 const OverallSection: React.FC<Props> = (props) => {
   const { id, stationType } = props
   const stationTypeId = toStationTypeId(stationType)
+  const isStation = stationType === 'STATION'
+
+  // OverallAvgSpeed/ChartTraffic read a WIM-only endpoint (`/masters/wim/traffic_avg_speed`) —
+  // hide both columns for STATION and let the weight-comparison chart take the full row.
+  const previousWeightColSpan = isStation
+    ? { xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24, xxxl: 24 }
+    : { xs: 24, sm: 24, md: 24, lg: 12, xl: 12, xxl: 12, xxxl: 7 }
 
   const {
     data: pcu,
@@ -105,24 +112,28 @@ const OverallSection: React.FC<Props> = (props) => {
       </section>
       <section className='mt-5'>
         <Row gutter={[16, 16]} style={{ alignItems: 'stretch' }}>
-          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={10} className='flex flex-col'>
-            <OverallAvgSpeed
-              stationId={id}
-              stationType={stationType}
-            />
-          </Col>
-          <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={7} className='flex flex-col'>
+          {!isStation && (
+            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={10} className='flex flex-col'>
+              <OverallAvgSpeed
+                stationId={id}
+                stationType={stationType}
+              />
+            </Col>
+          )}
+          <Col {...previousWeightColSpan} className='flex flex-col'>
             <ChartPreviousWeightVehicle
               stationId={id}
               stationType={stationType}
             />
           </Col>
-          <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={7} className='flex flex-col'>
-            <ChartTraffic
-              stationId={id}
-              stationType={stationType}
-            />
-          </Col>
+          {!isStation && (
+            <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={7} className='flex flex-col'>
+              <ChartTraffic
+                stationId={id}
+                stationType={stationType}
+              />
+            </Col>
+          )}
         </Row>
       </section>
       <section className='mt-5'>

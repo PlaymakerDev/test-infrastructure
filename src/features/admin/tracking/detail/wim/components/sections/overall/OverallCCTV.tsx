@@ -25,6 +25,21 @@ const OverallCCTV: React.FC<Props> = (props) => {
 
   const renderCCTVList = useMemo(() => {
     const randomCCTV = data?.data?.data?.filter(item => item.camera_status === 'Online')?.sort(() => Number(randomCam) - 0.5).slice(0, 4)
+
+    if (!randomCCTV || randomCCTV.length === 0) {
+      return Array.from({ length: 4 }).map((_, index) => (
+        <Col key={index} xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={6}>
+          <figure className='flex-1 min-h-0 rounded-lg overflow-hidden mb-1.5'>
+            <HLSLivePlayer
+              figureClassName='figure-normal lg:h-50! lg:min-h-0! lg:max-h-none! mb-1.5 rounded-lg cursor-pointer'
+            />
+          </figure>
+          <h4 className='fs-12 text-[#66AEFF] leading-snug break-all mb-0.5'>{'-'}</h4>
+          <p className='fs-12 text-gray-400 leading-snug m-0'>{'-'}</p>
+        </Col>
+      ))
+    }
+
     return randomCCTV?.map((item) => (
       <Col key={item.id} xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={6}>
         <figure className='flex-1 min-h-0 rounded-lg overflow-hidden mb-1.5'>
