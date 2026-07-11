@@ -19,6 +19,9 @@ const ChartContent: React.FC<Props> = (props) => {
       pagination={{ clickable: true }}
       autoHeight
       className='w-full'
+      autoplay={{
+        delay: 15000
+      }}
     >
       <SwiperSlide className='bg-transparent! pb-7'>
         <WeatherChart data={data} />

@@ -24,7 +24,8 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
       title='สถิติความชื้นและความเร็วลมรายชั่วโมงประจำวัน'
       subtitle='เปรียบเทียบความชื้นและความเร็วลมรายชั่วโมง'
       icon={<TbWind className='fs-18' />}
-      accentColor='#A78BFA'
+      iconCircle={false}
+      accentColor='var(--default-blue)'
       cardBackground='#00000080'
       cardBorderColor='transparent'
       showGlow={false}
