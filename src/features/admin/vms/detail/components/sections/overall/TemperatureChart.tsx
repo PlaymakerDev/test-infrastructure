@@ -31,10 +31,14 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
       showGlow={false}
       data={chartData}
       lines={[
-        { dataKey: 'windSpeed', color: '#A78BFA', label: 'ความเร็วลม', unit: 'km/h' },
+        // windSpeed (km/h, single digits) shares almost nothing in scale with
+        // humidity (%RH, 0-100) — on one shared axis one line always renders
+        // as a flat, unreadable line. Give it its own (right) axis instead.
+        { dataKey: 'windSpeed', color: '#A78BFA', label: 'ความเร็วลม', unit: 'km/h', yAxisIndex: 1 },
         { dataKey: 'humidity', color: '#60A5FA', label: 'ความชื้น', unit: '%RH' },
       ]}
-      yAxisTicks={[0, 10, 20, 30, 40]}
+      yAxisDomain={[0, 'auto']}
+      secondaryYAxisDomain={[0, 'auto']}
       tooltipShowDot
       height={220}
     />

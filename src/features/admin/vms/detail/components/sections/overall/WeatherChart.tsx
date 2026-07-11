@@ -37,9 +37,13 @@ const WeatherChart: React.FC<Props> = (props) => {
       data={chartData}
       lines={[
         { dataKey: 'temp', color: '#FF8C00', label: 'อุณหภูมิ', unit: '°C' },
-        { dataKey: 'pm25', color: '#FCD116', label: 'PM 2.5', unit: 'μg/m³' },
+        // PM 2.5 (μg/m³) can run well past 40 (haze season easily hits 100+),
+        // which on a shared 0-40 axis pins temp's whole line flat against the
+        // top. Give PM 2.5 its own (right) axis instead.
+        { dataKey: 'pm25', color: '#FCD116', label: 'PM 2.5', unit: 'μg/m³', yAxisIndex: 1 },
       ]}
-      yAxisTicks={[0, 10, 20, 30, 40]}
+      yAxisDomain={[0, 'auto']}
+      secondaryYAxisDomain={[0, 'auto']}
       tooltipShowDot
       height={220}
     />

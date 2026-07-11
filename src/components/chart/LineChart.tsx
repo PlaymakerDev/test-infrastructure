@@ -17,6 +17,10 @@ export interface LineConfig {
   dashed?: boolean
   /** ซ่อนเส้นนี้จาก tooltip rows (เส้นยังคงวาดบนกราฟ) */
   hideInTooltip?: boolean
+  /** ใช้แกน Y ที่สอง (ขวา) แทนแกนหลัก (ซ้าย) — ใช้เมื่อสองเส้นมีหน่วย/สเกล
+   *  ต่างกันมาก (เช่น °C กับ μg/m³) การใช้แกนร่วมกันจะทำให้เส้นใดเส้นหนึ่ง
+   *  แบนราบจนอ่านไม่ออก (default `0` = แกนหลัก) */
+  yAxisIndex?: 0 | 1
 }
 
 /** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
@@ -83,10 +87,14 @@ export interface LineChartProps {
   /** Padding (px) above the plot. Default 16 — lower it to pull the plot up
    *  closer to the card title. */
   gridTop?: number
-  /** กำหนด ticks บน Y-axis */
+  /** กำหนด ticks บน Y-axis (แกนหลัก/ซ้าย) */
   yAxisTicks?: number[]
-  /** domain ของ Y-axis */
+  /** domain ของ Y-axis (แกนหลัก/ซ้าย) */
   yAxisDomain?: [number | 'auto', number | 'auto']
+  /** กำหนด ticks บน Y-axis ที่สอง (ขวา) — ใช้ร่วมกับ `LineConfig.yAxisIndex: 1` */
+  secondaryYAxisTicks?: number[]
+  /** domain ของ Y-axis ที่สอง (ขวา) — ใช้ร่วมกับ `LineConfig.yAxisIndex: 1` */
+  secondaryYAxisDomain?: [number | 'auto', number | 'auto']
   /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
   xAxisLabelRotate?: number
   /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
@@ -155,6 +163,8 @@ const LineChart: React.FC<LineChartProps> = ({
   gridTop = 16,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  secondaryYAxisTicks,
+  secondaryYAxisDomain = [0, 'auto'],
   xAxisLabelRotate = 0,
   xAxisLabelMaxWidth,
   // Theme overrides — defaults match the original look
@@ -183,6 +193,36 @@ const LineChart: React.FC<LineChartProps> = ({
     const yMin = yAxisTicks ? yAxisTicks[0] : yAxisDomain[0] === 'auto' ? undefined : yAxisDomain[0]
     const yMax = yAxisTicks ? yAxisTicks[yAxisTicks.length - 1] : yAxisDomain[1] === 'auto' ? undefined : yAxisDomain[1]
     const yInterval = yAxisTicks && yAxisTicks.length >= 2 ? yAxisTicks[1] - yAxisTicks[0] : undefined
+
+    // A second (right-hand) axis is only built when a line actually opts in via
+    // `yAxisIndex: 1` — every other consumer keeps the original single-axis
+    // object shape untouched.
+    const hasSecondaryAxis = lines.some((line) => line.yAxisIndex === 1)
+    const secondaryYMin = secondaryYAxisTicks
+      ? secondaryYAxisTicks[0]
+      : secondaryYAxisDomain[0] === 'auto' ? undefined : secondaryYAxisDomain[0]
+    const secondaryYMax = secondaryYAxisTicks
+      ? secondaryYAxisTicks[secondaryYAxisTicks.length - 1]
+      : secondaryYAxisDomain[1] === 'auto' ? undefined : secondaryYAxisDomain[1]
+    const secondaryYInterval = secondaryYAxisTicks && secondaryYAxisTicks.length >= 2
+      ? secondaryYAxisTicks[1] - secondaryYAxisTicks[0]
+      : undefined
+
+    const primaryYAxis = {
+      type: 'value',
+      min: yMin,
+      max: yMax,
+      ...(yInterval ? { interval: yInterval } : {}),
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#ffffff',
+        fontSize: 11,
+        // Full integer with thousands separator — no `K` suffix.
+        formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+      },
+      splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
+    }
 
     return {
       backgroundColor: 'transparent',
@@ -213,21 +253,28 @@ const LineChart: React.FC<LineChartProps> = ({
         splitLine: { show: false },
         boundaryGap: false,
       },
-      yAxis: {
-        type: 'value',
-        min: yMin,
-        max: yMax,
-        ...(yInterval ? { interval: yInterval } : {}),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          color: '#ffffff',
-          fontSize: 11,
-          // Full integer with thousands separator — no `K` suffix.
-          formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
-        },
-        splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
-      },
+      yAxis: hasSecondaryAxis
+        ? [
+            { ...primaryYAxis, position: 'left' },
+            {
+              type: 'value',
+              min: secondaryYMin,
+              max: secondaryYMax,
+              ...(secondaryYInterval ? { interval: secondaryYInterval } : {}),
+              position: 'right',
+              axisLine: { show: false },
+              axisTick: { show: false },
+              axisLabel: {
+                color: '#ffffff',
+                fontSize: 11,
+                formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+              },
+              // Only the primary axis draws grid split-lines — a second set
+              // at a different scale would misalign and clutter the plot.
+              splitLine: { show: false },
+            },
+          ]
+        : primaryYAxis,
       tooltip: {
         trigger: 'axis',
         // Render tooltip in <body> so it escapes the card's `overflow: hidden`
@@ -311,6 +358,7 @@ const LineChart: React.FC<LineChartProps> = ({
       series: lines.map((line) => ({
         name: line.label,
         type: 'line',
+        yAxisIndex: line.yAxisIndex ?? 0,
         // Flat reference/dashed guidelines look wrong when smoothed — the
         // smoothing tries to curve a straight horizontal line into a spline
         // and the shadow bleeds between dashes. Keep smoothing for real
@@ -338,7 +386,7 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, gridBottom, gridTop])
 
   return (
     <div
