@@ -1,8 +1,11 @@
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { useAppDispatch } from '@/stores/hooks'
 import { APIResponseVMSDetail, Solution } from '@/types/vms/detail-api'
 import { Image } from 'antd'
 import React, { useMemo } from 'react'
+import { useDetailContext } from '../../../context'
 
 const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
 
@@ -13,25 +16,29 @@ interface Props {
 }
 
 interface SolutionPopupProps {
-  data?: Solution;
+  data?: APIResponseVMSDetail;
   isWarranty?: boolean;
   isOnline?: boolean
+  setOpenVMSScreen?: (value: { open: boolean; data?: APIResponseVMSDetail }) => void;
 }
 
 const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
-  const { data, isWarranty, isOnline } = props
+  const { data, isWarranty, isOnline, setOpenVMSScreen } = props
 
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-green-400`}>
       <section>
-        <p className='fs-11'>ชื่อสายทาง: <strong>{data?.solution_location?.project_roads?.road?.road_name || '-'}</strong></p>
-        <p className='fs-11'>รหัสสายทาง: <strong>{data?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
-        <p className='fs-11'>ชื่อจุดติดตั้ง: <strong>{data?.solution_name || '-'}</strong></p>
+        <p className='fs-11'>ชื่อจุดติดตั้ง: <strong>{data?.solution?.solution_name || '-'}</strong></p>
+        <p className='fs-11'>รหัสสายทาง: <strong>{data?.solution?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
       </section>
-      <hr className='my-3' />
       <section className='mt-1.5'>
-        <p className='fs-11'>สถานะ: <strong>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
-        <p className='fs-11'>การค้ำประกัน: <strong>{isWarranty ? 'อยู่ในค้ำ' : 'หมดค้ำ'}</strong></p>
+        <HLSLivePlayer
+          cameraId={String(data?.desktop_screen.id)}
+          hlsUrl={data?.desktop_screen.desktop_screen}
+          enableViewportPause
+          figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer"
+          onClick={() => setOpenVMSScreen?.({ open: true, data })}
+        />
       </section>
     </div>
   )
@@ -39,6 +46,7 @@ const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
 
 const MapSection: React.FC<Props> = (props) => {
   const { data, isWarranty, isOnline } = props
+  const { setOpenVMSScreen } = useDetailContext()
 
   const point = data?.solution?.geometry_point
 
@@ -64,7 +72,14 @@ const MapSection: React.FC<Props> = (props) => {
             anchor="bottom"
             offset={[0, 19]}
             title={data?.solution?.solution_name}
-            popup={() => <SolutionPopup data={data?.solution} isWarranty={isWarranty} isOnline={isOnline} />}
+            popup={() => (
+              <SolutionPopup
+                data={data}
+                isWarranty={isWarranty}
+                isOnline={isOnline}
+                setOpenVMSScreen={setOpenVMSScreen}
+              />
+            )}
             popupOptions={{ offset: 10, closeButton: false }}
           >
             <Image
