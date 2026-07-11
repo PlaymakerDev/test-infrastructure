@@ -36,7 +36,7 @@ const WIMDetailScreen: React.FC<Props> = (props) => {
         stationType={stationType}
         setCurrentTab={setCurrentTab}
       />
-      <section className='mt-8 px-10'>
+      <section className='mt-8 px-8'>
         {renderContent}
       </section>
     </div>

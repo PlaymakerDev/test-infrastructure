@@ -29,6 +29,10 @@ export const trackingWimKeys = {
     [...trackingWimKeys.all, 'weight-wim-log', params] as const,
   weightStationLog: (params: APIRequestWeightStationLog) =>
     [...trackingWimKeys.all, 'weight-station-log', params] as const,
+  weightWimLogById: (id?: string | number, stationTypeId?: number | null) =>
+    [...trackingWimKeys.all, 'weight-wim-log-by-id', String(id ?? ''), stationTypeId ?? ''] as const,
+  weightStationLogById: (id?: string | number) =>
+    [...trackingWimKeys.all, 'weight-station-log-by-id', String(id ?? '')] as const,
   stationDaily: (params: APIRequestStationDaily) =>
     [...trackingWimKeys.all, 'station-daily', params] as const,
   wimDaily: (params: APIRequestWIMDaily) =>
