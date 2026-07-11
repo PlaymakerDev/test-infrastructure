@@ -57,17 +57,17 @@ export const WEIGHT_STATUS_WITH_PROPERTIES = {
 export const VEHICLE_PROPERTIES = {
   "1": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/01.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/01.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/01.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/01.svg",
       "width": 80.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/01.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/01.svg",
       "width": 80.84,
       "height": 62.5
     },
@@ -85,17 +85,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "2": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/02.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/02.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/02.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/02.svg",
       "width": 80.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/02.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/02.svg",
       "width": 80.84,
       "height": 62.5
     },
@@ -112,17 +112,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "3": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/03.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/03.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/03.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/03.svg",
       "width": 142.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/03.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/03.svg",
       "width": 142.84,
       "height": 62.5
     },
@@ -139,17 +139,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "4": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/04.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/04.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/04.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/04.svg",
       "width": 142.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/04.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/04.svg",
       "width": 142.84,
       "height": 62.5
     },
@@ -166,17 +166,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "5": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/05.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/05.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/05.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/05.svg",
       "width": 142.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/05.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/05.svg",
       "width": 142.84,
       "height": 62.5
     },
@@ -193,17 +193,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "6": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/06.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/06.svg",
       "width": 204,
       "height": 67.83
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/06.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/06.svg",
       "width": 157.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/06.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/06.svg",
       "width": 157.84,
       "height": 62.5
     },
@@ -220,17 +220,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "7": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/07.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/07.svg",
       "width": 204,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/07.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/07.svg",
       "width": 190.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/07.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/07.svg",
       "width": 190.84,
       "height": 62.5
     },
@@ -247,17 +247,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "8": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/08.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/08.svg",
       "width": 204,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/08.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/08.svg",
       "width": 190.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/08.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/08.svg",
       "width": 190.84,
       "height": 62.5
     },
@@ -274,17 +274,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "9": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/09.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/09.svg",
       "width": 253,
       "height": 67.83
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/09.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/09.svg",
       "width": 190.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/09.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/09.svg",
       "width": 190.84,
       "height": 62.5
     },
@@ -301,17 +301,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "10": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/10.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/10.svg",
       "width": 253,
       "height": 68.14
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/10.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/10.svg",
       "width": 206.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/10.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/10.svg",
       "width": 206.84,
       "height": 62.5
     },
@@ -328,17 +328,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "111": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/11_1.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/11_1.svg",
       "width": 253,
       "height": 68.14
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/11_1.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/11_1.svg",
       "width": 206.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/11_1.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/11_1.svg",
       "width": 206.84,
       "height": 62.5
     },
@@ -355,17 +355,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "112": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/11_2.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/11_2.svg",
       "width": 253,
       "height": 68.14
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/11_2.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/11_2.svg",
       "width": 206.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/11_2.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/11_2.svg",
       "width": 206.84,
       "height": 62.5
     },
@@ -382,17 +382,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "113": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/11_3.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/11_3.svg",
       "width": 253,
       "height": 68.14
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/11_3.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/11_3.svg",
       "width": 206.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/11_3.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/11_3.svg",
       "width": 206.84,
       "height": 62.5
     },
@@ -409,17 +409,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "11": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/11_4.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/11_4.svg",
       "width": 253,
       "height": 68.14
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/11_4.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/11_4.svg",
       "width": 206.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/11_4.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/11_4.svg",
       "width": 206.84,
       "height": 62.5
     },
@@ -436,17 +436,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "12": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/12.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/12.svg",
       "width": 307,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/12.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/12.svg",
       "width": 236.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/12.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/12.svg",
       "width": 236.84,
       "height": 62.5
     },
@@ -463,17 +463,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "13": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/13.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/13.svg",
       "width": 303,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/13.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/13.svg",
       "width": 227.34,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/13.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/13.svg",
       "width": 227.34,
       "height": 62.5
     },
@@ -490,17 +490,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "14": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/14.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/14.svg",
       "width": 303,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/14.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/14.svg",
       "width": 256,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/14.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/14.svg",
       "width": 256,
       "height": 62.5
     },
@@ -517,17 +517,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "15": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/15.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/15.svg",
       "width": 153,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/15.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/15.svg",
       "width": 235,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/15.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/15.svg",
       "width": 235,
       "height": 62.5
     },
@@ -544,17 +544,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "16": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/16.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/16.svg",
       "width": 327,
       "height": 60
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/16.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/16.svg",
       "width": 232.99,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/16.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/16.svg",
       "width": 232.99,
       "height": 62.5
     },
@@ -571,17 +571,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "17": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/17.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/17.svg",
       "width": 173,
       "height": 59
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/17.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/17.svg",
       "width": 127.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/17.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/17.svg",
       "width": 127.84,
       "height": 62.5
     },
@@ -598,17 +598,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "18": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/18.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/18.svg",
       "width": 327,
       "height": 60
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/18.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/18.svg",
       "width": 219.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/18.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/18.svg",
       "width": 219.84,
       "height": 62.5
     },
@@ -625,17 +625,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "19": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/19.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/19.svg",
       "width": 327,
       "height": 60
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/19.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/19.svg",
       "width": 219.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/19.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/19.svg",
       "width": 219.84,
       "height": 62.5
     },
@@ -652,17 +652,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "20": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/20.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/20.svg",
       "width": 275,
       "height": 60
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/20.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/20.svg",
       "width": 223.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/20.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/20.svg",
       "width": 223.84,
       "height": 62.5
     },
@@ -679,17 +679,17 @@ export const VEHICLE_PROPERTIES = {
   },
   "21": {
     "vehicle": {
-      "image": "/atlas/images/truck-img/truck-type/21.svg",
+      "image": "/atlas/images/vehicles/truck-img/truck-type/21.svg",
       "width": 275,
       "height": 60
     },
     "wheel_vertical": {
-      "image": "/atlas/images/truck-img/wheel-vertical/21.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-vertical/21.svg",
       "width": 191.84,
       "height": 62.5
     },
     "wheel": {
-      "image": "/atlas/images/truck-img/wheel-type/21.svg",
+      "image": "/atlas/images/vehicles/truck-img/wheel-type/21.svg",
       "width": 191.84,
       "height": 62.5
     },

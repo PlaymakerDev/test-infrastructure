@@ -1,7 +1,7 @@
 "use client"
 import menu from "@/configs/menu"
 import type { AdminMenuItem } from "@/configs/menu/admin"
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   TbMenu2,
@@ -124,6 +124,7 @@ const IconText: React.FC<{ size?: number }> = ({ size = 24 }) => (
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const iconClassName = "fs-24 cursor-pointer"
   const dispatch = useAppDispatch()
   // STATE
@@ -140,12 +141,14 @@ export default function Navbar() {
   // that host a map. Bound to the TbZoomInArea button below.
   const { isMapFocus, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
 
-  // Reset focus mode whenever the route changes — otherwise the toggle would
-  // persist across navigations and land the user on a page with panels
-  // already hidden.
+  // Reset focus mode on ANY navigation — path OR query (e.g. picking another
+  // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
+  // the query dep the user lands on the new department with every card still
+  // hidden and only the small yellow icon hinting why.
+  const searchKey = searchParams.toString()
   useEffect(() => {
     setMapFocus(false)
-  }, [pathname, setMapFocus])
+  }, [pathname, searchKey, setMapFocus])
 
   useEffect(() => {
     const interval = setInterval(() => {

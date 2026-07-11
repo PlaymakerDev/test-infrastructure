@@ -64,7 +64,7 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
         id='cctv-locations'
         data={data}
         cluster
-        size={16}
+        size={18}
         strokeColor='#ffffff'
         popupOptions={{ offset: 10, closeButton: false }}
         popup={(f) => (

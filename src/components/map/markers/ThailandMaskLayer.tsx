@@ -14,7 +14,25 @@ export interface ThailandMaskLayerProps {
   maskOpacity?: number
   /** Highlighted province line color */
   highlightColor?: string
+  /** When true, adds an invisible full-coverage fill on every province that
+   *  fires mouse events (click / mouseenter / mouseleave) on the layer id
+   *  `province-click-hitbox`. Callers attach their own handlers (see the
+   *  dashboard). Default `false` — every non-dashboard map opts out so it
+   *  can't accidentally intercept clicks meant for markers underneath. */
+  enableProvinceClick?: boolean
 }
+
+/** Layer id of the transparent province-click hitbox layer. Exported so the
+ *  dashboard's click-handler code can attach `map.on('click', id, ...)`
+ *  without hard-coding the string. */
+export const PROVINCE_CLICK_LAYER_ID = 'province-click-hitbox'
+
+/** Hover-affordance layers (dashboard only, added with `enableProvinceClick`):
+ *  a soft yellow fill + outline on the province under the cursor, driven by
+ *  `map.setFilter(id, ['==', ['get','code'], code])` from the hover handler.
+ *  Start filtered to a non-existent code so nothing shows until hovered. */
+export const PROVINCE_HOVER_FILL_ID = 'province-hover-fill'
+export const PROVINCE_HOVER_LINE_ID = 'province-hover-line'
 
 /**
  * Renders a Thailand-shaped country mask + (optional) per-province highlight outline.
@@ -33,6 +51,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
   maskColor = '#0E0D0D',
   maskOpacity = 0.8,
   highlightColor = '#FCD116',
+  enableProvinceClick = false,
 }) => {
   const { map, isLoaded } = useMap()
   const setupRef = useRef(false)
@@ -68,7 +87,17 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
           },
         }
 
-        const firstSymbol = map.getStyle()?.layers?.find((l) => l.type === 'symbol')?.id
+        // Choose the beforeId so the mask/highlight layers ALWAYS render below
+        // markers. When this component's async fetch resolves AFTER the marker
+        // layers have already been added (typical since markers are sync but
+        // this fetches two geojsons), `firstSymbol` alone doesn't help — those
+        // marker symbols are ABOVE the base style's first symbol. Prefer the
+        // first `markerlayer-*` id so the mask sits underneath them; fall back
+        // to `firstSymbol` when no marker layer has mounted yet.
+        const style = map.getStyle()
+        const firstMarkerLayer = style?.layers?.find((l) => l.id.startsWith('markerlayer-'))?.id
+        const firstSymbol = style?.layers?.find((l) => l.type === 'symbol')?.id
+        const beforeId = firstMarkerLayer ?? firstSymbol
 
         if (!map.getSource('thailand-mask')) {
           map.addSource('thailand-mask', { type: 'geojson', data: maskFeature })
@@ -79,7 +108,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
               source: 'thailand-mask',
               paint: { 'fill-color': maskColor, 'fill-opacity': maskOpacity },
             },
-            firstSymbol
+            beforeId
           )
         }
 
@@ -94,7 +123,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
               filter: ['!=', ['get', 'code'], '__none__'],
               paint: { 'fill-color': '#000000', 'fill-opacity': 0.45 },
             },
-            firstSymbol
+            beforeId
           )
           map.addLayer(
             {
@@ -109,8 +138,62 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
                 'line-opacity': 0.8,
               },
             },
-            firstSymbol
+            beforeId
           )
+
+          // Optional click-hitbox layer — always visible with alpha ~0 so it
+          // never repaints anything visible, but mapbox still fires click /
+          // mouseenter / mouseleave events on it. Added LAST (on top of the
+          // dim + highlight layers) so it always wins the click above the
+          // dimmed non-highlighted provinces, while staying BELOW every
+          // marker layer via the same `beforeId`. Only added when opted-in
+          // (dashboard) — every other map opts out so clicks pass through
+          // to their own markers unchanged.
+          if (enableProvinceClick && !map.getLayer(PROVINCE_CLICK_LAYER_ID)) {
+            // Hover affordance — fill + outline on the hovered province so the
+            // user can tell WHICH province they're about to click. Both start
+            // with a never-matching filter; the dashboard's mousemove handler
+            // retargets them via setFilter.
+            map.addLayer(
+              {
+                id: PROVINCE_HOVER_FILL_ID,
+                type: 'fill',
+                source: 'th-provinces',
+                filter: ['==', ['get', 'code'], '__none__'],
+                paint: { 'fill-color': highlightColor, 'fill-opacity': 0.12 },
+              },
+              beforeId
+            )
+            map.addLayer(
+              {
+                id: PROVINCE_HOVER_LINE_ID,
+                type: 'line',
+                source: 'th-provinces',
+                filter: ['==', ['get', 'code'], '__none__'],
+                layout: { 'line-join': 'round' },
+                paint: {
+                  'line-color': highlightColor,
+                  'line-width': 2.5,
+                  'line-opacity': 0.95,
+                },
+              },
+              beforeId
+            )
+            map.addLayer(
+              {
+                id: PROVINCE_CLICK_LAYER_ID,
+                type: 'fill',
+                source: 'th-provinces',
+                paint: {
+                  // 0.001, not 0 — some mapbox versions skip event dispatch
+                  // for fully-transparent fills. Effectively invisible.
+                  'fill-color': '#000000',
+                  'fill-opacity': 0.001,
+                },
+              },
+              beforeId
+            )
+          }
         }
       } catch (e) {
         console.error('[ThailandMaskLayer] failed to load geojson', e)
@@ -122,7 +205,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
     return () => {
       cancelled = true
       try {
-        for (const id of ['province-highlight-line', 'province-dim-fill', 'thailand-mask-fill']) {
+        for (const id of [PROVINCE_CLICK_LAYER_ID, PROVINCE_HOVER_LINE_ID, PROVINCE_HOVER_FILL_ID, 'province-highlight-line', 'province-dim-fill', 'thailand-mask-fill']) {
           if (map.getLayer(id)) map.removeLayer(id)
         }
         for (const id of ['th-provinces', 'thailand-mask']) {

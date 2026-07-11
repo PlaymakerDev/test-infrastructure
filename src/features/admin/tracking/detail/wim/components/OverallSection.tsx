@@ -70,7 +70,12 @@ const OverallSection: React.FC<Props> = (props) => {
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={10}>
             <section>
               <QueryBoundary isLoading={isDailyLogLoading} isError={isDailyLogError}>
-                <OverallWeightStat dailyLog={dailyLog} />
+                <OverallWeightStat
+                  stationId={id}
+                  stationType={stationType}
+                  stationTypeId={stationTypeId}
+                  dailyLog={dailyLog}
+                />
               </QueryBoundary>
             </section>
             <section className='mt-5'>
@@ -137,7 +142,7 @@ const OverallSection: React.FC<Props> = (props) => {
         </Row>
       </section>
       <section className='mt-5'>
-        <OverallDataDisplaySection />
+        <OverallDataDisplaySection stationId={id} stationType={stationType} />
       </section>
     </>
   )

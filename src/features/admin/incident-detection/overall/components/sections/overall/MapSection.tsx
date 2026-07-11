@@ -60,7 +60,7 @@ const MapSection: React.FC<Props> = () => {
         id='incident-locations'
         data={data}
         cluster
-        size={16}
+        size={18}
         strokeColor='#ffffff'
         popupOptions={{ offset: 10, closeButton: false }}
         popup={(f) => (

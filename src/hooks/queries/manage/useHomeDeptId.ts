@@ -28,13 +28,17 @@ export const useHomeDeptId = (): number => {
 }
 
 /**
- * Build the overall-page query string for a department.
+ * Build the overall-page query string for a department — "my whole scope"
+ * entry points only (เมนูกลาง navbar + post-login landing).
  *
- * dept 0 = ส่วนกลาง — the central-list endpoints treat `id=0` as "the caller's
- * own department group" unless `scope=all` is added, which returns every bureau
- * the caller is permitted to see (all 18 for an unrestricted admin; still just
- * their own for a restricted user — so it's always safe to send).
+ * ALWAYS appends `scope=all` (rule updated 2026-07-10, was dept-0-only): the
+ * URL param is what tells `centralScope()` to forward `scope=all` to every
+ * dept-scoped API on the page, aggregating children (dept 0 → all permitted
+ * bureaus; สทช. → its ขทช. children once BE ships it; แขวง → leaf, no-op —
+ * always safe). The SIDEBAR intentionally does NOT use this helper — picking
+ * a specific ขทช. there pushes a plain `dept_id=N` URL so requests stay
+ * narrow to that one department.
  */
 export function deptQuery(deptId: number): string {
-  return deptId === 0 ? 'dept_id=0&scope=all' : `dept_id=${deptId}`
+  return `dept_id=${deptId}&scope=all`
 }

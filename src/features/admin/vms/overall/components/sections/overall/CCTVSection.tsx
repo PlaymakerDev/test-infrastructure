@@ -1,5 +1,6 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { getVMSOverviewRandomOnlineAPI } from '@/services/routes/VMSService'
+import { scopeKey } from '@/services/routes/scopeParam'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
@@ -15,7 +16,9 @@ const CCTVSection: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['random_cctv'],
+    // dept + scope in the key — same dept/scope must not share cache entries
+    // (key previously had neither, so switching departments reused stale data).
+    queryKey: ['random_cctv', String(deptId ?? ''), scopeKey()],
     queryFn: () => getVMSOverviewRandomOnlineAPI(Number(deptId)!, { limit: 3 }),
     enabled: !!deptId,
     placeholderData: keepPreviousData

@@ -132,7 +132,7 @@ export const getCctvUptimeStatisticsAPI = (
   ApiService.fetchData<APIResponseCCTVUptimeStatistics>({
     url: `${cctvDeptBase(deptId)}/cameras/uptime-statistics`,
     method: 'GET',
-    params,
+    params: { ...params, ...centralScope(deptId) },
   })
 
 /** Cameras for ONE road, grouped by project/solution_location/solution.
