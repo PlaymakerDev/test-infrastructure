@@ -3,7 +3,9 @@ import { useControlVMSContext } from '../../../context'
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { TbMapPin } from 'react-icons/tb'
-import { Button, ConfigProvider } from 'antd'
+import { Button, ConfigProvider, Image } from 'antd'
+
+const DEFAULT_ICON = '/images/icon-marker/Default.svg'
 
 const formatCoords = (lat: number, lng: number): string =>
   `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
@@ -27,8 +29,20 @@ const MapSection: React.FC = () => {
         initialPitch={45}
       >
         {hasCoords && (
-          <HTMLMarker lngLat={center!} anchor='bottom'>
-            <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
+          <HTMLMarker
+            key={bureauSign?.vms_id}
+            lngLat={[lng, lat]}
+            anchor="bottom"
+            offset={[0, 19]}
+            title={bureauSign?.solution_name}
+          >
+            <Image
+              src={DEFAULT_ICON}
+              alt="station-pin"
+              width={52}
+              height={55}
+              preview={false}
+            />
           </HTMLMarker>
         )}
       </BaseMap>

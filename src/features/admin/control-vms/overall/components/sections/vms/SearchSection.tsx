@@ -73,7 +73,12 @@ const SearchSection: React.FC<Props> = ({ openFromDrawer }) => {
         onBureauClick={(item) => setBureau(item)}
         onStateClick={(item) => setBureauState(item)}
         onRouteClick={(item) => setBureauRoute(item)}
-        onSignClick={(item) => setBureauSign(item)}
+        onSignClick={(sign, route, state, bureau) => {
+          setBureau(bureau)
+          setBureauState(state)
+          setBureauRoute(route)
+          setBureauSign(sign)
+        }}
         onSelectionChange={(item) => {
           const ids = item.signs.map(s => s.vms_id).filter((id): id is number => id != null)
           setVMSIdList(ids)

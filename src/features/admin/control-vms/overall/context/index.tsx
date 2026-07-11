@@ -6,6 +6,8 @@ import dayjs from 'dayjs'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
+  currentTab: string
+  setCurrentTab: (tab: string) => void
   bureau: BureauItem | null
   setBureau: (b: BureauItem | null) => void
   bureauState: BureauState | null
@@ -63,6 +65,8 @@ export interface OpenConfirmCreateState {
   open: boolean
   ids: number[]
   body: APIRequestPostVMSMedia | null
+  /** Present when confirming an EDIT (routes to PUT); null/absent for CREATE (POST). */
+  id?: string | number | null
 }
 
 export interface OpenUpdateTypeState {
@@ -75,7 +79,7 @@ export const INIT_OPEN_VMS_SCREEN: OpenVMSScreenState = {
   vms_url: ''
 }
 
-export const INIT_OPEN_CONFIRM_CREATE: OpenConfirmCreateState = { open: false, ids: [], body: null }
+export const INIT_OPEN_CONFIRM_CREATE: OpenConfirmCreateState = { open: false, ids: [], body: null, id: null }
 
 export const INIT_OPEN_UPDATE_TYPE: OpenUpdateTypeState = { open: false }
 
@@ -83,6 +87,7 @@ export const ControlVMSContext = createContext<ContextProps | null>(null)
 
 export const ControlVMSProvider = (props: PageProviderProps) => {
   const { children } = props
+  const [currentTab, setCurrentTab] = useState<string>('VMS')
   const [bureau, setBureau] = useState<BureauItem | null>(null)
   const [bureauState, setBureauState] = useState<BureauState | null>(null)
   const [bureauRoute, setBureauRoute] = useState<BureauRoute | null>(null)
@@ -104,6 +109,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   return (
     <ControlVMSContext.Provider
       value={{
+        currentTab,
+        setCurrentTab,
         bureau,
         setBureau,
         bureauState,

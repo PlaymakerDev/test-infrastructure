@@ -13,13 +13,13 @@ const VMSScreen: React.FC<Props> = (props) => {
   const { setOpenVMSScreen } = useDetailContext()
 
   return (
-    <div className='flex-1 min-h-0 flex flex-col bg-black/40 backdrop-blur-xs rounded-lg p-5'>
-      <h3 className='text-(--yellow) mb-1.5'>หน้าจอโปรแกรมป้าย VMS</h3>
+    <div className='flex-1 min-h-0 flex flex-col bg-black/40 backdrop-blur-xs rounded-2xl p-5'>
+      <h3 className='text-(--yellow) font-normal! mb-1.5'>หน้าจอโปรแกรมป้าย VMS</h3>
       <HLSLivePlayer
         cameraId={String(data?.desktop_screen.id)}
         hlsUrl={data?.desktop_screen.desktop_screen}
         enableViewportPause
-        figureClassName='figure-large min-h-0 overflow-hidden rounded-lg lg:flex-1 lg:max-h-none cursor-pointer'
+        figureClassName='figure-large min-h-0 overflow-hidden rounded-2xl lg:flex-1 lg:max-h-none cursor-pointer'
         onClick={() => setOpenVMSScreen({ open: true, data })}
       />
       <ModalVMSScreen />

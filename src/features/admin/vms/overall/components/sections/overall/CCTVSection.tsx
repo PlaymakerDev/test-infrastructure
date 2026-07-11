@@ -27,7 +27,7 @@ const CCTVSection: React.FC<Props> = (props) => {
       return Array.from({ length: 3 }).map((_, idx) => (
         <div
           key={idx}
-          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+          className='bg-(--mid-gray) p-3 rounded-2xl flex-1 min-h-0 flex flex-col'
         >
           <Skeleton loading={isLoading} active paragraph={{ rows: 3 }} />
         </div>
@@ -37,10 +37,10 @@ const CCTVSection: React.FC<Props> = (props) => {
     return data?.data.map((item, idx) => (
       <div
         key={item.vms.camera?.id ?? idx}
-        className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
+        className='bg-(--mid-gray) p-3 rounded-2xl flex-1 min-h-0 flex flex-col'
       >
         <HLSLivePlayer
-          figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg cursor-pointer'
+          figureClassName='flex-1 min-h-0 mb-1.5 rounded-2xl cursor-pointer'
           hlsUrl={item.vms.hls_url}
           onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.vms.camera?.id }))}
         />

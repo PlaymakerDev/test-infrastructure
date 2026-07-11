@@ -1,5 +1,5 @@
 "use client"
-import { Badge, Checkbox } from 'antd'
+import { Badge, Checkbox, ConfigProvider } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TbChevronDown, TbChevronRight } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -24,7 +24,7 @@ export interface BureauListProps {
   onBureauClick?: (bureau: BureauItem) => void
   onStateClick?: (state: BureauState, bureau: BureauItem) => void
   onRouteClick?: (route: BureauRoute, state: BureauState, bureau: BureauItem) => void
-  onSignClick?: (sign: BureauSign) => void
+  onSignClick?: (sign: BureauSign, route: BureauRoute, state: BureauState, bureau: BureauItem) => void
 
   showControls?: boolean
 }
@@ -73,6 +73,29 @@ const getAllKeys = (data: BureauItem[]): Set<string> => {
         }
       }
     }
+  }
+  return keys
+}
+
+// Descendant keys for cascading checkbox selection — checking/unchecking a
+// parent applies the same state to every key below it in the tree.
+const getRouteDescendantKeys = (bureau: BureauItem, state: BureauState, route: BureauRoute): string[] =>
+  (route.solution || []).map(sign => signKey(bureau, state, route, sign))
+
+const getStateDescendantKeys = (bureau: BureauItem, state: BureauState): string[] => {
+  const keys: string[] = []
+  for (const route of state.roads || []) {
+    keys.push(routeKey(bureau, state, route))
+    keys.push(...getRouteDescendantKeys(bureau, state, route))
+  }
+  return keys
+}
+
+const getBureauDescendantKeys = (bureau: BureauItem): string[] => {
+  const keys: string[] = []
+  for (const state of bureau.sub_department || []) {
+    keys.push(stateKey(bureau, state))
+    keys.push(...getStateDescendantKeys(bureau, state))
   }
   return keys
 }
@@ -175,10 +198,17 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     setCheckedKeys(new Set())
   }, [])
 
-  const toggleCheck = useCallback((key: string) => {
+  const toggleCheck = useCallback((key: string, descendantKeys: string[] = []) => {
     setCheckedKeys(prev => {
       const next = new Set(prev)
-      if (next.has(key)) { next.delete(key) } else { next.add(key) }
+      const checking = !next.has(key)
+      if (checking) {
+        next.add(key)
+        descendantKeys.forEach(k => next.add(k))
+      } else {
+        next.delete(key)
+        descendantKeys.forEach(k => next.delete(k))
+      }
       return next
     })
   }, [])
@@ -197,7 +227,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
           onClick={() => {
             if (selectMode) return
             setSelectedSign(prev => prev === sign.solution_id ? null : sign.solution_id)
-            onSignClick?.(sign)
+            onSignClick?.(sign, parentRoute, parentState, parentBureau)
           }}
           className={`p-3 bg-(--mid-gray) rounded-md mb-3 cursor-pointer hover:bg-(--mid-gray)/80 transition-colors border ${isSelected ? 'border-(--yellow)' : 'border-transparent'}`}
         >
@@ -222,7 +252,20 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               <h5>{sign.solution_name}</h5>
               <div className='flex items-center gap-2'>
                 <p className='fs-12'>Anydesk: {sign.anydesk || '-'}</p>
-                <Badge color={sign.is_online ? "blue" : "red"} />
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Badge: {
+                        dotSize: 12,
+                        statusSize: 12,
+                        textFontSize: 12,
+                        indicatorHeight: 12
+                      }
+                    }
+                  }}
+                >
+                  <Badge color={sign.is_online ? "var(--default-blue)" : "red"} />
+                </ConfigProvider>
               </div>
             </div>
           </div>
@@ -251,7 +294,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   <Checkbox
                     checked={checkedKeys.has(key)}
                     onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key)}
+                    onChange={() => toggleCheck(key, getRouteDescendantKeys(parentBureau, parentState, route))}
                   />
                 )}
                 {isOpen
@@ -262,13 +305,39 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {online > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={online} />
+                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='var(--default-blue)' text={online} />
+                    </ConfigProvider>
                   </span>
                 )}
                 {offline > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={offline} />
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='red' text={offline} />
+                    </ConfigProvider>
                   </span>
                 )}
               </div>
@@ -299,7 +368,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   <Checkbox
                     checked={checkedKeys.has(key)}
                     onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key)}
+                    onChange={() => toggleCheck(key, getStateDescendantKeys(parentBureau, state))}
                   />
                 )}
                 {isOpen
@@ -310,13 +379,39 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {state.camera_online_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={state.camera_online_count} />
+                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='var(--default-blue)' text={state.camera_online_count} />
+                    </ConfigProvider>
                   </span>
                 )}
                 {state.camera_offline_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={state.camera_offline_count} />
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='red' text={state.camera_offline_count} />
+                    </ConfigProvider>
                   </span>
                 )}
               </div>
@@ -345,7 +440,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   <Checkbox
                     checked={checkedKeys.has(key)}
                     onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key)}
+                    onChange={() => toggleCheck(key, getBureauDescendantKeys(item))}
                   />
                 )}
                 {isOpen
@@ -356,13 +451,39 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {item.camera_online_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-blue-500 text-blue-500 rounded-3xl'>
-                    <Badge color='blue' text={item.camera_online_count} />
+                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='var(--default-blue)' text={item.camera_online_count} />
+                    </ConfigProvider>
                   </span>
                 )}
                 {item.camera_offline_count > 0 && (
                   <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
-                    <Badge color='red' text={item.camera_offline_count} />
+                    <ConfigProvider
+                      theme={{
+                        components: {
+                          Badge: {
+                            dotSize: 12,
+                            statusSize: 12,
+                            textFontSize: 12,
+                            indicatorHeight: 12
+                          }
+                        }
+                      }}
+                    >
+                      <Badge color='red' text={item.camera_offline_count} />
+                    </ConfigProvider>
                   </span>
                 )}
               </div>

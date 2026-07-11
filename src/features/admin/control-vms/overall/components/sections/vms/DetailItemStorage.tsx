@@ -15,7 +15,7 @@ const DetailItemStorage: React.FC = () => {
           <TbLayoutGrid className='fs-22 text-(--yellow) shrink-0' />
           <div>
             <h4 className='mb-0 text-(--yellow)'>คลังรูปภาพและวิดีโอ</h4>
-            <p className='fs-12 text-gray-400 mb-0'>รวบรวมรูปภาพและวิดีโอที่มีการแสดงผลในปัจจุบัน</p>
+            <p className='fs-12 text-gray-400 mb-0'>รวบรวมรูปภาพและวิดีโอที่มีการแสดงผล</p>
           </div>
         </div>
         {!isAddMode && (

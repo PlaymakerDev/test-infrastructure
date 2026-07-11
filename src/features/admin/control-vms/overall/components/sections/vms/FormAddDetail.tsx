@@ -5,7 +5,7 @@ import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import th from 'dayjs/locale/th'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { TbCopyPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
@@ -15,6 +15,7 @@ import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 import { useControlVMSContext } from '../../../context'
 import { isVideoUrl } from '../../../data/media'
 import { DayList } from '@/components/list'
+import { ModalDetailItemStorage } from '../../../components'
 
 dayjs.extend(buddhistEra)
 dayjs.locale(th)
@@ -79,16 +80,18 @@ const FormAddDetail: React.FC<Props> = () => {
     name: 'schedules',
   })
 
+  const [selectMediaIndex, setSelectMediaIndex] = useState<number | null>(null)
+
   const displayType = useWatch({ control, name: 'display_type' })
   const schedulesWatch = useWatch({ control, name: 'schedules' })
   const watchStartDate = useWatch({ control, name: 'start_date' })
   const watchEndDate = useWatch({ control, name: 'end_date' })
 
   const availableDays = useMemo(() => {
-    if (!watchStartDate || !watchEndDate) return [1, 2, 3, 4, 5, 6, 7]
+    if (!watchStartDate || !watchEndDate) return []
     const start = dayjs(watchStartDate)
     const end = dayjs(watchEndDate)
-    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return [1, 2, 3, 4, 5, 6, 7]
+    if (!start.isValid() || !end.isValid() || end.isBefore(start, 'day')) return [1, 2, 3, 4, 5, 6, 7]
     if (end.diff(start, 'day') >= 6) return [1, 2, 3, 4, 5, 6, 7]
     const days = new Set<number>()
     for (let i = 0; i <= end.diff(start, 'day'); i++) {
@@ -150,6 +153,14 @@ const FormAddDetail: React.FC<Props> = () => {
     }
   }, [setValue, message])
 
+  const handleSelectMedia = useCallback((url: string) => {
+    if (selectMediaIndex === null) return
+    const fileName = url.split('/').pop() || 'file'
+    setValue(`schedules.${selectMediaIndex}.file_url`, url)
+    setValue(`schedules.${selectMediaIndex}.file`, [{ uid: '-1', name: fileName, status: 'done', url, thumbUrl: url }])
+    setSelectMediaIndex(null)
+  }, [selectMediaIndex, setValue])
+
   const renderMediaSection = useCallback((index: number) => {
     const mediaType = schedulesWatch?.[index]?.media_type
     const fileUrl = schedulesWatch?.[index]?.file_url ?? ''
@@ -187,8 +198,21 @@ const FormAddDetail: React.FC<Props> = () => {
               rules={{ required: 'กรุณาอัปโหลดไฟล์' }}
               render={({ field: { value, onChange, name: fieldName } }) => (
                 <fieldset>
-                  <label>อัปโหลดไฟล์ <span className='text-red-500'>*</span></label>
-                  <p className='fs-12 text-gray-400 mb-2'>ลากและวางไฟล์ที่นี่เพื่อดำเนินการต่อ</p>
+                  <div className='flex flex-wrap items-center justify-between mb-3 lg:mb-0'>
+                    <div>
+                      <label>อัปโหลดไฟล์ <span className='text-red-500'>*</span></label>
+                      <p className='fs-12 text-gray-400 mb-2'>ลากและวางไฟล์ที่นี่เพื่อดำเนินการต่อ</p>
+                    </div>
+                    <Button
+                      type='primary'
+                      htmlType='button'
+                      shape='round'
+                      className='w-full! sm:w-auto!'
+                      onClick={() => setSelectMediaIndex(index)}
+                    >
+                      <p className='fs-12'>เลือกไฟล์จากคลังรูปภาพ</p>
+                    </Button>
+                  </div>
                   <Upload.Dragger
                     name={fieldName}
                     fileList={value}
@@ -345,6 +369,12 @@ const FormAddDetail: React.FC<Props> = () => {
                       <label className='text-(--yellow)'>เริ่มต้นการแสดงผล <span className='text-red-500'>*</span></label>
                       <BuddhistDatePicker
                         {...field}
+                        onChange={(date) => {
+                          field.onChange(date)
+                          if (!date || (watchEndDate && dayjs(watchEndDate).isBefore(date, 'day'))) {
+                            setValue('end_date', '')
+                          }
+                        }}
                         placeholder='กรุณาเลือกวันที่และเวลาเริ่มต้น...'
                         className='w-full'
                         format='DD MMMM BBBB'
@@ -362,16 +392,18 @@ const FormAddDetail: React.FC<Props> = () => {
                   control={control}
                   rules={{
                     required: 'กรุณาเลือกวันที่และเวลาสิ้นสุด',
-                    validate: (v, form) =>
-                      !form.start_date || !v || dayjs(v).isAfter(dayjs(form.start_date))
-                        ? true
-                        : 'วันที่สิ้นสุดต้องมาหลังวันที่เริ่มต้น',
+                    // validate: (v, form) =>
+                    //   !form.start_date || !v || dayjs(v).isAfter(dayjs(form.start_date))
+                    //     ? true
+                    //     : 'วันที่สิ้นสุดต้องมาหลังวันที่เริ่มต้น',
                   }}
                   render={({ field }) => (
                     <fieldset>
                       <label className='text-(--yellow)'>สิ้นสุดการแสดงผล <span className='text-red-500'>*</span></label>
                       <BuddhistDatePicker
                         {...field}
+                        disabled={!watchStartDate}
+                        disabledDate={(current) => !!watchStartDate && current.isBefore(dayjs(watchStartDate), 'day')}
                         placeholder='กรุณาเลือกวันที่และเวลาสิ้นสุด...'
                         className='w-full'
                         format='DD MMMM BBBB'
@@ -516,6 +548,7 @@ const FormAddDetail: React.FC<Props> = () => {
                                   className='w-full'
                                   size='large'
                                   format='HH:mm'
+                                  needConfirm={false}
                                 />
                                 {!!errors.schedules?.[index]?.start_time && <p className='text-red-500'>{errors.schedules[index].start_time?.message}</p>}
                               </fieldset>
@@ -558,6 +591,7 @@ const FormAddDetail: React.FC<Props> = () => {
                                   className='w-full'
                                   size='large'
                                   format='HH:mm'
+                                  needConfirm={false}
                                 />
                                 {!!errors.schedules?.[index]?.end_time && <p className='text-red-500'>{errors.schedules[index].end_time?.message}</p>}
                               </fieldset>
@@ -614,6 +648,11 @@ const FormAddDetail: React.FC<Props> = () => {
           </div>
         </section>
       </form>
+      <ModalDetailItemStorage
+        open={selectMediaIndex !== null}
+        onClose={() => setSelectMediaIndex(null)}
+        onSelect={handleSelectMedia}
+      />
     </div>
   )
 }
