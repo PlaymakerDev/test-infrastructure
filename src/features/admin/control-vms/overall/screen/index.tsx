@@ -1,20 +1,19 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {
   TitleSection,
   VMSSection,
   DisplaySection,
   StatusSection
 } from '../components'
-import { ControlVMSProvider } from '../context'
+import { ControlVMSProvider, useControlVMSContext } from '../context'
 import { CCTVModal } from '@/components/modal'
 
 interface Props {
 
 }
 
-const ControlVMSScreen: React.FC<Props> = (props) => {
-  const { } = props
-  const [currentTab, setCurrentTab] = useState('VMS')
+const ControlVMSContent: React.FC = () => {
+  const { currentTab } = useControlVMSContext()
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
@@ -30,13 +29,21 @@ const ControlVMSScreen: React.FC<Props> = (props) => {
   }, [currentTab])
 
   return (
+    <div className='main-screen flex flex-col h-[calc(100vh-var(--nav-offset))]'>
+      <TitleSection />
+      <section className='mt-8 flex-1 min-h-0'>
+        {renderContent}
+      </section>
+    </div>
+  )
+}
+
+const ControlVMSScreen: React.FC<Props> = (props) => {
+  const { } = props
+
+  return (
     <ControlVMSProvider>
-      <div className='main-screen flex flex-col h-[calc(100vh-var(--nav-offset))]'>
-        <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 flex-1 min-h-0'>
-          {renderContent}
-        </section>
-      </div>
+      <ControlVMSContent />
       <CCTVModal />
     </ControlVMSProvider>
   )

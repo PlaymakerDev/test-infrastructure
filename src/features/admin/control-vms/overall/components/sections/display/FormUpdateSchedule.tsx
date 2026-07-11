@@ -137,10 +137,10 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
   const watchEndDate = useWatch({ control, name: 'end_date' })
 
   const availableDays = useMemo(() => {
-    if (!watchStartDate || !watchEndDate) return [1, 2, 3, 4, 5, 6, 7]
+    if (!watchStartDate || !watchEndDate) return []
     const start = dayjs(watchStartDate)
     const end = dayjs(watchEndDate)
-    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return [1, 2, 3, 4, 5, 6, 7]
+    if (!start.isValid() || !end.isValid() || end.isBefore(start, 'day')) return [1, 2, 3, 4, 5, 6, 7]
     if (end.diff(start, 'day') >= 6) return [1, 2, 3, 4, 5, 6, 7]
     const days = new Set<number>()
     for (let i = 0; i <= end.diff(start, 'day'); i++) {
@@ -470,6 +470,12 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
                       <label className='text-(--yellow)'>เริ่มต้นการแสดงผล <span className='text-red-500'>*</span></label>
                       <BuddhistDatePicker
                         {...field}
+                        onChange={(date) => {
+                          field.onChange(date)
+                          if (!date || (watchEndDate && dayjs(watchEndDate).isBefore(date, 'day'))) {
+                            setValue('end_date', null)
+                          }
+                        }}
                         placeholder='กรุณาเลือกวันที่เริ่มต้น...'
                         className='w-full'
                         format='DD MMMM BBBB'
@@ -496,6 +502,8 @@ const FormUpdateSchedule: React.FC<Props> = (props) => {
                       <label className='text-(--yellow)'>สิ้นสุดการแสดงผล <span className='text-red-500'>*</span></label>
                       <BuddhistDatePicker
                         {...field}
+                        disabled={!watchStartDate}
+                        disabledDate={(current) => !!watchStartDate && current.isBefore(dayjs(watchStartDate), 'day')}
                         placeholder='กรุณาเลือกวันที่สิ้นสุด...'
                         className='w-full'
                         format='DD MMMM BBBB'
