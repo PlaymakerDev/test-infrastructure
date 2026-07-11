@@ -4,6 +4,7 @@ import { useMap } from '@/components/map/hooks/useMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
+import { scopeKey } from '@/services/routes/scopeParam'
 import { Location } from '@/types/vms/overview-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
@@ -18,10 +19,18 @@ const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
 type VmsFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, Record<string, unknown>>
 
+/** A usable [lng, lat] — drops null / malformed / [0,0]. One bad point makes
+ *  Mapbox reject the WHOLE GeoJSON source → no markers at all. Hit for real
+ *  on dept 0 + scope=all (6/296 vms locations had a null GeometryPoint). */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  !(g[0] === 0 && g[1] === 0)
+
 const toGeoJSON = (locations: Location[]): VmsFeatureCollection => {
   return {
     type: 'FeatureCollection',
-    features: locations.map((loc) => ({
+    features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => ({
       type: 'Feature',
       properties: {
         id: loc.solution.id,
@@ -120,7 +129,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
       id="vms"
       data={allData}
       cluster
-      size={14}
+      size={18}
       strokeColor='#ffffff'
       popup={(f) => (
         <VMSPopup
@@ -145,7 +154,9 @@ const MapSection: React.FC<Props> = (props) => {
   const { deptId } = props
 
   const { data, isLoading, isSuccess } = useQuery({
-    queryKey: ['vms_overview'],
+    // dept + scope in the key — previously neither, so switching departments
+    // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
+    queryKey: ['vms_overview', String(deptId ?? ''), scopeKey()],
     queryFn: () => getVMSOverviewAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData

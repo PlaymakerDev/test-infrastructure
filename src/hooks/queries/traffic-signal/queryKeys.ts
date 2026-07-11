@@ -4,6 +4,7 @@
 // `queryClient.invalidateQueries({ queryKey: trafficSignalKeys.detail.all(id) })`
 // invalidates every nested detail query for the given id.
 
+import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestTrafficOverview,
   APIRequestTrafficList,
@@ -21,8 +22,9 @@ export const trafficSignalKeys = {
 
   // ── Overview keys ────────────────────────────────────────────────────────
   overview: {
+    // `scopeKey()` keys the cache apart per URL scope — see scopeParam.ts.
     root: (deptId: string | number) =>
-      [...trafficSignalKeys.all, 'overview', deptId] as const,
+      [...trafficSignalKeys.all, 'overview', deptId, scopeKey()] as const,
     map: (deptId: string | number, params: APIRequestTrafficOverview = {}) =>
       [...trafficSignalKeys.overview.root(deptId), 'map', params] as const,
     totals: (deptId: string | number) =>

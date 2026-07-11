@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVMSOverviewListAPI } from '@/services/routes/VMSService'
+import { scopeKey } from '@/services/routes/scopeParam'
 
 
 interface Props {
@@ -72,7 +73,9 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   }), [vms_total])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['vms_list', vms_list.search],
+    // dept + scope in the key — previously only the search text, so switching
+    // departments/entry point reused the other's cached list.
+    queryKey: ['vms_list', String(deptId ?? ''), scopeKey(), vms_list.search],
     queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
     enabled: !!deptId,
     placeholderData: keepPreviousData

@@ -1,4 +1,5 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIResponseDashboardCctvUptime,
   APIResponseDashboardVmsUptime,
@@ -20,10 +21,15 @@ import type {
 
 // ── Uptime % per system ──────────────────────────────────────────────────────
 
-export const getDashboardCctvUptimeAPI = (deptId: string | number) =>
+export const getDashboardCctvUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardCctvUptime>({
     url: `/cctv/departments/${deptId}/cameras/uptime-statistics`,
     method: 'GET',
+    // `scope=all` per the URL's intent. The dashboard hook passes the flag
+    // EXPLICITLY (from the reactive useScopeAll) so key and request always
+    // agree; when omitted, falls back to reading the current URL. Other
+    // uptime endpoints below don't support the param yet.
+    params: scopeAll === undefined ? centralScope(deptId) : scopeAll ? { scope: 'all' } : undefined,
   })
 
 export const getDashboardVmsUptimeAPI = (deptId: string | number) =>
@@ -67,10 +73,12 @@ export const getDashboardTunnelUptimeAPI = (deptId: string | number) =>
 
 // ── Map markers (all systems) ────────────────────────────────────────────────
 
-export const getDashboardPositionAPI = (deptId: string | number) =>
+export const getDashboardPositionAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardPosition>({
     url: `/manage/solution/${deptId}/position`,
     method: 'GET',
+    // Explicit flag from the hook (reactive useScopeAll); omitted → URL read.
+    params: scopeAll === undefined ? centralScope(deptId) : scopeAll ? { scope: 'all' } : undefined,
   })
 
 // ── Bucketed event counts (incident/analytic — drives AccidentChart) ─────────

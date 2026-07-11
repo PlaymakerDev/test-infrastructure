@@ -18,6 +18,7 @@ import {
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
+import { useRouter } from 'next/navigation'
 import HTMLMarker from '../primitives/HTMLMarker'
 import { useMap } from '../hooks/useMap'
 import { showReactPopup } from '../primitives/popupHelper'
@@ -74,6 +75,10 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   minZoom = 6.5,
 }) => {
   const { map, isLoaded } = useMap()
+  // Captured here (inside the App Router provider) so the detached-root popup
+  // can navigate client-side. Without this the popup's "ดูเพิ่มเติม" button is
+  // a silent no-op — `PopupDetailLink` navigates ONLY via `onNavigate`.
+  const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [zoomVisible, setZoomVisible] = useState(false)
 
@@ -95,10 +100,16 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
         map,
         mb,
         lngLat: device.coord,
-        content: <DefaultDevicePopup device={device} color={SYSTEMS[device.type].color} />,
+        content: (
+          <DefaultDevicePopup
+            device={device}
+            color={SYSTEMS[device.type].color}
+            onNavigate={(url) => router.push(url)}
+          />
+        ),
       })
     })
-  }, [map])
+  }, [map, router])
 
   // A device is "in scope" when its type is in the filter (or no filter set).
   const visible = useMemo(

@@ -1,4 +1,5 @@
 import { getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
+import { scopeKey } from '@/services/routes/scopeParam'
 import { useAppDispatch } from '@/stores/hooks'
 import { setVMSTotalData } from '@/stores/reducers/vms/vmsOverviewSlice'
 // import { useAppSelector } from '@/stores/hooks'
@@ -17,7 +18,9 @@ const InfoCardSection: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['vms_total'],
+    // dept + scope in the key — previously neither, so switching departments
+    // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached totals.
+    queryKey: ['vms_total', String(deptId ?? ''), scopeKey()],
     queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData

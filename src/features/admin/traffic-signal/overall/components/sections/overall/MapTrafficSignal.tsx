@@ -126,7 +126,7 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
         id='traffic-signal'
         data={allData}
         cluster
-        size={14}
+        size={18}
         popup={(f) => (
           <TrafficSignalPopup
             feature={f}
