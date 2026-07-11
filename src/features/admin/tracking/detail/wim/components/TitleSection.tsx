@@ -43,10 +43,16 @@ const TitleSection: React.FC<Props> = (props) => {
   }, [stationType, isLoading, isError, data])
 
   return (
-    <div className='px-3'>
+    <div className='px-8'>
+      <p
+        className='block mb-3 lg:hidden text-(--yellow) cursor-pointer'
+        onClick={() => router.back()}
+      >
+        &lt; ย้อนกลับ
+      </p>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
-          className='fs-24 text-(--yellow) cursor-pointer mt-2'
+          className='fs-24 text-(--yellow) cursor-pointer mt-2 hidden lg:block'
           onClick={() => router.back()}
         />
         <div>
@@ -54,7 +60,7 @@ const TitleSection: React.FC<Props> = (props) => {
           <p className='text-(--yellow)'>ระบบตรวจวัดน้ำหนักยานพาหนะขณะเคลื่อนที่</p>
         </div>
       </section>
-      <section className='mt-5 px-10'>
+      <section className='mt-5 px-0 lg:px-10'>
         <SwapButton
           options={OPTIONS}
           defaultActive="OVERALL"
