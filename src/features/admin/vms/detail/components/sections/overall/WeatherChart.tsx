@@ -29,7 +29,8 @@ const WeatherChart: React.FC<Props> = (props) => {
       title='สถิติอุณหภูมิรายชั่วโมงประจำวัน'
       subtitle='เปรียบเทียบอุณหภูมิและค่า PM 2.5 รายชั่วโมง'
       icon={<TbTemperaturePlus className='fs-18' />}
-      accentColor='#FFA94D'
+      iconCircle={false}
+      accentColor='var(--default-blue)'
       cardBackground='#00000080'
       cardBorderColor='transparent'
       showGlow={false}

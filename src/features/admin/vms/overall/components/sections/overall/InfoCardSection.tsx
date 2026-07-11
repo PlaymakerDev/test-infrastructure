@@ -82,7 +82,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
         xxl={24}
         xxxl={24}
       >
-        <div className='h-full bg-[#FFB1001A] border-2 rounded-lg p-5 border-(--yellow)'>
+        <div className='h-full bg-[#FFB1001A] border-2 rounded-2xl p-5 border-(--yellow)'>
           {renderTotalVMS}
         </div>
       </Col>
@@ -95,7 +95,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
         xxl={24}
         xxxl={24}
       >
-        <div className='h-full bg-[#05F2DB1A] border-2 rounded-lg p-5 border-teal-500'>
+        <div className='h-full bg-[#05F2DB1A] border-2 rounded-2xl p-5 border-teal-500'>
           {renderInWarranty}
         </div>
       </Col>
@@ -108,7 +108,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
         xxl={24}
         xxxl={24}
       >
-        <div className='h-full bg-[#9797971A] border-2 rounded-lg p-5 border-gray-500'>
+        <div className='h-full bg-[#9797971A] border-2 rounded-2xl p-5 border-gray-500'>
           {renderExpired}
         </div>
       </Col>
