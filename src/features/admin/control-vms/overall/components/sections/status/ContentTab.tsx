@@ -42,6 +42,11 @@ const ContentTab: React.FC<Props> = (props) => {
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden
+      // AntD's default `.ant-tabs-nav::before` border spans the whole nav row
+      // (tabs + tabBarExtraContent), since `.ant-tabs-nav-wrap` stretches with
+      // `flex: auto` to fill space up to the extra content. Hide that and redraw
+      // the line scoped to `.ant-tabs-nav-list`, which sizes to the tabs themselves.
+      className='[&_.ant-tabs-nav::before]:hidden! [&_.ant-tabs-nav-list]:relative! [&_.ant-tabs-nav-list::after]:content-[""]! [&_.ant-tabs-nav-list::after]:absolute! [&_.ant-tabs-nav-list::after]:inset-x-0! [&_.ant-tabs-nav-list::after]:bottom-0! [&_.ant-tabs-nav-list::after]:border-b! [&_.ant-tabs-nav-list::after]:border-(--light-gray-3)!'
       tabBarExtraContent={{
         right: (
           <div className='hidden lg:block'>

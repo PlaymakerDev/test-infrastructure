@@ -12,11 +12,14 @@ export interface TitleSectionProps {
   subtitle: string
   tabOptions?: TabOption[]
   defaultTab?: string
+  /** Controlled active tab — lets a parent programmatically switch tabs (e.g.
+   *  after a save completes). Omit for the uncontrolled `defaultTab`-only behaviour. */
+  activeTab?: string
   onTabChange?: (value: string) => void
   className?: string
 }
 
-const TitleSection: React.FC<TitleSectionProps> = ({ title, subtitle, tabOptions, defaultTab, onTabChange, className }) => (
+const TitleSection: React.FC<TitleSectionProps> = ({ title, subtitle, tabOptions, defaultTab, activeTab, onTabChange, className }) => (
   <div className={className}>
     <section>
       <h1 className='text-(--yellow)'>{title}</h1>
@@ -27,6 +30,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({ title, subtitle, tabOptions
         <SwapButton
           options={tabOptions}
           defaultActive={defaultTab ?? tabOptions[0]?.value}
+          activeValue={activeTab}
           setLabelValue={onTabChange ?? (() => {})}
         />
       </section>
