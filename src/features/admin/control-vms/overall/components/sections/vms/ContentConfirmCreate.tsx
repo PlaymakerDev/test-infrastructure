@@ -22,17 +22,22 @@ interface Props {
 
 const ContentConfirmCreate: React.FC<Props> = (props) => {
   const { data, body, id } = props
-  const { setOpenConfirmCreate, setAddMode, setUpdateScheduleState } = useControlVMSContext()
+  const { setOpenConfirmCreate, setAddMode, setUpdateScheduleState, setCurrentTab } = useControlVMSContext()
   const postMedia = usePostVMSMedia()
   const putMedia = usePutVMSMedia()
   const isPending = postMedia.isPending || putMedia.isPending
 
   const handleConfirm = () => {
     if (!body) return
+    // `id` is only present when confirming an EDIT (PUT) — its absence means
+    // this was a CREATE (POST), whether from FormAddDetail or FormUpdateSchedule
+    // with type === 'CREATE'. Only a brand-new schedule should jump to STATUS.
+    const isCreate = !id
     const onSuccess = () => {
       setOpenConfirmCreate(INIT_OPEN_CONFIRM_CREATE)
       setAddMode(false)
       setUpdateScheduleState(INIT_UPDATE_SCHEDULE)
+      if (isCreate) setCurrentTab('STATUS')
     }
     if (id) {
       putMedia.mutate({ id, data: body }, { onSuccess })
@@ -41,30 +46,39 @@ const ContentConfirmCreate: React.FC<Props> = (props) => {
     }
   }
 
+  const formatScheduleDuration = useCallback((timeSince: string, timeTo: string) => {
+    // Recompute the value fresh in whichever unit is chosen — do not just relabel
+    // a value already rounded in a bigger unit (e.g. 0.98 ชั่วโมง -> "0.98 นาที"
+    // is wrong; the correct minute value for that same span is ~59 นาที).
+    const diffMinutes = dayjs(timeTo, 'HH:mm').diff(dayjs(timeSince, 'HH:mm'), 'minute', true)
+    const diffHours = diffMinutes / 60
+    if (diffHours >= 1) return `${Math.round(diffHours * 100) / 100} ชั่วโมง`
+    if (diffMinutes >= 1) return `${Math.round(diffMinutes * 100) / 100} นาที`
+    return `${Math.round(diffMinutes * 60 * 100) / 100} วินาที`
+  }, [])
+
   const renderCurrentScheduleTime = useCallback((schedule: ScheduleByVMSID[] | undefined) => {
     const list = schedule ?? []
     if (!list.length) return <li>-</li>
     return list.map((item) => {
-      const hours = Math.round(dayjs(item.time_to, 'HH:mm').diff(dayjs(item.time_since, 'HH:mm'), 'hour', true) * 100) / 100
       return (
         <li key={`${item.schedule_name}-${item.time_since}`}>
-          <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({hours} ชั่วโมง)</p>
+          <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({formatScheduleDuration(item.time_since, item.time_to)})</p>
         </li>
       )
     })
-  }, [])
+  }, [formatScheduleDuration])
 
   const renderNewScheduleTime = useCallback((schedule: APIRequestPostVMSMedia | undefined) => {
     if (!schedule?.schedules?.length) return <li>-</li>
     return schedule.schedules.map((item) => {
-      const hours = Math.round(dayjs(item.time_to, 'HH:mm').diff(dayjs(item.time_since, 'HH:mm'), 'hour', true) * 100) / 100
       return (
         <li key={`${item.schedule_name}-${item.time_since}`}>
-          <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({schedule.is_all_day ? 'แสดงผลตลอดเวลา' : `${hours} ชั่วโมง`})</p>
+          <p className='fs-12 text-black'>{item.schedule_name} {item.time_since} - {item.time_to} ({schedule.is_all_day ? 'แสดงผลตลอดเวลา' : formatScheduleDuration(item.time_since, item.time_to)})</p>
         </li>
       )
     })
-  }, [])
+  }, [formatScheduleDuration])
 
   const renderPopoverContent = useCallback((data: APIResponseVMSSettingByVMSID) => {
     return (data ?? []).slice(1).map((item, index) => {

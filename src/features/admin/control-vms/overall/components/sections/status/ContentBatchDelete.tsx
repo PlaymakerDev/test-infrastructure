@@ -1,6 +1,6 @@
 import { APIResponseVMSMediaById } from '@/types/control-vms/display-api'
 import { Button, ConfigProvider } from 'antd'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
@@ -26,6 +26,7 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
   const { id, data } = props
   const { setUpdateScheduleState } = useControlVMSContext()
   const batchDelete = usePostVMSBatchDelete()
+  const allScheduleIds = useMemo(() => (data?.schedules ?? []).map((s) => s.id), [data])
 
   const {
     control,
@@ -34,13 +35,16 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
   } = useForm<FormValues>({
     // Modal is `destroyOnHidden`, so this always mounts fresh with `data`
     // already resolved — default every schedule to checked.
-    defaultValues: { schedule_ids: (data?.schedules ?? []).map((s) => s.id) },
+    defaultValues: { schedule_ids: allScheduleIds },
   })
 
   const onSubmit = (values: FormValues) => {
     if (!id) return
+    // The checkbox list marks which schedules to KEEP — the ones actually
+    // sent to the batch-delete API are the complement (the unchecked rows).
+    const idsToDelete = allScheduleIds.filter((scheduleId) => !values.schedule_ids.includes(scheduleId))
     batchDelete.mutate(
-      { id, schedule_ids: values.schedule_ids },
+      { id, schedule_ids: idsToDelete },
       { onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE) },
     )
   }
@@ -67,7 +71,7 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
             <Controller
               control={control}
               name="schedule_ids"
-              rules={{ validate: (v) => v.length > 0 || 'กรุณาเลือกตารางเวลาที่ต้องการลบ' }}
+              rules={{ validate: (v) => v.length < allScheduleIds.length || 'กรุณาเลือกตารางเวลาที่ต้องการลบ' }}
               render={({ field }) => (
                 <fieldset>
                   <FormUpdateBatch data={data?.schedules} value={field.value} onChange={field.onChange} />

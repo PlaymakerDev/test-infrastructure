@@ -6,6 +6,8 @@ import dayjs from 'dayjs'
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
+  currentTab: string
+  setCurrentTab: (tab: string) => void
   bureau: BureauItem | null
   setBureau: (b: BureauItem | null) => void
   bureauState: BureauState | null
@@ -85,6 +87,7 @@ export const ControlVMSContext = createContext<ContextProps | null>(null)
 
 export const ControlVMSProvider = (props: PageProviderProps) => {
   const { children } = props
+  const [currentTab, setCurrentTab] = useState<string>('VMS')
   const [bureau, setBureau] = useState<BureauItem | null>(null)
   const [bureauState, setBureauState] = useState<BureauState | null>(null)
   const [bureauRoute, setBureauRoute] = useState<BureauRoute | null>(null)
@@ -106,6 +109,8 @@ export const ControlVMSProvider = (props: PageProviderProps) => {
   return (
     <ControlVMSContext.Provider
       value={{
+        currentTab,
+        setCurrentTab,
         bureau,
         setBureau,
         bureauState,
