@@ -42,11 +42,14 @@ const MapFocusGrid: React.FC<Props> = ({
     return () => mql.removeEventListener('change', update)
   }, [desktopBreakpoint])
 
+  // NO transition on the columns, on purpose: animating the map cell's width
+  // makes the Mapbox canvas re-buffer on every frame of the 420ms tween, and
+  // each re-buffer clears the canvas before the next paint — the user sees the
+  // map "blink" while it stretches. Snapping the columns instead means ONE
+  // resize + ONE repaint → the map fills the row instantly with no flicker.
+  // The side panels still get their own exit animation from MapOverlayPanel.
   const style: React.CSSProperties = isDesktop
-    ? {
-        gridTemplateColumns: isMapFocus ? focusedCols : desktopCols,
-        transition: 'grid-template-columns 420ms cubic-bezier(0.4, 0, 0.2, 1)',
-      }
+    ? { gridTemplateColumns: isMapFocus ? focusedCols : desktopCols }
     : {}
 
   return (

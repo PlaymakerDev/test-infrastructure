@@ -19,10 +19,19 @@ type TrafficVolumeFeatureCollection = GeoJSON.FeatureCollection<
   Record<string, unknown>
 >
 
+/** A usable [lng, lat] — drops null / malformed / [0,0]. One bad point makes
+ *  Mapbox reject the WHOLE GeoJSON source (fires a map `error`: "object null
+ *  is not iterable") → no markers at all. Hit for real on dept 0 + scope=all
+ *  where 3/410 counting locations came back with a null geometry_point. */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  !(g[0] === 0 && g[1] === 0)
+
 /** Convert raw API locations → GeoJSON FeatureCollection for MarkerLayer. */
 const toGeoJSON = (locations: CountingLocation[]): TrafficVolumeFeatureCollection => ({
   type: 'FeatureCollection',
-  features: locations.map((loc) => ({
+  features: locations.filter((loc) => isValidCoord(loc.geometry_point)).map((loc) => ({
     type: 'Feature',
     properties: {
       id: loc.solution.id,

@@ -19,10 +19,18 @@ type CrosswalkFeatureCollection = GeoJSON.FeatureCollection<
   Record<string, unknown>
 >
 
+/** A usable [lng, lat] — drops null / malformed / [0,0]. One bad point makes
+ *  Mapbox reject the WHOLE GeoJSON source → no markers at all (seen live on
+ *  traffic-volume + vms with scope=all responses carrying null coords). */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  !(g[0] === 0 && g[1] === 0)
+
 /** Convert raw API locations → GeoJSON FeatureCollection for MarkerLayer. */
 const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection => ({
   type: 'FeatureCollection',
-  features: locations.map((loc) => ({
+  features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => ({
     type: 'Feature',
     properties: {
       id: loc.solution.id,
