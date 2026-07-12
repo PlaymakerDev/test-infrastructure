@@ -2,20 +2,22 @@ import React from 'react'
 import {
   FormSearchVehicle,
   VehicleStatCard,
-  TableVehicleData
+  TableVehicleData,
+  ModalWeightLog
 } from '../components'
+import { useWIMContext } from '../context'
 
 interface Props {
 
 }
 
-const VehicleSection: React.FC<Props> = (props) => {
-  const { } = props
+const VehicleSection: React.FC<Props> = () => {
+  const { setVehicleSearchParams } = useWIMContext()
 
   return (
     <div>
       <section>
-        <FormSearchVehicle />
+        <FormSearchVehicle onSearch={setVehicleSearchParams} />
       </section>
       <section className='mt-5'>
         <VehicleStatCard />
@@ -23,6 +25,7 @@ const VehicleSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <TableVehicleData />
       </section>
+      <ModalWeightLog />
     </div>
   )
 }

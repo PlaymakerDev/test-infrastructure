@@ -1,4 +1,3 @@
-import dayjs from 'dayjs'
 import type { APIResponseStationDaily, APIResponseWIMDaily } from '@/types/tracking/detail-api'
 import { useStationDaily } from './useStationDaily'
 import { useWimDaily } from './useWimDaily'
@@ -11,15 +10,29 @@ type DailyTableResult =
  *  rows shapes are close but not identical (WIM carries extra esal fields),
  *  so — unlike `useDailyWeightLog` — this stays a discriminated union rather
  *  than a normalized shape: callers branch on `kind` to pick which
- *  presentational table (`TableLatestStation`/`TableLatestWIM`) to render. */
+ *  presentational table (`TableLatestStation`/`TableLatestWIM`) to render.
+ *
+ *  `startDate`/`endDate` are a plain passthrough (no implicit default) — each
+ *  caller decides its own range, e.g. `TableOverallWeight` hardcodes the
+ *  current month, `TableVehicleData` derives it from `FormSearchVehicle`. */
 export function useDailyTable(
   id: string | number | undefined,
-  stationType: string | null | undefined
+  stationType: string | null | undefined,
+  options?: {
+    page?: number
+    pageSize?: number
+    startDate?: string
+    endDate?: string
+    stationStatus?: 'normal' | 'abnormal' | 'wim_disconnected'
+  }
 ): DailyTableResult {
   const params = {
-    start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
-    end_date: dayjs().endOf('month').format('YYYY-MM-DD'),
+    start_date: options?.startDate,
+    end_date: options?.endDate,
     station_id: id as string,
+    page: options?.page,
+    page_size: options?.pageSize,
+    station_status: options?.stationStatus,
   }
 
   const station = useStationDaily(params, stationType === 'STATION')

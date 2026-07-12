@@ -1,4 +1,4 @@
-import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestVehicleCountHour, APIRequestWeightStationLog, APIRequestWeightWIMLog, APIRequestWeightWIMLogByID, APIRequestWIMDaily, APIRequestWIMTodayStats, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseTrafficAvgSpeed, APIResponseVehicleCountHour, APIResponseWeightStationLog, APIResponseWeightStationLogByID, APIResponseWeightWIMLog, APIResponseWeightWIMLogByID, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
+import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestStationDailyCount, APIRequestVehicleCountHour, APIRequestWeightStationLog, APIRequestWeightWIMLog, APIRequestWeightWIMLogByID, APIRequestWIMDaily, APIRequestWIMDailyCount, APIRequestWIMTodayStats, APIResponseCalibrationHistory, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseStationDailyCount, APIResponseTrafficAvgSpeed, APIResponseVehicleCountHour, APIResponseWeightStationLog, APIResponseWeightStationLogByID, APIResponseWeightWIMLog, APIResponseWeightWIMLogByID, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMDailyCount, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
 import ApiService from "../ApiService"
 import { DEFAULT_TRACKING_API_URL } from "./TrackingService"
 
@@ -63,6 +63,13 @@ export const getTrackingCalibrationHistoryStatusAPI = async (stationType: string
   })
 }
 
+export const getTrackingCalibrationHistoryAPI = async (stationType: string | number, id: string | number) => {
+  return ApiService.fetchData<APIResponseCalibrationHistory>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/calibration-history/history/${stationType}/${id}`,
+    method: 'GET',
+  })
+}
+
 export const getTrackingLast7DaysAPI = async (params: APIRequestLast7Days) => {
   return ApiService.fetchData<APIResponseLast7Days, APIRequestLast7Days>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/dashboards/last_7_days`,
@@ -122,5 +129,21 @@ export const getTrackingTrafficAvgSpeedAPI = async (id: string | number) => {
   return ApiService.fetchData<APIResponseTrafficAvgSpeed>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/masters/wim/traffic_avg_speed/${id}`,
     method: 'GET',
+  })
+}
+
+export const getTrackingStationDailyCountAPI = async (params: APIRequestStationDailyCount) => {
+  return ApiService.fetchData<APIResponseStationDailyCount, APIRequestStationDailyCount>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/station_daily_status_count`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingWIMDailyCountAPI = async (params: APIRequestWIMDailyCount) => {
+  return ApiService.fetchData<APIResponseWIMDailyCount, APIRequestWIMDailyCount>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/wim_daily_status_count`,
+    method: 'GET',
+    params,
   })
 }

@@ -120,6 +120,81 @@ export interface APIResponseCalibrationHistoryStatus {
   daysUntilExpiry: number
 }
 
+export type APIResponseCalibrationHistory = CalibrationHistoryData[]
+
+export interface CalibrationHistoryData {
+  attachmentPath: any
+  calibrationBy: string
+  calibrationCompany: string
+  calibrationDate: string
+  calibrationResult: string
+  certificateNo: string
+  createdAt: string
+  createdBy: string
+  department: any
+  departmentId: any
+  id: number
+  nextCalibrationDate: string
+  remark: string
+  station: CalibrateHistoryStation
+  stationId: number
+  stationType: number
+  updatedAt: string
+  updatedBy: any
+  wim: CalibrateHistoryWIM
+}
+
+export interface CalibrateHistoryStation {
+  contract_number: any
+  contractor_name: any
+  delivery_year: string
+  department_id: number
+  enf_id: any
+  ip_address: string
+  is_enable: number
+  kilometer_position: any
+  last_update: string
+  latitude: string
+  location_description: string
+  longtitude: string
+  over: number
+  province_id: number
+  remark: any
+  side: any
+  station_description: string
+  station_id: number
+  station_name: string
+  station_type: number
+  total: number
+  update_year: any
+}
+
+export interface CalibrateHistoryWIM {
+  contract_number: any
+  contractor_name: any
+  delivery_year: any
+  department_id: number
+  enf_id: any
+  ip_address: string
+  is_enable: number
+  kilometer_position: any
+  last_update: string
+  latitude: string
+  location_description: string
+  longtitude: string
+  over: number
+  owner: string
+  province_id: number
+  remark: any
+  side: any
+  station_description: string
+  station_id: number
+  station_name: string
+  station_type: number
+  total: number
+  update_year: any
+}
+
 export interface LatestCalibration {
   id: number
   stationType: number
@@ -199,6 +274,7 @@ export interface APIRequestStationDaily {
   station_id?: string
   page?: number
   page_size?: number
+  station_status?: 'normal' | 'abnormal' | 'wim_disconnected'
   ordering?: 'asc' | 'desc'
 }
 
@@ -734,3 +810,38 @@ export interface TrafficAvgSpeedData {
   vehicle_count: string
   avg_speed: string
 }
+
+// STATION DAILY STATUS COUNT
+export interface APIRequestStationDailyCount {
+  start_date?: string
+  end_date?: string
+  station_id?: string | number
+}
+
+export interface APIResponseStationDailyCount {
+  data: StationDailyCountData
+  success: boolean
+}
+
+export interface StationDailyCountData {
+  abnormal: number
+  camera_offline: number
+  camera_online: number
+  max_grossweight_not_over: number
+  max_grossweight_over: number
+  normal: number
+  station_count: number
+  sum_isover_10percent: number
+  sum_total: number
+  sum_total_over: number
+  top_region: string
+  top_region_percent: number
+  top_region_station_count: number
+  total: number
+  wim_disconnected: number
+}
+
+// WIM DAILY STATUS COUNT
+export type APIRequestWIMDailyCount = APIRequestStationDailyCount
+
+export type APIResponseWIMDailyCount = APIResponseStationDailyCount

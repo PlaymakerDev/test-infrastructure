@@ -38,9 +38,9 @@ export interface CardListProps {
   columns?: ColumnsConfig
   /** lg:col-span-N for the expanded card. Default: 2 */
   expandedColSpan?: 1 | 2 | 3 | 4
-  /** Height (px) of the vehicle image in collapsed state. Default: 120 */
+  /** Height (px) of the vehicle image in collapsed state. Default: 90 */
   collapsedImageHeight?: number
-  /** Height (px) of the vehicle image in expanded state. Default: 140 */
+  /** Height (px) of the vehicle image in expanded state. Default: 105 */
   expandedImageHeight?: number
   /** Status value → Tailwind class string mapping */
   statusMap?: Record<string, string>
@@ -172,8 +172,8 @@ const CardList: React.FC<CardListProps> = ({
   data,
   columns = { base: 1, sm: 2, lg: 3, xl: 4 },
   expandedColSpan = 2,
-  collapsedImageHeight = 120,
-  expandedImageHeight = 140,
+  collapsedImageHeight = 90,
+  expandedImageHeight = 105,
   statusMap = DEFAULT_STATUS_MAP,
   onExpand,
   defaultExpandedId = null,
@@ -190,18 +190,18 @@ const CardList: React.FC<CardListProps> = ({
 
   const gridClass = [
     columns.base ? GRID_BASE[columns.base] : 'grid-cols-1',
-    columns.sm   ? GRID_SM[columns.sm]    : '',
-    columns.lg   ? GRID_LG[columns.lg]    : '',
-    columns.xl   ? GRID_XL[columns.xl]    : '',
+    columns.sm ? GRID_SM[columns.sm] : '',
+    columns.lg ? GRID_LG[columns.lg] : '',
+    columns.xl ? GRID_XL[columns.xl] : '',
   ].filter(Boolean).join(' ')
 
   const expandedSpanClass = EXPANDED_SPAN[expandedColSpan]
 
   const renderItem = useMemo(() => data.map((item) => {
     const isExpanded = expandedId === item.id
-    const images = item.images?.length
-      ? item.images
-      : item.vehicleImage ? [{ image: item.vehicleImage, description: '' }] : []
+    // Only real captured photos belong in the swiper — the generic per-vehicle-class
+    // SVG (`vehicleImage`) is a silhouette placeholder, not a substitute photo.
+    const images = item.images ?? []
 
     return (
       <motion.div
@@ -210,7 +210,7 @@ const CardList: React.FC<CardListProps> = ({
         transition={LAYOUT_TRANSITION}
         onClick={() => toggle(item.id)}
         className={[
-          'bg-[#2D2D2D] rounded-xl p-4 cursor-pointer transition-colors duration-300',
+          'bg-[#2D2D2D] rounded-xl p-4 cursor-pointer transition-colors duration-300 overflow-hidden',
           isExpanded
             ? `border-2 border-(--yellow) ${expandedSpanClass}`
             : 'border-2 border-transparent',
@@ -251,12 +251,12 @@ const CardList: React.FC<CardListProps> = ({
                 <div className={`flex-1 min-w-0 w-full relative ${item.vehicleImage ? 'pb-36' : ''}`}>
                   <DataRows item={item} />
                   {item.vehicleImage && (
-                    <div className='absolute bottom-0 right-0'>
+                    <div className='absolute bottom-0 right-0 -mr-16'>
                       <Image
                         src={item.vehicleImage}
                         alt={item.plate}
                         height={expandedImageHeight}
-                        className='object-contain'
+                        className='object-left object-contain'
                         preview={false}
                       />
                     </div>
@@ -281,12 +281,12 @@ const CardList: React.FC<CardListProps> = ({
               <div className='flex flex-col gap-2'>
                 <DataRows item={item} />
                 {item.vehicleImage && (
-                  <div className='flex justify-end'>
+                  <div className='flex justify-end -mr-16'>
                     <Image
                       src={item.vehicleImage}
                       alt={item.plate}
                       height={collapsedImageHeight}
-                      className='object-contain'
+                      className='object-left object-contain'
                       preview={false}
                     />
                   </div>

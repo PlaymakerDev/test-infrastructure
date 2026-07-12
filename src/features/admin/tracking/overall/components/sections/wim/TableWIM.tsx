@@ -4,13 +4,20 @@ import { Table, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { SumWim } from '@/types/tracking/overall-api'
-import { STATION_STATUS } from '@/constants'
 import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   data?: SumWim[]
   isLoading?: boolean
   isError?: boolean
+}
+
+type StatusType = 'เปิดปกติ' | 'ระบบขัดข้อง' | 'ไม่ส่งข้อมูล'
+
+const STATUS_CLASS: Record<StatusType, string> = {
+  'เปิดปกติ': 'border-(--default-blue) text-(--default-blue)',
+  'ระบบขัดข้อง': 'border-(--yellow) text-(--yellow)',
+  'ไม่ส่งข้อมูล': 'border-red-500 text-red-500',
 }
 
 const TableWIM: React.FC<Props> = (props) => {
@@ -148,11 +155,9 @@ const TableWIM: React.FC<Props> = (props) => {
         if (totalCCTV === 0 && activeCCTV === 0) status = 'ระบบขัดข้อง'
 
         return (
-          <div className='flex justify-center items-center'>
-            <div className={`bg-[#66AEFF1A] border border-(${STATION_STATUS[status as keyof typeof STATION_STATUS].color}) px-3 py-1 rounded-3xl w-full lg:w-28`}>
-              <p className={`fs-12 text-(${STATION_STATUS[status as keyof typeof STATION_STATUS].color}) mb-0`}>{STATION_STATUS[status as keyof typeof STATION_STATUS].text}</p>
-            </div>
-          </div>
+          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
+            {status}
+          </span>
         )
       },
     },

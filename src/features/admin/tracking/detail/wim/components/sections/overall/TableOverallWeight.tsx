@@ -1,19 +1,23 @@
 "use client"
 import React from 'react'
 import { Empty } from 'antd'
+import dayjs from 'dayjs'
 import { useDailyTable } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import { TableLatestStation, TableLatestWIM } from '../../../components'
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
-const TableOverallWeight: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+const TableOverallWeight: React.FC<Props> = () => {
+  const { id: stationId, stationType } = useWIMContext()
 
-  const result = useDailyTable(stationId as string | number | undefined, stationType)
+  const result = useDailyTable(stationId as string | number | undefined, stationType, {
+    startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+    endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+  })
 
   const renderTableData = () => {
     if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description="ไม่พบข้อมูล" />

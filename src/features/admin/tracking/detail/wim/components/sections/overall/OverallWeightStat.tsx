@@ -7,16 +7,15 @@ import {
 } from '@/features/admin/tracking/detail/wim/components'
 import { useCurrentWeightVehicle } from '@/features/admin/tracking/detail/wim/hooks'
 import type { NormalizedDailyLog } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
-  stationTypeId: number | null | undefined;
   dailyLog?: NormalizedDailyLog
 }
 
 const OverallWeightStat: React.FC<Props> = (props) => {
-  const { stationId, stationType, stationTypeId, dailyLog } = props
+  const { dailyLog } = props
+  const { id: stationId, stationType, stationTypeId } = useWIMContext()
 
   const {
     data: currentVehicleLog,

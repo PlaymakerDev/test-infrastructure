@@ -17,17 +17,17 @@ import {
   ChartTraffic,
 } from '../components'
 import { usePCU, useCalibrationHistory, usePositionById, useDailyWeightLog } from '../hooks'
-import { toStationTypeId } from '@/constants/tracking'
+import { useWIMContext } from '../context'
 import QueryBoundary from '@/components/common/QueryBoundary'
+import { useQuery } from '@tanstack/react-query'
+import { getTrackingCalibrationHistoryAPI } from '@/services/routes/TrackingDetailService'
 
 interface Props {
-  id: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
-const OverallSection: React.FC<Props> = (props) => {
-  const { id, stationType } = props
-  const stationTypeId = toStationTypeId(stationType)
+const OverallSection: React.FC<Props> = () => {
+  const { id, stationType, stationTypeId } = useWIMContext()
   const isStation = stationType === 'STATION'
 
   // OverallAvgSpeed/ChartTraffic read a WIM-only endpoint (`/masters/wim/traffic_avg_speed`) —
@@ -70,12 +70,7 @@ const OverallSection: React.FC<Props> = (props) => {
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={10}>
             <section>
               <QueryBoundary isLoading={isDailyLogLoading} isError={isDailyLogError}>
-                <OverallWeightStat
-                  stationId={id}
-                  stationType={stationType}
-                  stationTypeId={stationTypeId}
-                  dailyLog={dailyLog}
-                />
+                <OverallWeightStat dailyLog={dailyLog} />
               </QueryBoundary>
             </section>
             <section className='mt-5'>
@@ -101,16 +96,10 @@ const OverallSection: React.FC<Props> = (props) => {
               </QueryBoundary>
             </section>
             <section className='mt-5'>
-              <OverallCCTV
-                stationId={id}
-                stationType={stationTypeId}
-              />
+              <OverallCCTV />
             </section>
             <section className='mt-5'>
-              <TableOverallWeight
-                stationId={id}
-                stationType={stationType}
-              />
+              <TableOverallWeight />
             </section>
           </Col>
         </Row>
@@ -119,30 +108,21 @@ const OverallSection: React.FC<Props> = (props) => {
         <Row gutter={[16, 16]} style={{ alignItems: 'stretch' }}>
           {!isStation && (
             <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={10} className='flex flex-col'>
-              <OverallAvgSpeed
-                stationId={id}
-                stationType={stationType}
-              />
+              <OverallAvgSpeed />
             </Col>
           )}
           <Col {...previousWeightColSpan} className='flex flex-col'>
-            <ChartPreviousWeightVehicle
-              stationId={id}
-              stationType={stationType}
-            />
+            <ChartPreviousWeightVehicle />
           </Col>
           {!isStation && (
             <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={7} className='flex flex-col'>
-              <ChartTraffic
-                stationId={id}
-                stationType={stationType}
-              />
+              <ChartTraffic />
             </Col>
           )}
         </Row>
       </section>
       <section className='mt-5'>
-        <OverallDataDisplaySection stationId={id} stationType={stationType} />
+        <OverallDataDisplaySection />
       </section>
     </>
   )
