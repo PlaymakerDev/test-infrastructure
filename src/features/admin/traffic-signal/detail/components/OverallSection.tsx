@@ -11,6 +11,7 @@ import {
   ChartETAnalysisTrafficSignal,
   ChartRealtimePerformanceTrafficSignal,
 } from '../components'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props { }
 
@@ -31,15 +32,21 @@ const OverallSection: React.FC<Props> = () => {
           {/* Cycle overlay — same height as Phase Timing (h-71) and bottom-3.
             * `right-96` (24rem = 384px) clears the right rail below
             * (`right-4` + `w-90` = 16 + 360 = 376px) with an 8px gap. */}
-          <div className='hidden xl:block absolute bottom-2 right-96 w-115 xl:h-71 pointer-events-auto'>
+          <MapOverlayPanel
+            position='bottom'
+            className='hidden xl:block absolute bottom-2 right-96 w-115 xl:h-71 pointer-events-auto'
+          >
             <TrafficCycleTrafficSignal />
-          </div>
+          </MapOverlayPanel>
         </div>
 
         {/* Right rail — `gap-3` between every card. On desktop, absolute-positioned
           * on top of the map. `xl:bottom-3` matches the Cycle overlay's `bottom-3`
           * so Phase Timing's bottom edge aligns with the Cycle overlay's bottom. */}
-        <div className='flex flex-col gap-3 px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-3 xl:z-10 xl:w-90'>
+        <MapOverlayPanel
+          position='right'
+          className='flex flex-col gap-3 px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-3 xl:z-10 xl:w-90'
+        >
           <InfoCardsTrafficSignal />
           {/* `mt-auto` pins Phase Timing to the bottom. `shrink-0` guards against
             * flex shrinkage when InfoCards is tall, so h-71 (284px) is always
@@ -47,7 +54,7 @@ const OverallSection: React.FC<Props> = () => {
           <div className='xl:h-71 xl:mt-auto xl:shrink-0'>
             <PhaseTimingTrafficSignal />
           </div>
-        </div>
+        </MapOverlayPanel>
       </section>
 
       {/* ── Mobile/tablet fallback for the Cycle card (xl+ shows it as a map

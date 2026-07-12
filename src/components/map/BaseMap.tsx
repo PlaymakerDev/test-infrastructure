@@ -148,6 +148,14 @@ export interface BaseMapProps {
   /** Render the DRR road network (yellow lines + greyed base roads). Default
    *  true — every map shows ทช. roads. Set false to opt a map out. */
   showRoads?: boolean
+  /** Persist the current map view (center/zoom/pitch/bearing) to
+   *  sessionStorage under this key, and restore it on the next mount. Use
+   *  this to survive component remounts caused by Next.js `router.replace`
+   *  (verified: DashboardMapContent + BaseMap both remount on searchParams
+   *  change, otherwise the map would snap back to `initialCenter` and undo
+   *  everything the user just did). Optional — omit for maps that shouldn't
+   *  remember state. */
+  viewStateKey?: string
 }
 
 const DEFAULT_CENTER: [number, number] = [101.5, 14.0]
@@ -166,7 +174,32 @@ const BaseMap: React.FC<BaseMapProps> = ({
   style,
   edgeFade,
   showRoads = true,
+  viewStateKey,
 }) => {
+  // If a viewStateKey was passed and there's a saved view, hydrate from it.
+  // Otherwise fall back to the prop-supplied initialCenter/zoom/pitch/bearing.
+  // Read synchronously so the map is created at the restored position (no
+  // brief flash at COUNTRY_VIEW before the effect below could re-fly).
+  const restored = useMemo(() => {
+    if (typeof window === 'undefined' || !viewStateKey) return null
+    try {
+      const raw = sessionStorage.getItem(viewStateKey)
+      if (!raw) return null
+      const v = JSON.parse(raw) as {
+        center?: [number, number]
+        zoom?: number
+        pitch?: number
+        bearing?: number
+      }
+      return v
+    } catch {
+      return null
+    }
+  }, [viewStateKey])
+  const effectiveInitialCenter = restored?.center ?? initialCenter
+  const effectiveInitialZoom = restored?.zoom ?? initialZoom
+  const effectiveInitialPitch = restored?.pitch ?? initialPitch
+  const effectiveInitialBearing = restored?.bearing ?? initialBearing
   const containerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<MapboxMap | null>(null)
@@ -193,10 +226,10 @@ const BaseMap: React.FC<BaseMapProps> = ({
       instance = new mb.Map({
         container: containerRef.current,
         style: styleUrl,
-        center: initialCenter,
-        zoom: initialZoom,
-        pitch: initialPitch,
-        bearing: initialBearing,
+        center: effectiveInitialCenter,
+        zoom: effectiveInitialZoom,
+        pitch: effectiveInitialPitch,
+        bearing: effectiveInitialBearing,
         attributionControl: showAttribution,
         preserveDrawingBuffer: false,
       })
@@ -296,6 +329,33 @@ const BaseMap: React.FC<BaseMapProps> = ({
     observer.observe(containerRef.current)
     return () => observer.disconnect()
   }, [map])
+
+  // Persist view state on every moveend so the next mount (from a Next.js
+  // router.replace-driven remount) can restore it. Skipped when no key.
+  useEffect(() => {
+    if (!map || !viewStateKey) return
+    const save = () => {
+      const c = map.getCenter()
+      try {
+        sessionStorage.setItem(
+          viewStateKey,
+          JSON.stringify({
+            center: [c.lng, c.lat] as [number, number],
+            zoom: map.getZoom(),
+            pitch: map.getPitch(),
+            bearing: map.getBearing(),
+          })
+        )
+      } catch {
+        // storage quota or private mode — silently ignore, we still work
+        // fine, just without view restoration.
+      }
+    }
+    map.on('moveend', save)
+    return () => {
+      map.off('moveend', save)
+    }
+  }, [map, viewStateKey])
 
   const ctx = useMemo(() => ({ map, isLoaded }), [map, isLoaded])
 

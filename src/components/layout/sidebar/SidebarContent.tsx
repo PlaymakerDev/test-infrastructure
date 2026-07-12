@@ -1,7 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import {
-  TbLayoutDashboard,
+  TbHome,
   TbVideo,
   TbTruckDelivery,
   TbTrafficLights,
@@ -28,7 +28,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { APIResponseSidebar } from '@/types/layout/api';
 
 const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  "Dashboard": TbLayoutDashboard,
+  "Dashboard": TbHome,
   "CCTV": TbVideo,
   "Traffic Volume": TbTruckDelivery,
   "Incident Detection": TbCarCrash,

@@ -25,6 +25,9 @@ const initialState: LayoutState = {
       status: "IDLE"
     }
   },
+  map_focus: {
+    active: false
+  },
 }
 
 export const SLICE_NAME = 'layoutSlice';
@@ -67,6 +70,12 @@ const layoutSlice = createSlice({
     },
     resetCCTVModalOpen: (state) => {
       state.cctv_modal = initialState.cctv_modal
+    },
+    setMapFocusMode: (state, action) => {
+      state.map_focus.active = action.payload.active
+    },
+    toggleMapFocusMode: (state) => {
+      state.map_focus.active = !state.map_focus.active
     }
   },
   extraReducers: (builder) => {
@@ -95,7 +104,9 @@ export const {
   setCCTVModalOpen,
   resetCCTVModalOpen,
   setProjectInfoModalOpen,
-  resetProjectInfoModalOpen
+  resetProjectInfoModalOpen,
+  setMapFocusMode,
+  toggleMapFocusMode
 } = layoutSlice.actions
 
 export default layoutSlice.reducer

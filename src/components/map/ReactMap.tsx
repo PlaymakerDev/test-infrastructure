@@ -1,7 +1,9 @@
 "use client"
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { MapMouseEvent } from 'mapbox-gl'
 import { useMap } from './hooks/useMap'
 import {
+  PROVINCE_BY_CODE,
   PROVINCES,
   type Province,
 } from '@/features/admin/dashboard/data/provinces'
@@ -10,11 +12,16 @@ import {
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
+import { useProvinceDeptMap } from '@/features/admin/dashboard/data/useProvinceDeptMap'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { DashboardPositionLocation } from '@/types/dashboard/api'
 import BaseMap from './BaseMap'
-import ThailandMaskLayer from './markers/ThailandMaskLayer'
+import ThailandMaskLayer, {
+  PROVINCE_CLICK_LAYER_ID,
+  PROVINCE_HOVER_FILL_ID,
+  PROVINCE_HOVER_LINE_ID,
+} from './markers/ThailandMaskLayer'
 import DeviceClusterMarker from './markers/DeviceClusterMarker'
 import OverlapStackMarker from './markers/OverlapStackMarker'
 import StchSummaryMarker, { type StchSummary } from './markers/StchSummaryMarker'
@@ -104,33 +111,56 @@ function useNearestProvince(threshold: number): Province | null {
   return province
 }
 
-const DashboardMapContent: React.FC = () => {
+interface DashboardMapContentProps {
+  /** The dept the user landed with — reset button reverts to this. */
+  originalDeptId: string
+  /** Called whenever the user's map interaction should rescope the cards
+   *  (click a province, pan into one, or zoom out). Parent wires this into
+   *  the `DeptIdOverrideContext.Provider` value so every card that reads
+   *  `useDeptId()` refetches. URL is intentionally NOT touched — updating
+   *  it via `router.replace` remounts the whole map and flickers. */
+  onDeptIdChange: (id: string) => void
+}
+
+const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
+  originalDeptId,
+  onDeptIdChange,
+}) => {
   const { map, isLoaded } = useMap()
+  // Current CARD scope (comes back through DeptIdOverrideContext — the
+  // parent screen feeds our own onDeptIdChange broadcasts into it). Used
+  // only to compare before re-broadcasting; the markers do NOT use it.
   const deptId = useDeptId()
   const [visibleTypes, setVisibleTypes] = useState<Set<SystemType>>(
     () => new Set(SYSTEM_TYPES)
   )
   const province = useNearestProvince(PROVINCE_ZOOM_THRESHOLD)
+  // province.code → dept_id (RBAC-scoped: only provinces the user has access to).
+  const provinceDeptMap = useProvinceDeptMap()
 
-  // All devices for the current dept (dept_id=0 → ทช.ส่วนกลาง returns the
-  // nationwide pool, ~2,500 rows; dept_id=N returns that dept only).
-  const { data: position } = useDashboardPosition(deptId)
+  // MAP MARKERS always use the login-time scope (`originalDeptId`), NOT the
+  // live card scope. If markers followed the pan-updated dept, flying into
+  // one province would refetch positions for that single ขทช. and every
+  // OTHER province's markers would vanish mid-flight (user report: an สทช.
+  // summary shows 48 devices, but zooming in left a single marker). With the
+  // login scope the full device pool stays plotted; only the CARDS rescope.
+  const { data: position } = useDashboardPosition(originalDeptId)
 
   // When the dashboard scopes to a single dept (?dept_id=N, N ≠ 0), zoom the
   // map to that dept's centroid so the user lands on their devices instead of
   // a country-wide view that hides them behind STCH summary markers. dept 0 =
-  // ทช.ส่วนกลาง (nationwide) keeps the country-level view.
-  //
-  // The fly is one-shot per dept change — once we've flown to dept N, we don't
-  // re-fly on later position re-fetches (user may have panned/zoomed away).
+  // ทช.ส่วนกลาง (nationwide) keeps the country-level view. One-shot on mount.
   const flownForDeptRef = useRef<string | null>(null)
+  const markFlown = useCallback((id: string) => {
+    flownForDeptRef.current = id
+  }, [])
   useEffect(() => {
     if (!map || !isLoaded) return
-    if (deptId === '0') return
-    if (flownForDeptRef.current === deptId) return
+    if (originalDeptId === '0') return
+    if (flownForDeptRef.current === originalDeptId) return
     const c = position?.centroid
     if (!Array.isArray(c) || c.length !== 2 || (c[0] === 0 && c[1] === 0)) return
-    flownForDeptRef.current = deptId
+    markFlown(originalDeptId)
     map.flyTo({
       center: c as [number, number],
       // Above PROVINCE_ZOOM_THRESHOLD so device markers (not STCH summary) show.
@@ -138,7 +168,7 @@ const DashboardMapContent: React.FC = () => {
       pitch: 30,
       duration: 1400,
     })
-  }, [map, isLoaded, deptId, position?.centroid])
+  }, [map, isLoaded, originalDeptId, position?.centroid, markFlown])
 
   // Adapt API locations → Device + aggregate per-สทช. counts for the country-
   // level summary marker layer.
@@ -185,19 +215,173 @@ const DashboardMapContent: React.FC = () => {
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries }
   }, [position])
 
+  // Refs keep the click handler's closure fresh without re-registering the
+  // Mapbox listener on every render.
+  const provinceDeptMapRef = useRef(provinceDeptMap)
+  useEffect(() => { provinceDeptMapRef.current = provinceDeptMap }, [provinceDeptMap])
+  const onDeptIdChangeRef = useRef(onDeptIdChange)
+  useEffect(() => { onDeptIdChangeRef.current = onDeptIdChange }, [onDeptIdChange])
+  const deptIdRef = useRef(deptId)
+  useEffect(() => { deptIdRef.current = deptId }, [deptId])
+
+  // Click a province polygon → immediate flyTo + broadcast the new dept
+  // to every card via the parent-provided `onDeptIdChange`. NO URL update
+  // (that would `router.replace`, which remounts BaseMap and flickers the
+  // map back to COUNTRY_VIEW). Skips silently when the user has no RBAC
+  // access to that province (`provinceDeptMap` omits those).
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    const onClick = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // Guard 1 — clicks coming through HTML overlays (spider-fan markers,
+      // STCH summary badges, popup buttons like "ดูเพิ่มเติม") bubble up to
+      // the map container and register as map clicks on this full-coverage
+      // hitbox. Their DOM target is the overlay element, NOT the canvas —
+      // skip them, otherwise clicking a fanned-out marker/popup makes the
+      // map fly away mid-interaction and the popup becomes unclickable.
+      if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) return
+      // Guard 2 — canvas clicks that land ON a device marker / cluster
+      // (symbol+circle layers all named `markerlayer-*`). Those clicks
+      // belong to the marker's own popup handler; a province fly here
+      // would immediately close the popup it just opened.
+      const markerLayerIds = (map.getStyle()?.layers ?? [])
+        .map((l) => l.id)
+        .filter((id) => id.startsWith('markerlayer-'))
+      if (markerLayerIds.length > 0) {
+        const hits = map.queryRenderedFeatures(e.point, { layers: markerLayerIds })
+        if (hits.length > 0) return
+      }
+      const feature = e.features?.[0]
+      const code = feature?.properties?.code as string | undefined
+      if (!code) return
+      const nextDeptId = provinceDeptMapRef.current.get(code)
+      if (nextDeptId == null) return  // no RBAC access → no-op
+      const p = PROVINCE_BY_CODE[code] as Province | undefined
+      if (!p) return
+      const nextStr = String(nextDeptId)
+      // Hide the hover outline/tooltip — the map is about to fly, so the
+      // affordance for "what you're about to click" is no longer relevant
+      // (and would otherwise linger until the next mouse move).
+      clearHover()
+      // Suppress the auto-fly effect below — we're already flying here.
+      markFlown(nextStr)
+      map.flyTo({
+        center: p.coord,
+        zoom: 9.5,
+        pitch: 30,
+        duration: 1400,
+      })
+      if (nextStr !== deptIdRef.current) onDeptIdChangeRef.current(nextStr)
+    }
+    // ── Hover affordance — outline the province under the cursor + a small
+    // tooltip with its name, so the user knows WHAT they're about to click
+    // (province shapes are hard to identify at country zoom). Only provinces
+    // the user can actually open (RBAC map) get the highlight + pointer.
+    const container = map.getContainer()
+    const tooltip = document.createElement('div')
+    tooltip.style.cssText =
+      'position:absolute;z-index:30;pointer-events:none;display:none;' +
+      'padding:6px 10px;border-radius:8px;background:rgba(5,13,26,0.95);' +
+      'border:1px solid rgba(252,209,22,0.6);box-shadow:0 2px 10px rgba(0,0,0,0.5);' +
+      'font-size:12px;line-height:1.35;white-space:nowrap;color:#fff'
+    container.appendChild(tooltip)
+    let hoverCode: string | null = null
+
+    const clearHover = () => {
+      hoverCode = null
+      map.getCanvas().style.cursor = ''
+      tooltip.style.display = 'none'
+      const noneFilter = ['==', ['get', 'code'], '__none__'] as Parameters<typeof map.setFilter>[1]
+      if (map.getLayer(PROVINCE_HOVER_LINE_ID)) map.setFilter(PROVINCE_HOVER_LINE_ID, noneFilter)
+      if (map.getLayer(PROVINCE_HOVER_FILL_ID)) map.setFilter(PROVINCE_HOVER_FILL_ID, noneFilter)
+    }
+
+    const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // Cursor is over an HTML overlay (marker/badge/popup) — not the map.
+      if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
+      const code = e.features?.[0]?.properties?.code as string | undefined
+      const province = code ? (PROVINCE_BY_CODE[code] as Province | undefined) : undefined
+      const accessible = code != null && provinceDeptMapRef.current.has(code)
+      if (!code || !province || !accessible) { clearHover(); return }
+      map.getCanvas().style.cursor = 'pointer'
+      if (hoverCode !== code) {
+        hoverCode = code
+        const filter = ['==', ['get', 'code'], code] as Parameters<typeof map.setFilter>[1]
+        if (map.getLayer(PROVINCE_HOVER_LINE_ID)) map.setFilter(PROVINCE_HOVER_LINE_ID, filter)
+        if (map.getLayer(PROVINCE_HOVER_FILL_ID)) map.setFilter(PROVINCE_HOVER_FILL_ID, filter)
+        tooltip.innerHTML =
+          `<div style="font-weight:600;color:#FCD116">จ.${province.name}</div>` +
+          '<div style="font-size:10px;color:#9fb0c8">คลิกเพื่อดูข้อมูลจังหวัด</div>'
+      }
+      tooltip.style.display = 'block'
+      tooltip.style.left = `${e.point.x + 14}px`
+      tooltip.style.top = `${e.point.y + 14}px`
+    }
+
+    // HTML markers sit on top of the canvas and swallow mouse events, so the
+    // layer's own mouseleave never fires when sliding onto one — this DOM
+    // listener catches that and hides the stale tooltip/outline.
+    const onDomMove = (ev: Event) => {
+      if ((ev as globalThis.MouseEvent).target !== map.getCanvas()) clearHover()
+    }
+    container.addEventListener('mousemove', onDomMove)
+
+    map.on('click', PROVINCE_CLICK_LAYER_ID, onClick)
+    map.on('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
+    map.on('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
+    return () => {
+      map.off('click', PROVINCE_CLICK_LAYER_ID, onClick)
+      map.off('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
+      map.off('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
+      container.removeEventListener('mousemove', onDomMove)
+      tooltip.remove()
+    }
+  }, [map, isLoaded, markFlown])
+
   const resetView = () => {
-    map?.flyTo({
+    if (!map) return
+    // Revert dept scope to whatever the user landed with, so cards rescope
+    // in sync with the "← ทั่วประเทศ" action. Suppress the auto-fly effect
+    // (we're already flying to COUNTRY_VIEW here).
+    markFlown(originalDeptId)
+    map.flyTo({
       center: COUNTRY_VIEW.center,
       zoom: COUNTRY_VIEW.zoom,
       pitch: 0,
       bearing: 0,
       duration: 1200,
     })
+    if (deptId !== originalDeptId) onDeptIdChange(originalDeptId)
   }
+
+  // ── Province watcher — broadcasts dept changes on EVERY map interaction
+  // (pan/drag, marker-click flyTo, mousewheel zoom in). Driven by the
+  // `province` state that `useNearestProvince` updates on each moveend.
+  // Zooming out below the threshold makes province null → reverts to
+  // `originalDeptId`. NO URL update — parent is expected to hold the
+  // current dept in local state and feed it back via `DeptIdOverrideContext`.
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    if (!province) {
+      if (deptId === originalDeptId) return
+      markFlown(originalDeptId)
+      onDeptIdChange(originalDeptId)
+      return
+    }
+    const nextDeptId = provinceDeptMap.get(province.code)
+    if (nextDeptId == null) return  // no RBAC access — keep the previous scope
+    const nextStr = String(nextDeptId)
+    if (nextStr === deptId) return
+    markFlown(nextStr)
+    onDeptIdChange(nextStr)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [province, provinceDeptMap, map, isLoaded, originalDeptId, deptId])
 
   return (
     <>
-      <ThailandMaskLayer highlightedProvinceCode={province?.code ?? null} />
+      <ThailandMaskLayer
+        highlightedProvinceCode={province?.code ?? null}
+        enableProvinceClick
+      />
       {/* Unique-coord devices → normal Mapbox cluster (icon per system type). */}
       <DeviceClusterMarker
         devices={singletons}
@@ -221,16 +405,25 @@ const DashboardMapContent: React.FC = () => {
         value={visibleTypes}
         onChange={setVisibleTypes}
         visible={!!province}
+        top={92}
       />
-      <BreadcrumbBanner province={province} onReset={resetView} />
+      <BreadcrumbBanner province={province} onReset={resetView} top={144} />
     </>
   )
 }
 
-const ReactMap: React.FC = () => {
+interface ReactMapProps {
+  originalDeptId: string
+  onDeptIdChange: (id: string) => void
+}
+
+const ReactMap: React.FC<ReactMapProps> = ({ originalDeptId, onDeptIdChange }) => {
   return (
-    <BaseMap initialCenter={COUNTRY_VIEW.center} initialZoom={COUNTRY_VIEW.zoom}>
-      <DashboardMapContent />
+    <BaseMap
+      initialCenter={COUNTRY_VIEW.center}
+      initialZoom={COUNTRY_VIEW.zoom}
+    >
+      <DashboardMapContent originalDeptId={originalDeptId} onDeptIdChange={onDeptIdChange} />
     </BaseMap>
   )
 }

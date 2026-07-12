@@ -20,7 +20,7 @@ const WARRANTY_STATE: Record<
   string,
   { badge: string; remainingClass: string }
 > = {
-  ในค้ำ: { badge: '#05F2DB', remainingClass: 'text-sky-400' },
+  ในค้ำ: { badge: '#05F2DB', remainingClass: 'text-[#66AEFF]' },
   หมดค้ำ: { badge: '#979797', remainingClass: 'text-red-400' },
   ก่อนค้ำ: { badge: '#FCD116', remainingClass: 'text-white' },
 }

@@ -1,5 +1,6 @@
 // Centralized query key factory for the Traffic Volume feature.
 
+import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestTrafficVolumeCentralList,
   APIRequestTrafficVolumeOverview,
@@ -22,8 +23,9 @@ export const trafficVolumeKeys = {
     [...trafficVolumeKeys.all, 'license', solutionId] as const,
 
   overview: {
+    // `scopeKey()` keys the cache apart per URL scope — see scopeParam.ts.
     root: (deptId: string | number) =>
-      [...trafficVolumeKeys.all, 'overview', deptId] as const,
+      [...trafficVolumeKeys.all, 'overview', deptId, scopeKey()] as const,
     map: (
       deptId: string | number,
       params: APIRequestTrafficVolumeOverview = {}

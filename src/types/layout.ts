@@ -9,6 +9,14 @@ export interface LayoutState {
   project_info_modal: ProjectInfoModalProperties;
   sidebar: APIResponseSidebar;
   task_schedules: PromiseModules;
+  map_focus: MapFocusProperties;
+}
+
+export interface MapFocusProperties {
+  /** When true, all UI panels/cards positioned over or beside the map are
+   *  hidden (via slide-out animation) and the map container expands to
+   *  width:100%. Toggled from the Navbar's TbZoomInArea button. */
+  active: boolean;
 }
 
 /** Extra info cell appended to the CCTVModal's standard 6-cell grid. Kept as
