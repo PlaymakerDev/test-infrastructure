@@ -1,4 +1,4 @@
-import { APIRequestLast7Days, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestStationDailyCount, APIRequestVehicleCountHour, APIRequestWeightStationLog, APIRequestWeightWIMLog, APIRequestWeightWIMLogByID, APIRequestWIMDaily, APIRequestWIMDailyCount, APIRequestWIMTodayStats, APIResponseCalibrationHistory, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseStationDailyCount, APIResponseTrafficAvgSpeed, APIResponseVehicleCountHour, APIResponseWeightStationLog, APIResponseWeightStationLogByID, APIResponseWeightWIMLog, APIResponseWeightWIMLogByID, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMDailyCount, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
+import { APIRequestLast7Days, APIRequestMobileCar, APIRequestMobileMaster, APIRequestPCU, APIRequestPositionByID, APIRequestRecentlyWeight, APIRequestStationDaily, APIRequestStationDailyCount, APIRequestVehicleCountHour, APIRequestWeightStationLog, APIRequestWeightWIMLog, APIRequestWeightWIMLogByID, APIRequestWIMDaily, APIRequestWIMDailyCount, APIRequestWIMTodayStats, APIResponseCalibrationHistory, APIResponseCalibrationHistoryStatus, APIResponseLast7Days, APIResponseMobileCar, APIResponseMobileCarByTDID, APIResponseMobileMaster, APIResponseMobileMasterDepartmentByTID, APIResponsePCU, APIResponsePositionByID, APIResponseRecentlyWeight, APIResponseStationByID, APIResponseStationDaily, APIResponseStationDailyCount, APIResponseTrafficAvgSpeed, APIResponseVehicleCountHour, APIResponseWeightStationLog, APIResponseWeightStationLogByID, APIResponseWeightWIMLog, APIResponseWeightWIMLogByID, APIResponseWIMByID, APIResponseWIMDaily, APIResponseWIMDailyCount, APIResponseWIMTodayStats } from "@/types/tracking/detail-api"
 import ApiService from "../ApiService"
 import { DEFAULT_TRACKING_API_URL } from "./TrackingService"
 
@@ -143,6 +143,36 @@ export const getTrackingStationDailyCountAPI = async (params: APIRequestStationD
 export const getTrackingWIMDailyCountAPI = async (params: APIRequestWIMDailyCount) => {
   return ApiService.fetchData<APIResponseWIMDailyCount, APIRequestWIMDailyCount>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/wim_daily_status_count`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingMobileMasterDepartmentByTIDAPI = async (tid: string | number) => {
+  return ApiService.fetchData<APIResponseMobileMasterDepartmentByTID>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_mobile_master_department/${tid}`,
+    method: 'GET',
+  })
+}
+
+export const getTrackingMobileCarAPI = async (params: APIRequestMobileCar) => {
+  return ApiService.fetchData<APIResponseMobileCar, APIRequestMobileCar>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_mobile_car`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingMobileCarByTDIDAPI = async (tdid: string | number) => {
+  return ApiService.fetchData<APIResponseMobileCarByTDID>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/weight_mobile_car/${tdid}`,
+    method: 'GET',
+  })
+}
+
+export const getTrackingMobileMasterAPI = async (params: APIRequestMobileMaster) => {
+  return ApiService.fetchData<APIResponseMobileMaster, APIRequestMobileMaster>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/weight/mobile_master`,
     method: 'GET',
     params,
   })

@@ -6,7 +6,7 @@ import {
 } from '../components'
 
 interface Props {
-
+  id: string[] | string | number | undefined;
 }
 
 const VehicleSection: React.FC<Props> = (props) => {

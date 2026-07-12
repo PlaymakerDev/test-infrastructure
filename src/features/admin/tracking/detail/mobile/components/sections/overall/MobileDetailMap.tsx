@@ -1,53 +1,68 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useMobileContext } from '../../../context';
 import BaseMap from '@/components/map/BaseMap';
 import { TbMapPin } from 'react-icons/tb';
-import { Button, ConfigProvider } from 'antd';
+import { Button, ConfigProvider, Image } from 'antd';
+import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api';
+import HTMLMarker from '@/components/map/primitives/HTMLMarker';
 
 interface Props {
-
-}
-
-const MOCK_BUREAU_SIGN = {
-  latitude:  13.7563,
-  longitude: 100.5018,
-  name: 'หน่วยชั่งเคลื่อนที่ กรุงเทพมหานคร',
-}
-
-const MOCK_BUREAU_ROUTE = {
-  title: 'ทล.1 (ถนนพหลโยธิน)',
+  data?: MobileMasterDepartmentByTIDData
 }
 
 const formatCoords = (lat: number, lng: number): string => {
   return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
 }
 
+const DEFAULT_ICON = '/images/icon-marker/Default.svg'
+
 const MobileDetailMap: React.FC<Props> = (props) => {
-  const { } = props;
+  const { data } = props;
   const { } = useMobileContext()
 
-  const bureauSign  = MOCK_BUREAU_SIGN
-  const bureauRoute = MOCK_BUREAU_ROUTE
+  const point = useMemo(() => [Number(data?.longitude), Number(data?.latitude)], [data])
 
-  const hasCoords = bureauSign?.latitude != null && bureauSign?.longitude != null
+  const lngLat = useMemo<[number, number] | null>(() => {
+    if (!point || point.length < 2) return null
+    if (point[0] === 0 && point[1] === 0) return null
+    return [point[0], point[1]]
+  }, [point])
+
+
+  const hasCoords = data?.latitude != null && data?.longitude != null
   const googleMapsUrl = hasCoords
-    ? `https://www.google.com/maps?q=${bureauSign!.latitude},${bureauSign!.longitude}`
+    ? `https://www.google.com/maps?q=${data!.latitude},${data!.longitude}`
     : 'https://www.google.com/maps'
 
-  const coords = hasCoords ? formatCoords(bureauSign!.latitude!, bureauSign!.longitude!) : null
+  const coords = hasCoords ? formatCoords(Number(data!.latitude!), Number(data!.longitude!)) : null
 
   return (
     <div className='relative h-full min-h-80 rounded-xl overflow-hidden'>
       <BaseMap
-        initialCenter={hasCoords ? [bureauSign!.longitude!, bureauSign!.latitude!] : undefined}
-        initialZoom={15}
-        initialPitch={45}
-      />
-
-      {/* Centered pin */}
-      <div className='absolute inset-0 flex items-center justify-center pointer-events-none z-10'>
-        <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
-      </div>
+        initialCenter={lngLat ?? undefined}
+        initialZoom={lngLat ? 17 : 5.2}
+        initialPitch={lngLat ? 45 : 0}
+        initialBearing={lngLat ? -10 : 0}
+        edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
+      >
+        {lngLat && (
+          <HTMLMarker
+            key={data?.tid}
+            lngLat={lngLat}
+            anchor="bottom"
+            offset={[0, 19]}
+            title={data?.way_name}
+          >
+            <Image
+              src={DEFAULT_ICON}
+              alt="station-pin"
+              width={52}
+              height={55}
+              preview={false}
+            />
+          </HTMLMarker>
+        )}
+      </BaseMap>
 
       {/* Google Map button */}
       <ConfigProvider theme={{ token: { colorPrimary: '#1A73E8', colorTextLightSolid: '#FFFFFF' } }}>
@@ -67,13 +82,10 @@ const MobileDetailMap: React.FC<Props> = (props) => {
       {hasCoords && (
         <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
           <div className='flex items-center gap-2'>
-            <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
-              <TbMapPin className='text-(--yellow) text-xs' />
-            </div>
-            <h5 className='text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</h5>
+            <TbMapPin className='text-(--yellow) fs-22' />
+            <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
           </div>
-          <p className='text-white leading-snug fs-11'>TrafficSign: {bureauSign?.name || '-'}</p>
-          <p className='text-white leading-snug fs-11'>รหัสสายทาง: {bureauRoute?.title || '-'}</p>
+          <p className='text-white leading-snug fs-11'>{data?.way_name || '-'}</p>
           {coords && <p className='fs-11 text-white/60'>{coords}</p>}
         </div>
       )}

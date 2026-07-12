@@ -1,11 +1,10 @@
 "use client"
 import React from 'react'
-import { Table, Empty } from 'antd'
+import { Table, Empty, ConfigProvider, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { MobileMasterData } from '@/types/tracking/overall-api'
 import { fmtNumber } from '@/utils/formatNumber'
-import { MOBILE_STATUS } from '@/constants'
 import { WIMMetaData } from '@/types/shared'
 
 interface Props {
@@ -15,7 +14,13 @@ interface Props {
   isError?: boolean
 }
 
+
 type StatusType = 'เปิดด่าน' | 'ปิดด่าน'
+
+const STATUS_COLOR: Record<StatusType, string> = {
+  "เปิดด่าน": "#66AEFF",
+  "ปิดด่าน": "#E94C4C"
+}
 
 const STATUS_CLASS: Record<StatusType, string> = {
   'เปิดด่าน': 'border-(--default-blue) text-(--default-blue)',
@@ -253,16 +258,30 @@ const TableMobileData: React.FC<Props> = (props) => {
       align: 'center',
       width: 120,
       fixed: 'right',
-      render: (item) => {
-        let status = ''
+      render: (item, record) => {
+        let statusText = ''
 
-        if (item === 0) status = 'ปิดด่าน'
-        if (item === 1) status = 'เปิดด่าน'
+        if (item === 0) statusText = 'ปิดด่าน'
+        if (item === 1) statusText = 'เปิดด่าน'
 
+        const color = STATUS_COLOR[statusText as StatusType] || '#66AEFF'
         return (
-          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
-            {status}
-          </span>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: color,
+                colorTextLightSolid: 'black'
+              }
+            }}
+          >
+            <Button
+              type="primary"
+              shape="round"
+              onClick={() => router.push(`/admin/tracking/detail/mobile/${record.TID}`)}
+            >
+              <p className='fs-12'>{statusText}</p>
+            </Button>
+          </ConfigProvider>
         )
       },
     },
@@ -281,12 +300,6 @@ const TableMobileData: React.FC<Props> = (props) => {
       rowKey="station_id"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
-      onRow={(record) => {
-        return {
-          onClick: () => router.push(`/admin/tracking/detail/mobile/${record.TID}`),
-          className: 'cursor-pointer',
-        }
-      }}
     />
   )
 }

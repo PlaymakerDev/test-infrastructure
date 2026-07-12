@@ -1,13 +1,16 @@
+import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 import { Col, Row } from 'antd'
+import dayjs from 'dayjs'
 import React from 'react'
 
 interface Props {
-
+  data?: MobileMasterDepartmentByTIDData
 }
 
 const MobileDetailCard: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
+  console.log("=== data ===", data)
   return (
     <div className="h-full rounded-lg p-5 bg-(--dark-black)">
       <h3 className='text-(--yellow)'>ข้อมูลหน่วยจัดตั้งเคลื่อนที่</h3>
@@ -18,27 +21,27 @@ const MobileDetailCard: React.FC<Props> = (props) => {
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>รหัสสายทาง</p>
-                <p>มห.4021</p>
+                <p>{data?.way_id || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>ชื่อสายทาง</p>
-                <p>แยก ทล. 2370 (กม.ที่ 16+300) - บ้านห้วยค้อ</p>
+                <p>{data?.way_name || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>อำเภอ</p>
-                <p>หนองสูง,หนองพอก</p>
+                <p>{data?.district || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>จังหวัด</p>
-                <p>มุกดาหาร</p>
+                <p>{data?.province || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>กม. เริ่มต้น</p>
-                <p>8+000</p>
+                <p>{data?.km_from || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>กม. สิ้นสุด</p>
-                <p>9+000</p>
+                <p>{data?.km_to || '-'}</p>
               </div>
             </section>
           </Col>
@@ -47,19 +50,19 @@ const MobileDetailCard: React.FC<Props> = (props) => {
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>ขื่อหน่วยชั่งยานพาหนะ</p>
-                <p>แขวงทางหลวงชนบทมุกดาหาร</p>
+                <p>{data?.dept_province || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>การร่วมบูรณาการ</p>
-                <p>ไม่ระบุ</p>
+                <p>{data?.collaboration || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>วันที่และเวลาจัดตั้งล่าสุด</p>
-                <p>20 เม.ย. 2569 14:44:03 น.</p>
+                <p>{dayjs(data?.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')} {data?.time_from} น.</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>วันที่และเวลาสิ้นสุดล่าสุด</p>
-                <p>20 เม.ย. 2569 20:44:03 น.</p>
+                <p>{dayjs(data?.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')} {data?.time_to} น.</p>
               </div>
             </section>
           </Col>
