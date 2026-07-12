@@ -1,0 +1,63 @@
+"use client"
+import React, { useState } from 'react'
+import { Empty, Table } from 'antd'
+import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
+import type { DailyWeightLogRow } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
+import { getDailyWeightLogColumns } from '@/features/admin/tracking/detail/wim/data/dailyWeightLogColumns'
+
+interface Props {
+  isOverWeight?: 'Y' | 'N';
+}
+
+const DEFAULT_PAGE_SIZE = 10
+
+const TableWeightLog: React.FC<Props> = (props) => {
+  const { isOverWeight } = props
+  const { openWeightLogModal } = useWIMContext()
+  const { stationId, stationType, date } = openWeightLogModal
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+
+  const [prevIsOverWeight, setPrevIsOverWeight] = useState(isOverWeight)
+  if (isOverWeight !== prevIsOverWeight) {
+    setPrevIsOverWeight(isOverWeight)
+    setPage(1)
+  }
+
+  const { data, meta, isLoading } = useDailyWeightLogList(
+    stationId as string | number | undefined,
+    stationType,
+    page,
+    pageSize,
+    isOverWeight,
+    date
+  )
+
+  const columns = getDailyWeightLogColumns({ showImages: false })
+
+  if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description='ไม่พบข้อมูล' />
+
+  return (
+    <Table<DailyWeightLogRow>
+      columns={columns}
+      dataSource={data}
+      loading={isLoading}
+      pagination={{
+        current: page,
+        pageSize,
+        total: meta?.total ?? 0,
+        onChange: (nextPage, nextPageSize) => {
+          setPage(nextPage)
+          setPageSize(nextPageSize)
+        },
+      }}
+      size="middle"
+      rowKey="key"
+      scroll={{ x: 'max-content' }}
+      locale={{ emptyText: <Empty description='ไม่พบข้อมูล' /> }}
+    />
+  )
+}
+
+export default React.memo<Props>(TableWeightLog)
