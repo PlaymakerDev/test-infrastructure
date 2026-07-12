@@ -4,11 +4,10 @@ import React, { useMemo } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { Skeleton } from 'antd';
 import { useStationDetail } from '../hooks'
+import { useWIMContext } from '../context'
 
 interface Props {
-  id: string[] | string | number | undefined;
-  stationType: string | null | undefined;
-  setCurrentTab: (value: string) => void;
+
 }
 
 
@@ -28,8 +27,8 @@ const OPTIONS = [
 
 ]
 
-const TitleSection: React.FC<Props> = (props) => {
-  const { id, stationType, setCurrentTab } = props
+const TitleSection: React.FC<Props> = () => {
+  const { id, stationType, setCurrentTab } = useWIMContext()
   const router = useRouter()
 
   const { data, isLoading, isError } = useStationDetail(id as string | number | undefined, stationType)

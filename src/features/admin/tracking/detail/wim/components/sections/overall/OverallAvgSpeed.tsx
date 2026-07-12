@@ -2,15 +2,15 @@ import React, { useMemo } from 'react'
 import GaugeChart from '@/components/chart/GaugeChart'
 import { TbGauge } from 'react-icons/tb'
 import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
-const OverallAvgSpeed: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+const OverallAvgSpeed: React.FC<Props> = () => {
+  const { id: stationId, stationType } = useWIMContext()
 
   const { data, isLoading, isError } = useTrafficAvgSpeed(
     stationId as string | number | undefined,

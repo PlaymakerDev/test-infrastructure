@@ -14,7 +14,7 @@ export type ViewMode = 'TABLE' | 'GRID'
  */
 export type FilterType = 'all' | 'normal' | 'overweight' | 'example_active' | 'example_inactive'
 
-export type FilterStats = Record<string, number | undefined>
+export type FilterStats = Record<string, number | string | undefined>
 
 export interface FilterConfig {
   key: string

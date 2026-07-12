@@ -3,12 +3,12 @@ import React, { useMemo, useState } from 'react'
 import LineChart from '@/components/chart/LineChart'
 import { TbCalendarMonth } from 'react-icons/tb'
 import { useLast7Days } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import dayjs from 'dayjs';
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
 type Period = 'วันนี้' | 'เดือน' | 'ปี'
@@ -25,8 +25,8 @@ const LINES = [
   { dataKey: 'previous', color: '#E94C4C', label: 'สัปดาห์ก่อน' },
 ]
 
-const ChartPreviousWeightVehicle: React.FC<Props> = (props) => {
-  const { stationId } = props
+const ChartPreviousWeightVehicle: React.FC<Props> = () => {
+  const { id: stationId } = useWIMContext()
   const [period, setPeriod] = useState<Period>('วันนี้')
   const dateType = PERIOD_DATE_TYPE[period]
 

@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react'
 import LineChart from '@/components/chart/LineChart'
 import { TbMoon, TbSun } from 'react-icons/tb'
 import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import dayjs from 'dayjs';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
@@ -12,8 +13,7 @@ dayjs.extend(buddhistEra)
 dayjs.locale('th')
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
 type Period = 'กลางวัน' | 'กลางคืน'
@@ -22,8 +22,8 @@ const LINES = [
   { dataKey: 'total', color: '#66AEFF', label: 'รถทั้งหมด' },
 ]
 
-const ChartTraffic: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+const ChartTraffic: React.FC<Props> = () => {
+  const { id: stationId, stationType } = useWIMContext()
   const [period, setPeriod] = useState<Period>('กลางวัน')
 
   const { data, isLoading, isError } = useTrafficAvgSpeed(

@@ -1,51 +1,17 @@
 import React, { useMemo, useState } from 'react'
 import { TableOverallDailyWeight, OverallDailyWeightList } from '@/features/admin/tracking/detail/wim/components'
 import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
-import SearchBar, { FilterConfig, FilterStats } from '@/components/searchable/SearchBar'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
+import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '@/features/admin/tracking/detail/wim/data/weightFilters'
+import SearchBar, { FilterStats } from '@/components/searchable/SearchBar'
+import { fmtNumber } from '@/utils/formatNumber';
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: string | null | undefined;
+
 }
 
-type WeightFilter = 'all' | 'normal' | 'overweight'
-
-const WEIGHT_FILTERS: FilterConfig[] = [
-  {
-    key: 'all',
-    label: 'ทั้งหมด',
-    colorPrimary: '#3b82f6',
-    colorTextLightSolid: '#ffffff',
-    badgeActiveClass: 'bg-blue-800 text-white',
-    badgeIdleClass: 'bg-blue-500/20 text-blue-400',
-  },
-  {
-    key: 'normal',
-    label: 'น้ำหนักปกติ',
-    colorPrimary: '#FCD116',
-    colorTextLightSolid: '#0A0A0A',
-    badgeActiveClass: 'bg-[#8a7000] text-white',
-    badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]',
-  },
-  {
-    key: 'overweight',
-    label: 'น้ำหนักเกิน',
-    colorPrimary: '#ef4444',
-    colorTextLightSolid: '#ffffff',
-    badgeActiveClass: 'bg-red-800 text-white',
-    badgeIdleClass: 'bg-red-500/20 text-red-400',
-  },
-]
-
-// 'all' omits `is_over_weight` entirely (BaseService/axios drops undefined params).
-const IS_OVER_WEIGHT_BY_FILTER: Record<WeightFilter, 'Y' | 'N' | undefined> = {
-  all: undefined,
-  normal: 'N',
-  overweight: 'Y',
-}
-
-const OverallDataDisplaySection: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+const OverallDataDisplaySection: React.FC<Props> = () => {
+  const { id: stationId, stationType } = useWIMContext()
   const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('TABLE')
   const [weightFilter, setWeightFilter] = useState<WeightFilter>('all')
 
@@ -56,9 +22,9 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const summary = statsMeta?.summary
 
   const stats: FilterStats = useMemo(() => ({
-    all: summary?.total,
-    normal: summary ? summary.total - summary.overweight : undefined,
-    overweight: summary?.overweight,
+    all: fmtNumber(Number(summary?.total)),
+    normal: summary ? fmtNumber(Number(summary.total) - Number(summary.overweight)) : undefined,
+    overweight: fmtNumber(Number(summary?.overweight)),
   }), [summary])
 
   const renderContent = useMemo(() => {
@@ -66,13 +32,17 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
       case 'TABLE':
         return (
           <TableOverallDailyWeight
+            isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
+          />
+        )
+      case 'GRID':
+        return (
+          <OverallDailyWeightList
             stationId={stationId}
             stationType={stationType}
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
           />
         )
-      case 'GRID':
-        return <OverallDailyWeightList />
       default:
         return null
     }

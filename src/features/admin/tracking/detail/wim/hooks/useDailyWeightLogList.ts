@@ -8,6 +8,7 @@ export interface DailyWeightLogRow {
   time_stamp: string
   lp_head_no: string
   lp_head_province_name: string
+  vehicle_class_id: number
   vehicle_class_desc: string
   gross_weight: string
   legal_weight: string
@@ -27,25 +28,28 @@ export interface DailyWeightLogRow {
 const getGrossWeightOver = (item: { gross_weight_over: string } | { grossweight_over: string }) =>
   'gross_weight_over' in item ? item.gross_weight_over : item.grossweight_over
 
-/** Picks today's wim or station weight-log list based on `stationType` (server-side
+/** Picks the wim or station weight-log list based on `stationType` (server-side
  *  paginated via `page`/`pageSize`) and normalizes both shapes into one row model
- *  for TableOverallDailyWeight — mirrors useDailyWeightLog's normalization, plus
- *  the image fields that only WIM's list response actually has (STATION's list
- *  response has neither images nor `speed`; `speed` is absent from both). */
+ *  for TableOverallDailyWeight/TableWeightLog — mirrors useDailyWeightLog's
+ *  normalization, plus the image fields that only WIM's list response actually
+ *  has (STATION's list response has neither images nor `speed`; `speed` is
+ *  absent from both). `date` (single day, defaults to today) is used as both
+ *  start_date and end_date — this is always a single-day log view. */
 export function useDailyWeightLogList(
   id: string | number | undefined,
   stationType: string | null | undefined,
   page: number,
   pageSize: number,
-  isOverWeight?: 'Y' | 'N'
+  isOverWeight?: 'Y' | 'N',
+  date?: string
 ) {
-  const today = dayjs().format('YYYY-MM-DD')
+  const day = date ?? dayjs().format('YYYY-MM-DD')
   const isStation = stationType === 'STATION'
   const isWim = stationType === 'WIM'
 
   const params = {
-    start_date: today,
-    end_date: today,
+    start_date: day,
+    end_date: day,
     station: id as number,
     page,
     page_size: pageSize,
@@ -66,6 +70,7 @@ export function useDailyWeightLogList(
       time_stamp: item.time_stamp,
       lp_head_no: item.lp_head_no,
       lp_head_province_name: item.lp_head_province_name,
+      vehicle_class_id: item.vehicle_class_id,
       vehicle_class_desc: item.vehicle_class_desc,
       gross_weight: item.gross_weight,
       legal_weight: item.legal_weight,

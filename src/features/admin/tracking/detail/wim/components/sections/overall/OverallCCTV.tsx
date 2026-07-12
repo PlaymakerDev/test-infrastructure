@@ -5,20 +5,20 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { Col, Row } from 'antd'
 import React, { useMemo, useState } from 'react'
 import QueryBoundary from '@/components/common/QueryBoundary'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 
 interface Props {
-  stationId: string[] | string | number | undefined;
-  stationType: number | null | undefined;
+
 }
 
-const OverallCCTV: React.FC<Props> = (props) => {
-  const { stationId, stationType } = props
+const OverallCCTV: React.FC<Props> = () => {
+  const { id: stationId, stationTypeId } = useWIMContext()
   const dispatch = useAppDispatch()
   const [randomCam] = useState(() => `${Math.random()}`);
 
   const { data, isLoading, isError } = useCctvList({
     station_id: stationId as string,
-    station_type_id: stationType as number,
+    station_type_id: stationTypeId as number,
     page: 1,
     page_size: 100
   })

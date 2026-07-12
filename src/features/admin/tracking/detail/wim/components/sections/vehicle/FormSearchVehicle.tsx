@@ -1,40 +1,74 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import dayjs, { Dayjs } from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import { Button, Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
+import thTH from 'antd/locale/th_TH'
 import { TbPrinter } from "react-icons/tb";
+import { APIRequestStationDaily } from '@/types/tracking/detail-api'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 const { RangePicker } = DatePicker
 
-interface Props { }
+interface Props {
+  onSearch?: (params: APIRequestStationDaily) => void
+}
 
 interface FormSearchValues {
   date: [Dayjs | null, Dayjs | null] | null
-  period: 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'ALL'
-  status: 'ACTIVE' | 'INACTIVE' | 'NO_DATA' | 'ALL'
+  period: 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH'
+  status: 'normal' | 'abnormal' | 'wim_disconnected' | 'ALL'
 }
 
-const PERIOD_OPTIONS = [
+const PERIOD_OPTIONS: Array<{ label: string; value: FormSearchValues['period'] }> = [
   { label: "วันนี้", value: "TODAY" },
   { label: "เมื่อวานนี้", value: "YESTERDAY" },
   { label: "7 วันที่ผ่านมา", value: "LAST_7_DAYS" },
   { label: "เดือนนี้", value: "THIS_MONTH" },
-  { label: "ทั้งหมด", value: "ALL" },
 ]
 
-const STATUS_OPTIONS = [
-  { label: "เปิดปกติ", value: "ACTIVE" },
-  { label: "ระบบขัดข้อง", value: "INACTIVE" },
-  { label: "ไม่ส่งข้อมูล", value: "NO_DATA" },
+const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchValues['date'] => {
+  switch (period) {
+    case 'TODAY':
+      return [dayjs(), dayjs()]
+    case 'YESTERDAY': {
+      const yesterday = dayjs().subtract(1, 'day')
+      return [yesterday, yesterday]
+    }
+    case 'LAST_7_DAYS':
+      return [dayjs().subtract(6, 'day'), dayjs()]
+    case 'THIS_MONTH':
+      return [dayjs().startOf('month'), dayjs().endOf('month')]
+    default:
+      return null
+  }
+}
+
+const STATUS_OPTIONS: Array<{ label: string; value: FormSearchValues['status'] }> = [
+  { label: "เปิดปกติ", value: "normal" },
+  { label: "ระบบขัดข้อง", value: "abnormal" },
+  { label: "ไม่ส่งข้อมูล", value: "wim_disconnected" },
   { label: "ทั้งหมด", value: "ALL" },
 ]
 
 const FormSearchVehicle: React.FC<Props> = (props) => {
-  const { } = props
+  const { onSearch } = props
+  const submitRef = useRef<HTMLButtonElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
+
   const form = useForm<FormSearchValues>({
     defaultValues: {
-      date: [dayjs(), dayjs()],
-      period: 'ALL',
+      date: getDateRangeByPeriod('TODAY'),
+      period: 'TODAY',
       status: 'ALL',
     }
   })
@@ -42,11 +76,21 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
   const {
     control,
     handleSubmit,
+    setValue,
   } = form
 
   const onSubmit = useCallback((data: FormSearchValues) => {
-    console.log('submit', data)
-  }, [])
+    const [start, end] = data.date ?? [null, null]
+    onSearch?.({
+      start_date: start ? start.format('YYYY-MM-DD') : undefined,
+      end_date: end ? end.format('YYYY-MM-DD') : undefined,
+      station_status: data.status === 'ALL' ? undefined : data.status,
+    })
+  }, [onSearch])
+
+  useEffect(() => {
+    handleSubmit(onSubmit)()
+  }, [handleSubmit, onSubmit])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -59,16 +103,24 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
               return (
                 <fieldset>
                   <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
-                  <RangePicker
-                    value={field.value}
-                    onChange={(dates) => field.onChange(dates)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
-                    format='DD/MM/YYYY'
-                    size='large'
-                    className='w-full!'
-                  />
+                  <ConfigProvider locale={thTH}>
+                    <RangePicker
+                      value={field.value}
+                      onChange={(dates) => {
+                        field.onChange(dates)
+                        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                        timeoutRef.current = setTimeout(() => {
+                          submitRef.current?.click()
+                        }, 700)
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
+                      format='DD MMM BBBB'
+                      size='large'
+                      className='w-full!'
+                    />
+                  </ConfigProvider>
                 </fieldset>
               )
             }}
@@ -79,13 +131,22 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
             control={control}
             name='period'
             render={({ field }) => {
+              const handlePeriodChange = (value: FormSearchValues['period']) => {
+                field.onChange(value)
+                setValue('date', getDateRangeByPeriod(value))
+                if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                timeoutRef.current = setTimeout(() => {
+                  submitRef.current?.click()
+                }, 700)
+              }
               return (
                 <fieldset>
                   <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
                   <div className='overflow-x-auto'>
                     <Segmented
                       block
-                      {...field}
+                      value={field.value}
+                      onChange={handlePeriodChange}
                       options={PERIOD_OPTIONS}
                       size='large'
                       classNames={{
@@ -103,13 +164,21 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
             control={control}
             name='status'
             render={({ field }) => {
+              const handleStatusChange = (value: FormSearchValues['status']) => {
+                field.onChange(value)
+                if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                timeoutRef.current = setTimeout(() => {
+                  submitRef.current?.click()
+                }, 700)
+              }
               return (
                 <fieldset>
                   <label className='block fs-12 text-(--yellow)'>สถานะ</label>
                   <div className='overflow-x-auto'>
                     <Segmented
                       block
-                      {...field}
+                      value={field.value}
+                      onChange={handleStatusChange}
                       options={STATUS_OPTIONS}
                       size='large'
                       classNames={{
@@ -137,6 +206,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
           </div>
         </Col>
       </Row>
+      <button ref={submitRef} type='submit' hidden />
     </form>
   )
 }

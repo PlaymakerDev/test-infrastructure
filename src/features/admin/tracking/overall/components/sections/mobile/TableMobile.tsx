@@ -15,6 +15,13 @@ interface Props {
   isError?: boolean
 }
 
+type StatusType = 'เปิดด่าน' | 'ปิดด่าน'
+
+const STATUS_CLASS: Record<StatusType, string> = {
+  'เปิดด่าน': 'border-(--default-blue) text-(--default-blue)',
+  'ปิดด่าน': 'border-red-500 text-red-500',
+}
+
 interface WIMProjectRecord {
   key: string
   no: number
@@ -247,12 +254,15 @@ const TableMobileData: React.FC<Props> = (props) => {
       width: 120,
       fixed: 'right',
       render: (item) => {
+        let status = ''
+
+        if (item === 0) status = 'ปิดด่าน'
+        if (item === 1) status = 'เปิดด่าน'
+
         return (
-          <div className='flex justify-center items-center'>
-            <div className={`bg-[#66AEFF1A] border border-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) px-3 py-1 rounded-3xl w-full lg:w-28`}>
-              <p className={`fs-12 text-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) mb-0`}>{MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].text}</p>
-            </div>
-          </div>
+          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
+            {status}
+          </span>
         )
       },
     },

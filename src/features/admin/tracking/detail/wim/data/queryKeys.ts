@@ -6,9 +6,11 @@ import type {
   APIRequestPCU,
   APIRequestPositionByID,
   APIRequestStationDaily,
+  APIRequestStationDailyCount,
   APIRequestWeightStationLog,
   APIRequestWeightWIMLog,
   APIRequestWIMDaily,
+  APIRequestWIMDailyCount,
 } from '@/types/tracking/detail-api'
 import type { APIRequestTrackingCCTVList } from '@/types/tracking/overall-api'
 
@@ -37,6 +39,10 @@ export const trackingWimKeys = {
     [...trackingWimKeys.all, 'station-daily', params] as const,
   wimDaily: (params: APIRequestWIMDaily) =>
     [...trackingWimKeys.all, 'wim-daily', params] as const,
+  stationDailyCount: (params: APIRequestStationDailyCount) =>
+    [...trackingWimKeys.all, 'station-daily-count', params] as const,
+  wimDailyCount: (params: APIRequestWIMDailyCount) =>
+    [...trackingWimKeys.all, 'wim-daily-count', params] as const,
   last7Days: (params: APIRequestLast7Days) =>
     [...trackingWimKeys.all, 'last-7-days', params] as const,
   trafficAvgSpeed: (id?: string | number) =>

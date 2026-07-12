@@ -1,146 +1,96 @@
+"use client"
+import React, { useMemo, useState } from 'react'
+import { Empty, Pagination } from 'antd'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import CardList, { DataType } from '@/components/list/CardList'
-import React from 'react'
+import QueryBoundary from '@/components/common/QueryBoundary'
+import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
+import { VEHICLE_PROPERTIES } from '@/constants'
 
-interface Props { }
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
-const mockData: DataType[] = [
-  {
-    id: 1,
-    plate: 'ขฉ8960 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '3.000 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '59.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 23:56:27 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 2,
-    plate: 'งพ8934 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '2.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '45.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 23:22:17 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 3,
-    plate: '840417 เชียงใหม่',
-    vehicleType: 'ประเภท 2 : 2 เพลา 6 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '6.800 ตัน',
-    stdWeight: '15.000 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องออก',
-    speed: '57.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:38:02 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 4,
-    plate: 'ผพ6933 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '4.600 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '42.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:20:26 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 5,
-    plate: 'ยน9227 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '1.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '67.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:08:48 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 6,
-    plate: '1กช1540 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'แจ้งเตือนน้ำหนัก',
-    actualWeight: '1.400 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องออก',
-    speed: '48.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:04:28 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 7,
-    plate: 'ยค9968 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '2.800 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '58.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:02:03 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 8,
-    plate: 'ผร7875 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักเกิน',
-    actualWeight: '3.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '62.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 21:59:19 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-]
+interface Props {
+  stationId: string[] | string | number | undefined;
+  stationType: string | null | undefined;
+  isOverWeight?: 'Y' | 'N';
+  date?: string;
+}
+
+const STATUS_MAP: Record<string, string> = {
+  'น้ำหนักปกติ': 'text-green-400',
+  'น้ำหนักเกิน': 'text-red-400',
+}
+
+const DEFAULT_PAGE_SIZE = 10
 
 const OverallDailyWeightList: React.FC<Props> = (props) => {
-  const { } = props
+  const { stationId, stationType, isOverWeight, date } = props
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+
+  const [prevIsOverWeight, setPrevIsOverWeight] = useState(isOverWeight)
+  if (isOverWeight !== prevIsOverWeight) {
+    setPrevIsOverWeight(isOverWeight)
+    setPage(1)
+  }
+
+  const { data, meta, isLoading, isError } = useDailyWeightLogList(
+    stationId as string | number | undefined,
+    stationType,
+    page,
+    pageSize,
+    isOverWeight,
+    date
+  )
+
+  const cards = useMemo<DataType[]>(() => data.map((row) => {
+    const images = [
+      row.plate_image ? { image: row.plate_image, description: 'ภาพป้ายทะเบียน' } : null,
+      row.vehicle_image ? { image: row.vehicle_image, description: 'ภาพลักษณะรถ' } : null,
+    ].filter((item): item is { image: string; description: string } => item !== null)
+
+    return {
+      id: row.key,
+      plate: [row.lp_head_no, row.lp_head_province_name].filter(Boolean).join(' ') || '-',
+      vehicleType: row.vehicle_class_desc || '-',
+      status: row.is_over_weight_desc || '-',
+      actualWeight: `${Number(row.gross_weight ?? 0).toFixed(3)} ตัน`,
+      stdWeight: `${Number(row.legal_weight ?? 0).toFixed(3)} ตัน`,
+      overweight: `${Number(row.gross_weight_over ?? 0).toFixed(3)} ตัน`,
+      speed: row.speed ? `${Number(row.speed).toFixed(2)} กม./ชม.` : '-',
+      datetime: dayjs(row.time_stamp, 'DD/MM/BBBB  HH:mm:ss').format('DD MMM BBBB HH:mm:ss'),
+      images,
+      // Generic per-vehicle-class silhouette — same lookup as CardCurrentWeightVehicle.
+      vehicleImage: VEHICLE_PROPERTIES[String(row.vehicle_class_id) as keyof typeof VEHICLE_PROPERTIES]?.vehicle?.image,
+    }
+  }), [data])
+
+  if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description='ไม่พบข้อมูล' />
 
   return (
-    <div>
-      <CardList data={mockData} />
-    </div>
+    <QueryBoundary isLoading={isLoading} isError={isError}>
+      {cards.length === 0 ? (
+        <Empty description='ไม่พบข้อมูล' />
+      ) : (
+        <div>
+          <CardList data={cards} statusMap={STATUS_MAP} />
+          <div className='mt-5 flex justify-end'>
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={meta?.total ?? 0}
+              onChange={(nextPage, nextPageSize) => {
+                setPage(nextPage)
+                setPageSize(nextPageSize)
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </QueryBoundary>
   )
 }
 
