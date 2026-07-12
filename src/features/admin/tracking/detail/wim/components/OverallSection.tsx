@@ -15,6 +15,7 @@ import {
   OverallDataDisplaySection,
   ChartPreviousWeightVehicle,
   ChartTraffic,
+  ModalCalibrationHistory,
 } from '../components'
 import { usePCU, useCalibrationHistory, usePositionById, useDailyWeightLog } from '../hooks'
 import { useWIMContext } from '../context'
@@ -124,6 +125,7 @@ const OverallSection: React.FC<Props> = () => {
       <section className='mt-5'>
         <OverallDataDisplaySection />
       </section>
+      <ModalCalibrationHistory />
     </>
   )
 }

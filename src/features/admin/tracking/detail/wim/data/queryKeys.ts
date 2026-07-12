@@ -27,6 +27,8 @@ export const trackingWimKeys = {
     [...trackingWimKeys.all, 'pcu', params] as const,
   calibration: (stationType?: number | null, id?: string | number) =>
     [...trackingWimKeys.all, 'calibration', stationType ?? 'all', String(id ?? '')] as const,
+  calibrationHistory: (stationType?: string | number, id?: string | number) =>
+    [...trackingWimKeys.all, 'calibration-history', stationType ?? 'all', String(id ?? '')] as const,
   weightWimLog: (params: APIRequestWeightWIMLog) =>
     [...trackingWimKeys.all, 'weight-wim-log', params] as const,
   weightStationLog: (params: APIRequestWeightStationLog) =>

@@ -845,3 +845,205 @@ export interface StationDailyCountData {
 export type APIRequestWIMDailyCount = APIRequestStationDailyCount
 
 export type APIResponseWIMDailyCount = APIResponseStationDailyCount
+
+// MOBILE CAR
+export interface APIRequestMobileCar {
+  tid?: string | number
+  search?: string
+  is_over_weight?: number | string
+  page?: number
+  page_size?: number
+}
+
+export interface APIResponseMobileCar extends Omit<APIResponseStationByID, 'data'> {
+  data: MobileCarData
+}
+
+export interface MobileCarData {
+  data: MobileCarList[]
+  meta: WIMMetaData
+}
+
+export interface MobileCarList {
+  accept_weight: any
+  accept_weight_by: any
+  arrest_id: any
+  create_date: string
+  drive_shaft_over: string
+  driver_name: any
+  driver_shaft: string
+  ds_1: string
+  ds_2: string
+  ds_3: string
+  ds_4: string
+  ds_5: string
+  ds_6: string
+  ds_7: any
+  gross_weight: string
+  gross_weight_over: any
+  image_path1: string
+  image_path2: string
+  is_arrested: number
+  is_over_weight: string
+  is_over_weight_desc: string
+  legal_weight: string
+  lp_head: string
+  lp_head_no: string
+  lp_head_province_id: number
+  lp_head_province_id_ppa: number
+  lp_head_province_name: string
+  lp_tail: string
+  lp_tail_no: string
+  lp_tail_province_id: number
+  lp_tail_province_id_ppa: number
+  lp_tail_province_name: string
+  masterial_name: string
+  t_id: string
+  td_id: string
+  tdid_sort: number
+  vehicle_class_desc: string
+  vehicle_class_desc2: string
+  vehicle_class_desc3: string
+  vehicle_class_id: number
+  vehicle_class_id_ref: number
+  vehicle_class_legal_drive_shaft: string
+  vehicle_class_legal_drive_shaft_ref: string
+  vehicle_class_legal_weight: string
+  vehicle_class_name: string
+}
+
+// MOBILE MASTER DEPARTMENT BY TID
+export interface APIResponseMobileMasterDepartmentByTID extends Omit<APIResponseStationByID, 'data'> {
+  data: MobileMasterDepartmentByTIDData
+}
+
+export interface MobileMasterDepartmentByTIDData {
+  FirstName: string
+  LastName: string
+  Title: string
+  Total: string
+  TotalOver: string
+  collaboration: string
+  create_by: string
+  create_date: string
+  dept_id: number
+  dept_province: string
+  district: string
+  image_name1: string
+  image_name2: string
+  image_path1: string
+  image_path2: string
+  is_open: number
+  km_from: string
+  km_to: string
+  latitude: string
+  longitude: string
+  province: string
+  sub_district: string
+  tid: string
+  time_from: string
+  time_to: string
+  way_id: string
+  way_name: string
+}
+
+// MOBILE CAR BY TDID
+export interface APIResponseMobileCarByTDID extends Omit<APIResponseStationByID, 'data'> {
+  data: MobileCarByTDIDData[]
+}
+
+export interface MobileCarByTDIDData {
+  create_date: string
+  td_id: string
+  t_id: string
+  vehicle_class_id: number
+  vehicle_class_id_ref: number
+  masterial_name: string
+  lp_head_no: string
+  lp_head_province_id: number
+  lp_tail_no: string
+  lp_tail_province_id: number
+  lp_head: string
+  lp_tail: string
+  driver_shaft: string
+  accept_weight: any
+  accept_weight_by: any
+  ds_1: string
+  ds_2: string
+  ds_3: string
+  ds_4: string
+  ds_5: string
+  ds_6: string
+  ds_7: any
+  vehicle_class_desc: string
+  gross_weight: string
+  gross_weight_over: any
+  legal_weight: string
+  is_over_weight_desc: string
+  is_over_weight: string
+  drive_shaft_over: string
+  driver_name: any
+  image_path1: string
+  image_path2: string
+  image_path3: string
+  image_path4: string
+  image_path5: string
+  image_path6: string
+  vehicle_class_name: string
+  vehicle_class_desc2: string
+  vehicle_class_desc3: string
+  vehicle_class_legal_weight: string
+  vehicle_class_legal_drive_shaft: string
+  vehicle_class_legal_drive_shaft_ref: string
+  lp_head_province_name: string
+  lp_head_province_id_ppa: number
+  lp_tail_province_name: string
+  lp_tail_province_id_ppa: number
+}
+
+// MOBILE MASTER
+export interface APIRequestMobileMaster {
+  start_date?: string
+  end_date?: string
+  branch?: string
+  search?: string
+  is_join?: number
+  is_open?: number
+  page?: number
+  page_size?: number
+  ordering?: 'asc' | 'desc'
+}
+
+export interface APIResponseMobileMaster extends Omit<APIResponseStationByID, 'data'> {
+  data: MobileMasterData[]
+  meta: WIMMetaData
+}
+
+export interface MobileMasterData {
+  TID: string
+  DeptID: number
+  DeptName: string
+  Collaboration: string
+  DeptProvince: string
+  WayID: string
+  WayName: string
+  Subdistrict: string
+  District: string
+  Province: string
+  CreateBy: string
+  Title: string
+  FirstName: string
+  LastName: string
+  image_name1?: string
+  image_path1?: string
+  image_name2?: string
+  image_path2?: string
+  CreateDate: string
+  TimeFrom: string
+  TimeTo: string
+  IsOpen: number
+  Total: string
+  TotalOver: string
+  KMFrom: string
+  KMTo: string
+}

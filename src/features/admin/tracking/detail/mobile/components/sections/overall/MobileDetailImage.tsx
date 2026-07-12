@@ -1,20 +1,21 @@
+import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 import { Image } from 'antd'
 import React from 'react'
 
 interface Props {
-
+  data?: MobileMasterDepartmentByTIDData
 }
 
 const MobileDetailImage: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
   return (
     <div className="h-full rounded-lg p-5 bg-(--dark-black)">
       <div className='mb-1.5'>
         <figure className='h-52 overflow-hidden rounded-lg'>
           <Image
-            src='https://files.catbox.moe/pne90v.png'
-            alt='example-image'
+            src={data?.image_path1}
+            alt={data?.image_name1}
             width={'100%'}
             height={'100%'}
             className='object-center object-cover'
@@ -25,8 +26,8 @@ const MobileDetailImage: React.FC<Props> = (props) => {
       <div className='mt-1.5'>
         <figure className='h-52 overflow-hidden rounded-lg'>
           <Image
-            src='https://files.catbox.moe/0mw93c.png'
-            alt='example-image'
+            src={data?.image_path2}
+            alt={data?.image_name2}
             width={'100%'}
             height={'100%'}
             className='object-center object-cover'
