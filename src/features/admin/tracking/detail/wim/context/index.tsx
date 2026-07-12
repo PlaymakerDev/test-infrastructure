@@ -14,6 +14,8 @@ export interface ContextProps {
   setVehicleSearchParams: React.Dispatch<React.SetStateAction<APIRequestStationDaily>>
   openWeightLogModal: ModalWeightLogProps
   setOpenWeightLogModal: React.Dispatch<React.SetStateAction<ModalWeightLogProps>>
+  openCalibrationHistoryModal: ModalWeightLogProps
+  setOpenCalibrationHistoryModal: React.Dispatch<React.SetStateAction<ModalWeightLogProps>>
 }
 
 export interface PageProviderProps {
@@ -44,6 +46,7 @@ export const WIMProvider = (props: PageProviderProps) => {
     end_date: dayjs().format('YYYY-MM-DD'),
   })
   const [openWeightLogModal, setOpenWeightLogModal] = useState<ModalWeightLogProps>(INIT_MODAL_WEIGHT_LOG)
+  const [openCalibrationHistoryModal, setOpenCalibrationHistoryModal] = useState<ModalWeightLogProps>(INIT_MODAL_WEIGHT_LOG)
 
   return (
     <WIMContext.Provider
@@ -57,6 +60,8 @@ export const WIMProvider = (props: PageProviderProps) => {
         setVehicleSearchParams,
         openWeightLogModal,
         setOpenWeightLogModal,
+        openCalibrationHistoryModal,
+        setOpenCalibrationHistoryModal,
       }}
     >
       {children}

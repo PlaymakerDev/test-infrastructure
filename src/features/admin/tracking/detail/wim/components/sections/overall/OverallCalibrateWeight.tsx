@@ -4,6 +4,7 @@ import React from 'react'
 import { TbArticle, TbBrandCoinbase, TbCalendarStats, TbClipboardList, TbUser } from 'react-icons/tb'
 import relativeTime from 'dayjs/plugin/relativeTime';
 import dayjs from 'dayjs';
+import { useWIMContext } from '../../../context';
 
 dayjs.extend(relativeTime);
 
@@ -13,13 +14,29 @@ interface Props {
 
 const OverallCalibrateWeight: React.FC<Props> = (props) => {
   const { calibrationHistory } = props
+  const { id, stationTypeId, setOpenCalibrationHistoryModal } = useWIMContext()
 
   return (
     <div className="h-full bg-[#FFFFFF1A] border-2 rounded-lg p-5 border-white">
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6'>
         <h3 className='mb-0'>ข้อมูลการ Calibrate เครื่องชั่ง</h3>
-        <ConfigProvider theme={{ token: { colorPrimary: '#212121', colorTextLightSolid: '#FFFFFF' } }}>
-          <Button type="primary" shape="round">
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: '#212121',
+              colorTextLightSolid: '#FFFFFF'
+            }
+          }}
+        >
+          <Button
+            type="primary"
+            shape="round"
+            onClick={() => setOpenCalibrationHistoryModal({
+              open: true,
+              stationId: id,
+              stationType: stationTypeId?.toString()
+            })}
+          >
             ดูเพิ่มเติม
           </Button>
         </ConfigProvider>

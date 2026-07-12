@@ -22,6 +22,7 @@ export { default as TableLatestStation } from './sections/overall/TableLatestSta
 export { default as TableLatestWIM } from './sections/overall/TableLatestWIM'
 export { default as TableOverallWeight } from './sections/overall/TableOverallWeight'
 export { default as ModalCalibrationHistory } from './sections/overall/ModalCalibrationHistory'
+export { default as TableCalibrationHistory } from './sections/overall/TableCalibrationHistory'
 
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'
