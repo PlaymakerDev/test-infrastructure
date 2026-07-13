@@ -1,6 +1,8 @@
-export const dynamic = "force-dynamic";
-import TunnelScreen from '@/features/admin/tunnel/screen'
+import React from 'react'
+import TunnelScreen from '@/features/admin/tunnel/overall/screen'
 
-export default function TunnelPage() {
+const TunnelPage = () => {
   return <TunnelScreen />
 }
+
+export default React.memo(TunnelPage)

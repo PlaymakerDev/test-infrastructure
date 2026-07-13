@@ -51,6 +51,7 @@ import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { motion } from "motion/react";
 import axios, { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
+import FindOnPageOverlay from "./FindOnPageOverlay";
 
 // Feature systems — link to their overall page scoped to the logged-in user's
 // own department (?dept_id=สำนัก/แขวง). The remaining management menus
@@ -138,6 +139,10 @@ export default function Navbar() {
   // locked the menu ignores hover and stays visible. Persists while navigating
   // (layout doesn't remount); resets on a full page reload.
   const [locked, setLocked] = useState(false)
+  // Find-on-page overlay (Ctrl+F clone). Owned here because the trigger
+  // buttons live in this nav — the overlay itself renders as a portal-like
+  // fixed element that visually attaches under the navbar.
+  const [findOpen, setFindOpen] = useState(false)
   // Department of the logged-in user — appended to the owned menus' links.
   const homeDeptId = useHomeDeptId()
   // Global "focus the map" toggle — hides every card/panel on overall pages
@@ -162,6 +167,20 @@ export default function Navbar() {
       setCurrentTime(dayjs().format('HH:mm:ss'))
     }, 1000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Global Ctrl+F / Cmd+F — hijack the browser's native find-in-page and
+  // route it to our in-app overlay instead. Users who explicitly want the
+  // browser's search can still use it via the menu or Ctrl+G on Firefox.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        setFindOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   useEffect(() => {
@@ -223,7 +242,23 @@ export default function Navbar() {
     },
     {
       key: '2',
-      label: <TbSearch className={iconClassName} />
+      label: (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={() => setFindOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setFindOpen(true)
+            }
+          }}
+          className={`inline-flex ${findOpen ? 'text-(--yellow)' : ''}`}
+          aria-label="เปิดค้นหาในหน้า"
+        >
+          <TbSearch className={iconClassName} />
+        </span>
+      ),
     },
     {
       key: '3',
@@ -433,9 +468,50 @@ export default function Navbar() {
               ? <TbZoomReset className={iconClassName} />
               : <TbZoomInArea className={iconClassName} />}
           </button>
-          <TbSearch
-            className={iconClassName}
-          />
+          {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
+              icon *is* the shortcut. Open state paints the icon yellow with
+              a breathing glow; the small "Ctrl+F" chip below only appears on
+              hover so it doesn't fight the tighter icons for space. */}
+          <motion.button
+            type="button"
+            onClick={() => setFindOpen((v) => !v)}
+            title="ค้นหาในหน้า (Ctrl+F)"
+            className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors ${findOpen ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label={findOpen ? 'ปิดค้นหาในหน้า' : 'เปิดค้นหาในหน้า'}
+            aria-pressed={findOpen}
+          >
+            <motion.span
+              className="flex"
+              animate={
+                findOpen
+                  ? {
+                    filter: [
+                      'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+                      'drop-shadow(0 0 8px rgba(252,209,22,1))',
+                      'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+                    ],
+                  }
+                  : { filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))' }
+              }
+              transition={findOpen ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+            >
+              <TbSearch className={iconClassName} />
+            </motion.span>
+            {/* Hover chip — Ctrl+F hint. Positioned below so it never clips
+                the trapezoid above. */}
+            <span
+              className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums whitespace-nowrap"
+              style={{
+                background: 'rgba(0,0,0,0.75)',
+                color: 'rgba(255,255,255,0.85)',
+                border: '1px solid rgba(252,209,22,0.35)',
+              }}
+            >
+              Ctrl + F
+            </span>
+          </motion.button>
           <TbBrandGithubCopilot
             className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--default-blue)" : ""}`}
             onClick={() => router.push("/admin/smart-search")}
@@ -466,6 +542,7 @@ export default function Navbar() {
           </Dropdown>
         </div>
       </div>
+      <FindOnPageOverlay open={findOpen} onClose={() => setFindOpen(false)} />
       {contextHolder}
     </nav>
   )

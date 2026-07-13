@@ -107,6 +107,8 @@ export const theme: ConfigProviderProps = {
         footerBg: "#191919",
         footerColor: "#FFFFFF",
         colorBorderSecondary: "#333333",
+        cellPaddingInline: 50,
+        cellPaddingBlock: 50,
       },
       Timeline: {
         colorText: "#FFFFFF",

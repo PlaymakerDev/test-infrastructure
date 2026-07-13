@@ -70,14 +70,25 @@ const TitleSection: React.FC<Props> = (props) => {
                 <p>Google Map</p>
               </Button>
             </ConfigProvider>
-            <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+            <ConfigProvider
+              theme={{
+                token: {
+                  colorPrimary: '#66AEFF',
+                  colorTextLightSolid: '#0A0A0A',
+                  colorBgContainerDisabled: '#3d3d3d',
+                  colorTextDisabled: '#7d7d7d',
+                  colorPrimaryBorder: !data?.solution.anydesk ? '#7d7d7d' : '#66AEFF'
+                },
+              }}
+            >
               <Button
+                disabled={!data?.solution.anydesk}
                 type='primary'
                 htmlType='submit'
                 size='middle'
                 shape='round'
                 icon={<TbAppWindow />}
-                className='w-full sm:w-auto'
+                className='w-full sm:w-auto border-transparent!'
                 // onClick={() => window.open(data?.solution.anydesk ? `https://remote.anydesk.com/${data.solution.anydesk}` : '#', '_blank')}
                 onClick={() => {
                   if (!data?.solution.anydesk) return

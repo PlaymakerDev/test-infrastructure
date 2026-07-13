@@ -106,6 +106,15 @@ const AuthScreen: React.FC<Props> = (props) => {
     }
   }, [setValue])
 
+  // Notice when BaseService redirected here on session expiry (?session_expired=1).
+  // Read location.search (not useSearchParams) to avoid a Suspense requirement.
+  const [sessionExpired, setSessionExpired] = useState(false)
+  useEffect(() => {
+    setSessionExpired(
+      new URLSearchParams(window.location.search).get('session_expired') === '1'
+    )
+  }, [])
+
   const onSubmit = useCallback(
     async (value: FormLogin) => {
       dispatch(setLoading({ loading: true }))
@@ -315,6 +324,20 @@ const AuthScreen: React.FC<Props> = (props) => {
                   กรุณาเข้าระบบเพื่อใช้งานศูนย์ควบคุม
                 </p>
               </div>
+
+              {sessionExpired && (
+                <div
+                  className='mt-4 rounded-lg px-3 py-2 text-center'
+                  style={{
+                    background: 'rgba(252,209,22,0.10)',
+                    border: `1px solid ${YELLOW}`,
+                    color: YELLOW,
+                    fontSize: 13,
+                  }}
+                >
+                  เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง
+                </div>
+              )}
 
               <form onSubmit={handleSubmit(onSubmit)} className='mt-6'>
                 <Controller
