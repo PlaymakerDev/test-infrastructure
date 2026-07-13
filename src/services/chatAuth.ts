@@ -79,10 +79,12 @@ export function refreshChatSession(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight
   refreshInFlight = (async () => {
     try {
-      const sessionRes = await fetch("/api/auth/session")
-      const { refresh_token } = await sessionRes.json()
-      if (!refresh_token) return false
-      await axios.post("/api/auth/refresh", { refresh_token })
+      // Empty body — the route reads refresh_token from the server-side cookie.
+      // Wrap in the same Web Lock as BaseService (keep the name in sync) so the
+      // shared refresh token is never rotated concurrently → no rotation race.
+      const doRefresh = () => axios.post("/api/auth/refresh", {})
+      const locks = typeof navigator !== "undefined" ? navigator.locks : undefined
+      await (locks?.request ? locks.request("drr-auth-refresh", doRefresh) : doRefresh())
       return true
     } catch {
       return false
