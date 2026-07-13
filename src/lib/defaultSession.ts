@@ -4,8 +4,7 @@ export interface SessionData {
   access_token: string;
   refresh_token: string;
   role: "EXAMPLE" | "ADMIN" | "";
-  refresh_at: number;  // unix ms — next proactive-refresh due time (now + 12 min)
-  expires_at: number;  // unix ms — session hard-expiry time (now + 1 month)
+  refresh_at: number;  // unix ms — next proactive-refresh due time (now + REFRESH_AFTER_MS)
 }
 
 export const defaultSession: SessionData = {
@@ -13,7 +12,6 @@ export const defaultSession: SessionData = {
   refresh_token: "",
   role: "",
   refresh_at: 0,
-  expires_at: 0,
 };
 
 const getSessionPassword = (): string => {

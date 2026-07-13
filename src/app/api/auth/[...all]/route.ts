@@ -10,6 +10,25 @@ const loginSchema = z.object({
   password: z.string().min(1, 'password is required'),
 });
 
+// Refresh this long before the access token's own `exp`. Deriving refresh_at
+// from the JWT auto-tracks the backend TTL (no manual sync with JWT_EXPIRATION).
+const REFRESH_LEAD_MS = 3 * 60 * 1000;
+
+// Read `exp` (unix seconds) from the JWT payload — no signature check needed, the
+// token is issued by our backend. Returns exp − lead, clamped so it's never in
+// the past; falls back to a fixed lead if the token can't be parsed.
+function computeRefreshAt(accessToken: string, now: number): number {
+  try {
+    const exp = JSON.parse(
+      Buffer.from(accessToken.split(".")[1], "base64url").toString(),
+    ).exp;
+    if (typeof exp === "number") return Math.max(now + 30_000, exp * 1000 - REFRESH_LEAD_MS);
+  } catch {
+    // unreadable token — use the fallback below
+  }
+  return now + 12 * 60 * 1000;
+}
+
 // GET /api/auth/session — used by BaseService client-side to retrieve token
 export const GET = async (
   _request: NextRequest,
@@ -23,7 +42,6 @@ export const GET = async (
       return NextResponse.json({
         access_token: session.access_token ?? null,
         refresh_at: session.refresh_at ?? 0,
-        expires_at: session.expires_at ?? 0,
       }, { status: 200 })
     }
 
@@ -61,8 +79,7 @@ export const POST = async (
         session.access_token = response.data.access_token
         session.refresh_token = response.data.refresh_token
         session.role = 'ADMIN'
-        session.refresh_at = now + 12 * 60 * 1000
-        session.expires_at = now + 30 * 24 * 60 * 60 * 1000
+        session.refresh_at = computeRefreshAt(response.data.access_token, now)
         await session.save()
         return NextResponse.json({ message: 'success' }, { status: 200 })
       }
@@ -98,8 +115,7 @@ export const POST = async (
         const now = Date.now()
         session.access_token = response.data.access_token;
         session.refresh_token = response.data.refresh_token;
-        session.refresh_at = now + 12 * 60 * 1000;          // now + 12 min
-        session.expires_at = now + 30 * 24 * 60 * 60 * 1000; // now + 30 days
+        session.refresh_at = computeRefreshAt(response.data.access_token, now);
         await session.save();
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })
