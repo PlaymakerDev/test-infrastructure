@@ -1,7 +1,7 @@
 import React, { useDeferredValue, useMemo, useState } from 'react'
 import { TableWIM } from '../components'
 import WIMLocationSection from './sections/wim/WIMLocationSection'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { getTrackingSumWIMAPI } from '@/services/routes/TrackingService'
 
@@ -12,7 +12,7 @@ const WIMSection = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['tracking_sum_wim'],
     queryFn: () => getTrackingSumWIMAPI({ date: dayjs().format('YYYY-MM-DD') }),
-    placeholderData: keepPreviousData,
+    // placeholderData: keepPreviousData,
   })
 
   const filteredData = useMemo(() => {
@@ -26,9 +26,6 @@ const WIMSection = () => {
     <div>
       <section>
         <WIMLocationSection
-          data={filteredData}
-          isLoading={isLoading}
-          isError={isError}
           onSearch={setSearchText}
         />
       </section>

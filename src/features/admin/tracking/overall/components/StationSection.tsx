@@ -1,7 +1,7 @@
 "use client"
 import React, { useDeferredValue, useMemo, useState } from 'react'
 import { StationLocationSection, TableStation } from '../components'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { getTrackingSumStationAPI } from '@/services/routes/TrackingService'
 import dayjs from 'dayjs'
 
@@ -12,7 +12,7 @@ const StationSection: React.FC = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['tracking_sum_station'],
     queryFn: () => getTrackingSumStationAPI({ date: dayjs().format('YYYY-MM-DD') }),
-    placeholderData: keepPreviousData,
+    // placeholderData: keepPreviousData,
   })
 
   const filteredData = useMemo(() => {
@@ -26,9 +26,6 @@ const StationSection: React.FC = () => {
     <div>
       <section>
         <StationLocationSection
-          data={filteredData}
-          isLoading={isLoading}
-          isError={isError}
           onSearch={setSearchText}
         />
       </section>

@@ -1,77 +1,17 @@
-import { SumWim } from '@/types/tracking/overall-api';
 import { Col, Row } from 'antd'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { TbFlag, TbTruck, TbVideo } from "react-icons/tb";
 import { fmtNumber } from '@/utils/formatNumber'
+import { StationDailyCountData } from '@/types/tracking/detail-api';
 
 interface Props {
-  data?: SumWim[]
-}
-
-const DEFAULT_COUNT = {
-  total_weight: 0,
-  total_overweight: 0,
-  total_10percent: 0,
-  open: 0,
-  no_data: 0,
-  problem: 0,
-  total_cameras: 0,
-  offline_cameras: 0,
-  stations_without_cameras: 0
+  data?: StationDailyCountData
 }
 
 const WIMInfoCard: React.FC<Props> = (props) => {
   const { data } = props
 
-  const calcData = useMemo(() => {
-    if (!data || !Array.isArray(data)) return DEFAULT_COUNT
-
-    let open = 0;
-    let no_data = 0;
-    let problem = 0;
-    let total_cameras = 0;
-    let offline_cameras = 0;
-    let stations_without_cameras = 0;
-
-    data.forEach(item => {
-      const total = Number(item.total);
-      const totalCctv = Number(item.total_cctv) || 0;
-      const offlineCctv = Number(item.offline_cctv) || 0;
-      const onlineCctv = totalCctv - offlineCctv;
-
-      if (total > 0) {
-        open++;
-      } else if (total === 0 && onlineCctv > 0) {
-        no_data++;
-      } else if (total === 0 && onlineCctv === 0) {
-        problem++;
-      }
-
-      total_cameras += totalCctv;
-      offline_cameras += offlineCctv;
-      if (totalCctv === 0) {
-        stations_without_cameras++;
-      }
-    });
-
-    const totalVehicles = data.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
-    const totalOverweight = data.reduce((sum, item) => sum + (Number(item.over) || 0), 0)
-    const total10Percent = data.reduce((sum, item) => sum + (Number(item.over_10percent) || 0), 0)
-
-    return {
-      ...DEFAULT_COUNT,
-      total_weight: totalVehicles,
-      total_overweight: totalOverweight,
-      total_10percent: total10Percent,
-      open: open,
-      no_data: no_data,
-      problem: problem,
-      total_cameras: total_cameras,
-      offline_cameras: offline_cameras,
-      stations_without_cameras: stations_without_cameras
-
-    }
-  }, [data])
+  const totalCamera = fmtNumber(Number(data?.camera_online)) + fmtNumber(Number(data?.camera_offline))
 
   return (
     <Row gutter={[16, 16]}>
@@ -81,8 +21,8 @@ const WIMInfoCard: React.FC<Props> = (props) => {
             <TbFlag className='fs-22 text-yellow-500 shrink-0' />
             <h4 className='text-yellow-500 mb-0'>WIM ทั้งหมด</h4>
           </div>
-          <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(data?.length) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>ภาคตะวันออก (94.3%)</p>
+          <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.total)) || 0}</span> <span className='fs-14'>คัน</span></p>
+          <p className='fs-12 text-gray-400 mb-0'>{data?.top_region || '-'} ({fmtNumber(Number(data?.top_region_percent)) || 0}%)</p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
@@ -92,8 +32,8 @@ const WIMInfoCard: React.FC<Props> = (props) => {
             <h4 className='text-blue-500 mb-0'>รถเข้าชั่งทั้งหมด</h4>
           </div>
           <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(calcData.total_weight) || 0}</span> <span className='fs-14'>คัน</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน (173.4 ตัน)</p>
+            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.sum_total)) || 0}</span> <span className='fs-14'>คัน</span></p>
+            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_not_over)) || 0} ตัน)</p>
           </div>
         </div>
       </Col>
@@ -104,8 +44,8 @@ const WIMInfoCard: React.FC<Props> = (props) => {
             <h4 className='text-red-500 mb-0'>รถน้ำหนักเกิน</h4>
           </div>
           <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(calcData.total_overweight) || 0}</span> <span className='fs-14'>คัน</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน (184.2 ตัน)</p>
+            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.sum_total_over)) || 0}</span> <span className='fs-14'>คัน</span></p>
+            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_over)) || 0} ตัน)</p>
           </div>
         </div>
       </Col>
@@ -116,8 +56,8 @@ const WIMInfoCard: React.FC<Props> = (props) => {
             <h4 className='text-orange-500 mb-0'>รถน้ำหนักเกิน 10%</h4>
           </div>
           <div>
-            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(calcData.total_10percent) || 0}</span> <span className='fs-14'>คัน</span></p>
-            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน (192.1 ตัน)</p>
+            <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.sum_isover_10percent)) || 0}</span> <span className='fs-14'>คัน</span></p>
+            <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_over)) || 0} ตัน)</p>
           </div>
         </div>
       </Col>
@@ -129,13 +69,13 @@ const WIMInfoCard: React.FC<Props> = (props) => {
           </div>
           <div className='flex flex-wrap gap-2'>
             <div className='bg-[#66AEFF1A] border border-green-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-green-500 mb-0'>{fmtNumber(calcData.open) || 0} เปิดปกติ</p>
+              <p className='fs-12 text-green-500 mb-0'>{fmtNumber(Number(data?.normal)) || 0} เปิดปกติ</p>
             </div>
             <div className='bg-[#66AEFF1A] border border-yellow-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-yellow-500 mb-0'>{fmtNumber(calcData.problem) || 0} ระบบขัดข้อง</p>
+              <p className='fs-12 text-yellow-500 mb-0'>{fmtNumber(Number(data?.abnormal)) || 0} ระบบขัดข้อง</p>
             </div>
             <div className='bg-[#66AEFF1A] border border-red-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-red-500 mb-0'>{fmtNumber(calcData.no_data) || 0} ไม่ส่งข้อมูล</p>
+              <p className='fs-12 text-red-500 mb-0'>{fmtNumber(Number(data?.wim_disconnected)) || 0} ไม่ส่งข้อมูล</p>
             </div>
           </div>
         </div>
@@ -148,13 +88,13 @@ const WIMInfoCard: React.FC<Props> = (props) => {
           </div>
           <div className='flex flex-wrap gap-2'>
             <div className='bg-[#66AEFF1A] border border-yellow-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-yellow-500 mb-0'>{fmtNumber(calcData.total_cameras) || 0} ทั้งหมด</p>
+              <p className='fs-12 text-yellow-500 mb-0'>{totalCamera || 0} ทั้งหมด</p>
             </div>
             <div className='bg-[#66AEFF1A] border border-blue-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-blue-500 mb-0'>{fmtNumber(calcData.total_cameras - calcData.offline_cameras) || 0} ออนไลน์</p>
+              <p className='fs-12 text-blue-500 mb-0'>{fmtNumber(Number(data?.camera_online)) || 0} ออนไลน์</p>
             </div>
             <div className='bg-[#66AEFF1A] border border-red-500 px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-red-500 mb-0'>{fmtNumber(calcData.offline_cameras) || 0} ออฟไลน์</p>
+              <p className='fs-12 text-red-500 mb-0'>{fmtNumber(Number(data?.camera_offline)) || 0} ออฟไลน์</p>
             </div>
           </div>
         </div>

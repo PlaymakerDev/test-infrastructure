@@ -15,10 +15,10 @@ const OverallSection: React.FC<Props> = (props) => {
   return (
     <div className='px-10'>
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={24} md={24} lg={24} xl={12} xxl={12}>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12}>
           <VehicleOnRouteSection />
         </Col>
-        <Col xs={24} sm={24} md={24} lg={24} xl={12} xxl={12}>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12}>
           <VehicleDetailSection />
         </Col>
       </Row>

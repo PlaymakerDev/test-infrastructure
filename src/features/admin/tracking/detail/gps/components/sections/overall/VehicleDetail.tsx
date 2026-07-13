@@ -9,7 +9,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
   const { } = props
 
   return (
-    <div className='rounded-lg p-5 bg-(--mid-gray)'>
+    <div className='rounded-lg p-5 bg-(--mid-gray) lg:-mr-3'>
       <section>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
