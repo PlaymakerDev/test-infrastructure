@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { PageProvider } from '../provider/ContextProvider';
@@ -15,7 +15,9 @@ const Layout: React.FC<Props> = (props) => {
 
   return (
     <PageProvider>
-      <Navbar />
+      <Suspense fallback={null}>
+        <Navbar />
+      </Suspense>
       <Sidebar />
       <main className={`h-screen w-screen ${isDashboard ? '' : 'pt-(--nav-offset)'}`}>
         {children}
