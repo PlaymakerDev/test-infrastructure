@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import SearchBar, {
   type FilterConfig,
   type FilterStats,
@@ -7,6 +7,9 @@ import SearchBar, {
 } from '@/components/searchable/SearchBar'
 import FormSearchTunnel from './FormSearchTunnel'
 import TableTunnelData from './TableTunnelData'
+import ModalTunnelViewer, {
+  type TunnelViewerTarget,
+} from './ModalTunnelViewer'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import { useTunnelCentralList } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -95,21 +98,30 @@ const apiSolutionToProject = (
   }
 }
 
-/** Open the tunnel's live control dashboard in a new tab. `noopener,noreferrer`
- *  is required — the URL is a signed login link, so we must not leak the
- *  window opener nor forward a Referer that could expose the token. */
-const openTunnelUrl = (url?: string) => {
-  if (!url) return
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 
 const OverallDataDisplaySection: React.FC<Props> = () => {
   const deptId = useDeptId()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  // Modal state is local — the viewer is only ever shown from this section,
+  // so hoisting to Context would add noise without any real reuse.
+  const [viewerTarget, setViewerTarget] = useState<TunnelViewerTarget | null>(
+    null,
+  )
 
   const { data, isLoading } = useTunnelCentralList(deptId)
+
+  const handleOpenTunnel = useCallback((p: TunnelProject) => {
+    if (!p.tunnelUrl) return
+    setViewerTarget({
+      url: p.tunnelUrl,
+      title: p.installPoint || p.projectName || p.roadCode || '-',
+      subtitle: p.roadCode,
+    })
+  }, [])
+
+  const handleCloseViewer = useCallback(() => setViewerTarget(null), [])
 
   // Flatten bureau → sub-dept → solutions, tagging each row with its
   // sub-dept short name so the table groups by bureau out of the box.
@@ -175,9 +187,9 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
         total: p.totalCameras,
         online: p.onlineCount,
         offline: p.offlineCount,
-        onDetail: () => openTunnelUrl(p.tunnelUrl),
+        onDetail: () => handleOpenTunnel(p),
       })),
-    [filtered],
+    [filtered, handleOpenTunnel],
   )
 
   return (
@@ -195,11 +207,21 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
       </section>
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
-          <TableTunnelData projects={filtered} loading={isLoading} />
+          <TableTunnelData
+            projects={filtered}
+            loading={isLoading}
+            onOpenTunnel={handleOpenTunnel}
+          />
         ) : (
           <ProjectCardGrid items={cardItems} totalLabel='กล้องทั้งหมด' />
         )}
       </section>
+
+      <ModalTunnelViewer
+        open={viewerTarget !== null}
+        target={viewerTarget}
+        onClose={handleCloseViewer}
+      />
     </div>
   )
 }

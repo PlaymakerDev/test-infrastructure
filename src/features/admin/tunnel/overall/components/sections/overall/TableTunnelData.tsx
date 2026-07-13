@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff } from 'react-icons/tb'
@@ -15,6 +15,8 @@ interface Props {
   /** Filtered + searched tunnel projects */
   projects: TunnelProject[]
   loading?: boolean
+  /** Fired when the user clicks a link cell; parent opens the viewer modal. */
+  onOpenTunnel: (project: TunnelProject) => void
 }
 
 const Pill: React.FC<{
@@ -35,15 +37,7 @@ type Row = BureauGroupedRow<TunnelProject>
 
 const TOTAL_COLS = 8
 
-const TableTunnelData: React.FC<Props> = ({ projects, loading }) => {
-  // Row clicks open the tunnel's live-control URL in a new tab instead of
-  // routing to the local /admin/tunnel/detail. `noopener,noreferrer` keeps
-  // the signed login token from leaking via `window.opener` / Referer.
-  const openTunnel = useCallback((project: TunnelProject) => {
-    if (!project.tunnelUrl) return
-    window.open(project.tunnelUrl, '_blank', 'noopener,noreferrer')
-  }, [])
-
+const TableTunnelData: React.FC<Props> = ({ projects, loading, onOpenTunnel }) => {
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
   const columns: ColumnsType<Row> = useMemo(
@@ -76,7 +70,7 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading }) => {
             )
           }
           return (
-            <DetailLinkText onClick={() => openTunnel(row.project)}>
+            <DetailLinkText onClick={() => onOpenTunnel(row.project)}>
               {row.project.roadCode}
             </DetailLinkText>
           )
@@ -89,7 +83,7 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <DetailLinkText onClick={() => openTunnel(row.project)}>
+            <DetailLinkText onClick={() => onOpenTunnel(row.project)}>
               {row.project.projectName ?? '-'}
             </DetailLinkText>
           ) : null,
@@ -101,7 +95,7 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <DetailLinkText onClick={() => openTunnel(row.project)}>
+            <DetailLinkText onClick={() => onOpenTunnel(row.project)}>
               {row.project.installPoint}
             </DetailLinkText>
           ) : null,
@@ -170,7 +164,7 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading }) => {
           ) : null,
       },
     ],
-    [openTunnel],
+    [onOpenTunnel],
   )
 
   return (

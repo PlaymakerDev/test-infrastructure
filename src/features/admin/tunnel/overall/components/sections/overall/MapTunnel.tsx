@@ -4,10 +4,8 @@ import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
-import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTunnelOverview } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
-import { useRouter } from 'next/navigation'
 import type { TunnelLocation } from '@/types/tunnel/overview-api'
 
 interface Props { }
@@ -46,12 +44,11 @@ const toGeoJSON = (locations: TunnelLocation[]): TunnelFeatureCollection => ({
     })),
 })
 
-/** Popup card shown on marker click. */
-const TunnelPopup: React.FC<{
-  feature: GeoJSON.Feature
-  deptId: string
-  onNavigate: (url: string) => void
-}> = ({ feature, deptId, onNavigate }) => {
+/** Popup card shown on marker click — info-only, no detail link.
+ *  Row clicks in the table + card grid open the tunnel's live URL in a modal;
+ *  the map popup deliberately stops at read-only info to keep the marker
+ *  interaction light. */
+const TunnelPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
@@ -73,12 +70,6 @@ const TunnelPopup: React.FC<{
       <p className='fs-11 text-white'>
         ไฟส่องสว่าง: {Number(p.lighting_count ?? 0).toLocaleString()} ดวง
       </p>
-      {p.id != null && (
-        <PopupDetailLink
-          url={`/admin/tunnel/detail/${String(p.id)}?dept_id=${deptId}`}
-          onNavigate={onNavigate}
-        />
-      )}
     </div>
   )
 }
@@ -97,8 +88,6 @@ const TunnelMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   isReady,
 }) => {
   const { map, isLoaded } = useMap()
-  const router = useRouter()
-  const deptId = useDeptId()
 
   useEffect(() => {
     if (!map || !isLoaded || !isReady) return
@@ -155,9 +144,7 @@ const TunnelMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       data={allData}
       cluster
       size={18}
-      popup={(f) => (
-        <TunnelPopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
-      )}
+      popup={(f) => <TunnelPopup feature={f} />}
       popupOptions={{ offset: 10, closeButton: false }}
     />
   )
