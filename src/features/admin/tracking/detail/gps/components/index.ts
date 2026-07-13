@@ -14,6 +14,7 @@ export { default as VehicleDetailSection } from './sections/overall/VehicleDetai
 export { default as VehicleStat } from './sections/overall/VehicleStat'
 export { default as ChartVehicleRatio } from './sections/overall/ChartVehicleRatio'
 export { default as ChartTraffic } from './sections/overall/ChartTraffic'
+export { default as MapOverallSection } from './sections/overall/MapOverallSection'
 
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'

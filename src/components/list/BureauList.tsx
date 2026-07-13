@@ -233,11 +233,23 @@ const BureauList: React.FC<BureauListProps> = (props) => {
         >
           <div className='flex gap-3 items-center'>
             {selectMode && (
-              <Checkbox
-                checked={checkedKeys.has(key)}
-                onClick={e => e.stopPropagation()}
-                onChange={() => toggleCheck(key)}
-              />
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorBgContainer: 'transparent',
+                    colorBorder: 'white',
+                    colorPrimary: 'white',
+                    colorText: 'black',
+                    colorWhite: 'black'
+                  }
+                }}
+              >
+                <Checkbox
+                  checked={checkedKeys.has(key)}
+                  onClick={e => e.stopPropagation()}
+                  onChange={() => toggleCheck(key)}
+                />
+              </ConfigProvider>
             )}
             <div className='shrink-0 w-28'>
               <HLSLivePlayer
@@ -291,11 +303,23 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 {selectMode && (
-                  <Checkbox
-                    checked={checkedKeys.has(key)}
-                    onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key, getRouteDescendantKeys(parentBureau, parentState, route))}
-                  />
+                  <ConfigProvider
+                    theme={{
+                      token: {
+                        colorBgContainer: 'transparent',
+                        colorBorder: 'white',
+                        colorPrimary: 'white',
+                        colorText: 'black',
+                        colorWhite: 'black'
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={checkedKeys.has(key)}
+                      onClick={e => e.stopPropagation()}
+                      onChange={() => toggleCheck(key, getRouteDescendantKeys(parentBureau, parentState, route))}
+                    />
+                  </ConfigProvider>
                 )}
                 {isOpen
                   ? <TbChevronDown className='text-(--yellow) fs-18' />
@@ -365,11 +389,23 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 {selectMode && (
-                  <Checkbox
-                    checked={checkedKeys.has(key)}
-                    onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key, getStateDescendantKeys(parentBureau, state))}
-                  />
+                  <ConfigProvider
+                    theme={{
+                      token: {
+                        colorBgContainer: 'transparent',
+                        colorBorder: 'white',
+                        colorPrimary: 'white',
+                        colorText: 'black',
+                        colorWhite: 'black'
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={checkedKeys.has(key)}
+                      onClick={e => e.stopPropagation()}
+                      onChange={() => toggleCheck(key, getStateDescendantKeys(parentBureau, state))}
+                    />
+                  </ConfigProvider>
                 )}
                 {isOpen
                   ? <TbChevronDown className='text-(--yellow) fs-18' />
@@ -437,11 +473,23 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 {selectMode && (
-                  <Checkbox
-                    checked={checkedKeys.has(key)}
-                    onClick={e => e.stopPropagation()}
-                    onChange={() => toggleCheck(key, getBureauDescendantKeys(item))}
-                  />
+                  <ConfigProvider
+                    theme={{
+                      token: {
+                        colorBgContainer: 'transparent',
+                        colorBorder: 'white',
+                        colorPrimary: 'white',
+                        colorText: 'black',
+                        colorWhite: 'black'
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={checkedKeys.has(key)}
+                      onClick={e => e.stopPropagation()}
+                      onChange={() => toggleCheck(key, getBureauDescendantKeys(item))}
+                    />
+                  </ConfigProvider>
                 )}
                 {isOpen
                   ? <TbChevronDown className='text-(--yellow) fs-18' />

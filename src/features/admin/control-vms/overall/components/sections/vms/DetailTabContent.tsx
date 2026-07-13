@@ -42,6 +42,7 @@ const DetailTabContent: React.FC<Props> = ({ onSelect, inModal }) => {
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden
+      className='[&_.ant-tabs-nav::before]:hidden! [&_.ant-tabs-nav-list]:relative! [&_.ant-tabs-nav-list::after]:content-[""]! [&_.ant-tabs-nav-list::after]:absolute! [&_.ant-tabs-nav-list::after]:inset-x-0! [&_.ant-tabs-nav-list::after]:bottom-0! [&_.ant-tabs-nav-list::after]:border-b! [&_.ant-tabs-nav-list::after]:border-(--light-gray-3)!'
       tabBarExtraContent={onSelect ? undefined : {
         right: <Button htmlType='button' type='primary' onClick={() => setOpenUpdateType({ open: true })}>จัดการประเภท</Button>
       }}

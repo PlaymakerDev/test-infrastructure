@@ -37,6 +37,7 @@ import {
   TbCurrentLocation,
   TbLock,
   TbLockOpen,
+  TbLogout,
 } from "react-icons/tb";
 /* SEY DEFAULT YEAR FORMAT */
 import dayjs from 'dayjs';
@@ -46,8 +47,10 @@ import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
-import { Button, Dropdown, MenuProps } from "antd";
+import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { motion } from "motion/react";
+import axios, { AxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import FindOnPageOverlay from "./FindOnPageOverlay";
 
 // Feature systems — link to their overall page scoped to the logged-in user's
@@ -145,6 +148,10 @@ export default function Navbar() {
   // Global "focus the map" toggle — hides every card/panel on overall pages
   // that host a map. Bound to the TbZoomInArea button below.
   const { isMapFocus, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
+  // MODAL
+  const [modal, contextHolder] = Modal.useModal()
+  // QUERY CLIENT
+  const queryClient = useQueryClient()
 
   // Reset focus mode on ANY navigation — path OR query (e.g. picking another
   // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
@@ -181,6 +188,32 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  const onLogout = useCallback(async () => {
+    try {
+      const response = await axios.post('/api/auth/logout', {})
+      if (response.status === 200) {
+        // Drop this user's cached (token-scoped) data so the next login starts clean.
+        queryClient.clear()
+
+        modal.success({
+          title: 'Logout successful',
+          content: 'You have been logged out successfully.',
+          onOk: () => router.push('/auth/login'),
+          onCancel: () => Modal.destroyAll(),
+        })
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        modal.error({
+          title: 'Logout failed',
+          content: error.response?.data?.res_data?.message,
+          onOk: () => Modal.destroyAll(),
+          onCancel: () => Modal.destroyAll(),
+        })
+      }
+    }
+  }, [modal, router, queryClient])
 
   const items: MenuProps['items'] = [
     {
@@ -231,10 +264,26 @@ export default function Navbar() {
       key: '3',
       label: <TbBellRinging2 className={iconClassName} />
     },
+    // {
+    //   key: '4',
+    //   label: <TbGripHorizontal className={iconClassName} />
+    // },
+  ]
+
+  const extraItems: MenuProps['items'] = [
     {
-      key: '4',
-      label: <TbGripHorizontal className={iconClassName} />
+      key: '1',
+      label: 'ระบบและการตั้งค่า',
+      icon: <TbSettings />,
+      onClick: () => router.push("/admin/settings"),
     },
+    {
+      key: '2',
+      label: 'ออกจากระบบ',
+      icon: <TbLogout />,
+      onClick: () => onLogout(),
+
+    }
   ]
 
   // Fallback to a location icon for menu items without one (e.g. Tracking,
@@ -341,8 +390,8 @@ export default function Navbar() {
         >
           <div
             className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${hovered || locked
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-2"
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-2"
               }`}
             style={{ height: 72, width: "fit-content", maxWidth: "90vw" }}
           >
@@ -470,9 +519,15 @@ export default function Navbar() {
           <TbBellRinging2
             className={iconClassName}
           />
-          <TbGripHorizontal
-            className={iconClassName}
-          />
+          <Dropdown
+            menu={{ items: extraItems }}
+            trigger={["click"]}
+            placement="bottom"
+          >
+            <TbGripHorizontal
+              className={iconClassName}
+            />
+          </Dropdown>
         </div>
         <div className="mobile-side-menu">
           <Dropdown
@@ -488,6 +543,7 @@ export default function Navbar() {
         </div>
       </div>
       <FindOnPageOverlay open={findOpen} onClose={() => setFindOpen(false)} />
+      {contextHolder}
     </nav>
   )
 }
