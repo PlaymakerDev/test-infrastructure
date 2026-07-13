@@ -23,9 +23,9 @@ const LocationSection: React.FC<Props> = (props) => {
       </div>
       <MapOverlayPanel
         position='right'
-        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'
+        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
       >
-        <InfoCardSection deptId={deptId!} />
+        <InfoCardSection />
       </MapOverlayPanel>
     </MapFocusGrid>
   )
