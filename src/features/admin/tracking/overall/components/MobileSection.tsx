@@ -18,7 +18,7 @@ const MobileSection = () => {
       ordering: 'asc',
       search: searchMobileMaster?.search || ''
     }),
-    placeholderData: keepPreviousData,
+    // placeholderData: keepPreviousData,
   })
 
   const {
@@ -28,7 +28,7 @@ const MobileSection = () => {
   } = useQuery({
     queryKey: ['sum_plan', searchSumPlan],
     queryFn: () => getTrackingViewSumPlanChartAPI({ ...searchSumPlan }),
-    placeholderData: keepPreviousData
+    // placeholderData: keepPreviousData
   })
 
   return (
