@@ -2,7 +2,6 @@
 import React from 'react'
 import MapDetailBridgeLighting from './sections/overall/MapDetailBridgeLighting'
 import ChartElectricalBridgeLighting from './sections/overall/ChartElectricalBridgeLighting'
-import MadrixControlPanel from '@/features/admin/bridge-lighting/overall/components/sections/overall/MadrixControlPanel'
 import BridgeLightingStatus from './sections/overall/BridgeLightingStatus'
 import VoltageStat from './sections/overall/VoltageStat'
 
@@ -27,11 +26,6 @@ const OverallSection: React.FC = () => {
       {/* Left column: BridgeLightingStatus — natural height, anchored bottom-left */}
       <div className='px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-4 lg:z-10 lg:w-[clamp(20rem,22vw,28rem)]'>
         <BridgeLightingStatus />
-      </div>
-
-      {/* Center: MADRIX panel — defined height, anchored bottom-center */}
-      <div className='flex flex-col px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-[calc(clamp(20rem,22vw,28rem)+2rem)] lg:right-[calc(clamp(30rem,38vw,52rem)+2rem)] lg:z-10'>
-        <MadrixControlPanel />
       </div>
     </div>
   )

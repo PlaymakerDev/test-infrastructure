@@ -2,25 +2,41 @@
 import { StatCardRow } from '@/components/section/StatCard'
 import React, { useMemo } from 'react'
 import { TbShield, TbWalk } from 'react-icons/tb'
-import { useCrosswalkTotals } from '@/hooks/queries/crosswalk'
+import { useCrosswalkCentralList, useCrosswalkTotals } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-/** Right rail — 3 stat cards summarising the crosswalk fleet.
- *  Data: `GET /crosswalk/departments/{deptId}/overview/central/totals` */
+/** Right rail — 3 stat cards summarising the crosswalk fleet. Counts come
+ *  from `/overview/central/totals`. Per-card "Active" lines (solutions with
+ *  online crosswalk device per warranty bucket) are derived from
+ *  `/overview/central/list` — same cache the table consumes, no extra
+ *  request. Pattern mirrors `InfoCardTrafficSignal.tsx`. */
 const InfoCardSection: React.FC = () => {
   const deptId = useDeptId()
   const { data, isLoading } = useCrosswalkTotals(deptId)
+  const { data: central } = useCrosswalkCentralList(deptId)
 
   const cards = useMemo(() => {
     const solutionTotal = data?.solution.total ?? 0
     const solutionOnline = data?.solution.online ?? 0
     const inWarranty = data?.warranty.active ?? 0
     const expired = data?.warranty.expired ?? 0
-    // Warranty counts projects, not จุดติดตั้ง — use the warranty sum as
-    // the denominator for ใน/หมดค้ำ percentages.
-    const warrantyTotal = inWarranty + expired
     const pct = (n: number, d: number) => (d === 0 ? 0 : (n / d) * 100)
+
+    // Count solutions with online crosswalk devices, split by warranty bucket.
+    let inWarrantyActive = 0
+    let expiredActive = 0
+    for (const bureau of central ?? []) {
+      for (const sub of bureau.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          if (sol.crosswalk.is_online) {
+            if (sol.is_warranty) inWarrantyActive++
+            else expiredActive++
+          }
+        }
+      }
+    }
+
     return [
       {
         icon: <TbWalk />,
@@ -34,7 +50,7 @@ const InfoCardSection: React.FC = () => {
         icon: <TbShield />,
         title: 'ในค้ำ',
         count: inWarranty.toLocaleString(),
-        activeLabel: `${fmtNumber(pct(inWarranty, warrantyTotal), 1)}%`,
+        activeLabel: `Active : ${fmtNumber(inWarrantyActive, 0)} (${fmtNumber(pct(inWarrantyActive, inWarranty), 1)}%)`,
         color: 'teal' as const,
         isLoading,
       },
@@ -42,12 +58,12 @@ const InfoCardSection: React.FC = () => {
         icon: <TbShield />,
         title: 'หมดค้ำ',
         count: expired.toLocaleString(),
-        activeLabel: `${fmtNumber(pct(expired, warrantyTotal), 1)}%`,
+        activeLabel: `Active : ${fmtNumber(expiredActive, 0)} (${fmtNumber(pct(expiredActive, expired), 1)}%)`,
         color: 'gray' as const,
         isLoading,
       },
     ]
-  }, [data, isLoading])
+  }, [data, central, isLoading])
 
   return <StatCardRow cards={cards} />
 }

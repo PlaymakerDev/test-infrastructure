@@ -1,17 +1,17 @@
 "use client"
 import {
-  TbCamera,
+  TbVideo,
   TbDeviceDesktop,
-  TbWeight,
   TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
+  TbCarCrash,
   TbWalk,
-  TbChartBar,
   TbTrafficLights,
 } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
+import IconTracking from '@/components/icon/IconTracking'
 import {
   SYSTEMS,
   SYSTEM_TYPES,
@@ -19,15 +19,15 @@ import {
 } from '@/features/admin/dashboard/data/systems'
 
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
-  CCTV: TbCamera,
+  CCTV: TbVideo,
   VMS: TbDeviceDesktop,
-  WIM: TbWeight,
+  WIM: IconTracking,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
   Counting: TbCar,
   CrossWalk: TbWalk,
-  Analytic: TbChartBar,
+  Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
 }
 
