@@ -846,6 +846,32 @@ export type APIRequestWIMDailyCount = APIRequestStationDailyCount
 
 export type APIResponseWIMDailyCount = APIResponseStationDailyCount
 
+// MOBILE DAILY STATUS COUNT
+export interface APIRequestMobileDailyCount {
+  start_date?: string
+  end_date?: string
+  department_id?: string | number
+}
+
+export interface APIResponseMobileDailyCount extends Omit<APIResponseStationDailyCount, 'data'> {
+  data: MobileDailyCountData
+}
+
+export interface MobileDailyCountData {
+  actual: number
+  fiscal_year: number
+  max_grossweight_not_over: number
+  max_grossweight_over: number
+  open_station_count: number
+  plan: number
+  sum_total: number
+  sum_total_over: number
+  top_region: string
+  top_region_open_count: number
+  top_region_percent: number
+  total_station_count: number
+}
+
 // MOBILE CAR
 export interface APIRequestMobileCar {
   tid?: string | number

@@ -8,12 +8,12 @@ import { scopeKey } from '@/services/routes/scopeParam'
 import { Location } from '@/types/vms/overview-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
-import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
+import { ModalVMSScreenProps, useOverallContext } from '../../../context'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
@@ -30,23 +30,27 @@ const isValidCoord = (g: unknown): g is [number, number] =>
 const toGeoJSON = (locations: Location[]): VmsFeatureCollection => {
   return {
     type: 'FeatureCollection',
-    features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => ({
-      type: 'Feature',
-      properties: {
-        id: loc.solution.id,
-        solution_name: loc.solution.solution_name,
-        code_name: loc.road.code_name,
-        is_online: loc.vms.status.is_online,
-        is_warranty: loc.warranty.is_warranty,
-        status_name: loc.vms.status.name,
-        last_connected: loc.vms.last_connected,
-        hls_url: loc.vms.hls_url,
-        anydesk: loc.vms.anydesk,
-        camera_id: loc.vms.camera?.id ?? null,
-        camera_hls_url: loc.vms.camera?.hls_url ?? null,
-      },
-      geometry: { type: 'Point', coordinates: loc.GeometryPoint },
-    })),
+    features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => {
+      console.log("===", loc.vms.desktop_screen)
+      return ({
+        type: 'Feature',
+        properties: {
+          id: loc.solution.id,
+          solution_name: loc.solution.solution_name,
+          code_name: loc.road.code_name,
+          is_online: loc.vms.status.is_online,
+          is_warranty: loc.warranty.is_warranty,
+          status_name: loc.vms.status.name,
+          last_connected: loc.vms.last_connected,
+          hls_url: loc.vms.hls_url,
+          anydesk: loc.vms.anydesk,
+          camera_id: loc.vms.camera?.id ?? null,
+          camera_hls_url: loc.vms.camera?.hls_url ?? null,
+          desktop_screen: loc.vms.desktop_screen ?? null,
+        },
+        geometry: { type: 'Point', coordinates: loc.GeometryPoint },
+      })
+    }),
   }
 }
 
@@ -55,19 +59,20 @@ interface VMSPopupProps {
   isOnline: boolean
   dispatch: ReturnType<typeof useAppDispatch>
   onNavigate: (path: string) => void
+  setOpenVMSScreen: React.Dispatch<React.SetStateAction<ModalVMSScreenProps>>
 }
 
-const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, dispatch, onNavigate }) => {
+const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setOpenVMSScreen }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div className='min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)' style={{ borderColor: SYSTEM_BRIGHT.VMS }}>
       <section>
         <HLSLivePlayer
-          cameraId={String(p.camera_id ?? p.id)}
-          hlsUrl={String(p.camera_hls_url ?? p.hls_url)}
+          cameraId={String(p.id)}
+          hlsUrl={String(p.desktop_screen)}
           enableViewportPause
           figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer"
-          onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: String(p.camera_id) }))}
+          onClick={() => setOpenVMSScreen({ open: true, data: { solution_id: Number(p.id), desktop_screen: String(p.desktop_screen) } })}
         />
       </section>
       <section className='mt-1.5'>
@@ -108,6 +113,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
   const { map, isLoaded } = useMap()
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const { setOpenVMSScreen } = useOverallContext()
 
   useEffect(() => {
     if (!map || !isLoaded || !isReady) return
@@ -137,6 +143,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
           isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
           dispatch={dispatch}
           onNavigate={router.push}
+          setOpenVMSScreen={setOpenVMSScreen}
         />
       )}
       popupOptions={{ offset: 10, closeButton: false }}

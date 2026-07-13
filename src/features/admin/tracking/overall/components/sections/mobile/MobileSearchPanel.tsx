@@ -3,6 +3,9 @@ import { FormSearchMobile, MobileInfoCard } from '../../../components'
 import { MobileMasterData, APIResponseTrackingViewSumPlanChart } from '@/types/tracking/overall-api'
 import { Empty, Skeleton } from 'antd'
 import { WIMMetaData } from '@/types/shared'
+import { useQuery } from '@tanstack/react-query'
+import { getTrackingMobileDailyCountAPI } from '@/services/routes/TrackingDetailService'
+import dayjs from 'dayjs'
 
 interface Props {
   data?: MobileMasterData[]
@@ -15,21 +18,21 @@ interface Props {
 }
 
 const MobileSearchPanel: React.FC<Props> = (props) => {
-  const { data, meta, isLoading, isError, sumPlanData, isSumPlanLoading, isSumPlanError } = props
+  const { } = props
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['tracking_overall_mobile_daily_status_count'],
+    queryFn: () => getTrackingMobileDailyCountAPI({
+      start_date: dayjs().format('YYYY-MM-DD'),
+      end_date: dayjs().format('YYYY-MM-DD')
+    }),
+  })
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูล" />
-    return (
-      <MobileInfoCard
-        data={data}
-        meta={meta}
-        sumPlanData={sumPlanData}
-        isSumPlanLoading={isSumPlanLoading}
-        isSumPlanError={isSumPlanError}
-      />
-    )
-  }, [isLoading, isError, data, meta, sumPlanData, isSumPlanLoading, isSumPlanError])
+    return <MobileInfoCard data={data?.data.data} />
+  }, [isLoading, isError, data])
 
   return (
     <div>

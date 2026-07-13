@@ -49,7 +49,7 @@ const StationInfoCard: React.FC<Props> = (props) => {
           </div>
         </div>
       </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
+      {/* <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
         <div className='bg-[#66AEFF1A] border border-orange-500 py-3 px-5 rounded-lg'>
           <div className='flex items-center gap-2 mb-2'>
             <TbTruck className='fs-22 text-orange-500 shrink-0' />
@@ -60,7 +60,7 @@ const StationInfoCard: React.FC<Props> = (props) => {
             <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_over)) || 0} ตัน)</p>
           </div>
         </div>
-      </Col>
+      </Col> */}
       <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
         <div className='bg-[#66AEFF1A] border border-white py-3 px-5 rounded-lg'>
           <div className='flex items-center gap-2 mb-2'>
