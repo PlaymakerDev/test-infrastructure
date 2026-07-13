@@ -18,10 +18,13 @@ const VehicleDetailSection: React.FC<Props> = (props) => {
         <VehicleStat />
       </section>
       <section className='mt-5'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-5'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-0'>
           <VehicleDetail />
           <VehicleRoute />
         </div>
+      </section>
+      <section className='mt-5'>
+
       </section>
     </div>
   )
