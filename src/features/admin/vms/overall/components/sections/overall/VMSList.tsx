@@ -157,6 +157,7 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
+      className: 'col-road-code',
       width: 150,
       onCell: (row) => {
         if (row.type === 'header') return { colSpan: TOTAL_COLS }
@@ -179,6 +180,7 @@ const VMSList: React.FC<Props> = ({ data, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
+      className: 'col-project-name',
       width: 400,
       onCell: (row) => {
         if (row.type === 'header') return { colSpan: 0 }
