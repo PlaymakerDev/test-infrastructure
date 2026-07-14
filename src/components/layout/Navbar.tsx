@@ -2,7 +2,7 @@
 import menu from "@/configs/menu"
 import type { AdminMenuItem } from "@/configs/menu/admin"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TbMenu2,
   TbZoomInArea,
@@ -47,6 +47,7 @@ import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
+import IconTracking from "@/components/icon/IconTracking";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { motion } from "motion/react";
 import axios, { AxiosError } from "axios";
@@ -99,20 +100,10 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbBrandGithubCopilot,
 }
 
-// Design SVG icons (tracking.svg / text.svg) — inline so they inherit
-// currentColor (turns yellow when active) and take a size prop like react-icons.
-const IconTracking: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3.75 13.75C3.75 13.4185 3.8817 13.1005 4.11612 12.8661C4.35054 12.6317 4.66848 12.5 5 12.5H7.5C7.83152 12.5 8.14946 12.6317 8.38388 12.8661C8.6183 13.1005 8.75 13.4185 8.75 13.75V16.25C8.75 16.5815 8.6183 16.8995 8.38388 17.1339C8.14946 17.3683 7.83152 17.5 7.5 17.5H5C4.66848 17.5 4.35054 17.3683 4.11612 17.1339C3.8817 16.8995 3.75 16.5815 3.75 16.25V13.75Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 13.75C21.25 13.4185 21.3817 13.1005 21.6161 12.8661C21.8505 12.6317 22.1685 12.5 22.5 12.5H25C25.3315 12.5 25.6495 12.6317 25.8839 12.8661C26.1183 13.1005 26.25 13.4185 26.25 13.75V16.25C26.25 16.5815 26.1183 16.8995 25.8839 17.1339C25.6495 17.3683 25.3315 17.5 25 17.5H22.5C22.1685 17.5 21.8505 17.3683 21.6161 17.1339C21.3817 16.8995 21.25 16.5815 21.25 16.25V13.75Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12.5 5C12.5 4.66848 12.6317 4.35054 12.8661 4.11612C13.1005 3.8817 13.4185 3.75 13.75 3.75H16.25C16.5815 3.75 16.8995 3.8817 17.1339 4.11612C17.3683 4.35054 17.5 4.66848 17.5 5V7.5C17.5 7.83152 17.3683 8.14946 17.1339 8.38388C16.8995 8.6183 16.5815 8.75 16.25 8.75H13.75C13.4185 8.75 13.1005 8.6183 12.8661 8.38388C12.6317 8.14946 12.5 7.83152 12.5 7.5V5Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12.5 22.5C12.5 22.1685 12.6317 21.8505 12.8661 21.6161C13.1005 21.3817 13.4185 21.25 13.75 21.25H16.25C16.5815 21.25 16.8995 21.3817 17.1339 21.6161C17.3683 21.8505 17.5 22.1685 17.5 22.5V25C17.5 25.3315 17.3683 25.6495 17.1339 25.8839C16.8995 26.1183 16.5815 26.25 16.25 26.25H13.75C13.4185 26.25 13.1005 26.1183 12.8661 25.8839C12.6317 25.6495 12.5 25.3315 12.5 25V22.5Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M23.75 12.5C23.75 10.8424 23.0915 9.25269 21.9194 8.08058C20.7473 6.90848 19.1576 6.25 17.5 6.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.25 17.5C6.25 19.1576 6.90848 20.7473 8.08058 21.9194C9.25269 23.0915 10.8424 23.75 12.5 23.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.25 12.5C6.25 10.8424 6.90848 9.25269 8.08058 8.08058C9.25269 6.90848 10.8424 6.25 12.5 6.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-
+// Design SVG icon (text.svg) — inline so it inherits currentColor (turns yellow
+// when active) and takes a size prop like react-icons. Tracking icon comes from
+// @/components/icon/IconTracking so the trapezoid and every map's WIM markers
+// share the same glyph 1:1.
 const IconText: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13.75 15H21.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -157,8 +148,18 @@ export default function Navbar() {
   // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
   // the query dep the user lands on the new department with every card still
   // hidden and only the small yellow icon hinting why.
+  // Skips the very first run: on initial mount the store already starts with
+  // focus OFF, so resetting is a no-op — and because this Navbar mounts inside
+  // a Suspense boundary it could otherwise land AFTER a page's own mount
+  // effect and clobber an intentional landing state (dashboard's map-only
+  // intro turns focus ON on mount and relies on winning the landing frame).
   const searchKey = searchParams.toString()
+  const focusResetFirstRunRef = useRef(true)
   useEffect(() => {
+    if (focusResetFirstRunRef.current) {
+      focusResetFirstRunRef.current = false
+      return
+    }
     setMapFocus(false)
   }, [pathname, searchKey, setMapFocus])
 
@@ -389,7 +390,7 @@ export default function Navbar() {
           onMouseLeave={() => setHovered(false)}
         >
           <div
-            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${hovered || locked
+            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-300 ${hovered || locked
               ? "opacity-100 translate-y-0"
               : "opacity-0 -translate-y-2"
               }`}

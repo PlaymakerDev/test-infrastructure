@@ -42,7 +42,7 @@ export const useDashboardVmsUptime = (deptId: string | number | null | undefined
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('vms', deptId ?? '', scope),
-    queryFn: () => getDashboardVmsUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardVmsUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -51,7 +51,7 @@ export const useDashboardLightingUptime = (deptId: string | number | null | unde
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('lighting', deptId ?? '', scope),
-    queryFn: () => getDashboardLightingUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardLightingUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -60,7 +60,7 @@ export const useDashboardTrafficUptime = (deptId: string | number | null | undef
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('traffic', deptId ?? '', scope),
-    queryFn: () => getDashboardTrafficUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardTrafficUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -69,7 +69,7 @@ export const useDashboardWimUptime = (deptId: string | number | null | undefined
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('wim', deptId ?? '', scope),
-    queryFn: () => getDashboardWimUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardWimUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -78,7 +78,7 @@ export const useDashboardCrosswalkUptime = (deptId: string | number | null | und
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('crosswalk', deptId ?? '', scope),
-    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -87,7 +87,7 @@ export const useDashboardTunnelUptime = (deptId: string | number | null | undefi
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
     queryKey: dashboardKeys.uptime('tunnel', deptId ?? '', scope),
-    queryFn: () => getDashboardTunnelUptimeAPI(deptId!).then((r) => r.data),
+    queryFn: () => getDashboardTunnelUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -104,12 +104,14 @@ export const useDashboardPosition = (deptId: string | number | null | undefined)
 export const useDashboardAnalytic = (
   deptId: string | number | null | undefined,
   type: DashboardBucketType,
-) =>
-  useQuery({
-    queryKey: dashboardKeys.analytic(deptId ?? '', type),
-    queryFn: () => getDashboardAnalyticAPI(deptId!, type).then((r) => r.data),
+) => {
+  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  return useQuery({
+    queryKey: dashboardKeys.analytic(deptId ?? '', type, scope),
+    queryFn: () => getDashboardAnalyticAPI(deptId!, type, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
+}
 
 export const useDashboardTraffic = (
   deptId: string | number | null | undefined,
@@ -122,9 +124,11 @@ export const useDashboardTraffic = (
     enabled: !!deptId,
   })
 
-export const useDashboardCounting = (deptId: string | number | null | undefined) =>
-  useQuery({
-    queryKey: dashboardKeys.counting(deptId ?? ''),
-    queryFn: () => getDashboardCountingAPI(deptId!).then((r) => r.data),
+export const useDashboardCounting = (deptId: string | number | null | undefined) => {
+  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  return useQuery({
+    queryKey: dashboardKeys.counting(deptId ?? '', scope),
+    queryFn: () => getDashboardCountingAPI(deptId!, scope === 'all').then((r) => r.data),
     enabled: !!deptId,
   })
+}

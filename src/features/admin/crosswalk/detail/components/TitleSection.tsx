@@ -134,7 +134,14 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
 
             {anydeskId !== undefined && (
               <ConfigProvider
-                theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
+                theme={{
+                  // No AnyDesk id → gray "disabled" tokens (per design
+                  // 2026-07-13, same across the 6 menus); real `disabled`
+                  // prop is avoided so the tooltip keeps firing.
+                  token: anydeskId
+                    ? { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' }
+                    : { colorPrimary: '#3F3F3F', colorTextLightSolid: '#9CA3AF' },
+                }}
               >
                 <Button
                   type='primary'
@@ -142,10 +149,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
                   shape='round'
                   icon={<TbAppWindow />}
                   className='w-full! sm:w-auto!'
-                  style={{
-                    opacity: anydeskId ? 1 : 0.5,
-                    cursor: anydeskId ? 'pointer' : 'not-allowed',
-                  }}
+                  style={{ cursor: anydeskId ? 'pointer' : 'not-allowed' }}
                   title={anydeskId ? `เปิด AnyDesk : ${anydeskId}` : 'ไม่มีรหัส AnyDesk'}
                   onClick={() => {
                     if (!anydeskId) return

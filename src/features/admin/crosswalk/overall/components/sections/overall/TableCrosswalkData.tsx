@@ -70,6 +70,7 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
+        className: 'col-road-code',
         width: 130,
         onCell: (row) => {
           if (row.kind === 'bureau') {
@@ -104,6 +105,7 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'ชื่อโครงการ',
         key: 'projectName',
+        className: 'col-project-name',
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
