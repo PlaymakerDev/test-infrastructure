@@ -6,11 +6,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
 import BluePagination from './BluePagination'
-import {
-  isVehicleViolation,
-  parseViolationTimestamp,
-  useViolationRows,
-} from './useViolationRows'
+import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -18,8 +14,8 @@ interface Props {
 
 const PAGE_SIZE = 10
 
-const violationColor = (nameTh: string): string =>
-  isVehicleViolation(nameTh) ? '#FF7B00' : '#EF4444'
+// Single event-type color across the violation tab (table + grid) per design.
+const VIOLATION_COLOR = '#E94C4C'
 
 // AntD's 24-column system can't split evenly into 5, so use CSS grid instead.
 const GRID_CLASSES =
@@ -65,7 +61,7 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
     <div className='flex flex-col gap-3'>
       <div className={GRID_CLASSES}>
         {pageRows.map((r, i) => {
-          const color = violationColor(r.crosswalk.name_th)
+          const color = VIOLATION_COLOR
           const ip = ipByCameraId.get(r.camera.id) || r.camera.sta || '-'
           return (
             <div

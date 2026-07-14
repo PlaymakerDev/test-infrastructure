@@ -120,11 +120,18 @@ interface DashboardMapContentProps {
    *  `useDeptId()` refetches. URL is intentionally NOT touched — updating
    *  it via `router.replace` remounts the whole map and flickers. */
   onDeptIdChange: (id: string) => void
+  /** Fires when the province context becomes ACTIVE — the nearest-province
+   *  watcher resolves non-null after any drill-in (click a province, click a
+   *  marker, pan/zoom in past the threshold). The dashboard screen uses this
+   *  to end its landing "map-only" intro. May fire again on later province
+   *  switches — the consumer is expected to be one-shot. */
+  onProvinceActivate?: () => void
 }
 
 const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   originalDeptId,
   onDeptIdChange,
+  onProvinceActivate,
 }) => {
   const { map, isLoaded } = useMap()
   // Current CARD scope (comes back through DeptIdOverrideContext — the
@@ -376,6 +383,17 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [province, provinceDeptMap, map, isLoaded, originalDeptId, deptId])
 
+  // Announce "province context is active" to the parent (see the prop doc).
+  // Separate from the dept watcher above on purpose: this must fire even when
+  // the province maps to the SAME dept the cards already show (e.g. clicking
+  // กทม while landed on ส่วนกลาง dept 0) or to no dept at all (RBAC-omitted) —
+  // the intro should still reveal the cards in those cases.
+  const onProvinceActivateRef = useRef(onProvinceActivate)
+  useEffect(() => { onProvinceActivateRef.current = onProvinceActivate }, [onProvinceActivate])
+  useEffect(() => {
+    if (province) onProvinceActivateRef.current?.()
+  }, [province])
+
   return (
     <>
       <ThailandMaskLayer
@@ -415,15 +433,20 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
 interface ReactMapProps {
   originalDeptId: string
   onDeptIdChange: (id: string) => void
+  onProvinceActivate?: () => void
 }
 
-const ReactMap: React.FC<ReactMapProps> = ({ originalDeptId, onDeptIdChange }) => {
+const ReactMap: React.FC<ReactMapProps> = ({ originalDeptId, onDeptIdChange, onProvinceActivate }) => {
   return (
     <BaseMap
       initialCenter={COUNTRY_VIEW.center}
       initialZoom={COUNTRY_VIEW.zoom}
     >
-      <DashboardMapContent originalDeptId={originalDeptId} onDeptIdChange={onDeptIdChange} />
+      <DashboardMapContent
+        originalDeptId={originalDeptId}
+        onDeptIdChange={onDeptIdChange}
+        onProvinceActivate={onProvinceActivate}
+      />
     </BaseMap>
   )
 }

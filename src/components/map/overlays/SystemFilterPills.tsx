@@ -18,17 +18,21 @@ import {
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
 
+// Same icons as the navbar menu (configs/menu/admin.ts) so the pill row reads
+// as a filter for the menus above; key order mirrors the navbar menu order.
+// WIM/Tracking uses the shared IconTracking — the same custom glyph the navbar
+// itself renders (its menu config has no Tb icon name).
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
   CCTV: TbVideo,
-  VMS: TbDeviceDesktop,
-  WIM: IconTracking,
-  Lighting: TbBolt,
-  BridgeLighting: TbBuildingBridge,
-  Tunnel: TbBuildingBridge2,
   Counting: TbCar,
-  CrossWalk: TbWalk,
   Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
+  CrossWalk: TbWalk,
+  Lighting: TbBolt,
+  VMS: TbDeviceDesktop,
+  BridgeLighting: TbBuildingBridge,
+  Tunnel: TbBuildingBridge2,
+  WIM: IconTracking,
 }
 
 export interface SystemFilterPillsProps {

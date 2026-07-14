@@ -1,9 +1,15 @@
 "use client"
 import React from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
+import 'dayjs/locale/th'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import { Button, Col, ConfigProvider, DatePicker, Row } from 'antd'
-import { TbPrinter } from 'react-icons/tb'
+import thTH from 'antd/locale/th_TH'
+import { TbCalendar, TbPrinter } from 'react-icons/tb'
 import { thaiDateBE } from '@/utils/thaiDate'
+
+// `BBBB` (Buddhist-Era year) for the picker's `D MMM BBBB` display format.
+dayjs.extend(buddhistEra)
 
 interface Props {
   /** Reference date — the parent treats this as the end of a fixed 7-day
@@ -23,21 +29,24 @@ const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
       <Col xs={24} sm={24} md={12} lg={10} xl={8} xxl={6}>
         <fieldset>
           <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
-          <DatePicker
-            value={value}
-            onChange={(d) => {
-              // Ignore clears — parent always expects a valid date.
-              if (!d) return
-              onChange(d)
-            }}
-            allowClear={false}
-            // Forbid future dates — backend has no data past "now".
-            disabledDate={(d) => d.isAfter(dayjs(), 'day')}
-            placeholder='เลือกวันที่'
-            format='DD/MM/YYYY'
-            size='large'
-            className='w-full!'
-          />
+          <ConfigProvider locale={thTH}>
+            <DatePicker
+              value={value}
+              onChange={(d) => {
+                // Ignore clears — parent always expects a valid date.
+                if (!d) return
+                onChange(d)
+              }}
+              allowClear={false}
+              // Forbid future dates — backend has no data past "now".
+              disabledDate={(d) => d.isAfter(dayjs(), 'day')}
+              placeholder='เลือกวันที่'
+              format='D MMM BBBB'
+              size='large'
+              className='w-full!'
+              suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
+            />
+          </ConfigProvider>
           <p className='fs-11 text-gray-400 mt-1 mb-0'>
             ช่วงข้อมูล : {rangeText}
           </p>

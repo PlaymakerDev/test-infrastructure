@@ -1,8 +1,15 @@
 "use client"
 import React from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
-import { DatePicker, Segmented, Select } from 'antd'
+import 'dayjs/locale/th'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { ConfigProvider, DatePicker, Segmented, Select } from 'antd'
+import thTH from 'antd/locale/th_TH'
+import { TbCalendar } from 'react-icons/tb'
 import { EVENT_TYPES, getEventTypeColor } from '@/features/admin/incident-detection/components/eventTypes'
+
+// `BBBB` (Buddhist-Era year) for the picker's `D MMM BBBB` display format.
+dayjs.extend(buddhistEra)
 
 const { RangePicker } = DatePicker
 
@@ -81,21 +88,25 @@ const FormSearchEvent: React.FC<Props> = ({ value, onChange }) => {
       {/* วันที่แสดงข้อมูล — editing it switches the active period to CUSTOM. */}
       <fieldset className='min-w-0'>
         <label className='block fs-12 text-(--yellow) mb-1'>วันที่แสดงข้อมูล</label>
-        <RangePicker
-          value={value.date}
-          onChange={(d) =>
-            onChange({
-              ...value,
-              date: d && d[0] && d[1] ? [d[0], d[1]] : null,
-              period: d && d[0] && d[1] ? 'CUSTOM' : 'ALL',
-            })
-          }
-          placeholder={['เริ่มต้น', 'สิ้นสุด']}
-          format='DD/MM/YYYY'
-          disabledDate={(d) => d.isAfter(dayjs(), 'day')}
-          size='large'
-          className='w-full! lg:w-72!'
-        />
+        <ConfigProvider locale={thTH}>
+          <RangePicker
+            value={value.date}
+            onChange={(d) =>
+              onChange({
+                ...value,
+                date: d && d[0] && d[1] ? [d[0], d[1]] : null,
+                period: d && d[0] && d[1] ? 'CUSTOM' : 'ALL',
+              })
+            }
+            placeholder={['เริ่มต้น', 'สิ้นสุด']}
+            format='D MMM BBBB'
+            disabledDate={(d) => d.isAfter(dayjs(), 'day')}
+            size='large'
+            className='w-full! lg:w-72!'
+            separator={<span className='text-white'>-</span>}
+            suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
+          />
+        </ConfigProvider>
       </fieldset>
 
       {/* ช่วงเวลา — quick presets that set the date range. */}

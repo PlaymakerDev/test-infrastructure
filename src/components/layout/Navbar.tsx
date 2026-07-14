@@ -2,7 +2,7 @@
 import menu from "@/configs/menu"
 import type { AdminMenuItem } from "@/configs/menu/admin"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TbMenu2,
   TbZoomInArea,
@@ -148,8 +148,18 @@ export default function Navbar() {
   // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
   // the query dep the user lands on the new department with every card still
   // hidden and only the small yellow icon hinting why.
+  // Skips the very first run: on initial mount the store already starts with
+  // focus OFF, so resetting is a no-op — and because this Navbar mounts inside
+  // a Suspense boundary it could otherwise land AFTER a page's own mount
+  // effect and clobber an intentional landing state (dashboard's map-only
+  // intro turns focus ON on mount and relies on winning the landing frame).
   const searchKey = searchParams.toString()
+  const focusResetFirstRunRef = useRef(true)
   useEffect(() => {
+    if (focusResetFirstRunRef.current) {
+      focusResetFirstRunRef.current = false
+      return
+    }
     setMapFocus(false)
   }, [pathname, searchKey, setMapFocus])
 
@@ -380,7 +390,7 @@ export default function Navbar() {
           onMouseLeave={() => setHovered(false)}
         >
           <div
-            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${hovered || locked
+            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-300 ${hovered || locked
               ? "opacity-100 translate-y-0"
               : "opacity-0 -translate-y-2"
               }`}
