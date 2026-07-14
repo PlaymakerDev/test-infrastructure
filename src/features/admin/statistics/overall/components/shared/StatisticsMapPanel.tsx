@@ -9,6 +9,12 @@ import { SearchCard } from '@/components/search-card'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { ROUTE_ITEMS } from '../../../data/routeItems'
 
+// basePath ('/atlas' in prod, '' in dev) — raw <img src> is NOT prefixed
+// automatically like next/link, so prepend it manually (same as the sidebar
+// logo). Production previously hot-patched this file with a hardcoded
+// '/atlas/images/…'; this replaces that patch in an env-safe way.
+const BASE_PATH = process.env.__NEXT_ROUTER_BASEPATH ?? ''
+
 export interface StatCard {
   borderColor: string
   icon: string
@@ -182,7 +188,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                           >
                             <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
+                              <img src={`${BASE_PATH}/images/statistics/iconconnect.png`} alt="connected" width={20} height={20} />
                             </div>
                           </div>
                         ))}
