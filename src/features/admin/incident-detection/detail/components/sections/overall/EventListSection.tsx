@@ -70,13 +70,13 @@ const EventCard: React.FC<{ ev: IncidentTransactionItem; onOpenDetail: () => voi
           <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: getEventTypeColor(typeId) }} />
           <span className='font-semibold text-white truncate'>{typeLabel}</span>
         </div>
-        <p className='fs-11 text-gray-400 mt-0.5'>{fmtThaiDateTime(ev.date_time)}</p>
+        <p className='fs-12 text-gray-400 mt-0.5'>{fmtThaiDateTime(ev.date_time)}</p>
         <div className='my-1.5 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
-        <p className='fs-11 leading-snug line-clamp-2 mb-0.5'>
+        <p className='fs-12 leading-snug line-clamp-2 mb-0.5'>
           <span className='text-gray-400'>ชื่อกล้อง : </span>
           <span className='text-blue-400'>{ev.camera.camera_name}</span>
         </p>
-        <p className='fs-11 text-gray-400 mb-0'>IP Address : {ev.camera.ip_address}</p>
+        <p className='fs-12 text-gray-400 mb-0'>IP Address : {ev.camera.ip_address}</p>
       </div>
     </div>
   )
@@ -145,7 +145,7 @@ const EventListSection: React.FC<Props> = ({ onShowAll }) => {
             className='flex items-center justify-center py-10 rounded-2xl'
             style={{ background: CARD_BG, border: '2px solid transparent' }}
           >
-            <span className='fs-13 text-gray-300'>ยังไม่มีเหตุการณ์วันนี้</span>
+            <span className='fs-12 text-gray-300'>ยังไม่มีเหตุการณ์วันนี้</span>
           </div>
         ) : (
           events.map((ev) => (

@@ -157,7 +157,7 @@ const LineChart: React.FC<LineChartProps> = ({
   title,
   titleSize = 16,
   subtitle,
-  subtitleSize = 12,
+  subtitleSize = "var(--fs-12)",
   icon,
   data,
   lines,

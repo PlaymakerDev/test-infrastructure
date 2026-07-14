@@ -494,7 +494,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
         <div className='w-full lg:flex-[0_0_calc(30%-8px)] flex flex-col gap-4'>
           {/* Project info */}
           <div
-            className='rounded-[20px] p-4 md:p-6'
+            className='rounded-2xl p-4 md:p-6'
             style={{ background: '#191919' }}
           >
             <div className='flex items-center gap-2'>
@@ -540,7 +540,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
           {/* Device info */}
           <div
-            className='rounded-[20px] p-4 md:p-6'
+            className='rounded-2xl p-4 md:p-6'
             style={{ background: '#191919' }}
           >
             <div className='flex items-center gap-2'>

@@ -21,12 +21,12 @@ export const dashboardKeys = {
   position: (deptId: string | number, scope: DashboardScope) =>
     [...dashboardKeys.all, 'position', deptId, scope] as const,
 
-  analytic: (deptId: string | number, type: DashboardBucketType) =>
-    [...dashboardKeys.all, 'analytic', deptId, type] as const,
+  analytic: (deptId: string | number, type: DashboardBucketType, scope: DashboardScope) =>
+    [...dashboardKeys.all, 'analytic', deptId, type, scope] as const,
 
   traffic: (deptId: string | number, type: DashboardBucketType, limit: number) =>
     [...dashboardKeys.all, 'traffic', deptId, type, limit] as const,
 
-  counting: (deptId: string | number) =>
-    [...dashboardKeys.all, 'counting', deptId] as const,
+  counting: (deptId: string | number, scope: DashboardScope) =>
+    [...dashboardKeys.all, 'counting', deptId, scope] as const,
 } as const

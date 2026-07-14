@@ -10,7 +10,7 @@ const FormSearchWIM: React.FC<Props> = ({ onSearch }) => (
   <Input
     placeholder="ค้นหาสถานี WIM (Weight-In-Motion)..."
     className='rounded-lg'
-    suffix={<TbSearch />}
+    suffix={<TbSearch className='text-(--yellow)' />}
     // size='large'
     allowClear
     onChange={(e) => onSearch?.(e.target.value)}

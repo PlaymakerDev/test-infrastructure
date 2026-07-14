@@ -104,12 +104,12 @@ const PhaseTimingTrafficSignal: React.FC = () => {
       >
         <div className='relative flex items-center gap-2 mb-2'>
           <TbAffiliate size={22} color='#66AEFF' />
-          <h4 className='mb-0' style={{ color: '#66AEFF', fontSize: 16, fontWeight: 600 }}>
+          <h4 className='mb-0 text-(--default-blue) fs-14 font-normal!'>
             Phase Timing
           </h4>
         </div>
         <div className='relative flex-1 flex items-center justify-center'>
-          <p className='text-white/40 text-sm mb-0'>ไม่มีข้อมูล Phase Timing</p>
+          <p className='text-white/40 fs-12 mb-0'>ไม่มีข้อมูล Phase Timing</p>
         </div>
       </div>
     )

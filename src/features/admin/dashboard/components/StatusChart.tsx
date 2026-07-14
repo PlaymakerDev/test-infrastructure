@@ -43,7 +43,7 @@ const StatusChart: React.FC<Props> = () => {
     const { icon, value, label } = card
     return (
       <div
-        className='flex-1 flex flex-col items-center gap-3 py-5 px-3'
+        className='flex-1 flex flex-col items-center gap-3 py-5 px-4'
         style={{
           background: '#191919CC',
           borderRadius: 20,
@@ -67,7 +67,7 @@ const StatusChart: React.FC<Props> = () => {
   }, [])
 
   return (
-    <div className='flex gap-2'>
+    <div className='flex gap-3'>
       {stats.map((stat) => (
         <React.Fragment key={stat.label}>{renderStatCard(stat)}</React.Fragment>
       ))}

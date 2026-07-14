@@ -50,7 +50,7 @@ export const EventCountTag: React.FC<{ count: number }> = ({ count }) => {
   const color = count > 0 ? '#2EE59D' : '#979797'
   return (
     <span
-      className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {count} เหตุการณ์
@@ -103,7 +103,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </p>
 
     <div className='flex items-center justify-between gap-2 min-w-0'>
-      <span className='text-xs min-w-0 truncate' style={{ color: '#888' }}>
+      <span className='fs-12 min-w-0 truncate' style={{ color: '#888' }}>
         IP : {camera.ip}
       </span>
       <div className='shrink-0'>

@@ -293,8 +293,12 @@ const TableMobileData: React.FC<Props> = (props) => {
     <Table<MobileMasterData>
       columns={columns}
       dataSource={data}
+      className='bridge-projects-table'
       pagination={{
         locale: { items_per_page: "/ หน้า" },
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
       }}
       size="middle"
       rowKey="station_id"

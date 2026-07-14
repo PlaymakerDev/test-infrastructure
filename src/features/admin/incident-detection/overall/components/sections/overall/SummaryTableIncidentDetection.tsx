@@ -92,6 +92,7 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
+      className: 'col-road-code',
       width: 160,
       onCell: (row) =>
         row.kind === 'bureau'
@@ -121,6 +122,7 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
+      className: 'col-project-name',
       ellipsis: true,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>

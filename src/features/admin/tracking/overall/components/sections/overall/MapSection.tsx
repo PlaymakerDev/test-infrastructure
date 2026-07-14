@@ -30,17 +30,17 @@ const StationPopup: React.FC<{ data: PositionStation }> = ({ data }) => {
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)  ${data.isEnable ? `border-green-400` : 'border-red-400'}`}>
       <section>
-        <p className='fs-11'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
-        <p className='fs-11'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
+        <p className='fs-12'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
+        <p className='fs-12'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
       </section>
       <hr className='my-3' />
       <section className='mt-1.5'>
-        <p className='fs-11'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
-        <p className='fs-11'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
+        <p className='fs-12'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
+        <p className='fs-12'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
       </section>
       <hr className='my-3' />
       <section className='mt-1.5'>
-        <p className='fs-11'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+        <p className='fs-12'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -51,7 +51,7 @@ const StationPopup: React.FC<{ data: PositionStation }> = ({ data }) => {
             shape='round'
             block
           >
-            <p className='fs-11'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -63,17 +63,17 @@ const WIMPopup: React.FC<{ data: PositionWim }> = ({ data }) => {
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${data.isEnable ? `border-(--yellow)` : 'border-red-400'}`}>
       <section>
-        <p className='fs-11'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
-        <p className='fs-11'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
+        <p className='fs-12'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
+        <p className='fs-12'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
       </section>
       <hr className='my-3' />
       <section className='mt-1.5'>
-        <p className='fs-11'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
-        <p className='fs-11'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
+        <p className='fs-12'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
+        <p className='fs-12'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
       </section>
       <hr className='my-3' />
       <section className='mt-1.5'>
-        <p className='fs-11'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+        <p className='fs-12'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -84,7 +84,7 @@ const WIMPopup: React.FC<{ data: PositionWim }> = ({ data }) => {
             shape='round'
             block
           >
-            <p className='fs-11'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -103,8 +103,8 @@ const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-pink-400`}>
       <section>
-        <p className='fs-11'>ชื่อสถานี: <strong>{data.WayID || '-'}</strong></p>
-        <p className='fs-11'>ผู้จัดตั้งด่าน: <strong>{renderName(data.first_name, data.last_name) || '-'}</strong></p>
+        <p className='fs-12'>ชื่อสถานี: <strong>{data.WayID || '-'}</strong></p>
+        <p className='fs-12'>ผู้จัดตั้งด่าน: <strong>{renderName(data.first_name, data.last_name) || '-'}</strong></p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -115,7 +115,7 @@ const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
             shape='round'
             block
           >
-            <p className='fs-11'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>

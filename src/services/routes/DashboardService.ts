@@ -21,54 +21,63 @@ import type {
 
 // ── Uptime % per system ──────────────────────────────────────────────────────
 
+// `scope=all` per the URL's intent, on every uptime endpoint (BE confirmed
+// support across all 7 features, 2026-07-13). The dashboard hook passes the
+// flag EXPLICITLY (from the reactive useScopeAll) so key and request always
+// agree; when omitted, falls back to reading the current URL.
+const scopeParams = (deptId: string | number, scopeAll?: boolean) =>
+  scopeAll === undefined ? centralScope(deptId) : scopeAll ? ({ scope: 'all' } as const) : undefined
+
 export const getDashboardCctvUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardCctvUptime>({
     url: `/cctv/departments/${deptId}/cameras/uptime-statistics`,
     method: 'GET',
-    // `scope=all` per the URL's intent. The dashboard hook passes the flag
-    // EXPLICITLY (from the reactive useScopeAll) so key and request always
-    // agree; when omitted, falls back to reading the current URL. Other
-    // uptime endpoints below don't support the param yet.
-    params: scopeAll === undefined ? centralScope(deptId) : scopeAll ? { scope: 'all' } : undefined,
+    params: scopeParams(deptId, scopeAll),
   })
 
-export const getDashboardVmsUptimeAPI = (deptId: string | number) =>
+export const getDashboardVmsUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardVmsUptime>({
     url: `/vms/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
-export const getDashboardLightingUptimeAPI = (deptId: string | number) =>
+export const getDashboardLightingUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardLightingUptime>({
     url: `/lighting/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
 // Traffic / WIM / Crosswalk / Tunnel — same `/overview/uptime-statistics`
 // pattern as vms + lighting (verified live 2026-07-05, response shape identical
 // with the key named after the feature).
-export const getDashboardTrafficUptimeAPI = (deptId: string | number) =>
+export const getDashboardTrafficUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardTrafficUptime>({
     url: `/traffic/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
-export const getDashboardWimUptimeAPI = (deptId: string | number) =>
+export const getDashboardWimUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardWimUptime>({
     url: `/wim/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
-export const getDashboardCrosswalkUptimeAPI = (deptId: string | number) =>
+export const getDashboardCrosswalkUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardCrosswalkUptime>({
     url: `/crosswalk/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
-export const getDashboardTunnelUptimeAPI = (deptId: string | number) =>
+export const getDashboardTunnelUptimeAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardTunnelUptime>({
     url: `/tunnel/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })
 
 // ── Map markers (all systems) ────────────────────────────────────────────────
@@ -77,8 +86,7 @@ export const getDashboardPositionAPI = (deptId: string | number, scopeAll?: bool
   ApiService.fetchData<APIResponseDashboardPosition>({
     url: `/manage/solution/${deptId}/position`,
     method: 'GET',
-    // Explicit flag from the hook (reactive useScopeAll); omitted → URL read.
-    params: scopeAll === undefined ? centralScope(deptId) : scopeAll ? { scope: 'all' } : undefined,
+    params: scopeParams(deptId, scopeAll),
   })
 
 // ── Bucketed event counts (incident/analytic — drives AccidentChart) ─────────
@@ -86,11 +94,12 @@ export const getDashboardPositionAPI = (deptId: string | number, scopeAll?: bool
 export const getDashboardAnalyticAPI = (
   deptId: string | number,
   type: DashboardBucketType = 'yearly',
+  scopeAll?: boolean,
 ) =>
   ApiService.fetchData<APIResponseDashboardAnalytic>({
     url: `/analytic/details/${deptId}/dashboard`,
     method: 'GET',
-    params: { type },
+    params: { type, ...scopeParams(deptId, scopeAll) },
   })
 
 // ── Top solutions by traffic volume (informational, not wired yet) ───────────
@@ -108,8 +117,9 @@ export const getDashboardTrafficAPI = (
 
 // ── Counting — vehicle counts (rose chart) + hourly buckets (peak hour) ──────
 
-export const getDashboardCountingAPI = (deptId: string | number) =>
+export const getDashboardCountingAPI = (deptId: string | number, scopeAll?: boolean) =>
   ApiService.fetchData<APIResponseDashboardCounting>({
     url: `/counting/${deptId}/dashboard`,
     method: 'GET',
+    params: scopeParams(deptId, scopeAll),
   })

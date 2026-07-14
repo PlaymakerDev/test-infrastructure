@@ -26,14 +26,12 @@ const DetailSignalPopup: React.FC<{ project: TrafficSignalProject }> = ({
   const isOnline = project.connection === 'online'
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isOnline ? 'border-cyan-400' : 'border-red-500'
-      }`}
+      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${isOnline ? 'border-cyan-400' : 'border-red-500'
+        }`}
     >
       <p
-        className={`fs-11 font-bold tracking-wide ${
-          isOnline ? 'text-cyan-400' : 'text-red-400'
-        }`}
+        className={`fs-12 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'
+          }`}
       >
         Traffic Signal · {project.roadCode}
       </p>
@@ -41,13 +39,12 @@ const DetailSignalPopup: React.FC<{ project: TrafficSignalProject }> = ({
         {project.installPoint}
       </p>
       <p
-        className={`fs-11 font-semibold mt-1.5 ${
-          isOnline ? 'text-emerald-400' : 'text-red-400'
-        }`}
+        className={`fs-12 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'
+          }`}
       >
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
-      <p className='fs-11 text-slate-500 mt-0.5'>
+      <p className='fs-12 text-slate-500 mt-0.5'>
         PCU: {Number(project.dailyPCU ?? 0).toLocaleString()} · Phase: {project.phase}
       </p>
     </div>

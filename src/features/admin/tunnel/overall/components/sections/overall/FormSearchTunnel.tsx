@@ -52,7 +52,7 @@ const FormSearchTunnel: React.FC<Props> = ({
               name={field.name}
               placeholder={placeholder}
               className='rounded-lg'
-              suffix={<TbSearch />}
+              suffix={<TbSearch className='text-(--yellow)' />}
               size='large'
               onChange={(e) => {
                 field.onChange(e)

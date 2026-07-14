@@ -56,7 +56,7 @@ const TunnelPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => {
       style={{ borderColor: '#B57BFF' }}
     >
       <p
-        className='fs-11 font-bold tracking-wide'
+        className='fs-12 font-bold tracking-wide'
         style={{ color: '#B57BFF' }}
       >
         Tunnel · {String(p.code_name)}
@@ -64,10 +64,10 @@ const TunnelPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => {
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-11 text-white mt-1.5'>
+      <p className='fs-12 text-white mt-1.5'>
         กล้องทั้งหมด: {Number(p.camera_count ?? 0).toLocaleString()} กล้อง
       </p>
-      <p className='fs-11 text-white'>
+      <p className='fs-12 text-white'>
         ไฟส่องสว่าง: {Number(p.lighting_count ?? 0).toLocaleString()} ดวง
       </p>
     </div>

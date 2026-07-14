@@ -66,7 +66,7 @@ const CrosswalkDetailScreen: React.FC<Props> = ({ id }) => {
     <DetailProvider id={id} location={location}>
       <div className='main-screen'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>{renderContent}</section>
+        <section className='mt-8 px-10 pb-8'>{renderContent}</section>
         {/* Global Project Info modal — fires when the ⓘ icon in the title
           * bar is clicked. project_id/road_id self-derive from the central list
           * (URL param = fallback), so the modal works with a dept_id-only URL. */}

@@ -70,41 +70,45 @@ const ChartElectricalBridgeLighting: React.FC<Props> = () => {
   const tooltipDate = useMemo(() => formatThaiDate(new Date()), [])
 
   return (
-    <div className='flex flex-col gap-3 flex-1 min-h-0'>
-      <LineChart
-        title='แรงดันไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Volt)'
-        icon={<TbBolt size={18} />}
-        data={voltageData}
-        lines={VOLTAGE_LINES}
-        height={180}
-        yAxisDomain={[0, 260]}
-        titleSize={16}
-        accentColor='#FCD116'
-        cardBackground='#000000CC'
-        cardBorderColor='rgba(255,255,255,0.12)'
-        showGlow={false}
-        iconCircle={false}
-        tooltipDate={tooltipDate}
-        tooltipUnit='V'
-        tooltipShowDot
-      />
-      <LineChart
-        title='กระแสไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Amp)'
-        icon={<TbBolt size={18} />}
-        data={currentData}
-        lines={CURRENT_LINES}
-        height={180}
-        yAxisDomain={[0, 100]}
-        titleSize={16}
-        accentColor='#66AEFF'
-        cardBackground='#000000CC'
-        cardBorderColor='rgba(255,255,255,0.12)'
-        showGlow={false}
-        iconCircle={false}
-        tooltipDate={tooltipDate}
-        tooltipUnit='A'
-        tooltipShowDot
-      />
+    <div className='flex flex-col gap-3 lg:h-full'>
+      <div className='h-55 lg:h-auto lg:flex-1 lg:min-h-0'>
+        <LineChart
+          title='แรงดันไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Volt)'
+          icon={<TbBolt size={18} />}
+          data={voltageData}
+          lines={VOLTAGE_LINES}
+          fillHeight
+          yAxisDomain={[0, 260]}
+          titleSize={16}
+          accentColor='#FCD116'
+          cardBackground='#000000CC'
+          cardBorderColor='rgba(255,255,255,0.12)'
+          showGlow={false}
+          iconCircle={false}
+          tooltipDate={tooltipDate}
+          tooltipUnit='V'
+          tooltipShowDot
+        />
+      </div>
+      <div className='h-55 lg:h-auto lg:flex-1 lg:min-h-0'>
+        <LineChart
+          title='กระแสไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Amp)'
+          icon={<TbBolt size={18} />}
+          data={currentData}
+          lines={CURRENT_LINES}
+          fillHeight
+          yAxisDomain={[0, 100]}
+          titleSize={16}
+          accentColor='#66AEFF'
+          cardBackground='#000000CC'
+          cardBorderColor='rgba(255,255,255,0.12)'
+          showGlow={false}
+          iconCircle={false}
+          tooltipDate={tooltipDate}
+          tooltipUnit='A'
+          tooltipShowDot
+        />
+      </div>
     </div>
   )
 }

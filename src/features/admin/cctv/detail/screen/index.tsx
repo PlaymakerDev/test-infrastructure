@@ -188,7 +188,7 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
   return (
     <div className='main-screen'>
       <TitleSection detail={detail} />
-      <section className='mt-5 px-10'>
+      <section className='mt-5 px-10 pb-8'>
         <OverallSection detail={detail} groups={groups} />
       </section>
       {/* Global Project Info modal — fires when the ⓘ icon in the title bar or

@@ -30,7 +30,7 @@ const ElectricalSystemCard: React.FC = () => {
 
   return (
     <div
-      className='relative w-full h-[350px] rounded-[20px] p-4 flex flex-col border-2 border-white/70 overflow-hidden'
+      className='relative w-full h-[350px] rounded-2xl p-4 flex flex-col border-2 border-white/70 overflow-hidden'
       style={{ background: '#191919CC' }}
     >
       <div

@@ -3,17 +3,18 @@ import { useEffect, useMemo, useRef, useState, createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { IconType } from 'react-icons'
 import {
-  TbCamera,
+  TbVideo,
   TbDeviceDesktop,
-  TbWeight,
   TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
+  TbCarCrash,
   TbWalk,
-  TbChartBar,
   TbTrafficLights,
 } from 'react-icons/tb'
+import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
   SYSTEM_BRIGHT,
@@ -27,15 +28,16 @@ import MarkerLayer from '../primitives/MarkerLayer'
 import PopupDetailLink from '../primitives/PopupDetailLink'
 
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
-  CCTV: TbCamera,
+  CCTV: TbVideo,
   VMS: TbDeviceDesktop,
-  WIM: TbWeight,
+  WIM: IconTracking,
+  LPR: IconLPR,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
   Counting: TbCar,
   CrossWalk: TbWalk,
-  Analytic: TbChartBar,
+  Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
 }
 

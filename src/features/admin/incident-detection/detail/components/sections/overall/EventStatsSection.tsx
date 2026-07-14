@@ -55,15 +55,15 @@ const EventStatsSection: React.FC = () => {
         style={{ background: CARD_BG, border: '2px solid #ffffff' }}
       >
         <div className='flex items-center gap-1.5 mb-1'>
-          <TbCarCrash size={24} className='shrink-0' style={{ color: '#ffffff' }} />
-          <h4 className='mb-0 fs-14 font-semibold leading-tight' style={{ color: '#ffffff' }}>
+          <TbCarCrash size={24} className='shrink-0 text-white' />
+          <h4 className='mb-0 fs-14 font-semibold leading-tight text-white'>
             เหตุการณ์เกิดขึ้นมากที่สุด
           </h4>
         </div>
-        <p className='font-semibold text-white leading-tight mb-0.5' style={{ fontSize: 22 }}>
+        <p className='font-semibold text-white leading-tight mb-0.5 fs-14'>
           {topType?.label ?? '—'}
         </p>
-        <p className='fs-11 text-gray-400 mb-0'>
+        <p className='fs-12 text-gray-400 mb-0'>
           {topType ? `${topType.count.toLocaleString()} เหตุการณ์` : 'ยังไม่มีข้อมูล'}
         </p>
       </div>
@@ -79,10 +79,10 @@ const EventStatsSection: React.FC = () => {
             ช่วงเวลาที่มีเหตุการณ์มากที่สุด
           </h4>
         </div>
-        <p className='font-semibold text-white leading-tight mb-0.5' style={{ fontSize: 22 }}>
+        <p className='font-semibold text-white leading-tight mb-0.5 fs-22'>
           {peakHour?.range ?? '—'}
         </p>
-        <p className='fs-11 text-gray-400 mb-0'>
+        <p className='fs-12 text-gray-400 mb-0'>
           {peakHour ? `(${peakHour.pct}%)` : 'ยังไม่มีข้อมูล'}
         </p>
       </div>

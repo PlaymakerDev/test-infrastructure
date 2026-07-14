@@ -30,7 +30,7 @@ const OverallSection: React.FC = () => {
   return (
     <>
       <section className='mt-4 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-4 md:min-h-[760px]'>
-        <div className='shrink-0 w-full md:w-[240px] lg:w-[360px] xl:w-[500px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-[760px] rounded-[20px] bg-[#2B2B2B] p-3 sm:p-4 flex flex-col'>
+        <div className='shrink-0 w-full md:w-[240px] lg:w-[360px] xl:w-[500px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-[760px] rounded-2xl bg-[#2B2B2B] p-3 sm:p-4 flex flex-col'>
           <div className='flex flex-col gap-3 shrink-0'>
             {leftPanelItems.map((item) => (
               <div key={item.id} className='flex flex-row items-center gap-2'>
@@ -64,7 +64,7 @@ const OverallSection: React.FC = () => {
           )}
           <div className='mt-auto flex flex-col gap-3 shrink-0 w-full min-w-0'>
             <div
-              className='shrink-0 rounded-[20px] w-full min-w-0 p-3 sm:p-4 flex flex-col xl:min-h-[270px]'
+              className='shrink-0 rounded-2xl w-full min-w-0 p-3 sm:p-4 flex flex-col xl:min-h-[270px]'
               style={{ background: '#191919CC' }}
             >
               <div className='flex flex-row items-start gap-2 shrink-0'>
@@ -92,7 +92,7 @@ const OverallSection: React.FC = () => {
               {leftBottomCards.map((card) => (
                 <div
                   key={card.border}
-                  className='w-full xl:w-[230px] xl:h-[110px] xl:shrink-0 min-h-[96px] sm:min-h-[110px] rounded-[20px] px-3 pb-3 pt-4 sm:pt-5 flex flex-col'
+                  className='w-full xl:w-[230px] xl:h-[110px] xl:shrink-0 min-h-[96px] sm:min-h-[110px] rounded-2xl px-3 pb-3 pt-4 sm:pt-5 flex flex-col'
                   style={{ background: '#66AEFF1A', border: `2px solid ${card.border}` }}
                 >
                   <div className='pl-2 sm:pl-3 flex flex-col min-w-0'>
@@ -108,7 +108,7 @@ const OverallSection: React.FC = () => {
           </div>
         </div>
 
-        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:flex-1 md:min-h-[400px] md:h-[760px] rounded-[20px] overflow-hidden'>
+        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:flex-1 md:min-h-[400px] md:h-[760px] rounded-2xl overflow-hidden'>
           <BaseMap style={{ height: '100%', width: '100%' }}>
             {markers.map((m) => (
               <HTMLMarker key={m.id} lngLat={[m.lng, m.lat]} anchor='center'>
@@ -124,7 +124,7 @@ const OverallSection: React.FC = () => {
           {statCards.map((s) => (
             <div
               key={s.title}
-              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-[20px] p-3 sm:p-4'
+              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-2xl p-3 sm:p-4'
               style={{ background: s.bg, border: s.border }}
             >
               <div className='flex flex-col gap-2'>

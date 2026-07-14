@@ -7,7 +7,7 @@ const ScreenOverallTrafficSignal = () => {
   return (
     <div className='main-screen px-10'>
       <TitleSection />
-      <section className='mt-8'>
+      <section className='mt-8 pb-8'>
         <OverallSection />
       </section>
       {/* Single global Project Info modal — triggered via Redux from any

@@ -6,7 +6,7 @@ import React from 'react'
 const RemoteControlCard: React.FC = () => {
   return (
     <div
-      className='w-full max-w-[429px] h-[310px] rounded-[20px] p-5 flex flex-col'
+      className='w-full max-w-[429px] h-[310px] rounded-2xl p-5 flex flex-col'
       style={{ background: '#191919CC' }}
     >
       <div

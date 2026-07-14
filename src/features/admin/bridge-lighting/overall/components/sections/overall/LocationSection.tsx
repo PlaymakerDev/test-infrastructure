@@ -1,34 +1,39 @@
 "use client"
 import React from 'react'
-import { MadrixControlPanel, MapBridgeLighting } from '../../../components'
+import { MapBridgeLighting, StatusBridgeLighting } from '../../../components'
 import InfoCardSection from './InfoCardSection'
-import LatestDisplay from './LatestDisplay'
+import MapFocusGrid from '@/components/section/MapFocusGrid'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props { }
 
 const LocationSection: React.FC<Props> = () => {
   return (
-    <div className='flex flex-col gap-4 lg:block lg:relative'>
-      {/* Map: full-width background, defines container height on desktop */}
-      <div className='relative rounded-lg overflow-hidden h-[50dvh] lg:h-[75dvh]'>
+    <MapFocusGrid
+      desktopCols='360px minmax(0, 1fr) 280px'
+      focusedCols='0px minmax(0, 1fr) 0px'
+    >
+      {/* Left rail — latest bridge status (Figma-perfect sparkle card) */}
+      <MapOverlayPanel
+        position='left'
+        className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+      >
+        <StatusBridgeLighting />
+      </MapOverlayPanel>
+
+      {/* Map — row 1 on mobile (top), col 2 on desktop */}
+      <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
         <MapBridgeLighting edgeFade={{ all: 10 }} />
       </div>
 
-      {/* LatestDisplay: top-left, compact */}
-      <div className='lg:px-0 lg:absolute lg:top-4 lg:left-0 lg:z-10 lg:w-[clamp(18rem,23vw,28rem)]'>
-        <LatestDisplay />
-      </div>
-
-      {/* MadrixControlPanel: spans from below LatestDisplay to bottom-4 */}
-      <div className='flex flex-col lg:px-0 lg:absolute lg:top-52 lg:bottom-4 lg:left-0 lg:z-10 lg:w-[clamp(28rem,38vw,44rem)]'>
-        <MadrixControlPanel />
-      </div>
-
-      {/* InfoCardSection: top-right, 3 stat cards stacked */}
-      <div className='lg:px-0 lg:absolute lg:top-4 lg:right-0 lg:z-10 lg:w-[clamp(16rem,18vw,22rem)]'>
+      {/* Right rail — 3 stat cards */}
+      <MapOverlayPanel
+        position='right'
+        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+      >
         <InfoCardSection />
-      </div>
-    </div>
+      </MapOverlayPanel>
+    </MapFocusGrid>
   )
 }
 

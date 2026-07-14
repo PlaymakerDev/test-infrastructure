@@ -19,7 +19,7 @@ const FormSearchIncidentDetection: React.FC<Props> = ({ onSearchChange }) => {
     <form onSubmit={handleSubmit((v) => onSearchChange?.(v.search))}>
       <Controller control={control} name='search' render={({ field }) => (
         <fieldset>
-          <Input {...field} placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...' className='rounded-lg' suffix={<TbSearch />} size='large'
+          <Input {...field} placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...' className='rounded-lg' suffix={<TbSearch className='text-(--yellow)' />} size='large'
             onChange={(e) => { field.onChange(e); if (timeout) clearTimeout(timeout); timeout = setTimeout(() => submitRef.current?.click(), 700) }}
           />
         </fieldset>

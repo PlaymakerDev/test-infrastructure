@@ -43,6 +43,7 @@ const TableWeightLog: React.FC<Props> = (props) => {
       columns={columns}
       dataSource={data}
       loading={isLoading}
+      className='bridge-projects-table'
       pagination={{
         current: page,
         pageSize,
@@ -51,6 +52,10 @@ const TableWeightLog: React.FC<Props> = (props) => {
           setPage(nextPage)
           setPageSize(nextPageSize)
         },
+        locale: { items_per_page: '/ หน้า' },
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
       }}
       size="middle"
       rowKey="key"

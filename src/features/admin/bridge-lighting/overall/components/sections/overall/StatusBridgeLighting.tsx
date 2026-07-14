@@ -37,27 +37,27 @@ const SparkleIcon: React.FC<{ size?: number; className?: string }> = ({
 )
 
 const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
-  // Derive display values from the bridge if provided, else fall back to a
-  // sensible placeholder. The bridge name is the install point with the
-  // leading "ไฟประดับ : " prefix stripped, matching the Figma layout.
+  // h2 shows the short bridge name (roadCode); the subtitle shows the full
+  // install point with the "ไฟประดับ :" prefix, mirroring the Figma design.
+  const bridgeName = bridge?.roadCode ?? 'สะพานกรุงเทพ'
   const installPoint =
     bridge?.installPoint ?? 'ไฟประดับ : สะพานกรุงเทพ ฝั่งพระนคร'
-  const bridgeName = installPoint.replace(/^ไฟประดับ\s*:\s*/, '')
-  const lastUpdate = bridge?.lastUpdate ?? '—'
+  const installLocation = installPoint.replace(/^ไฟประดับ\s*:\s*/, '')
+  const lastUpdate = bridge?.lastUpdate ?? '5 ชั่วโมง'
 
   return (
     <div
       className='p-3 sm:p-4 flex flex-col gap-1 w-full h-36 sm:h-40 xl:h-42.5'
       style={{
         borderRadius: 20,
-        border: '2px solid rgba(255,255,255,0.7)',
+        border: '2px solid #FFFFFF',
         background:
-          'linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 50%, rgba(33,33,33,0.92) 90%)',
-        backdropFilter: 'blur(5px)',
+          'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(33,33,33,0.85) 55%',
+        backdropFilter: 'blur(10px)',
       }}
     >
-      <SparkleIcon size={32} className='text-white sm:hidden' />
-      <SparkleIcon size={40} className='text-white hidden sm:block' />
+      <SparkleIcon size={28} className='text-white sm:hidden' />
+      <SparkleIcon size={32} className='text-white hidden sm:block' />
       {/* Use <div> (not <p>) so we avoid globals.css's p clamp rule;
         * Tailwind `text-xs sm:text-sm` then controls the size cleanly. */}
       <div className='text-white text-xs sm:text-sm font-semibold leading-tight'>
@@ -69,7 +69,7 @@ const StatusBridgeLighting: React.FC<Props> = ({ bridge }) => {
         {bridgeName}
       </h2>
       <div className='text-white/70 text-[11px] sm:text-xs leading-tight'>
-        ไฟประดับ : {installPoint.replace(/^ไฟประดับ\s*:\s*/, '')} (อัพเดต {lastUpdate})
+        ไฟประดับ : {installLocation} ({lastUpdate})
       </div>
     </div>
   )

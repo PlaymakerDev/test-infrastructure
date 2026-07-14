@@ -23,31 +23,31 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorLabel = true }) => (
   <div
-    className='py-3 px-5 rounded-[14px]'
+    className='py-3 px-5 rounded-2xl'
     style={{
       border: `1.5px solid ${color}`,
       background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919',
     }}
   >
     <div className='flex items-center gap-2 mb-1'>
-      <span style={{ color }} className='flex items-center text-[22px] shrink-0'>
+      <span style={{ color }} className='flex items-center fs-22 shrink-0'>
         {icon}
       </span>
       <span
-        className='fs-14'
-        style={{ color: colorLabel ? color : '#ffffff', fontWeight: 500 }}
+        className='fs-14 font-medium leading-none'
+        style={{ color: colorLabel ? color : '#ffffff' }}
       >
         {label}
       </span>
     </div>
     <p
-      className='mb-0 font-bold leading-none'
-      style={{ color, fontSize: 24 }}
+      className='mb-0 font-bold leading-none fs-22'
+      style={{ color }}
     >
       {value}
     </p>
     {sublabel && (
-      <p className='fs-11 mb-0 mt-1' style={{ color: '#9aa7b8' }}>
+      <p className='fs-12 mb-0 mt-1' style={{ color: '#9aa7b8' }}>
         {sublabel}
       </p>
     )}
@@ -78,7 +78,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
         value={
           <>
             {fmtNumber(project.dailyPCU, 0)}{' '}
-            <span className='fs-11 font-normal' style={{ color: '#9aa7b8' }}>PCU</span>
+            <span className='fs-12 font-normal' style={{ color: '#9aa7b8' }}>PCU</span>
           </>
         }
         color='#B5FF3B'
@@ -89,7 +89,7 @@ const InfoCardsTrafficSignal: React.FC = () => {
         value={
           <>
             {fmtNumber(project.peakHourTraffic, 0)}{' '}
-            <span className='fs-11 font-normal' style={{ color: '#9aa7b8' }}>คัน</span>
+            <span className='fs-12 font-normal' style={{ color: '#9aa7b8' }}>คัน</span>
           </>
         }
         sublabel={`Phase ${project.peakPhase ?? '-'} : Peak`}

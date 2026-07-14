@@ -5,7 +5,7 @@ import { useTrafficCentralList, useTrafficTotals } from '@/hooks/queries/traffic
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props {}
+interface Props { }
 
 /** Right rail — 3 stat cards summarising the traffic-signal fleet. Counts come
  *  from `/overview/totals`. Per-card "Active" lines (solutions with online
@@ -54,7 +54,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
   const dim = isLoading ? 'opacity-50' : ''
   // `min-h-40` floors every card to card 1's natural size — keeps all three
   // visually identical even though cards 2 & 3 have fewer text lines.
-  const cardClass = `min-h-40 border-2 rounded-[20px] p-5 ${dim}`
+  const cardClass = `min-h-40 border-2 rounded-2xl p-5 ${dim}`
 
   return (
     <div className='flex flex-col gap-4 md:grid md:grid-cols-3 lg:flex lg:flex-col'>
@@ -64,7 +64,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.total.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.online, 0)} ({fmtNumber(stats.totalPct, 1)}%)
         </p>
       </div>
@@ -74,7 +74,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.inWarrantyActive, 0)} ({fmtNumber(stats.inWarrantyPct, 1)}%)
         </p>
       </div>
@@ -84,7 +84,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.expiredActive, 0)} ({fmtNumber(stats.expiredPct, 1)}%)
         </p>
       </div>
