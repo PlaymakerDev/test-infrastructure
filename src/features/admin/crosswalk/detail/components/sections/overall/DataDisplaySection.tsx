@@ -48,7 +48,7 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const { } = props
   const deptId = useDeptId()
   const { id } = useDetailContext()
-  const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
+  const [displayType, setDisplayType] = useState<ViewMode>('GRID')
   const [activeFilter, setActiveFilter] = useState<string>('all')
 
   // React Query dedupes with the same call inside TableCameraData/CameraList

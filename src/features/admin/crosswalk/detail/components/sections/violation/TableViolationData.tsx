@@ -8,11 +8,7 @@ import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import { type ViolationFilter } from './filter'
 import BluePagination from './BluePagination'
-import {
-  isVehicleViolation,
-  parseViolationTimestamp,
-  useViolationRows,
-} from './useViolationRows'
+import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -23,11 +19,6 @@ interface Row extends CrosswalkViolationRow {
 }
 
 const PAGE_SIZE = 10
-
-const eventClass = (nameTh: string): string =>
-  isVehicleViolation(nameTh)
-    ? 'border-[#FF7B00] text-[#FF7B00]'
-    : 'border-red-500 text-red-500'
 
 const TableViolationData: React.FC<Props> = ({ filter }) => {
   const deptId = useDeptId()
@@ -76,9 +67,7 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       key: 'eventType',
       width: 260,
       render: (_, row) => (
-        <span
-          className={`inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border ${eventClass(row.crosswalk.name_th)}`}
-        >
+        <span className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border border-[#E94C4C] text-[#E94C4C]'>
           {row.crosswalk.name_th}
         </span>
       ),

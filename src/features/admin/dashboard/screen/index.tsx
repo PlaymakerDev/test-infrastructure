@@ -1,10 +1,11 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ReactMap from '@/components/map/ReactMap'
 import { useAppDispatch } from '@/stores/hooks'
 import { getExampleData } from '@/stores/reducers/example/exampleSlice'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
+import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
 import { DeptIdOverrideContext } from '@/hooks/useDeptId'
 import {
   AccidentChart,
@@ -51,6 +52,41 @@ const DashboardScreen: React.FC<Props> = () => {
     () => searchParams.get('dept_id') ?? '0'
   )
 
+  // ── Landing intro: ส่วนกลาง (dept 0) opens MAP-ONLY ────────────────────────
+  // At the country view the cards are broad aggregates; the first real action
+  // is finding a province on the map, so the map gets the whole screen. The
+  // FIRST drill-in (click a province / a marker, or pan-zoom into one) reveals
+  // the cards, and everything behaves exactly as before from then on — this is
+  // one-shot per visit: zooming back out does NOT re-hide.
+  // Bureau/แขวง landings (dept ≠ 0) skip the intro entirely — they auto-fly
+  // into their own dept, so map-only would hide the data they came for.
+  const { isMapFocus, setMapFocus } = useMapFocusMode()
+  const introRef = useRef(originalDeptId === '0')
+  const introShownRef = useRef(false)
+
+  useEffect(() => {
+    // Mount-only. Ordering vs the Navbar's route-change reset (which forces
+    // focus OFF on every pathname/search change) is safe: Navbar sits before
+    // {children} in the layout tree, so its effect runs first and this one
+    // wins the landing frame.
+    if (introRef.current) setMapFocus(true)
+  }, [setMapFocus])
+
+  // The intro ends the FIRST time focus turns off — whether from the reveal
+  // below or the user hitting the navbar toggle themselves. After that the
+  // toggle is fully manual again: re-enabling focus and then clicking a
+  // province will NOT force the cards back open.
+  useEffect(() => {
+    if (isMapFocus) introShownRef.current = true
+    else if (introShownRef.current) introRef.current = false
+  }, [isMapFocus])
+
+  const handleProvinceActivate = useCallback(() => {
+    if (!introRef.current) return
+    introRef.current = false
+    setMapFocus(false)
+  }, [setMapFocus])
+
   useEffect(() => {
     dispatch(getExampleData())
   }, [dispatch])
@@ -59,7 +95,11 @@ const DashboardScreen: React.FC<Props> = () => {
     <DeptIdOverrideContext.Provider value={currentDeptId}>
     <div className="relative w-screen h-screen overflow-hidden bg-[#050d1a]">
       {/* MAP */}
-      <ReactMap originalDeptId={originalDeptId} onDeptIdChange={setCurrentDeptId} />
+      <ReactMap
+        originalDeptId={originalDeptId}
+        onDeptIdChange={setCurrentDeptId}
+        onProvinceActivate={handleProvinceActivate}
+      />
 
       {isDesktop === true && (
         <>
@@ -70,7 +110,8 @@ const DashboardScreen: React.FC<Props> = () => {
             style={{ top: 52, bottom: 180, width: 620 }}
           >
             <div className="flex-1" />
-            <div className="flex" style={{ width: 530 }}>
+            {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
+            <div className="flex">
               <StatusChart />
             </div>
             <AccidentChart />
@@ -91,7 +132,7 @@ const DashboardScreen: React.FC<Props> = () => {
           <MapOverlayPanel
             position="right"
             className="absolute right-4 z-10 flex flex-col gap-2"
-            style={{ top: 64, bottom: 16, width: 380 }}
+            style={{ top: 64, bottom: 16, width: 340 }}
           >
             <Notification />
             <VehicleRatioChart className="flex-1 min-h-0" />

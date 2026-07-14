@@ -15,8 +15,9 @@
  *
  * Covered endpoint families (7 overall menus × 4 + dashboard):
  *   /overview · /overview/central/list · /overview/central/totals ·
- *   /cameras|overview/random-online · /cctv/.../cameras/uptime-statistics ·
- *   /manage/solution/{id}/position
+ *   /cameras|overview/random-online · uptime-statistics (all 7 features) ·
+ *   /manage/solution/{id}/position · /analytic/details/{id}/dashboard ·
+ *   /counting/{id}/dashboard
  *
  * SSR-safe: services only run in the browser (BaseService pulls the token via
  * a client fetch), but guard `window` anyway. The dept id param is kept so a

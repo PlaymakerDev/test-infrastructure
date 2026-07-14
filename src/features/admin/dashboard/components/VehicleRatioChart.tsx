@@ -100,7 +100,9 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
         />
       </div>
 
-      <div className='px-14'>
+      {/* px-6 (not px-14) — at the 340px right rail the fatter padding left too
+        * little row width and Thai labels wrapped to two lines. */}
+      <div className='px-6'>
         {rows.map((d) => (
           <div
             key={d.name}
@@ -111,7 +113,7 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
               className='size-2.5 rounded-full shrink-0 mr-2'
               style={{ background: d.color }}
             />
-            <span className='text-white'>{d.name}</span>
+            <span className='text-white whitespace-nowrap'>{d.name}</span>
             <span className='flex-1' />
             <span className='text-white font-medium tabular-nums w-20 text-right'>
               {d.count.toLocaleString()}

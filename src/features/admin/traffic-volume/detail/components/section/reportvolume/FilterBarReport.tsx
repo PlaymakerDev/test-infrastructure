@@ -92,6 +92,7 @@ const FilterBarReport: React.FC<Props> = ({
             placeholder={['วันเริ่ม', 'วันสิ้นสุด']}
             className='min-w-75'
             size='large'
+            separator={<span className='text-white'>-</span>}
             suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
           />
         </ConfigProvider>
