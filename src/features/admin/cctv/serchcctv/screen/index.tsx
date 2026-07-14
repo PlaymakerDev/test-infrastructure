@@ -11,7 +11,7 @@ const SerchCctvScreen: React.FC = () => {
   return (
     <div className='main-screen'>
       <TitleSection />
-      <section className='mt-5 px-10'>
+      <section className='mt-5 px-10 pb-8'>
         <OverallSection deptId={deptId} />
       </section>
       {/* Global Project Info modal — opened via Redux from group ⓘ icons. */}

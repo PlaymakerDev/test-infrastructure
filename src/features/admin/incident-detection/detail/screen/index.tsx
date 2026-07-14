@@ -24,7 +24,7 @@ const IncidentDetectionDetailScreen: React.FC<Props> = (props) => {
     <DetailProvider>
       <div className='main-screen'>
         <TitleSection currentTab={currentTab} setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>
+        <section className='mt-8 px-10 pb-8'>
           {renderContent}
         </section>
         {/* Global Project Info modal — opened from the ⓘ on each camera-table

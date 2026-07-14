@@ -103,6 +103,7 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
         showSizeChanger: true,
         pageSizeOptions: [10, 20, 50, 100],
         showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+        locale: { items_per_page: '/ หน้า' },
         onChange: onPageChange,
       }}
     />

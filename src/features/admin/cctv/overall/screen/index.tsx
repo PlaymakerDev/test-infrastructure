@@ -13,7 +13,7 @@ const CCTVScreen: React.FC = () => {
     <CCTVProvider>
       <div className='main-screen px-10'>
         <TitleSection />
-        <section className='mt-8'>
+        <section className='mt-8 pb-8'>
           <OverallSection deptId={deptId} />
         </section>
       </div>

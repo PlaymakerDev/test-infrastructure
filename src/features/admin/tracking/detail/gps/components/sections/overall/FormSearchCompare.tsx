@@ -45,7 +45,7 @@ const FormSearchCompare: React.FC<Props> = (props) => {
                 name={field.name}
                 placeholder="ค้นหาจังหวัด..."
                 className='rounded-lg'
-                suffix={<TbSearch />}
+                suffix={<TbSearch className='text-(--yellow)' />}
                 size='large'
                 onChange={(e) => {
                   field.onChange(e)

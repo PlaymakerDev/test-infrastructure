@@ -41,7 +41,7 @@ const TrackingScreen = () => {
     <OverallProvider>
       <div className='main-screen px-10'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8'>
+        <section className='mt-8 pb-8'>
           {renderContent}
         </section>
       </div>

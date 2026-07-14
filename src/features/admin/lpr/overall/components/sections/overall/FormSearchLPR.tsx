@@ -36,7 +36,7 @@ const FormSearchLPR: React.FC<Props> = (props) => {
               {...field}
               placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
               className='rounded-lg'
-              suffix={<TbSearch />}
+              suffix={<TbSearch className='text-(--yellow)' />}
               size='large'
               onChange={(e) => {
                 field.onChange(e)

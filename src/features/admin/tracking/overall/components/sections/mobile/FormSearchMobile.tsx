@@ -54,7 +54,7 @@ const FormSearchMobile: React.FC<Props> = (props) => {
                 name={field.name}
                 placeholder="ค้นหาจุดตั้งด่าน..."
                 className='rounded-lg'
-                suffix={<TbSearch />}
+                suffix={<TbSearch className='text-(--yellow)' />}
                 size='medium'
                 onChange={(e) => {
                   field.onChange(e)

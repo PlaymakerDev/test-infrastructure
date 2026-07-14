@@ -115,7 +115,7 @@ const FormSearchProject: React.FC = () => {
           size='large'
           className='rounded-lg'
           placeholder='ค้นหาชื่อโครงการ...'
-          suffix={<TbSearch />}
+          suffix={<TbSearch className='text-(--yellow)' />}
           defaultValue={filters.search}
           onChange={(e) => onSearchChange(e.target.value)}
         />

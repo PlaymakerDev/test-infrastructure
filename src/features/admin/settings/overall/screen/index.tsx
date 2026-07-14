@@ -36,7 +36,7 @@ const SettingScreen = () => {
         <div className='shrink-0'>
           <TitleSection setCurrentTab={setCurrentTab} />
         </div>
-        <section className='mt-6 flex-1 min-h-0'>
+        <section className='mt-6 pb-8 flex-1 min-h-0'>
           {renderContent}
         </section>
       </div>

@@ -77,7 +77,7 @@ const FormSearchUser: React.FC<Props> = ({ filters, onChange }) => {
           size='large'
           className='rounded-lg'
           placeholder='ค้นหา username / ชื่อ...'
-          suffix={<TbSearch />}
+          suffix={<TbSearch className='text-(--yellow)' />}
           defaultValue={filters.search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
