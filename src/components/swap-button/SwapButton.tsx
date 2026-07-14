@@ -39,20 +39,20 @@ const SwapButton: React.FC<Props> = (props) => {
           size={size}
           ghost={!isActive}
           type={isActive ? 'primary' : 'default'}
-          className={`shrink-0 ${isActive ? '' : inactiveHover}`}
+          className={`border-0! shadow-md! shadow-yellow-500/50! min-w-40 shrink-0 ${isActive ? 'shadow-none!' : inactiveHover}`}
           onClick={() => {
             setInternalActive(item.value)
             setLabelValue(item.value)
           }}
         >
-          <p className='whitespace-nowrap'>{item.label}</p>
+          <p className='fs-12 whitespace-nowrap'>{item.label}</p>
         </Button>
       )
     })
   }, [options, setLabelValue, active, size])
 
   return (
-    <div className='flex items-center gap-2 sm:gap-3 w-full flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className='flex items-center gap-2 py-1.5 sm:gap-3 w-full flex-nowrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' style={{ WebkitOverflowScrolling: 'touch' }}>
       {renderButton}
     </div>
   )

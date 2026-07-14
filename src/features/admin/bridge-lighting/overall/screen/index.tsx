@@ -9,7 +9,7 @@ const BridgeLightingScreen: React.FC = () => {
     <OverallProvider>
       <div className='main-screen px-10'>
         <TitleSection />
-        <section className='mt-8'>
+        <section className='mt-8 pb-8'>
           <OverallSection />
         </section>
         {/* Shared project-info modal opened by the GRID card ⓘ (Redux-driven). */}

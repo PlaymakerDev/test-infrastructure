@@ -21,7 +21,7 @@ const VMSScreen: React.FC<Props> = (props) => {
       <OverallProvider>
         <div className='main-screen px-5 lg:px-10'>
           <TitleSection />
-          <section className='mt-8'>
+          <section className='mt-8 pb-8'>
             <OverallSection
               deptId={deptId!}
             />

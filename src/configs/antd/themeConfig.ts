@@ -8,6 +8,7 @@ export const theme: ConfigProviderProps = {
       colorText: "#FFFFFF",
       colorTextLightSolid: 'var(--dark-black)',
       colorTextDescription: "var(--white)",
+      colorTextQuaternary: "#FCD116",
     },
     components: {
       Progress: {
@@ -107,8 +108,6 @@ export const theme: ConfigProviderProps = {
         footerBg: "#191919",
         footerColor: "#FFFFFF",
         colorBorderSecondary: "#333333",
-        cellPaddingInline: 50,
-        cellPaddingBlock: 50,
       },
       Timeline: {
         colorText: "#FFFFFF",
@@ -207,7 +206,7 @@ export const theme: ConfigProviderProps = {
         colorSplit: "#333333",
       },
       Pagination: {
-        itemActiveBg: "var(--default-blue)",
+        itemActiveBg: "var(--yellow)",
         itemActiveColor: "var(--black)",
         itemBg: "transparent",
       },

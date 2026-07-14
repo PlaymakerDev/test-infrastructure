@@ -40,7 +40,7 @@ const FormSearchLicense: React.FC<Props> = (props) => {
                 name={field.name}
                 placeholder="ค้นหาป้ายทะเบียน..."
                 className='rounded-lg'
-                suffix={<TbSearch />}
+                suffix={<TbSearch className='text-(--yellow)' />}
                 size='large'
               />
             </fieldset>

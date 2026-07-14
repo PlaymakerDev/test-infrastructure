@@ -255,7 +255,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
             })}
           </ul>
           <p className='text-white/50 text-xs mt-3'>
-            ต้องมี endpoint "critical" ทำงานถึง render ได้
+            {`ต้องมี endpoint "critical" ทำงานถึง render ได้`}
           </p>
         </div>
 
@@ -274,7 +274,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
     <DetailProvider project={project}>
       <div className='main-screen'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>{renderContent}</section>
+        <section className='mt-8 px-10 pb-8'>{renderContent}</section>
         {/* Global Project Info modal — fires when ⓘ icon in title bar is
           * clicked. Reads project_id/road_id from URL search params. */}
         <ProjectInfoModal />

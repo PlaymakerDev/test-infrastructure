@@ -101,7 +101,7 @@ const FormSearchRoute: React.FC<Props> = ({
           size='large'
           className='rounded-lg'
           placeholder='ค้นหารหัสหรือชื่อสายทาง...'
-          suffix={<TbSearch />}
+          suffix={<TbSearch className='text-(--yellow)' />}
           defaultValue={filters.search}
           onChange={(e) => onSearchChange(e.target.value)}
         />

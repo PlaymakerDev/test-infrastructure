@@ -57,7 +57,7 @@ const ScreenDetailTrafficVolume: React.FC<Props> = ({ id }) => {
     <DetailProvider id={id} location={location}>
       <div className='main-screen'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>{renderContent}</section>
+        <section className='mt-8 px-10 pb-8'>{renderContent}</section>
         {/* Global Project Info modal — fires when the ⓘ icon in the title
           * bar is clicked. Reads project_id/road_id from URL search params. */}
         <ProjectInfoModal />

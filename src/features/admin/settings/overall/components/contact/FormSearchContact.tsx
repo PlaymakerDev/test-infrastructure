@@ -41,7 +41,7 @@ const FormSearchContact: React.FC<Props> = ({ filters, onFiltersChange }) => {
         size='large'
         className='rounded-lg'
         placeholder='ค้นหาชื่อบริษัท / ชื่อย่อ / ผู้ติดต่อ / เบอร์โทร...'
-        suffix={<TbSearch />}
+        suffix={<TbSearch className='text-(--yellow)' />}
         defaultValue={filters.search}
         onChange={(e) => onSearchChange(e.target.value)}
       />

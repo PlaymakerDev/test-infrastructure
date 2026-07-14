@@ -170,6 +170,7 @@ const TableVehicleData: React.FC<Props> = () => {
       columns={columns}
       dataSource={dataSource}
       loading={result.isLoading}
+      className='bridge-projects-table'
       pagination={{
         current: page,
         pageSize,
@@ -178,6 +179,10 @@ const TableVehicleData: React.FC<Props> = () => {
           setPage(nextPage)
           setPageSize(nextPageSize)
         },
+        locale: { items_per_page: '/ หน้า' },
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
       }}
       size="middle"
       rowKey="key"
