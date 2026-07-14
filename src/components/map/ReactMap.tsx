@@ -117,6 +117,11 @@ function useNearestProvince(threshold: number): Province | null {
 interface DashboardMapContentProps {
   /** The dept the user landed with — reset button reverts to this. */
   originalDeptId: string
+  /** True when the landing URL carried `scope=all`. Distinguishes the
+   *  nationwide view (`dept_id=0&scope=all` — keep the country view, no
+   *  auto-fly) from plain `dept_id=0` (sidebar ทช.ส่วนกลาง — a normal
+   *  single-dept landing that flies to its own devices like any แขวง). */
+  originalScopeAll?: boolean
   /** Called whenever the user's map interaction should rescope the cards
    *  (click a province, pan into one, or zoom out). Parent wires this into
    *  the `DeptIdOverrideContext.Provider` value so every card that reads
@@ -133,6 +138,7 @@ interface DashboardMapContentProps {
 
 const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   originalDeptId,
+  originalScopeAll = false,
   onDeptIdChange,
   onProvinceActivate,
 }) => {
@@ -156,17 +162,19 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // login scope the full device pool stays plotted; only the CARDS rescope.
   const { data: position } = useDashboardPosition(originalDeptId)
 
-  // When the dashboard scopes to a single dept (?dept_id=N, N ≠ 0), zoom the
-  // map to that dept's centroid so the user lands on their devices instead of
-  // a country-wide view that hides them behind STCH summary markers. dept 0 =
-  // ทช.ส่วนกลาง (nationwide) keeps the country-level view. One-shot on mount.
+  // When the dashboard scopes to a single dept, zoom the map to that dept's
+  // centroid so the user lands on their devices instead of a country-wide
+  // view that hides them behind STCH summary markers. Only the NATIONWIDE
+  // landing (dept 0 + scope=all) keeps the country-level view — plain
+  // dept_id=0 is the sidebar's ทช.ส่วนกลาง entry and flies like any แขวง.
+  // One-shot on mount.
   const flownForDeptRef = useRef<string | null>(null)
   const markFlown = useCallback((id: string) => {
     flownForDeptRef.current = id
   }, [])
   useEffect(() => {
     if (!map || !isLoaded) return
-    if (originalDeptId === '0') return
+    if (originalDeptId === '0' && originalScopeAll) return
     if (flownForDeptRef.current === originalDeptId) return
     const c = position?.centroid
     if (!Array.isArray(c) || c.length !== 2 || (c[0] === 0 && c[1] === 0)) return
@@ -178,7 +186,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       pitch: 30,
       duration: 1400,
     })
-  }, [map, isLoaded, originalDeptId, position?.centroid, markFlown])
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, markFlown])
 
   // Adapt API locations → Device + aggregate per-สทช. counts for the country-
   // level summary marker layer.
@@ -435,11 +443,17 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
 
 interface ReactMapProps {
   originalDeptId: string
+  originalScopeAll?: boolean
   onDeptIdChange: (id: string) => void
   onProvinceActivate?: () => void
 }
 
-const ReactMap: React.FC<ReactMapProps> = ({ originalDeptId, onDeptIdChange, onProvinceActivate }) => {
+const ReactMap: React.FC<ReactMapProps> = ({
+  originalDeptId,
+  originalScopeAll,
+  onDeptIdChange,
+  onProvinceActivate,
+}) => {
   return (
     <BaseMap
       initialCenter={COUNTRY_VIEW.center}
@@ -447,6 +461,7 @@ const ReactMap: React.FC<ReactMapProps> = ({ originalDeptId, onDeptIdChange, onP
     >
       <DashboardMapContent
         originalDeptId={originalDeptId}
+        originalScopeAll={originalScopeAll}
         onDeptIdChange={onDeptIdChange}
         onProvinceActivate={onProvinceActivate}
       />
