@@ -182,7 +182,7 @@ export default function Navbar() {
 
   const onLogout = useCallback(async () => {
     try {
-      const response = await axios.post('/api/auth/logout', {})
+      const response = await axios.post(`${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/api/auth/logout`, {})
       if (response.status === 200) {
         // Drop this user's cached (token-scoped) data so the next login starts clean.
         queryClient.clear()

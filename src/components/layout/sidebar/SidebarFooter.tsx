@@ -19,7 +19,7 @@ const SidebarFooter: React.FC<Props> = (props) => {
 
   const onLogout = useCallback(async () => {
     try {
-      const response = await axios.post('/api/auth/logout', {})
+      const response = await axios.post(`${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/api/auth/logout`, {})
       if (response.status === 200) {
         dispatch(resetDrawerOpen())
         // Drop this user's cached (token-scoped) data so the next login starts clean.

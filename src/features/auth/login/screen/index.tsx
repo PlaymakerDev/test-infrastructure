@@ -119,7 +119,7 @@ const AuthScreen: React.FC<Props> = (props) => {
     async (value: FormLogin) => {
       dispatch(setLoading({ loading: true }))
       try {
-        const response = await axios.post('/api/auth/login', value)
+        const response = await axios.post(`${BASE_PATH}/api/auth/login`, value)
         if (response.status === 200) {
           // Drop any cached data from a previous user so this session's
           // token-scoped queries (departments, etc.) refetch fresh.
