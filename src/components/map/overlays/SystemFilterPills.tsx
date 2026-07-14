@@ -12,6 +12,7 @@ import {
 } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
   SYSTEM_TYPES,
@@ -33,6 +34,7 @@ const SYSTEM_ICONS: Record<SystemType, IconType> = {
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
   WIM: IconTracking,
+  LPR: IconLPR,
 }
 
 export interface SystemFilterPillsProps {

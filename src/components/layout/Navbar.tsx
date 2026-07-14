@@ -1,6 +1,5 @@
 "use client"
 import menu from "@/configs/menu"
-import type { AdminMenuItem } from "@/configs/menu/admin"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -48,6 +47,7 @@ import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import IconTracking from "@/components/icon/IconTracking";
+import IconLPR from "@/components/icon/IconLPR";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { motion } from "motion/react";
 import axios, { AxiosError } from "axios";
@@ -68,6 +68,7 @@ const DEPT_SCOPED_KEYS = new Set([
   "vms",
   "bridge_lighting",
   "tunnel",
+  "lpr",
 ]);
 
 /* VARIABLE */
@@ -100,21 +101,10 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbBrandGithubCopilot,
 }
 
-// Design SVG icon (text.svg) — inline so it inherits currentColor (turns yellow
-// when active) and takes a size prop like react-icons. Tracking icon comes from
-// @/components/icon/IconTracking so the trapezoid and every map's WIM markers
-// share the same glyph 1:1.
-const IconText: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M13.75 15H21.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10 10H16.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M11.25 20H17.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M3.75 8.75V6.25C3.75 5.58696 4.01339 4.95107 4.48223 4.48223C4.95107 4.01339 5.58696 3.75 6.25 3.75H8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M3.75 21.25V23.75C3.75 24.413 4.01339 25.0489 4.48223 25.5178C4.95107 25.9866 5.58696 26.25 6.25 26.25H8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 3.75H23.75C24.413 3.75 25.0489 4.01339 25.5178 4.48223C25.9866 4.95107 26.25 5.58696 26.25 6.25V8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 26.25H23.75C24.413 26.25 25.0489 25.9866 25.5178 25.5178C25.9866 25.0489 26.25 24.413 26.25 23.75V21.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
+// The LPR scan-frame glyph (design's text.svg) lives in
+// @/components/icon/IconLPR — shared with the map pills/markers so the
+// trapezoid menu and every LPR marker use the same glyph 1:1 (same contract
+// as IconTracking for the tracking menu).
 
 export default function Navbar() {
   const router = useRouter()
@@ -297,53 +287,31 @@ export default function Navbar() {
     []
   )
 
-  // Trapezoid = shared admin menu minus Settings/Smart Search, PLUS a design-only
-  // placeholder icon (text.svg) inserted right after Tracking that has no menu
-  // data yet. admin.ts and the sidebar are left untouched.
-  const navItems = useMemo(() => {
-    const menuItems = menu["ADMIN"].filter(
-      (m) => m.label_key !== "settings" && m.label_key !== "smart_search"
-    )
-    const out: Array<
-      | { kind: "menu"; item: AdminMenuItem }
-      | { kind: "placeholder"; key: string }
-    > = []
-    for (const item of menuItems) {
-      out.push({ kind: "menu", item })
-      if (item.label_key === "tracking") {
-        out.push({ kind: "placeholder", key: "text-placeholder" })
-      }
-    }
-    return out
-  }, [])
+  // Trapezoid = shared admin menu minus Settings/Smart Search. The LPR menu
+  // (formerly a design-only placeholder) is a real admin.ts entry now, ordered
+  // right after Tracking in the config itself.
+  const navItems = useMemo(
+    () =>
+      menu["ADMIN"].filter(
+        (m) => m.label_key !== "settings" && m.label_key !== "smart_search"
+      ),
+    []
+  )
 
   const renderTrapezoidNav = useMemo(() => {
-    return navItems.map((node) => {
-      // Design placeholder (text.svg) — icon only, no route/label yet.
-      if (node.kind === "placeholder") {
-        return (
-          <button
-            key={node.key}
-            type="button"
-            title="(ยังไม่มีเมนู)"
-            className="relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full text-white/70 hover:text-white shrink-0 cursor-default"
-          >
-            <span>
-              <IconText size={24} />
-            </span>
-          </button>
-        )
-      }
-      const item = node.item
+    return navItems.map((item) => {
       const active = pathname === item.path_active
-      // Dashboard → house icon; Tracking → the design SVG; everything else
-      // uses its admin.ts icon. (Navbar-only overrides — admin.ts untouched.)
+      // Dashboard → house icon; Tracking / LPR → shared design glyphs (the
+      // same components the map markers/pills use); everything else uses its
+      // admin.ts icon. (Navbar-only overrides — admin.ts stays icon-string.)
       const OverrideIcon =
         item.label_key === "dashboard"
           ? TbHome
           : item.label_key === "tracking"
             ? IconTracking
-            : undefined
+            : item.label_key === "lpr"
+              ? IconLPR
+              : undefined
       // Owned menus land on the user's own department; others navigate plainly.
       // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
       const href = DEPT_SCOPED_KEYS.has(item.label_key)

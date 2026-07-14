@@ -9,6 +9,7 @@ export type SystemType =
   | "BridgeLighting"
   | "Tunnel"
   | "WIM"
+  | "LPR"
 
 // `label` is display-only (legend chips + marker popups); all filter/logic keys
 // off the SystemType key. Display names mirror DEVICE_BADGE (src/constants/cctv.ts):
@@ -27,6 +28,7 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
   BridgeLighting: { color: "#871000", label: "Bridge Lighting", icon: "bridge" },
   Tunnel:         { color: "#4D0087", label: "Tunnel",          icon: "tunnel" },
   WIM:            { color: "#70196D", label: "Tracking",        icon: "scale" },
+  LPR:            { color: "#87004D", label: "LPR",             icon: "scan" },
 }
 
 export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
@@ -49,4 +51,5 @@ export const SYSTEM_BRIGHT: Record<SystemType, string> = {
   BridgeLighting: "#FF6B57", // ← #871000
   Tunnel:         "#B57BFF", // ← #4D0087
   WIM:            "#E879DE", // ← #70196D
+  LPR:            "#FF6FB5", // ← #87004D
 }

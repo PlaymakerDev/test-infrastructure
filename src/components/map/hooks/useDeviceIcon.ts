@@ -14,6 +14,7 @@ import {
   TbTrafficLights,
 } from 'react-icons/tb'
 import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import type { SystemType } from '@/features/admin/dashboard/data/systems'
 import { useMap } from './useMap'
 
@@ -23,6 +24,7 @@ const SYSTEM_ICONS: Record<SystemType, IconType> = {
   CCTV: TbVideo,
   VMS: TbDeviceDesktop,
   WIM: IconTracking,
+  LPR: IconLPR,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
