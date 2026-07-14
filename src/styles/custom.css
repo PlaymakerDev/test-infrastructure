@@ -62,12 +62,12 @@
  *   `find-on-page`        — every match (softer yellow)
  *   `find-on-page-active` — the currently-focused match (brand yellow)
  * `find-on-page-active` is set AFTER `find-on-page`, so it wins the paint. */
-::highlight(find-on-page) {
+:highlight(find-on-page) {
   background-color: rgba(252, 209, 22, 0.35);
   color: inherit;
 }
 
-::highlight(find-on-page-active) {
+:highlight(find-on-page-active) {
   background-color: #FCD116;
   color: #212121;
 }
