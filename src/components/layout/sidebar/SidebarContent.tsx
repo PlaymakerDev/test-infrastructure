@@ -18,11 +18,11 @@ import {
   TbShieldHalf,
   TbCarCrash,
   TbChevronRight,
-  TbBrandGithubCopilot,
 } from "react-icons/tb";
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
 import IconLPR from '@/components/icon/IconLPR'
+import IconAIChat from '@/components/icon/IconAIChat'
 import menu from '@/configs/menu'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 // import { useAppSelector } from '@/stores/hooks';
@@ -45,7 +45,8 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "Control VMS": TbAdjustmentsHorizontal,
   "Statistic": TbBriefcase,
   "Maintenance": TbShieldHalf,
-  "Smart Search": TbBrandGithubCopilot,
+  // AI-chat glyph (Hugeicons ai-chat-01) — same as the navbar shortcut.
+  "Smart Search": IconAIChat,
 }
 
 const collapseVariants = {
