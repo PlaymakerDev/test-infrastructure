@@ -61,7 +61,7 @@ const InfoCell: React.FC<{ icon: React.ReactNode; label: string; children: React
 }) => (
   <div className='flex flex-col items-center text-center gap-1.5'>
     <span className='fs-22 text-white'>{icon}</span>
-    <span className='fs-11 text-gray-400'>{label}</span>
+    <span className='fs-12 text-gray-400'>{label}</span>
     <div className='fs-13 text-white'>{children}</div>
   </div>
 )
@@ -286,7 +286,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                 )}
               </p>
               {coord && (
-                <p className='fs-11 text-gray-400 mb-0 mt-1 flex items-center gap-1'>
+                <p className='fs-12 text-gray-400 mb-0 mt-1 flex items-center gap-1'>
                   <TbWorld size={12} /> {coord[1].toFixed(4)}° N, {coord[0].toFixed(4)}° E
                 </p>
               )}

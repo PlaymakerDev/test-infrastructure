@@ -213,7 +213,7 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
               การกระจายความเร็ว
             </span>
           </div>
-          <span className='flex items-center gap-1.5 fs-11 text-white/40'>
+          <span className='flex items-center gap-1.5 fs-12 text-white/40'>
             <TbHelpCircle size={14} />
             85th Percentile ใช้กำหนดขีดจำกัดความเร็ว
           </span>
@@ -226,15 +226,15 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
             { tone: '#F97316', label: 'ความเร็วสูงสุด (95th)', value: fmtPct(percentiles?.p95), share: '95% ของรถ' },
           ].map((c) => (
             <div key={c.label} className='flex flex-col items-center'>
-              <span className='fs-11 text-white/55'>{c.label}</span>
+              <span className='fs-12 text-white/55'>{c.label}</span>
               <span
                 className='fs-22 font-bold tabular-nums leading-tight mt-1'
                 style={{ color: c.tone }}
               >
                 {c.value}
               </span>
-              <span className='fs-11 text-white/50'>กิโลเมตร / ชั่วโมง</span>
-              <span className='fs-11 text-white/40 mt-0.5'>{c.share}</span>
+              <span className='fs-12 text-white/50'>กิโลเมตร / ชั่วโมง</span>
+              <span className='fs-12 text-white/40 mt-0.5'>{c.share}</span>
             </div>
           ))}
         </div>

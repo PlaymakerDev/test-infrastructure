@@ -70,13 +70,13 @@ const Content = (props: ContentProps) => {
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-y-6 gap-x-4 mb-6 justify-items-center'>
         <div className='flex flex-col items-center text-center'>
           <TbFileDescription className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
           <p className='fs-12 text-white mb-0'>{data?.contract_no || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbUserShield className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>หน่วยงานรับผิดชอบ</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>หน่วยงานรับผิดชอบ</p>
           {/* div, not p — Skeleton renders an <h3> internally and <h3> can
             * not be a descendant of <p> (causes a hydration error). */}
           <div className='fs-12 text-white mb-0'>{renderDepartmentName}</div>
@@ -84,7 +84,7 @@ const Content = (props: ContentProps) => {
 
         <div className='flex flex-col items-center text-center'>
           <TbUser className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
           <p className='fs-12 text-white mb-0'>{data?.department_name || '-'}</p>
         </div>
       </div>
@@ -92,13 +92,13 @@ const Content = (props: ContentProps) => {
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4'>
         <div className='flex flex-col items-center text-center'>
           <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
           <p className='fs-12 text-white mb-0'>{data?.warranty_start_date || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
           <p className='fs-12 text-white mb-0'>{data?.warranty_end_date || '-'}</p>
         </div>
 
@@ -126,7 +126,7 @@ const Content = (props: ContentProps) => {
             return (
               <>
                 <TbHourglass className={`fs-22 mb-2 ${warrantyUi.remainingClass}`} />
-                <p className='fs-11 text-gray-400 mb-0.5'>{label}</p>
+                <p className='fs-12 text-gray-400 mb-0.5'>{label}</p>
                 <p className={`fs-12 mb-0 ${warrantyUi.remainingClass}`}>{value}</p>
               </>
             )
@@ -135,7 +135,7 @@ const Content = (props: ContentProps) => {
 
         <div className='flex flex-col items-center text-center'>
           <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
           <p className='fs-12 text-white mb-0'>{data?.company_name || '-'}</p>
         </div>
       </div>

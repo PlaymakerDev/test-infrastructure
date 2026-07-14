@@ -56,7 +56,7 @@ const OverviewSection: React.FC = () => {
         </div>
 
         {/* Center — circuit diagram iframe for this device. */}
-        <div className='flex-1 min-w-0 rounded-[20px] overflow-hidden bg-[#191919CC] flex items-center justify-center min-h-[310px]'>
+        <div className='flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-center justify-center min-h-[310px]'>
           {imei ? (
             <DiagramIframe imei={imei} />
           ) : (

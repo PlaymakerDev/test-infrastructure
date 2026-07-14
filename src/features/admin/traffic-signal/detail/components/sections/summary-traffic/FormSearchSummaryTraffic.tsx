@@ -47,7 +47,7 @@ const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
               suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
             />
           </ConfigProvider>
-          <p className='fs-11 text-gray-400 mt-1 mb-0'>
+          <p className='fs-12 text-gray-400 mt-1 mb-0'>
             ช่วงข้อมูล : {rangeText}
           </p>
         </fieldset>

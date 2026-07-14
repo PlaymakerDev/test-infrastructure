@@ -33,7 +33,7 @@ export const PopupDetailLink: React.FC<{
           block
           onClick={() => onNavigate?.(url)}
         >
-          <p className='fs-11'>ดูเพิ่มเติม</p>
+          <p className='fs-12'>ดูเพิ่มเติม</p>
         </Button>
       </ConfigProvider>
     </div>

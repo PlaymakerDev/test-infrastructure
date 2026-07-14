@@ -90,112 +90,112 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
 
   const searchCardCollapse = (
     <Collapse
-                ghost
-                expandIcon={({ isActive }) => (
-                  <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                )}
-                style={{ marginTop: 16 }}
-                items={filteredRoutes.map((item, index) => ({
-                  key: item.name,
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {!hideIndexBadge && (() => {
-                          const badgeColor = badgeColorFn
-                            ? badgeColorFn(item, index)
-                            : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
-                          return (
-                            <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
-                              {item.sub3.length}
-                            </span>
-                          )
-                        })()}
-                        {!hideCount && renderCount(item.count)}
-                      </div>
-                    </div>
-                  ),
-                  style: { marginBottom: 4 },
-                  classNames: { header: 'rounded-lg bg-[#363636]' },
-                  styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
-                  children: (
-                    <Collapse
-                      ghost
-                      expandIcon={({ isActive }) => (
-                        <span style={{ marginLeft: 24 }}>
-                          <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      ghost
+      expandIcon={({ isActive }) => (
+        <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      )}
+      style={{ marginTop: 16 }}
+      items={filteredRoutes.map((item, index) => ({
+        key: item.name,
+        label: (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {!hideIndexBadge && (() => {
+                const badgeColor = badgeColorFn
+                  ? badgeColorFn(item, index)
+                  : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                return (
+                  <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
+                    {item.sub3.length}
+                  </span>
+                )
+              })()}
+              {!hideCount && renderCount(item.count)}
+            </div>
+          </div>
+        ),
+        style: { marginBottom: 4 },
+        classNames: { header: 'rounded-lg bg-[#363636]' },
+        styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
+        children: (
+          <Collapse
+            ghost
+            expandIcon={({ isActive }) => (
+              <span style={{ marginLeft: 24 }}>
+                <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+              </span>
+            )}
+            style={{ marginTop: 4 }}
+            items={[{
+              key: `${item.name}-sub`,
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {!hideIndexBadge && (() => {
+                      const bc = badgeColorFn
+                        ? badgeColorFn(item, index)
+                        : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                      return (
+                        <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
+                          {item.sub3.length}
                         </span>
-                      )}
-                      style={{ marginTop: 4 }}
-                      items={[{
-                        key: `${item.name}-sub`,
-                        label: (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+                      )
+                    })()}
+                    {!hideCount && renderCount(`${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
+                  </div>
+                </div>
+              ),
+              style: { marginBottom: 4 },
+              classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
+              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, body: { padding: 0 } },
+              children: (
+                <Collapse
+                  ghost
+                  expandIcon={({ isActive }) => (
+                    <span style={{ marginLeft: 56 }}>
+                      <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    </span>
+                  )}
+                  style={{ marginTop: 4 }}
+                  items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
+                    key: `${item.name}-${sub.label}`,
+                    label: (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
+                      </div>
+                    ),
+                    style: { marginBottom: 4 },
+                    classNames: { header: 'rounded-lg' },
+                    styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
+                    children: (
+                      <div style={{ marginTop: 4 }}>
+                        {sub.detail.map((d) => (
+                          <div
+                            key={d}
+                            onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
+                          >
+                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              {!hideIndexBadge && (() => {
-                                const bc = badgeColorFn
-                                  ? badgeColorFn(item, index)
-                                  : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
-                                return (
-                                  <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
-                                    {item.sub3.length}
-                                  </span>
-                                )
-                              })()}
-                              {!hideCount && renderCount(`${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
+                              <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
                             </div>
                           </div>
-                        ),
-                        style: { marginBottom: 4 },
-                        classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
-                        styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, body: { padding: 0 } },
-                        children: (
-                          <Collapse
-                            ghost
-                            expandIcon={({ isActive }) => (
-                              <span style={{ marginLeft: 56 }}>
-                                <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                              </span>
-                            )}
-                            style={{ marginTop: 4 }}
-                            items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
-                              key: `${item.name}-${sub.label}`,
-                              label: (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
-                                  <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
-                                </div>
-                              ),
-                              style: { marginBottom: 4 },
-                              classNames: { header: 'rounded-lg' },
-                              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
-                              children: (
-                                <div style={{ marginTop: 4 }}>
-                                  {sub.detail.map((d) => (
-                                    <div
-                                      key={d}
-                                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
-                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
-                                    >
-                                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                        <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ),
-                            }))}
-                          />
-                        ),
-                      }]}
-                    />
-                  ),
-                }))}
-              />
+                        ))}
+                      </div>
+                    ),
+                  }))}
+                />
+              ),
+            }]}
+          />
+        ),
+      }))}
+    />
   )
 
   return (
@@ -231,7 +231,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         </div>
 
         {/* ══ MAIN: map + stats cards ══ */}
-        <div className='flex-1 min-w-0 relative overflow-hidden rounded-[20px]'>
+        <div className='flex-1 min-w-0 relative overflow-hidden rounded-2xl'>
           <BaseMap initialCenter={[102.0, 14.0]} initialZoom={4.8}>
             {filteredRoutes.map((item, index) => {
               const count = item.sub3.length

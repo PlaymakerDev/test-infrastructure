@@ -7,6 +7,7 @@ interface Props {
 
 const OverallSection: React.FC<Props> = (props) => {
   const { deptId } = props
+
   return (
     <div>
       <section>

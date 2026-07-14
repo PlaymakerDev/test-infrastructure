@@ -16,14 +16,14 @@ export interface StatCardItem {
 
 const COLOR_MAP: Record<StatCardColor, { bg: string; border: string; text: string }> = {
   yellow: { bg: 'bg-[#FFB1001A]', border: 'border-(--yellow)', text: 'text-(--yellow)' },
-  teal:   { bg: 'bg-[#05F2DB1A]', border: 'border-teal-500',   text: 'text-teal-500'   },
-  gray:   { bg: 'bg-[#9797971A]', border: 'border-gray-500',   text: 'text-gray-500'   },
+  teal: { bg: 'bg-[#05F2DB1A]', border: 'border-teal-500', text: 'text-teal-500' },
+  gray: { bg: 'bg-[#9797971A]', border: 'border-gray-500', text: 'text-gray-500' },
 }
 
 const StatCard: React.FC<StatCardItem> = ({ icon, title, count, unit = 'จุดติดตั้ง', activeLabel, color, isLoading }) => {
   const c = COLOR_MAP[color]
   return (
-    <div className={`h-full ${c.bg} border-2 rounded-[20px] p-5 ${c.border}`}>
+    <div className={`h-full ${c.bg} border-2 rounded-2xl p-5 ${c.border}`}>
       {isLoading ? (
         <Skeleton active paragraph={{ rows: 3 }} />
       ) : (
@@ -33,7 +33,7 @@ const StatCard: React.FC<StatCardItem> = ({ icon, title, count, unit = 'จุ�
           <p>
             <span className='fs-24 font-bold'>{count}</span> {unit}
           </p>
-          {activeLabel && <p className='fs-11 text-gray-400'>{activeLabel}</p>}
+          {activeLabel && <p className='fs-12 text-gray-400'>{activeLabel}</p>}
         </>
       )}
     </div>

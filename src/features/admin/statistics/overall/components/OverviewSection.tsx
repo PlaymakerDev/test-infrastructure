@@ -28,7 +28,7 @@ const OverviewSection: React.FC = () => {
       {CARDS.map(card => (
         <div
           key={card.id}
-          className="relative rounded-[20px] overflow-hidden w-full h-auto min-h-115 sm:min-h-145 lg:min-h-175"
+          className="relative rounded-2xl overflow-hidden w-full h-auto min-h-115 sm:min-h-145 lg:min-h-175"
           style={{ backgroundColor: '#191919' }}
         >
           {card.imageBg && (
@@ -53,7 +53,7 @@ const OverviewSection: React.FC = () => {
               <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm lg:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
               <div className="flex flex-col gap-2 sm:gap-[10px] mt-6 sm:mt-8 lg:mt-10 w-full">
                 <div
-                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
+                  className="flex items-center mx-auto rounded-2xl border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
                   style={{ borderColor: card.glowColor }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -65,7 +65,7 @@ const OverviewSection: React.FC = () => {
                   </div>
                 </div>
                 <div
-                  className="flex items-center mx-auto rounded-[20px] border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
+                  className="flex items-center mx-auto rounded-2xl border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
                   style={{ borderColor: card.glowColor }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

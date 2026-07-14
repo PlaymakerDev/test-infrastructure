@@ -6,28 +6,26 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 const TitleSection: React.FC = () => {
   const router = useRouter()
 
-  const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back()
-    } else {
-      router.push('/admin/cctv')
-    }
-  }
-
   return (
-    <div className='px-10 pt-3 overflow-x-hidden'>
+    <div className='px-8'>
+      <p
+        className='block mb-3 lg:hidden text-(--yellow) cursor-pointer'
+        onClick={() => router.back()}
+      >
+        &lt; ย้อนกลับ
+      </p>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
-          className='fs-24 text-(--yellow) cursor-pointer mt-1.5 shrink-0'
-          onClick={handleBack}
+          className='fs-24 text-(--yellow) cursor-pointer mt-2 hidden lg:block'
+          onClick={() => router.back()}
         />
-        <div className='min-w-0 flex-1'>
-          <h1 className='text-(--yellow) leading-tight wrap-break-word'>
-            ค้นหากล้อง CCTV รายสายทาง
-          </h1>
-          <p className='text-(--yellow) text-sm mt-1'>
-            รวบรวมกล้อง CCTV ทุกจุดติดตั้งในสายทาง
-          </p>
+        <div className='flex-1 min-w-0'>
+          <h1 className='text-(--yellow)'>ค้นหากล้อง CCTV รายสายทาง</h1>
+          <div className='flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <p className='text-(--yellow)'>รวบรวมกล้อง CCTV ทุกจุดติดตั้งในสายทาง</p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

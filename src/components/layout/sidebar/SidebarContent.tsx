@@ -22,6 +22,7 @@ import {
 } from "react-icons/tb";
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
+import IconLPR from '@/components/icon/IconLPR'
 import menu from '@/configs/menu'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 // import { useAppSelector } from '@/stores/hooks';
@@ -39,6 +40,8 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "Bridge Lighting": TbBuildingBridge,
   "Tunnel": TbBuildingBridge2,
   "Tracking": TbTopologyStar3,
+  // Same custom scan-frame glyph as the navbar's LPR menu (IconLPR).
+  "LPR": IconLPR,
   "Control VMS": TbAdjustmentsHorizontal,
   "Statistic": TbBriefcase,
   "Maintenance": TbShieldHalf,
@@ -198,9 +201,11 @@ const SidebarContent: React.FC<Props> = (props) => {
                                           {solution.solution_type_name}
                                         </span>
                                       </div>
-                                      <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
-                                        {solution.roads_count} สายทาง
-                                      </span>
+                                      {solution.roads_count > 0 && (
+                                        <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
+                                          {solution.roads_count} สายทาง
+                                        </span>
+                                      )}
                                     </motion.div>
                                   )
                                 })}

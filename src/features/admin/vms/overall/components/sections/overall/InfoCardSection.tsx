@@ -7,7 +7,7 @@ import { Col, Row } from 'antd'
 import React, { useMemo } from 'react'
 import { TbDeviceDesktop, TbShield } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 /** Right rail — 3 stat cards summarising the VMS fleet. Counts come from
  *  `/overview/central/totals`. Per-card "Active" lines (solutions with online
@@ -79,7 +79,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.total.toLocaleString()}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.online, 0)} ({fmtNumber(stats.totalPct, 1)}%)
           </p>
         </div>
@@ -91,7 +91,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.inWarrantyActive, 0)} ({fmtNumber(stats.inWarrantyPct, 1)}%)
           </p>
         </div>
@@ -103,7 +103,7 @@ const InfoCardSection: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.expiredActive, 0)} ({fmtNumber(stats.expiredPct, 1)}%)
           </p>
         </div>

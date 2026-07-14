@@ -48,6 +48,9 @@ const TYPE_FROM_API: Record<string, SystemType> = {
   Crosswalk: 'CrossWalk',
   Analytic: 'Analytic',
   Traffic: 'Traffic',
+  // LPR solutions are not in /manage/solution position yet (probed 2026-07-14,
+  // 9 types only) — mapped ahead so markers appear the moment BE ships them.
+  LPR: 'LPR',
 }
 
 const apiLocationToDevice = (loc: DashboardPositionLocation): Device | null => {

@@ -6,7 +6,7 @@ import { useTrafficVolumeCentralList, useTrafficVolumeTotals } from '@/hooks/que
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props {}
+interface Props { }
 
 /** Right rail — 3 stat cards summarising the traffic-volume fleet. Camera
  *  counts come from `/overview/totals`; per-card "Active" for the warranty
@@ -69,37 +69,37 @@ const InfoCardTrafficVolume: React.FC<Props> = () => {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className={`h-full bg-[#FFB1001A] border-2 rounded-[20px] p-5 border-(--yellow) ${dim}`}>
+        <div className={`h-full bg-[#FFB1001A] border-2 rounded-2xl p-5 border-(--yellow) ${dim}`}>
           <TbCar className='fs-24 text-(--yellow) mb-1' />
           <h3 className='text-(--yellow)'>กล้องนับรถในระบบทั้งหมด</h3>
           <p>
             <span className='fs-24 font-bold'>{stats.cameraTotal.toLocaleString()}</span> กล้อง
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.cameraOnline, 0)} ({fmtNumber(stats.cameraOnlinePct, 1)}%)
           </p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className={`h-full bg-[#05F2DB1A] border-2 rounded-[20px] p-5 border-teal-500 ${dim}`}>
+        <div className={`h-full bg-[#05F2DB1A] border-2 rounded-2xl p-5 border-teal-500 ${dim}`}>
           <TbShield className='fs-24 text-teal-500 mb-1' />
           <h3 className='text-teal-500'>ในค้ำ</h3>
           <p>
             <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> โครงการ
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.inWarrantyActive, 0)} ({fmtNumber(stats.inWarrantyPct, 1)}%)
           </p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={24} xl={24} xxl={24} xxxl={24}>
-        <div className={`h-full bg-[#9797971A] border-2 rounded-[20px] p-5 border-gray-500 ${dim}`}>
+        <div className={`h-full bg-[#9797971A] border-2 rounded-2xl p-5 border-gray-500 ${dim}`}>
           <TbShield className='fs-24 text-gray-400 mb-1' />
           <h3 className='text-gray-400'>หมดค้ำ</h3>
           <p>
             <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> โครงการ
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.expiredActive, 0)} ({fmtNumber(stats.expiredPct, 1)}%)
           </p>
         </div>
