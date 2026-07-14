@@ -132,6 +132,19 @@ const admin: AdminMenuItem[] = [
     path_active: "/admin/tracking",
     path_list: [],
   },
+  {
+    key: '17',
+    title: 'LPR',
+    label: "LPR",
+    label_key: "lpr",
+    // Custom scan-frame glyph — rendered via IconLPR override in the Navbar
+    // (same pattern as tracking's IconTracking), so no Tb icon name here.
+    icon: "",
+    default_color_icon: '',
+    path: "/admin/lpr",
+    path_active: "/admin/lpr",
+    path_list: [],
+  },
   // SETTING
   {
     key: '12',
@@ -231,17 +244,6 @@ const admin: AdminMenuItem[] = [
     default_color_icon: '',
     path: "/admin/smart-search",
     path_active: "/admin/smart-search",
-    path_list: [],
-  },
-  {
-    key: '17',
-    title: 'LPR',
-    label: "LPR",
-    label_key: "lpr",
-    icon: "TbBrandGithubCopilot",
-    default_color_icon: '',
-    path: "/admin/lpr",
-    path_active: "/admin/lpr",
     path_list: [],
   },
 ]

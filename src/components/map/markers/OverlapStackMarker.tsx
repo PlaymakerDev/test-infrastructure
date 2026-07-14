@@ -13,6 +13,7 @@ import {
   TbTrafficLights,
 } from 'react-icons/tb'
 import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
   type SystemType,
@@ -28,6 +29,7 @@ const SYSTEM_ICONS: Record<SystemType, IconType> = {
   CCTV: TbVideo,
   VMS: TbDeviceDesktop,
   WIM: IconTracking,
+  LPR: IconLPR,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,

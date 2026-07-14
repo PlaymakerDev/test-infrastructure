@@ -104,10 +104,12 @@ const DashboardScreen: React.FC<Props> = () => {
       {isDesktop === true && (
         <>
           {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
+          {/* bottom: 200 (was 180) — the donut row below grew ~20px taller
+            * (py-4 + label gap), keep the same visual gap above it. */}
           <MapOverlayPanel
             position="left"
             className="absolute left-4 z-10 flex flex-col gap-3"
-            style={{ top: 52, bottom: 180, width: 620 }}
+            style={{ top: 52, bottom: 200, width: 620 }}
           >
             <div className="flex-1" />
             {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
@@ -117,11 +119,12 @@ const DashboardScreen: React.FC<Props> = () => {
             <AccidentChart />
           </MapOverlayPanel>
 
-          {/* DESKTOP: donut row */}
+          {/* DESKTOP: donut row — width follows content (126px per visible
+            * donut inside RatioChart); 7 donuts ≈ the old fixed 880. */}
           <MapOverlayPanel
             position="bottom"
             className="absolute left-4 z-10 flex"
-            style={{ bottom: 16, width: 880 }}
+            style={{ bottom: 16, maxWidth: 'calc(100vw - 32px)' }}
           >
             <RatioChart size={110} />
           </MapOverlayPanel>

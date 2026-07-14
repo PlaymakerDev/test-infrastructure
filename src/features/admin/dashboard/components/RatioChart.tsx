@@ -20,6 +20,10 @@ interface DonutItem {
   /** System id — matches STATIC_DONUTS key + MOCK_SYSTEM_DETAIL key. */
   id: string
   pct: number
+  /** Device count for this system — `null` until the query resolves. A donut
+   *  is hidden once its data loads with total = 0 (dept owns no such devices;
+   *  "0% Online" would misread as an outage). */
+  total: number | null
   color: string
   label: string
 }
@@ -106,8 +110,11 @@ const Donut = memo(function Donut(props: DonutProps) {
         style={{ width: size, height: size }}
         opts={{ renderer: 'canvas' }}
       />
+      {/* mt-1 (was -mt-2): keep a visible gap between the ring and its label —
+        * the ring's bottom edge sits ~6% inside the canvas, so a negative
+        * margin made them touch. Donut size itself stays unchanged. */}
       <div
-        className={`${isSmall ? 'text-sm' : 'text-base'} font-bold -mt-2 text-center leading-tight`}
+        className={`${isSmall ? 'text-sm' : 'text-base'} font-bold mt-1 text-center leading-tight`}
         style={{ color, width: size }}
       >
         {label}
@@ -133,16 +140,20 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
 
   const items = useMemo<DonutItem[]>(
     () => [
-      { id: 'cctv',      ...STATIC_DONUTS.cctv,      pct: cctv?.percentage      ?? 0 },
-      { id: 'traffic',   ...STATIC_DONUTS.traffic,   pct: traffic?.percentage   ?? 0 },
-      { id: 'lighting',  ...STATIC_DONUTS.lighting,  pct: lighting?.percentage  ?? 0 },
-      { id: 'vms',       ...STATIC_DONUTS.vms,       pct: vms?.percentage       ?? 0 },
-      { id: 'wim',       ...STATIC_DONUTS.wim,       pct: wim?.percentage       ?? 0 },
-      { id: 'crosswalk', ...STATIC_DONUTS.crosswalk, pct: crosswalk?.percentage ?? 0 },
-      { id: 'tunnel',    ...STATIC_DONUTS.tunnel,    pct: tunnel?.percentage    ?? 0 },
+      { id: 'cctv',      ...STATIC_DONUTS.cctv,      pct: cctv?.percentage      ?? 0, total: cctv      ? cctv.camera.total         : null },
+      { id: 'traffic',   ...STATIC_DONUTS.traffic,   pct: traffic?.percentage   ?? 0, total: traffic   ? traffic.traffic.total     : null },
+      { id: 'lighting',  ...STATIC_DONUTS.lighting,  pct: lighting?.percentage  ?? 0, total: lighting  ? lighting.lighting.total   : null },
+      { id: 'vms',       ...STATIC_DONUTS.vms,       pct: vms?.percentage       ?? 0, total: vms       ? vms.vms.total             : null },
+      { id: 'wim',       ...STATIC_DONUTS.wim,       pct: wim?.percentage       ?? 0, total: wim       ? wim.wim.total             : null },
+      { id: 'crosswalk', ...STATIC_DONUTS.crosswalk, pct: crosswalk?.percentage ?? 0, total: crosswalk ? crosswalk.crosswalk.total : null },
+      { id: 'tunnel',    ...STATIC_DONUTS.tunnel,    pct: tunnel?.percentage    ?? 0, total: tunnel    ? tunnel.tunnel.total       : null },
     ],
     [cctv, lighting, vms, traffic, wim, crosswalk, tunnel],
   )
+
+  // Hide zero-device systems (loaded + total 0). `null` (still loading) stays
+  // visible at 0% so the row doesn't flash empty while queries resolve.
+  const visible = items.filter((d) => d.total !== 0)
 
   // Click a donut → show that system's detail card; click the card → back.
   const [selected, setSelected] = useState<string | null>(null)
@@ -158,6 +169,9 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
     )
   }
 
+  // Every system loaded with 0 devices — nothing meaningful to render.
+  if (visible.length === 0) return null
+
   if (cols) {
     // mobile / grid layout
     return (
@@ -170,7 +184,7 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
           backdropFilter: 'blur(5px)',
         }}
       >
-        {items.map((d) => (
+        {visible.map((d) => (
           <div
             key={d.label}
             className='flex justify-center cursor-pointer'
@@ -186,20 +200,24 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
     )
   }
 
-  // desktop horizontal row
+  // desktop horizontal row — py-4 gives the donut + label pair breathing room.
+  // Fixed 126px per donut cell (= 880 / 7, the full-row density) with a
+  // fit-content card, so hiding zero-device systems shrinks the card instead
+  // of spreading the remaining donuts across the old full width.
   return (
     <div
-      className='flex items-center py-3 w-full'
+      className='flex items-center py-4 w-fit max-w-full'
       style={{
         background: 'rgba(0,0,0,0.8)',
         borderRadius: 20,
         backdropFilter: 'blur(5px)',
       }}
     >
-      {items.map((d) => (
+      {visible.map((d) => (
         <div
           key={d.label}
-          className='flex-1 flex justify-center cursor-pointer'
+          className='flex justify-center cursor-pointer shrink-0'
+          style={{ width: 126 }}
           role='button'
           tabIndex={0}
           title={`ดูรายละเอียด ${d.label}`}
