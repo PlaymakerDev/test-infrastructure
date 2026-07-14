@@ -1,5 +1,10 @@
 import React from 'react'
 
+// The login screen reads the URL via useSearchParams — same build-time
+// prerender constraint as /admin (see src/app/admin/layout.tsx). Render
+// per-request instead of failing the static export.
+export const dynamic = 'force-dynamic'
+
 interface Props {
   children: React.ReactNode
 }

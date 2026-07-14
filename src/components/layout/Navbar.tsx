@@ -49,7 +49,7 @@ import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import IconTracking from "@/components/icon/IconTracking";
 import IconLPR from "@/components/icon/IconLPR";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import axios, { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import FindOnPageOverlay from "./FindOnPageOverlay";
@@ -124,6 +124,12 @@ export default function Navbar() {
   // buttons live in this nav — the overlay itself renders as a portal-like
   // fixed element that visually attaches under the navbar.
   const [findOpen, setFindOpen] = useState(false)
+  // Mobile (< lg) replacement for the hover trapezoid: a single trapezoid tab
+  // at top-center that pops a grid of the same nav entries. Closes on backdrop
+  // tap, tapping the tab again — and on ANY navigation (path or query) without
+  // an effect: open state stores the URL it was opened at, so a route/query
+  // change derives it closed on the next render.
+  const [mobileNavOpenAt, setMobileNavOpenAt] = useState<string | null>(null)
   // Department of the logged-in user — appended to the owned menus' links.
   const homeDeptId = useHomeDeptId()
   // Global "focus the map" toggle — hides every card/panel on overall pages
@@ -152,6 +158,10 @@ export default function Navbar() {
     }
     setMapFocus(false)
   }, [pathname, searchKey, setMapFocus])
+
+  // Derived: the popup is open only while still on the URL it was opened at.
+  const mobileNavKey = `${pathname}?${searchKey}`
+  const mobileNavOpen = mobileNavOpenAt === mobileNavKey
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -298,29 +308,39 @@ export default function Navbar() {
     []
   )
 
+  // Enriched entries shared by the desktop trapezoid AND the mobile popup
+  // grid, so both always agree on icon overrides, active state, and hrefs.
+  // Dashboard → house icon; Tracking / LPR → shared design glyphs (the same
+  // components the map markers/pills use); everything else uses its admin.ts
+  // icon. (Navbar-only overrides — admin.ts stays icon-string.)
+  // Owned menus land on the user's own department; others navigate plainly.
+  // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
+  const navEntries = useMemo(
+    () =>
+      navItems.map((item) => {
+        const OverrideIcon =
+          item.label_key === "dashboard"
+            ? TbHome
+            : item.label_key === "tracking"
+              ? IconTracking
+              : item.label_key === "lpr"
+                ? IconLPR
+                : undefined
+        const href = DEPT_SCOPED_KEYS.has(item.label_key)
+          ? `${item.path}?${deptQuery(homeDeptId)}`
+          : item.path
+        return { ...item, OverrideIcon, href, active: pathname === item.path_active }
+      }),
+    [navItems, pathname, homeDeptId]
+  )
+
   const renderTrapezoidNav = useMemo(() => {
-    return navItems.map((item) => {
-      const active = pathname === item.path_active
-      // Dashboard → house icon; Tracking / LPR → shared design glyphs (the
-      // same components the map markers/pills use); everything else uses its
-      // admin.ts icon. (Navbar-only overrides — admin.ts stays icon-string.)
-      const OverrideIcon =
-        item.label_key === "dashboard"
-          ? TbHome
-          : item.label_key === "tracking"
-            ? IconTracking
-            : item.label_key === "lpr"
-              ? IconLPR
-              : undefined
-      // Owned menus land on the user's own department; others navigate plainly.
-      // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
-      const href = DEPT_SCOPED_KEYS.has(item.label_key)
-        ? `${item.path}?${deptQuery(homeDeptId)}`
-        : item.path
+    return navEntries.map((item) => {
+      const { OverrideIcon, active } = item
       return (
         <button
           key={item.key}
-          onClick={() => router.push(href)}
+          onClick={() => router.push(item.href)}
           className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-white"
             }`}
           title={item.title}
@@ -334,7 +354,7 @@ export default function Navbar() {
         </button>
       )
     })
-  }, [navItems, pathname, router, Icon, homeDeptId])
+  }, [navEntries, router, Icon])
 
   return (
     <nav className={`navbar ${scrolled ? ' scrolled' : ''}`}>
@@ -424,6 +444,73 @@ export default function Navbar() {
             </motion.button>
           </div>
         </div>
+        {/* MOBILE (< lg) system-menu popup — trigger button lives in
+            .mobile-side-menu below (beside the ... button; a centered tab
+            covered page text like the map-hint chip). Kept in an untransformed
+            wrapper: a CSS transform on an ancestor would re-anchor the `fixed`
+            backdrop to that ancestor instead of the viewport. */}
+        <div className="lg:hidden">
+          <AnimatePresence>
+            {/* Backdrop — dims the page; tap anywhere outside to close. Both
+                children sit DIRECTLY under AnimatePresence as keyed motion
+                components (fragments/plain wrappers break exit tracking). */}
+            {mobileNavOpen && (
+              <motion.div
+                key="mobile-nav-backdrop"
+                className="fixed inset-0 z-10"
+                style={{ background: 'rgba(0, 0, 0, 0.45)' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setMobileNavOpenAt(null)}
+              />
+            )}
+            {/* Popup grid — 3 columns, same entries/order as desktop. The
+                centering -50% lives in motion's x (constant across states)
+                because motion owns the transform and would overwrite a
+                Tailwind -translate-x-1/2. */}
+            {mobileNavOpen && (
+              <motion.div
+                key="mobile-nav-panel"
+                className="absolute left-1/2 z-20 rounded-2xl overflow-hidden"
+                style={{
+                  top: 'calc(100% + 10px)',
+                  width: 'min(92vw, 400px)',
+                  background: '#000000E6',
+                  border: '1px solid rgba(252,209,22,0.3)',
+                  boxShadow: '0px 2px 15px rgba(252, 209, 22, 0.45)',
+                }}
+                initial={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
+                animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+                exit={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <div className="grid grid-cols-3 py-1">
+                  {navEntries.map((item) => {
+                    const { OverrideIcon, active } = item
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => {
+                          setMobileNavOpenAt(null)
+                          router.push(item.href)
+                        }}
+                        className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 cursor-pointer transition-colors ${active ? 'text-(--yellow)' : 'text-white/75 active:text-white'}`}
+                        title={item.title}
+                      >
+                        <span>{OverrideIcon ? <OverrideIcon size={22} /> : Icon(item.icon, { size: 22 })}</span>
+                        <span className={`text-[11px] leading-tight text-center ${active ? 'font-semibold' : ''}`}>
+                          {item.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <div className="nav-side-menu">
           <button
             type="button"
@@ -499,16 +586,36 @@ export default function Navbar() {
           </Dropdown>
         </div>
         <div className="mobile-side-menu">
-          <Dropdown
-            menu={{ items }}
-            trigger={["click"]}
-            placement="bottom"
-          >
+          {/* Inner flex wrapper — layout.css forces .mobile-side-menu itself
+              to `display: block` (unlayered, beats Tailwind utilities), so
+              the gap must live one level down. */}
+          <div className="flex items-center gap-4">
+            {/* System-menu trigger — pops the nav grid (same entries as the
+                desktop trapezoid). Sits beside the ... button instead of a
+                centered tab so it never covers page text under the navbar. */}
             <Button
               shape="circle"
-              icon={<TbDots />}
+              aria-label={mobileNavOpen ? 'ปิดเมนูระบบ' : 'เปิดเมนูระบบ'}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpenAt(mobileNavOpen ? null : mobileNavKey)}
+              style={
+                mobileNavOpen
+                  ? { color: 'var(--yellow)', borderColor: 'rgba(252,209,22,0.6)' }
+                  : undefined
+              }
+              icon={<TbApps />}
             />
-          </Dropdown>
+            <Dropdown
+              menu={{ items }}
+              trigger={["click"]}
+              placement="bottom"
+            >
+              <Button
+                shape="circle"
+                icon={<TbDots />}
+              />
+            </Dropdown>
+          </div>
         </div>
       </div>
       <FindOnPageOverlay open={findOpen} onClose={() => setFindOpen(false)} />
