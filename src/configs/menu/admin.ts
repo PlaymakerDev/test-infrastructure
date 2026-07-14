@@ -241,7 +241,7 @@ const admin: AdminMenuItem[] = [
     icon: "TbBrandGithubCopilot",
     default_color_icon: '',
     path: "/admin/lpr",
-    path_active: "/admin/smart-search",
+    path_active: "/admin/lpr",
     path_list: [],
   },
 ]

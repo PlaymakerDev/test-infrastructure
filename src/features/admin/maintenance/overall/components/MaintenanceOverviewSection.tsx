@@ -194,7 +194,7 @@ const MaintenanceOverviewSection: React.FC<{
       {/* Left Column: Solution Overview + งานในค้ำ + งานหมดค้ำ */}
       <div className="flex flex-col gap-4">
         {/* Solution Overview */}
-        <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
+        <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
             <img src="/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
@@ -230,7 +230,7 @@ const MaintenanceOverviewSection: React.FC<{
         </div>
 
         {/* งานในค้ำ */}
-        <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
+        <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
             <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
@@ -262,7 +262,7 @@ const MaintenanceOverviewSection: React.FC<{
         </div>
 
         {/* งานหมดค้ำ */}
-        <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5">
+        <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
             <img src="/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานหมดค้ำ</h2>
@@ -295,7 +295,7 @@ const MaintenanceOverviewSection: React.FC<{
       </div>
 
       {/* Right Column: สายทางดับทุกจุดติดตั้ง */}
-      <div className="rounded-[20px] bg-[#191919] p-3 sm:p-5 xl:sticky xl:top-4">
+      <div className="rounded-2xl bg-[#191919] p-3 sm:p-5 xl:sticky xl:top-4">
         <div className="flex items-center gap-2 flex-wrap">
           <img src="/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
           <h2 className="text-lg sm:text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
@@ -383,11 +383,10 @@ const MaintenanceOverviewSection: React.FC<{
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${
-                    currentPage === pageNum
+                  className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${currentPage === pageNum
                       ? 'bg-[#FCD116] text-[#191919]'
                       : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
-                  }`}
+                    }`}
                 >
                   {pageNum}
                 </button>

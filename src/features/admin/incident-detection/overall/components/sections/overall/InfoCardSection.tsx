@@ -56,7 +56,7 @@ const InfoCardSection: React.FC<Props> = () => {
 
   // `min-h-40` floors every card to card 1's natural size — keeps all three
   // visually identical even though cards 2 & 3 have fewer text lines.
-  const cardClass = 'min-h-40 border-2 rounded-[20px] p-5'
+  const cardClass = 'min-h-40 border-2 rounded-2xl p-5'
 
   return (
     <div className='flex flex-col gap-4 md:grid md:grid-cols-3 lg:flex lg:flex-col'>
