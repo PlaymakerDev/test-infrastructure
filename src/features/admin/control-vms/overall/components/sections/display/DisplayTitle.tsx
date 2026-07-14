@@ -19,7 +19,7 @@ const DisplayTitle: React.FC<Props> = (props) => {
         </div>
         <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
           <Button type="primary" htmlType="submit" size="large" shape="round" icon={<TbPrinter />} className='w-full! md:w-auto!'>
-            <p>นำออกเอกสาร</p>
+            <p className='fs-12'>นำออกเอกสาร</p>
           </Button>
         </ConfigProvider>
       </div>
