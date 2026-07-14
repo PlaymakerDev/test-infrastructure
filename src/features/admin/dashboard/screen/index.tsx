@@ -52,17 +52,25 @@ const DashboardScreen: React.FC<Props> = () => {
   const [currentDeptId, setCurrentDeptId] = useState<string>(
     () => searchParams.get('dept_id') ?? '0'
   )
+  // Whether this visit LANDED as the nationwide view. `dept_id=0&scope=all`
+  // (navbar/login) = ทั่วประเทศ; plain `dept_id=0` (sidebar ทช.ส่วนกลาง) is a
+  // normal single-department landing — it auto-flies to its own devices and
+  // must NOT get the country-view treatment below.
+  const [landedScopeAll] = useState<boolean>(
+    () => searchParams.get('scope') === 'all'
+  )
 
-  // ── Landing intro: ส่วนกลาง (dept 0) opens MAP-ONLY ────────────────────────
+  // ── Landing intro: ทั่วประเทศ (dept 0 + scope=all) opens MAP-ONLY ──────────
   // At the country view the cards are broad aggregates; the first real action
   // is finding a province on the map, so the map gets the whole screen. The
   // FIRST drill-in (click a province / a marker, or pan-zoom into one) reveals
   // the cards, and everything behaves exactly as before from then on — this is
   // one-shot per visit: zooming back out does NOT re-hide.
-  // Bureau/แขวง landings (dept ≠ 0) skip the intro entirely — they auto-fly
-  // into their own dept, so map-only would hide the data they came for.
+  // Every dept-specific landing (dept ≠ 0, or plain dept 0 = ทช.ส่วนกลาง)
+  // skips the intro entirely — those auto-fly into their own devices, so
+  // map-only would hide the data they came for.
   const { isMapFocus, setMapFocus } = useMapFocusMode()
-  const introRef = useRef(originalDeptId === '0')
+  const introRef = useRef(originalDeptId === '0' && landedScopeAll)
   const introShownRef = useRef(false)
 
   useEffect(() => {
@@ -98,6 +106,7 @@ const DashboardScreen: React.FC<Props> = () => {
       {/* MAP */}
       <ReactMap
         originalDeptId={originalDeptId}
+        originalScopeAll={landedScopeAll}
         onDeptIdChange={setCurrentDeptId}
         onProvinceActivate={handleProvinceActivate}
       />

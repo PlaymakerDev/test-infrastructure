@@ -48,6 +48,7 @@ import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import IconTracking from "@/components/icon/IconTracking";
 import IconLPR from "@/components/icon/IconLPR";
+import IconAIChat from "@/components/icon/IconAIChat";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { AnimatePresence, motion } from "motion/react";
 import axios, { AxiosError } from "axios";
@@ -568,8 +569,10 @@ export default function Navbar() {
               Ctrl + F
             </span>
           </motion.button>
-          <TbBrandGithubCopilot
-            className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--default-blue)" : ""}`}
+          {/* Smart Search — AI-chat glyph (Hugeicons ai-chat-01 via IconAIChat);
+            * active = yellow, same as every other menu icon. */}
+          <IconAIChat
+            className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--yellow)" : ""}`}
             onClick={() => router.push("/admin/smart-search")}
           />
           <TbBellRinging2

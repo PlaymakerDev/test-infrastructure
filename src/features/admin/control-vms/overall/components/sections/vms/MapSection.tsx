@@ -63,10 +63,8 @@ const MapSection: React.FC = () => {
       {hasCoords && (
         <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
           <div className='flex items-center gap-2'>
-            <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
-              <TbMapPin className='text-(--yellow) text-xs' />
-            </div>
-            <h5 className='text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</h5>
+            <TbMapPin className='text-(--yellow) fs-18' />
+            <p className='fs-12 text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</p>
           </div>
           <p className='text-white leading-snug fs-12'>TrafficSign: {bureauSign?.solution_name || '-'}</p>
           <p className='text-white leading-snug fs-12'>รหัสสายทาง: {bureauRoute?.road_code || '-'}</p>

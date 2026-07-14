@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from "react"
-import { TbBrandGithubCopilot, TbLayoutGrid } from "react-icons/tb"
+import { TbLayoutGrid } from "react-icons/tb"
+import IconAIChat from "@/components/icon/IconAIChat"
 import { useSmartSearchContext } from "../context"
 import { SUGGESTED_PROMPTS } from "../data/suggestedPrompts"
 import InsightsPanel from "./InsightsPanel"
@@ -13,7 +14,7 @@ const EmptyState: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center text-center gap-4 px-4 md:px-6 py-6 max-w-5xl mx-auto">
-        <TbBrandGithubCopilot className="text-white" size={56} />
+        <IconAIChat className="text-white" size={56} />
         <div className="max-w-xl">
           <p className="text-white/80 text-lg">
             พิมพ์คำถามเกี่ยวกับข้อมูลจราจรหรือถนนเป็นภาษาไทยหรืออังกฤษ

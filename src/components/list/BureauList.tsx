@@ -1,5 +1,5 @@
 "use client"
-import { Badge, Checkbox, ConfigProvider } from 'antd'
+import { Badge, Checkbox, ConfigProvider, Tooltip } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TbChevronDown, TbChevronRight } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -261,7 +261,9 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               />
             </div>
             <div className='flex-1 min-w-0'>
-              <h5>{sign.solution_name}</h5>
+              <Tooltip title={sign.solution_name}>
+                <h5 className='truncate'>{sign.solution_name}</h5>
+              </Tooltip>
               <div className='flex items-center gap-2'>
                 <p className='fs-12'>Anydesk: {sign.anydesk || '-'}</p>
                 <ConfigProvider
@@ -301,7 +303,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             className={`pl-9 pr-3 py-3 bg-(--mid-gray) rounded-md mb-3 cursor-pointer hover:bg-(--mid-gray)/80 transition-colors border ${isOpen ? 'border-(--yellow)' : 'border-transparent'}`}
           >
             <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
+              <div className='flex items-center gap-2 min-w-0 flex-1'>
                 {selectMode && (
                   <ConfigProvider
                     theme={{
@@ -322,12 +324,14 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </ConfigProvider>
                 )}
                 {isOpen
-                  ? <TbChevronDown className='text-(--yellow) fs-18' />
-                  : <TbChevronRight className='text-(--yellow) fs-18' />
+                  ? <TbChevronDown className='text-(--yellow) fs-18 shrink-0' />
+                  : <TbChevronRight className='text-(--yellow) fs-18 shrink-0' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{route.road_name || route.road_code}</h5>
+                <Tooltip title={route.road_name || route.road_code}>
+                  <h5 className='font-normal! text-(--yellow) truncate'>{route.road_name || route.road_code}</h5>
+                </Tooltip>
               </div>
-              <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-3 shrink-0'>
                 {online > 0 && (
                   <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
@@ -387,7 +391,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             className={`pl-6 pr-3 py-3 bg-(--gray) rounded-md mb-3 cursor-pointer hover:bg-(--gray)/80 transition-colors border ${isOpen ? 'border-(--yellow)' : 'border-transparent'}`}
           >
             <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
+              <div className='flex items-center gap-2 min-w-0 flex-1'>
                 {selectMode && (
                   <ConfigProvider
                     theme={{
@@ -408,12 +412,14 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </ConfigProvider>
                 )}
                 {isOpen
-                  ? <TbChevronDown className='text-(--yellow) fs-18' />
-                  : <TbChevronRight className='text-(--yellow) fs-18' />
+                  ? <TbChevronDown className='text-(--yellow) fs-18 shrink-0' />
+                  : <TbChevronRight className='text-(--yellow) fs-18 shrink-0' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{state.department_short_name}</h5>
+                <Tooltip title={state.department_short_name}>
+                  <h5 className='font-normal! text-(--yellow) truncate'>{state.department_short_name}</h5>
+                </Tooltip>
               </div>
-              <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-3 shrink-0'>
                 {state.camera_online_count > 0 && (
                   <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
@@ -471,7 +477,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
             className={`p-3 bg-(--light-gray) rounded-md mb-3 cursor-pointer hover:bg-(--light-gray)/80 transition-colors border ${isOpen ? 'border-(--yellow)' : 'border-transparent'}`}
           >
             <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
+              <div className='flex items-center gap-2 min-w-0 flex-1'>
                 {selectMode && (
                   <ConfigProvider
                     theme={{
@@ -492,12 +498,14 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </ConfigProvider>
                 )}
                 {isOpen
-                  ? <TbChevronDown className='text-(--yellow) fs-18' />
-                  : <TbChevronRight className='text-(--yellow) fs-18' />
+                  ? <TbChevronDown className='text-(--yellow) fs-18 shrink-0' />
+                  : <TbChevronRight className='text-(--yellow) fs-18 shrink-0' />
                 }
-                <h5 className='font-normal! text-(--yellow)'>{item.department_short_name}</h5>
+                <Tooltip title={item.department_short_name}>
+                  <h5 className='font-normal! text-(--yellow) truncate'>{item.department_short_name}</h5>
+                </Tooltip>
               </div>
-              <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-3 shrink-0'>
                 {item.camera_online_count > 0 && (
                   <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
