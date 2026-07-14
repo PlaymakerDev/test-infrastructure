@@ -233,6 +233,17 @@ const admin: AdminMenuItem[] = [
     path_active: "/admin/smart-search",
     path_list: [],
   },
+  {
+    key: '17',
+    title: 'LPR',
+    label: "LPR",
+    label_key: "lpr",
+    icon: "TbBrandGithubCopilot",
+    default_color_icon: '',
+    path: "/admin/lpr",
+    path_active: "/admin/smart-search",
+    path_list: [],
+  },
 ]
 
 export default admin
