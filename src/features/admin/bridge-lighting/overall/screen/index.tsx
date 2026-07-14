@@ -1,5 +1,6 @@
 "use client"
 import React from 'react'
+import { ProjectInfoModal } from '@/components/modal'
 import { TitleSection, OverallSection } from '../components'
 import { OverallProvider } from '../context'
 
@@ -11,6 +12,8 @@ const BridgeLightingScreen: React.FC = () => {
         <section className='mt-8'>
           <OverallSection />
         </section>
+        {/* Shared project-info modal opened by the GRID card ⓘ (Redux-driven). */}
+        <ProjectInfoModal />
       </div>
     </OverallProvider>
   )

@@ -9,6 +9,5 @@ export { default as DataDisplaySection } from './sections/overall/DataDisplaySec
 export { default as StatusBridgeLighting } from './sections/overall/StatusBridgeLighting'
 export { default as StatsSectionBridgeLighting } from './sections/overall/StatsSectionBridgeLighting'
 export { default as MapBridgeLighting } from './sections/overall/MapBridgeLighting'
-export { default as TableBridgeLighting } from './sections/overall/TableBridgeLighting'
 export { default as SummaryTableBridgeLighting } from './sections/overall/SummaryTableBridgeLighting'
 export { default as FormSearchBridgeLighting } from './sections/overall/FormSearchBridgeLighting'

@@ -4,6 +4,7 @@ import MapDetailBridgeLighting from './sections/overall/MapDetailBridgeLighting'
 import ChartElectricalBridgeLighting from './sections/overall/ChartElectricalBridgeLighting'
 import BridgeLightingStatus from './sections/overall/BridgeLightingStatus'
 import VoltageStat from './sections/overall/VoltageStat'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 const OverallSection: React.FC = () => {
   return (
@@ -13,20 +14,28 @@ const OverallSection: React.FC = () => {
         <MapDetailBridgeLighting edgeFade={{ all: 30 }} />
       </div>
 
-      {/* Right column: stats then charts, spans full height on desktop */}
-      <div className='flex flex-col gap-3 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(30rem,38vw,52rem)]'>
+      {/* Right column: stats then charts, spans full height on desktop.
+        * Wrapped in MapOverlayPanel so it slides off when the navbar's Map
+        * Focus Mode toggle is on. */}
+      <MapOverlayPanel
+        position='right'
+        className='flex flex-col gap-3 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(30rem,38vw,52rem)]'
+      >
         <div className='shrink-0'>
           <VoltageStat />
         </div>
         <div className='flex-1 min-h-0'>
           <ChartElectricalBridgeLighting />
         </div>
-      </div>
+      </MapOverlayPanel>
 
       {/* Left column: BridgeLightingStatus — natural height, anchored bottom-left */}
-      <div className='px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-4 lg:z-10 lg:w-[clamp(20rem,22vw,28rem)]'>
+      <MapOverlayPanel
+        position='left'
+        className='px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-4 lg:z-10 lg:w-[clamp(20rem,22vw,28rem)]'
+      >
         <BridgeLightingStatus />
-      </div>
+      </MapOverlayPanel>
     </div>
   )
 }

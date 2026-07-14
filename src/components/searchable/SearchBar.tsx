@@ -173,8 +173,8 @@ const SearchBar: React.FC<Props> = ({
           value={viewMode}
           onChange={handleViewMode}
           options={[
-            { value: 'TABLE', icon: <BarsOutlined /> },
-            { value: 'GRID', icon: <AppstoreOutlined /> },
+            { value: 'TABLE', icon: <AppstoreOutlined /> },
+            { value: 'GRID', icon: <BarsOutlined /> },
           ]}
           size='large'
           block
