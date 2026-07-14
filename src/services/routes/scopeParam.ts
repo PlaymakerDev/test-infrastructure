@@ -15,21 +15,40 @@
  *
  * Covered endpoint families (7 overall menus × 4 + dashboard):
  *   /overview · /overview/central/list · /overview/central/totals ·
- *   /cameras|overview/random-online · /cctv/.../cameras/uptime-statistics ·
- *   /manage/solution/{id}/position
+ *   /cameras|overview/random-online · uptime-statistics (all 7 features) ·
+ *   /manage/solution/{id}/position · /analytic/details/{id}/dashboard ·
+ *   /counting/{id}/dashboard
  *
  * SSR-safe: services only run in the browser (BaseService pulls the token via
  * a client fetch), but guard `window` anyway. The dept id param is kept so a
  * future per-dept rule can be reinstated here without touching call sites.
  */
+
+/** Mirror of the COMMITTED router URL's `?scope=all`, written during render
+ *  by `<ScopeUrlSync />` (mounted first inside the admin layout, so it runs
+ *  before any page component in the same render pass).
+ *
+ *  Why not read `window.location` directly: during an App Router transition
+ *  the committed React tree and the window URL can be a render apart, so a
+ *  render-time window read returns the PREVIOUS page's scope — query keys
+ *  then never change and the overall pages sit on stale data until a manual
+ *  refresh (bug reported 2026-07-14; same race `useScopeAll` documents for
+ *  the dashboard). `null` = not synced yet (first paint / SSR) → fall back
+ *  to the window read, which is correct outside transitions. */
+let routerScopeAll: boolean | null = null
+export const setRouterScopeAll = (next: boolean): void => {
+  routerScopeAll = next
+}
+
+const isScopeAll = (): boolean => {
+  if (routerScopeAll !== null) return routerScopeAll
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('scope') === 'all'
+}
+
 export const centralScope = (
   _deptId: string | number
-): { scope: 'all' } | undefined => {
-  if (typeof window === 'undefined') return undefined
-  return new URLSearchParams(window.location.search).get('scope') === 'all'
-    ? { scope: 'all' }
-    : undefined
-}
+): { scope: 'all' } | undefined => (isScopeAll() ? { scope: 'all' } : undefined)
 
 /** TanStack-Query key segment mirroring `centralScope()`. Since BE shipped
  *  scope support (2026-07-11), `dept_id=0` PLAIN vs `dept_id=0&scope=all`
@@ -37,8 +56,4 @@ export const centralScope = (
  *  ≈8,946) — so cached entries MUST be keyed apart or switching entry points
  *  (sidebar ↔ เมนูกลาง) shows the other scope's stale data. Append this to
  *  every dept-scoped key whose queryFn sends `centralScope()`. */
-export const scopeKey = (): 'all' | 'own' =>
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).get('scope') === 'all'
-    ? 'all'
-    : 'own'
+export const scopeKey = (): 'all' | 'own' => (isScopeAll() ? 'all' : 'own')

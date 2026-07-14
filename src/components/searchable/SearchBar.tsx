@@ -146,7 +146,7 @@ const SearchBar: React.FC<Props> = ({
                   size='large'
                   onClick={() => handleFilter(f.key)}
                 >
-                  <span className='flex items-center gap-2'>
+                  <span className='flex items-center gap-2 fs-12'>
                     <span>{f.label}</span>
                     {count !== undefined && (
                       <span className={[
@@ -173,8 +173,8 @@ const SearchBar: React.FC<Props> = ({
           value={viewMode}
           onChange={handleViewMode}
           options={[
-            { value: 'TABLE', icon: <BarsOutlined /> },
-            { value: 'GRID', icon: <AppstoreOutlined /> },
+            { value: 'TABLE', icon: <AppstoreOutlined /> },
+            { value: 'GRID', icon: <BarsOutlined /> },
           ]}
           size='large'
           block
@@ -187,9 +187,9 @@ const SearchBar: React.FC<Props> = ({
               shape='round'
               icon={<TbPrinter />}
               onClick={onExport}
-              className='w-full! sm:w-auto! sm:min-w-[180px]!'
+              className='w-full! sm:w-auto! sm:min-w-45!'
             >
-              <span>นำออกเอกสาร</span>
+              <p className='fs-12'>นำออกเอกสาร</p>
             </Button>
           </ConfigProvider>
         )}

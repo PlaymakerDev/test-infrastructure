@@ -68,9 +68,9 @@ const MapSection: React.FC = () => {
             </div>
             <h5 className='text-(--yellow) font-medium'>จุดติดตั้งป้าย VMS</h5>
           </div>
-          <p className='text-white leading-snug fs-11'>TrafficSign: {bureauSign?.solution_name || '-'}</p>
-          <p className='text-white leading-snug fs-11'>รหัสสายทาง: {bureauRoute?.road_code || '-'}</p>
-          {coords && <p className='fs-11 text-white/60'>{coords}</p>}
+          <p className='text-white leading-snug fs-12'>TrafficSign: {bureauSign?.solution_name || '-'}</p>
+          <p className='text-white leading-snug fs-12'>รหัสสายทาง: {bureauRoute?.road_code || '-'}</p>
+          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
         </div>
       )}
     </div>

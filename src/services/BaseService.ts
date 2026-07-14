@@ -32,8 +32,7 @@ async function fetchSessionJSON(): Promise<SessionJSON> {
 		// Retry once: the route can briefly return 500/non-JSON while Next recompiles (dev).
 		for (let attempt = 0; attempt < 2; attempt++) {
 			try {
-				// const res = await fetch("/api/auth/session")
-				const res = await fetch(SESSION_PATH)
+				const res = await fetch(`${BASE_PATH}/api/auth/session`)
 				if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
 					return (await res.json()) as SessionJSON
 				}
@@ -78,7 +77,7 @@ async function refreshWithRetry(): Promise<void> {
 		for (let i = 0; i < delays.length; i++) {
 			if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]))
 			try {
-				await axios.post("/api/auth/refresh", {})
+				await axios.post(`${BASE_PATH}/api/auth/refresh`, {})
 				return
 			} catch (err) {
 				lastErr = err
@@ -154,19 +153,9 @@ const BaseService = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_HOST_BACKEND,
 })
 
-BaseService.interceptors.request.use(
-	async (config) => {
-		const { access_token } = await fetchSessionJSON()
-		if (access_token) config.headers["Authorization"] = `Bearer ${access_token}`
-		if (process.env.NEXT_PUBLIC_API_KEY) config.headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
-		return config
-	},
-	(error) => Promise.reject(error),
-)
-
 const logout = async () => {
 	try {
-		await axios.post(LOGOUT_PATH, {})
+		await axios.post(`${BASE_PATH}/api/auth/logout`, {})
 	} catch {
 		// ignore — redirect regardless
 	}

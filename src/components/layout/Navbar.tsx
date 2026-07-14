@@ -1,8 +1,7 @@
 "use client"
 import menu from "@/configs/menu"
-import type { AdminMenuItem } from "@/configs/menu/admin"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TbMenu2,
   TbZoomInArea,
@@ -47,6 +46,8 @@ import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
+import IconTracking from "@/components/icon/IconTracking";
+import IconLPR from "@/components/icon/IconLPR";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { motion } from "motion/react";
 import axios, { AxiosError } from "axios";
@@ -67,6 +68,7 @@ const DEPT_SCOPED_KEYS = new Set([
   "vms",
   "bridge_lighting",
   "tunnel",
+  "lpr",
 ]);
 
 /* VARIABLE */
@@ -99,31 +101,10 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbBrandGithubCopilot,
 }
 
-// Design SVG icons (tracking.svg / text.svg) — inline so they inherit
-// currentColor (turns yellow when active) and take a size prop like react-icons.
-const IconTracking: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3.75 13.75C3.75 13.4185 3.8817 13.1005 4.11612 12.8661C4.35054 12.6317 4.66848 12.5 5 12.5H7.5C7.83152 12.5 8.14946 12.6317 8.38388 12.8661C8.6183 13.1005 8.75 13.4185 8.75 13.75V16.25C8.75 16.5815 8.6183 16.8995 8.38388 17.1339C8.14946 17.3683 7.83152 17.5 7.5 17.5H5C4.66848 17.5 4.35054 17.3683 4.11612 17.1339C3.8817 16.8995 3.75 16.5815 3.75 16.25V13.75Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 13.75C21.25 13.4185 21.3817 13.1005 21.6161 12.8661C21.8505 12.6317 22.1685 12.5 22.5 12.5H25C25.3315 12.5 25.6495 12.6317 25.8839 12.8661C26.1183 13.1005 26.25 13.4185 26.25 13.75V16.25C26.25 16.5815 26.1183 16.8995 25.8839 17.1339C25.6495 17.3683 25.3315 17.5 25 17.5H22.5C22.1685 17.5 21.8505 17.3683 21.6161 17.1339C21.3817 16.8995 21.25 16.5815 21.25 16.25V13.75Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12.5 5C12.5 4.66848 12.6317 4.35054 12.8661 4.11612C13.1005 3.8817 13.4185 3.75 13.75 3.75H16.25C16.5815 3.75 16.8995 3.8817 17.1339 4.11612C17.3683 4.35054 17.5 4.66848 17.5 5V7.5C17.5 7.83152 17.3683 8.14946 17.1339 8.38388C16.8995 8.6183 16.5815 8.75 16.25 8.75H13.75C13.4185 8.75 13.1005 8.6183 12.8661 8.38388C12.6317 8.14946 12.5 7.83152 12.5 7.5V5Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12.5 22.5C12.5 22.1685 12.6317 21.8505 12.8661 21.6161C13.1005 21.3817 13.4185 21.25 13.75 21.25H16.25C16.5815 21.25 16.8995 21.3817 17.1339 21.6161C17.3683 21.8505 17.5 22.1685 17.5 22.5V25C17.5 25.3315 17.3683 25.6495 17.1339 25.8839C16.8995 26.1183 16.5815 26.25 16.25 26.25H13.75C13.4185 26.25 13.1005 26.1183 12.8661 25.8839C12.6317 25.6495 12.5 25.3315 12.5 25V22.5Z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M23.75 12.5C23.75 10.8424 23.0915 9.25269 21.9194 8.08058C20.7473 6.90848 19.1576 6.25 17.5 6.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.25 17.5C6.25 19.1576 6.90848 20.7473 8.08058 21.9194C9.25269 23.0915 10.8424 23.75 12.5 23.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.25 12.5C6.25 10.8424 6.90848 9.25269 8.08058 8.08058C9.25269 6.90848 10.8424 6.25 12.5 6.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-
-const IconText: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M13.75 15H21.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10 10H16.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M11.25 20H17.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M3.75 8.75V6.25C3.75 5.58696 4.01339 4.95107 4.48223 4.48223C4.95107 4.01339 5.58696 3.75 6.25 3.75H8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M3.75 21.25V23.75C3.75 24.413 4.01339 25.0489 4.48223 25.5178C4.95107 25.9866 5.58696 26.25 6.25 26.25H8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 3.75H23.75C24.413 3.75 25.0489 4.01339 25.5178 4.48223C25.9866 4.95107 26.25 5.58696 26.25 6.25V8.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M21.25 26.25H23.75C24.413 26.25 25.0489 25.9866 25.5178 25.5178C25.9866 25.0489 26.25 24.413 26.25 23.75V21.25" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
+// The LPR scan-frame glyph (design's text.svg) lives in
+// @/components/icon/IconLPR — shared with the map pills/markers so the
+// trapezoid menu and every LPR marker use the same glyph 1:1 (same contract
+// as IconTracking for the tracking menu).
 
 export default function Navbar() {
   const router = useRouter()
@@ -157,8 +138,18 @@ export default function Navbar() {
   // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
   // the query dep the user lands on the new department with every card still
   // hidden and only the small yellow icon hinting why.
+  // Skips the very first run: on initial mount the store already starts with
+  // focus OFF, so resetting is a no-op — and because this Navbar mounts inside
+  // a Suspense boundary it could otherwise land AFTER a page's own mount
+  // effect and clobber an intentional landing state (dashboard's map-only
+  // intro turns focus ON on mount and relies on winning the landing frame).
   const searchKey = searchParams.toString()
+  const focusResetFirstRunRef = useRef(true)
   useEffect(() => {
+    if (focusResetFirstRunRef.current) {
+      focusResetFirstRunRef.current = false
+      return
+    }
     setMapFocus(false)
   }, [pathname, searchKey, setMapFocus])
 
@@ -191,7 +182,7 @@ export default function Navbar() {
 
   const onLogout = useCallback(async () => {
     try {
-      const response = await axios.post('/api/auth/logout', {})
+      const response = await axios.post(`${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/api/auth/logout`, {})
       if (response.status === 200) {
         // Drop this user's cached (token-scoped) data so the next login starts clean.
         queryClient.clear()
@@ -296,53 +287,31 @@ export default function Navbar() {
     []
   )
 
-  // Trapezoid = shared admin menu minus Settings/Smart Search, PLUS a design-only
-  // placeholder icon (text.svg) inserted right after Tracking that has no menu
-  // data yet. admin.ts and the sidebar are left untouched.
-  const navItems = useMemo(() => {
-    const menuItems = menu["ADMIN"].filter(
-      (m) => m.label_key !== "settings" && m.label_key !== "smart_search"
-    )
-    const out: Array<
-      | { kind: "menu"; item: AdminMenuItem }
-      | { kind: "placeholder"; key: string }
-    > = []
-    for (const item of menuItems) {
-      out.push({ kind: "menu", item })
-      if (item.label_key === "tracking") {
-        out.push({ kind: "placeholder", key: "text-placeholder" })
-      }
-    }
-    return out
-  }, [])
+  // Trapezoid = shared admin menu minus Settings/Smart Search. The LPR menu
+  // (formerly a design-only placeholder) is a real admin.ts entry now, ordered
+  // right after Tracking in the config itself.
+  const navItems = useMemo(
+    () =>
+      menu["ADMIN"].filter(
+        (m) => m.label_key !== "settings" && m.label_key !== "smart_search"
+      ),
+    []
+  )
 
   const renderTrapezoidNav = useMemo(() => {
-    return navItems.map((node) => {
-      // Design placeholder (text.svg) — icon only, no route/label yet.
-      if (node.kind === "placeholder") {
-        return (
-          <button
-            key={node.key}
-            type="button"
-            title="(ยังไม่มีเมนู)"
-            className="relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full text-white/70 hover:text-white shrink-0 cursor-default"
-          >
-            <span>
-              <IconText size={24} />
-            </span>
-          </button>
-        )
-      }
-      const item = node.item
+    return navItems.map((item) => {
       const active = pathname === item.path_active
-      // Dashboard → house icon; Tracking → the design SVG; everything else
-      // uses its admin.ts icon. (Navbar-only overrides — admin.ts untouched.)
+      // Dashboard → house icon; Tracking / LPR → shared design glyphs (the
+      // same components the map markers/pills use); everything else uses its
+      // admin.ts icon. (Navbar-only overrides — admin.ts stays icon-string.)
       const OverrideIcon =
         item.label_key === "dashboard"
           ? TbHome
           : item.label_key === "tracking"
             ? IconTracking
-            : undefined
+            : item.label_key === "lpr"
+              ? IconLPR
+              : undefined
       // Owned menus land on the user's own department; others navigate plainly.
       // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
       const href = DEPT_SCOPED_KEYS.has(item.label_key)
@@ -389,7 +358,7 @@ export default function Navbar() {
           onMouseLeave={() => setHovered(false)}
         >
           <div
-            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-4 lg:px-6 transition-all duration-300 ${hovered || locked
+            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-300 ${hovered || locked
               ? "opacity-100 translate-y-0"
               : "opacity-0 -translate-y-2"
               }`}

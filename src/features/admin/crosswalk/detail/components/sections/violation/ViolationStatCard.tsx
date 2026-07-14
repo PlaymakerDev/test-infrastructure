@@ -30,7 +30,7 @@ const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = 
 const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
   const c = COLOR_MAP[color]
   return (
-    <div className={`h-full bg-[#66AEFF1A] border ${c.border} py-3 px-5 rounded-[20px]`}>
+    <div className={`h-full bg-[#66AEFF1A] border ${c.border} py-3 px-5 rounded-2xl`}>
       <span className={`fs-22 mb-1 ${c.text}`}>{icon}</span>
       <h4 className={`${c.text} mb-1`}>{label}</h4>
       {isLoading ? (

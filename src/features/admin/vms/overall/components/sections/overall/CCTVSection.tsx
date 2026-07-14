@@ -1,6 +1,6 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { getVMSOverviewRandomOnlineAPI } from '@/services/routes/VMSService'
-import { scopeKey } from '@/services/routes/scopeParam'
+import { useScopeAll } from '@/hooks/useScopeAll'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
@@ -14,13 +14,17 @@ interface Props {
 
 const CCTVSection: React.FC<Props> = (props) => {
   const { deptId } = props
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query key re-derives when scope toggles (render-time window reads go
+  // stale during App Router transitions).
+  const scope = useScopeAll() ? 'all' : 'own'
   const dispatch = useAppDispatch()
   const { setOpenVMSScreen } = useOverallContext()
 
   const { data, isLoading } = useQuery({
     // dept + scope in the key — same dept/scope must not share cache entries
     // (key previously had neither, so switching departments reused stale data).
-    queryKey: ['random_cctv', String(deptId ?? ''), scopeKey()],
+    queryKey: ['random_cctv', String(deptId ?? ''), scope],
     queryFn: () => getVMSOverviewRandomOnlineAPI(Number(deptId)!, { limit: 3 }),
     enabled: !!deptId,
     placeholderData: keepPreviousData

@@ -10,7 +10,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { CountingLocation } from '@/types/traffic-volume/overview-api'
 
-interface Props {}
+interface Props { }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -59,7 +59,7 @@ const TrafficVolumePopup: React.FC<{
       style={{ borderColor: '#2DD4BF' }}
     >
       <p
-        className='fs-11 font-bold tracking-wide'
+        className='fs-12 font-bold tracking-wide'
         style={{ color: '#2DD4BF' }}
       >
         Traffic Volume · {String(p.code_name)}
@@ -67,7 +67,7 @@ const TrafficVolumePopup: React.FC<{
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-11 text-slate-500 mt-1.5'>
+      <p className='fs-12 text-slate-500 mt-1.5'>
         ปริมาณจราจร: {Number(p.total_count ?? 0).toLocaleString()} คัน
       </p>
       {p.id != null && (

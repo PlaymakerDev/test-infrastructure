@@ -98,6 +98,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
+      className: 'col-road-code',
       width: 160,
       onCell: (row) => {
         if (row.kind === 'bureau') {
@@ -129,6 +130,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     {
       title: 'ชื่อโครงการ',
       key: 'projectName',
+      className: 'col-project-name',
       ellipsis: true,
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) =>

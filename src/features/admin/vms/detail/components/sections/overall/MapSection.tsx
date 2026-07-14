@@ -28,8 +28,8 @@ const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-green-400`}>
       <section>
-        <p className='fs-11'>ชื่อจุดติดตั้ง: <strong>{data?.solution?.solution_name || '-'}</strong></p>
-        <p className='fs-11'>รหัสสายทาง: <strong>{data?.solution?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
+        <p className='fs-12'>ชื่อจุดติดตั้ง: <strong>{data?.solution?.solution_name || '-'}</strong></p>
+        <p className='fs-12'>รหัสสายทาง: <strong>{data?.solution?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
       </section>
       <section className='mt-1.5'>
         <HLSLivePlayer

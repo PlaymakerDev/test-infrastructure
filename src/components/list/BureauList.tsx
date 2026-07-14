@@ -329,7 +329,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {online > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {
@@ -347,7 +347,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </span>
                 )}
                 {offline > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {
@@ -415,7 +415,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {state.camera_online_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {
@@ -433,7 +433,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </span>
                 )}
                 {state.camera_offline_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {
@@ -499,7 +499,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
               </div>
               <div className='flex items-center gap-3'>
                 {item.camera_online_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-(--default-blue) text-(--default-blue) rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {
@@ -517,7 +517,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   </span>
                 )}
                 {item.camera_offline_count > 0 && (
-                  <span className='fs-11 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
+                  <span className='fs-12 py-0.5 px-3 border border-red-500 text-red-500 rounded-3xl'>
                     <ConfigProvider
                       theme={{
                         components: {

@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Skeleton } from 'antd'
+import { Button, Skeleton } from 'antd'
 import SearchBar, {
   type FilterConfig,
   type FilterStats,
@@ -149,20 +149,15 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           position='right'
           className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
         >
-          <button
-            type='button'
+          <Button
+            block
+            type='primary'
+            size='large'
+            shape='round'
             onClick={() => router.push(`/admin/cctv/search${deptId ? `?dept_id=${deptId}` : ''}`)}
-            className='w-full rounded-full font-medium cursor-pointer'
-            style={{
-              background: '#FCD116',
-              border: 'none',
-              color: '#212121',
-              fontSize: 16,
-              padding: '14px 24px',
-            }}
           >
             ค้นหากล้อง CCTV รายสายทาง
-          </button>
+          </Button>
           <StatsSectionCctv totals={totals ?? null} />
         </MapOverlayPanel>
       </MapFocusGrid>

@@ -1,12 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { TableVMSData, VMSList } from '../../../components'
+import { useRouter } from 'next/navigation'
+import { TableVMSData } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import FormSearchVMS, { FormValues } from './FormSearchVMS'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getVMSOverviewListAPI } from '@/services/routes/VMSService'
-import { scopeKey } from '@/services/routes/scopeParam'
+import { getVMSOverviewListAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
+import { useScopeAll } from '@/hooks/useScopeAll'
+import type { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 
 
 interface Props {
@@ -59,58 +62,121 @@ const VMS_FILTERS: FilterConfig[] = [
 
 const DataDisplaySection: React.FC<Props> = (props) => {
   const { deptId } = props
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query keys re-derive when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
   const dispatch = useAppDispatch()
+  const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
-  const { vms_list, vms_total } = useAppSelector(state => state.vms_overview)
+  const { vms_list } = useAppSelector(state => state.vms_overview)
+
+  // Fetch totals directly instead of reading from Redux — same query key as
+  // InfoCardSection so both components share one cached response, no extra
+  // request. Redux is no longer the source of truth here (per CLAUDE.md:
+  // do NOT add server-fetched data to slices).
+  const { data: totals } = useQuery({
+    queryKey: ['vms_total', String(deptId ?? ''), scope],
+    queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData,
+  })
 
   const vmsStats = useMemo<FilterStats>(() => ({
-    all: vms_total.solution.total,
-    online: vms_total.solution.online,
-    offline: vms_total.solution.offline,
-    inWarranty: vms_total.warranty.active,
-    expired: vms_total.warranty.expired,
-  }), [vms_total])
+    all: totals?.data.solution.total ?? 0,
+    online: totals?.data.solution.online ?? 0,
+    offline: totals?.data.solution.offline ?? 0,
+    inWarranty: totals?.data.warranty.active ?? 0,
+    expired: totals?.data.warranty.expired ?? 0,
+  }), [totals])
 
   const { data, isLoading } = useQuery({
     // dept + scope in the key — previously only the search text, so switching
     // departments/entry point reused the other's cached list.
-    queryKey: ['vms_list', String(deptId ?? ''), scopeKey(), vms_list.search],
+    queryKey: ['vms_list', String(deptId ?? ''), scope, vms_list.search],
     queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
 
+  // Client-side filter — the API's status_name/warranty_name params don't
+  // match the FilterConfig keys ('online'/'offline'/'in-warranty'/'expired'),
+  // so filtering happens on the loaded response instead. Rebuilds the same
+  // dept → sub_dept → solutions tree with only the matching solutions kept;
+  // sub-depts / depts that end up empty are dropped so no empty headers show.
+  const filteredData = useMemo<APIResponseVMSList | undefined>(() => {
+    if (!data?.data) return data?.data
+    if (activeFilter === 'all') return data.data
+    const solutionMatches = (sol: ListSolution) => {
+      switch (activeFilter) {
+        case 'online': return sol.vms.status.is_online === true
+        case 'offline': return sol.vms.status.is_online === false
+        case 'in-warranty': return sol.warranty.is_warranty === true
+        case 'expired': return sol.warranty.is_warranty === false
+        default: return true
+      }
+    }
+    return data.data
+      .map((dept) => ({
+        ...dept,
+        sub_department: (dept.sub_department ?? [])
+          .map((sub) => ({ ...sub, solutions: (sub.solutions ?? []).filter(solutionMatches) }))
+          .filter((sub) => sub.solutions.length > 0),
+      }))
+      .filter((dept) => dept.sub_department.length > 0)
+  }, [data, activeFilter])
+
+  // Flatten dept → sub-dept → solutions into card items, tagging each with its
+  // sub-dept short name so ProjectCardGrid groups by แขวง out of the box
+  // (same adapter shape crosswalk feeds the shared grid).
+  const cardItems = useMemo<ProjectCardItem[]>(() => {
+    const out: ProjectCardItem[] = []
+    for (const dept of filteredData ?? []) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          out.push({
+            key: String(sol.solution.id),
+            roadId: sol.road.id,
+            projectId: sol.project.id,
+            roadCode: sol.road.code_name,
+            projectName: sol.project.project_name || '-',
+            installPoint: sol.solution.solution_name,
+            contractNo: sol.project.contract_no,
+            budgetYear: sol.project.budget_year,
+            isWarranty: sol.warranty.is_warranty === true,
+            bureau: sub.department_short_name,
+            total: sol.online_count + sol.offline_count,
+            online: sol.online_count,
+            offline: sol.offline_count,
+            onDetail: () =>
+              router.push(
+                `/admin/vms/detail/${sol.solution.id}?is_warranty=${sol.warranty.is_warranty}&is_online=${sol.vms.status.is_online}`,
+              ),
+          })
+        }
+      }
+    }
+    return out
+  }, [filteredData, router])
+
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableVMSData data={data?.data} loading={isLoading} />
+        return <TableVMSData data={filteredData} loading={isLoading} />
       case 'GRID':
-        return <VMSList data={data?.data} loading={isLoading} />
+        return <ProjectCardGrid items={cardItems} totalLabel='กล้องทั้งหมด' />
       default:
         return null
     }
-  }, [displayType, data, isLoading])
+  }, [displayType, filteredData, isLoading, cardItems])
 
   const onSearch = useCallback((formData: FormValues) => {
-    if (activeFilter === 'in-warranty' || activeFilter === 'expired') {
-      dispatch(setSearchVMSList({
-        ...vms_list.search,
-        ...formData,
-        status_name: undefined,
-        warranty_name: activeFilter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
-        page: 1,
-      }))
-    } else {
-      dispatch(setSearchVMSList({
-        ...vms_list.search,
-        ...formData,
-        status_name: activeFilter === 'all' ? undefined : activeFilter,
-        warranty_name: undefined,
-        page: 1,
-      }))
-    }
-  }, [dispatch, vms_list.search, activeFilter])
+    dispatch(setSearchVMSList({
+      ...vms_list.search,
+      ...formData,
+      page: 1,
+    }))
+  }, [dispatch, vms_list.search])
 
   return (
     <div>
@@ -119,24 +185,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           filters={VMS_FILTERS}
           stats={vmsStats}
           activeFilter={activeFilter}
-          onFilterChange={(filter) => {
-            setActiveFilter(filter)
-            if (filter === 'in-warranty' || filter === 'expired') {
-              dispatch(setSearchVMSList({
-                ...vms_list.search,
-                status_name: undefined,
-                warranty_name: filter === 'in-warranty' ? 'อยู่ในค้ำ' : 'หมดค้ำ',
-                page: 1,
-              }))
-            } else {
-              dispatch(setSearchVMSList({
-                ...vms_list.search,
-                status_name: filter === 'all' ? undefined : filter,
-                warranty_name: undefined,
-                page: 1,
-              }))
-            }
-          }}
+          onFilterChange={setActiveFilter}
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
           formSearch={<FormSearchVMS onSearch={onSearch} />}

@@ -80,7 +80,7 @@ const Content = (props: ContentProps) => {
   const renderStatusBadge = useMemo(() => {
     return (
       <span
-        className='inline-flex items-center px-3 py-1 rounded-full fs-11 whitespace-nowrap'
+        className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
         style={{ border: `1px solid ${connectionStatus[0]?.color}`, color: connectionStatus[0]?.color }}
       >
         {connectionStatus[0]?.status || '-'}
@@ -91,7 +91,7 @@ const Content = (props: ContentProps) => {
   const renderConnectionBadge = useMemo(() => {
     return (
       <span
-        className='inline-flex items-center px-3 py-1 rounded-full fs-11 whitespace-nowrap'
+        className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
         style={{ border: `1px solid ${data?.is_online ? '#00FF00' : '#FF0000'}`, color: data?.is_online ? '#00FF00' : '#FF0000' }}
       >
         {data?.is_online ? 'Online' : 'Offline'}
@@ -131,7 +131,7 @@ const Content = (props: ContentProps) => {
                 {deviceTypeBadges.map(b => (
                   <span
                     key={b.label}
-                    className='inline-flex items-center px-2 py-0.5 rounded-full fs-11 whitespace-nowrap'
+                    className='inline-flex items-center px-2 py-0.5 rounded-full fs-12 whitespace-nowrap'
                     style={{ border: `1px solid ${b.color}`, color: b.color }}
                   >
                     {b.label}
@@ -180,7 +180,7 @@ const Content = (props: ContentProps) => {
                 <h5 className='font-normal text-gray-400/50'>{cell.label}</h5>
                 {cell.pill ? (
                   <span
-                    className='inline-flex items-center px-3 py-1 rounded-full fs-11 whitespace-nowrap'
+                    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
                     style={{ border: `1px solid ${cell.color ?? '#fff'}`, color: cell.color ?? '#fff' }}
                   >
                     {cell.value}

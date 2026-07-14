@@ -10,7 +10,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
-interface Props {}
+interface Props { }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -61,7 +61,7 @@ const TrafficSignalPopup: React.FC<{
       style={{ borderColor: '#A3E635' }}
     >
       <p
-        className='fs-11 font-bold tracking-wide'
+        className='fs-12 font-bold tracking-wide'
         style={{ color: '#A3E635' }}
       >
         Traffic Signal · {String(p.code_name)}
@@ -70,13 +70,12 @@ const TrafficSignalPopup: React.FC<{
         {String(p.solution_name)}
       </p>
       <p
-        className={`fs-11 font-semibold mt-1.5 ${
-          isOnline ? 'text-emerald-400' : 'text-red-400'
-        }`}
+        className={`fs-12 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'
+          }`}
       >
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
-      <p className='fs-11 text-slate-500 mt-0.5'>
+      <p className='fs-12 text-slate-500 mt-0.5'>
         PCU: {Number(p.total_pcu ?? 0).toLocaleString()} · Phase:{' '}
         {String(p.total_phases ?? '-')}
       </p>

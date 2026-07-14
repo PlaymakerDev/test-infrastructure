@@ -85,8 +85,8 @@ const MobileDetailMap: React.FC<Props> = (props) => {
             <TbMapPin className='text-(--yellow) fs-22' />
             <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
           </div>
-          <p className='text-white leading-snug fs-11'>{data?.way_name || '-'}</p>
-          {coords && <p className='fs-11 text-white/60'>{coords}</p>}
+          <p className='text-white leading-snug fs-12'>{data?.way_name || '-'}</p>
+          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
         </div>
       )}
     </div>

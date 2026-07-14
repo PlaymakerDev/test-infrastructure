@@ -104,7 +104,7 @@ const DailyReportTable: React.FC<Props> = ({ rows }) => {
           return (
             <div className='flex flex-col leading-tight'>
               <span className='text-white'>{d.format('D MMM BBBB')}</span>
-              <span className='fs-11 text-white/55'>{dayName}</span>
+              <span className='fs-12 text-white/55'>{dayName}</span>
             </div>
           )
         },

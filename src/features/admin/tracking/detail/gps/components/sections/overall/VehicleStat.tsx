@@ -16,7 +16,7 @@ const VehicleStat: React.FC<Props> = (props) => {
           <TbNavigation className='fs-24 text-blue-500 mb-1' />
           <h3 className='text-blue-500'>รถในระบบทั้งหมด</h3>
           <p><span className='fs-24 font-bold'>3,632.70</span> คัน</p>
-          <p className='fs-11 text-gray-400'>Active : 262,797 (54.2%)</p>
+          <p className='fs-12 text-gray-400'>Active : 262,797 (54.2%)</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
@@ -24,7 +24,7 @@ const VehicleStat: React.FC<Props> = (props) => {
           <TbTruck className='fs-24 text-yellow-500 mb-1' />
           <h3 className='text-yellow-500'>รถบนสายทาง ทช.</h3>
           <p><span className='fs-24 font-bold'>3,632.70</span> คัน</p>
-          <p className='fs-11 text-gray-400'>7.6% ของรถที่ active</p>
+          <p className='fs-12 text-gray-400'>7.6% ของรถที่ active</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
@@ -39,7 +39,7 @@ const VehicleStat: React.FC<Props> = (props) => {
           <TbTruckDelivery className='fs-24 text-lime-500 mb-1' />
           <h3 className='text-lime-500'>รถกำลังเคลื่อนที่</h3>
           <p><span className='fs-24 font-bold'>3,632.70</span> คัน</p>
-          <p className='fs-11 text-gray-400'>{"Speed > 0 และ < 10 นาที"}</p>
+          <p className='fs-12 text-gray-400'>{"Speed > 0 และ < 10 นาที"}</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
@@ -47,7 +47,7 @@ const VehicleStat: React.FC<Props> = (props) => {
           <TbPlayerPauseFilled className='fs-24 text-orange-500 mb-1' />
           <h3 className='text-orange-500'>รถจอดนิ่ง</h3>
           <p><span className='fs-24 font-bold'>3,632.70</span> คัน</p>
-          <p className='fs-11 text-gray-400'>{"Speed = 0 และ < 10 นาที"}</p>
+          <p className='fs-12 text-gray-400'>{"Speed = 0 และ < 10 นาที"}</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
@@ -55,7 +55,7 @@ const VehicleStat: React.FC<Props> = (props) => {
           <TbWeight className='fs-24 text-red-500 mb-1' />
           <h3 className='text-red-500'>รถประวัติน้ำหนักเกิน</h3>
           <p><span className='fs-24 font-bold'>3,632.70</span> คัน</p>
-          <p className='fs-11 text-gray-400'>2.5% ของรถที่ active</p>
+          <p className='fs-12 text-gray-400'>2.5% ของรถที่ active</p>
         </div>
       </Col>
     </Row>

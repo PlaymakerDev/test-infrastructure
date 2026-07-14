@@ -137,7 +137,7 @@ const CctvMarkerInfoPanel: React.FC<Props> = ({ cameras, onClose, onOpenLive }) 
           {/* Extra bottom padding so the yellow card's overlap below sits in
             * empty space, not over the name/IP text. */}
           {/* Name + IP use the SAME fixed font sizes as the camera LIST card
-            * (name 11px, IP 10px) — the fs-11/fs-12 utilities clamp up to 12px
+            * (name 11px, IP 10px) — the fs-12/fs-12 utilities clamp up to 12px
             * on wide screens, so inline px is used to match the list exactly. */}
           <div className='px-3 pt-2.5 pb-5'>
             <p className='leading-snug wrap-break-word line-clamp-2 mb-1' style={{ fontSize: 11, color: online ? '#66AEFF' : '#E94C4C' }}>
@@ -155,32 +155,32 @@ const CctvMarkerInfoPanel: React.FC<Props> = ({ cameras, onClose, onOpenLive }) 
           style={{ border: '2px solid #FCD116', background: '#0d0d0d', marginTop: -16, padding: '24px 14px 14px' }}
         >
           <h4 className='mb-2.5' style={{ color: 'var(--yellow)' }}>ข้อมูลอุปกรณ์</h4>
-        {isLoading && !cam ? (
-          <div className='py-4 text-center text-white/40 fs-12'>กำลังโหลด...</div>
-        ) : (
-          <div className='flex flex-col gap-2.5'>
-            <InfoRow label='Latitude, Longitude'>{latLng}</InfoRow>
-            <InfoRow label='ยี่ห้อ'>{cam?.brand || '-'}</InfoRow>
-            <InfoRow label='รุ่น'>{cam?.model || '-'}</InfoRow>
-            <InfoRow label='การทำงาน'>
-              <div className='flex flex-wrap gap-1.5'>
-                {badges.map((b) => (
-                  <span
-                    key={b.label}
-                    className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-11 whitespace-nowrap'
-                    style={{ border: `1px solid ${b.color}`, color: b.color }}
-                  >
-                    {b.label}
-                  </span>
-                ))}
-              </div>
-            </InfoRow>
-            <InfoRow label='สถานะ'><StatusPill online={online} /></InfoRow>
-            <InfoRow label='Device'><ConnectPill online={online} /></InfoRow>
-            <InfoRow label='Stream'><ConnectPill online={online} /></InfoRow>
-            <InfoRow label='Downtime'>{cam?.offline_duration || '-'}</InfoRow>
-          </div>
-        )}
+          {isLoading && !cam ? (
+            <div className='py-4 text-center text-white/40 fs-12'>กำลังโหลด...</div>
+          ) : (
+            <div className='flex flex-col gap-2.5'>
+              <InfoRow label='Latitude, Longitude'>{latLng}</InfoRow>
+              <InfoRow label='ยี่ห้อ'>{cam?.brand || '-'}</InfoRow>
+              <InfoRow label='รุ่น'>{cam?.model || '-'}</InfoRow>
+              <InfoRow label='การทำงาน'>
+                <div className='flex flex-wrap gap-1.5'>
+                  {badges.map((b) => (
+                    <span
+                      key={b.label}
+                      className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
+                      style={{ border: `1px solid ${b.color}`, color: b.color }}
+                    >
+                      {b.label}
+                    </span>
+                  ))}
+                </div>
+              </InfoRow>
+              <InfoRow label='สถานะ'><StatusPill online={online} /></InfoRow>
+              <InfoRow label='Device'><ConnectPill online={online} /></InfoRow>
+              <InfoRow label='Stream'><ConnectPill online={online} /></InfoRow>
+              <InfoRow label='Downtime'>{cam?.offline_duration || '-'}</InfoRow>
+            </div>
+          )}
         </div>
       </div>
     </div>
