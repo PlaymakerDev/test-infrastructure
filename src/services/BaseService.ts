@@ -153,16 +153,6 @@ const BaseService = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_HOST_BACKEND,
 })
 
-BaseService.interceptors.request.use(
-	async (config) => {
-		const { access_token } = await fetchSessionJSON()
-		if (access_token) config.headers["Authorization"] = `Bearer ${access_token}`
-		if (process.env.NEXT_PUBLIC_API_KEY) config.headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
-		return config
-	},
-	(error) => Promise.reject(error),
-)
-
 const logout = async () => {
 	try {
 		await axios.post(`${BASE_PATH}/api/auth/logout`, {})

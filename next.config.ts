@@ -15,7 +15,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/auth/login', // Next auto-prefixes basePath
+        destination: '/auth/login',
+        // destination: '/atlas/auth/login',
         permanent: false
       }
     ]
