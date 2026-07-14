@@ -33,7 +33,7 @@ const StatCard: React.FC<StatCardItem> = ({ icon, title, count, unit = 'จุ�
           <p>
             <span className='fs-24 font-bold'>{count}</span> {unit}
           </p>
-          {activeLabel && <p className='fs-11 text-gray-400'>{activeLabel}</p>}
+          {activeLabel && <p className='fs-12 text-gray-400'>{activeLabel}</p>}
         </>
       )}
     </div>

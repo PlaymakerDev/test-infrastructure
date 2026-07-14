@@ -54,12 +54,12 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
   >
     <div
-      className='rounded-xl overflow-hidden cursor-pointer'
+      className='rounded-2xl overflow-hidden cursor-pointer'
       onClick={onSelect}
     >
       {/* 16:9 aspect box (matches Incident / traffic-volume grids). */}
       <HLSLivePlayer
-        figureClassName='aspect-video rounded-xl'
+        figureClassName='aspect-video rounded-2xl'
         cameraId={camera.id}
         hlsUrl={camera.hlsUrl}
         showLiveBadge
@@ -69,7 +69,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </div>
 
     {showKm && (
-      <span className='text-xs font-semibold' style={{ color: '#FCD116' }}>
+      <span className='fs-12 font-semibold' style={{ color: '#FCD116' }}>
         กม. {camera.km}
       </span>
     )}
@@ -84,7 +84,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </p>
 
     <div className='flex items-center justify-between gap-2 min-w-0'>
-      <span className='text-xs min-w-0 truncate' style={{ color: '#888' }}>
+      <span className='fs-12 min-w-0 truncate' style={{ color: '#888' }}>
         IP : {camera.ip}
       </span>
       <div className='flex items-center gap-1 flex-wrap justify-end shrink-0'>

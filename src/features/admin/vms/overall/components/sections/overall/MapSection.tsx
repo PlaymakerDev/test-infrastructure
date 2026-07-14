@@ -77,11 +77,11 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setO
       </section>
       <section className='mt-1.5'>
         <h5>{String(p.solution_name)}</h5>
-        <p className='fs-11 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
-        <p className={`fs-11 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
+        <p className='fs-12 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
+        <p className={`fs-12 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
           ● {String(p.status_name)}
         </p>
-        <p className="fs-11 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
+        <p className="fs-12 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
       </section>
       <section className='mt-1.5'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -93,7 +93,7 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setO
             block
             onClick={() => onNavigate(`/admin/vms/detail/${p.id}?is_warranty=${p.is_warranty}&is_online=${p.is_online}`)}
           >
-            <p className='fs-11'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>

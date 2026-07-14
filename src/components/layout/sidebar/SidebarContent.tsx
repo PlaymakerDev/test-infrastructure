@@ -198,9 +198,11 @@ const SidebarContent: React.FC<Props> = (props) => {
                                           {solution.solution_type_name}
                                         </span>
                                       </div>
-                                      <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
-                                        {solution.roads_count} สายทาง
-                                      </span>
+                                      {solution.roads_count > 0 && (
+                                        <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
+                                          {solution.roads_count} สายทาง
+                                        </span>
+                                      )}
                                     </motion.div>
                                   )
                                 })}

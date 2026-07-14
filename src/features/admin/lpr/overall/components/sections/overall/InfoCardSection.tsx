@@ -26,7 +26,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
           <p>
             <span className='fs-24 font-bold'>{0}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>Active : 55 (41.4%)</p>
+          <p className='fs-12 text-gray-400'>Active : 55 (41.4%)</p>
         </div>
       </Col>
       <Col
@@ -44,7 +44,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
           <p>
             <span className='fs-24 font-bold'>{0}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>Active : 45 (42.9%)</p>
+          <p className='fs-12 text-gray-400'>Active : 45 (42.9%)</p>
         </div>
       </Col>
       <Col
@@ -62,7 +62,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
           <p>
             <span className='fs-24 font-bold'>{0}</span> จุดติดตั้ง
           </p>
-          <p className='fs-11 text-gray-400'>Active : 10 (8.5%)</p>
+          <p className='fs-12 text-gray-400'>Active : 10 (8.5%)</p>
         </div>
       </Col>
     </Row>

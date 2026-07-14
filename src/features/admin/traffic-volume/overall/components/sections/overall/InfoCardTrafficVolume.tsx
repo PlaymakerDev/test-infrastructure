@@ -75,7 +75,7 @@ const InfoCardTrafficVolume: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.cameraTotal.toLocaleString()}</span> กล้อง
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.cameraOnline, 0)} ({fmtNumber(stats.cameraOnlinePct, 1)}%)
           </p>
         </div>
@@ -87,7 +87,7 @@ const InfoCardTrafficVolume: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> โครงการ
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.inWarrantyActive, 0)} ({fmtNumber(stats.inWarrantyPct, 1)}%)
           </p>
         </div>
@@ -99,7 +99,7 @@ const InfoCardTrafficVolume: React.FC<Props> = () => {
           <p>
             <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> โครงการ
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(stats.expiredActive, 0)} ({fmtNumber(stats.expiredPct, 1)}%)
           </p>
         </div>

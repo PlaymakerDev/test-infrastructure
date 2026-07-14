@@ -10,7 +10,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
-interface Props {}
+interface Props { }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -60,7 +60,7 @@ const CrosswalkPopup: React.FC<{
       style={{ borderColor: '#7C8CFF' }}
     >
       <p
-        className='fs-11 font-bold tracking-wide'
+        className='fs-12 font-bold tracking-wide'
         style={{ color: '#7C8CFF' }}
       >
         Crosswalk · {String(p.code_name)}
@@ -68,10 +68,10 @@ const CrosswalkPopup: React.FC<{
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-11 text-white mt-1.5'>
+      <p className='fs-12 text-white mt-1.5'>
         ทางข้าม: {Number(p.crosswalk_total ?? 0).toLocaleString()} จุด
       </p>
-      <p className='fs-11 text-white'>
+      <p className='fs-12 text-white'>
         กล้องทั้งหมด: {Number(p.camera_total ?? 0).toLocaleString()} กล้อง
       </p>
       {p.id != null && (

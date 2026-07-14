@@ -52,7 +52,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
           <p>
             <span className='fs-24 font-bold'>{fmtNumber(camera?.total ?? 0, 0)}</span> ตัว
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(camera?.online ?? 0, 0)} ({fmtNumber(cameraPct, 1)}%)
           </p>
         </div>
@@ -64,7 +64,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
           <p>
             <span className='fs-24 font-bold'>{fmtNumber(inWarrantyTotal, 0)}</span> จุด
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(active.inWarrantyActive, 0)} ({fmtNumber(inWarrantyPct, 1)}%)
           </p>
         </div>
@@ -76,7 +76,7 @@ const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
           <p>
             <span className='fs-24 font-bold'>{fmtNumber(expiredTotal, 0)}</span> จุด
           </p>
-          <p className='fs-11 text-gray-400'>
+          <p className='fs-12 text-gray-400'>
             Active : {fmtNumber(active.expiredActive, 0)} ({fmtNumber(expiredPct, 1)}%)
           </p>
         </div>

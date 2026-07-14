@@ -64,7 +64,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.total.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.online, 0)} ({fmtNumber(stats.totalPct, 1)}%)
         </p>
       </div>
@@ -74,7 +74,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.inWarranty.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.inWarrantyActive, 0)} ({fmtNumber(stats.inWarrantyPct, 1)}%)
         </p>
       </div>
@@ -84,7 +84,7 @@ const InfoCardTrafficSignal: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{stats.expired.toLocaleString()}</span> จุดติดตั้ง
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(stats.expiredActive, 0)} ({fmtNumber(stats.expiredPct, 1)}%)
         </p>
       </div>

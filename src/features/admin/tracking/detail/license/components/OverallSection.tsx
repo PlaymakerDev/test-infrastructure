@@ -52,10 +52,10 @@ const MapSection: React.FC = () => {
             <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
               <TbMapPin className='text-(--yellow) text-xs' />
             </div>
-            <p className='fs-11 text-(--yellow) font-medium'>จุดที่ตรวจจับล่าสุด</p>
+            <p className='fs-12 text-(--yellow) font-medium'>จุดที่ตรวจจับล่าสุด</p>
           </div>
           <p className='text-white leading-snug text-sm'>{latest.title}</p>
-          {coords && <p className='fs-11 text-white/60'>{coords}</p>}
+          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
         </div>
       )}
     </div>

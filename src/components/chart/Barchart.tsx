@@ -101,7 +101,7 @@ const BarChart: React.FC<BarChartProps> = ({
   titleSize = 16,
   cardClassName = '',
   subtitle,
-  subtitleSize = 12,
+  subtitleSize = 'var(--fs-12)',
   icon,
   data,
   bars,

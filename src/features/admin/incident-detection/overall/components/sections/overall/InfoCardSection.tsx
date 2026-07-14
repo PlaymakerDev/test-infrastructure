@@ -66,7 +66,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(camera?.total ?? 0, 0)}</span> ตัว
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(camera?.online ?? 0, 0)} ({onlinePct}%)
         </p>
       </div>
@@ -76,7 +76,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(inWarrantyTotal, 0)}</span> จุด
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(activeByWarranty.inWarrantyActive, 0)} ({inWarrantyPct}%)
         </p>
       </div>
@@ -86,7 +86,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(expiredTotal, 0)}</span> จุด
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(activeByWarranty.expiredActive, 0)} ({expiredPct}%)
         </p>
       </div>

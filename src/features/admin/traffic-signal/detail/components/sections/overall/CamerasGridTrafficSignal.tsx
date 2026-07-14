@@ -111,7 +111,7 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
     {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma.
       * No flex-wrap: IP truncates (min-w-0) so the pills stay on the same line. */}
     <div className='flex items-center justify-between gap-2 mt-1'>
-      <p className='text-gray-400 mb-0 fs-11 min-w-0 truncate'>IP Address : {cam.ipAddress}</p>
+      <p className='text-gray-400 mb-0 fs-12 min-w-0 truncate'>IP Address : {cam.ipAddress}</p>
       {cam.detectionMode === 'Counting' && (
         <div className='flex gap-2 shrink-0'>
           <span className='fs-12 border border-emerald-500 text-emerald-400 px-2 py-0.5 rounded-full'>

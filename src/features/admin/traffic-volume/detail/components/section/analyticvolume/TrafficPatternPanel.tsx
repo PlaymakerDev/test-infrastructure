@@ -263,7 +263,7 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
               >
                 {c.value}
               </span>
-              <span className='fs-11 text-white/40 mt-0.5'>{c.sub}</span>
+              <span className='fs-12 text-white/40 mt-0.5'>{c.sub}</span>
             </div>
           ))}
         </div>

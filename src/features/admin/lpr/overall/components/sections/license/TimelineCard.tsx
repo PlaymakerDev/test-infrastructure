@@ -54,22 +54,22 @@ const TimelineCard: React.FC<Props> = ({ item, isFirst }) => {
           <div className='grid grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-4 gap-3 mt-1'>
             <div className='flex flex-col items-center gap-1'>
               <TbGauge className='fs-24' />
-              <p className='fs-11'>ความเร็ว : {item.speed} กม./ชม.</p>
+              <p className='fs-12'>ความเร็ว : {item.speed} กม./ชม.</p>
             </div>
             <div className='flex flex-col items-center gap-1'>
               <TbRoad className='fs-24' />
-              <p className='fs-11'>หมายเลขเลน : {item.lane}</p>
+              <p className='fs-12'>หมายเลขเลน : {item.lane}</p>
             </div>
             {item.weight && (
               <div className='flex flex-col items-center gap-1'>
                 <TbWeight className='fs-24' />
-                <p className='fs-11'>น้ำหนักที่ชั่งได้ : <span className={isOverweight ? 'text-(--red)' : ''}>{item.weight} ตัน</span></p>
+                <p className='fs-12'>น้ำหนักที่ชั่งได้ : <span className={isOverweight ? 'text-(--red)' : ''}>{item.weight} ตัน</span></p>
               </div>
             )}
             {item.legal_weight && (
               <div className='flex flex-col items-center gap-1'>
                 <TbClipboardList className='fs-24' />
-                <p className='fs-11'>น้ำหนักตามมาตรฐาน : {item.legal_weight} ตัน</p>
+                <p className='fs-12'>น้ำหนักตามมาตรฐาน : {item.legal_weight} ตัน</p>
               </div>
             )}
           </div>

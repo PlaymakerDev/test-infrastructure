@@ -119,7 +119,7 @@ const FindOnPageOverlay: React.FC<Props> = ({ open, onClose }) => {
           />
 
           <span
-            className='fs-11 tabular-nums shrink-0 min-w-10 sm:min-w-14 text-right'
+            className='fs-12 tabular-nums shrink-0 min-w-10 sm:min-w-14 text-right'
             style={{ color: count === 0 && query ? '#E94C4C' : 'rgba(255,255,255,0.6)' }}
             aria-live='polite'
           >

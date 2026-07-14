@@ -53,19 +53,19 @@ const Card: React.FC<CardProps> = ({
     }}
   >
     <div className='flex items-center gap-2 mb-1'>
-      <span style={{ color }} className='flex items-center text-[22px] shrink-0'>
+      <span style={{ color }} className='flex items-center fs-22 shrink-0'>
         {icon}
       </span>
       <span
-        className='fs-14'
-        style={{ color: colorLabel ? color : '#ffffff', fontWeight: 500 }}
+        className='fs-14 font-medium leading-none'
+        style={{ color: colorLabel ? color : '#ffffff' }}
       >
         {label}
       </span>
     </div>
     <p
-      className='mb-0 font-bold leading-none'
-      style={{ color: '#ffffff', fontSize: 26 }}
+      className='mb-0 font-bold leading-none fs-22'
+      style={{ color: '#ffffff' }}
     >
       {value}
       {unit && (
