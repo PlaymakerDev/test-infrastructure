@@ -39,7 +39,8 @@ const DashboardScreen: React.FC<Props> = () => {
 
   // Snapshot the URL's dept_id on first mount:
   //   • `originalDeptId` never changes — the "← ทั่วประเทศ" reset button
-  //     reverts to it (drr-10 → 10, drr-cmi → 50, super-admin → 0).
+  //     reverts to it (drr-10 → 49 = สทช.10, drr-cmi → 50, super-admin → 0;
+  //     NOTE dept row id ≠ เลขสทช. — id 10 is ขทช.ชัยนาท, verified 2026-07-14).
   //   • `currentDeptId` is the LIVE dept scope. Every card that reads
   //     `useDeptId()` sees this value via `DeptIdOverrideContext` below,
   //     and refetches when it changes. Updated in place by map clicks /

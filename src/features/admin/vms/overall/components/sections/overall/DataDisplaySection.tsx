@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setSearchVMSList } from '@/stores/reducers/vms/vmsOverviewSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVMSOverviewListAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
-import { scopeKey } from '@/services/routes/scopeParam'
+import { useScopeAll } from '@/hooks/useScopeAll'
 import type { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 
 
@@ -62,6 +62,9 @@ const VMS_FILTERS: FilterConfig[] = [
 
 const DataDisplaySection: React.FC<Props> = (props) => {
   const { deptId } = props
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query keys re-derive when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
   const dispatch = useAppDispatch()
   const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
@@ -73,7 +76,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   // request. Redux is no longer the source of truth here (per CLAUDE.md:
   // do NOT add server-fetched data to slices).
   const { data: totals } = useQuery({
-    queryKey: ['vms_total', String(deptId ?? ''), scopeKey()],
+    queryKey: ['vms_total', String(deptId ?? ''), scope],
     queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
@@ -90,7 +93,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const { data, isLoading } = useQuery({
     // dept + scope in the key — previously only the search text, so switching
     // departments/entry point reused the other's cached list.
-    queryKey: ['vms_list', String(deptId ?? ''), scopeKey(), vms_list.search],
+    queryKey: ['vms_list', String(deptId ?? ''), scope, vms_list.search],
     queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
     enabled: !!deptId,
     placeholderData: keepPreviousData

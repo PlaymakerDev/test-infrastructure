@@ -4,7 +4,7 @@ import { useMap } from '@/components/map/hooks/useMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
-import { scopeKey } from '@/services/routes/scopeParam'
+import { useScopeAll } from '@/hooks/useScopeAll'
 import { Location } from '@/types/vms/overview-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
@@ -159,11 +159,14 @@ interface Props {
 
 const MapSection: React.FC<Props> = (props) => {
   const { deptId } = props
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query key re-derives when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
 
   const { data, isLoading, isSuccess } = useQuery({
     // dept + scope in the key — previously neither, so switching departments
     // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
-    queryKey: ['vms_overview', String(deptId ?? ''), scopeKey()],
+    queryKey: ['vms_overview', String(deptId ?? ''), scope],
     queryFn: () => getVMSOverviewAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData

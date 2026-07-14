@@ -1,5 +1,5 @@
 import { getVMSOverviewListAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
-import { scopeKey } from '@/services/routes/scopeParam'
+import { useScopeAll } from '@/hooks/useScopeAll'
 import { useDeptId } from '@/hooks/useDeptId'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { fmtNumber } from '@/utils/formatNumber'
@@ -16,9 +16,11 @@ interface Props { }
  *  `InfoCardTrafficSignal.tsx`. */
 const InfoCardSection: React.FC<Props> = () => {
   const deptId = useDeptId()
+  // Reactive ?scope=all — keys re-derive when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
 
   const { data: totals, isLoading } = useQuery({
-    queryKey: ['vms_total', String(deptId ?? ''), scopeKey()],
+    queryKey: ['vms_total', String(deptId ?? ''), scope],
     queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
@@ -28,7 +30,7 @@ const InfoCardSection: React.FC<Props> = () => {
   // this query hits the same cache entry TanStack already populated for the
   // table below — no extra request.
   const { data: list } = useQuery({
-    queryKey: ['vms_list', String(deptId ?? ''), scopeKey(), { page: 1, limit: 10 }],
+    queryKey: ['vms_list', String(deptId ?? ''), scope, { page: 1, limit: 10 }],
     queryFn: () => getVMSOverviewListAPI(Number(deptId)!, { page: 1, limit: 10 }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
