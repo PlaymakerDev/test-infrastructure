@@ -20,8 +20,8 @@ const TitleSection: React.FC<Props> = (props) => {
 
   const renderIsWarranty = useMemo(() => {
     return (
-      <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${isWarranty ? 'border-emerald-500' : 'border-gray-500'} ${isWarranty ? 'text-emerald-500' : 'text-gray-500'} w-full sm:w-auto`}>
-        {isWarranty ? 'อยู่ในค้ำ' : 'หมดค้ำ'}
+      <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${isWarranty ? 'border-[#05F2DB]' : 'border-gray-500'} ${isWarranty ? 'text-[#05F2DB]' : 'text-gray-500'} w-full sm:w-auto`}>
+        {isWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
       </span>
     )
   }, [isWarranty])
