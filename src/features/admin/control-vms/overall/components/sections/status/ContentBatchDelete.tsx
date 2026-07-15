@@ -33,18 +33,18 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
-    // Modal is `destroyOnHidden`, so this always mounts fresh with `data`
-    // already resolved — default every schedule to checked.
+    // Checked = will be cancelled. Default every schedule checked so
+    // confirming this "ยกเลิกคำสั่ง" action cancels everything right away —
+    // the common case of a single schedule needs zero clicks to confirm.
+    // Unchecking a row keeps it running, for the rarer case of a
+    // multi-schedule order where only some entries should be cancelled.
     defaultValues: { schedule_ids: allScheduleIds },
   })
 
   const onSubmit = (values: FormValues) => {
     if (!id) return
-    // The checkbox list marks which schedules to KEEP — the ones actually
-    // sent to the batch-delete API are the complement (the unchecked rows).
-    const idsToDelete = allScheduleIds.filter((scheduleId) => !values.schedule_ids.includes(scheduleId))
     batchDelete.mutate(
-      { id, schedule_ids: idsToDelete },
+      { id, schedule_ids: values.schedule_ids },
       { onSuccess: () => setUpdateScheduleState(INIT_UPDATE_SCHEDULE) },
     )
   }
@@ -68,10 +68,13 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
           <div>
             <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล :</p>
+            {allScheduleIds.length > 1 && (
+              <p className='fs-12 text-(--light-gray) mb-1'>ติ๊กตารางเวลาที่ต้องการยกเลิก ปลดติ๊กรายการที่ต้องการเก็บไว้</p>
+            )}
             <Controller
               control={control}
               name="schedule_ids"
-              rules={{ validate: (v) => v.length < allScheduleIds.length || 'กรุณาเลือกตารางเวลาที่ต้องการลบ' }}
+              rules={{ validate: (v) => v.length > 0 || 'กรุณาเลือกตารางเวลาที่ต้องการยกเลิกอย่างน้อย 1 รายการ' }}
               render={({ field }) => (
                 <fieldset>
                   <FormUpdateBatch data={data?.schedules} value={field.value} onChange={field.onChange} />

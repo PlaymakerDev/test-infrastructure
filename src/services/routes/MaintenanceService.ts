@@ -82,7 +82,7 @@ export const getMaintenanceHistoryAPI = async (params?: MaintenanceHistoryParams
 // --- Case CRUD APIs ---
 
 export const createMaintenanceCaseAPI = async (data: CreateCaseRequest) => {
-  return ApiService.fetchData<unknown>({
+  return ApiService.fetchData<unknown, CreateCaseRequest>({
     url: '/manage/maintenance/case',
     method: 'POST',
     data,
@@ -97,7 +97,7 @@ export const getMaintenanceCaseAPI = async (caseNo: string) => {
 }
 
 export const updateMaintenanceCaseAPI = async (caseNo: string, data: UpdateCaseRequest) => {
-  return ApiService.fetchData<unknown>({
+  return ApiService.fetchData<unknown, UpdateCaseRequest>({
     url: `/manage/maintenance/case/${caseNo}`,
     method: 'PUT',
     data,
