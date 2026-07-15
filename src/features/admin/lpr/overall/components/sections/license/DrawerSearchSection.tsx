@@ -9,7 +9,8 @@ const DrawerSearchSection: React.FC = () => {
 
   return (
     <>
-      {/* Floating button — visible only below lg */}
+      {/* Floating search button (< xl) — same entry point as control-vms's
+          DrawerSearchSection (yellow FloatButton, bottom-left), per design. */}
       <FloatButton
         type='primary'
         icon={<TbSearch className='fs-18' />}
@@ -22,9 +23,12 @@ const DrawerSearchSection: React.FC = () => {
         open={open}
         onClose={() => setOpen(false)}
         placement='bottom'
+        size={600}
         styles={{
           wrapper: { width: '100%' },
-          body: { padding: 0, background: 'var(--dark-black)' },
+          // overflow hidden: SearchSection scrolls its own list so the
+          // search input stays pinned while the plates scroll.
+          body: { padding: 0, background: 'var(--dark-black)', overflow: 'hidden' },
           header: {
             background: 'var(--dark-black)',
             borderBottom: '1px solid rgba(255,255,255,0.08)',

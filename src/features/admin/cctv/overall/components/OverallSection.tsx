@@ -21,6 +21,7 @@ import {
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 import MapFocusGrid from '@/components/section/MapFocusGrid'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
+import { useScopeAll } from '@/hooks/useScopeAll'
 
 interface Props {
   deptId?: string | null
@@ -72,6 +73,7 @@ const CCTV_FILTERS: FilterConfig[] = [
 
 const OverallSection: React.FC<Props> = ({ deptId }) => {
   const router = useRouter()
+  const scopeAll = useScopeAll()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
@@ -154,7 +156,17 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
             type='primary'
             size='large'
             shape='round'
-            onClick={() => router.push(`/admin/cctv/search${deptId ? `?dept_id=${deptId}` : ''}`)}
+            // Carry the CURRENT page's scope into the search page — arriving
+            // from the nationwide view (?scope=all) must keep every bureau's
+            // roads searchable; dropping it silently narrows the search to
+            // the single ทช.ส่วนกลาง group (1 road / 22 cameras).
+            onClick={() => {
+              const q = new URLSearchParams()
+              if (deptId) q.set('dept_id', deptId)
+              if (scopeAll) q.set('scope', 'all')
+              const qs = q.toString()
+              router.push(`/admin/cctv/search${qs ? `?${qs}` : ''}`)
+            }}
           >
             ค้นหากล้อง CCTV รายสายทาง
           </Button>
