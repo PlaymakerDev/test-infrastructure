@@ -40,15 +40,19 @@ const TimelineCard: React.FC<Props> = ({ item, isFirst }) => {
               <h4 className='leading-snug'>{item.title}</h4>
               <p className='text-white/50'>{item.timestamp}</p>
             </div>
-            <span className={`shrink-0 text-xs border rounded-full px-3 py-0.5 whitespace-nowrap ${STATUS_STYLE[item.status]}`}>
-              {item.status}
-            </span>
+            {item.status && (
+              <span className={`shrink-0 text-xs border rounded-full px-3 py-0.5 whitespace-nowrap ${STATUS_STYLE[item.status]}`}>
+                {item.status}
+              </span>
+            )}
           </div>
 
           {/* Camera name */}
-          <p className='text-(--yellow) truncate'>
-            ชื่อกล้อง : {item.camera_name}
-          </p>
+          {item.camera_name && (
+            <p className='text-(--yellow) truncate'>
+              ชื่อกล้อง : {item.camera_name}
+            </p>
+          )}
 
           {/* Stats */}
           <div className='grid grid-cols-1 @sm:grid-cols-2 @2xl:grid-cols-4 gap-3 mt-1'>

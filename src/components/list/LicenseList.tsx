@@ -9,7 +9,8 @@ export interface LicenseTimelineItem {
   title: string
   timestamp: string
   camera_name: string
-  status: LicenseTimelineStatus
+  // Optional: WIM records carry overweight status; ANPR records don't (no badge).
+  status?: LicenseTimelineStatus
   speed: string
   lane: string
   weight?: string
@@ -23,6 +24,8 @@ export interface LicenseItem {
   license_no: string
   license_province: string
   license_type: string
+  // Optional badge color (border + text). Omit for the default yellow badge.
+  license_type_color?: string
   road_description: string
   sta: string
   timestamp: string
@@ -43,6 +46,10 @@ export interface LicenseListProps {
   data: LicenseItem[]
   onSelect?: (item: LicenseItem) => void
   columns?: ColumnsConfig
+  // Optional controlled selection — when provided, the parent drives which card
+  // shows the highlight ring (e.g. an auto-selected default). Omit for the
+  // original uncontrolled behavior (highlight set on click only).
+  selectedId?: string | number | null
 }
 
 // Full class strings so Tailwind scanner detects them at build time
@@ -79,7 +86,10 @@ const LicenseCard: React.FC<{
         <h2>{item.license_no}</h2>
         <p className='text-sm'>{item.license_province}</p>
       </div>
-      <div className='shrink-0 rounded-3xl py-1 px-4 border border-(--yellow) text-center text-sm'>
+      <div
+        className={`shrink-0 rounded-3xl py-1 px-4 border text-center text-sm ${item.license_type_color ? '' : 'border-(--yellow)'}`}
+        style={item.license_type_color ? { borderColor: item.license_type_color, color: item.license_type_color } : undefined}
+      >
         {item.license_type}
       </div>
     </div>
@@ -97,13 +107,16 @@ const LicenseList: React.FC<LicenseListProps> = ({
   data,
   onSelect,
   columns = { base: 1 },
+  selectedId: controlledId,
 }) => {
-  const [selectedId, setSelectedId] = useState<string | number | null>(null)
+  const [internalId, setInternalId] = useState<string | number | null>(null)
+  const isControlled = controlledId !== undefined
+  const activeId = isControlled ? controlledId : internalId
 
   const handleClick = useCallback((item: LicenseItem) => {
-    setSelectedId(item.id)
+    if (!isControlled) setInternalId(item.id)
     onSelect?.(item)
-  }, [onSelect])
+  }, [onSelect, isControlled])
 
   const gridClass = useMemo(() => [
     columns.base ? GRID_BASE[columns.base] : 'grid-cols-1',
@@ -119,7 +132,7 @@ const LicenseList: React.FC<LicenseListProps> = ({
         <MemoCard
           key={item.id}
           item={item}
-          selected={selectedId === item.id}
+          selected={activeId === item.id}
           onClick={handleClick}
         />
       ))}

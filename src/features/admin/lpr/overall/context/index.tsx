@@ -1,10 +1,17 @@
 "use client"
 import { createContext, useContext, useState } from 'react'
-import { LicenseItem } from '../components/sections/license/LicenseList';
+
+// (plate_number, plate_province) is the composite identity of a plate — the
+// detail/timeline endpoints are keyed on both. Detail data is NOT stored here;
+// child components fetch it via hooks keyed on this selection.
+export interface SelectedPlate {
+  plate_number: string
+  plate_province: string
+}
 
 export interface ContextProps {
-  license: LicenseItem;
-  setLicense: React.Dispatch<React.SetStateAction<LicenseItem>>;
+  selected: SelectedPlate | null
+  setSelected: React.Dispatch<React.SetStateAction<SelectedPlate | null>>
 }
 
 export interface PageProviderProps {
@@ -15,20 +22,12 @@ export const OverallContext = createContext<ContextProps | null>(null)
 
 export const OverallProvider = (props: PageProviderProps) => {
   const { children } = props
-  const [license, setLicense] = useState<LicenseItem>({
-    id: "",
-    license_no: "",
-    license_province: "",
-    license_type: "",
-    road_description: "",
-    sta: "",
-    timestamp: ""
-  })
+  const [selected, setSelected] = useState<SelectedPlate | null>(null)
   return (
     <OverallContext.Provider
       value={{
-        license,
-        setLicense
+        selected,
+        setSelected,
       }}
     >
       {children}

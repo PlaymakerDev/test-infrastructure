@@ -1,22 +1,26 @@
-import { Progress } from 'antd'
-import React from 'react'
-import { TbCar, TbMap, TbTruck, TbWeight } from 'react-icons/tb'
+"use client"
+import { Empty, Progress } from 'antd'
+import React, { useMemo } from 'react'
+import { TbCar, TbMap, TbWeight } from 'react-icons/tb'
+import { useOverallContext } from '../../../context'
+import { usePlateDetail } from '@/hooks/queries/lpr'
+import type { LPRFrequentArea } from '@/types/lpr/lpr-api'
 
-interface StatItem {
-  icon: React.ReactNode
-  label: string
-  count: number
-}
-
-const MOCK_STATS: StatItem[] = [
-  { icon: <TbCar className='fs-22 text-blue-400' />, label: 'สายทาง สป.2014 กม.0+005', count: 12 },
-  { icon: <TbTruck className='fs-22 text-blue-400' />, label: 'สายทาง ปก.3026 กม.5+700', count: 8 },
-  { icon: <TbWeight className='fs-22 text-blue-400' />, label: 'WIM อยุธยา (อย.2053)', count: 2 },
-]
-
-const MAX_COUNT = Math.max(...MOCK_STATS.map((s) => s.count))
+const areaIcon = (area: LPRFrequentArea) =>
+  area.source === 'wim'
+    ? <TbWeight className='fs-22 text-blue-400' />
+    : <TbCar className='fs-22 text-blue-400' />
 
 const StatSection: React.FC = () => {
+  const { selected } = useOverallContext()
+  const { data: detail } = usePlateDetail(selected?.plate_province, selected?.plate_number)
+
+  const areas = useMemo(() => detail?.frequent_areas ?? [], [detail])
+  const maxCount = useMemo(
+    () => areas.reduce((max, a) => Math.max(max, a.count), 0),
+    [areas]
+  )
+
   return (
     <div className='rounded-lg p-5 bg-(--dark-black)'>
       {/* Header */}
@@ -26,30 +30,34 @@ const StatSection: React.FC = () => {
       </div>
 
       {/* List */}
-      <div className='flex flex-col gap-4'>
-        {MOCK_STATS.map((stat, i) => (
-          <div key={i} className='flex items-start gap-3'>
-            {/* Icon box */}
-            <div className='shrink-0 w-11 h-11 flex items-center justify-center rounded-lg bg-(--gray)'>
-              {stat.icon}
-            </div>
-
-            {/* Content */}
-            <div className='flex-1 min-w-0'>
-              <div className='flex items-center justify-between gap-2'>
-                <h4 className='truncate'>{stat.label}</h4>
-                <span className='shrink-0 text-blue-400 font-bold'>{stat.count}</span>
+      {areas.length === 0 ? (
+        <Empty description='ไม่พบข้อมูล' />
+      ) : (
+        <div className='flex flex-col gap-4'>
+          {areas.map((area, i) => (
+            <div key={`${area.detection_point ?? 'unknown'}-${i}`} className='flex items-start gap-3'>
+              {/* Icon box */}
+              <div className='shrink-0 w-11 h-11 flex items-center justify-center rounded-lg bg-(--gray)'>
+                {areaIcon(area)}
               </div>
-              <Progress
-                percent={Math.round((stat.count / MAX_COUNT) * 100)}
-                showInfo={false}
-                strokeColor='#60a5fa'
-                size={['100%', 5]}
-              />
+
+              {/* Content */}
+              <div className='flex-1 min-w-0'>
+                <div className='flex items-center justify-between gap-2'>
+                  <h4 className='truncate'>{area.detection_point ?? 'ไม่ระบุจุดตรวจจับ'}</h4>
+                  <span className='shrink-0 text-blue-400 font-bold'>{area.count}</span>
+                </div>
+                <Progress
+                  percent={maxCount > 0 ? Math.round((area.count / maxCount) * 100) : 0}
+                  showInfo={false}
+                  strokeColor='#60a5fa'
+                  size={['100%', 5]}
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

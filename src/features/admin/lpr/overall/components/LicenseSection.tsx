@@ -1,40 +1,86 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
+import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { Button, Empty } from 'antd'
 import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
 import { useOverallContext } from '../context'
+import { usePlateDetail } from '@/hooks/queries/lpr'
 
 const formatCoords = (lat: number, lng: number): string => {
   return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
 }
 
 const MapSection: React.FC = () => {
-  const { license } = useOverallContext()
-  const latest = license.timeline?.[0]
+  const { selected } = useOverallContext()
+  const { data: detail } = usePlateDetail(selected?.plate_province, selected?.plate_number)
 
-  const hasCoords = latest?.lat != null && latest?.lng != null
-  const googleMapsUrl = hasCoords
-    ? `https://www.google.com/maps?q=${latest!.lat},${latest!.lng}`
+  // Every location the vehicle passed (all-time unique points), sorted latest
+  // first by the backend. detection_location = [lat, lng] → convert to [lng, lat]
+  // for Mapbox; drop pins with missing coords.
+  const pins = useMemo(() => {
+    return (detail?.map_pins ?? [])
+      .map((pin) => {
+        const loc = pin.detection_location
+        if (!Array.isArray(loc) || loc[0] == null || loc[1] == null) return null
+        return {
+          lngLat: [loc[1], loc[0]] as [number, number],
+          detection_point: pin.detection_point ?? 'ไม่ระบุจุดตรวจจับ',
+          count: pin.count,
+          latest: pin.latest_captured_at_display,
+        }
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+  }, [detail])
+
+  const coords = useMemo(() => pins.map((p) => p.lngLat), [pins])
+
+  // Which pin the overlay describes — tracked by a stable coord key so it
+  // naturally falls back to the latest (pins[0]) when the plate changes (the
+  // old key no longer matches any pin). No reset effect needed.
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+  const keyOf = (p: { lngLat: [number, number] }) => `${p.lngLat[0]},${p.lngLat[1]}`
+  const activeIndex = Math.max(0, pins.findIndex((p) => keyOf(p) === activeKey))
+  const active = pins[activeIndex] ?? pins[0]
+
+  const googleMapsUrl = active
+    ? `https://www.google.com/maps?q=${active.lngLat[1]},${active.lngLat[0]}`
     : 'https://www.google.com/maps'
-
-  const coords = hasCoords ? formatCoords(latest!.lat!, latest!.lng!) : null
+  const activeCoordsText = active ? formatCoords(active.lngLat[1], active.lngLat[0]) : null
 
   return (
     <div className='relative h-80 xl:h-96 2xl:h-104 rounded-xl overflow-hidden'>
-      <BaseMap
-        initialCenter={hasCoords ? [latest!.lng!, latest!.lat!] : undefined}
-        initialZoom={15}
-        initialPitch={45}
-      />
+      <BaseMap initialCenter={coords[0]} initialZoom={13} initialPitch={45}>
+        {pins.map((pin, i) => (
+          <HTMLMarker
+            key={`${pin.lngLat[0]},${pin.lngLat[1]}-${i}`}
+            lngLat={pin.lngLat}
+            anchor='bottom'
+            title={`${pin.detection_point} · ${pin.count} ครั้ง · ล่าสุด ${pin.latest}`}
+            onClick={() => setActiveKey(keyOf(pin))}
+          >
+            <TbMapPin
+              className={
+                i === activeIndex
+                  ? 'text-(--yellow) text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
+                  : 'text-white text-2xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
+              }
+            />
+          </HTMLMarker>
+        ))}
+        {coords.length > 0 && (
+          <FitBoundsEffect
+            coords={coords}
+            maxZoom={15}
+            pitch={45}
+            padding={{ top: 50, bottom: 110, left: 40, right: 40 }}
+          />
+        )}
+      </BaseMap>
 
-      {/* Centered pin */}
-      <div className='absolute inset-0 flex items-center justify-center pointer-events-none z-10'>
-        <TbMapPin className='text-white text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' />
-      </div>
-
-      {/* Google Map button */}
+      {/* Google Map button — links to the active pin */}
       <Button
         type='primary'
         size='small'
@@ -45,17 +91,19 @@ const MapSection: React.FC = () => {
         Google Map
       </Button>
 
-      {/* Location overlay */}
-      {latest && (
+      {/* Active-location overlay — updates on marker click */}
+      {active && (
         <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
           <div className='flex items-center gap-2'>
             <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
               <TbMapPin className='text-(--yellow) text-xs' />
             </div>
-            <p className='fs-12 text-(--yellow) font-medium'>จุดที่ตรวจจับล่าสุด</p>
+            <p className='fs-12 text-(--yellow) font-medium'>
+              {activeIndex === 0 ? 'จุดที่ตรวจจับล่าสุด' : 'จุดที่ตรวจจับ'}
+            </p>
           </div>
-          <p className='text-white leading-snug text-sm'>{latest.title}</p>
-          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
+          <p className='text-white leading-snug text-sm'>{active.detection_point}</p>
+          {activeCoordsText && <p className='fs-12 text-white/60'>{activeCoordsText}</p>}
         </div>
       )}
     </div>
@@ -64,22 +112,22 @@ const MapSection: React.FC = () => {
 
 const LicenseSection: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(true)
-  const { license } = useOverallContext()
+  const { selected } = useOverallContext()
 
   const renderTimelineSection = useMemo(() => {
-    if (!license.id) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
+    if (!selected) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
     return <TimelineSection />
-  }, [license.id])
+  }, [selected])
 
   const renderMapAndStatSection = useMemo(() => {
-    if (!license.id) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
+    if (!selected) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
     return (
       <>
         <MapSection />
         <StatSection />
       </>
     )
-  }, [license.id])
+  }, [selected])
 
   return (
     <>
