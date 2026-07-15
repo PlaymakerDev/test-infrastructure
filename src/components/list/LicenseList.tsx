@@ -50,7 +50,20 @@ export interface LicenseListProps {
   // shows the highlight ring (e.g. an auto-selected default). Omit for the
   // original uncontrolled behavior (highlight set on click only).
   selectedId?: string | number | null
+  // Corner radius class for each card. LPR uses 'rounded-[20px]' (its design
+  // spec); the default keeps tracking/detail/license unchanged.
+  cardRadiusClass?: string
+  // Typography preset. 'lpr' follows the LPR Figma (plate 24px, everything
+  // else 14px on desktop via the responsive fs-* scale); 'default' keeps the
+  // original fixed sizes so tracking/detail/license renders unchanged.
+  textPreset?: 'default' | 'lpr'
 }
+
+const TEXT_PRESETS = {
+  default: { plate: '', meta: 'text-sm', badge: 'text-sm', timestamp: 'text-xs' },
+  // fs-22 → 24px desktop; fs-12 → 14px desktop.
+  lpr: { plate: 'fs-22', meta: 'fs-12', badge: 'fs-12', timestamp: 'fs-12' },
+} as const
 
 // Full class strings so Tailwind scanner detects them at build time
 const GRID_BASE: Record<ColCount, string> = {
@@ -73,30 +86,32 @@ const LicenseCard: React.FC<{
   item: LicenseItem
   selected: boolean
   onClick: (item: LicenseItem) => void
-}> = ({ item, selected, onClick }) => (
+  radiusClass: string
+  text: (typeof TEXT_PRESETS)[keyof typeof TEXT_PRESETS]
+}> = ({ item, selected, onClick, radiusClass, text }) => (
   <div
     onClick={() => onClick(item)}
     className={[
-      'bg-(--light-black) py-3 px-5 rounded-lg cursor-pointer transition-colors duration-200',
+      `bg-(--light-black) py-3 px-5 ${radiusClass} cursor-pointer transition-colors duration-200`,
       selected ? 'ring-2 ring-(--yellow)' : '',
     ].join(' ')}
   >
     <div className='flex flex-wrap items-start justify-between gap-x-3 gap-y-2'>
       <div>
-        <h2>{item.license_no}</h2>
-        <p className='text-sm'>{item.license_province}</p>
+        <h2 className={text.plate}>{item.license_no}</h2>
+        <p className={text.meta}>{item.license_province}</p>
       </div>
       <div
-        className={`shrink-0 rounded-3xl py-1 px-4 border text-center text-sm ${item.license_type_color ? '' : 'border-(--yellow)'}`}
+        className={`shrink-0 rounded-3xl py-1 px-4 border text-center ${text.badge} ${item.license_type_color ? '' : 'border-(--yellow)'}`}
         style={item.license_type_color ? { borderColor: item.license_type_color, color: item.license_type_color } : undefined}
       >
         {item.license_type}
       </div>
     </div>
     <div className='mt-4'>
-      <p className='text-(--yellow) text-sm'>พบล่าสุด</p>
-      <p className='text-sm'>{item.road_description} {item.sta}</p>
-      <p className='text-gray-400 text-xs mt-1'>{item.timestamp}</p>
+      <p className={`text-(--yellow) ${text.meta}`}>พบล่าสุด</p>
+      <p className={text.meta}>{item.road_description} {item.sta}</p>
+      <p className={`text-gray-400 mt-1 ${text.timestamp}`}>{item.timestamp}</p>
     </div>
   </div>
 )
@@ -108,6 +123,8 @@ const LicenseList: React.FC<LicenseListProps> = ({
   onSelect,
   columns = { base: 1 },
   selectedId: controlledId,
+  cardRadiusClass = 'rounded-lg',
+  textPreset = 'default',
 }) => {
   const [internalId, setInternalId] = useState<string | number | null>(null)
   const isControlled = controlledId !== undefined
@@ -134,6 +151,8 @@ const LicenseList: React.FC<LicenseListProps> = ({
           item={item}
           selected={activeId === item.id}
           onClick={handleClick}
+          radiusClass={cardRadiusClass}
+          text={TEXT_PRESETS[textPreset]}
         />
       ))}
     </div>

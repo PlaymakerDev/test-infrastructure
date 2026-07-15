@@ -18,7 +18,7 @@ const TimelineCard: React.FC<Props> = ({ item, isFirst }) => {
   const isOverweight = item.status === 'เกินพิกัด'
 
   return (
-    <div className={`@container ${isFirst ? 'bg-(--dark-black)' : 'bg-[#2B2B2B]'} p-4 rounded-lg`}>
+    <div className={`@container ${isFirst ? 'bg-(--dark-black)' : 'bg-[#2B2B2B]'} p-4 rounded-[20px]`}>
       <div className='flex flex-col @sm:flex-row gap-4'>
         {/* Thumbnail */}
         <div className='w-full @sm:w-36 shrink-0 rounded-md overflow-hidden'>

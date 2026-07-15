@@ -6,6 +6,7 @@ import { Button, Empty } from 'antd'
 import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
+import { WhiteTeardropPin } from '@/components/map/markers/OverlapMarkers'
 import { useOverallContext } from '../context'
 import { usePlateDetail } from '@/hooks/queries/lpr'
 
@@ -51,7 +52,7 @@ const MapSection: React.FC = () => {
   const activeCoordsText = active ? formatCoords(active.lngLat[1], active.lngLat[0]) : null
 
   return (
-    <div className='relative h-80 xl:h-96 2xl:h-104 rounded-xl overflow-hidden'>
+    <div className='relative h-80 xl:h-96 2xl:h-104 rounded-[20px] overflow-hidden'>
       <BaseMap initialCenter={coords[0]} initialZoom={13} initialPitch={45}>
         {pins.map((pin, i) => (
           <HTMLMarker
@@ -61,13 +62,9 @@ const MapSection: React.FC = () => {
             title={`${pin.detection_point} · ${pin.count} ครั้ง · ล่าสุด ${pin.latest}`}
             onClick={() => setActiveKey(keyOf(pin))}
           >
-            <TbMapPin
-              className={
-                i === activeIndex
-                  ? 'text-(--yellow) text-4xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
-                  : 'text-white text-2xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
-              }
-            />
+            {/* Shared detail-map teardrop (same as incident/crosswalk/signal
+                detail) — the selected pin keeps its yellow highlight. */}
+            <WhiteTeardropPin color={i === activeIndex ? '#FCD116' : undefined} />
           </HTMLMarker>
         ))}
         {coords.length > 0 && (
@@ -80,16 +77,16 @@ const MapSection: React.FC = () => {
         )}
       </BaseMap>
 
-      {/* Google Map button — links to the active pin */}
-      <Button
-        type='primary'
-        size='small'
-        href={googleMapsUrl}
-        target='_blank'
-        className='absolute! top-3 right-3 z-10'
+      {/* Google Map button — links to the active pin. Same look as the
+          incident event-detail modal's map button (navy pill, white text). */}
+      <button
+        type='button'
+        className='absolute top-3 right-3 z-10 rounded-full px-4 py-1 fs-12 font-medium cursor-pointer'
+        style={{ background: '#1B3F8B', color: '#fff' }}
+        onClick={() => window.open(googleMapsUrl, '_blank')}
       >
         Google Map
-      </Button>
+      </button>
 
       {/* Active-location overlay — updates on marker click */}
       {active && (
@@ -142,7 +139,9 @@ const LicenseSection: React.FC = () => {
             'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
             searchOpen ? 'w-md rounded-lg' : 'w-0',
           ].join(' ')}>
-            <div className='w-md h-full overflow-y-auto'>
+            {/* No scroll here — SearchSection scrolls its own list internally
+                so the search input stays pinned at the top. */}
+            <div className='w-md h-full overflow-hidden'>
               <SearchSection />
             </div>
           </div>
@@ -161,7 +160,8 @@ const LicenseSection: React.FC = () => {
         </div>
 
         {/* ══ CENTER: timeline ══ */}
-        <div className='flex-1 min-w-0 xl:overflow-y-auto px-4 xl:px-6 py-4'>
+        {/* no-scrollbar: still scrolls, just hides the bar (design ask). */}
+        <div className='flex-1 min-w-0 xl:overflow-y-auto no-scrollbar px-4 xl:px-6 py-4'>
           {renderTimelineSection}
         </div>
 

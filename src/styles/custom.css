@@ -71,3 +71,16 @@
   background-color: #FCD116;
   color: #212121;
 }
+/* ─── LPR search input (Figma) ───────────────────────────────────────────
+ * Yellow placeholder — antd's own ::placeholder rule outranks Tailwind's
+ * `placeholder:` utility here, so it needs a plain CSS override. */
+.lpr-yellow-placeholder input::placeholder {
+  color: var(--yellow);
+  opacity: 0.85;
+}
+
+/* Typed text matches the placeholder (antd's cssinjs outranks the Tailwind
+ * utility on the inner input, hence the heavier selector). */
+.ant-input-affix-wrapper.lpr-yellow-placeholder input.ant-input {
+  color: var(--yellow);
+}

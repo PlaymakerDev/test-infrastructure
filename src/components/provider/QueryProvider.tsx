@@ -36,7 +36,7 @@ const QueryProvider: React.FC<Props> = ({ children }) => {
     <QueryClientProvider client={queryClient}>
       {children}
       {/* Devtools — only renders in development; tree-shaken in production. */}
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition='bottom-left' />
+      {/* <ReactQueryDevtools initialIsOpen={false} buttonPosition='bottom-left' /> */}
     </QueryClientProvider>
   )
 }

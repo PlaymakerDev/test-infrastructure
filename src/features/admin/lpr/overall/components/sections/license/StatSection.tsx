@@ -22,11 +22,12 @@ const StatSection: React.FC = () => {
   )
 
   return (
-    <div className='rounded-lg p-5 bg-(--dark-black)'>
+    <div className='rounded-[20px] p-5 bg-(--dark-black)'>
       {/* Header */}
       <div className='flex items-center gap-2 mb-4'>
         <TbMap className='fs-22 text-blue-400 shrink-0' />
-        <h3 className='text-blue-400'>พื้นที่ตรวจพบบ่อย 30 วันย้อนหลัง</h3>
+        {/* fs-14 = clamp → 16px on desktop, per design. */}
+        <h3 className='text-blue-400 fs-14'>พื้นที่ตรวจพบบ่อย 30 วันย้อนหลัง</h3>
       </div>
 
       {/* List */}
@@ -44,8 +45,9 @@ const StatSection: React.FC = () => {
               {/* Content */}
               <div className='flex-1 min-w-0'>
                 <div className='flex items-center justify-between gap-2'>
-                  <h4 className='truncate'>{area.detection_point ?? 'ไม่ระบุจุดตรวจจับ'}</h4>
-                  <span className='shrink-0 text-blue-400 font-bold'>{area.count}</span>
+                  {/* fs-12 = clamp → 14px on desktop (both the white label and the count). */}
+                  <h4 className='truncate fs-12'>{area.detection_point ?? 'ไม่ระบุจุดตรวจจับ'}</h4>
+                  <span className='shrink-0 text-blue-400 font-bold fs-12'>{area.count}</span>
                 </div>
                 <Progress
                   percent={maxCount > 0 ? Math.round((area.count / maxCount) * 100) : 0}

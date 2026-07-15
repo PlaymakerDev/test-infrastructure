@@ -98,9 +98,10 @@ const TimelineSection: React.FC = () => {
       {metaCards.length > 0 && (
         <section className={isWim ? 'mt-10' : 'mt-10 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4'}>
           {metaCards.map(({ label, value }) => (
-            <div key={label} className='bg-(--yellow)/10 border-2 border-(--yellow) rounded-lg p-5'>
+            <div key={label} className='bg-(--yellow)/10 border-2 border-(--yellow) rounded-[20px] p-5'>
               <p className='text-(--yellow)'>{label}</p>
-              <p className='font-bold'>{value}</p>
+              {/* fs-12 = clamp(12px → 14px on desktop) per design. */}
+              <p className='font-bold fs-12'>{value}</p>
             </div>
           ))}
         </section>
@@ -108,7 +109,7 @@ const TimelineSection: React.FC = () => {
 
       {/* Timeline */}
       <section className='mt-5'>
-        <div className='bg-(--gray) py-8 px-10 rounded-lg'>
+        <div className='bg-(--gray) py-8 px-10 rounded-[20px]'>
           <h1 className='text-(--yellow) mb-5'>Vehicle Detection Timeline</h1>
           <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={6}>
             {events.length ? (

@@ -87,7 +87,10 @@ const SearchSection: React.FC<Props> = (props) => {
     : null
 
   // Infinite scroll — load the next cursor page as the sentinel enters view.
+  // The list scrolls in its own <section> (so the search input stays pinned);
+  // the observer's root is that scroller, not the viewport.
   const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const listScrollRef = useRef<HTMLElement | null>(null)
   useEffect(() => {
     const el = sentinelRef.current
     if (!el || !hasNextPage) return
@@ -95,7 +98,7 @@ const SearchSection: React.FC<Props> = (props) => {
       (entries) => {
         if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage()
       },
-      { rootMargin: '200px' }
+      { root: listScrollRef.current, rootMargin: '200px' }
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -112,27 +115,39 @@ const SearchSection: React.FC<Props> = (props) => {
   )
 
   return (
+    // Flex column: the search input is PINNED; only the plate list below
+    // scrolls (user report: scrolling the list dragged the search box away,
+    // forcing a scroll back to the top to search again).
     <div
-      className={`bg-(--dark-black) rounded-tr-lg ${openFromDrawer ? 'p-5' : 'py-10 px-12'} h-full`}
+      className={`bg-(--dark-black) rounded-tr-[20px] ${openFromDrawer ? 'p-5' : 'py-10 px-12'} h-full flex flex-col min-h-0`}
     >
-      <section>
+      <section className='shrink-0'>
+        {/* Figma spec: yellow text + leading yellow search icon, no border,
+            flat #212121 fill (was: gray placeholder + yellow border + trailing icon). */}
         <Input
           value={search}
           onChange={onSearchChange}
           placeholder="ค้นหาป้ายทะเบียน..."
-          className='rounded-lg'
-          suffix={<TbSearch className='text-(--yellow)' />}
+          variant='borderless'
+          className='rounded-lg lpr-yellow-placeholder'
+          style={{ background: '#212121' }}
+          classNames={{ input: 'text-(--yellow)' }}
+          prefix={<TbSearch className='text-(--yellow) me-1' />}
           size='large'
           allowClear
         />
       </section>
-      <section className='mt-5'>
+      {/* p-1/-mx-1: the selected card's ring-2 draws OUTSIDE the card and the
+          scroller clips it — 4px inner padding gives the ring room while the
+          negative margin keeps the cards flush with the search box above.
+          (mt-4 + pt from p-1 ≈ the previous mt-5 gap.) */}
+      <section ref={listScrollRef} className='mt-4 p-1 -mx-1 flex-1 min-h-0 overflow-y-auto no-scrollbar'>
         <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={8}>
           {items.length === 0 ? (
             <Empty description='ไม่พบป้ายทะเบียน' />
           ) : (
             <>
-              <LicenseList data={items} onSelect={handleSelect} selectedId={selectedId} />
+              <LicenseList data={items} onSelect={handleSelect} selectedId={selectedId} cardRadiusClass='rounded-[20px]' textPreset='lpr' />
               <div ref={sentinelRef} className='h-px' />
               {isFetchingNextPage && (
                 <div className='flex justify-center py-4'>
