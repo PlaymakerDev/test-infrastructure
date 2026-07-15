@@ -11,7 +11,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import CctvDetailMap, { type CamGroup } from './sections/CctvDetailMap'
 import CctvMarkerInfoPanel from './sections/CctvMarkerInfoPanel'
-import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
+import useMapFocusMode, { useRegisterMapFocusConsumer } from '@/utils/hooks/useMapFocusMode'
 
 // ── Panel camera card — list view ─────────────────────────────────────────────
 
@@ -73,6 +73,9 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
   const [panelOpen, setPanelOpen] = useState(true)
   // Global Map Focus Mode also force-hides the panel + its collapse button.
   const { isMapFocus } = useMapFocusMode()
+  // Direct consumer (no MapFocusGrid/MapOverlayPanel wrapper here) — register
+  // so the navbar's focus toggle stays usable on this tab.
+  useRegisterMapFocusConsumer()
   const railHidden = !panelOpen || isMapFocus
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
 

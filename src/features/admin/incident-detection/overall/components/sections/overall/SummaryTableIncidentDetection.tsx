@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -85,7 +86,7 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
 
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
+    router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
   const columns: ColumnsType<TableRow> = useMemo(() => [

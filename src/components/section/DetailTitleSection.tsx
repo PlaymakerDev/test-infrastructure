@@ -102,7 +102,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
               <TbInfoSquareRoundedFilled
                 size={24}
                 title='ดูข้อมูลโครงการ'
-                className='text-white/50 cursor-pointer hover:text-(--yellow) shrink-0'
+                className='text-white cursor-pointer hover:text-(--yellow) shrink-0'
                 onClick={onInfo}
               />
               {warranty && (

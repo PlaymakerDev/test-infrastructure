@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchBar, {
@@ -94,7 +95,7 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
 
   const goToDetail = useCallback((p: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/traffic-signal/detail/${p.id}?${params}`)
+    router.push(`/admin/traffic-signal/detail/${p.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
   // Bureau-aware list — single round-trip, no pagination, carries every

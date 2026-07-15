@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -61,7 +62,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
   const goToDetail = useCallback(
     (solutionId: number) => {
       const deptId = searchParams.get('dept_id')
-      router.push(`/admin/cctv/detail/${solutionId}${deptId ? `?dept_id=${deptId}` : ''}`)
+      router.push(`/admin/cctv/detail/${solutionId}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`)
     },
     [router, searchParams]
   )

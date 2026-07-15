@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -56,7 +57,7 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   // so the detail page can open the central Project Info modal without re-fetching.
   const goToDetail = useCallback((project: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/traffic-signal/detail/${project.id}?${params}`)
+    router.push(`/admin/traffic-signal/detail/${project.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
   // ── Build a flat list interleaving bureau dividers + project rows.
   // Within each bureau, consecutive rows that share a roadCode are merged

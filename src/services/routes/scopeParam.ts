@@ -57,3 +57,15 @@ export const centralScope = (
  *  (sidebar ↔ เมนูกลาง) shows the other scope's stale data. Append this to
  *  every dept-scoped key whose queryFn sends `centralScope()`. */
 export const scopeKey = (): 'all' | 'own' => (isScopeAll() ? 'all' : 'own')
+
+/** Query-string suffix that forwards the CURRENT page's scope into a detail
+ *  link — `''` on a plain page, `'&scope=all'` on a scope=all page.
+ *
+ *  Detail pages fetch dept-scoped data (central-list derive for road/project,
+ *  per-solution overview, camera lists) through `centralScope()`, which reads
+ *  the DETAIL page's own URL. Since BE made plain strictly own-department
+ *  (2026-07-14), opening a cross-department solution from a scope=all overall
+ *  page WITHOUT forwarding the scope fetches own-only data → "ไม่พบข้อมูล
+ *  สายทางนี้" / blank headers. Append this to every overall→detail navigation. */
+export const scopeQuerySuffix = (): '' | '&scope=all' =>
+  isScopeAll() ? '&scope=all' : ''

@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -62,7 +63,7 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const deptId = useDeptId()
   const goToDetail = useCallback((project: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
+    router.push(`/admin/traffic-volume/detail/${project.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 

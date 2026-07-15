@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { motion, type Transition } from 'motion/react'
-import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
+import useMapFocusMode, { useRegisterMapFocusConsumer } from '@/utils/hooks/useMapFocusMode'
 
 export type MapOverlayPosition = 'left' | 'right' | 'top' | 'bottom'
 
@@ -44,6 +44,8 @@ const MapOverlayPanel: React.FC<Props> = ({
   children,
 }) => {
   const { isMapFocus } = useMapFocusMode()
+  // While mounted (and not `disabled`) the navbar's focus toggle is usable.
+  useRegisterMapFocusConsumer(!disabled)
   const hidden = !disabled && isMapFocus
   const target = hidden ? hiddenTransform(position) : { x: 0, y: 0 }
 
