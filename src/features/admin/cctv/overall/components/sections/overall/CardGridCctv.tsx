@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueries } from '@tanstack/react-query'
@@ -45,7 +46,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
 
   const goToDetail = () => {
     const deptId = searchParams.get('dept_id')
-    router.push(`/admin/cctv/detail/${item.solution.id}${deptId ? `?dept_id=${deptId}` : ''}`)
+    router.push(`/admin/cctv/detail/${item.solution.id}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`)
   }
 
   return (

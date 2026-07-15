@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { useEffect, useMemo, useRef, useState, createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { IconType } from 'react-icons'
@@ -119,7 +120,7 @@ export function DefaultDevicePopup({
       ? new URLSearchParams(window.location.search).get('dept_id')
       : null)
   const detailUrl = route
-    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}` : ''}`
+    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`
     : null
   // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
   // a popup border/label on the dark map (per Figma: brighter).

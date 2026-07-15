@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
+import useMapFocusMode, { useRegisterMapFocusConsumer } from '@/utils/hooks/useMapFocusMode'
 
 interface Props {
   children: React.ReactNode
@@ -32,6 +32,8 @@ const MapFocusGrid: React.FC<Props> = ({
   desktopBreakpoint = 1024,
 }) => {
   const { isMapFocus } = useMapFocusMode()
+  // While this grid is mounted the navbar's focus toggle is usable.
+  useRegisterMapFocusConsumer()
   const [isDesktop, setIsDesktop] = React.useState(false)
 
   React.useEffect(() => {

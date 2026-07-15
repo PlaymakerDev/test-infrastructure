@@ -17,6 +17,11 @@ export interface MapFocusProperties {
    *  hidden (via slide-out animation) and the map container expands to
    *  width:100%. Toggled from the Navbar's TbZoomInArea button. */
   active: boolean;
+  /** Count of focus-capable map layouts currently MOUNTED (MapFocusGrid /
+   *  MapOverlayPanel / direct consumers register themselves). 0 → the navbar
+   *  toggle grays out, since pressing it would change nothing on screen.
+   *  A count (not a boolean) because one page can mount several panels. */
+  consumers: number;
 }
 
 /** Extra info cell appended to the CCTVModal's standard 6-cell grid. Kept as

@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
@@ -82,7 +83,7 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
             {f.properties?.solutionId != null && (
               <div>
                 <PopupDetailLink
-                  url={`/admin/cctv/detail/${f.properties?.solutionId}?dept_id=${navDeptId}`}
+                  url={`/admin/cctv/detail/${f.properties?.solutionId}?dept_id=${navDeptId}${scopeQuerySuffix()}`}
                   onNavigate={(u) => router.push(u)}
                 />
               </div>

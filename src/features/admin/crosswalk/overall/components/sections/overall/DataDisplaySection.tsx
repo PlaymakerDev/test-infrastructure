@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchBar, {
@@ -99,7 +100,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
       const params = new URLSearchParams({ dept_id: deptId })
       if (p.projectId) params.set('project_id', p.projectId)
       if (p.roadId) params.set('road_id', p.roadId)
-      router.push(`/admin/crosswalk/detail/${p.id}?${params}`)
+      router.push(`/admin/crosswalk/detail/${p.id}?${params}${scopeQuerySuffix()}`)
     },
     [router, deptId],
   )

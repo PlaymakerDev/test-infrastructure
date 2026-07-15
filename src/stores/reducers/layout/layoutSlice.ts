@@ -26,7 +26,8 @@ const initialState: LayoutState = {
     }
   },
   map_focus: {
-    active: false
+    active: false,
+    consumers: 0
   },
 }
 
@@ -76,6 +77,15 @@ const layoutSlice = createSlice({
     },
     toggleMapFocusMode: (state) => {
       state.map_focus.active = !state.map_focus.active
+    },
+    // Mount/unmount bookkeeping for focus-capable map layouts — see
+    // useRegisterMapFocusConsumer. Guarded so a stray double-unregister
+    // (e.g. StrictMode edge) can never push the count negative.
+    registerMapFocusConsumer: (state) => {
+      state.map_focus.consumers += 1
+    },
+    unregisterMapFocusConsumer: (state) => {
+      state.map_focus.consumers = Math.max(0, state.map_focus.consumers - 1)
     }
   },
   extraReducers: (builder) => {
@@ -106,7 +116,9 @@ export const {
   setProjectInfoModalOpen,
   resetProjectInfoModalOpen,
   setMapFocusMode,
-  toggleMapFocusMode
+  toggleMapFocusMode,
+  registerMapFocusConsumer,
+  unregisterMapFocusConsumer
 } = layoutSlice.actions
 
 export default layoutSlice.reducer

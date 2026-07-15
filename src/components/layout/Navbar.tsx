@@ -135,7 +135,12 @@ export default function Navbar() {
   const homeDeptId = useHomeDeptId()
   // Global "focus the map" toggle — hides every card/panel on overall pages
   // that host a map. Bound to the TbZoomInArea button below.
-  const { isMapFocus, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
+  // `focusAvailable` comes from live consumer registration (MapFocusGrid /
+  // MapOverlayPanel / direct consumers report their mount), so the toggle
+  // grays out whenever NOTHING currently on screen would respond — including
+  // detail TABS without a map (e.g. incident-detection's รายงานเหตุการณ์),
+  // which a route list could never express.
+  const { isMapFocus, focusAvailable, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
   // MODAL
   const [modal, contextHolder] = Modal.useModal()
   // QUERY CLIENT
@@ -220,21 +225,29 @@ export default function Navbar() {
   const items: MenuProps['items'] = [
     {
       key: '1',
+      // Disabled on pages without a focus-capable map — antd grays the row,
+      // and the inner span's own handlers are guarded too (antd's disabled
+      // only suppresses the menu-item click, not the span's).
+      disabled: !focusAvailable,
       label: (
         <span
           role="button"
-          tabIndex={0}
-          onClick={toggleMapFocus}
+          tabIndex={focusAvailable ? 0 : -1}
+          aria-disabled={!focusAvailable}
+          onClick={focusAvailable ? toggleMapFocus : undefined}
           onKeyDown={(e) => {
+            if (!focusAvailable) return
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
               toggleMapFocus()
             }
           }}
-          className={`inline-flex ${isMapFocus ? 'text-(--yellow)' : ''}`}
+          className={`inline-flex ${!focusAvailable ? 'opacity-40 cursor-not-allowed' : isMapFocus ? 'text-(--yellow)' : ''}`}
           aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
           aria-pressed={isMapFocus}
-          title={isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
+          title={!focusAvailable
+            ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
+            : isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
         >
           {isMapFocus
             ? <TbZoomReset className={iconClassName} />
@@ -515,15 +528,23 @@ export default function Navbar() {
         <div className="nav-side-menu">
           <button
             type="button"
-            onClick={toggleMapFocus}
-            className={`inline-flex items-center justify-center cursor-pointer transition-colors ${isMapFocus ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+            onClick={focusAvailable ? toggleMapFocus : undefined}
+            disabled={!focusAvailable}
+            className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
+              ? 'text-white/25 cursor-not-allowed'
+              : isMapFocus
+                ? 'text-(--yellow) cursor-pointer'
+                : 'text-inherit hover:text-white cursor-pointer'}`}
             aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
             aria-pressed={isMapFocus}
-            title={isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
+            aria-disabled={!focusAvailable}
+            title={!focusAvailable
+              ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
+              : isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
           >
             {isMapFocus
-              ? <TbZoomReset className={iconClassName} />
-              : <TbZoomInArea className={iconClassName} />}
+              ? <TbZoomReset className="fs-24" />
+              : <TbZoomInArea className="fs-24" />}
           </button>
           {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
               icon *is* the shortcut. Open state paints the icon yellow with

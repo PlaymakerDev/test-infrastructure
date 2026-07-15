@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -58,7 +59,7 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
       // Same URL pattern as the other detail pages — dept_id only. The detail
       // page self-derives project_id / road_id from the central list.
       const params = new URLSearchParams({ dept_id: deptId })
-      router.push(`/admin/crosswalk/detail/${project.id}?${params}`)
+      router.push(`/admin/crosswalk/detail/${project.id}?${params}${scopeQuerySuffix()}`)
     },
     [router, deptId],
   )

@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
@@ -75,7 +76,7 @@ const MapSection: React.FC<Props> = () => {
             {f.properties?.solutionId != null && (
               <div>
                 <PopupDetailLink
-                  url={`/admin/incident-detection/detail/${f.properties?.solutionId}?dept_id=${deptId}`}
+                  url={`/admin/incident-detection/detail/${f.properties?.solutionId}?dept_id=${deptId}${scopeQuerySuffix()}`}
                   onNavigate={(u) => router.push(u)}
                 />
               </div>

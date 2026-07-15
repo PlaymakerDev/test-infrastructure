@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
@@ -26,7 +27,7 @@ const DataDisplaySection: React.FC = () => {
 
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/incident-detection/detail/${r.id}?${params}`)
+    router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
   const { data: central, isLoading } = useIncidentCentralList(deptId)
