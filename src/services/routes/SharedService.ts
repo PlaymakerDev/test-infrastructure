@@ -1,10 +1,11 @@
-import { APIResponseCCTVDetail } from "@/types/cctv/shared-api"
+import { APIResponseCCTVDetail, APIResponseCCTVRoad } from "@/types/cctv/shared-api"
 import ApiService from "../ApiService"
 import {
   APIRequestDepartmentByRoad,
   APIRequestRoadList,
   APIResponseContactDetail,
   APIResponseDepartmentByRoad,
+  APIResponseProjectDetail,
   APIResponseRoadList,
   UploadResponse,
 } from "@/types/shared"
@@ -12,6 +13,22 @@ import {
 export const getCCTVDetailAPI = async (cameraId: string | number) => {
   return ApiService.fetchData<APIResponseCCTVDetail>({
     url: `/cctv/cameras/${cameraId}`,
+    method: 'GET',
+  })
+}
+
+/** GET /cctv/{id} — distinct endpoint from getCCTVDetailAPI's /cctv/cameras/{id}. Carries road_code. */
+export const getCCTVRoadAPI = async (cameraId: string | number) => {
+  return ApiService.fetchData<APIResponseCCTVRoad>({
+    url: `/cctv/${cameraId}`,
+    method: 'GET',
+  })
+}
+
+/** GET /manage/project/{id} — returns `[]` (not 404) when the id doesn't exist. */
+export const getProjectAPI = async (projectId: number) => {
+  return ApiService.fetchData<APIResponseProjectDetail | []>({
+    url: `/manage/project/${projectId}`,
     method: 'GET',
   })
 }

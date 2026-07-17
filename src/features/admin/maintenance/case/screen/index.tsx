@@ -1,6 +1,8 @@
 "use client"
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { App, Button, ConfigProvider, DatePicker, Input, Select, Spin, Upload } from 'antd'
+import type { UploadFile } from 'antd'
+import { AxiosError } from 'axios'
 import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -9,8 +11,43 @@ import { TbChevronDown, TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
 import styles from './maintenance-case.module.css'
 import ModalSaveSuccess from '../components/ModalSaveSuccess'
 import { TitleSection } from '../components'
-import { getMaintenanceCaseAPI, updateMaintenanceCaseAPI } from '@/services/routes/MaintenanceService'
+import { getMaintenanceCaseAPI, updateMaintenanceCaseAPI, postUploadMaintenanceAPI } from '@/services/routes/MaintenanceService'
+import { getCCTVDetailAPI, getCCTVRoadAPI, getProjectAPI } from '@/services/routes/SharedService'
+import { CCTVModal } from '@/components/modal'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CaseDetail } from '@/types/maintenance'
+import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/shared-api'
+import type { APIResponseProjectDetail } from '@/types/shared'
+
+const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
+const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
+
+/** before_image/after_image come back as a JSON-stringified array in a string
+ *  field (or the literal text "null", or ""). Never a real array or null. */
+const parseImageUrls = (raw: string | null | undefined): string[] => {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string' && u.length > 0) : []
+  } catch {
+    return []
+  }
+}
+
+/** Go's zero-value time ("0001-01-01T00:00:00Z", any offset) — the backend's
+ *  way of saying "never actually recorded", not a real timestamp. */
+const isRealTimestamp = (value: string | null | undefined): boolean =>
+  !!value && !value.startsWith('0001-01-01')
+
+const urlToUploadFile = (url: string, index: number): UploadFile => ({
+  uid: `existing-${index}`,
+  name: url.split('/').pop() || `file-${index}`,
+  status: 'done',
+  url,
+  thumbUrl: url,
+  type: /\.(jpe?g|png|gif)$/i.test(url) ? 'image/*' : undefined,
+})
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -49,7 +86,8 @@ const REPAIR_STATUS_CONFIG: Record<RepairStatus, { label: string; color: string;
 }
 
 const CaseContent: React.FC<Props> = ({ id }) => {
-  const { modal } = App.useApp()
+  const { modal, message } = App.useApp()
+  const dispatch = useAppDispatch()
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,10 +101,13 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     solution: '',
     reportDate: '',
     inspectDate: '',
-    beforeImages: 0,
-    afterImages: 0,
   })
+  const [beforeFiles, setBeforeFiles] = useState<UploadFile[]>([])
+  const [afterFiles, setAfterFiles] = useState<UploadFile[]>([])
   const [closeCaseAfterSave, setCloseCaseAfterSave] = useState(false)
+  const [cameraDetail, setCameraDetail] = useState<APIResponseCCTVDetail | null>(null)
+  const [cameraRoad, setCameraRoad] = useState<APIResponseCCTVRoad | null>(null)
+  const [projectDetail, setProjectDetail] = useState<APIResponseProjectDetail | null>(null)
 
   const fetchCase = useCallback(async () => {
     try {
@@ -82,9 +123,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
         solution: data.solution_method || '',
         reportDate: data.created_at ? dayjs(data.created_at).format('DD MMM BBBB') : '',
         inspectDate: data.inspection_date ? dayjs(data.inspection_date).format('DD MMM BBBB') : '',
-        beforeImages: 0,
-        afterImages: 0,
       })
+      setBeforeFiles(parseImageUrls(data.before_image).map(urlToUploadFile))
+      setAfterFiles(parseImageUrls(data.after_image).map(urlToUploadFile))
     } catch (err) {
       console.error('Error fetching case:', err)
       setError('ไม่สามารถโหลดข้อมูล Case ได้')
@@ -97,6 +138,59 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     fetchCase()
   }, [fetchCase])
 
+  // ข้อมูลอุปกรณ์ card — CaseDetail only carries camera_id, so the actual
+  // device name/IP/online status comes from the CCTV camera endpoint.
+  useEffect(() => {
+    const cameraId = caseData?.camera_id
+    if (!cameraId) return
+    let cancelled = false
+    getCCTVDetailAPI(cameraId)
+      .then((res) => { if (!cancelled) setCameraDetail(res.data) })
+      .catch((err) => { console.error('Error fetching camera detail:', err) })
+    return () => { cancelled = true }
+  }, [caseData?.camera_id])
+
+  // "จุดติดตั้ง / สายทาง" — GET /cctv/cameras/{id} (above) has no road info.
+  // This separate GET /cctv/{id} endpoint carries road_code instead.
+  useEffect(() => {
+    const cameraId = caseData?.camera_id
+    if (!cameraId) return
+    let cancelled = false
+    getCCTVRoadAPI(cameraId)
+      .then((res) => { if (!cancelled) setCameraRoad(res.data) })
+      .catch((err) => { console.error('Error fetching camera road:', err) })
+    return () => { cancelled = true }
+  }, [caseData?.camera_id])
+
+  // ข้อมูลโครงการ card — CaseDetail has no project_id either. Every entry
+  // point into this page comes from the solution detail page's Case No.
+  // link, which already resolved and stashed the owning project's id here
+  // (same key the solution detail page's own ⓘ Project Info modal uses).
+  useEffect(() => {
+    const projectId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_project_id') : null
+    if (!projectId) return
+    let cancelled = false
+    getProjectAPI(Number(projectId))
+      .then((res) => { if (!cancelled && !Array.isArray(res.data)) setProjectDetail(res.data) })
+      .catch((err) => { console.error('Error fetching project detail:', err) })
+    return () => { cancelled = true }
+  }, [])
+
+  const uploadFile = useCallback(async (file: UploadFile, kind: 'before' | 'after') => {
+    const setFiles = kind === 'before' ? setBeforeFiles : setAfterFiles
+    setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'uploading' } : f)))
+    try {
+      const fd = new FormData()
+      fd.append('upload', file.originFileObj as File)
+      const response = await postUploadMaintenanceAPI(fd)
+      const path = response.data?.path || ''
+      setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'done', url: path, thumbUrl: path } : f)))
+    } catch (err) {
+      setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'error' } : f)))
+      message.error(err instanceof AxiosError ? (err.response?.data?.message ?? 'อัปโหลดไม่สำเร็จ') : 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์')
+    }
+  }, [message])
+
   const handleSave = async () => {
     if (saving) return
     try {
@@ -107,6 +201,8 @@ const CaseContent: React.FC<Props> = ({ id }) => {
         responsible: formData.agency || undefined,
         solution_method: formData.solution || undefined,
         inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
+        before_image: beforeFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
+        after_image: afterFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
         is_closed: hasData ? closeCaseAfterSave : undefined,
       })
       await fetchCase()
@@ -126,12 +222,12 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
   const hasData = Boolean(caseData?.inspection_date)
 
-  const handleDeleteBeforeImage = (_index: number) => {
-    setFormData(prev => ({ ...prev, beforeImages: prev.beforeImages - 1 }))
+  const handleDeleteBeforeImage = (uid: string) => {
+    setBeforeFiles(prev => prev.filter(f => f.uid !== uid))
   }
 
-  const handleDeleteAfterImage = (_index: number) => {
-    setFormData(prev => ({ ...prev, afterImages: prev.afterImages - 1 }))
+  const handleDeleteAfterImage = (uid: string) => {
+    setAfterFiles(prev => prev.filter(f => f.uid !== uid))
   }
 
   // Determine repair status from API data
@@ -143,25 +239,34 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
   const statusConfig = REPAIR_STATUS_CONFIG[repairStatus]
 
-  // Placeholder project/device info (API doesn't return these yet)
   const project: ProjectInfo = {
-    projectName: '-',
-    contractor: '-',
-    agency: formData.agency || '-',
-    contractNo: '-',
-    warrantyStart: '-',
-    warrantyEnd: '-',
-    warrantyStatus: 'expired',
+    projectName: projectDetail?.project_name || '-',
+    contractor: projectDetail?.contractor?.username || '-',
+    agency: projectDetail?.department?.department_name || formData.agency || '-',
+    contractNo: projectDetail?.contract_no || '-',
+    warrantyStart: projectDetail?.warranty_start_date ? dayjs(projectDetail.warranty_start_date).format('DD MMM BBBB') : '-',
+    warrantyEnd: projectDetail?.warranty_end_date ? dayjs(projectDetail.warranty_end_date).format('DD MMM BBBB') : '-',
+    warrantyStatus: projectDetail ? (projectDetail.is_warranty ? 'active' : 'expired') : 'expired',
   }
 
+  // "Offline since" only means something when the camera is actually offline
+  // AND the backend has a real curl_updated_at (not the Go zero-value
+  // sentinel it sends when it's never actually checked in).
+  const offlineSince = cameraDetail && !cameraDetail.is_online && isRealTimestamp(cameraDetail.curl_updated_at)
+    ? dayjs(cameraDetail.curl_updated_at)
+    : null
+
   const device: DeviceInfo = {
-    deviceName: caseData?.camera_id || '-',
-    deviceType: '-',
-    installPoint: '-',
-    ipAddress: '-',
-    offlineDate: '-',
-    offlineDays: 0,
-    hasLive: false,
+    deviceName: cameraDetail?.camera_name || caseData?.camera_id || '-',
+    // The case screen's device lookup only ever joins camera_id against the
+    // CCTV camera endpoint (no other device source is wired), so this is
+    // always CCTV.
+    deviceType: 'cctv',
+    installPoint: cameraRoad?.road_code || '-',
+    ipAddress: cameraDetail?.ip_address || '-',
+    offlineDate: offlineSince ? offlineSince.format('DD MMM BBBB') : '-',
+    offlineDays: offlineSince ? Math.max(0, dayjs().diff(offlineSince, 'day')) : 0,
+    hasLive: !!cameraDetail?.is_online && !!cameraDetail?.hls_url,
   }
 
   if (loading) {
@@ -180,6 +285,14 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     )
   }
 
+  // Back-button fallback when sessionStorage's maintenance_detail_id is
+  // missing (e.g. the case URL was opened directly) — derive the solution id
+  // from whichever solution the camera is actually linked to.
+  const fallbackSolutionId = cameraDetail
+    ? [cameraDetail.counting, cameraDetail.analytic, cameraDetail.traffic, cameraDetail.crosswalk, cameraDetail.wim_camera, cameraDetail.vms]
+        .find((s) => s != null)?.solution_id
+    : undefined
+
   return (
     <div className='main-screen'>
       <style>{`
@@ -190,7 +303,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           min-height: unset !important;
         }
       `}</style>
-      <TitleSection caseId={id} />
+      <TitleSection caseId={id} fallbackSolutionId={fallbackSolutionId} />
 
       {/* ─── Status Badges ─── */}
       <section className='mt-5 px-4 md:px-10 flex flex-col sm:flex-row gap-3 sm:gap-4'>
@@ -355,36 +468,57 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
+                showUploadList={false}
+                multiple
+                beforeUpload={(file) => {
+                  if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+                    message.error('ประเภทไฟล์ไม่ถูกต้อง')
+                    return Upload.LIST_IGNORE
+                  }
+                  if (file.size > MAX_UPLOAD_SIZE) {
+                    message.error('ไม่สามารถอัปโหลดไฟล์ได้ ไฟล์ที่อัปโหลดมีขนาดเกิน 200 MB')
+                    return Upload.LIST_IGNORE
+                  }
+                  return false
+                }}
+                onChange={({ fileList }) => {
+                  const added = fileList.filter(f => !beforeFiles.some(existing => existing.uid === f.uid))
+                  setBeforeFiles(prev => [...prev, ...added])
+                  added.forEach(f => uploadFile(f, 'before'))
+                }}
               >
                 <img src='/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
-              {formData.beforeImages > 0 && (
+              {beforeFiles.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {Array.from({ length: formData.beforeImages }).map((_, index) => (
-                    <div
-                      key={index}
-                      className={styles.imagePreviewItem}
-                      style={{ background: '#2A2A2A' }}
-                    >
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
-                      </div>
+                  {beforeFiles.map((file) => {
+                    const isImage = file.type?.startsWith('image/')
+                    return (
                       <div
-                        className={styles.imagePreviewOverlay}
-                        onClick={() => handleDeleteBeforeImage(index)}
+                        key={file.uid}
+                        className={styles.imagePreviewItem}
+                        style={{ background: '#2A2A2A' }}
                       >
-                        <TbTrash size={24} color='#FFFFFF' />
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {file.status === 'uploading' ? (
+                            <Spin size='small' />
+                          ) : isImage && file.thumbUrl ? (
+                            <img src={file.thumbUrl} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <TbFileText size={32} color={file.status === 'error' ? '#E94C4C' : '#FCD116'} />
+                          )}
+                        </div>
+                        <div
+                          className={styles.imagePreviewOverlay}
+                          onClick={() => handleDeleteBeforeImage(file.uid)}
+                        >
+                          <TbTrash size={24} color='#FFFFFF' />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {/* PDF mock */}
-                  <div className={styles.imagePreviewItem} style={{ background: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                    <TbFileText size={24} color='#000000' />
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
-                    <span style={{ fontSize: 8, color: '#000000' }}>5.9 MB</span>
-                  </div>
+                    )
+                  })}
                 </div>
               )}
               <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '12px 0 4px 0' }}>หลังซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
@@ -393,36 +527,57 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
+                showUploadList={false}
+                multiple
+                beforeUpload={(file) => {
+                  if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+                    message.error('ประเภทไฟล์ไม่ถูกต้อง')
+                    return Upload.LIST_IGNORE
+                  }
+                  if (file.size > MAX_UPLOAD_SIZE) {
+                    message.error('ไม่สามารถอัปโหลดไฟล์ได้ ไฟล์ที่อัปโหลดมีขนาดเกิน 200 MB')
+                    return Upload.LIST_IGNORE
+                  }
+                  return false
+                }}
+                onChange={({ fileList }) => {
+                  const added = fileList.filter(f => !afterFiles.some(existing => existing.uid === f.uid))
+                  setAfterFiles(prev => [...prev, ...added])
+                  added.forEach(f => uploadFile(f, 'after'))
+                }}
               >
                 <img src='/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
-              {formData.afterImages > 0 && (
+              {afterFiles.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {Array.from({ length: formData.afterImages }).map((_, index) => (
-                    <div
-                      key={index}
-                      className={styles.imagePreviewItem}
-                      style={{ background: '#2A2A2A' }}
-                    >
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
-                      </div>
+                  {afterFiles.map((file) => {
+                    const isImage = file.type?.startsWith('image/')
+                    return (
                       <div
-                        className={styles.imagePreviewOverlay}
-                        onClick={() => handleDeleteAfterImage(index)}
+                        key={file.uid}
+                        className={styles.imagePreviewItem}
+                        style={{ background: '#2A2A2A' }}
                       >
-                        <TbTrash size={24} color='#FFFFFF' />
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {file.status === 'uploading' ? (
+                            <Spin size='small' />
+                          ) : isImage && file.thumbUrl ? (
+                            <img src={file.thumbUrl} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <TbFileText size={32} color={file.status === 'error' ? '#E94C4C' : '#FCD116'} />
+                          )}
+                        </div>
+                        <div
+                          className={styles.imagePreviewOverlay}
+                          onClick={() => handleDeleteAfterImage(file.uid)}
+                        >
+                          <TbTrash size={24} color='#FFFFFF' />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {/* PDF mock */}
-                  <div className={styles.imagePreviewItem} style={{ background: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                    <TbFileText size={24} color='#000000' />
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
-                    <span style={{ fontSize: 8, color: '#000000' }}>5.9 MB</span>
-                  </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -572,11 +727,15 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <div className='flex flex-col items-center'>
                 <img src='/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays > 0 ? `${device.offlineDays} วัน` : '-'}</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>
               {device.hasLive && (
                 <div className='flex flex-col items-center'>
-                  <div style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  <div
+                    className='cursor-pointer'
+                    style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                    onClick={() => caseData?.camera_id && dispatch(setCCTVModalOpen({ open: true, camera_id: caseData.camera_id }))}
+                  >
                     <img src='/images/Maintenance/iclive.png' alt='' width={30} height={30} />
                     <p style={{ color: '#000000', fontWeight: 400, fontSize: 14, margin: 0 }}>Live</p>
                   </div>
@@ -599,6 +758,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           repairDate: formData.reportDate || '-',
         }}
       />
+
+      {/* Global CCTV modal — fires from the "Live" tile in ข้อมูลอุปกรณ์. Reads camera_id from Redux. */}
+      <CCTVModal />
     </div>
   )
 }

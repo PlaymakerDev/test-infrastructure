@@ -5,12 +5,30 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 
 interface Props {
   caseId: string
+  /** Derived from the case's own camera→solution link — used when
+   *  sessionStorage's maintenance_detail_id is missing (e.g. this case URL
+   *  was opened directly, not via the solution detail page's Case No. link). */
+  fallbackSolutionId?: number
 }
 
-const TitleSection: React.FC<Props> = ({ caseId }) => {
+const TitleSection: React.FC<Props> = ({ caseId, fallbackSolutionId }) => {
   const router = useRouter()
 
   const handleBack = () => {
+    // Every entry point into this page (the Case No. link on the solution
+    // detail table) stashes the solution id here first — prefer it over
+    // router.back(), which just pops raw browser history and can land
+    // anywhere the tab happened to visit before this page, not necessarily
+    // the solution this case belongs to.
+    const detailId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_id') : null
+    if (detailId) {
+      router.push(`/admin/maintenance/detail/${detailId}`)
+      return
+    }
+    if (fallbackSolutionId) {
+      router.push(`/admin/maintenance/detail/${fallbackSolutionId}`)
+      return
+    }
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back()
     } else {
