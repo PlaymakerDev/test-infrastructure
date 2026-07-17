@@ -33,12 +33,15 @@ const analyticBase = (deptId: string | number) => `/analytic/departments/${deptI
 
 /** Map markers (one per solution) + centroid.
  *  `scope=all` — used with dept 0 (statistics' nationwide view) to bypass the
- *  normal single-department scoping and return every department's locations. */
+ *  normal single-department scoping and return every department's locations.
+ *  An explicit `params.scope` wins over the page-URL-driven `centralScope()`
+ *  default — needed by callers like statistics that always want the
+ *  nationwide aggregate regardless of the current page's own URL params. */
 export const getIncidentOverviewAPI = (deptId: string | number, params: { scope?: string } = {}) =>
   ApiService.fetchData<APIResponseIncidentOverview>({
     url: `${analyticBase(deptId)}/overview`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: params.scope ? { scope: params.scope } : centralScope(deptId),
   })
 
 /** Bureau-scoped totals — same shape, but counts match `/overview/central/list`
@@ -53,7 +56,8 @@ export const getIncidentCentralTotalsAPI = (deptId: string | number) =>
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging.
  *  `scope=all` — used with dept 0 (statistics' nationwide view), same as
- *  getIncidentOverviewAPI, to bypass single-department scoping.
+ *  getIncidentOverviewAPI, to bypass single-department scoping (an explicit
+ *  `params.scope` wins over the page-URL-driven `centralScope()` default).
  *  `start_date`/`end_date` (added to the spec after this was first wired up)
  *  bound each item's `noti_count` — omit both to default to today 00:00→now.
  *  Also part of the backend's 15-min Redis cache key, so a different window
@@ -65,7 +69,11 @@ export const getIncidentCentralListAPI = (
   ApiService.fetchData<APIResponseIncidentCentralList>({
     url: `${analyticBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...(params.scope ? { scope: params.scope } : centralScope(deptId)),
+      start_date: params.start_date,
+      end_date: params.end_date,
+    },
   })
 
 /** Flat paginated solution list (has offline_count directly). */
