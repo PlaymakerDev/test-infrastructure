@@ -101,12 +101,14 @@ const LicenseCard: React.FC<{
         <h2 className={text.plate}>{item.license_no}</h2>
         <p className={text.meta}>{item.license_province}</p>
       </div>
-      <div
-        className={`shrink-0 rounded-3xl py-1 px-4 border text-center ${text.badge} ${item.license_type_color ? '' : 'border-(--yellow)'}`}
-        style={item.license_type_color ? { borderColor: item.license_type_color, color: item.license_type_color } : undefined}
-      >
-        {item.license_type}
-      </div>
+      {item.license_type && (
+        <div
+          className={`shrink-0 rounded-3xl py-1 px-4 border text-center ${text.badge} ${item.license_type_color ? '' : 'border-(--yellow)'}`}
+          style={item.license_type_color ? { borderColor: item.license_type_color, color: item.license_type_color } : undefined}
+        >
+          {item.license_type}
+        </div>
+      )}
     </div>
     <div className='mt-4'>
       <p className={`text-(--yellow) ${text.meta}`}>พบล่าสุด</p>
