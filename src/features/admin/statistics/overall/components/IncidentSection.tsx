@@ -294,6 +294,8 @@ const IncidentSection: React.FC = () => {
           markerAltColor="#E94C4C"
           markerTextColor="#000000"
           markerShadowColor="rgba(76, 233, 154, 0.5)"
+          markerItemColor="#4CE99A"
+          markerItemOverflowColor="#E94C4C"
           useModernMarkers
           detailUrl="/admin/statistics/detail/incident"
           hideCount
