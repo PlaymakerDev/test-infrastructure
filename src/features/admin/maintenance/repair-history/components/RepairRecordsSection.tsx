@@ -532,29 +532,30 @@ const RepairRecordsSection: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Installation point leaf — one row per (project, solution_location) pair;
-                                a project trivially owns one location in almost every real case, so it
-                                never gets its own visible row — its name is just the row's caption. */}
+                            {/* Solution leaf — one row per (project, solution_location, solution) triple.
+                                A solution_location can legitimately hold more than one solution (e.g. two
+                                VMS signs sharing one installation point) — flatten all the way into
+                                loc.solution so every device gets its own clickable row instead of only
+                                the first being reachable. A project trivially owns one location in almost
+                                every real case, so project_name is just the row's caption, not a header. */}
                             {expandedRoad === road.road_id && sortByName(road.projects, (p) => p.project_name).flatMap((proj) =>
-                              sortByName(proj.solution_location ?? [], (l) => l.solution_location_name).map((loc) => {
-                                const solutionId = loc.solution?.[0]?.solution_id
-                                return (
+                              sortByName(proj.solution_location ?? [], (l) => l.solution_location_name).flatMap((loc) =>
+                                sortByName(loc.solution ?? [], (s) => s.solution_name).map((sol) => (
                                   <div
-                                    key={loc.solution_location_id}
+                                    key={sol.solution_id}
                                     className="mt-1 rounded-[10px] cursor-pointer flex items-center gap-4"
                                     style={{ background: '#151515', paddingLeft: 60, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
                                     onClick={() => {
-                                      if (!solutionId) return
                                       sessionStorage.setItem('maintenance_detail_title', road.road_name)
                                       sessionStorage.setItem('maintenance_detail_subtitle', proj.project_name)
-                                      router.push(`/admin/maintenance/detail/${solutionId}`)
+                                      router.push(`/admin/maintenance/detail/${sol.solution_id}`)
                                     }}
                                   >
-                                    <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{loc.solution_location_name}</span>
+                                    <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{sol.solution_name || loc.solution_location_name}</span>
                                     <span className="text-[12px] font-normal" style={{ color: '#FFFFFF' }}>{proj.project_name || 'โปรดระบุชื่อโครงการ'}</span>
                                   </div>
-                                )
-                              })
+                                ))
+                              )
                             )}
                           </React.Fragment>
                         ))}
