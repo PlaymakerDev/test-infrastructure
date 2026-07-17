@@ -424,6 +424,8 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   cluster
                   color={clusterColor}
                   size={25}
+                  strokeWidth={0}
+                  clusterStrokeWidth={0}
                   unclusteredCountProperty="countLabel"
                   clusterSumProperty="countValue"
                   countCapThreshold={markerOverflowThreshold}

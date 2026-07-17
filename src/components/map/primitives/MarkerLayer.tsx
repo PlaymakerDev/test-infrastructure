@@ -51,6 +51,10 @@ export interface MarkerLayerProps {
   size?: number
   /** Stroke around circle (default white 2px for unclustered, 2.5px for cluster) */
   strokeColor?: string
+  /** Stroke width for unclustered points (default 2) */
+  strokeWidth?: number
+  /** Stroke width for cluster bubbles (default 2.5) */
+  clusterStrokeWidth?: number
   /** Optional registered icon image name. Must be added to map BEFORE this component renders */
   iconImage?: string
   /** Icon scale relative to the source 64px image (default 0.36 unclustered, ramps for cluster) */
@@ -116,6 +120,8 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   color,
   size = 18,
   strokeColor = '#ffffff',
+  strokeWidth = 2,
+  clusterStrokeWidth = 2.5,
   iconImage,
   iconSize,
   unclusteredCountProperty,
@@ -179,7 +185,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': ['step', ['get', 'point_count'], 22, 10, 26, 50, 30, 100, 36],
-          'circle-stroke-width': 2.5,
+          'circle-stroke-width': clusterStrokeWidth,
           'circle-stroke-color': strokeColor,
           'circle-opacity': 0.95,
         },
@@ -196,7 +202,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': size,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': strokeWidth,
           'circle-stroke-color': strokeColor,
         },
       }
@@ -261,7 +267,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': size,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': strokeWidth,
           'circle-stroke-color': strokeColor,
         },
       }
@@ -363,7 +369,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
-    cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor,
+    cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor, strokeWidth, clusterStrokeWidth,
     iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor, minZoom,
   ])
 
