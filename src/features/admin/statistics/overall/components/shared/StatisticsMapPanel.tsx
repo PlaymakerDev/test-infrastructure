@@ -1,7 +1,7 @@
 "use client"
-import React, { useState } from 'react'
-import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbLayoutSidebarRightCollapse, TbLayoutSidebarRightExpand } from 'react-icons/tb'
-import { Button, Collapse } from 'antd'
+import React from 'react'
+import { TbChevronDown } from 'react-icons/tb'
+import { Collapse } from 'antd'
 import { useRouter } from 'next/navigation'
 import type { ExpressionSpecification } from 'mapbox-gl'
 import BaseMap from '@/components/map/BaseMap'
@@ -12,6 +12,7 @@ import type { GeoJSONSource } from 'mapbox-gl'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
@@ -134,10 +135,6 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   onMarkerGroupClick,
 }) => {
   const router = useRouter()
-  // Local collapse state for the search-list panel (left) and stat-cards
-  // panel (right) — each has its own toggle button, independent of the other.
-  const [searchOpen, setSearchOpen] = useState(true)
-  const [cardsOpen, setCardsOpen] = useState(true)
 
   const getCount = (item: RouteItem, index: number) => markerCountFn ? markerCountFn(item, index) : item.sub3.length
 
@@ -393,31 +390,13 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         </SearchCard>
       </DrawerMapSearchCard>
 
-      <div className="mt-8 overflow-hidden flex" style={{ height: 'calc(100vh - 200px)' }}>
+      {/* Map Focus Mode (same global toggle as the dashboard map) hides both
+          side panels below via MapOverlayPanel — no per-page show/hide
+          button needed; the map itself is full-bleed and never resizes. */}
+      <div className="mt-8 relative overflow-hidden rounded-2xl" style={{ height: 'calc(100vh - 200px)' }}>
 
-        {/* ══ LEFT: collapsible SearchCard panel — xl+ only ══ */}
-        <div className='relative shrink-0 max-xl:hidden self-stretch'>
-          <div className={[
-            'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
-            searchOpen ? 'w-[370px] rounded-lg' : 'w-0',
-          ].join(' ')}>
-            <div className='w-[370px] h-full overflow-y-auto'>
-              <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
-                {searchCardCollapse}
-              </SearchCard>
-            </div>
-          </div>
-          <Button
-            type='primary' shape='circle'
-            title={searchOpen ? 'ซ่อนรายการสายทาง' : 'แสดงรายการสายทาง'}
-            icon={searchOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
-            onClick={() => setSearchOpen((prev) => !prev)}
-            className='absolute! top-10 -right-5 z-20 w-10! h-10! shadow-lg'
-          />
-        </div>
-
-        {/* ══ MAIN: map + stats cards ══ */}
-        <div className='flex-1 min-w-0 relative overflow-hidden rounded-2xl'>
+        {/* ══ MAIN: map, always full-size ══ */}
+        <div className='absolute inset-0 transform-gpu'>
           <BaseMap initialCenter={[102.0, 14.0]} initialZoom={4.8}>
             {useModernMarkers ? (
               <>
@@ -514,45 +493,47 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               })
             )}
           </BaseMap>
-
-          {/* ══ RIGHT: stat cards overlay — nested inside this `relative`
-              container so `absolute` anchors to the map box, not the viewport ══ */}
-          {statsCards && statsCards.length > 0 && (
-            <>
-              <Button
-                type='primary' shape='circle'
-                title={cardsOpen ? 'ซ่อนการ์ดสถิติ' : 'แสดงการ์ดสถิติ'}
-                icon={cardsOpen ? <TbLayoutSidebarRightCollapse className='fs-18' /> : <TbLayoutSidebarRightExpand className='fs-18' />}
-                onClick={() => setCardsOpen((prev) => !prev)}
-                className={`absolute! top-3 z-20 w-10! h-10! shadow-lg transition-[right] duration-300 ease-in-out ${cardsOpen ? 'right-[232px] sm:right-[302px] lg:right-[372px]' : 'right-3'}`}
-              />
-              <div
-                className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 w-[220px] sm:w-[290px] lg:w-[360px] transition-transform duration-300 ease-in-out transform-gpu will-change-transform"
-                style={{ transform: cardsOpen ? 'translateX(0)' : 'translateX(calc(100% + 12px))' }}
-              >
-                {statsCards.map((card, i) => (
-                  <div key={i} className="min-h-[120px] sm:min-h-[145px] lg:min-h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
-                    <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
-                      <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
-                      <p
-                        lang="th"
-                        className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
-                        style={{ color: card.labelColor }}
-                      >
-                        {card.label}
-                      </p>
-                    </div>
-                    <div className="flex items-baseline gap-0.5 sm:gap-1">
-                      <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
-                      {card.unit && <span className="text-[8px] sm:text-[9px] lg:text-xs text-white">{card.unit}</span>}
-                    </div>
-                    <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 line-clamp-2">{card.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
         </div>
+
+        {/* ══ LEFT: SearchCard overlay — xl+ only, hidden by Map Focus Mode ══ */}
+        <MapOverlayPanel
+          position="left"
+          className="absolute inset-y-0 left-0 z-20 w-[370px] max-xl:hidden bg-(--dark-black) rounded-r-lg shadow-2xl overflow-hidden"
+        >
+          <div className='w-[370px] h-full overflow-y-auto'>
+            <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
+              {searchCardCollapse}
+            </SearchCard>
+          </div>
+        </MapOverlayPanel>
+
+        {/* ══ RIGHT: stat cards overlay — hidden by Map Focus Mode ══ */}
+        {statsCards && statsCards.length > 0 && (
+          <MapOverlayPanel
+            position="right"
+            className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 w-[220px] sm:w-[290px] lg:w-[360px]"
+          >
+            {statsCards.map((card, i) => (
+              <div key={i} className="min-h-[120px] sm:min-h-[145px] lg:min-h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
+                <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
+                  <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
+                  <p
+                    lang="th"
+                    className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
+                    style={{ color: card.labelColor }}
+                  >
+                    {card.label}
+                  </p>
+                </div>
+                <div className="flex items-baseline gap-0.5 sm:gap-1">
+                  <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
+                  {card.unit && <span className="text-[8px] sm:text-[9px] lg:text-xs text-white">{card.unit}</span>}
+                </div>
+                <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 line-clamp-2">{card.sub}</p>
+              </div>
+            ))}
+          </MapOverlayPanel>
+        )}
       </div>
     </>
   )
