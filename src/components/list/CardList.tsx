@@ -17,7 +17,8 @@ export interface DataType {
   stdWeight: string
   overweight: string
   laneAcceptance?: string
-  speed: string
+  cargo?: string
+  speed?: string
   datetime: string
   images?: { image: string; description: string }[]
   vehicleImage?: string
@@ -156,10 +157,18 @@ const DataRows: React.FC<{ item: DataType }> = ({ item }) => (
         <span className='text-white text-sm'>{item.laneAcceptance}</span>
       </div>
     )}
-    <div className='flex justify-between gap-4'>
-      <span className='text-white/60 text-sm whitespace-nowrap'>ความเร็ว :</span>
-      <span className='text-white text-sm'>{item.speed}</span>
-    </div>
+    {item.cargo !== undefined && (
+      <div className='flex justify-between gap-4'>
+        <span className='text-white/60 text-sm whitespace-nowrap'>สิ่งของที่บรรทุก :</span>
+        <span className='text-white text-sm'>{item.cargo}</span>
+      </div>
+    )}
+    {item.speed !== undefined && (
+      <div className='flex justify-between gap-4'>
+        <span className='text-white/60 text-sm whitespace-nowrap'>ความเร็ว :</span>
+        <span className='text-white text-sm'>{item.speed}</span>
+      </div>
+    )}
     <div className='flex justify-between gap-4'>
       <span className='text-white/60 text-sm whitespace-nowrap'>วันที่และเวลา :</span>
       <span className='text-white text-sm'>{item.datetime}</span>

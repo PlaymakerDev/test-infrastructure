@@ -5,28 +5,11 @@ import LineChart, {
   type LineChartDataPoint,
   type LineConfig,
 } from '@/components/chart/LineChart'
+import { APIResponsePostPmChart, PmChartData } from '@/types/bridge-lighting/overall-api'
 
-interface Props { }
-
-// ── Mock hourly data ──────────────────────────────────────────────────────────
-// 13 points covering 00:00 → 24:00 (every 2 hours). Values dip near-zero in
-// early morning when lights are off, then climb to nominal V/A once they
-// come on for the evening.
-const X_AXIS_LABELS = [
-  '00.00', '02.00', '04.00', '06.00', '08.00', '10.00', '12.00',
-  '14.00', '16.00', '18.00', '20.00', '22.00', '24.00',
-]
-
-const VOLTAGE_SERIES = {
-  p1: [220, 210, 60, 100, 160, 230, 232, 230, 231, 230, 230, 231, 231],
-  p2: [223, 215, 80, 110, 175, 232, 233, 231, 231, 232, 232, 232, 232],
-  p3: [225, 220, 90, 130, 180, 234, 233, 232, 232, 231, 232, 231, 231],
-}
-
-const CURRENT_SERIES = {
-  p1: [70, 50, 5, 3, 2, 1, 1, 1, 2, 5, 25, 55, 70],
-  p2: [80, 60, 7, 4, 3, 2, 1, 2, 3, 6, 28, 60, 80],
-  p3: [76, 55, 6, 4, 2, 1, 1, 1, 2, 5, 26, 56, 76],
+interface Props {
+  pmChartData?: APIResponsePostPmChart
+  isPmChartSuccess?: boolean
 }
 
 const VOLTAGE_LINES: LineConfig[] = [
@@ -49,25 +32,49 @@ const THAI_MONTHS = [
 const formatThaiDate = (d: Date) =>
   `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`
 
-/** Build LineChart-compatible data points from a 3-phase series object. */
+/** "2026-07-17T01:20:00+07:00" → "01.20" — matches the chart's original
+ *  dot-separated x-axis label style. */
+const formatBucketLabel = (bucket: string) => {
+  const d = new Date(bucket)
+  return `${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/** Build LineChart-compatible data points from `pmChartData`, picking the
+ *  per-phase field trio (voltage: v_l1/v_l2/v_l3, current: i_l1/i_l2/i_l3). */
 const buildPoints = (
-  series: { p1: number[]; p2: number[]; p3: number[] }
+  list: PmChartData[],
+  keys: { p1: keyof PmChartData; p2: keyof PmChartData; p3: keyof PmChartData }
 ): LineChartDataPoint[] =>
-  X_AXIS_LABELS.map((label, i) => ({
-    label,
-    p1: series.p1[i],
-    p2: series.p2[i],
-    p3: series.p3[i],
+  list.map((item) => ({
+    label: formatBucketLabel(item.bucket),
+    p1: parseFloat(item[keys.p1] as string) || 0,
+    p2: parseFloat(item[keys.p2] as string) || 0,
+    p3: parseFloat(item[keys.p3] as string) || 0,
   }))
 
 /** Voltage + Current 24-hour line charts.
  *  Both use the central `<LineChart>` with theme overrides (accent color,
  *  dark card bg, no golden glow, plain icon) plus a custom tooltip that
  *  shows Thai BE date + time + colored phase dots. */
-const ChartElectricalBridgeLighting: React.FC<Props> = () => {
-  const voltageData = useMemo(() => buildPoints(VOLTAGE_SERIES), [])
-  const currentData = useMemo(() => buildPoints(CURRENT_SERIES), [])
-  const tooltipDate = useMemo(() => formatThaiDate(new Date()), [])
+const ChartElectricalBridgeLighting: React.FC<Props> = (props) => {
+  const { pmChartData, isPmChartSuccess } = props
+
+  const voltageData = useMemo(
+    () => buildPoints(pmChartData ?? [], { p1: 'v_l1', p2: 'v_l2', p3: 'v_l3' }),
+    [pmChartData],
+  )
+  const currentData = useMemo(
+    () => buildPoints(pmChartData ?? [], { p1: 'i_l1', p2: 'i_l2', p3: 'i_l3' }),
+    [pmChartData],
+  )
+  // Same "latest reading" convention as VoltageStat — the last bucket is the
+  // most recent sample, so its date drives the tooltip header.
+  const tooltipDate = useMemo(() => {
+    const latest = pmChartData?.[pmChartData.length - 1]
+    return formatThaiDate(latest ? new Date(latest.bucket) : new Date())
+  }, [pmChartData])
+
+  if (!isPmChartSuccess) return null
 
   return (
     <div className='flex flex-col gap-3 lg:h-full'>
@@ -97,7 +104,9 @@ const ChartElectricalBridgeLighting: React.FC<Props> = () => {
           data={currentData}
           lines={CURRENT_LINES}
           fillHeight
-          yAxisDomain={[0, 100]}
+          // Real readings run ~0–1A (vs. the old mock's 0–100 scale) — auto-scale
+          // the max instead of a fixed guess so the curve isn't squashed flat.
+          yAxisDomain={[0, 'auto']}
           titleSize={16}
           accentColor='#66AEFF'
           cardBackground='#000000CC'

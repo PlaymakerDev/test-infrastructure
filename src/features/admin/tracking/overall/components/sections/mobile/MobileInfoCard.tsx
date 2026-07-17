@@ -1,12 +1,7 @@
-import { getTrackingTotalStationAPI } from '@/services/routes/TrackingService';
-import { WIMMetaData } from '@/types/shared';
 import { MobileDailyCountData } from '@/types/tracking/detail-api';
-import { APIResponseTrackingViewSumPlanChart, MobileMasterData } from '@/types/tracking/overall-api';
 import { fmtNumber } from '@/utils/formatNumber';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Col, Empty, Row, Skeleton } from 'antd'
-import dayjs from 'dayjs';
-import React, { useMemo } from 'react'
+import { Col, Row } from 'antd'
+import React from 'react'
 import { TbChartAreaLine, TbTrafficCone, TbTruck, TbUserShield } from "react-icons/tb";
 
 interface Props {

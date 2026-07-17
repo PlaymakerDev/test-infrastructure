@@ -1,150 +1,78 @@
+"use client"
+import React, { useMemo } from 'react'
+import { Empty, Pagination, Skeleton } from 'antd'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import CardList, { DataType } from '@/components/list/CardList'
-import { MobileCarByTDIDData } from '@/types/tracking/detail-api'
-import React from 'react'
+import { MobileCarData } from '@/types/tracking/detail-api'
+import { fmtNumber } from '@/utils/formatNumber'
+import { VEHICLE_PROPERTIES } from '@/constants'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 interface Props {
-  data?: MobileCarByTDIDData[]
+  data?: MobileCarData
   isLoading?: boolean
   isError?: boolean
+  page?: number
+  pageSize?: number
+  total?: number
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
-const mockData: DataType[] = [
-  {
-    id: 1,
-    plate: 'ขฉ8960 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '3.000 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '59.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 23:56:27 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 2,
-    plate: 'งพ8934 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '2.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '45.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 23:22:17 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 3,
-    plate: '840417 เชียงใหม่',
-    vehicleType: 'ประเภท 2 : 2 เพลา 6 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '6.800 ตัน',
-    stdWeight: '15.000 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องออก',
-    speed: '57.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:38:02 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 4,
-    plate: 'ผพ6933 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '4.600 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '42.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:20:26 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 5,
-    plate: 'ยน9227 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '1.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '67.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:08:48 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 6,
-    plate: '1กช1540 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'แจ้งเตือนน้ำหนัก',
-    actualWeight: '1.400 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องออก',
-    speed: '48.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:04:28 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 7,
-    plate: 'ยค9968 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักปกติ',
-    actualWeight: '2.800 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'กราย',
-    speed: '58.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 22:02:03 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-  {
-    id: 8,
-    plate: 'ผร7875 เชียงใหม่',
-    vehicleType: 'ประเภท 1 : 2 เพลา 4 เส้น',
-    status: 'น้ำหนักเกิน',
-    actualWeight: '3.200 ตัน',
-    stdWeight: '9.500 ตัน',
-    overweight: '0.000 ตัน',
-    laneAcceptance: 'ช่องจอด',
-    speed: '62.00 กม./ชม.',
-    datetime: '20 เม.ย. 2569 21:59:19 น.',
-    images: [
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'รถด้านหน้า' },
-      { image: 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg', description: 'ป้ายทะเบียน' },
-    ],
-  },
-]
+const STATUS_MAP: Record<string, string> = {
+  'น้ำหนักปกติ': 'text-(--yellow)',
+  'ยอมรับน้ำหนัก': 'text-teal-400',
+  'ดำเนินคดี': 'text-pink-500',
+}
 
 const MobileDailyWeightList: React.FC<Props> = (props) => {
-  const { } = props
+  const { data, isLoading, isError, page, pageSize, total, onPageChange } = props
+
+  const cards = useMemo<DataType[]>(() => (data?.data ?? []).map((row) => {
+    const images = [
+      row.image_path1 ? { image: row.image_path1, description: 'ภาพรถบรรทุก' } : null,
+      row.image_path5 ? { image: row.image_path5, description: 'สลิปน้ำหนัก' } : null,
+    ].filter((item): item is { image: string; description: string } => item !== null)
+
+    const status = row.is_arrested
+      ? 'ดำเนินคดี'
+      : row.accept_weight
+        ? 'ยอมรับน้ำหนัก'
+        : (row.is_over_weight_desc || 'น้ำหนักปกติ')
+
+    return {
+      id: row.td_id,
+      plate: row.lp_head || '-',
+      vehicleType: row.vehicle_class_desc || '-',
+      status,
+      actualWeight: `${fmtNumber(Number(row.gross_weight) || 0, 2)} ตัน`,
+      stdWeight: `${fmtNumber(Number(row.legal_weight) || 0, 2)} ตัน`,
+      overweight: `${fmtNumber(Number(row.gross_weight_over) || 0, 2)} ตัน`,
+      cargo: row.masterial_name || '-',
+      datetime: dayjs(row.create_date, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB HH:mm:ss'),
+      images,
+      vehicleImage: VEHICLE_PROPERTIES[String(row.vehicle_class_id) as keyof typeof VEHICLE_PROPERTIES]?.vehicle?.image,
+    }
+  }), [data])
+
+  if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+  if (cards.length === 0) return <Empty description="ไม่พบข้อมูล" />
 
   return (
     <div>
-      <CardList data={mockData} />
+      <CardList data={cards} statusMap={STATUS_MAP} />
+      <div className='mt-5 flex justify-end'>
+        <Pagination
+          current={page}
+          pageSize={pageSize}
+          total={total ?? 0}
+          onChange={onPageChange}
+        />
+      </div>
     </div>
   )
 }
