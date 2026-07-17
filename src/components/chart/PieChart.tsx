@@ -197,8 +197,9 @@ const PieChart: React.FC<PieChartProps> = ({
         return `<div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>
           <span>${params.name}</span>
-          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}</span>
-        </div>`,
+          <span style="font-weight:700;margin-left:8px;color:${color}">${Number(params.value).toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}</span>
+        </div>`
+      },
     },
     series: [
       {

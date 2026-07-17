@@ -113,7 +113,6 @@ export default function Navbar() {
   const searchParams = useSearchParams()
   const iconClassName = "fs-24 cursor-pointer"
   const dispatch = useAppDispatch()
-  const mapPanelsOpen = useAppSelector((state) => state.layout.map_panels.open)
   // STATE
   const [currentTime, setCurrentTime] = useState(dayjs().format('HH:mm:ss'))
   const [scrolled, setScrolled] = useState(false)
@@ -175,11 +174,6 @@ export default function Navbar() {
   // logout) with labels, replacing the old 3-icon label-less dropdown.
   const [mobileMoreOpenAt, setMobileMoreOpenAt] = useState<string | null>(null)
   const mobileMoreOpen = mobileMoreOpenAt === mobileNavKey
-
-  const toggleMapPanels = useCallback(
-    () => dispatch(setMapPanelsOpen({ open: !mapPanelsOpen })),
-    [dispatch, mapPanelsOpen],
-  )
 
   useEffect(() => {
     const interval = setInterval(() => {

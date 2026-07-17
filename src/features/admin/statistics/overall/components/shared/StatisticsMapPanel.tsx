@@ -1,7 +1,7 @@
 "use client"
-import React, { useEffect } from 'react'
-import { TbChevronDown } from 'react-icons/tb'
-import { Collapse } from 'antd'
+import React, { useState } from 'react'
+import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbLayoutSidebarRightCollapse, TbLayoutSidebarRightExpand } from 'react-icons/tb'
+import { Button, Collapse } from 'antd'
 import { useRouter } from 'next/navigation'
 import type { ExpressionSpecification } from 'mapbox-gl'
 import BaseMap from '@/components/map/BaseMap'
@@ -12,8 +12,6 @@ import type { GeoJSONSource } from 'mapbox-gl'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
-import { useAppDispatch, useAppSelector } from '@/stores/hooks'
-import { setMapPanelsOpen } from '@/stores/reducers/layout/layoutSlice'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
@@ -136,17 +134,10 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   onMarkerGroupClick,
 }) => {
   const router = useRouter()
-  const dispatch = useAppDispatch()
-  const panelsOpen = useAppSelector((state) => state.layout.map_panels.open)
-  const searchOpen = panelsOpen
-  const cardsOpen = panelsOpen
-
-  // Scope the Navbar's zoom-in-area toggle to whichever page currently
-  // mounts this panel — always start visible on mount so a hide left on a
-  // different tab/page never carries over here.
-  useEffect(() => {
-    dispatch(setMapPanelsOpen({ open: true }))
-  }, [dispatch])
+  // Local collapse state for the search-list panel (left) and stat-cards
+  // panel (right) — each has its own toggle button, independent of the other.
+  const [searchOpen, setSearchOpen] = useState(true)
+  const [cardsOpen, setCardsOpen] = useState(true)
 
   const getCount = (item: RouteItem, index: number) => markerCountFn ? markerCountFn(item, index) : item.sub3.length
 
@@ -366,18 +357,21 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                     styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
                     children: (
                       <div style={{ marginTop: 4 }}>
-                        {sub.detail.map((d) => (
+                        {sub.detail.map((d) => {
+                          const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
+                          return (
                           <div
-                            key={d}
-                            onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
+                            key={detailKey(d)}
+                            onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
                           >
-                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
+                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              <img src={`${BASE_PATH}/images/statistics/iconconnect.png`} alt="connected" width={20} height={20} />
+                              <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     ),
                   }))}
@@ -536,10 +530,18 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
 
         {/* ══ RIGHT: stat cards overlay ══ */}
         {statsCards && statsCards.length > 0 && (
-          <div
-            className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 w-[220px] sm:w-[290px] lg:w-[360px] transition-transform duration-300 ease-in-out transform-gpu will-change-transform"
-            style={{ transform: cardsOpen ? 'translateX(0)' : 'translateX(calc(100% + 12px))' }}
-          >
+          <>
+            <Button
+              type='primary' shape='circle'
+              title={cardsOpen ? 'ซ่อนการ์ดสถิติ' : 'แสดงการ์ดสถิติ'}
+              icon={cardsOpen ? <TbLayoutSidebarRightCollapse className='fs-18' /> : <TbLayoutSidebarRightExpand className='fs-18' />}
+              onClick={() => setCardsOpen((prev) => !prev)}
+              className={`absolute! top-3 z-20 w-10! h-10! shadow-lg transition-[right] duration-300 ease-in-out ${cardsOpen ? 'right-[232px] sm:right-[302px] lg:right-[372px]' : 'right-3'}`}
+            />
+            <div
+              className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 w-[220px] sm:w-[290px] lg:w-[360px] transition-transform duration-300 ease-in-out transform-gpu will-change-transform"
+              style={{ transform: cardsOpen ? 'translateX(0)' : 'translateX(calc(100% + 12px))' }}
+            >
             {statsCards.map((card, i) => (
               <div key={i} className="min-h-[120px] sm:min-h-[145px] lg:min-h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
                 <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
@@ -559,7 +561,8 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                 <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 line-clamp-2">{card.sub}</p>
               </div>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </>
