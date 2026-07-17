@@ -1,9 +1,11 @@
 "use client"
-import React, { useMemo, useState } from 'react'
-import { SummaryTableBridgeLighting, TableBridgeLighting } from '../../../components'
+import React, { useCallback, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { SummaryTableBridgeLighting } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchBridgeLighting from './FormSearchBridgeLighting'
-import { BRIDGE_PROJECTS } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import { BRIDGE_PROJECTS, type BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 const BRIDGE_FILTERS: FilterConfig[] = [
   {
@@ -52,9 +54,17 @@ const BRIDGE_FILTERS: FilterConfig[] = [
 interface Props { }
 
 const DataDisplaySection: React.FC<Props> = () => {
+  const router = useRouter()
   const [activeFilter, setActiveFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+
+  const goToDetail = useCallback(
+    (p: BridgeProject) => {
+      router.push(`/admin/bridge-lighting/detail/${p.id}`)
+    },
+    [router],
+  )
 
   const stats: FilterStats = useMemo(() => ({
     all: BRIDGE_PROJECTS.length,
@@ -81,16 +91,42 @@ const DataDisplaySection: React.FC<Props> = () => {
     })
   }, [activeFilter, search])
 
+  // GRID view — project cards grouped by bureau, mirroring the crosswalk /
+  // traffic-signal overall pages. `ProjectCardGrid` is the shared card layout.
+  // Bridge-lighting is mock-only, so it has no backend road_id / project_id:
+  //   • roadId 0 disables the card's "หน่วยงานที่รับผิดชอบ" lookup (shows "-")
+  //   • the card's ⓘ opens the shared (Redux) ProjectInfoModal with no ids,
+  //     so it renders placeholders — the rich mock modal stays on the TABLE view.
+  const cardItems = useMemo<ProjectCardItem[]>(
+    () =>
+      filtered.map((p) => ({
+        key: p.id,
+        roadId: 0,
+        projectId: null,
+        roadCode: p.roadCode,
+        projectName: p.projectName,
+        installPoint: p.installPoint,
+        contractNo: p.contractNo,
+        isWarranty: p.warranty === 'in-warranty',
+        bureau: p.bureau,
+        total: p.totalDevices,
+        online: p.onlineCount,
+        offline: p.offlineCount,
+        onDetail: () => goToDetail(p),
+      })),
+    [filtered, goToDetail],
+  )
+
   const renderContent = useMemo(() => {
     switch (viewMode) {
       case 'TABLE':
         return <SummaryTableBridgeLighting projects={filtered} />
       case 'GRID':
-        return <TableBridgeLighting projects={filtered} />
+        return <ProjectCardGrid items={cardItems} totalLabel='ดวงไฟทั้งหมด' />
       default:
         return null
     }
-  }, [viewMode, filtered])
+  }, [viewMode, filtered, cardItems])
 
   return (
     <div>

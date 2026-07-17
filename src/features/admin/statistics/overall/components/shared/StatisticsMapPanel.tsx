@@ -17,6 +17,12 @@ import { setMapPanelsOpen } from '@/stores/reducers/layout/layoutSlice'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
+// basePath ('/atlas' in prod, '' in dev) — raw <img src> is NOT prefixed
+// automatically like next/link, so prepend it manually (same as the sidebar
+// logo). Production previously hot-patched this file with a hardcoded
+// '/atlas/images/…'; this replaces that patch in an env-safe way.
+const BASE_PATH = process.env.__NEXT_ROUTER_BASEPATH ?? ''
+
 export interface StatCard {
   borderColor: string
   icon: string
@@ -276,117 +282,112 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
 
   const searchCardCollapse = (
     <Collapse
-                ghost
-                expandIcon={({ isActive }) => (
-                  <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                )}
-                style={{ marginTop: 16 }}
-                items={filteredRoutes.map((item, index) => ({
-                  key: item.name,
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {!hideIndexBadge && (() => {
-                          const noti = item.notiTotal ?? 0
-                          const badgeColor = badgeColorFn
-                            ? badgeColorFn(item, index)
-                            : noti === 0 ? '#979797' : '#FCD116'
-                          return (
-                            <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
-                              {noti}
-                            </span>
-                          )
-                        })()}
-                        {!hideCount && renderCount(item.count)}
-                      </div>
-                    </div>
-                  ),
-                  style: { marginBottom: 4 },
-                  classNames: { header: 'rounded-lg bg-[#363636]' },
-                  styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
-                  children: (
-                    <Collapse
-                      ghost
-                      expandIcon={({ isActive }) => (
-                        <span style={{ marginLeft: 24 }}>
-                          <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      ghost
+      expandIcon={({ isActive }) => (
+        <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      )}
+      style={{ marginTop: 16 }}
+      items={filteredRoutes.map((item, index) => ({
+        key: item.name,
+        label: (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {!hideIndexBadge && (() => {
+                const badgeColor = badgeColorFn
+                  ? badgeColorFn(item, index)
+                  : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                return (
+                  <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
+                    {item.sub3.length}
+                  </span>
+                )
+              })()}
+              {!hideCount && renderCount(item.count)}
+            </div>
+          </div>
+        ),
+        style: { marginBottom: 4 },
+        classNames: { header: 'rounded-lg bg-[#363636]' },
+        styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
+        children: (
+          <Collapse
+            ghost
+            expandIcon={({ isActive }) => (
+              <span style={{ marginLeft: 24 }}>
+                <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+              </span>
+            )}
+            style={{ marginTop: 4 }}
+            items={[{
+              key: `${item.name}-sub`,
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {!hideIndexBadge && (() => {
+                      const bc = badgeColorFn
+                        ? badgeColorFn(item, index)
+                        : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                      return (
+                        <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
+                          {item.sub3.length}
                         </span>
-                      )}
-                      style={{ marginTop: 4 }}
-                      items={[{
-                        key: `${item.name}-sub`,
-                        label: (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+                      )
+                    })()}
+                    {!hideCount && renderCount(`${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
+                  </div>
+                </div>
+              ),
+              style: { marginBottom: 4 },
+              classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
+              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, body: { padding: 0 } },
+              children: (
+                <Collapse
+                  ghost
+                  expandIcon={({ isActive }) => (
+                    <span style={{ marginLeft: 56 }}>
+                      <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    </span>
+                  )}
+                  style={{ marginTop: 4 }}
+                  items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
+                    key: `${item.name}-${sub.label}`,
+                    label: (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
+                      </div>
+                    ),
+                    style: { marginBottom: 4 },
+                    classNames: { header: 'rounded-lg' },
+                    styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
+                    children: (
+                      <div style={{ marginTop: 4 }}>
+                        {sub.detail.map((d) => (
+                          <div
+                            key={d}
+                            onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
+                          >
+                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{d}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              {!hideIndexBadge && (() => {
-                                const noti = item.notiTotal ?? 0
-                                const bc = badgeColorFn
-                                  ? badgeColorFn(item, index)
-                                  : noti === 0 ? '#979797' : '#FCD116'
-                                return (
-                                  <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
-                                    {noti}
-                                  </span>
-                                )
-                              })()}
-                              {!hideCount && renderCount(item.count ?? `${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
+                              <img src={`${BASE_PATH}/images/statistics/iconconnect.png`} alt="connected" width={20} height={20} />
                             </div>
                           </div>
-                        ),
-                        style: { marginBottom: 4 },
-                        classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
-                        styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, body: { padding: 0 } },
-                        children: (
-                          <Collapse
-                            ghost
-                            expandIcon={({ isActive }) => (
-                              <span style={{ marginLeft: 56 }}>
-                                <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                              </span>
-                            )}
-                            style={{ marginTop: 4 }}
-                            items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
-                              key: `${item.name}-${sub.label}`,
-                              label: (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
-                                  <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
-                                </div>
-                              ),
-                              style: { marginBottom: 4 },
-                              classNames: { header: 'rounded-lg' },
-                              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
-                              children: (
-                                <div style={{ marginTop: 4 }}>
-                                  {sub.detail.map((d) => {
-                                    const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
-                                    return (
-                                    <div
-                                      key={detailKey(d)}
-                                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
-                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
-                                    >
-                                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                        <img src={isOnline ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
-                                      </div>
-                                    </div>
-                                    )
-                                  })}
-                                </div>
-                              ),
-                            }))}
-                          />
-                        ),
-                      }]}
-                    />
-                  ),
-                }))}
-              />
+                        ))}
+                      </div>
+                    ),
+                  }))}
+                />
+              ),
+            }]}
+          />
+        ),
+      }))}
+    />
   )
 
   return (
@@ -398,21 +399,31 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         </SearchCard>
       </DrawerMapSearchCard>
 
-      {/* Both side panels are absolutely-positioned overlays on top of a
-          fixed-size map box — the map's own box never changes size when a
-          panel opens/closes (only `transform`, GPU-composited, no layout
-          reflow), so Mapbox's canvas never has to resize mid-animation.
-          Letting the map box itself shrink/grow (e.g. via flex width) makes
-          Mapbox visibly flicker every frame of the transition. */}
-      <div className="mt-8 relative overflow-hidden rounded-[20px]" style={{ height: 'calc(100vh - 200px)' }}>
-        {/* ══ MAIN: map, always full-size ══
-            `transform-gpu` promotes this to its own compositor layer so
-            the sliding panels' transform animation (also promoted below)
-            never forces the shared overflow-hidden ancestor to repaint the
-            WebGL canvas underneath — without this, Chrome periodically
-            flickers/blanks the map while ANY sibling inside the same
-            clipped stacking context is mid-transform-animation. */}
-        <div className='absolute inset-0 transform-gpu'>
+      <div className="mt-8 overflow-hidden flex" style={{ height: 'calc(100vh - 200px)' }}>
+
+        {/* ══ LEFT: collapsible SearchCard panel — xl+ only ══ */}
+        <div className='relative shrink-0 max-xl:hidden self-stretch'>
+          <div className={[
+            'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
+            searchOpen ? 'w-[370px] rounded-lg' : 'w-0',
+          ].join(' ')}>
+            <div className='w-[370px] h-full overflow-y-auto'>
+              <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
+                {searchCardCollapse}
+              </SearchCard>
+            </div>
+          </div>
+          <Button
+            type='primary' shape='circle'
+            title={searchOpen ? 'ซ่อนรายการสายทาง' : 'แสดงรายการสายทาง'}
+            icon={searchOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
+            onClick={() => setSearchOpen((prev) => !prev)}
+            className='absolute! top-10 -right-5 z-20 w-10! h-10! shadow-lg'
+          />
+        </div>
+
+        {/* ══ MAIN: map + stats cards ══ */}
+        <div className='flex-1 min-w-0 relative overflow-hidden rounded-2xl'>
           <BaseMap initialCenter={[102.0, 14.0]} initialZoom={4.8}>
             {useModernMarkers ? (
               <>

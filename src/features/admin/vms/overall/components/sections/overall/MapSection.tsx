@@ -1,42 +1,56 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
 import { useMap } from '@/components/map/hooks/useMap'
-import MarkerLayer from '@/components/map/primitives/MarkerLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
+import { useScopeAll } from '@/hooks/useScopeAll'
 import { Location } from '@/types/vms/overview-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
-import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
+import { ModalVMSScreenProps, useOverallContext } from '../../../context'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
 type VmsFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, Record<string, unknown>>
 
+/** A usable [lng, lat] — drops null / malformed / [0,0]. One bad point makes
+ *  Mapbox reject the WHOLE GeoJSON source → no markers at all. Hit for real
+ *  on dept 0 + scope=all (6/296 vms locations had a null GeometryPoint). */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  !(g[0] === 0 && g[1] === 0)
+
 const toGeoJSON = (locations: Location[]): VmsFeatureCollection => {
   return {
     type: 'FeatureCollection',
-    features: locations.map((loc) => ({
-      type: 'Feature',
-      properties: {
-        id: loc.solution.id,
-        solution_name: loc.solution.solution_name,
-        code_name: loc.road.code_name,
-        is_online: loc.vms.status.is_online,
-        is_warranty: loc.warranty.is_warranty,
-        status_name: loc.vms.status.name,
-        last_connected: loc.vms.last_connected,
-        hls_url: loc.vms.hls_url,
-        anydesk: loc.vms.anydesk,
-        camera_id: loc.vms.camera?.id ?? null,
-        camera_hls_url: loc.vms.camera?.hls_url ?? null,
-      },
-      geometry: { type: 'Point', coordinates: loc.GeometryPoint },
-    })),
+    features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => {
+      console.log("===", loc.vms.desktop_screen)
+      return ({
+        type: 'Feature',
+        properties: {
+          id: loc.solution.id,
+          solution_name: loc.solution.solution_name,
+          code_name: loc.road.code_name,
+          is_online: loc.vms.status.is_online,
+          is_warranty: loc.warranty.is_warranty,
+          status_name: loc.vms.status.name,
+          last_connected: loc.vms.last_connected,
+          hls_url: loc.vms.hls_url,
+          anydesk: loc.vms.anydesk,
+          camera_id: loc.vms.camera?.id ?? null,
+          camera_hls_url: loc.vms.camera?.hls_url ?? null,
+          desktop_screen: loc.vms.desktop_screen ?? null,
+        },
+        geometry: { type: 'Point', coordinates: loc.GeometryPoint },
+      })
+    }),
   }
 }
 
@@ -45,28 +59,29 @@ interface VMSPopupProps {
   isOnline: boolean
   dispatch: ReturnType<typeof useAppDispatch>
   onNavigate: (path: string) => void
+  setOpenVMSScreen: React.Dispatch<React.SetStateAction<ModalVMSScreenProps>>
 }
 
-const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, dispatch, onNavigate }) => {
+const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setOpenVMSScreen }) => {
   const p = feature.properties as Record<string, unknown>
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${isOnline ? 'border-cyan-400' : 'border-red-500'}`}>
+    <div className='min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)' style={{ borderColor: SYSTEM_BRIGHT.VMS }}>
       <section>
         <HLSLivePlayer
-          cameraId={String(p.camera_id ?? p.id)}
-          hlsUrl={String(p.camera_hls_url ?? p.hls_url)}
+          cameraId={String(p.id)}
+          hlsUrl={String(p.desktop_screen)}
           enableViewportPause
           figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer"
-          onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: String(p.camera_id) }))}
+          onClick={() => setOpenVMSScreen({ open: true, data: { solution_id: Number(p.id), desktop_screen: String(p.desktop_screen) } })}
         />
       </section>
       <section className='mt-1.5'>
         <h5>{String(p.solution_name)}</h5>
-        <p className='fs-11 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
-        <p className={`fs-11 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
+        <p className='fs-12 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
+        <p className={`fs-12 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
           ● {String(p.status_name)}
         </p>
-        <p className="fs-11 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
+        <p className="fs-12 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
       </section>
       <section className='mt-1.5'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -78,7 +93,7 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, dispatch, onNavi
             block
             onClick={() => onNavigate(`/admin/vms/detail/${p.id}?is_warranty=${p.is_warranty}&is_online=${p.is_online}`)}
           >
-            <p className='fs-11'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -98,6 +113,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
   const { map, isLoaded } = useMap()
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const { setOpenVMSScreen } = useOverallContext()
 
   useEffect(() => {
     if (!map || !isLoaded || !isReady) return
@@ -105,38 +121,33 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
     map.flyTo({ center: centroid as [number, number], zoom: 10, duration: 1200 })
   }, [map, isLoaded, isReady, centroid])
 
-  const onlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => l.vms.status.is_online)),
-    [locations],
-  )
-  const offlineData = useMemo(
-    () => toGeoJSON(locations.filter((l) => !l.vms.status.is_online)),
-    [locations],
-  )
+  // Single VMS-typed marker layer — same icon/menu-color style as the other
+  // overall maps (yellow-pin glyph via DeviceMarkerLayer). Online/offline is no
+  // longer a marker color; the popup shows it (border stays the VMS accent, the
+  // ● status text stays green/red).
+  const allData = useMemo(() => toGeoJSON(locations), [locations])
 
   if (!isReady) return null
 
   return (
-    <>
-      <MarkerLayer
-        id="vms-online"
-        data={onlineData}
-        cluster
-        color="#22d3ee"
-        size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={true} dispatch={dispatch} onNavigate={router.push} />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-      <MarkerLayer
-        id="vms-offline"
-        data={offlineData}
-        cluster
-        color="#ef4444"
-        size={14}
-        popup={(f) => <VMSPopup feature={f} isOnline={false} dispatch={dispatch} onNavigate={router.push} />}
-        popupOptions={{ offset: 10, closeButton: false }}
-      />
-    </>
+    <DeviceMarkerLayer
+      type='VMS'
+      id="vms"
+      data={allData}
+      cluster
+      size={18}
+      strokeColor='#ffffff'
+      popup={(f) => (
+        <VMSPopup
+          feature={f}
+          isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+          dispatch={dispatch}
+          onNavigate={router.push}
+          setOpenVMSScreen={setOpenVMSScreen}
+        />
+      )}
+      popupOptions={{ offset: 10, closeButton: false }}
+    />
   )
 }
 
@@ -148,9 +159,14 @@ interface Props {
 
 const MapSection: React.FC<Props> = (props) => {
   const { deptId } = props
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query key re-derives when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
 
   const { data, isLoading, isSuccess } = useQuery({
-    queryKey: ['vms_overview'],
+    // dept + scope in the key — previously neither, so switching departments
+    // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
+    queryKey: ['vms_overview', String(deptId ?? ''), scope],
     queryFn: () => getVMSOverviewAPI(Number(deptId)!),
     enabled: !!deptId,
     placeholderData: keepPreviousData

@@ -1,12 +1,11 @@
 "use client"
-import React, { useMemo } from 'react'
-import { Table, Tag } from 'antd'
+import React, { useMemo, useCallback } from 'react'
+import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
-import { useAppDispatch } from '@/stores/hooks'
-import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 
 interface Props {
@@ -32,6 +31,49 @@ type DataRow = {
 type Row = HeaderRow | DataRow
 
 const TOTAL_COLS = 8
+
+/** Bordered rounded pill — shared visual language with the crosswalk overall
+ *  table. Used for การค้ำประกัน + สถานะ (with an optional leading icon). */
+const Pill: React.FC<{ text: string; color: string; icon?: React.ReactNode }> = ({ text, color, icon }) => (
+  <span
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    style={{ border: `1px solid ${color}`, color }}
+  >
+    {icon}
+    {text}
+  </span>
+)
+
+const StreamButton: React.FC<{ url: string }> = ({ url }) => {
+  const isConnect = !!url
+  const color = isConnect ? '#66AEFF' : '#E94C4C'
+  return (
+    <span
+      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap cursor-pointer hover:opacity-80'
+      style={{ border: `1px solid ${color}`, color }}
+    >
+      {isConnect ? 'Connect' : 'Disconnect'}
+    </span>
+  )
+}
+
+const CameraButton: React.FC<{ url: string }> = ({ url }) => {
+  if (!url) {
+    return (
+      <span className='text-xs whitespace-nowrap' style={{ color: '#666' }}>
+        ไม่มีกล้อง
+      </span>
+    )
+  }
+  return (
+    <span
+      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap cursor-pointer hover:opacity-80'
+      style={{ border: '1px solid rgba(255,255,255,0.6)', color: 'rgba(255,255,255,0.6)' }}
+    >
+      Connect
+    </span>
+  )
+}
 
 const buildRows = (apiData: APIResponseVMSList): Row[] => {
   const rows: Row[] = []
@@ -79,211 +121,153 @@ const buildRows = (apiData: APIResponseVMSList): Row[] => {
 const TableVMSData: React.FC<Props> = ({ data, loading }) => {
   const rows = useMemo(() => buildRows(data ?? []), [data])
   const router = useRouter()
-  const dispatch = useAppDispatch()
 
-  const columns: ColumnsType<Row> = useMemo(
-    () => [
-      {
-        title: 'รหัสสายทาง',
-        key: 'roadCode',
-        width: 150,
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: TOTAL_COLS }
-          return { rowSpan: row.roadCodeRowSpan }
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') {
-            return (
-              <div className='flex items-center gap-3'>
-                <span className='font-semibold text-sm'>{row.label}</span>
-                <span className='text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full'>
-                  {row.count} โครงการ
-                </span>
-              </div>
-            )
-          }
-          return (
-            <DetailLinkText
-              onClick={() => {
-                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-              }}
-            >
-              <span className='font-medium'>{row.data.road.code_name}</span>
-            </DetailLinkText>
-          )
-        },
-      },
-      {
-        title: 'ชื่อโครงการ',
-        key: 'projectName',
-        width: 400,
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return { rowSpan: row.projectRowSpan }
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          return (
-            <DetailLinkText
-              onClick={() => {
-                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-              }}
-            >
-              <span className='text-sm'>{row.data.project.project_name || '-'}</span>
-            </DetailLinkText>
-          )
-        },
-      },
-      {
-        title: 'เลขที่สัญญา',
-        key: 'contractNo',
-        width: 210,
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return { rowSpan: row.projectRowSpan }
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-
-          let text
-
-          if (row.data.project.contract_no) {
-            text = row.data.project.contract_no
-          } else if (!row.data.project.contract_no) {
-            text = row.data.project.budget_year
-          } else {
-            text = null
-          }
-
-          return (
-            <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-              {/* {row.data.project.contract_no || '-'}
-              {row.data.project.budget_year ? (
-                <span className='text-[10px] bg-yellow-400/15 text-yellow-300 px-1.5 py-0.5 rounded'>
-                  {row.data.project.budget_year}
-                </span>
-              ) : null} */}
-              <DetailLinkText
-                onClick={() => {
-                  if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-                }}
-              >
-                {text || '-'}
-              </DetailLinkText>
-              <TbInfoSquareRoundedFilled
-                size={18}
-                className='text-white/50 cursor-pointer hover:text-(--yellow)'
-                onClick={(e) => {
-                  e.stopPropagation()
-                  dispatch(setProjectInfoModalOpen({ open: true, project_id: row.data.project.id, road_id: row.data.road.id }))
-                }}
-              />
-            </span>
-          )
-        },
-      },
-      {
-        title: 'การค้ำประกัน',
-        key: 'warranty',
-        width: 130,
-        align: 'center',
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return {}
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          const { is_warranty, name } = row.data.warranty
-          const color = is_warranty ? '#05F2DB' : '#979797'
-          if (is_warranty === null) {
-            return (
-              <span
-                className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
-                style={{ border: `1px solid var(--yellow)`, color: 'var(--yellow)' }}
-              >
-                ก่อนค้ำ
-              </span>
-            )
-          }
-          return (
-            <span
-              className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
-              style={{ border: `1px solid ${color}`, color }}
-            >
-              {name}
-            </span>
-          )
-        },
-      },
-      {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return {}
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          return (
-            <DetailLinkText
-              onClick={() => {
-                if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-              }}
-            >
-              <span>{row.data.solution.solution_name}</span>
-            </DetailLinkText>
-          )
-        },
-      },
-      {
-        title: 'กล้องทั้งหมด',
-        key: 'total',
-        width: 110,
-        align: 'center',
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return {}
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          return row.data.online_count + row.data.offline_count
-        },
-      },
-      {
-        title: 'ออนไลน์',
-        key: 'online',
-        width: 90,
-        align: 'center',
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return {}
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          const count = row.data.online_count
-          if (count === 0) return <p className='fs-12 text-blue-500/40'>0</p>
-          return <Tag variant='solid' color='blue'>{count}</Tag>
-        },
-      },
-      {
-        title: 'ออฟไลน์',
-        key: 'offline',
-        width: 90,
-        align: 'center',
-        onCell: (row) => {
-          if (row.type === 'header') return { colSpan: 0 }
-          return {}
-        },
-        render: (_: unknown, row: Row) => {
-          if (row.type === 'header') return null
-          const count = row.data.offline_count
-          if (count === 0) return <p className='fs-12 text-red-500/40'>0</p>
-          return <Tag variant='solid' color='red'>{count}</Tag>
-        },
-      },
-    ],
-    [dispatch, router],
+  const goToDetail = useCallback(
+    (row: ListSolution) => {
+      router.push(
+        `/admin/vms/detail/${row.solution.id}?is_warranty=${row.warranty.is_warranty}&is_online=${row.vms.status.is_online}`,
+      )
+    },
+    [router],
   )
+
+  const columns: ColumnsType<Row> = useMemo(() => [
+    {
+      title: 'รหัสสายทาง',
+      key: 'roadCode',
+      className: 'col-road-code',
+      width: 150,
+      onCell: (row) => {
+        if (row.type === 'header') {
+          return {
+            colSpan: TOTAL_COLS,
+            style: { background: '#2a2a2a', padding: '10px 16px' },
+          }
+        }
+        return { rowSpan: row.roadCodeRowSpan }
+      },
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') {
+          return (
+            <div className='flex items-center gap-3'>
+              <span className='text-white font-bold'>{row.label}</span>
+              <span
+                className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                style={{ border: '1px solid #fff', color: '#fff' }}
+              >
+                {row.count} โครงการ
+              </span>
+            </div>
+          )
+        }
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.data)}>
+            <span className='font-medium'>{row.data.road.code_name}</span>
+          </DetailLinkText>
+        )
+      },
+    },
+    {
+      title: 'ชื่อโครงการ',
+      key: 'projectName',
+      className: 'col-project-name',
+      ellipsis: true,
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.data)}>
+            <span className='text-sm'>{row.data.project.project_name || '-'}</span>
+          </DetailLinkText>
+        )
+      },
+    },
+    {
+      title: 'จุดติดตั้ง',
+      key: 'installPoint',
+      width: 280,
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return (
+          <DetailLinkText onClick={() => goToDetail(row.data)}>
+            <span>{row.data.solution.solution_name}</span>
+          </DetailLinkText>
+        )
+      },
+    },
+    {
+      title: 'เลขที่สัญญา',
+      key: 'contractNo',
+      width: 200,
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return (
+          <ContractInfoCell
+            contractNo={row.data.project.contract_no}
+            budgetYear={row.data.project.budget_year}
+            projectId={row.data.project.id}
+            roadId={row.data.road.id}
+          />
+        )
+      },
+    },
+    {
+      title: 'การค้ำประกัน',
+      key: 'warranty',
+      width: 130,
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return row.data.warranty.is_warranty ? (
+          <Pill text='ในค้ำ' color='#05F2DB' />
+        ) : (
+          <Pill text='หมดค้ำ' color='#979797' />
+        )
+      },
+    },
+    {
+      title: 'สถานะ',
+      key: 'status',
+      width: 140,
+      align: 'center',
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        const isOnline = row.data.vms.status.is_online
+        return (
+          <Pill
+            text={isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+            color={isOnline ? '#66AEFF' : '#E94C4C'}
+            icon={isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+          />
+        )
+      },
+    },
+    {
+      title: 'Stream',
+      key: 'stream',
+      width: 130,
+      align: 'center',
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <StreamButton url={row.data.vms.hls_url} />
+      },
+    },
+    {
+      title: 'กล้อง',
+      key: 'camera',
+      width: 140,
+      align: 'center',
+      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) => {
+        if (row.type === 'header') return null
+        return <CameraButton url={row.data.vms.desktop_screen} />
+      },
+    },
+  ], [goToDetail])
 
   return (
     <Table<Row>
@@ -293,13 +277,10 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
       loading={loading}
       pagination={false}
       size='middle'
-      scroll={{ x: 1200 }}
-    // onRow={(row) => ({
-    //   onClick: () => {
-    //     if (row.type === 'data') router.push(`/admin/vms/detail/${row.data.solution.id}?is_warranty=${row.data.warranty.is_warranty}&is_online=${row.data.vms.status.is_online}`)
-    //   },
-    //   className: row.type === 'data' ? 'cursor-pointer' : '',
-    // })}
+      scroll={{ x: 1400 }}
+      // Shared table skin — yellow row dividers + dark pagination styling,
+      // identical to the crosswalk / traffic-volume overall tables.
+      className='bridge-projects-table'
     />
   )
 }

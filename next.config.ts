@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Serve the whole app under a sub-path in prod (e.g. /atlas) via
+  // NEXT_PUBLIC_BASE_PATH. Unset in dev → app at root. Next prefixes
+  // routes/API/assets/links with this and exposes it as
+  // process.env.__NEXT_ROUTER_BASEPATH for raw fetch/axios calls.
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || undefined,
   reactCompiler: true,
   devIndicators: false,
   allowedDevOrigins: ["10.10.0.106", "localhost"],
@@ -9,8 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/auth/login',
-        // destination: '/atlas/auth/login',
+        destination: '/auth/login', // Next auto-prefixes basePath
         permanent: false
       }
     ]

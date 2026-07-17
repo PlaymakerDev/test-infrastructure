@@ -130,7 +130,7 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
           <Input
             placeholder="ค้นหาหน่วยงาน..."
             className="rounded-lg"
-            suffix={<TbSearch />}
+            suffix={<TbSearch className='text-(--yellow)' />}
             size="middle"
             allowClear
             value={searchText}

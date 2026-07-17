@@ -18,11 +18,19 @@ export { default as OverallStatCard } from './sections/overall/OverallStatCard'
 export { default as OverallWeightStat } from './sections/overall/OverallWeightStat'
 export { default as OverallChartSection } from './sections/overall/OverallChartSection'
 export { default as TableOverallDailyWeight } from './sections/overall/TableOverallDailyWeight'
+export { default as TableLatestStation } from './sections/overall/TableLatestStation'
+export { default as TableLatestWIM } from './sections/overall/TableLatestWIM'
 export { default as TableOverallWeight } from './sections/overall/TableOverallWeight'
+export { default as ModalCalibrationHistory } from './sections/overall/ModalCalibrationHistory'
+export { default as TableCalibrationHistory } from './sections/overall/TableCalibrationHistory'
 
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'
 export { default as FormSearchVehicle } from './sections/vehicle/FormSearchVehicle'
 export { default as VehicleStatCard } from './sections/vehicle/VehicleStatCard'
 export { default as TableVehicleData } from './sections/vehicle/TableVehicleData'
+export { default as ModalWeightLog } from './sections/vehicle/ModalWeightLog'
+export { default as FormSearchWeightLog } from './sections/vehicle/FormSearchWeightLog'
+export { default as TableWeightLog } from './sections/vehicle/TableWeightLog'
+
 // CCTV

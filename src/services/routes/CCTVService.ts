@@ -1,9 +1,9 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIRequestCCTVOverviewList,
   APIResponseCCTVOverview,
   APIResponseCCTVOverviewList,
-  APIResponseCCTVOverviewTotals,
   APIRequestCCTVOverviewDropdowns,
   APIResponseCCTVOverviewDropdowns,
   APIResponseCCTVOverviewCentralList,
@@ -34,6 +34,7 @@ export const getCctvOverviewAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseCCTVOverview>({
     url: `${cctvDeptBase(deptId)}/overview`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 export const getCctvOverviewListAPI = (
@@ -44,12 +45,6 @@ export const getCctvOverviewListAPI = (
     url: `${cctvDeptBase(deptId)}/overview/list`,
     method: 'GET',
     params,
-  })
-
-export const getCctvOverviewTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseCCTVOverviewTotals>({
-    url: `${cctvDeptBase(deptId)}/overview/totals`,
-    method: 'GET',
   })
 
 export const getCctvOverviewDropdownsAPI = (
@@ -67,12 +62,14 @@ export const getCctvOverviewCentralListAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseCCTVOverviewCentralList>({
     url: `${cctvDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 export const getCctvOverviewCentralTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseCCTVOverviewCentralTotals>({
     url: `${cctvDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 // ── Camera-level ────────────────────────────────────────────────────────────────
@@ -125,7 +122,7 @@ export const getCctvRandomOnlineAPI = (
   ApiService.fetchData<APIResponseCCTVRandomOnline>({
     url: `${cctvDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit },
+    params: { limit, ...centralScope(deptId) },
   })
 
 export const getCctvUptimeStatisticsAPI = (
@@ -135,7 +132,7 @@ export const getCctvUptimeStatisticsAPI = (
   ApiService.fetchData<APIResponseCCTVUptimeStatistics>({
     url: `${cctvDeptBase(deptId)}/cameras/uptime-statistics`,
     method: 'GET',
-    params,
+    params: { ...params, ...centralScope(deptId) },
   })
 
 /** Cameras for ONE road, grouped by project/solution_location/solution.

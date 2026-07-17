@@ -3,32 +3,34 @@ import { createElement, useEffect, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { IconType } from 'react-icons'
 import {
-  TbCamera,
+  TbVideo,
   TbDeviceDesktop,
-  TbWeight,
   TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
+  TbCarCrash,
   TbWalk,
-  TbChartBar,
   TbTrafficLights,
 } from 'react-icons/tb'
+import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import type { SystemType } from '@/features/admin/dashboard/data/systems'
 import { useMap } from './useMap'
 
-/** Per-device-type icon — same mapping the dashboard markers use, so overall
- *  maps render the identical glyph per menu. */
+/** Per-device-type icon — same glyphs as the top-menu trapezoid (Navbar.tsx),
+ *  so on-map markers match the menu 1:1. */
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
-  CCTV: TbCamera,
+  CCTV: TbVideo,
   VMS: TbDeviceDesktop,
-  WIM: TbWeight,
+  WIM: IconTracking,
+  LPR: IconLPR,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
   Counting: TbCar,
   CrossWalk: TbWalk,
-  Analytic: TbChartBar,
+  Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
 }
 

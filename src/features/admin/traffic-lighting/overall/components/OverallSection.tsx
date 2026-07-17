@@ -27,8 +27,8 @@ const OverallSection: React.FC = () => {
 
   return (
     <>
-      <section className='mt-4 relative flex flex-col gap-3 md:min-h-[760px]'>
-        <div className='w-full md:absolute md:top-0 md:left-0 md:z-10 md:w-[280px] lg:w-[340px] xl:w-[400px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-0 md:max-h-[760px] md:overflow-y-auto rounded-[20px] bg-[#2B2B2B] p-3 sm:p-4 flex flex-col overflow-hidden'>
+      <section className='mt-4 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-4 md:min-h-[760px]'>
+        <div className='shrink-0 w-full md:w-[240px] lg:w-[360px] xl:w-[500px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-[760px] rounded-2xl bg-[#2B2B2B] p-3 sm:p-4 flex flex-col'>
           <div className='flex flex-col gap-3 shrink-0'>
             {leftPanelItems.map((item) => (
               <div key={item.id} className='flex flex-col gap-1 min-w-0 flex-1'>
@@ -66,14 +66,24 @@ const OverallSection: React.FC = () => {
               </div>
             ))}
           </div>
-          <div className='mt-3 flex-1 min-h-0 w-full min-w-0 flex flex-col overflow-hidden'>
-            {diagramImei && (
-              <div className='shrink-0 min-h-[180px] sm:min-h-[210px] w-full min-w-0 flex items-center justify-center'>
-                <DiagramIframe
-                  imei={diagramImei}
-                  minHeight={180}
-                  className='h-full max-h-[210px] sm:max-h-[250px] md:max-h-[220px] lg:max-h-[280px] xl:max-h-[340px]'
-                />
+          {diagramUrl && (
+            <div className='mt-3 shrink-0 w-full min-w-0 flex justify-center'>
+              <iframe
+                src={diagramUrl}
+                title='วงจรไฟฟ้า'
+                style={{ width: '100%', height: 260, border: 0, display: 'block' }}
+                loading='lazy'
+              />
+            </div>
+          )}
+          <div className='mt-auto flex flex-col gap-3 shrink-0 w-full min-w-0'>
+            <div
+              className='shrink-0 rounded-2xl w-full min-w-0 p-3 sm:p-4 flex flex-col xl:min-h-[270px]'
+              style={{ background: '#191919CC' }}
+            >
+              <div className='flex flex-row items-start gap-2 shrink-0'>
+                <img src='/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
+                <p className='text-[14px] sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
               </div>
             )}
             <div className='flex-1 min-h-0 flex flex-col gap-2 w-full min-w-0'>
@@ -108,7 +118,7 @@ const OverallSection: React.FC = () => {
               {leftBottomCards.map((card) => (
                 <div
                   key={card.border}
-                  className='w-full min-w-0 min-h-[72px] sm:min-h-[80px] xl:min-h-[96px] rounded-[16px] sm:rounded-[20px] px-2 sm:px-3 py-2 sm:py-3 flex flex-row items-center'
+                  className='w-full xl:w-[230px] xl:h-[110px] xl:shrink-0 min-h-[96px] sm:min-h-[110px] rounded-2xl px-3 pb-3 pt-4 sm:pt-5 flex flex-col'
                   style={{ background: '#66AEFF1A', border: `2px solid ${card.border}` }}
                 >
                   <img src={card.icon} alt='' width={30} height={30} className='shrink-0 w-7 h-7 sm:w-[30px] sm:h-[30px] ml-1 sm:ml-2' />
@@ -123,23 +133,24 @@ const OverallSection: React.FC = () => {
           </div>
         </div>
 
-        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:w-full md:min-h-[400px] md:h-[760px] rounded-[20px] overflow-hidden'>
-          <MapTrafficLighting deptId={deptId} />
+        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:flex-1 md:min-h-[400px] md:h-[760px] rounded-2xl overflow-hidden'>
+          <BaseMap style={{ height: '100%', width: '100%' }}>
+            {markers.map((m) => (
+              <HTMLMarker key={m.id} lngLat={[m.lng, m.lat]} anchor='center'>
+                <div className='flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FCD116] text-[#121319] text-sm sm:text-base font-bold'>
+                  {m.no}
+                </div>
+              </HTMLMarker>
+            ))}
+          </BaseMap>
         </div>
 
         <div className='flex flex-col gap-3 md:gap-4 w-full md:absolute md:top-0 md:right-0 md:z-10 md:w-[240px] lg:w-[280px]'>
           {statCards.map((s) => (
             <div
               key={s.title}
-              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-[20px] border-2 border-solid p-3 sm:p-4'
-              style={{
-                borderColor: s.titleColor,
-                // Layered so the 10% tint blends onto an opaque dark backing
-                // instead of the map behind it — a flat `{color}1A` alone
-                // would let the busy map bleed through and wash out the text.
-                background: `linear-gradient(${s.titleColor}1A, ${s.titleColor}1A), #161616`,
-                boxShadow: `0 10px 24px -8px ${s.titleColor}59`,
-              }}
+              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-2xl p-3 sm:p-4'
+              style={{ background: s.bg, border: s.border }}
             >
               <div className='flex flex-col gap-2'>
                 <div

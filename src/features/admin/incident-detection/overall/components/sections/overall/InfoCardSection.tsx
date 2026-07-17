@@ -56,7 +56,7 @@ const InfoCardSection: React.FC<Props> = () => {
 
   // `min-h-40` floors every card to card 1's natural size — keeps all three
   // visually identical even though cards 2 & 3 have fewer text lines.
-  const cardClass = 'min-h-40 border-2 rounded-[20px] p-5'
+  const cardClass = 'min-h-40 border-2 rounded-2xl p-5'
 
   return (
     <div className='flex flex-col gap-4 md:grid md:grid-cols-3 lg:flex lg:flex-col'>
@@ -66,7 +66,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(camera?.total ?? 0, 0)}</span> ตัว
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(camera?.online ?? 0, 0)} ({onlinePct}%)
         </p>
       </div>
@@ -76,7 +76,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(inWarrantyTotal, 0)}</span> จุด
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(activeByWarranty.inWarrantyActive, 0)} ({inWarrantyPct}%)
         </p>
       </div>
@@ -86,7 +86,7 @@ const InfoCardSection: React.FC<Props> = () => {
         <p>
           <span className='fs-24 font-bold'>{fmtNumber(expiredTotal, 0)}</span> จุด
         </p>
-        <p className='fs-11 text-gray-400'>
+        <p className='fs-12 text-gray-400'>
           Active : {fmtNumber(activeByWarranty.expiredActive, 0)} ({expiredPct}%)
         </p>
       </div>

@@ -1,14 +1,17 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
-interface Props {}
+interface Props { }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -46,21 +49,21 @@ const toGeoJSON = (locations: TrafficLocation[]): TrafficFeatureCollection => ({
 })
 
 /** Popup card shown on marker click — matches VMS popup style for consistency. */
-const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean }> = ({
-  feature,
-  isOnline,
-}) => {
+const TrafficSignalPopup: React.FC<{
+  feature: GeoJSON.Feature
+  isOnline: boolean
+  deptId: string
+  onNavigate: (url: string) => void
+}> = ({ feature, isOnline, deptId, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isOnline ? 'border-cyan-400' : 'border-red-500'
-      }`}
+      className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
+      style={{ borderColor: '#A3E635' }}
     >
       <p
-        className={`fs-11 font-bold tracking-wide ${
-          isOnline ? 'text-cyan-400' : 'text-red-400'
-        }`}
+        className='fs-12 font-bold tracking-wide'
+        style={{ color: '#A3E635' }}
       >
         Traffic Signal · {String(p.code_name)}
       </p>
@@ -68,16 +71,21 @@ const TrafficSignalPopup: React.FC<{ feature: GeoJSON.Feature; isOnline: boolean
         {String(p.solution_name)}
       </p>
       <p
-        className={`fs-11 font-semibold mt-1.5 ${
-          isOnline ? 'text-emerald-400' : 'text-red-400'
-        }`}
+        className={`fs-12 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'
+          }`}
       >
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
-      <p className='fs-11 text-slate-500 mt-0.5'>
+      <p className='fs-12 text-slate-500 mt-0.5'>
         PCU: {Number(p.total_pcu ?? 0).toLocaleString()} · Phase:{' '}
         {String(p.total_phases ?? '-')}
       </p>
+      {p.id != null && (
+        <PopupDetailLink
+          url={`/admin/traffic-signal/detail/${String(p.id)}?dept_id=${deptId}${scopeQuerySuffix()}`}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }
@@ -93,6 +101,8 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   locations,
   isReady,
 }) => {
+  const router = useRouter()
+  const deptId = useDeptId()
   // One source for all markers — lets Mapbox cluster across online/offline
   // when two signals are geographically close (e.g. solutions 1557 and 2480
   // are ~25m apart). Separate layers would never cluster together.
@@ -116,11 +126,13 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
         id='traffic-signal'
         data={allData}
         cluster
-        size={14}
+        size={18}
         popup={(f) => (
           <TrafficSignalPopup
             feature={f}
             isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+            deptId={deptId}
+            onNavigate={(u) => router.push(u)}
           />
         )}
         popupOptions={{ offset: 10, closeButton: false }}

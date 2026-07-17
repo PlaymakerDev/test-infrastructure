@@ -39,7 +39,7 @@ export { default as WIMSearchPanel } from './sections/wim/WIMSearchPanel'
 // MOBILE
 export { default as MobileSection } from './MobileSection'
 export { default as ChartMobileUnitPlan } from './sections/mobile/ChartMobileUnitPlan'
-export { default as FormSearchDate } from './sections/mobile/FormSearchDate'
+export { default as FormSearchUnitPlan } from './sections/mobile/FormSearchUnitPlan'
 export { default as FormSearchMobile } from './sections/mobile/FormSearchMobile'
 export { default as TableMobile } from './sections/mobile/TableMobile'
 export { default as MobileInfoCard } from './sections/mobile/MobileInfoCard'
@@ -47,6 +47,7 @@ export { default as MobileLocationSection } from './sections/mobile/MobileLocati
 export { default as MobileMap } from './sections/mobile/MobileMap'
 export { default as MobileSearchPanel } from './sections/mobile/MobileSearchPanel'
 export { default as MobileStationData } from './sections/mobile/MobileStationData'
+export { default as MobileUnitPlanSection } from './sections/mobile/MobileUnitPlanSection'
 export { default as MobileChartSection } from './sections/mobile/MobileChartSection'
 
 // GPS

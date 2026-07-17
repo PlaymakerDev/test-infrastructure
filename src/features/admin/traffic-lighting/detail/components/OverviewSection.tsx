@@ -21,9 +21,8 @@ const OverviewSection: React.FC = () => {
           <RemoteControlCard />
         </div>
 
-        {/* Full-size circuit diagram — the two cards above/below float on
-         *  top of it (via `absolute`) instead of splitting the row. */}
-        <div className='relative w-full min-h-100 md:min-h-[650px] rounded-[20px] overflow-hidden bg-[#191919CC] flex items-stretch justify-center'>
+        {/* Center — circuit diagram iframe for this device. */}
+        <div className='flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-center justify-center min-h-[310px]'>
           {imei ? (
             // `items-stretch` (not `items-center`) on the parent so the
             // iframe fills the full card instead of hugging its own content

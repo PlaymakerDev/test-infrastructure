@@ -140,7 +140,7 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           return (
             <div className='flex flex-col leading-tight'>
               <span className='text-white'>{hh}:00 น.</span>
-              <span className='fs-11 text-white/55'>{dt.format('D MMM BBBB')}</span>
+              <span className='fs-12 text-white/55'>{dt.format('D MMM BBBB')}</span>
             </div>
           )
         },
@@ -264,9 +264,9 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? null
             : fmtCell(row.row.totalVehicles, {
-                color: '#66AEFF',
-                isSummary: row.kind === 'summary',
-              }),
+              color: '#66AEFF',
+              isSummary: row.kind === 'summary',
+            }),
       },
       {
         title: 'รวม PCU',
@@ -282,10 +282,10 @@ const HourlyReportTable: React.FC<Props> = ({ groups }) => {
           row.kind === 'camera'
             ? null
             : fmtCell(row.row.totalPCU, {
-                color: '#00FF55',
-                decimals: 1,
-                isSummary: row.kind === 'summary',
-              }),
+              color: '#00FF55',
+              decimals: 1,
+              isSummary: row.kind === 'summary',
+            }),
       },
       {
         title: 'รถบรรทุก (%)',

@@ -5,26 +5,18 @@ import {
   OverallSection,
   TitleSection,
 } from '../components'
-import { OverallProvider } from '../context'
 
-const TrackingScreen = () => {
-
+const CrosswalkScreen = () => {
   return (
-    <OverallProvider>
-      <div className='main-screen px-10'>
-        <TitleSection />
-        <section className='mt-8'>
-          <OverallSection />
-        </section>
-        {/* Single global Project Info modal — triggered via Redux from any
-          * row's info icon (ContractInfoCell). Rendered once here so we don't
-          * mount duplicates. */}
-        <ProjectInfoModal />
-        {/* Global Live Stream modal — opened via Redux from any camera preview. */}
-        <CCTVModal />
-      </div>
-    </OverallProvider>
+    <div className='main-screen px-10'>
+      <TitleSection />
+      <section className='mt-8 pb-8'>
+        <OverallSection />
+      </section>
+      <ProjectInfoModal />
+      <CCTVModal />
+    </div>
   )
 }
 
-export default React.memo(TrackingScreen)
+export default React.memo(CrosswalkScreen)

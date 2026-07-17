@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Drawer, Empty, Skeleton } from 'antd'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetDrawerOpen } from '@/stores/reducers/layout/layoutSlice'
@@ -26,6 +26,51 @@ const Sidebar: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData
   })
 
+  // Hide the logout footer on phones (< sm 640px) — the navbar's top-right
+  // menu already offers ออกจากระบบ there, and on a ~430px screen the footer
+  // just eats a row of the nearly-fullscreen drawer. Conditional on the
+  // Drawer's `footer` prop (not CSS) so antd doesn't render an empty
+  // `.ant-drawer-footer` strip.
+  const [footerVisible, setFooterVisible] = useState(true)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 640px)')
+    const update = () => setFooterVisible(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+
+  // Swipe-left anywhere on the drawer panel closes it. On phones the drawer
+  // (378px) nearly fills the viewport, leaving a sliver of mask that's hard
+  // to hit — swiping it shut is the natural gesture there. Document-level
+  // native listeners cover the whole panel (header/body/footer) without
+  // depending on antd's internal DOM; the 1.2× horizontal-dominance guard
+  // keeps vertical menu scrolling from triggering a close.
+  useEffect(() => {
+    if (!open) return
+    let start: { x: number; y: number } | null = null
+    const onTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null
+      start = target?.closest?.('.ant-drawer')
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        : null
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!start) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - start.x
+      const dy = Math.abs(t.clientY - start.y)
+      start = null
+      if (dx < -60 && Math.abs(dx) > dy * 1.2) dispatch(resetDrawerOpen())
+    }
+    document.addEventListener('touchstart', onTouchStart, { passive: true })
+    document.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [open, dispatch])
+
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description='ไม่สามารถโหลดข้อมูลได้' />
@@ -40,7 +85,7 @@ const Sidebar: React.FC<Props> = (props) => {
         onClose={() => dispatch(resetDrawerOpen())}
         placement='left'
         closable={false}
-        footer={<SidebarFooter />}
+        footer={footerVisible ? <SidebarFooter /> : undefined}
         loading={isLoading}
       >
         {renderContent}

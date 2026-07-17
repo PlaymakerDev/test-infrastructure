@@ -117,41 +117,26 @@ const EventTrendSection: React.FC<Props> = ({ solutionId: solutionIdProp, height
   }, [yMax])
 
   return (
-    <div className='relative w-full h-full'>
-      <LineChart
-        title='แนวโน้มเหตุการณ์รายวัน'
-        icon={<TbCar size={22} />}
-        iconCircle={false}
-        cardBackground='#000000CC'
-        cardBorderColor='#1f2d3d'
-        showGlow={false}
-        data={chartData}
-        lines={lines}
-        yAxisTicks={yAxisTicks}
-        height={height}
-        // Card has spare space — pull the plot down (default 28 leaves a big gap
-        // under the labels) and up closer to the title.
-        gridBottom={8}
-        gridTop={4}
-        tooltipShowDot
-        // Show the full date in the tooltip header (axis label stays the day name).
-        tooltipDateKey='dateText'
-        tooltipDateSuffix=''
-      />
-      {peakBadge && (
-        <div
-          className='absolute top-5 right-5 rounded-xl px-3 py-2 pointer-events-none'
-          style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}
-        >
-          <p className='mb-0.5 leading-tight' style={{ color: '#8a9ab5', fontSize: 11 }}>
-            ช่วงเวลาที่มีปริมาณเหตุการณ์สูงสุดประจำวัน
-          </p>
-          <p className='mb-0 font-semibold leading-tight' style={{ color: '#ffffff', fontSize: 13 }}>
-            {peakBadge.range} ({peakBadge.pct}%)
-          </p>
-        </div>
-      )}
-    </div>
+    <LineChart
+      title='แนวโน้มเหตุการณ์รายวัน'
+      icon={<TbCar size={22} />}
+      iconCircle={false}
+      cardBackground='#000000CC'
+      cardBorderColor='#1f2d3d'
+      showGlow={false}
+      data={chartData}
+      lines={lines}
+      yAxisTicks={yAxisTicks}
+      height={132}
+      // Card has spare space — pull the plot down (default 28 leaves a big gap
+      // under the labels) and up closer to the title.
+      gridBottom={8}
+      gridTop={4}
+      tooltipShowDot
+      // Show the full date in the tooltip header (axis label stays the day name).
+      tooltipDateKey='dateText'
+      tooltipDateSuffix=''
+    />
   )
 }
 

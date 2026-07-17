@@ -250,3 +250,20 @@ export type APIResponsePutVMSMedia = APIResponsePost
 
 // DELETE
 export type APIResponseDeleteVMSMedia = APIResponsePost
+
+// GET MEDIA URLS
+export interface APIRequestVMSMediaUrl {
+  setting_type_id?: number | string
+  limit?: number
+  page?: number
+  sort?: 'ASC' | 'DESC'
+}
+
+export interface APIResponseVMSMediaUrl {
+  meta_data: MetaData
+  res_data: VMSMediaUrlList[]
+}
+
+export interface VMSMediaUrlList {
+  media_url: string
+}

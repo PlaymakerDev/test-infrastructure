@@ -1,21 +1,24 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { useEffect, useMemo, useRef, useState, createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { IconType } from 'react-icons'
 import {
-  TbCamera,
+  TbVideo,
   TbDeviceDesktop,
-  TbWeight,
   TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
+  TbCarCrash,
   TbWalk,
-  TbChartBar,
   TbTrafficLights,
 } from 'react-icons/tb'
+import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
+  SYSTEM_BRIGHT,
   SYSTEM_TYPES,
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
@@ -23,17 +26,19 @@ import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useRouter } from 'next/navigation'
 import { useMap } from '../hooks/useMap'
 import MarkerLayer from '../primitives/MarkerLayer'
+import PopupDetailLink from '../primitives/PopupDetailLink'
 
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
-  CCTV: TbCamera,
+  CCTV: TbVideo,
   VMS: TbDeviceDesktop,
-  WIM: TbWeight,
+  WIM: IconTracking,
+  LPR: IconLPR,
   Lighting: TbBolt,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
   Counting: TbCar,
   CrossWalk: TbWalk,
-  Analytic: TbChartBar,
+  Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
 }
 
@@ -91,11 +96,9 @@ const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
  *  Rendered in a detached React root (mapbox popup) so Next's router context is
  *  NOT available here. Navigation therefore comes in as an `onNavigate` prop
  *  captured from `DeviceClusterMarker` (which IS inside the router provider) —
- *  clicking runs a CLIENT-SIDE `router.push`, identical to the table detail
- *  links. This matters on deploy: the app is served under a `basePath` (e.g.
- *  `/atlas`), and `router.push` prepends it automatically. A raw `<a href>`
- *  hard-navigation would drop the prefix and 404 (…/dashvue/error-404). The
- *  `href` is kept only as a semantic/right-click fallback. */
+ *  clicking runs a CLIENT-SIDE `router.push` (via the shared `PopupDetailLink`
+ *  button), identical to the table detail links — and `router.push` prepends
+ *  the deploy `basePath` (e.g. `/atlas`) automatically. */
 export function DefaultDevicePopup({
   device,
   color,
@@ -117,12 +120,11 @@ export function DefaultDevicePopup({
       ? new URLSearchParams(window.location.search).get('dept_id')
       : null)
   const detailUrl = route
-    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}` : ''}`
+    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`
     : null
-  // basePath ('/atlas' in prod, '' in dev) — inlined by Next at build time. Only
-  // used for the href fallback so a middle-click / open-in-new-tab keeps the
-  // deploy prefix; left-click goes through onNavigate (router.push adds it too).
-  const basePath = process.env.__NEXT_ROUTER_BASEPATH ?? ''
+  // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
+  // a popup border/label on the dark map (per Figma: brighter).
+  const brightColor = SYSTEM_BRIGHT[device.type] ?? color
 
   return (
     <div
@@ -131,12 +133,12 @@ export function DefaultDevicePopup({
         minWidth: 210,
         fontFamily: 'ui-sans-serif,system-ui',
         background: 'rgba(5,13,26,0.96)',
-        border: `1px solid ${color}`,
+        border: `1px solid ${brightColor}`,
         borderRadius: 10,
       }}
     >
       {/* เมนู (device type) */}
-      <div style={{ fontSize: 12, color, fontWeight: 700, letterSpacing: 0.5 }}>
+      <div style={{ fontSize: 12, color: brightColor, fontWeight: 700, letterSpacing: 0.5 }}>
         {SYSTEMS[device.type].label}
       </div>
       {/* จุดติดตั้ง */}
@@ -149,31 +151,9 @@ export function DefaultDevicePopup({
         <span style={{ color: '#64748b' }}>สายทาง: </span>
         <span style={{ color: '#fff' }}>{device.road || '-'}</span>
       </div>
-      {/* ดูเพิ่มเติม → install point detail page. Left-click navigates
-        * client-side via `onNavigate` (router.push) so the deploy basePath is
-        * preserved; ctrl/cmd/middle-click fall through to the href to open a
-        * new tab as usual. */}
-      {detailUrl && (
-        <a
-          href={`${basePath}${detailUrl}`}
-          onClick={(e) => {
-            if (!onNavigate) return
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
-            e.preventDefault()
-            onNavigate(detailUrl)
-          }}
-          style={{
-            display: 'inline-block',
-            marginTop: 9,
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#FCD116',
-            textDecoration: 'none',
-          }}
-        >
-          ดูเพิ่มเติม →
-        </a>
-      )}
+      {/* ดูเพิ่มเติม → install point detail page. Shared button navigates
+        * client-side via `onNavigate` (router.push), preserving the basePath. */}
+      {detailUrl && <PopupDetailLink url={detailUrl} onNavigate={onNavigate} />}
     </div>
   )
 }

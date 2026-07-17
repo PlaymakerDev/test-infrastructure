@@ -73,7 +73,16 @@ const SearchSection: React.FC<Props> = ({ openFromDrawer }) => {
         onBureauClick={(item) => setBureau(item)}
         onStateClick={(item) => setBureauState(item)}
         onRouteClick={(item) => setBureauRoute(item)}
-        onSignClick={(item) => setBureauSign(item)}
+        onSignClick={(sign, route, state, bureau) => {
+          setBureau(bureau)
+          setBureauState(state)
+          setBureauRoute(route)
+          setBureauSign(sign)
+          // Navigating straight to a sign's detail also selects it for
+          // schedule control, so "เพิ่มรูปแบบการแสดงผล" works without the
+          // user having to switch to select mode and check its box first.
+          setVMSIdList(sign.vms_id != null ? [sign.vms_id] : [])
+        }}
         onSelectionChange={(item) => {
           const ids = item.signs.map(s => s.vms_id).filter((id): id is number => id != null)
           setVMSIdList(ids)

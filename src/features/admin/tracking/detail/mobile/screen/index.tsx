@@ -11,25 +11,25 @@ interface Props {
 }
 
 const MobileDetailScreen: React.FC<Props> = (props) => {
-  const { } = props
+  const { id } = props
   const [currentTab, setCurrentTab] = useState('OVERALL')
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
       case 'OVERALL':
-        return <OverallSection />
+        return <OverallSection id={id} />
       case 'VEHICLE':
-        return <VehicleSection />
+        return <VehicleSection id={id} />
       default:
-        return <OverallSection />
+        return <OverallSection id={id} />
     }
-  }, [currentTab])
+  }, [currentTab, id])
 
   return (
     <MobileProvider>
       <div className='main-screen'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>
+        <section className='mt-8 px-8'>
           {renderContent}
         </section>
       </div>

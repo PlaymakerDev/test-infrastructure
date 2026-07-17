@@ -1,5 +1,6 @@
 // Centralized query key factory for the Crosswalk feature.
 
+import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestCrosswalkCentralList,
   APIRequestCrosswalkOverview,
@@ -15,8 +16,9 @@ export const crosswalkKeys = {
   all: ['crosswalk'] as const,
 
   overview: {
+    // `scopeKey()` keys the cache apart per URL scope — see scopeParam.ts.
     root: (deptId: string | number) =>
-      [...crosswalkKeys.all, 'overview', deptId] as const,
+      [...crosswalkKeys.all, 'overview', deptId, scopeKey()] as const,
     map: (
       deptId: string | number,
       params: APIRequestCrosswalkOverview = {}

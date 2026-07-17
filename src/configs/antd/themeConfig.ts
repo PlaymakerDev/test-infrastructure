@@ -8,6 +8,7 @@ export const theme: ConfigProviderProps = {
       colorText: "#FFFFFF",
       colorTextLightSolid: 'var(--dark-black)',
       colorTextDescription: "var(--white)",
+      colorTextQuaternary: "#FCD116",
     },
     components: {
       Progress: {
@@ -68,6 +69,16 @@ export const theme: ConfigProviderProps = {
         colorTextDisabled: "#FFFFFF30",
         // Date cells
         cellHoverBg: "#2A2A2A",
+        // Selected time cell (TimePicker / RangePicker time panel) and the
+        // range-connector overlay (RangePicker date panel) both read the raw
+        // `controlItemBgActive` alias token, which defaults to a pale
+        // colorPrimaryBg tint — with no dark algorithm this renders near-white,
+        // so the selected cell becomes a blank white box (white text on a
+        // near-white bg). Override with a dark, yellow-tinted surface instead
+        // so text stays legible while keeping the brand-color accent.
+        controlItemBgActive: "#463E18",
+        cellActiveWithRangeBg: "#463E18",
+        cellHoverWithRangeBg: "#302B18",
       },
       Segmented: {
         trackBg: '#1A1A1A',
@@ -195,7 +206,7 @@ export const theme: ConfigProviderProps = {
         colorSplit: "#333333",
       },
       Pagination: {
-        itemActiveBg: "var(--default-blue)",
+        itemActiveBg: "var(--yellow)",
         itemActiveColor: "var(--black)",
         itemBg: "transparent",
       },

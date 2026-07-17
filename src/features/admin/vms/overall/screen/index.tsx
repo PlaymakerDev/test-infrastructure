@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { OverallSection, TitleSection } from '../components'
+import { ModalVMSScreen, OverallSection, TitleSection } from '../components'
 import { OverallProvider } from '../context'
 import { useSearchParams } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -21,7 +21,7 @@ const VMSScreen: React.FC<Props> = (props) => {
       <OverallProvider>
         <div className='main-screen px-5 lg:px-10'>
           <TitleSection />
-          <section className='mt-8'>
+          <section className='mt-8 pb-8'>
             <OverallSection
               deptId={deptId!}
             />
@@ -29,6 +29,7 @@ const VMSScreen: React.FC<Props> = (props) => {
         </div>
         <CCTVModal />
         <ProjectInfoModal />
+        <ModalVMSScreen />
       </OverallProvider>
     </QueryClientProvider>
   )

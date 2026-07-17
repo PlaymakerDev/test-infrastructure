@@ -5,6 +5,7 @@ import 'dayjs/locale/th'
 import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
 import { thaiDayName } from '@/utils/formatDate'
+import { fmtNumber } from '@/utils/formatNumber'
 import { useDetailContext } from '../../../context'
 
 interface Props {
@@ -32,10 +33,10 @@ const PhaseBar: React.FC<{ phase: number; value: number; max: number }> = ({
          *  track. `minWidth: min-content` keeps the label readable when the
          *  fill would otherwise be too narrow to hold it. */}
         <div
-          className='h-full rounded flex items-center justify-end px-2 fs-12 font-semibold whitespace-nowrap'
+          className='h-full rounded flex items-center justify-end px-2 fs-12 font-normal whitespace-nowrap'
           style={{ width: `${pct}%`, minWidth: 'min-content', background: color, color: '#000000' }}
         >
-          {value.toLocaleString()}
+          {fmtNumber(value, 2)}
         </div>
       </div>
     </div>
@@ -90,7 +91,7 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
             </div>
             <div className='mt-3 text-center fs-12'>
               <p className='mb-0 text-white'>
-                Total : {day.total.toLocaleString()} PCU
+                Total : {fmtNumber(day.total, 2)} PCU
               </p>
               <p className='mb-0' style={{ color: getPhaseColor(day.peakPhase) }}>
                 Peak : Phase {day.peakPhase}

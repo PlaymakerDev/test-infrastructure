@@ -7,7 +7,7 @@ import { useTrafficVolumeCountPrevious } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { CountingPreviousDay } from '@/types/traffic-volume/detail-api'
 
-interface Props {}
+interface Props { }
 
 // Thai day-of-week abbreviations keyed by `Date.getDay()` (0 = Sunday).
 // Hardcoded rather than using `dayjs.locale('th').format('dd')` so the

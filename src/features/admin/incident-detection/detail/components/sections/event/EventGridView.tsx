@@ -6,14 +6,15 @@ import {
   getEventTypeColor,
   getEventTypeLabel,
 } from '@/features/admin/incident-detection/components/eventTypes'
+import { thaiDateBE } from '@/utils/thaiDate'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 
 // ── Date helpers (shared by table + grid) ────────────────────────────────────
 
-/** ISO date_time → Buddhist-era date "23/06/2569". */
+/** ISO date_time → Buddhist-era date "6 ก.ค. 2569". */
 export const fmtThaiDate = (iso: string): string => {
   const d = dayjs(iso)
-  return d.isValid() ? `${d.format('DD/MM/')}${d.year() + 543}` : iso
+  return d.isValid() ? thaiDateBE(iso) : iso
 }
 
 /** ISO date_time → "15:47:03". */
@@ -61,13 +62,13 @@ const EventCard: React.FC<{ ev: IncidentTransactionItem; onSelect?: () => void }
         <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: getEventTypeColor(typeId) }} />
         <h4 className='mb-0 font-semibold' style={{ color: getEventTypeColor(typeId) }}>{typeLabel}</h4>
       </div>
-      <p className='fs-11 text-gray-400 mb-0'>{fmtThaiDate(ev.date_time)} {fmtTime(ev.date_time)}</p>
+      <p className='fs-12 text-gray-400 mb-0'>{fmtThaiDate(ev.date_time)} {fmtTime(ev.date_time)}</p>
       <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
-      <p className='fs-11 leading-snug mb-0.5 line-clamp-2'>
+      <p className='fs-12 leading-snug mb-0.5 line-clamp-2'>
         <span className='text-gray-400'>ชื่อกล้อง : </span>
         <span className='text-blue-400'>{ev.camera.camera_name}</span>
       </p>
-      <p className='fs-11 text-gray-400 mb-1'>IP Address : {ev.camera.ip_address}</p>
+      <p className='fs-12 text-gray-400 mb-1'>IP Address : {ev.camera.ip_address}</p>
       {/* 4:3 box matches the source snapshots (1024×768) so object-cover fills
         * without cropping the scene — h-40 was chopping off top/bottom. */}
       <EventSnapshot url={ev.image_path} className='w-full aspect-[4/3] rounded-lg' onClick={onSelect} />

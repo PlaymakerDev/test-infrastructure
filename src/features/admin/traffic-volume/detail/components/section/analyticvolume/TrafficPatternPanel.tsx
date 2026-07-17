@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbBolt, TbCar, TbGridDots } from 'react-icons/tb'
+import { TbCar, TbGridDots, TbShare } from 'react-icons/tb'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import MiniStatCard from './MiniStatCard'
 import InfoListBox from './InfoListBox'
@@ -31,7 +31,7 @@ const apiPointToDataPoint = (p: CountingAnalyticGraphPoint): LineChartDataPoint 
   return {
     label: `${hh}.00`,
     actual: p.total_count,
-    reference: Math.round(p.ma_3h_total * 100) / 100,
+    reference: Math.round(p.ma_3h_total * 10) / 10,
     dateLabel: thaiDateBE(dateStr),
   }
 }
@@ -66,8 +66,8 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
     >
       {/* Header */}
       <div className='flex items-center gap-2'>
-        <TbBolt size={20} className='text-(--yellow)' />
-        <span className='fs-15 font-semibold text-white'>
+        <TbShare size={20} className='text-(--yellow)' />
+        <span className='fs-14 text-(--yellow)'>
           วิเคราะห์รูปแบบการจราจร
         </span>
       </div>
@@ -143,13 +143,13 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
         />
         <MiniStatCard
           color='#2CEABE'
-          value={apiData ? apiData.phf.toFixed(2) : '-'}
+          value={apiData ? apiData.phf.toFixed(1) : '-'}
           label='Peak Hour Factor'
           sublabel='PHF (ความสม่ำเสมอ)'
         />
         <MiniStatCard
           color='#00DDFF'
-          value={apiData ? apiData.vc_ratio.toFixed(2) : '-'}
+          value={apiData ? apiData.vc_ratio.toFixed(1) : '-'}
           label='V/C Ratio'
           sublabel='Volume/Capacity'
         />
@@ -241,7 +241,7 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
             {
               label: 'Capacity Utilization',
               value: apiData
-                ? `${apiData.traffic_quality.capacity_utilization.toFixed(2)}%`
+                ? `${apiData.traffic_quality.capacity_utilization.toFixed(1)}%`
                 : '-',
               tone: '#06B6D4',
               sub: 'การใช้ความจุ',
@@ -249,7 +249,7 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
             {
               label: 'Flow Efficiency',
               value: apiData
-                ? `${apiData.traffic_quality.flow_efficiency.toFixed(2)}%`
+                ? `${apiData.traffic_quality.flow_efficiency.toFixed(1)}%`
                 : '-',
               tone: '#3B82F6',
               sub: 'ประสิทธิภาพ',
@@ -263,7 +263,7 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
               >
                 {c.value}
               </span>
-              <span className='fs-11 text-white/40 mt-0.5'>{c.sub}</span>
+              <span className='fs-12 text-white/40 mt-0.5'>{c.sub}</span>
             </div>
           ))}
         </div>

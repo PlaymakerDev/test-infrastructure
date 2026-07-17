@@ -37,6 +37,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and api routes
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  // Run on everything except API routes, Next internals, and static public
+  // assets. The trailing extension guard is essential: without it, requests for
+  // files in `public/` (e.g. /images/login/login-hero.png) hit this middleware
+  // while unauthenticated and get redirected to /auth/login — which breaks the
+  // login page's own background image (you're not logged in *on* the login page).
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|woff2?|ttf)).*)',
+  ],
 }

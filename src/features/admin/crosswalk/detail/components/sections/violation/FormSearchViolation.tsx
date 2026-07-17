@@ -1,13 +1,20 @@
 "use client"
 import React from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
-import { Col, DatePicker, Row, Segmented } from 'antd'
+import 'dayjs/locale/th'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
+import thTH from 'antd/locale/th_TH'
+import { TbCalendar } from 'react-icons/tb'
 import {
   dateRangeForPeriod,
   type ViolationFilter,
   type ViolationPeriod,
   type ViolationStatus,
 } from './filter'
+
+// `BBBB` (Buddhist-Era year) for the picker's `D MMM BBBB` display format.
+dayjs.extend(buddhistEra)
 
 const { RangePicker } = DatePicker
 
@@ -63,14 +70,18 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
       <Col xs={24} sm={24} md={24} lg={24} xl={8} xxl={6} xxxl={6}>
         <fieldset>
           <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
-          <RangePicker
-            value={rangeValue}
-            onChange={handleRangeChange}
-            placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
-            format='DD/MM/YYYY'
-            size='large'
-            className='w-full!'
-          />
+          <ConfigProvider locale={thTH}>
+            <RangePicker
+              value={rangeValue}
+              onChange={handleRangeChange}
+              placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
+              format='D MMM BBBB'
+              size='large'
+              className='w-full! rounded-xl!'
+              separator={<span className='text-white'>-</span>}
+              suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
+            />
+          </ConfigProvider>
         </fieldset>
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
@@ -84,7 +95,7 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
               options={PERIOD_OPTIONS}
               size='large'
               classNames={{
-                root: 'min-w-max border! border-(--yellow)!',
+                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
               }}
             />
           </div>
@@ -101,7 +112,7 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
               options={STATUS_OPTIONS}
               size='large'
               classNames={{
-                root: 'min-w-max border! border-(--yellow)!',
+                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
               }}
             />
           </div>

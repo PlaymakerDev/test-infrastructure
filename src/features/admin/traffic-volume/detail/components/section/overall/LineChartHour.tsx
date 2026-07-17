@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbBolt } from 'react-icons/tb'
+import { TbCar } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import { thaiDateBE } from '@/utils/thaiDate'
@@ -9,7 +9,7 @@ import { useDetailContext } from '../../../context'
 import type { CountingHourBucket } from '@/types/traffic-volume/detail-api'
 import { VEHICLE_TYPES } from './data/vehicleTypes'
 
-interface Props {}
+interface Props { }
 
 /** Map our internal vehicle-type keys → the API's per-type `*_count` field
  *  on each hour bucket. Keeps the tooltip extras in lock-step with the
@@ -67,16 +67,19 @@ const LineChartHour: React.FC<Props> = () => {
   return (
     <LineChart
       title='ปริมาณจราจรรายชั่วโมง'
-      icon={<TbBolt size={22} />}
+      icon={<TbCar size={22} />}
       iconCircle={false}
       showGlow={false}
       data={hours}
       lines={[
         { dataKey: 'total', color: '#66AEFF', label: 'รวมทั้งหมด', unit: 'คัน' },
       ]}
-      height={200}
+      fillHeight
       tooltipDateKey='dateLabel'
       tooltipExtras={tooltipExtras}
+    // โชว์ทุกชั่วโมง 00.00–23.00 ไม่เว้น — หมุน 45° ให้ label ไม่ทับกัน
+    // xAxisLabelInterval={0}
+    // xAxisLabelRotate={45}
     />
   )
 }

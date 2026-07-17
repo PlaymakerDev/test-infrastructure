@@ -76,8 +76,8 @@ const CameraTile: React.FC<{
         cameraId={cam.id}
       />
     </div>
-    <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</h4>
-    <p className='fs-12 text-gray-400 mb-0'>IP Address : {cam.ipAddress || '-'}</p>
+    <h4 className='camera-code'>{cam.code}</h4>
+    <p className='camera-location text-(--light-gray-3)!'>IP Address : {cam.ipAddress || '-'}</p>
   </div>
 )
 

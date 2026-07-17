@@ -1,34 +1,40 @@
 "use client"
 import {
-  TbCamera,
+  TbVideo,
   TbDeviceDesktop,
-  TbWeight,
   TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
+  TbCarCrash,
   TbWalk,
-  TbChartBar,
   TbTrafficLights,
 } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
+import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
   SYSTEM_TYPES,
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
 
+// Same icons as the navbar menu (configs/menu/admin.ts) so the pill row reads
+// as a filter for the menus above; key order mirrors the navbar menu order.
+// WIM/Tracking uses the shared IconTracking — the same custom glyph the navbar
+// itself renders (its menu config has no Tb icon name).
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
-  CCTV: TbCamera,
-  VMS: TbDeviceDesktop,
-  WIM: TbWeight,
+  CCTV: TbVideo,
+  Counting: TbCar,
+  Analytic: TbCarCrash,
+  Traffic: TbTrafficLights,
+  CrossWalk: TbWalk,
   Lighting: TbBolt,
+  VMS: TbDeviceDesktop,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,
-  Counting: TbCar,
-  CrossWalk: TbWalk,
-  Analytic: TbChartBar,
-  Traffic: TbTrafficLights,
+  WIM: IconTracking,
+  LPR: IconLPR,
 }
 
 export interface SystemFilterPillsProps {

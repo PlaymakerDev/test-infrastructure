@@ -47,16 +47,18 @@ const YellowPin: React.FC<{ size?: number }> = ({ size = MARKER_SIZE }) => (
 )
 
 /** White teardrop pin — the shared detail-map marker (crosswalk / incident /
- *  traffic-volume / traffic-signal). Always white (never colored by status); an
- *  optional count badge marks an overlap group. */
-export const WhiteTeardropPin: React.FC<{ count?: number }> = ({ count }) => (
+ *  traffic-volume / traffic-signal / lpr). White by default (never colored by
+ *  status); `color` paints the SAME shape for a selected/active state (LPR
+ *  highlights the clicked pin yellow). Optional count badge marks an overlap
+ *  group. */
+export const WhiteTeardropPin: React.FC<{ count?: number; color?: string }> = ({ count, color }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
     <div
       style={{
         width: MARKER_SIZE, height: MARKER_SIZE,
         borderRadius: '50% 50% 50% 0',
         transform: 'rotate(-45deg)',
-        background: '#ffffff',
+        background: color ?? '#ffffff',
         boxShadow: '0 3px 12px rgba(0,0,0,0.55)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}

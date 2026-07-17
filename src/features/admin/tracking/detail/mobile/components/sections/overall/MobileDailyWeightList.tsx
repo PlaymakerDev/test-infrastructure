@@ -1,7 +1,12 @@
 import CardList, { DataType } from '@/components/list/CardList'
+import { MobileCarByTDIDData } from '@/types/tracking/detail-api'
 import React from 'react'
 
-interface Props { }
+interface Props {
+  data?: MobileCarByTDIDData[]
+  isLoading?: boolean
+  isError?: boolean
+}
 
 const mockData: DataType[] = [
   {

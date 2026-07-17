@@ -1,9 +1,16 @@
 "use client"
 import React from 'react'
-import { Image, Table } from 'antd'
+import { Empty, Image, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { MobileCarByTDIDData } from '@/types/tracking/detail-api'
+import dayjs from 'dayjs'
+import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props { }
+interface Props {
+  data?: MobileCarByTDIDData[]
+  isLoading?: boolean
+  isError?: boolean
+}
 
 type WeightStatusType = 'น้ำหนักปกติ' | 'น้ำหนักเกิน'
 type FinalStatusType = 'น้ำหนักปกติ' | 'ยอมรับน้ำหนัก' | 'ดำเนินคดี'
@@ -85,8 +92,10 @@ const StatusBadge = ({ label, cls }: { label: string; cls: string }) => (
   </span>
 )
 
-const TableMobileDailyWeight: React.FC<Props> = () => {
-  const columns: ColumnsType<DailyWeightRecord> = [
+const TableMobileDailyWeight: React.FC<Props> = (props) => {
+  const { data, isLoading, isError } = props
+
+  const columns: ColumnsType<MobileCarByTDIDData> = [
     {
       title: 'ลำดับ',
       dataIndex: 'no',
@@ -94,82 +103,119 @@ const TableMobileDailyWeight: React.FC<Props> = () => {
       align: 'center',
       width: 70,
       fixed: 'left',
+      render: (_, __, index) => {
+        return index + 1
+      }
     },
     {
       title: 'วันที่และเวลา',
-      key: 'datetime',
+      dataIndex: 'create_date',
+      key: 'create_date',
       align: 'center',
       width: 150,
-      render: (_, record) => (
-        <div>
-          <p className='mb-0'>{record.date}</p>
-          <p className='mb-0 text-white/60'>{record.time}</p>
-        </div>
-      ),
+      render: (item) => {
+        if (item) {
+          return (
+            <div>
+              <p className='fs-12 mb-0'>{dayjs(item, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB')}</p>
+              <p className='fs-12 mb-0 text-white/60'>{dayjs(item, 'DD/MM/BBBB HH:mm:ss').format('HH:mm:ss')}</p>
+            </div>
+          )
+        }
+        return '-'
+      },
     },
     {
       title: 'ทะเบียนรถ',
-      dataIndex: 'plate',
-      key: 'plate',
+      dataIndex: 'lp_head',
+      key: 'lp_head',
       align: 'center',
       width: 150,
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'ประเภทรถบรรทุก',
-      dataIndex: 'vehicleType',
-      key: 'vehicleType',
+      dataIndex: 'vehicle_class_desc',
+      key: 'vehicle_class_desc',
       align: 'center',
       width: 240,
+      render: (item) => {
+        if (item) return item
+        return '-'
+      }
     },
     {
       title: 'น้ำหนักที่ชั่งได้',
-      dataIndex: 'actualWeight',
-      key: 'actualWeight',
+      dataIndex: 'gross_weight',
+      key: 'gross_weight',
       align: 'center',
       width: 140,
-      render: (value: number) => `${value.toFixed(2)} ตัน`,
+      render: (item) => {
+        if (item) return fmtNumber(Number(item), 2)
+        return '-'
+      }
     },
     {
       title: 'น้ำหนักตามกำหนด',
-      dataIndex: 'stdWeight',
-      key: 'stdWeight',
+      dataIndex: 'legal_weight',
+      key: 'legal_weight',
       align: 'center',
       width: 160,
-      render: (value: number) => (
-        <span className='text-(--yellow)'>{value.toFixed(2)} ตัน</span>
-      ),
+      render: (item) => {
+        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(Number(item), 2)}</p>
+        return '-'
+      }
     },
     {
       title: 'น้ำหนักเกิน',
-      dataIndex: 'overweight',
-      key: 'overweight',
+      dataIndex: 'gross_weight_over',
+      key: 'gross_weight_over',
       align: 'center',
       width: 130,
-      render: (value: number) => (
-        <span className={value > 0 ? 'text-red-500' : 'text-white/25'}>
-          {value.toFixed(2)} ตัน
-        </span>
-      ),
+      render: (item) => {
+        if (item) return <p className='fs-12 text-red-500'>{fmtNumber(Number(item), 2)}</p>
+        return <p className='fs-12 text-white/25'>0</p>
+      }
     },
     {
       title: 'ภาพรถบรรทุก',
-      dataIndex: 'vehicleImage',
-      key: 'vehicleImage',
+      dataIndex: 'image_path1',
+      key: 'image_path1',
       align: 'center',
       width: 130,
-      render: (src: string) => (
-        <Image src={src} width={100} height={60} className='rounded object-cover' alt='vehicle' />
-      ),
+      render: (src: string) => {
+        console.log(`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`)
+        return (
+          <Image
+            src={`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`}
+            width={100}
+            height={60}
+            className='rounded object-cover'
+            alt='vehicle'
+          />
+        )
+      },
     },
     {
       title: 'สลิปน้ำหนัก',
-      dataIndex: 'slipImage',
-      key: 'slipImage',
+      dataIndex: 'image_path6',
+      key: 'image_path6',
       align: 'center',
       width: 130,
-      render: (src: string) => (
-        <Image src={src} width={100} height={60} className='rounded object-cover' alt='slip' />
-      ),
+      render: (src: string) => {
+        return (
+          <Image
+            src={`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`}
+            width={100}
+            height={60}
+            className='rounded object-cover'
+            alt='slip'
+          />
+        )
+      },
     },
     {
       title: 'สถานะน้ำหนักรวม',
@@ -177,9 +223,9 @@ const TableMobileDailyWeight: React.FC<Props> = () => {
       key: 'statusWeight',
       align: 'center',
       width: 150,
-      render: (val: WeightStatusType) => (
-        <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
-      ),
+      // render: (val: WeightStatusType) => (
+      //   <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
+      // ),
     },
     {
       title: 'สถานะเพลา',
@@ -187,9 +233,9 @@ const TableMobileDailyWeight: React.FC<Props> = () => {
       key: 'statusAxle',
       align: 'center',
       width: 140,
-      render: (val: WeightStatusType) => (
-        <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
-      ),
+      // render: (val: WeightStatusType) => (
+      //   <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
+      // ),
     },
     {
       title: 'สถานะ',
@@ -198,20 +244,23 @@ const TableMobileDailyWeight: React.FC<Props> = () => {
       align: 'center',
       width: 140,
       fixed: 'right',
-      render: (val: FinalStatusType) => (
-        <StatusBadge label={val} cls={FINAL_STATUS_CLASS[val]} />
-      ),
+      // render: (val: FinalStatusType) => (
+      //   <StatusBadge label={val} cls={FINAL_STATUS_CLASS[val]} />
+      // ),
     },
   ]
 
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+
   return (
-    <Table<DailyWeightRecord>
+    <Table<MobileCarByTDIDData>
       columns={columns}
-      dataSource={mockData}
+      dataSource={data}
       pagination={false}
       size="middle"
       rowKey="key"
       scroll={{ x: 'max-content' }}
+      loading={isLoading}
     />
   )
 }

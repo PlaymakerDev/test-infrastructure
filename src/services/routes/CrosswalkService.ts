@@ -1,4 +1,5 @@
 import ApiService from '../ApiService'
+import { centralScope } from './scopeParam'
 import type {
   APIRequestCrosswalkCentralList,
   APIResponseCrosswalkCentralList,
@@ -34,7 +35,10 @@ export const getCrosswalkOverviewAPI = (
   ApiService.fetchData<APIResponseCrosswalkOverview>({
     url: `${crosswalkDeptBase(deptId)}/overview`,
     method: 'GET',
-    params: params.solution_id ? { solution_id: params.solution_id } : undefined,
+    params: {
+      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...centralScope(deptId),
+    },
   })
 
 // Random online cameras for the left-rail CCTV preview list. Defaults to 3
@@ -46,7 +50,7 @@ export const getCrosswalkRandomCamerasAPI = (
   ApiService.fetchData<APIResponseCrosswalkRandomCameras>({
     url: `${crosswalkDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 3 },
+    params: { limit: params.limit ?? 3, ...centralScope(deptId) },
   })
 
 // Aggregated counters for the right-rail InfoCards — solution + warranty totals.
@@ -54,6 +58,7 @@ export const getCrosswalkTotalsAPI = (deptId: string | number) =>
   ApiService.fetchData<APIResponseCrosswalkTotals>({
     url: `${crosswalkDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 
 // ── Detail page ───────────────────────────────────────────────────────────────
@@ -138,5 +143,5 @@ export const getCrosswalkCentralListAPI = (
   ApiService.fetchData<APIResponseCrosswalkCentralList>({
     url: `${crosswalkDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params,
+    params: { ...params, ...centralScope(deptId) },
   })

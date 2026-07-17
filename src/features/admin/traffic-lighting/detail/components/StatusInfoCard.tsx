@@ -93,7 +93,7 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
 
   return (
     <div
-      className='w-full shrink-0 rounded-[20px] px-3 pb-3 pt-4 flex flex-col min-h-[96px]'
+      className='w-full h-full rounded-2xl px-3 pb-3 pt-4 flex flex-col min-h-[96px]'
       style={{
         background: background ?? '#66AEFF1A',
         border: noBorder ? 'none' : `2px solid ${borderColor}`,

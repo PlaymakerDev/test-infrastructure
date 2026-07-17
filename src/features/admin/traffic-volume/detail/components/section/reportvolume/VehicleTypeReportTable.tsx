@@ -23,19 +23,30 @@ const VEHICLE_LOOKUP: Record<string, { label: string; color: string }> =
     VEHICLE_TYPES.map((v) => [v.key, { label: v.label, color: v.color }])
   )
 
-/** Tier the share-pill colour by traffic dominance. Thresholds picked off
- *  the design: < 20% green (low), < 50% orange (moderate), ≥ 50% red
- *  (dominant). */
+/** Tier the share-pill colour by traffic dominance. Thresholds per design:
+ *  0–30% green (low), 31–50% orange (moderate), 51%+ red (dominant). */
 const sharePillStyle = (
   percent: number
-): { color: string; background: string } => {
-  if (percent >= 50) {
-    return { color: '#FF6B7A', background: 'rgba(255, 68, 68, 0.18)' }
+): { color: string; background: string; border: string } => {
+  if (percent > 50) {
+    return {
+      color: '#FF6B7A',
+      background: 'rgba(255, 68, 68, 0.18)',
+      border: '1px solid #FF6B7A',
+    }
   }
-  if (percent >= 20) {
-    return { color: '#FF9500', background: 'rgba(255, 149, 0, 0.18)' }
+  if (percent > 30) {
+    return {
+      color: '#FF9500',
+      background: 'rgba(255, 149, 0, 0.18)',
+      border: '1px solid #FF9500',
+    }
   }
-  return { color: '#00FF55', background: 'rgba(0, 255, 85, 0.16)' }
+  return {
+    color: '#00FF55',
+    background: 'rgba(0, 255, 85, 0.16)',
+    border: '1px solid #00FF55',
+  }
 }
 
 const VehicleTypeReportTable: React.FC<Props> = ({ rows }) => {

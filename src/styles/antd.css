@@ -401,6 +401,66 @@ body .bridge-projects-table .ant-table-tbody > tr:hover .detail-link {
   text-decoration: underline;
 }
 
+/* ── ชื่อโครงการ column — allow up to 2 lines instead of 1-line ellipsis.
+ * Column definitions across the overall list tables set `ellipsis: true`, which
+ * makes AntD paint `white-space:nowrap;text-overflow:ellipsis;overflow:hidden`
+ * on the td. Opt out per-column by adding `className: 'col-project-name'` to
+ * the column definition — the td keeps `display: table-cell` (touching it
+ * would break table layout), but the inner `.detail-link` span becomes a
+ * `-webkit-box` clamped to 2 lines, so long project names wrap once then
+ * gracefully ellipsis on the second line.
+ *
+ * Scoped under `.bridge-projects-table` because that's the shared wrapper on
+ * every list table in Traffic Volume / CCTV / Incident Detection / Traffic
+ * Signal / Crosswalk / VMS / Tunnel — a plain `.col-project-name` selector
+ * would leak into any other table that happened to reuse the name. */
+body .bridge-projects-table td.ant-table-cell.col-project-name {
+  white-space: normal !important;
+  vertical-align: middle;
+}
+
+/* ── รหัสสายทาง column — extra left padding so the road code doesn't sit
+ * flush against the table's left edge. Applied to BOTH `th` and `td` because
+ * `column.className` on an Antd Table column is forwarded to both the header
+ * and every data cell in that column, so header + values stay aligned.
+ *
+ * Why the specificity + `!important` fight:
+ *   Antd v6 uses CSS-in-JS to inject `.ant-table-wrapper.css-<hash> .ant-table
+ *   .ant-table-cell { padding-inline: 16px; ... }` at runtime. That's
+ *   specificity 0-3-1, which beats a plain `.bridge-projects-table td.col-road-code`
+ *   (0-2-2). We combine `.ant-table-cell` into our own selector so the compound
+ *   `.ant-table-cell.col-road-code` matches at the same specificity, and add
+ *   `!important` as belt-and-braces to survive whichever runtime order the
+ *   two rules end up in.
+ *
+ * Antd 6 sets `padding-inline` (logical) not `padding-left` (physical) —
+ * `padding-inline-start` and `padding-left` are separate cascade properties,
+ * so we set BOTH here to win regardless of which one antd used.
+ *
+ * Side effect: bureau header rows (`row.kind === 'bureau'`) carry an inline
+ * `style={{ padding: '10px 16px' }}` — normally inline styles win over CSS,
+ * but our `!important` overrides inline non-important. Result: bureau rows
+ * also indent to 28px, which visually aligns their label with the road codes
+ * below (a nice unintended consequence — not a bug). */
+body .bridge-projects-table td.ant-table-cell.col-road-code,
+body .bridge-projects-table th.ant-table-cell.col-road-code {
+  padding-inline-start: 28px !important;
+  padding-left: 28px !important;
+}
+
+body .bridge-projects-table td.ant-table-cell.col-project-name > span,
+body .bridge-projects-table td.ant-table-cell.col-project-name .detail-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.4;
+}
+
 /* ── Vehicle breakdown table — traffic-volume detail page.
  * Composes on top of `.bridge-projects-table`. The card on the right of the
  * pie chart needs the 9-row table to fill its container so it visually
@@ -409,4 +469,42 @@ body .vehicle-breakdown-table .ant-table-thead > tr > th,
 body .vehicle-breakdown-table .ant-table-tbody > tr > td {
   padding-top: 18px !important;
   padding-bottom: 18px !important;
+}
+
+/* ── RangePicker — dark-theme range/hover cells.
+ * AntD's default range-in / range-hover states paint a near-white background
+ * across every cell between start and end, which obliterates the day number
+ * on a dark theme (issue reported 2026-07-07). Repaint both states as a
+ * translucent yellow bar so the highlight is still visible but the digits stay
+ * readable. Applies to every RangePicker across the app. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+  background: rgba(252, 209, 22, 0.18) !important;
+}
+
+/* Preview bar shown while hovering to pick the end date — same tint as
+ * `in-range`, but the endpoints get a stronger tint so the drag anchor is
+ * still visually distinct. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start::before,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end::before {
+  background: rgba(252, 209, 22, 0.28) !important;
+}
+
+/* Day-number text — keep it white/yellow on both selected + in-range cells so
+ * it never fades to gray on the tinted bar. */
+body .ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-hover-end .ant-picker-cell-inner {
+  color: #ffffff !important;
+}
+
+/* Start + end date pills — solid yellow with dark text (matches other primary
+ * elements). Reserved for the actual selected endpoints, not the preview. */
+body .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+body .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background: #FCD116 !important;
+  color: #0A0A0A !important;
 }

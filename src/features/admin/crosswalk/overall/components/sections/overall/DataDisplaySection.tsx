@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchBar, {
@@ -92,19 +93,14 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  // Backend defaults are page=1, limit=100; pin them here so the URL is stable
-  // for the cache key (mirrors traffic-volume).
-  const { data, isLoading } = useCrosswalkCentralList(deptId, {
-    page: 1,
-    limit: 100,
-  })
+  const { data, isLoading } = useCrosswalkCentralList(deptId)
 
   const goToDetail = useCallback(
     (p: CrosswalkProject) => {
       const params = new URLSearchParams({ dept_id: deptId })
       if (p.projectId) params.set('project_id', p.projectId)
       if (p.roadId) params.set('road_id', p.roadId)
-      router.push(`/admin/crosswalk/detail/${p.id}?${params}`)
+      router.push(`/admin/crosswalk/detail/${p.id}?${params}${scopeQuerySuffix()}`)
     },
     [router, deptId],
   )

@@ -1,11 +1,13 @@
 import { APIRequestVMSList, APIRequestVMSRandomOnline, APIResponseVMSList, APIResponseVMSOverview, APIResponseVMSRandomOnline, APIResponseVMSTotal } from "@/types/vms/overview-api"
 import ApiService from "../ApiService"
+import { centralScope } from "./scopeParam"
 import { APIResponseVMSDetail } from "@/types/vms/detail-api"
 
 export const getVMSOverviewAPI = async (deptId: string | number) => {
   return ApiService.fetchData<APIResponseVMSOverview>({
     url: `/vms/departments/${deptId}/overview`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 
@@ -13,7 +15,7 @@ export const getVMSOverviewRandomOnlineAPI = async (deptId: string | number, par
   return ApiService.fetchData<APIResponseVMSRandomOnline[]>({
     url: `/vms/departments/${deptId}/overview/random-online`,
     method: 'GET',
-    params: { ...params }
+    params: { ...params, ...centralScope(deptId) }
   })
 }
 
@@ -21,6 +23,7 @@ export const getVMSOverviewTotalAPI = async (deptId: string | number) => {
   return ApiService.fetchData<APIResponseVMSTotal>({
     url: `/vms/departments/${deptId}/overview/central/totals`,
     method: 'GET',
+    params: centralScope(deptId),
   })
 }
 
@@ -28,7 +31,7 @@ export const getVMSOverviewListAPI = async (deptId: string | number, params: API
   return ApiService.fetchData<APIResponseVMSList>({
     url: `/vms/departments/${deptId}/overview/central/list`,
     method: 'GET',
-    params: { ...params }
+    params: { ...params, ...centralScope(deptId) }
   })
 }
 

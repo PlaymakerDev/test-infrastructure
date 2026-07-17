@@ -1,6 +1,8 @@
 "use client"
 import React from 'react'
 import { CCTVSection, InfoCardSection, MapSection } from '../../../components'
+import MapFocusGrid from '@/components/section/MapFocusGrid'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   deptId?: string | string[] | number
@@ -9,17 +11,23 @@ interface Props {
 const LocationSection: React.FC<Props> = (props) => {
   const { deptId } = props
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
-      <div className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
+    <MapFocusGrid>
+      <MapOverlayPanel
+        position='left'
+        className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:h-full flex flex-col gap-4'
+      >
         <CCTVSection deptId={deptId!} />
-      </div>
+      </MapOverlayPanel>
       <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
         <MapSection deptId={deptId!} />
       </div>
-      <div className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'>
-        <InfoCardSection deptId={deptId!} />
-      </div>
-    </div>
+      <MapOverlayPanel
+        position='right'
+        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
+      >
+        <InfoCardSection />
+      </MapOverlayPanel>
+    </MapFocusGrid>
   )
 }
 

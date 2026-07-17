@@ -1,7 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import {
-  TbLayoutDashboard,
+  TbHome,
   TbVideo,
   TbTruckDelivery,
   TbTrafficLights,
@@ -18,17 +18,18 @@ import {
   TbShieldHalf,
   TbCarCrash,
   TbChevronRight,
-  TbBrandGithubCopilot,
 } from "react-icons/tb";
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
+import IconLPR from '@/components/icon/IconLPR'
+import IconAIChat from '@/components/icon/IconAIChat'
 import menu from '@/configs/menu'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 // import { useAppSelector } from '@/stores/hooks';
 import { APIResponseSidebar } from '@/types/layout/api';
 
 const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  "Dashboard": TbLayoutDashboard,
+  "Dashboard": TbHome,
   "CCTV": TbVideo,
   "Traffic Volume": TbTruckDelivery,
   "Incident Detection": TbCarCrash,
@@ -39,10 +40,13 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "Bridge Lighting": TbBuildingBridge,
   "Tunnel": TbBuildingBridge2,
   "Tracking": TbTopologyStar3,
+  // Same custom scan-frame glyph as the navbar's LPR menu (IconLPR).
+  "LPR": IconLPR,
   "Control VMS": TbAdjustmentsHorizontal,
   "Statistic": TbBriefcase,
   "Maintenance": TbShieldHalf,
-  "Smart Search": TbBrandGithubCopilot,
+  // AI-chat glyph (Hugeicons ai-chat-01) — same as the navbar shortcut.
+  "Smart Search": IconAIChat,
 }
 
 const collapseVariants = {
@@ -72,6 +76,10 @@ const SidebarContent: React.FC<Props> = (props) => {
   const [openDepts, setOpenDepts] = useState<Set<string>>(new Set())
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  // The dept_id currently in the URL — used to scope the active highlight to
+  // the ONE sub-department that was actually clicked (see isActive below).
+  const activeDeptId = searchParams.get('dept_id')
   // const { sidebar } = useAppSelector(state => state.layout)
 
   const pathMap = useMemo<Record<string, RouteEntry>>(() => {
@@ -170,9 +178,15 @@ const SidebarContent: React.FC<Props> = (props) => {
                                 {dept.solutions.map((solution) => {
                                   const IconComp = SOLUTION_ICON_MAP[solution.solution_type_name]
                                   const route = pathMap[solution.solution_type_name]
-                                  const isActive = route
+                                  // Active only when the path matches AND the URL's dept_id matches
+                                  // THIS sub-department. Without the dept_id check, the same solution
+                                  // (e.g. CCTV) lights up under every bureau/แขวง group at once, since
+                                  // they all resolve to the same path — matching the id clicked in the
+                                  // onClick below (`?dept_id=${dept.department_id}`) scopes it correctly.
+                                  const pathActive = route
                                     ? pathname === route.path || pathname === route.path_active || route.path_list.includes(pathname)
                                     : false
+                                  const isActive = pathActive && activeDeptId === String(dept.department_id)
                                   return (
                                     <motion.div
                                       key={solution.solution_type_id}
@@ -188,9 +202,11 @@ const SidebarContent: React.FC<Props> = (props) => {
                                           {solution.solution_type_name}
                                         </span>
                                       </div>
-                                      <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
-                                        {solution.roads_count} สายทาง
-                                      </span>
+                                      {solution.roads_count > 0 && (
+                                        <span className={`fs-11 py-0.5 px-2 border rounded-3xl whitespace-nowrap ${isActive ? 'border-(--light-black) bg-(--light-black) text-white/50' : 'border-(--default-blue) text-(--default-blue)'}`}>
+                                          {solution.roads_count} สายทาง
+                                        </span>
+                                      )}
                                     </motion.div>
                                   )
                                 })}

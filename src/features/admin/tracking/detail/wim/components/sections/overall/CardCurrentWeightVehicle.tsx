@@ -1,69 +1,160 @@
-import React from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import { Image } from 'antd'
+import { Empty, Image } from 'antd'
+import { AnimatePresence, motion } from 'motion/react'
+import type { Transition } from 'motion/react'
+import { WeightStationLogByIDData, WeightWIMLogByIDData } from '@/types/tracking/detail-api'
+import { VEHICLE_PROPERTIES } from '@/constants'
 
-interface Props { }
+interface Props {
+  // STATION data has no `speed` reading (it's a static weighbridge, not a
+  // speed-sensing WIM sensor) — narrow with `'speed' in data` at the call site.
+  data?: WeightWIMLogByIDData | WeightStationLogByIDData
+}
+
+const PHOTO_TRANSITION: Transition = { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
+const LAYOUT_TRANSITION: Transition = { type: 'spring', stiffness: 350, damping: 30 }
 
 const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
+  const [showVehiclePhotos, setShowVehiclePhotos] = useState(false)
+
+  const renderLicensePlate = useCallback((plateNo: string, plateProvince: string) => {
+    const nameArr = [plateNo, plateProvince]
+    return nameArr.join(' ')
+  }, [])
+
+
+  const renderContent = useMemo(() => {
+    if (!data) return (
+      <div className='m-40'>
+        <Empty description='ไม่พบข้อมูล' />
+      </div>
+    )
+    return (
+      <>
+        <section>
+          <h1 className="text-red-500">{renderLicensePlate(data?.lp_head_no || '-', data?.lp_head_province?.name || '-')}</h1>
+          <p>รถน้ำหนักเกิน</p>
+          <p className="text-red-500">{dayjs(data?.time_stamp).format('DD MMMM BBBB HH:mm:ss')}</p>
+        </section>
+        <section className='mt-5 flex flex-col gap-4 md:flex-row md:flex-wrap'>
+          <AnimatePresence initial={false}>
+            {showVehiclePhotos && (
+              <>
+                <motion.figure
+                  key='photo-1'
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={PHOTO_TRANSITION}
+                  className='h-52 overflow-hidden rounded-lg md:flex-1 md:min-w-40'
+                >
+                  <Image
+                    src={data?.image_01_name}
+                    alt={data?.image_01_name}
+                    width={'100%'}
+                    height={'100%'}
+                    className='object-center object-cover'
+                  />
+                </motion.figure>
+                <motion.figure
+                  key='photo-2'
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={PHOTO_TRANSITION}
+                  className='h-52 overflow-hidden rounded-lg md:flex-1 md:min-w-40'
+                >
+                  <Image
+                    src={data?.image_02_name}
+                    alt={data?.image_02_name}
+                    width={'100%'}
+                    height={'100%'}
+                    className='object-center object-cover'
+                  />
+                </motion.figure>
+              </>
+            )}
+          </AnimatePresence>
+          <motion.figure
+            layout
+            transition={LAYOUT_TRANSITION}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className='h-52 overflow-hidden rounded-lg cursor-pointer md:flex-1 md:min-w-40 md:-mr-40'
+            onClick={() => setShowVehiclePhotos((prev) => !prev)}
+          >
+            <Image
+              src={VEHICLE_PROPERTIES[String(data?.vehicle_class_id) as keyof typeof VEHICLE_PROPERTIES]?.vehicle?.image}
+              alt='vehicle-appearance'
+              width={'100%'}
+              height={'100%'}
+              className='object-left object-contain'
+              preview={false}
+            />
+          </motion.figure>
+        </section>
+        <section className='mt-5'>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${showVehiclePhotos ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+            {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
+            <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-r lg:border-b-0'>
+              <section className='text-center'>
+                <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>{data?.vehicle_class_id || '-'}</h1>
+                <p className='text-xs text-gray-400'>{data?.vehicle_class?.vehicle_class_desc || '-'}</p>
+              </section>
+            </figure>
+
+            {/* f2 — xs: border-b | sm: border-b (rightmost, no border-r) | lg: border-b-0 + border-r */}
+            <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b lg:border-b-0 lg:border-r'>
+              <section className='text-center'>
+                <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>{data?.legal_weight || '-'}</h1>
+                <p className='text-xs text-gray-400'>น้ำหนักมาตราฐาน</p>
+                <p className='text-xs text-gray-400'>(ตัน)</p>
+              </section>
+            </figure>
+
+            {/* f3 — xs: border-b | sm: border-b-0 + border-r | lg: border-r */}
+            <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-b-0 sm:border-r'>
+              <section className='text-center'>
+                <h1 className='text-xs font-semibold text-white sm:text-sm'>{data?.gross_weight || '-'}</h1>
+                <p className='text-xs text-gray-400'>น้ำหนักที่ชั่ง</p>
+                <p className='text-xs text-gray-400'>(ตัน)</p>
+              </section>
+            </figure>
+
+            {/* f4 — xs: border-b | sm: border-b-0, no border-r (rightmost at sm) | lg: border-r only while f5 is shown (otherwise f4 is the last column) */}
+            <figure className={`flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-b-0 ${showVehiclePhotos ? 'lg:border-r' : ''}`}>
+              <section className='text-center'>
+                <h1 className={`text-xs font-semibold text-red-500 sm:text-sm`}>{data?.gross_weight_over || '-'}</h1>
+                <p className='text-xs text-gray-400'>น้ำหนักเกิน</p>
+                <p className='text-xs text-gray-400'>(ตัน)</p>
+              </section>
+            </figure>
+
+            {/* f5 — only rendered once showVehiclePhotos is true; last item, no border needed at any breakpoint.
+              sm:col-span-2 avoids it becoming an orphan alone in col1 (5 items in a 2-col grid) with an
+              awkward empty gap beside it; lg:col-span-1 resets that since it's a legitimate 5th column there. */}
+            {showVehiclePhotos && (
+              <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 sm:col-span-2 lg:col-span-1'>
+                <section className='text-center'>
+                  <h1 className={`text-xs font-semibold text-(--yellow) sm:text-sm`}>{(data && 'speed' in data && data.speed) || '-'}</h1>
+                  <p className='text-xs text-gray-400'>ความเร็ว</p>
+                  <p className='text-xs text-gray-400'>(กม./ชม.)</p>
+                </section>
+              </figure>
+            )}
+          </div>
+        </section>
+      </>
+    )
+  }, [data, renderLicensePlate, showVehiclePhotos])
 
   return (
-    <div className="border-2 rounded-lg p-5 border-red-500">
-      <section>
-        <h1 className="text-red-500">841233 เชียงใหม่</h1>
-        <p>รถน้ำหนักเกิน</p>
-        <p className="text-red-500">{dayjs().format('DD/MM/YYYY HH:mm:ss')}</p>
-      </section>
-      <section className='mt-5'>
-        <figure className='h-52 overflow-hidden rounded-lg'>
-          <Image
-            src='https://i.pinimg.com/736x/78/0d/41/780d410dcb9da0f84c05aa5cb80daec3.jpg'
-            alt='example-image'
-            width={'100%'}
-            height={'100%'}
-            className='object-center object-cover'
-          />
-        </figure>
-      </section>
-      <section className='mt-5'>
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
-          {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
-          <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-r lg:border-b-0'>
-            <section className='text-center'>
-              <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>10</h1>
-              <p className='text-xs text-gray-400'>ประเภท</p>
-              <p className='text-xs text-gray-400'>กึ่งพ่วง 5 เพลา 18 เส้น</p>
-            </section>
-          </figure>
-
-          {/* f2 — xs: border-b | sm: border-b (rightmost, no border-r) | lg: border-b-0 + border-r */}
-          <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b lg:border-b-0 lg:border-r'>
-            <section className='text-center'>
-              <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>10</h1>
-              <p className='text-xs text-gray-400'>น้ำหนักมาตราฐาน</p>
-              <p className='text-xs text-gray-400'>(ตัน)</p>
-            </section>
-          </figure>
-
-          {/* f3 — xs: border-b | sm: border-b-0 + border-r | lg: border-r */}
-          <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-b-0 sm:border-r'>
-            <section className='text-center'>
-              <h1 className='text-xs font-semibold text-white sm:text-sm'>10</h1>
-              <p className='text-xs text-gray-400'>น้ำหนักที่ชั่ง</p>
-              <p className='text-xs text-gray-400'>(ตัน)</p>
-            </section>
-          </figure>
-
-          {/* f4 — last item, no border needed at any breakpoint */}
-          <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6'>
-            <section className='text-center'>
-              <h1 className={`text-xs font-semibold text-red-500 sm:text-sm`}>10</h1>
-              <p className='text-xs text-gray-400'>น้ำหนักเกิน</p>
-              <p className='text-xs text-gray-400'>(ตัน)</p>
-            </section>
-          </figure>
-        </div>
-      </section>
+    <div className="border-2 rounded-lg p-5 border-red-500 overflow-hidden">
+      {renderContent}
     </div>
   )
 }

@@ -44,8 +44,8 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
       width: 180,
       render: (_, r) => (
         <div>
-          <p className='mb-0'>{fmtThaiDate(r.date_time)}</p>
-          <p className='mb-0 text-white/60'>{fmtTime(r.date_time)}</p>
+          <p className='fs-12 mb-0'>{fmtThaiDate(r.date_time)}</p>
+          <p className='fs-12 mb-0 text-white/60'>{fmtTime(r.date_time)}</p>
         </div>
       ),
     },
@@ -64,13 +64,13 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
       title: 'ชื่อกล้อง',
       key: 'camera',
       width: 420,
-      render: (_, r) => <span className='text-white'>{r.camera.camera_name}</span>,
+      render: (_, r) => <span className='fs-12 text-white'>{r.camera.camera_name}</span>,
     },
     {
       title: 'IP Address',
       key: 'ip',
       width: 160,
-      render: (_, r) => <span className='text-white/70'>{r.camera.ip_address}</span>,
+      render: (_, r) => <span className='fs-12 text-white/70'>{r.camera.ip_address}</span>,
     },
     {
       title: 'ภาพขณะเกิดเหตุ',
@@ -103,6 +103,7 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
         showSizeChanger: true,
         pageSizeOptions: [10, 20, 50, 100],
         showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+        locale: { items_per_page: '/ หน้า' },
         onChange: onPageChange,
       }}
     />

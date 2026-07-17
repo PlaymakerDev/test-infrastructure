@@ -14,7 +14,7 @@ export type ViewMode = 'TABLE' | 'GRID'
  */
 export type FilterType = 'all' | 'normal' | 'overweight' | 'example_active' | 'example_inactive'
 
-export type FilterStats = Record<string, number | undefined>
+export type FilterStats = Record<string, number | string | undefined>
 
 export interface FilterConfig {
   key: string
@@ -156,7 +156,7 @@ const SearchBar: React.FC<Props> = ({
                   size='large'
                   onClick={() => handleFilter(f.key)}
                 >
-                  <span className='flex items-center gap-2'>
+                  <span className='flex items-center gap-2 fs-12'>
                     <span>{f.label}</span>
                     {count !== undefined && (
                       <span className={[
@@ -179,18 +179,16 @@ const SearchBar: React.FC<Props> = ({
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
         {mode === 'form' && formSearch}
 
-        {showViewToggle && (
-          <Segmented
-            value={viewMode}
-            onChange={handleViewMode}
-            options={[
-              { value: 'TABLE', icon: <BarsOutlined /> },
-              { value: 'GRID', icon: <AppstoreOutlined /> },
-            ]}
-            size='large'
-            block
-          />
-        )}
+        <Segmented
+          value={viewMode}
+          onChange={handleViewMode}
+          options={[
+            { value: 'TABLE', icon: <AppstoreOutlined /> },
+            { value: 'GRID', icon: <BarsOutlined /> },
+          ]}
+          size='large'
+          block
+        />
         {mode !== 'default' && showExportButton && (
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
             <Button
@@ -199,9 +197,9 @@ const SearchBar: React.FC<Props> = ({
               shape='round'
               icon={<TbPrinter />}
               onClick={onExport}
-              className='w-full! sm:w-auto! sm:min-w-[180px]!'
+              className='w-full! sm:w-auto! sm:min-w-45!'
             >
-              <span>นำออกเอกสาร</span>
+              <p className='fs-12'>นำออกเอกสาร</p>
             </Button>
           </ConfigProvider>
         )}

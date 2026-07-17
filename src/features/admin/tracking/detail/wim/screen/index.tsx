@@ -1,18 +1,18 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {
   TitleSection,
   OverallSection,
   VehicleSection
 } from '../components'
-import { WIMProvider } from '../context';
+import { useSearchParams } from 'next/navigation';
+import { WIMProvider, useWIMContext } from '../context'
 
 interface Props {
   id: string[] | string | number | undefined;
 }
 
-const WIMDetailScreen: React.FC<Props> = (props) => {
-  const { } = props
-  const [currentTab, setCurrentTab] = useState('OVERALL')
+const WIMDetailContent: React.FC = () => {
+  const { currentTab } = useWIMContext()
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
@@ -28,13 +28,23 @@ const WIMDetailScreen: React.FC<Props> = (props) => {
   }, [currentTab])
 
   return (
-    <WIMProvider>
-      <div className='main-screen'>
-        <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10'>
-          {renderContent}
-        </section>
-      </div>
+    <div className='main-screen'>
+      <TitleSection />
+      <section className='mt-8 px-8'>
+        {renderContent}
+      </section>
+    </div>
+  )
+}
+
+const WIMDetailScreen: React.FC<Props> = (props) => {
+  const { id } = props
+  const searchParams = useSearchParams()
+  const stationType = searchParams.get('station_type')
+
+  return (
+    <WIMProvider id={id} stationType={stationType}>
+      <WIMDetailContent />
     </WIMProvider>
   )
 }

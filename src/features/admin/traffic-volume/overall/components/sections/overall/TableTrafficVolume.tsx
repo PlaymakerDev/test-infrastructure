@@ -1,9 +1,9 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useCallback, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { useQueries } from '@tanstack/react-query'
 import {
   TbShieldCheckFilled,
   TbWifi,
@@ -12,8 +12,6 @@ import {
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/traffic-volume/components/LicenseModal'
-import { getTrafficVolumeLicenseAPI } from '@/services/routes/TrafficVolumeService'
-import { trafficVolumeKeys } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import {
   groupByBureau,
@@ -51,35 +49,13 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   // central Project Info modal without re-fetching.
   const goToDetail = useCallback((project: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/traffic-volume/detail/${project.id}?${params}`)
+    router.push(`/admin/traffic-volume/detail/${project.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
   // Open the License modal — fetches the solution's camera license keys on
   // demand from /counting/license/{solution_id} (mirrors incident-detection).
   const openLicense = useCallback((project: TrafficVolumeProject) => {
     setLicenseSolution({ id: project.id, name: project.installPoint, roadId: project.roadId ?? '' })
   }, [])
-
-  // Fetch each solution's license list so the column icon reflects ACTUAL
-  // license presence (not warranty). Counts are small (≤~50 solutions/dept)
-  // and cached forever. Icon is YELLOW by default; turns GRAY only once a
-  // query resolves with an empty license list.
-  const solutionIds = useMemo(() => projects.map((p) => p.id), [projects])
-  const licenseQueries = useQueries({
-    queries: solutionIds.map((id) => ({
-      queryKey: trafficVolumeKeys.license(id),
-      queryFn: () => getTrafficVolumeLicenseAPI(id).then((r) => r.data),
-      enabled: !!id,
-      staleTime: Infinity,
-    })),
-  })
-  const hasLicenseById = useMemo(() => {
-    const m = new Map<string, boolean>()
-    solutionIds.forEach((id, i) => {
-      const d = licenseQueries[i]?.data
-      if (d) m.set(id, (d.license?.length ?? 0) > 0)
-    })
-    return m
-  }, [solutionIds, licenseQueries])
 
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
@@ -90,6 +66,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
+        className: 'col-road-code',
         width: 140,
         onCell: (row) => {
           if (row.kind === 'bureau') {
@@ -124,6 +101,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
       {
         title: 'ชื่อโครงการ',
         key: 'projectName',
+        className: 'col-project-name',
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
@@ -208,10 +186,11 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         key: 'license',
         width: 90,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        // Mirrors `is_warranty` visually — yellow when active, gray when not.
+        // Always yellow — the has-license coloring pre-fetched /counting/license
+        // for EVERY row (a 400+ request flood at scope=all, removed 2026-07-15).
+        // License data loads on demand when the modal opens.
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          const active = hasLicenseById.get(row.project.id) !== false
           return (
             <button
               type='button'
@@ -222,7 +201,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
               <TbShieldCheckFilled
                 size={20}
                 className='inline-block'
-                style={{ color: active ? '#FCD116' : '#979797' }}
+                style={{ color: '#FCD116' }}
               />
             </button>
           )
@@ -257,7 +236,7 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
-  }, [goToDetail, openLicense, hasLicenseById])
+  }, [goToDetail, openLicense])
 
   return (
     <>

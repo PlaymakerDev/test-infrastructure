@@ -27,10 +27,6 @@ const OPTIONS = [
     label: 'ติดตาม GPS',
     value: 'TRACK_GPS'
   },
-  {
-    label: 'ค้นหาป้ายทะเบียน',
-    value: 'LICENSE'
-  },
 ]
 
 const TitleSection: React.FC<Props> = (props) => {

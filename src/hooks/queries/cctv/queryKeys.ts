@@ -15,20 +15,21 @@ import type {
   APIRequestCCTVCameraDropdowns,
   APIRequestCCTVUptime,
 } from '@/types/cctv/camera-api'
+import { scopeKey } from '@/services/routes/scopeParam'
 
 export const cctvKeys = {
   all: ['cctv'] as const,
 
   // ── Overview (solution-level) ──────────────────────────────────────────────
   overview: {
+    // `scopeKey()` keys the cache apart per URL scope (`?scope=all` vs plain)
+    // — same dept can return very different data since BE shipped scope=all.
     root: (deptId: string | number) =>
-      [...cctvKeys.all, 'overview', deptId] as const,
+      [...cctvKeys.all, 'overview', deptId, scopeKey()] as const,
     map: (deptId: string | number) =>
       [...cctvKeys.overview.root(deptId), 'map'] as const,
     list: (deptId: string | number, params: APIRequestCCTVOverviewList) =>
       [...cctvKeys.overview.root(deptId), 'list', params] as const,
-    totals: (deptId: string | number) =>
-      [...cctvKeys.overview.root(deptId), 'totals'] as const,
     dropdowns: (
       deptId: string | number,
       params: APIRequestCCTVOverviewDropdowns
@@ -42,7 +43,7 @@ export const cctvKeys = {
   // ── Camera-level ───────────────────────────────────────────────────────────
   cameras: {
     root: (deptId: string | number) =>
-      [...cctvKeys.all, 'cameras', deptId] as const,
+      [...cctvKeys.all, 'cameras', deptId, scopeKey()] as const,
     map: (deptId: string | number, params: APIRequestCCTVCameras) =>
       [...cctvKeys.cameras.root(deptId), 'map', params] as const,
     list: (deptId: string | number, params: APIRequestCCTVCameraList) =>

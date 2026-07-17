@@ -10,6 +10,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useCctvCameraCentralList, useCctvOverviewCentralList } from '@/hooks/queries/cctv'
 import { extractCameraFunctions } from '@/features/admin/cctv/components/cameraFunctions'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   deptId?: string | null
@@ -159,8 +160,11 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           />
         </div>
 
-        {/* Right overlay — search + info cards */}
-        <aside
+        {/* Right overlay — search + info cards. Wrapped in MapOverlayPanel so
+          * the navbar's "เน้นแผนที่" toggle slides it off-screen and leaves
+          * the map alone (same behaviour as every other map page). */}
+        <MapOverlayPanel
+          position='right'
           className='absolute z-10 top-5 right-5 flex flex-col gap-3 pointer-events-auto'
           style={{ width: 320 }}
         >
@@ -226,13 +230,13 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
               <Pill count={meta?.out_warranty_count ?? 0} label='หมดค้ำ' color='#979797' />
             </div>
           </InfoCard>
-        </aside>
+        </MapOverlayPanel>
       </section>
 
-      {/* ── Camera detail table ── */}
-      <section className='mt-8'>
+      {/* ── Camera detail table — hidden in map-focus mode too ── */}
+      <MapOverlayPanel position='bottom' className='mt-8'>
         <CameraDetailTableCctv groups={groups} />
-      </section>
+      </MapOverlayPanel>
     </>
   )
 }

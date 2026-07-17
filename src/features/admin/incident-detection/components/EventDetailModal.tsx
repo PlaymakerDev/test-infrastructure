@@ -16,6 +16,7 @@ import {
 } from 'react-icons/tb'
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { WhiteTeardropPin } from '@/components/map/markers/OverlapMarkers'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
 import {
@@ -60,25 +61,8 @@ const InfoCell: React.FC<{ icon: React.ReactNode; label: string; children: React
 }) => (
   <div className='flex flex-col items-center text-center gap-1.5'>
     <span className='fs-22 text-white'>{icon}</span>
-    <span className='fs-11 text-gray-400'>{label}</span>
+    <span className='fs-12 text-gray-400'>{label}</span>
     <div className='fs-13 text-white'>{children}</div>
-  </div>
-)
-
-/** Yellow disc marker — same style as the detail-page map cameras. */
-const CameraMarker: React.FC = () => (
-  <div
-    className='flex items-center justify-center cursor-pointer'
-    style={{
-      width: 32,
-      height: 32,
-      borderRadius: '50%',
-      background: '#FCD116',
-      boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-      border: '2px solid #fff',
-    }}
-  >
-    <TbMapPin size={18} color='#212121' />
   </div>
 )
 
@@ -138,6 +122,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
         onCancel={onClose}
         footer={null}
         destroyOnHidden
+        centered
         width={1100}
         classNames={{ container: 'border-2! border-(--default-blue)!' }}
       >
@@ -188,7 +173,9 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
           * Left: 7 center-aligned cells in a 3-col grid (last row partial).
           * Right: map with clickable marker + Google Map button + install card. */}
         <h4 className='mb-4' style={{ color: '#66AEFF' }}>ข้อมูลเหตุการณ์</h4>
-        <div className='grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-5'>
+        {/* 6/6 split so the map (right half) lines up with the right event
+          * image above (also 50%). */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-5'>
           <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-6'>
             <InfoCell icon={<TbMapPin />} label='จุดติดตั้ง'>
               {installPoint}
@@ -258,7 +245,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                   )}
                   popupOptions={{ offset: 18, closeButton: true, maxWidth: '230px' }}
                 >
-                  <CameraMarker />
+                  <WhiteTeardropPin />
                 </HTMLMarker>
               </BaseMap>
             ) : (
@@ -299,7 +286,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                 )}
               </p>
               {coord && (
-                <p className='fs-11 text-gray-400 mb-0 mt-1 flex items-center gap-1'>
+                <p className='fs-12 text-gray-400 mb-0 mt-1 flex items-center gap-1'>
                   <TbWorld size={12} /> {coord[1].toFixed(4)}° N, {coord[0].toFixed(4)}° E
                 </p>
               )}

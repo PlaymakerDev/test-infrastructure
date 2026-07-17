@@ -1,14 +1,17 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useEffect, useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import { useMap } from '@/components/map/hooks/useMap'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useCrosswalkOverview } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRouter } from 'next/navigation'
 import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
-interface Props {}
+interface Props { }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -17,10 +20,18 @@ type CrosswalkFeatureCollection = GeoJSON.FeatureCollection<
   Record<string, unknown>
 >
 
+/** A usable [lng, lat] — drops null / malformed / [0,0]. One bad point makes
+ *  Mapbox reject the WHOLE GeoJSON source → no markers at all (seen live on
+ *  traffic-volume + vms with scope=all responses carrying null coords). */
+const isValidCoord = (g: unknown): g is [number, number] =>
+  Array.isArray(g) && g.length === 2 &&
+  typeof g[0] === 'number' && typeof g[1] === 'number' &&
+  !(g[0] === 0 && g[1] === 0)
+
 /** Convert raw API locations → GeoJSON FeatureCollection for MarkerLayer. */
 const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection => ({
   type: 'FeatureCollection',
-  features: locations.map((loc) => ({
+  features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => ({
     type: 'Feature',
     properties: {
       id: loc.solution.id,
@@ -40,31 +51,36 @@ const toGeoJSON = (locations: CrosswalkLocation[]): CrosswalkFeatureCollection =
 /** Popup card shown on marker click — mirrors traffic-volume's popup style. */
 const CrosswalkPopup: React.FC<{
   feature: GeoJSON.Feature
-  isActive: boolean
-}> = ({ feature, isActive }) => {
+  deptId: string
+  onNavigate: (url: string) => void
+}> = ({ feature, deptId, onNavigate }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isActive ? 'border-cyan-400' : 'border-gray-500'
-      }`}
+      className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
+      style={{ borderColor: '#7C8CFF' }}
     >
       <p
-        className={`fs-11 font-bold tracking-wide ${
-          isActive ? 'text-cyan-400' : 'text-gray-400'
-        }`}
+        className='fs-12 font-bold tracking-wide'
+        style={{ color: '#7C8CFF' }}
       >
         Crosswalk · {String(p.code_name)}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-11 text-white mt-1.5'>
+      <p className='fs-12 text-white mt-1.5'>
         ทางข้าม: {Number(p.crosswalk_total ?? 0).toLocaleString()} จุด
       </p>
-      <p className='fs-11 text-white'>
+      <p className='fs-12 text-white'>
         กล้องทั้งหมด: {Number(p.camera_total ?? 0).toLocaleString()} กล้อง
       </p>
+      {p.id != null && (
+        <PopupDetailLink
+          url={`/admin/crosswalk/detail/${String(p.id)}?dept_id=${deptId}${scopeQuerySuffix()}`}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }
@@ -83,6 +99,8 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   isReady,
 }) => {
   const { map, isLoaded } = useMap()
+  const router = useRouter()
+  const deptId = useDeptId()
 
   // Fit the map to all markers so the user sees the whole fleet at once.
   // Single-marker case can't form bounds → fall back to `flyTo` at a
@@ -142,14 +160,9 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
       id='crosswalk'
       data={allData}
       cluster
-      size={14}
+      size={18}
       popup={(f) => (
-        <CrosswalkPopup
-          feature={f}
-          isActive={Boolean(
-            (f.properties as Record<string, unknown>)?.is_active
-          )}
-        />
+        <CrosswalkPopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
       )}
       popupOptions={{ offset: 10, closeButton: false }}
     />

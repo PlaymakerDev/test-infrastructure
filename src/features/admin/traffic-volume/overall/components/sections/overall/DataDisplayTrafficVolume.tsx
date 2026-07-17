@@ -1,4 +1,5 @@
 "use client"
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import React, { useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchBar, {
@@ -88,7 +89,7 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
 
   const goToDetail = useCallback((p: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
-    router.push(`/admin/traffic-volume/detail/${p.id}?${params}`)
+    router.push(`/admin/traffic-volume/detail/${p.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
   // Backend defaults are page=1, limit=100; pin them here so the URL is stable

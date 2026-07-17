@@ -1,12 +1,16 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { Avatar } from 'antd'
-import { UserOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 interface Props {
 
 }
+
+// basePath ('/atlas' in prod, '' in dev) — public assets are NOT prefixed
+// automatically like next/link, so prepend it manually (same as the login page).
+const BASE_PATH = process.env.__NEXT_ROUTER_BASEPATH ?? ''
+const LOGO_SRC = `${BASE_PATH}/images/login/drr-logo.png`
 
 const SidebarHeader: React.FC<Props> = (props) => {
   const { } = props
@@ -23,8 +27,9 @@ const SidebarHeader: React.FC<Props> = (props) => {
     <header className='flex flex-col flex-wrap items-center justify-center gap-3'>
       <Avatar
         size={64}
-        icon={<UserOutlined style={{ color: "white" }} />}
-        src="https://preview.redd.it/zzz-icon-gallery-feel-free-to-share-with-fellow-proxies-i-v0-rsjtaijyhyie1.png?width=200&format=png&auto=webp&s=1ddcc843ebd5bcc9b9151933d4529c29b4b4dc1e"
+        src={LOGO_SRC}
+        alt='กรมทางหลวงชนบท'
+        style={{ backgroundColor: 'transparent' }}
       />
       <section className='text-center'>
         <p className='fs-14'>{currentTime}</p>

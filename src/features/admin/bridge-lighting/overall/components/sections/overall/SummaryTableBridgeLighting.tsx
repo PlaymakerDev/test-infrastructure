@@ -1,114 +1,65 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
-import { TbInfoSquareRoundedFilled } from 'react-icons/tb'
+import { TbInfoSquareRoundedFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
+import DetailLinkText from '@/components/table/DetailLinkText'
+import {
+  groupByBureau,
+  type BureauGroupedRow,
+} from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import ModalInfoBridgeLighting from '@/features/admin/bridge-lighting/overall/components/ModalInfoBridgeLighting'
 import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 interface Props {
   /** Filtered + searched projects */
   projects: BridgeProject[]
+  loading?: boolean
 }
 
-/**
- * Count badge — colored chip that highlights when value > 0.
- * Used in the "summary" view to call out online/offline totals.
- */
-const CountBadge: React.FC<{ value: number; color: string; highlight?: boolean }> = ({
-  value,
-  color,
-  highlight,
-}) => {
-  if (value === 0) {
-    return <span style={{ color }}>{value}</span>
-  }
-  if (highlight) {
-    return (
-      <span
-        className='inline-flex items-center justify-center min-w-8 px-2 py-0.5 rounded'
-        style={{ background: color, color: '#212121', fontWeight: 600 }}
-      >
-        {value}
-      </span>
-    )
-  }
-  return <span style={{ color, fontWeight: 600 }}>{value}</span>
-}
+/** Outlined pill — reused across การค้ำประกัน / สถานะ / Stream cells. Same
+ *  look as the crosswalk / traffic-signal / vms overall-list tables. */
+const Pill: React.FC<{
+  text: string
+  color: string
+  icon?: React.ReactNode
+}> = ({ text, color, icon }) => (
+  <span
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    style={{ border: `1px solid ${color}`, color }}
+  >
+    {icon}
+    {text}
+  </span>
+)
 
-const WarrantyPill: React.FC<{ warranty: BridgeProject['warranty'] }> = ({ warranty }) => {
-  const config =
-    warranty === 'in-warranty'
-      ? { text: 'ในค้ำ', color: '#05F2DB' }
-      : { text: 'หมดค้ำ', color: '#979797' }
-  return (
-    <span
-      className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
-      style={{ border: `1px solid ${config.color}`, color: config.color }}
-    >
-      {config.text}
-    </span>
-  )
-}
+type Row = BureauGroupedRow<BridgeProject>
 
-/** Single-table row — bureau divider or real project row.
- *  `roadCodeSpan` controls vertical cell merging in the `รหัสสายทาง` column
- *  (first row of a same-roadCode run = full span, others = 0 to hide). */
-type Row =
-  | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | { kind: 'project'; id: string; project: BridgeProject; roadCodeSpan: number }
+const TOTAL_COLS = 7
 
-const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
+const SummaryTableBridgeLighting: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
   const [infoBridge, setInfoBridge] = useState<BridgeProject | null>(null)
-  const data = useMemo<Row[]>(() => {
-    const groups = new Map<string, BridgeProject[]>()
-    for (const p of projects) {
-      const list = groups.get(p.bureau) ?? []
-      list.push(p)
-      groups.set(p.bureau, list)
-    }
-    const out: Row[] = []
-    for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
 
-      // Within each bureau, merge consecutive rows that share the same
-      // roadCode by assigning rowSpan to the first row and 0 to the rest.
-      let i = 0
-      while (i < items.length) {
-        const code = items[i].roadCode
-        let span = 1
-        while (i + span < items.length && items[i + span].roadCode === code) {
-          span++
-        }
-        out.push({
-          kind: 'project',
-          id: items[i].id,
-          project: items[i],
-          roadCodeSpan: span,
-        })
-        for (let j = 1; j < span; j++) {
-          out.push({
-            kind: 'project',
-            id: items[i + j].id,
-            project: items[i + j],
-            roadCodeSpan: 0,
-          })
-        }
-        i += span
-      }
-    }
-    return out
-  }, [projects])
+  const goToDetail = useCallback(
+    (project: BridgeProject) => {
+      router.push(`/admin/bridge-lighting/detail/${project.id}`)
+    },
+    [router],
+  )
 
-  const TOTAL_COLS = 8
+  // Interleave bureau dividers + project rows into ONE continuous table
+  // (single yellow header) with road-code rowspans — via the shared helper
+  // used by every overall list table, so the grouping algorithm lives once.
+  const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
-  const columns: ColumnsType<Row> = useMemo(() => {
-    return [
+  const columns: ColumnsType<Row> = useMemo(
+    () => [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
+        className: 'col-road-code',
         width: 180,
         onCell: (row) => {
           if (row.kind === 'bureau') {
@@ -126,26 +77,45 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
                   className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                  style={{
-                    border: '1px solid var(--yellow)',
-                    color: 'var(--yellow)',
-                  }}
+                  style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ
                 </span>
               </div>
             )
           }
-          return row.project.roadCode
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.roadCode}
+            </DetailLinkText>
+          )
         },
       },
       {
         title: 'ชื่อโครงการ',
         key: 'projectName',
+        className: 'col-project-name',
         ellipsis: true,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? row.project.projectName : null,
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.projectName ?? '-'}
+            </DetailLinkText>
+          ) : null,
+      },
+
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 280,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.installPoint}
+            </DetailLinkText>
+          ) : null,
       },
       {
         title: 'เลขที่สัญญา',
@@ -154,6 +124,11 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
+          // Bridge-lighting keeps its own mock-backed project-info modal
+          // (ModalInfoBridgeLighting) instead of the shared `ContractInfoCell`
+          // — the mock has no project_id / road_id for the Redux modal to
+          // resolve. Visual (contract number + inline info icon) matches
+          // every other overall-list cell 1:1.
           return (
             <span className='inline-flex items-center gap-1.5'>
               {row.project.contractNo}
@@ -172,84 +147,51 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
         key: 'warranty',
         width: 140,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? <WarrantyPill warranty={row.project.warranty} /> : null,
+        render: (_: unknown, row: Row) => {
+          if (row.kind !== 'project') return null
+          return row.project.warranty === 'in-warranty' ? (
+            <Pill text='ในค้ำ' color='#05F2DB' />
+          ) : (
+            <Pill text='หมดค้ำ' color='#979797' />
+          )
+        },
       },
       {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 280,
+        title: 'สถานะ',
+        key: 'connection',
+        width: 140,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
+          return row.project.connection === 'online' ? (
+            <Pill text='ออนไลน์' color='#66AEFF' icon={<TbWifi size={14} />} />
+          ) : (
+            <Pill text='ออฟไลน์' color='#E94C4C' icon={<TbWifiOff size={14} />} />
+          )
+        },
+      },
+      {
+        title: 'Stream',
+        key: 'stream',
+        width: 130,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.kind !== 'project') return null
+          const isConnect = row.project.stream
+          const color = isConnect ? '#66AEFF' : '#E94C4C'
           return (
             <span
-              className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
-              onClick={() =>
-                router.push(`/admin/bridge-lighting/detail/${row.project.id}`)
-              }
-              role='link'
-              tabIndex={0}
+              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+              style={{ border: `1px solid ${color}`, color }}
             >
-              {row.project.installPoint}
+              {isConnect ? 'Connect' : 'Disconnect'}
             </span>
           )
         },
       },
-      {
-        title: 'ดวงไฟทั้งหมด',
-        key: 'totalDevices',
-        align: 'center',
-        width: 130,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? (
-            <span className='text-white font-semibold'>{row.project.totalDevices}</span>
-          ) : null,
-      },
-      {
-        title: 'ออนไลน์',
-        key: 'onlineCount',
-        align: 'center',
-        width: 110,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          // Highlight (badge) only when one side is `0`; when both online
-          // and offline have data, render both as plain colored text so
-          // the badge calls out the "lopsided" rows specifically.
-          const bothActive =
-            row.project.onlineCount > 0 && row.project.offlineCount > 0
-          return (
-            <CountBadge
-              value={row.project.onlineCount}
-              color='#66AEFF'
-              highlight={!bothActive}
-            />
-          )
-        },
-      },
-      {
-        title: 'ออฟไลน์',
-        key: 'offlineCount',
-        align: 'center',
-        width: 110,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          const bothActive =
-            row.project.onlineCount > 0 && row.project.offlineCount > 0
-          return (
-            <CountBadge
-              value={row.project.offlineCount}
-              color='#E94C4C'
-              highlight={!bothActive}
-            />
-          )
-        },
-      },
-    ]
-  }, [router])
+    ],
+    [goToDetail],
+  )
 
   return (
     <>
@@ -259,11 +201,10 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ projects }) => {
         dataSource={data}
         pagination={false}
         size='middle'
-        // Keep horizontal scroll inside the table on narrow viewports.
-        // Using a specific min-width (instead of `max-content`) lets the
-        // table fit the container on wide screens — `max-content` would
-        // force the table to expand to its full natural width and overflow.
-        scroll={{ x: 1300 }}
+        loading={loading}
+        scroll={{ x: 1400 }}
+        // Shared table skin — yellow row dividers + dark pagination styling
+        // defined in `src/styles/antd.css` under `.bridge-projects-table`.
         className='bridge-projects-table'
       />
       <ModalInfoBridgeLighting bridge={infoBridge} onClose={() => setInfoBridge(null)} />

@@ -1,13 +1,12 @@
 import React from 'react'
-import { MobileLocationSection, TableMobile } from '../components'
-import ChartMobileUnitPlan from './sections/mobile/ChartMobileUnitPlan'
-import { getTrackingMobileMasterAPI } from '@/services/routes/TrackingService'
+import { MobileLocationSection, TableMobile, MobileUnitPlanSection } from '../components'
+import { getTrackingMobileMasterAPI, getTrackingViewSumPlanChartAPI } from '@/services/routes/TrackingService'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useOverallContext } from '../context'
 
 const MobileSection = () => {
-  const { searchMobileMaster } = useOverallContext()
+  const { searchMobileMaster, searchSumPlan } = useOverallContext()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['tracking_mobile_master', searchMobileMaster?.search],
@@ -19,7 +18,17 @@ const MobileSection = () => {
       ordering: 'asc',
       search: searchMobileMaster?.search || ''
     }),
-    placeholderData: keepPreviousData,
+    // placeholderData: keepPreviousData,
+  })
+
+  const {
+    data: sumPlanData,
+    isLoading: isSumPlanLoading,
+    isError: isSumPlanError
+  } = useQuery({
+    queryKey: ['sum_plan', searchSumPlan],
+    queryFn: () => getTrackingViewSumPlanChartAPI({ ...searchSumPlan }),
+    // placeholderData: keepPreviousData
   })
 
   return (
@@ -30,10 +39,17 @@ const MobileSection = () => {
           meta={data?.data.meta}
           isLoading={isLoading}
           isError={isError}
+          sumPlanData={sumPlanData?.data}
+          isSumPlanLoading={isSumPlanLoading}
+          isSumPlanError={isSumPlanError}
         />
       </section>
       <section className='mt-5'>
-        <ChartMobileUnitPlan />
+        <MobileUnitPlanSection
+          data={sumPlanData?.data}
+          isLoading={isSumPlanLoading}
+          isError={isSumPlanError}
+        />
       </section>
       <section className='mt-5'>
         <TableMobile

@@ -6,6 +6,7 @@ import EventStatsSection from './sections/overall/EventStatsSection'
 import EventDonutSection from './sections/overall/EventDonutSection'
 import EventTrendSection from './sections/overall/EventTrendSection'
 import DataDisplaySection from './sections/overall/DataDisplaySection'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
 interface Props {
   /** Jumps to the EVENTS tab — wired to "ดูเพิ่มเติม" in the event list. */
@@ -41,22 +42,25 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
         {/* xl+ overlays. Widths scale with viewport (xl: compact / 2xl: full
           * Figma size) so the map keeps a usable area in the middle. */}
         {/* Left rail — event list */}
-        <aside
+        <MapOverlayPanel
+          position='left'
           className='hidden xl:flex flex-col absolute z-10 top-4 left-10 pointer-events-none xl:w-80 2xl:w-104'
           style={{ bottom: 16 }}
         >
           <div className='pointer-events-auto h-full min-h-0'>
             <EventListSection onShowAll={onShowAllEvents} />
           </div>
-        </aside>
+        </MapOverlayPanel>
 
         {/* Right rail — stat cards on top, donut + line chart below */}
-        <aside
+        <MapOverlayPanel
+          position='right'
           className='hidden xl:flex flex-col absolute z-10 top-4 right-10 gap-3 pointer-events-none xl:w-90 2xl:w-115'
           style={{ bottom: 16 }}
         >
-          {/* Stat cards — narrower, pinned to the right edge of the rail */}
-          <div className='pointer-events-auto self-end xl:w-55 2xl:w-66.5'>
+          {/* Stat cards — pinned to the right edge of the rail; w-70 (280px)
+            * matches the crosswalk-detail info-card rail width. */}
+          <div className='pointer-events-auto self-end xl:w-70'>
             <EventStatsSection />
           </div>
           {/* Donut + line chart — full right-rail width. `shrink-0` wrappers keep
@@ -67,7 +71,7 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
             <div className='shrink-0'><EventDonutSection /></div>
             <div className='shrink-0'><EventTrendSection /></div>
           </div>
-        </aside>
+        </MapOverlayPanel>
       </section>
 
       {/* Bottom — camera grid */}

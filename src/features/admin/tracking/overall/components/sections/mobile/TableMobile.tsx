@@ -1,11 +1,10 @@
 "use client"
 import React from 'react'
-import { Table, Empty } from 'antd'
+import { Table, Empty, ConfigProvider, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { MobileMasterData } from '@/types/tracking/overall-api'
 import { fmtNumber } from '@/utils/formatNumber'
-import { MOBILE_STATUS } from '@/constants'
 import { WIMMetaData } from '@/types/shared'
 
 interface Props {
@@ -13,6 +12,19 @@ interface Props {
   meta?: WIMMetaData
   isLoading?: boolean
   isError?: boolean
+}
+
+
+type StatusType = 'เปิดด่าน' | 'ปิดด่าน'
+
+const STATUS_COLOR: Record<StatusType, string> = {
+  "เปิดด่าน": "#66AEFF",
+  "ปิดด่าน": "#E94C4C"
+}
+
+const STATUS_CLASS: Record<StatusType, string> = {
+  'เปิดด่าน': 'border-(--default-blue) text-(--default-blue)',
+  'ปิดด่าน': 'border-red-500 text-red-500',
 }
 
 interface WIMProjectRecord {
@@ -246,13 +258,30 @@ const TableMobileData: React.FC<Props> = (props) => {
       align: 'center',
       width: 120,
       fixed: 'right',
-      render: (item) => {
+      render: (item, record) => {
+        let statusText = ''
+
+        if (item === 0) statusText = 'ปิดด่าน'
+        if (item === 1) statusText = 'เปิดด่าน'
+
+        const color = STATUS_COLOR[statusText as StatusType] || '#66AEFF'
         return (
-          <div className='flex justify-center items-center'>
-            <div className={`bg-[#66AEFF1A] border border-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) px-3 py-1 rounded-3xl w-full lg:w-28`}>
-              <p className={`fs-12 text-(${MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].color}) mb-0`}>{MOBILE_STATUS[item as keyof typeof MOBILE_STATUS].text}</p>
-            </div>
-          </div>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: color,
+                colorTextLightSolid: 'black'
+              }
+            }}
+          >
+            <Button
+              type="primary"
+              shape="round"
+              onClick={() => router.push(`/admin/tracking/detail/mobile/${record.TID}`)}
+            >
+              <p className='fs-12'>{statusText}</p>
+            </Button>
+          </ConfigProvider>
         )
       },
     },
@@ -264,19 +293,17 @@ const TableMobileData: React.FC<Props> = (props) => {
     <Table<MobileMasterData>
       columns={columns}
       dataSource={data}
+      className='bridge-projects-table'
       pagination={{
         locale: { items_per_page: "/ หน้า" },
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
       }}
       size="middle"
       rowKey="station_id"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
-      onRow={(record) => {
-        return {
-          onClick: () => router.push(`/admin/tracking/detail/mobile/${record.TID}`),
-          className: 'cursor-pointer',
-        }
-      }}
     />
   )
 }

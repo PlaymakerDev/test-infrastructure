@@ -17,6 +17,10 @@ export interface LineConfig {
   dashed?: boolean
   /** ซ่อนเส้นนี้จาก tooltip rows (เส้นยังคงวาดบนกราฟ) */
   hideInTooltip?: boolean
+  /** ใช้แกน Y ที่สอง (ขวา) แทนแกนหลัก (ซ้าย) — ใช้เมื่อสองเส้นมีหน่วย/สเกล
+   *  ต่างกันมาก (เช่น °C กับ μg/m³) การใช้แกนร่วมกันจะทำให้เส้นใดเส้นหนึ่ง
+   *  แบนราบจนอ่านไม่ออก (default `0` = แกนหลัก) */
+  yAxisIndex?: 0 | 1
 }
 
 /** Extra row shown in tooltip but NOT rendered as a visible line. Useful when
@@ -49,8 +53,10 @@ export interface LineChartStat {
 }
 
 export interface LineChartProps {
+  /** class ของ card ด้านนอก (แทนที่ default ทั้งหมดถ้าส่งมา) — default: 'relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden' */
+  className?: string
   /** ชื่อหัวข้อ */
-  title: string
+  title?: string
   /** ขนาด font ของ title (px) */
   titleSize?: number
   /** คำอธิบายใต้ title */
@@ -73,20 +79,34 @@ export interface LineChartProps {
   onPeriodChange?: (period: string) => void
   /** ความสูง chart (default 260) */
   height?: number
+  /** ให้พื้นที่กราฟยืดเต็ม card แทนความสูงคงที่ (card ต้องมี h-full/height กำหนดจากภายนอก) */
+  fillHeight?: boolean
   /** Extra padding (px) below the auto-contained x-axis labels. Default 28 —
    *  lower it (e.g. 8) to pull the plot down when the card has spare space. */
   gridBottom?: number
   /** Padding (px) above the plot. Default 16 — lower it to pull the plot up
    *  closer to the card title. */
   gridTop?: number
-  /** กำหนด ticks บน Y-axis */
+  /** กำหนด ticks บน Y-axis (แกนหลัก/ซ้าย) */
   yAxisTicks?: number[]
-  /** domain ของ Y-axis */
+  /** domain ของ Y-axis (แกนหลัก/ซ้าย) */
   yAxisDomain?: [number | 'auto', number | 'auto']
+  /** กำหนด ticks บน Y-axis ที่สอง (ขวา) — ใช้ร่วมกับ `LineConfig.yAxisIndex: 1` */
+  secondaryYAxisTicks?: number[]
+  /** domain ของ Y-axis ที่สอง (ขวา) — ใช้ร่วมกับ `LineConfig.yAxisIndex: 1` */
+  secondaryYAxisDomain?: [number | 'auto', number | 'auto']
   /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
   xAxisLabelRotate?: number
   /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
   xAxisLabelMaxWidth?: number
+  /** ระยะห่างของ label แกน X (จำนวน category ที่ข้าม).
+   *  - `undefined` (default) = auto — ECharts เลือกเองโดย `hideOverlap` + `showMaxLabel`
+   *    (label สุดท้ายถูกบังคับให้โชว์เสมอ อาจทำให้ระยะห่างไม่เท่ากัน)
+   *  - `0` = โชว์ทุก label
+   *  - `1` = โชว์ทุก label ที่ 2 (เช่น 00, 02, 04, …)
+   *  - `N` = โชว์ทุก label ที่ N+1
+   *  เมื่อกำหนดค่านี้ระบบจะปิด `showMaxLabel` อัตโนมัติเพื่อให้ระยะห่างเท่ากัน */
+  xAxisLabelInterval?: number
 
   // ── Theme overrides (optional — defaults preserve original look) ──────────
   /** สี title + icon accent (default `#FCD116`) */
@@ -133,10 +153,11 @@ interface TooltipParam {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const LineChart: React.FC<LineChartProps> = ({
+  className = 'relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden',
   title,
   titleSize = 16,
   subtitle,
-  subtitleSize = 12,
+  subtitleSize = "var(--fs-12)",
   icon,
   data,
   lines,
@@ -145,12 +166,16 @@ const LineChart: React.FC<LineChartProps> = ({
   defaultPeriod,
   onPeriodChange,
   height = 260,
+  fillHeight = false,
   gridBottom = 28,
   gridTop = 16,
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
+  secondaryYAxisTicks,
+  secondaryYAxisDomain = [0, 'auto'],
   xAxisLabelRotate = 0,
   xAxisLabelMaxWidth,
+  xAxisLabelInterval,
   // Theme overrides — defaults match the original look
   accentColor = '#FCD116',
   cardBackground = '#00000080',
@@ -178,6 +203,36 @@ const LineChart: React.FC<LineChartProps> = ({
     const yMax = yAxisTicks ? yAxisTicks[yAxisTicks.length - 1] : yAxisDomain[1] === 'auto' ? undefined : yAxisDomain[1]
     const yInterval = yAxisTicks && yAxisTicks.length >= 2 ? yAxisTicks[1] - yAxisTicks[0] : undefined
 
+    // A second (right-hand) axis is only built when a line actually opts in via
+    // `yAxisIndex: 1` — every other consumer keeps the original single-axis
+    // object shape untouched.
+    const hasSecondaryAxis = lines.some((line) => line.yAxisIndex === 1)
+    const secondaryYMin = secondaryYAxisTicks
+      ? secondaryYAxisTicks[0]
+      : secondaryYAxisDomain[0] === 'auto' ? undefined : secondaryYAxisDomain[0]
+    const secondaryYMax = secondaryYAxisTicks
+      ? secondaryYAxisTicks[secondaryYAxisTicks.length - 1]
+      : secondaryYAxisDomain[1] === 'auto' ? undefined : secondaryYAxisDomain[1]
+    const secondaryYInterval = secondaryYAxisTicks && secondaryYAxisTicks.length >= 2
+      ? secondaryYAxisTicks[1] - secondaryYAxisTicks[0]
+      : undefined
+
+    const primaryYAxis = {
+      type: 'value',
+      min: yMin,
+      max: yMax,
+      ...(yInterval ? { interval: yInterval } : {}),
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#ffffff',
+        fontSize: 11,
+        // Full integer with thousands separator — no `K` suffix.
+        formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+      },
+      splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
+    }
+
     return {
       backgroundColor: 'transparent',
       grid: { top: gridTop, right: 16, bottom: gridBottom, left: 8, containLabel: true },
@@ -192,8 +247,21 @@ const LineChart: React.FC<LineChartProps> = ({
           // Keep the line flush to both edges (boundaryGap:false) while stopping
           // the first/last category labels from overflowing past the card edge:
           // align the first label to the left and the last to the right.
-          alignMinLabel: 'left',
-          alignMaxLabel: 'right',
+          // BUT: alignMin/Max don't play nice with rotated labels — the rotation
+          // origin conflicts with the alignment and the first/last labels end
+          // up floating (e.g. "00.00" drifts up next to the y-axis). Only apply
+          // the alignment when labels are NOT rotated.
+          ...(xAxisLabelRotate
+            ? {}
+            : { alignMinLabel: 'left', alignMaxLabel: 'right' }),
+          // When `xAxisLabelInterval` is explicit → let it control spacing evenly
+          // (turn off showMaxLabel so the forced-last label doesn't break the
+          // uniform interval). Otherwise fall back to auto-thinning w/ hideOverlap.
+          showMinLabel: true,
+          showMaxLabel: xAxisLabelInterval === undefined,
+          ...(xAxisLabelInterval === undefined
+            ? { hideOverlap: true }
+            : { interval: xAxisLabelInterval }),
           ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
           ...(typeof xAxisLabelMaxWidth === 'number'
             ? { width: xAxisLabelMaxWidth, overflow: 'truncate' }
@@ -202,20 +270,28 @@ const LineChart: React.FC<LineChartProps> = ({
         splitLine: { show: false },
         boundaryGap: false,
       },
-      yAxis: {
-        type: 'value',
-        min: yMin,
-        max: yMax,
-        ...(yInterval ? { interval: yInterval } : {}),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          color: '#ffffff',
-          fontSize: 11,
-          formatter: (v: number) => v >= 1000 ? `${v / 1000}K` : String(v),
-        },
-        splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
-      },
+      yAxis: hasSecondaryAxis
+        ? [
+          { ...primaryYAxis, position: 'left' },
+          {
+            type: 'value',
+            min: secondaryYMin,
+            max: secondaryYMax,
+            ...(secondaryYInterval ? { interval: secondaryYInterval } : {}),
+            position: 'right',
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              color: '#ffffff',
+              fontSize: 11,
+              formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+            },
+            // Only the primary axis draws grid split-lines — a second set
+            // at a different scale would misalign and clutter the plot.
+            splitLine: { show: false },
+          },
+        ]
+        : primaryYAxis,
       tooltip: {
         trigger: 'axis',
         // Render tooltip in <body> so it escapes the card's `overflow: hidden`
@@ -249,7 +325,7 @@ const LineChart: React.FC<LineChartProps> = ({
                  <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''}${tooltipDateSuffix}</div>
                </div>`
             : // When labels are truncated, surface the full category in the tooltip.
-              typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
+            typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
               ? `<div style="color:#fff;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
               : ''
           const rows = params
@@ -299,6 +375,7 @@ const LineChart: React.FC<LineChartProps> = ({
       series: lines.map((line) => ({
         name: line.label,
         type: 'line',
+        yAxisIndex: line.yAxisIndex ?? 0,
         // Flat reference/dashed guidelines look wrong when smoothed — the
         // smoothing tries to curve a straight horizontal line into a spline
         // and the shadow bleeds between dashes. Keep smoothing for real
@@ -326,11 +403,11 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, gridBottom, gridTop])
 
   return (
     <div
-      className='relative rounded-2xl pt-5 px-5 pb-4 w-full h-full overflow-hidden'
+      className={`${className} ${fillHeight ? ' flex flex-col' : ''}`}
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (
@@ -366,12 +443,14 @@ const LineChart: React.FC<LineChartProps> = ({
             )
           )}
           <div>
-            <h2
-              className='font-semibold leading-tight'
-              style={{ color: accentColor, fontSize: titleSize }}
-            >
-              {title}
-            </h2>
+            {title && (
+              <h2
+                className='leading-tight'
+                style={{ color: accentColor, fontSize: titleSize, fontWeight: 400 }}
+              >
+                {title}
+              </h2>
+            )}
             {subtitle && (
               <p style={{ color: '#8a9ab5', fontSize: subtitleSize }}>{subtitle}</p>
             )}
@@ -382,7 +461,7 @@ const LineChart: React.FC<LineChartProps> = ({
         {periods && periods.length > 0 && (
           <div
             className='flex gap-1 rounded-full p-1 text-sm'
-            style={{ background: '#3a2e00' }}
+            style={{ background: '#A2A2A233' }}
           >
             {periods.map((p) => (
               <button
@@ -423,10 +502,10 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className='relative'>
+      <div className={`relative${fillHeight ? ' flex-1 min-h-0' : ''}`}>
         <ReactECharts
           option={option}
-          style={{ height }}
+          style={{ height: fillHeight ? '100%' : height }}
           notMerge
           opts={{ renderer: 'svg' }}
         />

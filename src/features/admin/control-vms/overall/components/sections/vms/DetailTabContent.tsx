@@ -6,7 +6,15 @@ import { ContentSetting } from '../../../components'
 import { useVMSSettingTypes } from '../../../hooks/useVMSSettingTypes'
 import { useControlVMSContext } from '../../../context'
 
-const DetailTabContent: React.FC = () => {
+interface Props {
+  /** When provided, forwarded to every tab's ContentSetting (picker mode) —
+   *  also hides "จัดการประเภท" since managing types isn't relevant while picking. */
+  onSelect?: (url: string) => void
+  /** Forwarded to every tab's ContentSetting — see its own doc comment. */
+  inModal?: boolean
+}
+
+const DetailTabContent: React.FC<Props> = ({ onSelect, inModal }) => {
   const { data, isLoading, isError } = useVMSSettingTypes()
   const { setOpenUpdateType } = useControlVMSContext()
 
@@ -15,15 +23,15 @@ const DetailTabContent: React.FC = () => {
       {
         key: 'all',
         label: 'ทั้งหมด',
-        children: <ContentSetting settingTypeId={undefined} />,
+        children: <ContentSetting settingTypeId={undefined} onSelect={onSelect} inModal={inModal} />,
       },
       ...(data?.data ?? []).map((item) => ({
         key: String(item.id),
         label: item.name,
-        children: <ContentSetting settingTypeId={item.id} />,
+        children: <ContentSetting settingTypeId={item.id} onSelect={onSelect} inModal={inModal} />,
       }))
     ]
-  }, [data?.data])
+  }, [data?.data, onSelect, inModal])
 
   if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
   if (isError) return <Empty description="ไม่พบข้อมูล" />
@@ -34,7 +42,8 @@ const DetailTabContent: React.FC = () => {
       items={items}
       indicator={{ align: 'center' }}
       destroyOnHidden
-      tabBarExtraContent={{
+      className='[&_.ant-tabs-nav::before]:hidden! [&_.ant-tabs-nav-list]:relative! [&_.ant-tabs-nav-list::after]:content-[""]! [&_.ant-tabs-nav-list::after]:absolute! [&_.ant-tabs-nav-list::after]:inset-x-0! [&_.ant-tabs-nav-list::after]:bottom-0! [&_.ant-tabs-nav-list::after]:border-b! [&_.ant-tabs-nav-list::after]:border-(--light-gray-3)!'
+      tabBarExtraContent={onSelect ? undefined : {
         right: <Button htmlType='button' type='primary' onClick={() => setOpenUpdateType({ open: true })}>จัดการประเภท</Button>
       }}
     />

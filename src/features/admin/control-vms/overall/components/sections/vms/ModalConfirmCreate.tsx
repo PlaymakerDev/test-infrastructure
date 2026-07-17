@@ -11,7 +11,7 @@ interface Props {
 const ModalConfirmCreate: React.FC<Props> = (props) => {
   const { } = props
   const { openConfirmCreate, setOpenConfirmCreate } = useControlVMSContext()
-  const { open, ids, body } = openConfirmCreate
+  const { open, ids, body, id } = openConfirmCreate
 
   const { data, isLoading, isError } = useVMSSettingByVMSID(ids, open)
 
@@ -19,8 +19,8 @@ const ModalConfirmCreate: React.FC<Props> = (props) => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูล" />
 
-    return <ContentConfirmCreate data={data?.data} body={body ?? undefined} />
-  }, [isLoading, isError, data, body])
+    return <ContentConfirmCreate data={data?.data} body={body ?? undefined} id={id ?? undefined} />
+  }, [isLoading, isError, data, body, id])
 
   return (
     <ConfigProvider

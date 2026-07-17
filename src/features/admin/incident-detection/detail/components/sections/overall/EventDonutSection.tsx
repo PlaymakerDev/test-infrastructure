@@ -64,10 +64,10 @@ const EventDonutSection: React.FC<Props> = ({ solutionId: solutionIdProp, height
       cardBorderColor='#1f2d3d'
       showGlow={false}
       data={chartData}
-      centerLabel='เหตุการณ์ทั้งหมด'
+      centerLabel='ทั้งหมด'
       centerUnit='เหตุการณ์'
-      donutSize={donutSize}
-      height={height}
+      donutSize={130}
+      height={150}
       // Thicker ring — grow the OUTER radius (like the hover expand) while
       // keeping the inner hole roughly the same so the center text still fits.
       radius={['70%', '98%']}

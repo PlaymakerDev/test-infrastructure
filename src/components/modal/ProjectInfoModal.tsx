@@ -20,7 +20,7 @@ const WARRANTY_STATE: Record<
   string,
   { badge: string; remainingClass: string }
 > = {
-  ในค้ำ: { badge: '#05F2DB', remainingClass: 'text-sky-400' },
+  ในค้ำ: { badge: '#05F2DB', remainingClass: 'text-[#66AEFF]' },
   หมดค้ำ: { badge: '#979797', remainingClass: 'text-red-400' },
   ก่อนค้ำ: { badge: '#FCD116', remainingClass: 'text-white' },
 }
@@ -123,14 +123,77 @@ const Content = (props: ContentProps) => {
         </div>
       )}
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4'>
-        {cells.map((cell) => (
-          <div key={cell.key} className='flex flex-col items-center text-center'>
-            {cell.icon}
-            <p className='fs-11 text-gray-400 mb-0.5'>{cell.label}</p>
-            <div className='fs-12 text-white mb-0'>{cell.value}</div>
-          </div>
-        ))}
+      <div className='grid grid-cols-1 sm:grid-cols-3 gap-y-6 gap-x-4 mb-6 justify-items-center'>
+        <div className='flex flex-col items-center text-center'>
+          <TbFileDescription className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
+          <p className='fs-12 text-white mb-0'>{data?.contract_no || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbUserShield className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>หน่วยงานรับผิดชอบ</p>
+          {/* div, not p — Skeleton renders an <h3> internally and <h3> can
+            * not be a descendant of <p> (causes a hydration error). */}
+          <div className='fs-12 text-white mb-0'>{renderDepartmentName}</div>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbUser className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
+          <p className='fs-12 text-white mb-0'>{data?.department_name || '-'}</p>
+        </div>
+      </div>
+
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4'>
+        <div className='flex flex-col items-center text-center'>
+          <TbCalendarEvent className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
+          <p className='fs-12 text-white mb-0'>{data?.warranty_start_date || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbCalendarEvent className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
+          <p className='fs-12 text-white mb-0'>{data?.warranty_end_date || '-'}</p>
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          {(() => {
+            // Per-status content for the remaining/elapsed time cell.
+            // Backend's `warranty_date` semantics:
+            //   ในค้ำ   → positive (days remaining)
+            //   หมดค้ำ  → negative (days elapsed since expiry — `Math.abs`)
+            //   ก่อนค้ำ → render "-" (warranty hasn't started; value n/a)
+            const status = data?.warranty_status
+            const days = data?.warranty_date
+            let label = 'ระยะเวลาที่เหลือ'
+            let value: string = '-'
+            if (status === 'หมดค้ำ') {
+              label = 'หมดค้ำประกัน'
+              value = days != null ? `${Math.abs(days)} วัน` : '-'
+            } else if (status === 'ก่อนค้ำ') {
+              label = 'อยู่ระหว่างการส่งมอบงาน'
+              value = '-'
+            } else {
+              // Default: in-warranty / unknown — show BE's remaining days.
+              value = `${days ?? 0} วัน`
+            }
+            return (
+              <>
+                <TbHourglass className={`fs-22 mb-2 ${warrantyUi.remainingClass}`} />
+                <p className='fs-12 text-gray-400 mb-0.5'>{label}</p>
+                <p className={`fs-12 mb-0 ${warrantyUi.remainingClass}`}>{value}</p>
+              </>
+            )
+          })()}
+        </div>
+
+        <div className='flex flex-col items-center text-center'>
+          <TbCalendarEvent className='fs-22 text-white mb-2' />
+          <p className='fs-12 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
+          <p className='fs-12 text-white mb-0'>{data?.company_name || '-'}</p>
+        </div>
       </div>
     </>
   )

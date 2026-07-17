@@ -10,6 +10,7 @@ export { default as MobileDetailMap } from './sections/overall/MobileDetailMap'
 export { default as MobileStatCard } from './sections/overall/MobileStatCard'
 export { default as OverallDataDisplaySection } from './sections/overall/OverallDataDisplaySection'
 export { default as TableMobileDailyWeight } from './sections/overall/TableMobileDailyWeight'
+export { default as FormSearchDailyWeight } from './sections/overall/FormSearchDailyWeight'
 
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'

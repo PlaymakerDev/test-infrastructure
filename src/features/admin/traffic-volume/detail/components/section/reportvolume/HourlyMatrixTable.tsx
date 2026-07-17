@@ -45,16 +45,16 @@ const bandColor = (v: number): { bg: string; fg: string } => {
 type Row =
   | { kind: 'camera'; key: string; cameraName: string }
   | {
-      kind: 'count' | 'pcu' | 'summary'
-      key: string
-      label: string
-      unit: 'คัน' | 'PCU'
-      /** Per-hour values, keyed by "00".."23". */
-      hourly: Record<string, number>
-      total: number
-      /** Summary rows render values in yellow bold with no color banding. */
-      isSummary?: boolean
-    }
+    kind: 'count' | 'pcu' | 'summary'
+    key: string
+    label: string
+    unit: 'คัน' | 'PCU'
+    /** Per-hour values, keyed by "00".."23". */
+    hourly: Record<string, number>
+    total: number
+    /** Summary rows render values in yellow bold with no color banding. */
+    isSummary?: boolean
+  }
 
 /** Format one value cell — colored by band unless it's part of a summary row
  *  (summary uses yellow bold to match the other report tables). */
@@ -274,7 +274,7 @@ const HourlyMatrixTable: React.FC<Props> = ({ rows }) => {
             <div className='flex flex-col leading-tight'>
               <span style={{ color: '#ffffff' }}>{dateLine}</span>
               <span
-                className='fs-11'
+                className='fs-12'
                 style={{ color: 'rgba(255,255,255,0.55)' }}
               >
                 {dayLine} ({row.unit})
@@ -330,7 +330,7 @@ const HourlyMatrixTable: React.FC<Props> = ({ rows }) => {
         dataSource={data}
         pagination={false}
         size='small'
-        scroll={{ x: 1900 }}
+        scroll={{ x: 'max-content' }}
         className='bridge-projects-table hide-scrollbar'
       />
     </section>

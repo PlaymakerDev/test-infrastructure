@@ -1,38 +1,44 @@
 import React, { useMemo, useState } from 'react'
 import {
   TableMobileDailyWeight,
-  MobileDailyWeightList
+  MobileDailyWeightList,
+  FormSearchDailyWeight
 } from '@/features/admin/tracking/detail/mobile/components'
-import SearchBar from '@/components/searchable/SearchBar'
+import { getTrackingMobileCarAPI, getTrackingMobileCarByTDIDAPI } from '@/services/routes/TrackingDetailService';
+import { useQuery } from '@tanstack/react-query';
+
 
 interface Props {
-
+  id: string[] | string | number | undefined;
 }
 
 const OverallDataDisplaySection: React.FC<Props> = (props) => {
-  const { } = props
+  const { id } = props
   const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('TABLE')
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['weight_mobile_car', id],
+    queryFn: () => getTrackingMobileCarByTDIDAPI(String(id)),
+    enabled: !!id,
+  })
 
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableMobileDailyWeight />
+        return <TableMobileDailyWeight data={data?.data.data} isLoading={isLoading} isError={isError} />
       case 'GRID':
-        return <MobileDailyWeightList />
+        return <MobileDailyWeightList data={data?.data.data} isLoading={isLoading} isError={isError} />
       default:
         return null
     }
-  }, [displayType])
+  }, [displayType, data, isLoading, isError])
 
   return (
     <div>
       <section>
-        <h3 className='text-(--yellow)'>ตารางข้อมูลรถเข้าชั่งประจำวัน</h3>
-      </section>
-      <section className='mt-5'>
-        <SearchBar
-          defaultViewMode={displayType}
-          onViewModeChange={setDisplayType}
+        <FormSearchDailyWeight
+          displayType={displayType}
+          setDisplayType={setDisplayType}
         />
       </section>
       <section className='mt-5'>

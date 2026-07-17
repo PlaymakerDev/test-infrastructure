@@ -98,7 +98,7 @@ const MonthlyReportTable: React.FC<Props> = ({ rows }) => {
             <div className='flex flex-col leading-tight'>
               <span className='text-white'>{d.format('MMM BBBB')}</span>
               {row.daysCollected > 0 && (
-                <span className='fs-11 text-white/55'>
+                <span className='fs-12 text-white/55'>
                   เก็บข้อมูล {fmtNumber(row.daysCollected, 0)} วัน
                 </span>
               )}

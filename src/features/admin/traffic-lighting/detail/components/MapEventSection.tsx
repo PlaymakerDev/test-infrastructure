@@ -132,7 +132,7 @@ const MapEventSection: React.FC = () => {
     <div className='flex flex-col lg:flex-row lg:items-start w-full gap-3 mt-4 pb-5'>
       {/* Map */}
       <div
-        className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-[20px] overflow-hidden bg-[#212121]'
+        className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-2xl overflow-hidden bg-[#212121]'
       >
         <MapLightingDetail
           coord={project.coord}

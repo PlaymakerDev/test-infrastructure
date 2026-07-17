@@ -51,6 +51,7 @@ const TrafficCycleTrafficSignal: React.FC = () => {
       showGlow={false}
       cardBackground='#191919CC'
       data={data}
+      tooltipUnit='s'
       clockwise={false}
       donutSize={160}
       outerLabelRadius={100}

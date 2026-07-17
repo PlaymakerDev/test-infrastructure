@@ -28,6 +28,10 @@ const initialState: LayoutState = {
       status: "IDLE"
     }
   },
+  map_focus: {
+    active: false,
+    consumers: 0
+  },
 }
 
 export const SLICE_NAME = 'layoutSlice';
@@ -73,6 +77,21 @@ const layoutSlice = createSlice({
     },
     resetCCTVModalOpen: (state) => {
       state.cctv_modal = initialState.cctv_modal
+    },
+    setMapFocusMode: (state, action) => {
+      state.map_focus.active = action.payload.active
+    },
+    toggleMapFocusMode: (state) => {
+      state.map_focus.active = !state.map_focus.active
+    },
+    // Mount/unmount bookkeeping for focus-capable map layouts — see
+    // useRegisterMapFocusConsumer. Guarded so a stray double-unregister
+    // (e.g. StrictMode edge) can never push the count negative.
+    registerMapFocusConsumer: (state) => {
+      state.map_focus.consumers += 1
+    },
+    unregisterMapFocusConsumer: (state) => {
+      state.map_focus.consumers = Math.max(0, state.map_focus.consumers - 1)
     }
   },
   extraReducers: (builder) => {
@@ -102,7 +121,11 @@ export const {
   setCCTVModalOpen,
   resetCCTVModalOpen,
   setProjectInfoModalOpen,
-  resetProjectInfoModalOpen
+  resetProjectInfoModalOpen,
+  setMapFocusMode,
+  toggleMapFocusMode,
+  registerMapFocusConsumer,
+  unregisterMapFocusConsumer
 } = layoutSlice.actions
 
 export default layoutSlice.reducer

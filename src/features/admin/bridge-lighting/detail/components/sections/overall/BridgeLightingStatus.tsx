@@ -9,9 +9,9 @@ const BridgeLightingStatus: React.FC = () => {
   const [editMode, setEditMode] = useState(false)
 
   return (
-    <div className='flex-1 min-h-0 flex flex-col bg-(--dark-black)/80 backdrop-blur-xs rounded-lg p-5'>
+    <div className='flex-1 min-h-0 flex flex-col bg-(--dark-black)/80 backdrop-blur-xs rounded-[20px] p-5'>
       <section>
-        <div className='flex-1 min-h-0 flex flex-col bg-[#66AEFF1A] border-2 border-white rounded-lg p-5'>
+        <div className='flex-1 min-h-0 flex flex-col bg-[#66AEFF1A] border-2 border-white rounded-[20px] p-5'>
           <div className='flex items-start gap-2 mb-3'>
             <TbSparkles className='fs-22 shrink-0' />
             <h4 className='mb-0'>สถานะการทำงาน</h4>

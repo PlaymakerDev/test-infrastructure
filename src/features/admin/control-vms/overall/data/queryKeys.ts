@@ -6,6 +6,8 @@ export const controlVmsKeys = {
   media: () => [...controlVmsKeys.all, 'media'] as const,
   mediaList: (settingTypeId: number | undefined) =>
     [...controlVmsKeys.media(), settingTypeId ?? 'all'] as const,
+  mediaUrlList: (settingTypeId: number | undefined, page: number, limit: number) =>
+    [...controlVmsKeys.media(), 'urls', settingTypeId ?? 'all', page, limit] as const,
   mediaDetail: (id?: string | number) =>
     [...controlVmsKeys.media(), 'detail', String(id ?? '')] as const,
   contact: (id?: number | string) => [...controlVmsKeys.all, 'contact', String(id ?? '')] as const,

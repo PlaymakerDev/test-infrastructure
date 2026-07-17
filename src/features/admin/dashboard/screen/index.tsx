@@ -1,8 +1,12 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import ReactMap from '@/components/map/ReactMap'
 import { useAppDispatch } from '@/stores/hooks'
 import { getExampleData } from '@/stores/reducers/example/exampleSlice'
+import MapOverlayPanel from '@/components/section/MapOverlayPanel'
+import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
+import { DeptIdOverrideContext } from '@/hooks/useDeptId'
 import {
   AccidentChart,
   Notification,
@@ -31,49 +35,122 @@ const useIsDesktop = () => {
 const DashboardScreen: React.FC<Props> = () => {
   const dispatch = useAppDispatch()
   const isDesktop = useIsDesktop()
+  const searchParams = useSearchParams()
+
+  // Snapshot the URL's dept_id on first mount:
+  //   • `originalDeptId` never changes — the "← ทั่วประเทศ" reset button
+  //     reverts to it (drr-10 → 49 = สทช.10, drr-cmi → 50, super-admin → 0;
+  //     NOTE dept row id ≠ เลขสทช. — id 10 is ขทช.ชัยนาท, verified 2026-07-14).
+  //   • `currentDeptId` is the LIVE dept scope. Every card that reads
+  //     `useDeptId()` sees this value via `DeptIdOverrideContext` below,
+  //     and refetches when it changes. Updated in place by map clicks /
+  //     pans / marker interactions — NEVER by touching the URL, because
+  //     `router.replace()` remounts BaseMap and flickers the map.
+  const [originalDeptId] = useState<string>(
+    () => searchParams.get('dept_id') ?? '0'
+  )
+  const [currentDeptId, setCurrentDeptId] = useState<string>(
+    () => searchParams.get('dept_id') ?? '0'
+  )
+  // Whether this visit LANDED as the nationwide view. `dept_id=0&scope=all`
+  // (navbar/login) = ทั่วประเทศ; plain `dept_id=0` (sidebar ทช.ส่วนกลาง) is a
+  // normal single-department landing — it auto-flies to its own devices and
+  // must NOT get the country-view treatment below.
+  const [landedScopeAll] = useState<boolean>(
+    () => searchParams.get('scope') === 'all'
+  )
+
+  // ── Landing intro: ทั่วประเทศ (dept 0 + scope=all) opens MAP-ONLY ──────────
+  // At the country view the cards are broad aggregates; the first real action
+  // is finding a province on the map, so the map gets the whole screen. The
+  // FIRST drill-in (click a province / a marker, or pan-zoom into one) reveals
+  // the cards, and everything behaves exactly as before from then on — this is
+  // one-shot per visit: zooming back out does NOT re-hide.
+  // Every dept-specific landing (dept ≠ 0, or plain dept 0 = ทช.ส่วนกลาง)
+  // skips the intro entirely — those auto-fly into their own devices, so
+  // map-only would hide the data they came for.
+  const { isMapFocus, setMapFocus } = useMapFocusMode()
+  const introRef = useRef(originalDeptId === '0' && landedScopeAll)
+  const introShownRef = useRef(false)
+
+  useEffect(() => {
+    // Mount-only. Ordering vs the Navbar's route-change reset (which forces
+    // focus OFF on every pathname/search change) is safe: Navbar sits before
+    // {children} in the layout tree, so its effect runs first and this one
+    // wins the landing frame.
+    if (introRef.current) setMapFocus(true)
+  }, [setMapFocus])
+
+  // The intro ends the FIRST time focus turns off — whether from the reveal
+  // below or the user hitting the navbar toggle themselves. After that the
+  // toggle is fully manual again: re-enabling focus and then clicking a
+  // province will NOT force the cards back open.
+  useEffect(() => {
+    if (isMapFocus) introShownRef.current = true
+    else if (introShownRef.current) introRef.current = false
+  }, [isMapFocus])
+
+  const handleProvinceActivate = useCallback(() => {
+    if (!introRef.current) return
+    introRef.current = false
+    setMapFocus(false)
+  }, [setMapFocus])
 
   useEffect(() => {
     dispatch(getExampleData())
   }, [dispatch])
 
   return (
+    <DeptIdOverrideContext.Provider value={currentDeptId}>
     <div className="relative w-screen h-screen overflow-hidden bg-[#050d1a]">
       {/* MAP */}
-      <ReactMap />
+      <ReactMap
+        originalDeptId={originalDeptId}
+        originalScopeAll={landedScopeAll}
+        onDeptIdChange={setCurrentDeptId}
+        onProvinceActivate={handleProvinceActivate}
+      />
 
       {isDesktop === true && (
         <>
           {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
-          <aside
+          {/* bottom: 200 (was 180) — the donut row below grew ~20px taller
+            * (py-4 + label gap), keep the same visual gap above it. */}
+          <MapOverlayPanel
+            position="left"
             className="absolute left-4 z-10 flex flex-col gap-3"
-            style={{ top: 52, bottom: 180, width: 620 }}
+            style={{ top: 52, bottom: 200, width: 620 }}
           >
             <div className="flex-1" />
-            <div className="flex" style={{ width: 530 }}>
+            {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
+            <div className="flex">
               <StatusChart />
             </div>
             <AccidentChart />
-          </aside>
+          </MapOverlayPanel>
 
-          {/* DESKTOP: donut row */}
-          <div
+          {/* DESKTOP: donut row — width follows content (126px per visible
+            * donut inside RatioChart); 7 donuts ≈ the old fixed 880. */}
+          <MapOverlayPanel
+            position="bottom"
             className="absolute left-4 z-10 flex"
-            style={{ bottom: 16, width: 880 }}
+            style={{ bottom: 16, maxWidth: 'calc(100vw - 32px)' }}
           >
             <RatioChart size={110} />
-          </div>
+          </MapOverlayPanel>
 
           {/* DESKTOP: right absolute panel — top:48 sits right under the 48px navbar.
             * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
             * Notification + TrafficStat don't use → no empty gap at the bottom. */}
-          <aside
+          <MapOverlayPanel
+            position="right"
             className="absolute right-4 z-10 flex flex-col gap-2"
-            style={{ top: 64, bottom: 16, width: 408 }}
+            style={{ top: 64, bottom: 16, width: 340 }}
           >
             <Notification />
             <VehicleRatioChart className="flex-1 min-h-0" />
             <TrafficStat />
-          </aside>
+          </MapOverlayPanel>
         </>
       )}
 
@@ -81,12 +158,17 @@ const DashboardScreen: React.FC<Props> = () => {
         <>
           {/* MOBILE: notification — compact pill below the navbar (48px) so it
             * sits beside the centered filter pills + breadcrumb without covering them. */}
-          <div className="absolute z-20 right-3" style={{ top: 60 }}>
+          <MapOverlayPanel
+            position="top"
+            className="absolute z-20 right-3"
+            style={{ top: 60 }}
+          >
             <Notification compact />
-          </div>
+          </MapOverlayPanel>
 
           {/* MOBILE: scrollable column — map takes top 60vh, cards bottom 40vh */}
-          <div
+          <MapOverlayPanel
+            position="bottom"
             className="absolute left-0 right-0 overflow-y-auto z-10"
             style={{ top: "60vh", bottom: 0 }}
           >
@@ -99,10 +181,11 @@ const DashboardScreen: React.FC<Props> = () => {
               <RatioChart cols={4} size={90} />
               <TrafficStat />
             </div>
-          </div>
+          </MapOverlayPanel>
         </>
       )}
     </div>
+    </DeptIdOverrideContext.Provider>
   )
 }
 

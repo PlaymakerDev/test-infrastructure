@@ -61,21 +61,31 @@ const FormUpdateBatch: React.FC<Props> = (props) => {
     )
   }, [])
 
+  const formatScheduleDuration = useCallback((timeSince: string, timeTo: string) => {
+    // Recompute the value fresh in whichever unit is chosen — do not just relabel
+    // a value already rounded in a bigger unit (e.g. 0.98 ชั่วโมง -> "0.98 นาที"
+    // is wrong; the correct minute value for that same span is ~59 นาที).
+    const diffMinutes = dayjs(timeTo, 'HH:mm').diff(dayjs(timeSince, 'HH:mm'), 'minute', true)
+    const diffHours = diffMinutes / 60
+    if (diffHours >= 1) return `${Math.round(diffHours * 100) / 100} ชั่วโมง`
+    if (diffMinutes >= 1) return `${Math.round(diffMinutes * 100) / 100} นาที`
+    return `${Math.round(diffMinutes * 60 * 100) / 100} วินาที`
+  }, [])
+
   const OPTIONS = useMemo(() => {
     if (!data) return []
     return data.map((item) => {
-      const hours = Math.round(dayjs(item.time_to, 'HH:mm').diff(dayjs(item.time_since, 'HH:mm'), 'hour', true) * 100) / 100
       return {
         label: (
           <span className='inline-flex items-center gap-1.5'>
             {renderMapDate(item.days_of_week)}
-            {`${item.schedule_name} ${item.time_since} - ${item.time_to} (${hours} ชั่วโมง)`}
+            {`${item.schedule_name} ${item.time_since} - ${item.time_to} (${formatScheduleDuration(item.time_since, item.time_to)})`}
           </span>
         ),
         value: item.id,
       }
     })
-  }, [data, renderMapDate])
+  }, [data, renderMapDate, formatScheduleDuration])
 
   return (
     <ConfigProvider

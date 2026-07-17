@@ -20,28 +20,35 @@ interface CardProps {
 }
 
 const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = {
-  white: { border: 'border-white', text: 'text-white' },
-  blue: { border: 'border-blue-500', text: 'text-blue-500' },
-  red: { border: 'border-red-500', text: 'text-red-500' },
-  orange: { border: 'border-orange-500', text: 'text-orange-500' },
-  yellow: { border: 'border-yellow-500', text: 'text-yellow-500' },
-  lime: { border: 'border-lime-400', text: 'text-lime-400' },
+  white: { border: 'border-[#FFFFFF]', text: 'text-[#FFFFFF]' },
+  blue: { border: 'border-[#66AEFF]', text: 'text-[#66AEFF]' },
+  red: { border: 'border-[#E94C4C]', text: 'text-[#E94C4C]' },
+  orange: { border: 'border-[#FF7B00]', text: 'text-[#FF7B00]' },
+  yellow: { border: 'border-[#FCD116]', text: 'text-[#FCD116]' },
+  lime: { border: 'border-[#B2FF00]', text: 'text-[#B2FF00]' },
 }
 
+// Card metrics mirror incident-detection detail tab 1 (`EventStatsSection`):
+// p-3 / rounded-2xl / border-2, value 22px semibold, unit in gray.
 const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
   const c = COLOR_MAP[color]
   return (
-    <div className={`bg-[#66AEFF1A] border ${c.border} py-3 px-5 rounded-[20px]`}>
-      <div className='flex items-center gap-2 mb-2'>
+    <div
+      className={`border-2 ${c.border} p-3 rounded-2xl`}
+      style={{ background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919' }}
+    >
+      <div className='flex items-center gap-1.5 mb-1'>
         <span className={`fs-22 shrink-0 ${c.text} flex items-center`}>{icon}</span>
-        <h4 className={`${c.text} mb-0`}>{label}</h4>
+        <h4 className={`${c.text} mb-0 leading-tight`}>{label}</h4>
       </div>
       {isLoading ? (
         <Skeleton active paragraph={false} title={{ width: 120 }} />
       ) : (
-        <p className='mb-0.5'>
-          <span className='fs-18 font-bold'>{fmtNumber(value, unit === 'km/h' ? 2 : 0)}</span>{' '}
-          <span className='fs-14'>{unit}</span>
+        <p className='mb-0.5 leading-tight'>
+          <span className='font-semibold' style={{ fontSize: 22 }}>
+            {fmtNumber(value, unit === 'km/h' ? 2 : 0)}
+          </span>{' '}
+          <span className='fs-14 text-gray-400'>{unit}</span>
         </p>
       )}
     </div>

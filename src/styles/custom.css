@@ -40,6 +40,10 @@
   font-size: 1.14rem;
 }
 
+.fs-16 {
+  font-size: clamp(1rem, 4.27vw, 1.125rem);
+}
+
 .fs-14 {
   font-size: clamp(0.875rem, 3.73vw, 1rem);
 }
@@ -50,4 +54,33 @@
 
 .fs-11 {
   font-size: clamp(0.6875rem, 2.67vw, 0.75rem);
+}
+
+/* ─── Find-on-page (Ctrl+F clone) ────────────────────────────────────────
+ * Uses the CSS Custom Highlight API — no DOM mutation, so React re-renders
+ * don't clobber the highlights. Two custom highlights are painted:
+ *   `find-on-page`        — every match (softer yellow)
+ *   `find-on-page-active` — the currently-focused match (brand yellow)
+ * `find-on-page-active` is set AFTER `find-on-page`, so it wins the paint. */
+*::highlight(find-on-page) {
+  background-color: rgba(252, 209, 22, 0.35);
+  color: inherit;
+}
+
+*::highlight(find-on-page-active) {
+  background-color: #FCD116;
+  color: #212121;
+}
+/* ─── LPR search input (Figma) ───────────────────────────────────────────
+ * Yellow placeholder — antd's own ::placeholder rule outranks Tailwind's
+ * `placeholder:` utility here, so it needs a plain CSS override. */
+.lpr-yellow-placeholder input::placeholder {
+  color: var(--yellow);
+  opacity: 0.85;
+}
+
+/* Typed text matches the placeholder (antd's cssinjs outranks the Tailwind
+ * utility on the inner input, hence the heavier selector). */
+.ant-input-affix-wrapper.lpr-yellow-placeholder input.ant-input {
+  color: var(--yellow);
 }

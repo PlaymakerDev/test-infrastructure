@@ -25,15 +25,30 @@ const DetailTitle: React.FC<Props> = (props) => {
         <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${bureauSign?.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}>
           {bureauSign?.is_online ? 'Online' : 'Offline'} <Badge color={bureauSign?.is_online ? "green" : "red"} />
         </span>
-        <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: '#66AEFF',
+              colorTextLightSolid: '#0A0A0A',
+              colorBgContainerDisabled: '#3d3d3d',
+              colorTextDisabled: '#7d7d7d',
+              colorPrimaryBorder: !bureauSign?.anydesk ? '#7d7d7d' : '#66AEFF'
+            }
+          }}
+        >
           <Button
+            disabled={!bureauSign?.anydesk}
             type="primary"
             htmlType="submit"
             size="middle"
             shape="round"
             icon={<TbAppWindow />}
-            className='w-full! sm:w-auto!'
-            onClick={() => window.open(bureauSign?.anydesk ? `https://remote.anydesk.com/${bureauSign?.anydesk}` : '#', '_blank')}
+            className='w-full! sm:w-auto! border-transparent!'
+            // onClick={() => window.open(bureauSign?.anydesk ? `https://remote.anydesk.com/${bureauSign?.anydesk}` : '#', '_blank')}
+            onClick={() => {
+              if (!bureauSign?.anydesk) return
+              window.location.href = `anydesk:${bureauSign.anydesk}`
+            }}
           >
             <p className='fs-12'>Anydesk : {bureauSign?.anydesk || '-'}</p>
           </Button>

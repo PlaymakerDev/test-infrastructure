@@ -1,7 +1,8 @@
 "use client"
 import { Button } from "antd"
 import React from "react"
-import { TbBrandGithubCopilot, TbDatabaseOff, TbLogin2 } from "react-icons/tb"
+import { TbDatabaseOff, TbLogin2 } from "react-icons/tb"
+import IconAIChat from "@/components/icon/IconAIChat"
 import { reloginChat } from "@/services/chatAuth"
 import type { ChatTurn } from "@/types/chat"
 import AnswerText from "./AnswerText"
@@ -55,7 +56,7 @@ const AssistantMessage: React.FC<Props> = ({ turn }) => {
   return (
     <div className="flex gap-3">
       <div className="shrink-0 w-8 h-8 rounded-full bg-(--yellow)/15 flex items-center justify-center mt-0.5">
-        <TbBrandGithubCopilot className="text-(--yellow)" size={18} />
+        <IconAIChat className="text-(--yellow)" size={18} />
       </div>
       <div className="flex-1 min-w-0 pt-1">
         {status === "error" ? (

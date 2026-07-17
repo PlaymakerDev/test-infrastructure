@@ -9,6 +9,9 @@ import SearchBar, {
   type FilterStats,
   type ViewMode,
 } from '@/components/searchable/SearchBar'
+import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
+import { useDeptId } from '@/hooks/useDeptId'
+import { useDetailContext } from '../../../context'
 
 interface Props {
 
@@ -41,34 +44,44 @@ const CROSSWALK_FILTERS: FilterConfig[] = [
   },
 ]
 
-const CROSSWALK_STATS: FilterStats = {
-  all: 4,
-  online: 4,
-  offline: 0,
-}
-
 const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const { } = props
-  const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
+  const deptId = useDeptId()
+  const { id } = useDetailContext()
+  const [displayType, setDisplayType] = useState<ViewMode>('GRID')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+
+  // React Query dedupes with the same call inside TableCameraData/CameraList
+  // — one network request, shared cache.
+  const { data } = useCrosswalkCameras(deptId, { solution_id: id })
+
+  const stats = useMemo<FilterStats>(() => {
+    const cameras = data?.cameras ?? []
+    const online = cameras.filter((c) => c.is_online).length
+    return {
+      all: cameras.length,
+      online,
+      offline: cameras.length - online,
+    }
+  }, [data])
 
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableCameraData />
+        return <TableCameraData activeFilter={activeFilter} />
       case 'GRID':
-        return <CameraList />
+        return <CameraList activeFilter={activeFilter} />
       default:
         return null
     }
-  }, [displayType])
+  }, [displayType, activeFilter])
 
   return (
     <div>
       <section>
         <SearchBar
           filters={CROSSWALK_FILTERS}
-          stats={CROSSWALK_STATS}
+          stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
           defaultViewMode={displayType}

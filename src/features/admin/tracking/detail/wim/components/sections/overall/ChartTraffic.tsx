@@ -1,73 +1,76 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import LineChart from '@/components/chart/LineChart'
 import { TbMoon, TbSun } from 'react-icons/tb'
+import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
+import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
+import QueryBoundary from '@/components/common/QueryBoundary'
+import dayjs from 'dayjs';
+import buddhistEra from 'dayjs/plugin/buddhistEra';
+import 'dayjs/locale/th';
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
+
+interface Props {
+
+}
 
 type Period = 'กลางวัน' | 'กลางคืน'
-
-const DATA_DAY = [
-  { label: '00.00', total: 480 },
-  { label: '01.00', total: 550 },
-  { label: '02.00', total: 580 },
-  { label: '03.00', total: 270 },
-  { label: '04.00', total: 350 },
-  { label: '05.00', total: 300 },
-  { label: '06.00', total: 320 },
-  { label: '07.00', total: 475 },
-  { label: '08.00', total: 680 },
-  { label: '09.00', total: 480 },
-  { label: '10.00', total: 620 },
-  { label: '11.00', total: 640 },
-  { label: '12.00', total: 280 },
-]
-
-const DATA_NIGHT = [
-  { label: '12.00', total: 280 },
-  { label: '13.00', total: 320 },
-  { label: '14.00', total: 380 },
-  { label: '15.00', total: 450 },
-  { label: '16.00', total: 600 },
-  { label: '17.00', total: 720 },
-  { label: '18.00', total: 680 },
-  { label: '19.00', total: 520 },
-  { label: '20.00', total: 380 },
-  { label: '21.00', total: 280 },
-  { label: '22.00', total: 220 },
-  { label: '23.00', total: 380 },
-  { label: '24.00', total: 490 },
-]
 
 const LINES = [
   { dataKey: 'total', color: '#66AEFF', label: 'รถทั้งหมด' },
 ]
 
-const ChartTraffic: React.FC = () => {
+const ChartTraffic: React.FC<Props> = () => {
+  const { id: stationId, stationType } = useWIMContext()
   const [period, setPeriod] = useState<Period>('กลางวัน')
-  const data = period === 'กลางวัน' ? DATA_DAY : DATA_NIGHT
+
+  const { data, isLoading, isError } = useTrafficAvgSpeed(
+    stationId as string | number | undefined,
+    stationType === 'WIM'
+  )
+
+  const chartData = useMemo(() => {
+    return (data?.data ?? []).map(item => ({
+      label: item.period_name,
+      total: Number(item.vehicle_count),
+      pid: item.pid,
+    }))
+  }, [data?.data])
+
+  // Boundary hour (noon) is shared by both tabs so each line touches the other's edge.
+  const periodData = useMemo(() => {
+    return period === 'กลางวัน'
+      ? chartData.filter(item => item.pid <= 12)
+      : chartData.filter(item => item.pid >= 12)
+  }, [chartData, period])
 
   return (
-    <LineChart
-      title='ข้อมูลจราจรรายชั่วโมง'
-      icon={
-        period === 'กลางวัน'
-          ? <TbSun size={18} />
-          : <TbMoon size={18} />
-      }
-      iconCircle={false}
-      accentColor='#FCD116'
-      cardBackground='#00000080'
-      cardBorderColor='transparent'
-      showGlow={false}
-      data={data}
-      lines={LINES}
-      periods={['กลางวัน', 'กลางคืน']}
-      defaultPeriod='กลางวัน'
-      onPeriodChange={(p) => setPeriod(p as Period)}
-      tooltipDate='24 เม.ย. 2569'
-      tooltipUnit='คัน'
-      tooltipShowDot
-      height={260}
-    />
+    <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={10}>
+      <LineChart
+        title='ข้อมูลจราจรรายชั่วโมง'
+        icon={
+          period === 'กลางวัน'
+            ? <TbSun size={18} />
+            : <TbMoon size={18} />
+        }
+        iconCircle={false}
+        accentColor='#FCD116'
+        cardBackground='#00000080'
+        cardBorderColor='transparent'
+        showGlow={false}
+        data={periodData}
+        lines={LINES}
+        periods={['กลางวัน', 'กลางคืน']}
+        defaultPeriod='กลางวัน'
+        onPeriodChange={(p) => setPeriod(p as Period)}
+        tooltipDate={dayjs().format('DD MMM BBBB')}
+        tooltipUnit='คัน'
+        tooltipShowDot
+        height={260}
+      />
+    </QueryBoundary>
   )
 }
 

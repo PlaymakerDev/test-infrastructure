@@ -1,6 +1,6 @@
 import { APIResponseVMSMediaById } from '@/types/control-vms/display-api'
 import { Button, ConfigProvider } from 'antd'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { INIT_UPDATE_SCHEDULE, useControlVMSContext } from '../../../context'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
@@ -26,13 +26,19 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
   const { id, data } = props
   const { setUpdateScheduleState } = useControlVMSContext()
   const batchDelete = usePostVMSBatchDelete()
+  const allScheduleIds = useMemo(() => (data?.schedules ?? []).map((s) => s.id), [data])
 
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
-    defaultValues: { schedule_ids: [] },
+    // Checked = will be cancelled. Default every schedule checked so
+    // confirming this "ยกเลิกคำสั่ง" action cancels everything right away —
+    // the common case of a single schedule needs zero clicks to confirm.
+    // Unchecking a row keeps it running, for the rarer case of a
+    // multi-schedule order where only some entries should be cancelled.
+    defaultValues: { schedule_ids: allScheduleIds },
   })
 
   const onSubmit = (values: FormValues) => {
@@ -50,8 +56,8 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           className='text-red-500! text-9xl! mb-5! mx-auto! block!'
         />
         <div className='text-center mt-3'>
-          <h2 className='text-black'>ยืนยันลบคำสั่งนี้หรือไม่?</h2>
-          <p className='text-black'>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+          <h2 className='text-black'>ยืนยันยกเลิกคำสั่งหรือไม่?</h2>
+          <p className='text-black'>ระบบจะยกเลิกคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
         </div>
       </section>
 
@@ -62,10 +68,13 @@ const ContentBatchDelete: React.FC<Props> = (props) => {
           <p className='fs-12 text-(--light-gray)'>หน่วยงานรับผิดชอบ : <span className='text-black'>{data?.department_short_name || '-'}</span></p>
           <div>
             <p className='fs-12 text-(--light-gray)'>ระยะเวลาแสดงผล :</p>
+            {allScheduleIds.length > 1 && (
+              <p className='fs-12 text-(--light-gray) mb-1'>ติ๊กตารางเวลาที่ต้องการยกเลิก ปลดติ๊กรายการที่ต้องการเก็บไว้</p>
+            )}
             <Controller
               control={control}
               name="schedule_ids"
-              rules={{ validate: (v) => v.length > 0 || 'กรุณาเลือกตารางเวลาที่ต้องการลบ' }}
+              rules={{ validate: (v) => v.length > 0 || 'กรุณาเลือกตารางเวลาที่ต้องการยกเลิกอย่างน้อย 1 รายการ' }}
               render={({ field }) => (
                 <fieldset>
                   <FormUpdateBatch data={data?.schedules} value={field.value} onChange={field.onChange} />

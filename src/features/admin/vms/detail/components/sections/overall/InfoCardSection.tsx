@@ -53,8 +53,8 @@ const InfoCardSection: React.FC<Props> = (props) => {
 
     return (
       <>
-        <TbCloud className='fs-24 text-teal-500 mb-1' />
-        <h4 className='text-teal-500'>คุณภาพอากาศ AQI</h4>
+        <TbCloud className='fs-24 text-teal-400 mb-1' />
+        <h4 className='text-teal-400'>คุณภาพอากาศ AQI</h4>
         <p className='fs-14 font-bold'>{renderAQIName(sortAQI[0]?.aqi ?? 0)}</p>
       </>
     )
@@ -64,8 +64,8 @@ const InfoCardSection: React.FC<Props> = (props) => {
     if (tempLoading) return <Skeleton loading={tempLoading} active paragraph={{ rows: 4 }} />
     return (
       <>
-        <TbThermometer className='fs-24 text-blue-500 mb-1' />
-        <h4 className='text-blue-500'>อุณหภูมิ</h4>
+        <TbThermometer className='fs-24 text-(--default-blue) mb-1' />
+        <h4 className='text-(--default-blue)'>อุณหภูมิ</h4>
         <p className='mb-0.5'><span className='fs-14 font-bold'>{tempData?.data.main.temp || 0}</span> <span className='fs-12'>°C</span></p>
       </>
     )
@@ -75,8 +75,8 @@ const InfoCardSection: React.FC<Props> = (props) => {
     if (tempLoading) return <Skeleton loading={tempLoading} active paragraph={{ rows: 4 }} />
     return (
       <>
-        <TbUmbrella className='fs-24 text-blue-500 mb-1' />
-        <h4 className='text-blue-500'>ปริมาณน้ำฝน</h4>
+        <TbUmbrella className='fs-24 text-(--default-blue) mb-1' />
+        <h4 className='text-(--default-blue)'>ปริมาณน้ำฝน</h4>
         <p className='mb-0.5'><span className='fs-14 font-bold'>{tempData?.data.rain?.['1h'] || 0}</span> <span className='fs-12'>mm/min</span></p>
       </>
     )
@@ -86,38 +86,38 @@ const InfoCardSection: React.FC<Props> = (props) => {
     if (tempLoading) return <Skeleton loading={tempLoading} active paragraph={{ rows: 4 }} />
     return (
       <>
-        <TbWind className='fs-24 text-blue-500 mb-1' />
-        <h4 className='text-blue-500'>ความเร็วลม</h4>
+        <TbWind className='fs-24 text-(--default-blue) mb-1' />
+        <h4 className='text-(--default-blue)'>ความเร็วลม</h4>
         <p className='mb-0.5'><span className='fs-14 font-bold'>{tempData?.data.wind.speed || 0}</span> <span className='fs-12'>km/h</span></p>
       </>
     )
   }, [tempData, tempLoading])
 
   return (
-    <div className='flex-1 min-h-0 flex flex-col bg-black/70 backdrop-blur-xs rounded-lg p-5'>
+    <div className='flex-1 min-h-0 flex flex-col bg-black/70 backdrop-blur-xs rounded-2xl p-5'>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
-          <div className='h-full bg-[#FFB1001A] border-2 rounded-lg px-4 py-2 border-(--yellow)'>
+          <div className='h-full bg-[#FFB1001A] border-2 rounded-2xl px-4 py-2 border-(--yellow)'>
             {renderOverallWeather}
           </div>
         </Col>
         <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
-          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-teal-500'>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-2xl px-4 py-2 border-teal-400'>
             {renderWeatherQuality}
           </div>
         </Col>
         <Col xs={24} sm={8} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-2xl px-4 py-2 border-(--default-blue)'>
             {renderWeatherTemperature}
           </div>
         </Col>
         <Col xs={24} sm={8} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-2xl px-4 py-2 border-(--default-blue)'>
             {renderRainVolume}
           </div>
         </Col>
         <Col xs={24} sm={8} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-          <div className='h-full bg-[#66AEFF1A] border-2 rounded-lg px-4 py-2 border-blue-500'>
+          <div className='h-full bg-[#66AEFF1A] border-2 rounded-2xl px-4 py-2 border-(--default-blue)'>
             {renderWindSpeed}
           </div>
         </Col>

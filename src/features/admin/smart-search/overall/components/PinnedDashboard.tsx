@@ -58,7 +58,7 @@ const PinnedCard: React.FC<{ pin: DashboardPin; onRemove: () => void }> = ({
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-(--dark-black) p-4 min-h-[140px]">
       <div className="flex items-start gap-2">
-        <p className="flex-1 min-w-0 fs-14 text-white/90 line-clamp-2" title={pin.question}>
+        <p className="flex-1 min-w-0 fs-14 text-(--default-blue) line-clamp-2" title={pin.question}>
           {pin.question}
         </p>
         {pin.mode === "accurate" && (

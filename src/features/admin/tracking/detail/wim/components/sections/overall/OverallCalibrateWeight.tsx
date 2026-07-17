@@ -1,18 +1,42 @@
+import { APIResponseCalibrationHistoryStatus } from '@/types/tracking/detail-api'
 import { Button, ConfigProvider } from 'antd'
 import React from 'react'
 import { TbArticle, TbBrandCoinbase, TbCalendarStats, TbClipboardList, TbUser } from 'react-icons/tb'
+import relativeTime from 'dayjs/plugin/relativeTime';
+import dayjs from 'dayjs';
+import { useWIMContext } from '../../../context';
 
-interface Props { }
+dayjs.extend(relativeTime);
+
+interface Props {
+  calibrationHistory?: APIResponseCalibrationHistoryStatus
+}
 
 const OverallCalibrateWeight: React.FC<Props> = (props) => {
-  const { } = props
+  const { calibrationHistory } = props
+  const { id, stationTypeId, setOpenCalibrationHistoryModal } = useWIMContext()
 
   return (
     <div className="h-full bg-[#FFFFFF1A] border-2 rounded-lg p-5 border-white">
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6'>
         <h3 className='mb-0'>ข้อมูลการ Calibrate เครื่องชั่ง</h3>
-        <ConfigProvider theme={{ token: { colorPrimary: '#212121', colorTextLightSolid: '#FFFFFF' } }}>
-          <Button type="primary" shape="round">
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: '#212121',
+              colorTextLightSolid: '#FFFFFF'
+            }
+          }}
+        >
+          <Button
+            type="primary"
+            shape="round"
+            onClick={() => setOpenCalibrationHistoryModal({
+              open: true,
+              stationId: id,
+              stationType: stationTypeId?.toString()
+            })}
+          >
             ดูเพิ่มเติม
           </Button>
         </ConfigProvider>
@@ -22,32 +46,32 @@ const OverallCalibrateWeight: React.FC<Props> = (props) => {
         <div className='flex flex-col items-center text-center'>
           <TbClipboardList className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>Calibrate ครั้งล่าสุด</p>
-          <p className='fs-12 text-[#66AEFF] mb-0.5'>10 ส.ค. 2567</p>
-          <p className='fs-12 text-white mb-0'>(2 ปีที่แล้ว)</p>
+          <p className='fs-12 text-[#66AEFF] mb-0.5'>{dayjs(calibrationHistory?.latestCalibration?.calibrationDate).format('DD MMM BBBB')}</p>
+          <p className='fs-12 text-white mb-0'>({dayjs(calibrationHistory?.latestCalibration?.calibrationDate).fromNow()})</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbCalendarStats className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>กำหนด Calibrate ครั้งถัดไป</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>10 ส.ค. 2568</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>{dayjs(calibrationHistory?.latestCalibration?.nextCalibrationDate).format('DD MMM BBBB')}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbArticle className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>เลขที่ Certificate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>CERT-2024-102</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.certificateNo || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbUser className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>ผู้ทำการ Calibrate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>นายวิชัย สุขสันต์</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.calibrationBy || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbBrandCoinbase className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>บริษัททำการ Calibrate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>บริษัท เทคโนโลยีชั่งน้ำหนัก จำกัด</p>
+          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.calibrationCompany || '-'}</p>
         </div>
       </div>
     </div>

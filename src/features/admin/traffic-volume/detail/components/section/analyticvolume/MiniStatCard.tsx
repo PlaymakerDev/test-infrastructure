@@ -32,7 +32,7 @@ const MiniStatCard: React.FC<Props> = ({ color, value, label, sublabel }) => (
     </span>
     <span className='fs-12 text-white/85 leading-tight'>{label}</span>
     {sublabel && (
-      <span className='fs-11 text-white/50 leading-tight mt-0.5'>
+      <span className='fs-12 text-white/50 leading-tight mt-0.5'>
         {sublabel}
       </span>
     )}

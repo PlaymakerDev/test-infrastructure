@@ -16,9 +16,11 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
   const dispatch = useAppDispatch()
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
   const { data, isLoading } = useTrafficRandomCameras(deptId, 3)
-  // BE `random-online` may backfill with offline cameras when there aren't
-  // enough online ones — keep the preview true to its name.
-  const cameras = (data?.data ?? []).filter((c) => c.camera.is_online)
+  // Prefer online cameras; if none are online, still show the (offline) cards
+  // rather than a blank slot (backend random-online backfills offline anyway).
+  const cameras = data?.data ?? []
+  const online = cameras.filter((c) => c.camera.is_online)
+  const toShow = online.length > 0 ? online : cameras
 
   if (isLoading && cameras.length === 0) {
     return (
@@ -30,17 +32,17 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
     )
   }
 
-  if (!isLoading && cameras.length === 0) {
+  if (!isLoading && toShow.length === 0) {
     return (
       <div className='h-full flex items-center justify-center text-gray-500 fs-12 p-4'>
-        ไม่มีกล้องออนไลน์ในขณะนี้
+        ไม่มีกล้องในขณะนี้
       </div>
     )
   }
 
   return (
     <div className='h-full flex flex-col gap-4'>
-      {cameras.map((entry) => {
+      {toShow.map((entry) => {
         const cam = entry.camera
         const ipAddress = cam.ip_address || '-'
         const phaseCount = cam.phases_no
@@ -69,8 +71,10 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
               style={{ pointerEvents: 'none' }}
             />
             <h4 className='camera-code'>{cam.name}</h4>
-            <p className='camera-location'>IP Address : {ipAddress}</p>
-            <div className='mt-1.5 flex items-center gap-1.5 flex-wrap'>
+            {/* IP + phase + type on ONE row per design 2026-07-14 —
+              * flex-wrap keeps pills from clipping on narrow cards. */}
+            <div className='mt-1 flex items-center gap-1.5 flex-wrap'>
+              <p className='camera-location mb-0'>IP : {ipAddress}</p>
               {/* Phase pill — blue outline */}
               <span
                 className='inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap'

@@ -7,7 +7,6 @@ import {
   WIMSection,
   MobileSection,
   GPSSection,
-  LicenseSection
 } from '../components'
 import { useRouter } from 'next/navigation'
 import { OverallProvider } from '../context'
@@ -19,7 +18,6 @@ const TrackingScreen = () => {
 
   useEffect(() => {
     if (currentTab === 'TRACK_GPS') router.push('/admin/tracking/detail/gps')
-    if (currentTab === 'LICENSE') router.push('/admin/tracking/detail/license')
   }, [currentTab, router])
 
   const renderContent = useMemo(() => {
@@ -34,8 +32,6 @@ const TrackingScreen = () => {
         return <MobileSection />
       case 'TRACK_GPS':
         return <GPSSection />
-      case 'LICENSE':
-        return <LicenseSection />
       default:
         return <OverallSection />
     }
@@ -45,7 +41,7 @@ const TrackingScreen = () => {
     <OverallProvider>
       <div className='main-screen px-10'>
         <TitleSection setCurrentTab={setCurrentTab} />
-        <section className='mt-8'>
+        <section className='mt-8 pb-8'>
           {renderContent}
         </section>
       </div>
