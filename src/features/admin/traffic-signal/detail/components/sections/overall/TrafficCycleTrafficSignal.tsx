@@ -13,7 +13,9 @@ import { useDetailContext } from '../../../context'
  *  the same way as in the Figma reference. */
 const TrafficCycleTrafficSignal: React.FC = () => {
   const { project } = useDetailContext()
-  const phases = project.phaseTiming ?? []
+  // Memoized so the `?? []` fallback doesn't mint a new array every render
+  // (it destabilizes the [phases] deps of the memos below).
+  const phases = useMemo(() => project.phaseTiming ?? [], [project.phaseTiming])
 
   const data: PieChartDataPoint[] = useMemo(
     () =>
@@ -43,7 +45,7 @@ const TrafficCycleTrafficSignal: React.FC = () => {
 
   return (
     <PieChart
-      title='Traffic Signal Cycle'
+      title='Traffic Signal Cycle Length'
       titleSize={16}
       titleColor='#66AEFF'
       icon={<TbCirclesRelation size={22} color='#66AEFF' />}

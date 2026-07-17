@@ -242,9 +242,12 @@ export default function Navbar() {
       disabled: !focusAvailable,
       active: isMapFocus,
       title: !focusAvailable ? 'หน้านี้ไม่มีแผนที่ให้เน้น' : undefined,
-      // Keep the panel open — the effect is visible behind the backdrop and
-      // the user may want to toggle right back.
-      onClick: () => toggleMapFocus(),
+      // Close the panel so the focus result is immediately visible — keeping
+      // it open left the backdrop over a layout that just changed underneath.
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        toggleMapFocus()
+      },
     },
     {
       key: 'find',

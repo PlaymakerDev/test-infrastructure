@@ -54,9 +54,12 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
 
   const days = useMemo(() => {
     return (data ?? []).map((d) => {
-      // Map phases array to a {phase_no: pcu} lookup
+      // Map phases array to a {phase_no: pcu} lookup. Days with no traffic
+      // data come back WITHOUT a phases array (null) — e.g. solution 1647 —
+      // and an unguarded for..of threw "d.phases is not iterable", taking the
+      // whole detail page down with the error boundary.
       const values: Record<number, number> = {}
-      for (const p of d.phases) {
+      for (const p of d.phases ?? []) {
         values[p.phase_no] = p.pcu
       }
       const date = dayjs(d.date).locale('th')
