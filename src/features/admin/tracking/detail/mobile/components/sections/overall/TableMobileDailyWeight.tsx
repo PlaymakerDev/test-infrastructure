@@ -2,14 +2,20 @@
 import React from 'react'
 import { Empty, Image, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { MobileCarByTDIDData } from '@/types/tracking/detail-api'
+import { MobileCarByTDIDData, MobileCarData, MobileCarList } from '@/types/tracking/detail-api'
 import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
+import { WEIGHT_STATUS_WITH_PROPERTIES } from '@/constants/vehicle'
+import { FALLBACK } from '@/constants'
 
 interface Props {
-  data?: MobileCarByTDIDData[]
+  data?: MobileCarData
   isLoading?: boolean
   isError?: boolean
+  page?: number
+  pageSize?: number
+  total?: number
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
 type WeightStatusType = 'น้ำหนักปกติ' | 'น้ำหนักเกิน'
@@ -93,9 +99,9 @@ const StatusBadge = ({ label, cls }: { label: string; cls: string }) => (
 )
 
 const TableMobileDailyWeight: React.FC<Props> = (props) => {
-  const { data, isLoading, isError } = props
+  const { data, isLoading, isError, page, pageSize, total, onPageChange } = props
 
-  const columns: ColumnsType<MobileCarByTDIDData> = [
+  const columns: ColumnsType<MobileCarList> = [
     {
       title: 'ลำดับ',
       dataIndex: 'no',
@@ -187,76 +193,110 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       align: 'center',
       width: 130,
       render: (src: string) => {
-        console.log(`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`)
         return (
           <Image
-            src={`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`}
+            src={src}
             width={100}
             height={60}
             className='rounded object-cover'
             alt='vehicle'
+            fallback={FALLBACK}
           />
         )
       },
     },
     {
       title: 'สลิปน้ำหนัก',
-      dataIndex: 'image_path6',
-      key: 'image_path6',
+      dataIndex: 'image_path5',
+      key: 'image_path5',
       align: 'center',
       width: 130,
       render: (src: string) => {
         return (
           <Image
-            src={`${process.env.NEXT_PUBLIC_WTS_BASE_PATH}${src}`}
+            src={src}
             width={100}
             height={60}
             className='rounded object-cover'
             alt='slip'
+            fallback={FALLBACK}
           />
         )
       },
     },
     {
       title: 'สถานะน้ำหนักรวม',
-      dataIndex: 'statusWeight',
-      key: 'statusWeight',
+      dataIndex: 'is_over_weight',
+      key: 'is_over_weight',
       align: 'center',
       width: 150,
-      // render: (val: WeightStatusType) => (
-      //   <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
-      // ),
+      render: (item) => {
+        if (item === "Y") {
+          return (
+            <div className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border border-red-500`}>
+              <p className='fs-12 text-red-500'>น้ำหนักเกิน</p>
+            </div>
+          )
+        }
+
+        return (
+          <div className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border border-(--yellow) text-(--yellow)`}>
+            <p className='fs-12 text-(--yellow)'>น้ำหนักปกติ</p>
+          </div>
+        )
+      },
     },
     {
       title: 'สถานะเพลา',
-      dataIndex: 'statusAxle',
-      key: 'statusAxle',
+      dataIndex: 'is_over_weight',
+      key: 'is_over_weight',
       align: 'center',
       width: 140,
-      // render: (val: WeightStatusType) => (
-      //   <StatusBadge label={val} cls={WEIGHT_STATUS_CLASS[val]} />
-      // ),
+      render: (item) => {
+        if (item === "P") {
+          return (
+            <div className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border border-orange-500`}>
+              <p className='fs-12 text-orange-500'>น้ำหนักเกิน</p>
+            </div>
+          )
+        }
+
+        return (
+          <div className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border border-(--yellow) text-(--yellow)`}>
+            <p className='fs-12 text-(--yellow)'>น้ำหนักปกติ</p>
+          </div>
+        )
+      },
     },
-    {
-      title: 'สถานะ',
-      dataIndex: 'status',
-      key: 'status',
-      align: 'center',
-      width: 140,
-      fixed: 'right',
-      // render: (val: FinalStatusType) => (
-      //   <StatusBadge label={val} cls={FINAL_STATUS_CLASS[val]} />
-      // ),
-    },
+    // {
+    //   title: 'สถานะ',
+    //   dataIndex: 'status',
+    //   key: 'status',
+    //   align: 'center',
+    //   width: 140,
+    //   fixed: 'right',
+    //   render: (val: FinalStatusType) => (
+    //     <StatusBadge label={val} cls={FINAL_STATUS_CLASS[val]} />
+    //   ),
+    // },
   ]
 
   if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
   return (
-    <Table<MobileCarByTDIDData>
+    <Table<MobileCarList>
       columns={columns}
-      dataSource={data}
-      pagination={false}
+      dataSource={data?.data}
+      pagination={{
+        current: page,
+        pageSize,
+        total: total ?? 0,
+        onChange: onPageChange,
+        locale: { items_per_page: '/ หน้า' },
+        showSizeChanger: true,
+        pageSizeOptions: [10, 20, 50, 100],
+        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+      }}
       size="middle"
       rowKey="key"
       scroll={{ x: 'max-content' }}

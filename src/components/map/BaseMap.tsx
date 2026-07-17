@@ -325,7 +325,18 @@ const BaseMap: React.FC<BaseMapProps> = ({
 
   useEffect(() => {
     if (!map || !containerRef.current) return
-    const observer = new ResizeObserver(() => map.resize())
+    const observer = new ResizeObserver(() => {
+      try {
+        map.resize()
+      } catch {
+        // Style not finished loading yet, or the map was just torn down
+        // (unmount race) — mapbox-gl's internal render path can throw
+        // (e.g. "Cannot read properties of undefined (reading
+        // 'isIndoorEnabled')") if resize() runs in that window. Safe to
+        // skip; the next resize (or mapbox's own post-load layout pass)
+        // catches up.
+      }
+    })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
   }, [map])

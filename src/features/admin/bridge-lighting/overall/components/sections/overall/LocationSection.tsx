@@ -5,9 +5,13 @@ import InfoCardSection from './InfoCardSection'
 import MapFocusGrid from '@/components/section/MapFocusGrid'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 
-interface Props { }
+interface Props {
+  deptId: string | string[] | number
+}
 
-const LocationSection: React.FC<Props> = () => {
+const LocationSection: React.FC<Props> = (props) => {
+  const { deptId } = props
+
   return (
     <MapFocusGrid
       desktopCols='360px minmax(0, 1fr) 280px'
@@ -23,7 +27,9 @@ const LocationSection: React.FC<Props> = () => {
 
       {/* Map — row 1 on mobile (top), col 2 on desktop */}
       <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-        <MapBridgeLighting edgeFade={{ all: 10 }} />
+        <MapBridgeLighting
+          deptId={deptId!}
+        />
       </div>
 
       {/* Right rail — 3 stat cards */}
@@ -31,7 +37,9 @@ const LocationSection: React.FC<Props> = () => {
         position='right'
         className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
       >
-        <InfoCardSection />
+        <InfoCardSection
+          deptId={deptId!}
+        />
       </MapOverlayPanel>
     </MapFocusGrid>
   )

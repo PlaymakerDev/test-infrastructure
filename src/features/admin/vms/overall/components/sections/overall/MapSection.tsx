@@ -31,7 +31,6 @@ const toGeoJSON = (locations: Location[]): VmsFeatureCollection => {
   return {
     type: 'FeatureCollection',
     features: locations.filter((loc) => isValidCoord(loc.GeometryPoint)).map((loc) => {
-      console.log("===", loc.vms.desktop_screen)
       return ({
         type: 'Feature',
         properties: {

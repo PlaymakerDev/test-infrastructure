@@ -1,25 +1,22 @@
 "use client"
 import { createContext, useContext } from 'react'
-import { getBridgeProjectById } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
-import type { BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 export interface ContextProps {
-  bridge: BridgeProject
 }
 
 export interface PageProviderProps {
-  id?: string | string[]
   children: React.ReactNode
 }
 
 export const DetailContext = createContext<ContextProps | null>(null)
 
-export const DetailProvider = ({ id, children }: PageProviderProps) => {
-  const resolvedId = Array.isArray(id) ? id[0] : id
-  const bridge = getBridgeProjectById(resolvedId ?? '')
-  if (!bridge) return null
+export const DetailProvider: React.FC<PageProviderProps> = (props) => {
+  const { children } = props
+
   return (
-    <DetailContext.Provider value={{ bridge }}>
+    <DetailContext.Provider value={{
+
+    }}>
       {children}
     </DetailContext.Provider>
   )

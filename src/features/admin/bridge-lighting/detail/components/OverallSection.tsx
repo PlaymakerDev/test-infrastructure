@@ -5,13 +5,37 @@ import ChartElectricalBridgeLighting from './sections/overall/ChartElectricalBri
 import BridgeLightingStatus from './sections/overall/BridgeLightingStatus'
 import VoltageStat from './sections/overall/VoltageStat'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
+import { APIResponseBridgeLightingOverview, APIResponseBridgeLightingWID, APIResponsePostPmChart, APIResponsePostShellyStatus } from '@/types/bridge-lighting/overall-api'
 
-const OverallSection: React.FC = () => {
+interface Props {
+  locationData?: APIResponseBridgeLightingOverview
+  pmChartData?: APIResponsePostPmChart
+  widData?: APIResponseBridgeLightingWID
+  shellyStatusData?: APIResponsePostShellyStatus
+  isLocationSuccess?: boolean
+  isPmChartSuccess?: boolean
+  isShellyStatusSuccess?: boolean
+}
+
+const OverallSection: React.FC<Props> = (props) => {
+  const {
+    locationData,
+    pmChartData,
+    widData,
+    shellyStatusData,
+    isLocationSuccess,
+    isPmChartSuccess,
+    isShellyStatusSuccess
+  } = props
+
   return (
     <div className='flex flex-col gap-4 lg:block lg:relative lg:h-full'>
       {/* Map: full-width background; defines container height on desktop via h-full */}
       <div className='relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-        <MapDetailBridgeLighting edgeFade={{ all: 30 }} />
+        <MapDetailBridgeLighting
+          locationData={locationData}
+          isLocationSuccess={isLocationSuccess}
+        />
       </div>
 
       {/* Right column: stats then charts, spans full height on desktop.
@@ -22,10 +46,16 @@ const OverallSection: React.FC = () => {
         className='flex flex-col gap-3 px-10 lg:px-0 lg:absolute lg:top-4 lg:right-4 lg:bottom-4 lg:z-10 lg:w-[clamp(30rem,38vw,52rem)]'
       >
         <div className='shrink-0'>
-          <VoltageStat />
+          <VoltageStat
+            pmChartData={pmChartData}
+            isPmChartSuccess={isPmChartSuccess}
+          />
         </div>
         <div className='flex-1 min-h-0'>
-          <ChartElectricalBridgeLighting />
+          <ChartElectricalBridgeLighting
+            pmChartData={pmChartData}
+            isPmChartSuccess={isPmChartSuccess}
+          />
         </div>
       </MapOverlayPanel>
 
@@ -34,7 +64,11 @@ const OverallSection: React.FC = () => {
         position='left'
         className='px-10 lg:px-0 lg:absolute lg:bottom-4 lg:left-4 lg:z-10 lg:w-[clamp(20rem,22vw,28rem)]'
       >
-        <BridgeLightingStatus />
+        <BridgeLightingStatus
+          widData={widData}
+          shellyStatusData={shellyStatusData}
+          isShellyStatusSuccess={isShellyStatusSuccess}
+        />
       </MapOverlayPanel>
     </div>
   )

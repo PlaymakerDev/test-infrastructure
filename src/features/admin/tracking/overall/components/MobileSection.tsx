@@ -1,7 +1,7 @@
 import React from 'react'
 import { MobileLocationSection, TableMobile, MobileUnitPlanSection } from '../components'
 import { getTrackingMobileMasterAPI, getTrackingViewSumPlanChartAPI } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useOverallContext } from '../context'
 
@@ -14,7 +14,7 @@ const MobileSection = () => {
       start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
       end_date: dayjs().format('YYYY-MM-DD'),
       page: 1,
-      page_size: 10,
+      page_size: 100,
       ordering: 'asc',
       search: searchMobileMaster?.search || ''
     }),
