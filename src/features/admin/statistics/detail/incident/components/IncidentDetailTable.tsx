@@ -3,8 +3,13 @@ import React from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useSearchParams } from 'next/navigation'
-import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import { TbPhotoOff } from 'react-icons/tb'
+import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
+import EventDetailModal from '@/features/admin/incident-detection/components/EventDetailModal'
 import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
+import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
+import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
+import { detailLabel } from '../../../data/routeItems'
 import { useIncidentDetailContext } from '../context'
 import dayjs from 'dayjs'
 
@@ -18,21 +23,25 @@ export interface IncidentRecord {
   ipAddress: string
   imageUrl?: string
   status: IncidentStatusType
+  /** Full source row — needed to open EventDetailModal on image click. */
+  raw: IncidentTransactionItem
+}
+
+// Shared by StatusBadge (table) and IncidentCard (grid) below.
+const EVENT_TYPE_COLOR: Record<IncidentStatusType, string> = {
+  'รถเกิดอุบัติเหตุ': '#FF0000',
+  'รถจอดเสีย': '#FFA500',
+  'รถจอดไหล่ทาง': '#00AEFF',
+  'งานก่อสร้าง': '#B2FF00',
+  'ปิดกั้นทาง': '#FF00F2',
+  'รถย้อนเลน': '#FF4444',
+  'รถบรรทุกวิ่งเลนขวา': '#FF8800',
+  'รถความเร็วเกินกำหนด': '#FFFF00',
+  'จราจรติดขัด': '#FF6600',
 }
 
 const StatusBadge = ({ label }: { label: IncidentStatusType }) => {
-  const colorMap: Record<IncidentStatusType, string> = {
-    'รถเกิดอุบัติเหตุ': '#FF0000',
-    'รถจอดเสีย': '#FFA500',
-    'รถจอดไหล่ทาง': '#00AEFF',
-    'งานก่อสร้าง': '#B2FF00',
-    'ปิดกั้นทาง': '#FF00F2',
-    'รถย้อนเลน': '#FF4444',
-    'รถบรรทุกวิ่งเลนขวา': '#FF8800',
-    'รถความเร็วเกินกำหนด': '#FFFF00',
-    'จราจรติดขัด': '#FF6600',
-  }
-  const color = colorMap[label] ?? '#979797'
+  const color = EVENT_TYPE_COLOR[label] ?? '#979797'
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
@@ -41,6 +50,53 @@ const StatusBadge = ({ label }: { label: IncidentStatusType }) => {
     }}>
       {label}
     </span>
+  )
+}
+
+// ── Grid view (Segmented "appstore" mode) — mirrors incident-detection's
+// EventGridView card style, adapted to this page's own IncidentRecord shape. ──
+
+const IncidentCard: React.FC<{ record: IncidentRecord; onSelect: (item: IncidentTransactionItem) => void }> = ({ record, onSelect }) => {
+  const color = EVENT_TYPE_COLOR[record.eventType] ?? '#979797'
+  return (
+    <div className='flex flex-col gap-2 rounded-2xl p-4' style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+      <div className='flex items-center gap-2'>
+        <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: color }} />
+        <h4 className='mb-0 font-semibold' style={{ color }}>{record.eventType}</h4>
+      </div>
+      <p className='fs-11 text-gray-400 mb-0'>{record.datetime}</p>
+      <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
+      <p className='fs-11 leading-snug mb-0.5 line-clamp-2'>
+        <span className='text-gray-400'>ชื่อกล้อง : </span>
+        <span className='text-blue-400'>{record.cameraName}</span>
+      </p>
+      <p className='fs-11 text-gray-400 mb-1'>IP Address : {record.ipAddress}</p>
+      {record.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={record.imageUrl}
+          alt='ภาพเหตุการณ์'
+          className='w-full aspect-[4/3] rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity'
+          onClick={() => onSelect(record.raw)}
+          title='คลิกเพื่อดูรายละเอียดเหตุการณ์'
+        />
+      ) : (
+        <div className='w-full aspect-[4/3] rounded-lg flex items-center justify-center bg-[#0e0e0e] text-gray-600'>
+          <TbPhotoOff size={22} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+const IncidentGridView: React.FC<{ records: IncidentRecord[]; onSelect: (item: IncidentTransactionItem) => void }> = ({ records, onSelect }) => {
+  if (records.length === 0) {
+    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบเหตุการณ์</div>
+  }
+  return (
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+      {records.map((r) => <IncidentCard key={r.key} record={r} onSelect={onSelect} />)}
+    </div>
   )
 }
 
@@ -53,9 +109,12 @@ const FILTER_CONFIG: FilterConfig[] = [
 
 const IncidentDetailTable: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('ALL')
+  const [viewMode, setViewMode] = React.useState<ViewMode>('TABLE')
+  const [selected, setSelected] = React.useState<IncidentTransactionItem | null>(null)
   const { dateRange } = useIncidentDetailContext()
   const searchParams = useSearchParams()
   const solutionId = searchParams.get('detail') ?? ''
+  const routeId = searchParams.get('route') ?? ''
 
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
@@ -66,16 +125,37 @@ const IncidentDetailTable: React.FC = () => {
     end_date: endDate,
   })
 
+  // Road code for the EventDetailModal "จุดติดตั้ง" line — not carried on the
+  // event row itself. `detail[].label` is `${road.code_name} - ${solution_name}`
+  // (see useLiveIncidentRouteItems), so the road code is the part before " - ".
+  const { routeItems } = useLiveIncidentRouteItems()
+  const roadCode = React.useMemo(() => {
+    const route = routeItems.find((r) => String(r.id) === routeId)
+    if (!route) return undefined
+    for (const sub of route.sub3) {
+      for (const d of sub.detail) {
+        if (typeof d !== 'string' && String(d.id) === solutionId) {
+          return detailLabel(d).split(' - ')[0]
+        }
+      }
+    }
+    return undefined
+  }, [routeItems, routeId, solutionId])
+
   const records: IncidentRecord[] = React.useMemo(() => {
     const items = data?.res_data ?? []
-    return items.map((item) => ({
-      key: String(item.id),
+    // `${id}-${index}` — the backend can return the same event `id` more than
+    // once in a single page (e.g. a join fan-out), which would otherwise
+    // produce a duplicate React key and silently drop/duplicate rows.
+    return items.map((item, index) => ({
+      key: `${item.id}-${index}`,
       datetime: dayjs(item.date_time).format('DD/MM/YYYY HH:mm'),
       eventType: (item.analytic_type_info?.analytic_type_name_th ?? 'อื่นๆ') as IncidentStatusType,
       cameraName: item.camera?.camera_name ?? '-',
       ipAddress: item.camera?.ip_address ?? '-',
       imageUrl: item.image_path,
       status: (item.analytic_type_info?.analytic_type_name_th ?? 'อื่นๆ') as IncidentStatusType,
+      raw: item,
     }))
   }, [data])
 
@@ -98,12 +178,16 @@ const IncidentDetailTable: React.FC = () => {
     },
     {
       title: 'ภาพขณะเกิดเหตุ', dataIndex: 'imageUrl', key: 'imageUrl', align: 'center', width: 140,
-      render: (url?: string) => (
-        <div style={{
-          width: 100, height: 64, borderRadius: 6, overflow: 'hidden',
-          backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto', border: '1px solid #333',
-        }}>
+      render: (url: string | undefined, record: IncidentRecord) => (
+        <div
+          onClick={() => setSelected(record.raw)}
+          title='คลิกเพื่อดูรายละเอียดเหตุการณ์'
+          style={{
+            width: 100, height: 64, borderRadius: 6, overflow: 'hidden',
+            backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto', border: '1px solid #333', cursor: 'pointer',
+          }}
+        >
           {url
             ? <img src={url} alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <img src="/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -137,16 +221,33 @@ const IncidentDetailTable: React.FC = () => {
           stats={stats}
           defaultFilter="ALL"
           onFilterChange={(key) => setActiveTab(key)}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
+          // Mobile: 2-column grid so each tab fills half the row (2 per line,
+          // no scrollbar). Desktop: flex row as usual.
+          filterClassName="grid grid-cols-2 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
         />
       </section>
-      <Table<IncidentRecord>
-        columns={columns}
-        dataSource={filteredData}
-        loading={isLoading}
-        pagination={false}
-        size="middle"
-        rowKey="key"
-        scroll={{ x: 'max-content' }}
+      {viewMode === 'TABLE' ? (
+        <Table<IncidentRecord>
+          columns={columns}
+          dataSource={filteredData}
+          loading={isLoading}
+          pagination={false}
+          size="middle"
+          rowKey="key"
+          scroll={{ x: 'max-content' }}
+        />
+      ) : (
+        <IncidentGridView records={filteredData} onSelect={setSelected} />
+      )}
+
+      <EventDetailModal
+        open={!!selected}
+        event={selected}
+        roadCode={roadCode}
+        onClose={() => setSelected(null)}
       />
     </div>
   )

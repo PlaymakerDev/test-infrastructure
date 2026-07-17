@@ -17,9 +17,12 @@ export interface LiveAlertRouteData {
 /** Alert "ค้นหาสายทาง" — maps the iot-status tree into RouteItem[] so the
  *  existing StatisticsMapPanel search list can render real online/offline
  *  counts without any UI change, and into MapMarkerItem[] (one per device
- *  geometry_point) for the map. */
-export function useLiveAlertRouteItems(): LiveAlertRouteData {
-  const { data: bureaus } = useIotStatus(ALL_DEPARTMENTS_ID, { scope: 'all' })
+ *  geometry_point) for the map.
+ *
+ *  `start_date`/`end_date` bound each device's noti_count (also part of the
+ *  backend's Redis cache key) — omit for the default today-00:00→now window. */
+export function useLiveAlertRouteItems(dateRange?: { start_date?: string; end_date?: string }): LiveAlertRouteData {
+  const { data: bureaus } = useIotStatus(ALL_DEPARTMENTS_ID, { scope: 'all', ...dateRange })
 
   const routeItems = useMemo<RouteItem[]>(() => {
     return (bureaus ?? []).map((bureau) => {
@@ -39,6 +42,10 @@ export function useLiveAlertRouteItems(): LiveAlertRouteData {
               line_check_fail: dev.line_check_fail,
               circuit_fail: dev.circuit_fail,
               volt_amp_fail: dev.volt_amp_fail,
+              // No project_id in this API (unlike incident-detection's
+              // central-list) — only road_id is available, so ProjectInfoModal
+              // opens with department info but "-" for project-specific fields.
+              roadId: road.road_id,
             }
           }),
         )

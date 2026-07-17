@@ -7,6 +7,7 @@ import {
   apiResponseVMSDepartmentSchema,
   apiResponseVMSMediaByIdSchema,
   apiResponseVMSMediaSchema,
+  apiResponseVMSNotificationsSchema,
   apiResponseVMSScheduleByDateSchema,
   apiResponseVMSSettingByRoadSchema,
   apiResponseVMSSettingByStatusSchema,
@@ -15,8 +16,10 @@ import {
   apiResponseVMSSettingStatusCountSchema,
   apiResponseVMSSettingTypeSchema,
   apiResponseVMSUpcomingSummarySchema,
+  vmsDetailsSchema,
   vmsMediaListSchema,
   vmsSettingTypeSchema,
+  vmsStatusResponseSchema,
 } from './control-vms'
 
 describe('vmsSettingTypeSchema', () => {
@@ -40,18 +43,131 @@ describe('apiResponseVMSSettingTypeSchema', () => {
   })
 })
 
+describe('apiResponseVMSNotificationsSchema', () => {
+  const valid = {
+    count: 1,
+    items: [{
+      category: 'อุปกรณ์',
+      event_code: 'VMS_ERROR',
+      event_name: 'ป้าย VMS ขัดข้อง',
+      setting_type_id: 1,
+      status: 'alert',
+      timestamp: '2026-01-01T00:00:00Z',
+      type_name: 'ข้อความ',
+    }],
+  }
+  it('parses a valid notifications response', () => {
+    expect(apiResponseVMSNotificationsSchema.safeParse(valid).success).toBe(true)
+  })
+  it('parses an empty items array', () => {
+    expect(apiResponseVMSNotificationsSchema.safeParse({ count: 0, items: [] }).success).toBe(true)
+  })
+  it('rejects an invalid status enum value', () => {
+    const broken = { ...valid, items: [{ ...valid.items[0], status: 'unknown' }] }
+    expect(apiResponseVMSNotificationsSchema.safeParse(broken).success).toBe(false)
+  })
+})
+
+describe('vmsStatusResponseSchema', () => {
+  const valid = {
+    vms_id: 623,
+    operation: { is_online: true, label: 'ทำงานปกติ', raw_status: 1 },
+    stream: { is_online: true, last_connected: '2026-01-01T00:00:00Z' },
+    box: { is_connected: true, label: 'connect', connected_count: 2, total_count: 2 },
+    last_setting: { setting_id: 1, setting_type_id: 1, type_name: 'ข้อความ', media_type: 'image', status: 1 },
+    zt_ip_address: '10.210.1.70',
+  }
+  it('parses a valid status response', () => {
+    expect(vmsStatusResponseSchema.safeParse(valid).success).toBe(true)
+  })
+  it('parses a null last_setting (no currently-running command)', () => {
+    expect(vmsStatusResponseSchema.safeParse({ ...valid, last_setting: null }).success).toBe(true)
+  })
+  it('parses null zt_ip_address and stream.last_connected', () => {
+    const result = vmsStatusResponseSchema.safeParse({
+      ...valid,
+      zt_ip_address: null,
+      stream: { ...valid.stream, last_connected: null },
+    })
+    expect(result.success).toBe(true)
+  })
+  it('rejects an invalid operation.label enum value', () => {
+    const broken = { ...valid, operation: { ...valid.operation, label: 'unknown' } }
+    expect(vmsStatusResponseSchema.safeParse(broken).success).toBe(false)
+  })
+})
+
+describe('vmsDetailsSchema', () => {
+  const valid = {
+    id: 1,
+    solution_id: 2877,
+    last_connected: '2026-01-01T00:00:00Z',
+    weather_id: null,
+    crossings: { id: 1, vms_id: 594, wid: 1, crossing_master_index: 'CMI-001' },
+    desktop_screen: { id: 1, vms_id: 594, desktop_screen: 'https://example.com/live.m3u8', video_timestamp: '2026-01-01T00:00:00Z' },
+    solution: {
+      id: 2877,
+      solution_name: 'TrafficSign : ปท.3004 - จุดที่ 1',
+      solution_type_id: 7,
+      sta: null,
+      solution_location: {
+        solution_location_id: 1,
+        location_name: 'กม.0+600',
+        project_roads: { project_road_id: 1, road: { id: 7, road_code: 'ปท.3004', road_name: 'บ้านสวนสัก' } },
+      },
+    },
+    vms_camera: [{
+      id: 1, vms_id: 594, camera_id: 'abc-123',
+      camera: {
+        id: 'abc-123', ip_address: '10.101.27.2', department_id: 1, road_id: 7, solution_id: 2877,
+        camera_name: 'CMI-001', sta: '0+600', hls_url: 'https://example.com/cam.m3u8', point_geometry: [100.5, 13.7],
+        remark: '', created_by: 'system', created_at: '2026-01-01T00:00:00Z',
+        ping_updated: '2026-01-01T00:00:00Z', ping_status: true,
+        curl_updated: '2026-01-01T00:00:00Z', curl_status: true,
+        contractor_id: '1', updated_at: '2026-01-01T00:00:00Z',
+      },
+    }],
+    vms_weather: null,
+  }
+  it('parses a valid details response', () => {
+    expect(vmsDetailsSchema.safeParse(valid).success).toBe(true)
+  })
+  it('parses null crossings/desktop_screen/solution_location/vms_weather', () => {
+    const result = vmsDetailsSchema.safeParse({
+      ...valid,
+      crossings: null,
+      desktop_screen: null,
+      solution: { ...valid.solution, solution_location: null },
+      vms_weather: null,
+    })
+    expect(result.success).toBe(true)
+  })
+  it('parses a response with crossings key entirely absent (confirmed live — most solutions have no crossing signal)', () => {
+    const { crossings, ...withoutCrossings } = valid
+    expect(vmsDetailsSchema.safeParse(withoutCrossings).success).toBe(true)
+  })
+  it('parses an empty vms_camera array', () => {
+    expect(vmsDetailsSchema.safeParse({ ...valid, vms_camera: [] }).success).toBe(true)
+  })
+  it('rejects non-number solution_id', () => {
+    expect(vmsDetailsSchema.safeParse({ ...valid, solution_id: '2877' }).success).toBe(false)
+  })
+})
+
 const VALID_DEPARTMENT_TREE = [
   {
     department_id: 1,
     department_short_name: 'สทช.1',
     camera_online_count: 5,
     camera_offline_count: 2,
+    noti_count: 4,
     sub_department: [
       {
         department_id: 10,
         department_short_name: 'สาขา A',
         camera_online_count: 3,
         camera_offline_count: 1,
+        noti_count: 4,
         roads: [
           {
             road_id: 100,
@@ -64,12 +180,15 @@ const VALID_DEPARTMENT_TREE = [
                 solution_name: 'VMS-001',
                 anydesk: '123456',
                 geo_point: [100.5, 13.7],
+                latitude: 13.7,
+                longitude: 100.5,
                 project: { id: 1, budget_year: 2566, contract_no: 'CON-001' },
                 desktop_screen: '',
                 last_connected: '2026-01-01T00:00:00Z',
                 is_online: true,
                 camera_online_count: 2,
                 camera_offline_count: 0,
+                noti_count: 4,
               },
             ],
           },

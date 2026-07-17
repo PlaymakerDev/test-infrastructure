@@ -19,6 +19,12 @@ import { showReactPopup } from './popupHelper'
 
 type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, Record<string, unknown>>
 
+/** Deterministic Mapbox source id for a given MarkerLayer `id` prop — lets a
+ *  caller's `onClusterClick` call `map.getSource(...)` for its own
+ *  `getClusterExpansionZoom`/`getClusterLeaves` calls without hardcoding
+ *  this component's internal naming convention. */
+export const markerLayerSourceId = (id: string) => `markerlayer-src-${id}`
+
 /**
  * Generic marker layer — wraps a GeoJSON source plus 1-3 mapbox layers.
  *
@@ -121,7 +127,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   popupOptions,
 }) => {
   const { map, isLoaded } = useMap()
-  const sourceId = `markerlayer-src-${id}`
+  const sourceId = markerLayerSourceId(id)
   const clusterLayerId = `markerlayer-cluster-${id}`
   const pointLayerId = `markerlayer-point-${id}`
   const symbolLayerId = `markerlayer-symbol-${id}`

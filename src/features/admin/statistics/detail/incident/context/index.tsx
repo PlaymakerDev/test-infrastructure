@@ -6,8 +6,6 @@ import type { Dayjs } from 'dayjs'
 interface IncidentDetailContextType {
   searchText: string
   setSearchText: (v: string) => void
-  searchOpen: boolean
-  setSearchOpen: (v: boolean) => void
   dateRange: [Dayjs | null, Dayjs | null] | null
   setDateRange: (v: [Dayjs | null, Dayjs | null] | null) => void
 }
@@ -22,12 +20,11 @@ export const useIncidentDetailContext = () => {
 
 export const IncidentDetailProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [searchText, setSearchText] = useState('')
-  const [searchOpen, setSearchOpen] = useState(true)
   const today = dayjs()
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>([today.subtract(2, 'day').startOf('day'), today.endOf('day')])
 
   return (
-    <IncidentDetailContext.Provider value={{ searchText, setSearchText, searchOpen, setSearchOpen, dateRange, setDateRange }}>
+    <IncidentDetailContext.Provider value={{ searchText, setSearchText, dateRange, setDateRange }}>
       {children}
     </IncidentDetailContext.Provider>
   )

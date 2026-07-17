@@ -1,9 +1,11 @@
 "use client"
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from 'react-icons/tb'
-import { Button, Collapse } from 'antd'
+import { TbChevronDown } from 'react-icons/tb'
+import { Collapse } from 'antd'
 import { SearchCard } from '@/components/search-card'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { setMapPanelsOpen } from '@/stores/reducers/layout/layoutSlice'
 import { DrawerMapSearchCard } from '../../../overall/components/shared'
 import { useIncidentDetailContext } from '../context'
 import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
@@ -14,7 +16,15 @@ const IncidentDetailSidebar: React.FC = () => {
   const searchParams = useSearchParams()
   const routeParam = searchParams.get('route') || ''
   const detailParam = searchParams.get('detail') || ''
-  const { searchText, setSearchText, searchOpen, setSearchOpen } = useIncidentDetailContext()
+  const { searchText, setSearchText } = useIncidentDetailContext()
+
+  // Same Navbar zoom-in-area toggle as StatisticsMapPanel — always start
+  // visible on mount so a hide left on a different page never carries over.
+  const dispatch = useAppDispatch()
+  const searchOpen = useAppSelector((state) => state.layout.map_panels.open)
+  useEffect(() => {
+    dispatch(setMapPanelsOpen({ open: true }))
+  }, [dispatch])
 
   // ค้นหาสายทาง — same live data (GET /analytic/departments/0/overview/central/list
   // ?scope=all) as the overview map, via the shared hook, so this sidebar and
@@ -106,6 +116,13 @@ const IncidentDetailSidebar: React.FC = () => {
                       </span>
                     )}
                     style={{ marginTop: 4 }}
+                    defaultActiveKey={
+                      routeParam === key
+                        ? item.sub3
+                          .filter((sub) => sub.detail.some((d) => detailKey(d) === detailParam))
+                          .map((sub) => `${key}-${sub.label}`)
+                        : []
+                    }
                     items={item.sub3.map((sub) => ({
                       key: `${key}-${sub.label}`,
                       label: (
@@ -134,9 +151,9 @@ const IncidentDetailSidebar: React.FC = () => {
                               >
                                 <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                  {sub.connected
-                                    ? <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
-                                    : <img src="/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
+                                  {typeof d !== 'string' && d.is_online === false
+                                    ? <img src="/images/statistics/iconnoconnect.png" alt="no connect" width={20} height={20} />
+                                    : <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
                                   }
                                 </div>
                               </div>
@@ -176,18 +193,6 @@ const IncidentDetailSidebar: React.FC = () => {
             </SearchCard>
           </div>
         </div>
-
-        <Button
-          type='primary'
-          shape='circle'
-          title={searchOpen ? 'ซ่อนรายการสายทาง' : 'แสดงรายการสายทาง'}
-          icon={searchOpen
-            ? <TbLayoutSidebarLeftCollapse className='fs-18' />
-            : <TbLayoutSidebarLeftExpand className='fs-18' />
-          }
-          onClick={() => setSearchOpen(!searchOpen)}
-          className='absolute! top-10 -right-5 z-20 w-10! h-10! shadow-lg'
-        />
       </div>
     </>
   )

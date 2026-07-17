@@ -17,7 +17,7 @@ const Layout: React.FC<Props> = (props) => {
     <PageProvider>
       <Navbar />
       <Sidebar />
-      <main className={`min-h-screen w-screen overflow-y-auto pb-32 ${isDashboard ? '' : 'pt-(--nav-offset)'}`}>
+      <main className={`min-h-screen w-screen overflow-y-auto ${isDashboard ? '' : 'pt-(--nav-offset)'}`}>
         {children}
       </main>
     </PageProvider>

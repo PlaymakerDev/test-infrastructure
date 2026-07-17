@@ -119,6 +119,13 @@ const AlertDetailSidebar: React.FC = () => {
                               </span>
                             )}
                             style={{ marginTop: 4 }}
+                            defaultActiveKey={
+                              routeParam === key
+                                ? item.sub3
+                                  .filter((sub) => sub.detail.some((d) => detailKey(d) === detailParam))
+                                  .map((sub) => `${key}-${sub.label}`)
+                                : []
+                            }
                             items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
                               key: `${key}-${sub.label}`,
                               label: (

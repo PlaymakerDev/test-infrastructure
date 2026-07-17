@@ -5,9 +5,12 @@ import type {
   APIResponsePutVMSSettingType,
   APIResponseVMSDepartment,
   APIResponseVMSMedia,
+  APIResponseVMSNotifications,
   APIResponseVMSSettingType,
+  VMSDetails,
   VMSMediaList,
   VMSSettingType,
+  VMSStatusResponse,
 } from '@/types/control-vms/vms-api'
 import type {
   APIResponsePostVMSBatchDelete,
@@ -35,6 +38,132 @@ export const apiResponseVMSSettingTypeSchema = z.array(
   vmsSettingTypeSchema,
 ) satisfies z.ZodType<APIResponseVMSSettingType>
 
+// ── Notifications (per-VMS history) ──────────────────────────────────────────
+const vmsNotificationItemSchema = z.object({
+  category: z.string(),
+  event_code: z.string(),
+  event_name: z.string(),
+  setting_type_id: z.number(),
+  status: z.enum(['info', 'warning', 'alert', 'critical']),
+  timestamp: z.string(),
+  type_name: z.string(),
+})
+
+export const apiResponseVMSNotificationsSchema = z.object({
+  count: z.number(),
+  items: z.array(vmsNotificationItemSchema),
+}) satisfies z.ZodType<APIResponseVMSNotifications>
+
+// ── Status (composite health snapshot) ───────────────────────────────────────
+export const vmsStatusResponseSchema = z.object({
+  vms_id: z.number(),
+  operation: z.object({
+    is_online: z.boolean(),
+    label: z.enum(['ทำงานปกติ', 'ขาดการเชื่อมต่อ']),
+    raw_status: z.number().nullable(),
+  }),
+  stream: z.object({
+    is_online: z.boolean(),
+    last_connected: z.string().nullable(),
+  }),
+  box: z.object({
+    is_connected: z.boolean(),
+    label: z.enum(['connect', 'disconnect']),
+    connected_count: z.number(),
+    total_count: z.number(),
+  }),
+  last_setting: z.object({
+    setting_id: z.number(),
+    setting_type_id: z.number().nullable(),
+    type_name: z.string(),
+    media_type: z.string(),
+    status: z.number(),
+  }).nullable(),
+  zt_ip_address: z.string().nullable(),
+}) satisfies z.ZodType<VMSStatusResponse>
+
+// ── Details (full solution detail) ───────────────────────────────────────────
+const vmsWeatherLogSchema = z.object({
+  id: z.number(),
+  weather_id: z.number(),
+  hour_timestamp: z.string(),
+  temperature: z.number(),
+  humidity: z.number(),
+  pm2: z.number(),
+  aqi: z.number(),
+  wind_speed: z.number(),
+})
+
+export const vmsDetailsSchema = z.object({
+  id: z.number(),
+  solution_id: z.number(),
+  last_connected: z.string(),
+  weather_id: z.number().nullable(),
+  crossings: z.object({
+    id: z.number(),
+    vms_id: z.number(),
+    wid: z.number(),
+    crossing_master_index: z.string(),
+  }).nullish(),
+  desktop_screen: z.object({
+    id: z.number(),
+    vms_id: z.number(),
+    desktop_screen: z.string(),
+    video_timestamp: z.string(),
+  }).nullable(),
+  solution: z.object({
+    id: z.number(),
+    solution_name: z.string(),
+    solution_type_id: z.number(),
+    sta: z.string().nullable(),
+    solution_location: z.object({
+      solution_location_id: z.number(),
+      location_name: z.string(),
+      project_roads: z.object({
+        project_road_id: z.number(),
+        road: z.object({
+          id: z.number(),
+          road_code: z.string(),
+          road_name: z.string(),
+        }),
+      }),
+    }).nullable(),
+  }),
+  vms_camera: z.array(z.object({
+    id: z.number(),
+    vms_id: z.number(),
+    camera_id: z.string(),
+    camera: z.object({
+      id: z.string(),
+      ip_address: z.string(),
+      department_id: z.number(),
+      road_id: z.number(),
+      solution_id: z.number(),
+      camera_name: z.string(),
+      sta: z.string(),
+      hls_url: z.string(),
+      point_geometry: z.array(z.number()),
+      remark: z.string(),
+      created_by: z.string(),
+      created_at: z.string(),
+      ping_updated: z.string(),
+      ping_status: z.boolean(),
+      curl_updated: z.string(),
+      curl_status: z.boolean(),
+      contractor_id: z.string(),
+      updated_at: z.string(),
+    }),
+  })),
+  vms_weather: z.object({
+    id: z.number(),
+    road_id: z.number(),
+    icon: z.string().nullable(),
+    temp_url: z.string().nullable(),
+    waqi_url: z.string().nullable(),
+    weather_logs: z.array(vmsWeatherLogSchema),
+  }).nullable(),
+}) satisfies z.ZodType<VMSDetails>
+
 // ── Departments tree ─────────────────────────────────────────────────────────
 const sharedProjectSchema = z.object({
   id: z.number(),
@@ -50,12 +179,15 @@ const solutionSchema = z.object({
   solution_name: z.string(),
   anydesk: z.string(),
   geo_point: z.array(z.number()),
+  latitude: z.number(),
+  longitude: z.number(),
   project: sharedProjectSchema,
   desktop_screen: z.string(),
   last_connected: z.string(),
   is_online: z.boolean(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
 })
 
 const roadSchema = z.object({
@@ -70,6 +202,7 @@ const subDepartmentSchema = z.object({
   department_short_name: z.string(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
   roads: z.array(roadSchema),
 })
 
@@ -78,6 +211,7 @@ const vmsDepartmentListSchema = z.object({
   department_short_name: z.string(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
   sub_department: z.array(subDepartmentSchema),
 })
 

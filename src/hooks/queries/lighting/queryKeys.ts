@@ -8,4 +8,7 @@ export const lightingKeys = {
     list: (deptId: string | number, startDate: string, endDate: string, limit?: number) =>
       [...lightingKeys.all, 'topPowerRoads', deptId, startDate, endDate, limit ?? null] as const,
   },
+  diagram: (imei: string) => [...lightingKeys.all, 'diagram', imei] as const,
+  alerts: (imei: string, page: number, limit: number, sort: 'ASC' | 'DESC') =>
+    [...lightingKeys.all, 'alerts', imei, page, limit, sort] as const,
 } as const

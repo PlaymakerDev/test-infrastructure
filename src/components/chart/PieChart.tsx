@@ -189,12 +189,14 @@ const PieChart: React.FC<PieChartProps> = ({
       borderWidth: 1,
       padding: [10, 16],
       textStyle: { color: '#ffffff', fontSize: 12 },
-      formatter: (params: { name: string; value: number; data: { itemStyle: { color: string } } }) =>
-        `<div style="display:flex;align-items:center;gap:8px">
-          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.data.itemStyle.color}"></span>
+      formatter: (params: { name: string; value: number; data?: { itemStyle?: { color?: string } }; color?: string }) => {
+        const color = params.data?.itemStyle?.color ?? params.color ?? '#ffffff'
+        return `<div style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>
           <span>${params.name}</span>
-          <span style="font-weight:700;margin-left:8px;color:${params.data.itemStyle.color}">${Number(params.value).toLocaleString()}</span>
-        </div>`,
+          <span style="font-weight:700;margin-left:8px;color:${color}">${Number(params.value).toLocaleString()}</span>
+        </div>`
+      },
     },
     series: [
       {

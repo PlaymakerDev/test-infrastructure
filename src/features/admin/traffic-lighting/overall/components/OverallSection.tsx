@@ -27,8 +27,8 @@ const OverallSection: React.FC = () => {
 
   return (
     <>
-      <section className='mt-4 flex flex-col md:flex-row md:items-stretch gap-3 md:gap-4 md:min-h-[760px]'>
-        <div className='shrink-0 w-full md:w-[240px] lg:w-[360px] xl:w-[500px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-0 rounded-[20px] bg-[#2B2B2B] p-3 sm:p-4 flex flex-col overflow-hidden'>
+      <section className='mt-4 relative flex flex-col gap-3 md:min-h-[760px]'>
+        <div className='w-full md:absolute md:top-0 md:left-0 md:z-10 md:w-[280px] lg:w-[340px] xl:w-[400px] h-auto min-h-[280px] sm:min-h-[320px] md:h-[760px] md:min-h-0 md:max-h-[760px] md:overflow-y-auto rounded-[20px] bg-[#2B2B2B] p-3 sm:p-4 flex flex-col overflow-hidden'>
           <div className='flex flex-col gap-3 shrink-0'>
             {leftPanelItems.map((item) => (
               <div key={item.id} className='flex flex-col gap-1 min-w-0 flex-1'>
@@ -89,7 +89,7 @@ const OverallSection: React.FC = () => {
                   <p className='text-[22px] sm:text-[28px] lg:text-[30px] xl:text-[32px] font-bold m-0 text-white leading-none'>{phaseLabel}</p>
                   <p className='text-[11px] sm:text-[13px] xl:text-[14px] font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
                 </div>
-                <div className='grid grid-cols-3 gap-1.5 sm:gap-2 xl:grid-cols-6 w-full min-w-0 shrink-0 mt-auto'>
+                <div className='grid grid-cols-5 gap-1.5 sm:gap-2 w-full min-w-0 shrink-0 mt-auto'>
                   {phaseMetrics.map((metric) => (
                     <div
                       key={metric.label}
@@ -123,19 +123,31 @@ const OverallSection: React.FC = () => {
           </div>
         </div>
 
-        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:flex-1 md:min-h-[400px] md:h-[760px] rounded-[20px] overflow-hidden'>
+        <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:w-full md:min-h-[400px] md:h-[760px] rounded-[20px] overflow-hidden'>
           <MapTrafficLighting deptId={deptId} />
         </div>
 
-        <div className='flex flex-col gap-3 md:gap-4 w-full md:w-[240px] lg:w-[280px] shrink-0'>
+        <div className='flex flex-col gap-3 md:gap-4 w-full md:absolute md:top-0 md:right-0 md:z-10 md:w-[240px] lg:w-[280px]'>
           {statCards.map((s) => (
             <div
               key={s.title}
-              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-[20px] p-3 sm:p-4'
-              style={{ background: s.bg, border: s.border }}
+              className='flex flex-col justify-between h-[140px] sm:h-[160px] md:h-[170px] rounded-[20px] border-2 border-solid p-3 sm:p-4'
+              style={{
+                borderColor: s.titleColor,
+                // Layered so the 10% tint blends onto an opaque dark backing
+                // instead of the map behind it — a flat `{color}1A` alone
+                // would let the busy map bleed through and wash out the text.
+                background: `linear-gradient(${s.titleColor}1A, ${s.titleColor}1A), #161616`,
+                boxShadow: `0 10px 24px -8px ${s.titleColor}59`,
+              }}
             >
               <div className='flex flex-col gap-2'>
-                <img src={s.icon} alt='' width={30} height={30} className='shrink-0' />
+                <div
+                  className='w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0'
+                  style={{ background: `${s.titleColor}26` }}
+                >
+                  <img src={s.icon} alt='' className='w-5 h-5 sm:w-6 sm:h-6' />
+                </div>
                 <p style={{ color: s.titleColor, fontWeight: 700, fontSize: 16, margin: 0, lineHeight: 1.2 }}>{s.title}</p>
               </div>
               <div className='flex items-baseline gap-2'>
@@ -222,7 +234,7 @@ const OverallSection: React.FC = () => {
         </div>
       </div>
 
-      <section className='mt-4 pb-16'>
+      <section className='mt-4'>
         <TableTrafficLighting projects={filteredProjects} />
       </section>
     </>

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
 import { getLightingAlertsAPI } from '@/services/routes/LightingService'
 import type { AlertItem } from '@/types/lighting'
 
@@ -47,6 +47,43 @@ const LineStatusBadge = ({ status }: { status: string }) => {
   )
 }
 
+// ── Grid view (Segmented "appstore" mode) — mirrors incident-detection's
+// IncidentGridView card style (statistics/detail/incident), adapted to AlertItem. ──
+
+const alertKey = (r: AlertItem) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`
+
+const AlertCard: React.FC<{ record: AlertItem }> = ({ record }) => {
+  const level = levelOf(record.equipment_id)
+  const levelColor = level === 'Warning' ? '#FF9D00' : '#E94C4C'
+  return (
+    <div className='flex flex-col gap-2 rounded-2xl p-4' style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+      <div className='flex items-center justify-between gap-2'>
+        <div className='flex items-center gap-2'>
+          <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: levelColor }} />
+          <h4 className='mb-0 font-semibold' style={{ color: levelColor }}>{level}</h4>
+        </div>
+        <LineStatusBadge status={record.status} />
+      </div>
+      <p className='fs-11 text-gray-400 mb-0'>
+        {record.timestamp ? dayjs(record.timestamp).format('D MMM BBBB HH:mm:ss') : '-'}
+      </p>
+      <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
+      <p className='fs-11 leading-snug mb-0' style={{ color: '#66AEFF' }}>{record.incident}</p>
+    </div>
+  )
+}
+
+const AlertGridView: React.FC<{ records: AlertItem[] }> = ({ records }) => {
+  if (records.length === 0) {
+    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
+  }
+  return (
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+      {records.map((r) => <AlertCard key={alertKey(r)} record={r} />)}
+    </div>
+  )
+}
+
 // ── Filter config ──────────────────────────────────────────────────────────────
 
 const FILTER_CONFIG: FilterConfig[] = [
@@ -59,6 +96,7 @@ const FILTER_CONFIG: FilterConfig[] = [
 
 const AlertDetailTable: React.FC = () => {
   const [activeTab, setActiveTab] = useState('ALL')
+  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
   const searchParams = useSearchParams()
   const imei = searchParams.get('detail') ?? ''
   const [alerts, setAlerts] = useState<AlertItem[]>([])
@@ -136,17 +174,24 @@ const AlertDetailTable: React.FC = () => {
           stats={stats}
           defaultFilter="ALL"
           onFilterChange={(key) => setActiveTab(key)}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
         />
       </section>
-      <Table<AlertItem>
-        columns={columns}
-        dataSource={filteredData}
-        loading={loaded ? false : true}
-        pagination={false}
-        size="middle"
-        rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
-        scroll={{ x: 'max-content' }}
-      />
+      {viewMode === 'TABLE' ? (
+        <Table<AlertItem>
+          columns={columns}
+          dataSource={filteredData}
+          loading={loaded ? false : true}
+          pagination={false}
+          size="middle"
+          rowKey={alertKey}
+          scroll={{ x: 'max-content' }}
+        />
+      ) : (
+        <AlertGridView records={filteredData} />
+      )}
     </div>
   )
 }

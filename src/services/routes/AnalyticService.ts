@@ -58,8 +58,15 @@ export const getIncidentCentralTotalsAPI = (deptId: string | number) =>
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging.
  *  `scope=all` — used with dept 0 (statistics' nationwide view), same as
- *  getIncidentOverviewAPI, to bypass single-department scoping. */
-export const getIncidentCentralListAPI = (deptId: string | number, params: { scope?: string } = {}) =>
+ *  getIncidentOverviewAPI, to bypass single-department scoping.
+ *  `start_date`/`end_date` (added to the spec after this was first wired up)
+ *  bound each item's `noti_count` — omit both to default to today 00:00→now.
+ *  Also part of the backend's 15-min Redis cache key, so a different window
+ *  is a genuine cache miss, not just a wasted refetch. */
+export const getIncidentCentralListAPI = (
+  deptId: string | number,
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
+) =>
   ApiService.fetchData<APIResponseIncidentCentralList>({
     url: `${analyticBase(deptId)}/overview/central/list`,
     method: 'GET',
@@ -196,10 +203,13 @@ export const getIncidentByDepartmentAPI = (
 // ── Incidents Summary (stat cards) ───────────────────────────────────────────
 
 /** GET /analytic/departments/{id}/overview/incidents-summary
- *  Aggregate counts powering the 4 stat cards on the incident overview. */
+ *  Aggregate counts powering the 4 stat cards on the incident overview.
+ *  NOTE: request params are `start_date`/`end_date` (per the OpenAPI spec) —
+ *  the response echoes the resolved window back as `range.since`/`range.until`,
+ *  a DIFFERENT pair of names. Omitting both makes the backend default to today. */
 export const getIncidentSummaryAPI = (
   deptId: string | number,
-  params: { scope?: string; since?: string; until?: string } = {},
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
 ) =>
   ApiService.fetchData<{
     range: { since: string; until: string }
@@ -283,7 +293,7 @@ export interface IotStatusBureau {
  *  Powers the alert overview search list. */
 export const getIotStatusAPI = (
   deptId: string | number,
-  params: { scope?: string } = {},
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
 ) =>
   ApiService.fetchData<IotStatusBureau[]>({
     url: `/lighting/departments/${deptId}/overview/central/iot-status`,
@@ -310,7 +320,7 @@ export interface IotStatusSummary {
  *  Aggregate counts powering the 4 stat cards on the alert overview. */
 export const getIotStatusSummaryAPI = (
   deptId: string | number,
-  params: { scope?: string } = {},
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
 ) =>
   ApiService.fetchData<IotStatusSummary>({
     url: `/lighting/departments/${deptId}/overview/central/iot-status/summary`,

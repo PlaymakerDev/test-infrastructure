@@ -14,13 +14,42 @@ import {
   APIResponsePostVMSSettingType,
   APIRequestPutVMSSettingType,
   APIResponsePutVMSSettingType,
-  APIResponseDeleteVMSSettingType
+  APIResponseDeleteVMSSettingType,
+  APIResponseVMSNotifications,
+  VMSStatusResponse,
+  VMSDetails
 } from "@/types/control-vms/vms-api"
 
 // VMS
-export const getVMSDepartmentAPI = async () => {
+export const getVMSDepartmentAPI = async (params?: { since?: string }) => {
   return ApiService.fetchData<APIResponseVMSDepartment>({
     url: `/vms/settings/departments`,
+    method: 'GET',
+    params,
+  })
+}
+
+// GET NOTIFICATIONS (per-VMS history)
+export const getVMSNotificationsAPI = async (vmsId: number | string, params: { start_date: string; end_date: string }) => {
+  return ApiService.fetchData<APIResponseVMSNotifications>({
+    url: `/vms/vms/${vmsId}/notifications`,
+    method: 'GET',
+    params,
+  })
+}
+
+// GET STATUS (composite health snapshot — operation/stream/box/last_setting)
+export const getVMSStatusAPI = async (vmsId: number | string) => {
+  return ApiService.fetchData<VMSStatusResponse>({
+    url: `/vms/vms/${vmsId}/status`,
+    method: 'GET',
+  })
+}
+
+// GET DETAILS (full solution detail — crossings/desktop_screen/camera/weather)
+export const getVMSDetailsAPI = async (solutionId: number | string) => {
+  return ApiService.fetchData<VMSDetails>({
+    url: `/vms/details/${solutionId}`,
     method: 'GET',
   })
 }

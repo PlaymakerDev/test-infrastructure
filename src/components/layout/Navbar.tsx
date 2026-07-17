@@ -33,8 +33,8 @@ import {
 import dayjs from 'dayjs';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
 import th from 'dayjs/locale/th';
-import { useAppDispatch } from "@/stores/hooks";
-import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { setDrawerOpen, setMapPanelsOpen } from "@/stores/reducers/layout/layoutSlice";
 import { Button, Dropdown, MenuProps } from "antd";
 
 /* VARIABLE */
@@ -67,9 +67,15 @@ export default function Navbar() {
   const pathname = usePathname()
   const iconClassName = "fs-24 cursor-pointer"
   const dispatch = useAppDispatch()
+  const mapPanelsOpen = useAppSelector((state) => state.layout.map_panels.open)
   // STATE
   const [currentTime, setCurrentTime] = useState(dayjs().format('HH:mm:ss'))
   const [scrolled, setScrolled] = useState(false)
+
+  const toggleMapPanels = useCallback(
+    () => dispatch(setMapPanelsOpen({ open: !mapPanelsOpen })),
+    [dispatch, mapPanelsOpen],
+  )
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -87,7 +93,12 @@ export default function Navbar() {
   const items: MenuProps['items'] = [
     {
       key: '1',
-      label: <TbZoomInArea className={iconClassName} />
+      label: (
+        <TbZoomInArea
+          className={`${iconClassName} ${!mapPanelsOpen ? 'text-(--yellow)' : ''}`}
+          onClick={toggleMapPanels}
+        />
+      )
     },
     {
       key: '2',
@@ -143,7 +154,9 @@ export default function Navbar() {
         {/* NAVBAR SESSION END */}
         <div className="nav-side-menu">
           <TbZoomInArea
-            className={iconClassName}
+            title={mapPanelsOpen ? 'ซ่อนแผงข้อมูลด้านข้าง' : 'แสดงแผงข้อมูลด้านข้าง'}
+            className={`${iconClassName} ${!mapPanelsOpen ? 'text-(--yellow)' : ''}`}
+            onClick={toggleMapPanels}
           />
           <TbSearch
             className={iconClassName}

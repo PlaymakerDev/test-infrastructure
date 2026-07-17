@@ -14,9 +14,10 @@ interface Props {
    *  another tab). Omit for the uncontrolled `defaultActive`-only behaviour. */
   activeValue?: string;
   size?: 'small' | 'middle' | 'large';
-  /** Below the `sm` breakpoint, wrap onto additional lines instead of
-   *  horizontally scrolling. `sm:` and up are unchanged (nowrap + scroll).
-   *  Default false preserves the original scroll-only behaviour. */
+  /** Wrap onto additional lines instead of horizontally scrolling, at every
+   *  viewport width. Default false preserves the original scroll-only
+   *  behaviour (only usage is statistics' TitleSection, so this doesn't
+   *  affect any other caller). */
   mobileWrap?: boolean;
 }
 
@@ -55,7 +56,7 @@ const SwapButton: React.FC<Props> = (props) => {
     // silently fails to hide the scrollbar wherever it's used. `no-scrollbar` is itself unlayered,
     // so it wins on class-vs-universal specificity within the same (no) layer.
     <div
-      className={`flex items-center gap-2 sm:gap-3 w-full no-scrollbar ${mobileWrap ? 'flex-wrap sm:flex-nowrap sm:overflow-x-auto' : 'flex-nowrap overflow-x-auto'}`}
+      className={`flex items-center gap-2 sm:gap-3 w-full no-scrollbar ${mobileWrap ? 'flex-wrap' : 'flex-nowrap overflow-x-auto'}`}
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {renderButton}

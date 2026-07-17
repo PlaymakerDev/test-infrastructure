@@ -339,8 +339,17 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     }
   };
 
-  const handleErrorCallback = (error: any) => {
-    console.error(`❌ Camera [${cameraId}]: Error`, error);
+  // `fatal = false` logs via console.warn instead of console.error — Next.js's
+  // dev overlay turns every console.error into a full-screen blocking error,
+  // even for hls.js errors the player already recovers from automatically
+  // (e.g. a single dropped fragment). Only genuinely fatal errors (playback
+  // actually stops) warrant that interruption.
+  const handleErrorCallback = (error: any, fatal: boolean = true) => {
+    if (fatal) {
+      console.error(`❌ Camera [${cameraId}]: Error`, error);
+    } else {
+      console.warn(`⚠️ Camera [${cameraId}]: Recoverable error`, error);
+    }
     if (onError) {
       onError(error);
     }
@@ -486,7 +495,6 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     };
 
     const onError = (e: Event) => {
-      console.error(`❌ Camera [${cameraId}]: Video error (direct)`, e);
       handleErrorCallback(e);
       setHasError(true);
       setIsLoading(false);
@@ -638,8 +646,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
             return;
           }
 
-          console.error(`❌ Camera [${cameraId}]: HLS Error`, data);
-          handleErrorCallback(data);
+          handleErrorCallback(data, data.fatal);
 
           if (data.fatal) {
             setHasError(true);
@@ -774,7 +781,6 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         };
 
         const handleVideoError = (e: Event) => {
-          console.error(`❌ Camera [${cameraId}]: Video error`, e);
           handleErrorCallback(e);
           setHasError(true);
           setIsLoading(false);
@@ -814,7 +820,6 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         throw new Error('HLS not supported in this browser');
       }
     } catch (error: any) {
-      console.error(`❌ Camera [${cameraId}]: Init HLS error`, error);
       handleErrorCallback(error);
       setHasError(true);
       setIsLoading(false);

@@ -10,6 +10,7 @@ import type {
   PaginatedLogs4gCentral,
   PaginatedElectricityAgg,
   TopPowerRoadItem,
+  LightingDiagram,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -70,6 +71,17 @@ export const getLightingTopPowerRoadsAPI = async (
       end_date: opts.end_date,
       ...(opts.limit ? { limit: opts.limit } : {}),
     },
+  })
+}
+
+/** GET /lighting/diagrams/{imei} → circuit diagram data (components + wiring)
+ *  behind the diagram iframe. Used to detect an empty/incomplete diagram
+ *  (components: []) so the UI can show a placeholder instead of rendering
+ *  a blank iframe. */
+export const getLightingDiagramAPI = async (imei: string) => {
+  return ApiService.fetchData<LightingDiagram>({
+    url: `/lighting/diagrams/${imei}`,
+    method: 'GET',
   })
 }
 

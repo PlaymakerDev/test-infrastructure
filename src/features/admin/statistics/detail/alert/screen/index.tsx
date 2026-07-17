@@ -8,16 +8,20 @@ import { AlertDetailProvider, useAlertDetailContext } from '../context'
 import { AlertDetailSidebar, AlertDetailTable } from '../components'
 import { useLiveAlertRouteItems } from '../../../data/useLiveAlertRouteItems'
 import VoltageAmpChartsRow from '@/features/admin/traffic-lighting/detail/components/VoltageAmpChartsRow'
+import { ProjectInfoModal } from '@/components/modal'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 const { RangePicker } = DatePicker
 
 const AlertDetailContent: React.FC = () => {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const searchParams = useSearchParams()
   const route = searchParams.get('route') || ''
   const detail = searchParams.get('detail') || ''
   const { dateRange, setDateRange } = useAlertDetailContext()
-  const { routeItems } = useLiveAlertRouteItems()
+  const { routeItems, markerItems } = useLiveAlertRouteItems()
 
   // Lookup the real names from live data instead of showing raw IDs.
   const routeItem = routeItems.find((r) => String(r.id) === route)
@@ -43,6 +47,11 @@ const AlertDetailContent: React.FC = () => {
     return null
   })()
 
+  // Real coord for the Google Map button — same source/pattern as the
+  // incident detail page (statistics/detail/incident): match the selected
+  // device against markerItems (one real point per device geometry_point).
+  const coord = markerItems.find((m) => m.detailKey === detail)?.lngLat ?? null
+
   const handleBack = () => {
     router.push('/admin/statistics?alert')
   }
@@ -61,7 +70,22 @@ const AlertDetailContent: React.FC = () => {
             <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
               {detailLabel || '-'}
             </p>
-            <img src="/images/statistics/icbt.png" alt="" width={25} height={25} />
+            <img
+              src="/images/statistics/icbt.png"
+              alt="ดูข้อมูลโครงการ"
+              title="ดูข้อมูลโครงการ"
+              width={25}
+              height={25}
+              // No project_id in this data source (unlike incident-detection's
+              // central-list) — only road_id, so the modal shows department
+              // info but "-" for project-specific fields (contract, dates, etc).
+              onClick={() => device && dispatch(setProjectInfoModalOpen({
+                open: true,
+                project_id: null,
+                road_id: device.roadId ?? null,
+              }))}
+              style={{ cursor: device ? 'pointer' : 'default', opacity: device ? 1 : 0.5 }}
+            />
             <div style={{
               height: 22, borderRadius: 88,
               border: '1px solid #05F2DB',
@@ -74,13 +98,13 @@ const AlertDetailContent: React.FC = () => {
             </div>
             <div style={{
               height: 22, borderRadius: 88,
-              border: '1px solid #66AEFF',
+              border: `1px solid ${device?.is_online ? '#66AEFF' : '#E94C4C'}`,
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src="/images/statistics/iconconnect.png" alt="" width={12} height={12} />
+              <img src={device?.is_online ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
               <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
-                ออนไลน์
+                {device?.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
               </span>
             </div>
             <div style={{
@@ -93,16 +117,25 @@ const AlertDetailContent: React.FC = () => {
                 3 Phase
               </span>
             </div>
-            <div style={{
-              height: 22, borderRadius: 88,
-              backgroundColor: '#003F87',
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
-                Google Map
-              </span>
-            </div>
+            <button
+              type="button"
+              disabled={!coord}
+              onClick={() => {
+                if (!coord) return
+                window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+              }}
+              style={{
+                height: 22, borderRadius: 88,
+                backgroundColor: '#003F87',
+                padding: '4px 10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none',
+                cursor: coord ? 'pointer' : 'not-allowed',
+                opacity: coord ? 1 : 0.5,
+              }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
+            </button>
             <fieldset style={{ flexShrink: 0, marginLeft: 'auto' }}>
               <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
               <RangePicker
@@ -155,6 +188,7 @@ const AlertDetailContent: React.FC = () => {
           <AlertDetailTable />
         </div>
       </section>
+      <ProjectInfoModal />
     </div>
   )
 }

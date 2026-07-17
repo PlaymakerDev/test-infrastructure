@@ -7,28 +7,37 @@ import VoltageAmpChartsRow from './VoltageAmpChartsRow'
 import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIframe'
 import { useDetailContext } from '../context'
 
-/** OVERVIEW tab layout — remote control card (left) + diagram iframe (center)
- *  + right status column. Below: example cards + map/event section. */
+/** OVERVIEW tab layout — full-size diagram iframe with the remote control
+ *  card (top-left) and status column (top-right) floating on top of it, like
+ *  the overall page's map + corner stat cards. Below: charts + map/event
+ *  section. */
 const OverviewSection: React.FC = () => {
   const { imei } = useDetailContext()
 
   return (
     <div className='w-full flex flex-col'>
-      <div className='flex flex-col md:flex-row md:items-stretch w-full gap-3'>
-        <div className='shrink-0'>
+      <div className='relative flex flex-col gap-3 md:min-h-[650px]'>
+        <div className='w-full md:w-[429px] md:absolute md:top-0 md:left-0 md:z-10'>
           <RemoteControlCard />
         </div>
 
-        {/* Center — circuit diagram iframe for this device. */}
-        <div className='flex-1 min-w-0 rounded-[20px] overflow-hidden bg-[#191919CC] flex items-center justify-center min-h-[310px]'>
+        {/* Full-size circuit diagram — the two cards above/below float on
+         *  top of it (via `absolute`) instead of splitting the row. */}
+        <div className='relative w-full min-h-100 md:min-h-[650px] rounded-[20px] overflow-hidden bg-[#191919CC] flex items-stretch justify-center'>
           {imei ? (
-            <DiagramIframe imei={imei} minHeight={310} className='h-full' />
+            // `items-stretch` (not `items-center`) on the parent so the
+            // iframe fills the full card instead of hugging its own content
+            // height — the viewer itself centers the circuit graphic inside
+            // whatever canvas size it's given.
+            <DiagramIframe imei={imei} minHeight={400} />
           ) : (
             <p className='text-white/50 text-sm m-0'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
           )}
         </div>
 
-        <StatusCardsColumn />
+        <div className='w-full md:w-[300px] md:absolute md:top-0 md:right-0 md:z-10'>
+          <StatusCardsColumn />
+        </div>
       </div>
       <VoltageAmpChartsRow imei={imei} />
       <MapEventSection />

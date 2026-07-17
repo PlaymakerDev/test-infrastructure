@@ -20,9 +20,16 @@ export interface LiveIncidentRouteData {
 /** ค้นหาสายทาง + map markers — both from the SAME GET
  *  /analytic/departments/0/overview/central/list?scope=all call. Shared by
  *  the overview map (IncidentSection) and the detail-page sidebar
- *  (IncidentDetailSidebar) so all three always agree on the same live data. */
-export function useLiveIncidentRouteItems(): LiveIncidentRouteData {
-  const { data: centralList } = useIncidentCentralList(ALL_DEPARTMENTS_ID, 'all')
+ *  (IncidentDetailSidebar) so all three always agree on the same live data.
+ *
+ *  `dateRange` bounds each solution's `noti_count` (the number shown on
+ *  each marker/cluster) — pass the same range used for the page's other
+ *  period-scoped cards. Omit for the default today-00:00→now window.
+ *  Passing a different range is a genuine TanStack Query cache key change
+ *  (also the backend's own Redis cache key), so it refetches automatically
+ *  — no manual refetch() needed. */
+export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end_date?: string }): LiveIncidentRouteData {
+  const { data: centralList } = useIncidentCentralList(ALL_DEPARTMENTS_ID, 'all', dateRange)
 
   const routeItems = useMemo<RouteItem[]>(() => (centralList ?? []).map((bureau) => {
     let onlineCount = 0
@@ -36,6 +43,10 @@ export function useLiveIncidentRouteItems(): LiveIncidentRouteData {
       const detail = dept.solutions.map((sol) => ({
         label: `${sol.road.code_name} - ${sol.solution.solution_name}`,
         id: sol.solution.id,
+        is_online: (sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))) > 0,
+        is_warranty: sol.is_warranty,
+        projectId: sol.project.id,
+        roadId: sol.road.id,
       }))
       let deptConnected = false
 

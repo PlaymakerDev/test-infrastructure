@@ -32,7 +32,6 @@ const PHASE_METRICS = [
   { label: 'Volt', value: '240.2' },
   { label: 'Amp', value: '35.2' },
   { label: 'Watt', value: '50.27' },
-  { label: 'Pf', value: '0.97' },
   { label: 'kWh', value: '3.02' },
   { label: 'Hz', value: '50.03' },
 ] as const
@@ -41,8 +40,6 @@ export interface StatCardView {
   title: string
   icon: string
   titleColor: string
-  bg: string
-  border: string
   value: number
   active: string
 }
@@ -181,13 +178,15 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
   const phaseMetrics = useMemo(() => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
     const e = device?.electricity?.[0]
+    // API values can come back as long floats (e.g. 1209.2671710000002) that
+    // overflow the fixed-width metric card — round to 2dp like the static defaults.
+    const fmt = (n: number) => n.toFixed(2)
     return PHASE_METRICS.map((m) => {
       switch (m.label) {
-        case 'Volt': return { ...m, value: e ? String(e.voltage) : m.value }
-        case 'Amp': return { ...m, value: e ? String(e.amplitude) : m.value }
-        case 'Watt': return { ...m, value: e ? String(e.watt) : m.value }
-        case 'Pf': return { ...m, value: e ? String(e.power_factor) : m.value }
-        case 'Hz': return { ...m, value: e ? String(e.frequency) : m.value }
+        case 'Volt': return { ...m, value: e ? fmt(e.voltage) : m.value }
+        case 'Amp': return { ...m, value: e ? fmt(e.amplitude) : m.value }
+        case 'Watt': return { ...m, value: e ? fmt(e.watt) : m.value }
+        case 'Hz': return { ...m, value: e ? fmt(e.frequency) : m.value }
         default: return m
       }
     })
@@ -207,10 +206,10 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const statCards = useMemo(() => {
     const base = [
-      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/images/Lighting/icc1.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'โคมไฟในระบบทั้งหมด', icon: '/images/Lighting/icc2.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'ในค้ำ', icon: '/images/Lighting/icc3.png', titleColor: '#05F2DB', bg: '#05F2DB1A', border: '2px solid #05F2DB' },
-      { title: 'หมดค้ำ', icon: '/images/Lighting/icc4.png', titleColor: '#979797', bg: '#9797971A', border: '0px solid #979797' },
+      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/images/Lighting/icc1.png', titleColor: '#FCD116' },
+      { title: 'โคมไฟในระบบทั้งหมด', icon: '/images/Lighting/icc2.png', titleColor: '#FCD116' },
+      { title: 'ในค้ำ', icon: '/images/Lighting/icc3.png', titleColor: '#05F2DB' },
+      { title: 'หมดค้ำ', icon: '/images/Lighting/icc4.png', titleColor: '#979797' },
     ]
     if (!centralListLoaded) {
       return base.map((s) => ({ ...s, value: 0, active: '-' }))

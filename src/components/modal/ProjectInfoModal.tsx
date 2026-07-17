@@ -54,88 +54,83 @@ const Content = (props: ContentProps) => {
   // Backend computes `warranty_date` (remaining days) + `warranty_status`
   // directly. No more FE date parsing — just consume.
   const warrantyUi = getWarrantyUi(data?.warranty_status)
+  const departmentName = roadData?.data.department_name
 
-  const renderDepartmentName = useMemo(() => {
-    if (roadLoading) return <Skeleton loading={roadLoading} active paragraph={false} />
-    if (roadError) return <span className='text-red-500'>-</span>
-    return roadData?.data.department_name || '-'
-  }, [roadData, roadLoading, roadError])
+  // Show only fields that actually have data — some callers (e.g. the
+  // alert-detail page) only have a road_id to work with, not a project_id,
+  // so most of `data` is undefined. A field with no value is omitted
+  // entirely instead of rendering as "-".
+  const cells: { key: string; icon: React.ReactNode; label: string; value: React.ReactNode }[] = []
+
+  if (data?.contract_no) {
+    cells.push({ key: 'contract_no', icon: <TbFileDescription className='fs-22 text-white mb-2' />, label: 'เลขที่สัญญา', value: data.contract_no })
+  }
+  if (roadLoading || (!roadError && departmentName)) {
+    cells.push({
+      key: 'department',
+      icon: <TbUserShield className='fs-22 text-white mb-2' />,
+      label: 'หน่วยงานรับผิดชอบ',
+      // div, not p — Skeleton renders an <h3> internally and <h3> can
+      // not be a descendant of <p> (causes a hydration error).
+      value: roadLoading ? <Skeleton loading paragraph={false} /> : departmentName,
+    })
+  }
+  if (data?.department_name) {
+    cells.push({ key: 'owner', icon: <TbUser className='fs-22 text-white mb-2' />, label: 'ผู้ว่าจ้าง', value: data.department_name })
+  }
+  if (data?.warranty_start_date) {
+    cells.push({ key: 'warranty_start', icon: <TbCalendarEvent className='fs-22 text-white mb-2' />, label: 'เริ่มต้นการรับประกัน', value: data.warranty_start_date })
+  }
+  if (data?.warranty_end_date) {
+    cells.push({ key: 'warranty_end', icon: <TbCalendarEvent className='fs-22 text-white mb-2' />, label: 'สิ้นสุดการรับประกัน', value: data.warranty_end_date })
+  }
+  if (data?.warranty_status) {
+    // Per-status content for the remaining/elapsed time cell. Backend's
+    // `warranty_date` semantics:
+    //   ในค้ำ   → positive (days remaining)
+    //   หมดค้ำ  → negative (days elapsed since expiry — `Math.abs`)
+    //   ก่อนค้ำ → render "-" (warranty hasn't started; value n/a)
+    const days = data.warranty_date
+    let label = 'ระยะเวลาที่เหลือ'
+    let value = `${days ?? 0} วัน`
+    if (data.warranty_status === 'หมดค้ำ') {
+      label = 'หมดค้ำประกัน'
+      value = days != null ? `${Math.abs(days)} วัน` : '-'
+    } else if (data.warranty_status === 'ก่อนค้ำ') {
+      label = 'อยู่ระหว่างการส่งมอบงาน'
+      value = '-'
+    }
+    cells.push({
+      key: 'warranty_remaining',
+      icon: <TbHourglass className={`fs-22 mb-2 ${warrantyUi.remainingClass}`} />,
+      label,
+      value: <span className={warrantyUi.remainingClass}>{value}</span>,
+    })
+  }
+  if (data?.company_name) {
+    cells.push({ key: 'contractor', icon: <TbCalendarEvent className='fs-22 text-white mb-2' />, label: 'ผู้รับจ้าง', value: data.company_name })
+  }
+
+  if (cells.length === 0) {
+    return <Empty description='ไม่มีข้อมูลเพิ่มเติม' />
+  }
 
   return (
     <>
-      <div className='mb-5'>
-        <p className='fs-12'>{data?.project_name || '-'}</p>
-      </div>
+      {data?.project_name && (
+        <div className='mb-5'>
+          <p className='fs-12'>{data.project_name}</p>
+        </div>
+      )}
 
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4'>
-        <div className='flex flex-col items-center text-center'>
-          <TbFileDescription className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>เลขที่สัญญา</p>
-          <p className='fs-12 text-white mb-0'>{data?.contract_no || '-'}</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbUserShield className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>หน่วยงานรับผิดชอบ</p>
-          {/* div, not p — Skeleton renders an <h3> internally and <h3> can
-            * not be a descendant of <p> (causes a hydration error). */}
-          <div className='fs-12 text-white mb-0'>{renderDepartmentName}</div>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbUser className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
-          <p className='fs-12 text-white mb-0'>{data?.department_name || '-'}</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>เริ่มต้นการรับประกัน</p>
-          <p className='fs-12 text-white mb-0'>{data?.warranty_start_date || '-'}</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>สิ้นสุดการรับประกัน</p>
-          <p className='fs-12 text-white mb-0'>{data?.warranty_end_date || '-'}</p>
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          {(() => {
-            // Per-status content for the remaining/elapsed time cell.
-            // Backend's `warranty_date` semantics:
-            //   ในค้ำ   → positive (days remaining)
-            //   หมดค้ำ  → negative (days elapsed since expiry — `Math.abs`)
-            //   ก่อนค้ำ → render "-" (warranty hasn't started; value n/a)
-            const status = data?.warranty_status
-            const days = data?.warranty_date
-            let label = 'ระยะเวลาที่เหลือ'
-            let value: string = '-'
-            if (status === 'หมดค้ำ') {
-              label = 'หมดค้ำประกัน'
-              value = days != null ? `${Math.abs(days)} วัน` : '-'
-            } else if (status === 'ก่อนค้ำ') {
-              label = 'อยู่ระหว่างการส่งมอบงาน'
-              value = '-'
-            } else {
-              // Default: in-warranty / unknown — show BE's remaining days.
-              value = `${days ?? 0} วัน`
-            }
-            return (
-              <>
-                <TbHourglass className={`fs-22 mb-2 ${warrantyUi.remainingClass}`} />
-                <p className='fs-11 text-gray-400 mb-0.5'>{label}</p>
-                <p className={`fs-12 mb-0 ${warrantyUi.remainingClass}`}>{value}</p>
-              </>
-            )
-          })()}
-        </div>
-
-        <div className='flex flex-col items-center text-center'>
-          <TbCalendarEvent className='fs-22 text-white mb-2' />
-          <p className='fs-11 text-gray-400 mb-0.5'>ผู้รับจ้าง</p>
-          <p className='fs-12 text-white mb-0'>{data?.company_name || '-'}</p>
-        </div>
+        {cells.map((cell) => (
+          <div key={cell.key} className='flex flex-col items-center text-center'>
+            {cell.icon}
+            <p className='fs-11 text-gray-400 mb-0.5'>{cell.label}</p>
+            <div className='fs-12 text-white mb-0'>{cell.value}</div>
+          </div>
+        ))}
       </div>
     </>
   )
@@ -173,12 +168,14 @@ const ProjectInfoModal: React.FC<Props> = (props) => {
         <span className='fs-18 font-semibold' style={{ color: '#66AEFF' }}>
           ข้อมูลโครงการ
         </span>
-        <span
-          className='inline-flex items-center justify-center py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border ml-1'
-          style={{ border: `1px solid ${titleWarrantyUi.badge}`, color: titleWarrantyUi.badge }}
-        >
-          {warrantyStatus || '-'}
-        </span>
+        {warrantyStatus && (
+          <span
+            className='inline-flex items-center justify-center py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border ml-1'
+            style={{ border: `1px solid ${titleWarrantyUi.badge}`, color: titleWarrantyUi.badge }}
+          >
+            {warrantyStatus}
+          </span>
+        )}
       </div>
     ),
     [titleWarrantyUi, warrantyStatus],

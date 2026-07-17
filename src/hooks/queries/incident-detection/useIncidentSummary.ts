@@ -5,7 +5,7 @@ import { incidentKeys } from './queryKeys'
 /** Aggregate incident counts powering the 4 stat cards. */
 export const useIncidentSummary = (
   deptId: string | number,
-  params: { scope?: string; since?: string; until?: string } = {},
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
 ) =>
   useQuery({
     queryKey: incidentKeys.incidentsSummary(deptId, params),

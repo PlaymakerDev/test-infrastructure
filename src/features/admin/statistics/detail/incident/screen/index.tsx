@@ -1,12 +1,16 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
 import { IncidentDetailProvider, useIncidentDetailContext } from '../context'
 import { IncidentDetailSidebar, IncidentDetailTable } from '../components'
+import { ProjectInfoModal } from '@/components/modal'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
+import type { RouteDetailEntry } from '../../../data/routeItems'
 import EventDonutSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventDonutSection'
 import EventTrendSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventTrendSection'
 import { ROUTE_ITEMS } from '../../../data/routeItems'
@@ -15,11 +19,12 @@ const { RangePicker } = DatePicker
 
 const IncidentDetailContent: React.FC = () => {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const searchParams = useSearchParams()
   const route = searchParams.get('route') || ''
   const detail = searchParams.get('detail') || ''
   const { dateRange, setDateRange } = useIncidentDetailContext()
-  const { routeItems } = useLiveIncidentRouteItems()
+  const { routeItems, markerItems } = useLiveIncidentRouteItems()
 
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
@@ -27,25 +32,45 @@ const IncidentDetailContent: React.FC = () => {
   // Lookup the real names from live data instead of showing raw IDs.
   const routeItem = routeItems.find((r) => String(r.id) === route)
   const routeName = routeItem?.name ?? route
-  const detailLabel = (() => {
+  const detailEntry: RouteDetailEntry | undefined = useMemo(() => {
     for (const r of routeItems) {
       for (const s of r.sub3) {
         const found = s.detail.find((d) => (typeof d === 'string' ? d : String(d.id)) === detail)
-        if (found) return typeof found === 'string' ? found : found.label
+        if (found) return found
       }
     }
-    return detail
-  })()
-  const isExpired = (routeItem?.sub3.length ?? 0) >= 99
-  const warrantyColor = isExpired ? '#979797' : '#05F2DB'
-  const warrantyLabel = isExpired ? 'หมดค้ำ' : 'ในค้ำ'
+    return undefined
+  }, [routeItems, detail])
+  const detailLabel = typeof detailEntry === 'string' || detailEntry === undefined
+    ? (detailEntry ?? detail)
+    : detailEntry.label
+  const projectId = typeof detailEntry === 'object' ? detailEntry.projectId : undefined
+  const roadId = typeof detailEntry === 'object' ? detailEntry.roadId : undefined
+  const isOnline = typeof detailEntry === 'object' ? detailEntry.is_online !== false : true
+  const statusColor = isOnline ? '#66AEFF' : '#E94C4C'
+  // Only render the warranty pill when the backend actually reported
+  // `is_warranty` for THIS solution (mock/undefined data → no pill at all,
+  // instead of a misleading default "ในค้ำ").
+  const warranty = typeof detailEntry === 'object' && detailEntry.is_warranty !== undefined
+    ? detailEntry.is_warranty
+    : null
+  const warrantyColor = warranty === false ? '#979797' : '#05F2DB'
+  const warrantyLabel = warranty === false ? 'หมดค้ำ' : 'ในค้ำ'
+
+  // Real coord for the Google Map button — same source as the sidebar/overview
+  // map (the central-list call already cached by useLiveIncidentRouteItems),
+  // so no extra request. Match the solution in ?detail= against markerItems.
+  const coord = useMemo(
+    () => markerItems.find((m) => m.detailKey === detail)?.lngLat ?? null,
+    [markerItems, detail]
+  )
 
   const handleBack = () => {
     router.push('/admin/statistics?incident')
   }
 
   return (
-    <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col" style={{ paddingBottom: 60 }}>
+    <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col">
       <section className="flex items-start gap-3">
         <TbArrowBigLeftFilled
           className="fs-24 text-(--yellow) cursor-pointer"
@@ -58,15 +83,29 @@ const IncidentDetailContent: React.FC = () => {
             <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
               {detailLabel || '-'}
             </p>
-            <img src="/images/statistics/icbt.png" alt="" width={25} height={25} />
-            <div style={{
-              height: 22, borderRadius: 88,
-              border: `1px solid ${warrantyColor}`,
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 500, color: warrantyColor }}>{warrantyLabel}</span>
-            </div>
+            <img
+              src="/images/statistics/icbt.png"
+              alt="ดูข้อมูลโครงการ"
+              title="ดูข้อมูลโครงการ"
+              width={25}
+              height={25}
+              onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
+                open: true,
+                project_id: projectId,
+                road_id: roadId ?? null,
+              }))}
+              style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
+            />
+            {warranty !== null && (
+              <div style={{
+                height: 22, borderRadius: 88,
+                border: `1px solid ${warrantyColor}`,
+                padding: '4px 10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 500, color: warrantyColor }}>{warrantyLabel}</span>
+              </div>
+            )}
             {routeItem && (
               <div style={{
                 height: 22, borderRadius: 88,
@@ -82,21 +121,32 @@ const IncidentDetailContent: React.FC = () => {
             )}
             <div style={{
               height: 22, borderRadius: 88,
-              border: '1px solid #66AEFF',
+              border: `1px solid ${statusColor}`,
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src="/images/statistics/iconconnect.png" alt="" width={12} height={12} />
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>ออนไลน์</span>
+              <img src={isOnline ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
+              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</span>
             </div>
-            <div style={{
-              height: 22, borderRadius: 88,
-              backgroundColor: '#003F87',
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+            <button
+              type="button"
+              disabled={!coord}
+              onClick={() => {
+                if (!coord) return
+                window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+              }}
+              style={{
+                height: 22, borderRadius: 88,
+                backgroundColor: '#003F87',
+                padding: '4px 10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none',
+                cursor: coord ? 'pointer' : 'not-allowed',
+                opacity: coord ? 1 : 0.5,
+              }}
+            >
               <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
-            </div>
+            </button>
             <fieldset style={{ flexShrink: 0, marginLeft: 'auto' }}>
               <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
               <RangePicker
@@ -120,6 +170,9 @@ const IncidentDetailContent: React.FC = () => {
           <IncidentDetailTable />
         </div>
       </section>
+      {/* Opens from the icbt.png icon in the header — fetches /contact/{project_id}
+        * + /department-by-road/{road_id}, same modal as incident-detection detail. */}
+      <ProjectInfoModal />
     </div>
   )
 }

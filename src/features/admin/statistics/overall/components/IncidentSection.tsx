@@ -37,6 +37,38 @@ const PERIOD_OPTIONS = [
   { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
+// Shared by the OVERVIEW summary cards (`since`/`until`) and the COMPARISON
+// table (`start_date`/`end_date`) — same period options, different param names.
+const periodToDateBounds = (period: string): { start?: string; end?: string } => {
+  const now = new Date()
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  switch (period) {
+    case 'TODAY':
+      return { start: fmt(today), end: fmt(today) }
+    case 'LAST_7_DAYS': {
+      const start = new Date(today)
+      start.setDate(start.getDate() - 6)
+      return { start: fmt(start), end: fmt(today) }
+    }
+    case 'THIS_MONTH': {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { start: fmt(start), end: fmt(today) }
+    }
+    case 'THIS_YEAR': {
+      const start = new Date(now.getFullYear(), 0, 1)
+      return { start: fmt(start), end: fmt(today) }
+    }
+    case 'LAST_YEAR': {
+      const start = new Date(now.getFullYear() - 1, 0, 1)
+      const end = new Date(now.getFullYear() - 1, 11, 31)
+      return { start: fmt(start), end: fmt(end) }
+    }
+    default:
+      return {}
+  }
+}
+
 interface IncidentRow {
   key: string
   agency: string
@@ -160,13 +192,26 @@ const IncidentSection: React.FC = () => {
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
+  // Shared by both the stat cards AND the map/search-list below — same
+  // start_date/end_date window, same backend param names (NOT since/until;
+  // those only appear in the response's echoed `range`). Omitting both
+  // makes the backend silently default to "today" instead of erroring,
+  // which is why this was easy to miss originally.
+  const summaryDateRange = React.useMemo<{ start_date?: string; end_date?: string }>(() => {
+    const { start, end } = periodToDateBounds(activePeriod)
+    return start && end ? { start_date: start, end_date: end } : {}
+  }, [activePeriod])
+
   // ค้นหาสายทาง + map markers — shared with the detail-page sidebar so all
   // three stay in sync. `markerItems` plots each solution at its OWN real
   // geometry_point (decoupled from the coarser bureau-level search tree).
-  const { routeItems: liveRouteItems, markerItems } = useLiveIncidentRouteItems()
+  // `summaryDateRange` bounds each marker's noti_count to the selected period.
+  const { routeItems: liveRouteItems, markerItems } = useLiveIncidentRouteItems(summaryDateRange)
 
-  // Stat cards data — real API instead of mock.
-  const { data: summaryData } = useIncidentSummary(0, { scope: 'all' })
+  // Stat cards data — real API instead of mock. Refetches whenever the
+  // period Segmented above changes (`start_date`/`end_date` are part of the
+  // query key).
+  const { data: summaryData } = useIncidentSummary(0, { scope: 'all', ...summaryDateRange })
   const incidentCards: StatCard[] = React.useMemo(() => {
     const s = summaryData
     const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
@@ -181,36 +226,11 @@ const IncidentSection: React.FC = () => {
   // Comparison table data — real API instead of mock.
   const [comparisonPeriod, setComparisonPeriod] = useState('TODAY')
   const comparisonDateRange = React.useMemo<{ start_date?: string; end_date?: string }>(() => {
-    const now = new Date()
-    const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    switch (comparisonPeriod) {
-      case 'TODAY':
-        return { start_date: fmt(today), end_date: fmt(today) }
-      case 'LAST_7_DAYS': {
-        const start = new Date(today)
-        start.setDate(start.getDate() - 6)
-        return { start_date: fmt(start), end_date: fmt(today) }
-      }
-      case 'THIS_MONTH': {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1)
-        return { start_date: fmt(start), end_date: fmt(today) }
-      }
-      case 'THIS_YEAR': {
-        const start = new Date(now.getFullYear(), 0, 1)
-        return { start_date: fmt(start), end_date: fmt(today) }
-      }
-      case 'LAST_YEAR': {
-        const start = new Date(now.getFullYear() - 1, 0, 1)
-        const end = new Date(now.getFullYear() - 1, 11, 31)
-        return { start_date: fmt(start), end_date: fmt(end) }
-      }
-      default:
-        return {}
-    }
+    const { start, end } = periodToDateBounds(comparisonPeriod)
+    return start && end ? { start_date: start, end_date: end } : {}
   }, [comparisonPeriod])
 
-  const { data: byDeptData } = useIncidentByDepartment(0, comparisonDateRange)
+  const { data: byDeptData, isFetching: comparisonFetching } = useIncidentByDepartment(0, comparisonDateRange)
   const comparisonData: IncidentRow[] = React.useMemo(() => {
     const rows = byDeptData?.rows ?? []
     return rows.map((r, idx) => ({
@@ -241,7 +261,7 @@ const IncidentSection: React.FC = () => {
   }, [byDeptData])
 
   return (
-    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
+    <div className="flex flex-col">
       <section className="flex items-start gap-3 px-3">
         <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
         <div>
@@ -291,6 +311,7 @@ const IncidentSection: React.FC = () => {
           columns={INCIDENT_COMPARISON_COLUMNS as unknown as ColumnsType<ComparisonRecord>}
           activePeriod={comparisonPeriod}
           onPeriodChange={setComparisonPeriod}
+          loading={comparisonFetching}
         />
       )}
     </div>

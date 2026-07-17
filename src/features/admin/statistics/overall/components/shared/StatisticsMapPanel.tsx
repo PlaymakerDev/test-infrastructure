@@ -1,15 +1,19 @@
 "use client"
-import React, { useState } from 'react'
-import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbLayoutSidebarRightCollapse, TbLayoutSidebarRightExpand } from 'react-icons/tb'
-import { Button, Collapse } from 'antd'
+import React, { useEffect } from 'react'
+import { TbChevronDown } from 'react-icons/tb'
+import { Collapse } from 'antd'
 import { useRouter } from 'next/navigation'
 import type { ExpressionSpecification } from 'mapbox-gl'
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import MarkerLayer, { type MarkerColor } from '@/components/map/primitives/MarkerLayer'
+import MarkerLayer, { type MarkerColor, markerLayerSourceId } from '@/components/map/primitives/MarkerLayer'
+import { showReactPopup } from '@/components/map/primitives/popupHelper'
+import type { GeoJSONSource } from 'mapbox-gl'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { setMapPanelsOpen } from '@/stores/reducers/layout/layoutSlice'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
@@ -70,7 +74,23 @@ export interface StatisticsMapPanelProps {
   /** Fill color for markerItems-path points/clusters ABOVE the 263 overflow
    *  threshold. Defaults to the original hardcoded red. */
   markerItemOverflowColor?: string
+  /** Opt-in: called when a markerItems-path point is clicked — either a
+   *  single unclustered point (array of 1), or a "stuck" cluster whose
+   *  merged points all share the exact same coordinate (e.g. several devices
+   *  installed at one physical location, so zooming in can never visually
+   *  separate them). Return JSX to show it in a popup anchored above the
+   *  point instead of navigating straight to `detailUrl`; return
+   *  null/undefined to fall through to the default (instant navigation for a
+   *  single point, zoom-to-expand for a genuine multi-coordinate cluster).
+   *  Omit entirely to keep every existing caller's behavior unchanged. */
+  onMarkerGroupClick?: (items: MapMarkerItem[]) => React.ReactNode
 }
+
+// Module-level constant — MarkerLayer includes `textOffset` in the
+// dependency array of its rebuild-everything effect, so an inline `[0, 0]`
+// literal here would recreate a new array reference on every render and
+// trigger the same needless teardown/rebuild as an unmemoized `color`.
+const MARKER_TEXT_OFFSET: [number, number] = [0, 0]
 
 const renderCount = (count: string) => {
   const [left, right] = count.split('/')
@@ -107,10 +127,20 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerItems,
   markerItemColor = '#B2FF00',
   markerItemOverflowColor = '#E94C4C',
+  onMarkerGroupClick,
 }) => {
   const router = useRouter()
-  const [searchOpen, setSearchOpen] = useState(true)
-  const [cardsOpen, setCardsOpen] = useState(true)
+  const dispatch = useAppDispatch()
+  const panelsOpen = useAppSelector((state) => state.layout.map_panels.open)
+  const searchOpen = panelsOpen
+  const cardsOpen = panelsOpen
+
+  // Scope the Navbar's zoom-in-area toggle to whichever page currently
+  // mounts this panel — always start visible on mount so a hide left on a
+  // different tab/page never carries over here.
+  useEffect(() => {
+    dispatch(setMapPanelsOpen({ open: true }))
+  }, [dispatch])
 
   const getCount = (item: RouteItem, index: number) => markerCountFn ? markerCountFn(item, index) : item.sub3.length
 
@@ -202,15 +232,39 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
     [markerItems, routableRoutes]
   )
 
+  // Groups markerItems sharing the EXACT same coordinate (e.g. several
+  // devices installed at one physical location) — used by onMarkerGroupClick
+  // to detect a "stuck" cluster that can never zoom-separate, as opposed to a
+  // normal cluster of genuinely nearby-but-distinct points.
+  const markerGroupsByCoord = React.useMemo(() => {
+    if (!markerItems) return null
+    const m = new Map<string, MapMarkerItem[]>()
+    for (const it of markerItems) {
+      const key = `${it.lngLat[0].toFixed(6)},${it.lngLat[1].toFixed(6)}`
+      const arr = m.get(key)
+      if (arr) arr.push(it)
+      else m.set(key, [it])
+    }
+    return m
+  }, [markerItems])
+
   // Cluster bubbles don't carry arbitrary per-feature properties, so a plain
   // `color` lookup would always fall back to a flat default. When items carry
   // online/offline status, `colorSum` (summed via clusterColorSumProperty)
   // lets a cluster bubble turn red if it contains ANY offline device;
   // otherwise fall back to the per-feature `color` (or markerItemColor for a
   // cluster with no properties at all).
-  const clusterColor: MarkerColor = hasOfflineInfo
-    ? ['case', ['>', ['coalesce', ['get', 'colorSum'], ['get', 'offlineFlag'], 0], 0], markerItemOverflowColor, markerItemColor] as ExpressionSpecification
-    : ['coalesce', ['get', 'color'], markerItemColor] as ExpressionSpecification
+  // Memoized — MarkerLayer includes `color` in the dependency array of the
+  // effect that tears down and rebuilds its Mapbox source + all 3 layers
+  // (see MarkerLayer.tsx). A fresh array literal on every render (e.g. when
+  // this panel toggles open/closed and re-renders for an unrelated reason)
+  // was making Mapbox remove and re-add every marker on each toggle —
+  // visible as the numbered circles flickering.
+  const clusterColor: MarkerColor = React.useMemo(() => (
+    hasOfflineInfo
+      ? ['case', ['>', ['coalesce', ['get', 'colorSum'], ['get', 'offlineFlag'], 0], 0], markerItemOverflowColor, markerItemColor] as ExpressionSpecification
+      : ['coalesce', ['get', 'color'], markerItemColor] as ExpressionSpecification
+  ), [hasOfflineInfo, markerItemOverflowColor, markerItemColor])
 
   const handleMarkerClick = (item: RouteItem) => {
     if (onMarkerClick) {
@@ -344,31 +398,21 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         </SearchCard>
       </DrawerMapSearchCard>
 
-      <div className="mt-8 overflow-hidden flex" style={{ height: 'calc(100vh - 200px)' }}>
-
-        {/* ══ LEFT: collapsible SearchCard panel — xl+ only ══ */}
-        <div className='relative shrink-0 max-xl:hidden self-stretch'>
-          <div className={[
-            'overflow-hidden transition-[width] duration-300 ease-in-out bg-(--dark-black) h-full',
-            searchOpen ? 'w-[370px] rounded-lg' : 'w-0',
-          ].join(' ')}>
-            <div className='w-[370px] h-full overflow-y-auto'>
-              <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
-                {searchCardCollapse}
-              </SearchCard>
-            </div>
-          </div>
-          <Button
-            type='primary' shape='circle'
-            title={searchOpen ? 'ซ่อนรายการสายทาง' : 'แสดงรายการสายทาง'}
-            icon={searchOpen ? <TbLayoutSidebarLeftCollapse className='fs-18' /> : <TbLayoutSidebarLeftExpand className='fs-18' />}
-            onClick={() => setSearchOpen((prev) => !prev)}
-            className='absolute! top-10 -right-5 z-20 w-10! h-10! shadow-lg'
-          />
-        </div>
-
-        {/* ══ MAIN: map + stats cards ══ */}
-        <div className='flex-1 min-w-0 relative overflow-hidden rounded-[20px]'>
+      {/* Both side panels are absolutely-positioned overlays on top of a
+          fixed-size map box — the map's own box never changes size when a
+          panel opens/closes (only `transform`, GPU-composited, no layout
+          reflow), so Mapbox's canvas never has to resize mid-animation.
+          Letting the map box itself shrink/grow (e.g. via flex width) makes
+          Mapbox visibly flicker every frame of the transition. */}
+      <div className="mt-8 relative overflow-hidden rounded-[20px]" style={{ height: 'calc(100vh - 200px)' }}>
+        {/* ══ MAIN: map, always full-size ══
+            `transform-gpu` promotes this to its own compositor layer so
+            the sliding panels' transform animation (also promoted below)
+            never forces the shared overflow-hidden ancestor to repaint the
+            WebGL canvas underneath — without this, Chrome periodically
+            flickers/blanks the map while ANY sibling inside the same
+            clipped stacking context is mid-transform-animation. */}
+        <div className='absolute inset-0 transform-gpu'>
           <BaseMap initialCenter={[102.0, 14.0]} initialZoom={4.8}>
             {useModernMarkers ? (
               <>
@@ -384,13 +428,24 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   clusterSumProperty="countValue"
                   clusterColorSumProperty={hasOfflineInfo ? 'offlineFlag' : undefined}
                   textAnchor="center"
-                  textOffset={[0, 0]}
+                  textOffset={MARKER_TEXT_OFFSET}
                   textSize={13}
                   textColor={markerTextColor}
-                  onClick={(_e, feature) => {
+                  onClick={(e, feature) => {
                     const navRoute = feature.properties?.navRoute as string | undefined
                     if (navRoute !== undefined) {
                       const navDetail = feature.properties?.navDetail as string | undefined
+                      if (onMarkerGroupClick && feature.geometry.type === 'Point') {
+                        const coords = feature.geometry.coordinates as [number, number]
+                        const item = markerItems?.find((m) => m.routeKey === navRoute && m.detailKey === navDetail)
+                        const content = item ? onMarkerGroupClick([item]) : null
+                        if (content) {
+                          import('mapbox-gl').then(({ default: mb }) => {
+                            showReactPopup({ map: e.target, mb, lngLat: coords, content, options: { offset: 18, closeButton: true, maxWidth: 'none' } })
+                          })
+                          return
+                        }
+                      }
                       const query = navDetail ? `route=${encodeURIComponent(navRoute)}&detail=${encodeURIComponent(navDetail)}` : `route=${encodeURIComponent(navRoute)}`
                       router.push(`${detailUrl}?${query}`)
                       return
@@ -399,6 +454,30 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                     const item = navKey ? itemByNavKey.get(navKey) : undefined
                     if (item) handleMarkerClick(item)
                   }}
+                  onClusterClick={onMarkerGroupClick ? (e, clusterFeature) => {
+                    if (clusterFeature.geometry.type !== 'Point') return
+                    const coords = clusterFeature.geometry.coordinates as [number, number]
+                    const key = `${coords[0].toFixed(6)},${coords[1].toFixed(6)}`
+                    const group = markerGroupsByCoord?.get(key)
+                    const content = group && group.length > 1 ? onMarkerGroupClick(group) : null
+                    if (content) {
+                      import('mapbox-gl').then(({ default: mb }) => {
+                        showReactPopup({ map: e.target, mb, lngLat: coords, content, options: { offset: 18, closeButton: true } })
+                      })
+                      return
+                    }
+                    // Not a "stuck" same-coordinate cluster — fall back to the
+                    // default zoom-to-expand behavior (providing onClusterClick
+                    // replaces MarkerLayer's own default entirely).
+                    const clusterId = clusterFeature.properties?.cluster_id
+                    if (typeof clusterId !== 'number') return
+                    const map = e.target
+                    const src = map.getSource(markerLayerSourceId('statistics-route')) as GeoJSONSource
+                    src.getClusterExpansionZoom(clusterId, (err, zoom) => {
+                      if (err || zoom == null) return
+                      map.flyTo({ center: coords, zoom: zoom + 0.3, duration: 800 })
+                    })
+                  } : undefined}
                 />
               </>
             ) : (
@@ -430,41 +509,47 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               })
             )}
           </BaseMap>
-          {statsCards && statsCards.length > 0 && (
-            <>
-              <Button
-                type='primary' shape='circle'
-                title={cardsOpen ? 'ซ่อนการ์ดสถิติ' : 'แสดงการ์ดสถิติ'}
-                icon={cardsOpen ? <TbLayoutSidebarRightCollapse className='fs-18' /> : <TbLayoutSidebarRightExpand className='fs-18' />}
-                onClick={() => setCardsOpen((prev) => !prev)}
-                className={`absolute! top-3 z-20 w-10! h-10! shadow-lg transition-[right] duration-300 ease-in-out ${cardsOpen ? 'right-[208px] sm:right-[258px] lg:right-[318px]' : 'right-3'}`}
-              />
-              <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 overflow-hidden transition-[width] duration-300 ease-in-out" style={{ width: cardsOpen ? undefined : 0 }}>
-                <div className="flex flex-col gap-2 pb-3">
-                  {statsCards.map((card, i) => (
-                    <div key={i} className="w-[200px] sm:w-[250px] lg:w-[310px] h-[120px] sm:h-[145px] lg:h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
-                      <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
-                        <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
-                        <p
-                          lang="th"
-                          className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
-                          style={{ color: card.labelColor }}
-                        >
-                          {card.label}
-                        </p>
-                      </div>
-                      <div className="flex items-baseline gap-0.5 sm:gap-1">
-                        <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
-                        {card.unit && <span className="text-[8px] sm:text-[9px] lg:text-xs text-white">{card.unit}</span>}
-                      </div>
-                      <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 truncate">{card.sub}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* ══ LEFT: collapsible SearchCard overlay — xl+ only ══ */}
+        <div
+          className='absolute inset-y-0 left-0 z-20 w-[370px] max-xl:hidden bg-(--dark-black) rounded-r-lg shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out transform-gpu will-change-transform'
+          style={{ transform: searchOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        >
+          <div className='w-[370px] h-full overflow-y-auto'>
+            <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
+              {searchCardCollapse}
+            </SearchCard>
+          </div>
+        </div>
+
+        {/* ══ RIGHT: stat cards overlay ══ */}
+        {statsCards && statsCards.length > 0 && (
+          <div
+            className="absolute top-3 right-3 z-10 flex flex-col gap-2 pb-3 w-[220px] sm:w-[290px] lg:w-[360px] transition-transform duration-300 ease-in-out transform-gpu will-change-transform"
+            style={{ transform: cardsOpen ? 'translateX(0)' : 'translateX(calc(100% + 12px))' }}
+          >
+            {statsCards.map((card, i) => (
+              <div key={i} className="min-h-[120px] sm:min-h-[145px] lg:min-h-[175px] rounded-[12px] border-2 border-solid bg-[#333333]/80 backdrop-blur-[10px] p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between shrink-0" style={{ borderColor: card.borderColor }}>
+                <div className="flex flex-col gap-0.5 sm:gap-1 overflow-visible">
+                  <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
+                  <p
+                    lang="th"
+                    className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
+                    style={{ color: card.labelColor }}
+                  >
+                    {card.label}
+                  </p>
+                </div>
+                <div className="flex items-baseline gap-0.5 sm:gap-1">
+                  <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
+                  {card.unit && <span className="text-[8px] sm:text-[9px] lg:text-xs text-white">{card.unit}</span>}
+                </div>
+                <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 line-clamp-2">{card.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

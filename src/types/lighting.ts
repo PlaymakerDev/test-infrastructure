@@ -104,6 +104,17 @@ export interface DetailsResponse {
   electricity: DetailsElectricityItem[]
 }
 
+/** GET /lighting/diagrams/{imei} → circuit diagram data behind the diagram
+ *  iframe. `components` (the drawable nodes — breakers, contactors, lamps,
+ *  etc. with canvas positions) is sometimes empty even when `connections`
+ *  (the wires between component ids) is populated — a backend data gap, not
+ *  a fetch error. The iframe viewer then silently renders a blank canvas. */
+export interface LightingDiagram {
+  imei: string
+  components: unknown[]
+  connections: unknown[]
+}
+
 /** GET /lighting/departments/{id}/overview/top-power-roads?start_date=&end_date=
  *  → roads ranked by total power draw (kW) descending, for the given date
  *  range (both params required by the backend). */

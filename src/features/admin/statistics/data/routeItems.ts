@@ -167,6 +167,17 @@ export type RouteDetailEntry = string | {
   line_check_fail?: boolean
   circuit_fail?: boolean
   volt_amp_fail?: boolean
+  /** For opening ProjectInfoModal (ⓘ) — the project + road behind this solution. */
+  projectId?: number
+  roadId?: number
+  /** Whether this solution is still under warranty (drives the ในค้ำ/หมดค้ำ pill). */
+  is_warranty?: boolean
+  /** VMS-only — Anydesk remote-access id, shown on the status detail page. */
+  anydesk?: string
+  /** VMS-only — live HLS stream URL for the sign's own desktop/display preview. */
+  desktopScreen?: string
+  /** VMS-only — `solution_id` (distinct from `id`/vms_id), needed for `GET /vms/details/{solution_id}`. */
+  solutionId?: number
 }
 
 // `lngLat: null` is allowed so API-backed items (e.g. a bureau with no

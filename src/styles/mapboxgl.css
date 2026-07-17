@@ -18,6 +18,23 @@
   display: none !important;
 }
 
+/* Default close button is dark text — invisible against a dark popup card
+   (every `showReactPopup` consumer renders its own dark background). */
+.react-popup .mapboxgl-popup-close-button {
+  position: absolute !important;
+  top: 2px !important;
+  right: 2px !important;
+  color: #ffffff !important;
+  font-size: 26px !important;
+  line-height: 1 !important;
+  padding: 4px 8px !important;
+  opacity: 0.7;
+}
+.react-popup .mapboxgl-popup-close-button:hover {
+  opacity: 1;
+  background: transparent !important;
+}
+
 /* ── Cooperative gesture hint ──────────────────────────────────────────────
  * Mapbox v3 uses `.mapboxgl-scroll-zoom-blocker` (desktop) and
  * `.mapboxgl-touch-pan-blocker` (mobile). Default is a fullscreen black
