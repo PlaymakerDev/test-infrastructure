@@ -49,7 +49,9 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
   const rows = useMemo<RowData[]>(() => {
     const out: RowData[] = []
     for (const day of data?.res_data ?? []) {
-      const phasesForDay = day.data.slice(0, phaseCount)
+      // Same null-guard as the daily cards: a day with no data can arrive
+      // without its per-phase array.
+      const phasesForDay = (day.data ?? []).slice(0, phaseCount)
       const dateLabel = `วัน${thaiDayName(day.day)}\n${dayjs(day.date).locale('th').format('D MMM BBBB')}`
       phasesForDay.forEach((p, i) => {
         out.push({

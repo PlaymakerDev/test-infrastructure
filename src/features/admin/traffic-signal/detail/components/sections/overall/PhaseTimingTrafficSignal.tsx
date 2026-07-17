@@ -44,7 +44,10 @@ const computeApiState = (phases: PhaseTimingConfig[]) => {
  *  driven by `is_active` + `timestamp` from the phase_details API. */
 const PhaseTimingTrafficSignal: React.FC = () => {
   const { project } = useDetailContext()
-  const phases = project.phaseTiming ?? []
+  // Memoized: `?? []` would mint a NEW array every render when phaseTiming is
+  // absent, destabilizing every [phases] dependency below (the countdown
+  // interval was being torn down and recreated on each render).
+  const phases = useMemo(() => project.phaseTiming ?? [], [project.phaseTiming])
 
   // Seed from API on every refetch (phases reference changes when TanStack
   // Query returns new data). `tick` advances the countdown smoothly between
@@ -52,8 +55,16 @@ const PhaseTimingTrafficSignal: React.FC = () => {
   const apiSeed = useMemo(() => computeApiState(phases), [phases])
   const [tick, setTick] = useState(0)
 
-  useEffect(() => {
+  // Reset during render (sanctioned "adjusting state when props change"
+  // pattern) instead of synchronously inside the effect, which the
+  // set-state-in-effect lint forbids.
+  const [prevPhases, setPrevPhases] = useState(phases)
+  if (prevPhases !== phases) {
+    setPrevPhases(phases)
     setTick(0)
+  }
+
+  useEffect(() => {
     if (phases.length === 0) return
     const id = window.setInterval(() => setTick((t) => t + 1), 1000)
     return () => window.clearInterval(id)

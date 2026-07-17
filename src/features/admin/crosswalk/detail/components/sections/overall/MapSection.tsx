@@ -95,7 +95,9 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
         coord: cam.geometry_point as [number, number],
         title: cam.camera_name,
         popup: <CameraPopup cam={cam} />,
-        popupOptions: { offset: 22, closeButton: true, maxWidth: '300px' },
+        popupOptions: { offset: 22, closeButton: false, maxWidth: '300px' },
+        // Status-colored pin: red when the whole coordinate group is offline.
+        offline: !cam.is_online,
       })),
     [cameras],
   )
