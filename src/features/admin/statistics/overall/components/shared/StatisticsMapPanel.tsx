@@ -47,6 +47,10 @@ export interface StatisticsMapPanelProps {
   markerColorFn?: (item: RouteItem, index: number) => string
   markerLabelFn?: (item: RouteItem, index: number) => string | number
   badgeColorFn?: (item: RouteItem, index: number) => string
+  /** Number shown inside the search-list bureau badge. Defaults to
+   *  `item.sub3.length` (sub-department count) — override when the badge
+   *  should reflect something else, e.g. `item.notiTotal` (incident count). */
+  badgeValueFn?: (item: RouteItem, index: number) => number
   /** Numeric count backing the DEFAULT marker color/label threshold (green
    *  unless > 263, then red + "263+") AND the modern-marker cluster-bubble
    *  sum. Defaults to `item.sub3.length` (right for the mock data, where
@@ -126,6 +130,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerColorFn,
   markerLabelFn,
   badgeColorFn,
+  badgeValueFn,
   markerCountFn,
   routeItems = ROUTE_ITEMS,
   useModernMarkers = false,
@@ -285,10 +290,11 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                 const badgeColor = badgeColorFn
                   ? badgeColorFn(item, index)
                   : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                const badgeValue = badgeValueFn ? badgeValueFn(item, index) : item.sub3.length
                 return (
                   <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
-                    {item.sub3.length}
+                    {badgeValue}
                   </span>
                 )
               })()}
@@ -318,10 +324,11 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                       const bc = badgeColorFn
                         ? badgeColorFn(item, index)
                         : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
+                      const badgeValue = badgeValueFn ? badgeValueFn(item, index) : item.sub3.length
                       return (
                         <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
-                          {item.sub3.length}
+                          {badgeValue}
                         </span>
                       )
                     })()}
