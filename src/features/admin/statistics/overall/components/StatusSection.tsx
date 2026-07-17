@@ -2,7 +2,10 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { useRouter, useSearchParams } from 'next/navigation'
+import dayjs from 'dayjs'
 import SwapButton from '@/components/swap-button/SwapButton'
+import { useNotificationsSummary } from '@/hooks/queries/manage'
+import type { NotificationSummaryItem } from '@/types/manage/notification-api'
 import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard } from './shared'
@@ -64,6 +67,35 @@ const periodToSince = (period: string): string | undefined => {
   }
 }
 
+// Matches OverviewSection.tsx's own periodToRange/pct exactly — the "หมวดหมู่
+// ยอดนิยม" card here mirrors that page's VMS card, which is also backed by
+// GET /manage/notifications/summary (start_date/end_date, not `?since=`).
+const ALL_TIME_START = '2000-01-01'
+const DATE_FORMAT = 'YYYY-MM-DD'
+
+const periodToRange = (period: string): { startDate: string; endDate: string } => {
+  const now = dayjs()
+  switch (period) {
+    case 'TODAY':
+      return { startDate: now.format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_7_DAYS':
+      return { startDate: now.subtract(6, 'day').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_MONTH':
+      return { startDate: now.startOf('month').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_YEAR':
+      return { startDate: now.startOf('year').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_YEAR': {
+      const lastYear = now.subtract(1, 'year')
+      return { startDate: lastYear.startOf('year').format(DATE_FORMAT), endDate: lastYear.endOf('year').format(DATE_FORMAT) }
+    }
+    case 'ALL':
+    default:
+      return { startDate: ALL_TIME_START, endDate: now.format(DATE_FORMAT) }
+  }
+}
+
+const pct = (part: number, total: number) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0.0')
+
 const COMPARISON_MOCK_DATA: ComparisonRecord[] = [
   { key: '1', agency: 'สทช. 1 (กรุงเทพ)', installations: 5, online: 4, offline: 1, newCmdWeb: 3, newCmdApp: 2 },
   { key: '1-1', agency: 'สทช. 1 (กรุงเทพ)', installations: 3, online: 3, offline: 0, newCmdWeb: 2, newCmdApp: 1, isChild: true },
@@ -80,9 +112,14 @@ const COMPARISON_MOCK_DATA: ComparisonRecord[] = [
 // There's no "incident category" concept in the VMS data model (unlike
 // Alert/Incident's real backend), so `เหตุการณ์`/`หน่วยงานที่มีเหตุการณ์` are
 // backed by the closest real equivalent — `noti_count` (VMS notification
-// logs) — and the 4th card (previously a hardcoded "หมวดหมู่ยอดนิยม" mock
-// with no backing field at all) is repurposed to a real online-rate stat.
-const buildStatusCards = (summary: LiveStatusSummary): StatCard[] => [
+// logs). The 4th card mirrors OverviewSection.tsx's VMS "หมวดหมู่ยอดนิยม"
+// detail exactly — same source (GET /manage/notifications/summary,
+// source_type=vms_setting), same most_type/most_count/count fields.
+const buildStatusCards = (
+  summary: LiveStatusSummary,
+  vmsNotificationSummary: NotificationSummaryItem | undefined,
+  vmsNotificationLoading: boolean,
+): StatCard[] => [
   {
     borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF',
     value: String(summary.totalInstallPoints), unit: 'จุดติดตั้ง',
@@ -99,9 +136,11 @@ const buildStatusCards = (summary: LiveStatusSummary): StatCard[] => [
     sub: summary.topSubDepartmentByNoti ? `${summary.topSubDepartmentByNoti.name} (${summary.topSubDepartmentByNoti.count} เหตุการณ์)` : '-',
   },
   {
-    borderColor: '#FC1691', icon: '/images/statistics/c4.png', label: 'จุดติดตั้งออนไลน์', labelColor: '#FC1691',
-    value: String(summary.onlineCount), unit: 'จุดติดตั้ง',
-    sub: `${summary.onlinePercentage.toFixed(1)}% ออนไลน์`,
+    borderColor: '#FC1691', icon: '/images/statistics/c4.png', label: 'หมวดหมู่ยอดนิยม', labelColor: '#FC1691',
+    value: vmsNotificationLoading ? '-' : (vmsNotificationSummary?.most_type?.name ?? '-'),
+    sub: vmsNotificationLoading || !vmsNotificationSummary?.most_type
+      ? '-'
+      : `${vmsNotificationSummary.most_count.toLocaleString()} จุดติดตั้ง (${pct(vmsNotificationSummary.most_count, vmsNotificationSummary.count)}%)`,
   },
 ]
 
@@ -114,7 +153,18 @@ const StatusSection: React.FC = () => {
   const [activePeriod, setActivePeriod] = useState('ALL')
   const [searchText, setSearchText] = useState('')
   const { routeItems, markerItems, summary } = useLiveStatusRouteItems(periodToSince(activePeriod))
-  const statusCards = useMemo(() => buildStatusCards(summary), [summary])
+
+  const { startDate, endDate } = useMemo(() => periodToRange(activePeriod), [activePeriod])
+  const { data: notificationsSummary, isLoading: notificationsLoading } = useNotificationsSummary(startDate, endDate)
+  const vmsNotificationSummary = useMemo(
+    () => notificationsSummary?.find((item) => item.source_type === 'vms_setting'),
+    [notificationsSummary],
+  )
+
+  const statusCards = useMemo(
+    () => buildStatusCards(summary, vmsNotificationSummary, notificationsLoading),
+    [summary, vmsNotificationSummary, notificationsLoading],
+  )
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
