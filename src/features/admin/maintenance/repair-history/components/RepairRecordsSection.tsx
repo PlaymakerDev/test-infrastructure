@@ -525,7 +525,7 @@ const RepairRecordsSection: React.FC = () => {
                                   className="text-[16px] shrink-0 transition-transform duration-200"
                                   style={{ color: '#FCD116', transform: expandedRoad === road.road_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                 />
-                                <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{road.road_name}</span>
+                                <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{road.road_name || 'โปรดระบุชื่อสายทาง'}</span>
                                 <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
                                 <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
                                 <span className="text-[12px] font-normal hidden sm:inline" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
