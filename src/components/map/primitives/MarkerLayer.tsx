@@ -74,6 +74,12 @@ export interface MarkerLayerProps {
    *  to a flat default, since Mapbox clusters don't otherwise inherit
    *  arbitrary per-feature properties like `color`. Omit to skip. */
   clusterColorSumProperty?: string
+  /** Caps the cluster bubble's SUMMED text (via `clusterSumProperty`) at this
+   *  value — a cluster whose sum exceeds it shows `${countCapThreshold}+`
+   *  instead of the raw sum. Has no effect without `clusterSumProperty`, and
+   *  no effect on unclustered points (cap that yourself in the GeoJSON
+   *  property passed to `unclusteredCountProperty`). */
+  countCapThreshold?: number
   /** Text anchor for the count/label (default 'top', matching the
    *  icon+badge-below-it layout). Pass 'center' for a plain circle+number
    *  marker with no icon. */
@@ -115,6 +121,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   unclusteredCountProperty,
   clusterSumProperty,
   clusterColorSumProperty,
+  countCapThreshold,
   textAnchor = 'top',
   textOffset = [0, 0.5],
   textSize = 12,
@@ -227,7 +234,11 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           'text-field': [
             'case',
             ['has', 'point_count'],
-            clusterSumProperty ? ['to-string', ['get', 'sum']] : ['get', 'point_count_abbreviated'],
+            clusterSumProperty
+              ? (countCapThreshold !== undefined
+                ? ['case', ['>', ['get', 'sum'], countCapThreshold], `${countCapThreshold}+`, ['to-string', ['get', 'sum']]] as ExpressionSpecification
+                : ['to-string', ['get', 'sum']] as ExpressionSpecification)
+              : ['get', 'point_count_abbreviated'],
             unclusteredCountProperty ? ['to-string', ['get', unclusteredCountProperty]] : '',
           ],
           'text-font': ['Arial Unicode MS Bold'],
@@ -353,7 +364,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   }, [
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
     cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor,
-    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, textAnchor, textOffset, textSize, textColor, minZoom,
+    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor, minZoom,
   ])
 
   // Update data without rebuilding layers

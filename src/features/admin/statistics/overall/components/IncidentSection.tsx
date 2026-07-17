@@ -297,6 +297,7 @@ const IncidentSection: React.FC = () => {
           useModernMarkers
           detailUrl="/admin/statistics/detail/incident"
           hideCount
+          markerOverflowThreshold={99}
           badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
           badgeValueFn={(item) => item.notiTotal ?? 0}
           searchText={searchText}

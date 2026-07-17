@@ -83,6 +83,10 @@ export interface StatisticsMapPanelProps {
   /** Fill color for markerItems-path points/clusters ABOVE the 263 overflow
    *  threshold. Defaults to the original hardcoded red. */
   markerItemOverflowColor?: string
+  /** Count above which a marker/cluster is considered "overflow" — switches
+   *  to `markerItemOverflowColor` (or the legacy path's hardcoded red) and
+   *  shows `${threshold}+` instead of the exact count. Default 263. */
+  markerOverflowThreshold?: number
   /** Opt-in: called when a markerItems-path point is clicked — either a
    *  single unclustered point (array of 1), or a "stuck" cluster whose
    *  merged points all share the exact same coordinate (e.g. several devices
@@ -137,6 +141,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerItems,
   markerItemColor = '#B2FF00',
   markerItemOverflowColor = '#E94C4C',
+  markerOverflowThreshold = 263,
   onMarkerGroupClick,
 }) => {
   const router = useRouter()
@@ -190,7 +195,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
       return {
         type: 'FeatureCollection' as const,
         features: markerItems.map((m) => {
-          const isOverflow = m.count > 263
+          const isOverflow = m.count > markerOverflowThreshold
           const color = m.offline !== undefined
             ? (m.offline ? markerItemOverflowColor : markerItemColor)
             : (isOverflow ? markerItemOverflowColor : markerItemColor)
@@ -201,7 +206,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               navDetail: m.detailKey,
               color,
               ...(m.offline !== undefined && { offlineFlag: m.offline ? 1 : 0 }),
-              countLabel: String(m.count),
+              countLabel: isOverflow ? `${markerOverflowThreshold}+` : String(m.count),
               countValue: m.count,
             },
             geometry: { type: 'Point' as const, coordinates: m.lngLat },
@@ -213,9 +218,9 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
       type: 'FeatureCollection' as const,
       features: routableRoutes.map((item, index) => {
         const count = getCount(item, index)
-        const isOverflow = count > 263
+        const isOverflow = count > markerOverflowThreshold
         const color = markerColorFn ? markerColorFn(item, index) : (isOverflow ? '#E94C4C' : '#B2FF00')
-        const countLabel = markerLabelFn ? String(markerLabelFn(item, index)) : (isOverflow ? '263+' : String(count))
+        const countLabel = markerLabelFn ? String(markerLabelFn(item, index)) : (isOverflow ? `${markerOverflowThreshold}+` : String(count))
         return {
           type: 'Feature' as const,
           properties: { navKey: routeKey(item), color, countLabel, countValue: count },
@@ -224,7 +229,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
       }),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markerItems, routableRoutes, markerColorFn, markerLabelFn, markerCountFn, markerItemColor, markerItemOverflowColor])
+  }, [markerItems, routableRoutes, markerColorFn, markerLabelFn, markerCountFn, markerItemColor, markerItemOverflowColor, markerOverflowThreshold])
 
   const fitCoords = React.useMemo(
     () => markerItems ? markerItems.map((m) => m.lngLat) : routableRoutes.map((item) => item.lngLat),
@@ -250,9 +255,13 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   // Cluster bubbles don't carry arbitrary per-feature properties, so a plain
   // `color` lookup would always fall back to a flat default. When items carry
   // online/offline status, `colorSum` (summed via clusterColorSumProperty)
-  // lets a cluster bubble turn red if it contains ANY offline device;
-  // otherwise fall back to the per-feature `color` (or markerItemColor for a
-  // cluster with no properties at all).
+  // lets a cluster bubble turn red if it contains ANY offline device.
+  // Otherwise, a cluster's aggregated `sum` (via clusterSumProperty) is
+  // checked against markerOverflowThreshold — e.g. a cluster summing to 155
+  // installs turns overflow-red just like a single point would — falling
+  // back to the per-feature `color` (unclustered points; already threshold-
+  // colored in clusterGeoData above) or markerItemColor for a cluster with
+  // no properties at all.
   // Memoized — MarkerLayer includes `color` in the dependency array of the
   // effect that tears down and rebuilds its Mapbox source + all 3 layers
   // (see MarkerLayer.tsx). A fresh array literal on every render (e.g. when
@@ -262,8 +271,8 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   const clusterColor: MarkerColor = React.useMemo(() => (
     hasOfflineInfo
       ? ['case', ['>', ['coalesce', ['get', 'colorSum'], ['get', 'offlineFlag'], 0], 0], markerItemOverflowColor, markerItemColor] as ExpressionSpecification
-      : ['coalesce', ['get', 'color'], markerItemColor] as ExpressionSpecification
-  ), [hasOfflineInfo, markerItemOverflowColor, markerItemColor])
+      : ['case', ['>', ['coalesce', ['get', 'sum'], 0], markerOverflowThreshold], markerItemOverflowColor, ['coalesce', ['get', 'color'], markerItemColor]] as ExpressionSpecification
+  ), [hasOfflineInfo, markerItemOverflowColor, markerItemColor, markerOverflowThreshold])
 
   const handleMarkerClick = (item: RouteItem) => {
     if (onMarkerClick) {
@@ -417,6 +426,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   size={25}
                   unclusteredCountProperty="countLabel"
                   clusterSumProperty="countValue"
+                  countCapThreshold={markerOverflowThreshold}
                   clusterColorSumProperty={hasOfflineInfo ? 'offlineFlag' : undefined}
                   textAnchor="center"
                   textOffset={MARKER_TEXT_OFFSET}
@@ -475,7 +485,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               filteredRoutes.map((item, index) => {
                 if (!item.lngLat) return null
                 const count = getCount(item, index)
-                const isOverflow = count > 263
+                const isOverflow = count > markerOverflowThreshold
                 const bgColor = markerColorFn
                   ? markerColorFn(item, index)
                   : isOverflow ? '#E94C4C' : '#B2FF00'
@@ -493,7 +503,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                         cursor: 'pointer',
                       }}
                     >
-                      {markerLabelFn ? markerLabelFn(item, index) : isOverflow ? '263+' : count}
+                      {markerLabelFn ? markerLabelFn(item, index) : isOverflow ? `${markerOverflowThreshold}+` : count}
                     </div>
                   </HTMLMarker>
                 )
