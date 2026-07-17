@@ -1,7 +1,6 @@
 // Top-level
 export { default as TitleSection } from './TitleSection'
 export { default as OverallSection } from './OverallSection'
-export { default as ModalInfoBridgeLighting } from './ModalInfoBridgeLighting'
 
 // Sections (sub-components)
 export { default as LocationSection } from './sections/overall/LocationSection'

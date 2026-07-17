@@ -7,21 +7,28 @@ import QueryBoundary from '@/components/common/QueryBoundary'
 import { usePlatesInfinite } from '@/hooks/queries/lpr'
 import type { LPRPlateListItem } from '@/types/lpr/lpr-api'
 import { VEHICLE_TYPE_COLOR } from '@/constants/vehicle'
-import { useOverallContext } from '../../../context'
+import { useOverallContext, type SelectedPlate } from '../../../context'
 
 interface Props {
   openFromDrawer?: boolean
 }
 
-// Left-card badge (Decision #1): WIM shows the vehicle type label, ANPR the
-// type name. `vehicle_type_number` already arrives as a preformatted string
-// ("ประเภท 1") — render it as-is, do NOT prefix "ประเภท" again.
+// A plate is "WIM-only" when every source it's been seen with is wim. Anything
+// with anpr (anpr-only OR wim+anpr) is treated as ANPR for display.
+const sourcesOf = (item: LPRPlateListItem): LPRPlateListItem['sources'] =>
+  item.sources && item.sources.length > 0 ? item.sources : [item.source]
+const isWimOnly = (item: LPRPlateListItem): boolean =>
+  (sourcesOf(item) ?? []).every((s) => s === 'wim')
+
+// Left-card badge: WIM-only shows the "ประเภท N" label (already preformatted —
+// do NOT prefix "ประเภท" again); any plate with anpr shows the type name.
+// Returns '' when there's no value → LicenseList hides the badge entirely.
 const badgeLabel = (item: LPRPlateListItem): string => {
   const typeNo = item.vehicle_type_number
-  if (item.source === 'wim' && typeNo != null && `${typeNo}`.trim() !== '') {
+  if (isWimOnly(item) && typeNo != null && `${typeNo}`.trim() !== '') {
     return `${typeNo}`
   }
-  return item.vehicle_type_name ?? '-'
+  return item.vehicle_type_name ?? ''
 }
 
 const toLicenseItem = (p: LPRPlateListItem): LicenseItem => ({
@@ -29,11 +36,17 @@ const toLicenseItem = (p: LPRPlateListItem): LicenseItem => ({
   license_no: p.plate_number,
   license_province: p.plate_province,
   license_type: badgeLabel(p),
-  // Color by the actual type name; WIM ("ประเภท N") has no name match → default.
+  // Color by the actual type name; WIM-only ("ประเภท N") has no name match → default.
   license_type_color: p.vehicle_type_name ? VEHICLE_TYPE_COLOR[p.vehicle_type_name] : undefined,
   road_description: p.detection_point ?? 'ไม่ระบุจุดตรวจจับ',
   sta: '',
   timestamp: p.captured_at_display,
+})
+
+const toSelected = (p: LPRPlateListItem): SelectedPlate => ({
+  plate_number: p.plate_number,
+  plate_province: p.plate_province,
+  sources: sourcesOf(p),
 })
 
 const SearchSection: React.FC<Props> = (props) => {
@@ -64,23 +77,23 @@ const SearchSection: React.FC<Props> = (props) => {
     isFetchingNextPage,
   } = usePlatesInfinite({ q })
 
-  const items = useMemo(
-    // res_data can come back null (not []) when a search has no matches — guard it.
-    () => (data?.pages ?? []).flatMap((page) => page.res_data ?? []).map(toLicenseItem),
+  // Keep the raw API rows (they carry `sources`, needed for the WIM-only vs
+  // ANPR decision) alongside the display-mapped items.
+  // res_data can come back null (not []) when a search has no matches — guard it.
+  const rawItems = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.res_data ?? []),
     [data]
   )
+  const items = useMemo(() => rawItems.map(toLicenseItem), [rawItems])
 
   // Default selection: when nothing is picked yet, auto-select the latest plate
-  // (the list is sorted captured_at DESC, so items[0] is the newest). Does not
-  // override an explicit user selection.
+  // (the list is sorted captured_at DESC, so rawItems[0] is the newest). Does
+  // not override an explicit user selection.
   useEffect(() => {
-    if (!selected && items.length > 0) {
-      setSelected({
-        plate_number: items[0].license_no,
-        plate_province: items[0].license_province,
-      })
+    if (!selected && rawItems.length > 0) {
+      setSelected(toSelected(rawItems[0]))
     }
-  }, [selected, items, setSelected])
+  }, [selected, rawItems, setSelected])
 
   const selectedId = selected
     ? `${selected.plate_province}|${selected.plate_number}`
@@ -106,12 +119,14 @@ const SearchSection: React.FC<Props> = (props) => {
 
   const handleSelect = useCallback(
     (item: LicenseItem) => {
-      setSelected({
-        plate_number: item.license_no,
-        plate_province: item.license_province,
-      })
+      const raw = rawItems.find((p) => `${p.plate_province}|${p.plate_number}` === item.id)
+      setSelected(
+        raw
+          ? toSelected(raw)
+          : { plate_number: item.license_no, plate_province: item.license_province }
+      )
     },
-    [setSelected]
+    [rawItems, setSelected]
   )
 
   return (

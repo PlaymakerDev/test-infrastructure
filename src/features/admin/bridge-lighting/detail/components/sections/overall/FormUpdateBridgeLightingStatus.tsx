@@ -1,64 +1,61 @@
-import { Button, Col, ConfigProvider, DatePicker, Radio, Row, Segmented } from 'antd';
-import dayjs from 'dayjs';
+import { usePostOpenBridgeLighting } from '@/features/admin/bridge-lighting/detail/hooks';
+import { APIResponseBridgeLightingWID, ShellyStatusData } from '@/types/bridge-lighting/overall-api';
+import { Button, Col, ConfigProvider, Radio, Row } from 'antd';
 import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 interface Props {
+  widData?: APIResponseBridgeLightingWID
+  shellyStatus?: ShellyStatusData
   editMode: boolean
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 interface FormUpdateStatus {
-  type: 'INSTANT' | 'SCHEDULED'
-  status: 'ON' | 'OFF'
-  start_date?: string;
-  end_date?: string;
+  send: '0' | '1'
+  wid: string
 }
 
-const TYPE = [
-  { label: "ดำเนินการทันที", value: "INSTANT" },
-  { label: "ตั้งเวลา", value: "SCHEDULED" },
-]
+// const TYPE = [
+//   { label: "ดำเนินการทันที", value: "INSTANT" },
+//   { label: "ตั้งเวลา", value: "SCHEDULED" },
+// ]
 
 const STATUS = [
-  { label: 'เปิดไฟระดับสะพาน', value: 'ON', },
-  { label: 'ปิดไฟระดับสะพาน', value: 'OFF', },
+  { label: 'เปิดไฟระดับสะพาน', value: '1', },
+  { label: 'ปิดไฟระดับสะพาน', value: '0', },
 ]
 
 const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
-  const { setEditMode } = props
+  const { widData, shellyStatus, setEditMode } = props
 
   const form = useForm<FormUpdateStatus>({
     defaultValues: {
-      type: 'INSTANT',
-      status: 'ON',
-      start_date: '',
-      end_date: '',
+      send: shellyStatus?.output ? '1' : '0',
+      wid: String(widData?.wid) || '',
     }
   })
 
   const {
     handleSubmit,
     control,
-    watch,
+    // watch,
     formState: { errors }
   } = form
 
+  const { mutate: postOpenBridgeLighting, isPending } = usePostOpenBridgeLighting()
+
   const onSubmit = useCallback((data: FormUpdateStatus) => {
-    const body = {
-      type: data.type,
-      status: data.status,
-      start_date: data.type === 'SCHEDULED' ? dayjs(data.start_date).format('YYYY-MM-DD HH:mm:ss') : undefined,
-      end_date: data.type === 'SCHEDULED' ? dayjs(data.end_date).format('YYYY-MM-DD HH:mm:ss') : undefined,
-    }
-    console.log(body)
-  }, [])
+    postOpenBridgeLighting(data, {
+      onSuccess: () => setEditMode(false),
+    })
+  }, [postOpenBridgeLighting, setEditMode])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <section>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+          {/* <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
             <Controller
               control={control}
               name='type'
@@ -86,11 +83,11 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
                 )
               }}
             />
-          </Col>
+          </Col> */}
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
             <Controller
               control={control}
-              name="status"
+              name="send"
               rules={{
                 required: 'กรุณาเลือกสถานะ'
               }}
@@ -102,15 +99,15 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
                       {...field}
                       options={STATUS}
                     />
-                    {!!errors.status &&
-                      <p className='text-red-500'>{errors.status.message}</p>
+                    {!!errors.send &&
+                      <p className='text-red-500'>{errors.send.message}</p>
                     }
                   </fieldset>
                 )
               }}
             />
           </Col>
-          {watch('type') === 'SCHEDULED' && (
+          {/* {watch('type') === 'SCHEDULED' && (
             <>
               <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
                 <Controller
@@ -165,7 +162,7 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
                 />
               </Col>
             </>
-          )}
+          )} */}
         </Row>
       </section>
       <section className='mt-3'>
@@ -186,6 +183,8 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
             htmlType='submit'
             shape='round'
             className='w-full! sm:w-auto!'
+            loading={isPending}
+            disabled={isPending}
           >
             <p className='fs-12'>บันทึก</p>
           </Button>

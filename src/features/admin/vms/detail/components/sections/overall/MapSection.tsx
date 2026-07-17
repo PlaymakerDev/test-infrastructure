@@ -1,13 +1,11 @@
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { WhiteTeardropPin, OFFLINE_PIN_COLOR } from '@/components/map/markers/OverlapMarkers'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
 import { APIResponseVMSDetail, Solution } from '@/types/vms/detail-api'
-import { Image } from 'antd'
 import React, { useMemo } from 'react'
 import { useDetailContext } from '../../../context'
-
-const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
 
 interface Props {
   data?: APIResponseVMSDetail
@@ -70,7 +68,6 @@ const MapSection: React.FC<Props> = (props) => {
             key={data?.solution?.id}
             lngLat={lngLat}
             anchor="bottom"
-            offset={[0, 19]}
             title={data?.solution?.solution_name}
             popup={() => (
               <SolutionPopup
@@ -80,15 +77,12 @@ const MapSection: React.FC<Props> = (props) => {
                 setOpenVMSScreen={setOpenVMSScreen}
               />
             )}
-            popupOptions={{ offset: 10, closeButton: false }}
+            popupOptions={{ offset: 18, closeButton: false }}
           >
-            <Image
-              src={DEFAULT_ICON}
-              alt="station-pin"
-              width={52}
-              height={55}
-              preview={false}
-            />
+            {/* Shared detail-map teardrop (replaces the station-pin image so
+                every detail page uses one marker language) — single device:
+                offline paints it red. */}
+            <WhiteTeardropPin color={isOnline ? undefined : OFFLINE_PIN_COLOR} />
           </HTMLMarker>
         )}
       </BaseMap>

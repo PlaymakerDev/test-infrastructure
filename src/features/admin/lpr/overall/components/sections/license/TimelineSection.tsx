@@ -43,26 +43,32 @@ const TimelineSection: React.FC = () => {
 
   const firstSeen = detail?.first_seen
 
-  // Metadata cards branch on the latest detection's source:
-  //  • WIM  → a single "ประเภทยานพาหนะ" card (per design — vehicle_type_name is
-  //           already the full "ประเภท N : … เพลา … (… ตัน)" string).
-  //  • ANPR → the full 4-field grid; a missing/blank value shows "-".
-  const isWim = detail?.latest?.source === 'wim'
+  // Metadata cards branch on whether the plate is WIM-only:
+  //  • WIM-only → a single "ประเภทยานพาหนะ" card (per design — vehicle_type_name
+  //    is already the full "ประเภท N : … เพลา … (… ตัน)" string).
+  //  • has anpr (anpr-only OR wim+anpr) → the full 4-field ANPR grid; blanks → "-".
+  // Uses the list `sources` (authoritative); falls back to latest.source.
+  const isWimOnly = useMemo(() => {
+    const srcs = selected?.sources
+    if (srcs && srcs.length > 0) return srcs.every((s) => s === 'wim')
+    return detail?.latest?.source === 'wim'
+  }, [selected, detail])
   const metaCards = useMemo(() => {
     const m = detail?.metadata
     if (!m) return []
-    const val = (v: string | number | null | undefined) =>
-      v != null && String(v).trim() !== '' ? String(v) : '-'
-    if (detail?.latest?.source === 'wim') {
-      return [{ label: 'ประเภทยานพาหนะ', value: val(m.vehicle_type_name) }]
-    }
-    return [
-      { label: 'ประเภทป้ายทะเบียน', value: val(m.plate_type) },
-      { label: 'ประเภทยานพาหนะ', value: val(m.vehicle_type_name) },
-      { label: 'ยี่ห้อ', value: val(m.vehicle_brand) },
-      { label: 'สียานพาหนะ', value: val(m.vehicle_color) },
-    ]
-  }, [detail])
+    // Empty/blank → null → card dropped entirely (no "-" placeholders).
+    const clean = (v: string | number | null | undefined) =>
+      v != null && String(v).trim() !== '' ? String(v) : null
+    const cards = isWimOnly
+      ? [{ label: 'ประเภทยานพาหนะ', value: clean(m.vehicle_type_name) }]
+      : [
+          { label: 'ประเภทป้ายทะเบียน', value: clean(m.plate_type) },
+          { label: 'ประเภทยานพาหนะ', value: clean(m.vehicle_type_name) },
+          { label: 'ยี่ห้อ', value: clean(m.vehicle_brand) },
+          { label: 'สียานพาหนะ', value: clean(m.vehicle_color) },
+        ]
+    return cards.filter((c): c is { label: string; value: string } => c.value !== null)
+  }, [detail, isWimOnly])
 
   return (
     <div className='lg:px-8'>
@@ -96,7 +102,7 @@ const TimelineSection: React.FC = () => {
 
       {/* Vehicle metadata — single card for WIM, 4-field grid for ANPR */}
       {metaCards.length > 0 && (
-        <section className={isWim ? 'mt-10' : 'mt-10 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4'}>
+        <section className={isWimOnly ? 'mt-10' : 'mt-10 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4'}>
           {metaCards.map(({ label, value }) => (
             <div key={label} className='bg-(--yellow)/10 border-2 border-(--yellow) rounded-[20px] p-5'>
               <p className='text-(--yellow)'>{label}</p>

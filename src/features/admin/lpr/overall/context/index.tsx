@@ -1,5 +1,6 @@
 "use client"
 import { createContext, useContext, useState } from 'react'
+import type { LPRSource } from '@/types/lpr/lpr-api'
 
 // (plate_number, plate_province) is the composite identity of a plate — the
 // detail/timeline endpoints are keyed on both. Detail data is NOT stored here;
@@ -7,6 +8,10 @@ import { createContext, useContext, useState } from 'react'
 export interface SelectedPlate {
   plate_number: string
   plate_province: string
+  // All sources this plate has been seen with (v2 list `sources`). Drives the
+  // WIM-only vs ANPR display (single card + "ประเภท N" badge for WIM-only;
+  // ANPR metadata + type-name badge whenever anpr is present). Optional.
+  sources?: LPRSource[]
 }
 
 export interface ContextProps {

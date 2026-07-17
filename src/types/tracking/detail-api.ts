@@ -851,6 +851,7 @@ export interface APIRequestMobileDailyCount {
   start_date?: string
   end_date?: string
   department_id?: string | number
+  tid?: string | number
 }
 
 export interface APIResponseMobileDailyCount extends Omit<APIResponseStationDailyCount, 'data'> {
@@ -859,17 +860,20 @@ export interface APIResponseMobileDailyCount extends Omit<APIResponseStationDail
 
 export interface MobileDailyCountData {
   actual: number
+  axis_over_gross_weight: number
   fiscal_year: number
   max_grossweight_not_over: number
   max_grossweight_over: number
+  max_grossweight_over_percent: number
   open_station_count: number
   plan: number
   sum_total: number
   sum_total_over: number
-  top_region: string
+  top_region: any
   top_region_open_count: number
   top_region_percent: number
   total_station_count: number
+  weight_axis_over_count: number
 }
 
 // MOBILE CAR
@@ -895,20 +899,25 @@ export interface MobileCarList {
   accept_weight_by: any
   arrest_id: any
   create_date: string
-  drive_shaft_over: string
+  drive_shaft_over?: string
   driver_name: any
   driver_shaft: string
   ds_1: string
   ds_2: string
-  ds_3: string
-  ds_4: string
-  ds_5: string
-  ds_6: string
-  ds_7: any
+  ds_3?: string
+  ds_4?: string
+  ds_5?: string
+  ds_6?: string
+  ds_7?: string
   gross_weight: string
   gross_weight_over: any
+  image_path0: string
   image_path1: string
   image_path2: string
+  image_path3: string
+  image_path4: string
+  image_path5: string
+  image_path6: string
   is_arrested: number
   is_over_weight: string
   is_over_weight_desc: string
@@ -920,9 +929,9 @@ export interface MobileCarList {
   lp_head_province_name: string
   lp_tail: string
   lp_tail_no: string
-  lp_tail_province_id: number
-  lp_tail_province_id_ppa: number
-  lp_tail_province_name: string
+  lp_tail_province_id?: number
+  lp_tail_province_id_ppa?: number
+  lp_tail_province_name?: string
   masterial_name: string
   t_id: string
   td_id: string

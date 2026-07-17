@@ -7,7 +7,7 @@ import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api';
 import HTMLMarker from '@/components/map/primitives/HTMLMarker';
 
 interface Props {
-  data?: MobileMasterDepartmentByTIDData
+  departmentData?: MobileMasterDepartmentByTIDData
 }
 
 const formatCoords = (lat: number, lng: number): string => {
@@ -17,10 +17,10 @@ const formatCoords = (lat: number, lng: number): string => {
 const DEFAULT_ICON = '/images/icon-marker/Default.svg'
 
 const MobileDetailMap: React.FC<Props> = (props) => {
-  const { data } = props;
+  const { departmentData } = props;
   const { } = useMobileContext()
 
-  const point = useMemo(() => [Number(data?.longitude), Number(data?.latitude)], [data])
+  const point = useMemo(() => [Number(departmentData?.longitude), Number(departmentData?.latitude)], [departmentData])
 
   const lngLat = useMemo<[number, number] | null>(() => {
     if (!point || point.length < 2) return null
@@ -29,12 +29,12 @@ const MobileDetailMap: React.FC<Props> = (props) => {
   }, [point])
 
 
-  const hasCoords = data?.latitude != null && data?.longitude != null
+  const hasCoords = departmentData?.latitude != null && departmentData?.longitude != null
   const googleMapsUrl = hasCoords
-    ? `https://www.google.com/maps?q=${data!.latitude},${data!.longitude}`
+    ? `https://www.google.com/maps?q=${departmentData!.latitude},${departmentData!.longitude}`
     : 'https://www.google.com/maps'
 
-  const coords = hasCoords ? formatCoords(Number(data!.latitude!), Number(data!.longitude!)) : null
+  const coords = hasCoords ? formatCoords(Number(departmentData!.latitude!), Number(departmentData!.longitude!)) : null
 
   return (
     <div className='relative h-full min-h-80 rounded-xl overflow-hidden'>
@@ -47,11 +47,11 @@ const MobileDetailMap: React.FC<Props> = (props) => {
       >
         {lngLat && (
           <HTMLMarker
-            key={data?.tid}
+            key={departmentData?.tid}
             lngLat={lngLat}
             anchor="bottom"
             offset={[0, 19]}
-            title={data?.way_name}
+            title={departmentData?.way_name}
           >
             <Image
               src={DEFAULT_ICON}
@@ -85,7 +85,7 @@ const MobileDetailMap: React.FC<Props> = (props) => {
             <TbMapPin className='text-(--yellow) fs-22' />
             <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
           </div>
-          <p className='text-white leading-snug fs-12'>{data?.way_name || '-'}</p>
+          <p className='text-white leading-snug fs-12'>{departmentData?.way_name || '-'}</p>
           {coords && <p className='fs-12 text-white/60'>{coords}</p>}
         </div>
       )}

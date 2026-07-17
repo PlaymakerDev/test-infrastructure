@@ -71,10 +71,12 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
               style={{ pointerEvents: 'none' }}
             />
             <h4 className='camera-code'>{cam.name}</h4>
-            {/* IP + phase + type on ONE row per design 2026-07-14 —
-              * flex-wrap keeps pills from clipping on narrow cards. */}
+            {/* IP + phase + type on ONE row per design 2026-07-14 — original
+              * font sizes; the LEFT rail was widened to 320px instead (see
+              * LocationTrafficSignal) so the longest IP + 2 pills still fit.
+              * flex-wrap stays as a last-resort fallback only. */}
             <div className='mt-1 flex items-center gap-1.5 flex-wrap'>
-              <p className='camera-location mb-0'>IP : {ipAddress}</p>
+              <p className='camera-location mb-0 whitespace-nowrap'>IP : {ipAddress}</p>
               {/* Phase pill — blue outline */}
               <span
                 className='inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap'

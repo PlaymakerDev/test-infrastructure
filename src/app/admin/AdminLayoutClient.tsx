@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react'
 import PageLayout from '@/components/layout/Layout'
 import ScopeUrlSync from '@/components/provider/ScopeUrlSync'
+import BackToTop from '@/components/common/BackToTop'
 
 interface Props {
   children: React.ReactNode;
@@ -22,6 +23,9 @@ const AdminLayoutClient: React.FC<Props> = (props) => {
       <PageLayout>
         {children}
       </PageLayout>
+      {/* Shows only after the window is scrolled — pages that don't scroll
+        * (dashboard desktop) never see it. */}
+      <BackToTop />
     </>
   )
 }

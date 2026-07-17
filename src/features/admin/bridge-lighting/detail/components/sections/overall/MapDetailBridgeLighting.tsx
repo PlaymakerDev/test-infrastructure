@@ -1,43 +1,86 @@
-"use client"
-import React from 'react'
-import { TbMapPin } from 'react-icons/tb'
-import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
+import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import { useDetailContext } from '../../../context'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import { APIResponseBridgeLightingOverview, BridgeLightingLocation } from '@/types/bridge-lighting/overall-api'
+import { APIResponseVMSDetail } from '@/types/vms/detail-api'
+import { Image } from 'antd'
+import React, { useMemo } from 'react'
+
+const DEFAULT_ICON = '/images/icon-marker/Default.svg'
 
 interface Props {
-  /** Optional vignette overlay forwarded to BaseMap. */
-  edgeFade?: MapEdgeFadeProps
+  locationData?: APIResponseBridgeLightingOverview
+  isLocationSuccess?: boolean
+
 }
 
-/** Single-bridge centered map used as the detail page background.
- *  Higher zoom + 3D-ish pitch so the focus bridge fills the viewport. */
-const MapDetailBridgeLighting: React.FC<Props> = ({ edgeFade }) => {
-  const { bridge } = useDetailContext()
+interface SolutionPopupProps {
+  data?: BridgeLightingLocation;
+}
+
+const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
+  const { data } = props
+
   return (
-    <BaseMap
-      initialCenter={bridge.coord}
-      initialZoom={16}
-      initialPitch={45}
-      edgeFade={edgeFade}
-    >
-      <HTMLMarker lngLat={bridge.coord} anchor='bottom' title={bridge.installPoint}>
-        <div
-          className='flex items-center justify-center'
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: '#FCD116',
-            boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-            border: '2px solid #fff',
-          }}
-        >
-          <TbMapPin size={20} color='#212121' />
-        </div>
-      </HTMLMarker>
-    </BaseMap>
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${data?.is_online ? 'border-green-400' : 'border-red-400'}`}>
+      <section>
+        <p className='fs-12'>ชื่อจุดติดตั้ง: <strong>{data?.solution?.solution_name || '-'}</strong></p>
+        <p className='fs-12'>รหัสสายทาง: <strong>{data?.road.code_name || '-'}</strong></p>
+        <p className='fs-12'>สถานะ: <strong>{data?.is_online ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+      </section>
+    </div>
   )
 }
 
-export default React.memo(MapDetailBridgeLighting)
+const MapDetailBridgeLighting: React.FC<Props> = (props) => {
+  const { locationData, isLocationSuccess } = props
+  const location = locationData?.locations?.[0]
+
+  const point = location?.geometry_point
+
+  const lngLat = useMemo<[number, number] | null>(() => {
+    if (!point || point.length < 2) return null
+    if (point[0] === 0 && point[1] === 0) return null
+    return [point[0], point[1]]
+  }, [point])
+
+  if (!isLocationSuccess) return null
+
+  return (
+    <>
+      <BaseMap
+        initialCenter={lngLat ?? undefined}
+        initialZoom={lngLat ? 17 : 5.2}
+        initialPitch={lngLat ? 45 : 0}
+        initialBearing={lngLat ? -10 : 0}
+        edgeFade={{ all: 10 }}
+      >
+        {lngLat && (
+          <HTMLMarker
+            key={location?.solution.id}
+            lngLat={lngLat}
+            anchor="bottom"
+            offset={[0, 19]}
+            title={location?.solution.solution_name}
+            popup={() => (
+              <SolutionPopup
+                data={location}
+              />
+            )}
+            popupOptions={{ offset: 10, closeButton: false }}
+          >
+            <Image
+              src={DEFAULT_ICON}
+              alt="station-pin"
+              width={52}
+              height={55}
+              preview={false}
+            />
+          </HTMLMarker>
+        )}
+      </BaseMap>
+    </>
+  )
+}
+
+export default React.memo<Props>(MapDetailBridgeLighting)
