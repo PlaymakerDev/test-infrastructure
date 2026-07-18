@@ -133,6 +133,26 @@ export interface APIResponseDepartmentByRoad {
   region_id: number
 }
 
+// GET /manage/project/{id}
+export interface APIResponseProjectDetail {
+  id: number
+  project_name: string
+  project_no: string
+  contract_no: string | null
+  budget_year: number
+  department_id: number
+  contractor_id: string
+  warranty_start_date: string | null
+  warranty_end_date: string | null
+  is_warranty: boolean
+  /** Not always populated by the backend — guard with `?.` at every call site. */
+  contractor?: {
+    id: string
+    username: string
+  }
+  department?: APIResponseDepartmentByRoad
+}
+
 // UPLOAD
 export interface UploadResponse {
   path: string;
