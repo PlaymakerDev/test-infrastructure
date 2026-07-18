@@ -10,18 +10,36 @@ import {
 } from '@/features/admin/incident-detection/components/eventTypes'
 import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
 
+interface Props {
+  /** Overrides the route `[id]` param — lets other features (e.g. statistics'
+   *  incident detail page, scoped by `?detail=<solutionId>`) reuse this same
+   *  real-data section without being on the incident-detection detail route. */
+  solutionId?: string
+  /** Card height — default (170) matches the compact incident-detection
+   *  detail-page rail; other consumers can size it to their own layout. */
+  height?: number
+  /** Donut circle size (px, square) — default (144) matches the compact rail. */
+  donutSize?: number
+  /** Legend scroll cap (px) — default (160) matches the compact rail. */
+  legendMaxHeight?: number
+  /** Override the date range (YYYY-MM-DD). Defaults to today. */
+  startDate?: string
+  endDate?: string
+}
+
 /** "สัดส่วนประเภทเหตุการณ์" — donut + legend (count + %).
  *  Source: /details/transactions summary.type_details — counts per event type
  *  for this solution's day. */
-const EventDonutSection: React.FC = () => {
+const EventDonutSection: React.FC<Props> = ({ solutionId: solutionIdProp, height = 170, donutSize = 144, legendMaxHeight = 160, startDate, endDate }) => {
   const params = useParams()
-  const solutionId = Array.isArray(params.id) ? params.id[0] : params.id
+  const solutionId = solutionIdProp ?? (Array.isArray(params.id) ? params.id[0] : params.id)
   const today = dayjs().format('YYYY-MM-DD')
+  const start_date = startDate ?? today
+  const end_date = endDate ?? today
   const { data } = useIncidentTransactions({
     solution_id: solutionId,
-    start_date: today,
-    end_date: today,
-    limit: 1,
+    start_date,
+    end_date,
   })
 
   // Drop zero-count types so the donut/legend show only types that actually
@@ -58,7 +76,7 @@ const EventDonutSection: React.FC = () => {
       centerUnitSize={10}
       centerLabelColor='#ffffff'
       centerUnitColor='#ffffff'
-      legendMaxHeight={160}
+      legendMaxHeight={legendMaxHeight}
     />
   )
 }
