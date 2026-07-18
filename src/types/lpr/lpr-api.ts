@@ -57,6 +57,31 @@ export interface APIResponseLPRPointPlates {
   has_more: boolean
 }
 
+// ── GET /lpr/points/:solution_id/stats ──────────────────────────────────────
+// Aggregate for the detail-overview: hourly today+yesterday, province Top-10,
+// vehicle-type Top-10, plus totals.
+export interface LPRHourBucket {
+  hour: number
+  count: number
+}
+export interface LPRProvinceBucket {
+  province: string
+  count: number
+}
+export interface LPRVehicleBucket {
+  vehicle_type_name: string
+  count: number
+}
+export interface APIResponseLPRPointStats {
+  total: number
+  total_yesterday: number
+  avg_speed: number
+  hourly_today: LPRHourBucket[]
+  hourly_yesterday: LPRHourBucket[]
+  province_top: LPRProvinceBucket[]
+  vehicle_type_top: LPRVehicleBucket[]
+}
+
 
 
 export type LPRSource = 'wim' | 'anpr'

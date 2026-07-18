@@ -30,7 +30,7 @@ const resolveImg = (path?: string | null): string => {
  *  page (existing /admin/lpr LICENSE tab search). */
 const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
   const { solutionId } = useLPRDetailContext()
-  const { data, isLoading } = useLPRPointPlates(solutionId, 5)
+  const { data, isLoading } = useLPRPointPlates(solutionId, { limit: 5 })
   const items = data?.pages?.[0]?.res_data ?? []
 
   return (

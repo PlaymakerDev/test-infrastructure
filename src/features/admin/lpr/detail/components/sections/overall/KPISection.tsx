@@ -1,72 +1,97 @@
 "use client"
 import React from 'react'
-import { TbBolt, TbCamera, TbLicense, TbClock } from 'react-icons/tb'
+import { TbBolt, TbCamera, TbLicense, TbGauge } from 'react-icons/tb'
+import { useLPRPointStats } from '@/hooks/queries/lpr'
 import { useLPRDetailContext } from '../../../context'
 
 interface StatCardProps {
   icon: React.ReactNode
   label: string
   value: string
-  hint?: string
+  sub?: string
   color: string
+  accent?: string
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, hint, color }) => (
+const StatCard: React.FC<StatCardProps> = ({ icon, label, value, sub, color, accent }) => (
   <div
-    className='h-full rounded-2xl p-4 border-2 flex flex-col gap-1'
-    style={{ borderColor: color, background: `${color}1A` }}
+    className='h-full rounded-2xl p-4 border-2 flex flex-col gap-1 relative overflow-hidden'
+    style={{ borderColor: `${color}55`, background: `${color}12` }}
   >
-    <div className='flex items-center gap-2' style={{ color }}>
+    {/* Subtle accent glow */}
+    <span
+      className='absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-40 pointer-events-none'
+      style={{ background: color }}
+    />
+    <div className='flex items-center gap-2 relative' style={{ color }}>
       {icon}
       <span className='fs-13 font-semibold'>{label}</span>
     </div>
-    <p className='mb-0 leading-none'>
+    <p className='mb-0 leading-none relative'>
       <span className='fs-24 font-bold tabular-nums text-white'>{value}</span>
     </p>
-    {hint && <p className='fs-11 text-gray-400 mb-0'>{hint}</p>}
+    <p className='fs-11 mb-0 relative' style={{ color: accent ?? '#94a3b8' }}>
+      {sub || ''}
+    </p>
   </div>
 )
 
-/** Four-tile KPI row for the LPR detail page — same visual family as the
- *  overall page's InfoCardSection, only per-install-point instead of
- *  totals. Sources numbers from the useLPRPoints cache (via context). */
+/** Detail-page KPI row — pulls totals from /stats (authoritative day count
+ *  incl. yesterday) and camera count from the /points cache (context). */
 const KPISection: React.FC = () => {
-  const { point } = useLPRDetailContext()
+  const { point, solutionId } = useLPRDetailContext()
+  const { data: stats } = useLPRPointStats(solutionId)
   const fmt = (n: number) => n.toLocaleString('th-TH')
 
-  const eventsToday = point?.events_today ?? 0
+  const totalToday = stats?.total ?? 0
+  const totalYest = stats?.total_yesterday ?? 0
   const eventsHour = point?.events_hour ?? 0
   const cameraCount = point?.camera_count ?? 0
-  const isActive = eventsHour > 0
+  const avgSpeed = stats?.avg_speed ?? 0
+
+  const delta = totalToday - totalYest
+  const deltaPct = totalYest > 0 ? (delta / totalYest) * 100 : null
+  const deltaSub =
+    totalYest === 0
+      ? 'ยังไม่มีข้อมูลเปรียบเทียบ'
+      : delta >= 0
+        ? `▲ +${fmt(delta)} (${deltaPct?.toFixed(1)}%) จากเมื่อวาน`
+        : `▼ ${fmt(delta)} (${deltaPct?.toFixed(1)}%) จากเมื่อวาน`
+  const deltaColor = totalYest === 0 ? '#94a3b8' : delta >= 0 ? '#4ade80' : '#f87171'
 
   return (
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
       <StatCard
         icon={<TbLicense size={20} />}
         label='ตรวจจับวันนี้'
-        value={fmt(eventsToday)}
-        hint='ครั้ง'
+        value={fmt(totalToday)}
+        sub={deltaSub}
+        accent={deltaColor}
         color='#FCD116'
       />
       <StatCard
         icon={<TbBolt size={20} />}
         label='ชั่วโมงล่าสุด'
         value={fmt(eventsHour)}
-        hint={isActive ? 'Active' : 'Idle'}
+        sub={eventsHour > 0 ? 'Active' : 'Idle'}
         color='#66AEFF'
       />
       <StatCard
         icon={<TbCamera size={20} />}
         label='กล้อง LPR'
         value={fmt(cameraCount)}
-        hint='ตัว'
+        sub='ในจุดติดตั้งนี้'
         color='#05F2DB'
       />
       <StatCard
-        icon={<TbClock size={20} />}
-        label='อัตราต่อชั่วโมง'
-        value={fmt(Math.round(eventsToday / Math.max(1, new Date().getHours() || 1)))}
-        hint='เฉลี่ยครั้ง / ชั่วโมง'
+        icon={<TbGauge size={20} />}
+        label='ความเร็วเฉลี่ย'
+        value={
+          avgSpeed > 0
+            ? `${avgSpeed.toFixed(1)}`
+            : '—'
+        }
+        sub={avgSpeed > 0 ? 'กม./ชม. · วันนี้' : 'ไม่มีข้อมูลความเร็ว'}
         color='#B57BFF'
       />
     </div>

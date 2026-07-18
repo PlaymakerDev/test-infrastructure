@@ -4,14 +4,16 @@ import Image from 'next/image'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
-import { Table, Button, Empty, Input, Modal } from 'antd'
+import { Table, Button, Empty, Input, Modal, DatePicker } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbSearch, TbCamera } from 'react-icons/tb'
+import { TbSearch, TbCamera, TbCalendar } from 'react-icons/tb'
 import { useLPRPointPlates } from '@/hooks/queries/lpr'
 import type { LPRPointPlate, LPRSource } from '@/types/lpr/lpr-api'
 import { useLPRDetailContext } from '../context'
 
 dayjs.extend(relativeTime)
+
+const { RangePicker } = DatePicker
 
 const SOURCE_LABEL: Record<LPRSource, string> = { anpr: 'ANPR', wim: 'WIM' }
 const SOURCE_COLOR: Record<LPRSource, string> = {
@@ -19,37 +21,44 @@ const SOURCE_COLOR: Record<LPRSource, string> = {
   wim: '#B57BFF',
 }
 
-const resolveImg = (path?: string | null): string => {
-  if (!path) return ''
-  if (/^https?:\/\//i.test(path)) return path
-  const base = process.env.NEXT_PUBLIC_HOST_BACKEND ?? ''
-  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
-}
-
-/** Detail Tab 2 — full detection list.
- *  Infinite-scroll (via "โหลดเพิ่ม" button) over the cursor-paginated
- *  /lpr/points/:id/plates stream. Client-side filter for source + plate
- *  search (backend doesn't accept those params yet — keeps it snappy on
- *  the loaded page). Row click opens a modal with the full-size vehicle
- *  + plate crop image, kept out-of-flow so the table stays scrollable. */
+/** Detail Tab 2 — full detection list with real filters wired to backend.
+ *  Backend handles: source narrow (`source=anpr|wim`), plate substring
+ *  search (`q=`), inclusive date range (`from=YYYY-MM-DD&to=YYYY-MM-DD`).
+ *  Frontend batches cursor pages via useLPRPointPlates + shows a click-to-
+ *  view Modal with full-size vehicle + plate images. */
 const DetectionSection: React.FC = () => {
   const { solutionId } = useLPRDetailContext()
+
   const [sourceFilter, setSourceFilter] = useState<'all' | LPRSource>('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
+    null,
+    null,
+  ])
   const [modalItem, setModalItem] = useState<LPRPointPlate | null>(null)
 
-  const { data, isLoading, isFetching, hasNextPage, fetchNextPage } =
-    useLPRPointPlates(solutionId, 25)
+  // Debounce plate search so we don't re-issue the query on every keystroke.
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350)
+    return () => clearTimeout(t)
+  }, [search])
 
-  const rows = useMemo(() => {
-    const all = (data?.pages ?? []).flatMap((p) => p.res_data)
-    const term = search.trim().toLowerCase()
-    return all.filter((r) => {
-      if (sourceFilter !== 'all' && r.source !== sourceFilter) return false
-      if (term && !(r.plate_number ?? '').toLowerCase().includes(term)) return false
-      return true
-    })
-  }, [data, sourceFilter, search])
+  const from = dateRange[0]?.format('YYYY-MM-DD')
+  const to = dateRange[1]?.format('YYYY-MM-DD')
+
+  const { data, isLoading, isFetching, hasNextPage, fetchNextPage } = useLPRPointPlates(
+    solutionId,
+    {
+      limit: 25,
+      from,
+      to,
+      q: debouncedSearch || undefined,
+      source: sourceFilter,
+    },
+  )
+
+  const rows = useMemo(() => (data?.pages ?? []).flatMap((p) => p.res_data), [data])
 
   const columns: ColumnsType<LPRPointPlate> = useMemo(
     () => [
@@ -75,7 +84,7 @@ const DetectionSection: React.FC = () => {
           <div className='flex items-center gap-2'>
             {r.plate_image ? (
               <Image
-                src={resolveImg(r.plate_image)}
+                src={r.plate_image}
                 alt={r.plate_number}
                 width={70}
                 height={30}
@@ -154,47 +163,94 @@ const DetectionSection: React.FC = () => {
             {SOURCE_LABEL[v]}
           </span>
         ),
-        filters: [
-          { text: 'ANPR', value: 'anpr' },
-          { text: 'WIM', value: 'wim' },
-        ],
-        onFilter: (val, r) => r.source === val,
       },
     ],
     [],
   )
 
+  const applyPreset = (days: number) => {
+    const end = dayjs()
+    const start = end.subtract(days, 'day')
+    setDateRange([start, end])
+  }
+
+  const clearAll = () => {
+    setSourceFilter('all')
+    setSearch('')
+    setDateRange([null, null])
+  }
+
   return (
     <div className='flex flex-col gap-4'>
-      <section className='flex flex-col md:flex-row md:items-center gap-3'>
-        <div className='flex items-center gap-1 bg-(--mid-gray) rounded-lg p-1'>
-          {(['all', 'anpr', 'wim'] as const).map((s) => (
+      <section className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3'>
+        <div className='flex items-center gap-2 text-(--yellow)'>
+          <TbCalendar size={16} />
+          <h4 className='mb-0 fs-13'>ตัวกรอง</h4>
+          <div className='ms-auto flex items-center gap-1'>
+            {[
+              { label: 'วันนี้', d: 0 },
+              { label: '7 วัน', d: 7 },
+              { label: '30 วัน', d: 30 },
+            ].map((p) => (
+              <button
+                key={p.label}
+                type='button'
+                onClick={() => applyPreset(p.d)}
+                className='fs-11 px-2 py-1 rounded-md bg-(--light-black) text-gray-300 hover:text-white hover:bg-black/40 transition-colors'
+              >
+                {p.label}
+              </button>
+            ))}
             <button
-              key={s}
               type='button'
-              onClick={() => setSourceFilter(s)}
-              className={`px-3 py-1.5 rounded-md fs-12 transition-colors ${
-                sourceFilter === s
-                  ? 'bg-(--yellow) text-black font-semibold'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={clearAll}
+              className='fs-11 px-2 py-1 rounded-md text-gray-500 hover:text-(--yellow) transition-colors'
             >
-              {s === 'all' ? 'ทั้งหมด' : SOURCE_LABEL[s]}
+              ล้างตัวกรอง
             </button>
-          ))}
+          </div>
         </div>
-        <Input
-          allowClear
-          size='middle'
-          prefix={<TbSearch className='text-gray-400' />}
-          placeholder='ค้นหาป้ายทะเบียน'
-          className='max-w-xs'
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className='ms-auto fs-11 text-gray-400'>
-          แสดง {rows.length.toLocaleString('th-TH')} รายการ
-          {isFetching && ' · กำลังโหลด…'}
+        <div className='flex flex-col md:flex-row md:items-center gap-3'>
+          <RangePicker
+            value={dateRange}
+            onChange={(dates) =>
+              setDateRange(
+                (dates ?? [null, null]) as [dayjs.Dayjs | null, dayjs.Dayjs | null],
+              )
+            }
+            format='DD MMM YYYY'
+            placeholder={['จาก', 'ถึง']}
+            allowClear
+          />
+          <div className='flex items-center gap-1 bg-(--light-black) rounded-lg p-1'>
+            {(['all', 'anpr', 'wim'] as const).map((s) => (
+              <button
+                key={s}
+                type='button'
+                onClick={() => setSourceFilter(s)}
+                className={`px-3 py-1.5 rounded-md fs-12 transition-colors ${
+                  sourceFilter === s
+                    ? 'bg-(--yellow) text-black font-semibold'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {s === 'all' ? 'ทั้งหมด' : SOURCE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+          <Input
+            allowClear
+            size='middle'
+            prefix={<TbSearch className='text-gray-400' />}
+            placeholder='ค้นหาป้ายทะเบียน'
+            className='md:max-w-xs'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className='md:ms-auto fs-11 text-gray-400'>
+            แสดง {rows.length.toLocaleString('th-TH')} รายการ
+            {isFetching && ' · กำลังโหลด…'}
+          </div>
         </div>
       </section>
 
@@ -206,17 +262,13 @@ const DetectionSection: React.FC = () => {
         pagination={false}
         size='middle'
         scroll={{ x: 1000 }}
-        locale={{ emptyText: <Empty description='ไม่มีข้อมูลตรวจจับ' /> }}
+        locale={{ emptyText: <Empty description='ไม่มีข้อมูลตรวจจับตามตัวกรอง' /> }}
         onRow={(row) => ({ onClick: () => setModalItem(row), className: 'cursor-pointer' })}
       />
 
       {hasNextPage && (
         <div className='flex justify-center'>
-          <Button
-            type='primary'
-            loading={isFetching}
-            onClick={() => fetchNextPage()}
-          >
+          <Button type='primary' loading={isFetching} onClick={() => fetchNextPage()}>
             โหลดเพิ่ม
           </Button>
         </div>
@@ -234,7 +286,7 @@ const DetectionSection: React.FC = () => {
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
               {modalItem.vehicle_image && (
                 <Image
-                  src={resolveImg(modalItem.vehicle_image)}
+                  src={modalItem.vehicle_image}
                   alt='vehicle'
                   width={640}
                   height={360}
@@ -244,7 +296,7 @@ const DetectionSection: React.FC = () => {
               )}
               {modalItem.plate_image && (
                 <Image
-                  src={resolveImg(modalItem.plate_image)}
+                  src={modalItem.plate_image}
                   alt='plate'
                   width={640}
                   height={360}
@@ -269,9 +321,7 @@ const DetectionSection: React.FC = () => {
               {modalItem.speed != null && (
                 <>
                   <dt className='text-gray-400'>ความเร็ว</dt>
-                  <dd>
-                    {modalItem.speed.toLocaleString('th-TH')} กม./ชม.
-                  </dd>
+                  <dd>{modalItem.speed.toLocaleString('th-TH')} กม./ชม.</dd>
                 </>
               )}
               {modalItem.is_overweight != null && (
