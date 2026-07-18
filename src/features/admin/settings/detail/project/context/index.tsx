@@ -64,9 +64,21 @@ const mapCamera = (c: APIResponseCamera): Equipment => ({
   ipAddress: c.ip_address ?? null,
   hlsUrl: c.hls_url ?? null,
   sta: c.sta ?? null,
-  isOnline: Boolean(c.ping_status),
+  // `isOnline` in the equipment badge = the HLS stream serves. This is
+  // the same rule the rest of the app calls "online" (see backend
+  // cctv service — CameraResponse.IsOnline := CurlStatus). Using
+  // ping_status here previously flipped the badge to "offline" for any
+  // camera on a remote NAT/subnet the worker can't ICMP, even when the
+  // stream was serving fine — which was the user-reported bug.
+  isOnline: Boolean(c.curl_status),
   streamConnected: Boolean(c.curl_status),
-  lastUpdated: c.updated_at ?? c.created_at ?? null,
+  // Prefer the health-check-specific timestamps over the row's overall
+  // updated_at (which can lag or race with unrelated writes). Field
+  // names on this endpoint are `curl_updated` / `ping_updated`, NOT
+  // `..._at` — /manage/solution/camera/list returns the raw model
+  // shape, unlike /cctv/... which normalizes.
+  lastUpdated:
+    c.curl_updated ?? c.curl_updated_at ?? c.ping_updated ?? c.updated_at ?? c.created_at ?? null,
 })
 
 const mapSolution = (

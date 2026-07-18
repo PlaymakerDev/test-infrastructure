@@ -250,8 +250,23 @@ export interface APIResponseCamera {
   model?: string | null
   brand?: string | null
   created_at?: string
+  /** ICMP ping reachable — MAY be false while `curl_status` is true when
+   *  the camera lives on a NAT/subnet the health-check worker can't reach
+   *  but its HLS stream still serves. Don't use this alone to decide the
+   *  online badge — use `curl_status` (see mapCamera in the settings
+   *  project detail context for canonical rules). */
   ping_status?: boolean
+  /** Timestamp of the last successful ICMP ping. Raw model field name is
+   *  `ping_updated`; some endpoints (cctv camera detail) surface it as
+   *  `ping_updated_at` — both spellings are declared optional. */
+  ping_updated?: string | null
+  ping_updated_at?: string | null
+  /** HLS/curl probe succeeds. This is what dashboards mean by "online". */
   curl_status?: boolean
+  /** Timestamp of the last successful HLS probe. Same dual-spelling
+   *  situation as ping_updated / ping_updated_at. */
+  curl_updated?: string | null
+  curl_updated_at?: string | null
   contractor_id?: string | null
   updated_at?: string | null
   solution?: APIResponseSolution & { solution_type?: APIResponseSolutionType }
