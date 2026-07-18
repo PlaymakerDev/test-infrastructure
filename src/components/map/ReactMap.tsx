@@ -1,6 +1,7 @@
 "use client"
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MapMouseEvent } from 'mapbox-gl'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { useMap } from './hooks/useMap'
 import {
   PROVINCE_BY_CODE,
@@ -25,6 +26,13 @@ import ThailandMaskLayer, {
 import DeviceClusterMarker from './markers/DeviceClusterMarker'
 import OverlapStackMarker from './markers/OverlapStackMarker'
 import StchSummaryMarker, { type StchSummary } from './markers/StchSummaryMarker'
+import BureauMaskLayer, {
+  BUREAU_CLICK_LAYER_ID,
+  BUREAU_HOVER_FILL_ID,
+  BUREAU_HOVER_LINE_ID,
+} from './markers/BureauMaskLayer'
+import { useBureauFeatures } from './hooks/useBureauFeatures'
+import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
 import BreadcrumbBanner from './overlays/BreadcrumbBanner'
 import MapSearchBox from './overlays/MapSearchBox'
@@ -165,6 +173,12 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // summary shows 48 devices, but zooming in left a single marker). With the
   // login scope the full device pool stays plotted; only the CARDS rescope.
   const { data: position } = useDashboardPosition(originalDeptId)
+  // 18 bureau polygons — used for point-in-polygon reclassification of any
+  // solution whose road.stch didn't land in 1..18 (บทช. under stch=0, plus
+  // stch=20 กรมทางหลวง and stch=21 ด่านชั่งน้ำหนัก). Falls back to `null`
+  // until the geojson loads — during that window we behave exactly like
+  // before (stch straight from the API).
+  const bureauFeatures = useBureauFeatures()
 
   // When the dashboard scopes to a single dept, zoom the map to that dept's
   // centroid so the user lands on their devices instead of a country-wide
@@ -207,7 +221,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     const byCoord = new Map<string, Device[]>()
     // Per-stch accumulator — sum coords as we go, then divide at the end to
     // get the centroid. The marker lands on real devices instead of the mock
-    // HQ from units.ts (some stch values aren't in the mock at all).
+    // HQ from units.ts. Solutions whose raw stch is 0/20/21 (BKK บทช.,
+    // กรมทางหลวง, ด่านชั่งน้ำหนัก) are reclassified with a point-in-polygon
+    // check against the 18-bureau geojson: if the coord falls inside a
+    // bureau polygon, it joins that bureau's bucket; otherwise it goes into
+    // a single synthetic "ทช.ส่วนกลาง" bucket keyed as `0`. Result: the
+    // country view shows exactly 18 (+1 central) markers instead of the
+    // scattered 21-bucket set the BE returns raw.
     const stchAcc: Record<number, { count: number; sumLng: number; sumLat: number }> = {}
     for (const loc of position?.locations ?? []) {
       const dev = apiLocationToDevice(loc)
@@ -216,7 +236,26 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       const arr = byCoord.get(key)
       if (arr) arr.push(dev)
       else byCoord.set(key, [dev])
-      const a = stchAcc[dev.stch] ?? (stchAcc[dev.stch] = { count: 0, sumLng: 0, sumLat: 0 })
+
+      // Reclassify orphan stch (not one of 1..18) by spatial containment.
+      // Skip the reclassification when the bureau geojson hasn't loaded
+      // yet — falling back to the raw stch keeps prior behaviour.
+      let bucketStch = dev.stch
+      if (!BUREAU_STCH_SET.has(bucketStch) && bureauFeatures) {
+        const hit = bureauFeatures.find((b) => {
+          // Cheap bbox reject before the polygon test — 18 bboxes × N devices
+          // dominates the loop, so this is where we save the most work.
+          const [minX, minY, maxX, maxY] = b.bbox
+          const [lng, lat] = dev.coord
+          if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
+          return booleanPointInPolygon(dev.coord, b.feature)
+        })
+        // Central bucket keyed as 0 — 18 buckets 1..18 + this one → exactly
+        // 19 aggregate markers on the country view (down from ~21 before).
+        bucketStch = hit ? hit.stch : 0
+      }
+
+      const a = stchAcc[bucketStch] ?? (stchAcc[bucketStch] = { count: 0, sumLng: 0, sumLat: 0 })
       a.count++
       a.sumLng += dev.coord[0]
       a.sumLat += dev.coord[1]
@@ -235,7 +274,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       }
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries }
-  }, [position])
+  }, [position, bureauFeatures])
 
   // Refs keep the click handler's closure fresh without re-registering the
   // Mapbox listener on every render.
@@ -359,6 +398,85 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
   }, [map, isLoaded, markFlown])
 
+  // Bureau layer hover + click — mirrors the province handler above, but
+  // fires on `BUREAU_CLICK_LAYER_ID` (only exists while zoom < threshold).
+  // Depends on `bureauFeatures` for tooltip metadata + centroid flyTo.
+  useEffect(() => {
+    if (!map || !isLoaded || !bureauFeatures) return
+    const container = map.getContainer()
+    const tooltip = document.createElement('div')
+    tooltip.style.cssText =
+      'position:absolute;z-index:30;pointer-events:none;display:none;' +
+      'padding:6px 10px;border-radius:8px;background:rgba(5,13,26,0.95);' +
+      'border:1px solid rgba(252,209,22,0.6);box-shadow:0 2px 10px rgba(0,0,0,0.5);' +
+      'font-size:12px;line-height:1.35;white-space:nowrap;color:#fff'
+    container.appendChild(tooltip)
+    let hoverStch: number | null = null
+
+    const clearHover = () => {
+      hoverStch = null
+      map.getCanvas().style.cursor = ''
+      tooltip.style.display = 'none'
+      const none = ['==', ['get', 'stch'], -1] as Parameters<typeof map.setFilter>[1]
+      if (map.getLayer(BUREAU_HOVER_LINE_ID)) map.setFilter(BUREAU_HOVER_LINE_ID, none)
+      if (map.getLayer(BUREAU_HOVER_FILL_ID)) map.setFilter(BUREAU_HOVER_FILL_ID, none)
+    }
+
+    const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
+      const stchRaw = e.features?.[0]?.properties?.stch
+      const stch = typeof stchRaw === 'number' ? stchRaw : Number(stchRaw)
+      if (!Number.isFinite(stch)) { clearHover(); return }
+      const b = bureauFeatures.find((x) => x.stch === stch)
+      if (!b) { clearHover(); return }
+      map.getCanvas().style.cursor = 'pointer'
+      if (hoverStch !== stch) {
+        hoverStch = stch
+        const filter = ['==', ['get', 'stch'], stch] as Parameters<typeof map.setFilter>[1]
+        if (map.getLayer(BUREAU_HOVER_LINE_ID)) map.setFilter(BUREAU_HOVER_LINE_ID, filter)
+        if (map.getLayer(BUREAU_HOVER_FILL_ID)) map.setFilter(BUREAU_HOVER_FILL_ID, filter)
+        const summary = stchSummaries[stch]
+        const count = summary?.count ?? 0
+        tooltip.innerHTML =
+          `<div style="font-weight:600;color:#FCD116">${b.name} (${b.baseProvince})</div>` +
+          `<div style="font-size:11px;color:#e2e8f0">${count} จุดติดตั้ง</div>` +
+          '<div style="font-size:10px;color:#9fb0c8">คลิกเพื่อดูข้อมูลสำนัก</div>'
+      }
+      tooltip.style.display = 'block'
+      tooltip.style.left = `${e.point.x + 14}px`
+      tooltip.style.top  = `${e.point.y + 14}px`
+    }
+
+    const onClick = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // Same guards as the province click — skip clicks passing through HTML
+      // overlays and clicks that land on marker layers.
+      if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) return
+      const markerLayerIds = (map.getStyle()?.layers ?? [])
+        .map((l) => l.id)
+        .filter((id) => id.startsWith('markerlayer-'))
+      if (markerLayerIds.length > 0) {
+        const hits = map.queryRenderedFeatures(e.point, { layers: markerLayerIds })
+        if (hits.length > 0) return
+      }
+      const stchRaw = e.features?.[0]?.properties?.stch
+      const stch = typeof stchRaw === 'number' ? stchRaw : Number(stchRaw)
+      const b = bureauFeatures.find((x) => x.stch === stch)
+      if (!b) return
+      clearHover()
+      map.fitBounds(b.bbox, { padding: 60, duration: 1400, maxZoom: 9.5, pitch: 30 })
+    }
+
+    map.on('mousemove', BUREAU_CLICK_LAYER_ID, onMove)
+    map.on('mouseleave', BUREAU_CLICK_LAYER_ID, clearHover)
+    map.on('click', BUREAU_CLICK_LAYER_ID, onClick)
+    return () => {
+      map.off('mousemove', BUREAU_CLICK_LAYER_ID, onMove)
+      map.off('mouseleave', BUREAU_CLICK_LAYER_ID, clearHover)
+      map.off('click', BUREAU_CLICK_LAYER_ID, onClick)
+      tooltip.remove()
+    }
+  }, [map, isLoaded, bureauFeatures, stchSummaries])
+
   const resetView = () => {
     if (!map) return
     // Revert dept scope to whatever the user landed with, so cards rescope
@@ -415,6 +533,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         highlightedProvinceCode={province?.code ?? null}
         enableProvinceClick
       />
+      {/* 18-สำนัก polygon overlay — visible ONLY at country zoom, hands off
+        * to the province layer at PROVINCE_ZOOM_THRESHOLD. Hover + click are
+        * wired below via the exported BUREAU_CLICK_LAYER_ID. */}
+      <BureauMaskLayer hideAtZoom={PROVINCE_ZOOM_THRESHOLD} />
       {/* Unique-coord devices → normal Mapbox cluster (icon per system type). */}
       <DeviceClusterMarker
         devices={singletons}
