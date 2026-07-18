@@ -1,5 +1,6 @@
 "use client"
-import React, { memo, useMemo, useState } from 'react'
+import React, { memo, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   TbVideo,
   TbTrafficLights,
@@ -15,8 +16,6 @@ import {
   useDashboardPosition,
 } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
-import SystemDetailCard from './SystemDetailCard'
-import { MOCK_SYSTEM_DETAIL } from '../data/systemDetailMock'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
 // One row per KPI: which solution_type_name to count in the /position payload,
@@ -36,16 +35,18 @@ interface TileConfig {
   apiTypeName: string
   /** Unit shown under the count. "จุด" for install-point, "กล้อง" for CCTV. */
   unit: string
+  /** Route the tile navigates to on click — the feature's overall page. */
+  route: string
 }
 
 const TILES: TileConfig[] = [
-  { id: 'cctv',           label: 'CCTV',          color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'กล้อง' },
-  { id: 'traffic',        label: 'Traffic',       color: '#FFC766', Icon: TbTrafficLights,  apiTypeName: 'Traffic',        unit: 'จุด'   },
-  { id: 'vms',            label: 'VMS',           color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด'   },
-  { id: 'lighting',       label: 'Lighting',      color: '#D9FF66', Icon: TbBolt,           apiTypeName: 'Lighting',       unit: 'จุด'   },
-  { id: 'crosswalk',      label: 'Crosswalk',     color: '#66F0FF', Icon: TbWalk,           apiTypeName: 'Crosswalk',      unit: 'จุด'   },
-  { id: 'bridgelighting', label: 'B.Light',       color: '#6685FF', Icon: TbBuildingBridge, apiTypeName: 'BridgeLighting', unit: 'จุด'   },
-  { id: 'wim',            label: 'WIM',           color: '#66FFB5', Icon: IconTracking,     apiTypeName: 'WIM',            unit: 'จุด'   },
+  { id: 'cctv',           label: 'CCTV',      color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'กล้อง', route: '/admin/cctv' },
+  { id: 'traffic',        label: 'Traffic',   color: '#FFC766', Icon: TbTrafficLights,  apiTypeName: 'Traffic',        unit: 'จุด',   route: '/admin/traffic-signal' },
+  { id: 'vms',            label: 'VMS',       color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด',   route: '/admin/vms' },
+  { id: 'lighting',       label: 'Lighting',  color: '#D9FF66', Icon: TbBolt,           apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
+  { id: 'crosswalk',      label: 'Crosswalk', color: '#66F0FF', Icon: TbWalk,           apiTypeName: 'Crosswalk',      unit: 'จุด',   route: '/admin/crosswalk' },
+  { id: 'bridgelighting', label: 'B.Light',   color: '#6685FF', Icon: TbBuildingBridge, apiTypeName: 'BridgeLighting', unit: 'จุด',   route: '/admin/bridge-lighting' },
+  { id: 'wim',            label: 'WIM',       color: '#66FFB5', Icon: IconTracking,     apiTypeName: 'WIM',            unit: 'จุด',   route: '/admin/tracking' },
 ]
 
 interface TileProps {
@@ -121,7 +122,16 @@ interface Props {
 }
 
 const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
+  const router = useRouter()
   const deptId = useDeptId()
+
+  // Every tile links to its feature's overall page, dept-scoped. Same URL
+  // shape the sidebar uses so the target page hydrates its own scope
+  // correctly (no `scope=all` here — we're inside a specific dept view).
+  const openFeature = (route: string) => {
+    const q = deptId ? `?dept_id=${encodeURIComponent(String(deptId))}` : ''
+    router.push(`${route}${q}`)
+  }
   // CCTV needs a special count — "กล้อง" not "จุดติดตั้ง" (one CCTV solution
   // can hold multiple cameras). The uptime endpoint's `.camera.total` is the
   // canonical camera count.
@@ -157,19 +167,6 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
 
   const visible = items.filter((t) => t.count !== 0)
 
-  const [selected, setSelected] = useState<string | null>(null)
-  const selectedItem = selected ? items.find((t) => t.id === selected) : null
-  if (selectedItem) {
-    return (
-      <SystemDetailCard
-        system={{ label: selectedItem.label, color: selectedItem.color }}
-        data={MOCK_SYSTEM_DETAIL[selectedItem.id] ?? MOCK_SYSTEM_DETAIL.cctv}
-        onBack={() => setSelected(null)}
-        size={cols ? 110 : 120}
-      />
-    )
-  }
-
   if (visible.length === 0) return null
 
   if (cols) {
@@ -193,7 +190,7 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
             count={t.count}
             unit={t.unit}
             size={size}
-            onClick={() => setSelected(t.id)}
+            onClick={() => openFeature(t.route)}
           />
         ))}
       </div>
@@ -219,7 +216,7 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
             count={t.count}
             unit={t.unit}
             size={126}
-            onClick={() => setSelected(t.id)}
+            onClick={() => openFeature(t.route)}
           />
         </div>
       ))}
