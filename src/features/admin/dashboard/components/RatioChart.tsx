@@ -11,10 +11,7 @@ import {
 } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
-import {
-  useDashboardCctvUptime,
-  useDashboardPosition,
-} from '@/hooks/queries/dashboard'
+import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
@@ -40,7 +37,7 @@ interface TileConfig {
 }
 
 const TILES: TileConfig[] = [
-  { id: 'cctv',           label: 'CCTV',      color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'กล้อง', route: '/admin/cctv' },
+  { id: 'cctv',           label: 'CCTV',      color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'จุด',   route: '/admin/cctv' },
   { id: 'traffic',        label: 'Traffic',   color: '#FFC766', Icon: TbTrafficLights,  apiTypeName: 'Traffic',        unit: 'จุด',   route: '/admin/traffic-signal' },
   { id: 'vms',            label: 'VMS',       color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด',   route: '/admin/vms' },
   { id: 'lighting',       label: 'Lighting',  color: '#D9FF66', Icon: TbBolt,           apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
@@ -132,14 +129,12 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
     const q = deptId ? `?dept_id=${encodeURIComponent(String(deptId))}` : ''
     router.push(`${route}${q}`)
   }
-  // CCTV needs a special count — "กล้อง" not "จุดติดตั้ง" (one CCTV solution
-  // can hold multiple cameras). The uptime endpoint's `.camera.total` is the
-  // canonical camera count.
-  const { data: cctvUptime } = useDashboardCctvUptime(deptId)
-  // Every other tile derives its count from a single /position fetch, grouped
-  // by solution_type_name. One query instead of six per-feature uptime hooks
-  // — cuts the initial dashboard load in half + guarantees the numbers agree
-  // with the map's actual pins (same source).
+  // Every tile — CCTV included now — derives its count from a single
+  // /position fetch grouped by solution_type_name. One query, one source of
+  // truth: the number that shows on the tile equals the number of pins on
+  // the map. (Prior version used cctv-uptime's camera.total, which is
+  // devices-per-solution rather than install-points — didn't match the
+  // pins and confused users.)
   const { data: position } = useDashboardPosition(deptId)
 
   const countsByType = useMemo(() => {
@@ -158,12 +153,10 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // simply doesn't own — mirrors the previous donut behaviour.
   const items = useMemo(() => {
     return TILES.map((t) => {
-      const count = t.id === 'cctv'
-        ? (cctvUptime ? cctvUptime.camera.total : null)
-        : (position ? (countsByType[t.apiTypeName] ?? 0) : null)
+      const count = position ? (countsByType[t.apiTypeName] ?? 0) : null
       return { ...t, count }
     })
-  }, [cctvUptime, position, countsByType])
+  }, [position, countsByType])
 
   const visible = items.filter((t) => t.count !== 0)
 
