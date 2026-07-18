@@ -148,14 +148,18 @@ const TableStation: React.FC<Props> = (props) => {
         const inactiveCCTV = Number(record.offline_cctv || 0);
         const activeCCTV = totalCCTV - inactiveCCTV;
 
-        let status = ''
-
-        if (totalCCTV > 0) status = 'เปิดปกติ'
-        if (totalCCTV === 0 && activeCCTV > 0) status = 'ไม่ส่งข้อมูล'
-        if (totalCCTV === 0 && activeCCTV === 0) status = 'ระบบขัดข้อง'
+        // Priority ordered so a station with all cameras offline renders
+        // "ไม่ส่งข้อมูล" (yellow) rather than "เปิดปกติ" (green). The old
+        // cascade tested totalCCTV against 0 in every branch, leaving the
+        // middle case unreachable (activeCCTV can never be > 0 when
+        // totalCCTV === 0 by arithmetic).
+        let status: StatusType
+        if (activeCCTV > 0) status = 'เปิดปกติ'
+        else if (totalCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        else status = 'ระบบขัดข้อง'
 
         return (
-          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
+          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status]}`}>
             {status}
           </span>
         )

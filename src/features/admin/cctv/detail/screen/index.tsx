@@ -79,8 +79,11 @@ const CctvDetailScreen: React.FC<Props> = ({ id, deptId }) => {
         functions: extractCameraFunctions(c),
         ip: c.ip_address,
         hlsUrl: c.hls_url,
-        streamStatus: c.is_online ? 'connect' : 'disconnect',
-        deviceStatus: c.is_online ? 'connect' : 'disconnect',
+        // Stream = HLS/curl probe result. Device = ICMP ping. Backend now
+        // ships both flags separately; when the older aggregate is all we
+        // have, fall back to `is_online` (which equals `stream_status`).
+        streamStatus: (c.stream_status ?? c.is_online) ? 'connect' : 'disconnect',
+        deviceStatus: (c.ping_status ?? c.is_online) ? 'connect' : 'disconnect',
       })),
     }))
   }, [solutionLists, roadId])

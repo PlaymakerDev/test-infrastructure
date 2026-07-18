@@ -144,9 +144,18 @@ export interface CCTVCameraResponse {
   ip_address: string
   /** Station / km marker, e.g. "0+050" */
   sta: string
+  /** Aggregate — currently equal to `stream_status`. */
   is_online: boolean
+  /** Device is ICMP-pingable. Optional — older builds only ship the
+   *  aggregate. May be false while `stream_status` is true (device on a
+   *  different NAT/subnet but its HLS still serves). */
+  ping_status?: boolean
+  /** HLS/curl probe succeeds. Optional — older builds only ship the
+   *  aggregate `is_online`. */
+  stream_status?: boolean
   geometry_point: [number, number] | null
   curl_updated_at: string | null
+  ping_updated_at?: string | null
   remark: string | null
   // Per-camera solution participation. Non-null → show the function tag.
   counting: CCTVSolutionDetails | null

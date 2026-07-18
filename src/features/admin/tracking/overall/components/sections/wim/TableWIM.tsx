@@ -148,14 +148,18 @@ const TableWIM: React.FC<Props> = (props) => {
         const inactiveCCTV = Number(record.offline_cctv || 0);
         const activeCCTV = totalCCTV - inactiveCCTV;
 
-        let status = ''
-
-        if (totalCCTV > 0) status = 'เปิดปกติ'
-        if (totalCCTV === 0 && activeCCTV > 0) status = 'ไม่ส่งข้อมูล'
-        if (totalCCTV === 0 && activeCCTV === 0) status = 'ระบบขัดข้อง'
+        // Priority ordered so a station with cameras that are ALL offline
+        // renders "ไม่ส่งข้อมูล" (yellow) instead of "เปิดปกติ" (green) — the
+        // previous conditional cascade compared totalCCTV to 0 in every
+        // branch, making the middle "no active but total > 0" case
+        // unreachable (activeCCTV can never be > 0 while totalCCTV === 0).
+        let status: StatusType
+        if (activeCCTV > 0) status = 'เปิดปกติ'
+        else if (totalCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        else status = 'ระบบขัดข้อง'
 
         return (
-          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
+          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status]}`}>
             {status}
           </span>
         )
