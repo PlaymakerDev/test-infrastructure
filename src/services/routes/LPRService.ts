@@ -5,7 +5,18 @@ import type {
   APIResponseLPRPlateDetail,
   APIRequestLPRTimeline,
   APIResponseLPRTimeline,
+  APIResponseLPRPoints,
 } from '@/types/lpr/lpr-api'
+
+// One row per CCTV solution that has LPR-active cameras — drives the LPR
+// overall page's map + list. Returns raw array (no res_data wrapper). No
+// dept scoping in backend; the FE filters by department_id when the URL
+// carries dept_id.
+export const getLPRPointsAPI = () =>
+  ApiService.fetchData<APIResponseLPRPoints>({
+    url: '/lpr/points',
+    method: 'GET',
+  })
 
 // LPR read API — `/api-v2/lpr/*`, same host + admin JWT as the main backend,
 // so BaseService injects auth automatically. See docs/lpr/API_DOCS.md.

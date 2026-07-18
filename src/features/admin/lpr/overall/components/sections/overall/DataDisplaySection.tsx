@@ -1,104 +1,62 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { TableLPRData, LPRList, FormSearchLPR } from '../../../components'
-import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
-import { useAppDispatch } from '@/stores/hooks'
-import { FormValues } from './FormSearchLPR'
+"use client"
+import React, { useMemo, useState } from 'react'
+import { TbLayoutGrid, TbTable } from 'react-icons/tb'
+import { TableLPRData, LPRList } from '../../../components'
 
 interface Props {
   deptId?: string | string[] | number
 }
 
-const LPR_FILTERS: FilterConfig[] = [
-  {
-    key: 'all',
-    label: 'ทั้งหมด',
-    colorPrimary: '#FCD116',
-    colorTextLightSolid: '#212121',
-    badgeActiveClass: 'bg-[#8a7000] text-white',
-    badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]',
-  },
-  {
-    key: 'online',
-    label: 'ออนไลน์',
-    colorPrimary: '#66AEFF',
-    colorTextLightSolid: '#212121',
-    badgeActiveClass: 'bg-[#1B3F8B] text-white',
-    badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]',
-  },
-  {
-    key: 'offline',
-    label: 'ออฟไลน์',
-    colorPrimary: '#E94C4C',
-    colorTextLightSolid: '#ffffff',
-    badgeActiveClass: 'bg-red-800 text-white',
-    badgeIdleClass: 'bg-red-500/20 text-red-400',
-  },
-  {
-    key: 'in-warranty',
-    label: 'ในค้ำ',
-    statKey: 'inWarranty',
-    colorPrimary: '#05F2DB',
-    colorTextLightSolid: '#212121',
-    badgeActiveClass: 'bg-[#016f64] text-white',
-    badgeIdleClass: 'bg-[#05F2DB]/20 text-[#05F2DB]',
-  },
-  {
-    key: 'expired',
-    label: 'หมดค้ำ',
-    colorPrimary: '#979797',
-    colorTextLightSolid: '#212121',
-    badgeActiveClass: 'bg-[#4a4a4a] text-white',
-    badgeIdleClass: 'bg-[#979797]/20 text-[#979797]',
-  },
-]
+type ViewMode = 'TABLE' | 'GRID'
 
-const DataDisplaySection: React.FC<Props> = (props) => {
-  const { deptId } = props
-  const dispatch = useAppDispatch()
-  const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
-  const [activeFilter, setActiveFilter] = useState<string>('all')
+/** Search + filter bar for LPR install-points was originally reused from the
+ *  VMS/CCTV list (warranty + online filters). None of that applies here —
+ *  LPR install-points are always active by definition; there's no warranty
+ *  contract per point. Simplified to just the table/grid view toggle. */
+const DataDisplaySection: React.FC<Props> = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  const vmsStats = useMemo<FilterStats>(() => ({
-    all: 0,
-    online: 0,
-    offline: 0,
-    inWarranty: 0,
-    expired: 0,
-  }), [])
-
-  const renderContent = useMemo(() => {
-    switch (displayType) {
+  const content = useMemo(() => {
+    switch (viewMode) {
       case 'TABLE':
         return <TableLPRData />
       case 'GRID':
         return <LPRList />
-      default:
-        return null
     }
-  }, [displayType])
-
-  const onSearch = useCallback((formData: FormValues) => {
-    console.log(formData)
-  }, [])
+  }, [viewMode])
 
   return (
     <div>
-      <section>
-        <SearchBar
-          filters={LPR_FILTERS}
-          stats={vmsStats}
-          activeFilter={activeFilter}
-          onFilterChange={(filter) => {
-            setActiveFilter(filter)
-          }}
-          defaultViewMode={displayType}
-          onViewModeChange={setDisplayType}
-          formSearch={<FormSearchLPR onSearch={onSearch} />}
-        />
+      <section className='flex items-center justify-between mb-4'>
+        <h3 className='text-white'>จุดติดตั้ง LPR ทั้งหมด</h3>
+        <div className='flex items-center gap-1 bg-(--mid-gray) rounded-lg p-1'>
+          <button
+            type='button'
+            onClick={() => setViewMode('TABLE')}
+            title='มุมมองตาราง'
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 fs-12 transition-colors ${
+              viewMode === 'TABLE'
+                ? 'bg-(--yellow) text-black font-semibold'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <TbTable size={16} /> ตาราง
+          </button>
+          <button
+            type='button'
+            onClick={() => setViewMode('GRID')}
+            title='มุมมองการ์ด'
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 fs-12 transition-colors ${
+              viewMode === 'GRID'
+                ? 'bg-(--yellow) text-black font-semibold'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <TbLayoutGrid size={16} /> การ์ด
+          </button>
+        </div>
       </section>
-      <section className='mt-5'>
-        {renderContent}
-      </section>
+      <section>{content}</section>
     </div>
   )
 }

@@ -13,6 +13,10 @@ export const lprKeys = {
       [...lprKeys.plates.root(), 'list', params] as const,
   },
 
+  points: {
+    list: () => [...lprKeys.all, 'points'] as const,
+  },
+
   plate: {
     // (plate_number, plate_province) is the composite identity.
     root: (province: string, plateNumber: string) =>

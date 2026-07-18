@@ -1,6 +1,30 @@
 // API types for the LPR (License Plate Recognition) feature.
-// Backend: `https://its.drr.go.th/api-v2/lpr` — 3 read endpoints.
+// Backend: `https://its.drr.go.th/api-v2/lpr` — 4 read endpoints.
 // See docs/lpr/API_DOCS.md for the full contract.
+
+// ── GET /lpr/points ──────────────────────────────────────────────────────────
+// One row per CCTV solution that has ≥1 LPR-capable camera — the "install
+// point" shape the overall page renders as map markers + list cards. Same
+// pattern as counting/incident where a solution is bound to a CCTV project.
+export interface LPRInstallPoint {
+  solution_id: number
+  solution_name: string
+  road_id?: number
+  road_code?: string
+  project_id?: number
+  project_name?: string
+  contract_no?: string
+  department_id?: number
+  lat: number
+  lng: number
+  camera_count: number
+  camera_names: string[]
+  events_today: number
+  events_hour: number
+  latest_captured_at: string
+}
+export type APIResponseLPRPoints = LPRInstallPoint[]
+
 
 export type LPRSource = 'wim' | 'anpr'
 export type LPRSourceFilter = 'all' | LPRSource
