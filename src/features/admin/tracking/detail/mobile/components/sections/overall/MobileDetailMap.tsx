@@ -14,7 +14,10 @@ const formatCoords = (lat: number, lng: number): string => {
   return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`
 }
 
-const DEFAULT_ICON = '/images/icon-marker/Default.svg'
+// Prepend the Next.js basePath (`/atlas` in prod). A bare `/images/...`
+// slips past nginx's app-scoped locations and gets 301'd into `/dashvue`,
+// where the asset doesn't exist either → 404 flood.
+const DEFAULT_ICON = `${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/images/icon-marker/Default.svg`
 
 const MobileDetailMap: React.FC<Props> = (props) => {
   const { departmentData } = props;

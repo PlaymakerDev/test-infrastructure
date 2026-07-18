@@ -6,7 +6,14 @@ import { APIResponseVMSDetail } from '@/types/vms/detail-api'
 import { Image } from 'antd'
 import React, { useMemo } from 'react'
 
-const DEFAULT_ICON = '/images/icon-marker/Default.svg'
+// Prepend the Next.js basePath — the app is served under `/atlas` in prod,
+// and nginx has a catch-all that 301-redirects unmatched paths into
+// `/dashvue$request_uri`. A bare `/images/...` therefore resolves to
+// `/dashvue/images/...` which does not exist → 404 (and browsers retry the
+// broken <img> aggressively, flooding devtools). `__NEXT_ROUTER_BASEPATH`
+// is empty string in dev, `/atlas` in prod — same helper the rest of the
+// codebase uses for hard window.location navigations.
+const DEFAULT_ICON = `${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/images/icon-marker/Default.svg`
 
 interface Props {
   locationData?: APIResponseBridgeLightingOverview
