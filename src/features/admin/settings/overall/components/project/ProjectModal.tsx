@@ -429,6 +429,19 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
                 <div>
                   {fields.map((field, idx) => (
                     <div key={field.key} className='flex items-end' style={{ gap: 8, marginBottom: 8 }}>
+                      {/* Hidden field so AntD Form.List keeps `projectRoadId`
+                          in the row values across renders. Without an
+                          explicit Form.Item, AntD only tracks fields it
+                          "knows about" and drops projectRoadId at submit —
+                          the payload then arrives as `{ road_id }` without
+                          `project_road_id`, and the backend interprets it
+                          as an implicit delete + insert, which FK-fails
+                          against any solution_location linked to the row.
+                          Hidden + noStyle preserves the value without
+                          rendering anything. */}
+                      <Form.Item name={[field.name, 'projectRoadId']} hidden noStyle>
+                        <input type='hidden' />
+                      </Form.Item>
                       <Form.Item
                         className='flex-1'
                         style={{ marginBottom: 0 }}
