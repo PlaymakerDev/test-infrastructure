@@ -39,17 +39,20 @@ const SOURCE_ID = 'bureaus-src'
 const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
   hideAtZoom = 6.5,
   highlightedStch,
-  // Fill (country zoom): pale yellow tint so a hovered bureau reads as
-  // "current focus" — matches --yellow token elsewhere in the app.
-  fillColor = '#FCD116',
-  fillOpacity = 0.06,
-  // Permanent outline: --default-blue. Distinct from the yellow province
-  // hover, so at province zoom the user sees a BLUE bureau boundary
-  // (multi-province scope) different from any YELLOW province outline
-  // (single-province focus).
-  lineColor = '#66AEFF',
-  lineWidth = 1.8,
-  hoverColor = '#FCD116',
+  // Country-zoom fill: very faint tint so the bureau reads as a subtle group
+  // rather than a hard block. The dashed cyan line does the heavy lifting.
+  fillColor = '#22D3EE',
+  fillOpacity = 0.04,
+  // Permanent outline: bright cyan #22D3EE — clearly different from the
+  // yellow province highlight. Cyan = "สำนัก grouping (parent scope)",
+  // yellow = "จังหวัด / drill-down target". Distinct color families so
+  // the two never read as the same layer.
+  lineColor = '#22D3EE',
+  lineWidth = 2.6,
+  // Bureau hover keeps the cyan family — the same boundary lit up bolder,
+  // so hovering a จังหวัด makes its parent สำนัก glow in the SAME hue as
+  // the always-on outline (no yellow wash across multiple provinces).
+  hoverColor = '#67E8F9',
   enableClick = true,
 }) => {
   const { map, isLoaded } = useMap()
@@ -87,28 +90,31 @@ const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
       })
     }
     // Outline — visible at EVERY zoom level so users always see the parent
-    // สำนัก boundary around the province they're looking at. Only fill +
-    // hover-fill respect `hideAtZoom` (the country-only fill would clutter
-    // the province zoom, but the outline provides constant orientation).
+    // สำนัก boundary around the province they're looking at. Dashed so it
+    // never reads as a จังหวัด outline (province highlight is solid yellow).
+    // Only fill + hover-fill respect `hideAtZoom`; the outline provides
+    // constant orientation.
     if (!map.getLayer(BUREAU_LINE_ID)) {
       map.addLayer({
         id: BUREAU_LINE_ID,
         type: 'line',
         source: SOURCE_ID,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': lineColor,
           'line-width': [
             'interpolate', ['linear'], ['zoom'],
             5, lineWidth,
-            9, lineWidth * 0.7,
-            12, lineWidth * 0.5,
+            9, lineWidth * 0.65,
+            12, lineWidth * 0.45,
           ],
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            5, 0.55,
-            8, 0.35,
-            12, 0.2,
+            5, 0.9,
+            8, 0.7,
+            12, 0.45,
           ],
+          'line-dasharray': [3, 2],
         },
       })
     }
@@ -127,19 +133,22 @@ const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
         },
       })
     }
-    // Bureau hover-line is visible at ALL zooms — it's what lights up the
-    // parent สำนัก when the user hovers a province at province zoom (per
-    // the ReactMap province onMove handler that pipes stch into this filter).
+    // Bureau hover-line is visible at ALL zooms (below HOVER_MAX_ZOOM — the
+    // ReactMap parent gates it) — it's what lights up the parent สำนัก when
+    // the user hovers a province. Solid + bright cyan so it reads as the
+    // SAME layer as the always-on dashed outline, just "lit up" — never
+    // yellow, so it can never be mistaken for a จังหวัด highlight.
     if (!map.getLayer(BUREAU_HOVER_LINE_ID)) {
       map.addLayer({
         id: BUREAU_HOVER_LINE_ID,
         type: 'line',
         source: SOURCE_ID,
         filter: ['==', ['get', 'stch'], -1],
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': hoverColor,
-          'line-width': 3,
-          'line-opacity': 0.9,
+          'line-width': 4,
+          'line-opacity': 1,
         },
       })
     }
