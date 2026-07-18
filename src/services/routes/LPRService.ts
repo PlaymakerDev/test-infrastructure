@@ -6,7 +6,25 @@ import type {
   APIRequestLPRTimeline,
   APIResponseLPRTimeline,
   APIResponseLPRPoints,
+  APIRequestLPRPointPlates,
+  APIResponseLPRPointPlates,
 } from '@/types/lpr/lpr-api'
+
+// Cursor-paginated stream of every detection captured at any camera owned
+// by this install-point (CCTV solution). Drives the detail page's recent
+// list + full-detection table.
+export const getLPRPointPlatesAPI = (
+  solutionId: string | number,
+  params: APIRequestLPRPointPlates = {},
+) =>
+  ApiService.fetchData<APIResponseLPRPointPlates>({
+    url: `/lpr/points/${encodeURIComponent(String(solutionId))}/plates`,
+    method: 'GET',
+    params: {
+      ...(params.cursor ? { cursor: params.cursor } : {}),
+      limit: params.limit ?? 20,
+    },
+  })
 
 // One row per CCTV solution that has LPR-active cameras — drives the LPR
 // overall page's map + list. Returns raw array (no res_data wrapper). No

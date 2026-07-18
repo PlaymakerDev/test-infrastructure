@@ -25,6 +25,39 @@ export interface LPRInstallPoint {
 }
 export type APIResponseLPRPoints = LPRInstallPoint[]
 
+// ── GET /lpr/points/:solution_id/plates ─────────────────────────────────────
+// Recent detections at any camera owned by the given CCTV solution. Same
+// shape as LPRTimelineEvent but per-install-point instead of per-plate.
+export interface LPRPointPlate {
+  id: number
+  source: LPRSource
+  captured_at: string
+  captured_at_display: string
+  plate_number: string
+  plate_province: string
+  vehicle_type_name?: string
+  vehicle_brand?: string
+  vehicle_color?: string
+  camera_name?: string
+  detection_point?: string
+  vehicle_image?: string
+  plate_image?: string
+  speed?: number | null
+  is_overweight?: boolean | null
+}
+
+export interface APIRequestLPRPointPlates {
+  cursor?: string
+  limit?: number
+}
+
+export interface APIResponseLPRPointPlates {
+  res_data: LPRPointPlate[]
+  next_cursor?: string | null
+  has_more: boolean
+}
+
+
 
 export type LPRSource = 'wim' | 'anpr'
 export type LPRSourceFilter = 'all' | LPRSource
