@@ -85,7 +85,11 @@ const StatusBridgeLighting: React.FC<Props> = ({ deptId }) => {
 
   const { data } = useQuery({
     queryKey: ['bridge_lighting_overview', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId), {}),
+    // MUST forward `scope` to the backend — /departments/0/overview
+    // without ?scope=all returns zero locations (dept 0 = ส่วนกลาง has no
+    // solutions directly assigned to it). Same call MapBridgeLighting
+    // makes; they share the query key so the payload must match too.
+    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId), { scope }),
     enabled: !!deptId || deptId === 0 || deptId === '0',
     placeholderData: keepPreviousData,
   })

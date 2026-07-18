@@ -145,7 +145,10 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
     // dept + scope in the key — previously neither, so switching departments
     // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
     queryKey: ['bridge_lighting_overview', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId)!, {}),
+    // Backend requires ?scope=all for the ส่วนกลาง view (dept_id=0) —
+    // otherwise returns zero locations. Must match StatusBridgeLighting's
+    // queryFn payload since the two consumers share this cache slot.
+    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId)!, { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
