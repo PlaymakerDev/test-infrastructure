@@ -49,6 +49,13 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "Smart Search": IconAIChat,
 }
 
+// Display-name overrides for API solution_type_name values. Key = raw API
+// string, value = label rendered in the sidebar. Icon/route lookups still
+// key off the API string above.
+const SOLUTION_DISPLAY_LABEL: Record<string, string> = {
+  "Tracking": "Truck Tracking",
+}
+
 const collapseVariants = {
   open: { height: "auto", opacity: 1, transition: { duration: 0.28, ease: "easeInOut" as const } },
   closed: { height: 0, opacity: 0, transition: { duration: 0.22, ease: "easeInOut" as const } },
@@ -199,7 +206,7 @@ const SidebarContent: React.FC<Props> = (props) => {
                                           <IconComp className={`fs-18 shrink-0 ${isActive ? 'text-black' : 'text-(--default-blue)'}`} />
                                         )}
                                         <span className={`fs-12 ${isActive ? 'text-black font-medium' : 'text-(--default-blue)'}`}>
-                                          {solution.solution_type_name}
+                                          {SOLUTION_DISPLAY_LABEL[solution.solution_type_name] ?? solution.solution_type_name}
                                         </span>
                                       </div>
                                       {solution.roads_count > 0 && (

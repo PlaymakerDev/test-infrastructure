@@ -123,8 +123,8 @@ const admin: AdminMenuItem[] = [
   },
   {
     key: '11',
-    title: 'Tracking',
-    label: "Tracking",
+    title: 'Truck Tracking',
+    label: "Truck Tracking",
     label_key: "tracking",
     icon: "",
     default_color_icon: '',
