@@ -316,23 +316,43 @@ const BaseMap: React.FC<BaseMapProps> = ({
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`)
           const thGeo = await res.json() as GeoJSON.FeatureCollection
-          if (thGeo.features?.[0]) {
+          const thFeature = thGeo.features?.[0]
+          if (thFeature) {
             const style = instance!.getStyle()
-            const isPlaceLabelLayer = (id: string) =>
-              /^(country|state|settlement|continent)/i.test(id) ||
-              /(country|state|settlement|continent)-label/i.test(id)
-            const withinTH = ['within', thGeo] as never
-            for (const layer of style?.layers ?? []) {
-              const l = layer as { id: string; type?: string }
-              if (l.type !== 'symbol' || !isPlaceLabelLayer(l.id)) continue
+            // Target the concrete Mapbox Standard place-label ids — pattern
+            // confirmed against the imported style JSON. Includes country,
+            // state, settlement-major/minor/subdivision, continent labels.
+            const PLACE_LABEL_IDS = [
+              'country-label', 'state-label', 'continent-label',
+              'settlement-major-label', 'settlement-minor-label',
+              'settlement-subdivision-label',
+            ]
+            // `within` needs a single Feature (or a Geometry) with Polygon /
+            // MultiPolygon coordinates — NOT a FeatureCollection. Passing a
+            // FC silently drops the whole filter clause (which is why the
+            // previous attempt didn't hide anything).
+            const availableIds = new Set(
+              (style?.layers ?? []).map((l) => (l as { id: string }).id),
+            )
+            // Two-pronged approach because Mapbox Standard's composed style
+            // sometimes ignores `setFilter` on imported layers silently:
+            //   (1) AND-filter each place-label layer with `within` — the
+            //       feature drops out cleanly when it works.
+            //   (2) Also drive text-opacity + icon-opacity via a `case`
+            //       expression on the same `within` predicate — paint
+            //       properties are respected on imported Standard layers
+            //       even when filters aren't, so this covers the gap.
+            const withinTH = ['within', thFeature]
+            const opacityExpr = ['case', withinTH, 1, 0] as never
+            for (const lid of PLACE_LABEL_IDS) {
+              if (!availableIds.has(lid)) continue
               try {
-                const existing = instance!.getFilter(l.id)
+                const existing = instance!.getFilter(lid)
                 const combined = (existing ? ['all', existing, withinTH] : withinTH) as never
-                instance!.setFilter(l.id, combined)
-              } catch {
-                // Layer may reject an extra clause on a Standard-style
-                // baked filter — skip that one and keep going.
-              }
+                instance!.setFilter(lid, combined)
+              } catch {}
+              try { instance!.setPaintProperty(lid, 'text-opacity', opacityExpr) } catch {}
+              try { instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr) } catch {}
             }
           }
         } catch {
