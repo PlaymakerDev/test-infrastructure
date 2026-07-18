@@ -57,30 +57,22 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
     return m
   }, [positions])
 
+  // Only surface roads that have at least one device on-screen — searching
+  // finds nationwide matches, but a road without any solution can't be flown
+  // to and has no data to inspect, so it's noise in the dropdown.
   const options = useMemo(() => {
     if (!enabled) return []
-    return (roads.data?.res_data ?? []).map((r) => {
-      const known = coordByRoadId.has(r.id)
-      return {
+    return (roads.data?.res_data ?? [])
+      .filter((r) => coordByRoadId.has(r.id))
+      .map((r) => ({
         value: String(r.id),
-        // AutoComplete's `label` renders in both the input (on select) and the
-        // dropdown — a JSX label lets us show both code + name and a subtle
-        // "no location" hint for roads without any device coord.
         label: (
-          <div className='flex items-center justify-between gap-2'>
-            <div className='min-w-0'>
-              <div className='truncate text-white'>{r.road_code}</div>
-              <div className='truncate text-white/50 text-[11px]'>{r.road_name}</div>
-            </div>
-            {!known && (
-              <span className='text-[10px] text-yellow-400/80 shrink-0'>
-                ยังไม่มีอุปกรณ์
-              </span>
-            )}
+          <div className='min-w-0'>
+            <div className='truncate text-white'>{r.road_code}</div>
+            <div className='truncate text-white/50 text-[11px]'>{r.road_name}</div>
           </div>
         ),
-      }
-    })
+      }))
   }, [enabled, roads.data, coordByRoadId])
 
   const flyToRoad = (roadId: number) => {
