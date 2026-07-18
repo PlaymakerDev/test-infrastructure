@@ -1,11 +1,30 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { TbAffiliate } from 'react-icons/tb'
+import {
+  TbAffiliate,
+  TbArrowsUpDown,
+  TbArrowsLeftRight,
+  TbArrowUp,
+} from 'react-icons/tb'
 import {
   getPhaseColor,
   type PhaseTimingConfig,
 } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useDetailContext } from '../../../context'
+
+// Direction icon per phase — main road = up/down (N-S through), side road =
+// left/right (E-W through). Approximation until BE ships per-phase movement
+// direction; today we only have `is_main_road` on the phase feed. See
+// Dr. Nick's request in the 15 ก.ค. 2569 ticket.
+const PhaseDirectionArrow: React.FC<{ isMainRoad?: boolean; size?: number; color: string }> = ({
+  isMainRoad,
+  size = 14,
+  color,
+}) => {
+  if (isMainRoad === undefined) return null
+  const Icon = isMainRoad ? TbArrowsUpDown : TbArrowsLeftRight
+  return <Icon size={size} color={color} aria-hidden />
+}
 
 /** Compute the active phase + elapsed seconds in that phase from the API.
  *
@@ -152,14 +171,25 @@ const PhaseTimingTrafficSignal: React.FC = () => {
         </h4>
       </div>
 
-      {/* Center area — flex-1 so the big P fills the middle vertically */}
+      {/* Center area — flex-1 so the big P fills the middle vertically.
+        * Arrow next to the phase label shows the current flow direction
+        * (main road = ↕, side road = ↔) — Dr. Nick request from the
+        * 15 ก.ค. 2569 ticket. */}
       <div className='relative flex-1 flex flex-col items-center justify-center text-center'>
-        <p
-          className='font-bold text-white leading-none mb-2'
-          style={{ fontSize: 44 }}
-        >
-          P{activePhase.phase}
-        </p>
+        <div className='flex items-center gap-3 mb-2'>
+          <p className='font-bold text-white leading-none' style={{ fontSize: 44 }}>
+            P{activePhase.phase}
+          </p>
+          {activePhase.isMainRoad !== undefined && (
+            <span
+              className='flex items-center gap-1'
+              style={{ color: activeColor, fontSize: 14 }}
+              title={activePhase.isMainRoad ? 'ปล่อยรถถนนหลัก' : 'ปล่อยรถถนนรอง'}
+            >
+              <PhaseDirectionArrow isMainRoad={activePhase.isMainRoad} size={28} color={activeColor} />
+            </span>
+          )}
+        </div>
         <p className='mb-0' style={{ color: activeColor, fontSize: 13 }}>
           {inGreen ? 'Green Time' : 'Red Time'} : {remaining}s
         </p>
@@ -183,9 +213,20 @@ const PhaseTimingTrafficSignal: React.FC = () => {
                 boxShadow: isActive ? `0 0 12px ${color}40` : 'none',
               }}
             >
-              <span className='font-bold leading-none' style={{ color, fontSize: 18 }}>
-                P{p.phase}
-              </span>
+              <div className='flex items-center gap-1'>
+                <span className='font-bold leading-none' style={{ color, fontSize: 18 }}>
+                  P{p.phase}
+                </span>
+                <PhaseDirectionArrow isMainRoad={p.isMainRoad} size={12} color={color} />
+              </div>
+              {p.phase === activePhase.phase && (
+                <TbArrowUp
+                  size={10}
+                  color={color}
+                  className='animate-pulse'
+                  aria-hidden
+                />
+              )}
               <div className='flex items-center gap-1'>
                 <span
                   className='inline-block rounded-full'
