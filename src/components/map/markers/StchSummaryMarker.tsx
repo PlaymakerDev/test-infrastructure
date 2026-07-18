@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { STCH_UNITS } from '@/features/admin/dashboard/data/units'
+import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { useMap } from '../hooks/useMap'
 import HTMLMarker from '../primitives/HTMLMarker'
 
@@ -29,6 +30,16 @@ const stchLabel = (stch: number): string => {
   if (u) return u.name
   if (stch === 0) return 'ทช.ส่วนกลาง'
   return `สำนักงานทางหลวงชนบทที่ ${stch}`
+}
+
+/** Short label for the pill under each cluster marker — "สทช.10" for the 18
+ *  regional bureaus, "ทช.ส่วนกลาง" for the BKK bucket. Kept ≤ 12 chars so it
+ *  never wraps under the 44 px count circle. */
+const stchShortLabel = (stch: number): string => {
+  const b = BUREAU_BY_STCH[stch]
+  if (b) return b.name
+  if (stch === 0) return 'ทช.ส่วนกลาง'
+  return `สทช.${stch}`
 }
 
 /**
@@ -75,12 +86,13 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
               })
             }}
           >
-            <div style={{ width: 44, height: 44 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              {/* Count bubble — yellow circle, unchanged size + shadow. */}
               <div
                 className="stch-marker-inner"
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: 44,
+                  height: 44,
                   borderRadius: '50%',
                   background: '#FCD116',
                   color: '#050d1a',
@@ -96,6 +108,26 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
                 }}
               >
                 {info.count}
+              </div>
+              {/* Bureau tag — dark pill under the bubble so users know which
+                * สำนัก the count belongs to without opening the popup. Uses
+                * the same yellow/dark-bg palette as the breadcrumb banner. */}
+              <div
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  background: 'rgba(5,13,26,0.88)',
+                  border: '1px solid rgba(252,209,22,0.35)',
+                  color: '#FCD116',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                  fontFamily: 'ui-sans-serif, system-ui',
+                }}
+              >
+                {stchShortLabel(stch)}
               </div>
             </div>
           </HTMLMarker>
