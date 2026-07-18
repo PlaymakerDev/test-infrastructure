@@ -266,7 +266,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // Unknown error → let it surface (mapbox still console.errors it).
       })
 
-      instance.on('load', () => {
+      instance.on('load', async () => {
         if (cancelled) return
         // Cull the 3D buildings layers + source so the map stops asking
         // for tiles that will never resolve on TH pans. Mapbox Standard's
@@ -299,37 +299,44 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // the camera pans. `setLight` is the classic-style API; if the
         // style uses the newer `setLights` (Standard style light block),
         // fall back to that. Silent try/catch: some styles have neither.
-        // Hide every country / city / settlement label outside Thailand —
-        // we only care about the domestic view; showing "MYANMAR", "LAOS",
-        // "PHNOM PENH" etc. across the border areas just adds visual noise.
-        // Approach: any base-style symbol layer whose id reads like a label
-        // gets an added `iso_3166_1 == 'TH'` clause AND-ed onto its existing
-        // filter. Mapbox's vector tile features carry that ISO code on the
-        // relevant layers (country_label, settlement_label, etc.); features
-        // outside Thailand simply drop out. Wrapped in try/catch per layer
-        // because a custom style could have symbol layers with no such
-        // property, and we'd rather skip one than crash the whole init.
+        // Hide every country / state / settlement / continent label whose
+        // geometry sits outside Thailand — the base style is Mapbox Standard
+        // v11 which drops labels around Thailand's borders ("MYANMAR", "LAOS",
+        // "Yangon", "Phnom Penh") that just clutter the domestic view.
+        //
+        // Approach: AND-filter each place-name symbol layer with
+        // `["within", thailand.geojson]`. Mapbox Standard's features don't
+        // carry an iso_3166_1 property (checked against the imported style
+        // — filter expressions branch on `class` / `worldview` only), so a
+        // spatial filter is the only reliable way to distinguish TH labels
+        // from foreign ones. Only place-name layers get the treatment;
+        // road / transit / POI / natural / water labels are either already
+        // inside TH or would false-negative on the water polygon (Gulf of
+        // Thailand, Andaman Sea labels sit outside the coast polygon).
         try {
-          const style = instance!.getStyle()
-          const isLabelLayer = (id: string) =>
-            /label|place|country|settlement|state|city|town|locality|marine/i.test(id)
-          const thOnly = ['==', ['get', 'iso_3166_1'], 'TH']
-          for (const layer of style?.layers ?? []) {
-            const l = layer as { id: string; type?: string }
-            if (l.type !== 'symbol' || !isLabelLayer(l.id)) continue
-            try {
-              const existing = instance!.getFilter(l.id)
-              const combined = (existing ? ['all', existing, thOnly] : thOnly) as never
-              instance!.setFilter(l.id, combined)
-            } catch {
-              // Some layers legitimately don't carry iso_3166_1 (e.g. natural
-              // features, transit stops) — skip; the filter would drop them
-              // entirely, which is fine, but if setFilter itself throws just
-              // leave the layer alone.
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`)
+          const thGeo = await res.json() as GeoJSON.FeatureCollection
+          if (thGeo.features?.[0]) {
+            const style = instance!.getStyle()
+            const isPlaceLabelLayer = (id: string) =>
+              /^(country|state|settlement|continent)/i.test(id) ||
+              /(country|state|settlement|continent)-label/i.test(id)
+            const withinTH = ['within', thGeo] as never
+            for (const layer of style?.layers ?? []) {
+              const l = layer as { id: string; type?: string }
+              if (l.type !== 'symbol' || !isPlaceLabelLayer(l.id)) continue
+              try {
+                const existing = instance!.getFilter(l.id)
+                const combined = (existing ? ['all', existing, withinTH] : withinTH) as never
+                instance!.setFilter(l.id, combined)
+              } catch {
+                // Layer may reject an extra clause on a Standard-style
+                // baked filter — skip that one and keep going.
+              }
             }
           }
         } catch {
-          // Style not queryable — nothing to filter, move on.
+          // No thailand.geojson (dev host?) — nothing to spatially filter, move on.
         }
 
         try {
