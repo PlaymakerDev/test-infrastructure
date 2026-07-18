@@ -40,3 +40,6 @@ export { useHomeDeptId, resolveHomeDeptId, deptQuery } from './useHomeDeptId'
 
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'
+
+// Notifications
+export { useNotificationsSummary } from './useNotificationsSummary'
