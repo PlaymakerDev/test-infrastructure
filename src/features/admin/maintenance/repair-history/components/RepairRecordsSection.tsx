@@ -36,6 +36,16 @@ const sortByName = <T,>(items: T[], nameOf: (item: T) => string): T[] =>
 const sortById = <T,>(items: T[], idOf: (item: T) => number): T[] =>
   [...items].sort((a, b) => idOf(a) - idOf(b))
 
+// Road rows show "road_code - road_name" when both exist; if road_name is blank,
+// fall back to road_code alone (and vice-versa), then a placeholder when both are
+// empty. Both fields can carry trailing spaces from the backend, so trim first.
+const formatRoadLabel = (roadCode?: string | null, roadName?: string | null): string => {
+  const code = (roadCode ?? '').trim()
+  const name = (roadName ?? '').trim()
+  if (code && name) return `${code} - ${name}`
+  return code || name || 'โปรดระบุชื่อสายทาง'
+}
+
 const SUB_TAB_OPTIONS = [
   { label: 'สรุป Solution', value: 'SOLUTION' },
   { label: 'งานซ่อมทั้งหมด', value: 'ALL_REPAIRS' },
@@ -416,6 +426,19 @@ const RepairRecordsSection: React.FC = () => {
     </span>
   )
 
+  // Compact online/offline count pill for each tree row — smaller than the header's
+  // renderBadge, and kept visible on every breakpoint (unlike the projects/locations/
+  // devices metadata, which hides below sm) since it's the status the user tracks.
+  const renderCountBadge = (count: number, color: string) => (
+    <span
+      className="inline-flex items-center gap-1 text-[12px] font-normal whitespace-nowrap shrink-0 mt-0.5"
+      style={{ padding: '1px 8px', borderRadius: 9999, border: `1px solid ${color}`, color }}
+    >
+      <img src={`/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
+      <span style={{ marginTop: 1 }}>{count}</span>
+    </span>
+  )
+
   const selectedSummary = summaryData.find(s => s.type === selectedType)
 
   return (
@@ -557,6 +580,8 @@ const RepairRecordsSection: React.FC = () => {
                       <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.projects_count} โครงการ</span>
                       <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.location_count} จุดติดตั้ง</span>
                       <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.device_count} อุปกรณ์</span>
+                      {renderCountBadge(bureau.online_count, '#66AEFF')}
+                      {renderCountBadge(bureau.offline_count, '#E94C4C')}
                     </div>
 
                     {sortByName(bureau.departments, (d) => d.department_name).map((dept) => (
@@ -576,6 +601,8 @@ const RepairRecordsSection: React.FC = () => {
                             <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.projects_count} โครงการ</span>
                             <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.location_count} จุดติดตั้ง</span>
                             <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.device_count} อุปกรณ์</span>
+                            {renderCountBadge(dept.online_count, '#66AEFF')}
+                            {renderCountBadge(dept.offline_count, '#E94C4C')}
                           </div>
                         </div>
 
@@ -599,10 +626,12 @@ const RepairRecordsSection: React.FC = () => {
                                   className="text-[16px] shrink-0 transition-transform duration-200 mt-1"
                                   style={{ color: '#FCD116', transform: expandedRoad === road.road_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                 />
-                                <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={road.road_name}>{road.road_name || 'โปรดระบุชื่อสายทาง'}</span>
+                                <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={formatRoadLabel(road.road_code, road.road_name)}>{formatRoadLabel(road.road_code, road.road_name)}</span>
                                 <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
                                 <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
                                 <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
+                                {renderCountBadge(road.online_count, '#66AEFF')}
+                                {renderCountBadge(road.offline_count, '#E94C4C')}
                               </div>
                             </div>
 
@@ -632,6 +661,8 @@ const RepairRecordsSection: React.FC = () => {
                                     <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={proj.project_name}>{proj.project_name || 'โปรดระบุชื่อโครงการ'}</span>
                                     <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{proj.location_count} จุดติดตั้ง</span>
                                     <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{proj.device_count} อุปกรณ์</span>
+                                    {renderCountBadge(proj.online_count, '#66AEFF')}
+                                    {renderCountBadge(proj.offline_count, '#E94C4C')}
                                   </div>
                                 </div>
 
@@ -666,6 +697,8 @@ const RepairRecordsSection: React.FC = () => {
                                     >
                                       <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={sol.solution_name || loc.solution_location_name}>{sol.solution_name || loc.solution_location_name}</span>
                                       <span className="text-[12px] font-normal shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{loc.solution_location_name}</span>
+                                      {renderCountBadge(sol.online_count, '#66AEFF')}
+                                      {renderCountBadge(sol.offline_count, '#E94C4C')}
                                     </div>
                                   ))
                                 )}

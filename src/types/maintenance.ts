@@ -71,6 +71,7 @@ export interface DetailProject {
 export interface DetailRoad {
   road_id: number
   road_name: string
+  road_code: string
   online_count: number
   offline_count: number
   projects_count: number

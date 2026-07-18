@@ -14,7 +14,7 @@ import type {
   MaintenanceHistoryParams,
   RegionItem,
 } from "@/types/maintenance"
-import type { UploadResponse } from "@/types/shared"
+import type { APIResponseProjectDetail, UploadResponse } from "@/types/shared"
 
 // --- Summary APIs ---
 
@@ -55,6 +55,20 @@ export const getMaintenanceDetailAPI = async (solutionTypeId: number) => {
 export const getMaintenanceSolutionAPI = async (solutionId: number) => {
   return ApiService.fetchData<SolutionDetailResponse>({
     url: `/manage/maintenance/solution/${solutionId}`,
+    method: 'GET',
+  })
+}
+
+/**
+ * GET /manage/project/solution/{solution_id} — resolves a solution to its owning
+ * project (same shape as GET /manage/project/{id}). The maintenance detail route's
+ * `id` IS the solution_id, so this yields the project_id the ⓘ "ดูข้อมูลโครงการ"
+ * modal needs directly from the URL, instead of relying on the sessionStorage
+ * hand-off from the repair-history tree (absent on a direct visit to the route).
+ */
+export const getProjectBySolutionAPI = async (solutionId: number) => {
+  return ApiService.fetchData<APIResponseProjectDetail>({
+    url: `/manage/project/solution/${solutionId}`,
     method: 'GET',
   })
 }

@@ -5,7 +5,7 @@ import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
 import { TitleSection } from '../components'
-import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI, getSolutionMapLocationAPI } from '@/services/routes/MaintenanceService'
+import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI, getProjectBySolutionAPI, getSolutionMapLocationAPI } from '@/services/routes/MaintenanceService'
 import { ProjectInfoModal } from '@/components/modal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 
@@ -31,13 +31,15 @@ interface TableRow {
 }
 
 /** Wrapper อ่าน title/subtitle/project_id/road_id จาก sessionStorage แล้วส่งเข้า TitleSection */
-const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null; coord: [number, number] | null }> = ({ id, data, coord }) => {
-  // title/subtitle/project_id/road_id มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
+const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null; coord: [number, number] | null; resolvedProjectId?: number }> = ({ id, data, coord, resolvedProjectId }) => {
+  // title/subtitle/road_id มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
   const title = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_title') || data?.solution_name || id) : (data?.solution_name || id)
   const subtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
   const storedProjectId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_project_id') : null
   const storedRoadId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_road_id') : null
-  const projectId = storedProjectId ? Number(storedProjectId) : undefined
+  // project_id มาจาก GET /project/solution/{id} (resolvedProjectId) เป็นหลัก ให้ ⓘ ทำงานได้แม้เปิด URL ตรง ๆ
+  // ที่ไม่มี sessionStorage; fallback เป็นค่าที่ tree ฝากไว้เมื่อยังโหลด/เรียก API ไม่สำเร็จ
+  const projectId = resolvedProjectId ?? (storedProjectId ? Number(storedProjectId) : undefined)
   const roadId = storedRoadId ? Number(storedRoadId) : undefined
   const onlineCount = data?.online_count ?? 0
   const offlineCount = data?.offline_count ?? 0
@@ -67,6 +69,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [coord, setCoord] = useState<[number, number] | null>(null)
+  const [projectId, setProjectId] = useState<number | undefined>(undefined)
 
   // Fetch solution detail
   const fetchSolution = useCallback(async () => {
@@ -88,6 +91,18 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   useEffect(() => {
     fetchSolution()
   }, [fetchSolution])
+
+  // Resolve the owning project from the solution_id (this route's `id`) so the
+  // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no sessionStorage.
+  useEffect(() => {
+    const numericId = Number(id)
+    if (!numericId) return
+    let cancelled = false
+    getProjectBySolutionAPI(numericId)
+      .then((res) => { if (!cancelled) setProjectId(res.data?.id) })
+      .catch(() => { if (!cancelled) setProjectId(undefined) })
+    return () => { cancelled = true }
+  }, [id])
 
   // Google Map pin — solution/{id} has no coordinates, but the tree click
   // (RepairRecordsSection) stashes department_id + the feature's URL prefix
@@ -112,8 +127,8 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     return () => { cancelled = true }
   }, [id])
 
-  // Map API data to table rows — only offline devices belong on this table.
-  const tableData: TableRow[] = (solutionData?.lists ?? []).filter((item: CameraItem) => !item.status).map((item: CameraItem) => ({
+  // Map API data to table rows — show every device (both online and offline).
+  const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
     key: item.camera_id,
     status: item.status ? 'online' : 'offline',
     cameraName: item.camera_name,
@@ -158,30 +173,40 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
       key: 'caseNo',
       width: 160,
       align: 'center',
-      render: (text: string | null, record: TableRow) =>
-        text ? (
-          <span
-            style={{ color: '#FCD116', cursor: 'pointer' }}
-            onClick={() => {
-                  sessionStorage.setItem('maintenance_detail_id', id)
-                  router.push(`/admin/maintenance/case/${text}`)
-                }}
-          >
-            {text}
-          </span>
-        ) : (
-          <button
-            type='button'
-            className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-            style={{ background: '#FCD116', color: '#212121' }}
-            onClick={() => {
-              setSelectedRow(record)
-              setIsModalOpen(true)
-            }}
-          >
-            เปิด Case
-          </button>
-        ),
+      render: (text: string | null, record: TableRow) => {
+        // มี case_no → โชว์ลิงก์ case_no (ทั้ง online และ offline)
+        if (text) {
+          return (
+            <span
+              style={{ color: '#FCD116', cursor: 'pointer' }}
+              onClick={() => {
+                sessionStorage.setItem('maintenance_detail_id', id)
+                router.push(`/admin/maintenance/case/${text}`)
+              }}
+            >
+              {text}
+            </span>
+          )
+        }
+        // ไม่มี case_no และ offline → โชว์ปุ่มเปิดเคส
+        if (record.status === 'offline') {
+          return (
+            <button
+              type='button'
+              className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+              style={{ background: '#FCD116', color: '#212121' }}
+              onClick={() => {
+                setSelectedRow(record)
+                setIsModalOpen(true)
+              }}
+            >
+              เปิด Case
+            </button>
+          )
+        }
+        // online และไม่มี case_no → ไม่โชว์ปุ่ม
+        return <span>-</span>
+      },
     },
     { title: 'ประเภท', dataIndex: 'category', key: 'category', width: 120, align: 'center' },
     { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120, align: 'center' },
@@ -213,7 +238,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className='main-screen'>
-      <TitleSectionWithData id={id} data={solutionData} coord={coord} />
+      <TitleSectionWithData id={id} data={solutionData} coord={coord} resolvedProjectId={projectId} />
       <section className='mt-5 px-3 sm:px-10'>
         <ConfigProvider
           theme={{

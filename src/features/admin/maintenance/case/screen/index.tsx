@@ -1,13 +1,13 @@
 "use client"
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { App, Button, ConfigProvider, DatePicker, Input, Select, Spin, Upload } from 'antd'
+import { App, Button, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
 import type { UploadFile } from 'antd'
 import { AxiosError } from 'axios'
 import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbChevronDown, TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
+import { TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
 import styles from './maintenance-case.module.css'
 import ModalSaveSuccess from '../components/ModalSaveSuccess'
 import { TitleSection } from '../components'
@@ -368,36 +368,20 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <div className='pl-0 md:pl-9.5 mt-3 flex flex-col sm:flex-row gap-4'>
                 <div className='flex-1 w-full'>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หมวดหมู่ของปัญหาที่พบ<span style={{ color: '#E94C4C' }}>*</span></p>
-                  <Select
-                    placeholder='กรุณาเลือกหมวดหมู่...'
-                    style={{ width: '100%', height: 40, borderRadius: 10 }}
-                    suffixIcon={<TbChevronDown style={{ color: '#FCD116', fontSize: 16 }} />}
-                    value={formData.category || undefined}
-                    onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    options={[
-                      { label: 'CCTV', value: 'cctv' },
-                      { label: 'Traffic Volume', value: 'traffic_volume' },
-                      { label: 'Incident Detection', value: 'incident_detection' },
-                      { label: 'Traffic Signal', value: 'traffic_signal' },
-                      { label: 'Traffic Lighting', value: 'traffic_lighting' },
-                      { label: 'VMS', value: 'vms' },
-                    ]}
+                  <Input
+                    placeholder='กรุณาระบุหมวดหมู่...'
+                    style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10, color: '#FFFFFF' }}
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   />
                 </div>
                 <div className='flex-1 w-full'>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หน่วยงานรับผิดชอบหรือมอบหมาย<span style={{ color: '#E94C4C' }}>*</span></p>
-                  <Select
-                    placeholder='กรุณาเลือกหน่วยงาน...'
-                    style={{ width: '100%', height: 40, borderRadius: 10 }}
-                    suffixIcon={<TbChevronDown style={{ color: '#FCD116', fontSize: 16 }} />}
-                    value={formData.agency || undefined}
-                    onChange={(value) => setFormData(prev => ({ ...prev, agency: value }))}
-                    options={[
-                      { label: 'หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์', value: 'agency_1' },
-                      { label: 'สทช. 1 (ปทุมธานี)', value: 'agency_2' },
-                      { label: 'สทช. 2 (นนทบุรี)', value: 'agency_3' },
-                      { label: 'สทช. 3 (สมุทรปราการ)', value: 'agency_4' },
-                    ]}
+                  <Input
+                    placeholder='กรุณาระบุหน่วยงาน...'
+                    style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10, color: '#FFFFFF' }}
+                    value={formData.agency}
+                    onChange={(e) => setFormData(prev => ({ ...prev, agency: e.target.value }))}
                   />
                 </div>
               </div>
