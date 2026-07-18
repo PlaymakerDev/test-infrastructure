@@ -29,6 +29,13 @@ interface FormShape {
   lighting_phase_type?: string
   lighting_sem_type?: string
   lighting_diagram_type?: string
+  lighting_connection_type?: string
+  lighting_send_frequency?: string
+  // BridgeLighting (solution_type_id === 10) — the wid links to the legacy
+  // shelly device (tbl_work_master.id). dashvue's `resolveBridgeKey(wid)`
+  // decides which SVG template to render (bangkok / phraphuttha / krungthon
+  // / phrapokklao / pinklao / rama3/4/5/7 / phayamengrai / generic).
+  bridge_wid?: number
 }
 
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -85,6 +92,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
   const isWIM = selectedTypeId === SOLUTION_TYPE.WIM
   const isLighting = selectedTypeId === SOLUTION_TYPE.Lighting
   const isLightingIoT = isLighting && Form.useWatch('lighting_type', form) === 2
+  const isBridgeLighting = selectedTypeId === SOLUTION_TYPE.BridgeLighting
 
   const handleFinish = async (v: FormShape) => {
     if (!activePoint) return
@@ -100,7 +108,13 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
               phase_type: v.lighting_phase_type?.trim() || undefined,
               sem_type: v.lighting_sem_type?.trim() || undefined,
               diagram_type: v.lighting_diagram_type?.trim() || undefined,
+              connection_type: v.lighting_connection_type?.trim() || undefined,
+              send_frequency: v.lighting_send_frequency?.trim() || undefined,
             }
+          : undefined
+      const bridge_lighting =
+        v.solution_type_id === SOLUTION_TYPE.BridgeLighting && v.bridge_wid != null
+          ? { wid: Number(v.bridge_wid) }
           : undefined
       await addTaskType({
         solution_type_id: v.solution_type_id,
@@ -114,6 +128,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
         remarks: v.remarks?.trim() ?? '',
         station_id: v.solution_type_id === SOLUTION_TYPE.WIM ? Number(v.station_id) : undefined,
         lighting,
+        bridge_lighting,
       })
       onClose()
     } catch {
@@ -288,6 +303,30 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
               <Input placeholder='กรุณาระบุ Station ID...' inputMode='numeric' />
             </Form.Item>
           )}
+          {isBridgeLighting && (
+            <Form.Item
+              label={<RequiredLabel>WID (Shelly device id)</RequiredLabel>}
+              name='bridge_wid'
+              extra={
+                <span style={{ color: '#666', fontSize: 12 }}>
+                  ต้องตรงกับ id อุปกรณ์ shelly ใน dashvue เช่น 1899 = สะพานกรุงธน,
+                  1900 = สะพานพุทธ, 2442/2452 = สะพานกรุงเทพ. ถ้าไม่ได้ mapping ใน
+                  ระบบจะแสดง template แบบ generic
+                </span>
+              }
+              rules={[
+                { required: true, message: 'กรุณาระบุ WID' },
+                {
+                  validator: async (_, v) =>
+                    Number.isInteger(Number(v)) && Number(v) > 0
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('WID ต้องเป็นเลขจำนวนเต็มบวก')),
+                },
+              ]}
+            >
+              <Input placeholder='กรุณาระบุ WID...' inputMode='numeric' />
+            </Form.Item>
+          )}
           {isLighting && (
             <>
               <Form.Item
@@ -368,6 +407,42 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
                   >
                     <Input placeholder='เช่น 0STW-1MCB-1PW-1MC-3CB-1TFM-ADJ' />
                   </Form.Item>
+                  <div className='grid grid-cols-2 gap-5'>
+                    <Form.Item
+                      label={<PlainLabel>ประเภทการเชื่อมต่อ</PlainLabel>}
+                      name='lighting_connection_type'
+                    >
+                      <Select
+                        placeholder='เลือกประเภทการเชื่อมต่อ...'
+                        classNames={{ popup: { root: 'light-modal-popup' } }}
+                        allowClear
+                        options={[
+                          { label: 'NB-IoT', value: 'NB-IoT' },
+                          { label: 'LTE-M', value: 'LTE-M' },
+                          { label: '4G LTE', value: '4G_LTE' },
+                          { label: 'WiFi', value: 'WiFi' },
+                        ]}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label={<PlainLabel>ความถี่การส่งข้อมูล</PlainLabel>}
+                      name='lighting_send_frequency'
+                    >
+                      <Select
+                        placeholder='เลือกความถี่การส่งข้อมูล...'
+                        classNames={{ popup: { root: 'light-modal-popup' } }}
+                        allowClear
+                        options={[
+                          { label: 'ทุก 1 นาที', value: 'every_1min' },
+                          { label: 'ทุก 5 นาที', value: 'every_5min' },
+                          { label: 'ทุก 10 นาที', value: 'every_10min' },
+                          { label: 'ทุก 15 นาที', value: 'every_15min' },
+                          { label: 'ทุก 30 นาที', value: 'every_30min' },
+                          { label: 'ทุกชั่วโมง', value: 'hourly' },
+                        ]}
+                      />
+                    </Form.Item>
+                  </div>
                 </>
               )}
             </>

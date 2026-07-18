@@ -127,6 +127,16 @@ export interface APIRequestCreateSolution {
   station_id?: number
   /** REQUIRED (with `lighting_type`) when solution_type_id === Lighting (6). */
   lighting?: APIRequestLightingConfig
+  /** REQUIRED when solution_type_id === BridgeLighting (10). */
+  bridge_lighting?: APIRequestBridgeLightingConfig
+}
+
+/** Bridge-lighting-specific block. Only `wid` persists — the sync worker
+ *  refreshes `last_update` on first poll. `wid` is the legacy
+ *  tbl_work_master.id used by dashvue's `resolveBridgeKey(wid)` to pick
+ *  which SVG template to render, so it must match the shelly device. */
+export interface APIRequestBridgeLightingConfig {
+  wid: number
 }
 
 /** Lighting-specific block. Sent as a nested object on POST /solution when
@@ -147,6 +157,11 @@ export interface APIRequestLightingConfig {
   sem_type?: string
   /** e.g. "0STW-1MCB-1PW-1MC-3CB-1TFM-ADJ" */
   diagram_type?: string
+  /** ประเภทการเชื่อมต่อ — e.g. "NB-IoT" | "LTE-M" | "WiFi".
+   *  Added via 2026-07-18 migration; older backends will ignore it. */
+  connection_type?: string
+  /** ความถี่การส่งข้อมูล — e.g. "every_5min" | "every_10min" | "hourly". */
+  send_frequency?: string
   /** Optional proxy URL override. Blank falls back to the migrator default. */
   proxy_url?: string
 }
