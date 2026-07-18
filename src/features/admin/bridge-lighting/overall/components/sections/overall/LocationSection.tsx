@@ -22,7 +22,7 @@ const LocationSection: React.FC<Props> = (props) => {
         position='left'
         className='row-start-2 lg:row-start-1 lg:col-start-1 lg:overflow-y-auto lg:overflow-x-hidden lg:h-full flex flex-col gap-4'
       >
-        <StatusBridgeLighting />
+        <StatusBridgeLighting deptId={deptId!} />
       </MapOverlayPanel>
 
       {/* Map — row 1 on mobile (top), col 2 on desktop */}

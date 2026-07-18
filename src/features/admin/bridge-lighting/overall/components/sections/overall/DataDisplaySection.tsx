@@ -194,7 +194,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           onExport={() => alert('TODO: นำออกเอกสาร')}
         />
       </section>
-      <section className='mt-5'>
+      <section id='bridge-lighting-summary-table' className='mt-5 scroll-mt-24'>
         {renderContent}
       </section>
     </div>
