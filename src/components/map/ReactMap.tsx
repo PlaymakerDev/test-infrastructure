@@ -197,14 +197,44 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     const c = position?.centroid
     if (!Array.isArray(c) || c.length !== 2 || (c[0] === 0 && c[1] === 0)) return
     markFlown(originalDeptId)
-    map.flyTo({
-      center: c as [number, number],
-      // Above PROVINCE_ZOOM_THRESHOLD so device markers (not STCH summary) show.
-      zoom: 9.5,
-      pitch: 30,
-      duration: 1400,
-    })
-  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, markFlown])
+
+    // Fit to the bounding box of all devices in this dept's scope so the
+    // user lands with EVERY device visible, no matter whether the dept is
+    // a สำนัก (multi-จังหวัด, wide spread) or a แขวง (single จังหวัด,
+    // tight spread). Falls back to a plain flyTo centroid @ 8.5 if there
+    // aren't at least two points to compute a bbox from.
+    const pts = (position?.locations ?? [])
+      .map((l) => l.geometry_point)
+      .filter((p): p is [number, number] =>
+        Array.isArray(p) && p.length === 2 && (p[0] !== 0 || p[1] !== 0)
+      )
+    if (pts.length >= 2) {
+      let minX = pts[0][0], minY = pts[0][1], maxX = pts[0][0], maxY = pts[0][1]
+      for (const [x, y] of pts) {
+        if (x < minX) minX = x
+        if (x > maxX) maxX = x
+        if (y < minY) minY = y
+        if (y > maxY) maxY = y
+      }
+      map.fitBounds([[minX, minY], [maxX, maxY]], {
+        padding: { top: 90, right: 40, bottom: 100, left: 40 },
+        // Cap at 10.5 so tight ขทช. clusters don't over-zoom past what
+        // the device markers can meaningfully render. maxZoom < 6.5 would
+        // also strand us below the province threshold (STCH summary
+        // markers would still be showing) → guard the low end too.
+        maxZoom: 10.5,
+        pitch: 30,
+        duration: 1400,
+      })
+    } else {
+      map.flyTo({
+        center: c as [number, number],
+        zoom: 8.5,
+        pitch: 30,
+        duration: 1400,
+      })
+    }
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, markFlown])
 
   // Adapt API locations → Device + aggregate per-สทช. counts for the country-
   // level summary marker layer.
@@ -354,6 +384,9 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       const noneFilter = ['==', ['get', 'code'], '__none__'] as Parameters<typeof map.setFilter>[1]
       if (map.getLayer(PROVINCE_HOVER_LINE_ID)) map.setFilter(PROVINCE_HOVER_LINE_ID, noneFilter)
       if (map.getLayer(PROVINCE_HOVER_FILL_ID)) map.setFilter(PROVINCE_HOVER_FILL_ID, noneFilter)
+      // Also drop the parent-bureau highlight — same "clear everything" reset.
+      const noneStch = ['==', ['get', 'stch'], -1] as Parameters<typeof map.setFilter>[1]
+      if (map.getLayer(BUREAU_HOVER_LINE_ID)) map.setFilter(BUREAU_HOVER_LINE_ID, noneStch)
     }
 
     const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -369,8 +402,15 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         const filter = ['==', ['get', 'code'], code] as Parameters<typeof map.setFilter>[1]
         if (map.getLayer(PROVINCE_HOVER_LINE_ID)) map.setFilter(PROVINCE_HOVER_LINE_ID, filter)
         if (map.getLayer(PROVINCE_HOVER_FILL_ID)) map.setFilter(PROVINCE_HOVER_FILL_ID, filter)
+        // Cross-highlight the PARENT สำนัก outline (yellow line spanning every
+        // จังหวัด in the same สทช.) so the user sees the wider scope this
+        // จังหวัด belongs to — the whole multi-province polygon glows in
+        // hoverColor while the single จังหวัด lights up in the fill+line above.
+        const bureauFilter = ['==', ['get', 'stch'], province.stch] as Parameters<typeof map.setFilter>[1]
+        if (map.getLayer(BUREAU_HOVER_LINE_ID)) map.setFilter(BUREAU_HOVER_LINE_ID, bureauFilter)
         tooltip.innerHTML =
           `<div style="font-weight:600;color:#FCD116">จ.${province.name}</div>` +
+          `<div style="font-size:11px;color:#66AEFF">สทช.${province.stch}</div>` +
           '<div style="font-size:10px;color:#9fb0c8">คลิกเพื่อดูข้อมูลจังหวัด</div>'
       }
       tooltip.style.display = 'block'

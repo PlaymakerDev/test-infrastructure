@@ -39,10 +39,16 @@ const SOURCE_ID = 'bureaus-src'
 const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
   hideAtZoom = 6.5,
   highlightedStch,
+  // Fill (country zoom): pale yellow tint so a hovered bureau reads as
+  // "current focus" — matches --yellow token elsewhere in the app.
   fillColor = '#FCD116',
   fillOpacity = 0.06,
-  lineColor = '#FCD116',
-  lineWidth = 1.5,
+  // Permanent outline: --default-blue. Distinct from the yellow province
+  // hover, so at province zoom the user sees a BLUE bureau boundary
+  // (multi-province scope) different from any YELLOW province outline
+  // (single-province focus).
+  lineColor = '#66AEFF',
+  lineWidth = 1.8,
   hoverColor = '#FCD116',
   enableClick = true,
 }) => {
@@ -80,17 +86,29 @@ const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
         },
       })
     }
-    // Outline.
+    // Outline — visible at EVERY zoom level so users always see the parent
+    // สำนัก boundary around the province they're looking at. Only fill +
+    // hover-fill respect `hideAtZoom` (the country-only fill would clutter
+    // the province zoom, but the outline provides constant orientation).
     if (!map.getLayer(BUREAU_LINE_ID)) {
       map.addLayer({
         id: BUREAU_LINE_ID,
         type: 'line',
         source: SOURCE_ID,
-        maxzoom: hideAtZoom,
         paint: {
           'line-color': lineColor,
-          'line-width': lineWidth,
-          'line-opacity': 0.55,
+          'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            5, lineWidth,
+            9, lineWidth * 0.7,
+            12, lineWidth * 0.5,
+          ],
+          'line-opacity': [
+            'interpolate', ['linear'], ['zoom'],
+            5, 0.55,
+            8, 0.35,
+            12, 0.2,
+          ],
         },
       })
     }
@@ -109,12 +127,14 @@ const BureauMaskLayer: React.FC<BureauMaskLayerProps> = ({
         },
       })
     }
+    // Bureau hover-line is visible at ALL zooms — it's what lights up the
+    // parent สำนัก when the user hovers a province at province zoom (per
+    // the ReactMap province onMove handler that pipes stch into this filter).
     if (!map.getLayer(BUREAU_HOVER_LINE_ID)) {
       map.addLayer({
         id: BUREAU_HOVER_LINE_ID,
         type: 'line',
         source: SOURCE_ID,
-        maxzoom: hideAtZoom,
         filter: ['==', ['get', 'stch'], -1],
         paint: {
           'line-color': hoverColor,
