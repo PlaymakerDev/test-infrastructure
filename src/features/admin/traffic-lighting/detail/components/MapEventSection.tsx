@@ -1,19 +1,19 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbMapPin } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import { getLightingAlertsAPI } from '@/services/routes/LightingService'
+import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
+import { useLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
+
+const DEFAULT_LIMIT = 10
 
 const SUMMARY_STATS = [
   { label: 'ทั้งหมด', color: '#FCD116', variant: 'filled' as const },
@@ -53,26 +53,27 @@ const LineStatusBadge = ({ status }: { status: string }) => {
 }
 
 /** Map (left) + event log table (right) below the charts row. The table is
- *  fed by /imei/{imei}/alerts. */
+ *  fed by /imei/{imei}/alerts (server-side paginated). */
 const MapEventSection: React.FC = () => {
-  const { project, imei } = useDetailContext()
-  const [alerts, setAlerts] = useState<AlertItem[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const { project, imei, device } = useDetailContext()
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(DEFAULT_LIMIT)
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    getLightingAlertsAPI(imei, { limit: 100, sort: 'DESC' })
-      .then((res) => { if (active) setAlerts(res.data?.res_data ?? []) })
-      .catch((err) => console.error('alerts failed:', err))
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei])
+  // A different device (imei) resets pagination back to page 1 — adjusted
+  // during render (React's recommended pattern) instead of an effect, so it
+  // takes effect before the now-stale page number is used to fetch below.
+  const [prevImei, setPrevImei] = useState(imei)
+  if (imei !== prevImei) {
+    setPrevImei(imei)
+    setPage(1)
+  }
 
-  const total = alerts.length
+  const { data, isFetching } = useLightingAlerts(imei, page, limit)
+  const alerts = data?.res_data ?? []
+  // "ทั้งหมด" comes from the backend's true count (meta_data.count); the
+  // backend's /alerts endpoint has no status filter, so UP/DOWN can only
+  // reflect the currently loaded page, not a global total.
+  const total = data?.meta_data?.count ?? 0
   const upCount = alerts.filter((a) => a.status === 'UP').length
   const downCount = alerts.filter((a) => a.status === 'DOWN').length
   const summary = [
@@ -80,6 +81,11 @@ const MapEventSection: React.FC = () => {
     { ...SUMMARY_STATS[1], value: upCount },
     { ...SUMMARY_STATS[2], value: downCount },
   ]
+
+  const handlePageChange = (nextPage: number, nextSize: number) => {
+    setPage(nextPage)
+    setLimit(nextSize)
+  }
 
   const columns: ColumnsType<AlertItem> = useMemo(
     () => [
@@ -128,29 +134,14 @@ const MapEventSection: React.FC = () => {
       <div
         className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-2xl overflow-hidden bg-[#212121]'
       >
-        <BaseMap
-          style={{ height: '100%', width: '100%' }}
-          initialCenter={project.coord}
-          initialZoom={16}
-          initialPitch={45}
-          edgeFade={{ all: 20 }}
-        >
-          <HTMLMarker lngLat={project.coord} anchor='bottom' title={project.installPoint}>
-            <div
-              className='flex items-center justify-center'
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: '#FCD116',
-                boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                border: '2px solid #fff',
-              }}
-            >
-              <TbMapPin size={20} color='#212121' />
-            </div>
-          </HTMLMarker>
-        </BaseMap>
+        <MapLightingDetail
+          coord={project.coord}
+          imei={imei}
+          isOnline={device?.is_online ?? project.connection === 'online'}
+          roadCode={project.roadCode}
+          installPoint={project.installPoint}
+          projectName={project.projectName}
+        />
       </div>
 
       {/* Event table */}
@@ -186,7 +177,7 @@ const MapEventSection: React.FC = () => {
                     : { background: stat.color, color: '#212121' }),
                 }}
               >
-                {loaded ? stat.value : '-'}
+                {data ? stat.value : '-'}
               </span>
             </div>
           ))}
@@ -194,10 +185,19 @@ const MapEventSection: React.FC = () => {
 
         <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
           <Table<AlertItem>
-            rowKey={(r) => `${r.imei}-${r.timestamp}`}
+            rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
             columns={columns}
             dataSource={alerts}
-            pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t} รายการ` }}
+            loading={isFetching}
+            pagination={{
+              current: page,
+              pageSize: limit,
+              total,
+              showSizeChanger: true,
+              pageSizeOptions: [10, 20, 50, 100],
+              showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+              onChange: handlePageChange,
+            }}
             size='middle'
             className='bridge-projects-table event-log-table'
             locale={{ emptyText: 'ไม่พบข้อมูล' }}

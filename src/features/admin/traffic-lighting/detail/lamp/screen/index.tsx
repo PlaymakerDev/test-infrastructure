@@ -1,8 +1,7 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbBulb, TbBolt, TbMapPin } from 'react-icons/tb'
-import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import { TbBulb, TbBolt } from 'react-icons/tb'
+import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
 import StatusInfoCard from '@/features/admin/traffic-lighting/detail/components/StatusInfoCard'
 import DonutChart from '../components/DonutChart'
 import LampChartsSection from '../components/LampChartsSection'
@@ -39,30 +38,15 @@ const LampDetailScreen: React.FC<Props> = ({ id }) => {
 
         {/* Top row: map (left) + 3 stat cards (right) */}
         <section className='mt-6 flex flex-col lg:flex-row lg:items-stretch w-full gap-3'>
-          <div className='relative w-full lg:flex-1 min-w-0 min-h-[480px] lg:min-h-[600px] rounded-2xl overflow-hidden bg-[#212121]'>
-            <BaseMap
-              style={{ height: '100%', width: '100%', minHeight: 480 }}
-              initialCenter={project.coord}
-              initialZoom={15}
-              initialPitch={45}
-              edgeFade={{ all: 20 }}
-            >
-              <HTMLMarker lngLat={project.coord} anchor='bottom' title={project.installPoint}>
-                <div
-                  className='flex items-center justify-center'
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    background: '#FCD116',
-                    boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                    border: '2px solid #fff',
-                  }}
-                >
-                  <TbMapPin size={20} color='#212121' />
-                </div>
-              </HTMLMarker>
-            </BaseMap>
+          <div className='relative w-full lg:flex-1 min-w-0 min-h-[480px] lg:min-h-[600px] rounded-[20px] overflow-hidden bg-[#212121]'>
+            <MapLightingDetail
+              coord={project.coord}
+              imei={project.id}
+              isOnline={project.connection === 'online'}
+              roadCode={project.roadCode}
+              installPoint={project.installPoint}
+              projectName={project.projectName}
+            />
           </div>
 
           <div className='flex flex-col gap-3 ml-auto shrink-0 items-end'>
@@ -93,7 +77,7 @@ const LampDetailScreen: React.FC<Props> = ({ id }) => {
             </div>
             <div
               style={{ width: 440, height: 330, background: '#191919CC' }}
-              className='shrink-0 rounded-2xl px-5 pt-4 pb-5 flex flex-col'
+              className='shrink-0 rounded-[20px] px-5 pt-4 pb-5 flex flex-col'
             >
               <div className='flex items-center gap-2 shrink-0 mb-1'>
                 <TbBulb size={20} style={{ color: '#05F2DB' }} />

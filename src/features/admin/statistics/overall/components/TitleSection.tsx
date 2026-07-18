@@ -1,10 +1,9 @@
 "use client"
 import SwapButton from '@/components/swap-button/SwapButton'
-import { Segmented } from 'antd'
 import React, { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-const useIsMobile = (breakpoint = 640) => {
+const useIsMobile = (breakpoint = 1280) => {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
@@ -44,6 +43,7 @@ const TitleSection: React.FC = () => {
   const currentTab = hasStatus ? 'STATUS' : hasIncident ? 'INCIDENT' : hasAlert ? 'ALERT' : 'OVERVIEW'
 
   const activePeriod = searchParams.get('period') || 'ALL'
+  const showTabsAndPeriod = currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT'
 
   const handleTabChange = (value: string) => {
     // Build query string without = for boolean params
@@ -88,37 +88,46 @@ const TitleSection: React.FC = () => {
 
   return (
     <div>
-      {currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT' && (
+      {showTabsAndPeriod && (
         <section>
           <h1 className='text-(--yellow)'>Statistics</h1>
           <p className='text-(--yellow)'>สถิติและรายงานการแจ้งเตือนเหตุการณ์</p>
         </section>
       )}
-      <section className={`${currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT' ? 'mt-5' : 'mt-0'} flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4`}>
-        {currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT' && (
-          <div className='flex-1 min-w-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+      {showTabsAndPeriod && (
+        // `flex-wrap` (no fixed sm:flex-row switch) — the period group drops
+        // to its own line the moment it no longer fits beside the tabs, at
+        // any viewport width, instead of forcing a scrollbar.
+        <section className='mt-5 flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex flex-wrap gap-2 sm:gap-3'>
             <SwapButton
               options={TAB_OPTIONS}
               defaultActive={currentTab}
               setLabelValue={handleTabChange}
               size={isMobile ? 'middle' : 'large'}
+              mobileWrap
             />
           </div>
-        )}
-        {currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT' && (
-          <div className='shrink-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
-            <Segmented
-              value={activePeriod}
-              onChange={(value) => handlePeriodChange(value as string)}
-              options={PERIOD_OPTIONS}
-              size={isMobile ? 'middle' : 'large'}
-              classNames={{
-                root: 'min-w-max border! border-(--yellow)!',
-              }}
-            />
+          <div className='flex flex-wrap gap-1 rounded-xl border border-(--yellow) p-1'>
+            {PERIOD_OPTIONS.map((opt) => {
+              const isActive = activePeriod === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type='button'
+                  onClick={() => handlePeriodChange(opt.value)}
+                  className='px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-sm font-medium cursor-pointer transition-colors whitespace-nowrap'
+                  style={isActive
+                    ? { background: 'var(--yellow)', color: '#212121' }
+                    : { background: 'transparent', color: 'var(--yellow)' }}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   )
 }

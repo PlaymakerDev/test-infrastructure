@@ -5,7 +5,8 @@ import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
 import { TitleSection } from '../components'
-import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI } from '@/services/routes/MaintenanceService'
+import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI, getProjectBySolutionAPI, getSolutionMapLocationAPI } from '@/services/routes/MaintenanceService'
+import { ProjectInfoModal } from '@/components/modal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 
 interface Props {
@@ -29,11 +30,17 @@ interface TableRow {
   password: string
 }
 
-/** Wrapper อ่าน title/subtitle จาก sessionStorage แล้วส่งเข้า TitleSection */
-const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null }> = ({ id, data }) => {
-  // title/subtitle มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
+/** Wrapper อ่าน title/subtitle/project_id/road_id จาก sessionStorage แล้วส่งเข้า TitleSection */
+const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null; coord: [number, number] | null; resolvedProjectId?: number }> = ({ id, data, coord, resolvedProjectId }) => {
+  // title/subtitle/road_id มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
   const title = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_title') || data?.solution_name || id) : (data?.solution_name || id)
   const subtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
+  const storedProjectId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_project_id') : null
+  const storedRoadId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_road_id') : null
+  // project_id มาจาก GET /project/solution/{id} (resolvedProjectId) เป็นหลัก ให้ ⓘ ทำงานได้แม้เปิด URL ตรง ๆ
+  // ที่ไม่มี sessionStorage; fallback เป็นค่าที่ tree ฝากไว้เมื่อยังโหลด/เรียก API ไม่สำเร็จ
+  const projectId = resolvedProjectId ?? (storedProjectId ? Number(storedProjectId) : undefined)
+  const roadId = storedRoadId ? Number(storedRoadId) : undefined
   const onlineCount = data?.online_count ?? 0
   const offlineCount = data?.offline_count ?? 0
   const warranty = data?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ'
@@ -45,6 +52,9 @@ const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse 
       onlineCount={onlineCount}
       offlineCount={offlineCount}
       warranty={warranty}
+      projectId={projectId}
+      roadId={roadId}
+      coord={coord}
     />
   )
 }
@@ -58,6 +68,8 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [coord, setCoord] = useState<[number, number] | null>(null)
+  const [projectId, setProjectId] = useState<number | undefined>(undefined)
 
   // Fetch solution detail
   const fetchSolution = useCallback(async () => {
@@ -80,7 +92,42 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     fetchSolution()
   }, [fetchSolution])
 
-  // Map API data to table rows
+  // Resolve the owning project from the solution_id (this route's `id`) so the
+  // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no sessionStorage.
+  useEffect(() => {
+    const numericId = Number(id)
+    if (!numericId) return
+    let cancelled = false
+    getProjectBySolutionAPI(numericId)
+      .then((res) => { if (!cancelled) setProjectId(res.data?.id) })
+      .catch(() => { if (!cancelled) setProjectId(undefined) })
+    return () => { cancelled = true }
+  }, [id])
+
+  // Google Map pin — solution/{id} has no coordinates, but the tree click
+  // (RepairRecordsSection) stashes department_id + the feature's URL prefix
+  // (lowercased SummaryItem.type) into sessionStorage, so we can hit that
+  // feature's own overview endpoint filtered to this solution_id.
+  useEffect(() => {
+    const numericId = Number(id)
+    const prefix = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_solution_prefix') : null
+    const departmentId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_department_id') : null
+    if (!numericId || !prefix || !departmentId) {
+      setCoord(null)
+      return
+    }
+    let cancelled = false
+    getSolutionMapLocationAPI(prefix, Number(departmentId), numericId)
+      .then((res) => {
+        if (cancelled) return
+        const point = res.data.locations?.[0]?.GeometryPoint
+        setCoord(point && point.length === 2 ? [point[0], point[1]] : null)
+      })
+      .catch(() => { if (!cancelled) setCoord(null) })
+    return () => { cancelled = true }
+  }, [id])
+
+  // Map API data to table rows — show every device (both online and offline).
   const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
     key: item.camera_id,
     status: item.status ? 'online' : 'offline',
@@ -126,30 +173,40 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
       key: 'caseNo',
       width: 160,
       align: 'center',
-      render: (text: string | null, record: TableRow) =>
-        text ? (
-          <span
-            style={{ color: '#FCD116', cursor: 'pointer' }}
-            onClick={() => {
-                  sessionStorage.setItem('maintenance_detail_id', id)
-                  router.push(`/admin/maintenance/case/${text}`)
-                }}
-          >
-            {text}
-          </span>
-        ) : (
-          <button
-            type='button'
-            className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-            style={{ background: '#FCD116', color: '#212121' }}
-            onClick={() => {
-              setSelectedRow(record)
-              setIsModalOpen(true)
-            }}
-          >
-            เปิด Case
-          </button>
-        ),
+      render: (text: string | null, record: TableRow) => {
+        // มี case_no → โชว์ลิงก์ case_no (ทั้ง online และ offline)
+        if (text) {
+          return (
+            <span
+              style={{ color: '#FCD116', cursor: 'pointer' }}
+              onClick={() => {
+                sessionStorage.setItem('maintenance_detail_id', id)
+                router.push(`/admin/maintenance/case/${text}`)
+              }}
+            >
+              {text}
+            </span>
+          )
+        }
+        // ไม่มี case_no และ offline → โชว์ปุ่มเปิดเคส
+        if (record.status === 'offline') {
+          return (
+            <button
+              type='button'
+              className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+              style={{ background: '#FCD116', color: '#212121' }}
+              onClick={() => {
+                setSelectedRow(record)
+                setIsModalOpen(true)
+              }}
+            >
+              เปิด Case
+            </button>
+          )
+        }
+        // online และไม่มี case_no → ไม่โชว์ปุ่ม
+        return <span>-</span>
+      },
     },
     { title: 'ประเภท', dataIndex: 'category', key: 'category', width: 120, align: 'center' },
     { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120, align: 'center' },
@@ -181,83 +238,8 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className='main-screen'>
-      <style>{`
-        /* ─── Pagination dark theme ─── */
-        .maintenance-detail-pagination .ant-pagination-item {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-          min-width: 32px !important;
-          height: 32px !important;
-          line-height: 30px !important;
-          transition: all 0.2s ease !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item a {
-          color: #c2c2d3 !important;
-          font-size: 13px !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item:hover {
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item:hover a {
-          color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item-active {
-          background: #FCD116 !important;
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item-active,
-        .maintenance-detail-pagination .ant-pagination-item-active a,
-        .maintenance-detail-pagination .ant-pagination-item-active span,
-        .maintenance-detail-pagination .ant-pagination-item-active div {
-          color: #212121 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev .ant-pagination-item-link,
-        .maintenance-detail-pagination .ant-pagination-next .ant-pagination-item-link {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev button,
-        .maintenance-detail-pagination .ant-pagination-next button {
-          color: #c2c2d3 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover .ant-pagination-item-link,
-        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover .ant-pagination-item-link {
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover button,
-        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover button {
-          color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-disabled .ant-pagination-item-link {
-          opacity: 0.3 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-disabled button {
-          color: #555 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-total-text {
-          color: #979797 !important;
-          font-size: 13px !important;
-        }
-        .maintenance-detail-pagination .ant-select-selector {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-          color: #c2c2d3 !important;
-          padding: 0 8px !important;
-          height: 32px !important;
-        }
-        .maintenance-detail-pagination .ant-select-selection-item {
-          color: #c2c2d3 !important;
-          line-height: 30px !important;
-        }
-        .maintenance-detail-pagination .ant-select-arrow {
-          color: #979797 !important;
-        }
-      `}</style>
-      <TitleSectionWithData id={id} data={solutionData} />
-      <section className='maintenance-detail-pagination mt-5 px-3 sm:px-10'>
+      <TitleSectionWithData id={id} data={solutionData} coord={coord} resolvedProjectId={projectId} />
+      <section className='mt-5 px-3 sm:px-10'>
         <ConfigProvider
           theme={{
             token: { colorPrimary: '#FCD116', colorBgContainer: '#2a2a2a', colorText: '#c2c2d3' },
@@ -273,12 +255,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
           <Table
             columns={columns}
             dataSource={tableData}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50'],
-              showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
-            }}
+            pagination={false}
             scroll={{ x: 'max-content' }}
             size='middle'
           />
@@ -456,6 +433,9 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
           </div>
         </div>
       )}
+
+      {/* Global Project Info modal — opens from the ⓘ icon in the title bar. Reads project_id/road_id from Redux. */}
+      <ProjectInfoModal />
     </div>
   )
 }

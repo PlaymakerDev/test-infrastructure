@@ -88,11 +88,40 @@ export interface StatisticsComparisonTableProps {
   summaryBadges?: SummaryBadge[]
   columns?: ColumnsType<ComparisonRecord>
   useArrowExpand?: boolean
+  activePeriod?: string
+  onPeriodChange?: (value: string) => void
+  /** Shows an Antd spinner overlay over the table while the data refetches
+   *  (e.g. when switching the period). */
+  loading?: boolean
 }
 
-const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand }) => {
-  const [activePeriod, setActivePeriod] = React.useState('ALL')
+const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, activePeriod: activePeriodProp, onPeriodChange, loading }) => {
+  const [internalPeriod, setInternalPeriod] = React.useState('TODAY')
+  const activePeriod = activePeriodProp ?? internalPeriod
+  const handlePeriodChange = (value: string) => {
+    setInternalPeriod(value)
+    onPeriodChange?.(value)
+  }
+  const [searchText, setSearchText] = React.useState('')
   const isMobile = useIsMobile()
+
+  // Client-side filter on the agency name. Matches parent rows directly OR
+  // child rows by their own name — a parent with no matching children but a
+  // matching name still shows, and a parent whose children match keeps the
+  // whole group (parent + its children) so the tree stays intact.
+  const filteredData = React.useMemo(() => {
+    const keyword = searchText.trim().toLowerCase()
+    if (!keyword) return data
+    return data.filter((row) => {
+      const agency = (row.agency ?? '').toLowerCase()
+      if (agency.includes(keyword)) return true
+      // Keep the parent if any of its children match, plus those children.
+      const matchingChildren = (row.children ?? []).filter((c) =>
+        (c.agency ?? '').toLowerCase().includes(keyword)
+      )
+      return matchingChildren.length > 0
+    })
+  }, [data, searchText])
 
   return (
     <div className="mt-6 flex-1 p-3 sm:p-5 min-h-[400px] sm:min-h-[500px] lg:min-h-[580px]">
@@ -103,6 +132,9 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
             className="rounded-lg"
             suffix={<TbSearch className='text-(--yellow)' />}
             size="middle"
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
             style={{ width: isMobile ? '100%' : 320, height: 40, minWidth: isMobile ? 200 : undefined, maxWidth: isMobile ? 320 : undefined }}
           />
           {(summaryBadges ?? [
@@ -123,7 +155,7 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
         </div>
         <Segmented
           value={activePeriod}
-          onChange={(value) => setActivePeriod(value as string)}
+          onChange={(value) => handlePeriodChange(value as string)}
           options={PERIOD_OPTIONS}
           size={isMobile ? 'middle' : 'large'}
           classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
@@ -131,7 +163,8 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
       </div>
       <Table
         columns={columns ?? COMPARISON_COLUMNS}
-        dataSource={data}
+        dataSource={filteredData}
+        loading={loading}
         pagination={false}
         size="middle"
         rowKey="key"

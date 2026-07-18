@@ -7,8 +7,8 @@ import dayjs, { type Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TbPrinter } from 'react-icons/tb'
-import { getLightingLogs4gAPI } from '@/services/routes/LightingService'
-import type { Logs4gRecord } from '@/types/lighting'
+import { getLightingLogs4gCentralAPI } from '@/services/routes/LightingService'
+import type { Logs4gCentralItem, Logs4gCircuitStatus } from '@/types/lighting'
 import { useDetailContext } from '../context'
 import Pill from './Pill'
 
@@ -18,19 +18,22 @@ dayjs.locale('th')
 // Map each backend data_type to a display label + color, matching the
 // original MonitorSection event-type colors.
 const DATA_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  'line-check': { label: 'Line Check', color: '#FCD116' },
+  line_check: { label: 'Line Check', color: '#FCD116' },
   FMTS: { label: 'FMTS', color: '#E94C4C' },
   UPS1: { label: 'UPS1', color: '#E94C4C' },
   UPS2: { label: 'UPS2', color: '#E94C4C' },
-  'volt_amp': { label: 'Volt/Amp', color: '#66AEFF' },
+  UPS3: { label: 'UPS3', color: '#E94C4C' },
+  volt_amp: { label: 'Volt/Amp', color: '#66AEFF' },
   circuit: { label: 'Circuit', color: '#05F2DB' },
 }
 
-// eventCategory for the segmented filter — derived from data_type.
-type EventCategory = 'ALL' | 'line-check' | 'volt_amp' | 'circuit' | 'UPS' | 'FMTS'
+// eventCategory for the segmented filter — derived from data_type. Values
+// match the API's `data_type` enum directly except UPS/FMTS, which the API
+// only exposes bundled together as `etc` (see fetch effect below).
+type EventCategory = 'ALL' | 'line_check' | 'volt_amp' | 'circuit' | 'UPS' | 'FMTS'
 const EVENT_TYPE_OPTIONS: { label: string; value: EventCategory }[] = [
   { label: 'ทั้งหมด', value: 'ALL' },
-  { label: 'Line Check', value: 'line-check' },
+  { label: 'Line Check', value: 'line_check' },
   { label: 'Volt/Amp', value: 'volt_amp' },
   { label: 'Circuit', value: 'circuit' },
   { label: 'UPS', value: 'UPS' },
@@ -43,54 +46,117 @@ const PERIOD_OPTIONS: { label: string; value: PeriodFilter }[] = [
   { label: 'เมื่อวาน', value: 'YESTERDAY' },
   { label: '7 วัน', value: 'LAST_7_DAYS' },
   { label: 'เดือนนี้', value: 'THIS_MONTH' },
-  { label: 'ปีนี้', value: 'THIS_YEAR' },
   { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
 const STATUS_BADGE_CLASS =
   'inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs whitespace-nowrap border box-border'
 
-// Render a status cell per data_type. line-check → ok/fail pills; others →
-// the key values (f/g/h) joined; volt_amp shows Volt/Amp.
-const renderStatus = (r: Logs4gRecord) => {
+const isCircuitStatus = (s: Logs4gCentralItem['status']): s is Logs4gCircuitStatus =>
+  typeof s === 'object' && s !== null && !Array.isArray(s)
+
+// Render a status cell per data_type — the new /logs4g/central endpoint
+// bundles everything into one `status` field (shape depends on data_type).
+const renderStatus = (r: Logs4gCentralItem) => {
+  const { status } = r
   switch (r.data_type) {
-    case 'line-check': {
-      const checks = [r.line_detect1, r.line_detect2, r.line_detect3, r.line_detect4,
-      r.line_detect5, r.line_detect6, r.line_detect7, r.line_detect8]
-      const ok = checks.filter((c) => c === 'ok').length
-      const fail = checks.filter((c) => c === 'fail').length
+    case 'line_check': {
+      // array of 8 (int|null) — convention: 1 = ok, 0 = fail, null = no reading.
+      // Shown individually (not aggregated) as two groups of 4 (line_detect1-4
+      // / line_detect5-8) separated by a divider, per line_detect1..8 pairing.
+      const checks = Array.isArray(status) ? status : []
+      const label = (c: number | null) => (c === 1 ? 'OK' : c === 0 ? 'FAIL' : '-')
+      const color = (c: number | null) => (c === 1 ? '#4CE99A' : c === 0 ? '#E94C4C' : '#979797')
+      const renderGroup = (group: (number | null)[], keyPrefix: string) =>
+        group.map((c, i) => (
+          <span key={`${keyPrefix}${i}`} className={STATUS_BADGE_CLASS} style={{ borderColor: color(c), color: color(c) }}>{label(c)}</span>
+        ))
+      const divider = (key: string) => <span key={key} style={{ width: 2, height: 26, background: '#ffffff', flexShrink: 0 }} />
       return (
-        <div className='flex flex-wrap items-center justify-center gap-1'>
-          {ok > 0 && <span className={STATUS_BADGE_CLASS} style={{ borderColor: '#4CE99A', color: '#4CE99A' }}>OK ×{ok}</span>}
-          {fail > 0 && <span className={STATUS_BADGE_CLASS} style={{ borderColor: '#E94C4C', color: '#E94C4C' }}>Fail ×{fail}</span>}
+        <div className='flex flex-wrap items-center justify-center gap-1.5'>
+          {divider('l')}
+          {renderGroup(checks.slice(0, 4), 'a')}
+          {divider('m')}
+          {renderGroup(checks.slice(4, 8), 'b')}
+          {divider('r')}
         </div>
       )
     }
     case 'volt_amp':
+      return <span style={{ color: '#FCD116' }}>{typeof status === 'string' ? status : '-'}</span>
+    case 'circuit': {
+      if (!isCircuitStatus(status)) return <span style={{ color: '#05F2DB' }}>-</span>
+      // TFM is always purple regardless of value; every other field is
+      // colored by value: 1 = blue, 0 = red, null = gray.
+      const fieldColor = (key: string, value: number | null) =>
+        key === 'TFM' ? '#CF66FF' : value === 1 ? '#66AEFF' : value === 0 ? '#E94C4C' : '#979797'
+      const fields: [string, number | null][] = [
+        ['ST', status.ST], ['MB', status.MB], ['PS', status.PS],
+        ['MC1', status.MC1], ['MC2', status.MC2],
+        ['CB1', status.CB1], ['CB2', status.CB2], ['CB3', status.CB3], ['CB4', status.CB4],
+        ['TFM', status.TFM],
+      ]
       return (
-        <span style={{ color: '#66AEFF' }}>
-          {r.f}V / {r.g}A
-        </span>
+        <div className='flex flex-wrap items-center justify-center gap-1.5'>
+          {fields.map(([key, value]) => (
+            <span key={key} className={STATUS_BADGE_CLASS} style={{ borderColor: fieldColor(key, value), color: fieldColor(key, value) }}>
+              {key}
+            </span>
+          ))}
+        </div>
       )
-    case 'circuit':
-      return <span style={{ color: '#05F2DB' }}>{r.f} / {r.g}</span>
+    }
     case 'FMTS':
-      return <span style={{ color: '#E94C4C' }}>Err: {r.i}</span>
+      return <span style={{ color: '#E94C4C' }}>{typeof status === 'string' ? status : '-'}</span>
     case 'UPS1':
     case 'UPS2':
-      return <span className='text-white'>{r.f} {r.g}</span>
+    case 'UPS3':
+      return <span className='text-white'>{typeof status === 'string' ? status : '-'}</span>
     default:
-      return <span className='text-white/70'>{r.f} {r.g}</span>
+      return <span className='text-white/70'>{typeof status === 'string' ? status : '-'}</span>
+  }
+}
+
+type PeriodBounds = [Dayjs, Dayjs] | null
+
+const periodToBounds = (p: PeriodFilter): PeriodBounds => {
+  const now = dayjs()
+  switch (p) {
+    case 'TODAY': return [now.startOf('day'), now.endOf('day')]
+    case 'YESTERDAY': { const y = now.subtract(1, 'day'); return [y.startOf('day'), y.endOf('day')] }
+    case 'LAST_7_DAYS': return [now.subtract(6, 'day').startOf('day'), now.endOf('day')]
+    case 'THIS_MONTH': return [now.startOf('month'), now.endOf('month')]
+    case 'THIS_YEAR': return [now.startOf('year'), now.endOf('year')]
+    case 'ALL': return null
   }
 }
 
 const MonitorSection: React.FC = () => {
   const { imei } = useDetailContext()
-  const [records, setRecords] = useState<Logs4gRecord[]>([])
+  const [records, setRecords] = useState<Logs4gCentralItem[]>([])
   const [loaded, setLoaded] = useState(false)
   const [eventType, setEventType] = useState<EventCategory>('ALL')
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
   const [period, setPeriod] = useState<PeriodFilter>('ALL')
+
+  // Explicit date-range picker wins over the period preset when both are set;
+  // ALL + no picker → omit both dates (API defaults to "today", matching the
+  // old endpoint's implicit today-only behavior).
+  const effectiveRange: PeriodBounds = useMemo(() => {
+    const [pickerStart, pickerEnd] = dateRange ?? [null, null]
+    if (pickerStart || pickerEnd) {
+      return [pickerStart?.startOf('day') ?? periodToBounds(period)?.[0] ?? dayjs().startOf('day'),
+        pickerEnd?.endOf('day') ?? periodToBounds(period)?.[1] ?? dayjs().endOf('day')]
+    }
+    return periodToBounds(period)
+  }, [dateRange, period])
+
+  // The API only exposes UPS1/UPS2/UPS3 and FMTS bundled together as `etc` —
+  // request that and split them apart client-side for the UPS/FMTS tabs.
+  const dataTypeParam: 'circuit' | 'line_check' | 'volt_amp' | 'etc' | undefined =
+    eventType === 'ALL' ? undefined
+      : eventType === 'UPS' || eventType === 'FMTS' ? 'etc'
+        : eventType
 
   useEffect(() => {
     let active = true
@@ -98,67 +164,38 @@ const MonitorSection: React.FC = () => {
       setLoaded(true)
       return
     }
-    getLightingLogs4gAPI(imei)
-      .then((res) => { if (active) setRecords(res.data ?? []) })
-      .catch((err) => console.error('logs4g failed:', err))
+    setLoaded(false)
+    const start_date = effectiveRange?.[0].format('YYYY-MM-DD')
+    const end_date = effectiveRange?.[1].format('YYYY-MM-DD')
+
+    // Single request, no pagination params — flat table shows whatever the
+    // backend's own default page/limit returns.
+    getLightingLogs4gCentralAPI(imei, { start_date, end_date, data_type: dataTypeParam })
+      .then((res) => { if (active) setRecords(res.data?.res_data ?? []) })
+      .catch((err) => console.error('logs4g/central failed:', err))
       .finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
-  }, [imei])
+  }, [imei, effectiveRange, dataTypeParam])
 
-  // Filter by data_type + date range + period (client-side — the API only
-  //  returns today, so older periods simply yield nothing).
+  // UPS/FMTS split out of the combined `etc` response (see dataTypeParam above).
+  // `_rowKey` disambiguates records that share created_at/data_type/phase —
+  // the backend can log more than one reading within the same second.
   const filteredRecords = useMemo(() => {
-    let out = records
-    if (eventType !== 'ALL') {
-      out = eventType === 'UPS'
-        ? out.filter((r) => r.data_type === 'UPS1' || r.data_type === 'UPS2')
-        : out.filter((r) => r.data_type === eventType)
-    }
-    // date_time is "DD/MM/YYYY HH:mm:ss" (Buddhist era). Parse to a comparable.
-    const toDayjs = (s: string) => {
-      const m = s?.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
-      if (!m) return null
-      const [, dd, mm, yyyy] = m
-      return dayjs(`${yyyy}-${mm}-${dd}`, 'YYYY-MM-DD')
-    }
-    if (dateRange && (dateRange[0] || dateRange[1])) {
-      out = out.filter((r) => {
-        const d = toDayjs(r.date_time)
-        if (!d) return false
-        if (dateRange[0] && d.isBefore(dateRange[0], 'day')) return false
-        if (dateRange[1] && d.isAfter(dateRange[1], 'day')) return false
-        return true
-      })
-    }
-    if (period !== 'ALL') {
-      const now = dayjs()
-      const bounds: [Dayjs, Dayjs] | null =
-        period === 'TODAY' ? [now.startOf('day'), now.endOf('day')]
-        : period === 'YESTERDAY' ? [now.subtract(1, 'day').startOf('day'), now.subtract(1, 'day').endOf('day')]
-        : period === 'LAST_7_DAYS' ? [now.subtract(6, 'day').startOf('day'), now.endOf('day')]
-        : period === 'THIS_MONTH' ? [now.startOf('month'), now.endOf('month')]
-        : period === 'THIS_YEAR' ? [now.startOf('year'), now.endOf('year')]
-        : null
-      if (bounds) {
-        out = out.filter((r) => {
-          const d = toDayjs(r.date_time)
-          if (!d) return false
-          return !d.isBefore(bounds[0], 'day') && !d.isAfter(bounds[1], 'day')
-        })
-      }
-    }
-    return out
-  }, [records, eventType, dateRange, period])
+    const base = eventType === 'UPS' ? records.filter((r) => r.data_type === 'UPS1' || r.data_type === 'UPS2' || r.data_type === 'UPS3')
+      : eventType === 'FMTS' ? records.filter((r) => r.data_type === 'FMTS')
+        : records
+    return base.map((r, i) => ({ ...r, _rowKey: `${r.created_at}-${r.data_type}-${r.phase}-${i}` }))
+  }, [records, eventType])
 
-  const columns: ColumnsType<Logs4gRecord> = useMemo(
+  const columns: ColumnsType<Logs4gCentralItem & { _rowKey: string }> = useMemo(
     () => [
       {
         title: 'วันที่และเวลา',
-        dataIndex: 'date_time',
-        key: 'date_time',
+        dataIndex: 'created_at',
+        key: 'created_at',
         align: 'center',
         width: 180,
-        render: (t: string) => <span className='text-white'>{t}</span>,
+        render: (t: string) => <span className='text-white'>{dayjs(t, 'YYYY-MM-DD HH:mm:ss').format('DD/MM/BBBB HH:mm:ss')}</span>,
       },
       {
         title: 'ประเภท',
@@ -177,23 +214,14 @@ const MonitorSection: React.FC = () => {
         key: 'phase',
         align: 'center',
         width: 70,
-        render: (p: number) => <span className='text-white'>{p}</span>,
+        render: (p: number | null) => <span className='text-white'>{p ?? '-'}</span>,
       },
       {
         title: 'สถานะ',
         key: 'status',
         align: 'center',
         width: 280,
-        render: (_: unknown, r: Logs4gRecord) => renderStatus(r),
-      },
-      {
-        title: 'Data 1-2',
-        key: 'data',
-        align: 'center',
-        width: 160,
-        render: (_: unknown, r: Logs4gRecord) => (
-          <span style={{ color: '#FCD116' }}>{r.h} {r.i}</span>
-        ),
+        render: (_: unknown, r: Logs4gCentralItem) => renderStatus(r),
       },
     ],
     [],
@@ -304,11 +332,11 @@ const MonitorSection: React.FC = () => {
       </div>
 
       <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
-        <Table<Logs4gRecord>
-          rowKey={(r) => `${r.date_time}-${r.data_type}-${r.e ?? ''}`}
+        <Table<Logs4gCentralItem & { _rowKey: string }>
+          rowKey='_rowKey'
           columns={columns}
           dataSource={filteredRecords}
-          pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ` }}
+          pagination={false}
           size='middle'
           className='bridge-projects-table event-log-table'
           locale={{ emptyText: loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...' }}

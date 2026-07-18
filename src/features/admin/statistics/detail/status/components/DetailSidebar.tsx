@@ -5,7 +5,8 @@ import { TbChevronDown, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand }
 import { Button, Collapse } from 'antd'
 import { SearchCard } from '@/components/search-card'
 import { useStatusDetailContext } from '../context'
-import { ROUTE_ITEMS } from '../../../data/routeItems'
+import { useLiveStatusRouteItems } from '../../../data/useLiveStatusRouteItems'
+import { routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
 const renderCount = (count: string) => {
   const [left, right] = count.split('/')
@@ -35,21 +36,22 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
   const routeParam = searchParams.get('route') || ''
   const detailParam = searchParams.get('detail') || ''
   const { searchText, setSearchText, searchOpen, setSearchOpen } = useStatusDetailContext()
+  const { routeItems } = useLiveStatusRouteItems()
 
   const filteredRoutes = React.useMemo(() => {
-    if (!searchText) return ROUTE_ITEMS
+    if (!searchText) return routeItems
     const keyword = searchText.toLowerCase()
-    return ROUTE_ITEMS
+    return routeItems
       .map((item) => ({
         ...item,
         sub3: item.sub3.filter(
           (sub) =>
             sub.label.toLowerCase().includes(keyword) ||
-            sub.detail.some((d) => d.toLowerCase().includes(keyword))
+            sub.detail.some((d) => detailLabel(d).toLowerCase().includes(keyword))
         ),
       }))
       .filter((item) => item.name.toLowerCase().includes(keyword) || item.sub3.length > 0)
-  }, [searchText])
+  }, [searchText, routeItems])
 
   const collapseContent = (
     <Collapse
@@ -66,8 +68,12 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
       )}
       style={{ marginTop: 16 }}
       defaultActiveKey={routeParam ? [routeParam] : []}
-      items={filteredRoutes.map((item, index) => ({
-        key: item.name,
+      items={filteredRoutes.map((item) => {
+        const key = routeKey(item)
+        const noti = item.notiTotal ?? 0
+        const badgeColor = noti === 0 ? '#979797' : '#FCD116'
+        return {
+        key,
         label: (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
@@ -75,13 +81,13 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <span style={{
-                fontSize: 12, fontWeight: 500, color: '#FCD116',
+                fontSize: 12, fontWeight: 500, color: badgeColor,
                 width: 50, height: 22, borderRadius: 88,
-                border: '1px solid #FCD116',
+                border: `1px solid ${badgeColor}`,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
-                {index + 1}
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
+                {noti}
               </span>
               {renderCount(item.count)}
             </div>
@@ -110,9 +116,9 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
               </span>
             )}
             style={{ marginTop: 4 }}
-            defaultActiveKey={routeParam === item.name ? [`${item.name}-sub`] : []}
+            defaultActiveKey={routeParam === key ? [`${key}-sub`] : []}
             items={[{
-              key: `${item.name}-sub`,
+              key: `${key}-sub`,
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>
@@ -120,13 +126,13 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <span style={{
-                      fontSize: 12, fontWeight: 500, color: '#FCD116',
+                      fontSize: 12, fontWeight: 500, color: badgeColor,
                       width: 50, height: 22, borderRadius: 88,
-                      border: '1px solid #FCD116',
+                      border: `1px solid ${badgeColor}`,
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FCD116' }} />
-                      {index + 1}
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
+                      {noti}
                     </span>
                     {renderCount(item.count)}
                   </div>
@@ -142,11 +148,13 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
                 <div style={{ marginTop: 4 }}>
                   {item.sub3.map((sub) =>
                     sub.detail.map((d) => {
-                      const isActive = d === detailParam
+                      const dKey = detailKey(d)
+                      const isActive = dKey === detailParam
+                      const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
                       return (
                         <div
-                          key={`${item.name}-${sub.label}-${d}`}
-                          onClick={() => router.push(`/admin/statistics/detail/status?route=${encodeURIComponent(item.name)}&detail=${encodeURIComponent(d)}`)}
+                          key={`${key}-${sub.label}-${dKey}`}
+                          onClick={() => router.push(`/admin/statistics/detail/status?route=${encodeURIComponent(key)}&detail=${encodeURIComponent(dKey)}`)}
                           style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             width: '100%', borderRadius: 8,
@@ -156,13 +164,13 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
                           }}
                         >
                           <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>
-                            {d}
+                            {detailLabel(d)}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            {sub.connected ? (
+                            {isOnline ? (
                               <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
                             ) : (
-                              <img src="/images/statistics/iconnoconnect.png.png" alt="no connect" width={20} height={20} />
+                              <img src="/images/statistics/iconnoconnect.png" alt="no connect" width={20} height={20} />
                             )}
                           </div>
                         </div>
@@ -174,7 +182,7 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ fromDrawer = false }) => 
             }]}
           />
         ),
-      }))}
+      }})}
     />
   )
 
