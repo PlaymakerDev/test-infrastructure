@@ -41,6 +41,9 @@ export { useHomeDeptId, resolveHomeDeptId, deptQuery } from './useHomeDeptId'
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'
 
+// Notifications summary — one row per source_type over a date window.
+export { useNotificationSummary } from './useNotificationSummary'
+
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
 
