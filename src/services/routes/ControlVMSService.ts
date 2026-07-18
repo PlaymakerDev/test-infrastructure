@@ -27,6 +27,22 @@ export const getVMSDepartmentAPI = async () => {
   })
 }
 
+// GET STATUS (composite health snapshot — operation/stream/box/last_setting)
+export const getVMSStatusAPI = async (vmsId: number | string) => {
+  return ApiService.fetchData<VMSStatusResponse>({
+    url: `/vms/vms/${vmsId}/status`,
+    method: 'GET',
+  })
+}
+
+// GET DETAILS (full solution detail — crossings/desktop_screen/camera/weather)
+export const getVMSDetailsAPI = async (solutionId: number | string) => {
+  return ApiService.fetchData<VMSDetails>({
+    url: `/vms/details/${solutionId}`,
+    method: 'GET',
+  })
+}
+
 // GET SETTING TYPE
 export const getVMSSettingTypeAPI = async () => {
   return ApiService.fetchData<APIResponseVMSSettingType>({
