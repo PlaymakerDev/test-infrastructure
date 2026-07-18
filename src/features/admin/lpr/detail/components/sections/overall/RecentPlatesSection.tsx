@@ -1,12 +1,14 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
 import { TbArrowRight, TbLicense } from 'react-icons/tb'
 import { useLPRPointPlates } from '@/hooks/queries/lpr'
+import type { LPRPointPlate } from '@/types/lpr/lpr-api'
 import { useLPRDetailContext } from '../../../context'
+import PlateDetailModal from '../../PlateDetailModal'
 
 dayjs.extend(relativeTime)
 
@@ -14,24 +16,14 @@ interface Props {
   onShowAll?: () => void
 }
 
-// Backend serves images from /api-v2/lpr proxy — the payload gives us a path
-// like "/anpr/2026/07/18/..." that must be joined with the backend base. Use
-// NEXT_PUBLIC_HOST_BACKEND (same env the auth layer uses) so dev + prod
-// both resolve to the right host.
-const resolveImg = (path?: string | null): string => {
-  if (!path) return ''
-  if (/^https?:\/\//i.test(path)) return path
-  const base = process.env.NEXT_PUBLIC_HOST_BACKEND ?? ''
-  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
-}
-
-/** Latest 5 plate detections at this install-point. Card-style with vehicle
- *  thumbnail + plate text + timestamp. Card click → open the plate detail
- *  page (existing /admin/lpr LICENSE tab search). */
+/** Latest 5 plate detections at this install-point. Card click → open the
+ *  shared PlateDetailModal (same one the Detection tab uses) with full-size
+ *  vehicle + plate images + metadata. */
 const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
   const { solutionId } = useLPRDetailContext()
   const { data, isLoading } = useLPRPointPlates(solutionId, { limit: 5 })
   const items = data?.pages?.[0]?.res_data ?? []
+  const [selected, setSelected] = useState<LPRPointPlate | null>(null)
 
   return (
     <div className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3'>
@@ -62,11 +54,20 @@ const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
         {items.map((it) => (
           <div
             key={it.id}
-            className='flex items-center gap-3 rounded-xl bg-(--light-black) p-2 hover:bg-black/40 transition-colors'
+            role='button'
+            tabIndex={0}
+            onClick={() => setSelected(it)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setSelected(it)
+              }
+            }}
+            className='cursor-pointer flex items-center gap-3 rounded-xl bg-(--light-black) p-2 hover:bg-black/40 transition-colors'
           >
             {it.vehicle_image ? (
               <Image
-                src={resolveImg(it.vehicle_image)}
+                src={it.vehicle_image}
                 alt={it.plate_number}
                 width={64}
                 height={48}
@@ -97,6 +98,8 @@ const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
           </div>
         ))}
       </div>
+
+      <PlateDetailModal item={selected} onClose={() => setSelected(null)} />
     </div>
   )
 }

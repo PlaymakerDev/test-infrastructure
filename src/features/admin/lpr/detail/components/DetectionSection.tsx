@@ -4,12 +4,13 @@ import Image from 'next/image'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
-import { Table, Button, Empty, Input, Modal, DatePicker } from 'antd'
+import { Table, Button, Empty, Input, DatePicker } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbSearch, TbCamera, TbCalendar } from 'react-icons/tb'
 import { useLPRPointPlates } from '@/hooks/queries/lpr'
 import type { LPRPointPlate, LPRSource } from '@/types/lpr/lpr-api'
 import { useLPRDetailContext } from '../context'
+import PlateDetailModal from './PlateDetailModal'
 
 dayjs.extend(relativeTime)
 
@@ -59,6 +60,14 @@ const DetectionSection: React.FC = () => {
   )
 
   const rows = useMemo(() => (data?.pages ?? []).flatMap((p) => p.res_data), [data])
+
+  // Hide the ความเร็ว column entirely when every loaded row lacks a real speed
+  // reading — ANPR-only sites always come through as speed=0/null (WIM is the
+  // source that populates it), so showing a full column of "-" is just noise.
+  const hasSpeed = useMemo(
+    () => rows.some((r) => r.speed != null && r.speed > 0),
+    [rows],
+  )
 
   const columns: ColumnsType<LPRPointPlate> = useMemo(
     () => [
@@ -117,21 +126,25 @@ const DetectionSection: React.FC = () => {
           </div>
         ),
       },
-      {
-        title: 'ความเร็ว',
-        key: 'speed',
-        width: 100,
-        align: 'right',
-        render: (_, r) =>
-          r.speed != null && r.speed > 0 ? (
-            <span className='tabular-nums text-white'>
-              {r.speed.toLocaleString('th-TH')}{' '}
-              <span className='fs-11 text-gray-500'>กม./ชม.</span>
-            </span>
-          ) : (
-            <span className='text-gray-500'>-</span>
-          ),
-      },
+      ...(hasSpeed
+        ? [
+            {
+              title: 'ความเร็ว',
+              key: 'speed',
+              width: 100,
+              align: 'right' as const,
+              render: (_: unknown, r: LPRPointPlate) =>
+                r.speed != null && r.speed > 0 ? (
+                  <span className='tabular-nums text-white'>
+                    {r.speed.toLocaleString('th-TH')}{' '}
+                    <span className='fs-11 text-gray-500'>กม./ชม.</span>
+                  </span>
+                ) : (
+                  <span className='text-gray-500'>-</span>
+                ),
+            },
+          ]
+        : []),
       {
         title: 'กล้อง',
         key: 'camera',
@@ -165,7 +178,7 @@ const DetectionSection: React.FC = () => {
         ),
       },
     ],
-    [],
+    [hasSpeed],
   )
 
   const applyPreset = (days: number) => {
@@ -274,68 +287,7 @@ const DetectionSection: React.FC = () => {
         </div>
       )}
 
-      <Modal
-        open={!!modalItem}
-        onCancel={() => setModalItem(null)}
-        footer={null}
-        title={modalItem ? `${modalItem.plate_number} · ${modalItem.plate_province}` : ''}
-        width={720}
-      >
-        {modalItem && (
-          <div className='flex flex-col gap-3'>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-              {modalItem.vehicle_image && (
-                <Image
-                  src={modalItem.vehicle_image}
-                  alt='vehicle'
-                  width={640}
-                  height={360}
-                  unoptimized
-                  className='w-full h-auto rounded-lg bg-black'
-                />
-              )}
-              {modalItem.plate_image && (
-                <Image
-                  src={modalItem.plate_image}
-                  alt='plate'
-                  width={640}
-                  height={360}
-                  unoptimized
-                  className='w-full h-auto rounded-lg bg-black object-contain'
-                />
-              )}
-            </div>
-            <dl className='grid grid-cols-2 gap-x-4 gap-y-1 fs-13'>
-              <dt className='text-gray-400'>เวลา</dt>
-              <dd>{modalItem.captured_at_display}</dd>
-              <dt className='text-gray-400'>กล้อง</dt>
-              <dd>{modalItem.camera_name || '-'}</dd>
-              <dt className='text-gray-400'>ที่มา</dt>
-              <dd>{SOURCE_LABEL[modalItem.source]}</dd>
-              <dt className='text-gray-400'>ประเภทรถ</dt>
-              <dd>{modalItem.vehicle_type_name || '-'}</dd>
-              <dt className='text-gray-400'>ยี่ห้อ</dt>
-              <dd>{modalItem.vehicle_brand || '-'}</dd>
-              <dt className='text-gray-400'>สี</dt>
-              <dd>{modalItem.vehicle_color || '-'}</dd>
-              {modalItem.speed != null && (
-                <>
-                  <dt className='text-gray-400'>ความเร็ว</dt>
-                  <dd>{modalItem.speed.toLocaleString('th-TH')} กม./ชม.</dd>
-                </>
-              )}
-              {modalItem.is_overweight != null && (
-                <>
-                  <dt className='text-gray-400'>น้ำหนักเกิน</dt>
-                  <dd className={modalItem.is_overweight ? 'text-red-400' : ''}>
-                    {modalItem.is_overweight ? 'ใช่' : 'ไม่'}
-                  </dd>
-                </>
-              )}
-            </dl>
-          </div>
-        )}
-      </Modal>
+      <PlateDetailModal item={modalItem} onClose={() => setModalItem(null)} />
     </div>
   )
 }

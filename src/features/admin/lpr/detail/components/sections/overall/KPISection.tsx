@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { TbBolt, TbCamera, TbLicense, TbGauge } from 'react-icons/tb'
+import { TbBolt, TbCamera, TbLicense, TbGauge, TbMapPin } from 'react-icons/tb'
 import { useLPRPointStats } from '@/hooks/queries/lpr'
 import { useLPRDetailContext } from '../../../context'
 
@@ -48,6 +48,7 @@ const KPISection: React.FC = () => {
   const eventsHour = point?.events_hour ?? 0
   const cameraCount = point?.camera_count ?? 0
   const avgSpeed = stats?.avg_speed ?? 0
+  const topProvince = stats?.province_top?.[0]
 
   const delta = totalToday - totalYest
   const deltaPct = totalYest > 0 ? (delta / totalYest) * 100 : null
@@ -83,17 +84,30 @@ const KPISection: React.FC = () => {
         sub='ในจุดติดตั้งนี้'
         color='#05F2DB'
       />
-      <StatCard
-        icon={<TbGauge size={20} />}
-        label='ความเร็วเฉลี่ย'
-        value={
-          avgSpeed > 0
-            ? `${avgSpeed.toFixed(1)}`
-            : '—'
-        }
-        sub={avgSpeed > 0 ? 'กม./ชม. · วันนี้' : 'ไม่มีข้อมูลความเร็ว'}
-        color='#B57BFF'
-      />
+      {/* 4th tile is context-sensitive: ANPR sites don't record speed, so
+       *  fall back to "จังหวัดตรวจจับสูงสุด" (matches dmon's KPI #4). WIM sites
+       *  keep the useful ความเร็วเฉลี่ย reading. */}
+      {avgSpeed > 0 ? (
+        <StatCard
+          icon={<TbGauge size={20} />}
+          label='ความเร็วเฉลี่ย'
+          value={avgSpeed.toFixed(1)}
+          sub='กม./ชม. · วันนี้'
+          color='#B57BFF'
+        />
+      ) : (
+        <StatCard
+          icon={<TbMapPin size={20} />}
+          label='จังหวัดตรวจจับสูงสุด'
+          value={topProvince?.province || '—'}
+          sub={
+            topProvince
+              ? `${fmt(topProvince.count)} ครั้ง · วันนี้`
+              : 'ยังไม่มีข้อมูลวันนี้'
+          }
+          color='#B57BFF'
+        />
+      )}
     </div>
   )
 }
