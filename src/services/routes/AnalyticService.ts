@@ -50,11 +50,18 @@ export const getIncidentCentralTotalsAPI = (deptId: string | number) =>
   })
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging. */
-export const getIncidentCentralListAPI = (deptId: string | number) =>
+export const getIncidentCentralListAPI = (
+  deptId: string | number,
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
+) =>
   ApiService.fetchData<APIResponseIncidentCentralList>({
     url: `${analyticBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...(params.scope ? { scope: params.scope } : centralScope(deptId)),
+      start_date: params.start_date,
+      end_date: params.end_date,
+    },
   })
 
 /** Flat paginated solution list (has offline_count directly). */

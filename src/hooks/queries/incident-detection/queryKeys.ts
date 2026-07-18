@@ -17,12 +17,12 @@ export const incidentKeys = {
     // `scopeKey()` keys the cache apart per URL scope — see scopeParam.ts.
     root: (deptId: string | number) =>
       [...incidentKeys.all, 'overview', deptId, scopeKey()] as const,
-    map: (deptId: string | number) =>
-      [...incidentKeys.overview.root(deptId), 'map'] as const,
+    map: (deptId: string | number, scope?: string) =>
+      [...incidentKeys.overview.root(deptId), 'map', scope ?? ''] as const,
     centralTotals: (deptId: string | number) =>
       [...incidentKeys.overview.root(deptId), 'central-totals'] as const,
-    centralList: (deptId: string | number) =>
-      [...incidentKeys.overview.root(deptId), 'central-list'] as const,
+    centralList: (deptId: string | number, scope?: string, dateRange?: { start_date?: string; end_date?: string }) =>
+      [...incidentKeys.overview.root(deptId), 'central-list', scope ?? '', dateRange ?? {}] as const,
     list: (deptId: string | number, params: APIRequestIncidentList) =>
       [...incidentKeys.overview.root(deptId), 'list', params] as const,
   },
