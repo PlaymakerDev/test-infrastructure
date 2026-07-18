@@ -1,4 +1,5 @@
 import { APIResponsePost, MetaData, SharedProject } from "../shared"
+import { Camera, DesktopScreen } from "../vms/detail-api"
 
 // DEPARTMENT
 export type APIResponseVMSDepartment = VMSDepartmentList[]
@@ -8,6 +9,8 @@ export interface VMSDepartmentList {
   department_short_name: string
   camera_online_count: number
   camera_offline_count: number
+  /** Sum of tbl_notification_logs (source_type='vms_setting') rows since `?since=`, rolled up from every solution under this bureau. */
+  noti_count: number
   sub_department: SubDepartment[]
 }
 
@@ -16,6 +19,7 @@ export interface SubDepartment {
   department_short_name: string
   camera_online_count: number
   camera_offline_count: number
+  noti_count: number
   roads: Road[]
 }
 
@@ -32,12 +36,118 @@ export interface Solution {
   solution_name: string
   anydesk: string
   geo_point: number[]
+  latitude: number
+  longitude: number
   project: SharedProject
   desktop_screen: string
   last_connected: string
   is_online: boolean
   camera_online_count: number
   camera_offline_count: number
+  noti_count: number
+}
+
+// NOTIFICATIONS (per-VMS history — GET /vms/{vms_id}/notifications)
+export type VMSNotificationStatus = 'info' | 'warning' | 'alert' | 'critical'
+
+export interface VMSNotificationItem {
+  category: string
+  event_code: string
+  event_name: string
+  setting_type_id: number
+  status: VMSNotificationStatus
+  timestamp: string
+  type_name: string
+}
+
+export interface APIResponseVMSNotifications {
+  count: number
+  items: VMSNotificationItem[]
+}
+
+// STATUS (composite health snapshot — GET /vms/{vms_id}/status)
+export interface VMSStatusResponse {
+  vms_id: number
+  operation: {
+    is_online: boolean
+    label: 'ทำงานปกติ' | 'ขาดการเชื่อมต่อ'
+    raw_status: number | null
+  }
+  stream: {
+    is_online: boolean
+    last_connected: string | null
+  }
+  box: {
+    is_connected: boolean
+    label: 'connect' | 'disconnect'
+    connected_count: number
+    total_count: number
+  }
+  last_setting: {
+    setting_id: number
+    setting_type_id: number | null
+    type_name: string
+    media_type: string
+    status: number
+  } | null
+  zt_ip_address: string | null
+}
+
+// DETAILS (full solution detail — GET /vms/details/{solution_id})
+export interface VMSDetails {
+  id: number
+  solution_id: number
+  last_connected: string
+  weather_id: number | null
+  /** Absent entirely (not even `null`) for solutions with no crossing signal — confirmed live. */
+  crossings?: {
+    id: number
+    vms_id: number
+    wid: number
+    crossing_master_index: string
+  } | null
+  desktop_screen: DesktopScreen | null
+  solution: {
+    id: number
+    solution_name: string
+    solution_type_id: number
+    sta: string | null
+    solution_location: {
+      solution_location_id: number
+      location_name: string
+      project_roads: {
+        project_road_id: number
+        road: {
+          id: number
+          road_code: string
+          road_name: string
+        }
+      }
+    } | null
+  }
+  vms_camera: {
+    id: number
+    vms_id: number
+    camera_id: string
+    camera: Camera
+  }[]
+  vms_weather: {
+    id: number
+    road_id: number
+    icon: string | null
+    temp_url: string | null
+    waqi_url: string | null
+    weather_logs: {
+      id: number
+      weather_id: number
+      hour_timestamp: string
+      temperature: number
+      humidity: number
+      pm2: number
+      aqi: number
+      wind_speed: number
+    }[]
+  } | null
 }
 
 // SETTING TYPE

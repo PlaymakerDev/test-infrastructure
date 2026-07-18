@@ -16,7 +16,9 @@ import {
   APIResponsePutVMSSettingType,
   APIResponseDeleteVMSSettingType,
   APIRequestVMSMediaUrl,
-  APIResponseVMSMediaUrl
+  APIResponseVMSMediaUrl,
+  VMSStatusResponse,
+  VMSDetails
 } from "@/types/control-vms/vms-api"
 
 // VMS
