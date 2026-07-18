@@ -25,3 +25,13 @@ export interface APIResponseCCTVDetail {
   wim_camera?: SharedSolution
   vms?: SharedSolution
 }
+
+/** GET /cctv/{id} — distinct from GET /cctv/cameras/{id} (APIResponseCCTVDetail
+ *  above). This one carries `road_code`, which the camera-detail endpoint doesn't. */
+export interface APIResponseCCTVRoad {
+  id: string
+  camera_name: string
+  road_code: string
+  hls_url: string
+  solutions: { solution_type_id: number; solution_name: string }[]
+}
