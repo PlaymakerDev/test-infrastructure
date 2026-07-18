@@ -19,6 +19,12 @@ import { showReactPopup } from './popupHelper'
 
 type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, Record<string, unknown>>
 
+/** Deterministic Mapbox source id for a given MarkerLayer `id` prop — lets a
+ *  caller's `onClusterClick` call `map.getSource(...)` for its own
+ *  `getClusterExpansionZoom`/`getClusterLeaves` calls without hardcoding
+ *  this component's internal naming convention. */
+export const markerLayerSourceId = (id: string) => `markerlayer-src-${id}`
+
 /**
  * Generic marker layer — wraps a GeoJSON source plus 1-3 mapbox layers.
  *
@@ -45,10 +51,46 @@ export interface MarkerLayerProps {
   size?: number
   /** Stroke around circle (default white 2px for unclustered, 2.5px for cluster) */
   strokeColor?: string
+  /** Stroke width for unclustered points (default 2) */
+  strokeWidth?: number
+  /** Stroke width for cluster bubbles (default 2.5) */
+  clusterStrokeWidth?: number
   /** Optional registered icon image name. Must be added to map BEFORE this component renders */
   iconImage?: string
   /** Icon scale relative to the source 64px image (default 0.36 unclustered, ramps for cluster) */
   iconSize?: number
+
+  /** GeoJSON property (string or number) to show as text on UNCLUSTERED points
+   *  too, not just the cluster count badge. Omit to keep unclustered points
+   *  textless (default — matches every existing consumer). */
+  unclusteredCountProperty?: string
+  /** Numeric GeoJSON property to SUM across merged points and show as the
+   *  cluster bubble's text, instead of Mapbox's default `point_count`
+   *  (literally "how many points got merged here" — meaningless/inconsistent
+   *  when the same property is also shown per-item via
+   *  `unclusteredCountProperty`, e.g. "3 install points" on one marker vs
+   *  "4 markers merged" on a cluster). Omit to keep the default behavior. */
+  clusterSumProperty?: string
+  /** Numeric GeoJSON property (typically a 0/1 flag) to SUM across merged
+   *  points into a cluster property named "colorSum" — lets `color`'s
+   *  expression branch a cluster bubble by an aggregated condition (e.g.
+   *  "any offline device in this cluster") instead of always falling back
+   *  to a flat default, since Mapbox clusters don't otherwise inherit
+   *  arbitrary per-feature properties like `color`. Omit to skip. */
+  clusterColorSumProperty?: string
+  /** Caps the cluster bubble's SUMMED text (via `clusterSumProperty`) at this
+   *  value — a cluster whose sum exceeds it shows `${countCapThreshold}+`
+   *  instead of the raw sum. Has no effect without `clusterSumProperty`, and
+   *  no effect on unclustered points (cap that yourself in the GeoJSON
+   *  property passed to `unclusteredCountProperty`). */
+  countCapThreshold?: number
+  /** Text anchor for the count/label (default 'top', matching the
+   *  icon+badge-below-it layout). Pass 'center' for a plain circle+number
+   *  marker with no icon. */
+  textAnchor?: 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  textOffset?: [number, number]
+  textSize?: number
+  textColor?: string
 
   /** minzoom on all layers */
   minZoom?: number
@@ -78,8 +120,18 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   color,
   size = 18,
   strokeColor = '#ffffff',
+  strokeWidth = 2,
+  clusterStrokeWidth = 2.5,
   iconImage,
   iconSize,
+  unclusteredCountProperty,
+  clusterSumProperty,
+  clusterColorSumProperty,
+  countCapThreshold,
+  textAnchor = 'top',
+  textOffset = [0, 0.5],
+  textSize = 12,
+  textColor = '#ffffff',
   minZoom,
   visible = true,
   onClick,
@@ -88,7 +140,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   popupOptions,
 }) => {
   const { map, isLoaded } = useMap()
-  const sourceId = `markerlayer-src-${id}`
+  const sourceId = markerLayerSourceId(id)
   const clusterLayerId = `markerlayer-cluster-${id}`
   const pointLayerId = `markerlayer-point-${id}`
   const symbolLayerId = `markerlayer-symbol-${id}`
@@ -110,7 +162,15 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     const sourceSpec: GeoJSONSourceSpecification = {
       type: 'geojson',
       data,
-      ...(cluster && { cluster: true, clusterMaxZoom, clusterRadius }),
+      ...(cluster && {
+        cluster: true, clusterMaxZoom, clusterRadius,
+        ...((clusterSumProperty || clusterColorSumProperty) && {
+          clusterProperties: {
+            ...(clusterSumProperty && { sum: ['+', ['get', clusterSumProperty]] }),
+            ...(clusterColorSumProperty && { colorSum: ['+', ['get', clusterColorSumProperty]] }),
+          },
+        }),
+      }),
     }
     map.addSource(sourceId, sourceSpec)
 
@@ -125,7 +185,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': ['step', ['get', 'point_count'], 22, 10, 26, 50, 30, 100, 36],
-          'circle-stroke-width': 2.5,
+          'circle-stroke-width': clusterStrokeWidth,
           'circle-stroke-color': strokeColor,
           'circle-opacity': 0.95,
         },
@@ -142,7 +202,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': size,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': strokeWidth,
           'circle-stroke-color': strokeColor,
         },
       }
@@ -180,17 +240,21 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           'text-field': [
             'case',
             ['has', 'point_count'],
-            ['get', 'point_count_abbreviated'],
-            '',
+            clusterSumProperty
+              ? (countCapThreshold !== undefined
+                ? ['case', ['>', ['get', 'sum'], countCapThreshold], `${countCapThreshold}+`, ['to-string', ['get', 'sum']]] as ExpressionSpecification
+                : ['to-string', ['get', 'sum']] as ExpressionSpecification)
+              : ['get', 'point_count_abbreviated'],
+            unclusteredCountProperty ? ['to-string', ['get', unclusteredCountProperty]] : '',
           ],
           'text-font': ['Arial Unicode MS Bold'],
-          'text-size': 12,
-          'text-anchor': 'top',
-          'text-offset': [0, 0.5],
+          'text-size': textSize,
+          'text-anchor': textAnchor,
+          'text-offset': textOffset,
           'text-allow-overlap': true,
           'text-ignore-placement': true,
         },
-        paint: { 'text-color': '#ffffff' },
+        paint: { 'text-color': textColor },
       }
       map.addLayer(symbolSpec)
     } else {
@@ -203,7 +267,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         paint: {
           'circle-color': color,
           'circle-radius': size,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': strokeWidth,
           'circle-stroke-color': strokeColor,
         },
       }
@@ -305,8 +369,8 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
-    cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor,
-    iconImage, iconSize, minZoom,
+    cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor, strokeWidth, clusterStrokeWidth,
+    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor, minZoom,
   ])
 
   // Update data without rebuilding layers
