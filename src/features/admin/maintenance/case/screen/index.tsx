@@ -290,7 +290,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   // from whichever solution the camera is actually linked to.
   const fallbackSolutionId = cameraDetail
     ? [cameraDetail.counting, cameraDetail.analytic, cameraDetail.traffic, cameraDetail.crosswalk, cameraDetail.wim_camera, cameraDetail.vms]
-        .find((s) => s != null)?.solution_id
+      .find((s) => s != null)?.solution_id
     : undefined
 
   return (

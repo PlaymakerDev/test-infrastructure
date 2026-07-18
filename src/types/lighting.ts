@@ -104,6 +104,30 @@ export interface DetailsResponse {
   electricity: DetailsElectricityItem[]
 }
 
+/** GET /lighting/diagrams/{imei} → circuit diagram data behind the diagram
+ *  iframe. `components` (the drawable nodes — breakers, contactors, lamps,
+ *  etc. with canvas positions) is sometimes empty even when `connections`
+ *  (the wires between component ids) is populated — a backend data gap, not
+ *  a fetch error. The iframe viewer then silently renders a blank canvas. */
+export interface LightingDiagram {
+  imei: string
+  components: unknown[]
+  connections: unknown[]
+}
+
+/** GET /lighting/departments/{id}/overview/top-power-roads?start_date=&end_date=
+ *  → roads ranked by total power draw (kW) descending, for the given date
+ *  range (both params required by the backend). */
+export interface TopPowerRoadItem {
+  road: {
+    id: number
+    code_name: string
+    road_name: string
+  }
+  install_points: number
+  total_kw: number
+}
+
 /** GET /lighting/logs4g/graph/volt → [{ Period_Name, volt }]
  *  GET /lighting/logs4g/graph/amp  → [{ Period_Name, amp }]
  *  Period_Name is an hourly label "00:00".."23:00"; volt/amp null when no data. */
@@ -153,33 +177,45 @@ export interface PaginatedAlerts {
   meta_data: PaginationMeta
 }
 
-/** GET /lighting/logs4g?imei= → raw IoT log records for today.
- *  Each record has a `data_type` (UPS1, UPS2, circuit, volt_amp, FMTS,
- *  line-check); the meaning of fields a..o depends on the type, so we keep
- *  them as a string bag and interpret per-type in the UI. */
-export interface Logs4gRecord {
-  data_type: string
-  date_time: string
-  phase: number
-  e: string
-  f: string
-  g: string
-  h: string
-  i: string
-  j: string
-  k: string
-  l: string
-  m: string
-  n: string
-  o: string
-  line_detect1: string | null
-  line_detect2: string | null
-  line_detect3: string | null
-  line_detect4: string | null
-  line_detect5: string | null
-  line_detect6: string | null
-  line_detect7: string | null
-  line_detect8: string | null
-  [key: string]: string | number | null
+/** GET /lighting/logs4g/central?imei=&start_date=&end_date=&data_type=&page=&limit=
+ *  → paginated IoT log records read from daily Mongo collections, sorted by
+ *  created_at DESC. Replaces the old /lighting/logs4g (which silently ignored
+ *  its `date` param and always returned "today"). */
+export type Logs4gCentralDataType = 'volt_amp' | 'FMTS' | 'circuit' | 'UPS1' | 'UPS2' | 'UPS3' | 'line_check'
+
+/** `circuit` status shape — first 5 fields map to ST/MB/PS/MC1/MC2; CB1-4 are
+ *  always null; TFM is always 1 (per spec). */
+export interface Logs4gCircuitStatus {
+  ST: number
+  MB: number
+  PS: number
+  MC1: number
+  MC2: number
+  CB1: number | null
+  CB2: number | null
+  CB3: number | null
+  CB4: number | null
+  TFM: number
+}
+
+/** `status` shape depends on `data_type`:
+ *  - volt_amp/FMTS → string "{V} V - {A} A"
+ *  - circuit        → Logs4gCircuitStatus
+ *  - UPS1/UPS2/UPS3 → string "{f} {g} {h}"
+ *  - line_check     → array of 8 (int | null), one per line_detect1..8 */
+export type Logs4gCentralStatus = string | Logs4gCircuitStatus | Array<number | null>
+
+export interface Logs4gCentralItem {
+  /** Asia/Bangkok, formatted "YYYY-MM-DD HH:mm:ss" */
+  created_at: string
+  data_type: Logs4gCentralDataType
+  /** null when the source value is 0 */
+  phase: number | null
+  status: Logs4gCentralStatus
+}
+
+export interface PaginatedLogs4gCentral {
+  res_data: Logs4gCentralItem[]
+  meta_data: PaginationMeta
 }
 
