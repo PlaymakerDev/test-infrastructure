@@ -42,6 +42,11 @@ const COUNTRY_VIEW = {
   zoom: 5.2,
 }
 const PROVINCE_ZOOM_THRESHOLD = 6.5
+// Above this zoom, drop the province/bureau hover chrome (yellow outlines,
+// parent-สำนัก glow, tooltip, pointer cursor). It's a country/province-picker
+// affordance; once the user has drilled in enough to see roads/markers, the
+// hover paints huge multi-province swaths of yellow that just obscure the map.
+const HOVER_MAX_ZOOM = 10
 
 // BE returns "Crosswalk" while the FE enum is "CrossWalk" (capital W). Other
 // types match 1:1. Anything not in this map is rejected so the marker layer
@@ -390,6 +395,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
 
     const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // Zoomed past the picker range — no more province/bureau highlight.
+      if (map.getZoom() >= HOVER_MAX_ZOOM) { clearHover(); return }
       // Cursor is over an HTML overlay (marker/badge/popup) — not the map.
       if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
       const code = e.features?.[0]?.properties?.code as string | undefined
@@ -426,13 +433,20 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
     container.addEventListener('mousemove', onDomMove)
 
+    // Panning-with-zoom or fly-to may cross the HOVER_MAX_ZOOM boundary while
+    // the cursor is still hovering the layer — mousemove won't fire until the
+    // user actually moves, so a stale yellow highlight would linger. Listen
+    // to zoom directly and clear as we cross the threshold.
+    const onZoom = () => { if (map.getZoom() >= HOVER_MAX_ZOOM) clearHover() }
     map.on('click', PROVINCE_CLICK_LAYER_ID, onClick)
     map.on('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
     map.on('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
+    map.on('zoom', onZoom)
     return () => {
       map.off('click', PROVINCE_CLICK_LAYER_ID, onClick)
       map.off('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
       map.off('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
+      map.off('zoom', onZoom)
       container.removeEventListener('mousemove', onDomMove)
       tooltip.remove()
     }
