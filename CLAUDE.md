@@ -477,6 +477,41 @@ Also added `POST /api-v2/gateways/wim/heartbeat {station_id}` (`Klanarm/drr_its_
 
 **Verified:** `npx tsc --noEmit` clean (only the 2 pre-existing, unrelated `MaintenanceService.ts` errors remain); ESLint clean on every touched/new file; 109/109 unit tests pass (91 → 109, all 18 new in `tracking.test.ts`); `next build`'s Turbopack compile step succeeds for the whole app (the build's separate full-project TS gate still fails only on the same untouched `MaintenanceService.ts` error). **Not verified:** interactive browser click-through — the route is RBAC/session-gated and no browser automation tool was available in this environment.
 
+## Backend sync worker landscape (added 2026-07-18)
+
+The `drr_worker.service` on 10.10.0.104 runs 8 cron jobs plus 4 aggregations —
+this is where legacy MySQL data flows into new PG (`its_db`), where the
+dashboard's `is_online` flag comes from, and where auto-generated maintenance
+cases originate. Read this before touching any feature that shows install-point
+counts, camera lists, or offline pill colours.
+
+| Job | Cadence | Source → Target |
+|---|---|---|
+| `VMSSync` | :00 + startup | legacy `tbl_work_master (type_name=TrafficSign)` → `vms.tbl_vms` + related |
+| `BridgeLightingSync` | :00 + startup | legacy `tbl_work_master (type_name=BridgeLighting)` → `bridge_lighting.tbl_bridge_lighting` |
+| `SolutionSync` | :30 + startup | legacy `tbl_work_master` (8 types) → `tbl_solution` |
+| `CameraSync` | :45 + startup | legacy `tbl_cctv` → `cctv.tbl_camera` |
+| `EnixmaURL` | :45 + startup | legacy `tbl_vmsscreen_enixma_provision` → `vms.tbl_vms_desktop_screen.desktop_screen` (via dblink) |
+| `CaseAutoOpen` | :10/:30/:50 + startup | offline in-warranty solutions → `tbl_maintenance_case` (+ email vendor) |
+| `VMSStatusProgress` | */5 min | `vms.tbl_vms_setting` stuck at status 0 → 3/4 |
+| `Counting/Traffic/Crosswalk/Lighting agg` | :01 hourly | Hourly buckets |
+
+Migration tracking: `public.tbl_work_master_migration` — composite PK `(wid, type_name)` because legacy tbl_work_master shares `id` across type_names for the same physical install-point.
+
+is_online logic: manage service `/manage/solution/{deptId}/position` returns `is_online: boolean | null` via 6 LEFT JOIN LATERAL blocks gated on `ts.solution_type_id`. Thresholds: CCTV `bool_or(curl_status)` no window · Traffic `connection_status='connected' AND traffic_connected_at > NOW()-15m` · VMS `last_connected > NOW()-30m` · WIM `wim_connected_at > NOW()-30m` · Lighting `MAX(lighting_iot_status.last_update) > NOW()-60m` · BridgeLighting `last_update > NOW()-90m`.
+
+## Maintenance case workflow (added 2026-07-18)
+
+State machine: `open → in_progress → pending_approval → closed` (plus rejected → back to in_progress). `tbl_maintenance_case.camera_id` is nullable now; the row accepts any of `camera_id | project_id | solution_id`. `contractor_id` pins it to the vendor. `POST /manage/maintenance/case/{case_no}/approve` handles the officer close. `GET /manage/maintenance/contractor-summary` feeds `/admin/maintenance/contractor-summary` (per-vendor offline-device rollup). SMTP mailer at `worker/mailer/mailer.go` runs in log-only mode until env vars `SMTP_HOST/PORT/USERNAME/PASSWORD/FROM/FROM_NAME` are set on the service unit.
+
+Contractor emails live in `tbl_contractors.email` (added 2026-07-18). Settings → ผู้รับจ้าง form now has an email input.
+
+## Ticket 15 ก.ค. 2569 — status
+
+All 8 top-level ticket items delivered live 2026-07-18. Session log + open follow-ups: see project-ticket-150769-status memory. FE features live: 18-สำนัก polygon overlay, road-code search, three-way hide dropdown, KPI tile row, CCTV nationwide search, Traffic phase arrows via `is_main_road`, Smart Search markdown-link + inline-image render, contractor summary page, seamless deploy pipeline.
+
+Deploy RULE (2026-07-18 Keng): `/home/kaiser/auto-pull-build-its-new.sh` NEVER stops the service before `next build` — it does `mv .next .next.old → next build → systemctl restart → rm -rf .next.old`. Downtime ~2s, not 30-60s. Old script backed up at `.bak.pre-seamless`.
+
 ## Environment Variables
 
 | Variable | Purpose | Note |
