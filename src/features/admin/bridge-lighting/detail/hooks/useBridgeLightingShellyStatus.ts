@@ -13,10 +13,9 @@ export const useBridgeLightingShellyStatus = (
     queryKey: bridgeLightingDetailKeys.shellyStatusDetail(String(id ?? ''), scope),
     queryFn: () => postBridgeLightingShellyStatusAPI({ wid: String(wid) }),
     enabled: !!deptId && !!id && isWidReady,
-    // Poll every 5s so the "สถานะการทำงาน" card auto-flips right after the
-    // ON/OFF command lands on the shelly device — user report was that they
-    // had to F5 to see the new state. Also drives the pending overlay in
-    // BridgeLightingStatus, which watches the payload for a state flip.
+    // Idle cadence — real-time confirmation of a just-issued ON/OFF command
+    // is layered on top by BridgeLightingStatus, which calls invalidateQueries
+    // every 2 s while `pendingTarget != null`.
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
   })

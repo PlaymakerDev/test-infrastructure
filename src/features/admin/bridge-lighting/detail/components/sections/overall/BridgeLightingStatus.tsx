@@ -5,11 +5,17 @@ import { AnimatePresence, motion } from 'motion/react'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { TbBulb, TbBulbOff, TbLoader2, TbSparkles } from 'react-icons/tb'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/th'
+import { useQueryClient } from '@tanstack/react-query'
+import { bridgeLightingDetailKeys } from '@/features/admin/bridge-lighting/detail/data/queryKeys'
 import FormUpdateBridgeLightingStatus from './FormUpdateBridgeLightingStatus'
 import {
   APIResponseBridgeLightingWID,
   APIResponsePostShellyStatus,
 } from '@/types/bridge-lighting/overall-api'
+
+dayjs.extend(relativeTime)
 
 interface Props {
   widData?: APIResponseBridgeLightingWID
@@ -35,14 +41,23 @@ const BridgeLightingStatus: React.FC<Props> = ({
   shellyStatusData,
   isShellyStatusSuccess,
 }) => {
+  const queryClient = useQueryClient()
   const [editMode, setEditMode] = useState(false)
   const [pendingTarget, setPendingTarget] = useState<boolean | null>(null)
-  const pendingSinceRef = useRef<number | null>(null)
+  const [pendingSince, setPendingSince] = useState<number | null>(null)
+  const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
   // `?.[0]` on the array — the shelly endpoint returns `data: null` for
   // never-connected wids (e.g. wid 1901); `data[0]` would crash on null.
   const shellyStatus = shellyStatusData?.data?.[0]
   const isOn = !!shellyStatus?.output
+
+  // Second-resolution ticker for the "อัพเดตล่าสุด" indicator + pending
+  // "รอมา N วิ" counter. Cheap — one setState per second, no cascade.
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 1_000)
+    return () => clearInterval(t)
+  }, [])
 
   // Clear the pending overlay once the poll reports the target state.
   // Also auto-clear after 30 s to avoid leaving a stuck overlay if the
@@ -51,19 +66,31 @@ const BridgeLightingStatus: React.FC<Props> = ({
     if (pendingTarget == null) return
     if (isOn === pendingTarget) {
       setPendingTarget(null)
-      pendingSinceRef.current = null
+      setPendingSince(null)
     }
   }, [isOn, pendingTarget])
   useEffect(() => {
     if (pendingTarget == null) return
-    const since = pendingSinceRef.current ?? Date.now()
-    pendingSinceRef.current = since
+    setPendingSince((v) => v ?? Date.now())
     const t = setTimeout(() => {
       setPendingTarget(null)
-      pendingSinceRef.current = null
+      setPendingSince(null)
     }, 30_000)
     return () => clearTimeout(t)
   }, [pendingTarget])
+
+  // Real-time push while the overlay is up — invalidate the shelly-status
+  // query every 2 s so React Query refetches faster than the idle 5 s
+  // interval. Layered on top of the hook's default cadence.
+  useEffect(() => {
+    if (pendingTarget == null) return
+    const t = setInterval(() => {
+      queryClient.invalidateQueries({
+        queryKey: bridgeLightingDetailKeys.shellyStatus(),
+      })
+    }, 2_000)
+    return () => clearInterval(t)
+  }, [pendingTarget, queryClient])
 
   const stateLabel = isOn ? 'เปิดไฟประดับสะพาน' : 'ปิดไฟประดับสะพาน'
   const stateColor = isOn ? ON_COLOR : OFF_COLOR
@@ -73,6 +100,17 @@ const BridgeLightingStatus: React.FC<Props> = ({
     if (!shellyStatus?.last_seen) return '—'
     return dayjs(shellyStatus.last_seen).format('DD MMM BBBB HH:mm:ss')
   }, [shellyStatus?.last_seen])
+
+  const lastUpdateRelative = useMemo(() => {
+    if (!shellyStatus?.last_seen) return '—'
+    // Recompute against the second-resolution ticker so the label updates
+    // live even without a fresh payload arriving.
+    void nowTick
+    return dayjs(shellyStatus.last_seen).locale('th').fromNow()
+  }, [shellyStatus?.last_seen, nowTick])
+
+  const pendingElapsedSec =
+    pendingSince != null ? Math.max(0, Math.floor((nowTick - pendingSince) / 1000)) : 0
 
   if (!isShellyStatusSuccess) return null
 
@@ -93,16 +131,29 @@ const BridgeLightingStatus: React.FC<Props> = ({
           </div>
           <div className='flex items-center gap-3'>
             <div
-              className='shrink-0 w-11 h-11 rounded-full flex items-center justify-center'
+              className='shrink-0 w-11 h-11 rounded-full flex items-center justify-center relative'
               style={{ background: `${stateColor}33`, color: stateColor }}
             >
               {stateIcon}
+              {/* Live-tracking pulse — signals that the card is polling. */}
+              <span
+                className='absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full'
+                style={{ background: stateColor, boxShadow: `0 0 8px ${stateColor}` }}
+              >
+                <span
+                  className='absolute inset-0 rounded-full animate-ping'
+                  style={{ background: stateColor, opacity: 0.5 }}
+                />
+              </span>
             </div>
-            <div className='min-w-0'>
+            <div className='min-w-0 flex-1'>
               <h3 className='mb-0' style={{ color: stateColor }}>
                 {stateLabel}
               </h3>
-              <p className='fs-12 text-gray-400 mb-0'>อัพเดตล่าสุด : {lastUpdate} น.</p>
+              <p className='fs-12 text-gray-400 mb-0'>
+                อัพเดตล่าสุด : {lastUpdateRelative}
+                <span className='ml-2 text-gray-500'>({lastUpdate} น.)</span>
+              </p>
             </div>
           </div>
         </div>
@@ -176,6 +227,9 @@ const BridgeLightingStatus: React.FC<Props> = ({
                 กำลังส่งคำสั่ง{pendingTarget ? 'เปิด' : 'ปิด'}ไฟประดับสะพาน
                 <br />
                 โปรดรอสักครู่จนกว่าจะเปลี่ยนคำสั่งสำเร็จ
+              </div>
+              <div className='fs-11 text-(--yellow) tabular-nums mt-1'>
+                รอมา {pendingElapsedSec} วินาที · ตรวจสอบทุก 2 วินาที
               </div>
             </div>
           </motion.div>
