@@ -1,4 +1,4 @@
-import { Card, Col, Row, Tag } from 'antd'
+import { Col, Row } from 'antd'
 import React from 'react'
 import { TbFlag, TbTruck, TbVideo } from "react-icons/tb";
 import { useDailyCount } from '../../../hooks';

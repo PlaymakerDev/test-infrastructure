@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import { WhiteTeardropPin } from '@/components/map/markers/OverlapMarkers'
+import { WhiteTeardropPin, OFFLINE_PIN_COLOR } from '@/components/map/markers/OverlapMarkers'
 import { useMap } from '@/components/map/hooks/useMap'
 import { useDetailContext } from '../../../context'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
@@ -72,7 +72,10 @@ const SignalMarker: React.FC<{ project: TrafficSignalProject }> = ({ project }) 
       popup={() => <DetailSignalPopup project={project} />}
       popupOptions={{ offset: 18, closeButton: false }}
     >
-      <WhiteTeardropPin />
+      {/* Single device at this pin — offline paints it red (all-offline rule). */}
+      <WhiteTeardropPin
+        color={project.connection === 'online' ? undefined : OFFLINE_PIN_COLOR}
+      />
     </HTMLMarker>
   )
 }

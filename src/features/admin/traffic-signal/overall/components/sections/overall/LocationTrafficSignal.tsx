@@ -15,7 +15,11 @@ interface Props {}
  *  Stacks vertically on mobile. */
 const LocationTrafficSignal: React.FC<Props> = () => {
   return (
-    <MapFocusGrid>
+    // LEFT rail widened 280→320px (other menus keep the 280 default): the
+    // camera cards show "IP : x.x.x.x" + phase/type pills on ONE row at the
+    // original font sizes, and the longest IPs (e.g. 10.101.200.193) need the
+    // extra room to not wrap.
+    <MapFocusGrid desktopCols='320px minmax(0, 1fr) 280px'>
       {/* LEFT — Camera list */}
       <MapOverlayPanel
         position='left'

@@ -54,9 +54,13 @@ const CctvMarkerInfoPanel: React.FC<Props> = ({ cameras, onClose, onOpenLive }) 
   const [selectedId, setSelectedId] = useState(cameras[0]?.id)
 
   // Reset to the first camera whenever a different marker (group) is selected.
-  useEffect(() => {
+  // Adjusted during render (sanctioned pattern) rather than synchronously in
+  // an effect, which the set-state-in-effect lint forbids.
+  const [prevCameras, setPrevCameras] = useState(cameras)
+  if (prevCameras !== cameras) {
+    setPrevCameras(cameras)
     setSelectedId(cameras[0]?.id)
-  }, [cameras])
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['cctv_detail', String(selectedId ?? '')],

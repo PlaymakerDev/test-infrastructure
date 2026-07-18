@@ -22,6 +22,13 @@ export interface IncidentCameraMapItem {
    * code change once it arrives.
    */
   license?: string | null
+  /**
+   * Online status. NOT returned by /analytic's cameras endpoint yet (BE TODO —
+   * crosswalk's equivalent got it 2026-07-03). Drives the red/white map pin;
+   * pins stay white until BE populates it. Same map-in-when-it-arrives
+   * contract as `license` above.
+   */
+  is_online?: boolean
 }
 
 export interface APIResponseIncidentCameras {

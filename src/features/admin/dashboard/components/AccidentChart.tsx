@@ -229,7 +229,7 @@ const AccidentChart: React.FC<Props> = () => {
       <div className='relative z-10 flex items-center justify-between mb-2'>
         <div className='flex items-center gap-2 text-white text-sm font-medium'>
           <TbCarCrash size={30} color='#FCD116' />
-          ปริมาณการเกิดอุบัติเหตุ
+          ปริมาณการเกิดอุบัติการณ์
         </div>
         <Tabs value={tab} onChange={setTab} options={TAB_OPTIONS} />
       </div>

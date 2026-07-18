@@ -30,6 +30,13 @@ const PERIOD_OPTIONS: Array<{ label: string; value: FormSearchValues['period'] }
   { label: "เดือนนี้", value: "THIS_MONTH" },
 ]
 
+const STATUS_OPTIONS: Array<{ label: string; value: FormSearchValues['status'] }> = [
+  { label: "เปิดปกติ", value: "normal" },
+  { label: "ระบบขัดข้อง", value: "abnormal" },
+  { label: "ไม่ส่งข้อมูล", value: "wim_disconnected" },
+  { label: "ทั้งหมด", value: "ALL" },
+]
+
 const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchValues['date'] => {
   switch (period) {
     case 'TODAY':
@@ -46,13 +53,6 @@ const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchVal
       return null
   }
 }
-
-const STATUS_OPTIONS: Array<{ label: string; value: FormSearchValues['status'] }> = [
-  { label: "เปิดปกติ", value: "normal" },
-  { label: "ระบบขัดข้อง", value: "abnormal" },
-  { label: "ไม่ส่งข้อมูล", value: "wim_disconnected" },
-  { label: "ทั้งหมด", value: "ALL" },
-]
 
 const FormSearchVehicle: React.FC<Props> = (props) => {
   const { onSearch } = props

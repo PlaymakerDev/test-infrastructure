@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
+import { OFFLINE_PIN_COLOR } from '@/components/map/markers/OverlapMarkers'
 import type { PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 
 interface Props {
@@ -26,9 +27,10 @@ interface CamGroup {
 
 // ── Teardrop pin ────────────────────────────────────────────────────────────────
 
-const CameraPin: React.FC<{ online: boolean; count: number }> = ({ count }) => {
-  // Always white — offline is no longer shown red (color-only change per request).
-  const color = '#ffffff'
+const CameraPin: React.FC<{ online: boolean; count: number }> = ({ online, count }) => {
+  // `online` = "any camera at this pin is online" (group.cameras.some) — so
+  // false means EVERY camera here is offline → red; any online keeps white.
+  const color = online ? '#ffffff' : OFFLINE_PIN_COLOR
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
       <div

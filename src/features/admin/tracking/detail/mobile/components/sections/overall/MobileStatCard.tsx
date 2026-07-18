@@ -1,13 +1,17 @@
+import { MobileDailyCountData } from '@/types/tracking/detail-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import Image from 'next/image'
 import React from 'react'
 
-interface Props { }
+interface Props {
+  data?: MobileDailyCountData
+}
 
 const TRUCK_IMG = '/images/vehicles/placeholder/truck-icon.svg'
 
 const MobileStatCard: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
@@ -20,12 +24,12 @@ const MobileStatCard: React.FC<Props> = (props) => {
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
           <h4 className="text-blue-500 mb-0">รถบรรทุกเข้าชั่ง</h4>
           <p className="mb-0">
-            <span className="fs-22 font-bold">1,708</span>{' '}
+            <span className="fs-22 font-bold">{fmtNumber(Number(data?.sum_total)) || 0}</span>{' '}
             <span className="fs-12 text-gray-300">คัน</span>
           </p>
           <section>
             <p className="fs-12 text-gray-400 mb-0">น้ำหนักที่ชั่งได้สูงสุด/คัน</p>
-            <p className="mb-0">56.4 ตัน</p>
+            <p className="mb-0">{fmtNumber(Number(data?.max_grossweight_not_over), 1) || 0} ตัน</p>
           </section>
         </div>
       </div>
@@ -38,16 +42,16 @@ const MobileStatCard: React.FC<Props> = (props) => {
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
           <h4 className="text-red-500 mb-0">รถบรรทุกน้ำหนักรวมเกิน</h4>
           <p className="mb-0">
-            <span className="fs-22 font-bold">1,708</span>{' '}
+            <span className="fs-22 font-bold">{fmtNumber(Number(data?.sum_total_over)) || 0}</span>{' '}
             <span className="fs-12 text-gray-300">คัน</span>
           </p>
           <section>
             <p className="fs-12 text-gray-400 mb-0">น้ำหนักที่ชั่งได้สูงสุด/คัน</p>
-            <p className="mb-0">56.4 ตัน</p>
+            <p className="mb-0">{fmtNumber(Number(data?.max_grossweight_over), 1) || 0} ตัน</p>
           </section>
           <div className="flex items-center justify-end gap-1 mt-1">
             <InfoCircleOutlined className="text-xs! text-red-500!" />
-            <p className="text-red-500 fs-12 mb-0">เกินพิกัด 25%</p>
+            <p className="text-red-500 fs-12 mb-0">เกินพิกัด {fmtNumber(Number(data?.max_grossweight_over_percent)) || 0}%</p>
           </div>
         </div>
       </div>
@@ -60,22 +64,22 @@ const MobileStatCard: React.FC<Props> = (props) => {
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
           <h4 className="text-orange-500 mb-0">รถบรรทุกน้ำหนักเพลาเกิน</h4>
           <p className="mb-0">
-            <span className="fs-22 font-bold">1,708</span>{' '}
+            <span className="fs-22 font-bold">{fmtNumber(Number(data?.weight_axis_over_count)) || 0}</span>{' '}
             <span className="fs-12 text-gray-300">คัน</span>
           </p>
           <section>
             <p className="fs-12 text-gray-400 mb-0">น้ำหนักที่ชั่งได้สูงสุด/คัน</p>
-            <p className="mb-0">56.4 ตัน</p>
+            <p className="mb-0">{fmtNumber(Number(data?.axis_over_gross_weight), 1) || 0} ตัน</p>
           </section>
-          <div className="flex items-center justify-end gap-1 mt-1">
+          {/* <div className="flex items-center justify-end gap-1 mt-1">
             <InfoCircleOutlined className="text-xs! text-orange-500!" />
             <p className="text-orange-500 fs-12 mb-0">เกินพิกัด 25%</p>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* ยอมรับน้ำหนัก */}
-      <div className="flex bg-[#05F2DB1A] border-2 rounded-xl border-teal-400 overflow-hidden min-h-32.5">
+      {/* <div className="flex bg-[#05F2DB1A] border-2 rounded-xl border-teal-400 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -94,10 +98,10 @@ const MobileStatCard: React.FC<Props> = (props) => {
             <p className="mb-0">56.4 ตัน</p>
           </section>
         </div>
-      </div>
+      </div> */}
 
       {/* ดำเนินคดี */}
-      <div className="flex bg-[#EB66FF1A] border-2 rounded-xl border-pink-500 overflow-hidden min-h-32.5">
+      {/* <div className="flex bg-[#EB66FF1A] border-2 rounded-xl border-pink-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -116,7 +120,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
             <p className="mb-0">56.4 ตัน</p>
           </section>
         </div>
-      </div>
+      </div> */}
 
     </div>
   )
