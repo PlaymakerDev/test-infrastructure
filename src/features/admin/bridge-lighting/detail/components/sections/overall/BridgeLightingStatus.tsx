@@ -16,7 +16,11 @@ interface Props {
 const BridgeLightingStatus: React.FC<Props> = (props) => {
   const { widData, shellyStatusData, isShellyStatusSuccess } = props
   const [editMode, setEditMode] = useState(false)
-  const shellyStatus = shellyStatusData?.data[0]
+  // `?.[0]` on the array too — the shelly endpoint returns `data: null`
+  // for offline / never-connected wids (e.g. wid 1901 สะพานพระปกเกล้า),
+  // and `shellyStatusData?.data[0]` only guards `shellyStatusData` itself,
+  // not `.data`. `null[0]` crashed the whole detail page.
+  const shellyStatus = shellyStatusData?.data?.[0]
 
   if (!isShellyStatusSuccess) return null
 

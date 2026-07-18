@@ -45,7 +45,7 @@ const TitleSection: React.FC<Props> = (props) => {
         label: isInWarranty ? 'ในค้ำ' : 'หมดค้ำ',
         color: isInWarranty ? '#05F2DB' : '#979797',
       }}
-      googleMap={{ coord: [Number(location?.geometry_point[0]), Number(location?.geometry_point[1])] }}
+      googleMap={{ coord: [Number(location?.geometry_point?.[0]), Number(location?.geometry_point?.[1])] }}
       anydesk={{ id: '' }}
       online={{
         isOnline: isOnline
