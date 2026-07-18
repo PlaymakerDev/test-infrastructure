@@ -2,7 +2,11 @@
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/th'
 import { TbBolt, TbCamera } from 'react-icons/tb'
+
+dayjs.extend(relativeTime)
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
@@ -93,7 +97,7 @@ const CCTVSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
               </div>
             </div>
             <p className='pl-8 fs-11 text-gray-500'>
-              ล่าสุด {p.latest_captured_at ? dayjs(p.latest_captured_at).fromNow() : '-'}
+              ล่าสุด {p.latest_captured_at ? dayjs(p.latest_captured_at).locale('th').fromNow() : '-'}
             </p>
           </div>
         ))}

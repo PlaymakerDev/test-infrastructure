@@ -3,7 +3,11 @@ import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Empty, Row, Col } from 'antd'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/th'
 import { TbCamera, TbBolt } from 'react-icons/tb'
+
+dayjs.extend(relativeTime)
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
@@ -87,7 +91,7 @@ const LPRList: React.FC = () => {
               </div>
             </div>
             <p className='fs-11 text-gray-500'>
-              ล่าสุด {p.latest_captured_at ? dayjs(p.latest_captured_at).fromNow() : '-'}
+              ล่าสุด {p.latest_captured_at ? dayjs(p.latest_captured_at).locale('th').fromNow() : '-'}
             </p>
           </div>
         </Col>

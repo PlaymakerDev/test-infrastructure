@@ -4,7 +4,11 @@ import { useRouter } from 'next/navigation'
 import { Table, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/th'
 import { useLPRPoints } from '@/hooks/queries/lpr'
+
+dayjs.extend(relativeTime)
 import type { LPRInstallPoint } from '@/types/lpr/lpr-api'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
@@ -96,7 +100,7 @@ const TableLPRData: React.FC = () => {
         dataIndex: 'latest_captured_at',
         key: 'latest_captured_at',
         width: 130,
-        render: (v: string) => (v ? dayjs(v).fromNow() : '-'),
+        render: (v: string) => (v ? dayjs(v).locale('th').fromNow() : '-'),
       },
     ],
     [],
