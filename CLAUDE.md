@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Next.js 16 ITS (Intelligent Transportation System) dashboard for Thailand's Department of Rural Roads (กรมทางหลวงชนบท). It features CCTV management, vehicle tracking, VMS (Variable Message Signs), bridge lighting control, and traffic monitoring with live maps and video streaming.
 
+## Branch flow — MUST follow (2026-07-18)
+
+**Do NOT push directly to `production`.** Team convention:
+
+1. New commits land on **`temp`** first (`git push origin temp`). Integration / manual smoke happens there.
+2. To ship, run **`bash /home/kaiser/promote-temp-to-prod.sh`** on `10.10.0.106` as user `kaiser` — fast-forwards `production` to `temp`, pushes `production`, then delegates to `auto-pull-build-its-new.sh` for the build + service restart.
+3. `production` history is always a subset of `temp` — no divergent branches, no directly-pushed commits.
+
+If someone accidentally commits straight to `production`, the promote script refuses to run and prints the offending commits. To resolve: merge `production` back into `temp`, push `temp`, then re-run promote.
+
+Locally: default working branch is `temp`. Only switch to `production` for the promote step (or let the script do it for you on the deploy host).
+
 ## Commands
 
 ```bash
