@@ -16,7 +16,11 @@ interface Props {
 const TitleSection: React.FC<Props> = (props) => {
   const { data, isWarranty, projectId } = props
   const router = useRouter()
-  const location = data?.locations[0]
+  // Optional chain the array access too — `data?.locations[0]` still throws
+  // if `locations` itself is null (only the `data` layer is guarded by `?.`),
+  // which is the real API shape returned when the detail scope resolves to
+  // zero solutions. `?.[0]` short-circuits cleanly.
+  const location = data?.locations?.[0]
   const dispatch = useAppDispatch()
 
   const isInWarranty = isWarranty === 'true' ? true : false

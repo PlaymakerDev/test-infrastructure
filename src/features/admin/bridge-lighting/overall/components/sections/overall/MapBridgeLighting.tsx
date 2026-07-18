@@ -150,10 +150,19 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData
   })
 
-  const centroidValid = data?.data.centroid[0] !== 0 || data?.data.centroid[1] !== 0
-  const initialCenter = centroidValid
-    ? (data?.data.centroid as [number, number])
-    : FALLBACK_CENTER
+  // Guard the centroid access — the API returns `centroid: null` when the
+  // scope has zero locations (real case: dept_id=0 + scope=all with no
+  // bridge-lighting solutions granted to the caller). Without this guard,
+  // `centroid[0]` threw "Cannot read properties of null (reading '0')" the
+  // moment the page mounted, killing the whole overview render.
+  const centroid = data?.data.centroid
+  const centroidValid =
+    Array.isArray(centroid) &&
+    centroid.length === 2 &&
+    typeof centroid[0] === 'number' &&
+    typeof centroid[1] === 'number' &&
+    !(centroid[0] === 0 && centroid[1] === 0)
+  const initialCenter = centroidValid ? (centroid as [number, number]) : FALLBACK_CENTER
 
   return (
     <div className="relative w-full h-full">
