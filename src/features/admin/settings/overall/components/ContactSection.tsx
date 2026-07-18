@@ -113,6 +113,7 @@ const ContactSection: React.FC = () => {
       shortName: c.short_name,
       contactPerson: c.name ?? '',
       phone: c.phone ?? '',
+      email: c.email ?? '',
       address: c.address ?? '',
       role: c.role ?? '',
       registeredAt: c.created_at,
@@ -156,6 +157,7 @@ const ContactSection: React.FC = () => {
             short_name: shortName,
             name: optional(values.contactPerson),
             phone: optional(values.phone),
+            email: optional(values.email),
             address: optional(values.address),
             role: optional(values.role),
             password: optional(values.password),
@@ -170,6 +172,7 @@ const ContactSection: React.FC = () => {
             password: (values.password ?? '').trim(),
             name: optional(values.contactPerson),
             phone: optional(values.phone),
+            email: optional(values.email),
             address: optional(values.address),
             role: optional(values.role),
           }

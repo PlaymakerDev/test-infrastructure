@@ -1,8 +1,9 @@
 // UI-shape types for the ผู้รับจ้าง tab. Mirrors what the real backend at
 // /api-v2/manage/contractor actually returns (verified live 2026-07-06):
 //   - primary key is `user_id` (uuid) — mapped to `id`
-//   - the API has NO taxId, NO email, NO province → those columns/filters
-//     were dropped from the mock UI when wiring to the real endpoint.
+//   - the API grew an `email` column (2026-07-18) — the case-notification
+//     workflow lands there. taxId + province still have no server storage
+//     and stay out of the UI.
 //   - `projectCount` is derived on the client by counting projects whose
 //     `contractor_id` matches this row's `id` (see ContactSection).
 
@@ -14,6 +15,9 @@ export interface Contractor {
   /** Contact person name — API `name`; empty string when null. */
   contactPerson: string
   phone: string
+  /** Contact email — target for maintenance-case notifications. Empty string
+   *  when the API returns null. */
+  email: string
   address: string
   /** Free-form role/title string. */
   role: string
@@ -31,6 +35,7 @@ export interface ContractorFormValues {
   shortName: string
   contactPerson?: string
   phone?: string
+  email?: string
   address?: string
   role?: string
   /** Required only when creating a new contractor. Optional on edit — if

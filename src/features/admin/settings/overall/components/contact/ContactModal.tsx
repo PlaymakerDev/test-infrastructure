@@ -56,6 +56,7 @@ const ContactModal: React.FC<Props> = ({ open, editing, submitting, onClose, onS
         shortName: editing.shortName,
         contactPerson: editing.contactPerson,
         phone: editing.phone,
+        email: editing.email,
         address: editing.address,
         role: editing.role,
         // Password intentionally blank on edit — the API keeps the existing
@@ -182,6 +183,18 @@ const ContactModal: React.FC<Props> = ({ open, editing, submitting, onClose, onS
               <Input placeholder='เช่น 02-123-4567' />
             </Form.Item>
           </div>
+
+          {/* Email — maintenance case auto-open flow will send notifications
+            * here when a device this contractor is responsible for goes offline. */}
+          <Form.Item
+            label={plainLabel('อีเมล (สำหรับแจ้งเตือน case)')}
+            name='email'
+            rules={[
+              { type: 'email' as const, message: 'รูปแบบอีเมลไม่ถูกต้อง' },
+            ]}
+          >
+            <Input placeholder='เช่น support@example.co.th' />
+          </Form.Item>
 
           <Form.Item label={plainLabel('ที่อยู่')} name='address'>
             <Input.TextArea rows={3} placeholder='กรุณาระบุที่อยู่...' />
