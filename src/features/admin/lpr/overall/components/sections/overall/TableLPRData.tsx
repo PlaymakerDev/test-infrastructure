@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Table, Tag } from 'antd'
+import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -88,11 +88,15 @@ const TableLPRData: React.FC = () => {
         sorter: (a, b) => a.events_hour - b.events_hour,
         render: (n: number) =>
           n > 0 ? (
-            <Tag color='gold' style={{ margin: 0 }}>
+            <span className='inline-flex items-center gap-1 text-(--yellow) font-semibold tabular-nums'>
+              <span
+                className='inline-block w-1.5 h-1.5 rounded-full bg-(--yellow)'
+                style={{ boxShadow: '0 0 6px rgba(252,209,22,0.7)' }}
+              />
               {n.toLocaleString('th-TH')}
-            </Tag>
+            </span>
           ) : (
-            <span className='text-gray-500'>0</span>
+            <span className='text-gray-500 tabular-nums'>0</span>
           ),
       },
       {
