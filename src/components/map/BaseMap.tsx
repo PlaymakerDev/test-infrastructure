@@ -299,6 +299,39 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // the camera pans. `setLight` is the classic-style API; if the
         // style uses the newer `setLights` (Standard style light block),
         // fall back to that. Silent try/catch: some styles have neither.
+        // Hide every country / city / settlement label outside Thailand —
+        // we only care about the domestic view; showing "MYANMAR", "LAOS",
+        // "PHNOM PENH" etc. across the border areas just adds visual noise.
+        // Approach: any base-style symbol layer whose id reads like a label
+        // gets an added `iso_3166_1 == 'TH'` clause AND-ed onto its existing
+        // filter. Mapbox's vector tile features carry that ISO code on the
+        // relevant layers (country_label, settlement_label, etc.); features
+        // outside Thailand simply drop out. Wrapped in try/catch per layer
+        // because a custom style could have symbol layers with no such
+        // property, and we'd rather skip one than crash the whole init.
+        try {
+          const style = instance!.getStyle()
+          const isLabelLayer = (id: string) =>
+            /label|place|country|settlement|state|city|town|locality|marine/i.test(id)
+          const thOnly = ['==', ['get', 'iso_3166_1'], 'TH']
+          for (const layer of style?.layers ?? []) {
+            const l = layer as { id: string; type?: string }
+            if (l.type !== 'symbol' || !isLabelLayer(l.id)) continue
+            try {
+              const existing = instance!.getFilter(l.id)
+              const combined = (existing ? ['all', existing, thOnly] : thOnly) as never
+              instance!.setFilter(l.id, combined)
+            } catch {
+              // Some layers legitimately don't carry iso_3166_1 (e.g. natural
+              // features, transit stops) — skip; the filter would drop them
+              // entirely, which is fine, but if setFilter itself throws just
+              // leave the layer alone.
+            }
+          }
+        } catch {
+          // Style not queryable — nothing to filter, move on.
+        }
+
         try {
           const maybeSetLights = (instance as unknown as {
             setLights?: (lights: unknown[]) => void
