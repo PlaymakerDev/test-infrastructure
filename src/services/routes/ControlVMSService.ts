@@ -23,10 +23,11 @@ import {
 } from "@/types/control-vms/vms-api"
 
 // VMS
-export const getVMSDepartmentAPI = async () => {
+export const getVMSDepartmentAPI = async (params?: { since?: string }) => {
   return ApiService.fetchData<APIResponseVMSDepartment>({
     url: `/vms/settings/departments`,
     method: 'GET',
+    params,
   })
 }
 
