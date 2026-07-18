@@ -100,23 +100,58 @@ export const POST = async (
       await session.destroy()
       return NextResponse.json({ message: 'success' }, { status: 200 })
     }
-    // REFRESH — uses server-side session.refresh_token; never reads from client body
+    // REFRESH — uses server-side session.refresh_token; never reads from client body.
+    // Deploy/rotation-race safety: the backend rotates the refresh_token on every
+    // use, so two parallel refresh calls with the same cookie make the second one
+    // 40100. On that failure we re-read the cookie ONCE (a concurrent Next.js
+    // handler may have just persisted a new one via session.save()) and retry
+    // with the fresh refresh_token before giving up. Only if THAT also fails do
+    // we surface the 40100 to the client (which then decides whether to logout).
     if (all.includes('refresh')) {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/refresh`,
-        { refresh_token: session.refresh_token },
-        {
-          headers: {
-            ["x-api-key"]: process.env.NEXT_PUBLIC_API_KEY || '',
-            "Authorization": `Bearer ${session.access_token}`
+      const doRefresh = async (rt: string, at: string) =>
+        axios.post(
+          `${process.env.NEXT_PUBLIC_HOST_BACKEND}/auth/refresh`,
+          { refresh_token: rt },
+          {
+            headers: {
+              ['x-api-key']: process.env.NEXT_PUBLIC_API_KEY || '',
+              Authorization: `Bearer ${at}`,
+            },
+          },
+        )
+
+      let response
+      try {
+        response = await doRefresh(session.refresh_token, session.access_token)
+      } catch (err) {
+        const resCode =
+          axios.isAxiosError(err) && (err.response?.data as { res_code?: number } | undefined)?.res_code
+        if (resCode === 40100) {
+          // Small yield: give any concurrent handler that already rotated the
+          // token a moment to finish persisting its session.save() before we
+          // re-read the cookie. 100 ms is plenty; the actual write is
+          // microseconds — this just avoids racing our own event loop.
+          await new Promise((r) => setTimeout(r, 100))
+          const fresh = await getIronSession<SessionData>(await cookies(), sessionOptions)
+          if (fresh.refresh_token && fresh.refresh_token !== session.refresh_token) {
+            response = await doRefresh(fresh.refresh_token, fresh.access_token)
+            session.access_token = fresh.access_token
+            session.refresh_token = fresh.refresh_token
+            session.refresh_at = fresh.refresh_at
+          } else {
+            throw err
           }
+        } else {
+          throw err
         }
-      )
+      }
+
       if (response.status === 200) {
         const now = Date.now()
-        session.access_token = response.data.access_token;
-        session.refresh_token = response.data.refresh_token;
-        session.refresh_at = computeRefreshAt(response.data.access_token, now);
-        await session.save();
+        session.access_token = response.data.access_token
+        session.refresh_token = response.data.refresh_token
+        session.refresh_at = computeRefreshAt(response.data.access_token, now)
+        await session.save()
       }
       return NextResponse.json({ message: 'success' }, { status: 200 })
     }

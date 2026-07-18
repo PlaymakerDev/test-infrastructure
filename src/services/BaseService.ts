@@ -29,17 +29,29 @@ async function fetchSessionJSON(): Promise<SessionJSON> {
 	if (sessionPromise && now - sessionCacheAt < SESSION_CACHE_TTL) return sessionPromise
 	sessionCacheAt = now
 	sessionPromise = (async () => {
-		// Retry once: the route can briefly return 500/non-JSON while Next recompiles (dev).
-		for (let attempt = 0; attempt < 2; attempt++) {
+		// Retry pattern tolerates:
+		//  - Next.js recompiling in dev (route briefly 500s)
+		//  - Prod redeploy window where nginx returns 502/504 while the Node
+		//    process restarts (usually <2 s; the delays sum ~2.5 s so a
+		//    single deploy cycle rarely bleeds into the caller)
+		// Delays: 200 / 500 / 1000 / 1500 ms — total ~3.2 s cap.
+		const delays = [0, 200, 500, 1000, 1500]
+		for (let i = 0; i < delays.length; i++) {
+			if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]))
 			try {
-				const res = await fetch(`${BASE_PATH}/api/auth/session`)
+				const res = await fetch(`${BASE_PATH}/api/auth/session`, {
+					// Deliberately no-store: caching a session lookup across a
+					// redeploy would return a stale token that decrypts fine
+					// but has been rotated on the server.
+					cache: "no-store",
+					credentials: "same-origin",
+				})
 				if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
 					return (await res.json()) as SessionJSON
 				}
 			} catch {
-				// fall through to retry / give up
+				// fall through to next retry
 			}
-			if (attempt === 0) await new Promise((r) => setTimeout(r, 500))
 		}
 		invalidateSessionCache()
 		return {}
@@ -70,8 +82,26 @@ function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 // 3 attempts [0, 800, 2000]ms; fail-fast on a definitive-invalid token.
+//
+// Deploy-race safety: after acquiring the Web Lock, we re-check whether
+// another lock holder (previous request, other tab, background timer) just
+// rotated the token. If the cookie's access_token has changed since this
+// call started waiting, that means somebody's refresh already succeeded —
+// skip the axios.post entirely so we don't hit the backend a second time
+// with a now-invalid refresh_token (which would come back as 40100 and
+// falsely trigger logout). This is the mechanism that keeps a tab-reload
+// during a redeploy from spiralling into a signed-out state.
 async function refreshWithRetry(): Promise<void> {
+	// Capture what the cookie looked like BEFORE we started queuing on the
+	// lock. Anyone who rotated it while we waited counts as "success" for us.
+	const tokenBeforeWait = (await fetchSessionJSON()).access_token
 	return withRefreshLock(async () => {
+		invalidateSessionCache()
+		const tokenAfterLock = (await fetchSessionJSON()).access_token
+		if (tokenAfterLock && tokenAfterLock !== tokenBeforeWait) {
+			// Some other holder rotated it while we waited — done.
+			return
+		}
 		const delays = [0, 800, 2000]
 		let lastErr: unknown
 		for (let i = 0; i < delays.length; i++) {
@@ -81,7 +111,16 @@ async function refreshWithRetry(): Promise<void> {
 				return
 			} catch (err) {
 				lastErr = err
-				if (classifyRefreshError(err) === "invalid") throw err
+				// A 40100 here is USUALLY a rotation-race — the backend
+				// already rotated the refresh_token for a concurrent call.
+				// Before failing fast, re-check the cookie: if it changed
+				// under us, treat this attempt as a no-op success.
+				if (classifyRefreshError(err) === "invalid") {
+					invalidateSessionCache()
+					const currentToken = (await fetchSessionJSON()).access_token
+					if (currentToken && currentToken !== tokenBeforeWait) return
+					throw err
+				}
 			}
 		}
 		throw lastErr
