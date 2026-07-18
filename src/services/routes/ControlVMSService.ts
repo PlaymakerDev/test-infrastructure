@@ -18,7 +18,8 @@ import {
   APIRequestVMSMediaUrl,
   APIResponseVMSMediaUrl,
   VMSStatusResponse,
-  VMSDetails
+  VMSDetails,
+  APIResponseVMSNotifications
 } from "@/types/control-vms/vms-api"
 
 // VMS
@@ -26,6 +27,15 @@ export const getVMSDepartmentAPI = async () => {
   return ApiService.fetchData<APIResponseVMSDepartment>({
     url: `/vms/settings/departments`,
     method: 'GET',
+  })
+}
+
+// GET NOTIFICATIONS (per-VMS history)
+export const getVMSNotificationsAPI = async (vmsId: number | string, params: { start_date: string; end_date: string }) => {
+  return ApiService.fetchData<APIResponseVMSNotifications>({
+    url: `/vms/vms/${vmsId}/notifications`,
+    method: 'GET',
+    params,
   })
 }
 
