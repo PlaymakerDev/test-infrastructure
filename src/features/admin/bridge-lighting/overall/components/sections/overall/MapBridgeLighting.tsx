@@ -1,14 +1,15 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
-import { useMap } from '@/components/map/hooks/useMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useScopeAll } from '@/hooks/useScopeAll'
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { BridgeLightingLocation } from '@/types/bridge-lighting/overall-api'
 import { useAppDispatch } from '@/stores/hooks'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
 import { getBridgeLightingOverviewAPI } from '@/services/routes/BridgeLightingService'
@@ -48,9 +49,11 @@ interface VMSPopupProps {
   isOnline: boolean
   dispatch: ReturnType<typeof useAppDispatch>
   onNavigate: (path: string) => void
+  deptId: string
+  scopeSuffix: string
 }
 
-const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate }) => {
+const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, deptId, scopeSuffix }) => {
   const p = feature.properties as Record<string, unknown>
   return (
     <div className='min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)' style={{ borderColor: SYSTEM_BRIGHT.BridgeLighting }}>
@@ -71,7 +74,14 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate }) =>
             size='small'
             shape='round'
             block
-            onClick={() => onNavigate(`/admin/bridge-lighting/detail/${p.id}?is_online=${p.is_online}`)}
+            onClick={() =>
+              // Detail page reads dept_id + scope from the URL to fetch its
+              // location/wid/pm-chart/shelly hooks. Dropping either produced
+              // a blank page — the hooks bail early on empty dept_id.
+              onNavigate(
+                `/admin/bridge-lighting/detail/${p.id}?dept_id=${encodeURIComponent(deptId)}&is_online=${p.is_online}${scopeSuffix}`,
+              )
+            }
           >
             <p className='fs-12'>ดูเพิ่มเติม</p>
           </Button>
@@ -85,20 +95,14 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate }) =>
 
 interface MarkerLayerGroupProps {
   locations: BridgeLightingLocation[]
-  centroid: number[]
   isReady: boolean
+  deptId: string
+  scopeSuffix: string
 }
 
-const BridgeLightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, isReady }) => {
-  const { map, isLoaded } = useMap()
+const BridgeLightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, isReady, deptId, scopeSuffix }) => {
   const dispatch = useAppDispatch()
   const router = useRouter()
-
-  useEffect(() => {
-    if (!map || !isLoaded || !isReady) return
-    if (centroid[0] === 0 && centroid[1] === 0) return
-    map.flyTo({ center: centroid as [number, number], zoom: 10, duration: 1200 })
-  }, [map, isLoaded, isReady, centroid])
 
   // Single VMS-typed marker layer — same icon/menu-color style as the other
   // overall maps (yellow-pin glyph via DeviceMarkerLayer). Online/offline is no
@@ -122,6 +126,8 @@ const BridgeLightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations,
           isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
           dispatch={dispatch}
           onNavigate={router.push}
+          deptId={deptId}
+          scopeSuffix={scopeSuffix}
         />
       )}
       popupOptions={{ offset: 10, closeButton: false }}
@@ -153,30 +159,34 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData
   })
 
-  // Guard the centroid access — the API returns `centroid: null` when the
-  // scope has zero locations (real case: dept_id=0 + scope=all with no
-  // bridge-lighting solutions granted to the caller). Without this guard,
-  // `centroid[0]` threw "Cannot read properties of null (reading '0')" the
-  // moment the page mounted, killing the whole overview render.
-  const centroid = data?.data.centroid
-  const centroidValid =
-    Array.isArray(centroid) &&
-    centroid.length === 2 &&
-    typeof centroid[0] === 'number' &&
-    typeof centroid[1] === 'number' &&
-    !(centroid[0] === 0 && centroid[1] === 0)
-  const initialCenter = centroidValid ? (centroid as [number, number]) : FALLBACK_CENTER
+  // Fit to the REAL location bounds instead of trusting the backend centroid.
+  // Prior version flew to `centroid` at fixed zoom 10 — but centroid is a
+  // simple average, so a single outlier point (e.g. Phitsanulok while every
+  // real bridge-lighting site is central Bangkok) pulled the view into empty
+  // ocean. Mirrors the CCTV overall map, which uses FitBoundsEffect for the
+  // same reason.
+  const coords = useMemo<[number, number][]>(
+    () =>
+      (data?.data.locations ?? [])
+        .filter((loc) => isValidCoord(loc.geometry_point))
+        .map((loc) => loc.geometry_point as [number, number]),
+    [data?.data.locations],
+  )
+  const scopeSuffix = scopeQuerySuffix()
 
   return (
     <div className="relative w-full h-full">
       <BaseMap
-        initialCenter={initialCenter}
+        initialCenter={FALLBACK_CENTER}
+        initialZoom={5.4}
         edgeFade={{ all: 10 }}
       >
+        <FitBoundsEffect coords={coords} padding={60} maxZoom={12} />
         <BridgeLightingMarkerLayer
           locations={data?.data.locations || []}
-          centroid={data?.data.centroid || [0, 0]}
           isReady={isSuccess}
+          deptId={String(deptId ?? '')}
+          scopeSuffix={scopeSuffix}
         />
       </BaseMap>
 

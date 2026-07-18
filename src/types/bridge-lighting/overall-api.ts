@@ -134,8 +134,12 @@ export interface ShellyStatusData {
 }
 
 // API OPEN BRIDGE LIGHTING
+// send="1" turns the light ON, send="2" turns it OFF (upstream
+// its-api-go/dashvue/openBridgeLighting — NOT "0"). Prior "0" silently
+// no-op'd against the legacy service, which is why users reported
+// "เปิดได้ ปิดไม่ได้" before 2026-07-18.
 export interface APIRequestPostOpenBridgeLighting {
-  send: '0' | '1'
+  send: '1' | '2'
   wid: string
 }
 
