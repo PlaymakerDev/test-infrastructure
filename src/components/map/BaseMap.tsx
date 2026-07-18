@@ -238,7 +238,85 @@ const BaseMap: React.FC<BaseMapProps> = ({
       // Touch interactions (pinch / drag) stay enabled for mobile users.
       instance.scrollZoom.disable()
 
+      // ── Silence known-benign Mapbox noise ─────────────────────────────
+      // Mapbox emits an `error` event (which surfaces as `console.error`)
+      // for every failing tile / source. Two known-benign ones flood on
+      // Thailand-region maps:
+      //   1. `procedural-buildings-v1` — Mapbox Standard's 3D-buildings
+      //      tileset is only populated for a handful of US/EU cities;
+      //      every pan over TH pans returns 404. Cosmetic (no buildings
+      //      render, which is what we want anyway).
+      //   2. The `sun direction is attached to a light with viewport
+      //      anchor` warning — Mapbox Standard's default light block sets
+      //      `anchor: 'viewport'`; the 3D directional lighting drifts as
+      //      the camera moves. Purely a warning, not an error.
+      // Filter both out so real errors stay visible in devtools.
+      instance.on('error', (e) => {
+        // Mapbox's declared event has `error: Error`, but the RUNTIME
+        // payload for tile / source failures actually carries the
+        // richer `{ status, url }` shape. Cast at the boundary.
+        const anyE = e as unknown as {
+          error?: { status?: number; url?: string; message?: string }
+          sourceId?: string
+        }
+        const url = anyE.error?.url ?? ''
+        const status = anyE.error?.status
+        if (status === 404 && url.includes('procedural-buildings')) return
+        if (anyE.sourceId === 'mapbox-procedural-buildings-v1') return
+        // Unknown error → let it surface (mapbox still console.errors it).
+      })
+
       instance.on('load', () => {
+        if (cancelled) return
+        // Cull the 3D buildings layers + source so the map stops asking
+        // for tiles that will never resolve on TH pans. Mapbox Standard's
+        // building layer ids all start with `building` in the reference
+        // style; we drop any that reference the procedural-buildings
+        // source, then remove the source itself. Wrapped in try/catch
+        // because the style could be a custom one without those layers.
+        try {
+          const style = instance!.getStyle()
+          const doomedLayers = (style?.layers ?? []).filter((l) => {
+            const layer = l as { source?: string; type?: string }
+            return (
+              layer.source === 'mapbox-procedural-buildings-v1' ||
+              (layer.type === 'model' && typeof layer.source === 'string' &&
+                layer.source.includes('procedural-buildings'))
+            )
+          })
+          doomedLayers.forEach((l) => {
+            try { instance!.removeLayer((l as { id: string }).id) } catch {}
+          })
+          if (instance!.getSource('mapbox-procedural-buildings-v1')) {
+            try { instance!.removeSource('mapbox-procedural-buildings-v1') } catch {}
+          }
+        } catch {
+          // Style not yet queryable or non-standard — skip.
+        }
+
+        // Re-anchor the sun to `map` so the "viewport anchor" warning
+        // stops firing and the 3D lighting no longer swings around when
+        // the camera pans. `setLight` is the classic-style API; if the
+        // style uses the newer `setLights` (Standard style light block),
+        // fall back to that. Silent try/catch: some styles have neither.
+        try {
+          const maybeSetLights = (instance as unknown as {
+            setLights?: (lights: unknown[]) => void
+          }).setLights
+          if (typeof maybeSetLights === 'function') {
+            maybeSetLights.call(instance, [
+              { id: 'directional', type: 'directional', properties: { direction: [200, 40], 'cast-shadows': false, intensity: 0.5 } },
+              { id: 'ambient', type: 'ambient', properties: { intensity: 0.7 } },
+            ])
+          } else {
+            (instance as unknown as { setLight?: (opts: unknown) => void }).setLight?.({
+              anchor: 'map',
+            })
+          }
+        } catch {
+          // Style doesn't support the light API — ignore.
+        }
+
         if (cancelled) return
         setIsLoaded(true)
       })
