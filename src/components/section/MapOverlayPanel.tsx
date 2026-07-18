@@ -43,10 +43,21 @@ const MapOverlayPanel: React.FC<Props> = ({
   disabled,
   children,
 }) => {
-  const { isMapFocus } = useMapFocusMode()
+  const { mode } = useMapFocusMode()
   // While mounted (and not `disabled`) the navbar's focus toggle is usable.
   useRegisterMapFocusConsumer(!disabled)
-  const hidden = !disabled && isMapFocus
+  // A panel hides iff:
+  //  • `mode === 'both'` — everything hides (baseline "focus map")
+  //  • `mode === 'left'`  and this panel sits on the LEFT edge (top/bottom
+  //    are edge-anchored too but their content is closer to left/main flow
+  //    on desktop; they follow 'both' only to avoid partial layouts)
+  //  • `mode === 'right'` and this panel sits on the RIGHT edge
+  // Anything else — visible.
+  const isHiddenSide =
+    mode === 'both' ||
+    (mode === 'left'  && position === 'left') ||
+    (mode === 'right' && position === 'right')
+  const hidden = !disabled && isHiddenSide
 
   // Below lg (1024px — same breakpoint MapFocusGrid uses) the panels sit in
   // NORMAL FLOW at full width (stacked under the map), so the slide-away

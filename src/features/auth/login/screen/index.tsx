@@ -31,7 +31,6 @@ type FormLogin = {
 // assets (<img>/CSS background) are NOT prefixed automatically like next/link, so
 // we prepend it manually to keep the logo + hero image working under /atlas.
 const BASE_PATH = process.env.__NEXT_ROUTER_BASEPATH ?? ''
-const LOGO_SRC = `${BASE_PATH}/images/login/drr-logo.png`
 const HERO_SRC = `${BASE_PATH}/images/login/login-hero.png`
 
 const REMEMBER_KEY = 'drr_remember_username'
@@ -218,34 +217,7 @@ const AuthScreen: React.FC<Props> = (props) => {
           >
             {/* Card bg = #000000B2 (semi-transparent black over the hero, no
                 backdrop blur — mirrors Login.svg). Compact, content-height. */}
-            <div className='rounded-[18px] bg-[#000000B2] px-7 py-8 sm:px-9 xl:px-12 2xl:px-16'>
-              {/* logo + org name */}
-              <div className='flex flex-col items-center text-center'>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={LOGO_SRC}
-                  alt='กรมทางหลวงชนบท'
-                  width={124}
-                  height={124}
-                  className='select-none'
-                  draggable={false}
-                />
-                <h2 className='font-bold text-white mt-3' style={{ fontSize: 26 }}>
-                  กรมทางหลวงชนบท
-                </h2>
-                <p style={{ fontSize: 14, color: GREY }}>Department of Rural Roads</p>
-              </div>
-
-              {/* divider (paint10: yellow centre → blue ends) */}
-              <div className='my-5 flex justify-center'>
-                <span
-                  className='h-0.5 w-3/5'
-                  style={{
-                    background: `linear-gradient(90deg,${BLUE} 0%,${YELLOW} 50%,${BLUE} 100%)`,
-                  }}
-                />
-              </div>
-
+            <div className='rounded-[18px] bg-[#000000B2] px-7 py-10 sm:px-9 xl:px-12 2xl:px-16'>
               <div className='text-center'>
                 <p className='font-bold' style={{ color: BLUE, fontSize: 22 }}>
                   เข้าสู่ระบบ

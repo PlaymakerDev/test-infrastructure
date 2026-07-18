@@ -12,11 +12,18 @@ export interface LayoutState {
   map_focus: MapFocusProperties;
 }
 
+/** Which side of the map (if any) has its overlays hidden.
+ *   • `off`   — nothing hidden (baseline)
+ *   • `left`  — only left-position overlays hide
+ *   • `right` — only right-position overlays hide
+ *   • `both`  — every side hides (equivalent to the old "focus mode") */
+export type MapFocusMode = 'off' | 'left' | 'right' | 'both';
+
 export interface MapFocusProperties {
-  /** When true, all UI panels/cards positioned over or beside the map are
-   *  hidden (via slide-out animation) and the map container expands to
-   *  width:100%. Toggled from the Navbar's TbZoomInArea button. */
-  active: boolean;
+  /** Which overlays are hidden. Replaces the old boolean `active` — kept in
+   *  redux so any consumer can read the exact side hidden (MapOverlayPanel
+   *  uses this + its own `position` prop to decide whether to slide out). */
+  mode: MapFocusMode;
   /** Count of focus-capable map layouts currently MOUNTED (MapFocusGrid /
    *  MapOverlayPanel / direct consumers register themselves). 0 → the navbar
    *  toggle grays out, since pressing it would change nothing on screen.

@@ -128,9 +128,10 @@ const SummaryReportSection: React.FC = () => {
   // and average the phases for the table row.
   const voltageChartData: BarChartDataPoint[] = useMemo(
     () => rows.map((r) => {
-      const p1 = r.phases.find((p) => p.phase === '1')
-      const p2 = r.phases.find((p) => p.phase === '2')
-      const p3 = r.phases.find((p) => p.phase === '3')
+      const phases = r.phases ?? []
+      const p1 = phases.find((p) => p.phase === '1')
+      const p2 = phases.find((p) => p.phase === '2')
+      const p3 = phases.find((p) => p.phase === '3')
       return {
         label: r.label,
         p1: p1?.voltage ?? 0,
@@ -142,9 +143,10 @@ const SummaryReportSection: React.FC = () => {
   )
   const ampChartData: BarChartDataPoint[] = useMemo(
     () => rows.map((r) => {
-      const p1 = r.phases.find((p) => p.phase === '1')
-      const p2 = r.phases.find((p) => p.phase === '2')
-      const p3 = r.phases.find((p) => p.phase === '3')
+      const phases = r.phases ?? []
+      const p1 = phases.find((p) => p.phase === '1')
+      const p2 = phases.find((p) => p.phase === '2')
+      const p3 = phases.find((p) => p.phase === '3')
       return {
         label: r.label,
         p1: p1?.amplitude ?? 0,
@@ -157,10 +159,12 @@ const SummaryReportSection: React.FC = () => {
 
   const tableRows: VoltageAmpTableRow[] = useMemo(
     () => rows.map((r, i) => {
-      // Average across phases for the headline numbers.
-      const avg = (sel: (p: typeof r.phases[number]) => number) => {
-        if (!r.phases.length) return 0
-        return r.phases.reduce((s, p) => s + sel(p), 0) / r.phases.length
+      // Average across phases for the headline numbers. BE returns null (not [])
+      // for solutions with no phase data — guard both `.length` and `.reduce`.
+      const phases = r.phases ?? []
+      const avg = (sel: (p: typeof phases[number]) => number) => {
+        if (!phases.length) return 0
+        return phases.reduce((s, p) => s + sel(p), 0) / phases.length
       }
       return {
         key: `${r.label}-${i}`,

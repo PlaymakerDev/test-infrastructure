@@ -26,7 +26,7 @@ const initialState: LayoutState = {
     }
   },
   map_focus: {
-    active: false,
+    mode: 'off',
     consumers: 0
   },
 }
@@ -73,10 +73,20 @@ const layoutSlice = createSlice({
       state.cctv_modal = initialState.cctv_modal
     },
     setMapFocusMode: (state, action) => {
-      state.map_focus.active = action.payload.active
+      // Back-compat: callers still pass `{active: boolean}` (older code paths
+      // that pre-date the tri-state) — coerce to 'both'/'off'. New callers
+      // send `{mode: 'left'|'right'|'both'|'off'}` and win over `active`.
+      const payload = action.payload as { active?: boolean; mode?: string }
+      if (typeof payload.mode === 'string') {
+        state.map_focus.mode = payload.mode as typeof state.map_focus.mode
+      } else if (typeof payload.active === 'boolean') {
+        state.map_focus.mode = payload.active ? 'both' : 'off'
+      }
     },
     toggleMapFocusMode: (state) => {
-      state.map_focus.active = !state.map_focus.active
+      // Simple binary toggle — routes the navbar's single-click path through
+      // 'off' ↔ 'both' (the direction-aware picks live in the popover).
+      state.map_focus.mode = state.map_focus.mode === 'off' ? 'both' : 'off'
     },
     // Mount/unmount bookkeeping for focus-capable map layouts — see
     // useRegisterMapFocusConsumer. Guarded so a stray double-unregister

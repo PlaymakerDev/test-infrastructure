@@ -27,6 +27,7 @@ import OverlapStackMarker from './markers/OverlapStackMarker'
 import StchSummaryMarker, { type StchSummary } from './markers/StchSummaryMarker'
 import SystemFilterPills from './overlays/SystemFilterPills'
 import BreadcrumbBanner from './overlays/BreadcrumbBanner'
+import MapSearchBox from './overlays/MapSearchBox'
 
 const COUNTRY_VIEW = {
   center: [101.5, 14.0] as [number, number],
@@ -68,6 +69,9 @@ const apiLocationToDevice = (loc: DashboardPositionLocation): Device | null => {
     road: loc.road.road_code,
     landmark: loc.road.road_name,
     solutionName: loc.solution.solution_name,
+    // Optional online flag — becomes `undefined` while BE hasn't shipped the
+    // joined field (currently rolling out). See DashboardPositionLocation doc.
+    isOnline: typeof loc.is_online === 'boolean' ? loc.is_online : undefined,
   }
 }
 
@@ -437,6 +441,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         top={92}
       />
       <BreadcrumbBanner province={province} onReset={resetView} top={144} />
+      {/* Road-code search — nationwide autocomplete against /manage/roads.
+        * Uses the already-fetched position payload to fly to the road's first
+        * known device without a second network hop. */}
+      <MapSearchBox positions={position?.locations ?? []} />
     </>
   )
 }

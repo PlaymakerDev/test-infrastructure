@@ -45,7 +45,7 @@ const TrafficCycleTrafficSignal: React.FC = () => {
 
   return (
     <PieChart
-      title='Traffic Signal Cycle Length'
+      title='Cycle Length'
       titleSize={16}
       titleColor='#66AEFF'
       icon={<TbCirclesRelation size={22} color='#66AEFF' />}
