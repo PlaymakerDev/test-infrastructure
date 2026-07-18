@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import { TbAlertTriangle } from 'react-icons/tb'
 import { useNotificationSummary } from '@/hooks/queries/manage'
-import { useDeptId } from '@/hooks/useDeptId'
 
 interface Props {
   /**
@@ -25,7 +24,6 @@ const fmt = (n: number): string => {
 
 const Notification: React.FC<Props> = ({ compact = false }) => {
   const router = useRouter()
-  const deptId = useDeptId()
 
   // "Today" window in Bangkok time — same date on both sides so the backend
   // aggregates a single day. Rebuilt every render is fine: dayjs() is cheap
@@ -48,11 +46,12 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
   const topLabel = analytic?.most_type?.name
 
   const onOpen = () => {
-    // Route to Incident Detection scoped to the current dept — the overall
-    // page filters by dept_id from the URL search params.
-    const q = new URLSearchParams()
-    if (deptId) q.set('dept_id', String(deptId))
-    router.push(`/admin/incident-detection${q.size ? `?${q.toString()}` : ''}`)
+    // The pill counts nationwide (backend scopes by JWT — admin sees the
+    // whole system), so the target page should too. Hard-code dept_id=0 +
+    // scope=all so opening the alert from any dashboard view lands on the
+    // full-country incident list for today, not just the bureau the user
+    // was already looking at.
+    router.push('/admin/incident-detection?dept_id=0&scope=all')
   }
 
   // Common accessibility affordances — role + keyboard for both variants.
@@ -66,7 +65,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         onOpen()
       }
     },
-    'aria-label': `แจ้งเตือนด่วน ${count} รายการ — คลิกเพื่อเปิดหน้าตรวจจับเหตุการณ์`,
+    'aria-label': `แจ้งเตือนอุบัติการณ์ ${count} รายการวันนี้ — คลิกเพื่อดูทุกจุดติดตั้ง`,
   }
 
   if (compact) {
@@ -80,7 +79,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
           backdropFilter: "blur(5px)",
           boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
         }}
-        title={`แจ้งเตือนด่วน · ${count.toLocaleString('th-TH')} รายการวันนี้`}
+        title={`แจ้งเตือนอุบัติการณ์ · ${count.toLocaleString('th-TH')} รายการวันนี้ (ทุกจุด)`}
       >
         <TbAlertTriangle size={16} color="#f5c842" />
         <span className="text-[#f5c842] text-sm font-bold leading-none tabular-nums">
@@ -100,7 +99,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         background:
           "linear-gradient(135deg, rgba(245,200,66,0.8) 0%, rgba(245,200,66,0.1) 50%, rgba(245,200,66,0.4) 100%)",
       }}
-      title="คลิกเพื่อเปิดหน้าตรวจจับเหตุการณ์"
+      title="คลิกเพื่อดูอุบัติการณ์ทุกจุดติดตั้งวันนี้"
     >
       <div
         className="flex items-center gap-3 px-4 py-2"
@@ -114,15 +113,15 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
           <TbAlertTriangle size={24} color="#f5c842" />
         </div>
         <div className="flex-1 leading-tight min-w-0">
-          <div className="text-white text-sm font-medium">แจ้งเตือนด่วน</div>
+          <div className="text-white text-sm font-medium">แจ้งเตือนอุบัติการณ์</div>
           <div className="text-[#6b7f9a] text-[11px] truncate">
             {isLoading
               ? 'กำลังโหลด…'
               : count === 0
-                ? 'ยังไม่มีเหตุการณ์ตรวจจับใหม่วันนี้'
+                ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
                 : topLabel
                   ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
-                  : 'เหตุการณ์ตรวจจับวันนี้'}
+                  : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
           </div>
         </div>
         <div className="text-[#f5c842] text-3xl font-bold leading-none tabular-nums shrink-0">
