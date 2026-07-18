@@ -5,16 +5,11 @@ import axios, { AxiosError } from 'axios'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import {
-  TbCar,
-  TbZoomScan,
-  TbWeight,
   TbUser,
   TbLock,
   TbEye,
   TbEyeOff,
 } from 'react-icons/tb'
-import { MdOutlineMonitorHeart } from 'react-icons/md'
-import type { IconType } from 'react-icons'
 import menu from '@/configs/menu'
 import { getDepartmentsAPI } from '@/services/routes/ManageService'
 import { resolveHomeDeptId, deptQuery } from '@/hooks/queries/manage'
@@ -47,34 +42,6 @@ const REMEMBER_KEY = 'drr_remember_username'
 const YELLOW = '#FCD116'
 const BLUE = '#66AEFF'
 const GREY = '#A2A2A2'
-
-// Custom "Analytic Report" icon from the design (Frame.svg) — no matching
-// react-icon exists. Inline so it accepts size/color like react-icons do.
-const IconAnalytic: IconType = ({ size = 24, color = 'currentColor' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 50 50'
-    fill='none'
-    xmlns='http://www.w3.org/2000/svg'
-  >
-    <path d='M7.47039 17.5296C6.68899 16.7482 6.25 15.6884 6.25 14.5833C6.25 13.4782 6.68899 12.4184 7.47039 11.637C8.25179 10.8556 9.3116 10.4166 10.4167 10.4166C11.5217 10.4166 12.5815 10.8556 13.3629 11.637C14.1443 12.4184 14.5833 13.4782 14.5833 14.5833C14.5833 15.6884 14.1443 16.7482 13.3629 17.5296C12.5815 18.311 11.5217 18.75 10.4167 18.75C9.3116 18.75 8.25179 18.311 7.47039 17.5296Z' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M29.1665 31.25C29.1665 32.3551 29.6055 33.4149 30.3869 34.1963C31.1683 34.9777 32.2281 35.4167 33.3332 35.4167C34.4382 35.4167 35.498 34.9777 36.2794 34.1963C37.0608 33.4149 37.4998 32.3551 37.4998 31.25C37.4998 30.145 37.0608 29.0852 36.2794 28.3038C35.498 27.5224 34.4382 27.0834 33.3332 27.0834C32.2281 27.0834 31.1683 27.5224 30.3869 28.3038C29.6055 29.0852 29.1665 30.145 29.1665 31.25Z' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M33.0806 16.9194C31.9085 15.7473 31.25 14.1576 31.25 12.5C31.25 10.8424 31.9085 9.25269 33.0806 8.08058C34.2527 6.90848 35.8424 6.25 37.5 6.25C39.1576 6.25 40.7473 6.90848 41.9194 8.08058C43.0915 9.25269 43.75 10.8424 43.75 12.5C43.75 14.1576 43.0915 15.7473 41.9194 16.9194C40.7473 18.0915 39.1576 18.75 37.5 18.75C35.8424 18.75 34.2527 18.0915 33.0806 16.9194Z' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M8.08058 41.9194C6.90848 40.7473 6.25 39.1576 6.25 37.5C6.25 35.8424 6.90848 34.2527 8.08058 33.0806C9.25269 31.9085 10.8424 31.25 12.5 31.25C14.1576 31.25 15.7473 31.9085 16.9194 33.0806C18.0915 34.2527 18.75 35.8424 18.75 37.5C18.75 39.1576 18.0915 40.7473 16.9194 41.9194C15.7473 43.0915 14.1576 43.75 12.5 43.75C10.8424 43.75 9.25269 43.0915 8.08058 41.9194Z' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M18.75 35.4166L29.1667 32.2916' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M13.5415 17.7084L29.8123 28.8959' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-    <path d='M14.5835 14.5833L31.2502 12.5' stroke={color} strokeWidth={3} strokeLinecap='round' strokeLinejoin='round' />
-  </svg>
-)
-
-const FEATURES: { icon: IconType; label: string }[] = [
-  { icon: TbCar, label: 'Traffic Monitoring' },
-  { icon: MdOutlineMonitorHeart, label: 'VMS Control' },
-  { icon: TbZoomScan, label: 'GPS Tracking' },
-  { icon: TbWeight, label: 'WIM Monitoring' },
-  { icon: IconAnalytic, label: 'Analytic Report' },
-]
 
 const AuthScreen: React.FC<Props> = (props) => {
   const { username = '', password = '' } = props
@@ -235,44 +202,7 @@ const AuthScreen: React.FC<Props> = (props) => {
               >
                 ระบบบริหารจัดการจราจรอัจฉริยะส่วนกลาง
               </p>
-              <p className='mt-1' style={{ fontSize: 'clamp(13px,1.1vw,19px)', color: GREY }}>
-                Intelligent transport control and monitoring
-              </p>
             </div>
-          </div>
-
-          {/* yellow eyebrow + rule (paint3: transparent → grey → yellow) */}
-          <div className='mt-8 flex items-center gap-4 max-w-2xl'>
-            <span className='whitespace-nowrap font-medium' style={{ color: YELLOW, fontSize: 15 }}>
-              National transport monitoring and control
-            </span>
-            <span
-              className='h-0.5 flex-1'
-              style={{
-                background: `linear-gradient(to right,rgba(82,82,82,0) 0%,#525252 29%,${YELLOW} 100%)`,
-              }}
-            />
-          </div>
-
-          {/* feature circles (paint4-8: grey sheen gradient) */}
-          <div className='mt-10 flex flex-wrap gap-x-10 gap-y-6'>
-            {FEATURES.map(({ icon: Icon, label }) => (
-              <div key={label} className='flex flex-col items-center gap-3'>
-                <span
-                  className='w-19 h-19 rounded-full flex items-center justify-center backdrop-blur-sm'
-                  style={{
-                    background:
-                      'linear-gradient(to top right,rgba(151,151,151,0.22),rgba(60,60,60,0))',
-                    border: `1px solid rgba(162,162,162,0.45)`,
-                  }}
-                >
-                  <Icon size={32} color='#fff' />
-                </span>
-                <span className='font-semibold text-white text-center' style={{ fontSize: 13 }}>
-                  {label}
-                </span>
-              </div>
-            ))}
           </div>
         </section>
 

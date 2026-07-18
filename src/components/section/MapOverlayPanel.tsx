@@ -47,12 +47,30 @@ const MapOverlayPanel: React.FC<Props> = ({
   // While mounted (and not `disabled`) the navbar's focus toggle is usable.
   useRegisterMapFocusConsumer(!disabled)
   const hidden = !disabled && isMapFocus
+
+  // Below lg (1024px — same breakpoint MapFocusGrid uses) the panels sit in
+  // NORMAL FLOW at full width (stacked under the map), so the slide-away
+  // transform can't work there: x:±110% pushes the invisible panel past the
+  // viewport edge → the page gains a horizontal scroll region (mobile focus
+  // mode "shifted right and stuck", 2026-07-17) while its row still holds
+  // the old height. On small screens a hidden panel therefore collapses
+  // entirely (display:none) instead of sliding.
+  const [isDesktop, setIsDesktop] = React.useState(true)
+  React.useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+  const collapsed = hidden && !isDesktop
+
   const target = hidden ? hiddenTransform(position) : { x: 0, y: 0 }
 
   return (
     <motion.div
       className={className}
-      style={style}
+      style={{ ...style, ...(collapsed ? { display: 'none' } : null) }}
       initial={false}
       animate={{
         ...target,

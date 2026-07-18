@@ -110,6 +110,9 @@ const CamerasMarkerLayer: React.FC<{
         title: camera.camera_name,
         popup: <DetailCameraPopup camera={camera} />,
         popupOptions: { offset: 18, closeButton: false },
+        // Red/white status pin — inert (undefined → white) until BE adds
+        // `is_online` to /counting's cameras endpoint (see the type's note).
+        offline: camera.is_online == null ? undefined : !camera.is_online,
       })),
     [valid],
   )

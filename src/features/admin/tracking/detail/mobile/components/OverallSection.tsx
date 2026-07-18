@@ -8,44 +8,73 @@ import {
   OverallDataDisplaySection
 } from '../components'
 import { useQuery } from '@tanstack/react-query';
-import { getTrackingMobileMasterDepartmentByTIDAPI } from '@/services/routes/TrackingDetailService';
+import { getTrackingMobileDailyCountAPI } from '@/services/routes/TrackingDetailService';
+import dayjs from 'dayjs';
+import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api';
 
 interface Props {
   id: string[] | string | number | undefined;
+  departmentData?: MobileMasterDepartmentByTIDData
+  isDepartmentLoading?: boolean
+  isDepartmentError?: boolean
 }
 
 const OverallSection: React.FC<Props> = (props) => {
-  const { id } = props
+  const { id, departmentData, isDepartmentLoading, isDepartmentError } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['weight_mobile_master_department', id],
-    queryFn: () => getTrackingMobileMasterDepartmentByTIDAPI(String(id)),
+  const {
+    data: countData,
+    isLoading: isCountLoading,
+    isError: isCountError
+  } = useQuery({
+    queryKey: ['tracking_overall_mobile_daily_status_count'],
+    queryFn: () => getTrackingMobileDailyCountAPI({
+      start_date: dayjs().format('YYYY-MM-DD'),
+      end_date: dayjs().format('YYYY-MM-DD'),
+      tid: String(id)
+    }),
     enabled: !!id,
   })
 
   const renderDetailContent = useMemo(() => {
-    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
-    if (isError) return <Empty description="ไม่พบข้อมูล" />
+    if (isDepartmentLoading) return <Skeleton loading={isDepartmentLoading} active paragraph={{ rows: 10 }} />
+    if (isDepartmentError) return <Empty description="ไม่พบข้อมูล" />
     return (
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={24} md={24} lg={24} xl={12} xxl={12} xxxl={12}>
           <MobileDetailCard
-            data={data?.data.data}
+            departmentData={departmentData}
+            countData={countData?.data.data}
+            isCountLoading={isCountLoading}
+            isCountError={isCountError}
           />
         </Col>
         <Col xs={24} sm={24} md={24} lg={24} xl={12} xxl={6} xxxl={6}>
           <MobileDetailImage
-            data={data?.data.data}
+            departmentData={departmentData}
           />
         </Col>
         <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={6} xxxl={6}>
           <MobileDetailMap
-            data={data?.data.data}
+            departmentData={departmentData}
           />
         </Col>
       </Row>
     )
-  }, [data, isLoading, isError])
+  }, [
+    departmentData,
+    countData,
+    isDepartmentLoading,
+    isDepartmentError,
+    isCountLoading,
+    isCountError
+  ])
+
+  const renderMobileStatContent = useMemo(() => {
+    if (isCountLoading) return <Skeleton loading={isCountLoading} active paragraph={{ rows: 10 }} />
+    if (isCountError) return <Empty description="ไม่พบข้อมูล" />
+    return <MobileStatCard data={countData?.data.data} />
+  }, [countData, isCountLoading, isCountError])
 
   return (
     <>
@@ -53,7 +82,7 @@ const OverallSection: React.FC<Props> = (props) => {
         {renderDetailContent}
       </section>
       <section className='mt-5'>
-        <MobileStatCard />
+        {renderMobileStatContent}
       </section>
       <section className='mt-5'>
         <OverallDataDisplaySection

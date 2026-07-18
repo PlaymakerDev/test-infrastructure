@@ -38,9 +38,11 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   const { data: central } = useTrafficCentralList(deptId)
   const matchedSolution = useMemo(() => {
     if (!central) return null
+    // Inner arrays are backend-sourced — guard like every other nested tree
+    // (a bureau without sub_department/solutions must not crash the page).
     for (const bureau of central)
-      for (const sub of bureau.sub_department)
-        for (const sol of sub.solutions)
+      for (const sub of bureau.sub_department ?? [])
+        for (const sol of sub.solutions ?? [])
           if (String(sol.solution.id) === String(id)) return sol
     return null
   }, [central, id])

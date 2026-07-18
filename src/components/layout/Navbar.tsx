@@ -168,6 +168,12 @@ export default function Navbar() {
   // Derived: the popup is open only while still on the URL it was opened at.
   const mobileNavKey = `${pathname}?${searchKey}`
   const mobileNavOpen = mobileNavOpenAt === mobileNavKey
+  // Mobile "..." utilities popup — same URL-keyed open state + same grid panel
+  // styling as the system-menu popup above, holding what the desktop right-icon
+  // row offers (map focus / find / smart search / notifications / settings /
+  // logout) with labels, replacing the old 3-icon label-less dropdown.
+  const [mobileMoreOpenAt, setMobileMoreOpenAt] = useState<string | null>(null)
+  const mobileMoreOpen = mobileMoreOpenAt === mobileNavKey
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -222,67 +228,75 @@ export default function Navbar() {
     }
   }, [modal, router, queryClient])
 
-  const items: MenuProps['items'] = [
+  // Entries for the mobile "..." grid panel — everything the desktop
+  // right-icon row offers, now with visible labels (the old label-less
+  // 3-icon dropdown hid what each glyph meant and was missing Smart Search /
+  // settings / logout entirely).
+  const moreEntries = [
     {
-      key: '1',
-      // Disabled on pages without a focus-capable map — antd grays the row,
-      // and the inner span's own handlers are guarded too (antd's disabled
-      // only suppresses the menu-item click, not the span's).
+      key: 'map-focus',
+      label: isMapFocus ? 'ปิดเน้นแผนที่' : 'เน้นแผนที่',
+      icon: isMapFocus
+        ? <TbZoomReset size={22} />
+        : <TbZoomInArea size={22} />,
       disabled: !focusAvailable,
-      label: (
-        <span
-          role="button"
-          tabIndex={focusAvailable ? 0 : -1}
-          aria-disabled={!focusAvailable}
-          onClick={focusAvailable ? toggleMapFocus : undefined}
-          onKeyDown={(e) => {
-            if (!focusAvailable) return
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              toggleMapFocus()
-            }
-          }}
-          className={`inline-flex ${!focusAvailable ? 'opacity-40 cursor-not-allowed' : isMapFocus ? 'text-(--yellow)' : ''}`}
-          aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
-          aria-pressed={isMapFocus}
-          title={!focusAvailable
-            ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
-            : isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
-        >
-          {isMapFocus
-            ? <TbZoomReset className={iconClassName} />
-            : <TbZoomInArea className={iconClassName} />}
-        </span>
-      ),
+      active: isMapFocus,
+      title: !focusAvailable ? 'หน้านี้ไม่มีแผนที่ให้เน้น' : undefined,
+      // Close the panel so the focus result is immediately visible — keeping
+      // it open left the backdrop over a layout that just changed underneath.
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        toggleMapFocus()
+      },
     },
     {
-      key: '2',
-      label: (
-        <span
-          role="button"
-          tabIndex={0}
-          onClick={() => setFindOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              setFindOpen(true)
-            }
-          }}
-          className={`inline-flex ${findOpen ? 'text-(--yellow)' : ''}`}
-          aria-label="เปิดค้นหาในหน้า"
-        >
-          <TbSearch className={iconClassName} />
-        </span>
-      ),
+      key: 'find',
+      label: 'ค้นหาในหน้า',
+      icon: <TbSearch size={22} />,
+      active: findOpen,
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        setFindOpen(true)
+      },
     },
     {
-      key: '3',
-      label: <TbBellRinging2 className={iconClassName} />
+      key: 'smart-search',
+      label: 'Smart Search',
+      icon: <IconAIChat size={22} />,
+      active: !!pathname?.startsWith('/admin/smart-search'),
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        router.push('/admin/smart-search')
+      },
     },
-    // {
-    //   key: '4',
-    //   label: <TbGripHorizontal className={iconClassName} />
-    // },
+    {
+      key: 'notifications',
+      label: 'แจ้งเตือน',
+      icon: <TbBellRinging2 size={22} />,
+      active: false,
+      // No behavior yet — mirrors the desktop bell placeholder.
+      onClick: () => setMobileMoreOpenAt(null),
+    },
+    {
+      key: 'settings',
+      label: 'ระบบและการตั้งค่า',
+      icon: <TbSettings size={22} />,
+      active: !!pathname?.startsWith('/admin/settings'),
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        router.push('/admin/settings')
+      },
+    },
+    {
+      key: 'logout',
+      label: 'ออกจากระบบ',
+      icon: <TbLogout size={22} />,
+      active: false,
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        onLogout()
+      },
+    },
   ]
 
   const extraItems: MenuProps['items'] = [
@@ -523,6 +537,60 @@ export default function Navbar() {
                 </div>
               </motion.div>
             )}
+            {/* "..." utilities popup — same backdrop/panel treatment as the
+                system menu above; entries carry labels so each glyph is
+                self-explanatory (the old dropdown was icon-only). */}
+            {mobileMoreOpen && (
+              <motion.div
+                key="mobile-more-backdrop"
+                className="fixed inset-0 z-10"
+                style={{ background: 'rgba(0, 0, 0, 0.45)' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setMobileMoreOpenAt(null)}
+              />
+            )}
+            {mobileMoreOpen && (
+              <motion.div
+                key="mobile-more-panel"
+                className="absolute left-1/2 z-20 rounded-2xl overflow-hidden"
+                style={{
+                  top: 'calc(100% + 10px)',
+                  width: 'min(92vw, 400px)',
+                  background: '#000000E6',
+                  border: '1px solid rgba(252,209,22,0.3)',
+                  boxShadow: '0px 2px 15px rgba(252, 209, 22, 0.45)',
+                }}
+                initial={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
+                animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+                exit={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <div className="grid grid-cols-3 py-1">
+                  {moreEntries.map((item) => (
+                    <button
+                      key={item.key}
+                      disabled={item.disabled}
+                      onClick={item.disabled ? undefined : item.onClick}
+                      className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 transition-colors ${item.disabled
+                        ? 'opacity-40 cursor-not-allowed text-white/75'
+                        : item.active
+                          ? 'text-(--yellow) cursor-pointer'
+                          : 'text-white/75 active:text-white cursor-pointer'
+                        }`}
+                      title={item.title}
+                    >
+                      <span>{item.icon}</span>
+                      <span className={`text-[11px] leading-tight text-center ${item.active ? 'font-semibold' : ''}`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
         <div className="nav-side-menu">
@@ -621,7 +689,10 @@ export default function Navbar() {
               shape="circle"
               aria-label={mobileNavOpen ? 'ปิดเมนูระบบ' : 'เปิดเมนูระบบ'}
               aria-expanded={mobileNavOpen}
-              onClick={() => setMobileNavOpenAt(mobileNavOpen ? null : mobileNavKey)}
+              onClick={() => {
+                setMobileMoreOpenAt(null) // one popup at a time
+                setMobileNavOpenAt(mobileNavOpen ? null : mobileNavKey)
+              }}
               style={
                 mobileNavOpen
                   ? { color: 'var(--yellow)', borderColor: 'rgba(252,209,22,0.6)' }
@@ -629,16 +700,23 @@ export default function Navbar() {
               }
               icon={<TbApps />}
             />
-            <Dropdown
-              menu={{ items }}
-              trigger={["click"]}
-              placement="bottom"
-            >
-              <Button
-                shape="circle"
-                icon={<TbDots />}
-              />
-            </Dropdown>
+            {/* "..." utilities — pops the labeled grid panel (same look as the
+                system menu); replaces the old icon-only antd Dropdown. */}
+            <Button
+              shape="circle"
+              aria-label={mobileMoreOpen ? 'ปิดเมนูเพิ่มเติม' : 'เปิดเมนูเพิ่มเติม'}
+              aria-expanded={mobileMoreOpen}
+              onClick={() => {
+                setMobileNavOpenAt(null) // one popup at a time
+                setMobileMoreOpenAt(mobileMoreOpen ? null : mobileNavKey)
+              }}
+              style={
+                mobileMoreOpen
+                  ? { color: 'var(--yellow)', borderColor: 'rgba(252,209,22,0.6)' }
+                  : undefined
+              }
+              icon={<TbDots />}
+            />
           </div>
         </div>
       </div>

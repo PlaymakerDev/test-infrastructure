@@ -326,6 +326,10 @@ export interface CountingCameraItem {
   geometry_point: [number, number]
   /** Optional — backend may not expose it on this endpoint yet. */
   ip_address?: string
+  /** Online status. NOT returned by /counting's cameras endpoint yet (BE
+   *  TODO — crosswalk's equivalent got it 2026-07-03). Drives the red/white
+   *  map pin; pins stay white until BE populates it. */
+  is_online?: boolean
 }
 
 export interface APIResponseTrafficVolumeCameras {

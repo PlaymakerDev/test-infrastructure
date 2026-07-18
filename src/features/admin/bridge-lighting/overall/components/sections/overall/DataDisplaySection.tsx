@@ -1,11 +1,15 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SummaryTableBridgeLighting } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import FormSearchBridgeLighting from './FormSearchBridgeLighting'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
-import { BRIDGE_PROJECTS, type BridgeProject } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import { useScopeAll } from '@/hooks/useScopeAll'
+import { getBridgeLightingListAPI, getBridgeLightingTotalAPI } from '@/services/routes/BridgeLightingService'
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
+import type { APIResponseBridgeLightingList, BridgeLightingSolution } from '@/types/bridge-lighting/overall-api'
 
 const BRIDGE_FILTERS: FilterConfig[] = [
   {
@@ -51,82 +55,130 @@ const BRIDGE_FILTERS: FilterConfig[] = [
   },
 ]
 
-interface Props { }
+interface Props {
+  deptId: string | string[] | number
+}
 
-const DataDisplaySection: React.FC<Props> = () => {
+const DataDisplaySection: React.FC<Props> = (props) => {
+  const { deptId } = props
   const router = useRouter()
+  // Reactive ?scope=all — subscribes this memo'd component to the URL so the
+  // query keys re-derive when scope toggles.
+  const scope = useScopeAll() ? 'all' : 'own'
   const [activeFilter, setActiveFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
-  const goToDetail = useCallback(
-    (p: BridgeProject) => {
-      router.push(`/admin/bridge-lighting/detail/${p.id}`)
-    },
-    [router],
-  )
+  // Same query key InfoCardSection uses — both hit the same cache entry,
+  // no extra request.
+  const { data: totals } = useQuery({
+    queryKey: ['bridge_lighting_total', String(deptId ?? ''), scope],
+    queryFn: () => getBridgeLightingTotalAPI(String(deptId)!, { scope }),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData,
+  })
 
   const stats: FilterStats = useMemo(() => ({
-    all: BRIDGE_PROJECTS.length,
-    online: BRIDGE_PROJECTS.filter((p) => p.connection === 'online').length,
-    offline: BRIDGE_PROJECTS.filter((p) => p.connection === 'offline').length,
-    inWarranty: BRIDGE_PROJECTS.filter((p) => p.warranty === 'in-warranty').length,
-    expired: BRIDGE_PROJECTS.filter((p) => p.warranty === 'expired').length,
-  }), [])
+    all: totals?.data.solution.total ?? 0,
+    online: totals?.data.solution.online ?? 0,
+    offline: totals?.data.solution.offline ?? 0,
+    inWarranty: totals?.data.warranty.active ?? 0,
+    expired: totals?.data.warranty.expired ?? 0,
+  }), [totals])
 
-  const filtered = useMemo(() => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['bridge_lighting_list', String(deptId ?? ''), scope],
+    queryFn: () => getBridgeLightingListAPI(String(deptId)!, { scope }),
+    enabled: !!deptId,
+    placeholderData: keepPreviousData,
+  })
+
+  // Client-side filter — the API's request params only carry `scope` (no
+  // status/warranty/search params), so both the SearchBar filter buttons and
+  // the search box filter the already-loaded list here, same as InfoCardSection's
+  // stat aggregation. Rebuilds the same dept → sub_department → solutions tree
+  // with only the matching solutions kept; sub-depts / depts that end up empty
+  // are dropped so no empty headers show.
+  const filteredData = useMemo<APIResponseBridgeLightingList>(() => {
+    const list = data?.data ?? []
     const term = search.trim().toLowerCase()
-    return BRIDGE_PROJECTS.filter((p) => {
+    const solutionMatches = (sol: BridgeLightingSolution, bureau: string) => {
       switch (activeFilter) {
-        case 'online': if (p.connection !== 'online') return false; break
-        case 'offline': if (p.connection !== 'offline') return false; break
-        case 'in-warranty': if (p.warranty !== 'in-warranty') return false; break
-        case 'expired': if (p.warranty !== 'expired') return false; break
+        case 'online': if (!sol.is_online) return false; break
+        case 'offline': if (sol.is_online) return false; break
+        case 'in-warranty': if (!sol.is_warranty) return false; break
+        case 'expired': if (sol.is_warranty) return false; break
       }
       if (term) {
-        const haystack = `${p.roadCode} ${p.projectName} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
+        const haystack = `${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no} ${bureau}`.toLowerCase()
         if (!haystack.includes(term)) return false
       }
       return true
-    })
-  }, [activeFilter, search])
+    }
+    return list
+      .map((dept) => ({
+        ...dept,
+        sub_department: (dept.sub_department ?? [])
+          .map((sub) => ({
+            ...sub,
+            solutions: (sub.solutions ?? []).filter((sol) => solutionMatches(sol, sub.department_short_name)),
+          }))
+          .filter((sub) => sub.solutions.length > 0),
+      }))
+      .filter((dept) => dept.sub_department.length > 0)
+  }, [data, activeFilter, search])
 
-  // GRID view — project cards grouped by bureau, mirroring the crosswalk /
-  // traffic-signal overall pages. `ProjectCardGrid` is the shared card layout.
-  // Bridge-lighting is mock-only, so it has no backend road_id / project_id:
-  //   • roadId 0 disables the card's "หน่วยงานที่รับผิดชอบ" lookup (shows "-")
-  //   • the card's ⓘ opens the shared (Redux) ProjectInfoModal with no ids,
-  //     so it renders placeholders — the rich mock modal stays on the TABLE view.
-  const cardItems = useMemo<ProjectCardItem[]>(
-    () =>
-      filtered.map((p) => ({
-        key: p.id,
-        roadId: 0,
-        projectId: null,
-        roadCode: p.roadCode,
-        projectName: p.projectName,
-        installPoint: p.installPoint,
-        contractNo: p.contractNo,
-        isWarranty: p.warranty === 'in-warranty',
-        bureau: p.bureau,
-        total: p.totalDevices,
-        online: p.onlineCount,
-        offline: p.offlineCount,
-        onDetail: () => goToDetail(p),
-      })),
-    [filtered, goToDetail],
-  )
+  // Flatten dept → sub-dept → solutions into card items, tagging each with its
+  // sub-dept short name so ProjectCardGrid groups by แขวง out of the box —
+  // same adapter shape vms/overall feeds the shared grid. A bridge-lighting
+  // solution is a single install point (no online_count/offline_count group
+  // like VMS), so total is always 1, split into online/offline by is_online.
+  const cardItems = useMemo<ProjectCardItem[]>(() => {
+    const out: ProjectCardItem[] = []
+    for (const dept of filteredData) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          out.push({
+            key: String(sol.solution.id),
+            roadId: sol.road.id,
+            projectId: sol.project.id,
+            roadCode: sol.road.code_name,
+            projectName: sol.project.project_name || '-',
+            installPoint: sol.solution.solution_name,
+            contractNo: sol.project.contract_no,
+            budgetYear: sol.project.budget_year,
+            isWarranty: sol.is_warranty === true,
+            bureau: sub.department_short_name,
+            total: 1,
+            online: sol.is_online ? 1 : 0,
+            offline: sol.is_online ? 0 : 1,
+            onDetail: () => {
+              // dept_id + is_warranty, plus the current page's scope forwarded via
+              // scopeQuerySuffix() — same URL pattern as SummaryTableBridgeLighting's goToDetail.
+              const params = new URLSearchParams({
+                dept_id: String(deptId),
+                is_warranty: String(sol.is_warranty),
+                project_id: String(sol.project.id),
+              })
+              router.push(`/admin/bridge-lighting/detail/${sol.solution.id}?${params}${scopeQuerySuffix()}`)
+            },
+          })
+        }
+      }
+    }
+    return out
+  }, [filteredData, router, deptId])
 
   const renderContent = useMemo(() => {
     switch (viewMode) {
       case 'TABLE':
-        return <SummaryTableBridgeLighting projects={filtered} />
+        return <SummaryTableBridgeLighting data={filteredData} loading={isLoading} />
       case 'GRID':
         return <ProjectCardGrid items={cardItems} totalLabel='ดวงไฟทั้งหมด' />
       default:
         return null
     }
-  }, [viewMode, filtered, cardItems])
+  }, [viewMode, filteredData, isLoading, cardItems])
 
   return (
     <div>

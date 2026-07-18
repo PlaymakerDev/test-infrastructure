@@ -16,7 +16,15 @@ export interface OverlapMarkerItem {
   popup: React.ReactNode
   /** Extra mapbox popup options (offset / closeButton / maxWidth …). */
   popupOptions?: PopupOptions
+  /** Device status (white variant only). A single pin — or a collapsed group
+   *  where EVERY item is offline — paints red; a group with at least one
+   *  online device stays white. Fanned-out tips are colored per item.
+   *  Omit when the endpoint doesn't carry status (pin stays white). */
+  offline?: boolean
 }
+
+/** Offline pin red — same tone the camera lists use for their offline dot. */
+export const OFFLINE_PIN_COLOR = '#ef4444'
 
 // Match the normal pin diameter so the spider center is indistinguishable in
 // size from a singleton pin next to it.
@@ -47,16 +55,18 @@ const YellowPin: React.FC<{ size?: number }> = ({ size = MARKER_SIZE }) => (
 )
 
 /** White teardrop pin — the shared detail-map marker (crosswalk / incident /
- *  traffic-volume / traffic-signal). Always white (never colored by status); an
- *  optional count badge marks an overlap group. */
-export const WhiteTeardropPin: React.FC<{ count?: number }> = ({ count }) => (
+ *  traffic-volume / traffic-signal / lpr). White by default (never colored by
+ *  status); `color` paints the SAME shape for a selected/active state (LPR
+ *  highlights the clicked pin yellow). Optional count badge marks an overlap
+ *  group. */
+export const WhiteTeardropPin: React.FC<{ count?: number; color?: string }> = ({ count, color }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
     <div
       style={{
         width: MARKER_SIZE, height: MARKER_SIZE,
         borderRadius: '50% 50% 50% 0',
         transform: 'rotate(-45deg)',
-        background: '#ffffff',
+        background: color ?? '#ffffff',
         boxShadow: '0 3px 12px rgba(0,0,0,0.55)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
@@ -82,9 +92,12 @@ export const WhiteTeardropPin: React.FC<{ count?: number }> = ({ count }) => (
 
 type PinVariant = 'yellow' | 'white'
 
-/** Single pin for the given variant (no count badge). */
-const Pin: React.FC<{ variant: PinVariant }> = ({ variant }) =>
-  variant === 'white' ? <WhiteTeardropPin /> : <YellowPin />
+/** Single pin for the given variant (no count badge). White variant turns
+ *  red when the item is offline; yellow (dashboard) has no status concept. */
+const Pin: React.FC<{ variant: PinVariant; offline?: boolean }> = ({ variant, offline }) =>
+  variant === 'white'
+    ? <WhiteTeardropPin color={offline ? OFFLINE_PIN_COLOR : undefined} />
+    : <YellowPin />
 
 /** Thin SVG legs from the center badge to each fanned tip. */
 const FanLegs: React.FC<{ count: number; length: number }> = memo(function FanLegs({ count, length }) {
@@ -142,12 +155,15 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
     const it = items[0]
     return (
       <HTMLMarker lngLat={center} anchor='center' title={it.title} onClick={() => showPopup(it)}>
-        <Pin variant={variant} />
+        <Pin variant={variant} offline={it.offline} />
       </HTMLMarker>
     )
   }
 
   const n = items.length
+  // Collapsed group goes red ONLY when every device at this coordinate is
+  // offline; any online device keeps it white (per design).
+  const allOffline = items.every((i) => i.offline === true)
   return (
     <HTMLMarker lngLat={center} anchor='center'>
       <div style={{ position: 'relative', width: MARKER_SIZE, height: MARKER_SIZE, overflow: 'visible' }}>
@@ -163,7 +179,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
             title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
             style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', zIndex: 2 }}
           >
-            <WhiteTeardropPin count={n} />
+            <WhiteTeardropPin count={n} color={allOffline ? OFFLINE_PIN_COLOR : undefined} />
           </button>
         ) : (
           <button
@@ -214,7 +230,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
                   zIndex: 3,
                 }}
               >
-                <Pin variant={variant} />
+                <Pin variant={variant} offline={it.offline} />
               </button>
             )
           })}

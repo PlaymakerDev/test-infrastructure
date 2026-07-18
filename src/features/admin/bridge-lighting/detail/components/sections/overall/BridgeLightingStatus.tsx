@@ -4,9 +4,21 @@ import { AnimatePresence, motion } from 'motion/react'
 import React, { useState } from 'react'
 import { TbSparkles } from 'react-icons/tb'
 import FormUpdateBridgeLightingStatus from './FormUpdateBridgeLightingStatus'
+import { APIResponseBridgeLightingWID, APIResponsePostShellyStatus } from '@/types/bridge-lighting/overall-api'
+import dayjs from 'dayjs'
 
-const BridgeLightingStatus: React.FC = () => {
+interface Props {
+  widData?: APIResponseBridgeLightingWID
+  shellyStatusData?: APIResponsePostShellyStatus
+  isShellyStatusSuccess?: boolean
+}
+
+const BridgeLightingStatus: React.FC<Props> = (props) => {
+  const { widData, shellyStatusData, isShellyStatusSuccess } = props
   const [editMode, setEditMode] = useState(false)
+  const shellyStatus = shellyStatusData?.data[0]
+
+  if (!isShellyStatusSuccess) return null
 
   return (
     <div className='flex-1 min-h-0 flex flex-col bg-(--dark-black)/80 backdrop-blur-xs rounded-[20px] p-5'>
@@ -17,8 +29,8 @@ const BridgeLightingStatus: React.FC = () => {
             <h4 className='mb-0'>สถานะการทำงาน</h4>
           </div>
           <div>
-            <h3>ปิดไฟประดับสะพาน</h3>
-            <p className='fs-12'>อัพเดตล่าสุด : 15 เม.ย. 2569 18:35:29 น.</p>
+            <h3>{shellyStatus?.output ? "เปิดไฟประดับสะพาน" : "ปิดไฟประดับสะพาน"}</h3>
+            <p className='fs-12'>อัพเดตล่าสุด : {dayjs(shellyStatus?.last_seen).format('DD MMM BBBB HH:mm:ss')} น.</p>
           </div>
         </div>
       </section>
@@ -54,7 +66,12 @@ const BridgeLightingStatus: React.FC = () => {
               exit={{ opacity: 0, y: 24 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <FormUpdateBridgeLightingStatus editMode={editMode} setEditMode={setEditMode} />
+              <FormUpdateBridgeLightingStatus
+                widData={widData}
+                shellyStatus={shellyStatus}
+                editMode={editMode}
+                setEditMode={setEditMode}
+              />
             </motion.div>
           )}
         </AnimatePresence>

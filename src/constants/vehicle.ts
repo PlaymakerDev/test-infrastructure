@@ -39,6 +39,19 @@ export const WEIGHT_STATUS = {
   "P": "รถน้ำหนักเกิน (เพลาเกิน)"
 }
 
+// Vehicle-type badge colors, keyed on the Thai vehicle_type_name. Mirrors the
+// traffic-volume palette (blue→orange, light→heavy) so type colors stay
+// consistent across features — see traffic-volume .../overall/data/vehicleTypes.ts.
+export const VEHICLE_TYPE_COLOR: Record<string, string> = {
+  "รถจักรยานยนต์": "#007BFF",
+  "รถยนต์": "#00DDFF",
+  "รถกระบะ": "#00FFAA",
+  "รถแท็กซี่": "#00FF00",
+  "รถบัส": "#C8FF00",
+  "รถบรรทุก": "#FFC800",
+  "รถพ่วง": "#FF5E00",
+}
+
 export const WEIGHT_STATUS_WITH_PROPERTIES = {
   "N": {
     text: "ปกติ",

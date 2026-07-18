@@ -1,9 +1,11 @@
 import SwapButton from '@/components/swap-button/SwapButton'
+import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 
 interface Props {
+  departmentData?: MobileMasterDepartmentByTIDData
   setCurrentTab: (value: string) => void;
 }
 
@@ -17,10 +19,10 @@ const OPTIONS = [
     label: 'ข้อมูลรถเข้าชั่งน้ำหนัก',
     value: 'VEHICLE'
   },
-
 ]
 
 const TitleSection: React.FC<Props> = (props) => {
+  const { departmentData } = props
   const { setCurrentTab } = props
   const router = useRouter()
 
@@ -38,7 +40,7 @@ const TitleSection: React.FC<Props> = (props) => {
           onClick={() => router.back()}
         />
         <div>
-          <h1 className='text-(--yellow)'>ตรวจสอบน้ำหนักเคลื่อนที่ : มห.4021</h1>
+          <h1 className='text-(--yellow)'>ตรวจสอบน้ำหนักเคลื่อนที่ : {departmentData?.way_id || '-'}</h1>
           <p className='text-(--yellow)'>ระบบตรวจสอบน้ำหนักเคลื่อนที่ด้วยเจ้าหน้าที่ภาคสนาม</p>
         </div>
       </section>
