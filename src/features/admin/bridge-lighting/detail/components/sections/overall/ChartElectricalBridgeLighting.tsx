@@ -67,6 +67,28 @@ const ChartElectricalBridgeLighting: React.FC<Props> = (props) => {
     () => buildPoints(pmChartData ?? [], { p1: 'i_l1', p2: 'i_l2', p3: 'i_l3' }),
     [pmChartData],
   )
+
+  // Auto-scale both charts so the visible curve shows the actual variation.
+  // Voltage in a healthy grid sits ~220 V — the previous fixed [0, 260] wasted
+  // ~85% of the y-axis and made a 2-3 V swing look like a flat line. Pad the
+  // observed min/max by 5% of the range (min 2 V / 0.2 A) so the traces don't
+  // hug the plot edges.
+  const computeDomain = (data: LineChartDataPoint[], minPad: number): [number, number] => {
+    const vals: number[] = []
+    for (const row of data) {
+      for (const key of ['p1', 'p2', 'p3'] as const) {
+        const v = row[key]
+        if (typeof v === 'number' && Number.isFinite(v) && v > 0) vals.push(v)
+      }
+    }
+    if (vals.length === 0) return [0, 1]
+    const min = Math.min(...vals)
+    const max = Math.max(...vals)
+    const pad = Math.max(minPad, (max - min) * 0.05)
+    return [Math.max(0, min - pad), max + pad]
+  }
+  const voltageDomain = useMemo(() => computeDomain(voltageData, 2), [voltageData])
+  const currentDomain = useMemo(() => computeDomain(currentData, 0.2), [currentData])
   // Same "latest reading" convention as VoltageStat — the last bucket is the
   // most recent sample, so its date drives the tooltip header.
   const tooltipDate = useMemo(() => {
@@ -85,7 +107,7 @@ const ChartElectricalBridgeLighting: React.FC<Props> = (props) => {
           data={voltageData}
           lines={VOLTAGE_LINES}
           fillHeight
-          yAxisDomain={[0, 260]}
+          yAxisDomain={voltageDomain}
           titleSize={16}
           accentColor='#FCD116'
           cardBackground='#000000CC'
@@ -104,9 +126,10 @@ const ChartElectricalBridgeLighting: React.FC<Props> = (props) => {
           data={currentData}
           lines={CURRENT_LINES}
           fillHeight
-          // Real readings run ~0–1A (vs. the old mock's 0–100 scale) — auto-scale
-          // the max instead of a fixed guess so the curve isn't squashed flat.
-          yAxisDomain={[0, 'auto']}
+          // Real readings run ~0-1A (vs. the old mock's 0-100 scale) — use a
+          // tightly padded observed range so the tiny per-phase variation is
+          // still legible.
+          yAxisDomain={currentDomain}
           titleSize={16}
           accentColor='#66AEFF'
           cardBackground='#000000CC'
