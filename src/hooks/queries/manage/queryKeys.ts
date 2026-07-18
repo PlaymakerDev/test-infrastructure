@@ -65,4 +65,43 @@ export const manageKeys = {
     search: (keyword: string) =>
       [...manageKeys.sso.all, 'search', keyword.trim().toLowerCase()] as const,
   },
+
+  // Project detail resources — road_solution (routes + installation
+  // points), solutions (task types), cameras.
+  roadSolutions: {
+    all: ['manage', 'road-solutions'] as const,
+    /** GET /solution/road_solution?project_id — full route tree of a project. */
+    byProject: (projectId: number | string) =>
+      [...manageKeys.roadSolutions.all, 'by-project', projectId] as const,
+  },
+  solutions: {
+    all: ['manage', 'solutions'] as const,
+    /** GET /solution?solution_location_id — solutions at a location. */
+    byLocation: (solutionLocationId: number | string) =>
+      [...manageKeys.solutions.all, 'by-location', solutionLocationId] as const,
+    /** GET /solution/details/{id} */
+    detail: (id: number | string) =>
+      [...manageKeys.solutions.all, 'detail', id] as const,
+    /** GET /solution/type/{solution_location_id} — task type presence + counts. */
+    typesAtLocation: (solutionLocationId: number | string) =>
+      [...manageKeys.solutions.all, 'types-at-location', solutionLocationId] as const,
+    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location. */
+    camerasAtLocation: (solutionLocationId: number | string) =>
+      [...manageKeys.solutions.all, 'cameras-at-location', solutionLocationId] as const,
+    /** GET /solution/camera/vms/{solution_id} */
+    vmsCameras: (solutionId: number | string) =>
+      [...manageKeys.solutions.all, 'vms-cameras', solutionId] as const,
+    /** GET /solution/camera/crossing_codes/{solution_id} */
+    crossingCodes: (solutionId: number | string) =>
+      [...manageKeys.solutions.all, 'crossing-codes', solutionId] as const,
+  },
+  equipments: {
+    all: ['manage', 'equipments'] as const,
+    list: (params: Record<string, unknown>) =>
+      [...manageKeys.equipments.all, 'list', params] as const,
+  },
+  solutionTypes: {
+    /** GET /solution/type — the master list of the ~10 solution kinds. */
+    all: () => ['manage', 'solution-types', 'master'] as const,
+  },
 } as const

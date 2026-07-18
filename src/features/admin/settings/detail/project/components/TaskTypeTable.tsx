@@ -5,12 +5,14 @@ import React, { useMemo } from 'react'
 import { TbPencil, TbPlus, TbShieldCheckFilled, TbTrash, TbVideo } from 'react-icons/tb'
 import { useProjectDetailContext } from '../context'
 import type { InstallPoint, TaskType } from '../types'
+import { SOLUTION_TYPE } from '@/types/manage/solution-api'
 
 interface Props {
   point: InstallPoint
   onEditPoint: () => void
   onDeletePoint: () => void
   onAddTaskType: () => void
+  onEditTaskType: (task: TaskType) => void
   onDeleteTaskType: (task: TaskType) => void
   onOpenEquipment: (task: TaskType) => void
   onOpenCrossingCode: (task: TaskType) => void
@@ -21,12 +23,13 @@ const TaskTypeTable: React.FC<Props> = ({
   onEditPoint,
   onDeletePoint,
   onAddTaskType,
+  onEditTaskType,
   onDeleteTaskType,
   onOpenEquipment,
   onOpenCrossingCode,
 }) => {
-  const { activeRouteId, project } = useProjectDetailContext()
-  const activeRoute = project.routes.find((r) => r.id === activeRouteId)
+  const { activeRoute, activePointTaskTypes, taskTypesLoading, activePointCameras } =
+    useProjectDetailContext()
 
   const columns: ColumnsType<TaskType> = useMemo(
     () => [
@@ -41,8 +44,16 @@ const TaskTypeTable: React.FC<Props> = ({
         key: 'crossing',
         width: 160,
         align: 'center',
-        render: (_: unknown, row) =>
-          row.kind !== 'CCTV' ? (
+        render: (_: unknown, row) => {
+          // CrossingCode endpoint is only implemented for Counting / Analytic
+          // / Traffic / Crosswalk (backend returns 404 for others).
+          const supportsCrossing =
+            row.kindId === SOLUTION_TYPE.Counting ||
+            row.kindId === SOLUTION_TYPE.Analytic ||
+            row.kindId === SOLUTION_TYPE.Traffic ||
+            row.kindId === SOLUTION_TYPE.Crosswalk
+          if (!supportsCrossing) return null
+          return (
             <button
               type='button'
               onClick={() => onOpenCrossingCode(row)}
@@ -51,7 +62,8 @@ const TaskTypeTable: React.FC<Props> = ({
             >
               <TbShieldCheckFilled size={22} className='text-(--default-blue)' />
             </button>
-          ) : null,
+          )
+        },
       },
       {
         title: 'รายการอุปกรณ์',
@@ -59,7 +71,13 @@ const TaskTypeTable: React.FC<Props> = ({
         width: 160,
         align: 'center',
         render: (_: unknown, row) => {
-          const hasEquipment = row.kind === 'CCTV' ? row.equipment.length > 0 : (row.equipmentRefs?.length ?? 0) > 0
+          // CCTV task rows draw from the point-level camera list; non-CCTV
+          // rows carry their own attach state that we haven't preloaded on
+          // the table, so lazily surface presence via the CCTV list only.
+          const isCCTV = row.kindId === SOLUTION_TYPE.CCTV
+          const hasCameras = isCCTV
+            ? activePointCameras.length > 0
+            : (row.equipment?.length ?? 0) > 0
           return (
             <button
               type='button'
@@ -67,17 +85,17 @@ const TaskTypeTable: React.FC<Props> = ({
               className='cursor-pointer hover:opacity-80'
               title='ดู/จัดการอุปกรณ์'
             >
-              {row.kind === 'CCTV' ? (
+              {isCCTV ? (
                 <TbVideo
                   size={26}
-                  className={hasEquipment ? 'text-(--yellow)' : 'text-white/40'}
+                  className={hasCameras ? 'text-(--yellow)' : 'text-white/40'}
                 />
               ) : (
                 <div
                   className='inline-flex items-center justify-center w-8 h-8 rounded-full'
                   style={{
-                    border: `1px solid ${hasEquipment ? 'var(--yellow)' : 'var(--default-blue)'}`,
-                    color: hasEquipment ? 'var(--yellow)' : 'var(--default-blue)',
+                    border: `1px solid ${hasCameras ? 'var(--yellow)' : 'var(--default-blue)'}`,
+                    color: hasCameras ? 'var(--yellow)' : 'var(--default-blue)',
                   }}
                 >
                   <TbPlus size={16} />
@@ -98,7 +116,7 @@ const TaskTypeTable: React.FC<Props> = ({
             className='underline text-(--default-blue) hover:opacity-80'
             title='เปิดหน้าเว็บฟีเจอร์'
           >
-            {activeRoute?.code} {row.pointName}
+            {activeRoute?.code} {point.name}
           </a>
         ),
       },
@@ -109,7 +127,12 @@ const TaskTypeTable: React.FC<Props> = ({
         align: 'center',
         render: (_: unknown, row) => (
           <div className='flex items-center gap-3 justify-center'>
-            <button className='text-(--yellow) cursor-pointer hover:opacity-80' title='แก้ไข'>
+            <button
+              type='button'
+              onClick={() => onEditTaskType(row)}
+              className='text-(--yellow) cursor-pointer hover:opacity-80'
+              title='แก้ไข'
+            >
               <TbPencil size={18} />
             </button>
             <button
@@ -124,7 +147,15 @@ const TaskTypeTable: React.FC<Props> = ({
         ),
       },
     ],
-    [activeRoute, onDeleteTaskType, onOpenEquipment, onOpenCrossingCode],
+    [
+      activeRoute,
+      point.name,
+      activePointCameras,
+      onEditTaskType,
+      onDeleteTaskType,
+      onOpenEquipment,
+      onOpenCrossingCode,
+    ],
   )
 
   return (
@@ -166,7 +197,8 @@ const TaskTypeTable: React.FC<Props> = ({
       <Table<TaskType>
         rowKey='id'
         columns={columns}
-        dataSource={point.taskTypes}
+        dataSource={activePointTaskTypes}
+        loading={taskTypesLoading}
         pagination={false}
         size='middle'
         className='point-task-table'

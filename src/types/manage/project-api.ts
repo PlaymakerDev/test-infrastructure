@@ -30,9 +30,16 @@ export interface ProjectContractorUser {
 }
 
 /** One road linked to a project. Server accepts an array of these on
- *  POST/PUT. Rejects empty arrays with res_code 40010 (details="min"). */
+ *  POST/PUT. Rejects empty arrays with res_code 40010 (details="min").
+ *
+ *  On PUT: rows with `project_road_id === 0` (or missing) are treated as
+ *  NEW rows and cause the backend to insert a duplicate project_road plus
+ *  auto-create a "จุดติดตั้งที่ 1" solution_location. To update-in-place
+ *  the frontend MUST forward the existing `project_road_id` returned from
+ *  GET /project/{id}.project_roads[i].project_road_id. */
 export interface ProjectRoadLink {
   road_id: number
+  project_road_id?: number
 }
 
 // ── GET /manage/project ──────────────────────────────────────────────────────

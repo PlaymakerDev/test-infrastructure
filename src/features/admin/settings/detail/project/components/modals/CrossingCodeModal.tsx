@@ -1,10 +1,10 @@
 "use client"
-import { Button, ConfigProvider, Modal, Table } from 'antd'
+import { Button, ConfigProvider, Modal, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import React, { useMemo } from 'react'
-import { TbTrash } from 'react-icons/tb'
+import { useCrossingCodes } from '@/hooks/queries/manage'
 import { useProjectDetailContext } from '../../context'
-import type { Equipment, TaskType } from '../../types'
+import type { TaskType } from '../../types'
 
 interface Props {
   open: boolean
@@ -12,38 +12,40 @@ interface Props {
   onClose: () => void
 }
 
+interface Row {
+  camera_id: string
+  camera_name: string
+  crossing_index_code: string
+}
+
+/** Read-only view of the crossing index codes generated for the given
+ *  Counting / Analytic / Traffic / Crosswalk solution. Backend endpoint
+ *  is available only for those 4 types; the parent table hides the icon
+ *  for other kinds. */
 const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
-  const { project, activeRouteId, activePointId } = useProjectDetailContext()
+  const { activePoint } = useProjectDetailContext()
+  const codesQuery = useCrossingCodes(open ? task?.id ?? null : null)
 
-  // Rows are the equipment currently referenced by this task-type via
-  // equipmentRefs, resolved to the actual CCTV equipment rows at the same
-  // installation point (so we can pull the pre-generated crossingCode).
-  const rows = useMemo(() => {
-    if (!task) return []
-    const point = project.routes
-      .find((r) => r.id === activeRouteId)
-      ?.points.find((p) => p.id === activePointId)
-    const cctv = point?.taskTypes.find((t) => t.kind === 'CCTV')
-    if (!cctv) return []
-    const refs = new Set(task.equipmentRefs ?? [])
-    return cctv.equipment.filter((e) => refs.has(e.id))
-  }, [task, project, activeRouteId, activePointId])
+  const rows: Row[] = useMemo(
+    () => codesQuery.data?.camera_crossing_index_code ?? [],
+    [codesQuery.data],
+  )
 
-  const columns: ColumnsType<Equipment> = useMemo(
+  const columns: ColumnsType<Row> = useMemo(
     () => [
-      { title: 'ลำดับ', key: 'no', width: 60, render: (_: unknown, __: Equipment, i: number) => i + 1 },
-      { title: 'ชื่ออุปกรณ์', dataIndex: 'name', key: 'name', ellipsis: true },
-      { title: 'Crossingcode', dataIndex: 'crossingCode', key: 'crossingCode', width: 380 },
       {
-        title: 'จัดการ',
-        key: 'actions',
-        width: 100,
-        align: 'center',
-        render: () => (
-          <button className='text-(--red) cursor-pointer hover:opacity-80' title='ลบ'>
-            <TbTrash size={18} />
-          </button>
-        ),
+        title: 'ลำดับ',
+        key: 'no',
+        width: 60,
+        render: (_: unknown, __: Row, i: number) => i + 1,
+      },
+      { title: 'ชื่ออุปกรณ์', dataIndex: 'camera_name', key: 'camera_name', ellipsis: true },
+      {
+        title: 'CrossingCode',
+        dataIndex: 'crossing_index_code',
+        key: 'crossing_index_code',
+        width: 380,
+        render: (v: string) => <span style={{ fontFamily: 'monospace' }}>{v}</span>,
       },
     ],
     [],
@@ -53,7 +55,14 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#1A1A1A', headerBg: '#1A1A1A', footerBg: '#1A1A1A', colorIcon: '#FFF', titleColor: '#66AEFF', borderRadiusLG: 16 },
+          Modal: {
+            contentBg: '#1A1A1A',
+            headerBg: '#1A1A1A',
+            footerBg: '#1A1A1A',
+            colorIcon: '#FFF',
+            titleColor: '#66AEFF',
+            borderRadiusLG: 16,
+          },
           Table: {
             headerBg: '#66AEFF',
             headerColor: '#1A1A1A',
@@ -74,38 +83,59 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
         destroyOnHidden
         width={900}
         closable={{ 'aria-label': 'Custom Close Button' }}
-        styles={{ container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' }, mask: { background: 'rgba(0,0,0,0.55)' } }}
+        styles={{
+          container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' },
+          mask: { background: 'rgba(0,0,0,0.55)' },
+        }}
         title={null}
       >
         <div className='mb-4'>
-          <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>CrossingCode</h2>
+          <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>
+            CrossingCode
+          </h2>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, margin: 0 }}>
-            {task ? `จุดติดตั้ง : ${task.pointName} • ${task.kind}` : ''}
+            {task && activePoint ? `จุดติดตั้ง : ${activePoint.name} • ${task.kind}` : ''}
           </p>
+          {codesQuery.data?.master_index_code && (
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: '8px 0 0', fontFamily: 'monospace' }}>
+              Master : {codesQuery.data.master_index_code}
+            </p>
+          )}
         </div>
 
-        <Table<Equipment>
-          rowKey='id'
-          columns={columns}
-          dataSource={rows}
-          pagination={false}
-          size='middle'
-        />
+        {codesQuery.isLoading ? (
+          <div className='flex items-center justify-center py-10'>
+            <Spin />
+          </div>
+        ) : codesQuery.isError ? (
+          <div style={{ color: '#FF6666', textAlign: 'center', padding: '40px 0' }}>
+            ไม่สามารถโหลด CrossingCode ได้ (บาง Solution type ไม่รองรับ)
+          </div>
+        ) : (
+          <Table<Row>
+            rowKey='camera_id'
+            columns={columns}
+            dataSource={rows}
+            pagination={false}
+            size='middle'
+            locale={{ emptyText: 'ยังไม่มี CrossingCode' }}
+          />
+        )}
 
         <div className='flex justify-end gap-3 mt-6'>
           <Button
             shape='round'
+            style={{
+              background: '#FCD116',
+              color: '#1A1A1A',
+              borderColor: '#FCD116',
+              padding: '8px 32px',
+              height: 'auto',
+              fontWeight: 600,
+            }}
             onClick={onClose}
-            style={{ background: '#E5E5E5', color: '#4A4A4A', borderColor: '#E5E5E5', padding: '8px 28px', height: 'auto', fontWeight: 500 }}
           >
-            ยกเลิก
-          </Button>
-          <Button
-            shape='round'
-            style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', padding: '8px 32px', height: 'auto', fontWeight: 600 }}
-            onClick={onClose}
-          >
-            ยืนยัน
+            ปิด
           </Button>
         </div>
       </Modal>

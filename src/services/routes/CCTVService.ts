@@ -143,3 +143,42 @@ export const getCctvCameraCentralListAPI = (roadId: string | number) =>
     method: 'GET',
     params: { road_id: roadId },
   })
+
+// ── Camera CRUD (settings/project-detail rewrite) ──────────────────────────
+
+/** POST /cctv/cameras — create a physical CCTV camera and attach it to
+ *  a Solution row. Backend enforces `solution_id, camera_name, sta,
+ *  hls_url, geometry_point`. */
+export interface CreateCameraRequest {
+  solution_id: number
+  camera_name: string
+  sta: string
+  hls_url: string
+  /** GeoJSON Point object. WKT strings are rejected with "invalid character"
+   *  or "unable to unmarshal geometry data". */
+  geometry_point: { type: 'Point'; coordinates: [number, number] }
+  ip_address?: string
+  remark?: string | null
+}
+
+export const createCameraAPI = (body: CreateCameraRequest) =>
+  ApiService.fetchData<{ id: string }, CreateCameraRequest>({
+    url: '/cctv/cameras',
+    method: 'POST',
+    data: body,
+  })
+
+export const deleteCameraAPI = (id: string) =>
+  ApiService.fetchData<void>({
+    url: `/cctv/cameras/${id}`,
+    method: 'DELETE',
+  })
+
+export type UpdateCameraRequest = Partial<CreateCameraRequest>
+
+export const updateCameraAPI = (id: string, body: UpdateCameraRequest) =>
+  ApiService.fetchData<void, UpdateCameraRequest>({
+    url: `/cctv/cameras/${id}`,
+    method: 'PUT',
+    data: body,
+  })

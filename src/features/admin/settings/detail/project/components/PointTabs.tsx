@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React from 'react'
 import { TbPlus } from 'react-icons/tb'
 import { useProjectDetailContext } from '../context'
 
@@ -8,26 +8,27 @@ interface Props {
 }
 
 const PointTabs: React.FC<Props> = ({ onAddPoint }) => {
-  const { project, activeRouteId, activePointId, setActivePointId } = useProjectDetailContext()
+  const { activeRoute, activePointId, setActivePointId, activePointTaskTypes } =
+    useProjectDetailContext()
 
-  const route = useMemo(
-    () => project.routes.find((r) => r.id === activeRouteId),
-    [project, activeRouteId],
-  )
-
-  if (!route) return null
+  if (!activeRoute) return null
 
   return (
     <div className='flex items-center gap-4 flex-wrap border-b border-white/10 pb-2'>
-      {route.points.map((p) => {
+      {activeRoute.points.map((p) => {
         const isActive = p.id === activePointId
+        // Only the ACTIVE point has its task types loaded; other tabs show a
+        // placeholder count until the user clicks in. Keeps the initial page
+        // fetch minimal.
+        const count = isActive ? activePointTaskTypes.length : (p.taskTypes?.length ?? '·')
         return (
           <button
             key={p.id}
             type='button'
             onClick={() => setActivePointId(p.id)}
-            className={`inline-flex items-center gap-2 py-1 cursor-pointer transition-colors ${isActive ? 'text-(--yellow) border-b-2 border-(--yellow)' : 'text-white/70 hover:text-white'
-              }`}
+            className={`inline-flex items-center gap-2 py-1 cursor-pointer transition-colors ${
+              isActive ? 'text-(--yellow) border-b-2 border-(--yellow)' : 'text-white/70 hover:text-white'
+            }`}
             style={{ marginBottom: -9 }}
           >
             <span>{p.name}</span>
@@ -37,7 +38,7 @@ const PointTabs: React.FC<Props> = ({ onAddPoint }) => {
                 border: `1px solid ${isActive ? 'var(--yellow)' : 'rgba(255,255,255,0.4)'}`,
               }}
             >
-              {p.taskTypes.length}
+              {count}
             </span>
           </button>
         )

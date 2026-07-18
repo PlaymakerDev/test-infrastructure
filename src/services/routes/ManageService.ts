@@ -78,14 +78,18 @@ export const createProjectAPI = (body: APIRequestProject) =>
     data: body,
   })
 
-/** PUT reuses the same body as create with the numeric `id` inlined —
- *  there is no path parameter. */
-export const updateProjectAPI = (body: APIRequestProjectUpdate) =>
-  ApiService.fetchData<APIResponseProject, APIRequestProjectUpdate>({
+/** Backend PUT reads the target id from the `project_id` query string
+ *  (see manage/project_handler.go:PutProject), NOT the JSON body. Without
+ *  this param the server returns 400 "project_id params is required". */
+export const updateProjectAPI = (body: APIRequestProjectUpdate) => {
+  const { id, ...rest } = body
+  return ApiService.fetchData<APIResponseProject, Omit<APIRequestProjectUpdate, 'id'>>({
     url: '/manage/project',
     method: 'PUT',
-    data: body,
+    params: { project_id: id },
+    data: rest,
   })
+}
 
 export const deleteProjectAPI = (id: number) =>
   ApiService.fetchData<void>({

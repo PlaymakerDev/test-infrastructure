@@ -40,3 +40,34 @@ export { useHomeDeptId, resolveHomeDeptId, deptQuery } from './useHomeDeptId'
 
 // LDAP / SSO search
 export { useSsoSearch } from './useSsoSearch'
+
+// Project detail — camera CRUD (via /cctv/cameras)
+export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
+
+// Project detail — road_solution / solution / cameras / equipments
+export {
+  useSolutionTypes,
+  useSolutionTypesAtLocation,
+  useRoadSolutions,
+  useSolutions,
+  useSolutionDetail,
+  useSolutionCameras,
+  useSolutionVmsCameras,
+  useCrossingCodes,
+  useEquipmentsList,
+  useCreateRoadSolution,
+  useUpdateSolutionLocation,
+  useDeleteSolutionLocation,
+  useDeleteProjectRoad,
+  useCreateSolution,
+  useUpdateSolution,
+  useDeleteSolution,
+  useAttachCountingCameras,
+  useAttachAnalyticCameras,
+  useAttachCrosswalkCameras,
+  useAttachWimCameras,
+  useAttachTrafficCameras,
+  useCreateVMSSolution,
+  useAppendVmsCameras,
+  useLinkWimStation,
+} from './solution'

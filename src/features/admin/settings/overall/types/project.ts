@@ -19,6 +19,15 @@ export interface Project {
   warrantyStatus: WarrantyStatus
 }
 
+/** One row from the modal's roads list. `projectRoadId` is defined when
+ *  the row was loaded from an existing project (edit mode) and MUST be
+ *  echoed back on PUT so the backend updates that row in place instead
+ *  of inserting a duplicate. */
+export interface ProjectFormRoad {
+  roadId: string
+  projectRoadId?: number
+}
+
 export interface ProjectFormValues {
   name: string
   budgetYear: number | null
@@ -26,7 +35,7 @@ export interface ProjectFormValues {
   code: string
   owner: string
   contractor: string
-  roads: string[]
+  roads: ProjectFormRoad[]
   warrantyStart: string
   warrantyEnd: string
 }

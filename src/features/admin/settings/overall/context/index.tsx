@@ -172,7 +172,8 @@ export const OverallProvider = (props: PageProviderProps) => {
           contractor_id: values.contractor,
           warranty_start_date: values.warrantyStart,
           warranty_end_date: values.warrantyEnd,
-          project_road: values.roads.map((r) => ({ road_id: Number(r) })),
+          // Create-flow: no existing project_road ids yet.
+          project_road: values.roads.map((r) => ({ road_id: Number(r.roadId) })),
         })
         message.success('เพิ่มโครงการสำเร็จ')
       } catch (err) {
@@ -196,7 +197,14 @@ export const OverallProvider = (props: PageProviderProps) => {
           contractor_id: values.contractor,
           warranty_start_date: values.warrantyStart,
           warranty_end_date: values.warrantyEnd,
-          project_road: values.roads.map((r) => ({ road_id: Number(r) })),
+          // Echo project_road_id for existing rows so the backend updates in
+          // place; rows without it are new inserts. Rows removed from the
+          // form are absent here — the backend deletes them by diffing
+          // (see manage/projects/repository.go:PutProject).
+          project_road: values.roads.map((r) => ({
+            road_id: Number(r.roadId),
+            ...(r.projectRoadId ? { project_road_id: r.projectRoadId } : {}),
+          })),
         })
         message.success('แก้ไขโครงการสำเร็จ')
       } catch (err) {

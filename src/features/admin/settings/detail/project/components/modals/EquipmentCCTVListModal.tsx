@@ -1,9 +1,10 @@
 "use client"
-import { Button, ConfigProvider, Modal, Table } from 'antd'
+import { Button, ConfigProvider, message, Modal, Popconfirm, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { TbPencil, TbPlayerPlay, TbPlus, TbTrash, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { useDeleteCamera } from '@/hooks/queries/manage'
 import { useProjectDetailContext } from '../../context'
 import type { Equipment, TaskType } from '../../types'
 
@@ -14,7 +15,6 @@ interface Props {
   onClose: () => void
   onAdd: () => void
   onOpenLiveStream: (equipment: Equipment) => void
-  onDelete: (equipment: Equipment) => void
 }
 
 const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
@@ -30,8 +30,30 @@ const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
   </span>
 )
 
-const EquipmentCCTVListModal: React.FC<Props> = ({ open, task, projectName, onClose, onAdd, onOpenLiveStream, onDelete }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
+/** CCTV camera list at the active installation point. Reads cameras from
+ *  the shared detail context (loaded via useSolutionCameras). Wires the
+ *  row-level delete straight to `/cctv/cameras/{id}`. */
+const EquipmentCCTVListModal: React.FC<Props> = ({
+  open,
+  task,
+  projectName,
+  onClose,
+  onAdd,
+  onOpenLiveStream,
+}) => {
+  const { activePointCameras, camerasLoading } = useProjectDetailContext()
+  const deleteCamera = useDeleteCamera()
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCamera.mutateAsync(id)
+      message.success('ลบอุปกรณ์สำเร็จ')
+    } catch (err) {
+      const anyErr = err as { response?: { data?: { res_data?: { message?: string } } }; message?: string }
+      message.error(anyErr?.response?.data?.res_data?.message ?? anyErr?.message ?? 'ลบอุปกรณ์ไม่สำเร็จ')
+    }
+  }
+
   const columns: ColumnsType<Equipment> = useMemo(
     () => [
       { title: 'ลำดับ', key: 'no', width: 60, render: (_: unknown, __: Equipment, i: number) => i + 1 },
@@ -41,7 +63,8 @@ const EquipmentCCTVListModal: React.FC<Props> = ({ open, task, projectName, onCl
         dataIndex: 'lastUpdated',
         key: 'lastUpdated',
         width: 200,
-        render: (v: string) => (dayjs(v).isValid() ? dayjs(v).format('DD MMM YYYY HH:mm:ss') : v),
+        render: (v: string | null | undefined) =>
+          v && dayjs(v).isValid() ? dayjs(v).format('DD MMM YYYY HH:mm:ss') : '-',
       },
       {
         title: 'สถานะการเชื่อมต่อ',
@@ -77,25 +100,38 @@ const EquipmentCCTVListModal: React.FC<Props> = ({ open, task, projectName, onCl
             <button className='text-(--yellow) cursor-pointer hover:opacity-80' title='แก้ไข'>
               <TbPencil size={18} />
             </button>
-            <button
-              className='text-(--red) cursor-pointer hover:opacity-80'
-              onClick={() => onDelete(row)}
-              title='ลบ'
+            <Popconfirm
+              title='ลบอุปกรณ์นี้?'
+              description='การลบไม่สามารถย้อนกลับได้'
+              okText='ลบ'
+              cancelText='ยกเลิก'
+              onConfirm={() => handleDelete(row.id)}
+              placement='topRight'
             >
-              <TbTrash size={18} />
-            </button>
+              <button className='text-(--red) cursor-pointer hover:opacity-80' title='ลบ'>
+                <TbTrash size={18} />
+              </button>
+            </Popconfirm>
           </div>
         ),
       },
     ],
-    [onOpenLiveStream, onDelete],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onOpenLiveStream],
   )
 
   return (
     <ConfigProvider
       theme={{
         components: {
-          Modal: { contentBg: '#1A1A1A', headerBg: '#1A1A1A', footerBg: '#1A1A1A', colorIcon: '#FFF', titleColor: '#66AEFF', borderRadiusLG: 16 },
+          Modal: {
+            contentBg: '#1A1A1A',
+            headerBg: '#1A1A1A',
+            footerBg: '#1A1A1A',
+            colorIcon: '#FFF',
+            titleColor: '#66AEFF',
+            borderRadiusLG: 16,
+          },
           Table: {
             headerBg: '#66AEFF',
             headerColor: '#1A1A1A',
@@ -116,46 +152,67 @@ const EquipmentCCTVListModal: React.FC<Props> = ({ open, task, projectName, onCl
         destroyOnHidden
         width={1100}
         closable={{ 'aria-label': 'Custom Close Button' }}
-        styles={{ container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' }, mask: { background: 'rgba(0,0,0,0.55)' } }}
+        styles={{
+          container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' },
+          mask: { background: 'rgba(0,0,0,0.55)' },
+        }}
         title={null}
       >
         <div className='flex items-start justify-between gap-4 mb-4'>
           <div className='flex-1 min-w-0'>
-            <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>{task?.kind ?? '-'}</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, wordBreak: 'break-word', margin: 0 }}>{projectName}</p>
+            <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>
+              {task?.kind ?? '-'}
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, wordBreak: 'break-word', margin: 0 }}>
+              {projectName}
+            </p>
           </div>
           <Button
             shape='round'
             icon={<TbPlus size={16} />}
             onClick={onAdd}
-            style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', fontWeight: 600, padding: '6px 18px', height: 'auto' }}
+            style={{
+              background: '#FCD116',
+              color: '#1A1A1A',
+              borderColor: '#FCD116',
+              fontWeight: 600,
+              padding: '6px 18px',
+              height: 'auto',
+            }}
           >
             เพิ่มอุปกรณ์
           </Button>
         </div>
 
-        <Table<Equipment>
-          rowKey='id'
-          columns={columns}
-          dataSource={task?.equipment ?? []}
-          pagination={false}
-          size='middle'
-        />
+        {camerasLoading ? (
+          <div className='flex items-center justify-center py-10'>
+            <Spin />
+          </div>
+        ) : (
+          <Table<Equipment>
+            rowKey='id'
+            columns={columns}
+            dataSource={activePointCameras}
+            pagination={false}
+            size='middle'
+            locale={{ emptyText: 'ยังไม่มีอุปกรณ์ในจุดติดตั้งนี้' }}
+          />
+        )}
 
         <div className='flex justify-end gap-3 mt-6'>
           <Button
             shape='round'
             onClick={onClose}
-            style={{ background: '#E5E5E5', color: '#4A4A4A', borderColor: '#E5E5E5', padding: '8px 28px', height: 'auto', fontWeight: 500 }}
+            style={{
+              background: '#E5E5E5',
+              color: '#4A4A4A',
+              borderColor: '#E5E5E5',
+              padding: '8px 28px',
+              height: 'auto',
+              fontWeight: 500,
+            }}
           >
-            ยกเลิก
-          </Button>
-          <Button
-            shape='round'
-            style={{ background: '#FCD116', color: '#1A1A1A', borderColor: '#FCD116', padding: '8px 32px', height: 'auto', fontWeight: 600 }}
-            onClick={onClose}
-          >
-            ยืนยัน
+            ปิด
           </Button>
         </div>
       </Modal>

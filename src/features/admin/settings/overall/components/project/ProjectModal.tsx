@@ -30,8 +30,10 @@ interface FormShape {
   owner: number | null
   /** contractor_id (uuid). */
   contractor: string
-  /** Each row stores the numeric road id in `roadId`. */
-  roads: { roadId: number | null }[]
+  /** Each row stores the numeric road id in `roadId` plus, for rows loaded
+   *  from an existing project, the `projectRoadId` so a subsequent PUT can
+   *  update the row instead of duplicating it. */
+  roads: { roadId: number | null; projectRoadId?: number }[]
   warrantyStart: dayjs.Dayjs | null
   warrantyEnd: dayjs.Dayjs | null
 }
@@ -55,7 +57,11 @@ type ProjectDetailRuntime = APIResponseProject & {
   }[]
   /** Legacy singular alias — kept as a runtime fallback in case the API is
    *  ever renamed. Current server ships `project_roads` (plural). */
-  project_road?: { road_id: number; road?: { road_code?: string; road_name?: string } }[]
+  project_road?: {
+    project_road_id?: number
+    road_id: number
+    road?: { road_code?: string; road_name?: string }
+  }[]
 }
 
 /** Grab the road linkage array from a project-detail payload, accepting either
@@ -119,7 +125,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
       contractor: d.contractor_id,
       roads:
         links.length > 0
-          ? links.map((r) => ({ roadId: r.road_id }))
+          ? links.map((r) => ({ roadId: r.road_id, projectRoadId: r.project_road_id }))
           : [{ roadId: null }],
       warrantyStart: d.warranty_start_date ? dayjs(d.warranty_start_date) : null,
       warrantyEnd: d.warranty_end_date ? dayjs(d.warranty_end_date) : null,
@@ -144,14 +150,14 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
       budgetYear: values.budgetYear ?? null,
       contractNo: values.contractNo,
       code: values.code,
-      // Reuses the existing string slots but carries the id-as-string so the
-      // context can Number(...) it back into the API payload.
       owner: values.owner != null ? String(values.owner) : '',
       contractor: values.contractor,
+      // Keep projectRoadId alongside roadId so PUT can update existing rows
+      // in-place instead of inserting duplicates. New rows have no
+      // projectRoadId and the backend will insert them.
       roads: (values.roads || [])
-        .map((r) => r.roadId)
-        .filter((id): id is number => id != null)
-        .map((id) => String(id)),
+        .filter((r) => r.roadId != null)
+        .map((r) => ({ roadId: String(r.roadId), projectRoadId: r.projectRoadId })),
       warrantyStart: values.warrantyStart?.format('YYYY-MM-DD') ?? '',
       warrantyEnd: values.warrantyEnd?.format('YYYY-MM-DD') ?? '',
     }

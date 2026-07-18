@@ -1,8 +1,7 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import { Alert, Spin } from 'antd'
 import { useSearchParams } from 'next/navigation'
-import { Button } from 'antd'
-import { TbAlertCircle, TbBox, TbPlus } from 'react-icons/tb'
+import React, { useMemo, useState } from 'react'
 import {
   AddCCTVEquipmentModal,
   AddPointModal,
@@ -10,6 +9,7 @@ import {
   CannotDeleteModal,
   ConfirmDeleteModal,
   CrossingCodeModal,
+  EditSolutionModal,
   EquipmentCCTVListModal,
   EquipmentSelectModal,
   LiveStreamModal,
@@ -17,14 +17,21 @@ import {
   RouteTabs,
   TaskTypeTable,
   TitleSection,
+  TrafficSignalCameraModal,
+  VMSSolutionModal,
 } from '../components'
 import { ProjectDetailProvider, useProjectDetailContext } from '../context'
 import type { Equipment, TaskType } from '../types'
+import { SOLUTION_TYPE } from '@/types/manage/solution-api'
+import { TbAlertCircle, TbBox } from 'react-icons/tb'
+import { Button } from 'antd'
+import { TbPlus } from 'react-icons/tb'
 
 type ConfirmDelete =
-  | { kind: 'point'; roadId: string; pointId: string }
-  | { kind: 'taskType'; roadId: string; pointId: string; taskId: string }
-  | { kind: 'equipment'; taskId: string; equipmentId: string }
+  | { kind: 'point'; solutionLocationId: number }
+  | { kind: 'taskType'; solutionId: number; taskKind: string }
+  | { kind: 'equipment'; equipmentId: string }
+  | { kind: 'route'; projectRoadId: number }
 
 type CannotDelete =
   | { kind: 'point'; taskKinds: string[] }
@@ -34,117 +41,127 @@ type CannotDelete =
 const DetailContent: React.FC = () => {
   const {
     project,
-    activeRouteId,
-    activePointId,
+    activeRoute,
+    activePoint,
+    activePointTaskTypes,
+    activePointCameras,
+    isLoading,
+    isError,
+    errorMessage,
     removePoint,
     removeTaskType,
-    removeEquipment,
   } = useProjectDetailContext()
 
-  const [pointModal, setPointModal] = useState<{ open: boolean; editingId: string | null }>({
+  const [pointModal, setPointModal] = useState<{ open: boolean; editingId: number | null }>({
     open: false,
     editingId: null,
   })
   const [addTaskTypeOpen, setAddTaskTypeOpen] = useState(false)
   const [equipmentListModal, setEquipmentListModal] = useState<TaskType | null>(null)
   const [equipmentSelectModal, setEquipmentSelectModal] = useState<TaskType | null>(null)
-  const [addEquipmentTaskId, setAddEquipmentTaskId] = useState<string | null>(null)
+  const [trafficPickerTask, setTrafficPickerTask] = useState<TaskType | null>(null)
+  const [vmsProvisionTask, setVmsProvisionTask] = useState<TaskType | null>(null)
+  const [editTask, setEditTask] = useState<TaskType | null>(null)
+  const [addEquipmentTaskId, setAddEquipmentTaskId] = useState<number | null>(null)
   const [liveStreamEquipment, setLiveStreamEquipment] = useState<Equipment | null>(null)
   const [crossingCodeTask, setCrossingCodeTask] = useState<TaskType | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDelete | null>(null)
   const [cannotDelete, setCannotDelete] = useState<CannotDelete | null>(null)
 
-  const route = useMemo(
-    () => project.routes.find((r) => r.id === activeRouteId),
-    [project, activeRouteId],
-  )
-  const point = useMemo(
-    () => route?.points.find((p) => p.id === activePointId) ?? null,
-    [route, activePointId],
-  )
-
-  const projectHasAnyEquipment = useMemo(
-    () =>
-      project.routes.some((r) =>
-        r.points.some((p) => p.taskTypes.some((t) => t.equipment.length > 0 || (t.equipmentRefs?.length ?? 0) > 0)),
-      ),
-    [project],
-  )
+  // The "no equipment anywhere" banner shows only if the currently active
+  // point (the one whose task types are loaded) has 0 solutions AND no
+  // other route has any points. Anything else we can't know without a
+  // fan-out fetch.
+  const projectHasAnyEquipment = useMemo(() => {
+    if (activePointTaskTypes.length > 0) return true
+    return project.routes.some((r) =>
+      r.points.some((p) => (p.taskTypes?.length ?? 0) > 0),
+    )
+  }, [activePointTaskTypes, project.routes])
 
   const handleDeletePoint = () => {
-    if (!point) return
-    if (point.taskTypes.length > 0) {
-      setCannotDelete({ kind: 'point', taskKinds: point.taskTypes.map((t) => t.kind) })
+    if (!activePoint) return
+    if (activePointTaskTypes.length > 0) {
+      setCannotDelete({
+        kind: 'point',
+        taskKinds: activePointTaskTypes.map((t) => t.kind),
+      })
       return
     }
-    setConfirmDelete({ kind: 'point', roadId: activeRouteId, pointId: point.id })
+    setConfirmDelete({ kind: 'point', solutionLocationId: activePoint.id })
   }
 
   const handleDeleteTaskType = (task: TaskType) => {
-    const hasEquipment = task.kind === 'CCTV' ? task.equipment.length > 0 : (task.equipmentRefs?.length ?? 0) > 0
-    if (hasEquipment) {
-      const equipmentNames =
-        task.kind === 'CCTV'
-          ? task.equipment.map((e) => e.name)
-          : (task.equipmentRefs ?? []).map((id) => {
-              const cctv = point?.taskTypes.find((t) => t.kind === 'CCTV')
-              return cctv?.equipment.find((e) => e.id === id)?.name ?? id
-            })
-      setCannotDelete({ kind: 'taskType', taskKind: task.kind, equipmentNames })
+    // CCTV: cameras are point-scoped (not solution-scoped) — we don't
+    //   fetch per-solution camera lists. Assume deletable if the point
+    //   has no CCTV cameras. Backend enforces FK anyway.
+    // Non-CCTV: solutions in the current context haven't preloaded their
+    //   attached cameras; delete goes through and backend cascade handles it.
+    if (task.kindId === SOLUTION_TYPE.CCTV && activePointCameras.length > 0) {
+      setCannotDelete({
+        kind: 'taskType',
+        taskKind: task.kind,
+        equipmentNames: activePointCameras.map((e) => e.name),
+      })
       return
     }
-    if (!activePointId) return
-    setConfirmDelete({ kind: 'taskType', roadId: activeRouteId, pointId: activePointId, taskId: task.id })
+    setConfirmDelete({ kind: 'taskType', solutionId: task.id, taskKind: task.kind })
   }
 
-  const handleDeleteEquipment = (equipment: Equipment) => {
-    const usedIn: string[] = []
-    project.routes.forEach((r) =>
-      r.points.forEach((p) =>
-        p.taskTypes.forEach((t) => {
-          if (t.equipmentRefs?.includes(equipment.id)) usedIn.push(t.kind)
-        }),
-      ),
-    )
-    if (usedIn.length > 0) {
-      setCannotDelete({ kind: 'equipment', equipmentName: equipment.name, usedIn })
-      return
-    }
-    if (!equipmentListModal) return
-    setConfirmDelete({ kind: 'equipment', taskId: equipmentListModal.id, equipmentId: equipment.id })
-  }
-
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (!confirmDelete) return
-    if (confirmDelete.kind === 'point') removePoint(confirmDelete.roadId, confirmDelete.pointId)
-    else if (confirmDelete.kind === 'taskType')
-      removeTaskType(confirmDelete.roadId, confirmDelete.pointId, confirmDelete.taskId)
-    else if (confirmDelete.kind === 'equipment')
-      removeEquipment(confirmDelete.taskId, confirmDelete.equipmentId)
-    setConfirmDelete(null)
+    try {
+      if (confirmDelete.kind === 'point')
+        await removePoint(confirmDelete.solutionLocationId)
+      else if (confirmDelete.kind === 'taskType')
+        await removeTaskType(confirmDelete.solutionId)
+      // Route/equipment delete flows aren't wired yet — placeholder.
+    } finally {
+      setConfirmDelete(null)
+    }
   }
 
   const openEquipmentModal = (task: TaskType) => {
-    if (task.kind === 'CCTV') setEquipmentListModal(task)
+    // Route the camera-picker per solution type. CCTV opens the read-only
+    // list (add via /cctv/cameras). Traffic Signal needs phase + camera_type
+    // per row → dedicated picker. VMS provisions its whole tree in one shot
+    // via /solution/vms/solution → dedicated modal. Everything else routes
+    // to the generic replace-on-write picker.
+    if (task.kindId === SOLUTION_TYPE.CCTV) setEquipmentListModal(task)
+    else if (task.kindId === SOLUTION_TYPE.Traffic) setTrafficPickerTask(task)
+    else if (task.kindId === SOLUTION_TYPE.VMS) setVmsProvisionTask(task)
     else setEquipmentSelectModal(task)
   }
 
-  const emptyState = (
+  if (isLoading) {
+    return (
+      <div className='main-screen px-10 pb-10 flex items-center justify-center' style={{ minHeight: 400 }}>
+        <Spin size='large' />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className='main-screen px-10 pb-10'>
+        <Alert type='error' message={errorMessage ?? 'ไม่สามารถโหลดข้อมูลโครงการได้'} />
+      </div>
+    )
+  }
+
+  const emptyPoints = (
     <div
       className='rounded-2xl p-10 flex flex-col items-center justify-center'
       style={{ border: '2px dashed #66AEFF' }}
     >
       <TbBox size={44} className='text-(--default-blue) mb-3' />
-      <p className='text-white/70 mb-3'>กรุณาเพิ่มอุปกรณ์ของแต่ละสายทาง ภายในโครงการนี้</p>
+      <p className='text-white/70 mb-3'>เริ่มเพิ่มและจัดการอุปกรณ์ในตำแหน่งนี้</p>
       <Button
         size='middle'
         shape='round'
         icon={<TbPlus />}
         onClick={() => setPointModal({ open: true, editingId: null })}
-        style={{
-          background: 'var(--yellow)', color: '#000',
-          borderColor: 'var(--yellow)', fontWeight: 700,
-        }}
+        style={{ background: 'var(--yellow)', color: '#000', borderColor: 'var(--yellow)', fontWeight: 700 }}
       >
         เพิ่มจุดติดตั้ง
       </Button>
@@ -160,27 +177,28 @@ const DetailContent: React.FC = () => {
         className='mt-5 rounded-2xl p-5'
         style={{ background: '#191919', border: '1px solid var(--light-gray-2)' }}
       >
-        {route && route.points.length > 0 ? (
+        {activeRoute && activeRoute.points.length > 0 ? (
           <>
             <PointTabs onAddPoint={() => setPointModal({ open: true, editingId: null })} />
             <div className='mt-4'>
-              {point ? (
+              {activePoint ? (
                 <TaskTypeTable
-                  point={point}
-                  onEditPoint={() => setPointModal({ open: true, editingId: point.id })}
+                  point={activePoint}
+                  onEditPoint={() => setPointModal({ open: true, editingId: activePoint.id })}
                   onDeletePoint={handleDeletePoint}
                   onAddTaskType={() => setAddTaskTypeOpen(true)}
+                  onEditTaskType={setEditTask}
                   onDeleteTaskType={handleDeleteTaskType}
                   onOpenEquipment={openEquipmentModal}
                   onOpenCrossingCode={setCrossingCodeTask}
                 />
               ) : (
-                emptyState
+                emptyPoints
               )}
             </div>
           </>
         ) : (
-          emptyState
+          emptyPoints
         )}
       </section>
 
@@ -190,7 +208,9 @@ const DetailContent: React.FC = () => {
           style={{ border: '2px dashed #FF6666' }}
         >
           <TbAlertCircle size={40} className='text-(--red) mx-auto mb-2' />
-          <p className='text-white/70 mb-1'>คุณสามารถลบโครงการนี้ได้ เนื่องจากไม่มีจุดติดตั้งในโครงการนี้</p>
+          <p className='text-white/70 mb-1'>
+            คุณสามารถลบโครงการนี้ได้ เนื่องจากไม่มีจุดติดตั้งในโครงการนี้
+          </p>
           <a href='/admin/settings' className='text-(--red) underline font-semibold'>
             คุณต้องการลบโครงการหรือไม่ ?
           </a>
@@ -204,7 +224,7 @@ const DetailContent: React.FC = () => {
       />
       <AddTaskTypeModal open={addTaskTypeOpen} onClose={() => setAddTaskTypeOpen(false)} />
       <AddCCTVEquipmentModal
-        open={!!addEquipmentTaskId}
+        open={addEquipmentTaskId != null}
         taskId={addEquipmentTaskId}
         onClose={() => setAddEquipmentTaskId(null)}
       />
@@ -215,7 +235,6 @@ const DetailContent: React.FC = () => {
         onClose={() => setEquipmentListModal(null)}
         onAdd={() => equipmentListModal && setAddEquipmentTaskId(equipmentListModal.id)}
         onOpenLiveStream={setLiveStreamEquipment}
-        onDelete={handleDeleteEquipment}
       />
       <EquipmentSelectModal
         open={!!equipmentSelectModal}
@@ -224,10 +243,27 @@ const DetailContent: React.FC = () => {
         onClose={() => setEquipmentSelectModal(null)}
         onOpenLiveStream={setLiveStreamEquipment}
       />
+      <TrafficSignalCameraModal
+        open={!!trafficPickerTask}
+        task={trafficPickerTask}
+        projectName={project.name}
+        onClose={() => setTrafficPickerTask(null)}
+        onOpenLiveStream={setLiveStreamEquipment}
+      />
+      <VMSSolutionModal
+        open={!!vmsProvisionTask}
+        task={vmsProvisionTask}
+        onClose={() => setVmsProvisionTask(null)}
+      />
+      <EditSolutionModal
+        open={!!editTask}
+        task={editTask}
+        onClose={() => setEditTask(null)}
+      />
       <LiveStreamModal
         open={!!liveStreamEquipment}
         equipment={liveStreamEquipment}
-        pointLabel={`${route?.code ?? ''} ${point?.name ?? ''}`}
+        pointLabel={`${activeRoute?.code ?? ''} ${activePoint?.name ?? ''}`}
         onClose={() => setLiveStreamEquipment(null)}
       />
       <CrossingCodeModal
@@ -237,18 +273,6 @@ const DetailContent: React.FC = () => {
       />
 
       <ConfirmDeleteModal
-        open={confirmDelete?.kind === 'equipment'}
-        title='ยืนยันลบอุปกรณ์หรือไม่?'
-        subtitle='ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้'
-        onCancel={() => setConfirmDelete(null)}
-        onConfirm={executeDelete}
-        bodyNode={
-          <div className='text-sm text-black text-center py-2'>
-            ยืนยันการลบอุปกรณ์นี้
-          </div>
-        }
-      />
-      <ConfirmDeleteModal
         open={confirmDelete?.kind === 'point'}
         title='ยืนยันลบจุดติดตั้งหรือไม่?'
         subtitle='ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้'
@@ -256,7 +280,7 @@ const DetailContent: React.FC = () => {
         onConfirm={executeDelete}
         bodyNode={
           <div className='text-sm text-black text-center py-2'>
-            <p className='font-bold mb-1'>จุดติดตั้ง : {point?.name}</p>
+            <p className='font-bold mb-1'>จุดติดตั้ง : {activePoint?.name}</p>
             <p className='mb-0'>ไม่มีประเภทงานหรืออุปกรณ์ที่ใช้งานอยู่ในจุดติดตั้งนี้</p>
             <p className='mb-0'>สามารถลบจุดติดตั้งออกจากระบบได้อย่างปลอดภัย</p>
           </div>
@@ -268,7 +292,14 @@ const DetailContent: React.FC = () => {
         subtitle='ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้'
         onCancel={() => setConfirmDelete(null)}
         onConfirm={executeDelete}
-        bodyNode={<div className='text-sm text-black text-center py-2'>ยืนยันการลบประเภทงาน</div>}
+        bodyNode={
+          <div className='text-sm text-black text-center py-2'>
+            <p className='mb-0'>ยืนยันการลบประเภทงาน</p>
+            {confirmDelete?.kind === 'taskType' && (
+              <p className='font-bold mb-0'>{confirmDelete.taskKind}</p>
+            )}
+          </div>
+        }
       />
 
       <CannotDeleteModal
@@ -334,49 +365,13 @@ const DetailContent: React.FC = () => {
           </div>
         }
       />
-      <CannotDeleteModal
-        open={cannotDelete?.kind === 'equipment'}
-        title='ไม่สามารถลบอุปกรณ์ได้'
-        subtitleNode={
-          <>
-            เนื่องจากระบบตรวจพบอุปกรณ์อยู่ใน{' '}
-            <span className='text-red-500 font-semibold'>
-              {(cannotDelete?.kind === 'equipment' && cannotDelete.usedIn.length) || 0} ประเภทงาน
-            </span>
-          </>
-        }
-        onClose={() => setCannotDelete(null)}
-        bodyNode={
-          <div className='text-sm text-black'>
-            {cannotDelete?.kind === 'equipment' && (
-              <>
-                <p className='mb-2'>
-                  ชื่อกล้อง : <span className='font-semibold'>{cannotDelete.equipmentName}</span>
-                </p>
-                <p className='mb-1'>ประเภทงานที่ยังใช้อุปกรณ์นี้:</p>
-                <div className='flex gap-2 flex-wrap'>
-                  {cannotDelete.usedIn.map((k, i) => (
-                    <span
-                      key={i}
-                      className='inline-flex px-3 py-1 rounded-full text-xs'
-                      style={{ background: '#F59E0B', color: '#000' }}
-                    >
-                      {k}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        }
-      />
     </div>
   )
 }
 
 const SettingProjectDetailScreen: React.FC = () => {
   const searchParams = useSearchParams()
-  const projectId = searchParams.get('id') ?? 'p-001'
+  const projectId = searchParams.get('id') ?? ''
 
   return (
     <ProjectDetailProvider projectId={projectId}>

@@ -90,10 +90,12 @@ const LiveStreamModal: React.FC<Props> = ({ open, equipment, pointLabel, onClose
               />
             </InfoStat>
             <InfoStat icon={<TbNetwork size={20} />} label='IP Address'>
-              {equipment?.ipAddress ?? extractIpFromHlsUrl(equipment?.hlsUrl)}
+              {equipment?.ipAddress ?? extractIpFromHlsUrl(equipment?.hlsUrl ?? undefined)}
             </InfoStat>
             <InfoStat icon={<TbRefresh size={20} />} label='อัพเดตล่าสุด'>
-              {equipment ? dayjs(equipment.lastUpdated).format('DD MMM YYYY HH:mm:ss') : '-'}
+              {equipment?.lastUpdated && dayjs(equipment.lastUpdated).isValid()
+                ? dayjs(equipment.lastUpdated).format('DD MMM YYYY HH:mm:ss')
+                : '-'}
             </InfoStat>
           </div>
         </div>
