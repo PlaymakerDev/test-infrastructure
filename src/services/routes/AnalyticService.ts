@@ -150,3 +150,164 @@ export const getIncidentLicenseAPI = (solutionId: string | number) =>
     url: `/analytic/license/${solutionId}`,
     method: 'GET',
   })
+
+// ── Incidents by Department (comparison table) ───────────────────────────────
+
+/** GET /analytic/departments/{id}/overview/incidents-by-department
+ *  Per-department incident counts broken down by type — powers the comparison
+ *  table on /admin/statistics?incident&subtab=comparison. */
+export const getIncidentByDepartmentAPI = (
+  deptId: string | number,
+  params: { start_date?: string; end_date?: string; scope?: string } = {},
+) => {
+  const { start_date, end_date, scope } = params
+  return ApiService.fetchData<{
+    summary: { departments_count: number; installation_points_count: number; incidents_count: number }
+    range: { code: string; label: string; since: string; until: string }
+    columns: { id: number; code: string; name_th: string }[]
+    rows: {
+      department_id: number
+      department_short_name: string
+      parent_department_id: number | null
+      counts: number[]
+      total: number
+    }[]
+    totals: { counts: number[]; total: number }
+  }>({
+    url: `${analyticBase(deptId)}/overview/incidents-by-department`,
+    method: 'GET',
+    params: {
+      ...(scope ? { scope } : {}),
+      ...(start_date ? { since: start_date } : {}),
+      ...(end_date ? { until: end_date } : {}),
+    },
+  })
+}
+
+// ── Incidents Summary (stat cards) ───────────────────────────────────────────
+
+/** GET /analytic/departments/{id}/overview/incidents-summary
+ *  Aggregate counts powering the 4 stat cards on the incident overview.
+ *  NOTE: request params are `start_date`/`end_date` (per the OpenAPI spec) —
+ *  the response echoes the resolved window back as `range.since`/`range.until`,
+ *  a DIFFERENT pair of names. Omitting both makes the backend default to today. */
+export const getIncidentSummaryAPI = (
+  deptId: string | number,
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
+) =>
+  ApiService.fetchData<{
+    range: { since: string; until: string }
+    installation_points: {
+      total: number
+      top_region: { region_id: number; name_th: string; name_en: string; count: number; percentage: number }
+    }
+    incidents: {
+      total: number
+      top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+      departments_with_incidents: number
+    }
+    top_incident_type: {
+      id: number
+      name_en: string
+      name_th: string
+      count: number
+      percentage: number
+    }
+  }>({
+    url: `${analyticBase(deptId)}/overview/incidents-summary`,
+    method: 'GET',
+    params,
+  })
+
+// ── IoT Status (alert overview search list) ──────────────────────────────────
+
+export interface IotStatusDevice {
+  imei: string
+  solution_name: string
+  sta: string
+  is_online: boolean
+  line_check_fail: boolean
+  circuit_fail: boolean
+  volt_amp_fail: boolean
+  noti_count: number
+  geometry_point: [number, number] | null
+}
+
+export interface IotStatusRoad {
+  road_id: number
+  road_code: string
+  install_points: number
+  online: number
+  offline: number
+  line_check_fail: number
+  circuit_fail: number
+  volt_amp_fail: number
+  noti_count: number
+  devices: IotStatusDevice[]
+}
+
+export interface IotStatusSubDept {
+  department_id: number
+  department_short_name: string
+  install_points: number
+  online: number
+  offline: number
+  line_check_fail: number
+  circuit_fail: number
+  volt_amp_fail: number
+  noti_count: number
+  roads: IotStatusRoad[]
+}
+
+export interface IotStatusBureau {
+  department_id: number
+  department_short_name: string
+  install_points: number
+  online: number
+  offline: number
+  line_check_fail: number
+  circuit_fail: number
+  volt_amp_fail: number
+  noti_count: number
+  sub_department: IotStatusSubDept[]
+}
+
+/** GET /lighting/departments/{id}/overview/central/iot-status?scope=all
+ *  Bureau → sub_department → roads → devices IoT status tree.
+ *  Powers the alert overview search list. */
+export const getIotStatusAPI = (
+  deptId: string | number,
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
+) =>
+  ApiService.fetchData<IotStatusBureau[]>({
+    url: `/lighting/departments/${deptId}/overview/central/iot-status`,
+    method: 'GET',
+    params,
+  })
+
+export interface IotStatusSummary {
+  range: { since: string; until: string }
+  installation_points: { total: number; phase_1: number; phase_3: number }
+  line_broken: {
+    total: number
+    top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+  }
+  circuit_abnormal: {
+    total: number
+    top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+  }
+  normal: { total: number; percentage: number }
+  notifications: { total: number }
+}
+
+/** GET /lighting/departments/{id}/overview/central/iot-status/summary?scope=all
+ *  Aggregate counts powering the 4 stat cards on the alert overview. */
+export const getIotStatusSummaryAPI = (
+  deptId: string | number,
+  params: { scope?: string; start_date?: string; end_date?: string } = {},
+) =>
+  ApiService.fetchData<IotStatusSummary>({
+    url: `/lighting/departments/${deptId}/overview/central/iot-status/summary`,
+    method: 'GET',
+    params,
+  })

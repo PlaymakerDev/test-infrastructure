@@ -53,4 +53,16 @@ export const incidentKeys = {
   // License is keyed by solution_id only (endpoint is not department-scoped).
   license: (solutionId: string | number) =>
     [...incidentKeys.all, 'license', solutionId] as const,
+
+  byDepartment: (deptId: string | number, params: { start_date?: string; end_date?: string }) =>
+    [...incidentKeys.all, 'by-department', deptId, params] as const,
+
+  incidentsSummary: (deptId: string | number, params: { scope?: string; start_date?: string; end_date?: string }) =>
+    [...incidentKeys.all, 'incidents-summary', deptId, params] as const,
+
+  iotStatus: (deptId: string | number, params: { scope?: string; start_date?: string; end_date?: string }) =>
+    [...incidentKeys.all, 'iot-status', deptId, params] as const,
+
+  iotStatusSummary: (deptId: string | number, params: { scope?: string; start_date?: string; end_date?: string }) =>
+    [...incidentKeys.all, 'iot-status-summary', deptId, params] as const,
 } as const
