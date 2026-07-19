@@ -7,6 +7,7 @@ import Composer from '../components/Composer'
 import LiveMonitor from '../components/LiveMonitor'
 import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
+import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
 
 const emptySelection: BureauSelection = {
   keys: [],
@@ -64,6 +65,15 @@ const VMSCommandCenterScreen: React.FC = () => {
               children: (
                 <div className="h-[calc(100vh-160px)]">
                   <GlobalHistoryTable onOpenSign={openDetail} />
+                </div>
+              ),
+            },
+            {
+              key: 'library',
+              label: 'คลังเนื้อหา / ปฏิทิน',
+              children: (
+                <div className="h-[calc(100vh-160px)] overflow-auto">
+                  <ControlVMSScreen />
                 </div>
               ),
             },

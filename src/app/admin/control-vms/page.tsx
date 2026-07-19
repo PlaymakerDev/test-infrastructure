@@ -1,6 +1,6 @@
 "use client"
-import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
+import VMSCommandCenterScreen from '@/features/admin/vms-command-center/screen'
 
 export default function ControlVMS() {
-	return <ControlVMSScreen />
+  return <VMSCommandCenterScreen />
 }

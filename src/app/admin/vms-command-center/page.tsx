@@ -1,6 +1,7 @@
-"use client"
-import VMSCommandCenterScreen from '@/features/admin/vms-command-center/screen'
+import { redirect } from 'next/navigation'
 
-export default function VMSCommandCenterPage() {
-  return <VMSCommandCenterScreen />
+// Merged into /admin/control-vms as a tab set. Keep this route as a permanent
+// redirect so any bookmarks / old links keep working.
+export default function VMSCommandCenterRedirect() {
+  redirect('/admin/control-vms')
 }

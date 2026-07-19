@@ -158,17 +158,6 @@ const admin: AdminMenuItem[] = [
     path_list: [],
   },
   {
-    key: '12b',
-    title: 'VMS Command Center',
-    label: "VMS Command Center",
-    label_key: "vms_command_center",
-    icon: "TbRadar2",
-    default_color_icon: '',
-    path: "/admin/vms-command-center",
-    path_active: "/admin/vms-command-center",
-    path_list: [],
-  },
-  {
     key: '13',
     title: 'Statistic',
     label: "Statistic",
