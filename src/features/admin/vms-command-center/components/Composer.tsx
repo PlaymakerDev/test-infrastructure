@@ -1,6 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Alert, Button, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, TimePicker } from 'antd'
+import { Button, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, TimePicker } from 'antd'
+import { TbAlertTriangle } from 'react-icons/tb'
 import { TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useVMSSettingTypes } from '@/features/admin/control-vms/overall/hooks/useVMSSettingTypes'
@@ -217,7 +218,10 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           {vmsIds.length === 0 && (
-            <Alert type="warning" showIcon title="เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย" />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) text-xs">
+              <TbAlertTriangle className="fs-16 shrink-0" />
+              <span>เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย</span>
+            </div>
           )}
         </div>
         <div className="px-4 py-3 border-t border-white/10">
