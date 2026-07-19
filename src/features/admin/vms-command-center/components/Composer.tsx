@@ -162,9 +162,11 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                           style={{ objectFit: 'cover' }}
                         />
                       </div>
-                      <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-white/80">
-                        {m.name}
-                      </div>
+                      {m.setting_type_name && (
+                        <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
+                          {m.setting_type_name}
+                        </div>
+                      )}
                     </button>
                   )
                 })}

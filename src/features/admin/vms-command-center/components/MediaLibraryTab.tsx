@@ -1,7 +1,8 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { App, Button, ConfigProvider, Empty, Image, Input, Modal, Popconfirm, Progress, Select, Skeleton, Tooltip } from 'antd'
-import { TbAlertTriangle, TbCircleCheckFilled, TbCloudUpload, TbPencil, TbPlus, TbSearch, TbTrash, TbX } from 'react-icons/tb'
+import { TbAlertTriangle, TbCategory2, TbCircleCheckFilled, TbCloudUpload, TbPencil, TbSearch, TbTrash, TbX } from 'react-icons/tb'
+import CategoryManagerModal from './CategoryManagerModal'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
@@ -75,12 +76,10 @@ const MediaLibraryTab: React.FC = () => {
   }
 
   const [editing, setEditing] = useState<VMSMediaItem | null>(null)
-  const [editName, setEditName] = useState('')
   const [editCategory, setEditCategory] = useState<number | null>(null)
 
   const openEdit = (item: VMSMediaItem) => {
     setEditing(item)
-    setEditName(item.name)
     setEditCategory(item.setting_type_id ?? null)
   }
   const saveEdit = async () => {
@@ -88,10 +87,7 @@ const MediaLibraryTab: React.FC = () => {
     try {
       await updateMedia.mutateAsync({
         id: editing.id,
-        data: {
-          name: editName.trim() || editing.name,
-          setting_type_id: editCategory === null ? -1 : editCategory,
-        },
+        data: { setting_type_id: editCategory === null ? -1 : editCategory },
       })
       message.success('บันทึกเรียบร้อย')
       setEditing(null)
@@ -141,30 +137,35 @@ const MediaLibraryTab: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Single-file mode: pick just the first valid file, replacing any prior
+  // staged item (its blob URL is revoked so we don't leak).
   const addStagedFiles = (files: FileList | File[]) => {
     const arr = Array.from(files)
-    const next: StagedFile[] = []
-    for (const f of arr) {
-      if (f.size > MAX_MB * 1024 * 1024) {
-        message.error(`"${f.name}" ใหญ่เกิน ${MAX_MB}MB — ข้าม`)
-        continue
-      }
-      const isImg = f.type.startsWith('image/')
-      const isVid = f.type.startsWith('video/')
-      if (!isImg && !isVid) {
-        message.error(`"${f.name}" ไม่ใช่รูป/วิดีโอที่รองรับ — ข้าม`)
-        continue
-      }
-      next.push({
-        key: `${f.name}-${f.size}-${f.lastModified}-${Math.random().toString(36).slice(2, 6)}`,
-        file: f,
-        previewUrl: URL.createObjectURL(f),
-        isVideo: isVid,
-        status: 'idle',
-        progress: 0,
-      })
+    if (arr.length === 0) return
+    const f = arr[0]
+    if (f.size > MAX_MB * 1024 * 1024) {
+      message.error(`ไฟล์ใหญ่เกิน ${MAX_MB}MB`)
+      return
     }
-    if (next.length) setStaged((prev) => [...prev, ...next])
+    const isImg = f.type.startsWith('image/')
+    const isVid = f.type.startsWith('video/')
+    if (!isImg && !isVid) {
+      message.error('รองรับเฉพาะไฟล์รูปและวิดีโอ')
+      return
+    }
+    setStaged((prev) => {
+      prev.forEach((s) => URL.revokeObjectURL(s.previewUrl))
+      return [
+        {
+          key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          file: f,
+          previewUrl: URL.createObjectURL(f),
+          isVideo: isVid,
+          status: 'idle',
+          progress: 0,
+        },
+      ]
+    })
   }
 
   const removeStaged = (key: string) => {
@@ -205,9 +206,16 @@ const MediaLibraryTab: React.FC = () => {
         const raw = uploadRes?.data as { path?: string; url?: string } | undefined
         const url = raw?.path ?? raw?.url
         if (!url) throw new Error('no url in response')
+        // Derive a stable, non-user-facing display name from the URL (server
+        // already renamed the file to a UUID like 019f26d4-….png). We store
+        // the original filename in `filename` for search, but never expose it.
+        const derived = (() => {
+          const p = url.split('/').pop() || url
+          return p.replace(/\.[^.]+$/, '')
+        })()
         await createMedia.mutateAsync({
           url,
-          name: s.file.name,
+          name: derived,
           filename: s.file.name,
           mime_type: s.file.type,
           setting_type_id: uploadCategory ?? undefined,
@@ -233,6 +241,7 @@ const MediaLibraryTab: React.FC = () => {
   }
 
   const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false)
 
   return (
     <div className="h-full flex flex-col bg-(--dark-black) rounded-xl overflow-hidden text-white/90">
@@ -264,6 +273,12 @@ const MediaLibraryTab: React.FC = () => {
               </Button>
             </Popconfirm>
           )}
+          <Button
+            icon={<TbCategory2 style={{ verticalAlign: -2 }} />}
+            onClick={() => setCategoryManagerOpen(true)}
+          >
+            จัดการหมวดหมู่
+          </Button>
           <Button
             type="primary"
             icon={<TbCloudUpload style={{ verticalAlign: -2 }} />}
@@ -352,13 +367,20 @@ const MediaLibraryTab: React.FC = () => {
                     )}
                   </div>
                   <div className="p-2">
-                    <div className="text-xs truncate text-white/90" title={it.name}>
-                      {it.name}
-                    </div>
-                    <div className="text-[11px] text-white/50 mt-0.5 flex items-center justify-between">
-                      <span>{it.setting_type_name || 'อื่นๆ'}</span>
+                    <div className="text-xs flex items-center justify-between gap-2">
+                      <span
+                        className="px-1.5 py-0.5 rounded text-[10px] font-medium truncate"
+                        style={{
+                          background: it.setting_type_name ? '#FCD11622' : 'rgba(255,255,255,0.08)',
+                          color: it.setting_type_name ? '#FCD116' : 'rgba(255,255,255,0.6)',
+                        }}
+                      >
+                        {it.setting_type_name || 'อื่นๆ'}
+                      </span>
                       <Tooltip title={dayjs(it.uploaded_at).format('YYYY-MM-DD HH:mm')}>
-                        <span>{dayjs(it.uploaded_at).locale('th').fromNow()}</span>
+                        <span className="text-white/50 text-[10px]">
+                          {dayjs(it.uploaded_at).locale('th').fromNow()}
+                        </span>
                       </Tooltip>
                     </div>
                   </div>
@@ -440,23 +462,34 @@ const MediaLibraryTab: React.FC = () => {
       )}
 
       {/* ─── Upload modal (light-modal, follows settings pattern) ─── */}
+      <ConfigProvider
+        theme={{
+          components: {
+            Modal: {
+              contentBg: '#FFFFFF',
+              headerBg: '#FFFFFF',
+              footerBg: '#FFFFFF',
+              colorIcon: '#1F1F1F',
+              colorText: '#1F1F1F',
+              titleColor: '#1F1F1F',
+              borderRadiusLG: 12,
+            },
+          },
+        }}
+      >
       <Modal
         open={uploadOpen}
         onCancel={closeUploadModal}
-        title={
-          <span>
-            อัปโหลดสื่อใหม่ {staged.length > 0 && <span className="text-slate-500 text-sm">({staged.length} ไฟล์)</span>}
-          </span>
-        }
-        okText={uploading ? 'กำลังอัปโหลด…' : `อัปโหลด (${staged.filter((s) => s.status !== 'done').length})`}
+        title={<span style={{ color: '#1F1F1F' }}>อัปโหลดสื่อใหม่</span>}
+        okText={uploading ? 'กำลังอัปโหลด…' : 'อัปโหลด'}
         cancelText="ปิด"
         onOk={runUpload}
         confirmLoading={uploading}
-        okButtonProps={{ disabled: staged.length === 0 || uploading || staged.every((s) => s.status === 'done') }}
+        okButtonProps={{ disabled: staged.length === 0 || uploading || staged[0]?.status === 'done' }}
         maskClosable={!uploading}
         closable={!uploading}
         destroyOnHidden
-        width={720}
+        width={640}
         wrapClassName="light-modal"
         styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
       >
@@ -474,122 +507,145 @@ const MediaLibraryTab: React.FC = () => {
             />
           </div>
 
-          {/* Custom drop zone */}
-          <div
-            className="rounded-lg border-2 border-dashed transition-colors cursor-pointer text-center px-4 py-6"
-            style={{
-              borderColor: isDragOver ? '#FCD116' : '#D9D9D9',
-              background: isDragOver ? 'rgba(252,209,22,0.06)' : '#FAFAFA',
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files?.length) addStagedFiles(e.target.files)
+              e.target.value = ''
             }}
-            onDragOver={(e) => {
-              e.preventDefault()
-              setIsDragOver(true)
-            }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault()
-              setIsDragOver(false)
-              if (uploading) return
-              if (e.dataTransfer.files?.length) addStagedFiles(e.dataTransfer.files)
-            }}
-            onClick={() => {
-              if (uploading) return
-              fileInputRef.current?.click()
-            }}
-          >
-            <div className="flex items-center justify-center text-slate-500">
-              <TbCloudUpload size={36} />
-            </div>
-            <div className="mt-2 text-sm text-slate-700">ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือก</div>
-            <div className="text-xs text-slate-500 mt-1">
-              รองรับรูปภาพและวิดีโอ (ขนาดไม่เกิน {MAX_MB}MB / ไฟล์)
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept={ACCEPT}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                if (e.target.files?.length) addStagedFiles(e.target.files)
-                e.target.value = ''
-              }}
-            />
-          </div>
+          />
 
-          {/* Staged file list */}
-          {staged.length > 0 && (
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-              {staged.map((s) => (
-                <div
-                  key={s.key}
-                  className="flex items-center gap-3 rounded-md border p-2"
-                  style={{
-                    borderColor:
-                      s.status === 'done'
-                        ? '#22c55e'
-                        : s.status === 'error'
-                        ? '#ef4444'
-                        : '#E5E5E5',
-                    background: '#FFFFFF',
-                  }}
-                >
-                  <div className="w-16 h-12 rounded overflow-hidden bg-slate-100 shrink-0">
+          {staged.length === 0 ? (
+            // Empty dropzone
+            <div
+              className="rounded-lg border-2 border-dashed transition-colors cursor-pointer text-center px-4 py-10"
+              style={{
+                borderColor: isDragOver ? '#FCD116' : '#D9D9D9',
+                background: isDragOver ? 'rgba(252,209,22,0.06)' : '#FAFAFA',
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setIsDragOver(false)
+                if (uploading) return
+                if (e.dataTransfer.files?.length) addStagedFiles(e.dataTransfer.files)
+              }}
+              onClick={() => {
+                if (uploading) return
+                fileInputRef.current?.click()
+              }}
+            >
+              <div className="flex items-center justify-center text-slate-500">
+                <TbCloudUpload size={48} />
+              </div>
+              <div className="mt-2 text-sm text-slate-700">ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือก</div>
+              <div className="text-xs text-slate-500 mt-1">
+                รองรับรูปภาพและวิดีโอ · 1 ไฟล์ต่อครั้ง · ขนาดไม่เกิน {MAX_MB}MB
+              </div>
+            </div>
+          ) : (
+            // Big preview of the selected file
+            (() => {
+              const s = staged[0]
+              const border =
+                s.status === 'done' ? '#22c55e' : s.status === 'error' ? '#ef4444' : '#E5E5E5'
+              return (
+                <div className="space-y-2">
+                  <div
+                    className="relative rounded-lg overflow-hidden border bg-slate-50"
+                    style={{ borderColor: border, aspectRatio: '16/10' }}
+                  >
                     {s.isVideo ? (
-                      <video src={s.previewUrl} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <video
+                        src={s.previewUrl}
+                        controls
+                        muted
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                      />
                     ) : (
-                      <img src={s.previewUrl} alt={s.file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img
+                        src={s.previewUrl}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                      />
                     )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-slate-800 truncate" title={s.file.name}>
-                      {s.file.name}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {(s.file.size / 1024 / 1024).toFixed(2)} MB · {isVideoMime(s.file.type) ? 'วิดีโอ' : 'รูป'}
-                    </div>
-                    {s.status !== 'idle' && (
-                      <div className="mt-1">
-                        <Progress
-                          percent={s.progress}
-                          size="small"
-                          status={
-                            s.status === 'error' ? 'exception' : s.status === 'done' ? 'success' : 'active'
-                          }
-                          showInfo={false}
-                        />
+                    {s.status === 'done' && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                        <TbCircleCheckFilled size={14} /> อัปโหลดสำเร็จ
                       </div>
                     )}
-                    {s.status === 'error' && (
-                      <div className="text-xs text-red-500 mt-0.5 flex items-center gap-1">
-                        <TbAlertTriangle size={12} /> {s.errorMsg}
-                      </div>
+                    {s.status === 'idle' && (
+                      <button
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded"
+                        title="ลบออก"
+                        onClick={() => removeStaged(s.key)}
+                      >
+                        <TbX size={16} />
+                      </button>
                     )}
                   </div>
-                  {s.status === 'done' ? (
-                    <TbCircleCheckFilled className="text-green-500" size={20} />
-                  ) : (
-                    <button
-                      className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
-                      title="ลบออกจากรายการ"
-                      onClick={() => removeStaged(s.key)}
-                      disabled={uploading}
-                    >
-                      <TbX size={16} />
-                    </button>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>
+                      {(s.file.size / 1024 / 1024).toFixed(2)} MB · {isVideoMime(s.file.type) ? 'วิดีโอ' : 'รูปภาพ'}
+                    </span>
+                    {s.status === 'idle' && (
+                      <button
+                        className="text-slate-700 hover:text-(--yellow) underline"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        เปลี่ยนไฟล์
+                      </button>
+                    )}
+                  </div>
+
+                  {s.status !== 'idle' && (
+                    <Progress
+                      percent={s.progress}
+                      status={s.status === 'error' ? 'exception' : s.status === 'done' ? 'success' : 'active'}
+                      strokeColor="#FCD116"
+                    />
+                  )}
+                  {s.status === 'error' && (
+                    <div className="text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                      <TbAlertTriangle size={12} /> {s.errorMsg}
+                    </div>
                   )}
                 </div>
-              ))}
-            </div>
+              )
+            })()
           )}
         </div>
       </Modal>
+      </ConfigProvider>
 
       {/* ─── Edit modal (light-modal, follows settings pattern) ─── */}
+      <ConfigProvider
+        theme={{
+          components: {
+            Modal: {
+              contentBg: '#FFFFFF',
+              headerBg: '#FFFFFF',
+              footerBg: '#FFFFFF',
+              colorIcon: '#1F1F1F',
+              colorText: '#1F1F1F',
+              titleColor: '#1F1F1F',
+              borderRadiusLG: 12,
+            },
+          },
+        }}
+      >
       <Modal
         open={!!editing}
         onCancel={() => setEditing(null)}
-        title="แก้ไขสื่อ"
+        title={<span style={{ color: '#1F1F1F' }}>แก้ไขสื่อ</span>}
         onOk={saveEdit}
         confirmLoading={updateMedia.isPending}
         okText="บันทึก"
@@ -609,10 +665,6 @@ const MediaLibraryTab: React.FC = () => {
               )}
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-1">ชื่อ</div>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div>
               <div className="text-xs text-slate-500 mb-1">หมวดหมู่</div>
               <Select
                 placeholder="อื่นๆ"
@@ -626,6 +678,7 @@ const MediaLibraryTab: React.FC = () => {
           </div>
         )}
       </Modal>
+      </ConfigProvider>
 
       {/* ─── Preview modal — DARK, CCTVModal pattern ─── */}
       <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
@@ -634,7 +687,7 @@ const MediaLibraryTab: React.FC = () => {
           onCancel={() => setPreviewing(null)}
           footer={null}
           width={900}
-          title={previewing?.name}
+          title={previewing?.setting_type_name || 'สื่อ'}
           closable={{ 'aria-label': 'Close' }}
           destroyOnHidden
           classNames={{ container: 'border-2! border-(--default-blue)!' }}
@@ -682,6 +735,9 @@ const MediaLibraryTab: React.FC = () => {
           )}
         </Modal>
       </ConfigProvider>
+
+      {/* Category CRUD */}
+      <CategoryManagerModal open={categoryManagerOpen} onClose={() => setCategoryManagerOpen(false)} />
     </div>
   )
 }
