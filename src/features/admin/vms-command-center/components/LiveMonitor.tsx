@@ -123,14 +123,17 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
               {hasActive && (
                 <div className="mt-2 flex items-center gap-3">
                   {it.media_url ? (
-                    <div className="w-16 h-16 rounded overflow-hidden bg-black/30 flex-shrink-0">
+                    <div
+                      className="rounded overflow-hidden bg-black flex-shrink-0"
+                      style={{ width: 96, aspectRatio: '16/9' }}
+                    >
                       <Image
                         src={it.media_url}
                         alt=""
-                        width={64}
-                        height={64}
+                        width="100%"
+                        height="100%"
                         preview={false}
-                        style={{ objectFit: 'cover' }}
+                        style={{ objectFit: 'contain' }}
                       />
                     </div>
                   ) : null}

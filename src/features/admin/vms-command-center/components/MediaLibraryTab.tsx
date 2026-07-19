@@ -339,14 +339,14 @@ const MediaLibraryTab: React.FC = () => {
                   }}
                 >
                   <div
-                    className="cursor-pointer relative"
-                    style={{ aspectRatio: '16/10' }}
+                    className="cursor-pointer relative bg-black"
+                    style={{ aspectRatio: '16/9' }}
                     onClick={() => setPreviewing(it)}
                   >
                     {isVideo ? (
                       <video
                         src={it.url}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                         muted
                         playsInline
                       />
@@ -357,7 +357,7 @@ const MediaLibraryTab: React.FC = () => {
                         preview={false}
                         width="100%"
                         height="100%"
-                        style={{ objectFit: 'cover' }}
+                        style={{ objectFit: 'contain' }}
                       />
                     )}
                     {isVideo && (
@@ -566,21 +566,21 @@ const MediaLibraryTab: React.FC = () => {
               return (
                 <div className="space-y-2">
                   <div
-                    className="relative rounded-lg overflow-hidden border bg-slate-50"
-                    style={{ borderColor: border, aspectRatio: '16/10' }}
+                    className="relative rounded-lg overflow-hidden border bg-black"
+                    style={{ borderColor: border, aspectRatio: '16/9' }}
                   >
                     {s.isVideo ? (
                       <video
                         src={s.previewUrl}
                         controls
                         muted
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
                     ) : (
                       <img
                         src={s.previewUrl}
                         alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
                     )}
                     {s.status === 'done' && (
@@ -670,11 +670,11 @@ const MediaLibraryTab: React.FC = () => {
       >
         {editing && (
           <div className="space-y-3">
-            <div className="rounded overflow-hidden bg-slate-100" style={{ aspectRatio: '16/10' }}>
+            <div className="rounded overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
               {isVideoName(editing.filename || editing.url) ? (
-                <video src={editing.url} controls style={{ width: '100%', height: '100%' }} />
+                <video src={editing.url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
-                <Image src={editing.url} alt="" preview={false} width="100%" height="100%" style={{ objectFit: 'cover' }} />
+                <Image src={editing.url} alt="" preview={false} width="100%" height="100%" style={{ objectFit: 'contain' }} />
               )}
             </div>
             <div>
@@ -708,11 +708,25 @@ const MediaLibraryTab: React.FC = () => {
         >
           {previewing && (
             <div>
-              {isVideoName(previewing.filename || previewing.url) ? (
-                <video src={previewing.url} controls style={{ width: '100%' }} autoPlay />
-              ) : (
-                <Image src={previewing.url} alt="" width="100%" preview={false} />
-              )}
+              <div className="bg-black rounded overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                {isVideoName(previewing.filename || previewing.url) ? (
+                  <video
+                    src={previewing.url}
+                    controls
+                    autoPlay
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <Image
+                    src={previewing.url}
+                    alt=""
+                    width="100%"
+                    height="100%"
+                    preview={false}
+                    style={{ objectFit: 'contain' }}
+                  />
+                )}
+              </div>
               <div className="mt-3 text-xs text-white/70 flex items-center gap-3 flex-wrap">
                 <span>หมวด: <b className="text-white">{previewing.setting_type_name || 'อื่นๆ'}</b></span>
                 <span>อัปโหลด: {dayjs(previewing.uploaded_at).format('DD MMM YYYY HH:mm')} · {dayjs(previewing.uploaded_at).locale('th').fromNow()}</span>

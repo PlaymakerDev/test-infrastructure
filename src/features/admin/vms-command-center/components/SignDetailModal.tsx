@@ -147,13 +147,18 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                     <div className="text-xs text-white/50 mb-1">คำสั่งที่กำลังแสดง (setting #{activeSettingID})</div>
                     <div className="flex items-center gap-3">
                       {detail.media_url && (
-                        <Image
-                          src={detail.media_url}
-                          width={120}
-                          height={72}
-                          preview={{ mask: 'ดูรูปใหญ่' }}
-                          style={{ objectFit: 'cover', borderRadius: 6 }}
-                        />
+                        <div
+                          className="rounded overflow-hidden bg-black flex-shrink-0"
+                          style={{ width: 160, aspectRatio: '16/9' }}
+                        >
+                          <Image
+                            src={detail.media_url}
+                            width="100%"
+                            height="100%"
+                            preview={{ mask: 'ดูรูปใหญ่' }}
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
                       )}
                       <div className="min-w-0 flex-1 text-sm">
                         <div><b>{detail.setting_type_name || '-'}</b></div>

@@ -152,14 +152,14 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                       }}
                       title={m.name}
                     >
-                      <div style={{ aspectRatio: '16/10' }}>
+                      <div style={{ aspectRatio: '16/9', background: '#000' }}>
                         <Image
                           src={m.url}
                           alt={m.name}
                           width="100%"
                           height="100%"
                           preview={false}
-                          style={{ objectFit: 'cover' }}
+                          style={{ objectFit: 'contain' }}
                         />
                       </div>
                       {m.setting_type_name && (
