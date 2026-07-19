@@ -1,6 +1,6 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { App, Tabs } from 'antd'
+import { App, ConfigProvider, Tabs, theme as antdTheme } from 'antd'
 import type { BureauSelection } from '@/types/control-vms/bureau'
 import ScopePicker from '../components/ScopePicker'
 import Composer from '../components/Composer'
@@ -8,6 +8,22 @@ import LiveMonitor from '../components/LiveMonitor'
 import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
 import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
+
+// App-wide dark palette matching the yellow-on-black theme used everywhere
+// else in the admin surface (globals.css: --yellow #FCD116, --dark-black
+// #191919, --default-blue #66AEFF).
+const DARK_THEME = {
+  algorithm: antdTheme.darkAlgorithm,
+  token: {
+    colorPrimary: '#FCD116',
+    colorBgContainer: '#191919',
+    colorBgElevated: '#212121',
+    colorText: '#e5e7eb',
+    colorTextSecondary: '#66AEFF',
+    colorBorder: '#363636',
+    borderRadius: 8,
+  },
+}
 
 const emptySelection: BureauSelection = {
   keys: [],
@@ -36,52 +52,54 @@ const VMSCommandCenterScreen: React.FC = () => {
   }, [selection])
 
   return (
-    <App>
-      <div className="h-[calc(100vh-96px)] w-full p-3">
-        <Tabs
-          defaultActiveKey="dispatch"
-          className="vms-cc-tabs h-full"
-          items={[
-            {
-              key: 'dispatch',
-              label: 'สั่งใหม่ + ติดตาม',
-              children: (
-                <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
-                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-                    <ScopePicker onSelectionChange={setSelection} selection={selection} />
+    <ConfigProvider theme={DARK_THEME}>
+      <App>
+        <div className="h-[calc(100vh-96px)] w-full p-3 text-white/90">
+          <Tabs
+            defaultActiveKey="dispatch"
+            className="vms-cc-tabs h-full"
+            items={[
+              {
+                key: 'dispatch',
+                label: 'สั่งใหม่ + ติดตาม',
+                children: (
+                  <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
+                    <div className="rounded-xl border border-white/10 bg-(--light-black) overflow-hidden">
+                      <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-(--light-black) overflow-hidden">
+                      <Composer vmsIds={vmsIds} targetSignSummary={targetSummary} />
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-(--light-black) overflow-hidden">
+                      <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                    </div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-                    <Composer vmsIds={vmsIds} targetSignSummary={targetSummary} />
+                ),
+              },
+              {
+                key: 'history',
+                label: 'ประวัติสั่งงานทั้งหมด',
+                children: (
+                  <div className="h-[calc(100vh-160px)]">
+                    <GlobalHistoryTable onOpenSign={openDetail} />
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-                    <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                ),
+              },
+              {
+                key: 'library',
+                label: 'คลังเนื้อหา / ปฏิทิน',
+                children: (
+                  <div className="h-[calc(100vh-160px)] overflow-auto">
+                    <ControlVMSScreen />
                   </div>
-                </div>
-              ),
-            },
-            {
-              key: 'history',
-              label: 'ประวัติสั่งงานทั้งหมด',
-              children: (
-                <div className="h-[calc(100vh-160px)]">
-                  <GlobalHistoryTable onOpenSign={openDetail} />
-                </div>
-              ),
-            },
-            {
-              key: 'library',
-              label: 'คลังเนื้อหา / ปฏิทิน',
-              children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
-                  <ControlVMSScreen />
-                </div>
-              ),
-            },
-          ]}
-        />
-      </div>
-      <SignDetailModal open={detailVmsId !== null} onClose={closeDetail} vmsId={detailVmsId} />
-    </App>
+                ),
+              },
+            ]}
+          />
+        </div>
+        <SignDetailModal open={detailVmsId !== null} onClose={closeDetail} vmsId={detailVmsId} />
+      </App>
+    </ConfigProvider>
   )
 }
 

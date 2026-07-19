@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Alert, Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, TimePicker } from 'antd'
+import { Alert, Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, theme as antdTheme, TimePicker } from 'antd'
 import { TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useVMSSettingTypes } from '@/features/admin/control-vms/overall/hooks/useVMSSettingTypes'
@@ -78,11 +78,24 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   }
 
   return (
-    <ConfigProvider theme={{ token: { colorTextBase: '#1f2937' } }}>
-      <div className="flex flex-col h-full text-slate-900 bg-white/95">
-        <div className="px-4 py-3 border-b border-slate-200/60">
-          <div className="text-sm font-semibold">แต่งคำสั่งใหม่</div>
-          <div className="text-xs text-slate-500 mt-0.5">{targetSignSummary}</div>
+    <ConfigProvider
+      theme={{
+        algorithm: antdTheme.darkAlgorithm,
+        token: {
+          colorPrimary: '#FCD116',
+          colorBgContainer: '#191919',
+          colorBgElevated: '#212121',
+          colorText: '#e5e7eb',
+          colorTextSecondary: '#66AEFF',
+          colorBorder: '#363636',
+          borderRadius: 8,
+        },
+      }}
+    >
+      <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
+        <div className="px-4 py-3 border-b border-white/10">
+          <div className="text-sm font-semibold text-(--yellow)">แต่งคำสั่งใหม่</div>
+          <div className="text-xs text-(--default-blue) mt-0.5">{targetSignSummary}</div>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           <div>
@@ -106,11 +119,11 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           <div>
             <div className="text-xs font-medium mb-1">
               เลือกรูปที่จะแสดง{' '}
-              {selectedType?.name && <span className="text-slate-400">({selectedType.name})</span>}
+              {selectedType?.name && <span className="text-white/40">({selectedType.name})</span>}
             </div>
             {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
             {!mediaLoading && mediaUrls.length === 0 && (
-              <div className="text-xs text-slate-500 border border-dashed border-slate-300 rounded p-3 text-center">
+              <div className="text-xs text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
                 {settingTypeId ? 'ยังไม่มีรูปในประเภทนี้ (อัปโหลดในหน้า Control VMS)' : 'เลือกประเภทก่อน'}
               </div>
             )}
@@ -127,8 +140,8 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                       onClick={() => setSelectedMediaUrl(url)}
                       className="relative rounded-md overflow-hidden border cursor-pointer"
                       style={{
-                        borderColor: active ? '#f59e0b' : '#e5e7eb',
-                        outline: active ? '2px solid #f59e0b' : 'none',
+                        borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
+                        outline: active ? '2px solid #FCD116' : 'none',
                         outlineOffset: -2,
                       }}
                     >
@@ -209,9 +222,9 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <Radio.Button value="custom">จันทร์–ศุกร์</Radio.Button>
             </Radio.Group>
             {daysOfWeek.length === 0 && (
-              <div className="text-xs text-slate-500 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
+              <div className="text-xs text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
             )}
-            <div className="text-xs text-slate-400 mt-1">
+            <div className="text-xs text-white/40 mt-1">
               mask = {isoDaysMask(daysOfWeek) || 127}
             </div>
           </div>
@@ -220,7 +233,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             <Alert type="warning" showIcon message="เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย" />
           )}
         </div>
-        <div className="px-4 py-3 border-t border-slate-200/60">
+        <div className="px-4 py-3 border-t border-white/10">
           <Button
             type="primary"
             danger
@@ -251,7 +264,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
             <br />
             {vmsIds.length > 3 && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-white/50">
                 คำสั่งเดิมที่กำลังแสดงอยู่จะถูกทำเครื่องหมาย "ถูกสั่งทับ" (status=7) โดยอัตโนมัติ
               </span>
             )}

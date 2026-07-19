@@ -47,7 +47,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold">ติดตามสถานะแบบเรียลไทม์</div>
+          <div className="text-sm font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
           <div className="text-xs opacity-60 mt-0.5">
             อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
             {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}

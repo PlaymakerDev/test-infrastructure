@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Badge, Button, ConfigProvider, DatePicker, Empty, Radio, Skeleton, Table, Tooltip } from 'antd'
+import { Badge, Button, ConfigProvider, DatePicker, Empty, Radio, Skeleton, Table, theme as antdTheme, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbEye, TbRefresh } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
@@ -53,7 +53,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
           <Tooltip title={d.format('YYYY-MM-DD HH:mm:ss.SSS')}>
             <div>
               <div className="text-sm">{d.format('DD MMM HH:mm:ss')}</div>
-              <div className="text-xs text-slate-500">{d.locale('th').fromNow()}</div>
+              <div className="text-xs text-white/50">{d.locale('th').fromNow()}</div>
             </div>
           </Tooltip>
         )
@@ -65,7 +65,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
       render: (_, r) => (
         <div className="min-w-0">
           <div className="text-sm truncate">{r.solution_name || `WID ${r.wid ?? '?'}`}</div>
-          <div className="text-xs text-slate-500">WID {r.wid ?? '—'} · setting #{r.setting_id}</div>
+          <div className="text-xs text-white/50">WID {r.wid ?? '—'} · setting #{r.setting_id}</div>
         </div>
       ),
     },
@@ -85,7 +85,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
           {r.prev_status != null && r.prev_status !== r.status && (
             <>
               <StatusPill status={r.prev_status} size="sm" />
-              <span className="text-slate-400">→</span>
+              <span className="text-white/40">→</span>
             </>
           )}
           <StatusPill status={r.status} size="sm" />
@@ -123,11 +123,24 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
   const lastUpdated = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
   return (
-    <ConfigProvider theme={{ token: { colorTextBase: '#0f172a' } }}>
-      <div className="flex flex-col h-full bg-white/95 rounded-xl overflow-hidden text-slate-900">
+    <ConfigProvider
+      theme={{
+        algorithm: antdTheme.darkAlgorithm,
+        token: {
+          colorPrimary: '#FCD116',
+          colorBgContainer: '#191919',
+          colorBgElevated: '#212121',
+          colorText: '#e5e7eb',
+          colorTextSecondary: '#66AEFF',
+          colorBorder: '#363636',
+          borderRadius: 8,
+        },
+      }}
+    >
+      <div className="flex flex-col h-full bg-(--dark-black) rounded-xl overflow-hidden text-white/90 border border-white/10">
         {/* Toolbar */}
-        <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3 flex-wrap">
-          <div className="text-sm font-semibold">ประวัติสั่งงานทั้งหมด</div>
+        <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-wrap">
+          <div className="text-sm font-semibold text-(--yellow)">ประวัติสั่งงานทั้งหมด</div>
           <Radio.Group value={preset} onChange={(e) => setPreset(e.target.value)} size="small">
             <Radio.Button value="today">วันนี้</Radio.Button>
             <Radio.Button value="7d">7 วันล่าสุด</Radio.Button>
