@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Alert, Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, theme as antdTheme, TimePicker } from 'antd'
+import { Alert, Button, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, TimePicker } from 'antd'
 import { TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useVMSSettingTypes } from '@/features/admin/control-vms/overall/hooks/useVMSSettingTypes'
@@ -78,20 +78,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   }
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: antdTheme.darkAlgorithm,
-        token: {
-          colorPrimary: '#FCD116',
-          colorBgContainer: '#191919',
-          colorBgElevated: '#212121',
-          colorText: '#e5e7eb',
-          colorTextSecondary: '#66AEFF',
-          colorBorder: '#363636',
-          borderRadius: 8,
-        },
-      }}
-    >
+    <>
       <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
           <div className="text-sm font-semibold text-(--yellow)">แต่งคำสั่งใหม่</div>
@@ -271,7 +258,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
         </Modal>
       </div>
-    </ConfigProvider>
+    </>
   )
 })
 

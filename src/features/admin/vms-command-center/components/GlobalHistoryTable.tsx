@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Badge, Button, ConfigProvider, DatePicker, Empty, Radio, Skeleton, Table, theme as antdTheme, Tooltip } from 'antd'
+import { Badge, Button, DatePicker, Empty, Radio, Skeleton, Table, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbEye, TbRefresh } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
@@ -127,21 +127,8 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
   const lastUpdated = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: antdTheme.darkAlgorithm,
-        token: {
-          colorPrimary: '#FCD116',
-          colorBgContainer: '#191919',
-          colorBgElevated: '#212121',
-          colorText: '#e5e7eb',
-          colorTextSecondary: '#66AEFF',
-          colorBorder: '#363636',
-          borderRadius: 8,
-        },
-      }}
-    >
-      <div className="flex flex-col h-full bg-(--dark-black) rounded-xl overflow-hidden text-white/90 border border-white/10">
+    <>
+      <div className="flex flex-col h-full bg-(--dark-black) rounded-xl overflow-hidden text-white/90">
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-wrap">
           <div className="text-sm font-semibold text-(--yellow)">ประวัติสั่งงานทั้งหมด</div>
@@ -191,7 +178,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
           )}
         </div>
       </div>
-    </ConfigProvider>
+    </>
   )
 })
 
