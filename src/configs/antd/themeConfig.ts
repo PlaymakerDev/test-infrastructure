@@ -166,6 +166,15 @@ export const theme: ConfigProviderProps = {
         colorText: "var(--white)",
         controlItemBgHover: "#2A2A2A",
       },
+      Popover: {
+        // Same fix as Dropdown/Menu/Notification/Message — with no dark
+        // algorithm the popover pops white while the app-wide colorText is
+        // white, so title + description end up invisible (Popconfirm, Tooltip,
+        // Popover all inherit from here).
+        colorBgElevated: "var(--dark-black)",
+        colorText: "var(--white)",
+        colorTextHeading: "var(--white)",
+      },
       Menu: {
         colorBgElevated: "var(--dark-black)",
         popupBg: "var(--dark-black)",

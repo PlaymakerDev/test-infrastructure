@@ -503,6 +503,7 @@ const MediaLibraryTab: React.FC = () => {
               onChange={(v) => setUploadCategory(v ?? null)}
               disabled={uploading}
               options={types.map((t) => ({ label: t.name, value: t.id }))}
+              classNames={{ popup: { root: 'light-modal-popup' } }}
               style={{ width: '100%' }}
             />
           </div>
@@ -672,6 +673,7 @@ const MediaLibraryTab: React.FC = () => {
                 value={editCategory ?? undefined}
                 onChange={(v) => setEditCategory(v ?? null)}
                 options={types.map((t) => ({ label: t.name, value: t.id }))}
+                classNames={{ popup: { root: 'light-modal-popup' } }}
                 style={{ width: '100%' }}
               />
             </div>
