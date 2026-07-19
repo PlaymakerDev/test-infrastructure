@@ -69,7 +69,21 @@ const TitleSection: React.FC = () => {
             <ConfigProvider
               theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#212121' } }}
             >
-              <Button type='primary' size='middle' shape='round' className='w-full! sm:w-auto!'>
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                className='w-full! sm:w-auto!'
+                onClick={() => {
+                  const [lng, lat] = project.coord ?? [0, 0]
+                  if (lng !== 0 || lat !== 0) {
+                    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank')
+                    return
+                  }
+                  const query = [project.roadCode, project.installPoint].filter(Boolean).join(' ')
+                  window.open(`https://www.google.com/maps?q=${encodeURIComponent(query)}`, '_blank')
+                }}
+              >
                 Google Map
               </Button>
             </ConfigProvider>

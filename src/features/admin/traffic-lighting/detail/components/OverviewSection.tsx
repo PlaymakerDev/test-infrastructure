@@ -22,7 +22,7 @@ const OverviewSection: React.FC = () => {
         </div>
 
         {/* Center — circuit diagram iframe for this device. */}
-        <div className='flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-center justify-center min-h-[310px]'>
+        <div className='flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-stretch justify-center min-h-[310px]'>
           {imei ? (
             // `items-stretch` (not `items-center`) on the parent so the
             // iframe fills the full card instead of hugging its own content
@@ -30,7 +30,7 @@ const OverviewSection: React.FC = () => {
             // whatever canvas size it's given.
             <DiagramIframe imei={imei} minHeight={400} />
           ) : (
-            <p className='text-white/50 text-sm m-0'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
+            <p className='text-white/50 text-sm m-0 self-center'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
           )}
         </div>
 

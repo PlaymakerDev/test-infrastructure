@@ -1,19 +1,17 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
-import { useLightingAlerts } from '@/hooks/queries/lighting'
+import { useAllLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
-
-const DEFAULT_LIMIT = 10
 
 const SUMMARY_STATS = [
   { label: 'ทั้งหมด', color: '#FCD116', variant: 'filled' as const },
@@ -53,27 +51,14 @@ const LineStatusBadge = ({ status }: { status: string }) => {
 }
 
 /** Map (left) + event log table (right) below the charts row. The table is
- *  fed by /imei/{imei}/alerts (server-side paginated). */
+ *  fed by /imei/{imei}/alerts, fetched in full across as many pages as the
+ *  backend actually has (no pagination UI, no row cap). */
 const MapEventSection: React.FC = () => {
   const { project, imei, device } = useDetailContext()
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(DEFAULT_LIMIT)
 
-  // A different device (imei) resets pagination back to page 1 — adjusted
-  // during render (React's recommended pattern) instead of an effect, so it
-  // takes effect before the now-stale page number is used to fetch below.
-  const [prevImei, setPrevImei] = useState(imei)
-  if (imei !== prevImei) {
-    setPrevImei(imei)
-    setPage(1)
-  }
-
-  const { data, isFetching } = useLightingAlerts(imei, page, limit)
-  const alerts = data?.res_data ?? []
-  // "ทั้งหมด" comes from the backend's true count (meta_data.count); the
-  // backend's /alerts endpoint has no status filter, so UP/DOWN can only
-  // reflect the currently loaded page, not a global total.
-  const total = data?.meta_data?.count ?? 0
+  const { alerts, total, isLoading, isFetching } = useAllLightingAlerts(imei)
+  // Now that the full set is fetched, UP/DOWN reflect the true totals, not
+  // just whatever a single page happened to contain.
   const upCount = alerts.filter((a) => a.status === 'UP').length
   const downCount = alerts.filter((a) => a.status === 'DOWN').length
   const summary = [
@@ -81,11 +66,6 @@ const MapEventSection: React.FC = () => {
     { ...SUMMARY_STATS[1], value: upCount },
     { ...SUMMARY_STATS[2], value: downCount },
   ]
-
-  const handlePageChange = (nextPage: number, nextSize: number) => {
-    setPage(nextPage)
-    setLimit(nextSize)
-  }
 
   const columns: ColumnsType<AlertItem> = useMemo(
     () => [
@@ -177,7 +157,7 @@ const MapEventSection: React.FC = () => {
                     : { background: stat.color, color: '#212121' }),
                 }}
               >
-                {data ? stat.value : '-'}
+                {isLoading ? '-' : stat.value}
               </span>
             </div>
           ))}
@@ -189,15 +169,7 @@ const MapEventSection: React.FC = () => {
             columns={columns}
             dataSource={alerts}
             loading={isFetching}
-            pagination={{
-              current: page,
-              pageSize: limit,
-              total,
-              showSizeChanger: true,
-              pageSizeOptions: [10, 20, 50, 100],
-              showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
-              onChange: handlePageChange,
-            }}
+            pagination={false}
             size='middle'
             className='bridge-projects-table event-log-table'
             locale={{ emptyText: 'ไม่พบข้อมูล' }}

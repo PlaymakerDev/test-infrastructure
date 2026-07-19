@@ -1,9 +1,32 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 
-/** Remote ON/OFF control card — status box, warning text, expand trigger.
- *  Shown on the OVERVIEW tab below route tabs. */
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
+
+/** Remote ON/OFF control card — status box, warning text, toggle button.
+ *  Shown on the OVERVIEW tab below route tabs.
+ *
+ *  No backend endpoint exists for actually sending this command yet (unlike
+ *  bridge-lighting's equivalent card, which is likewise local-only — see
+ *  bridge-lighting/detail/components/sections/overall/RemoteControlCard.tsx —
+ *  the real POST there lives behind a separate confirm form, not this card).
+ *  Mirrors that sibling's local-toggle behavior so the button does SOMETHING
+ *  instead of being a dead decoration. */
 const RemoteControlCard: React.FC = () => {
+  const [isOff, setIsOff] = useState(true)
+  // 2569 BE = 2026 CE — dayjs parses this natively; buddhistEra only needs to
+  // be loaded for the OUTPUT side (.format('BBBB')) below, not for parsing.
+  const [updatedAt, setUpdatedAt] = useState(() => dayjs('2026-04-15 18:35:29'))
+
+  const handleToggle = () => {
+    setIsOff((v) => !v)
+    setUpdatedAt(dayjs())
+  }
+
   return (
     <div
       className='w-full max-w-[429px] h-[310px] rounded-2xl p-5 flex flex-col'
@@ -21,10 +44,10 @@ const RemoteControlCard: React.FC = () => {
           สถานะการทำงาน
         </div>
         <h2 className='text-white font-bold text-[22px] leading-tight m-0'>
-          ปิดไฟตู้โจรกรรม
+          {isOff ? 'ปิดไฟตู้โจรกรรม' : 'เปิดไฟตู้โจรกรรม'}
         </h2>
         <p className='text-white/70 text-[12px] leading-tight m-0'>
-          อัพเดตล่าสุด : 15 เม.ย. 2569 18:35:29 น.
+          อัพเดตล่าสุด : {updatedAt.format('D MMM BBBB HH:mm:ss')} น.
         </p>
       </div>
 
@@ -39,8 +62,11 @@ const RemoteControlCard: React.FC = () => {
         <div className='mt-auto pt-3'>
           <button
             type='button'
-            aria-label='เปิดคำสั่งเปิด-ปิดระยะไกล'
+            aria-label={isOff ? 'เปิดคำสั่งเปิด-ปิดระยะไกล' : 'ปิดคำสั่งเปิด-ปิดระยะไกล'}
+            aria-pressed={!isOff}
+            onClick={handleToggle}
             className='border-0 cursor-pointer hover:brightness-110 transition-all p-0 bg-transparent'
+            style={{ transform: isOff ? 'none' : 'rotate(180deg)' }}
           >
             <img src='/images/Lighting/arrowdown.png' alt='' width={40} height={40} className='shrink-0' />
           </button>

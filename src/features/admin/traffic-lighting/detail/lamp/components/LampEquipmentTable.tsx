@@ -187,12 +187,7 @@ const LampEquipmentTable: React.FC = () => {
           rowKey='key'
           columns={columns}
           dataSource={filteredRows}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50'],
-            showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t} รายการ`,
-          }}
+          pagination={false}
           size='middle'
           className='bridge-projects-table lamp-equipment-table'
           locale={{ emptyText: 'ไม่พบข้อมูล' }}

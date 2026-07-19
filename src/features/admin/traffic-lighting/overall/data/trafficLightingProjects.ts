@@ -25,6 +25,15 @@ export interface TrafficLightingProject {
   coord: [number, number]
   /** Equipment on this solution — drives which detail layout to show. */
   equipment: { count: number | null; type: string | null }
+  /** Road id — drives the GRID view's "หน่วยงานที่รับผิดชอบ" lookup + Project Info
+   *  modal. Only populated from the real central/list mapping below — absent
+   *  on the detail page's sessionStorage-reconstructed project (see
+   *  buildTrafficLightingProject), which never stashed it. */
+  roadId?: number
+  /** Project id — opens the Project Info modal from the GRID view. Same
+   *  sessionStorage caveat as roadId. */
+  projectId?: number
+  budgetYear?: number
 }
 
 export const TRAFFIC_LIGHTING_PROJECTS: TrafficLightingProject[] = [
@@ -177,6 +186,9 @@ export const mapCentralListToProjects = (
           bureau: bureau.department_short_name ?? '-',
           coord: sol.GeometryPoint ?? [0, 0],
           equipment: { count: equip?.count ?? null, type: equip?.type ?? null },
+          roadId: sol.road?.id,
+          projectId: sol.project?.id,
+          budgetYear: sol.project?.budget_year,
         })
       }
     }

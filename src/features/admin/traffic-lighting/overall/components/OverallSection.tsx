@@ -1,11 +1,25 @@
 "use client"
-import React from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, ConfigProvider, Input } from 'antd'
-import { TbPrinter, TbSearch } from 'react-icons/tb'
+import { Input } from 'antd'
+import { TbSearch } from 'react-icons/tb'
 import { TableTrafficLighting, MapTrafficLighting } from '../components'
 import { useOverallContext } from '../context'
 import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIframe'
+import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
+import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import type { TrafficLightingProject } from '../data/trafficLightingProjects'
+
+// Same 5 filters/colors as the old static summaryStats badges — now wired to
+// actually filter the list (they never did before), matching the shared
+// SearchBar pattern every other overall page (crosswalk, cctv, etc.) already uses.
+const TRAFFIC_LIGHTING_FILTERS: FilterConfig[] = [
+  { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
+  { key: 'online', label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white', badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
+  { key: 'offline', label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white', badgeIdleClass: 'bg-red-500/20 text-red-400' },
+  { key: 'in-warranty', label: 'ในค้ำ', colorPrimary: '#05F2DB', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#016f64] text-white', badgeIdleClass: 'bg-[#05F2DB]/20 text-[#05F2DB]' },
+  { key: 'expired', label: 'หมดค้ำ', colorPrimary: '#979797', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#4a4a4a] text-white', badgeIdleClass: 'bg-[#979797]/20 text-[#979797]' },
+]
 
 const OverallSection: React.FC = () => {
   const router = useRouter()
@@ -24,6 +38,75 @@ const OverallSection: React.FC = () => {
     diagramImei,
   } = useOverallContext()
   const deptQuery = deptId ? `?dept_id=${deptId}` : ''
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+
+  // summaryStats already carries the live totals (from a separate totals
+  // endpoint, unaffected by the search box) — reshape into SearchBar's
+  // {key: value} stats lookup instead of refetching anything new.
+  const filterStats: FilterStats = useMemo(() => {
+    const byLabel = new Map(summaryStats.map((s) => [s.label, s.value]))
+    return {
+      all: byLabel.get('ทั้งหมด'),
+      online: byLabel.get('ออนไลน์'),
+      offline: byLabel.get('ออฟไลน์'),
+      'in-warranty': byLabel.get('ในค้ำ'),
+      expired: byLabel.get('หมดค้ำ'),
+    }
+  }, [summaryStats])
+
+  // filteredProjects (context) is already search-filtered; apply the status
+  // filter on top, same as crosswalk's OverallDataDisplaySection.
+  const displayedProjects = useMemo(() => {
+    switch (activeFilter) {
+      case 'online': return filteredProjects.filter((p) => p.connection === 'online')
+      case 'offline': return filteredProjects.filter((p) => p.connection === 'offline')
+      case 'in-warranty': return filteredProjects.filter((p) => p.warranty === 'in-warranty')
+      case 'expired': return filteredProjects.filter((p) => p.warranty === 'expired')
+      default: return filteredProjects
+    }
+  }, [filteredProjects, activeFilter])
+
+  // Same navigation as TableTrafficLighting's onRow — stash row context in
+  // sessionStorage so the detail page can render its header, then route by
+  // equipment type (lamp has its own page, phase shares one).
+  const goToDetail = useCallback((project: TrafficLightingProject) => {
+    sessionStorage.setItem('lighting_detail_type', project.equipment.type ?? '')
+    sessionStorage.setItem('lighting_detail_imei', project.id)
+    sessionStorage.setItem('lighting_detail_row', JSON.stringify({
+      roadCode: project.roadCode,
+      projectName: project.projectName,
+      installPoint: project.installPoint,
+      bureau: project.bureau,
+      coord: project.coord,
+      warranty: project.warranty,
+      connection: project.connection,
+    }))
+    const base = project.equipment.type === 'lamp'
+      ? `/admin/traffic-lighting/detail/lamp/${project.id}`
+      : `/admin/traffic-lighting/detail/${project.id}`
+    router.push(`${base}${deptQuery}`)
+  }, [router, deptQuery])
+
+  const cardItems = useMemo<ProjectCardItem[]>(
+    () => displayedProjects.map((p) => ({
+      key: p.id,
+      roadId: p.roadId ?? 0,
+      projectId: p.projectId,
+      roadCode: p.roadCode,
+      projectName: p.projectName,
+      installPoint: p.installPoint,
+      contractNo: p.contractNo,
+      budgetYear: p.budgetYear,
+      isWarranty: p.warranty === 'in-warranty',
+      bureau: p.bureau,
+      total: p.equipment.count ?? 0,
+      online: p.connection === 'online' ? 1 : 0,
+      offline: p.connection === 'offline' ? 1 : 0,
+      onDetail: () => goToDetail(p),
+    })),
+    [displayedProjects, goToDetail],
+  )
 
   return (
     <>
@@ -160,82 +243,48 @@ const OverallSection: React.FC = () => {
         </div>
       </section>
 
-      <div className='mt-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 shrink-0'>
-        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full xl:w-full xl:max-w-[850px] xl:shrink-0 min-w-0'>
-          {summaryStats.map((stat) => (
-            <div
-              key={stat.label}
-              className='box-border flex flex-row items-center justify-between rounded-[10px] px-2 w-full min-w-0 h-[46px]'
-              style={{
-                ...(stat.variant === 'filled'
-                  ? { background: stat.color }
-                  : { background: 'transparent', border: `2px solid ${stat.color}` }),
+      <div className='mt-4'>
+        <style>{`
+          .traffic-lighting-search-input::placeholder {
+            color: #FFFFFF80 !important;
+            font-weight: 400;
+            font-size: 14px;
+          }
+        `}</style>
+        <SearchBar
+          filters={TRAFFIC_LIGHTING_FILTERS}
+          stats={filterStats}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
+          formSearch={
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
+              classNames={{
+                root: 'traffic-lighting-search !w-full sm:!w-[360px] sm:!max-w-[360px] !shrink-0 !rounded-[10px]! !h-[46px]! !bg-[#2B2B2B]! !border-[#FCD116]! !overflow-hidden',
+                input: 'traffic-lighting-search-input !bg-transparent!',
               }}
-            >
-              <span
-                className='text-[11px] sm:text-[12px] font-normal m-0 leading-none shrink-0'
-                style={{ color: stat.variant === 'filled' ? '#212121' : stat.color }}
-              >
-                {stat.label}
-              </span>
-              <span
-                className='flex items-center justify-center text-[13px] sm:text-[14px] font-normal m-0 leading-none shrink-0 rounded-[5px]'
-                style={{
-                  width: 46,
-                  height: 28,
-                  ...(stat.variant === 'filled'
-                    ? { background: '#212121', color: stat.color }
-                    : { background: stat.color, color: '#212121' }),
-                }}
-              >
-                {stat.value}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full xl:w-auto xl:shrink-0 min-w-0'>
-          <style>{`
-            .traffic-lighting-search-input::placeholder {
-              color: #FFFFFF80 !important;
-              font-weight: 400;
-              font-size: 14px;
-            }
-          `}</style>
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-            classNames={{
-              root: 'traffic-lighting-search !w-full sm:!flex-1 xl:!w-[360px] xl:!max-w-[360px] xl:!flex-none !shrink-0 !rounded-[10px]! !h-[46px]! !bg-[#2B2B2B]! !border-[#FCD116]! !overflow-hidden',
-              input: 'traffic-lighting-search-input !bg-transparent!',
-            }}
-            styles={{
-              root: { height: 46, background: '#2B2B2B', borderRadius: 10 },
-              input: { background: 'transparent', fontSize: 14, fontWeight: 400, color: '#FFFFFF' },
-            }}
-            suffix={<TbSearch style={{ color: '#FCD116', fontSize: 18 }} />}
-            allowClear
-          />
-          <div className='flex flex-row items-center justify-end sm:justify-start gap-2 w-full sm:w-auto shrink-0'>
-            <img src='/images/Lighting/icbar1.png' alt='' width={30} height={30} className='shrink-0' />
-            <img src='/images/Lighting/icbar2.png' alt='' width={30} height={30} className='shrink-0' />
-            <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-              <Button
-                type='primary'
-                size='small'
-                icon={<TbPrinter />}
-                onClick={() => alert('TODO: นำออกเอกสาร')}
-                className='w-full! sm:w-[130px]! h-[27px]! rounded-[88px]! px-2! text-xs! inline-flex! items-center! justify-center!'
-              >
-                นำออกเอกสาร
-              </Button>
-            </ConfigProvider>
-          </div>
-        </div>
+              styles={{
+                root: { height: 46, background: '#2B2B2B', borderRadius: 10 },
+                input: { background: 'transparent', fontSize: 14, fontWeight: 400, color: '#FFFFFF' },
+              }}
+              suffix={<TbSearch style={{ color: '#FCD116', fontSize: 18 }} />}
+              allowClear
+            />
+          }
+        />
       </div>
 
       <section className='mt-4'>
-        <TableTrafficLighting projects={filteredProjects} />
+        {viewMode === 'TABLE' ? (
+          <TableTrafficLighting projects={displayedProjects} />
+        ) : (
+          <ProjectCardGrid items={cardItems} totalLabel='อุปกรณ์ทั้งหมด' />
+        )}
       </section>
     </>
   )
