@@ -11,6 +11,7 @@ import 'swiper/css/pagination'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useControlVMSContext } from '../../../context'
+import StatusPill from '@/features/admin/vms-command-center/components/StatusPill'
 
 interface Props {
   item: VMSSettingByStatus
@@ -79,9 +80,19 @@ const StatusList: React.FC<Props> = (props) => {
         <h4 className='text-(--yellow)'>{item.solution_name || '-'}</h4>
         <div className='mt-3'>
           <div className='flex flex-wrap items-center gap-3'>
-            <p className='fs-12 text-white/50'>สถานะ : <span className='text-white'>{item.status_name || '-'}</span></p>
-            <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${item.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}>
-              {item.is_online ? 'เชื่อมต่อปกติ' : 'เชื่อมต่อผิดปกติ'}
+            <div className='flex items-center gap-2'>
+              <span className='fs-12 text-white/50'>สถานะการแสดงผล :</span>
+              <StatusPill
+                status={item.status}
+                size='sm'
+                tooltip={<span className='text-xs'>สถานะ playback ของคำสั่งบนป้าย</span>}
+              />
+            </div>
+            <span
+              className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${item.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}
+              title='สถานะการเชื่อมต่อของฮาร์ดแวร์ป้าย (คนละอันกับสถานะการแสดงผล)'
+            >
+              เชื่อมต่อฮาร์ดแวร์ · {item.is_online ? 'ปกติ' : 'ผิดปกติ'}
             </span>
           </div>
           <p className='fs-12 text-white/50'>วันที่และเวลาเริ่มต้น : <span className='text-white'>{dayjs(item.start_date).format('DD MMM BBBB') || '-'}</span></p>

@@ -27,4 +27,9 @@ export const controlVmsKeys = {
   byVmsIdsPrefix: () => [...controlVmsKeys.all, 'by-vms-ids'] as const,
   byVmsIds: (vmsIds: number[]) =>
     [...controlVmsKeys.byVmsIdsPrefix(), [...vmsIds].sort((a, b) => a - b)] as const,
+  history: () => [...controlVmsKeys.all, 'history'] as const,
+  historyBySetting: (settingID: number | undefined) =>
+    [...controlVmsKeys.history(), 'setting', settingID ?? 0] as const,
+  historyByCrossing: (crossingMasterIndex: string | undefined) =>
+    [...controlVmsKeys.history(), 'crossing', crossingMasterIndex ?? ''] as const,
 }
