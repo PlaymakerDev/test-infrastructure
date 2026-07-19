@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { TbChevronDown } from 'react-icons/tb'
-import { Collapse } from 'antd'
+import { Collapse, Empty, Spin } from 'antd'
 import { useRouter } from 'next/navigation'
 import type { ExpressionSpecification } from 'mapbox-gl'
 import BaseMap from '@/components/map/BaseMap'
@@ -14,7 +14,7 @@ import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
-import { ROUTE_ITEMS, type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
+import { type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
 // basePath ('/atlas' in prod, '' in dev) — raw <img src> is NOT prefixed
 // automatically like next/link, so prepend it manually (same as the sidebar
@@ -53,20 +53,16 @@ export interface StatisticsMapPanelProps {
   badgeValueFn?: (item: RouteItem, index: number) => number
   /** Numeric count backing the DEFAULT marker color/label threshold (green
    *  unless > 263, then red + "263+") AND the modern-marker cluster-bubble
-   *  sum. Defaults to `item.sub3.length` (right for the mock data, where
-   *  sub3 holds one entry per road/pole and its length is a meaningful
-   *  count) — override when `sub3` represents something else, e.g. live
-   *  incident data where sub3 is one entry per แขวง (org unit, 1-6) and the
+   *  sum. Defaults to `item.sub3.length` when sub3 holds one entry per
+   *  countable unit — override when `sub3` represents something else, e.g.
+   *  live incident data where sub3 is one entry per แขวง (org unit, 1-6) and the
    *  actually-meaningful count is the total install points in `item.count`. */
   markerCountFn?: (item: RouteItem, index: number) => number
-  /** Data source for both the ค้นหาสายทาง search list and the map markers.
-   *  Defaults to the static ROUTE_ITEMS mock — pass real API-backed data to
-   *  wire a tab up to the backend without touching the other (still-mock) tabs. */
+  /** Data source for both the ค้นหาสายทาง search list and the map markers. */
   routeItems?: RouteItem[]
   /** Opt-in: render markers via the shared ThailandMaskLayer + clustered
    *  MarkerLayer + FitBoundsEffect stack (same as the dashboard/CCTV maps)
-   *  instead of the legacy plain HTMLMarker-per-item loop. Default false
-   *  keeps Alert/Status (still mock) on the old rendering untouched. */
+   *  instead of the legacy plain HTMLMarker-per-item loop. */
   useModernMarkers?: boolean
   /** Real per-point map markers (e.g. one per solution, each with its own
    *  geometry_point) — decoupled from `routeItems`, which groups by the
@@ -97,6 +93,8 @@ export interface StatisticsMapPanelProps {
    *  single point, zoom-to-expand for a genuine multi-coordinate cluster).
    *  Omit entirely to keep every existing caller's behavior unchanged. */
   onMarkerGroupClick?: (items: MapMarkerItem[]) => React.ReactNode
+  loading?: boolean
+  error?: boolean
 }
 
 // Module-level constant — MarkerLayer includes `textOffset` in the
@@ -104,6 +102,7 @@ export interface StatisticsMapPanelProps {
 // literal here would recreate a new array reference on every render and
 // trigger the same needless teardown/rebuild as an unmemoized `color`.
 const MARKER_TEXT_OFFSET: [number, number] = [0, 0]
+const EMPTY_ROUTE_ITEMS: RouteItem[] = []
 
 const renderCount = (count: string) => {
   const [left, right] = count.split('/')
@@ -136,13 +135,15 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   badgeColorFn,
   badgeValueFn,
   markerCountFn,
-  routeItems = ROUTE_ITEMS,
+  routeItems = EMPTY_ROUTE_ITEMS,
   useModernMarkers = false,
   markerItems,
   markerItemColor = '#B2FF00',
   markerItemOverflowColor = '#E94C4C',
   markerOverflowThreshold = 263,
   onMarkerGroupClick,
+  loading = false,
+  error = false,
 }) => {
   const router = useRouter()
 
@@ -323,7 +324,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               </span>
             )}
             style={{ marginTop: 4 }}
-            items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
+            items={item.sub3.map((sub) => ({
               key: `${item.name}-${sub.label}`,
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -360,12 +361,27 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
     />
   )
 
+  const searchCardContent = loading ? (
+    <div className="flex min-h-40 items-center justify-center"><Spin /></div>
+  ) : error ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่สามารถโหลดข้อมูลสายทาง" />
+  ) : filteredRoutes.length === 0 ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบข้อมูลสายทาง" />
+  ) : searchCardCollapse
+
+  const hasNoMapData = !loading && !error && routeItems.length === 0 && (markerItems?.length ?? 0) === 0
+  const mapState = loading ? <Spin /> : error ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่สามารถโหลดข้อมูลแผนที่" />
+  ) : hasNoMapData ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบข้อมูลแผนที่" />
+  ) : null
+
   return (
     <>
       {/* ══ MOBILE: drawer search card — outside flex to escape map stacking context ══ */}
       <DrawerMapSearchCard>
         <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)}>
-          {searchCardCollapse}
+          {searchCardContent}
         </SearchCard>
       </DrawerMapSearchCard>
 
@@ -477,6 +493,12 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
           </BaseMap>
         </div>
 
+        {mapState && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/45 pointer-events-none">
+            <div className="rounded-xl bg-black/80 px-6 py-4 pointer-events-auto">{mapState}</div>
+          </div>
+        )}
+
         {/* ══ LEFT: SearchCard overlay — xl+ only, hidden by Map Focus Mode ══ */}
         <MapOverlayPanel
           position="left"
@@ -484,7 +506,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         >
           <div className='w-[370px] h-full overflow-y-auto'>
             <SearchCard placeholder="ค้นหาสายทาง..." onChange={(value) => onSearchChange?.(value)} className="h-full">
-              {searchCardCollapse}
+              {searchCardContent}
             </SearchCard>
           </div>
         </MapOverlayPanel>

@@ -1,15 +1,12 @@
 "use client"
 import React from 'react'
-import { Table } from 'antd'
+import { Alert, Button, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useSearchParams } from 'next/navigation'
 import { TbPhotoOff } from 'react-icons/tb'
 import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
 import EventDetailModal from '@/features/admin/incident-detection/components/EventDetailModal'
 import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
-import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
-import { detailLabel } from '../../../data/routeItems'
 import { useIncidentDetailContext } from '../context'
 import dayjs from 'dayjs'
 
@@ -107,40 +104,26 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'ปิดกั้นทาง', label: 'ปิดกั้นทาง', colorPrimary: '#FF00F2', colorTextLightSolid: '#0A0A0A', badgeActiveClass: 'bg-[#7a0075] text-white', badgeIdleClass: 'bg-[#FF00F2]/20 text-[#FF00F2]' },
 ]
 
-const IncidentDetailTable: React.FC = () => {
+interface IncidentDetailTableProps {
+  /** Already validated against the selected route by the parent screen. */
+  solutionId: string
+  roadCode?: string
+}
+
+const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, roadCode }) => {
   const [activeTab, setActiveTab] = React.useState('ALL')
   const [viewMode, setViewMode] = React.useState<ViewMode>('TABLE')
   const [selected, setSelected] = React.useState<IncidentTransactionItem | null>(null)
   const { dateRange } = useIncidentDetailContext()
-  const searchParams = useSearchParams()
-  const solutionId = searchParams.get('detail') ?? ''
-  const routeId = searchParams.get('route') ?? ''
 
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
 
-  const { data, isLoading } = useIncidentTransactions({
+  const { data, isLoading, isFetching, isError, refetch } = useIncidentTransactions({
     solution_id: solutionId,
     start_date: startDate,
     end_date: endDate,
   })
-
-  // Road code for the EventDetailModal "จุดติดตั้ง" line — not carried on the
-  // event row itself. `detail[].label` is `${road.code_name} - ${solution_name}`
-  // (see useLiveIncidentRouteItems), so the road code is the part before " - ".
-  const { routeItems } = useLiveIncidentRouteItems()
-  const roadCode = React.useMemo(() => {
-    const route = routeItems.find((r) => String(r.id) === routeId)
-    if (!route) return undefined
-    for (const sub of route.sub3) {
-      for (const d of sub.detail) {
-        if (typeof d !== 'string' && String(d.id) === solutionId) {
-          return detailLabel(d).split(' - ')[0]
-        }
-      }
-    }
-    return undefined
-  }, [routeItems, routeId, solutionId])
 
   const records: IncidentRecord[] = React.useMemo(() => {
     const items = data?.res_data ?? []
@@ -213,6 +196,21 @@ const IncidentDetailTable: React.FC = () => {
     return records.filter((r) => r.status === activeTab)
   }, [activeTab, records])
 
+  if (isLoading) {
+    return <div className="min-h-48 flex items-center justify-center"><Spin size="large" /></div>
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="ไม่สามารถโหลดรายการเหตุการณ์ได้"
+        action={<Button size="small" onClick={() => void refetch()}>ลองใหม่</Button>}
+      />
+    )
+  }
+
   return (
     <div>
       <section className="mb-4">
@@ -223,7 +221,7 @@ const IncidentDetailTable: React.FC = () => {
           onFilterChange={(key) => setActiveTab(key)}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          showExportButton={false}
           // Mobile: 2-column grid so each tab fills half the row (2 per line,
           // no scrollbar). Desktop: flex row as usual.
           filterClassName="grid grid-cols-2 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
@@ -233,14 +231,16 @@ const IncidentDetailTable: React.FC = () => {
         <Table<IncidentRecord>
           columns={columns}
           dataSource={filteredData}
-          loading={isLoading}
+          loading={isFetching}
           pagination={false}
           size="middle"
           rowKey="key"
           scroll={{ x: 'max-content' }}
         />
       ) : (
-        <IncidentGridView records={filteredData} onSelect={setSelected} />
+        <Spin spinning={isFetching}>
+          <IncidentGridView records={filteredData} onSelect={setSelected} />
+        </Spin>
       )}
 
       <EventDetailModal

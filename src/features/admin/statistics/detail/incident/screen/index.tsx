@@ -2,18 +2,16 @@
 import React, { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
-import { DatePicker } from 'antd'
+import { Button, DatePicker, Empty, Spin } from 'antd'
 import dayjs from 'dayjs'
 import { IncidentDetailProvider, useIncidentDetailContext } from '../context'
-import { IncidentDetailSidebar, IncidentDetailTable } from '../components'
+import { IncidentDetailSidebar, IncidentDetailTable, IncidentDonutSection } from '../components'
 import { ProjectInfoModal } from '@/components/modal'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useLiveIncidentRouteItems } from '../../../data/useLiveIncidentRouteItems'
 import type { RouteDetailEntry } from '../../../data/routeItems'
-import EventDonutSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventDonutSection'
 import EventTrendSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventTrendSection'
-import { ROUTE_ITEMS } from '../../../data/routeItems'
 
 const { RangePicker } = DatePicker
 
@@ -24,23 +22,31 @@ const IncidentDetailContent: React.FC = () => {
   const route = searchParams.get('route') || ''
   const detail = searchParams.get('detail') || ''
   const { dateRange, setDateRange } = useIncidentDetailContext()
-  const { routeItems, markerItems } = useLiveIncidentRouteItems()
+  const {
+    routeItems,
+    markerItems,
+    isLoading: routesLoading,
+    isError: routesError,
+    refetch: refetchRoutes,
+  } = useLiveIncidentRouteItems()
 
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
 
-  // Lookup the real names from live data instead of showing raw IDs.
+  // Resolve the solution strictly inside the selected route. A hand-edited or
+  // stale URL must not combine one bureau's heading/project with another
+  // bureau's globally matched solution.
   const routeItem = routeItems.find((r) => String(r.id) === route)
   const routeName = routeItem?.name ?? route
   const detailEntry: RouteDetailEntry | undefined = useMemo(() => {
-    for (const r of routeItems) {
-      for (const s of r.sub3) {
-        const found = s.detail.find((d) => (typeof d === 'string' ? d : String(d.id)) === detail)
-        if (found) return found
-      }
+    for (const subDepartment of routeItem?.sub3 ?? []) {
+      const found = subDepartment.detail.find(
+        (entry) => (typeof entry === 'string' ? entry : String(entry.id)) === detail
+      )
+      if (found) return found
     }
     return undefined
-  }, [routeItems, detail])
+  }, [routeItem, detail])
   const detailLabel = typeof detailEntry === 'string' || detailEntry === undefined
     ? (detailEntry ?? detail)
     : detailEntry.label
@@ -61,12 +67,37 @@ const IncidentDetailContent: React.FC = () => {
   // map (the central-list call already cached by useLiveIncidentRouteItems),
   // so no extra request. Match the solution in ?detail= against markerItems.
   const coord = useMemo(
-    () => markerItems.find((m) => m.detailKey === detail)?.lngLat ?? null,
-    [markerItems, detail]
+    () => markerItems.find((m) => m.routeKey === route && m.detailKey === detail)?.lngLat ?? null,
+    [markerItems, route, detail]
   )
+  const roadCode = typeof detailEntry === 'object'
+    ? detailEntry.label.split(' - ')[0]
+    : undefined
 
   const handleBack = () => {
     router.push('/admin/statistics?incident')
+  }
+
+  if (routesLoading) {
+    return (
+      <div className="main-screen min-h-[60vh] flex items-center justify-center">
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  if (routesError || !routeItem || !detailEntry) {
+    return (
+      <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col gap-8">
+        <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} />
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={routesError ? 'ไม่สามารถโหลดข้อมูลสายทางได้' : 'ไม่พบจุดติดตั้งในสายทางตามลิงก์ที่ระบุ'}
+        >
+          {routesError && <Button onClick={() => refetchRoutes()}>ลองใหม่</Button>}
+        </Empty>
+      </div>
+    )
   }
 
   return (
@@ -164,10 +195,10 @@ const IncidentDetailContent: React.FC = () => {
         <IncidentDetailSidebar />
         <div className="flex flex-col flex-1 gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 min-w-0"><EventDonutSection solutionId={detail} height={260} donutSize={260} legendMaxHeight={260} startDate={startDate} endDate={endDate} /></div>
+            <div className="flex-1 min-w-0"><IncidentDonutSection solutionId={detail} startDate={startDate} endDate={endDate} /></div>
             <div className="flex-1 min-w-0"><EventTrendSection solutionId={detail} height={260} showPeakBadge startDate={startDate} endDate={endDate} /></div>
           </div>
-          <IncidentDetailTable />
+          <IncidentDetailTable solutionId={detail} roadCode={roadCode} />
         </div>
       </section>
       {/* Opens from the icbt.png icon in the header — fetches /contact/{project_id}

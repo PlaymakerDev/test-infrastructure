@@ -1,19 +1,14 @@
 "use client"
-import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Input, Table, Spin } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbSearch, TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import {
-  getMaintenanceSummaryAPI,
-  getMaintenanceWarrantySummaryAPI,
-  getMaintenanceOfflineRoadsAPI,
-  getUptimeStatisticsAPI,
-} from '@/services/routes/MaintenanceService'
-import type { SummaryItem, WarrantySummaryItem, OfflineRoadItem, UptimeStatistics } from '@/types/maintenance'
-
-// The only SummaryItem.type values with a confirmed uptime-statistics endpoint
-// (Counting/Analytic have none — they keep MOCK_ONLINE_PERCENTS below).
-const UPTIME_STATISTICS_TYPES = ['CCTV', 'Traffic', 'Lighting', 'VMS', 'WIM', 'Crosswalk', 'Tunnel'] as const
+  useMaintenanceSummary,
+  useMaintenanceWarrantySummary,
+  useMaintenanceOfflineRoads,
+  useUptimeStatisticsAll,
+} from '@/hooks/queries/maintenance'
 
 // Hidden from Solution Overview until a real uptime-statistics endpoint
 // exists for them — showing a mock percentage next to 7 real ones is
@@ -103,54 +98,28 @@ const periodToOfflineSince = (period?: string): string | undefined => {
 const MaintenanceOverviewSection: React.FC<{
   period?: string
 }> = ({ period }) => {
-  const [summaryData, setSummaryData] = useState<SummaryItem[]>([])
-  const [warrantyData, setWarrantyData] = useState<WarrantySummaryItem[]>([])
-  const [offlineRoads, setOfflineRoads] = useState<OfflineRoadItem[]>([])
-  const [uptimeData, setUptimeData] = useState<Record<string, UptimeStatistics>>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchText, setSearchText] = useState('')
   const pageSize = 10
 
-  const fetchData = useCallback(async (periodValue?: string) => {
-    try {
-      setLoading(true)
-      setError(null)
+  const offlineSince = periodToOfflineSince(period || 'ทั้งหมด')
 
-      const offlineSince = periodToOfflineSince(periodValue || 'ทั้งหมด')
+  const summaryQuery = useMaintenanceSummary()
+  const warrantyQuery = useMaintenanceWarrantySummary()
+  const offlineRoadsQuery = useMaintenanceOfflineRoads(offlineSince)
+  // Per-domain queries — a failed domain is simply absent from byType (its
+  // ring falls back below), so one bad endpoint never blanks the others or
+  // trips the page-level error state.
+  const uptime = useUptimeStatisticsAll()
 
-      const [summaryRes, warrantyRes, offlineRes, uptimeResults] = await Promise.all([
-        getMaintenanceSummaryAPI(),
-        getMaintenanceWarrantySummaryAPI(),
-        getMaintenanceOfflineRoadsAPI(offlineSince),
-        // allSettled — one domain's uptime endpoint failing shouldn't blank
-        // out the rest of the ring or trip the page-level error state below.
-        Promise.allSettled(
-          UPTIME_STATISTICS_TYPES.map((type) => getUptimeStatisticsAPI(type.toLowerCase())),
-        ),
-      ])
-
-      setSummaryData(summaryRes.data)
-      setWarrantyData(warrantyRes.data)
-      setOfflineRoads(offlineRes.data)
-      setUptimeData(
-        uptimeResults.reduce<Record<string, UptimeStatistics>>((acc, result, i) => {
-          if (result.status === 'fulfilled') acc[UPTIME_STATISTICS_TYPES[i]] = result.value.data
-          return acc
-        }, {}),
-      )
-    } catch (err) {
-      console.error('Error fetching maintenance data:', err)
-      setError('ไม่สามารถโหลดข้อมูลได้')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchData(period)
-  }, [period, fetchData])
+  const summaryData = summaryQuery.data ?? []
+  const warrantyData = warrantyQuery.data ?? []
+  const offlineRoads = useMemo(() => offlineRoadsQuery.data ?? [], [offlineRoadsQuery.data])
+  const uptimeData = uptime.byType
+  const loading = summaryQuery.isLoading || warrantyQuery.isLoading || offlineRoadsQuery.isLoading || uptime.isLoading
+  const error = summaryQuery.isError || warrantyQuery.isError || offlineRoadsQuery.isError
+    ? 'ไม่สามารถโหลดข้อมูลได้'
+    : null
 
   // Reset page when search changes
   useEffect(() => {
@@ -178,21 +147,6 @@ const MaintenanceOverviewSection: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [loading]
   )
-
-  // Counting/Analytic have no confirmed uptime-statistics endpoint yet, so they
-  // keep these mock percents; every other type is overridden by uptimeData below.
-  const MOCK_ONLINE_PERCENTS: Record<string, number> = {
-    CCTV: 85,
-    Traffic: 72,
-    Counting: 68,
-    Analytic: 91,
-    'Traffic Signal': 78,
-    Crosswalk: 63,
-    VMS: 55,
-    Lighting: 44,
-    Tunnel: 90,
-    WIM: 50,
-  }
 
   if (loading) {
     return (
@@ -226,7 +180,10 @@ const MaintenanceOverviewSection: React.FC<{
           <div className="mt-3 sm:mt-5 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
             {summaryData.filter((item) => !HIDDEN_SOLUTION_TYPES.has(item.type)).map((item, idx) => {
               const color = getSolutionColor(item.type)
-              const onlinePercent = uptimeData[item.type]?.percentage ?? MOCK_ONLINE_PERCENTS[item.type] ?? 75
+              const onlinePercent = uptimeData[item.type]?.percentage
+              const hasUptime = typeof onlinePercent === 'number' && Number.isFinite(onlinePercent)
+              const boundedPercent = hasUptime ? Math.min(100, Math.max(0, onlinePercent)) : 0
+              const ringColor = hasUptime ? color : '#5B5B5B'
               return (
                 <div key={`${item.solution_type_id}-${idx}`} className="flex flex-col items-center gap-1 sm:gap-2">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24">
@@ -234,15 +191,19 @@ const MaintenanceOverviewSection: React.FC<{
                       <circle cx="48" cy="48" r="40" fill="none" stroke="#333333" strokeWidth="10" />
                       <circle
                         cx="48" cy="48" r="40" fill="none"
-                        stroke={color}
+                        stroke={ringColor}
                         strokeWidth="10"
-                        strokeDasharray={`${(onlinePercent / 100) * 251.33} 251.33`}
+                        strokeDasharray={`${(boundedPercent / 100) * 251.33} 251.33`}
                         strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-sm sm:text-base lg:text-lg font-bold leading-none" style={{ color }}>{onlinePercent}%</span>
-                      <span className="text-[10px] sm:text-xs leading-none mt-0.5" style={{ color }}>Online</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-bold leading-none" style={{ color: hasUptime ? color : '#979797' }}>
+                        {hasUptime ? `${boundedPercent}%` : '—'}
+                      </span>
+                      <span className="text-[10px] sm:text-xs leading-none mt-0.5" style={{ color: hasUptime ? color : '#979797' }}>
+                        {hasUptime ? 'Online' : 'ไม่มีข้อมูล'}
+                      </span>
                     </div>
                   </div>
                   <span className="text-sm sm:text-xl lg:text-2xl font-bold text-center" style={{ color }}>{item.type}</span>

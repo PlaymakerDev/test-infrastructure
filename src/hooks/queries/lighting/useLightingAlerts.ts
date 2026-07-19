@@ -1,10 +1,8 @@
-import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { getLightingAlertsAPI } from '@/services/routes/LightingService'
 import { lightingKeys } from './queryKeys'
 
-/** Paginated alert log for one device (ตารางข้อมูลรายเหตุการณ์).
- *  `keepPreviousData` keeps the current rows visible while the next page
- *  loads, so paging doesn't flash empty. */
+/** Paginated alert log for one device (ตารางข้อมูลรายเหตุการณ์). */
 export const useLightingAlerts = (
   imei: string,
   page: number,
@@ -15,7 +13,6 @@ export const useLightingAlerts = (
     queryKey: lightingKeys.alerts(imei, page, limit, sort),
     queryFn: () => getLightingAlertsAPI(imei, { page, limit, sort }).then((r) => r.data),
     enabled: !!imei,
-    placeholderData: keepPreviousData,
   })
 
 // Backend hard-enforces this as the max `limit` per request — confirmed
@@ -34,7 +31,6 @@ export const useAllLightingAlerts = (imei: string, sort: 'ASC' | 'DESC' = 'DESC'
     queryKey: lightingKeys.alerts(imei, 1, MAX_PAGE_LIMIT, sort),
     queryFn: () => getLightingAlertsAPI(imei, { page: 1, limit: MAX_PAGE_LIMIT, sort }).then((r) => r.data),
     enabled: !!imei,
-    placeholderData: keepPreviousData,
   })
 
   const totalPages = first.data?.meta_data?.total_pages ?? 1
@@ -58,5 +54,6 @@ export const useAllLightingAlerts = (imei: string, sort: 'ASC' | 'DESC' = 'DESC'
     total: first.data?.meta_data?.count ?? 0,
     isLoading: first.isLoading || rest.some((q) => q.isLoading),
     isFetching: first.isFetching || rest.some((q) => q.isFetching),
+    isError: first.isError || rest.some((q) => q.isError),
   }
 }

@@ -1,13 +1,12 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
-import { Table } from 'antd'
+import React, { useMemo, useState } from 'react'
+import { Alert, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
-import { getLightingAlertsAPI } from '@/services/routes/LightingService'
+import { useAllLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 
 dayjs.extend(buddhistEra)
@@ -94,26 +93,18 @@ const FILTER_CONFIG: FilterConfig[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const AlertDetailTable: React.FC = () => {
+interface AlertDetailTableProps {
+  /** Validated IMEI from the owning route/detail pair. */
+  imei: string
+}
+
+const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
   const [activeTab, setActiveTab] = useState('ALL')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
-  const searchParams = useSearchParams()
-  const imei = searchParams.get('detail') ?? ''
-  const [alerts, setAlerts] = useState<AlertItem[]>([])
-  const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    getLightingAlertsAPI(imei, { limit: 100, sort: 'DESC' })
-      .then((res) => { if (active) setAlerts(res.data?.res_data ?? []) })
-      .catch((err) => console.error('alerts failed:', err))
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei])
+  // Full alert history (fetches every page — the old raw fetch here was
+  // silently capped at the backend's 100-row-per-request limit).
+  const { alerts, isLoading, isError } = useAllLightingAlerts(imei)
 
   const columns: ColumnsType<AlertItem> = useMemo(() => [
     {
@@ -166,6 +157,14 @@ const AlertDetailTable: React.FC = () => {
     return alerts.filter((a) => a.status === activeTab)
   }, [activeTab, alerts])
 
+  if (isError) {
+    return <Alert type="error" showIcon message="ไม่สามารถโหลดประวัติการแจ้งเตือนได้" />
+  }
+
+  if (isLoading) {
+    return <div className="min-h-48 flex items-center justify-center"><Spin /></div>
+  }
+
   return (
     <div>
       <section className="mb-4">
@@ -176,14 +175,14 @@ const AlertDetailTable: React.FC = () => {
           onFilterChange={(key) => setActiveTab(key)}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          showExportButton={false}
         />
       </section>
       {viewMode === 'TABLE' ? (
         <Table<AlertItem>
           columns={columns}
           dataSource={filteredData}
-          loading={loaded ? false : true}
+          loading={false}
           pagination={false}
           size="middle"
           rowKey={alertKey}

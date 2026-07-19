@@ -50,6 +50,24 @@ const pct = (part: number, total: number) => (total > 0 ? ((part / total) * 100)
 const formatTypeName = (name: string) =>
   name.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
+// buddhistEra adds the `BBBB` FORMAT token but customParseFormat does not
+// parse it. Parsing the backend's `18/07/2569 ...` directly as BBBB silently
+// falls back to the current timestamp, so normalize the year to Gregorian
+// first and only then format it back as Buddhist era for display.
+const formatBackendBuddhistDateTime = (value: string): string => {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{2}:\d{2}:\d{2})$/.exec(value.trim())
+  if (!match) {
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('DD MMM BBBB HH:mm') : '-'
+  }
+  const [, day, month, rawYear, time] = match
+  const numericYear = Number(rawYear)
+  const gregorianYear = numericYear > 2400 ? numericYear - 543 : numericYear
+  const normalized = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${gregorianYear} ${time}`
+  const parsed = dayjs(normalized, 'DD/MM/YYYY HH:mm:ss', true)
+  return parsed.isValid() ? parsed.format('DD MMM BBBB HH:mm') : '-'
+}
+
 const BASE_CARDS = [
   {
     id: 1, src: '/images/statistics/Frame1.png', imageBg: true, value: '-',
@@ -67,7 +85,7 @@ const BASE_CARDS = [
     id: 3, src: '/images/statistics/Frame3.png', imageBg: true, value: '-',
     label: 'VMS', glowColor: '#BDFF66',
     detail1: { img: '/images/statistics/Frame3.1.png', title: 'หมวดหมู่ยอดนิยม', subtitle: '-', summary: '-' },
-    detail2: { img: '/images/statistics/Frame3.2.png', title: 'ชุดคำสั่งล่าสุด', subtitle: '-', summary: '-' },
+    detail2: { img: '/images/statistics/Frame3.2.png', title: 'ป้าย VMS ที่เชื่อมต่อล่าสุด', subtitle: '-', summary: '-' },
   },
 ]
 
@@ -75,17 +93,29 @@ const OverviewSection: React.FC = () => {
   const searchParams = useSearchParams()
   const period = searchParams.get('period') || 'ALL'
   const { startDate, endDate } = useMemo(() => periodToRange(period), [period])
-  const { data: topPowerRoads, isLoading: topPowerRoadsLoading } = useTopPowerRoads(TOP_POWER_ROADS_DEPT_ID, startDate, endDate, 1)
+  const {
+    data: topPowerRoads,
+    isLoading: topPowerRoadsLoading,
+    isError: topPowerRoadsError,
+  } = useTopPowerRoads(TOP_POWER_ROADS_DEPT_ID, startDate, endDate, 1)
   const topRoad = topPowerRoads?.[0]
 
-  const { data: notificationsSummary, isLoading: notificationsLoading } = useNotificationsSummary(startDate, endDate)
+  const {
+    data: notificationsSummary,
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+  } = useNotificationsSummary(startDate, endDate)
   const bySource = useMemo(() => {
     const map = {} as Record<NotificationSourceType, NotificationSummaryItem>
     for (const item of notificationsSummary ?? []) map[item.source_type] = item
     return map
   }, [notificationsSummary])
 
-  const { data: vmsLatestRes, isLoading: vmsLatestLoading } = useVMSSettingLatest()
+  const {
+    data: vmsLatestRes,
+    isLoading: vmsLatestLoading,
+    isError: vmsLatestError,
+  } = useVMSSettingLatest()
   const vmsLatest = vmsLatestRes?.data.res_data?.[0]
 
   const CARDS = useMemo(() => BASE_CARDS.map((card) => {
@@ -94,18 +124,18 @@ const OverviewSection: React.FC = () => {
       const s = bySource.analytic
       return {
         ...card,
-        value: notificationsLoading ? '-' : (s?.count.toLocaleString() ?? '0'),
+        value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
         detail1: {
           ...card.detail1,
-          subtitle: notificationsLoading ? '-' : (s?.most_type?.name ?? '-'),
-          summary: notificationsLoading || !s?.most_type
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type?.name ?? '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_type
             ? '-'
             : `${s.most_count.toLocaleString()} เหตุการณ์ (${pct(s.most_count, s.count)}%)`,
         },
         detail2: {
           ...card.detail2,
-          subtitle: notificationsLoading ? '-' : (s?.most_department?.department_short_name ?? '-'),
-          summary: notificationsLoading || !s?.most_department
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_department?.department_short_name ?? '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_department
             ? '-'
             : `${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
         },
@@ -116,18 +146,18 @@ const OverviewSection: React.FC = () => {
       const s = bySource.lighting
       return {
         ...card,
-        value: notificationsLoading ? '-' : (s?.count.toLocaleString() ?? '0'),
+        value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
         detail1: {
           ...card.detail1,
-          subtitle: topPowerRoadsLoading ? '-' : (topRoad?.road.code_name ?? '-'),
-          summary: topPowerRoadsLoading || !topRoad
+          subtitle: topPowerRoadsLoading || topPowerRoadsError ? '-' : (topRoad?.road.code_name ?? '-'),
+          summary: topPowerRoadsLoading || topPowerRoadsError || !topRoad
             ? '-'
             : `${topRoad.install_points} จุดติดตั้ง (${topRoad.total_kw.toFixed(1)} kW)`,
         },
         detail2: {
           ...card.detail2,
-          subtitle: notificationsLoading ? '-' : (s?.most_type ? formatTypeName(s.most_type.name) : '-'),
-          summary: notificationsLoading || !s?.most_department
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type ? formatTypeName(s.most_type.name) : '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_department
             ? '-'
             : `${s.most_department.department_short_name} ${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
         },
@@ -137,27 +167,37 @@ const OverviewSection: React.FC = () => {
     const s = bySource.vms_setting
     return {
       ...card,
-      value: notificationsLoading ? '-' : (s?.count.toLocaleString() ?? '0'),
+      value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
       detail1: {
         ...card.detail1,
-        subtitle: notificationsLoading ? '-' : (s?.most_type?.name ?? '-'),
-        summary: notificationsLoading || !s?.most_type
+        subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type?.name ?? '-'),
+        summary: notificationsLoading || notificationsError || !s?.most_type
           ? '-'
-          : `${s.most_count.toLocaleString()} จุดติดตั้ง (${pct(s.most_count, s.count)}%)`,
+          : `${s.most_count.toLocaleString()} การแจ้งเตือน (${pct(s.most_count, s.count)}%)`,
       },
       detail2: {
         ...card.detail2,
         // No dedicated "latest command" endpoint exists — this is the most
         // recently connected VMS sign instead (see getVMSSettingLatestAPI).
-        subtitle: vmsLatestLoading ? '-' : (vmsLatest?.solution_name ?? '-'),
-        summary: vmsLatestLoading || !vmsLatest?.last_connected
+        subtitle: vmsLatestLoading || vmsLatestError ? '-' : (vmsLatest?.solution_name ?? '-'),
+        summary: vmsLatestLoading || vmsLatestError || !vmsLatest?.last_connected
           ? '-'
           // Backend sends last_connected pre-formatted as Buddhist-era
           // DD/MM/BBBB HH:mm:ss (e.g. "18/07/2569 15:21:54"), not ISO.
-          : dayjs(vmsLatest.last_connected, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB HH:mm'),
+          : formatBackendBuddhistDateTime(vmsLatest.last_connected),
       },
     }
-  }), [topPowerRoadsLoading, topRoad, notificationsLoading, bySource, vmsLatestLoading, vmsLatest])
+  }), [
+    topPowerRoadsLoading,
+    topPowerRoadsError,
+    topRoad,
+    notificationsLoading,
+    notificationsError,
+    bySource,
+    vmsLatestLoading,
+    vmsLatestError,
+    vmsLatest,
+  ])
 
   return (
     <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">

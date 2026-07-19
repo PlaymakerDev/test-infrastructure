@@ -8,6 +8,9 @@ interface Props {
   open: boolean
   onClose: () => void
   isClosingCase?: boolean
+  solutionId?: number
+  detailQuery?: string
+  returnToAllRepairs?: boolean
   data?: {
     caseNo: string
     deviceName: string
@@ -17,7 +20,15 @@ interface Props {
   }
 }
 
-const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = false, data }) => {
+const ModalSaveSuccess: React.FC<Props> = ({
+  open,
+  onClose,
+  isClosingCase = false,
+  solutionId,
+  detailQuery = '',
+  returnToAllRepairs = false,
+  data,
+}) => {
   const router = useRouter()
 
   if (!open || !data) return null
@@ -26,9 +37,10 @@ const ModalSaveSuccess: React.FC<Props> = ({ open, onClose, isClosingCase = fals
 
   const handleConfirm = () => {
     onClose()
-    const detailId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_id') : ''
-    if (detailId) {
-      router.push(`/admin/maintenance/detail/${detailId}`)
+    if (returnToAllRepairs) {
+      router.push('/admin/maintenance?repair&all_repairs')
+    } else if (solutionId) {
+      router.push(`/admin/maintenance/detail/${solutionId}${detailQuery ? `?${detailQuery}` : ''}`)
     } else {
       router.push('/admin/maintenance')
     }

@@ -1,22 +1,17 @@
 "use client"
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { Table, Input, Button, ConfigProvider, Tag, Segmented, Select, Spin, Drawer, FloatButton } from 'antd'
+import React, { useState, useMemo } from 'react'
+import { Table, Input, Button, ConfigProvider, Segmented, Select, Spin, Drawer, FloatButton } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbSearch, TbPrinter, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbChevronDown } from 'react-icons/tb'
+import { TbSearch, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbChevronDown } from 'react-icons/tb'
 import SwapButton from '@/components/swap-button/SwapButton'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import {
-  getMaintenanceSummaryAPI,
-  getMaintenanceDetailAPI,
-  getMaintenanceHistoryAPI,
-} from '@/services/routes/MaintenanceService'
+  useMaintenanceSummary,
+  useMaintenanceDetail,
+  useMaintenanceHistory,
+} from '@/hooks/queries/maintenance'
 import type {
-  SummaryItem,
-  DetailBureau,
-  DetailDepartment,
-  DetailRoad,
-  DetailProject,
   HistoryRegion,
   HistoryCase,
 } from '@/types/maintenance'
@@ -110,6 +105,7 @@ interface RepairRecord {
   route: string
   installPoint: string
   caseNo: string
+  solutionId?: number
   warranty: 'ในค้ำ' | 'หมดค้ำ'
   type: string
   problemCategory: string
@@ -124,6 +120,23 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   in_progress: { label: 'กำลังดำเนินการ', color: '#66AEFF' },
   completed: { label: 'ปิด Case', color: '#FCD116' },
 }
+
+interface QueryErrorNoticeProps {
+  message: string
+  onRetry: () => void
+}
+
+const QueryErrorNotice: React.FC<QueryErrorNoticeProps> = ({ message, onRetry }) => (
+  <div
+    role="alert"
+    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E94C4C] bg-[#E94C4C]/10 px-4 py-3"
+  >
+    <span className="text-[13px] text-[#E94C4C]">{message}</span>
+    <Button size="small" danger onClick={onRetry}>
+      ลองอีกครั้ง
+    </Button>
+  </div>
+)
 
 // Map API status (open|in_progress|closed) → UI repairStatus (pending|in_progress|completed)
 const mapStatusToRepairStatus = (status: HistoryCase['status']): RepairRecord['repairStatus'] => {
@@ -144,6 +157,9 @@ const mapHistoryToRecords = (regions: HistoryRegion[]): RepairRecord[] => {
         route: c.road_name ?? '',
         installPoint: c.location_name ?? '',
         caseNo: c.case_no ?? '',
+        solutionId: typeof c.solution_id === 'number' && c.solution_id > 0
+          ? c.solution_id
+          : undefined,
         warranty: c.warranty_status ? 'ในค้ำ' : 'หมดค้ำ',
         type: c.solution_type ?? '',
         problemCategory: c.category?.trim() || '-',
@@ -172,19 +188,14 @@ const RepairRecordsSection: React.FC = () => {
   const [activeStatusTab, setActiveStatusTab] = useState('ALL')
   const activeSubTab = searchParams.has('all_repairs') ? 'ALL_REPAIRS' : 'SOLUTION'
 
-  // API state for Solution tab
-  const [summaryData, setSummaryData] = useState<SummaryItem[]>([])
+  // Solution tab state
   const [selectedType, setSelectedType] = useState<string>('')
-  const [detailData, setDetailData] = useState<DetailBureau[]>([])
-  const [detailLoading, setDetailLoading] = useState(false)
   const [expandedDept, setExpandedDept] = useState<number | null>(null)
   const [expandedRoad, setExpandedRoad] = useState<number | null>(null)
   const [expandedProject, setExpandedProject] = useState<number | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  // API state for All Repairs tab
-  const [historyData, setHistoryData] = useState<RepairRecord[]>([])
-  const [historyLoading, setHistoryLoading] = useState(false)
+  // All Repairs tab state
   const [selectedPeriod, setSelectedPeriod] = useState('ALL')
 
   // Client-side filter state for the All Repairs table — each Select holds the
@@ -196,71 +207,43 @@ const RepairRecordsSection: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string | undefined>(undefined)
   const [searchText, setSearchText] = useState('')
 
-  // Fetch summary on mount
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const res = await getMaintenanceSummaryAPI()
-        setSummaryData(res.data)
-        if (res.data.length > 0) {
-          setSelectedType(res.data[0].type)
-        }
-      } catch (err) {
-        console.error('Error fetching summary:', err)
-      }
-    }
-    fetchSummary()
-  }, [])
+  const summaryQuery = useMaintenanceSummary()
+  const summaryData = useMemo(() => summaryQuery.data ?? [], [summaryQuery.data])
 
-  // Fetch detail when selected type changes
-  const fetchDetail = useCallback(async (typeName: string) => {
-    const typeId = SOLUTION_TYPE_ID_MAP[typeName]
-    if (!typeId) return
-    setDetailLoading(true)
-    try {
-      const res = await getMaintenanceDetailAPI(typeId)
-      setDetailData(res.data)
-    } catch (err) {
-      console.error('Error fetching detail:', err)
-      setDetailData([])
-    } finally {
-      setDetailLoading(false)
-    }
-  }, [])
+  // Seed the initial type tab from the first summary row — adjusted during
+  // render (not an effect); the `!selectedType` guard keeps a later
+  // background refetch from clobbering the user's pick.
+  if (!selectedType && summaryData.length > 0) {
+    setSelectedType(summaryData[0].type)
+  }
 
-  useEffect(() => {
-    if (selectedType) {
-      fetchDetail(selectedType)
-      setExpandedDept(null)
-      setExpandedRoad(null)
-      setExpandedProject(null)
-    }
-  }, [selectedType, fetchDetail])
+  const detailQuery = useMaintenanceDetail(SOLUTION_TYPE_ID_MAP[selectedType])
+  const detailData = useMemo(() => detailQuery.data ?? [], [detailQuery.data])
+  const detailLoading = detailQuery.isLoading
 
-  // Fetch maintenance history for All Repairs tab. Sends date_from/date_to derived
-  // from the selected period so the API can filter server-side; the status tab is
-  // still filtered client-side on top of whatever 'all' returns.
-  useEffect(() => {
-    if (activeSubTab !== 'ALL_REPAIRS') return
-    let cancelled = false
-    const fetchHistory = async () => {
-      setHistoryLoading(true)
-      try {
-        const res = await getMaintenanceHistoryAPI({
-          status: 'all',
-          ...getPeriodRange(selectedPeriod),
-        })
-        if (!cancelled) setHistoryData(mapHistoryToRecords(res.data ?? []))
-      } catch (err) {
-        console.error('Error fetching maintenance history:', err)
-        if (!cancelled) setHistoryData([])
-      } finally {
-        if (!cancelled) setHistoryLoading(false)
-      }
-    }
-    fetchHistory()
-    return () => { cancelled = true }
-  }, [activeSubTab, selectedPeriod])
+  // Collapse the drill-down when switching type tabs — adjusted during render
+  // (React's adjust-state-on-prop-change pattern), so it applies before the
+  // new type's tree paints.
+  const [prevType, setPrevType] = useState(selectedType)
+  if (prevType !== selectedType) {
+    setPrevType(selectedType)
+    setExpandedDept(null)
+    setExpandedRoad(null)
+    setExpandedProject(null)
+  }
+
+  // History for the All Repairs tab. date_from/date_to derive from the selected
+  // period so the API filters server-side; the status tab is still filtered
+  // client-side on top of whatever 'all' returns. Disabled until the tab opens.
+  const historyQuery = useMaintenanceHistory(
+    { status: 'all', ...getPeriodRange(selectedPeriod) },
+    activeSubTab === 'ALL_REPAIRS',
+  )
+  const historyData = useMemo(
+    () => mapHistoryToRecords(historyQuery.data ?? []),
+    [historyQuery.data],
+  )
+  const historyLoading = historyQuery.isLoading
 
   // Aggregate stats from detail data
   const detailStats = useMemo(() => {
@@ -378,12 +361,21 @@ const RepairRecordsSection: React.FC = () => {
       // Same destination as the "เปิด Case" confirm flow on the device
       // detail page (detail/screen/index.tsx) — otherwise this list shows
       // every case's number but has no way to open one back up.
-      render: (caseNo: string) => (
+      render: (caseNo: string, record) => (
         <span
           style={{ color: '#FCD116', cursor: 'pointer', textDecoration: 'underline' }}
           onClick={(e) => {
             e.stopPropagation()
-            router.push(`/admin/maintenance/case/${caseNo}`)
+            const params = new URLSearchParams({
+              source: 'all_repairs',
+              solution_type: record.type,
+            })
+            // Prefer the exact solution id when the history endpoint provides
+            // it. Older responses only expose solution_type; the case screen
+            // then resolves that named relationship and never guesses the
+            // first of several camera relationships.
+            if (record.solutionId) params.set('solution_id', String(record.solutionId))
+            router.push(`/admin/maintenance/case/${caseNo}?${params.toString()}`)
           }}
         >
           {caseNo}
@@ -565,11 +557,25 @@ const RepairRecordsSection: React.FC = () => {
 
           {/* Right Content: Tree from detail API */}
           <div className="flex-1 min-w-0 h-full px-3 sm:px-4 xl:pl-4 xl:pr-4">
-            {detailLoading ? (
+            {summaryQuery.isError && (
+              <QueryErrorNotice
+                message="ไม่สามารถโหลดรายการประเภท Solution ได้"
+                onRetry={() => { void summaryQuery.refetch() }}
+              />
+            )}
+            {detailQuery.isError && (
+              <div className={summaryQuery.isError ? 'mt-3' : ''}>
+                <QueryErrorNotice
+                  message={`ไม่สามารถโหลดรายละเอียด ${selectedType || 'Solution'} ได้`}
+                  onRetry={() => { void detailQuery.refetch() }}
+                />
+              </div>
+            )}
+            {(summaryQuery.isLoading && summaryData.length === 0) || (detailLoading && detailData.length === 0) ? (
               <div className="flex items-center justify-center h-40">
                 <Spin size="large" />
               </div>
-            ) : (
+            ) : (summaryQuery.isError && summaryData.length === 0) || (detailQuery.isError && detailData.length === 0) ? null : (
               <>
                 <div className="flex items-center gap-4">
                   <span className="text-[18px] sm:text-[24px] font-bold" style={{ color: '#FCD116' }}>{selectedType}</span>
@@ -699,16 +705,19 @@ const RepairRecordsSection: React.FC = () => {
                                         // page's subtitle actually distinguishes which point this is,
                                         // instead of showing the same road+project text for all of them.
                                         const solutionLabel = sol.solution_name || loc.solution_location_name
-                                        sessionStorage.setItem('maintenance_detail_title', road.road_name)
-                                        sessionStorage.setItem('maintenance_detail_subtitle', `${proj.project_name} — ${solutionLabel}`)
-                                        sessionStorage.setItem('maintenance_detail_project_id', String(proj.project_id))
-                                        sessionStorage.setItem('maintenance_detail_road_id', String(road.road_id))
-                                        sessionStorage.setItem('maintenance_detail_department_id', String(dept.department_id))
-                                        // selectedType is the SummaryItem.type label ("CCTV"/"Traffic"/...),
-                                        // which lowercased is exactly the feature's URL prefix segment
-                                        // (/cctv/, /traffic/, /crosswalk/, ...) for GET {prefix}/departments/{id}/overview.
-                                        sessionStorage.setItem('maintenance_detail_solution_prefix', selectedType.toLowerCase())
-                                        router.push(`/admin/maintenance/detail/${sol.solution_id}`)
+                                        // Keep route context in the URL so a direct/deep navigation can
+                                        // never inherit another solution's stale browser state.
+                                        // `prefix` + `dept_id` resolve the map endpoint; project detail is
+                                        // resolved independently from the route's solution id.
+                                        const params = new URLSearchParams({
+                                          context_id: String(sol.solution_id),
+                                          prefix: selectedType.toLowerCase(),
+                                          dept_id: String(dept.department_id),
+                                          road_id: String(road.road_id),
+                                          title: road.road_name || sol.solution_name || String(sol.solution_id),
+                                          subtitle: `${proj.project_name} — ${solutionLabel}`,
+                                        })
+                                        router.push(`/admin/maintenance/detail/${sol.solution_id}?${params.toString()}`)
                                       }}
                                     >
                                       <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={sol.solution_name || loc.solution_location_name}>{sol.solution_name || loc.solution_location_name}</span>
@@ -793,11 +802,6 @@ const RepairRecordsSection: React.FC = () => {
                 classNames={{ root: 'border! border-(--yellow)!' }}
                 className="shrink-0"
               />
-              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-                <Button type="primary" size={isMobile ? 'middle' : 'large'} shape="round" icon={<TbPrinter />} style={{ height: 40 }} className="shrink-0">
-                  <p>นำออกเอกสาร</p>
-                </Button>
-              </ConfigProvider>
             </div>
           </div>
           {/* Filter Selects */}
@@ -836,6 +840,14 @@ const RepairRecordsSection: React.FC = () => {
               },
             }}
           >
+            {historyQuery.isError && (
+              <div className="mb-4">
+                <QueryErrorNotice
+                  message="ไม่สามารถโหลดรายการงานซ่อมทั้งหมดได้"
+                  onRetry={() => { void historyQuery.refetch() }}
+                />
+              </div>
+            )}
             <Table
               columns={columns}
               dataSource={filteredData}

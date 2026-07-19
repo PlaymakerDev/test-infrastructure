@@ -55,8 +55,16 @@ const LineStatusBadge = ({ status }: { status: string }) => {
  *  backend actually has (no pagination UI, no row cap). */
 const MapEventSection: React.FC = () => {
   const { project, imei, device } = useDetailContext()
+  const isOnline = device
+    ? device.is_online
+    : project.connection === 'online'
+      ? true
+      : project.connection === 'offline'
+        ? false
+        : undefined
 
-  const { alerts, total, isLoading, isFetching } = useAllLightingAlerts(imei)
+  const { alerts, total, isLoading, isFetching, isError } = useAllLightingAlerts(imei)
+  const alertsUnavailable = !imei || isLoading || isError
   // Now that the full set is fetched, UP/DOWN reflect the true totals, not
   // just whatever a single page happened to contain.
   const upCount = alerts.filter((a) => a.status === 'UP').length
@@ -117,7 +125,7 @@ const MapEventSection: React.FC = () => {
         <MapLightingDetail
           coord={project.coord}
           imei={imei}
-          isOnline={device?.is_online ?? project.connection === 'online'}
+          isOnline={isOnline}
           roadCode={project.roadCode}
           installPoint={project.installPoint}
           projectName={project.projectName}
@@ -157,7 +165,7 @@ const MapEventSection: React.FC = () => {
                     : { background: stat.color, color: '#212121' }),
                 }}
               >
-                {isLoading ? '-' : stat.value}
+                {alertsUnavailable ? '-' : stat.value}
               </span>
             </div>
           ))}
@@ -167,12 +175,18 @@ const MapEventSection: React.FC = () => {
           <Table<AlertItem>
             rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
             columns={columns}
-            dataSource={alerts}
+            dataSource={isError ? [] : alerts}
             loading={isFetching}
             pagination={false}
             size='middle'
             className='bridge-projects-table event-log-table'
-            locale={{ emptyText: 'ไม่พบข้อมูล' }}
+            locale={{
+              emptyText: isError
+                ? 'ไม่สามารถโหลดข้อมูลเหตุการณ์ได้'
+                : !imei
+                  ? 'ไม่มี IMEI — ไม่สามารถโหลดข้อมูลเหตุการณ์ได้'
+                  : isLoading ? 'กำลังโหลด...' : 'ไม่พบข้อมูล',
+            }}
           />
         </div>
       </div>

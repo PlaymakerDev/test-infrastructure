@@ -1,10 +1,10 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
+import { Empty, Spin } from 'antd'
 import { TbBolt } from 'react-icons/tb'
 import LineChart from '@/components/chart/LineChart'
 import type { LineChartDataPoint } from '@/components/chart/LineChart'
-import { getLightingVoltGraphAPI, getLightingAmpGraphAPI } from '@/services/routes/LightingService'
-import type { Logs4gVoltPoint, Logs4gAmpPoint } from '@/types/lighting'
+import { useLightingVoltGraph, useLightingAmpGraph } from '@/hooks/queries/lighting'
 
 // Title color is always the project yellow; the chart line itself keeps its
 // semantic color (cyan for Volt, orange for Amp) for readability.
@@ -24,41 +24,32 @@ const SHARED_CHART_PROPS = {
  *  ExampleCardsRow image pair. Each chart pulls 24h hourly data from the
  *  logs4g graph endpoints for the given IMEI. */
 const VoltageAmpChartsRow: React.FC<{ imei: string }> = ({ imei }) => {
-  const [volt, setVolt] = useState<Logs4gVoltPoint[]>([])
-  const [amp, setAmp] = useState<Logs4gAmpPoint[]>([])
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    Promise.all([
-      getLightingVoltGraphAPI(imei).then((r) => r.data ?? []).catch((e) => { console.error('volt graph failed:', e); return [] }),
-      getLightingAmpGraphAPI(imei).then((r) => r.data ?? []).catch((e) => { console.error('amp graph failed:', e); return [] }),
-    ]).then(([v, a]) => {
-      if (!active) return
-      setVolt(v)
-      setAmp(a)
-    }).finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei])
-
+  const voltQuery = useLightingVoltGraph(imei)
+  const ampQuery = useLightingAmpGraph(imei)
   // Map the API points to the LineChart data shape (label = hour, value key).
   const voltData: LineChartDataPoint[] = useMemo(
-    () => volt.map((p) => ({ label: p.Period_Name, volt: p.volt ?? 0 })),
-    [volt],
+    () => (voltQuery.data ?? [])
+      .filter((point) => point.volt !== null)
+      .map((point) => ({ label: point.Period_Name, volt: point.volt as number })),
+    [voltQuery.data],
   )
   const ampData: LineChartDataPoint[] = useMemo(
-    () => amp.map((p) => ({ label: p.Period_Name, amp: p.amp ?? 0 })),
-    [amp],
+    () => (ampQuery.data ?? [])
+      .filter((point) => point.amp !== null)
+      .map((point) => ({ label: point.Period_Name, amp: point.amp as number })),
+    [ampQuery.data],
   )
 
   return (
     <div className='flex flex-col md:flex-row w-full gap-3 mt-4'>
       <div className='flex-1 min-w-0'>
-        {loaded ? (
+        {voltQuery.isLoading ? (
+          <div className='h-[220px] flex items-center justify-center'><Spin /></div>
+        ) : voltQuery.isError ? (
+          <div className='h-[220px] flex items-center justify-center'>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่สามารถโหลดข้อมูลแรงดันไฟฟ้าได้' />
+          </div>
+        ) : voltData.length > 0 ? (
           <LineChart
             {...SHARED_CHART_PROPS}
             title='แรงดันไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Volt)'
@@ -69,10 +60,20 @@ const VoltageAmpChartsRow: React.FC<{ imei: string }> = ({ imei }) => {
             tooltipUnit='V'
             yAxisDomain={['auto', 'auto']}
           />
-        ) : null}
+        ) : (
+          <div className='h-[220px] flex items-center justify-center'>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่พบข้อมูลแรงดันไฟฟ้า' />
+          </div>
+        )}
       </div>
       <div className='flex-1 min-w-0'>
-        {loaded ? (
+        {ampQuery.isLoading ? (
+          <div className='h-[220px] flex items-center justify-center'><Spin /></div>
+        ) : ampQuery.isError ? (
+          <div className='h-[220px] flex items-center justify-center'>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่สามารถโหลดข้อมูลกระแสไฟฟ้าได้' />
+          </div>
+        ) : ampData.length > 0 ? (
           <LineChart
             {...SHARED_CHART_PROPS}
             title='กระแสไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Amp)'
@@ -83,7 +84,11 @@ const VoltageAmpChartsRow: React.FC<{ imei: string }> = ({ imei }) => {
             tooltipUnit='A'
             yAxisDomain={['auto', 'auto']}
           />
-        ) : null}
+        ) : (
+          <div className='h-[220px] flex items-center justify-center'>
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่พบข้อมูลกระแสไฟฟ้า' />
+          </div>
+        )}
       </div>
     </div>
   )

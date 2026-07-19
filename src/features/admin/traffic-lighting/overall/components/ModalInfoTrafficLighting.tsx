@@ -1,10 +1,11 @@
 "use client"
 import React, { useMemo } from 'react'
 import {
-  TbCalendarEvent,
   TbClipboardList,
-  TbHourglassHigh,
+  TbBulb,
   TbLock,
+  TbMapPin,
+  TbPlugConnected,
   TbUser,
   TbUserShield,
 } from 'react-icons/tb'
@@ -26,7 +27,7 @@ const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
         {
           icon: <TbLock size={30} />,
           label: 'รหัสโครงการ',
-          value: `MT${project.id.replace(/[^\d]/g, '').padStart(5, '0')}`,
+          value: project.projectId != null ? String(project.projectId) : '-',
         },
         {
           icon: <TbClipboardList size={30} />,
@@ -39,37 +40,33 @@ const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
           value: project.bureau,
         },
         {
-          icon: <TbUser size={30} />,
-          label: 'ผู้ว่าจ้าง',
-          value: 'สำนักอำนวยความปลอดภัย',
+          icon: <TbMapPin size={30} />,
+          label: 'สายทาง',
+          value: project.roadCode || '-',
         },
       ],
       [
         {
-          icon: <TbCalendarEvent size={30} />,
-          label: 'เริ่มต้นการรับประกัน',
-          value: '25 พ.ค. 2568',
+          icon: <TbMapPin size={30} />,
+          label: 'จุดติดตั้ง',
+          value: project.installPoint || '-',
         },
         {
-          icon: <TbCalendarEvent size={30} />,
-          label: 'สิ้นสุดการรับประกัน',
-          value: '26 พ.ค. 2570',
+          icon: <TbBulb size={30} />,
+          label: 'ประเภท / จำนวนอุปกรณ์',
+          value: `${project.equipment.type || '-'} / ${project.equipment.count ?? '-'} จุด`,
         },
         {
-          icon: <TbHourglassHigh size={30} color='#05F2DB' />,
-          label: 'ระยะเวลาที่เหลือ',
-          value: <span style={{ color: '#05F2DB' }}>106 วัน</span>,
+          icon: <TbPlugConnected size={30} />,
+          label: 'สถานะการเชื่อมต่อ',
+          value: project.connection === 'online'
+            ? 'ออนไลน์'
+            : project.connection === 'offline' ? 'ออฟไลน์' : '-',
         },
         {
           icon: <TbUser size={30} />,
-          label: 'ผู้รับจ้าง',
-          value: (
-            <>
-              FTD
-              <br />
-              บริษัท เฟิร์สเทค ดีไซน์ จำกัด
-            </>
-          ),
+          label: 'Phase',
+          value: project.phase != null ? `${project.phase} Phase` : '-',
         },
       ],
     ]
@@ -83,7 +80,7 @@ const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
       badge={
         project?.warranty === 'in-warranty'
           ? { text: 'ในค้ำ', color: '#05F2DB' }
-          : project
+          : project?.warranty === 'expired'
             ? { text: 'หมดค้ำ', color: '#979797' }
             : undefined
       }

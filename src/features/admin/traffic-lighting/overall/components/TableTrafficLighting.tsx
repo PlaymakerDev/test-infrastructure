@@ -5,6 +5,10 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
+import {
+  buildLightingDetailUrl,
+  resolveLightingImei,
+} from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useOverallContext } from '../context'
 
 interface Props {
@@ -37,17 +41,18 @@ type Row =
 const LINE_STATUS_LABELS = {
   normal: { text: 'ปกติ', color: '#4CE99A' },
   abnormal: { text: 'ผิดปกติ', color: '#E94C4C' },
+  unknown: { text: '-', color: '#979797' },
 } as const
 
 const CIRCUIT_STATUS_LABELS = {
   normal: { text: 'ปกติ', color: '#4CD1E9' },
   abnormal: { text: 'ผิดปกติ', color: '#E99A4C' },
+  unknown: { text: '-', color: '#979797' },
 } as const
 
 const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const { deptId } = useOverallContext()
-  const deptQuery = deptId ? `?dept_id=${deptId}` : ''
 
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficLightingProject[]>()
@@ -145,11 +150,10 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          return row.project.warranty === 'in-warranty' ? (
-            <Pill text='ในค้ำ' color='#05F2DB' />
-          ) : (
-            <Pill text='หมดค้ำ' color='#979797' />
-          )
+          if (row.project.warranty === 'unknown') return <Pill text='-' color='#979797' />
+          return row.project.warranty === 'in-warranty'
+            ? <Pill text='ในค้ำ' color='#05F2DB' />
+            : <Pill text='หมดค้ำ' color='#979797' />
         },
       },
       {
@@ -168,7 +172,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <span className='text-white'>{row.project.phase}</span>
+            <span className='text-white'>{row.project.phase ?? '-'}</span>
           ) : null,
       },
       {
@@ -178,11 +182,10 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          return row.project.connection === 'online' ? (
-            <Pill text='ออนไลน์' color='#66AEFF' icon={<TbWifi size={14} />} />
-          ) : (
-            <Pill text='ออฟไลน์' color='#E94C4C' icon={<TbWifiOff size={14} />} />
-          )
+          if (row.project.connection === 'unknown') return <Pill text='-' color='#979797' />
+          return row.project.connection === 'online'
+            ? <Pill text='ออนไลน์' color='#66AEFF' icon={<TbWifi size={14} />} />
+            : <Pill text='ออฟไลน์' color='#E94C4C' icon={<TbWifiOff size={14} />} />
         },
       },
       {
@@ -225,19 +228,12 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         row.kind === 'project'
           ? {
               onClick: () => {
-                const { id, equipment, roadCode, projectName, installPoint, bureau, coord, warranty, connection } = row.project
-                // Stash row context in sessionStorage (same pattern as
-                // maintenance) so the detail page can render the header.
-                sessionStorage.setItem('lighting_detail_type', equipment.type ?? '')
-                sessionStorage.setItem('lighting_detail_imei', id)
-                sessionStorage.setItem('lighting_detail_row', JSON.stringify({
-                  roadCode, projectName, installPoint, bureau, coord, warranty, connection,
-                }))
-                // Route by equipment type — lamp has its own page, phase shares one.
-                const base = equipment.type === 'lamp'
-                  ? `/admin/traffic-lighting/detail/lamp/${id}`
-                  : `/admin/traffic-lighting/detail/${id}`
-                router.push(`${base}${deptQuery}`)
+                const {
+                  id, imei: projectImei, equipment,
+                } = row.project
+                const type = equipment.type ?? ''
+                const imei = resolveLightingImei(id, projectImei)
+                router.push(buildLightingDetailUrl({ routeId: id, imei, type, deptId }))
               },
               style: { cursor: 'pointer' },
             }

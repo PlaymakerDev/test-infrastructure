@@ -4,15 +4,9 @@ import { getLightingOverviewAPI } from '@/services/routes/LightingService'
 
 import type { LightingOverviewResponse } from '@/types/lighting'
 
-import { lightingKeys } from './queryKeys'
+import { isValidLightingDeptId, lightingKeys } from './queryKeys'
 
 import { unwrapLightingResponse } from './unwrapLightingResponse'
-
-
-
-const isEnabledDept = (deptId: string | number | null | undefined) =>
-
-  deptId !== null && deptId !== undefined && String(deptId) !== ''
 
 
 
@@ -32,7 +26,7 @@ export const useLightingOverview = (deptId: string | number | null | undefined) 
 
       ),
 
-    enabled: isEnabledDept(deptId),
+    enabled: isValidLightingDeptId(deptId),
 
   })
 

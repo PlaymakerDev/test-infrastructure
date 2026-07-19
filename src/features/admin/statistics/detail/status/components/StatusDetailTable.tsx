@@ -1,15 +1,13 @@
 "use client"
 import React from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { Table } from 'antd'
+import { Alert, Button, Empty, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
 import { useStatusDetailContext } from '../context'
-import { getVMSNotificationsAPI } from '@/services/routes/ControlVMSService'
+import { useVMSNotifications } from '@/features/admin/control-vms/overall/hooks/useVMSNotifications'
 import type { VMSNotificationStatus } from '@/types/control-vms/vms-api'
 
 dayjs.extend(buddhistEra)
@@ -24,8 +22,11 @@ const STATUS_STYLE: Record<VMSNotificationStatus, { color: string; label: string
   critical: { color: '#FF0000', label: 'Critical' },
 }
 
-const StatusBadge = ({ status }: { status: VMSNotificationStatus }) => {
-  const style = STATUS_STYLE[status] ?? STATUS_STYLE.info
+const StatusBadge = ({ status }: { status: string }) => {
+  const style = STATUS_STYLE[status as VMSNotificationStatus]
+  if (!style) {
+    return <span style={{ color: '#979797' }}>{status || '-'}</span>
+  }
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
@@ -59,19 +60,19 @@ const FILTER_CONFIG: FilterConfig[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const StatusDetailTable: React.FC = () => {
+interface StatusDetailTableProps {
+  vmsId: string | number
+}
+
+const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
   const [activeTab, setActiveTab] = React.useState('ALL')
-  const searchParams = useSearchParams()
-  const vmsId = searchParams.get('detail') ?? ''
   const { dateRange } = useStatusDetailContext()
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
+  const hasDateRange = Boolean(startDate && endDate)
 
-  const { data, isFetching } = useQuery({
-    queryKey: ['vms_notifications', vmsId, startDate, endDate],
-    queryFn: () => getVMSNotificationsAPI(vmsId, { start_date: startDate!, end_date: endDate! }),
-    enabled: !!vmsId && !!startDate && !!endDate,
-  })
+  const notificationsQuery = useVMSNotifications(vmsId, startDate, endDate)
+  const { data, isLoading, isFetching, isError } = notificationsQuery
 
   const records: StatusRow[] = React.useMemo(() => {
     const items = data?.data?.items ?? []
@@ -118,17 +119,36 @@ const StatusDetailTable: React.FC = () => {
   ], [])
 
   const stats = React.useMemo(() => ({
-    ALL: records.length,
+    ALL: data?.data?.count ?? records.length,
     info: records.filter((r) => r.status === 'info').length,
     warning: records.filter((r) => r.status === 'warning').length,
     alert: records.filter((r) => r.status === 'alert').length,
     critical: records.filter((r) => r.status === 'critical').length,
-  }), [records])
+  }), [data, records])
 
   const filteredData = React.useMemo(() => {
     if (activeTab === 'ALL') return records
     return records.filter((r) => r.status === activeTab)
   }, [activeTab, records])
+
+  if (!hasDateRange) {
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="กรุณาเลือกช่วงวันที่เพื่อดูประวัติการแจ้งเตือน" />
+  }
+
+  if (isLoading) {
+    return <div className="min-h-48 flex items-center justify-center"><Spin /></div>
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="ไม่สามารถโหลดประวัติการแจ้งเตือนได้"
+        action={<Button size="small" onClick={() => void notificationsQuery.refetch()}>ลองใหม่</Button>}
+      />
+    )
+  }
 
   return (
     <div className="pb-6">
@@ -140,6 +160,7 @@ const StatusDetailTable: React.FC = () => {
           onFilterChange={(key) => setActiveTab(key)}
           filterClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
           showViewToggle={false}
+          showExportButton={false}
         />
       </section>
       <Table<StatusRow>
@@ -150,6 +171,7 @@ const StatusDetailTable: React.FC = () => {
         size="middle"
         rowKey="key"
         scroll={{ x: 'max-content' }}
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก" /> }}
       />
     </div>
   )

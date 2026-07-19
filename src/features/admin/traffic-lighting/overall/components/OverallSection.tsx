@@ -1,7 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Input } from 'antd'
+import { Alert, Button, Input, Spin } from 'antd'
 import { TbSearch } from 'react-icons/tb'
 import { TableTrafficLighting, MapTrafficLighting } from '../components'
 import { useOverallContext } from '../context'
@@ -9,6 +9,10 @@ import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIfram
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import type { TrafficLightingProject } from '../data/trafficLightingProjects'
+import {
+  buildLightingDetailUrl,
+  resolveLightingImei,
+} from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 
 // Same 5 filters/colors as the old static summaryStats badges — now wired to
 // actually filter the list (they never did before), matching the shared
@@ -27,6 +31,9 @@ const OverallSection: React.FC = () => {
     deptId,
     searchQuery,
     setSearchQuery,
+    centralListLoaded,
+    centralListError,
+    retryCentralList,
     statCards,
     summaryStats,
     filteredProjects,
@@ -37,7 +44,6 @@ const OverallSection: React.FC = () => {
     leftBottomCards,
     diagramImei,
   } = useOverallContext()
-  const deptQuery = deptId ? `?dept_id=${deptId}` : ''
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
@@ -67,26 +73,18 @@ const OverallSection: React.FC = () => {
     }
   }, [filteredProjects, activeFilter])
 
-  // Same navigation as TableTrafficLighting's onRow — stash row context in
-  // sessionStorage so the detail page can render its header, then route by
-  // equipment type (lamp has its own page, phase shares one).
+  // Same navigation as TableTrafficLighting's onRow. URL params make the
+  // detail route portable; tab-local context only enriches its header.
   const goToDetail = useCallback((project: TrafficLightingProject) => {
-    sessionStorage.setItem('lighting_detail_type', project.equipment.type ?? '')
-    sessionStorage.setItem('lighting_detail_imei', project.id)
-    sessionStorage.setItem('lighting_detail_row', JSON.stringify({
-      roadCode: project.roadCode,
-      projectName: project.projectName,
-      installPoint: project.installPoint,
-      bureau: project.bureau,
-      coord: project.coord,
-      warranty: project.warranty,
-      connection: project.connection,
+    const type = project.equipment.type ?? ''
+    const imei = resolveLightingImei(project.id, project.imei)
+    router.push(buildLightingDetailUrl({
+      routeId: project.id,
+      imei,
+      type,
+      deptId,
     }))
-    const base = project.equipment.type === 'lamp'
-      ? `/admin/traffic-lighting/detail/lamp/${project.id}`
-      : `/admin/traffic-lighting/detail/${project.id}`
-    router.push(`${base}${deptQuery}`)
-  }, [router, deptQuery])
+  }, [router, deptId])
 
   const cardItems = useMemo<ProjectCardItem[]>(
     () => displayedProjects.map((p) => ({
@@ -100,7 +98,9 @@ const OverallSection: React.FC = () => {
       budgetYear: p.budgetYear,
       isWarranty: p.warranty === 'in-warranty',
       bureau: p.bureau,
-      total: p.equipment.count ?? 0,
+      // The central endpoint exposes connectivity per installation, not per
+      // individual lamp/controller. Keep all three counters in that unit.
+      total: 1,
       online: p.connection === 'online' ? 1 : 0,
       offline: p.connection === 'offline' ? 1 : 0,
       onDetail: () => goToDetail(p),
@@ -122,25 +122,17 @@ const OverallSection: React.FC = () => {
                   <p className='text-[12px] font-normal m-0 shrink-0' style={{ color: '#979797' }}>IMEI : {item.imei}</p>
                   <button
                     type='button'
-                    className='shrink-0 flex items-center justify-center border-0 cursor-pointer p-0 text-[12px] font-normal text-white leading-none'
+                    disabled={!item.imei || item.imei === '-'}
+                    className='shrink-0 flex items-center justify-center border-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 p-0 text-[12px] font-normal text-white leading-none'
                     style={{ width: 80, height: 27, borderRadius: 88, background: '#212121' }}
                     onClick={() => {
-                      const equipType = item.equipmentType || 'phase'
-                      sessionStorage.setItem('lighting_detail_type', equipType)
-                      sessionStorage.setItem('lighting_detail_imei', item.imei)
-                      sessionStorage.setItem('lighting_detail_row', JSON.stringify({
-                        roadCode: item.route,
-                        projectName: item.cabinet,
-                        installPoint: item.cabinet,
-                        bureau: '-',
-                        coord: item.coord ?? [],
-                        warranty: '',
-                        connection: '',
+                      const equipType = item.equipmentType || ''
+                      router.push(buildLightingDetailUrl({
+                        routeId: item.imei,
+                        imei: item.imei,
+                        type: equipType,
+                        deptId,
                       }))
-                      const base = equipType === 'lamp'
-                        ? `/admin/traffic-lighting/detail/lamp/${item.imei}`
-                        : `/admin/traffic-lighting/detail/${item.imei}`
-                      router.push(`${base}${deptQuery}`)
                     }}
                   >
                     ดูเพิ่มเติม
@@ -258,7 +250,7 @@ const OverallSection: React.FC = () => {
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          showExportButton={false}
           formSearch={
             <Input
               value={searchQuery}
@@ -280,10 +272,19 @@ const OverallSection: React.FC = () => {
       </div>
 
       <section className='mt-4'>
-        {viewMode === 'TABLE' ? (
+        {centralListError ? (
+          <Alert
+            type='error'
+            showIcon
+            message='ไม่สามารถโหลดข้อมูล Traffic Lighting ได้'
+            action={<Button size='small' onClick={retryCentralList}>ลองใหม่</Button>}
+          />
+        ) : !centralListLoaded ? (
+          <div className='flex min-h-40 items-center justify-center'><Spin /></div>
+        ) : viewMode === 'TABLE' ? (
           <TableTrafficLighting projects={displayedProjects} />
         ) : (
-          <ProjectCardGrid items={cardItems} totalLabel='อุปกรณ์ทั้งหมด' />
+          <ProjectCardGrid items={cardItems} totalLabel='จุดติดตั้งทั้งหมด' />
         )}
       </section>
     </>

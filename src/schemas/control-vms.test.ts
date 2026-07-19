@@ -46,12 +46,14 @@ const VALID_DEPARTMENT_TREE = [
     department_short_name: 'สทช.1',
     camera_online_count: 5,
     camera_offline_count: 2,
+    noti_count: 1,
     sub_department: [
       {
         department_id: 10,
         department_short_name: 'สาขา A',
         camera_online_count: 3,
         camera_offline_count: 1,
+        noti_count: 1,
         roads: [
           {
             road_id: 100,
@@ -64,12 +66,15 @@ const VALID_DEPARTMENT_TREE = [
                 solution_name: 'VMS-001',
                 anydesk: '123456',
                 geo_point: [100.5, 13.7],
+                latitude: 13.7,
+                longitude: 100.5,
                 project: { id: 1, budget_year: 2566, contract_no: 'CON-001' },
                 desktop_screen: '',
                 last_connected: '2026-01-01T00:00:00Z',
                 is_online: true,
                 camera_online_count: 2,
                 camera_offline_count: 0,
+                noti_count: 1,
               },
             ],
           },

@@ -12,11 +12,13 @@ import { useState } from 'react'
 const WARRANTY_COLORS = {
   'in-warranty': '#05F2DB',
   expired: '#979797',
+  unknown: '#979797',
 } as const
 
 const CONNECTION_COLORS = {
   online: '#66AEFF',
   offline: '#E94C4C',
+  unknown: '#979797',
 } as const
 
 /** Lamp header — back arrow + title + pills + Google Map. No tabs (lamp is a
@@ -25,8 +27,13 @@ const LampTitleSection: React.FC = () => {
   const router = useRouter()
   const { project } = useLampContext()
   const isOnline = project.connection === 'online'
-  const isInWarranty = project.warranty === 'in-warranty'
   const [infoProject, setInfoProject] = useState<TrafficLightingProject | null>(null)
+  const warrantyLabel = project.warranty === 'in-warranty'
+    ? 'ในค้ำ'
+    : project.warranty === 'expired' ? 'หมดค้ำ' : '-'
+  const connectionLabel = project.connection === 'online'
+    ? 'ออนไลน์'
+    : project.connection === 'offline' ? 'ออฟไลน์' : '-'
 
   const handleBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -60,7 +67,7 @@ const LampTitleSection: React.FC = () => {
               />
             </div>
             <Pill
-              text={isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
+              text={warrantyLabel}
               color={WARRANTY_COLORS[project.warranty]}
             />
             <ConfigProvider
@@ -85,9 +92,11 @@ const LampTitleSection: React.FC = () => {
               </Button>
             </ConfigProvider>
             <Pill
-              text={isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+              text={connectionLabel}
               color={CONNECTION_COLORS[project.connection]}
-              icon={isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+              icon={project.connection === 'unknown'
+                ? undefined
+                : isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
             />
           </div>
         </div>

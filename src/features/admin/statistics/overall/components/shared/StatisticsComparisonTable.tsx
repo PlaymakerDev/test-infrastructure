@@ -1,8 +1,9 @@
 "use client"
-import React, { useEffect, useState } from 'react'
-import { Table, Input, Button, ConfigProvider, Segmented } from 'antd'
+import React from 'react'
+import { Alert, Table, Input, Segmented } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbSearch, TbPrinter, TbChevronRight } from 'react-icons/tb'
+import { TbSearch, TbChevronRight } from 'react-icons/tb'
+import useIsMobile from '@/utils/hooks/useIsMobile'
 
 export interface ComparisonRecord {
   key: string
@@ -10,8 +11,8 @@ export interface ComparisonRecord {
   installations: number
   online: number
   offline: number
-  newCmdWeb: number
-  newCmdApp: number
+  newCmdWeb?: number
+  newCmdApp?: number
   lineCheck?: number
   circuit?: number
   voltAmp?: number
@@ -20,18 +21,6 @@ export interface ComparisonRecord {
 }
 
 const isParent = (r: ComparisonRecord) => !r.isChild
-
-const useIsMobile = (breakpoint = 640) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
-}
 
 const COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   {
@@ -90,12 +79,17 @@ export interface StatisticsComparisonTableProps {
   useArrowExpand?: boolean
   activePeriod?: string
   onPeriodChange?: (value: string) => void
+  showPeriodSelector?: boolean
   /** Shows an Antd spinner overlay over the table while the data refetches
    *  (e.g. when switching the period). */
   loading?: boolean
+  error?: boolean
+  /** Keep summary badge placeholders visible on errors. The caller should
+   * provide labels such as "— หน่วยงาน" instead of stale/zero values. */
+  showSummaryBadgesOnError?: boolean
 }
 
-const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, activePeriod: activePeriodProp, onPeriodChange, loading }) => {
+const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, activePeriod: activePeriodProp, onPeriodChange, showPeriodSelector = true, loading, error, showSummaryBadgesOnError = false }) => {
   const [internalPeriod, setInternalPeriod] = React.useState('TODAY')
   const activePeriod = activePeriodProp ?? internalPeriod
   const handlePeriodChange = (value: string) => {
@@ -137,78 +131,84 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: isMobile ? '100%' : 320, height: 40, minWidth: isMobile ? 200 : undefined, maxWidth: isMobile ? 320 : undefined }}
           />
-          {(summaryBadges ?? [
-            { label: '45 หน่วยงาน', color: '#B2FF00' },
-            { label: '53 จุดติดตั้ง', color: '#66AEFF' },
-            { label: '16 เหตุการณ์', color: '#05F2DB' },
-          ]).map((b) => (
+          {(!error || showSummaryBadgesOnError) && !loading && (summaryBadges ?? []).map((b) => (
             <span key={b.label} style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: `1px solid ${b.color}`, color: b.color, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: isMobile ? 11 : 13, whiteSpace: 'nowrap' }}>
               {b.icon && <img src={b.icon} alt="" width={16} height={16} />}
               {b.label}
             </span>
           ))}
-          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-            <Button type="primary" size={isMobile ? 'middle' : 'large'} shape="round" icon={<TbPrinter />} style={{ height: 40 }}>
-              <p>นำออกเอกสาร</p>
-            </Button>
-          </ConfigProvider>
         </div>
-        <Segmented
-          value={activePeriod}
-          onChange={(value) => handlePeriodChange(value as string)}
-          options={PERIOD_OPTIONS}
-          size={isMobile ? 'middle' : 'large'}
-          classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
-        />
+        {showPeriodSelector && (
+          <Segmented
+            value={activePeriod}
+            onChange={(value) => handlePeriodChange(value as string)}
+            options={PERIOD_OPTIONS}
+            size={isMobile ? 'middle' : 'large'}
+            classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+          />
+        )}
       </div>
-      <Table
-        columns={columns ?? COMPARISON_COLUMNS}
-        dataSource={filteredData}
-        loading={loading}
-        pagination={false}
-        size="middle"
-        rowKey="key"
-        scroll={{ x: 'max-content' }}
-        expandable={useArrowExpand ? {
-          expandIcon: ({ expanded, onExpand, record }) =>
-            record.children?.length ? (
-              <TbChevronRight
-                onClick={(e) => onExpand(record, e as unknown as React.MouseEvent<HTMLElement>)}
-                style={{
-                  cursor: 'pointer',
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                  transform: expanded ? 'rotate(270deg)' : 'rotate(90deg)',
-                  transition: 'transform 0.2s',
-                  display: 'inline-block',
-                  verticalAlign: 'middle',
-                  marginRight: 4,
-                }}
-              />
-            ) : <span style={{ display: 'inline-block', width: 20 }} />,
-        } : undefined}
-        summary={(rows) => {
-          const activeCols = (columns ?? COMPARISON_COLUMNS)
-          const txt: React.CSSProperties = { color: '#FCD116', fontWeight: 600 }
-          return (
-            <Table.Summary.Row style={{ background: '#191919' }}>
-              {activeCols.map((col, i) => {
-                const key = (col as { dataIndex?: string }).dataIndex
-                if (i === 0) {
-                  return <Table.Summary.Cell key={i} index={i}><span style={{ ...txt, paddingLeft: 12, display: 'inline-block' }}>รวมทุกหน่วยงาน</span></Table.Summary.Cell>
-                }
-                const sum = key
-                  ? rows.reduce((acc, r) => {
-                    const v = (r as unknown as Record<string, unknown>)[key]
-                    return acc + (typeof v === 'number' && !isNaN(v) ? v : 0)
-                  }, 0)
-                  : ''
-                return <Table.Summary.Cell key={i} index={i} align="center"><span style={txt}>{sum}</span></Table.Summary.Cell>
-              })}
-            </Table.Summary.Row>
-          )
-        }}
-      />
+      {error ? (
+        <Alert type="error" showIcon message="ไม่สามารถโหลดข้อมูลตารางเปรียบเทียบได้" />
+      ) : (
+        <Table
+          columns={columns ?? COMPARISON_COLUMNS}
+          dataSource={filteredData}
+          loading={loading}
+          locale={{ emptyText: 'ไม่พบข้อมูล' }}
+          pagination={false}
+          size="middle"
+          rowKey="key"
+          scroll={{ x: 'max-content' }}
+          expandable={useArrowExpand ? {
+            expandIcon: ({ expanded, onExpand, record }) =>
+              record.children?.length ? (
+                <TbChevronRight
+                  onClick={(e) => onExpand(record, e as unknown as React.MouseEvent<HTMLElement>)}
+                  style={{
+                    cursor: 'pointer',
+                    color: '#FFFFFF',
+                    fontSize: 16,
+                    transform: expanded ? 'rotate(270deg)' : 'rotate(90deg)',
+                    transition: 'transform 0.2s',
+                    display: 'inline-block',
+                    verticalAlign: 'middle',
+                    marginRight: 4,
+                  }}
+                />
+              ) : <span style={{ display: 'inline-block', width: 20 }} />,
+          } : undefined}
+          summary={(rows) => {
+            const activeCols = (columns ?? COMPARISON_COLUMNS)
+            const txt: React.CSSProperties = { color: '#FCD116', fontWeight: 600 }
+            // Alert/Incident comparisons provide aggregate bureau rows and
+            // their child departments as a flat list. Summing every visible
+            // row would count the same installations/events twice. When at
+            // least one aggregate row is present, total only those parents;
+            // a child-only filtered result still totals the visible children.
+            const rowsToTotal = rows.some((row) => !row.isChild)
+              ? rows.filter((row) => !row.isChild)
+              : rows
+            return (
+              <Table.Summary.Row style={{ background: '#191919' }}>
+                {activeCols.map((col, i) => {
+                  const key = (col as { dataIndex?: string }).dataIndex
+                  if (i === 0) {
+                    return <Table.Summary.Cell key={i} index={i}><span style={{ ...txt, paddingLeft: 12, display: 'inline-block' }}>รวมทุกหน่วยงาน</span></Table.Summary.Cell>
+                  }
+                  const sum = key
+                    ? rowsToTotal.reduce((acc, r) => {
+                      const v = (r as unknown as Record<string, unknown>)[key]
+                      return acc + (typeof v === 'number' && !isNaN(v) ? v : 0)
+                    }, 0)
+                    : ''
+                  return <Table.Summary.Cell key={i} index={i} align="center"><span style={txt}>{sum}</span></Table.Summary.Cell>
+                })}
+              </Table.Summary.Row>
+            )
+          }}
+        />
+      )}
     </div>
   )
 }

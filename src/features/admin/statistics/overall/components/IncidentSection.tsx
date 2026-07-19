@@ -1,27 +1,15 @@
 "use client"
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
 import { Segmented } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
 import SwapButton from '@/components/swap-button/SwapButton'
-import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
 import { useLiveIncidentRouteItems } from '../../data/useLiveIncidentRouteItems'
 import { useIncidentByDepartment, useIncidentSummary } from '@/hooks/queries/incident-detection'
 import type { ColumnsType } from 'antd/es/table'
-
-const useIsMobile = (breakpoint = 640) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
-}
+import useIsMobile from '@/utils/hooks/useIsMobile'
 
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
@@ -64,6 +52,8 @@ const periodToDateBounds = (period: string): { start?: string; end?: string } =>
       const end = new Date(now.getFullYear() - 1, 11, 31)
       return { start: fmt(start), end: fmt(end) }
     }
+    case 'ALL':
+      return { start: '2000-01-01', end: fmt(today) }
     default:
       return {}
   }
@@ -85,8 +75,6 @@ interface IncidentRow {
   isChild?: boolean
   children?: IncidentRow[]
 }
-
-const num = (v: number) => <span style={{ color: '#ffffff' }}>{v}</span>
 
 const INCIDENT_COMPARISON_COLUMNS: ColumnsType<IncidentRow> = [
   {
@@ -148,43 +136,9 @@ const INCIDENT_COMPARISON_COLUMNS: ColumnsType<IncidentRow> = [
   },
 ]
 
-const COMPARISON_MOCK_DATA: IncidentRow[] = [
-  { key: '1', agency: 'สทช. 1 (ปทุมธานี)', accident: 12, breakdown: 8, shoulder: 15, construction: 5, blocked: 3, wrongWay: 2, rightLane: 4, speeding: 20, congestion: 10, total: 79 },
-  { key: '1-1', agency: 'สทช. 1 (ปทุมธานี)', accident: 12, breakdown: 8, shoulder: 15, construction: 5, blocked: 3, wrongWay: 2, rightLane: 4, speeding: 20, congestion: 10, total: 79, isChild: true },
-  { key: '1-2', agency: 'ขทช.ปทุมธานี', accident: 7, breakdown: 5, shoulder: 9, construction: 3, blocked: 2, wrongWay: 1, rightLane: 2, speeding: 12, congestion: 6, total: 47, isChild: true },
-  { key: '1-3', agency: 'ขทช.นนทบุรี', accident: 5, breakdown: 3, shoulder: 6, construction: 2, blocked: 1, wrongWay: 1, rightLane: 2, speeding: 8, congestion: 4, total: 32, isChild: true },
-  { key: '2', agency: 'สทช. 2 (สระบุรี)', accident: 9, breakdown: 6, shoulder: 11, construction: 8, blocked: 2, wrongWay: 1, rightLane: 3, speeding: 15, congestion: 7, total: 62 },
-  { key: '2-1', agency: 'สทช. 2 (สระบุรี)', accident: 9, breakdown: 6, shoulder: 11, construction: 8, blocked: 2, wrongWay: 1, rightLane: 3, speeding: 15, congestion: 7, total: 62, isChild: true },
-  { key: '2-2', agency: 'ขทช.สระบุรี', accident: 5, breakdown: 3, shoulder: 6, construction: 4, blocked: 1, wrongWay: 1, rightLane: 2, speeding: 9, congestion: 4, total: 35, isChild: true },
-  { key: '2-3', agency: 'ขทช.นครราชสีมา', accident: 4, breakdown: 3, shoulder: 5, construction: 4, blocked: 1, wrongWay: 0, rightLane: 1, speeding: 6, congestion: 3, total: 27, isChild: true },
-  { key: '3', agency: 'สทช. 9 (พิษณุโลก)', accident: 11, breakdown: 8, shoulder: 13, construction: 5, blocked: 4, wrongWay: 2, rightLane: 4, speeding: 19, congestion: 9, total: 75 },
-  { key: '3-1', agency: 'สทช. 9 (พิษณุโลก)', accident: 11, breakdown: 8, shoulder: 13, construction: 5, blocked: 4, wrongWay: 2, rightLane: 4, speeding: 19, congestion: 9, total: 75, isChild: true },
-  { key: '3-2', agency: 'ขทช.พิษณุโลก', accident: 6, breakdown: 5, shoulder: 7, construction: 3, blocked: 2, wrongWay: 1, rightLane: 2, speeding: 11, congestion: 5, total: 42, isChild: true },
-  { key: '3-3', agency: 'ขทช.เพชรบูรณ์', accident: 5, breakdown: 3, shoulder: 6, construction: 2, blocked: 2, wrongWay: 1, rightLane: 2, speeding: 8, congestion: 4, total: 33, isChild: true },
-  { key: '4', agency: 'สทช. 10 (เชียงใหม่)', accident: 20, breakdown: 13, shoulder: 25, construction: 11, blocked: 6, wrongWay: 4, rightLane: 8, speeding: 35, congestion: 16, total: 138 },
-  { key: '4-1', agency: 'สทช. 10 (เชียงใหม่)', accident: 20, breakdown: 13, shoulder: 25, construction: 11, blocked: 6, wrongWay: 4, rightLane: 8, speeding: 35, congestion: 16, total: 138, isChild: true },
-  { key: '4-2', agency: 'ขทช.เชียงใหม่', accident: 9, breakdown: 6, shoulder: 11, construction: 5, blocked: 3, wrongWay: 2, rightLane: 3, speeding: 16, congestion: 7, total: 62, isChild: true },
-  { key: '4-3', agency: 'ขทช.ลำปาง', accident: 7, breakdown: 4, shoulder: 9, construction: 4, blocked: 2, wrongWay: 1, rightLane: 3, speeding: 12, congestion: 6, total: 48, isChild: true },
-  { key: '4-4', agency: 'ขทช.เชียงราย', accident: 4, breakdown: 3, shoulder: 5, construction: 2, blocked: 1, wrongWay: 1, rightLane: 2, speeding: 7, congestion: 3, total: 28, isChild: true },
-]
-
-const INCIDENT_SUMMARY_BADGES: SummaryBadge[] = [
-  { label: '45 หน่วยงาน', color: '#B2FF00' },
-  { label: '750 จุดติดตั้ง', color: '#66AEFF' },
-  { label: '30,284 เหตุการณ์', color: '#05F2DB' },
-]
-
-const INCIDENT_CARDS: StatCard[] = [
-  { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: '599', unit: 'จุดติดตั้ง', sub: 'ภาคกลาง (75.6%)' },
-  { borderColor: '#05F2DB', icon: '/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: '67', unit: 'เหตุการณ์', sub: 'สทช. 6 (ขอนแก่น) (37.2%)' },
-  { borderColor: '#B2FF00', icon: '/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: '45', unit: 'หน่วยงาน', sub: 'แขวงทางหลวงชนบทขอนแก่น (1,081 เหตุการณ์)' },
-  { borderColor: '#FCD116', icon: '/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: 'รถจอดไหล่ทาง', sub: '3,580 เหตุการณ์ (59.6%)' },
-]
-
 const IncidentSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setCurrentTab } = useStatisticsContext()
   const isMobile = useIsMobile()
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('ALL')
@@ -206,22 +160,28 @@ const IncidentSection: React.FC = () => {
   // three stay in sync. `markerItems` plots each solution at its OWN real
   // geometry_point (decoupled from the coarser bureau-level search tree).
   // `summaryDateRange` bounds each marker's noti_count to the selected period.
-  const { routeItems: liveRouteItems, markerItems } = useLiveIncidentRouteItems(summaryDateRange)
+  const {
+    routeItems: liveRouteItems,
+    markerItems,
+    isLoading: routesLoading,
+    isError: routesError,
+  } = useLiveIncidentRouteItems(summaryDateRange)
 
   // Stat cards data — real API instead of mock. Refetches whenever the
   // period Segmented above changes (`start_date`/`end_date` are part of the
   // query key).
-  const { data: summaryData } = useIncidentSummary(0, { scope: 'all', ...summaryDateRange })
+  const { data: summaryData, isError: summaryError } = useIncidentSummary(0, { scope: 'all', ...summaryDateRange })
   const incidentCards: StatCard[] = React.useMemo(() => {
     const s = summaryData
-    const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
+    const unavailable = summaryError ? '—' : '-'
+    const fmt = (v: number | undefined) => !summaryError && s != null ? (v ?? 0) : unavailable
     return [
-      { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: s ? `${s.installation_points.top_region.name_th} (${s.installation_points.top_region.percentage.toFixed(1)}%)` : '-' },
-      { borderColor: '#05F2DB', icon: '/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: String(fmt(s?.incidents?.total)), unit: 'เหตุการณ์', sub: s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.percentage.toFixed(1)}%)` : '-' },
-      { borderColor: '#B2FF00', icon: '/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: String(fmt(s?.incidents?.departments_with_incidents)), unit: 'หน่วยงาน', sub: s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.count} เหตุการณ์)` : '-' },
-      { borderColor: '#FCD116', icon: '/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: s?.top_incident_type?.name_th ?? '-', sub: s ? `${s.top_incident_type.count} เหตุการณ์ (${s.top_incident_type.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: !summaryError && s ? `${s.installation_points.top_region.name_th} (${s.installation_points.top_region.percentage.toFixed(1)}%)` : unavailable },
+      { borderColor: '#05F2DB', icon: '/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: String(fmt(s?.incidents?.total)), unit: 'เหตุการณ์', sub: !summaryError && s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.percentage.toFixed(1)}%)` : unavailable },
+      { borderColor: '#B2FF00', icon: '/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: String(fmt(s?.incidents?.departments_with_incidents)), unit: 'หน่วยงาน', sub: !summaryError && s ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.count} เหตุการณ์)` : unavailable },
+      { borderColor: '#FCD116', icon: '/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: !summaryError ? (s?.top_incident_type?.name_th ?? '-') : '—', sub: !summaryError && s ? `${s.top_incident_type.count} เหตุการณ์ (${s.top_incident_type.percentage.toFixed(1)}%)` : unavailable },
     ]
-  }, [summaryData])
+  }, [summaryData, summaryError])
 
   // Comparison table data — real API instead of mock.
   const [comparisonPeriod, setComparisonPeriod] = useState('TODAY')
@@ -230,7 +190,7 @@ const IncidentSection: React.FC = () => {
     return start && end ? { start_date: start, end_date: end } : {}
   }, [comparisonPeriod])
 
-  const { data: byDeptData, isFetching: comparisonFetching } = useIncidentByDepartment(0, comparisonDateRange)
+  const { data: byDeptData, isFetching: comparisonFetching, isError: comparisonError } = useIncidentByDepartment(0, comparisonDateRange)
   const comparisonData: IncidentRow[] = React.useMemo(() => {
     const rows = byDeptData?.rows ?? []
     return rows.map((r, idx) => ({
@@ -252,13 +212,13 @@ const IncidentSection: React.FC = () => {
 
   const comparisonBadges: SummaryBadge[] = React.useMemo(() => {
     const s = byDeptData?.summary
-    const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
+    const fmt = (v: number | undefined) => !comparisonError && s != null ? (v ?? 0) : '—'
     return [
       { label: `${fmt(s?.departments_count)} หน่วยงาน`, color: '#B2FF00' },
       { label: `${fmt(s?.installation_points_count)} จุดติดตั้ง`, color: '#66AEFF' },
       { label: `${fmt(s?.incidents_count)} เหตุการณ์`, color: '#05F2DB' },
     ]
-  }, [byDeptData])
+  }, [byDeptData, comparisonError])
 
   return (
     <div className="flex flex-col">
@@ -307,6 +267,8 @@ const IncidentSection: React.FC = () => {
           statsCards={incidentCards}
           routeItems={liveRouteItems}
           markerItems={markerItems}
+          loading={routesLoading}
+          error={routesError}
         />
       )}
       {activeSubTab === 'COMPARISON' && (
@@ -317,6 +279,8 @@ const IncidentSection: React.FC = () => {
           activePeriod={comparisonPeriod}
           onPeriodChange={setComparisonPeriod}
           loading={comparisonFetching}
+          error={comparisonError}
+          showSummaryBadgesOnError
         />
       )}
     </div>

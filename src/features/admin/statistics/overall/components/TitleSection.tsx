@@ -1,19 +1,8 @@
 "use client"
 import SwapButton from '@/components/swap-button/SwapButton'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-
-const useIsMobile = (breakpoint = 1280) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
-}
+import useIsMobile from '@/utils/hooks/useIsMobile'
 
 const TAB_OPTIONS = [
   { label: 'ภาพรวม', value: 'OVERVIEW' },
@@ -34,7 +23,7 @@ const PERIOD_OPTIONS = [
 const TitleSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile(1280)
 
   // Determine current tab from boolean params
   const hasStatus = searchParams.has('status')

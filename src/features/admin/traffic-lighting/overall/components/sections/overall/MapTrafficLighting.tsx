@@ -9,6 +9,10 @@ import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { theme } from '@/configs/antd/themeConfig'
 import { useLightingOverview } from '@/hooks/queries/lighting'
 import type { LightingOverviewListItem } from '@/types/lighting'
+import {
+  buildLightingDetailUrl,
+  resolveLightingImei,
+} from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 
 interface Props {
   deptId: number
@@ -45,10 +49,13 @@ const toGeoJSON = (locations: LightingOverviewListItem[]): LightingFeatureCollec
         solution_name: loc.solution?.solution_name ?? '-',
         code_name: loc.road?.code_name ?? '-',
         project_name: loc.project?.project_name ?? loc.solution?.solution_name ?? '-',
+        project_id: loc.project?.id,
+        road_id: loc.road?.id,
+        budget_year: loc.project?.budget_year,
         contract_no: loc.project?.contract_no ?? '-',
         is_online: loc.lighting?.is_online ?? false,
         is_warranty: loc.is_warranty ?? false,
-        equipment_count: loc.lighting?.equipment?.count ?? 0,
+        equipment_count: loc.lighting?.equipment?.count ?? null,
         equipment_type: loc.lighting?.equipment?.type ?? '',
         imei: loc.imei ?? '',
         coord_lng: loc.GeometryPoint[0],
@@ -69,6 +76,9 @@ const LightingPopup: React.FC<{
   const p = feature.properties as Record<string, unknown>
   const equipType = String(p.equipment_type ?? '')
   const equipLabel = equipType === 'lamp' ? 'โคมไฟ' : equipType === 'phase' ? 'ตู้ควบคุม' : 'อุปกรณ์'
+  const equipmentCount = typeof p.equipment_count === 'number'
+    ? p.equipment_count.toLocaleString()
+    : '-'
   return (
     <div
       className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
@@ -85,7 +95,7 @@ const LightingPopup: React.FC<{
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
       <p className='fs-11 text-slate-500 mt-0.5'>
-        {equipLabel}: {Number(p.equipment_count ?? 0).toLocaleString()} จุด
+        {equipLabel}: {equipmentCount} จุด
         {p.imei ? ` · IMEI ${String(p.imei)}` : ''}
       </p>
       <section className='mt-2'>
@@ -98,22 +108,13 @@ const LightingPopup: React.FC<{
             block
             onClick={() => {
               const id = String(p.id)
-              sessionStorage.setItem('lighting_detail_type', equipType)
-              sessionStorage.setItem('lighting_detail_imei', String(p.imei || id))
-              sessionStorage.setItem('lighting_detail_row', JSON.stringify({
-                roadCode: String(p.code_name),
-                projectName: String(p.project_name),
-                installPoint: String(p.solution_name),
-                bureau: '-',
-                coord: [Number(p.coord_lng), Number(p.coord_lat)],
-                warranty: p.is_warranty ? 'in-warranty' : 'expired',
-                connection: isOnline ? 'online' : 'offline',
+              const imei = resolveLightingImei(id, typeof p.imei === 'string' ? p.imei : undefined)
+              onNavigate(buildLightingDetailUrl({
+                routeId: id,
+                imei,
+                type: equipType,
+                deptId,
               }))
-              const base = equipType === 'lamp'
-                ? `/admin/traffic-lighting/detail/lamp/${id}`
-                : `/admin/traffic-lighting/detail/${id}`
-              const deptQuery = deptId ? `?dept_id=${deptId}` : ''
-              onNavigate(`${base}${deptQuery}`)
             }}
           >
             <p className='fs-11 m-0'>ดูเพิ่มเติม</p>
@@ -164,7 +165,7 @@ const LightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, deptI
 }
 
 const MapTrafficLighting: React.FC<Props> = ({ deptId }) => {
-  const { data, isLoading, isSuccess } = useLightingOverview(deptId)
+  const { data, isLoading, isSuccess, isError, refetch } = useLightingOverview(deptId)
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)
@@ -188,6 +189,14 @@ const MapTrafficLighting: React.FC<Props> = ({ deptId }) => {
           <div className='flex flex-col items-center gap-2'>
             <div className='w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin' />
             <span className='text-yellow-400 text-xs'>กำลังโหลด...</span>
+          </div>
+        </div>
+      )}
+      {isError && (
+        <div className='absolute inset-0 flex items-center justify-center bg-black/60 z-10 rounded-lg'>
+          <div className='flex flex-col items-center gap-3 text-center'>
+            <span className='text-red-300 text-sm'>ไม่สามารถโหลดข้อมูลแผนที่ได้</span>
+            <Button size='small' onClick={() => void refetch()}>ลองใหม่</Button>
           </div>
         </div>
       )}

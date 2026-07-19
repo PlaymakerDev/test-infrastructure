@@ -126,7 +126,7 @@ const AlertDetailSidebar: React.FC = () => {
                                   .map((sub) => `${key}-${sub.label}`)
                                 : []
                             }
-                            items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
+                            items={item.sub3.map((sub) => ({
                               key: `${key}-${sub.label}`,
                               label: (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>

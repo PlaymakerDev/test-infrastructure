@@ -1,13 +1,12 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
-import { Button, ConfigProvider, DatePicker, Segmented, Table } from 'antd'
+import React, { useMemo, useState } from 'react'
+import { ConfigProvider, DatePicker, Segmented, Table } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs, { type Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbPrinter } from 'react-icons/tb'
-import { getLightingLogs4gCentralAPI } from '@/services/routes/LightingService'
+import { useLightingLogs4gCentral } from '@/hooks/queries/lighting'
 import type { Logs4gCentralItem, Logs4gCircuitStatus } from '@/types/lighting'
 import { useDetailContext } from '../context'
 import Pill from './Pill'
@@ -28,25 +27,23 @@ const DATA_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 }
 
 // eventCategory for the segmented filter — derived from data_type. Values
-// match the API's `data_type` enum directly except UPS/FMTS, which the API
-// only exposes bundled together as `etc` (see fetch effect below).
-type EventCategory = 'ALL' | 'line_check' | 'volt_amp' | 'circuit' | 'UPS' | 'FMTS'
+// The API exposes UPS and FMTS only as one server-side `etc` category. Keep
+// them combined so pagination totals always describe the rows being shown.
+type EventCategory = 'ALL' | 'line_check' | 'volt_amp' | 'circuit' | 'etc'
 const EVENT_TYPE_OPTIONS: { label: string; value: EventCategory }[] = [
   { label: 'ทั้งหมด', value: 'ALL' },
   { label: 'Line Check', value: 'line_check' },
   { label: 'Volt/Amp', value: 'volt_amp' },
   { label: 'Circuit', value: 'circuit' },
-  { label: 'UPS', value: 'UPS' },
-  { label: 'FMTS', value: 'FMTS' },
+  { label: 'UPS / FMTS', value: 'etc' },
 ]
 
-type PeriodFilter = 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'THIS_YEAR' | 'ALL'
+type PeriodFilter = 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH'
 const PERIOD_OPTIONS: { label: string; value: PeriodFilter }[] = [
   { label: 'วันนี้', value: 'TODAY' },
   { label: 'เมื่อวาน', value: 'YESTERDAY' },
   { label: '7 วัน', value: 'LAST_7_DAYS' },
   { label: 'เดือนนี้', value: 'THIS_MONTH' },
-  { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
 const STATUS_BADGE_CLASS =
@@ -126,22 +123,20 @@ const periodToBounds = (p: PeriodFilter): PeriodBounds => {
     case 'YESTERDAY': { const y = now.subtract(1, 'day'); return [y.startOf('day'), y.endOf('day')] }
     case 'LAST_7_DAYS': return [now.subtract(6, 'day').startOf('day'), now.endOf('day')]
     case 'THIS_MONTH': return [now.startOf('month'), now.endOf('month')]
-    case 'THIS_YEAR': return [now.startOf('year'), now.endOf('year')]
-    case 'ALL': return null
   }
 }
 
 const MonitorSection: React.FC = () => {
   const { imei } = useDetailContext()
-  const [records, setRecords] = useState<Logs4gCentralItem[]>([])
-  const [loaded, setLoaded] = useState(false)
   const [eventType, setEventType] = useState<EventCategory>('ALL')
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
-  const [period, setPeriod] = useState<PeriodFilter>('ALL')
+  const [period, setPeriod] = useState<PeriodFilter>('TODAY')
+  const [page, setPage] = useState(1)
+  const pageSize = 50
 
   // Explicit date-range picker wins over the period preset when both are set;
-  // ALL + no picker → omit both dates (API defaults to "today", matching the
-  // old endpoint's implicit today-only behavior).
+  // Without a picker, use an explicit preset range rather than relying on
+  // the endpoint's implicit today-only default.
   const effectiveRange: PeriodBounds = useMemo(() => {
     const [pickerStart, pickerEnd] = dateRange ?? [null, null]
     if (pickerStart || pickerEnd) {
@@ -151,41 +146,27 @@ const MonitorSection: React.FC = () => {
     return periodToBounds(period)
   }, [dateRange, period])
 
-  // The API only exposes UPS1/UPS2/UPS3 and FMTS bundled together as `etc` —
-  // request that and split them apart client-side for the UPS/FMTS tabs.
   const dataTypeParam: 'circuit' | 'line_check' | 'volt_amp' | 'etc' | undefined =
-    eventType === 'ALL' ? undefined
-      : eventType === 'UPS' || eventType === 'FMTS' ? 'etc'
-        : eventType
+    eventType === 'ALL' ? undefined : eventType
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    setLoaded(false)
-    const start_date = effectiveRange?.[0].format('YYYY-MM-DD')
-    const end_date = effectiveRange?.[1].format('YYYY-MM-DD')
+  const logsQuery = useLightingLogs4gCentral(imei, {
+    start_date: effectiveRange?.[0].format('YYYY-MM-DD'),
+    end_date: effectiveRange?.[1].format('YYYY-MM-DD'),
+    data_type: dataTypeParam,
+    page,
+    limit: pageSize,
+  })
+  const records = logsQuery.data?.res_data ?? []
+  const loaded = !logsQuery.isLoading
 
-    // Single request, no pagination params — flat table shows whatever the
-    // backend's own default page/limit returns.
-    getLightingLogs4gCentralAPI(imei, { start_date, end_date, data_type: dataTypeParam })
-      .then((res) => { if (active) setRecords(res.data?.res_data ?? []) })
-      .catch((err) => console.error('logs4g/central failed:', err))
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei, effectiveRange, dataTypeParam])
-
-  // UPS/FMTS split out of the combined `etc` response (see dataTypeParam above).
   // `_rowKey` disambiguates records that share created_at/data_type/phase —
   // the backend can log more than one reading within the same second.
   const filteredRecords = useMemo(() => {
-    const base = eventType === 'UPS' ? records.filter((r) => r.data_type === 'UPS1' || r.data_type === 'UPS2' || r.data_type === 'UPS3')
-      : eventType === 'FMTS' ? records.filter((r) => r.data_type === 'FMTS')
-        : records
-    return base.map((r, i) => ({ ...r, _rowKey: `${r.created_at}-${r.data_type}-${r.phase}-${i}` }))
-  }, [records, eventType])
+    return records.map((record, index) => ({
+      ...record,
+      _rowKey: `${record.created_at}-${record.data_type}-${record.phase}-${index}`,
+    }))
+  }, [records])
 
   const columns: ColumnsType<Logs4gCentralItem & { _rowKey: string }> = useMemo(
     () => [
@@ -279,7 +260,10 @@ const MonitorSection: React.FC = () => {
             <ConfigProvider locale={thTH}>
               <DatePicker.RangePicker
                 value={dateRange}
-                onChange={(dates) => setDateRange(dates)}
+                onChange={(dates) => {
+                  setDateRange(dates)
+                  setPage(1)
+                }}
                 format='D MMM BBBB'
                 size='middle'
                 allowClear
@@ -295,7 +279,10 @@ const MonitorSection: React.FC = () => {
           <div className={`${FILTER_BOX_CLASS} monitor-filter-segmented`}>
             <Segmented
               value={period}
-              onChange={(value) => setPeriod(value as PeriodFilter)}
+              onChange={(value) => {
+                setPeriod(value as PeriodFilter)
+                setPage(1)
+              }}
               options={PERIOD_OPTIONS}
               size='middle'
               classNames={SEGMENTED_CLASS_NAMES}
@@ -309,7 +296,10 @@ const MonitorSection: React.FC = () => {
             <div className={`${FILTER_BOX_CLASS} monitor-filter-segmented`}>
               <Segmented
                 value={eventType}
-                onChange={(value) => setEventType(value as EventCategory)}
+                onChange={(value) => {
+                  setEventType(value as EventCategory)
+                  setPage(1)
+                }}
                 options={EVENT_TYPE_OPTIONS}
                 size='middle'
                 classNames={SEGMENTED_CLASS_NAMES}
@@ -317,17 +307,6 @@ const MonitorSection: React.FC = () => {
             </div>
           </div>
 
-          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-            <Button
-              type='primary'
-              size='small'
-              icon={<TbPrinter />}
-              onClick={() => alert('TODO: นำออกเอกสาร')}
-              className='w-[130px]! h-[27px]! rounded-[88px]! px-2! text-xs! inline-flex! items-center! justify-center!'
-            >
-              นำออกเอกสาร
-            </Button>
-          </ConfigProvider>
         </div>
       </div>
 
@@ -336,10 +315,21 @@ const MonitorSection: React.FC = () => {
           rowKey='_rowKey'
           columns={columns}
           dataSource={filteredRecords}
-          pagination={false}
+          loading={logsQuery.isFetching}
+          pagination={{
+            current: page,
+            pageSize,
+            total: logsQuery.data?.meta_data?.count ?? 0,
+            showSizeChanger: false,
+            onChange: setPage,
+          }}
           size='middle'
           className='bridge-projects-table event-log-table'
-          locale={{ emptyText: loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...' }}
+          locale={{
+            emptyText: logsQuery.isError
+              ? 'ไม่สามารถโหลดข้อมูลได้'
+              : loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...',
+          }}
         />
       </div>
     </div>

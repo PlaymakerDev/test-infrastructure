@@ -15,9 +15,11 @@ const PHASE_METRICS = [
 const ElectricalSystemCard: React.FC = () => {
   const { device, deviceLoaded } = useDetailContext()
 
-  const phaseNum = !deviceLoaded ? null : (device ? device.phase : 3)
+  const phaseNum = !deviceLoaded ? null : (device ? device.phase : null)
   const phaseLabel = phaseNum === null ? '-' : `${phaseNum} Phase`
-  const phaseSubLabel = phaseNum === 1 ? 'Single Phase' : 'Three Phase'
+  const phaseSubLabel = phaseNum === null
+    ? '-'
+    : phaseNum === 1 ? 'Single Phase' : 'Three Phase'
 
   const metrics = useMemo(() => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))

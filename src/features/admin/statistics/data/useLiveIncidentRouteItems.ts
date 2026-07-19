@@ -30,6 +30,10 @@ export interface LiveIncidentRouteData {
    *  from the search-list's coarser bureau grouping — a bureau can own
    *  solutions scattered across many different locations. */
   markerItems: MapMarkerItem[]
+  isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  refetch: () => void
 }
 
 /** ค้นหาสายทาง + map markers — both from the SAME GET
@@ -44,7 +48,8 @@ export interface LiveIncidentRouteData {
  *  (also the backend's own Redis cache key), so it refetches automatically
  *  — no manual refetch() needed. */
 export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end_date?: string }): LiveIncidentRouteData {
-  const { data: centralList } = useIncidentCentralList(ALL_DEPARTMENTS_ID, 'all', dateRange)
+  const centralListQuery = useIncidentCentralList(ALL_DEPARTMENTS_ID, 'all', dateRange)
+  const centralList = centralListQuery.data
 
   const routeItems = useMemo<RouteItem[]>(() => (centralList ?? []).map((bureau) => {
     let onlineCount = 0
@@ -111,5 +116,12 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
     return items
   }, [centralList])
 
-  return { routeItems, markerItems }
+  return {
+    routeItems,
+    markerItems,
+    isLoading: centralListQuery.isLoading,
+    isFetching: centralListQuery.isFetching,
+    isError: centralListQuery.isError,
+    refetch: centralListQuery.refetch,
+  }
 }

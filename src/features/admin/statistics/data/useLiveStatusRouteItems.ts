@@ -36,6 +36,10 @@ export interface LiveStatusRouteData {
   markerItems: MapMarkerItem[]
   /** Aggregate counts for the top-right stat cards. */
   summary: LiveStatusSummary
+  isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  refetch: () => void
 }
 
 const countOnlineOffline = (roads: Road[]) => {
@@ -58,7 +62,8 @@ const countOnlineOffline = (roads: Road[]) => {
  *  `since` bounds each solution/department/bureau's `noti_count` (backend
  *  defaults to today 00:00 Asia/Bangkok when omitted). */
 export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
-  const { data: bureausResponse } = useVMSDepartments(since ? { since } : undefined)
+  const departmentsQuery = useVMSDepartments(since ? { since } : undefined)
+  const bureausResponse = departmentsQuery.data
   const bureaus = bureausResponse?.data
 
   const routeItems = useMemo<RouteItem[]>(() => {
@@ -85,7 +90,12 @@ export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
           }),
         )
         const { online, offline } = countOnlineOffline(dept.roads)
-        return { label: dept.department_short_name, detail, connected: online > 0, count: `${offline}/${online}` }
+        return {
+          label: dept.department_short_name,
+          detail,
+          connected: online > 0,
+          count: `${online}/${online + offline}`,
+        }
       })
 
       const { online, offline } = countOnlineOffline(bureau.sub_department.flatMap((d) => d.roads))
@@ -93,7 +103,7 @@ export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
       return {
         id: bureau.department_id,
         name: bureau.department_short_name,
-        count: `${offline}/${online}`,
+        count: `${online}/${online + offline}`,
         lngLat,
         sub3,
         notiTotal: bureau.noti_count,
@@ -123,12 +133,9 @@ export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
     return items
   }, [bureaus])
 
-  // Stat-card aggregates. There is no "incident category" concept in the VMS
-  // data model (unlike Alert/Incident's real backend), so instead of faking
-  // one, `เหตุการณ์`/`หน่วยงานที่มีเหตุการณ์` are backed by the closest real
-  // equivalent — `noti_count` (VMS notification logs) — and the 4th card
-  // (previously a hardcoded "หมวดหมู่ยอดนิยม" mock) is repurposed to a real
-  // online-rate stat.
+  // Stat-card aggregates. VMS has notification logs (`noti_count`), not the
+  // incident-domain event concept; StatusSection labels these values as
+  // notifications so the UI matches the backend semantics.
   const summary = useMemo<LiveStatusSummary>(() => {
     const list = bureaus ?? []
 
@@ -177,5 +184,13 @@ export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
     }
   }, [bureaus])
 
-  return { routeItems, markerItems, summary }
+  return {
+    routeItems,
+    markerItems,
+    summary,
+    isLoading: departmentsQuery.isLoading,
+    isFetching: departmentsQuery.isFetching,
+    isError: departmentsQuery.isError,
+    refetch: () => { void departmentsQuery.refetch() },
+  }
 }

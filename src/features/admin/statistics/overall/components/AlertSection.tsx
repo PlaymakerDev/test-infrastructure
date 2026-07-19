@@ -1,16 +1,16 @@
 "use client"
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { TbArrowBigLeftFilled, TbBolt } from 'react-icons/tb'
 import { Segmented } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
 import SwapButton from '@/components/swap-button/SwapButton'
-import { useStatisticsContext } from '../context'
 import { StatisticsMapPanel, StatisticsComparisonTable } from './shared'
 import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
 import { useLiveAlertRouteItems } from '../../data/useLiveAlertRouteItems'
 import type { MapMarkerItem } from '../../data/routeItems'
 import { useIotStatus, useIotStatusSummary } from '@/hooks/queries/incident-detection'
 import type { ColumnsType } from 'antd/es/table'
+import useIsMobile from '@/utils/hooks/useIsMobile'
 
 // ── Map marker group popup ──────────────────────────────────────────────────
 // Shown (instead of navigating instantly) when a marker point represents one
@@ -77,18 +77,6 @@ const AlertMapPopup: React.FC<{
     </button>
   </div>
 )
-
-const useIsMobile = (breakpoint = 640) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
-}
 
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
@@ -174,6 +162,8 @@ const periodToSinceUntil = (period: string): { start_date?: string; end_date?: s
       const end = new Date(now.getFullYear() - 1, 11, 31)
       return { start_date: fmt(start), end_date: fmt(end) }
     }
+    case 'ALL':
+      return { start_date: '2000-01-01', end_date: fmt(today) }
     default:
       return {}
   }
@@ -182,7 +172,6 @@ const periodToSinceUntil = (period: string): { start_date?: string; end_date?: s
 const AlertSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setCurrentTab } = useStatisticsContext()
   const isMobile = useIsMobile()
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('ALL')
@@ -197,7 +186,12 @@ const AlertSection: React.FC = () => {
 
   // ค้นหาสายทาง + map markers — `markerItems` plots each device at its OWN
   // real geometry_point (decoupled from the coarser bureau-level search tree).
-  const { routeItems: liveRouteItems, markerItems } = useLiveAlertRouteItems(summaryDateRange)
+  const {
+    routeItems: liveRouteItems,
+    markerItems,
+    isLoading: routesLoading,
+    isError: routesError,
+  } = useLiveAlertRouteItems(summaryDateRange)
 
   // MapMarkerItem only carries routeKey/detailKey/lngLat/offline — cross-
   // reference liveRouteItems (which has the road_code/solution_name label +
@@ -256,7 +250,7 @@ const AlertSection: React.FC = () => {
   // overview cards. Bureau = parent row, แขวง (sub_department) = child rows.
   const [comparisonPeriod, setComparisonPeriod] = useState('TODAY')
   const comparisonDateRange = React.useMemo(() => periodToSinceUntil(comparisonPeriod), [comparisonPeriod])
-  const { data: comparisonTree, isFetching: comparisonFetching } = useIotStatus(0, { scope: 'all', ...comparisonDateRange })
+  const { data: comparisonTree, isFetching: comparisonFetching, isError: comparisonError } = useIotStatus(0, { scope: 'all', ...comparisonDateRange })
   const comparisonData: ComparisonRecord[] = React.useMemo(() => {
     const bureaus = comparisonTree ?? []
     const rows: ComparisonRecord[] = []
@@ -356,6 +350,8 @@ const AlertSection: React.FC = () => {
           statsCards={alertCards}
           routeItems={liveRouteItems}
           markerItems={markerItems}
+          loading={routesLoading}
+          error={routesError}
           onMarkerGroupClick={handleMarkerGroupClick}
         />
       )}
@@ -368,6 +364,7 @@ const AlertSection: React.FC = () => {
           activePeriod={comparisonPeriod}
           onPeriodChange={setComparisonPeriod}
           loading={comparisonFetching}
+          error={comparisonError}
         />
       )}
     </div>

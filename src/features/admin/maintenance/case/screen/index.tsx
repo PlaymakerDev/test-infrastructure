@@ -1,19 +1,25 @@
 "use client"
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { App, Button, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
+import React, { Suspense, useCallback, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { App, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
 import type { UploadFile } from 'antd'
 import { AxiosError } from 'axios'
 import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
+import { TbFileText, TbTrash } from 'react-icons/tb'
 import styles from './maintenance-case.module.css'
 import ModalSaveSuccess from '../components/ModalSaveSuccess'
 import { TitleSection } from '../components'
-import { getMaintenanceCaseAPI, updateMaintenanceCaseAPI, postUploadMaintenanceAPI } from '@/services/routes/MaintenanceService'
-import { getCCTVDetailAPI, getCCTVRoadAPI, getProjectAPI } from '@/services/routes/SharedService'
+import {
+  useMaintenanceCase,
+  useProjectBySolution,
+  useUpdateMaintenanceCase,
+  useUploadMaintenance,
+} from '@/hooks/queries/maintenance'
+import { useCCTVDetail } from '@/hooks/queries/shared/useCCTVDetail'
+import { useCCTVRoad } from '@/hooks/queries/shared/useCCTVRoad'
 import { CCTVModal } from '@/components/modal'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
@@ -40,6 +46,9 @@ const parseImageUrls = (raw: string | null | undefined): string[] => {
  *  way of saying "never actually recorded", not a real timestamp. */
 const isRealTimestamp = (value: string | null | undefined): boolean =>
   !!value && !value.startsWith('0001-01-01')
+
+const normalizeSolutionType = (value: string | null): string =>
+  (value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '')
 
 const urlToUploadFile = (url: string, index: number): UploadFile => ({
   uid: `existing-${index}`,
@@ -90,11 +99,8 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   const { modal, message } = App.useApp()
   const dispatch = useAppDispatch()
   const router = useRouter()
-  const [caseData, setCaseData] = useState<CaseDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
     category: '',
@@ -107,76 +113,93 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   const [beforeFiles, setBeforeFiles] = useState<UploadFile[]>([])
   const [afterFiles, setAfterFiles] = useState<UploadFile[]>([])
   const [closeCaseAfterSave, setCloseCaseAfterSave] = useState(false)
-  const [cameraDetail, setCameraDetail] = useState<APIResponseCCTVDetail | null>(null)
-  const [cameraRoad, setCameraRoad] = useState<APIResponseCCTVRoad | null>(null)
-  const [projectDetail, setProjectDetail] = useState<APIResponseProjectDetail | null>(null)
 
-  const fetchCase = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await getMaintenanceCaseAPI(id)
-      const data = (res as any).data ?? res as unknown as CaseDetail
-      setCaseData(data)
-      setFormData({
-        category: data.category || '',
-        agency: data.responsible || '',
-        problem: data.problem || '',
-        solution: data.solution_method || '',
-        reportDate: data.created_at ? dayjs(data.created_at).format('DD MMM BBBB') : '',
-        inspectDate: data.inspection_date ? dayjs(data.inspection_date).format('DD MMM BBBB') : '',
-      })
-      setBeforeFiles(parseImageUrls(data.before_image).map(urlToUploadFile))
-      setAfterFiles(parseImageUrls(data.after_image).map(urlToUploadFile))
-    } catch (err) {
-      console.error('Error fetching case:', err)
-      setError('ไม่สามารถโหลดข้อมูล Case ได้')
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
+  const caseQuery = useMaintenanceCase(id)
+  const caseData: CaseDetail | null = caseQuery.data ?? null
+  const loading = caseQuery.isLoading
+  const error = caseQuery.isError ? 'ไม่สามารถโหลดข้อมูล Case ได้' : null
 
-  useEffect(() => {
-    fetchCase()
-  }, [fetchCase])
+  // Seed the editable form state from the fetched case — adjusted during
+  // render (React's adjust-state-on-prop-change pattern) so it reruns on
+  // every fresh payload (initial load AND the refetch after save), matching
+  // the old fetchCase()'s seed-on-every-fetch behavior.
+  const [seededFrom, setSeededFrom] = useState<CaseDetail | null>(null)
+  if (caseQuery.data && caseQuery.data !== seededFrom) {
+    const data = caseQuery.data
+    setSeededFrom(data)
+    setFormData({
+      category: data.category || '',
+      agency: data.responsible || '',
+      problem: data.problem || '',
+      solution: data.solution_method || '',
+      reportDate: data.created_at ? dayjs(data.created_at).format('DD MMM BBBB') : '',
+      inspectDate: data.inspection_date ? dayjs(data.inspection_date).format('DD MMM BBBB') : '',
+    })
+    setBeforeFiles(parseImageUrls(data.before_image).map(urlToUploadFile))
+    setAfterFiles(parseImageUrls(data.after_image).map(urlToUploadFile))
+  }
 
   // ข้อมูลอุปกรณ์ card — CaseDetail only carries camera_id, so the actual
-  // device name/IP/online status comes from the CCTV camera endpoint.
-  useEffect(() => {
-    const cameraId = caseData?.camera_id
-    if (!cameraId) return
-    let cancelled = false
-    getCCTVDetailAPI(cameraId)
-      .then((res) => { if (!cancelled) setCameraDetail(res.data) })
-      .catch((err) => { console.error('Error fetching camera detail:', err) })
-    return () => { cancelled = true }
-  }, [caseData?.camera_id])
+  // device name/IP/online status comes from the CCTV camera endpoint;
+  // "จุดติดตั้ง / สายทาง" needs the separate GET /cctv/{id} (road_code).
+  const cameraDetailQuery = useCCTVDetail(caseData?.camera_id)
+  const cameraDetail: APIResponseCCTVDetail | null = cameraDetailQuery.data ?? null
+  const cameraRoadQuery = useCCTVRoad(caseData?.camera_id)
+  const cameraRoad: APIResponseCCTVRoad | null = cameraRoadQuery.data ?? null
 
-  // "จุดติดตั้ง / สายทาง" — GET /cctv/cameras/{id} (above) has no road info.
-  // This separate GET /cctv/{id} endpoint carries road_code instead.
-  useEffect(() => {
-    const cameraId = caseData?.camera_id
-    if (!cameraId) return
-    let cancelled = false
-    getCCTVRoadAPI(cameraId)
-      .then((res) => { if (!cancelled) setCameraRoad(res.data) })
-      .catch((err) => { console.error('Error fetching camera road:', err) })
-    return () => { cancelled = true }
-  }, [caseData?.camera_id])
+  // The explicit URL solution identifies which detail row opened this case.
+  // For older history responses without solution_id, resolve the named
+  // solution_type relationship. A bare direct URL may fall back only when the
+  // camera has exactly one distinct related solution; never silently pick the
+  // first relation when a camera participates in several solutions.
+  const requestedSolutionType = normalizeSolutionType(searchParams.get('solution_type'))
+  const relatedSolutions = cameraDetail
+    ? [
+      { types: ['counting', 'trafficvolume'], solution: cameraDetail.counting },
+      { types: ['analytic', 'trafficanalytic'], solution: cameraDetail.analytic },
+      { types: ['traffic', 'trafficlighting'], solution: cameraDetail.traffic },
+      { types: ['crosswalk'], solution: cameraDetail.crosswalk },
+      { types: ['wim', 'weightinmotion'], solution: cameraDetail.wim_camera },
+      { types: ['vms'], solution: cameraDetail.vms },
+    ]
+    : []
+  const typeMatchedSolutionId = requestedSolutionType
+    ? relatedSolutions.find(({ types }) => types.includes(requestedSolutionType))?.solution?.solution_id
+    : undefined
+  const uniqueRelatedSolutionIds = Array.from(new Set(
+    relatedSolutions
+      .map(({ solution }) => solution?.solution_id)
+      .filter((value): value is number => typeof value === 'number' && value > 0),
+  ))
+  const fallbackSolutionId = typeMatchedSolutionId ?? (
+    !requestedSolutionType && uniqueRelatedSolutionIds.length === 1
+      ? uniqueRelatedSolutionIds[0]
+      : undefined
+  )
+  const parsedSolutionId = Number(searchParams.get('solution_id'))
+  const routeSolutionId = Number.isFinite(parsedSolutionId) && parsedSolutionId > 0
+    ? parsedSolutionId
+    : undefined
+  const solutionId = routeSolutionId ?? fallbackSolutionId
+  const returnToAllRepairs = searchParams.get('source') === 'all_repairs'
+  const parsedContextId = Number(searchParams.get('context_id'))
+  const hasMatchingDetailContext = solutionId !== undefined &&
+    Number.isFinite(parsedContextId) &&
+    parsedContextId === solutionId
 
-  // ข้อมูลโครงการ card — CaseDetail has no project_id either. Every entry
-  // point into this page comes from the solution detail page's Case No.
-  // link, which already resolved and stashed the owning project's id here
-  // (same key the solution detail page's own ⓘ Project Info modal uses).
-  useEffect(() => {
-    const projectId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_project_id') : null
-    if (!projectId) return
-    let cancelled = false
-    getProjectAPI(Number(projectId))
-      .then((res) => { if (!cancelled && !Array.isArray(res.data)) setProjectDetail(res.data) })
-      .catch((err) => { console.error('Error fetching project detail:', err) })
-    return () => { cancelled = true }
-  }, [])
+  // Preserve detail-page context only when it belongs to this case's solution.
+  // A matching context_id binds the accompanying title/map values to that
+  // exact solution route instead of accepting unrelated URL metadata.
+  const detailParams = new URLSearchParams(searchParams.toString())
+  detailParams.delete('solution_id')
+  const detailQuery = hasMatchingDetailContext && routeSolutionId !== undefined
+    ? detailParams.toString()
+    : ''
+
+  const projectBySolutionQuery = useProjectBySolution(solutionId)
+  const projectDetail: APIResponseProjectDetail | null = projectBySolutionQuery.data ?? null
+
+  const { mutateAsync: uploadMaintenance } = useUploadMaintenance()
 
   const uploadFile = useCallback(async (file: UploadFile, kind: 'before' | 'after') => {
     const setFiles = kind === 'before' ? setBeforeFiles : setAfterFiles
@@ -184,42 +207,54 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     try {
       const fd = new FormData()
       fd.append('upload', file.originFileObj as File)
-      const response = await postUploadMaintenanceAPI(fd)
-      const path = response.data?.path || ''
+      const response = await uploadMaintenance(fd)
+      const path = response.data?.path?.trim()
+      if (!path) {
+        throw new Error('อัปโหลดไม่สำเร็จ: ระบบไม่ส่งที่อยู่ไฟล์กลับมา')
+      }
       setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'done', url: path, thumbUrl: path } : f)))
     } catch (err) {
       setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'error' } : f)))
-      message.error(err instanceof AxiosError ? (err.response?.data?.message ?? 'อัปโหลดไม่สำเร็จ') : 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์')
+      message.error(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'อัปโหลดไม่สำเร็จ')
+          : err instanceof Error
+            ? err.message
+            : 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์',
+      )
     }
-  }, [message])
+  }, [message, uploadMaintenance])
 
-  const handleSave = async () => {
-    if (saving) return
-    try {
-      setSaving(true)
-      await updateMaintenanceCaseAPI(id, {
-        category: formData.category || undefined,
-        problem: formData.problem || undefined,
-        responsible: formData.agency || undefined,
-        solution_method: formData.solution || undefined,
-        inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
-        before_image: beforeFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
-        after_image: afterFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
-        is_closed: hasData ? closeCaseAfterSave : undefined,
-      })
-      await fetchCase()
-      setModalOpen(true)
-    } catch (err) {
-      console.error('Error saving case:', err)
-      modal.error({
-        title: 'บันทึกไม่สำเร็จ',
-        content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-        okText: 'ตกลง',
-        centered: true,
-      })
-    } finally {
-      setSaving(false)
-    }
+  const updateCase = useUpdateMaintenanceCase(id)
+  const saving = updateCase.isPending
+  const uploading = [...beforeFiles, ...afterFiles].some(file => file.status === 'uploading')
+
+  const handleSave = () => {
+    if (saving || uploading) return
+    // `mutate` + callbacks (not mutateAsync) per the canonical write pattern —
+    // the hook invalidates the case query, whose refetch reseeds the form via
+    // the effect above (same as the old fetchCase()-after-save flow).
+    updateCase.mutate({
+      category: formData.category || undefined,
+      problem: formData.problem || undefined,
+      responsible: formData.agency || undefined,
+      solution_method: formData.solution || undefined,
+      inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
+      before_image: beforeFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
+      after_image: afterFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
+      is_closed: hasData ? closeCaseAfterSave : undefined,
+    }, {
+      onSuccess: () => setModalOpen(true),
+      onError: (err) => {
+        console.error('Error saving case:', err)
+        modal.error({
+          title: 'บันทึกไม่สำเร็จ',
+          content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+          okText: 'ตกลง',
+          centered: true,
+        })
+      },
+    })
   }
 
   const hasData = Boolean(caseData?.inspection_date)
@@ -287,26 +322,16 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     )
   }
 
-  // Back-button fallback when sessionStorage's maintenance_detail_id is
-  // missing (e.g. the case URL was opened directly) — derive the solution id
-  // from whichever solution the camera is actually linked to.
-  const fallbackSolutionId = cameraDetail
-    ? [cameraDetail.counting, cameraDetail.analytic, cameraDetail.traffic, cameraDetail.crosswalk, cameraDetail.wim_camera, cameraDetail.vms]
-      .find((s) => s != null)?.solution_id
-    : undefined
-
-  // Mirrors TitleSection's own back-arrow handler — the "ยกเลิก" button had no
-  // onClick at all (discovered while clicking through the page: it did
-  // nothing), so it never matched the arrow's "go back without saving"
-  // behavior sitting right above it.
+  // Mirrors TitleSection's own back-arrow handler. The return target comes
+  // from this case's API relationship or its explicit `solution_id` URL param,
+  // never from unscoped state left by another route.
   const handleCancel = () => {
-    const detailId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_id') : null
-    if (detailId) {
-      router.push(`/admin/maintenance/detail/${detailId}`)
+    if (returnToAllRepairs) {
+      router.push('/admin/maintenance?repair&all_repairs')
       return
     }
-    if (fallbackSolutionId) {
-      router.push(`/admin/maintenance/detail/${fallbackSolutionId}`)
+    if (solutionId) {
+      router.push(`/admin/maintenance/detail/${solutionId}${detailQuery ? `?${detailQuery}` : ''}`)
       return
     }
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -326,7 +351,22 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           min-height: unset !important;
         }
       `}</style>
-      <TitleSection caseId={id} fallbackSolutionId={fallbackSolutionId} />
+      <TitleSection
+        caseId={id}
+        solutionId={solutionId}
+        detailQuery={detailQuery}
+        returnToAllRepairs={returnToAllRepairs}
+      />
+
+      {returnToAllRepairs && !solutionId && !cameraDetailQuery.isLoading && (
+        <div
+          role='alert'
+          className='mx-4 sm:mx-10 mt-4 rounded-xl px-4 py-3 text-[13px]'
+          style={{ border: '1px solid #FCD116', background: '#FCD1161A', color: '#FCD116' }}
+        >
+          ไม่พบ Solution ที่ผูกกับ Case นี้อย่างแน่ชัด จึงไม่แสดงข้อมูลโครงการแทนด้วย Solution อื่น
+        </div>
+      )}
 
       {/* ─── Status Badges ─── */}
       <section className='mt-5 px-4 md:px-10 flex flex-col sm:flex-row gap-3 sm:gap-4'>
@@ -628,25 +668,20 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               </div>
             )}
             <div className='ml-auto flex flex-wrap items-center gap-3'>
-              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-                <Button type="primary" size="small" shape="round" icon={<TbPrinter />} style={{ height: 31 }}>
-                  นำออกเอกสาร
-                </Button>
-              </ConfigProvider>
               <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }} onClick={handleCancel}>
                 ยกเลิก
               </button>
               <button
                 className={styles.btnPrimary}
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || uploading}
                 style={{
                   ...(hasData ? { background: '#05F2DB', color: '#000000' } : {}),
-                  opacity: saving ? 0.6 : 1,
-                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: saving || uploading ? 0.6 : 1,
+                  cursor: saving || uploading ? 'not-allowed' : 'pointer',
                 }}
               >
-                {saving ? 'กำลังบันทึก...' : hasData ? 'บันทึก + ปิด Case' : 'บันทึก'}
+                {uploading ? 'กำลังอัปโหลด...' : saving ? 'กำลังบันทึก...' : hasData ? 'บันทึก + ปิด Case' : 'บันทึก'}
               </button>
             </div>
           </div>
@@ -757,6 +792,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         isClosingCase={hasData}
+        solutionId={solutionId}
+        detailQuery={detailQuery}
+        returnToAllRepairs={returnToAllRepairs}
         data={{
           caseNo: id,
           deviceName: device.deviceName,

@@ -6,7 +6,6 @@ import {
   MaintenanceOverviewSection,
 } from '../components'
 import { RepairRecordsSection } from '../../repair-history/components'
-import { MaintenanceProvider } from '../context'
 
 const MaintenanceContent: React.FC = () => {
   const searchParams = useSearchParams()
@@ -43,11 +42,7 @@ const MaintenanceContent: React.FC = () => {
 }
 
 const MaintenanceScreen: React.FC = () => {
-  return (
-    <MaintenanceProvider>
-      <MaintenanceContent />
-    </MaintenanceProvider>
-  )
+  return <MaintenanceContent />
 }
 
 export default React.memo(MaintenanceScreen)

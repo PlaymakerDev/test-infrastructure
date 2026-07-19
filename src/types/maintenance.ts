@@ -202,6 +202,9 @@ export interface CaseHistoryItem {
 
 export interface HistoryCase {
   case_no: string
+  /** Present on newer history responses. When absent, callers may only infer
+   *  a solution from an unambiguous camera/type relationship. */
+  solution_id?: number | null
   category: string
   department_name: string
   device_name: string

@@ -12,6 +12,10 @@ export interface LiveAlertRouteData {
    *  the search-list's coarser bureau grouping — a bureau can own devices
    *  scattered across many different roads. */
   markerItems: MapMarkerItem[]
+  isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  refetch: () => void
 }
 
 /** Alert "ค้นหาสายทาง" — maps the iot-status tree into RouteItem[] so the
@@ -22,7 +26,8 @@ export interface LiveAlertRouteData {
  *  `start_date`/`end_date` bound each device's noti_count (also part of the
  *  backend's Redis cache key) — omit for the default today-00:00→now window. */
 export function useLiveAlertRouteItems(dateRange?: { start_date?: string; end_date?: string }): LiveAlertRouteData {
-  const { data: bureaus } = useIotStatus(ALL_DEPARTMENTS_ID, { scope: 'all', ...dateRange })
+  const iotStatusQuery = useIotStatus(ALL_DEPARTMENTS_ID, { scope: 'all', ...dateRange })
+  const bureaus = iotStatusQuery.data
 
   const routeItems = useMemo<RouteItem[]>(() => {
     return (bureaus ?? []).map((bureau) => {
@@ -50,13 +55,18 @@ export function useLiveAlertRouteItems(dateRange?: { start_date?: string; end_da
           }),
         )
         const connected = dept.online > 0
-        return { label: dept.department_short_name, detail, connected, count: `${dept.offline}/${dept.online}` }
+        return {
+          label: dept.department_short_name,
+          detail,
+          connected,
+          count: `${dept.online}/${dept.online + dept.offline}`,
+        }
       })
 
       return {
         id: bureau.department_id,
         name: bureau.department_short_name,
-        count: `${bureau.offline}/${bureau.online}`,
+        count: `${bureau.online}/${bureau.online + bureau.offline}`,
         lngLat,
         sub3,
         notiTotal: bureau.noti_count,
@@ -90,5 +100,12 @@ export function useLiveAlertRouteItems(dateRange?: { start_date?: string; end_da
     return items
   }, [bureaus])
 
-  return { routeItems, markerItems }
+  return {
+    routeItems,
+    markerItems,
+    isLoading: iotStatusQuery.isLoading,
+    isFetching: iotStatusQuery.isFetching,
+    isError: iotStatusQuery.isError,
+    refetch: () => { void iotStatusQuery.refetch() },
+  }
 }

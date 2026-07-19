@@ -1,13 +1,11 @@
-"use client"
-import React from 'react'
-import { useParams } from 'next/navigation'
 import TrafficLightingDetailScreen from '@/features/admin/traffic-lighting/detail/screen'
 
-const TrafficLightingDetailPage = () => {
-  const params = useParams()
-  const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
-
-  return <TrafficLightingDetailScreen id={id} />
+interface Props {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ imei?: string; type?: string }>
 }
 
-export default React.memo(TrafficLightingDetailPage)
+export default async function TrafficLightingDetailPage({ params, searchParams }: Props) {
+  const [{ id }, { imei, type }] = await Promise.all([params, searchParams])
+  return <TrafficLightingDetailScreen id={id} imeiParam={imei} typeParam={type} />
+}

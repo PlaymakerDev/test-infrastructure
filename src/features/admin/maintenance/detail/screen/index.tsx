@@ -1,11 +1,16 @@
 "use client"
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { Suspense, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
 import { TitleSection } from '../components'
-import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI, getProjectBySolutionAPI, getSolutionMapLocationAPI } from '@/services/routes/MaintenanceService'
+import {
+  useCreateMaintenanceCase,
+  useMaintenanceSolution,
+  useProjectBySolution,
+  useSolutionMapLocation,
+} from '@/hooks/queries/maintenance'
 import { ProjectInfoModal } from '@/components/modal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 
@@ -30,17 +35,40 @@ interface TableRow {
   password: string
 }
 
-/** Wrapper อ่าน title/subtitle/project_id/road_id จาก sessionStorage แล้วส่งเข้า TitleSection */
-const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null; coord: [number, number] | null; resolvedProjectId?: number }> = ({ id, data, coord, resolvedProjectId }) => {
-  // title/subtitle/road_id มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
-  const title = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_title') || data?.solution_name || id) : (data?.solution_name || id)
-  const subtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
-  const storedProjectId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_project_id') : null
-  const storedRoadId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_road_id') : null
-  // project_id มาจาก GET /project/solution/{id} (resolvedProjectId) เป็นหลัก ให้ ⓘ ทำงานได้แม้เปิด URL ตรง ๆ
-  // ที่ไม่มี sessionStorage; fallback เป็นค่าที่ tree ฝากไว้เมื่อยังโหลด/เรียก API ไม่สำเร็จ
-  const projectId = resolvedProjectId ?? (storedProjectId ? Number(storedProjectId) : undefined)
-  const roadId = storedRoadId ? Number(storedRoadId) : undefined
+const SOLUTION_PREFIXES = new Set([
+  'cctv',
+  'counting',
+  'analytic',
+  'traffic',
+  'crosswalk',
+  'vms',
+  'lighting',
+  'tunnel',
+  'wim',
+])
+
+interface TitleSectionWithDataProps {
+  id: string
+  data: SolutionDetailResponse | null
+  coord: [number, number] | null
+  resolvedProjectId?: number
+  routeTitle?: string
+  routeSubtitle?: string
+  routeRoadId?: number
+}
+
+/** Route context is URL-scoped; a direct visit falls back to solution API data. */
+const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
+  id,
+  data,
+  coord,
+  resolvedProjectId,
+  routeTitle,
+  routeSubtitle,
+  routeRoadId,
+}) => {
+  const title = routeTitle || data?.solution_name || id
+  const subtitle = routeSubtitle || ''
   const onlineCount = data?.online_count ?? 0
   const offlineCount = data?.offline_count ?? 0
   const warranty = data?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ'
@@ -52,8 +80,8 @@ const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse 
       onlineCount={onlineCount}
       offlineCount={offlineCount}
       warranty={warranty}
-      projectId={projectId}
-      roadId={roadId}
+      projectId={resolvedProjectId}
+      roadId={routeRoadId}
       coord={coord}
     />
   )
@@ -61,71 +89,58 @@ const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse 
 
 const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { modal } = App.useApp()
-  const [solutionData, setSolutionData] = useState<SolutionDetailResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [coord, setCoord] = useState<[number, number] | null>(null)
-  const [projectId, setProjectId] = useState<number | undefined>(undefined)
+  const numericId = Number(id)
 
-  // Fetch solution detail
-  const fetchSolution = useCallback(async () => {
-    const numericId = Number(id)
-    if (!numericId) return
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await getMaintenanceSolutionAPI(numericId)
-      setSolutionData(res.data)
-    } catch (err) {
-      console.error('Error fetching solution detail:', err)
-      setError('ไม่สามารถโหลดข้อมูลได้')
-    } finally {
-      setLoading(false)
+  // The URL is the source of truth for optional navigation context. Validate
+  // the dynamic prefix before interpolating it into an API path; missing or
+  // invalid/mismatched context simply disables the optional route metadata on
+  // a direct deep link.
+  const routeQuery = searchParams.toString()
+  const routeContext = useMemo(() => {
+    const params = new URLSearchParams(routeQuery)
+    const contextId = Number(params.get('context_id'))
+    if (!Number.isFinite(contextId) || contextId !== numericId) {
+      return { map: null, roadId: undefined, title: undefined, subtitle: undefined }
     }
-  }, [id])
+    const prefix = params.get('prefix')?.toLowerCase() ?? ''
+    const departmentParam = params.get('dept_id')
+    const roadParam = params.get('road_id')
+    const departmentId = departmentParam === null ? Number.NaN : Number(departmentParam)
+    const roadId = roadParam === null ? Number.NaN : Number(roadParam)
+    return {
+      map: SOLUTION_PREFIXES.has(prefix) && Number.isFinite(departmentId) && departmentId >= 0
+        ? { prefix, departmentId }
+        : null,
+      roadId: Number.isFinite(roadId) && roadId >= 0 ? roadId : undefined,
+      title: params.get('title') || undefined,
+      subtitle: params.get('subtitle') || undefined,
+    }
+  }, [numericId, routeQuery])
 
-  useEffect(() => {
-    fetchSolution()
-  }, [fetchSolution])
+  const solutionQuery = useMaintenanceSolution(numericId)
+  const solutionData: SolutionDetailResponse | null = solutionQuery.data ?? null
+  const loading = solutionQuery.isLoading
+  const error = solutionQuery.isError ? 'ไม่สามารถโหลดข้อมูลได้' : null
 
   // Resolve the owning project from the solution_id (this route's `id`) so the
-  // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no sessionStorage.
-  useEffect(() => {
-    const numericId = Number(id)
-    if (!numericId) return
-    let cancelled = false
-    getProjectBySolutionAPI(numericId)
-      .then((res) => { if (!cancelled) setProjectId(res.data?.id) })
-      .catch(() => { if (!cancelled) setProjectId(undefined) })
-    return () => { cancelled = true }
-  }, [id])
+  // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no route context.
+  const projectQuery = useProjectBySolution(numericId)
+  const projectId = projectQuery.data?.id
 
-  // Google Map pin — solution/{id} has no coordinates, but the tree click
-  // (RepairRecordsSection) stashes department_id + the feature's URL prefix
-  // (lowercased SummaryItem.type) into sessionStorage, so we can hit that
-  // feature's own overview endpoint filtered to this solution_id.
-  useEffect(() => {
-    const numericId = Number(id)
-    const prefix = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_solution_prefix') : null
-    const departmentId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_department_id') : null
-    if (!numericId || !prefix || !departmentId) {
-      setCoord(null)
-      return
-    }
-    let cancelled = false
-    getSolutionMapLocationAPI(prefix, Number(departmentId), numericId)
-      .then((res) => {
-        if (cancelled) return
-        const point = res.data.locations?.[0]?.GeometryPoint
-        setCoord(point && point.length === 2 ? [point[0], point[1]] : null)
-      })
-      .catch(() => { if (!cancelled) setCoord(null) })
-    return () => { cancelled = true }
-  }, [id])
+  // Google Map pin — solution/{id} has no coordinates, but the feature's own
+  // overview endpoint (keyed by the URL's prefix + department_id) carries
+  // GeometryPoint filtered to this solution_id.
+  const mapLocationQuery = useSolutionMapLocation(routeContext.map?.prefix, routeContext.map?.departmentId, numericId)
+  const coord = useMemo<[number, number] | null>(() => {
+    const point = mapLocationQuery.data?.locations?.[0]?.GeometryPoint
+    return point && point.length === 2 ? [point[0], point[1]] : null
+  }, [mapLocationQuery.data])
+
+  const createCase = useCreateMaintenanceCase()
 
   // Map API data to table rows — show every device (both online and offline).
   const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
@@ -180,8 +195,9 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             <span
               style={{ color: '#FCD116', cursor: 'pointer' }}
               onClick={() => {
-                sessionStorage.setItem('maintenance_detail_id', id)
-                router.push(`/admin/maintenance/case/${text}`)
+                const params = new URLSearchParams(routeQuery)
+                params.set('solution_id', id)
+                router.push(`/admin/maintenance/case/${text}?${params.toString()}`)
               }}
             >
               {text}
@@ -238,7 +254,15 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className='main-screen'>
-      <TitleSectionWithData id={id} data={solutionData} coord={coord} resolvedProjectId={projectId} />
+      <TitleSectionWithData
+        id={id}
+        data={solutionData}
+        coord={coord}
+        resolvedProjectId={projectId}
+        routeTitle={routeContext.title}
+        routeSubtitle={routeContext.subtitle}
+        routeRoadId={routeContext.roadId}
+      />
       <section className='mt-5 px-3 sm:px-10'>
         <ConfigProvider
           theme={{
@@ -390,44 +414,45 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 ยกเลิก
               </button>
               <button
-                onClick={async () => {
-                  if (!selectedRow || submitting) return
-                  try {
-                    setSubmitting(true)
-                    await createMaintenanceCaseAPI({ camera_id: selectedRow.cameraId })
-                    setIsModalOpen(false)
-                    await fetchSolution()
-                    modal.success({
-                      title: 'เปิด Case สำเร็จ',
-                      content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
-                      okText: 'ตกลง',
-                      centered: true,
-                    })
-                  } catch (err) {
-                    console.error('Error creating case:', err)
-                    modal.error({
-                      title: 'ไม่สามารถเปิด Case ได้',
-                      content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-                      okText: 'ตกลง',
-                      centered: true,
-                    })
-                  } finally {
-                    setSubmitting(false)
-                  }
+                onClick={() => {
+                  if (!selectedRow || createCase.isPending) return
+                  // `mutate` + callbacks (not mutateAsync) per the canonical
+                  // write pattern — the hook itself invalidates the solution/
+                  // cases/history reads so the device table refreshes.
+                  createCase.mutate({ camera_id: selectedRow.cameraId }, {
+                    onSuccess: () => {
+                      setIsModalOpen(false)
+                      modal.success({
+                        title: 'เปิด Case สำเร็จ',
+                        content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
+                        okText: 'ตกลง',
+                        centered: true,
+                      })
+                    },
+                    onError: (err) => {
+                      console.error('Error creating case:', err)
+                      modal.error({
+                        title: 'ไม่สามารถเปิด Case ได้',
+                        content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+                        okText: 'ตกลง',
+                        centered: true,
+                      })
+                    },
+                  })
                 }}
-                disabled={submitting}
+                disabled={createCase.isPending}
                 style={{
                   padding: '8px 20px',
                   borderRadius: 88,
                   fontSize: 14,
                   fontWeight: 500,
                   border: 'none',
-                  backgroundColor: submitting ? '#C4C4C4' : '#FCD116',
+                  backgroundColor: createCase.isPending ? '#C4C4C4' : '#FCD116',
                   color: '#212121',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  cursor: createCase.isPending ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'กำลังสร้าง...' : 'เปิด Case'}
+                {createCase.isPending ? 'กำลังสร้าง...' : 'เปิด Case'}
               </button>
             </div>
           </div>

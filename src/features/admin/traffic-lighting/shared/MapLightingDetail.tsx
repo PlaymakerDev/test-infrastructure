@@ -32,21 +32,27 @@ export interface MapLightingDetailProps {
 
 const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => {
   const p = feature.properties as Record<string, unknown>
-  const isOnline = Boolean(p.is_online)
+  const connection = p.is_online === true
+    ? 'online'
+    : p.is_online === false
+      ? 'offline'
+      : 'unknown'
+  const isOnline = connection === 'online'
+  const statusColor = connection === 'unknown' ? '#979797' : isOnline ? '#66AEFF' : '#E94C4C'
+  const statusLabel = connection === 'unknown' ? 'ไม่ทราบสถานะ' : isOnline ? 'ออนไลน์' : 'ออฟไลน์'
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isOnline ? 'border-cyan-400' : 'border-red-500'
-      }`}
+      className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
+      style={{ borderColor: statusColor }}
     >
-      <p className={`fs-11 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
+      <p className='fs-11 font-bold tracking-wide' style={{ color: statusColor }}>
         Traffic Lighting · {String(p.code_name ?? '-')}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.install_point ?? p.project_name ?? '-')}
       </p>
-      <p className={`fs-11 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
-        ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+      <p className='fs-11 font-semibold mt-1.5' style={{ color: statusColor }}>
+        ● {statusLabel}
       </p>
     </div>
   )
@@ -71,7 +77,7 @@ function useResolvedCoord(coord: [number, number], imei?: string): [number, numb
 const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
   coord,
   imei,
-  isOnline = false,
+  isOnline,
   roadCode = '-',
   installPoint = '-',
   projectName = '-',

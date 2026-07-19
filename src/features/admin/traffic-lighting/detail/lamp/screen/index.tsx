@@ -1,51 +1,83 @@
 "use client"
-import React, { useMemo } from 'react'
+import React from 'react'
+import { Alert, Button, Empty, Spin } from 'antd'
 import { TbBulb, TbBolt } from 'react-icons/tb'
 import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
 import StatusInfoCard from '@/features/admin/traffic-lighting/detail/components/StatusInfoCard'
-import DonutChart from '../components/DonutChart'
 import LampChartsSection from '../components/LampChartsSection'
 import LampEquipmentTable from '../components/LampEquipmentTable'
-import { LAMP_EQUIPMENT_ROWS } from '../data/lampEquipment'
 import { LampProvider } from '../context'
 import LampTitleSection from '../components/TitleSection'
-import { buildTrafficLightingProject } from '@/features/admin/traffic-lighting/shared/buildTrafficLightingProject'
-import { useLightingDetailBootstrap } from '@/features/admin/traffic-lighting/shared/useLightingDetailBootstrap'
+import { resolveLightingImei } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
+import { useLightingProject } from '@/features/admin/traffic-lighting/shared/useLightingProject'
+import { useLightingAmpGraph, useLightingDeviceDetails } from '@/hooks/queries/lighting'
 
 interface Props {
   id: string
+  imeiParam?: string
 }
 
 /** Lamp detail screen — map + stat cards, then charts + equipment table below. */
-const LampDetailScreen: React.FC<Props> = ({ id }) => {
-  const { row, ready } = useLightingDetailBootstrap(id, { includeType: false })
+const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
+  const requestedImei = resolveLightingImei(id, imeiParam)
+  const projectQuery = useLightingProject(id, requestedImei, 'lamp')
+  const { project } = projectQuery
+  const imei = requestedImei || project.imei || ''
+  const deviceQuery = useLightingDeviceDetails(imei)
+  const ampQuery = useLightingAmpGraph(imei)
+  const totalLamps = project.equipment.count
+  const amps = (ampQuery.data ?? []).map((point) => point.amp).filter((amp): amp is number => amp !== null)
+  const avgAmp = amps.length ? amps.reduce((sum, amp) => sum + amp, 0) / amps.length : 0
+  const resolvedProject = deviceQuery.data
+    ? {
+        ...project,
+        imei: imei || project.imei,
+        connection: deviceQuery.data.is_online ? 'online' as const : 'offline' as const,
+        phase: deviceQuery.data.phase === 1 || deviceQuery.data.phase === 3
+          ? deviceQuery.data.phase
+          : project.phase,
+        circuitStatus: deviceQuery.data.has_broken_wire ? 'abnormal' as const : 'normal' as const,
+      }
+    : project
 
-  if (!ready) return null
-
-  const project = buildTrafficLightingProject(id, row, 'lamp')
-  const totalLamps = LAMP_EQUIPMENT_ROWS.length
-  const avgAmp = useMemo(() => {
-    const amps = LAMP_EQUIPMENT_ROWS.map((r) => r.amp).filter((a): a is number => a !== null)
-    return amps.length ? amps.reduce((s, a) => s + a, 0) / amps.length : 0
-  }, [])
-  const onToday = LAMP_EQUIPMENT_ROWS.filter((r) => r.lampStatus === 'up').length
-  const downToday = LAMP_EQUIPMENT_ROWS.filter((r) => r.lampStatus === 'down').length
+  if (projectQuery.isLoading) {
+    return (
+      <div className='main-screen min-h-64 flex items-center justify-center'>
+        <Spin />
+      </div>
+    )
+  }
 
   return (
-    <LampProvider project={project}>
+    <LampProvider project={resolvedProject}>
       <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-6'>
+        {projectQuery.isError && (
+          <Alert
+            className='mb-4'
+            type='error'
+            showIcon
+            message='ไม่สามารถโหลดข้อมูลโครงการได้'
+            action={<Button size='small' onClick={projectQuery.refetch}>ลองใหม่</Button>}
+          />
+        )}
         <LampTitleSection />
 
         {/* Top row: map (left) + 3 stat cards (right) */}
         <section className='mt-6 flex flex-col lg:flex-row lg:items-stretch w-full gap-3'>
           <div className='relative w-full lg:flex-1 min-w-0 min-h-[480px] lg:min-h-[600px] rounded-[20px] overflow-hidden bg-[#212121]'>
             <MapLightingDetail
-              coord={project.coord}
-              imei={project.id}
-              isOnline={project.connection === 'online'}
-              roadCode={project.roadCode}
-              installPoint={project.installPoint}
-              projectName={project.projectName}
+              coord={resolvedProject.coord}
+              imei={imei}
+              isOnline={deviceQuery.data
+                ? deviceQuery.data.is_online
+                : resolvedProject.connection === 'online'
+                  ? true
+                  : resolvedProject.connection === 'offline'
+                    ? false
+                    : undefined}
+              roadCode={resolvedProject.roadCode}
+              installPoint={resolvedProject.installPoint}
+              projectName={resolvedProject.projectName}
             />
           </div>
 
@@ -56,9 +88,9 @@ const LampDetailScreen: React.FC<Props> = ({ id }) => {
                 titleColor='#05F2DB'
                 title='โคมไฟทั้งหมด'
                 iconNode={<TbBulb size={28} style={{ color: '#05F2DB' }} className='shrink-0' />}
-                status={String(totalLamps)}
-                valueUnit='จุด'
-                active={`${onToday} (${totalLamps ? ((onToday / totalLamps) * 100).toFixed(1) : 0}%)`}
+                status={totalLamps == null ? '-' : String(totalLamps)}
+                valueUnit={totalLamps == null ? undefined : 'จุด'}
+                subtitle='ข้อมูลจากรายการอุปกรณ์ส่วนกลาง'
                 valueFontSize={24}
               />
             </div>
@@ -68,10 +100,10 @@ const LampDetailScreen: React.FC<Props> = ({ id }) => {
                 titleColor='#FFFFFF'
                 title='กระแสไฟฟ้าเฉลี่ย'
                 iconNode={<TbBolt size={28} style={{ color: '#FFFFFF' }} className='shrink-0' />}
-                status={`${avgAmp.toFixed(2)}`}
-                valueUnit='A'
+                status={ampQuery.isLoading || ampQuery.isError || amps.length === 0 ? '-' : avgAmp.toFixed(2)}
+                valueUnit={amps.length > 0 ? 'A' : undefined}
                 valueUnitLarge
-                subtitle='Peak Hour Current : 03.00 - 04.00'
+                subtitle='ค่าเฉลี่ยจากข้อมูล 24 ชั่วโมงล่าสุด'
                 valueFontSize={24}
               />
             </div>
@@ -86,21 +118,16 @@ const LampDetailScreen: React.FC<Props> = ({ id }) => {
                 </p>
               </div>
               <div className='flex-1 flex items-center justify-center min-h-0 w-full'>
-                <DonutChart
-                  segments={[
-                    { label: 'ทำงาน', value: onToday, color: '#66AEFF' },
-                    { label: 'ไม่ทำงาน', value: downToday, color: '#E94C4C' },
-                  ]}
-                  centerValue={String(totalLamps)}
-                  centerLabel='โคม'
-                  size={165}
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description='ยังไม่มีข้อมูลสถานะรายโคมจาก API'
                 />
               </div>
             </div>
           </div>
         </section>
 
-        <LampChartsSection />
+        <LampChartsSection imei={imei} />
         <LampEquipmentTable />
       </div>
     </LampProvider>

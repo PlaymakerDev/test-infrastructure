@@ -29,4 +29,10 @@ export const controlVmsKeys = {
   byVmsIds: (vmsIds: number[]) =>
     [...controlVmsKeys.byVmsIdsPrefix(), [...vmsIds].sort((a, b) => a - b)] as const,
   latest: () => [...controlVmsKeys.all, 'latest'] as const,
+  vmsStatus: (vmsId?: number | string) =>
+    [...controlVmsKeys.all, 'vms-status', String(vmsId ?? '')] as const,
+  vmsDetails: (solutionId?: number | string) =>
+    [...controlVmsKeys.all, 'vms-details', String(solutionId ?? '')] as const,
+  notifications: (vmsId?: number | string, startDate?: string, endDate?: string) =>
+    [...controlVmsKeys.all, 'notifications', String(vmsId ?? ''), startDate ?? null, endDate ?? null] as const,
 }
