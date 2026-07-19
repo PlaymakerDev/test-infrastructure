@@ -9,6 +9,7 @@ import LiveMonitor from '../components/LiveMonitor'
 import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
 import MediaLibraryTab from '../components/MediaLibraryTab'
+import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
 
 
 const emptySelection: BureauSelection = {
@@ -19,7 +20,7 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-const VALID_TABS = ['dispatch', 'history', 'media'] as const
+const VALID_TABS = ['dispatch', 'history', 'media', 'legacy'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -102,6 +103,15 @@ const VMSCommandCenterScreen: React.FC = () => {
               children: (
                 <div className="h-[calc(100vh-160px)]">
                   <MediaLibraryTab />
+                </div>
+              ),
+            },
+            {
+              key: 'legacy',
+              label: 'หน้าเดิม (Legacy)',
+              children: (
+                <div className="h-[calc(100vh-160px)] overflow-auto">
+                  <ControlVMSScreen />
                 </div>
               ),
             },
