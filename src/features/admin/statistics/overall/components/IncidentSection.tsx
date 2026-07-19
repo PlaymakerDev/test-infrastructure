@@ -246,7 +246,7 @@ const IncidentSection: React.FC = () => {
       speeding: r.counts[7] ?? 0,
       congestion: r.counts[8] ?? 0,
       total: r.total,
-      isChild: r.parent_department_id != null,
+      isChild: !r.is_aggregate,
     }))
   }, [byDeptData])
 

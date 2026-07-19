@@ -147,6 +147,17 @@ export const getVMSSettingListAPI = async (params: APIRequestVMSSettingList) => 
   })
 }
 
+// LATEST — the single most recently connected VMS sign (Statistics overview
+// card's "ชุดคำสั่งล่าสุด"). No dedicated backend endpoint exists for this, so
+// reuse the list endpoint sorted to the same effect instead of a made-up path.
+export const getVMSSettingLatestAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSSettingList, APIRequestVMSSettingList>({
+    url: `/vms/settings/list`,
+    method: 'GET',
+    params: { limit: 1, field: 'last_connected', sort: 'DESC' },
+  })
+}
+
 // `id` accepts schedule.setting_id — same alias as GET above
 export const putVMSMediaAPI = async (id: string | number, data: APIRequestPutVMSMedia) => {
   return ApiService.fetchData<APIResponsePutVMSMedia, APIRequestPutVMSMedia>({

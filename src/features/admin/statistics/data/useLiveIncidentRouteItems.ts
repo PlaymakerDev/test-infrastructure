@@ -3,6 +3,21 @@ import { useMemo } from 'react'
 import { useIncidentCentralList } from '@/hooks/queries/incident-detection'
 import type { RouteItem, MapMarkerItem } from './routeItems'
 
+// The backend has been observed returning the same solution twice within one
+// department's `solutions` array (same solution_id, e.g. id 964 under
+// ขทช.นครราชสีมา) — without this, that duplicate double-counts into
+// totalCount/onlineCount/notiTotal AND produces a React "duplicate key"
+// crash in IncidentDetailSidebar's `sub.detail.map(d => <div key={dKey}>)`.
+// Dedupe defensively, keeping the first occurrence.
+const dedupeSolutions = <T extends { solution: { id: number | string } }>(solutions: T[]): T[] => {
+  const seen = new Set<number | string>()
+  return solutions.filter((sol) => {
+    if (seen.has(sol.solution.id)) return false
+    seen.add(sol.solution.id)
+    return true
+  })
+}
+
 // dept_id=0 is the "all departments" aggregate (same convention as
 // statistics/overall's TOP_POWER_ROADS_DEPT_ID) — paired with scope=all so
 // the endpoint returns every department's data instead of just dept 0's own.
@@ -38,9 +53,10 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
     let lngLat: [number, number] | null = null
 
     const sub3 = bureau.sub_department.map((dept) => {
+      const solutions = dedupeSolutions(dept.solutions)
       // `id` keeps the detail-page nav URL short (`?detail=<solution_id>`)
       // instead of URL-encoding the whole Thai label.
-      const detail = dept.solutions.map((sol) => ({
+      const detail = solutions.map((sol) => ({
         label: `${sol.road.code_name} - ${sol.solution.solution_name}`,
         id: sol.solution.id,
         is_online: (sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))) > 0,
@@ -50,7 +66,7 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
       }))
       let deptConnected = false
 
-      for (const sol of dept.solutions) {
+      for (const sol of solutions) {
         totalCount += 1
         notiTotal += sol.noti_count ?? 0
         const online = sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))
@@ -80,7 +96,7 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
     const items: MapMarkerItem[] = []
     for (const bureau of centralList ?? []) {
       for (const dept of bureau.sub_department) {
-        for (const sol of dept.solutions) {
+        for (const sol of dedupeSolutions(dept.solutions)) {
           if (Array.isArray(sol.geometry_point) && sol.geometry_point.length === 2) {
             items.push({
               routeKey: String(bureau.department_id),

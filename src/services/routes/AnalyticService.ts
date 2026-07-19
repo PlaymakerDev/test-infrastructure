@@ -175,7 +175,14 @@ export const getIncidentByDepartmentAPI = (
     rows: {
       department_id: number
       department_short_name: string
-      parent_department_id: number | null
+      department_type: number
+      department_group: number
+      // true = roll-up total for this department AND all its descendants
+      // (rendered as the bold parent row); false = this department's own
+      // directly-attributed count (rendered as a child row, alongside its
+      // real sub-departments — same department_id as the aggregate row
+      // above it, since it's the parent counted "as itself").
+      is_aggregate: boolean
       counts: number[]
       total: number
     }[]

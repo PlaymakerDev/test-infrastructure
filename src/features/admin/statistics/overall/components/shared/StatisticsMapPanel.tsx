@@ -323,74 +323,37 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               </span>
             )}
             style={{ marginTop: 4 }}
-            items={[{
-              key: `${item.name}-sub`,
+            items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
+              key: `${item.name}-${sub.label}`,
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    {!hideIndexBadge && (() => {
-                      const bc = badgeColorFn
-                        ? badgeColorFn(item, index)
-                        : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
-                      const badgeValue = badgeValueFn ? badgeValueFn(item, index) : item.sub3.length
-                      return (
-                        <span style={{ fontSize: 12, fontWeight: 500, color: bc, width: 50, height: 22, borderRadius: 88, border: `1px solid ${bc}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: bc }} />
-                          {badgeValue}
-                        </span>
-                      )
-                    })()}
-                    {!hideCount && renderCount(`${item.sub3.filter(s => s.connected).length}/${item.sub3.length}`)}
-                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
                 </div>
               ),
               style: { marginBottom: 4 },
               classNames: { header: 'rounded-lg bg-[#4B4B4B]' },
-              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, body: { padding: 0 } },
+              styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16 }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
               children: (
-                <Collapse
-                  ghost
-                  expandIcon={({ isActive }) => (
-                    <span style={{ marginLeft: 56 }}>
-                      <TbChevronDown size={20} style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                    </span>
-                  )}
-                  style={{ marginTop: 4 }}
-                  items={item.sub3.filter((sub) => sub.connected).map((sub) => ({
-                    key: `${item.name}-${sub.label}`,
-                    label: (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                        <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
+                <div style={{ marginTop: 4 }}>
+                  {sub.detail.map((d) => {
+                    const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
+                    return (
+                    <div
+                      key={detailKey(d)}
+                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
                       </div>
-                    ),
-                    style: { marginBottom: 4 },
-                    classNames: { header: 'rounded-lg' },
-                    styles: { header: { borderRadius: 8, paddingBlock: 12, paddingInline: 16, backgroundColor: '#212121' }, content: { padding: '8px 0 0 0' }, body: { padding: 0 } },
-                    children: (
-                      <div style={{ marginTop: 4 }}>
-                        {sub.detail.map((d) => {
-                          const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
-                          return (
-                          <div
-                            key={detailKey(d)}
-                            onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
-                          >
-                            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
-                            </div>
-                          </div>
-                          )
-                        })}
-                      </div>
-                    ),
-                  }))}
-                />
+                    </div>
+                    )
+                  })}
+                </div>
               ),
-            }]}
+            }))}
           />
         ),
       }))}

@@ -2,10 +2,15 @@
 import React, { useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 import { useTopPowerRoads } from '@/hooks/queries/lighting'
 import { useNotificationsSummary } from '@/hooks/queries/manage'
 import { useVMSSettingLatest } from '@/features/admin/control-vms/overall/hooks/useVMSSettingLatest'
 import type { NotificationSourceType, NotificationSummaryItem } from '@/types/manage/notification-api'
+
+dayjs.extend(buddhistEra)
+dayjs.extend(customParseFormat)
 
 // dept_id=0 is the "all departments" aggregate — confirmed against the live
 // API (its top result matches this card's original mock road, ฉช.3001).
@@ -81,7 +86,7 @@ const OverviewSection: React.FC = () => {
   }, [notificationsSummary])
 
   const { data: vmsLatestRes, isLoading: vmsLatestLoading } = useVMSSettingLatest()
-  const vmsLatest = vmsLatestRes?.data
+  const vmsLatest = vmsLatestRes?.data.res_data?.[0]
 
   const CARDS = useMemo(() => BASE_CARDS.map((card) => {
     if (card.id === 1) {
@@ -142,10 +147,14 @@ const OverviewSection: React.FC = () => {
       },
       detail2: {
         ...card.detail2,
-        subtitle: vmsLatestLoading ? '-' : (vmsLatest?.type_name ?? '-'),
-        summary: vmsLatestLoading || !vmsLatest?.department
+        // No dedicated "latest command" endpoint exists — this is the most
+        // recently connected VMS sign instead (see getVMSSettingLatestAPI).
+        subtitle: vmsLatestLoading ? '-' : (vmsLatest?.solution_name ?? '-'),
+        summary: vmsLatestLoading || !vmsLatest?.last_connected
           ? '-'
-          : vmsLatest.department.department_short_name,
+          // Backend sends last_connected pre-formatted as Buddhist-era
+          // DD/MM/BBBB HH:mm:ss (e.g. "18/07/2569 15:21:54"), not ISO.
+          : dayjs(vmsLatest.last_connected, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB HH:mm'),
       },
     }
   }), [topPowerRoadsLoading, topRoad, notificationsLoading, bySource, vmsLatestLoading, vmsLatest])
