@@ -27,6 +27,15 @@ export interface BureauListProps {
   onSignClick?: (sign: BureauSign, route: BureauRoute, state: BureauState, bureau: BureauItem) => void
 
   showControls?: boolean
+
+  /** Command Center mode — checkboxes always visible; "ยกเลิกทั้งหมด" clears
+   *  ticks but doesn't hide the checkboxes, and "เลือกทั้งหมด" excludes
+   *  offline signs by default. */
+  alwaysSelectMode?: boolean
+  /** When alwaysSelectMode, whether "เลือกทั้งหมด" should include offline
+   *  signs. Default false (safer — offline signs are still individually
+   *  selectable via their checkbox). */
+  includeOfflineOnSelectAll?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -58,21 +67,35 @@ const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id
   })
 }
 
-const getAllKeys = (data: BureauItem[]): Set<string> => {
+// includeOffline = true collects every sign; false skips offline signs at
+// the leaf and prunes empty parent aggregate keys (bureau/state/route) so
+// their tri-state checkbox isn't stuck "checked" while no leaf is picked.
+const getAllKeys = (data: BureauItem[], includeOffline = true): Set<string> => {
   const keys = new Set<string>()
   for (const bureau of data) {
-    keys.add(bureauKey(bureau))
+    let bureauHasAny = false
     for (const state of bureau.sub_department || []) {
       const sk = stateKey(bureau, state)
-      keys.add(sk)
+      let stateHasAny = false
       for (const route of state.roads || []) {
         const rk = routeKey(bureau, state, route)
-        keys.add(rk)
+        let routeHasAny = false
         for (const sign of route.solution || []) {
+          if (!includeOffline && !sign.is_online) continue
           keys.add(signKey(bureau, state, route, sign))
+          routeHasAny = true
+        }
+        if (routeHasAny) {
+          keys.add(rk)
+          stateHasAny = true
         }
       }
+      if (stateHasAny) {
+        keys.add(sk)
+        bureauHasAny = true
+      }
     }
+    if (bureauHasAny) keys.add(bureauKey(bureau))
   }
   return keys
 }
@@ -150,6 +173,8 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     onSelectModeChange,
     defaultCheckedKeys,
     defaultSelectMode = false,
+    alwaysSelectMode = false,
+    includeOfflineOnSelectAll = false,
     defaultExpandAll = false,
     onBureauClick,
     onStateClick,
@@ -172,7 +197,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
   })
 
   const [selectedSign, setSelectedSign] = useState<number | null>(null)
-  const [selectMode, setSelectMode] = useState(defaultSelectMode)
+  const [selectMode, setSelectMode] = useState(alwaysSelectMode || defaultSelectMode)
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(
     () => new Set(defaultCheckedKeys ?? [])
   )
@@ -190,13 +215,20 @@ const BureauList: React.FC<BureauListProps> = (props) => {
 
   const enterSelectMode = useCallback((selectAll: boolean) => {
     setSelectMode(true)
-    if (selectAll) setCheckedKeys(getAllKeys(data))
-  }, [data])
+    if (selectAll) setCheckedKeys(getAllKeys(data, includeOfflineOnSelectAll))
+  }, [data, includeOfflineOnSelectAll])
 
+  // In alwaysSelectMode we only clear ticks — the checkboxes stay visible so
+  // operators can immediately pick a fresh set without re-entering select
+  // mode. In legacy toggle-mode we exit select mode (hides checkboxes).
   const exitSelectMode = useCallback(() => {
+    if (alwaysSelectMode) {
+      setCheckedKeys(new Set())
+      return
+    }
     setSelectMode(false)
     setCheckedKeys(new Set())
-  }, [])
+  }, [alwaysSelectMode])
 
   const toggleCheck = useCallback((key: string, descendantKeys: string[] = []) => {
     setCheckedKeys(prev => {
@@ -559,18 +591,42 @@ const BureauList: React.FC<BureauListProps> = (props) => {
       {showControls && (
         <section>
           <div className='flex flex-wrap justify-between items-center gap-3'>
-            <p
-              className='cursor-pointer hover:text-(--yellow) transition-colors'
-              onClick={() => selectMode ? exitSelectMode() : enterSelectMode(false)}
-            >
-              {selectMode ? 'ยกเลิก' : 'เลือก'}
-            </p>
-            <p
-              className='cursor-pointer hover:text-(--yellow) transition-colors'
-              onClick={() => selectMode ? exitSelectMode() : enterSelectMode(true)}
-            >
-              {selectMode ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
-            </p>
+            {alwaysSelectMode ? (
+              <>
+                <p
+                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                  onClick={() => enterSelectMode(true)}
+                  title={
+                    includeOfflineOnSelectAll
+                      ? 'เลือกทุกป้ายรวมทั้งออฟไลน์'
+                      : 'เลือกเฉพาะป้ายออนไลน์ (ออฟไลน์ต้องติ๊กเอง)'
+                  }
+                >
+                  เลือกทั้งหมด
+                </p>
+                <p
+                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                  onClick={exitSelectMode}
+                >
+                  ล้างที่เลือก
+                </p>
+              </>
+            ) : (
+              <>
+                <p
+                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                  onClick={() => selectMode ? exitSelectMode() : enterSelectMode(false)}
+                >
+                  {selectMode ? 'ยกเลิก' : 'เลือก'}
+                </p>
+                <p
+                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                  onClick={() => selectMode ? exitSelectMode() : enterSelectMode(true)}
+                >
+                  {selectMode ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
+                </p>
+              </>
+            )}
           </div>
         </section>
       )}

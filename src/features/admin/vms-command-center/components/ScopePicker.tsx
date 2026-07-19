@@ -1,6 +1,6 @@
 "use client"
-import React, { useMemo } from 'react'
-import { Empty, Skeleton, Tag } from 'antd'
+import React, { useMemo, useState } from 'react'
+import { Empty, Skeleton, Switch, Tag, Tooltip } from 'antd'
 import { TbBuilding, TbMapPin, TbRoad, TbSignRight } from 'react-icons/tb'
 import BureauList from '@/components/list/BureauList'
 import type { BureauItem, BureauSelection } from '@/types/control-vms/bureau'
@@ -17,17 +17,18 @@ const summaryTagStyle: React.CSSProperties = {
   borderRadius: 6,
 }
 
-// Left column: hierarchical bureau → district → road → sign picker with a
-// count summary at the top so operators know exactly how many signs will
-// receive the command.
 const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({ onSelectionChange, selection }) {
   const { data, isLoading, isError } = useVMSDepartments()
-
   const items: BureauItem[] = useMemo(() => data?.data ?? [], [data])
+
+  // Off by default — "เลือกทั้งหมด" then only picks online signs. Offline
+  // signs stay visible and individually tickable; operators still get to
+  // opt-in when they want to queue up commands for offline boards.
+  const [includeOffline, setIncludeOffline] = useState(false)
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-3 border-b border-white/10">
+      <div className="px-3 py-3 border-b border-white/10 space-y-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Tag color="processing" style={summaryTagStyle} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
             สำนัก {selection.bureaus.length}
@@ -42,8 +43,14 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({ onSelecti
             ป้าย {selection.signs.length}
           </Tag>
         </div>
-        <div className="text-xs opacity-60 mt-2">
+        <div className="text-xs opacity-60">
           เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — ใช้ checkbox เพื่อรวมหลายป้าย
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <Tooltip title='เมื่อกด "เลือกทั้งหมด" ป้ายออฟไลน์จะถูกรวมด้วยหรือไม่ (คำสั่งจะรอส่งเมื่อกลับมาออนไลน์)'>
+            <span className="opacity-70">รวมป้ายออฟไลน์เมื่อเลือกทั้งหมด</span>
+          </Tooltip>
+          <Switch size="small" checked={includeOffline} onChange={setIncludeOffline} />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -52,7 +59,8 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({ onSelecti
         {!isLoading && !isError && (
           <BureauList
             data={items}
-            defaultSelectMode
+            alwaysSelectMode
+            includeOfflineOnSelectAll={includeOffline}
             defaultExpandAll={false}
             onSelectionChange={onSelectionChange}
           />
