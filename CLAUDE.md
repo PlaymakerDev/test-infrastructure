@@ -274,6 +274,23 @@ These risks are **explicitly accepted** for the current deployment context (inte
 - `src/proxy.ts` — gates `/admin/*` routes by `session.role === 'ADMIN'`
 - `src/lib/defaultSession.ts` — `TOKEN_SECRET` now throws in production if not set; dev warns with a safe dev-only fallback (no hardcoded secret in source)
 
+### control-vms — Command Center overhaul (2026-07-19/20)
+
+`/admin/control-vms` is now a **3-tab Command Center**: `?tab=dispatch` (scope picker + composer + real-time monitor with countdown & progress bar) · `?tab=history` (cross-sign timeline table with date pills) · `?tab=media` (first-class media library with categories CRUD + upload + drag-drop preview). `/admin/vms-command-center` is a permanent redirect for old bookmarks. All new code lives under `src/features/admin/vms-command-center/`.
+
+**New backend contract** (bundled in `Klanarm/drr_its_service`, applied on 10.10.0.112 via migrations `2026-07-19_vms_setting_status_history.sql` + `2026-07-19b_vms_media_library.sql`):
+- **`vms.tbl_vms_setting_status_log`** — append-only status history via trigger `vms.fn_log_vms_setting_status()`. Writes only on `NEW.status IS DISTINCT FROM OLD.status`. Every writer opens a tx and `SET LOCAL app.vms_status_source = '<label>'` (+ `app.vms_status_changed_by` when applicable) — trigger reads via `current_setting()`. Labels: `device / admin_override / admin_cancel / admin_edit / watcher_disconnect / watcher_expired / worker_advance / seed`. **Rule going forward:** any new writer of `tbl_vms_setting.status` must set the GUC or it lands as `source='unknown'`.
+- **`vms.tbl_vms_media`** — first-class media library (id, url, name, filename, mime_type, setting_type_id nullable, uploaded_by, uploaded_at, deleted_at, unique-on-active-url). Replaces the earlier "URLs are implicit inside past schedules" model.
+- **13 new endpoints under `/api-v2/vms/`**: `command-center/{monitor,history,sign/:vms_id}`, `settings/media/:id/{cancel,history}`, `crossings/:cmi/history`, `media/*` (CRUD + category-counts + bulk-delete). See project_vms_command_center memory (out-of-tree) or grep `internal/api/router/vms_setting.go` for the wiring.
+- **`command_no`** — running 1..N per-sign command index exposed on every monitor/history/setting-history response. Human-friendly label for the shared `setting.id`. Not sent to devices; device POSTs still key on setting_id.
+
+**Frontend conventions** for anything under vms-command-center or touching the VMS surface:
+- **Every image/video preview** = `aspectRatio: '16/9'` + `background: '#000'` + `objectFit: 'contain'`. Grid cards, upload previews, edit modals, LiveMonitor thumbnails, SignDetailModal HLS players. Letterboxes portrait/4:3 sources cleanly.
+- **Status enum + colours** — `src/features/admin/vms-command-center/constants/vmsStatus.ts` (0..7 with `isActive`, `isTerminal`, `isCancellable`). Consume via `statusMeta(status)` + `<StatusPill>`. Do NOT redefine.
+- **Modals**: light forms use `wrapClassName='light-modal'` + `<ConfigProvider theme={{ components: { Modal, Input, Select } }}>` white overrides + `classNames={{ popup: { root: 'light-modal-popup' } }}` on every Select/DatePicker (Select popups portal outside modal DOM so `.light-modal` doesn't reach them). Dark viewer modals mirror `components/modal/CCTVModal.tsx` (border-2 border-(--default-blue), colorIcon white). App root `themeConfig.ts` now has a `Popover` component override so Popconfirm/Tooltip render on dark bg globally — don't wrap individually.
+- **BureauList** accepts `alwaysSelectMode` (checkboxes stay visible; ยกเลิกทั้งหมด clears ticks instead of exiting select mode) + `includeOfflineOnSelectAll` (default false — "เลือกทั้งหมด" filters online-only; offline signs stay individually tickable).
+- **LiveMonitor** shows live countdown / progress bar / summary counts, dims terminal cards to 0.65 opacity (they stay visible for audit), has a `ซ่อนที่เสร็จแล้ว` toggle. Multi-day schedules resolve to today's `[time_since..time_to]` window when today's ISO weekday matches `days_of_week` mask.
+
 ### control-vms/overall — reference implementation (fully refactored 2026-06-23)
 The first backend-integrated feature. Canonical template for all future backend work. Key patterns:
 
