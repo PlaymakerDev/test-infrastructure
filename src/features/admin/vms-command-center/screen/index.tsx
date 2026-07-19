@@ -8,7 +8,7 @@ import Composer from '../components/Composer'
 import LiveMonitor from '../components/LiveMonitor'
 import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
-import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
+import MediaLibraryTab from '../components/MediaLibraryTab'
 
 
 const emptySelection: BureauSelection = {
@@ -19,7 +19,7 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-const VALID_TABS = ['dispatch', 'history', 'library'] as const
+const VALID_TABS = ['dispatch', 'history', 'media'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -68,14 +68,18 @@ const VMSCommandCenterScreen: React.FC = () => {
           items={[
             {
               key: 'dispatch',
-              label: 'สั่งใหม่ + ติดตาม',
+              label: 'การสั่งงาน + ติดตาม',
               children: (
                 <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
                     <ScopePicker onSelectionChange={setSelection} selection={selection} />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <Composer vmsIds={vmsIds} targetSignSummary={targetSummary} />
+                    <Composer
+                      vmsIds={vmsIds}
+                      targetSignSummary={targetSummary}
+                      onGotoLibrary={() => changeTab('media')}
+                    />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
                     <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
@@ -93,11 +97,11 @@ const VMSCommandCenterScreen: React.FC = () => {
               ),
             },
             {
-              key: 'library',
-              label: 'คลังเนื้อหา / ปฏิทิน',
+              key: 'media',
+              label: 'คลังสื่อ',
               children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
-                  <ControlVMSScreen />
+                <div className="h-[calc(100vh-160px)]">
+                  <MediaLibraryTab />
                 </div>
               ),
             },

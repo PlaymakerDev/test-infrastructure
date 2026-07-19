@@ -112,7 +112,7 @@ export function statusMeta(status: number | null | undefined): VMSStatusMeta {
 
 export const VMS_STATUS_SOURCE_LABEL: Record<string, string> = {
   device: 'จากป้าย',
-  admin_override: 'ผู้ดูแล (สั่งใหม่/ทับ)',
+  admin_override: 'ผู้ดูแล (สั่งงานใหม่ทับคำสั่งเดิม)',
   admin_cancel: 'ผู้ดูแล (ยกเลิก)',
   admin_edit: 'ผู้ดูแล (แก้ไข)',
   watcher_disconnect: 'ระบบ (ตรวจพบขาดการเชื่อมต่อ)',

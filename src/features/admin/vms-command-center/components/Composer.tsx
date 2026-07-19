@@ -1,17 +1,16 @@
 "use client"
-import React, { useMemo, useState } from 'react'
-import { Button, DatePicker, Image, Input, Modal, Radio, Select, Skeleton, Switch, TimePicker } from 'antd'
-import { TbAlertTriangle } from 'react-icons/tb'
-import { TbRocket } from 'react-icons/tb'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Button, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { TbAlertTriangle, TbFolderOpen, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
-import { useVMSSettingTypes } from '@/features/admin/control-vms/overall/hooks/useVMSSettingTypes'
-import { useVMSMediaUrlList } from '@/features/admin/control-vms/overall/hooks/useVMSMediaUrlList'
+import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
 
 interface Props {
   vmsIds: number[]
   targetSignSummary: string
   onDispatched?: () => void
+  onGotoLibrary?: () => void
 }
 
 const dateFmt = 'YYYY-MM-DD'
@@ -19,18 +18,34 @@ const timeFmt = 'HH:mm:ss'
 
 const isoDaysMask = (days: number[]) => days.reduce((m, d) => m | (1 << (d - 1)), 0)
 
-const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetSignSummary, onDispatched }) {
-  const { data: typesData, isLoading: typesLoading } = useVMSSettingTypes()
-  const settingTypes = typesData?.data ?? []
-  const [settingTypeId, setSettingTypeId] = useState<number | undefined>()
-  const selectedType = useMemo(
-    () => settingTypes.find((t) => t.id === settingTypeId),
-    [settingTypes, settingTypeId]
+const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetSignSummary, onDispatched, onGotoLibrary }) {
+  const { data: countsData } = useMediaCategoryCounts()
+  const counts = countsData?.data ?? []
+
+  const [categoryFilter, setCategoryFilter] = useState<'all' | number>('all')
+  const { data: mediaData, isLoading: mediaLoading } = useMediaLibraryList({
+    setting_type_id: categoryFilter === 'all' ? undefined : categoryFilter,
+    limit: 24,
+    page: 1,
+  })
+  const mediaItems = mediaData?.data?.res_data ?? []
+  const [selectedMediaId, setSelectedMediaId] = useState<number | undefined>()
+  const selectedMedia = useMemo(
+    () => mediaItems.find((m) => m.id === selectedMediaId),
+    [mediaItems, selectedMediaId]
   )
 
-  const { data: mediaData, isLoading: mediaLoading } = useVMSMediaUrlList(settingTypeId, 1, 12)
-  const mediaUrls = mediaData?.data?.res_data?.map((m) => m.media_url) ?? []
-  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | undefined>()
+  // Auto-select first media whenever the list changes and current selection
+  // isn't in the new list — one-click flow when picking a category.
+  useEffect(() => {
+    if (mediaItems.length === 0) {
+      setSelectedMediaId(undefined)
+      return
+    }
+    if (!selectedMediaId || !mediaItems.find((m) => m.id === selectedMediaId)) {
+      setSelectedMediaId(mediaItems[0].id)
+    }
+  }, [mediaItems, selectedMediaId])
 
   const [message, setMessage] = useState<string>('')
   const [scheduleName, setScheduleName] = useState<string>('ประกาศ')
@@ -46,19 +61,19 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
   const post = usePostVMSMedia()
 
-  const canDispatch = vmsIds.length > 0 && settingTypeId != null && (selectedMediaUrl || message.trim())
+  const canDispatch = vmsIds.length > 0 && (!!selectedMedia?.url || message.trim().length > 0)
 
   const buildPayload = () => ({
     vms_ids: vmsIds,
-    type_name: selectedType?.name ?? '',
-    setting_type_id: settingTypeId as number,
+    type_name: selectedMedia?.setting_type_name || 'ประกาศ',
+    setting_type_id: selectedMedia?.setting_type_id ?? 0,
     date_since: dateRange[0].format(dateFmt),
     date_to: dateRange[1].format(dateFmt),
     is_all_day: isAllDay,
     schedules: [
       {
         schedule_name: scheduleName || 'ประกาศ',
-        media_url: selectedMediaUrl ?? '',
+        media_url: selectedMedia?.url ?? '',
         message: message,
         time_since: isAllDay ? '00:00:00' : timeRange[0].format(timeFmt),
         time_to: isAllDay ? '23:59:59' : timeRange[1].format(timeFmt),
@@ -82,65 +97,74 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     <>
       <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
-          <div className="text-sm font-semibold text-(--yellow)">แต่งคำสั่งใหม่</div>
+          <div className="text-sm font-semibold text-(--yellow)">สร้างคำสั่งใหม่</div>
           <div className="text-xs text-(--default-blue) mt-0.5">{targetSignSummary}</div>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           <div>
-            <div className="text-xs font-medium mb-1">ประเภทเนื้อหา</div>
-            {typesLoading ? (
-              <Skeleton.Input active block />
-            ) : (
-              <Select
-                placeholder="เลือกประเภท เช่น ไว้อาลัย, ซ่อมแซมถนน"
-                value={settingTypeId}
-                onChange={(v) => {
-                  setSettingTypeId(v)
-                  setSelectedMediaUrl(undefined)
-                }}
-                options={settingTypes.map((t) => ({ label: t.name, value: t.id }))}
-                style={{ width: '100%' }}
-              />
-            )}
-          </div>
-
-          <div>
-            <div className="text-xs font-medium mb-1">
-              เลือกรูปที่จะแสดง{' '}
-              {selectedType?.name && <span className="text-white/40">({selectedType.name})</span>}
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs font-medium">เลือกรูป / วิดีโอที่จะแสดง</div>
+              {onGotoLibrary && (
+                <button
+                  className="text-xs text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  onClick={onGotoLibrary}
+                  type="button"
+                >
+                  <TbFolderOpen size={14} />
+                  <span>ไปคลังสื่อ →</span>
+                </button>
+              )}
+            </div>
+            {/* Category chip filter */}
+            <div className="flex items-center gap-1.5 flex-wrap mb-2">
+              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => setCategoryFilter('all')} />
+              {counts.map((c) => (
+                <Chip
+                  key={c.setting_type_id ?? 'null'}
+                  active={categoryFilter === (c.setting_type_id ?? -1)}
+                  label={`${c.setting_type_name} (${c.count})`}
+                  onClick={() => setCategoryFilter(c.setting_type_id ?? -1)}
+                />
+              ))}
             </div>
             {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
-            {!mediaLoading && mediaUrls.length === 0 && (
+            {!mediaLoading && mediaItems.length === 0 && (
               <div className="text-xs text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
-                {settingTypeId ? 'ยังไม่มีรูปในประเภทนี้ (อัปโหลดในหน้า Control VMS)' : 'เลือกประเภทก่อน'}
+                ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ "คลังสื่อ"
               </div>
             )}
-            {mediaUrls.length > 0 && (
+            {mediaItems.length > 0 && (
               <div
                 className="grid gap-2"
-                style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(96px,1fr))' }}
+                style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
               >
-                {mediaUrls.map((url) => {
-                  const active = url === selectedMediaUrl
+                {mediaItems.map((m) => {
+                  const active = m.id === selectedMediaId
                   return (
                     <button
-                      key={url}
-                      onClick={() => setSelectedMediaUrl(url)}
-                      className="relative rounded-md overflow-hidden border cursor-pointer"
+                      key={m.id}
+                      onClick={() => setSelectedMediaId(m.id)}
+                      className="relative rounded-md overflow-hidden border cursor-pointer group"
                       style={{
                         borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
                         outline: active ? '2px solid #FCD116' : 'none',
                         outlineOffset: -2,
                       }}
+                      title={m.name}
                     >
-                      <Image
-                        src={url}
-                        alt=""
-                        width="100%"
-                        height={72}
-                        preview={false}
-                        style={{ objectFit: 'cover' }}
-                      />
+                      <div style={{ aspectRatio: '16/10' }}>
+                        <Image
+                          src={m.url}
+                          alt={m.name}
+                          width="100%"
+                          height="100%"
+                          preview={false}
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-white/80">
+                        {m.name}
+                      </div>
                     </button>
                   )
                 })}
@@ -235,19 +259,19 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             loading={post.isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            ยิงคำสั่งไปยัง {vmsIds.length} ป้าย
+            ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
           </Button>
         </div>
         <Modal
           open={confirmOpen}
           onOk={dispatch}
           onCancel={() => setConfirmOpen(false)}
-          okText="ยืนยันส่ง"
+          okText="ยืนยันการส่ง"
           cancelText="ยกเลิก"
-          title="ยืนยันการยิงคำสั่ง"
+          title="ยืนยันการส่งคำสั่งควบคุม"
         >
           <div className="text-sm">
-            จะส่งคำสั่ง <b>{selectedType?.name ?? ''}</b> ไปยัง <b>{vmsIds.length}</b> ป้าย
+            จะส่งคำสั่ง <b>{selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}</b> ไปยัง <b>{vmsIds.length}</b> ป้าย
             <br />
             ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
             {isAllDay
@@ -265,5 +289,21 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     </>
   )
 })
+
+const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = ({ active, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="text-[11px] px-2.5 py-0.5 rounded-full transition-colors border"
+    style={{
+      background: active ? '#FCD116' : 'transparent',
+      color: active ? '#191919' : '#FCD116',
+      borderColor: '#FCD116',
+      fontWeight: active ? 600 : 400,
+    }}
+  >
+    {label}
+  </button>
+)
 
 export default Composer
