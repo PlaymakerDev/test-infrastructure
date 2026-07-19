@@ -3,6 +3,9 @@ export interface VMSMonitorItem {
   wid: number
   crossing_master_index: string
   solution_name: string
+  sta?: string
+  road_code?: string
+  road_name?: string
   is_online: boolean
   last_seen_at?: string
   last_connected?: string
@@ -30,6 +33,8 @@ export interface VMSGlobalHistoryItem {
   vms_id?: number
   wid?: number
   solution_name?: string
+  sta?: string
+  road_code?: string
   prev_status: number | null
   status: number
   prev_status_name?: string

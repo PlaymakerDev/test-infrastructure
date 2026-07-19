@@ -327,8 +327,13 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   ? <TbChevronDown className='text-(--yellow) fs-18 shrink-0' />
                   : <TbChevronRight className='text-(--yellow) fs-18 shrink-0' />
                 }
-                <Tooltip title={route.road_name || route.road_code}>
-                  <h5 className='font-normal! text-(--yellow) truncate'>{route.road_name || route.road_code}</h5>
+                <Tooltip title={route.road_name ? `${route.road_code} — ${route.road_name}` : route.road_code}>
+                  <h5 className='font-normal! text-(--yellow) truncate'>
+                    {route.road_code || route.road_name}
+                    {route.road_name && route.road_code && (
+                      <span className='text-(--default-blue) fs-12 font-normal ml-1.5 opacity-70'>{route.road_name}</span>
+                    )}
+                  </h5>
                 </Tooltip>
               </div>
               <div className='flex items-center gap-3 shrink-0'>

@@ -76,7 +76,14 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
                   <div className="text-xs text-slate-500">WID {detail.wid} · vms_id {detail.vms_id}</div>
-                  <div className="text-lg font-semibold truncate">{detail.solution_name || `VMS ${detail.vms_id}`}</div>
+                  <div className="text-lg font-semibold truncate flex items-center gap-2 flex-wrap">
+                    {detail.road_code && <span className="text-amber-600">{detail.road_code}</span>}
+                    {detail.sta && <span className="text-blue-600 text-sm">กม.{detail.sta}</span>}
+                    <span className="truncate">{detail.solution_name || `VMS ${detail.vms_id}`}</span>
+                  </div>
+                  {detail.road_name && (
+                    <div className="text-xs text-slate-500 mt-0.5">สายทาง: {detail.road_name}</div>
+                  )}
                   <div className="text-xs text-slate-500 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">

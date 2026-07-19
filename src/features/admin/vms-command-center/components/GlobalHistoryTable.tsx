@@ -60,11 +60,15 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
       },
     },
     {
-      title: 'ป้าย',
+      title: 'ป้าย / สายทาง / STA',
       key: 'sign',
       render: (_, r) => (
         <div className="min-w-0">
-          <div className="text-sm truncate">{r.solution_name || `WID ${r.wid ?? '?'}`}</div>
+          <div className="text-sm truncate flex items-center gap-1.5">
+            {r.road_code && <span className="text-(--yellow) font-semibold">{r.road_code}</span>}
+            {r.sta && <span className="text-(--default-blue) text-xs">กม.{r.sta}</span>}
+            <span className="truncate opacity-80">{r.solution_name || `WID ${r.wid ?? '?'}`}</span>
+          </div>
           <div className="text-xs text-white/50">WID {r.wid ?? '—'} · setting #{r.setting_id}</div>
         </div>
       ),

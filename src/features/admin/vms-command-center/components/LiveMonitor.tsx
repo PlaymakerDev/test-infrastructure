@@ -71,9 +71,14 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{it.solution_name || `VMS ${it.vms_id}`}</div>
+                  <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                    {it.road_code && <span className="text-(--yellow) font-semibold">{it.road_code}</span>}
+                    {it.sta && <span className="text-(--default-blue) text-xs">กม.{it.sta}</span>}
+                    <span className="truncate opacity-80">{it.solution_name || `VMS ${it.vms_id}`}</span>
+                  </div>
                   <div className="text-xs opacity-60">
                     WID {it.wid} · vms_id {it.vms_id}
+                    {it.road_name && <span className="ml-2 opacity-70">· {it.road_name}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
