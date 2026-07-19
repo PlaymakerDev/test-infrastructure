@@ -1,6 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import { App, ConfigProvider, Tabs, theme as antdTheme } from 'antd'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { BureauSelection } from '@/types/control-vms/bureau'
 import ScopePicker from '../components/ScopePicker'
 import Composer from '../components/Composer'
@@ -33,7 +34,27 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
+const VALID_TABS = ['dispatch', 'history', 'library'] as const
+type TabKey = (typeof VALID_TABS)[number]
+
 const VMSCommandCenterScreen: React.FC = () => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const activeTab: TabKey = (VALID_TABS as readonly string[]).includes(tabParam ?? '')
+    ? (tabParam as TabKey)
+    : 'dispatch'
+
+  const changeTab = useCallback(
+    (key: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('tab', key)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [router, pathname, searchParams]
+  )
+
   const [selection, setSelection] = useState<BureauSelection>(emptySelection)
   const [detailVmsId, setDetailVmsId] = useState<number | null>(null)
   const openDetail = useCallback((id: number) => setDetailVmsId(id), [])
@@ -56,7 +77,9 @@ const VMSCommandCenterScreen: React.FC = () => {
       <App>
         <div className="h-[calc(100vh-96px)] w-full p-3 text-white/90">
           <Tabs
-            defaultActiveKey="dispatch"
+            activeKey={activeTab}
+            onChange={changeTab}
+            destroyOnHidden
             className="vms-cc-tabs h-full"
             items={[
               {
@@ -90,7 +113,13 @@ const VMSCommandCenterScreen: React.FC = () => {
                 label: 'คลังเนื้อหา / ปฏิทิน',
                 children: (
                   <div className="h-[calc(100vh-160px)] overflow-auto">
-                    <ControlVMSScreen />
+                    {/* Legacy Control VMS screen was authored against the default
+                        light AntD algorithm; the outer dark algorithm turned its
+                        SwapButton "inactive" tabs into invisible dark ghosts.
+                        Reset to defaults for just this pane. */}
+                    <ConfigProvider theme={{ algorithm: antdTheme.defaultAlgorithm, token: { colorPrimary: '#FCD116' } }}>
+                      <ControlVMSScreen />
+                    </ConfigProvider>
                   </div>
                 ),
               },

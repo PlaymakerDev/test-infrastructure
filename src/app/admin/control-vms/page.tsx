@@ -1,6 +1,11 @@
 "use client"
+import { Suspense } from 'react'
 import VMSCommandCenterScreen from '@/features/admin/vms-command-center/screen'
 
 export default function ControlVMS() {
-  return <VMSCommandCenterScreen />
+  return (
+    <Suspense fallback={null}>
+      <VMSCommandCenterScreen />
+    </Suspense>
+  )
 }
