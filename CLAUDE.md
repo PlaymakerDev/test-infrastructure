@@ -125,6 +125,28 @@ Do not create new Context providers with empty `value={{}}` — they add overhea
 - **Video**: HLS live streams via `src/components/video/`.
 - **Animation**: Use `motion` package only. Do NOT use `framer-motion` (both installed but `motion` is the current one).
 
+### Theme colors — never invent (rule set 2026-07-19)
+
+Every colour in the admin UI **must** come from an authoritative source that already exists in the project. Never pick an ad-hoc hex or a stock AntD colour name (`processing`, `cyan`, `geekblue`, `gold`, `volcano`, `green`) unless you can point to a sibling module that already uses that exact token for the same UI element.
+
+**Order of lookup:**
+1. **`src/styles/globals.css` tokens first** — the canonical palette:
+   - `--yellow` (`#FCD116`) — primary / brand
+   - `--default-blue` (`#66AEFF`) — secondary text, accent pills
+   - `--red` (`#FF6666`) — danger, offline
+   - `--light-blue` (`#05F2DB99`) — teal accent
+   - `--dark-black` (`#191919`) — panel bg
+   - `--light-black` (`#212121`) — nested panel bg
+   - `--mid-gray` (`#2B2B2B`) — hover row bg
+   - `--light-gray*` — subdued text
+2. **If globals.css doesn't have it, mirror an existing solution module.** Grep sibling admin features (cctv, traffic-signal, crosswalk, incident-detection, settings, bridge-lighting, traffic-volume, tracking) for the same UI element (Tag, Chip, Badge, StatusPill, Popconfirm palette) and copy the approach — including any `ConfigProvider theme.components.*` block. Do not invent a new scheme.
+3. **For `light-modal` popups** — reuse the existing `body .light-modal .<selector>` overrides in `src/styles/antd.css`; do not roll new ConfigProvider hex tokens per-component.
+4. **If uncertain, ASK — don't guess.**
+
+Use Tailwind 4's `text-(--yellow)` / `bg-(--dark-black)` / `border-(--default-blue)` bracket syntax against the CSS custom properties above — this is the style already used everywhere in the app.
+
+Applies to every admin surface. Introduced after repeated iterations on the VMS Command Center picked off-palette AntD tag colours that clashed with the yellow-on-black brand look.
+
 ## Data Fetching
 
 Backend integration has expanded well beyond `control-vms/overall` (surveyed 2026-07-04) — most admin features now call the real backend. **Four data-fetching patterns coexist**; know which one a feature already uses before touching it:
