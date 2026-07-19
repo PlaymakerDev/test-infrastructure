@@ -19,6 +19,10 @@ export interface VMSMonitorItem {
   message?: string
   date_since?: string
   date_to?: string
+  is_all_day?: boolean
+  time_since?: string
+  time_to?: string
+  days_of_week?: number
 }
 
 export type APIResponseVMSMonitor = VMSMonitorItem[]

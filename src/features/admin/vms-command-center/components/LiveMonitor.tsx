@@ -1,6 +1,6 @@
 "use client"
-import React from 'react'
-import { App, Badge, Button, Empty, Image, Popconfirm, Skeleton, Tooltip } from 'antd'
+import React, { useEffect, useMemo, useState } from 'react'
+import { App, Badge, Button, Empty, Image, Popconfirm, Progress, Skeleton, Switch, Tooltip } from 'antd'
 import { TbEye, TbPlayerStop } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -25,11 +25,82 @@ const relativeSince = (iso?: string) => {
   return d.locale('th').fromNow()
 }
 
+const DAY_LABELS = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.']
+const formatDaysOfWeek = (mask?: number): string => {
+  if (mask == null || mask === 0 || mask === 127) return 'ทุกวัน'
+  const days: number[] = []
+  for (let bit = 0; bit < 7; bit++) if (mask & (1 << bit)) days.push(bit + 1)
+  if (days.length === 5 && !days.includes(6) && !days.includes(7)) return 'จันทร์ – ศุกร์'
+  return days.map((d) => DAY_LABELS[d - 1]).join(', ')
+}
+
+// Combine date (YYYY-MM-DD) + time (HH:mm:ss) into a Dayjs.
+// Returns null if either is missing/invalid.
+const combine = (date?: string, time?: string): dayjs.Dayjs | null => {
+  if (!date) return null
+  const t = time && time.length >= 5 ? time : '00:00:00'
+  const d = dayjs(`${date}T${t}`)
+  return d.isValid() ? d : null
+}
+
+// Compute a schedule's window for TODAY (a schedule can span multiple days;
+// the countdown/progress needs today's actual start/end datetimes).
+const getSlotWindow = (it: VMSMonitorItem, nowMs: number): { start: dayjs.Dayjs; end: dayjs.Dayjs } | null => {
+  if (!it.date_since || !it.date_to) return null
+  const isAllDay = it.is_all_day === true
+  const timeSince = isAllDay ? '00:00:00' : (it.time_since || '00:00:00')
+  const timeTo = isAllDay ? '23:59:59' : (it.time_to || '23:59:59')
+  const rangeStart = combine(it.date_since, timeSince)
+  const rangeEnd = combine(it.date_to, timeTo)
+  if (!rangeStart || !rangeEnd) return null
+
+  const today = dayjs(nowMs).startOf('day')
+  // Multi-day: today's window is [today+timeSince .. today+timeTo] as long
+  // as today is within [date_since..date_to] and days_of_week allows it.
+  const isoDow = today.day() === 0 ? 7 : today.day() // Mon=1..Sun=7
+  const mask = it.days_of_week ?? 127
+  const dayAllowed = (mask & (1 << (isoDow - 1))) !== 0
+  const withinDates = !today.isBefore(rangeStart.startOf('day')) && !today.isAfter(rangeEnd.startOf('day'))
+
+  if (isAllDay || (!withinDates && !dayAllowed)) {
+    // All-day mode: single continuous window [rangeStart, rangeEnd]
+    return { start: rangeStart, end: rangeEnd }
+  }
+  if (!withinDates || !dayAllowed) {
+    return null
+  }
+  return {
+    start: today.hour(rangeStart.hour()).minute(rangeStart.minute()).second(rangeStart.second()),
+    end: today.hour(rangeEnd.hour()).minute(rangeEnd.minute()).second(rangeEnd.second()),
+  }
+}
+
+const formatDuration = (ms: number): string => {
+  const abs = Math.abs(ms)
+  const totalMin = Math.floor(abs / 60000)
+  const hr = Math.floor(totalMin / 60)
+  const min = totalMin % 60
+  if (hr > 0) return `${hr} ชม. ${min} นาที`
+  if (totalMin > 0) return `${totalMin} นาที`
+  const sec = Math.floor(abs / 1000) % 60
+  return `${sec} วินาที`
+}
+
 const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, onOpenSignDetail }) {
   const { data, isLoading, isFetching, dataUpdatedAt } = useCommandCenterMonitor(vmsIds, { refetchIntervalMs: 5_000 })
   const rows: VMSMonitorItem[] = data?.data ?? []
   const cancel = useCancelVMSSetting()
   const { message } = App.useApp()
+
+  // Local tick so the countdown/progress refresh every second without a full
+  // React Query refetch.
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const [hideFinished, setHideFinished] = useState(false)
 
   const handleCancel = async (settingID?: number) => {
     if (!settingID) return
@@ -43,17 +114,51 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
 
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
+  // Summary counts by status kind
+  const summary = useMemo(() => {
+    const s = { active: 0, done: 0, cancel: 0, overwrite: 0, lost: 0, pending: 0 }
+    for (const it of rows) {
+      const m = statusMeta(it.status ?? undefined)
+      if (m.isActive) s.active++
+      else if (m.id === 4) s.done++
+      else if (m.id === 5) s.lost++
+      else if (m.id === 6) s.cancel++
+      else if (m.id === 7) s.overwrite++
+      else s.pending++
+    }
+    return s
+  }, [rows])
+
+  const visible = hideFinished ? rows.filter((r) => statusMeta(r.status ?? undefined).isActive) : rows
+
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-        <div>
-          <div className="text-sm font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
-          <div className="text-xs opacity-60 mt-0.5">
-            อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
-            {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
+      <div className="px-4 py-3 border-b border-white/10 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
+            <div className="text-xs opacity-60 mt-0.5">
+              อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
+              {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
+            </div>
           </div>
+          <Badge count={rows.length} showZero color="#f59e0b" overflowCount={999} />
         </div>
-        <Badge count={rows.length} showZero color="#f59e0b" overflowCount={999} />
+        {/* Summary counters */}
+        {rows.length > 0 && (
+          <div className="flex items-center gap-2 text-[11px] flex-wrap">
+            {summary.active > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">●</span> กำลังทำงาน {summary.active}</span>}
+            {summary.done > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#6b7280' }}>●</span> เสร็จสิ้น {summary.done}</span>}
+            {summary.cancel > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#a855f7' }}>●</span> ยกเลิก {summary.cancel}</span>}
+            {summary.overwrite > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#eab308' }}>●</span> ถูกสั่งทับ {summary.overwrite}</span>}
+            {summary.lost > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-red-500">●</span> ขาดเชื่อมต่อ {summary.lost}</span>}
+            {summary.pending > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="opacity-60">●</span> ยังไม่มีคำสั่ง {summary.pending}</span>}
+            <span className="ml-auto flex items-center gap-1.5 opacity-70">
+              <span>ซ่อนที่เสร็จแล้ว</span>
+              <Switch size="small" checked={hideFinished} onChange={setHideFinished} />
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {vmsIds.length === 0 && <Empty description="เลือกป้ายจากคอลัมน์ซ้ายเพื่อเริ่มติดตาม" />}
@@ -61,13 +166,47 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
         {vmsIds.length > 0 && !isLoading && rows.length === 0 && (
           <Empty description="ไม่มีข้อมูลป้ายที่เลือก" />
         )}
-        {rows.map((it) => {
+        {vmsIds.length > 0 && !isLoading && rows.length > 0 && visible.length === 0 && (
+          <div className="text-center text-xs text-white/50 py-4">
+            ป้ายทั้งหมดเสร็จสิ้นแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
+          </div>
+        )}
+        {visible.map((it) => {
           const meta = statusMeta(it.status ?? undefined)
           const hasActive = it.setting_id != null
+          const isTerminal = meta.isTerminal
+          const win = hasActive ? getSlotWindow(it, nowMs) : null
+          const now = dayjs(nowMs)
+
+          // Countdown state derived from window
+          let countdown: React.ReactNode = null
+          let progressPct: number | null = null
+          if (win && !isTerminal) {
+            if (now.isBefore(win.start)) {
+              countdown = (
+                <span className="text-(--default-blue)">จะเริ่มในอีก {formatDuration(win.start.valueOf() - nowMs)}</span>
+              )
+            } else if (now.isBefore(win.end)) {
+              const total = win.end.valueOf() - win.start.valueOf()
+              const done = nowMs - win.start.valueOf()
+              progressPct = Math.max(0, Math.min(100, (done / total) * 100))
+              countdown = (
+                <span className="text-green-400">
+                  กำลังเล่น · อีก {formatDuration(win.end.valueOf() - nowMs)} จะจบ
+                </span>
+              )
+            } else {
+              countdown = (
+                <span className="text-white/50">หมดเวลาไปแล้ว {formatDuration(nowMs - win.end.valueOf())}</span>
+              )
+            }
+          }
+
           return (
             <div
               key={it.vms_id}
-              className="rounded-lg border border-white/10 bg-white/[.04] p-3"
+              className="rounded-lg border border-white/10 bg-white/[.04] p-3 transition-opacity"
+              style={{ opacity: isTerminal ? 0.65 : 1 }}
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
@@ -137,16 +276,40 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                       />
                     </div>
                   ) : null}
-                  <div className="min-w-0 flex-1 text-xs opacity-80">
+                  <div className="min-w-0 flex-1 text-xs opacity-90 space-y-0.5">
                     <div>
                       <b>{it.setting_type_name || '-'}</b>
                       {it.command_no != null && <span className="ml-2 opacity-70">คำสั่งที่ {it.command_no}</span>}
                     </div>
                     <div className="opacity-70">
-                      {it.date_since} → {it.date_to}
+                      <span className="opacity-70">วันที่:</span>{' '}
+                      {it.date_since === it.date_to ? it.date_since : `${it.date_since} → ${it.date_to}`}
                     </div>
+                    <div className="opacity-70">
+                      <span className="opacity-70">เวลา:</span>{' '}
+                      {it.is_all_day
+                        ? <span className="text-(--yellow)">ตลอดวัน</span>
+                        : it.time_since && it.time_to
+                        ? `${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`
+                        : '—'}
+                      <span className="opacity-70 ml-2">· วัน:</span>{' '}
+                      {formatDaysOfWeek(it.days_of_week)}
+                    </div>
+                    {countdown && <div>{countdown}</div>}
                     {it.message && <div className="opacity-70 truncate">{it.message}</div>}
                   </div>
+                </div>
+              )}
+
+              {progressPct != null && (
+                <div className="mt-2">
+                  <Progress
+                    percent={progressPct}
+                    size="small"
+                    showInfo={false}
+                    strokeColor="#22c55e"
+                    trailColor="rgba(255,255,255,0.08)"
+                  />
                 </div>
               )}
 
