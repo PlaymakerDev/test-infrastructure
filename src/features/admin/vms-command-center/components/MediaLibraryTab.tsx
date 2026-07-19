@@ -474,6 +474,12 @@ const MediaLibraryTab: React.FC = () => {
               titleColor: '#1F1F1F',
               borderRadiusLG: 12,
             },
+            // Force Select + Input value/placeholder to render dark on the
+            // white light-modal background — the app root sets colorText=white
+            // globally, so without this the typed text and selected value are
+            // white-on-white in these fields.
+            Input: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
+            Select: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
           },
         }}
       >
@@ -640,6 +646,12 @@ const MediaLibraryTab: React.FC = () => {
               titleColor: '#1F1F1F',
               borderRadiusLG: 12,
             },
+            // Force Select + Input value/placeholder to render dark on the
+            // white light-modal background — the app root sets colorText=white
+            // globally, so without this the typed text and selected value are
+            // white-on-white in these fields.
+            Input: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
+            Select: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
           },
         }}
       >

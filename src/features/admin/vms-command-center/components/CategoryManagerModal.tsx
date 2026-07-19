@@ -88,10 +88,11 @@ const CategoryManagerModal: React.FC<Props> = ({ open, onClose }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 12,
           },
-          Popconfirm: {
-            colorText: '#1F1F1F',
-            colorTextHeading: '#1F1F1F',
-          },
+          // Input value + placeholder inside the light modal need explicit
+          // dark colors — app root sets colorText=white globally so without
+          // this the typed text is white-on-white.
+          Input: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
+          Select: { colorText: '#1F1F1F', colorTextPlaceholder: '#B8B8B8' },
         },
       }}
     >
