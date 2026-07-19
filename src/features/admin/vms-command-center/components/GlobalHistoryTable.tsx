@@ -69,7 +69,9 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
             {r.sta && <span className="text-(--default-blue) text-xs">กม.{r.sta}</span>}
             <span className="truncate opacity-80">{r.solution_name || `WID ${r.wid ?? '?'}`}</span>
           </div>
-          <div className="text-xs text-white/50">WID {r.wid ?? '—'} · setting #{r.setting_id}</div>
+          <div className="text-xs text-white/50">
+            WID {r.wid ?? '—'} · {r.command_no != null ? `คำสั่งที่ ${r.command_no}` : `setting #${r.setting_id}`}
+          </div>
         </div>
       ),
     },

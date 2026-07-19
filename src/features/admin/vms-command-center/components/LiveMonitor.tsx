@@ -139,7 +139,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                   ) : null}
                   <div className="min-w-0 flex-1 text-xs opacity-80">
                     <div>
-                      <b>{it.setting_type_name || '-'}</b> · setting #{it.setting_id}
+                      <b>{it.setting_type_name || '-'}</b>
+                      {it.command_no != null && <span className="ml-2 opacity-70">คำสั่งที่ {it.command_no}</span>}
                     </div>
                     <div className="opacity-70">
                       {it.date_since} → {it.date_to}

@@ -98,7 +98,11 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   </Tag>
                   <StatusPill
                     status={detail.status ?? 0}
-                    tooltip={activeSettingID ? `setting #${activeSettingID} · อัพเดต ${fmt(detail.status_updated_at)}` : 'ยังไม่มีคำสั่ง'}
+                    tooltip={
+                      activeSettingID
+                        ? `${detail.command_no != null ? `คำสั่งที่ ${detail.command_no}` : `setting #${activeSettingID}`} · อัพเดต ${fmt(detail.status_updated_at)}`
+                        : 'ยังไม่มีคำสั่ง'
+                    }
                   />
                   {canCancel && (
                     <Popconfirm
@@ -144,7 +148,9 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                 {/* Current setting content preview */}
                 {activeSettingID && (
                   <div className="rounded-lg border border-white/10 bg-(--dark-black) p-3">
-                    <div className="text-xs text-white/50 mb-1">คำสั่งที่กำลังแสดง (setting #{activeSettingID})</div>
+                    <div className="text-xs text-white/50 mb-1">
+                      คำสั่งที่กำลังแสดง {detail.command_no != null ? `(คำสั่งที่ ${detail.command_no})` : `(setting #${activeSettingID})`}
+                    </div>
                     <div className="flex items-center gap-3">
                       {detail.media_url && (
                         <div
@@ -230,50 +236,79 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   {history.length === 0 ? (
                     <Empty description="ยังไม่มีประวัติ" />
                   ) : (
-                    <Timeline
-                      items={history.map((r) => {
-                        const meta = statusMeta(r.status)
-                        const at = dayjs(r.reported_at)
-                        return {
-                          color: meta.color,
-                          dot: (
-                            <span
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: '50%',
-                                background: meta.color,
-                                boxShadow: `0 0 0 3px ${meta.ring}44`,
-                                display: 'inline-block',
-                              }}
-                            />
-                          ),
-                          children: (
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <StatusPill status={r.status} size="sm" />
-                                {r.prev_status != null && r.prev_status !== r.status && (
-                                  <span className="text-xs text-white/50">
-                                    จาก {statusMeta(r.prev_status).label} →
-                                  </span>
-                                )}
-                                <span className="text-xs text-white/70">{sourceLabel(r.source)}</span>
-                              </div>
-                              <div className="text-xs text-white/50 mt-1">
-                                <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
-                                  <span>{at.format('DD MMM YYYY HH:mm:ss')} · {at.locale('th').fromNow()}</span>
-                                </Tooltip>
-                              </div>
-                              {r.setting_type_name && (
-                                <div className="text-xs text-white/50 mt-0.5">
-                                  เนื้อหา: {r.setting_type_name} · setting #{r.setting_id}
-                                </div>
-                              )}
-                            </div>
-                          ),
+                    <div className="space-y-4">
+                      {/* Group history by setting_id — separator between commands
+                          so a wall of same-command rows becomes scannable. */}
+                      {(() => {
+                        const groups: typeof history[] = []
+                        let last: number | null = null
+                        for (const r of history) {
+                          if (r.setting_id !== last) {
+                            groups.push([r])
+                            last = r.setting_id
+                          } else {
+                            groups[groups.length - 1].push(r)
+                          }
                         }
-                      })}
-                    />
+                        return groups.map((group, gi) => {
+                          const head = group[0]
+                          const label = head.command_no != null
+                            ? `คำสั่งที่ ${head.command_no}`
+                            : `setting #${head.setting_id}`
+                          return (
+                            <div key={`${head.setting_id}-${gi}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <span className="text-xs text-(--yellow) font-semibold">
+                                  ▸ {label}
+                                </span>
+                                <span className="text-[10px] text-white/50">
+                                  {head.setting_type_name || 'อื่นๆ'} · {group.length} เหตุการณ์
+                                </span>
+                              </div>
+                              <Timeline
+                                items={group.map((r) => {
+                                  const meta = statusMeta(r.status)
+                                  const at = dayjs(r.reported_at)
+                                  return {
+                                    color: meta.color,
+                                    dot: (
+                                      <span
+                                        style={{
+                                          width: 10,
+                                          height: 10,
+                                          borderRadius: '50%',
+                                          background: meta.color,
+                                          boxShadow: `0 0 0 3px ${meta.ring}44`,
+                                          display: 'inline-block',
+                                        }}
+                                      />
+                                    ),
+                                    children: (
+                                      <div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <StatusPill status={r.status} size="sm" />
+                                          {r.prev_status != null && r.prev_status !== r.status && (
+                                            <span className="text-xs text-white/50">
+                                              จาก {statusMeta(r.prev_status).label} →
+                                            </span>
+                                          )}
+                                          <span className="text-xs text-white/70">{sourceLabel(r.source)}</span>
+                                        </div>
+                                        <div className="text-xs text-white/50 mt-1">
+                                          <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
+                                            <span>{at.format('DD MMM YYYY HH:mm:ss')} · {at.locale('th').fromNow()}</span>
+                                          </Tooltip>
+                                        </div>
+                                      </div>
+                                    ),
+                                  }
+                                })}
+                              />
+                            </div>
+                          )
+                        })
+                      })()}
+                    </div>
                   )}
                 </div>
               </div>

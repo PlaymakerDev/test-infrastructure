@@ -1,6 +1,7 @@
 export interface VMSStatusHistoryEntry {
   id: number
   setting_id: number
+  command_no?: number
   crossing_master_index: string
   prev_status: number | null
   status: number

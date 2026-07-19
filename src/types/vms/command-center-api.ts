@@ -10,6 +10,7 @@ export interface VMSMonitorItem {
   last_seen_at?: string
   last_connected?: string
   setting_id?: number
+  command_no?: number
   status?: number
   status_name?: string
   status_updated_at?: string
@@ -35,6 +36,7 @@ export interface VMSGlobalHistoryItem {
   solution_name?: string
   sta?: string
   road_code?: string
+  command_no?: number
   prev_status: number | null
   status: number
   prev_status_name?: string
