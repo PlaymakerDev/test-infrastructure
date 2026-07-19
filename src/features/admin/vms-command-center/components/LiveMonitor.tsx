@@ -1,7 +1,7 @@
 "use client"
-import React, { useState } from 'react'
+import React from 'react'
 import { App, Badge, Button, Empty, Image, Popconfirm, Skeleton, Tooltip } from 'antd'
-import { TbHistory, TbPlayerStop } from 'react-icons/tb'
+import { TbEye, TbPlayerStop } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
@@ -9,13 +9,13 @@ import { useCommandCenterMonitor } from '../hooks/useCommandCenterMonitor'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta } from '../constants/vmsStatus'
 import StatusPill from './StatusPill'
-import HistoryDrawer from './HistoryDrawer'
 import { VMSMonitorItem } from '@/types/vms/command-center-api'
 
 dayjs.extend(relativeTime)
 
 interface Props {
   vmsIds: number[]
+  onOpenSignDetail?: (vmsId: number) => void
 }
 
 const relativeSince = (iso?: string) => {
@@ -25,23 +25,11 @@ const relativeSince = (iso?: string) => {
   return d.locale('th').fromNow()
 }
 
-const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds }) {
+const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, onOpenSignDetail }) {
   const { data, isLoading, isFetching, dataUpdatedAt } = useCommandCenterMonitor(vmsIds, { refetchIntervalMs: 5_000 })
   const rows: VMSMonitorItem[] = data?.data ?? []
   const cancel = useCancelVMSSetting()
   const { message } = App.useApp()
-  const [drawer, setDrawer] = useState<{ cmi?: string; name?: string; wid?: number; open: boolean }>({ open: false })
-
-  const openHistory = (item: VMSMonitorItem) => {
-    setDrawer({
-      open: true,
-      cmi: item.crossing_master_index,
-      name: item.solution_name,
-      wid: item.wid,
-    })
-  }
-
-  const closeDrawer = () => setDrawer((s) => ({ ...s, open: false }))
 
   const handleCancel = async (settingID?: number) => {
     if (!settingID) return
@@ -156,10 +144,12 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds })
               <div className="mt-2 flex items-center gap-2 justify-end">
                 <Button
                   size="small"
-                  icon={<TbHistory style={{ verticalAlign: -2 }} />}
-                  onClick={() => openHistory(it)}
+                  type="primary"
+                  ghost
+                  icon={<TbEye style={{ verticalAlign: -2 }} />}
+                  onClick={() => onOpenSignDetail?.(it.vms_id)}
                 >
-                  ประวัติ
+                  ดูรายละเอียด
                 </Button>
                 {hasActive && meta.isCancellable && (
                   <Popconfirm
@@ -185,13 +175,6 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds })
           )
         })}
       </div>
-      <HistoryDrawer
-        open={drawer.open}
-        onClose={closeDrawer}
-        crossingMasterIndex={drawer.cmi}
-        solutionName={drawer.name}
-        wid={drawer.wid}
-      />
     </div>
   )
 })

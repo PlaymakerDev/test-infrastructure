@@ -1,10 +1,12 @@
 "use client"
-import React, { useMemo, useState } from 'react'
-import { App } from 'antd'
+import React, { useCallback, useMemo, useState } from 'react'
+import { App, Tabs } from 'antd'
 import type { BureauSelection } from '@/types/control-vms/bureau'
 import ScopePicker from '../components/ScopePicker'
 import Composer from '../components/Composer'
 import LiveMonitor from '../components/LiveMonitor'
+import GlobalHistoryTable from '../components/GlobalHistoryTable'
+import SignDetailModal from '../components/SignDetailModal'
 
 const emptySelection: BureauSelection = {
   keys: [],
@@ -16,6 +18,9 @@ const emptySelection: BureauSelection = {
 
 const VMSCommandCenterScreen: React.FC = () => {
   const [selection, setSelection] = useState<BureauSelection>(emptySelection)
+  const [detailVmsId, setDetailVmsId] = useState<number | null>(null)
+  const openDetail = useCallback((id: number) => setDetailVmsId(id), [])
+  const closeDetail = useCallback(() => setDetailVmsId(null), [])
 
   const vmsIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
 
@@ -31,17 +36,41 @@ const VMSCommandCenterScreen: React.FC = () => {
 
   return (
     <App>
-      <div className="h-[calc(100vh-96px)] w-full grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3 p-3">
-        <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-          <ScopePicker onSelectionChange={setSelection} selection={selection} />
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-          <Composer vmsIds={vmsIds} targetSignSummary={targetSummary} />
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
-          <LiveMonitor vmsIds={vmsIds} />
-        </div>
+      <div className="h-[calc(100vh-96px)] w-full p-3">
+        <Tabs
+          defaultActiveKey="dispatch"
+          className="vms-cc-tabs h-full"
+          items={[
+            {
+              key: 'dispatch',
+              label: 'สั่งใหม่ + ติดตาม',
+              children: (
+                <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
+                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
+                    <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
+                    <Composer vmsIds={vmsIds} targetSignSummary={targetSummary} />
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[.03] overflow-hidden">
+                    <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'history',
+              label: 'ประวัติสั่งงานทั้งหมด',
+              children: (
+                <div className="h-[calc(100vh-160px)]">
+                  <GlobalHistoryTable onOpenSign={openDetail} />
+                </div>
+              ),
+            },
+          ]}
+        />
       </div>
+      <SignDetailModal open={detailVmsId !== null} onClose={closeDetail} vmsId={detailVmsId} />
     </App>
   )
 }

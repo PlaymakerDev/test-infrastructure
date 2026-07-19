@@ -19,7 +19,7 @@ import {
   APIResponseVMSMediaUrl
 } from "@/types/control-vms/vms-api"
 import { APIRequestVMSStatusHistory, APIResponseVMSStatusHistory } from "@/types/vms/history-api"
-import { APIResponseVMSMonitor } from "@/types/vms/command-center-api"
+import { APIRequestVMSGlobalHistory, APIResponseVMSGlobalHistory, APIResponseVMSMonitor, APIResponseVMSSignDetail } from "@/types/vms/command-center-api"
 
 // VMS
 export const getVMSDepartmentAPI = async () => {
@@ -232,5 +232,22 @@ export const getVMSCommandCenterMonitorAPI = async (vmsIds: number[]) => {
     method: 'GET',
     params: { vms_ids: vmsIds },
     paramsSerializer: { indexes: null },
+  })
+}
+
+// GLOBAL HISTORY — cross-sign command timeline (from/to YYYY-MM-DD optional).
+export const getVMSCommandCenterHistoryAPI = async (params: APIRequestVMSGlobalHistory = {}) => {
+  return ApiService.fetchData<APIResponseVMSGlobalHistory, APIRequestVMSGlobalHistory>({
+    url: `/vms/command-center/history`,
+    method: 'GET',
+    params: { ...params },
+  })
+}
+
+// SIGN DETAIL — full detail for fullscreen modal (current setting + schedules + cameras + live screen capture)
+export const getVMSCommandCenterSignAPI = async (vmsId: number) => {
+  return ApiService.fetchData<APIResponseVMSSignDetail>({
+    url: `/vms/command-center/sign/${vmsId}`,
+    method: 'GET',
   })
 }
