@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react'
 import { FormSearchStation, StationInfoCard } from '../../../components'
-import { SumStation } from '@/types/tracking/overall-api'
 import { Empty, Skeleton } from 'antd'
-import { useQuery } from '@tanstack/react-query'
-import { getTrackingStationDailyCountAPI } from '@/services/routes/TrackingDetailService'
+import { useStationDailyCount } from '../../../hooks'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -13,12 +11,9 @@ interface Props {
 const StationSearchPanel: React.FC<Props> = (props) => {
   const { onSearch } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_overall_station_daily_status_count'],
-    queryFn: () => getTrackingStationDailyCountAPI({
-      start_date: dayjs().format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD')
-    }),
+  const { data, isLoading, isError } = useStationDailyCount({
+    start_date: dayjs().format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD')
   })
 
   const renderContent = useMemo(() => {

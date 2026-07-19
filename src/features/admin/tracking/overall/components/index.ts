@@ -1,5 +1,6 @@
 // TITLE
 export { default as TitleSection } from './TitleSection'
+export { default as ModalCCTVData } from './ModalCCTVData'
 
 // OVERALL
 export { default as OverallSection } from './OverallSection'

@@ -1,6 +1,16 @@
 "use client"
-import { APIRequestTrackingMobileMaster, APIRequestTrackingPosition, APIRequestTrackingViewSumPlanChart } from '@/types/tracking/overall-api';
+import { APIRequestTrackingMobileMaster, APIRequestTrackingPosition, APIRequestTrackingViewSumPlanChart, CCTVList } from '@/types/tracking/overall-api';
 import { createContext, useContext, useState } from 'react'
+
+export interface ModalCCTVDataProps {
+  open: boolean
+  item: CCTVList | null
+}
+
+export const INIT_MODAL_CCTV_DATA: ModalCCTVDataProps = {
+  open: false,
+  item: null,
+}
 
 export interface ContextProps {
   searchPosition: APIRequestTrackingPosition | null
@@ -9,6 +19,8 @@ export interface ContextProps {
   setSearchMobileMaster: (s: APIRequestTrackingMobileMaster | null) => void
   searchSumPlan: APIRequestTrackingViewSumPlanChart | null
   setSearchSumPlan: (s: APIRequestTrackingViewSumPlanChart | null) => void
+  openCCTVData: ModalCCTVDataProps
+  setOpenCCTVData: React.Dispatch<React.SetStateAction<ModalCCTVDataProps>>
 }
 
 export interface PageProviderProps {
@@ -22,6 +34,7 @@ export const OverallProvider = (props: PageProviderProps) => {
   const [searchPosition, setSearchPosition] = useState<APIRequestTrackingPosition | null>(null)
   const [searchMobileMaster, setSearchMobileMaster] = useState<APIRequestTrackingMobileMaster | null>(null)
   const [searchSumPlan, setSearchSumPlan] = useState<APIRequestTrackingViewSumPlanChart | null>(null)
+  const [openCCTVData, setOpenCCTVData] = useState<ModalCCTVDataProps>(INIT_MODAL_CCTV_DATA)
 
   return (
     <OverallContext.Provider
@@ -31,7 +44,9 @@ export const OverallProvider = (props: PageProviderProps) => {
         searchMobileMaster,
         setSearchMobileMaster,
         searchSumPlan,
-        setSearchSumPlan
+        setSearchSumPlan,
+        openCCTVData,
+        setOpenCCTVData,
       }}
     >
       {children}

@@ -3,8 +3,7 @@ import { FormSearchMobile, MobileInfoCard } from '../../../components'
 import { MobileMasterData, APIResponseTrackingViewSumPlanChart } from '@/types/tracking/overall-api'
 import { Empty, Skeleton } from 'antd'
 import { WIMMetaData } from '@/types/shared'
-import { useQuery } from '@tanstack/react-query'
-import { getTrackingMobileDailyCountAPI } from '@/services/routes/TrackingDetailService'
+import { useMobileDailyCount } from '../../../hooks'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -20,12 +19,9 @@ interface Props {
 const MobileSearchPanel: React.FC<Props> = (props) => {
   const { } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_overall_mobile_daily_status_count'],
-    queryFn: () => getTrackingMobileDailyCountAPI({
-      start_date: dayjs().format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD')
-    }),
+  const { data, isLoading, isError } = useMobileDailyCount({
+    start_date: dayjs().format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD')
   })
 
   const renderContent = useMemo(() => {

@@ -1,5 +1,4 @@
-import { getTrackingCollaborationAPI } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useCollaboration } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Image, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo, useState } from 'react'
@@ -27,16 +26,12 @@ const MobileStationData: React.FC<Props> = (props) => {
   const { } = props
   const [randomCollaboration] = useState(() => `${Math.random()}`);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['wim_cctv_list'],
-    queryFn: () => getTrackingCollaborationAPI({
-      start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD'),
-      page: 1,
-      page_size: 10,
-      order: 'ASC'
-    }),
-    placeholderData: keepPreviousData
+  const { data, isLoading, isError } = useCollaboration({
+    start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD'),
+    page: 1,
+    page_size: 10,
+    order: 'ASC'
   })
 
   const renderCollaboration = useMemo(() => {

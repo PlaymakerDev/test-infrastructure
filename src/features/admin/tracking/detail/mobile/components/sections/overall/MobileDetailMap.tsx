@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { useMobileContext } from '../../../context';
 import BaseMap from '@/components/map/BaseMap';
 import { TbMapPin } from 'react-icons/tb';
 import { Button, ConfigProvider, Image } from 'antd';
@@ -18,7 +17,6 @@ const DEFAULT_ICON = '/images/icon-marker/Default.svg'
 
 const MobileDetailMap: React.FC<Props> = (props) => {
   const { departmentData } = props;
-  const { } = useMobileContext()
 
   const point = useMemo(() => [Number(departmentData?.longitude), Number(departmentData?.latitude)], [departmentData])
 

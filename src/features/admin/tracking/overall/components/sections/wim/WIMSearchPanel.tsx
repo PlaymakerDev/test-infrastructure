@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react'
 import { FormSearchWIM, WIMInfoCard } from '../../../components'
 import { Empty, Skeleton } from 'antd'
-import { getTrackingSumWIMAPI } from '@/services/routes/TrackingService'
-import { useQuery } from '@tanstack/react-query'
-import { getTrackingWIMDailyCountAPI } from '@/services/routes/TrackingDetailService'
+import { useWimDailyCount } from '../../../hooks'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -13,12 +11,9 @@ interface Props {
 const WIMSearchPanel: React.FC<Props> = (props) => {
   const { onSearch } = props
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_overall_wim_daily_status_count'],
-    queryFn: () => getTrackingWIMDailyCountAPI({
-      start_date: dayjs().format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD')
-    }),
+  const { data, isLoading, isError } = useWimDailyCount({
+    start_date: dayjs().format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD')
   })
 
   const renderContent = useMemo(() => {

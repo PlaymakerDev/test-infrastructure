@@ -4,7 +4,7 @@ import { Empty, Image } from 'antd'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Transition } from 'motion/react'
 import { WeightStationLogByIDData, WeightWIMLogByIDData } from '@/types/tracking/detail-api'
-import { VEHICLE_PROPERTIES } from '@/constants'
+import { FALLBACK, VEHICLE_PROPERTIES } from '@/constants'
 
 interface Props {
   // STATION data has no `speed` reading (it's a static weighbridge, not a
@@ -57,6 +57,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
                     width={'100%'}
                     height={'100%'}
                     className='object-center object-cover'
+                    fallback={FALLBACK}
                   />
                 </motion.figure>
                 <motion.figure
@@ -74,6 +75,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
                     width={'100%'}
                     height={'100%'}
                     className='object-center object-cover'
+                    fallback={FALLBACK}
                   />
                 </motion.figure>
               </>
@@ -94,6 +96,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
               height={'100%'}
               className='object-left object-contain'
               preview={false}
+              fallback={FALLBACK}
             />
           </motion.figure>
         </section>

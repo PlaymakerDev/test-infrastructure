@@ -12,8 +12,10 @@ interface Props {
   meta?: WIMMetaData
   isLoading?: boolean
   isError?: boolean
+  page?: number
+  pageSize?: number
+  onPageChange?: (page: number, pageSize: number) => void
 }
-
 
 type StatusType = 'เปิดด่าน' | 'ปิดด่าน'
 
@@ -22,102 +24,9 @@ const STATUS_COLOR: Record<StatusType, string> = {
   "ปิดด่าน": "#E94C4C"
 }
 
-const STATUS_CLASS: Record<StatusType, string> = {
-  'เปิดด่าน': 'border-(--default-blue) text-(--default-blue)',
-  'ปิดด่าน': 'border-red-500 text-red-500',
-}
-
-interface WIMProjectRecord {
-  key: string
-  no: number
-  routeCode: string
-  province: string
-  unit: string
-  integration: string | null
-  startTime: string
-  endTime: string | null
-  totalVehicles: number
-  normalWeight: number
-  overweight: number
-  overweight10: number
-}
-
 const TableMobileData: React.FC<Props> = (props) => {
-  const { data, isError, isLoading } = props;
+  const { data, isError, isLoading, meta, page, pageSize, onPageChange } = props;
   const router = useRouter()
-
-  const mockData: WIMProjectRecord[] = [
-    {
-      key: '1',
-      no: 1,
-      routeCode: 'ชย.3002',
-      province: 'ชัยภูมิ',
-      unit: 'ขทช.ชัยภูมิ',
-      integration: 'อส.ทช',
-      startTime: '16:02',
-      endTime: null,
-      totalVehicles: 8,
-      normalWeight: 5,
-      overweight: 3,
-      overweight10: 1,
-    },
-    {
-      key: '2',
-      no: 2,
-      routeCode: 'อบ.4041',
-      province: 'อุบลราชธานี',
-      unit: 'สทช.7 (อุบลราชธานี)',
-      integration: 'กช.',
-      startTime: '14:48',
-      endTime: '16:03',
-      totalVehicles: 12,
-      normalWeight: 12,
-      overweight: 0,
-      overweight10: 0,
-    },
-    {
-      key: '3',
-      no: 3,
-      routeCode: 'มห.4012',
-      province: 'มุกดาหาร',
-      unit: 'ขทช.มุกดาหาร',
-      integration: null,
-      startTime: '12:25',
-      endTime: '14:30',
-      totalVehicles: 4,
-      normalWeight: 4,
-      overweight: 0,
-      overweight10: 0,
-    },
-    {
-      key: '4',
-      no: 4,
-      routeCode: 'กพ.4020',
-      province: 'กำแพงเพชร',
-      unit: 'ขทช.กำแพงเพชร',
-      integration: 'ตำรวจ',
-      startTime: '10:25',
-      endTime: '14:30',
-      totalVehicles: 25,
-      normalWeight: 22,
-      overweight: 3,
-      overweight10: 1,
-    },
-    {
-      key: '5',
-      no: 5,
-      routeCode: 'ปก.3020',
-      province: 'ปทุมธานี',
-      unit: 'สทช.1 (ปทุมธานี)',
-      integration: null,
-      startTime: '09:15',
-      endTime: '12:06',
-      totalVehicles: 9,
-      normalWeight: 9,
-      overweight: 0,
-      overweight10: 0,
-    },
-  ]
 
   const columns: ColumnsType<MobileMasterData> = [
     {
@@ -295,13 +204,17 @@ const TableMobileData: React.FC<Props> = (props) => {
       dataSource={data}
       className='bridge-projects-table'
       pagination={{
+        current: page,
+        pageSize,
+        total: meta?.total ?? 0,
+        onChange: onPageChange,
         locale: { items_per_page: "/ หน้า" },
         showSizeChanger: true,
         pageSizeOptions: [10, 20, 50, 100],
         showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
       }}
       size="middle"
-      rowKey="station_id"
+      rowKey="TID"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
     />

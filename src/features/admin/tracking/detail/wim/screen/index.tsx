@@ -2,7 +2,8 @@ import React, { useMemo } from 'react'
 import {
   TitleSection,
   OverallSection,
-  VehicleSection
+  VehicleSection,
+  CCTVSection
 } from '../components'
 import { useSearchParams } from 'next/navigation';
 import { WIMProvider, useWIMContext } from '../context'
@@ -21,7 +22,7 @@ const WIMDetailContent: React.FC = () => {
       case 'VEHICLE':
         return <VehicleSection />
       case 'CCTV':
-        return <p>CCTV</p>
+        return <CCTVSection />
       default:
         return <OverallSection />
     }
