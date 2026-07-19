@@ -52,10 +52,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const today = dayjs()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([today, today])
   const [isAllDay, setIsAllDay] = useState(false)
-  const [timeRange, setTimeRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().startOf('day'),
-    dayjs().endOf('day').startOf('minute'),
-  ])
+  // Default the slot to "now → now + 1 hr" so a one-tap dispatch actually
+  // covers the current moment. Round to the nearest minute so the picker
+  // shows clean values (13:07 rather than 13:07:42).
+  const [timeRange, setTimeRange] = useState<[Dayjs, Dayjs]>(() => {
+    const now = dayjs().startOf('minute')
+    return [now, now.add(1, 'hour')]
+  })
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
   const [confirmOpen, setConfirmOpen] = useState(false)
 
