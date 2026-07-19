@@ -116,6 +116,16 @@ export interface SummaryItem {
   location_count: number
 }
 
+/** GET /{prefix}/departments/{id}/{cameras|overview}/uptime-statistics?scope=all
+ *  — per-domain online percentage used by Solution Overview's rings. The
+ *  response also carries a domain-specific `{ total, online, offline }` block
+ *  under a key named after the domain (e.g. `camera`, `traffic`, `lighting`),
+ *  omitted here since only the aggregate percentage is needed. */
+export interface UptimeStatistics {
+  percentage: number
+  is_maintain: boolean
+}
+
 export interface WarrantySummaryItem {
   in_warranty: boolean
   project_count: number

@@ -373,7 +373,23 @@ const RepairRecordsSection: React.FC = () => {
     { title: 'หน่วยงาน', dataIndex: 'agency', key: 'agency', width: 160 },
     { title: 'สายทาง', dataIndex: 'route', key: 'route', width: 180 },
     { title: 'จุดติดตั้ง', dataIndex: 'installPoint', key: 'installPoint', width: 130 },
-    { title: 'Case No.', dataIndex: 'caseNo', key: 'caseNo', width: 160 },
+    {
+      title: 'Case No.', dataIndex: 'caseNo', key: 'caseNo', width: 160,
+      // Same destination as the "เปิด Case" confirm flow on the device
+      // detail page (detail/screen/index.tsx) — otherwise this list shows
+      // every case's number but has no way to open one back up.
+      render: (caseNo: string) => (
+        <span
+          style={{ color: '#FCD116', cursor: 'pointer', textDecoration: 'underline' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            router.push(`/admin/maintenance/case/${caseNo}`)
+          }}
+        >
+          {caseNo}
+        </span>
+      ),
+    },
     {
       title: 'การค้ำประกัน', dataIndex: 'warranty', key: 'warranty', width: 140, align: 'center',
       render: (warranty: string) => (

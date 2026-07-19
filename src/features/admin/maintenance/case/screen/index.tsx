@@ -1,5 +1,6 @@
 "use client"
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { App, Button, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
 import type { UploadFile } from 'antd'
 import { AxiosError } from 'axios'
@@ -88,6 +89,7 @@ const REPAIR_STATUS_CONFIG: Record<RepairStatus, { label: string; color: string;
 const CaseContent: React.FC<Props> = ({ id }) => {
   const { modal, message } = App.useApp()
   const dispatch = useAppDispatch()
+  const router = useRouter()
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -292,6 +294,27 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     ? [cameraDetail.counting, cameraDetail.analytic, cameraDetail.traffic, cameraDetail.crosswalk, cameraDetail.wim_camera, cameraDetail.vms]
       .find((s) => s != null)?.solution_id
     : undefined
+
+  // Mirrors TitleSection's own back-arrow handler — the "ยกเลิก" button had no
+  // onClick at all (discovered while clicking through the page: it did
+  // nothing), so it never matched the arrow's "go back without saving"
+  // behavior sitting right above it.
+  const handleCancel = () => {
+    const detailId = typeof window !== 'undefined' ? sessionStorage.getItem('maintenance_detail_id') : null
+    if (detailId) {
+      router.push(`/admin/maintenance/detail/${detailId}`)
+      return
+    }
+    if (fallbackSolutionId) {
+      router.push(`/admin/maintenance/detail/${fallbackSolutionId}`)
+      return
+    }
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/admin/maintenance')
+    }
+  }
 
   return (
     <div className='main-screen'>
@@ -610,7 +633,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                   นำออกเอกสาร
                 </Button>
               </ConfigProvider>
-              <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }}>
+              <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }} onClick={handleCancel}>
                 ยกเลิก
               </button>
               <button

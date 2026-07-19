@@ -7,8 +7,18 @@ import {
   getMaintenanceSummaryAPI,
   getMaintenanceWarrantySummaryAPI,
   getMaintenanceOfflineRoadsAPI,
+  getUptimeStatisticsAPI,
 } from '@/services/routes/MaintenanceService'
-import type { SummaryItem, WarrantySummaryItem, OfflineRoadItem } from '@/types/maintenance'
+import type { SummaryItem, WarrantySummaryItem, OfflineRoadItem, UptimeStatistics } from '@/types/maintenance'
+
+// The only SummaryItem.type values with a confirmed uptime-statistics endpoint
+// (Counting/Analytic have none — they keep MOCK_ONLINE_PERCENTS below).
+const UPTIME_STATISTICS_TYPES = ['CCTV', 'Traffic', 'Lighting', 'VMS', 'WIM', 'Crosswalk', 'Tunnel'] as const
+
+// Hidden from Solution Overview until a real uptime-statistics endpoint
+// exists for them — showing a mock percentage next to 7 real ones is
+// misleading.
+const HIDDEN_SOLUTION_TYPES = new Set(['Counting', 'Analytic'])
 
 interface LineRecord {
   key: string
@@ -96,6 +106,7 @@ const MaintenanceOverviewSection: React.FC<{
   const [summaryData, setSummaryData] = useState<SummaryItem[]>([])
   const [warrantyData, setWarrantyData] = useState<WarrantySummaryItem[]>([])
   const [offlineRoads, setOfflineRoads] = useState<OfflineRoadItem[]>([])
+  const [uptimeData, setUptimeData] = useState<Record<string, UptimeStatistics>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -109,15 +120,26 @@ const MaintenanceOverviewSection: React.FC<{
 
       const offlineSince = periodToOfflineSince(periodValue || 'ทั้งหมด')
 
-      const [summaryRes, warrantyRes, offlineRes] = await Promise.all([
+      const [summaryRes, warrantyRes, offlineRes, uptimeResults] = await Promise.all([
         getMaintenanceSummaryAPI(),
         getMaintenanceWarrantySummaryAPI(),
         getMaintenanceOfflineRoadsAPI(offlineSince),
+        // allSettled — one domain's uptime endpoint failing shouldn't blank
+        // out the rest of the ring or trip the page-level error state below.
+        Promise.allSettled(
+          UPTIME_STATISTICS_TYPES.map((type) => getUptimeStatisticsAPI(type.toLowerCase())),
+        ),
       ])
 
       setSummaryData(summaryRes.data)
       setWarrantyData(warrantyRes.data)
       setOfflineRoads(offlineRes.data)
+      setUptimeData(
+        uptimeResults.reduce<Record<string, UptimeStatistics>>((acc, result, i) => {
+          if (result.status === 'fulfilled') acc[UPTIME_STATISTICS_TYPES[i]] = result.value.data
+          return acc
+        }, {}),
+      )
     } catch (err) {
       console.error('Error fetching maintenance data:', err)
       setError('ไม่สามารถโหลดข้อมูลได้')
@@ -157,7 +179,8 @@ const MaintenanceOverviewSection: React.FC<{
     [loading]
   )
 
-  // TODO: Replace mock online percents with real API data when backend adds online_count to SummaryItem
+  // Counting/Analytic have no confirmed uptime-statistics endpoint yet, so they
+  // keep these mock percents; every other type is overridden by uptimeData below.
   const MOCK_ONLINE_PERCENTS: Record<string, number> = {
     CCTV: 85,
     Traffic: 72,
@@ -200,10 +223,10 @@ const MaintenanceOverviewSection: React.FC<{
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
           <p className="text-xs font-normal text-[#979797] mt-1 hidden sm:block">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
-          <div className="mt-3 sm:mt-5 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-9 gap-2 sm:gap-4">
-            {summaryData.map((item, idx) => {
+          <div className="mt-3 sm:mt-5 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
+            {summaryData.filter((item) => !HIDDEN_SOLUTION_TYPES.has(item.type)).map((item, idx) => {
               const color = getSolutionColor(item.type)
-              const onlinePercent = MOCK_ONLINE_PERCENTS[item.type] ?? 75
+              const onlinePercent = uptimeData[item.type]?.percentage ?? MOCK_ONLINE_PERCENTS[item.type] ?? 75
               return (
                 <div key={`${item.solution_type_id}-${idx}`} className="flex flex-col items-center gap-1 sm:gap-2">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24">
@@ -352,7 +375,10 @@ const MaintenanceOverviewSection: React.FC<{
             columns={LINE_COLUMNS}
             dataSource={filteredOfflineRoads.map((road, index) => ({
               key: index.toString(),
-              line: road.road_name,
+              // Confirmed via live API: some roads genuinely have
+              // road_name: "" from the backend (same known gap fixed for
+              // RepairRecordsSection's tree — see commit b8be95e).
+              line: road.road_name || 'โปรดระบุชื่อสายทาง',
               installPoints: road.location_count,
               devices: road.device_count,
               offline: road.offline_count,

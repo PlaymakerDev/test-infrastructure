@@ -13,6 +13,7 @@ import type {
   MaintenanceCaseParams,
   MaintenanceHistoryParams,
   RegionItem,
+  UptimeStatistics,
 } from "@/types/maintenance"
 import type { APIResponseProjectDetail, UploadResponse } from "@/types/shared"
 
@@ -23,6 +24,22 @@ export const getMaintenanceSummaryAPI = async (solutionTypeId?: number) => {
     url: '/manage/maintenance/summary',
     method: 'GET',
     params: solutionTypeId ? { solution_type_id: solutionTypeId } : undefined,
+  })
+}
+
+/**
+ * GET /{prefix}/departments/{departmentId}/{cameras|overview}/uptime-statistics?scope=all
+ * — per-domain online percentage backing Solution Overview's rings. `prefix`
+ * is the lowercased `SummaryItem.type` (cctv/traffic/lighting/vms/wim/crosswalk/tunnel);
+ * CCTV's path segment is `cameras`, every other confirmed domain uses `overview`.
+ * `departmentId=0` is "all departments" (this page has no department filter).
+ */
+export const getUptimeStatisticsAPI = async (prefix: string, departmentId: number = 0) => {
+  const segment = prefix === 'cctv' ? 'cameras' : 'overview'
+  return ApiService.fetchData<UptimeStatistics>({
+    url: `/${prefix}/departments/${departmentId}/${segment}/uptime-statistics`,
+    method: 'GET',
+    params: { scope: 'all' },
   })
 }
 
