@@ -23,6 +23,22 @@ interface Props {
 
 const fmt = (iso?: string) => (iso ? dayjs(iso).locale('th').fromNow() : '—')
 
+// Backend stores days_of_week as a 7-bit mask (Mon=bit0 … Sun=bit6, 127=all).
+// Some responses ship it as a number, some as an ISO-array — accept either.
+const DAY_LABELS = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.']
+const formatDaysOfWeek = (input: number | number[] | undefined | null): string => {
+  const days: number[] = []
+  if (Array.isArray(input)) {
+    // ISO 1..7 array
+    for (const d of input) if (d >= 1 && d <= 7) days.push(d)
+  } else if (typeof input === 'number') {
+    for (let bit = 0; bit < 7; bit++) if (input & (1 << bit)) days.push(bit + 1)
+  }
+  if (days.length === 0 || days.length === 7) return 'ทุกวัน'
+  if (days.length === 5 && !days.includes(6) && !days.includes(7)) return 'จันทร์ – ศุกร์'
+  return days.map((d) => DAY_LABELS[d - 1]).join(', ')
+}
+
 const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const { message } = App.useApp()
   const { data, isLoading } = useSignDetail(vmsId, { refetchIntervalMs: open ? 5_000 : undefined })
@@ -145,11 +161,29 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   )}
                 </div>
 
-                {/* Current setting content preview */}
+                {/* Current setting content preview — label switches when the
+                    setting has already reached a terminal state (4/6/7) so
+                    the card doesn't lie ("กำลังแสดง" for a finished run). */}
                 {activeSettingID && (
                   <div className="rounded-lg border border-white/10 bg-(--dark-black) p-3">
                     <div className="text-xs text-white/50 mb-1">
-                      คำสั่งที่กำลังแสดง {detail.command_no != null ? `(คำสั่งที่ ${detail.command_no})` : `(setting #${activeSettingID})`}
+                      {(() => {
+                        const label = detail.command_no != null
+                          ? `คำสั่งที่ ${detail.command_no}`
+                          : `setting #${activeSettingID}`
+                        const heading = activeMeta.isActive
+                          ? 'คำสั่งที่กำลังแสดง'
+                          : activeMeta.id === 4
+                          ? 'คำสั่งล่าสุด (เสร็จสิ้นแล้ว)'
+                          : activeMeta.id === 5
+                          ? 'คำสั่งล่าสุด (ป้ายขาดการเชื่อมต่อ)'
+                          : activeMeta.id === 6
+                          ? 'คำสั่งล่าสุด (ถูกยกเลิก)'
+                          : activeMeta.id === 7
+                          ? 'คำสั่งล่าสุด (ถูกสั่งทับด้วยคำสั่งอื่น)'
+                          : 'คำสั่งล่าสุด'
+                        return `${heading} (${label})`
+                      })()}
                     </div>
                     <div className="flex items-center gap-3">
                       {detail.media_url && (
@@ -166,12 +200,29 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           />
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 text-sm">
+                      <div className="min-w-0 flex-1 text-sm space-y-0.5">
                         <div><b>{detail.setting_type_name || '-'}</b></div>
-                        <div className="text-white/50">
-                          {detail.date_since} → {detail.date_to}
+                        <div className="text-white/60 text-xs">
+                          <span className="opacity-70">วันที่:</span>{' '}
+                          {detail.date_since === detail.date_to
+                            ? detail.date_since
+                            : `${detail.date_since} → ${detail.date_to}`}
                         </div>
-                        {detail.message && <div className="text-white/70 mt-0.5">{detail.message}</div>}
+                        {detail.schedules?.map((sc) => {
+                          const allDay = sc.time_since === '00:00:00' && (sc.time_to === '00:00:00' || sc.time_to === '23:59:00' || sc.time_to === '23:59:59')
+                          const daysLabel = formatDaysOfWeek(sc.days_of_week)
+                          return (
+                            <div key={sc.id} className="text-white/60 text-xs">
+                              <span className="opacity-70">เวลา:</span>{' '}
+                              {allDay
+                                ? <span className="text-(--yellow)">ตลอดวัน</span>
+                                : <span>{sc.time_since.slice(0, 5)} – {sc.time_to.slice(0, 5)}</span>}
+                              <span className="opacity-70 ml-2">· วัน:</span>{' '}
+                              <span>{daysLabel}</span>
+                              {sc.message && <div className="text-white/70 mt-0.5">{sc.message}</div>}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
@@ -266,9 +317,28 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                 </span>
                               </div>
                               <Timeline
-                                items={group.map((r) => {
+                                items={(() => {
+                                  // Belt-and-suspenders: collapse consecutive
+                                  // rows sharing (status, source). New logs
+                                  // don't produce dupes, but legacy rows still
+                                  // exist — group into one line with "×N" +
+                                  // time range so timelines stay scannable.
+                                  const runs: { first: typeof group[number]; last: typeof group[number]; count: number }[] = []
+                                  for (const r of group) {
+                                    const cur = runs[runs.length - 1]
+                                    if (cur && cur.last.status === r.status && cur.last.source === r.source && cur.last.prev_status === r.prev_status) {
+                                      cur.last = r
+                                      cur.count++
+                                    } else {
+                                      runs.push({ first: r, last: r, count: 1 })
+                                    }
+                                  }
+                                  return runs
+                                })().map((run) => {
+                                  const r = run.first
                                   const meta = statusMeta(r.status)
                                   const at = dayjs(r.reported_at)
+                                  const lastAt = dayjs(run.last.reported_at)
                                   return {
                                     color: meta.color,
                                     dot: (
@@ -293,10 +363,20 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                             </span>
                                           )}
                                           <span className="text-xs text-white/70">{sourceLabel(r.source)}</span>
+                                          {run.count > 1 && (
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
+                                              ×{run.count}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="text-xs text-white/50 mt-1">
                                           <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
-                                            <span>{at.format('DD MMM YYYY HH:mm:ss')} · {at.locale('th').fromNow()}</span>
+                                            <span>
+                                              {at.format('DD MMM YYYY HH:mm:ss')}
+                                              {run.count > 1 && ` – ${lastAt.format('HH:mm:ss')}`}
+                                              {' · '}
+                                              {at.locale('th').fromNow()}
+                                            </span>
                                           </Tooltip>
                                         </div>
                                       </div>
