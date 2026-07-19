@@ -217,7 +217,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           {vmsIds.length === 0 && (
-            <Alert type="warning" showIcon message="เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย" />
+            <Alert type="warning" showIcon title="เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย" />
           )}
         </div>
         <div className="px-4 py-3 border-t border-white/10">

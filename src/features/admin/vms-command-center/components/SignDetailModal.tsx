@@ -1,6 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { App, Badge, Button, ConfigProvider, Empty, Image, Modal, Popconfirm, Skeleton, Tag, Timeline, Tooltip } from 'antd'
+import { App, Badge, Button, Empty, Image, Modal, Popconfirm, Skeleton, Tag, Timeline, Tooltip } from 'antd'
 import { TbCircleCheckFilled, TbPlayerStop, TbRefresh, TbWifi, TbWifiOff } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -54,16 +54,16 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const screenURL = detail?.desktop_screen_url
 
   return (
-    <ConfigProvider theme={{ token: { colorTextBase: '#0f172a' } }}>
-      <Modal
-        open={open}
-        onCancel={onClose}
-        footer={null}
-        width="min(1400px, 96vw)"
-        centered
-        destroyOnClose
-        styles={{ body: { padding: 0, background: '#f8fafc', borderRadius: 12 } }}
-      >
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width="min(1400px, 96vw)"
+      centered
+      destroyOnHidden
+      classNames={{ wrapper: 'light-modal-popup' }}
+      styles={{ body: { padding: 0, background: '#f8fafc', borderRadius: 12 } }}
+    >
         {isLoading && (
           <div className="p-8">
             <Skeleton active paragraph={{ rows: 8 }} />
@@ -273,8 +273,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
             </div>
           </div>
         )}
-      </Modal>
-    </ConfigProvider>
+    </Modal>
   )
 }
 
