@@ -1,5 +1,4 @@
-import { getTrackingAllDepartmentAPI } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useAllDepartment } from '@/features/admin/tracking/overall/hooks'
 import { Col, ConfigProvider, Row, Select } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import dayjs, { Dayjs } from 'dayjs'
@@ -65,11 +64,7 @@ const FormSearchUnitPlan: React.FC<Props> = (props) => {
     })
   }, [setSearchSumPlan])
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['all_department'],
-    queryFn: () => getTrackingAllDepartmentAPI({}),
-    placeholderData: keepPreviousData
-  })
+  const { data, isLoading } = useAllDepartment({})
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

@@ -1,35 +1,41 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { MobileLocationSection, TableMobile, MobileUnitPlanSection } from '../components'
-import { getTrackingMobileMasterAPI, getTrackingViewSumPlanChartAPI } from '@/services/routes/TrackingService'
-import { useQuery } from '@tanstack/react-query'
+import { useMobileMaster, useSumPlanChart } from '../hooks'
 import dayjs from 'dayjs'
 import { useOverallContext } from '../context'
 
+const DEFAULT_PAGE_SIZE = 10
+
 const MobileSection = () => {
   const { searchMobileMaster, searchSumPlan } = useOverallContext()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_mobile_master', searchMobileMaster?.search],
-    queryFn: () => getTrackingMobileMasterAPI({
-      start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD'),
-      page: 1,
-      page_size: 100,
-      ordering: 'asc',
-      search: searchMobileMaster?.search || ''
-    }),
-    // placeholderData: keepPreviousData,
+  const [prevSearch, setPrevSearch] = useState(searchMobileMaster?.search)
+  if (searchMobileMaster?.search !== prevSearch) {
+    setPrevSearch(searchMobileMaster?.search)
+    setPage(1)
+  }
+
+  const { data, isLoading, isError } = useMobileMaster({
+    start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD'),
+    page,
+    page_size: pageSize,
+    ordering: 'asc',
+    search: searchMobileMaster?.search || ''
   })
 
   const {
     data: sumPlanData,
     isLoading: isSumPlanLoading,
     isError: isSumPlanError
-  } = useQuery({
-    queryKey: ['sum_plan', searchSumPlan],
-    queryFn: () => getTrackingViewSumPlanChartAPI({ ...searchSumPlan }),
-    // placeholderData: keepPreviousData
-  })
+  } = useSumPlanChart({ ...searchSumPlan })
+
+  const handlePageChange = (nextPage: number, nextPageSize: number) => {
+    setPage(nextPage)
+    setPageSize(nextPageSize)
+  }
 
   return (
     <div>
@@ -57,6 +63,9 @@ const MobileSection = () => {
           meta={data?.data.meta}
           isLoading={isLoading}
           isError={isError}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
         />
       </section>
     </div>

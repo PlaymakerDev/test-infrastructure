@@ -7,34 +7,28 @@ import {
   MobileStatCard,
   OverallDataDisplaySection
 } from '../components'
-import { useQuery } from '@tanstack/react-query';
-import { getTrackingMobileDailyCountAPI } from '@/services/routes/TrackingDetailService';
-import dayjs from 'dayjs';
-import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api';
+import { useMobileDailyCount, useMobileMasterDepartmentByTID } from '../hooks'
+import { useMobileContext } from '../context'
 
 interface Props {
-  id: string[] | string | number | undefined;
-  departmentData?: MobileMasterDepartmentByTIDData
-  isDepartmentLoading?: boolean
-  isDepartmentError?: boolean
+
 }
 
-const OverallSection: React.FC<Props> = (props) => {
-  const { id, departmentData, isDepartmentLoading, isDepartmentError } = props
+const OverallSection: React.FC<Props> = () => {
+  const { id } = useMobileContext()
+
+  const {
+    data: departmentResponse,
+    isLoading: isDepartmentLoading,
+    isError: isDepartmentError
+  } = useMobileMasterDepartmentByTID(id as string | number | undefined)
+  const departmentData = departmentResponse?.data.data
 
   const {
     data: countData,
     isLoading: isCountLoading,
     isError: isCountError
-  } = useQuery({
-    queryKey: ['tracking_overall_mobile_daily_status_count'],
-    queryFn: () => getTrackingMobileDailyCountAPI({
-      start_date: dayjs().format('YYYY-MM-DD'),
-      end_date: dayjs().format('YYYY-MM-DD'),
-      tid: String(id)
-    }),
-    enabled: !!id,
-  })
+  } = useMobileDailyCount(id as string | number | undefined)
 
   const renderDetailContent = useMemo(() => {
     if (isDepartmentLoading) return <Skeleton loading={isDepartmentLoading} active paragraph={{ rows: 10 }} />
@@ -85,9 +79,7 @@ const OverallSection: React.FC<Props> = (props) => {
         {renderMobileStatContent}
       </section>
       <section className='mt-5'>
-        <OverallDataDisplaySection
-          id={id}
-        />
+        <OverallDataDisplaySection />
       </section>
     </>
   )

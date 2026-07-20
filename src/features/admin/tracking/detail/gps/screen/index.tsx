@@ -3,7 +3,7 @@ import {
   TitleSection,
   OverallSection,
   VehicleSection,
-  SummarySection
+  // SummarySection
 } from '../components'
 import { GPSProvider } from '../context'
 
@@ -21,8 +21,8 @@ const GPSDetailScreen: React.FC<Props> = (props) => {
         return <OverallSection />
       case 'VEHICLE':
         return <VehicleSection />
-      case 'SUMMARY':
-        return <SummarySection />
+      // case 'SUMMARY':
+      //   return <SummarySection />
       default:
         return <OverallSection />
     }

@@ -17,10 +17,10 @@ const OPTIONS = [
     label: 'ข้อมูลรถรายสายทาง',
     value: 'VEHICLE'
   },
-  {
-    label: 'รายงานสรุปผล',
-    value: 'SUMMARY'
-  },
+  // {
+  //   label: 'รายงานสรุปผล',
+  //   value: 'SUMMARY'
+  // },
 ]
 
 const TitleSection: React.FC<Props> = (props) => {

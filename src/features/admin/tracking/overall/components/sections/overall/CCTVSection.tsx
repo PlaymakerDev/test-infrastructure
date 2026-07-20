@@ -1,8 +1,6 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
-import { getTrackingCCTVListAPI } from '@/services/routes/TrackingService'
-import { useAppDispatch } from '@/stores/hooks'
-import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useOverallContext } from '@/features/admin/tracking/overall/context'
+import { useCctvList } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import React, { useMemo, useState } from 'react'
 
@@ -30,16 +28,12 @@ interface Props {
 
 const CCTVSection: React.FC<Props> = (props) => {
   const { } = props
-  const dispatch = useAppDispatch()
+  const { setOpenCCTVData } = useOverallContext()
   const [randomCam] = useState(() => `${Math.random()}`);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tracking_cctv_list'],
-    queryFn: () => getTrackingCCTVListAPI({
-      page: 1,
-      page_size: 100
-    }),
-    placeholderData: keepPreviousData
+  const { data, isLoading, isError } = useCctvList({
+    page: 1,
+    page_size: 100
   })
 
   const renderCCTVList = useMemo(() => {
@@ -65,14 +59,14 @@ const CCTVSection: React.FC<Props> = (props) => {
             hlsUrl={item.stream_url}
             enableViewportPause
             figureClassName='h-full cursor-pointer'
-            onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.id }))}
+            onClick={() => setOpenCCTVData({ open: true, item })}
           />
         </figure>
         <h4 className="camera-code">{item.camera_description}</h4>
         <p className="camera-location">{item.station_description}</p>
       </div>
     ))
-  }, [data, isLoading, isError, dispatch, randomCam])
+  }, [data, isLoading, isError, setOpenCCTVData, randomCam])
 
   // Camera list — hidden on mobile, col 1 on desktop
   return (

@@ -1,7 +1,6 @@
 import Barchart from '@/components/chart/Barchart'
 import { toWeightInspectionChartData } from '@/features/admin/tracking/overall/data/chartHelpers'
-import { getTrackingWeightInspectionAPI } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useWeightInspection } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -23,15 +22,11 @@ const ChartStation: React.FC<Props> = () => {
     else setDateType('year')
   }, [])
 
-  const { data, isLoading, isError, isPlaceholderData } = useQuery({
-    queryKey: ['vehicle_weight_inspection', 'station', dateType],
-    queryFn: () => getTrackingWeightInspectionAPI({
-      date: dayjs().format('YYYY-MM-DD'),
-      number_day: 6,
-      date_type: dateType,
-      station_type_id: 1,
-    }),
-    placeholderData: keepPreviousData,
+  const { data, isLoading, isError, isPlaceholderData } = useWeightInspection({
+    date: dayjs().format('YYYY-MM-DD'),
+    number_day: 6,
+    date_type: dateType,
+    station_type_id: 1,
   })
 
   const chartData = useMemo(

@@ -12,12 +12,26 @@ dayjs.locale('th')
 
 const { RangePicker } = DatePicker
 
-interface Props { }
+export interface MobileVehicleSearchParams {
+  start_date?: string
+  end_date?: string
+  is_open?: number
+}
+
+interface Props {
+  onSearch?: (params: MobileVehicleSearchParams) => void
+}
 
 interface FormSearchValues {
   date: [Dayjs | null, Dayjs | null] | null
   period: 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH'
   status: 'ACTIVE' | 'INACTIVE' | 'ALL'
+}
+
+const STATUS_TO_IS_OPEN: Record<FormSearchValues['status'], number | undefined> = {
+  ACTIVE: 1,
+  INACTIVE: 0,
+  ALL: undefined,
 }
 
 const PERIOD_OPTIONS: Array<{ label: string; value: FormSearchValues['period'] }> = [
@@ -51,7 +65,7 @@ const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchVal
 }
 
 const FormSearchVehicle: React.FC<Props> = (props) => {
-  const { } = props
+  const { onSearch } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -76,8 +90,13 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((data: FormSearchValues) => {
-    console.log('submit', data)
-  }, [])
+    const [start, end] = data.date ?? [null, null]
+    onSearch?.({
+      start_date: start ? start.format('YYYY-MM-DD') : undefined,
+      end_date: end ? end.format('YYYY-MM-DD') : undefined,
+      is_open: STATUS_TO_IS_OPEN[data.status],
+    })
+  }, [onSearch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

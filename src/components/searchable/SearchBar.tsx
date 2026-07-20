@@ -88,6 +88,9 @@ interface Props {
 
   /* FORM SEARCH */
   formSearch?: React.ReactNode
+
+  /* HAS SWITCH */
+  hasSwitch?: boolean
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -104,7 +107,8 @@ const SearchBar: React.FC<Props> = ({
   onViewModeChange,
   onExport,
   showExportButton = true,
-  formSearch
+  formSearch,
+  hasSwitch = true
 }) => {
   const initialFilter = defaultFilter ?? filters[0]?.key ?? ''
   const [uncontrolledFilter, setUncontrolledFilter] = useState<string>(initialFilter)
@@ -168,17 +172,18 @@ const SearchBar: React.FC<Props> = ({
       {/* ── Right controls ── */}
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
         {mode === 'form' && formSearch}
-
-        <Segmented
-          value={viewMode}
-          onChange={handleViewMode}
-          options={[
-            { value: 'TABLE', icon: <AppstoreOutlined /> },
-            { value: 'GRID', icon: <BarsOutlined /> },
-          ]}
-          size='large'
-          block
-        />
+        {hasSwitch && (
+          <Segmented
+            value={viewMode}
+            onChange={handleViewMode}
+            options={[
+              { value: 'TABLE', icon: <AppstoreOutlined /> },
+              { value: 'GRID', icon: <BarsOutlined /> },
+            ]}
+            size='large'
+            block
+          />
+        )}
         {mode !== 'default' && showExportButton && (
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
             <Button

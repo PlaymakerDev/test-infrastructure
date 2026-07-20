@@ -34,3 +34,10 @@ export { default as FormSearchWeightLog } from './sections/vehicle/FormSearchWei
 export { default as TableWeightLog } from './sections/vehicle/TableWeightLog'
 
 // CCTV
+export { default as CCTVSection } from './CCTVSection'
+export { default as CardCCTVData } from './sections/cctv/CardCCTVData'
+export { default as FormSearchCCTV } from './sections/cctv/FormSearchCCTV'
+export { default as TableCCTVList } from './sections/cctv/TableCCTVList'
+export { default as DataDisplaySection } from './sections/cctv/DataDisplaySection'
+export { default as CCTVList } from './sections/cctv/CCTVList'
+export { default as ModalCCTVData } from './sections/cctv/ModalCCTVData'

@@ -1,6 +1,5 @@
 import LineChart from '@/components/chart/LineChart'
-import { getTrackingViewSumPlanChartAPI } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useSumPlanChart } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo } from 'react'
@@ -9,12 +8,8 @@ import { TbClockBolt } from 'react-icons/tb'
 interface Props {}
 
 const ChartPredictAccident: React.FC<Props> = () => {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['sum_plan_chart'],
-    queryFn: () => getTrackingViewSumPlanChartAPI({
-      year: Number(dayjs().format('BBBB')),
-    }),
-    placeholderData: keepPreviousData,
+  const { data, isLoading, isError } = useSumPlanChart({
+    year: Number(dayjs().format('BBBB')),
   })
 
   const chartData = useMemo(() => {

@@ -16,6 +16,7 @@ import {
   ChartPreviousWeightVehicle,
   ChartTraffic,
   ModalCalibrationHistory,
+  ModalCCTVData,
 } from '../components'
 import { usePCU, useCalibrationHistory, usePositionById, useDailyWeightLog } from '../hooks'
 import { useWIMContext } from '../context'
@@ -126,6 +127,7 @@ const OverallSection: React.FC<Props> = () => {
         <OverallDataDisplaySection />
       </section>
       <ModalCalibrationHistory />
+      <ModalCCTVData />
     </>
   )
 }
