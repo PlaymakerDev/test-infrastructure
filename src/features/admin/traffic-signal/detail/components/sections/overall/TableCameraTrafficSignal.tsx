@@ -28,6 +28,9 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'seq',
       key: 'seq',
       width: 80,
+      // Indent first column 28px to match the overall-page list tables.
+      onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
+      onCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
       render: (seq: number) => <span className='text-white/60'>{seq}</span>,
     },
     {

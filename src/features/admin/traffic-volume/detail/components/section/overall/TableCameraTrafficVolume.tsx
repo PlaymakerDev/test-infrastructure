@@ -31,6 +31,11 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         dataIndex: 'seq',
         key: 'seq',
         width: 80,
+        // Indent the first column 28px so the table doesn't sit flush against
+        // its left edge — matches the overall-page list tables (the 28px
+        // `col-road-code` padding in antd.css). Applied to header + body cells.
+        onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
+        onCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
         render: (seq: number) => <span className='text-white/60'>{seq}</span>,
       },
       {

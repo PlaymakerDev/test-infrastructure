@@ -179,10 +179,13 @@ const DataDisplaySection: React.FC = () => {
       title: 'ลำดับที่',
       key: 'seq',
       width: 80,
+      // Indent first column 28px to match the overall-page list tables
+      // (group divider rows keep their span but also indent their label).
+      onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
       onCell: (row) =>
         row.kind === 'group'
-          ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
-          : {},
+          ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px 10px 28px' } }
+          : { style: { paddingInlineStart: 28, paddingLeft: 28 } },
       render: (_: unknown, row: Row) => {
         if (row.kind === 'group') {
           return (

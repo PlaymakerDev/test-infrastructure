@@ -109,6 +109,9 @@ const TableCameraData: React.FC<Props> = ({ activeFilter = 'all' }) => {
       dataIndex: 'seq',
       key: 'seq',
       width: 80,
+      // Indent first column 28px to match the overall-page list tables.
+      onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
+      onCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
     },
     {
       title: 'ชื่อกล้อง',
