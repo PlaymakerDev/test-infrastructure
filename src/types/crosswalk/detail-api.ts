@@ -113,7 +113,7 @@ export interface APIResponseCrosswalkGraph {
 // field+sort. Backend defaults page=1, limit=10.
 
 export interface APIRequestCrosswalkViolationList {
-  solution_id: string | number
+  solution_id?: string | number
   /** YYYY-MM-DD */
   start_date?: string
   /** YYYY-MM-DD */

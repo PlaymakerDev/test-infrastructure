@@ -1,24 +1,80 @@
 "use client"
 import { Button } from 'antd'
-import React, { useState } from 'react'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
+import React, { useMemo, useState } from 'react'
 import { TbLayoutGrid, TbList, TbPlus, TbPrinter } from 'react-icons/tb'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
 import { useOverallContext } from '../context'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
-import type { Project } from '../types/project'
+import type { Project, WarrantyStatus } from '../types/project'
 import DeleteProjectModal from './project/DeleteProjectModal'
 import FormSearchProject from './project/FormSearchProject'
 import ProjectModal from './project/ProjectModal'
 import TableProject from './project/TableProject'
 
+dayjs.extend(buddhistEra)
+
+// Text labels mirrored from project/StatusBadge so the export reads exactly
+// like the on-screen pills.
+const WARRANTY_LABELS: Record<WarrantyStatus, string> = {
+  'in-warranty': 'ในค้ำ',
+  expired: 'หมดค้ำ',
+  delivering: 'ระหว่างส่งมอบ',
+}
+
+/** "5 ก.ค. 2569" — same Thai short-month + Buddhist-year format TableProject renders. */
+const fmtThaiDate = (iso: string): string => {
+  if (!iso) return '-'
+  const d = dayjs(iso)
+  return d.isValid() ? d.locale('th').format('D MMM BBBB') : iso
+}
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as TableProject (minus the จัดการ action column), plus ลำดับ (mirrors
+// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
+// (sums to 100).
+const PROJECT_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: Project, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 4, value: (_r, i) => i + 1 },
+  { header: 'ผู้รับจ้าง', width: 28, widthPct: 13, align: 'left', value: (r) => r.contractor || '-' },
+  { header: 'รหัสโครงการ', width: 14, widthPct: 8, value: (r) => r.code || '-' },
+  { header: 'ชื่อโครงการ', width: 40, widthPct: 20, align: 'left', value: (r) => r.name || '-' },
+  { header: 'ผู้ว่าจ้าง', width: 12, widthPct: 8, value: (r) => r.owner || '-' },
+  { header: 'เลขที่สัญญา', width: 18, widthPct: 10, value: (r) => r.contractNo || '-' },
+  { header: 'วันที่เริ่มต้นค้ำประกัน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.warrantyStart) },
+  { header: 'วันที่สิ้นสุดค้ำประกัน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.warrantyEnd) },
+  { header: 'สถานะการค้ำประกัน', width: 15, widthPct: 11, value: (r) => WARRANTY_LABELS[r.warrantyStatus] },
+]
+
 const ProjectSection: React.FC = () => {
-  const { viewMode, setViewMode } = useOverallContext()
+  const { viewMode, setViewMode, filtered, filters } = useOverallContext()
   const [projectModal, setProjectModal] = useState<{ open: boolean; editing: Project | null }>({
     open: false,
     editing: null,
   })
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const [attachContainer, containerH] = useContainerHeight<HTMLDivElement>()
+
+  // Human-readable note of the active filters/search — printed in the PDF
+  // header so a reader knows what subset they're looking at. `search` is
+  // applied server-side but still narrows the displayed rows, so it's noted.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    if (filters.budgetYear) parts.push(`ปีงบประมาณ ${filters.budgetYear}`)
+    if (filters.owner) parts.push(`ผู้ว่าจ้าง ${filters.owner}`)
+    if (filters.contractor) parts.push(`ผู้รับจ้าง ${filters.contractor}`)
+    if (filters.search.trim()) parts.push(`ค้นหา "${filters.search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [filters])
 
   const openCreate = () => setProjectModal({ open: true, editing: null })
   const openEdit = (project: Project) => setProjectModal({ open: true, editing: project })
@@ -71,6 +127,7 @@ const ProjectSection: React.FC = () => {
             size='large'
             shape='round'
             icon={<TbPrinter />}
+            onClick={() => setExportOpen(true)}
             style={{
               background: '#66AEFF',
               color: '#000',
@@ -90,6 +147,33 @@ const ProjectSection: React.FC = () => {
           scrollY={calcTableScrollY(containerH)}
         />
       </div>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filtered.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Settings_Projects_Report',
+            title: 'รายงานรายชื่อโครงการ (Project Management)',
+            filterNote: exportFilterNote,
+            columns: PROJECT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filtered,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Settings_Projects_Report',
+            sheetName: 'Projects',
+            columns: PROJECT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filtered,
+          })
+        }}
+      />
 
       <ProjectModal open={projectModal.open} editing={projectModal.editing} onClose={closeProject} />
       <DeleteProjectModal

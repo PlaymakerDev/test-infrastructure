@@ -1,93 +1,189 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
-import { useLPRPoints } from '@/hooks/queries/lpr'
 
 dayjs.extend(relativeTime)
-import type { LPRInstallPoint } from '@/types/lpr/lpr-api'
+import { ContractInfoCell } from '@/components/modal'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
+import type { LPRRow } from '../../../data/lprRows'
 
-/** Sortable table view of every LPR install-point — same fields as the grid
- *  view (`LPRList`) but denser for desktop. Click a row → detail page for
- *  that solution (`/admin/lpr/detail/[solutionId]`). */
-const TableLPRData: React.FC = () => {
+/** Table row — a bureau (ขทช.) divider header or a real install-point row.
+ *  Same interleaved shape as cctv / incident-detection / traffic-signal. */
+type TableRow =
+  | { kind: 'bureau'; id: string; bureau: string; count: number }
+  | { kind: 'project'; id: string; item: LPRRow; roadCodeSpan: number }
+
+const TOTAL_COLS = 8
+
+interface Props {
+  /** Filtered + display-ordered rows from DataDisplaySection. */
+  rows: LPRRow[]
+  loading?: boolean
+}
+
+/** Overall list table for LPR install-points, following the shared overall-
+ *  table pattern (cctv / incident-detection / traffic-signal): bureau divider
+ *  rows + road-code rowSpan merge + DetailLinkText link cells +
+ *  ContractInfoCell + `.bridge-projects-table` skin, no column sorters. */
+const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
   const router = useRouter()
   const deptIdFromUrl = useDeptId()
   const deptId = String(deptIdFromUrl ?? '0')
-  const { data: points, isLoading } = useLPRPoints()
 
-  const rows = useMemo(() => {
-    const all = points ?? []
-    return (!deptId || deptId === '0'
-      ? all
-      : all.filter((p) => p.department_id === Number(deptId))
-    ).map((p) => ({ key: String(p.solution_id), ...p }))
-  }, [points, deptId])
+  // Interleave bureau dividers + install-point rows. The incoming list is
+  // already sorted bureau → road code, so consecutive same-code rows merge
+  // via rowSpan (the code shows once per group — same as the sibling menus).
+  const data = useMemo<TableRow[]>(() => {
+    const groups = new Map<string, LPRRow[]>()
+    for (const r of rows) {
+      const list = groups.get(r.bureau) ?? []
+      list.push(r)
+      groups.set(r.bureau, list)
+    }
+    const out: TableRow[] = []
+    for (const [bureau, items] of groups) {
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      let i = 0
+      while (i < items.length) {
+        const code = items[i].road_code
+        let span = 1
+        while (i + span < items.length && items[i + span].road_code === code) span++
+        out.push({ kind: 'project', id: String(items[i].solution_id), item: items[i], roadCodeSpan: span })
+        for (let j = 1; j < span; j++) {
+          out.push({ kind: 'project', id: String(items[i + j].solution_id), item: items[i + j], roadCodeSpan: 0 })
+        }
+        i += span
+      }
+    }
+    return out
+  }, [rows])
 
-  const columns: ColumnsType<LPRInstallPoint & { key: string }> = useMemo(
+  const goToDetail = useCallback(
+    (item: LPRRow) => {
+      router.push(
+        `/admin/lpr/detail/${item.solution_id}?dept_id=${deptId}${scopeQuerySuffix()}`,
+      )
+    },
+    [router, deptId],
+  )
+
+  const columns: ColumnsType<TableRow> = useMemo(
     () => [
       {
         title: 'รหัสสายทาง',
-        dataIndex: 'road_code',
         key: 'road_code',
-        width: 130,
-        render: (v: string) => v || '-',
-        sorter: (a, b) => (a.road_code ?? '').localeCompare(b.road_code ?? ''),
-      },
-      {
-        title: 'จุดติดตั้ง',
-        dataIndex: 'solution_name',
-        key: 'solution_name',
-        render: (v: string) => v || '-',
+        className: 'col-road-code',
+        width: 150,
+        onCell: (row) =>
+          row.kind === 'bureau'
+            ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
+            : { rowSpan: row.roadCodeSpan },
+        render: (_, row) => {
+          if (row.kind === 'bureau') {
+            return (
+              <div className='flex items-center gap-3'>
+                <span className='text-white font-bold'>{row.bureau}</span>
+                <span
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                  style={{ border: '1px solid #fff', color: '#fff' }}
+                >
+                  {row.count} โครงการ
+                </span>
+              </div>
+            )
+          }
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.road_code || '-'}
+            </DetailLinkText>
+          )
+        },
       },
       {
         title: 'ชื่อโครงการ',
-        dataIndex: 'project_name',
         key: 'project_name',
+        className: 'col-project-name',
         ellipsis: true,
-        render: (v: string) => v || '-',
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.project_name || '-'}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'solution_name',
+        width: 240,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.solution_name || '-'}
+            </DetailLinkText>
+          ) : null,
       },
       {
         title: 'เลขที่สัญญา',
-        dataIndex: 'contract_no',
         key: 'contract_no',
-        width: 150,
-        render: (v: string) => v || '-',
+        width: 190,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.item.contract_no}
+              projectId={row.item.project_id}
+              roadId={row.item.road_id}
+            />
+          ) : null,
       },
       {
         title: 'กล้อง',
-        dataIndex: 'camera_count',
         key: 'camera_count',
-        width: 90,
-        align: 'right',
-        sorter: (a, b) => a.camera_count - b.camera_count,
-        render: (n: number) => `${n.toLocaleString('th-TH')} ตัว`,
+        width: 110,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <span className='text-white font-semibold tabular-nums'>
+              {row.item.camera_count.toLocaleString('th-TH')} ตัว
+            </span>
+          ) : null,
       },
       {
         title: 'ตรวจจับวันนี้',
-        dataIndex: 'events_today',
         key: 'events_today',
-        width: 130,
-        align: 'right',
-        defaultSortOrder: 'descend',
-        sorter: (a, b) => a.events_today - b.events_today,
-        render: (n: number) => n.toLocaleString('th-TH'),
+        width: 120,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => {
+          if (row.kind !== 'project') return null
+          const n = row.item.events_today
+          return (
+            <span
+              className='font-semibold tabular-nums'
+              style={{ color: n > 0 ? '#ffffff' : '#ffffff40' }}
+            >
+              {n.toLocaleString('th-TH')}
+            </span>
+          )
+        },
       },
       {
         title: 'ชั่วโมงล่าสุด',
-        dataIndex: 'events_hour',
         key: 'events_hour',
         width: 130,
-        align: 'right',
-        sorter: (a, b) => a.events_hour - b.events_hour,
-        render: (n: number) =>
-          n > 0 ? (
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => {
+          if (row.kind !== 'project') return null
+          const n = row.item.events_hour
+          return n > 0 ? (
             <span className='inline-flex items-center gap-1 text-(--yellow) font-semibold tabular-nums'>
               <span
                 className='inline-block w-1.5 h-1.5 rounded-full bg-(--yellow)'
@@ -97,37 +193,37 @@ const TableLPRData: React.FC = () => {
             </span>
           ) : (
             <span className='text-gray-500 tabular-nums'>0</span>
-          ),
+          )
+        },
       },
       {
         title: 'ล่าสุด',
-        dataIndex: 'latest_captured_at',
         key: 'latest_captured_at',
         width: 130,
-        render: (v: string) => (v ? dayjs(v).locale('th').fromNow() : '-'),
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project'
+            ? row.item.latest_captured_at
+              ? dayjs(row.item.latest_captured_at).locale('th').fromNow()
+              : '-'
+            : null,
       },
     ],
-    [],
+    [goToDetail],
   )
 
   return (
-    <Table
-      rowKey='key'
+    <Table<TableRow>
+      rowKey='id'
       columns={columns}
-      dataSource={rows}
-      loading={isLoading}
-      pagination={{ pageSize: 20, showSizeChanger: false }}
+      dataSource={data}
+      loading={loading}
+      pagination={false}
       size='middle'
-      scroll={{ x: 1200 }}
-      onRow={(row) => ({
-        onClick: () =>
-          router.push(
-            `/admin/lpr/detail/${row.solution_id}?dept_id=${deptId}${scopeQuerySuffix()}`,
-          ),
-        className: 'cursor-pointer',
-      })}
+      scroll={{ x: 1500 }}
+      className='bridge-projects-table'
     />
   )
 }
 
-export default React.memo(TableLPRData)
+export default React.memo<Props>(TableLPRData)

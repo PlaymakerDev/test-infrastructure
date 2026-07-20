@@ -151,7 +151,6 @@ const PopupCameraList: React.FC<{
       minWidth: 230,
       maxHeight: 260,
       overflowY: 'auto',
-      fontFamily: 'ui-sans-serif,system-ui',
     }}
   >
     <div style={{ fontSize: 11, color: '#FCD116', fontWeight: 700, padding: '2px 4px 6px' }}>

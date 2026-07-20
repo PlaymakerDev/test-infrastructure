@@ -15,6 +15,7 @@ const { RangePicker } = DatePicker
 
 interface Props {
   onSearch?: (params: APIRequestStationDaily) => void
+  onExport?: () => void
 }
 
 interface FormSearchValues {
@@ -55,7 +56,7 @@ const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchVal
 }
 
 const FormSearchVehicle: React.FC<Props> = (props) => {
-  const { onSearch } = props
+  const { onSearch, onExport } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -199,7 +200,7 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
               </Button>
             </ConfigProvider>
             <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-              <Button type="primary" htmlType="submit" size="large" shape="round" icon={<TbPrinter />}>
+              <Button type="primary" size="large" shape="round" icon={<TbPrinter />} onClick={() => onExport?.()}>
                 <p>นำออกเอกสาร</p>
               </Button>
             </ConfigProvider>

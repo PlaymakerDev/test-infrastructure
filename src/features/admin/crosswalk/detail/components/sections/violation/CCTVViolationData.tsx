@@ -6,7 +6,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
 import AppPagination from '@/components/pagination/AppPagination'
-import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
+import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -62,7 +62,11 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
     <div className='flex flex-col gap-3'>
       <div className={GRID_CLASSES}>
         {pageRows.map((r, i) => {
-          const color = VIOLATION_COLOR
+          // Vehicle (รถ) violations are orange to match the stat card; the
+          // default red (VIOLATION_COLOR) stays for pedestrian (คน).
+          const color = isVehicleViolation(r.crosswalk.name_th)
+            ? '#FF7B00'
+            : VIOLATION_COLOR
           const ip = ipByCameraId.get(r.camera.id) || r.camera.sta || '-'
           return (
             <div

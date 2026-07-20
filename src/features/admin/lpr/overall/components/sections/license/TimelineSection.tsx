@@ -1,13 +1,15 @@
 "use client"
 import { Button, ConfigProvider, Empty, Spin, Timeline } from 'antd'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { TbPrinter } from 'react-icons/tb'
 import TimelineCard from './TimelineCard'
 import QueryBoundary from '@/components/common/QueryBoundary'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useOverallContext } from '../../../context'
 import { usePlateDetail, useTimelineInfinite } from '@/hooks/queries/lpr'
 import type { LicenseTimelineItem } from '@/components/list/LicenseList'
 import type { LPRTimelineEvent } from '@/types/lpr/lpr-api'
+import type { PdfReportBlock } from '@/utils/export/pdf'
 
 const toTimelineItem = (e: LPRTimelineEvent): LicenseTimelineItem => ({
   id: e.id,
@@ -70,8 +72,76 @@ const TimelineSection: React.FC = () => {
         ]
   }, [detail, isWimOnly])
 
+  // ── Export (PDF only — timeline report, no Excel per spec) ────────────────
+  const [exportOpen, setExportOpen] = useState(false)
+
+  // Exports the events currently loaded on screen (same as what the timeline
+  // shows — the modal's count makes the scope explicit) as photo cards
+  // mirroring TimelineCard: vehicle image + the exact field strings the
+  // screen renders. Images are pre-fetched and re-encoded (utils/export/
+  // image.ts); any image that fails just renders its card photo-less.
+  const handleExportPdf = async () => {
+    const [{ exportReportPdf }, { fetchImageAsDataUrl }] = await Promise.all([
+      import('@/utils/export/pdf'),
+      import('@/utils/export/image'),
+    ])
+    const items = events.map(toTimelineItem)
+    const images = await Promise.all(items.map((it) => fetchImageAsDataUrl(it.image)))
+
+    const blocks: PdfReportBlock[] = [
+      {
+        type: 'kv',
+        title: 'ข้อมูลป้ายทะเบียน',
+        items: [
+          { label: 'เลขทะเบียน', value: selected?.plate_number ?? '-' },
+          { label: 'จังหวัด', value: selected?.plate_province ?? '-' },
+          {
+            label: 'ตรวจพบครั้งแรก',
+            value: firstSeen
+              ? `${firstSeen.detection_point ?? 'ไม่ระบุจุดตรวจจับ'} เมื่อวันที่ ${firstSeen.captured_at_display}`
+              : '-',
+          },
+          ...metaCards,
+        ],
+      },
+      {
+        type: 'entries',
+        title: 'Vehicle Detection Timeline',
+        items: items.map((it, i) => ({
+          image: images[i],
+          heading: it.title,
+          subheading: it.timestamp,
+          badge: it.status,
+          badgeColor: it.status ? (it.status === 'เกินพิกัด' ? '#b91c1c' : '#1d4ed8') : undefined,
+          fields: [
+            ...(it.camera_name ? [{ label: 'ชื่อกล้อง', value: it.camera_name }] : []),
+            { label: 'ความเร็ว', value: `${it.speed} กม./ชม.` },
+            { label: 'หมายเลขเลน', value: it.lane },
+            ...(it.weight ? [{ label: 'น้ำหนักที่ชั่งได้', value: `${it.weight} ตัน` }] : []),
+            ...(it.legal_weight ? [{ label: 'น้ำหนักตามมาตรฐาน', value: `${it.legal_weight} ตัน` }] : []),
+          ],
+        })),
+      },
+    ]
+
+    await exportReportPdf({
+      filenameBase: `LPR_Timeline_${selected?.plate_number ?? 'report'}`,
+      title: 'รายงานการตรวจจับยานพาหนะ (Vehicle Detection Timeline)',
+      subtitleNote: [selected?.plate_number, selected?.plate_province].filter(Boolean).join(' · ') || undefined,
+      blocks,
+    })
+  }
+
   return (
     <div className='lg:px-8'>
+      {/* นำออกเอกสาร — timeline report: PDF only, exports the loaded events. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={events.length}
+        onExportPdf={handleExportPdf}
+      />
+
       {/* Header */}
       <section className='flex flex-wrap items-start justify-between gap-4'>
         {/* License info */}
@@ -85,10 +155,17 @@ const TimelineSection: React.FC = () => {
           )}
         </div>
 
-        {/* Action buttons — export + view-more (unwired, pending spec) */}
+        {/* Action buttons — export (PDF only) + view-more (unwired, pending spec) */}
         <div className='flex items-center gap-2 shrink-0'>
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-            <Button type='primary' size='medium' shape='round' icon={<TbPrinter />}>
+            <Button
+              type='primary'
+              size='medium'
+              shape='round'
+              icon={<TbPrinter />}
+              disabled={!events.length}
+              onClick={() => setExportOpen(true)}
+            >
               นำออกเอกสาร
             </Button>
           </ConfigProvider>

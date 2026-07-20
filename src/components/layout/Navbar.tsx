@@ -370,7 +370,14 @@ export default function Navbar() {
         const href = DEPT_SCOPED_KEYS.has(item.label_key)
           ? `${item.path}?${deptQuery(homeDeptId)}`
           : item.path
-        return { ...item, OverrideIcon, href, active: pathname === item.path_active }
+        // Active on the overall page AND every subpage (detail/[id], tabs…) —
+        // exact-only matching left the menu unlit on detail routes. The
+        // trailing '/' keeps sibling prefixes apart (e.g. /admin/traffic-signal
+        // never matches /admin/traffic-volume/...).
+        const active =
+          pathname === item.path_active ||
+          !!pathname?.startsWith(item.path_active + '/')
+        return { ...item, OverrideIcon, href, active }
       }),
     [navItems, pathname, homeDeptId]
   )
@@ -379,19 +386,27 @@ export default function Navbar() {
     return navEntries.map((item) => {
       const { OverrideIcon, active } = item
       return (
+        // Hover mirrors the active look instantly (soft-yellow icon + label
+        // below) — replaces the native `title` tooltip, whose OS delay made
+        // the icons hard to identify. Active stays full brand yellow.
         <button
           key={item.key}
           onClick={() => router.push(item.href)}
-          className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-white"
+          aria-label={item.title}
+          className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
             }`}
-          title={item.title}
         >
-          <span>{OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}</span>
-          {active && (
-            <span className="hidden lg:block text-[13px] font-medium text-(--yellow)">
-              {item.label}
-            </span>
-          )}
+          <span className="transition-colors">
+            {OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}
+          </span>
+          <span
+            className={`hidden text-[13px] font-medium whitespace-nowrap ${active
+              ? "lg:block text-(--yellow)"
+              : "lg:group-hover:block text-[#FFE97A]"
+              }`}
+          >
+            {item.label}
+          </span>
         </button>
       )
     })

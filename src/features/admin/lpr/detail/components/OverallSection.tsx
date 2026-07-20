@@ -36,7 +36,10 @@ const OverallSection: React.FC<Props> = ({ onShowAllDetections }) => {
         <div className='lg:col-span-2 rounded-2xl overflow-hidden bg-(--mid-gray) h-96'>
           <MapSection />
         </div>
-        <div className='lg:col-span-1'>
+        {/* lg:h-96 — pin the column to the map's height so the card matches it
+          * exactly (12 camera rows outgrow the row otherwise); the card's list
+          * scrolls internally. Mobile stacks, so no cap there. */}
+        <div className='lg:col-span-1 lg:h-96'>
           <CameraListSection />
         </div>
       </div>

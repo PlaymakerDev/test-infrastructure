@@ -26,6 +26,40 @@ interface RowData {
   yesterday: number
 }
 
+/** Chart tooltip — module-scope so it isn't re-created every render
+ *  (react-hooks/static-components). */
+const CustomTooltip: React.FC<{
+  active?: boolean
+  payload?: TooltipPayload[]
+  label?: string
+}> = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div
+      style={{
+        background: 'rgba(2,8,23,0.92)',
+        border: '1px solid #3b82f6',
+        borderRadius: 10,
+        color: '#f8fafc',
+        fontSize: 13,
+        padding: '8px 14px',
+        boxShadow: '0 4px 24px rgba(59,130,246,0.15)',
+      }}
+    >
+      <p className='text-slate-300 text-xs mb-1'>เวลา {label}</p>
+      {payload.map((e, i) => (
+        <p
+          key={i}
+          className='font-semibold mb-0'
+          style={{ color: e.color, marginTop: i === 0 ? 0 : 2 }}
+        >
+          {e.name}: {(e.value ?? 0).toLocaleString('th-TH')} ครั้ง
+        </p>
+      ))}
+    </div>
+  )
+}
+
 /** Overview chart — plate detections per hour, today filled + yesterday as
  *  a dashed line for comparison. Same shape as dmon's AnprOverviewTab area
  *  chart. */
@@ -45,40 +79,8 @@ const HourlyChartSection: React.FC = () => {
     }))
   }, [data])
 
-  const CustomTooltip: React.FC<{
-    active?: boolean
-    payload?: TooltipPayload[]
-    label?: string
-  }> = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null
-    return (
-      <div
-        style={{
-          background: 'rgba(2,8,23,0.92)',
-          border: '1px solid #3b82f6',
-          borderRadius: 10,
-          color: '#f8fafc',
-          fontSize: 13,
-          padding: '8px 14px',
-          boxShadow: '0 4px 24px rgba(59,130,246,0.15)',
-        }}
-      >
-        <p className='text-slate-300 text-xs mb-1'>เวลา {label}</p>
-        {payload.map((e, i) => (
-          <p
-            key={i}
-            className='font-semibold mb-0'
-            style={{ color: e.color, marginTop: i === 0 ? 0 : 2 }}
-          >
-            {e.name}: {(e.value ?? 0).toLocaleString('th-TH')} ครั้ง
-          </p>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className='bg-(--mid-gray) rounded-2xl p-5 h-full flex flex-col'>
+    <div className='bg-[#000000CC] rounded-2xl p-5 h-full flex flex-col'>
       <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
         <TbChartAreaLine size={20} />
         <h4 className='mb-0'>ปริมาณทะเบียนรายชั่วโมง</h4>

@@ -17,9 +17,11 @@ interface Props {
   value: Dayjs
   /** Fires when the user picks a new reference date. */
   onChange: (value: Dayjs) => void
+  /** Fires on นำออกเอกสาร — the parent owns the export modal + table rows. */
+  onExport: () => void
 }
 
-const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
+const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange, onExport }) => {
   // The picked date is the END of a fixed 7-day window; start = end − 6 days.
   // Show the resolved range so the user sees exactly which days are displayed
   // (selection stays single-date per the design).
@@ -66,7 +68,7 @@ const FormSearchSummaryTraffic: React.FC<Props> = ({ value, onChange }) => {
               shape='round'
               icon={<TbPrinter />}
               className='w-full! sm:w-auto! sm:min-w-45!'
-              onClick={() => alert('TODO: นำออกเอกสาร')}
+              onClick={onExport}
             >
               <span>นำออกเอกสาร</span>
             </Button>

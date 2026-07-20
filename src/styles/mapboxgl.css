@@ -4,6 +4,15 @@
   display: none !important;
 }
 
+/* App font for EVERYTHING inside a map — markers, popups, controls. Mapbox's
+   own stylesheet sets `font: 12px/20px Helvetica Neue,…` on .mapboxgl-map,
+   which silently dropped marker/popup text out of IBM Plex Sans Thai; that's
+   why components kept adding inline `fontFamily: 'ui-sans-serif'` overrides.
+   This single rule replaces all of them (removed 2026-07-20). */
+.mapboxgl-map {
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
+}
+
 /* React-rendered popups (showReactPopup) — clear Mapbox's default white wrapper.
    The inner JSX renders its own background/border, so the wrapper should be invisible. */
 .react-popup .mapboxgl-popup-content {

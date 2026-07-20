@@ -36,6 +36,20 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
   const [term, setTerm] = useState('')
   const debouncedTerm = useDebouncedValue(term, 220)
 
+  // Phone (< sm 640px): the 320px input ate most of the row next to the
+  // alert badge (2026-07-20) — collapse to a 44px search button that slides
+  // open on tap. Desktop keeps the always-open input.
+  const [isMobile, setIsMobile] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)')
+    const update = () => setIsMobile(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+  const collapsed = isMobile && !expanded
+
   // Only hit the server once the user has typed 2+ chars — one-letter queries
   // return effectively everything and waste bandwidth.
   const enabled = debouncedTerm.trim().length >= 2
@@ -102,9 +116,31 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
           top: 60,
           left: 16,
           zIndex: 20,
-          width: 320,
+          // Mobile: 44px button ↔ expanded input. Expanded width stops short
+          // of the alert badge pinned top-right (~100px + gap) instead of
+          // running underneath it (2026-07-20).
+          width: collapsed ? 44 : isMobile ? 'calc(100vw - 140px)' : 320,
+          transition: 'width 0.25s ease-out',
         }}
       >
+        {collapsed ? (
+          <button
+            type='button'
+            aria-label='ค้นหาสายทาง'
+            onClick={() => setExpanded(true)}
+            className='flex items-center justify-center cursor-pointer'
+            style={{
+              width: 44,
+              height: 40,
+              borderRadius: 10,
+              background: 'rgba(5,13,26,0.85)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <TbSearch size={18} className='text-white/70' />
+          </button>
+        ) : (
         <AutoComplete
           value={term}
           onChange={setTerm}
@@ -138,8 +174,14 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
           <Input
             allowClear
             size='large'
+            autoFocus={isMobile}
             prefix={<TbSearch size={16} className='text-white/60' />}
             placeholder='ค้นหาสายทาง (เช่น ชม.3035)'
+            // Collapse back to the button when leaving an EMPTY field — a
+            // typed term keeps the box open so the searched code stays visible.
+            onBlur={() => {
+              if (isMobile && term.trim() === '') setExpanded(false)
+            }}
             style={{
               background: 'rgba(5,13,26,0.85)',
               borderColor: 'rgba(255,255,255,0.12)',
@@ -148,6 +190,7 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
             }}
           />
         </AutoComplete>
+        )}
       </div>
     </ConfigProvider>
   )

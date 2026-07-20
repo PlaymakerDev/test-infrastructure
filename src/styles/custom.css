@@ -86,3 +86,19 @@
 .ant-input-affix-wrapper.lpr-yellow-placeholder input.ant-input {
   color: var(--yellow);
 }
+
+/* ─── ECharts tooltips → app font ────────────────────────────────────────
+ * ECharts writes an inline `font: … sans-serif` onto every HTML tooltip it
+ * creates, silently dropping chart tooltips out of IBM Plex Sans Thai
+ * (reported 2026-07-20 on traffic-volume detail tabs 2–3, applies to every
+ * menu). Two mount modes need covering:
+ *   1. default — tooltip div lives INSIDE the chart container, which carries
+ *      the `_echarts_instance_` attribute echarts.init() stamps on it;
+ *   2. `appendToBody: true` (shared LineChart/PieChart) — tooltip mounts on
+ *      <body>, tagged with `className: 'echarts-tooltip'` in the wrappers.
+ * !important is required to beat the inline style. Canvas-drawn text (axis
+ * digits) is unaffected by CSS and keeps ECharts' default. */
+div[_echarts_instance_] > div,
+.echarts-tooltip {
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
+}

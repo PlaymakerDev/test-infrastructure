@@ -2,12 +2,15 @@
 import React, { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import { Pagination, Skeleton } from 'antd'
 import { FormSearchEvent, TableEventData, EventGridView } from '../components'
 import { periodToRange, type EventFilterValues } from './sections/event/FormSearchEvent'
+import { fmtThaiDate, fmtTime } from './sections/event/EventGridView'
 import SearchBar, { type ViewMode } from '@/components/searchable/SearchBar'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import EventDetailModal from '@/features/admin/incident-detection/components/EventDetailModal'
-import { EVENT_TYPES } from '@/features/admin/incident-detection/components/eventTypes'
+import { EVENT_TYPES, getEventTypeLabel } from '@/features/admin/incident-detection/components/eventTypes'
 import {
   useIncidentTransactions,
   useIncidentCentralList,
@@ -16,9 +19,39 @@ import {
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 
+// `BBBB` (Buddhist-Era year) in the export date column / filter note.
+dayjs.extend(buddhistEra)
+
 interface Props {}
 
 const DEFAULT_LIMIT = 10
+
+// Excel export columns — SAME columns, SAME order as the on-screen
+// TableEventData; the snapshot column exports its image URL (Excel can't
+// embed images). `width` = Excel chars. The PDF export is card-based
+// (`entries` block), not a table, so no widthPct here.
+const EVENT_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  value: (row: IncidentTransactionItem, index: number) => string | number
+}[] = [
+  {
+    header: 'วันที่และเวลา',
+    width: 18,
+    value: (r) => {
+      const d = dayjs(r.date_time)
+      return d.isValid() ? d.format('DD/MM/BBBB HH:mm') : r.date_time
+    },
+  },
+  {
+    header: 'ประเภทเหตุการณ์',
+    width: 20,
+    value: (r) => getEventTypeLabel(r.analytic_type_info.id, r.analytic_type_info.analytic_type_name_th),
+  },
+  { header: 'ชื่อกล้อง', width: 42, value: (r) => r.camera.camera_name || '-' },
+  { header: 'IP Address', width: 16, value: (r) => r.camera.ip_address || '-' },
+  { header: 'ภาพขณะเกิดเหตุ', width: 50, value: (r) => r.image_path || '-' },
+]
 
 // FE enum name (eventType) → backend analytic_type id. 'ALL' → undefined (no filter).
 const typeNameToId = (name: string): number | undefined =>
@@ -42,6 +75,7 @@ const EventSection: React.FC<Props> = () => {
   const [limit, setLimit] = useState(DEFAULT_LIMIT)
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [selected, setSelected] = useState<IncidentTransactionItem | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Changing any filter restarts pagination at page 1.
   const handleFilterChange = (next: EventFilterValues) => {
@@ -100,6 +134,54 @@ const EventSection: React.FC<Props> = () => {
     setLimit(nextSize)
   }
 
+  // Human-readable note of the active filters — printed in the export header
+  // so a reader knows the date window / event type of this page of events.
+  const exportNote = useMemo(() => {
+    const parts: string[] = [
+      filters.date
+        ? `ช่วงวันที่ ${filters.date[0].format('DD/MM/BBBB')} - ${filters.date[1].format('DD/MM/BBBB')}`
+        : 'ช่วงเวลา ทั้งหมด',
+    ]
+    if (filters.eventType !== 'ALL') {
+      const typeLabel = EVENT_TYPES.find((t) => t.name === filters.eventType)?.displayName
+      if (typeLabel) parts.push(`ประเภท ${typeLabel}`)
+    }
+    return parts.join(' · ')
+  }, [filters])
+
+  // PDF = photo cards mirroring the on-screen event cards (snapshot + ประเภท
+  // + วันเวลา + camera fields). Exports the SAME rows the table/grid currently
+  // shows (this page of the paginated list). Snapshots are pre-fetched and
+  // re-encoded (utils/export/image.ts); any image that fails just renders its
+  // card photo-less.
+  const handleExportPdf = async () => {
+    const [{ exportReportPdf }, { fetchImageAsDataUrl }] = await Promise.all([
+      import('@/utils/export/pdf'),
+      import('@/utils/export/image'),
+    ])
+    const images = await Promise.all(events.map((ev) => fetchImageAsDataUrl(ev.image_path)))
+    await exportReportPdf({
+      filenameBase: 'Incident_Detection_Events_Report',
+      title: 'รายงานเหตุการณ์ที่ตรวจจับได้ (Incident Detection Events)',
+      subtitleNote: exportNote,
+      blocks: [
+        {
+          type: 'entries',
+          title: 'ตารางแสดงเหตุการณ์',
+          items: events.map((ev, i) => ({
+            image: images[i],
+            heading: getEventTypeLabel(ev.analytic_type_info.id, ev.analytic_type_info.analytic_type_name_th),
+            subheading: `${fmtThaiDate(ev.date_time)} ${fmtTime(ev.date_time)}`,
+            fields: [
+              { label: 'ชื่อกล้อง', value: ev.camera.camera_name || '-' },
+              { label: 'IP Address', value: ev.camera.ip_address || '-' },
+            ],
+          })),
+        },
+      ],
+    })
+  }
+
   return (
     <div>
       <section>
@@ -111,9 +193,28 @@ const EventSection: React.FC<Props> = () => {
           title='ตารางแสดงเหตุการณ์'
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — PDF = photo cards (snapshot ต่อเหตุการณ์), Excel = flat
+          table with the same columns as TableEventData. Both export the rows
+          currently displayed (this page, current filters). */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={events.length}
+        onExportPdf={handleExportPdf}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Incident_Detection_Events_Report',
+            sheetName: 'Incident Events',
+            columns: EVENT_EXPORT_COLUMNS,
+            rows: events,
+          })
+        }}
+      />
       <section className='mt-5'>
         {displayType === 'TABLE' ? (
           <TableEventData

@@ -26,7 +26,7 @@ const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
   const [selected, setSelected] = useState<LPRPointPlate | null>(null)
 
   return (
-    <div className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3'>
+    <div className='bg-(--dark-black) rounded-2xl p-4 flex flex-col gap-3'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2 text-(--yellow)'>
           <TbLicense size={18} />

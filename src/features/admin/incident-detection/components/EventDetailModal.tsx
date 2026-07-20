@@ -225,7 +225,6 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                         border: '1px solid #2f6db0',
                         borderRadius: 10,
                         padding: 8,
-                        fontFamily: 'ui-sans-serif,system-ui',
                       }}
                     >
                       <HLSLivePlayer
