@@ -71,6 +71,30 @@ export interface APIResponseProjectListEnvelope {
   meta_data: APIResponseMetaData
 }
 
+// ── GET /manage/project/case/{case_no} ────────────────────────────────────────
+// Verified live 2026-07-20: same base project fields as GET /project/{id}, but
+// `contractor` here is the FLAT contractor-account object (no nested
+// `.contractor.company_name` — only `username` identifies the contractor).
+// Also carries case_no/road_id/camera_id/project_roads, which GET /project/{id}
+// does not return.
+
+export interface ProjectCaseContractorUser {
+  id: string
+  username: string
+  user_type_id: number
+  is_active: boolean
+  created_at: string
+  created_by: string | null
+  deleted_by: string | null
+}
+
+export interface APIResponseProjectByCase extends Omit<APIResponseProject, 'contractor'> {
+  contractor?: ProjectCaseContractorUser | null
+  case_no: string
+  road_id?: number
+  camera_id?: string
+}
+
 // ── GET /manage/project/budget_year ──────────────────────────────────────────
 // Plain array (NOT enveloped) — e.g. `[2564, 2565, 2566]`.
 export type APIResponseBudgetYearList = number[]

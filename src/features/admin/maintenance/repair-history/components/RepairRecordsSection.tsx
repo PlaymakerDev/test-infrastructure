@@ -196,7 +196,7 @@ const RepairRecordsSection: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   // All Repairs tab state
-  const [selectedPeriod, setSelectedPeriod] = useState('ALL')
+  const [selectedPeriod, setSelectedPeriod] = useState('TODAY')
 
   // Client-side filter state for the All Repairs table — each Select holds the
   // raw string value shown in its column (warranty uses 'ในค้ำ'/'หมดค้ำ').
