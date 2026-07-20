@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 import { Select } from 'antd'
 import { TbSearch, TbRoad, TbVideo, TbList } from 'react-icons/tb'
-import CameraDetailTableCctv from './sections/overall/CameraDetailTableCctv'
+import CameraDetailTableCctv, { type ViewTab } from './sections/overall/CameraDetailTableCctv'
 import CctvLocationMap from '@/features/admin/cctv/detail/components/sections/CctvLocationMap'
 import type { PanelCamera } from '@/features/admin/cctv/overall/data/cctvData'
 import type { InstallGroup, CameraRow } from './sections/overall/CameraGridView'
@@ -53,6 +53,9 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
   // `selectedRoad` (id + label) drives the camera central list.
   const [selectedRoad, setSelectedRoad] = useState<{ id: number; label: string } | null>(null)
+  // View tab shared with the table — also switches how the map hover-groups
+  // pins: 'โครงการ' → by install point, 'กม.' → by km marker (c.sta).
+  const [activeTab, setActiveTab] = useState<ViewTab>('โครงการ')
 
   // Dropdown lists ONLY roads that actually have CCTV — sourced from the same
   // overview the overall page uses. (NOT /manage/roads, which returns every
@@ -115,23 +118,34 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
   // Flatten cameras with coords into the same `PanelCamera` shape the detail
   // page uses — lets us share `CctvLocationMap` for the marker grouping,
   // popup-on-overlap, and HLS thumbnail logic.
-  const mapCameras = useMemo<PanelCamera[]>(
-    () =>
-      lists
-        .flatMap((item) => item.cameras)
-        .filter((c) => c.geometry_point)
-        .map<PanelCamera>((c) => ({
-          id: c.id,
-          name: c.camera_name,
-          ip: c.ip_address,
-          online: c.is_online,
-          km: c.sta,
-          hlsUrl: c.hls_url,
-          functions: extractCameraFunctions(c),
-          coord: c.geometry_point as [number, number],
-        })),
-    [lists]
-  )
+  const mapCameras = useMemo<PanelCamera[]>(() => {
+    const byKm = activeTab === 'กม.'
+    return lists
+      // Tag each camera with both grouping keys, then pick which one the map
+      // hover-grouping uses based on the active view tab.
+      .flatMap((item) =>
+        item.cameras.map((c) => ({
+          camera: c,
+          projectId: String(item.solution_location_id),
+          projectName: [item.solution_name, item.solution_location_name].filter(Boolean).join(' '),
+        }))
+      )
+      .filter(({ camera }) => camera.geometry_point)
+      .map<PanelCamera>(({ camera: c, projectId, projectName }) => ({
+        id: c.id,
+        name: c.camera_name,
+        ip: c.ip_address,
+        online: c.is_online,
+        km: c.sta,
+        hlsUrl: c.hls_url,
+        functions: extractCameraFunctions(c),
+        coord: c.geometry_point as [number, number],
+        // 'กม.' groups every pin sharing the same km marker; 'โครงการ' groups
+        // by install point. c.sta may be empty → no group (undefined).
+        groupId: byKm ? (c.sta ? `km-${c.sta}` : undefined) : projectId,
+        groupName: byKm ? (c.sta ? `กม. ${c.sta}` : undefined) : projectName,
+      }))
+  }, [lists, activeTab])
 
   // Map centre = first camera with a coord on the selected road, else a sane
   // fallback (Bangkok); CctvLocationMap also frames all markers via fitBounds.
@@ -235,7 +249,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
 
       {/* ── Camera detail table — hidden in map-focus mode too ── */}
       <MapOverlayPanel position='bottom' className='mt-8'>
-        <CameraDetailTableCctv groups={groups} />
+        <CameraDetailTableCctv groups={groups} activeTab={activeTab} onTabChange={setActiveTab} />
       </MapOverlayPanel>
     </>
   )
