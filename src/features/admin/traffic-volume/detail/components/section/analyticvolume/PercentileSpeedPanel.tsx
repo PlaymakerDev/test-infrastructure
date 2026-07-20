@@ -20,10 +20,10 @@ interface Props {
   date?: string
 }
 
-// Reference Y level (%) for the dashed yellow guideline on the cumulative
-// speed-distribution chart. Visual-only reference, not the actual 85th
-// percentile value — that comes from `percentiles.p85` in the API.
-const REFERENCE_PCT = 90
+// Reference Y level (%) for the dashed yellow guideline — the 85th-percentile
+// line on the cumulative speed-distribution chart (85% cumulative). Visual-only
+// guide; the actual 85th-percentile SPEED value comes from `percentiles.p85`.
+const REFERENCE_PCT = 85
 
 /** API point → LineChart data row. Only `speed` (X-axis) and `percentage`
  *  (cumulative Y) are used; the rest of the API row is ignored per design. */
@@ -47,7 +47,24 @@ const PercentileSpeedPanel: React.FC<Props> = ({ date }) => {
     // API wraps the points under `cdf[0].points` — flatten to a single
     // series for the chart.
     const points = apiData?.cdf?.[0]?.points ?? []
-    return points.map(cdfToDataPoint)
+    const rows = points.map(cdfToDataPoint)
+    // A line needs ≥2 points to render, and LineChart hides single-point
+    // symbols — so a lone API point (e.g. one { speed:50, percentage:100 })
+    // would show nothing at all. Keep BOTH the real data and the dashed
+    // 85th-percentile line visible:
+    //   • 1 point  → prepend a (0 km/h, 0%) CDF origin so the cumulative curve
+    //                rises to the measured point and the dashed line spans it.
+    //   • 0 points → two flat endpoints so at least the dashed 85 line shows.
+    if (rows.length === 1) {
+      return [{ label: '0', cum: 0, ref: REFERENCE_PCT, speed: 0 }, rows[0]]
+    }
+    if (rows.length === 0) {
+      return [
+        { label: '0', cum: 0, ref: REFERENCE_PCT, speed: 0 },
+        { label: '100', cum: 0, ref: REFERENCE_PCT, speed: 100 },
+      ]
+    }
+    return rows
   }, [apiData])
 
   /** Mini cards read from `percentiles[0]`. Each percentile field is an
