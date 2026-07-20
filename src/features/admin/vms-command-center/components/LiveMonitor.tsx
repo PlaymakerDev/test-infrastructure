@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { App, Badge, Button, Empty, Image, Popconfirm, Progress, Skeleton, Switch, Tooltip } from 'antd'
+import { App, Badge, Button, Empty, Popconfirm, Progress, Skeleton, Switch, Tooltip } from 'antd'
 import { TbEye, TbPlayerStop } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -9,6 +9,7 @@ import { useCommandCenterMonitor } from '../hooks/useCommandCenterMonitor'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta } from '../constants/vmsStatus'
 import StatusPill from './StatusPill'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import { VMSMonitorItem } from '@/types/vms/command-center-api'
 
 dayjs.extend(relativeTime)
@@ -263,17 +264,31 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                 <div className="mt-2 flex items-center gap-3">
                   {it.media_url ? (
                     <div
-                      className="rounded overflow-hidden bg-black flex-shrink-0"
+                      className="rounded overflow-hidden bg-black flex-shrink-0 relative"
                       style={{ width: 96, aspectRatio: '16/9' }}
                     >
-                      <Image
-                        src={it.media_url}
+                      {/* Thumbnail sibling (~15 KB) — a 5-second poll
+                          across dozens of active cards used to re-fetch
+                          full-res PNGs / MP4 posters. onError falls
+                          back to original for pre-backfill uploads. */}
+                      <img
+                        src={getThumbUrl(it.media_url)}
                         alt=""
-                        width="100%"
-                        height="100%"
-                        preview={false}
-                        style={{ objectFit: 'contain' }}
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget
+                          if (img.dataset.fallback !== '1') {
+                            img.dataset.fallback = '1'
+                            img.src = isVideoUrl(it.media_url) ? '' : (it.media_url ?? '')
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
+                      {isVideoUrl(it.media_url) && (
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white text-xs">▶</span>
+                        </span>
+                      )}
                     </div>
                   ) : null}
                   <div className="min-w-0 flex-1 text-xs opacity-90 space-y-0.5">

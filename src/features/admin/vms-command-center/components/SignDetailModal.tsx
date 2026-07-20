@@ -9,6 +9,7 @@ import { useSignDetail } from '../hooks/useSignDetail'
 import { useVMSCrossingHistory } from '@/features/admin/control-vms/overall/hooks/useVMSCrossingHistory'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta, sourceLabel } from '../constants/vmsStatus'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import StatusPill from './StatusPill'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { VMSSignCamera } from '@/types/vms/command-center-api'
@@ -188,16 +189,27 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                     <div className="flex items-center gap-3">
                       {detail.media_url && (
                         <div
-                          className="rounded overflow-hidden bg-black flex-shrink-0"
+                          className="rounded overflow-hidden bg-black flex-shrink-0 relative"
                           style={{ width: 160, aspectRatio: '16/9' }}
                         >
+                          {/* Thumbnail sibling (~15 KB) — click to
+                              preview reuses AntD Image's built-in
+                              overlay + still loads full-res on tap. */}
                           <Image
-                            src={detail.media_url}
+                            src={getThumbUrl(detail.media_url)}
+                            preview={{
+                              mask: 'ดูรูปใหญ่',
+                              src: detail.media_url,
+                            }}
                             width="100%"
                             height="100%"
-                            preview={{ mask: 'ดูรูปใหญ่' }}
                             style={{ objectFit: 'contain' }}
                           />
+                          {isVideoUrl(detail.media_url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
                       )}
                       <div className="min-w-0 flex-1 text-sm space-y-0.5">
