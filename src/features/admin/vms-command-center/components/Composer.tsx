@@ -1,10 +1,11 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { Button, DatePicker, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
 import { TbAlertTriangle, TbFolderOpen, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
+import { getThumbUrl } from '../utils/thumbnail'
 
 interface Props {
   vmsIds: number[]
@@ -22,13 +23,33 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const { data: countsData } = useMediaCategoryCounts()
   const counts = countsData?.data ?? []
 
+  // Default to the first non-empty category rather than "ทั้งหมด" —
+  // operators almost always know the setting type they're about to send,
+  // and defaulting to "all" pulled 60+ thumbnails on first paint. Once a
+  // user explicitly clicks "ทั้งหมด" that stays. First non-empty is picked
+  // once when the counts load; a manual filter later is respected.
   const [categoryFilter, setCategoryFilter] = useState<'all' | number>('all')
+  const [categoryTouched, setCategoryTouched] = useState(false)
+  useEffect(() => {
+    if (categoryTouched) return
+    const firstWithItems = counts.find((c) => c.count > 0)
+    if (firstWithItems?.setting_type_id != null) {
+      setCategoryFilter(firstWithItems.setting_type_id)
+    }
+  }, [counts, categoryTouched])
+  const chooseCategory = (v: 'all' | number) => {
+    setCategoryTouched(true)
+    setCategoryFilter(v)
+  }
+  const [pageSize, setPageSize] = useState(12)
   const { data: mediaData, isLoading: mediaLoading } = useMediaLibraryList({
     setting_type_id: categoryFilter === 'all' ? undefined : categoryFilter,
-    limit: 24,
+    limit: pageSize,
     page: 1,
   })
   const mediaItems = mediaData?.data?.res_data ?? []
+  const totalCount = mediaData?.data?.meta_data?.count ?? mediaItems.length
+  const hasMore = mediaItems.length < totalCount
   const [selectedMediaId, setSelectedMediaId] = useState<number | undefined>()
   const selectedMedia = useMemo(
     () => mediaItems.find((m) => m.id === selectedMediaId),
@@ -120,13 +141,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             </div>
             {/* Category chip filter */}
             <div className="flex items-center gap-1.5 flex-wrap mb-2">
-              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => setCategoryFilter('all')} />
+              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => chooseCategory('all')} />
               {counts.map((c) => (
                 <Chip
                   key={c.setting_type_id ?? 'null'}
                   active={categoryFilter === (c.setting_type_id ?? -1)}
                   label={`${c.setting_type_name} (${c.count})`}
-                  onClick={() => setCategoryFilter(c.setting_type_id ?? -1)}
+                  onClick={() => chooseCategory(c.setting_type_id ?? -1)}
                 />
               ))}
             </div>
@@ -137,43 +158,64 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               </div>
             )}
             {mediaItems.length > 0 && (
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
-              >
-                {mediaItems.map((m) => {
-                  const active = m.id === selectedMediaId
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setSelectedMediaId(m.id)}
-                      className="relative rounded-md overflow-hidden border cursor-pointer group"
-                      style={{
-                        borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
-                        outline: active ? '2px solid #FCD116' : 'none',
-                        outlineOffset: -2,
-                      }}
-                      title={m.name}
-                    >
-                      <div style={{ aspectRatio: '16/9', background: '#000' }}>
-                        <Image
-                          src={m.url}
-                          alt={m.name}
-                          width="100%"
-                          height="100%"
-                          preview={false}
-                          style={{ objectFit: 'contain' }}
-                        />
-                      </div>
-                      {m.setting_type_name && (
-                        <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
-                          {m.setting_type_name}
+              <>
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
+                >
+                  {mediaItems.map((m) => {
+                    const active = m.id === selectedMediaId
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelectedMediaId(m.id)}
+                        className="relative rounded-md overflow-hidden border cursor-pointer group"
+                        style={{
+                          borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
+                          outline: active ? '2px solid #FCD116' : 'none',
+                          outlineOffset: -2,
+                        }}
+                        title={m.name}
+                      >
+                        <div style={{ aspectRatio: '16/9', background: '#000' }}>
+                          {/* Composer grid uses the JPEG q85 thumbnail
+                              (~15 KB) instead of the full-res PNG (~2 MB).
+                              onError falls back to original for uploads that
+                              predate the thumbnail backfill. */}
+                          <img
+                            src={getThumbUrl(m.url)}
+                            alt={m.name}
+                            loading="lazy"
+                            onError={(e) => {
+                              const img = e.currentTarget
+                              if (img.dataset.fallback !== '1') {
+                                img.dataset.fallback = '1'
+                                img.src = m.url
+                              }
+                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
                         </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+                        {m.setting_type_name && (
+                          <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
+                            {m.setting_type_name}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                {hasMore && (
+                  <div className="mt-2 text-center">
+                    <Button
+                      size="small"
+                      onClick={() => setPageSize((n) => n + 12)}
+                    >
+                      โหลดเพิ่ม ({mediaItems.length}/{totalCount})
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
