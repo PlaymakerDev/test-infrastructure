@@ -30,8 +30,10 @@ const ElectricalSystemCard: React.FC = () => {
       const raw = e[m.key as keyof typeof e]
       if (raw == null) return { ...m, value: '-' }
       const num = Number(raw)
-      // Hz / Pf → 2 decimals; Volt / Amp / Watt → 3 decimals (small values like 0.0002)
-      const decimals = m.key === 'frequency' || m.key === 'power_factor' ? 2 : 3
+      // Volt → 2 decimals; Amp → 4 decimals (small values like 0.0002); Hz / Pf → 2 decimals; Watt → 3 decimals
+      const decimals = m.key === 'voltage' || m.key === 'frequency' || m.key === 'power_factor'
+        ? 2
+        : m.key === 'amplitude' ? 4 : 3
       return { ...m, value: isFinite(num) ? num.toFixed(decimals) : String(raw) }
     })
   }, [device, deviceLoaded])

@@ -222,7 +222,7 @@ const IncidentSection: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      <section className="flex items-start gap-3 px-3">
+      <section className="flex items-start gap-3 px-3 sm:px-10">
         <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
         <div>
           <h1 className="text-(--yellow)">รายงานเหตุการณ์</h1>
@@ -258,7 +258,6 @@ const IncidentSection: React.FC = () => {
           markerItemOverflowColor="#E94C4C"
           useModernMarkers
           detailUrl="/admin/statistics/detail/incident"
-          hideCount
           markerOverflowThreshold={99}
           badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
           badgeValueFn={(item) => item.notiTotal ?? 0}

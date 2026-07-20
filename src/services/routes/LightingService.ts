@@ -99,21 +99,21 @@ export const getLightingDeviceDetailsAPI = async (imei: string) => {
   })
 }
 
-/** GET /lighting/logs4g/graph/volt?imei= → hourly voltage points (24h) */
-export const getLightingVoltGraphAPI = async (imei: string) => {
+/** GET /lighting/logs4g/graph/volt?imei=&phase_type= → hourly voltage points (24h) */
+export const getLightingVoltGraphAPI = async (imei: string, phaseType?: number | null) => {
   return ApiService.fetchData<Logs4gVoltPoint[]>({
     url: `/lighting/logs4g/graph/volt`,
     method: 'GET',
-    params: { imei },
+    params: { imei, ...(phaseType ? { phase_type: phaseType } : {}) },
   })
 }
 
-/** GET /lighting/logs4g/graph/amp?imei= → hourly current points (24h) */
-export const getLightingAmpGraphAPI = async (imei: string) => {
+/** GET /lighting/logs4g/graph/amp?imei=&phase_type= → hourly current points (24h) */
+export const getLightingAmpGraphAPI = async (imei: string, phaseType?: number | null) => {
   return ApiService.fetchData<Logs4gAmpPoint[]>({
     url: `/lighting/logs4g/graph/amp`,
     method: 'GET',
-    params: { imei },
+    params: { imei, ...(phaseType ? { phase_type: phaseType } : {}) },
   })
 }
 

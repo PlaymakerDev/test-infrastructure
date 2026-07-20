@@ -36,7 +36,7 @@ const DiagramIframe: React.FC<Props> = ({ imei, minHeight = 260, className = '' 
 
   // Fail open on error — if the check itself fails, still try the iframe
   // rather than hiding a diagram that might actually render fine.
-  const isEmpty = !isLoading && !isError && (diagram?.components.length ?? 0) === 0
+  const isEmpty = !isLoading && !isError && (diagram?.components?.length ?? 0) === 0
 
   const url = size && imei && !isEmpty
     ? `${process.env.NEXT_PUBLIC_HOST_BACKEND}/lighting/diagram/view/${imei}?w=${size.w}&h=${size.h}`

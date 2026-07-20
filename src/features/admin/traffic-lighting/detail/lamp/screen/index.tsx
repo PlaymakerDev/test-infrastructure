@@ -24,7 +24,14 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
   const { project } = projectQuery
   const imei = requestedImei || project.imei || ''
   const deviceQuery = useLightingDeviceDetails(imei)
-  const ampQuery = useLightingAmpGraph(imei)
+  const resolvedPhase = deviceQuery.data
+    ? (deviceQuery.data.phase === 1 || deviceQuery.data.phase === 3 ? deviceQuery.data.phase : project.phase)
+    : project.phase
+  // Gate on the device query having settled first, same rationale as
+  // OverviewSection's `phaseReady` — otherwise this fires once with no
+  // `phase_type` before re-firing once phase resolves.
+  const phaseReady = !deviceQuery.isLoading
+  const ampQuery = useLightingAmpGraph(imei, resolvedPhase, phaseReady)
   const totalLamps = project.equipment.count
   const amps = (ampQuery.data ?? []).map((point) => point.amp).filter((amp): amp is number => amp !== null)
   const avgAmp = amps.length ? amps.reduce((sum, amp) => sum + amp, 0) / amps.length : 0
@@ -33,9 +40,7 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
         ...project,
         imei: imei || project.imei,
         connection: deviceQuery.data.is_online ? 'online' as const : 'offline' as const,
-        phase: deviceQuery.data.phase === 1 || deviceQuery.data.phase === 3
-          ? deviceQuery.data.phase
-          : project.phase,
+        phase: resolvedPhase,
         circuitStatus: deviceQuery.data.has_broken_wire ? 'abnormal' as const : 'normal' as const,
       }
     : project
@@ -127,7 +132,7 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
           </div>
         </section>
 
-        <LampChartsSection imei={imei} />
+        <LampChartsSection imei={imei} phase={resolvedPhase} phaseReady={phaseReady} />
         <LampEquipmentTable />
       </div>
     </LampProvider>

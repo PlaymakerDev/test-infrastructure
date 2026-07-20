@@ -157,7 +157,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     },
     {
       title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', align: 'center', width: 140,
-      render: (v: string) => <span style={{ color: '#FFFFFF', fontFamily: 'monospace' }}>{v}</span>,
+      render: (v: string) => <span style={{ color: '#FFFFFF' }}>{v}</span>,
     },
     {
       title: 'ภาพขณะเกิดเหตุ', dataIndex: 'imageUrl', key: 'imageUrl', align: 'center', width: 140,
@@ -195,6 +195,9 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     if (activeTab === 'ALL') return records
     return records.filter((r) => r.status === activeTab)
   }, [activeTab, records])
+  // Table shows only the first 10 rows — the stat badges above still read
+  // from `stats`/`records` (the full unsliced set), so counts stay accurate.
+  const tableData = React.useMemo(() => filteredData.slice(0, 10), [filteredData])
 
   if (isLoading) {
     return <div className="min-h-48 flex items-center justify-center"><Spin size="large" /></div>
@@ -230,7 +233,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
       {viewMode === 'TABLE' ? (
         <Table<IncidentRecord>
           columns={columns}
-          dataSource={filteredData}
+          dataSource={tableData}
           loading={isFetching}
           pagination={false}
           size="middle"

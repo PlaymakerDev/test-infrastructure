@@ -1,11 +1,11 @@
 "use client"
 import React from 'react'
-import { Alert, Button, Empty, Spin, Table } from 'antd'
+import { Alert, Button, Empty, Pagination, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
 import { useStatusDetailContext } from '../context'
 import { useVMSNotifications } from '@/features/admin/control-vms/overall/hooks/useVMSNotifications'
 import type { VMSNotificationStatus } from '@/types/control-vms/vms-api'
@@ -48,6 +48,45 @@ interface StatusRow {
   status: VMSNotificationStatus
 }
 
+// ── Grid view (Segmented "appstore" mode) — mirrors IncidentDetailTable's
+// card style, adapted to this page's own StatusRow shape (no image). ──
+
+const STATUS_CARD_COLOR: Record<VMSNotificationStatus, string> = {
+  info: '#66AEFF',
+  warning: '#FF9D00',
+  alert: '#E94C4C',
+  critical: '#FF0000',
+}
+
+const StatusCard: React.FC<{ record: StatusRow }> = ({ record }) => {
+  const color = STATUS_CARD_COLOR[record.status] ?? '#979797'
+  return (
+    <div className='flex flex-col gap-2 rounded-2xl p-4' style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+      <div className='flex items-center justify-between gap-2'>
+        <div className='flex items-center gap-2'>
+          <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: color }} />
+          <h4 className='mb-0 font-semibold' style={{ color }}>{record.eventType}</h4>
+        </div>
+        <StatusBadge status={record.status} />
+      </div>
+      <p className='fs-11 text-gray-400 mb-0'>{record.datetime}</p>
+      <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
+      <p className='fs-11 leading-snug mb-0' style={{ color: '#66AEFF' }}>{record.category || '-'}</p>
+    </div>
+  )
+}
+
+const StatusGridView: React.FC<{ records: StatusRow[] }> = ({ records }) => {
+  if (records.length === 0) {
+    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก</div>
+  }
+  return (
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+      {records.map((r) => <StatusCard key={r.key} record={r} />)}
+    </div>
+  )
+}
+
 // ── Filter config ──────────────────────────────────────────────────────────────
 
 const FILTER_CONFIG: FilterConfig[] = [
@@ -66,6 +105,9 @@ interface StatusDetailTableProps {
 
 const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
   const [activeTab, setActiveTab] = React.useState('ALL')
+  const [viewMode, setViewMode] = React.useState<ViewMode>('TABLE')
+  const [page, setPage] = React.useState(1)
+  const pageSize = 10
   const { dateRange } = useStatusDetailContext()
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
   const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
@@ -131,6 +173,15 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
     return records.filter((r) => r.status === activeTab)
   }, [activeTab, records])
 
+  // Reset to page 1 whenever the filter (or underlying data) changes, so a
+  // filter switch never strands the view on a now-out-of-range page.
+  React.useEffect(() => { setPage(1) }, [activeTab, data])
+
+  const pagedData = React.useMemo(
+    () => filteredData.slice((page - 1) * pageSize, page * pageSize),
+    [filteredData, page],
+  )
+
   if (!hasDateRange) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="กรุณาเลือกช่วงวันที่เพื่อดูประวัติการแจ้งเตือน" />
   }
@@ -159,20 +210,46 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
           defaultFilter="ALL"
           onFilterChange={(key) => setActiveTab(key)}
           filterClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
-          showViewToggle={false}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
           showExportButton={false}
         />
       </section>
-      <Table<StatusRow>
-        columns={columns}
-        dataSource={filteredData}
-        loading={isFetching}
-        pagination={false}
-        size="middle"
-        rowKey="key"
-        scroll={{ x: 'max-content' }}
-        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก" /> }}
-      />
+      {viewMode === 'TABLE' ? (
+        <Table<StatusRow>
+          columns={columns}
+          dataSource={filteredData}
+          loading={isFetching}
+          pagination={{
+            current: page,
+            pageSize,
+            total: filteredData.length,
+            onChange: setPage,
+            showSizeChanger: false,
+          }}
+          size="middle"
+          rowKey="key"
+          scroll={{ x: 'max-content' }}
+          locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก" /> }}
+        />
+      ) : (
+        <>
+          <Spin spinning={isFetching}>
+            <StatusGridView records={pagedData} />
+          </Spin>
+          {filteredData.length > pageSize && (
+            <div className="flex justify-end mt-4">
+              <Pagination
+                current={page}
+                pageSize={pageSize}
+                total={filteredData.length}
+                onChange={setPage}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

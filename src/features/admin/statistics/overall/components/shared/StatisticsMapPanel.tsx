@@ -283,6 +283,17 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
     }
   }
 
+  // Widest badge value in the current (filtered) list — every badge is sized
+  // to this so short values ("2") and long ones ("12867") share one uniform
+  // pill width instead of a fixed width clipping long values.
+  const maxBadgeChars = React.useMemo(() => {
+    if (hideIndexBadge) return 0
+    const lengths = filteredRoutes.map((item, index) =>
+      String(badgeValueFn ? badgeValueFn(item, index) : item.sub3.length).length,
+    )
+    return lengths.length ? Math.max(...lengths) : 1
+  }, [filteredRoutes, badgeValueFn, hideIndexBadge])
+
   const searchCardCollapse = (
     <Collapse
       ghost
@@ -302,8 +313,25 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
                 const badgeValue = badgeValueFn ? badgeValueFn(item, index) : item.sub3.length
                 return (
-                  <span style={{ fontSize: 12, fontWeight: 500, color: badgeColor, width: 50, height: 22, borderRadius: 88, border: `1px solid ${badgeColor}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor }} />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      fontVariantNumeric: 'tabular-nums',
+                      color: badgeColor,
+                      minWidth: `calc(${maxBadgeChars}ch + 30px)`,
+                      height: 22,
+                      borderRadius: 88,
+                      border: `1px solid ${badgeColor}`,
+                      boxSizing: 'border-box',
+                      paddingInline: 8,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor, flexShrink: 0 }} />
                     {badgeValue}
                   </span>
                 )
