@@ -5,10 +5,10 @@ import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons
 import dayjs, { Dayjs } from 'dayjs'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
-import { getThumbUrl } from '../utils/thumbnail'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import type { VMSMediaItem } from '@/types/vms/media-library-api'
 
-const isVideoName = (s: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(s)
+const isVideoName = (s: string) => isVideoUrl(s)
 
 interface Props {
   vmsIds: number[]
@@ -187,11 +187,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                         }}
                         title={m.name}
                       >
-                        <div style={{ aspectRatio: '16/9', background: '#000' }}>
+                        <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
                           {/* Composer grid uses the JPEG q85 thumbnail
                               (~15 KB) instead of the full-res PNG (~2 MB).
-                              onError falls back to original for uploads that
-                              predate the thumbnail backfill. */}
+                              Backend ffmpeg-extracts the first frame for
+                              videos so the same <img> path handles both.
+                              onError falls back to original for older
+                              uploads that predate the backfill. */}
                           <img
                             src={getThumbUrl(m.url)}
                             alt={m.name}
@@ -200,11 +202,16 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                               const img = e.currentTarget
                               if (img.dataset.fallback !== '1') {
                                 img.dataset.fallback = '1'
-                                img.src = m.url
+                                img.src = isVideoName(m.filename || m.url) ? '' : m.url
                               }
                             }}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                           />
+                          {isVideoName(m.filename || m.url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
                         {/* Maximize/preview affordance — top-right corner.
                             stopPropagation so the outer <button>'s
