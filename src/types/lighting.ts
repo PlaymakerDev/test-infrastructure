@@ -128,11 +128,15 @@ export interface TopPowerRoadItem {
   total_kw: number
 }
 
-/** GET /lighting/logs4g/graph/volt → [{ Period_Name, volt }]
- *  GET /lighting/logs4g/graph/amp  → [{ Period_Name, amp }]
- *  Period_Name is an hourly label "00:00".."23:00"; volt/amp null when no data. */
-export interface Logs4gVoltPoint { Period_Name: string; volt: number | null }
-export interface Logs4gAmpPoint { Period_Name: string; amp: number | null }
+/** GET /lighting/logs4g/graph/volt?imei=&phase_type= → [{ Period_Name, volt, volt2, volt3 }]
+ *  GET /lighting/logs4g/graph/amp?imei=&phase_type=  → [{ Period_Name, amp, amp2, amp3 }]
+ *  Period_Name is an hourly label "00:00".."23:00". `phase_type` does NOT filter
+ *  the response — the endpoint always returns all 3 phase columns; `volt`/`amp`
+ *  is phase 1, `volt2`/`amp2` is phase 2, `volt3`/`amp3` is phase 3. Any/all
+ *  null when no data for that hour. Single-phase devices only ever populate
+ *  `volt`/`amp` (phase 1) — `volt2`/`volt3`/`amp2`/`amp3` stay null. */
+export interface Logs4gVoltPoint { Period_Name: string; volt: number | null; volt2: number | null; volt3: number | null }
+export interface Logs4gAmpPoint { Period_Name: string; amp: number | null; amp2: number | null; amp3: number | null }
 
 /** GET /lighting/imei/{imei}/alerts → { res_data: AlertItem[], meta_data: PaginationMeta } */
 export interface AlertItem {
