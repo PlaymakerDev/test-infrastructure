@@ -12,11 +12,13 @@ export const useTrafficVolumeCountHour = (
     queryKey: trafficVolumeKeys.detail.countHour({
       solution_id: params.solution_id ?? '',
       date: params.date,
+      camera_id: params.camera_id,
     }),
     queryFn: () =>
       getTrafficVolumeCountHourAPI({
         solution_id: params.solution_id!,
         date: params.date,
+        camera_id: params.camera_id,
       }).then((r) => r.data),
     enabled: !!params.solution_id,
   })

@@ -188,6 +188,7 @@ export const getTrafficVolumeCountHourAPI = (
     params: {
       solution_id: params.solution_id,
       ...(params.date ? { date: params.date } : {}),
+      ...(params.camera_id ? { camera_id: params.camera_id } : {}),
     },
   })
 

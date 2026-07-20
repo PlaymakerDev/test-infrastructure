@@ -40,6 +40,8 @@ export const parseViolationTimestamp = (
 interface UseViolationRowsResult {
   pageRows: CrosswalkViolationRow[]
   totalPages: number
+  /** Total matching rows (NOT pages) — drives antd Pagination's item count. */
+  total: number
   page: number
   setPage: (n: number) => void
   isLoading: boolean
@@ -93,5 +95,5 @@ export const useViolationRows = (
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
   const isLoading = infiniteQuery.isLoading || isFetchingNextPage
 
-  return { pageRows, totalPages, page, setPage, isLoading, pageStart }
+  return { pageRows, totalPages, total: filteredRows.length, page, setPage, isLoading, pageStart }
 }

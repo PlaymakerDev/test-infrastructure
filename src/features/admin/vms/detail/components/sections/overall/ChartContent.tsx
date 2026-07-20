@@ -12,7 +12,6 @@ interface Props {
 
 const ChartContent: React.FC<Props> = (props) => {
   const { data } = props
-  console.log(">>>>>>>>>", data)
   return (
     <Swiper
       modules={[Pagination]}

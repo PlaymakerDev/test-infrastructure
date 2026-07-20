@@ -9,6 +9,9 @@ export interface APIRequestTrafficVolumeCountHour {
   solution_id: string | number
   /** YYYY-MM-DD. Omit to let the backend default to today. */
   date?: string
+  /** Narrow the hourly rollup to a single camera. Omit (or 'all') = every
+   *  camera — mirrors the camera filter on the รายงาน tab's summary endpoint. */
+  camera_id?: string | number
 }
 
 export interface CountingHourBucket {

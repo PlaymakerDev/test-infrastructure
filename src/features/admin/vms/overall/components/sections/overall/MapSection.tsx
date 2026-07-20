@@ -1,7 +1,7 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
-import { useMap } from '@/components/map/hooks/useMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
 import { useScopeAll } from '@/hooks/useScopeAll'
@@ -10,7 +10,7 @@ import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useAppDispatch } from '@/stores/hooks'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
 import { ModalVMSScreenProps, useOverallContext } from '../../../context'
@@ -78,7 +78,7 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setO
         <h5>{String(p.solution_name)}</h5>
         <p className='fs-12 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
         <p className={`fs-12 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
-          ● {String(p.status_name)}
+          ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
         </p>
         <p className="fs-12 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
       </section>
@@ -104,21 +104,13 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setO
 
 interface MarkerLayerGroupProps {
   locations: Location[]
-  centroid: number[]
   isReady: boolean
 }
 
-const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, isReady }) => {
-  const { map, isLoaded } = useMap()
+const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, isReady }) => {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const { setOpenVMSScreen } = useOverallContext()
-
-  useEffect(() => {
-    if (!map || !isLoaded || !isReady) return
-    if (centroid[0] === 0 && centroid[1] === 0) return
-    map.flyTo({ center: centroid as [number, number], zoom: 10, duration: 1200 })
-  }, [map, isLoaded, isReady, centroid])
 
   // Single VMS-typed marker layer — same icon/menu-color style as the other
   // overall maps (yellow-pin glyph via DeviceMarkerLayer). Online/offline is no
@@ -126,27 +118,40 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, centroid, 
   // ● status text stays green/red).
   const allData = useMemo(() => toGeoJSON(locations), [locations])
 
+  // Frame EVERY plottable VMS marker (fitBounds) instead of a fixed zoom-10
+  // flyTo to the centroid — that left ?scope=all (nationwide) zoomed in on one
+  // small area near the centroid. Same coord guard as the markers so framing
+  // matches what renders; maxZoom stops a single dept / tight cluster from
+  // over-zooming to street level.
+  const coords = useMemo<[number, number][]>(
+    () => locations.map((l) => l.GeometryPoint).filter(isValidCoord),
+    [locations]
+  )
+
   if (!isReady) return null
 
   return (
-    <DeviceMarkerLayer
-      type='VMS'
-      id="vms"
-      data={allData}
-      cluster
-      size={18}
-      strokeColor='#ffffff'
-      popup={(f) => (
-        <VMSPopup
-          feature={f}
-          isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
-          dispatch={dispatch}
-          onNavigate={router.push}
-          setOpenVMSScreen={setOpenVMSScreen}
-        />
-      )}
-      popupOptions={{ offset: 10, closeButton: false }}
-    />
+    <>
+      <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
+      <DeviceMarkerLayer
+        type='VMS'
+        id="vms"
+        data={allData}
+        cluster
+        size={18}
+        strokeColor='#ffffff'
+        popup={(f) => (
+          <VMSPopup
+            feature={f}
+            isOnline={Boolean((f.properties as Record<string, unknown>)?.is_online)}
+            dispatch={dispatch}
+            onNavigate={router.push}
+            setOpenVMSScreen={setOpenVMSScreen}
+          />
+        )}
+        popupOptions={{ offset: 10, closeButton: false }}
+      />
+    </>
   )
 }
 
@@ -184,7 +189,6 @@ const MapSection: React.FC<Props> = (props) => {
       >
         <VmsMarkerLayer
           locations={data?.data.locations || []}
-          centroid={data?.data.centroid || [0, 0]}
           isReady={isSuccess}
         />
       </BaseMap>

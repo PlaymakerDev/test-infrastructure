@@ -67,6 +67,10 @@ export const periodToRange = (period: EventPeriod): [Dayjs, Dayjs] | null => {
 interface Props {
   value: EventFilterValues
   onChange: (next: EventFilterValues) => void
+  /** First calendar day that actually has recorded events. When period is
+   *  'ทั้งหมด', the date picker DISPLAYS [allStartDate → today] so the user sees
+   *  the real data span. Display-only — the ALL query stays unfiltered. */
+  allStartDate?: Dayjs | null
 }
 
 /** Coloured dot + label, for both the dropdown items and the selected value. */
@@ -79,7 +83,11 @@ const TypeOption: React.FC<{ value: string; label: React.ReactNode }> = ({ value
   </span>
 )
 
-const FormSearchEvent: React.FC<Props> = ({ value, onChange }) => {
+const FormSearchEvent: React.FC<Props> = ({ value, onChange, allStartDate }) => {
+  // For ทั้งหมด, show the real data span [first day with data → today]. Falls
+  // back to the raw value while `allStartDate` is still loading.
+  const displayDate: [Dayjs, Dayjs] | null =
+    value.period === 'ALL' && allStartDate ? [allStartDate, dayjs()] : value.date
   return (
     // Filters sit adjacent (flex) on lg+ and stack on mobile. `items-end` lines
     // the inputs up at the same baseline; all controls are `large` so
@@ -90,7 +98,7 @@ const FormSearchEvent: React.FC<Props> = ({ value, onChange }) => {
         <label className='block fs-12 text-(--yellow) mb-1'>วันที่แสดงข้อมูล</label>
         <ConfigProvider locale={thTH}>
           <RangePicker
-            value={value.date}
+            value={displayDate}
             onChange={(d) =>
               onChange({
                 ...value,

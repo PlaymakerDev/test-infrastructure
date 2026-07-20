@@ -1,11 +1,11 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Empty, Image } from 'antd'
 import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
-import BluePagination from './BluePagination'
+import AppPagination from '@/components/pagination/AppPagination'
 import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
@@ -24,8 +24,9 @@ const GRID_CLASSES =
 const CCTVViolationData: React.FC<Props> = ({ filter }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
-  const { pageRows, totalPages, page, setPage, isLoading, pageStart } =
-    useViolationRows(filter, PAGE_SIZE)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+  const { pageRows, total, page, setPage, isLoading, pageStart } =
+    useViolationRows(filter, pageSize)
 
   const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
   const ipByCameraId = useMemo(() => {
@@ -34,7 +35,7 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
     return m
   }, [camerasData])
 
-  const showPagination = totalPages > 1
+  const showPagination = total > 0
 
   if (isLoading && pageRows.length === 0) {
     return (
@@ -107,7 +108,15 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
         })}
       </div>
       {showPagination && (
-        <BluePagination current={page} total={totalPages} onChange={setPage} />
+        <AppPagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={(p, s) => {
+            setPage(p)
+            setPageSize(s)
+          }}
+        />
       )}
     </div>
   )

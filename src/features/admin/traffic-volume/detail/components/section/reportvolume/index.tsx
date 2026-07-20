@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { TbArrowLeft, TbArrowRight } from 'react-icons/tb'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
+import AppPagination from '@/components/pagination/AppPagination'
 import FilterBarReport, {
   type DateRange,
   type HourView,
@@ -21,7 +21,6 @@ import {
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import {
-  buildPageList,
   computeReportSummary,
   groupByCamera,
 } from '@/features/admin/traffic-volume/shared/utils/reportSummary'
@@ -193,89 +192,6 @@ const EMPTY_VEHICLE_TYPE_SUMMARY: VehicleTypeReportSummary = {
   truckPercent: 0,
 }
 
-interface BluePaginationProps {
-  current: number
-  total: number
-  onChange: (page: number) => void
-}
-
-/** Numbered pagination styled per the report-tab design — round blue
- *  active pill, blue page numbers, ก่อนหน้า / ถัดไป labels with arrows.
- *  Built locally instead of using `antd/Pagination` because the design
- *  diverges from Antd's defaults (round active state + Thai prev/next
- *  labels with custom layout). */
-const BluePagination: React.FC<BluePaginationProps> = ({
-  current,
-  total,
-  onChange,
-}) => {
-  const pages = buildPageList(current, total)
-  const prevDisabled = current === 1
-  const nextDisabled = current >= total
-  const BLUE = '#66AEFF'
-  return (
-    <nav className='flex items-center justify-end gap-2 mt-2 select-none'>
-      <button
-        type='button'
-        disabled={prevDisabled}
-        onClick={() => onChange(Math.max(1, current - 1))}
-        className={`inline-flex items-center gap-2 px-2 py-1 fs-14 ${
-          prevDisabled
-            ? 'text-white/35 cursor-not-allowed'
-            : 'cursor-pointer hover:opacity-80'
-        }`}
-        style={{ color: prevDisabled ? undefined : BLUE }}
-      >
-        <TbArrowLeft size={18} />
-        <span>ก่อนหน้า</span>
-      </button>
-      {pages.map((p, i) =>
-        p === '...' ? (
-          <span
-            key={`ellipsis-${i}`}
-            className='inline-flex items-center justify-center w-8 h-8 fs-14'
-            style={{ color: BLUE }}
-          >
-            ...
-          </span>
-        ) : p === current ? (
-          <span
-            key={p}
-            className='inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-semibold fs-14'
-            style={{ background: BLUE }}
-          >
-            {p}
-          </span>
-        ) : (
-          <button
-            key={p}
-            type='button'
-            onClick={() => onChange(p)}
-            className='inline-flex items-center justify-center w-8 h-8 rounded-full fs-14 hover:bg-white/5 cursor-pointer'
-            style={{ color: BLUE }}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button
-        type='button'
-        disabled={nextDisabled}
-        onClick={() => onChange(Math.min(total, current + 1))}
-        className={`inline-flex items-center gap-2 px-2 py-1 fs-14 ${
-          nextDisabled
-            ? 'text-white/35 cursor-not-allowed'
-            : 'cursor-pointer hover:opacity-80'
-        }`}
-        style={{ color: nextDisabled ? undefined : BLUE }}
-      >
-        <span>ถัดไป</span>
-        <TbArrowRight size={18} />
-      </button>
-    </nav>
-  )
-}
-
 /** Map the FE dropdown value to the API's `report_type` enum. Same values
  *  apart from the legacy `daily` key (the backend uses the same literal). */
 const toBackendReportType = (v: string): CountingReportType => {
@@ -382,7 +298,9 @@ const ReportVolume: React.FC<Props> = () => {
   // cascading render.
   // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [monthlyPage, setMonthlyPage] = useState(1)
+  const [monthlyPageSize, setMonthlyPageSize] = useState(10)
   const [yearlyPage, setYearlyPage] = useState(1)
+  const [yearlyPageSize, setYearlyPageSize] = useState(10)
   const resetKey = `${reportType}|${startDate ?? ''}|${endDate ?? ''}|${cameraId}`
   const [prevResetKey, setPrevResetKey] = useState(resetKey)
   if (prevResetKey !== resetKey) {
@@ -538,8 +456,7 @@ const ReportVolume: React.FC<Props> = () => {
     return map
   }, [dailyHelperRows])
 
-  // Monthly — same shape as daily; client-paginated at 10 per page.
-  const MONTHLY_PAGE_SIZE = 10
+  // Monthly — same shape as daily; client-paginated (page size selectable).
   const monthlyRowsAll = useMemo<MonthlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -550,18 +467,13 @@ const ReportVolume: React.FC<Props> = () => {
     [allApiRows, daysCollectedByMonth]
   )
   const monthlyRows = useMemo<MonthlyReportRow[]>(() => {
-    const start = (monthlyPage - 1) * MONTHLY_PAGE_SIZE
-    return monthlyRowsAll.slice(start, start + MONTHLY_PAGE_SIZE)
-  }, [monthlyRowsAll, monthlyPage])
-  const monthlyTotalPages = Math.max(
-    1,
-    Math.ceil(monthlyRowsAll.length / MONTHLY_PAGE_SIZE)
-  )
+    const start = (monthlyPage - 1) * monthlyPageSize
+    return monthlyRowsAll.slice(start, start + monthlyPageSize)
+  }, [monthlyRowsAll, monthlyPage, monthlyPageSize])
   const showMonthlyPagination =
-    reportType === 'month' && monthlyTotalPages > 1
+    reportType === 'month' && monthlyRowsAll.length > 0
 
-  // Yearly — same shape as daily/monthly; client-paginated at 10 per page.
-  const YEARLY_PAGE_SIZE = 10
+  // Yearly — same shape as daily/monthly; client-paginated (page size selectable).
   const yearlyRowsAll = useMemo<YearlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -572,15 +484,11 @@ const ReportVolume: React.FC<Props> = () => {
     [allApiRows, daysCollectedByYear]
   )
   const yearlyRows = useMemo<YearlyReportRow[]>(() => {
-    const start = (yearlyPage - 1) * YEARLY_PAGE_SIZE
-    return yearlyRowsAll.slice(start, start + YEARLY_PAGE_SIZE)
-  }, [yearlyRowsAll, yearlyPage])
-  const yearlyTotalPages = Math.max(
-    1,
-    Math.ceil(yearlyRowsAll.length / YEARLY_PAGE_SIZE)
-  )
+    const start = (yearlyPage - 1) * yearlyPageSize
+    return yearlyRowsAll.slice(start, start + yearlyPageSize)
+  }, [yearlyRowsAll, yearlyPage, yearlyPageSize])
   const showYearlyPagination =
-    reportType === 'year' && yearlyTotalPages > 1
+    reportType === 'year' && yearlyRowsAll.length > 0
 
   // Hourly — group every fetched row by camera (now we have ALL rows so
   // each group contains the camera's full hour list). Narrow by the
@@ -654,10 +562,14 @@ const ReportVolume: React.FC<Props> = () => {
           <div className='flex flex-col gap-3'>
             <MonthlyReportTable rows={monthlyRows} />
             {showMonthlyPagination && (
-              <BluePagination
+              <AppPagination
                 current={monthlyPage}
-                total={monthlyTotalPages}
-                onChange={setMonthlyPage}
+                pageSize={monthlyPageSize}
+                total={monthlyRowsAll.length}
+                onChange={(p, s) => {
+                  setMonthlyPage(p)
+                  setMonthlyPageSize(s)
+                }}
               />
             )}
           </div>
@@ -667,10 +579,14 @@ const ReportVolume: React.FC<Props> = () => {
           <div className='flex flex-col gap-3'>
             <YearlyReportTable rows={yearlyRows} />
             {showYearlyPagination && (
-              <BluePagination
+              <AppPagination
                 current={yearlyPage}
-                total={yearlyTotalPages}
-                onChange={setYearlyPage}
+                pageSize={yearlyPageSize}
+                total={yearlyRowsAll.length}
+                onChange={(p, s) => {
+                  setYearlyPage(p)
+                  setYearlyPageSize(s)
+                }}
               />
             )}
           </div>

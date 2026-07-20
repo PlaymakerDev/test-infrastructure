@@ -11,6 +11,7 @@ import { EVENT_TYPES } from '@/features/admin/incident-detection/components/even
 import {
   useIncidentTransactions,
   useIncidentCentralList,
+  useIncidentDaily,
 } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
@@ -60,6 +61,24 @@ const EventSection: React.FC<Props> = () => {
   const events = data?.res_data ?? []
   const total = data?.meta_data?.count ?? 0
 
+  // First calendar day that actually has events — used to fill the picker's
+  // start when ช่วงเวลา = ทั้งหมด (display only; the ALL query stays unfiltered).
+  // Query the daily breakdown over a wide window and take the earliest bucket
+  // that has any event. Gated to ALL: passing an undefined solution_id disables
+  // the hook (its `enabled` is `!!solution_id`), so it doesn't fetch otherwise.
+  const { data: dailyAll } = useIncidentDaily({
+    solution_id: filters.period === 'ALL' ? solutionId : undefined,
+    start_date: '2020-01-01',
+    end_date: dayjs().format('YYYY-MM-DD'),
+  })
+  const allStartDate = useMemo(() => {
+    const firstWithData = (dailyAll ?? [])
+      .filter((b) => (b.data ?? []).some((d) => d.count > 0))
+      .map((b) => b.date)
+      .sort()[0]
+    return firstWithData ? dayjs(firstWithData) : null
+  }, [dailyAll])
+
   // Road code for the EventDetailModal "จุดติดตั้ง" line — same source/cache as
   // Tab 1's event list (not carried on the event row itself).
   const { data: central } = useIncidentCentralList(deptId)
@@ -84,7 +103,7 @@ const EventSection: React.FC<Props> = () => {
   return (
     <div>
       <section>
-        <FormSearchEvent value={filters} onChange={handleFilterChange} />
+        <FormSearchEvent value={filters} onChange={handleFilterChange} allStartDate={allStartDate} />
       </section>
       <section className='mt-5'>
         <SearchBar

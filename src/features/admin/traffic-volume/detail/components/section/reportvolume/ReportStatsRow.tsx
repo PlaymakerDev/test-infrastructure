@@ -64,22 +64,22 @@ const ReportStatsRow: React.FC<Props> = ({ summary, unit = 'day' }) => {
       <Cell
         value={fmtNumber(summary.daysCount, 0)}
         label={UNIT_COUNT_LABEL[unit]}
-        color='#FCD116'
+        color='#007BFF'
       />
       <Cell
         value={fmtNumber(summary.totalVehicles, 0)}
         label='จำนวนยานพาหนะ (คัน)'
-        color='#66AEFF'
+        color='#00DDFF'
       />
       <Cell
         value={fmtNumber(summary.totalPCU, 1)}
         label='รวมเฉลี่ย PCU'
-        color='#00FF55'
+        color='#00FFAA'
       />
       <Cell
         value={fmtNumber(summary.avgVehiclesPerDay, 0)}
         label={`เฉลี่ยยานพาหนะคันต่อ${u}`}
-        color='#00FFDD'
+        color='#00FF00'
       />
       <Cell
         value={fmtNumber(summary.avgPCUPerDay, 1)}
@@ -89,17 +89,17 @@ const ReportStatsRow: React.FC<Props> = ({ summary, unit = 'day' }) => {
       <Cell
         value={fmtNumber(summary.maxVehiclesPerDay, 0)}
         label={`ยานพาหนะสูงสุดคันต่อ${u}`}
-        color='#FCD116'
+        color='#FFC800'
       />
       <Cell
         value={fmtNumber(summary.maxPCUPerDay, 1)}
         label={`PCU สูงสุดต่อ${u}`}
-        color='#FF9500'
+        color='#FF5E00'
       />
       <Cell
         value={`${fmtNumber(summary.truckPercent, 1)}%`}
         label='รถบรรทุก'
-        color='#FF4444'
+        color='#FF2B00'
       />
     </div>
   )
