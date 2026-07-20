@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { TbSearch } from 'react-icons/tb'
 
 interface Props {
-
+  onSearch?: (search: string) => void
 }
 
 interface FormSearchRouteValues {
@@ -14,7 +14,7 @@ interface FormSearchRouteValues {
 let timeout: NodeJS.Timeout
 
 const FormSearchRoute: React.FC<Props> = (props) => {
-  const { } = props
+  const { onSearch } = props
   const submitRef = useRef<HTMLButtonElement>(null)
 
   const form = useForm<FormSearchRouteValues>({
@@ -29,8 +29,8 @@ const FormSearchRoute: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((value: FormSearchRouteValues) => {
-    console.log('submit', value)
-  }, [])
+    onSearch?.(value.search)
+  }, [onSearch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

@@ -1,4 +1,4 @@
-import { APIRequestAnalyticProvinceTraffic, APIRequestAnalyticWeeklyPattern, APIRequestHourlyTraffic, APIRequestTopActiveTruck, APIRequestVehicleHistory, APIRequestVehicleRouteHistory, APIResponseAnalyticProvinceTraffic, APIResponseAnalyticVehicleType, APIResponseAnalyticWeeklyPattern, APIResponseFleetKPI, APIResponseHourlyTraffic, APIResponseProvinceSummary, APIResponseTopActiveTruck, APIResponseVehicleHistory, APIResponseVehicleRouteHistory } from "@/types/tracking/detail-gps-api"
+import { APIRequestAllVehicleLocation, APIRequestAnalyticProvinceTraffic, APIRequestAnalyticWeeklyPattern, APIRequestGeoRoad, APIRequestHourlyTraffic, APIRequestTopActiveTruck, APIRequestVehicleHistory, APIRequestVehicleLocation, APIRequestVehicleRouteHistory, APIResponseAllVehicleLocation, APIResponseAnalyticProvinceTraffic, APIResponseAnalyticVehicleType, APIResponseAnalyticWeeklyPattern, APIResponseFleetKPI, APIResponseGeoRoad, APIResponseHourlyTraffic, APIResponseProvinceSummary, APIResponseTopActiveTruck, APIResponseVehicleHistory, APIResponseVehicleLocation, APIResponseVehicleRouteHistory } from "@/types/tracking/detail-gps-api"
 import ApiService from "../ApiService"
 import { DEFAULT_TRACKING_API_URL } from "./TrackingService"
 
@@ -66,6 +66,30 @@ export const getTrackingGPSAnalyticWeeklyPatternAPI = async (params: APIRequestA
 export const getTrackingGPSAnalyticProvinceTrafficAPI = async (params: APIRequestAnalyticProvinceTraffic) => {
   return ApiService.fetchData<APIResponseAnalyticProvinceTraffic, APIRequestAnalyticProvinceTraffic>({
     url: `${DEFAULT_TRACKING_API_URL}/api/v1/info/analytics_province_traffic`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingGPSAllVehicleLocationAPI = async (params: APIRequestAllVehicleLocation) => {
+  return ApiService.fetchData<APIResponseAllVehicleLocation, APIRequestAllVehicleLocation>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/info/all_vehical_location`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingGPSVehicleLocationAPI = async (params: APIRequestVehicleLocation) => {
+  return ApiService.fetchData<APIResponseVehicleLocation, APIRequestVehicleLocation>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/info/vehical_location`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getTrackingGPSGeoRoadAPI = async (params: APIRequestGeoRoad) => {
+  return ApiService.fetchData<APIResponseGeoRoad, APIRequestGeoRoad>({
+    url: `${DEFAULT_TRACKING_API_URL}/api/v1/info/geo_road`,
     method: 'GET',
     params,
   })

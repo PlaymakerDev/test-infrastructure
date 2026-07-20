@@ -502,7 +502,7 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className={`relative${fillHeight ? ' flex-1 min-h-0' : ''}`}>
+      <div className={`relative ${fillHeight ? ' flex-1 min-h-0' : ''}`}>
         <ReactECharts
           option={option}
           style={{ height: fillHeight ? '100%' : height }}

@@ -1,13 +1,15 @@
 import React from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
+import { GeoRoadData, VehicleLocationData } from '@/types/tracking/detail-gps-api'
 
 interface Props {
-
+  road?: GeoRoadData
+  vehicle?: VehicleLocationData
 }
 
 const MapSection: React.FC<Props> = (props) => {
-  const { } = props
+  const { road, vehicle } = props
 
   return (
     <div className='h-full w-full'>
