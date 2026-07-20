@@ -23,7 +23,8 @@ const MobileSection = () => {
     page,
     page_size: pageSize,
     ordering: 'asc',
-    search: searchMobileMaster?.search || ''
+    search: searchMobileMaster?.search || '',
+    is_open: 1
   })
 
   const {

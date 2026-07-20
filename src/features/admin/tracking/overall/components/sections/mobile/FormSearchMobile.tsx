@@ -55,7 +55,7 @@ const FormSearchMobile: React.FC<Props> = (props) => {
                 placeholder="ค้นหาจุดตั้งด่าน..."
                 className='rounded-lg'
                 suffix={<TbSearch className='text-(--yellow)' />}
-                size='medium'
+                size='large'
                 onChange={(e) => {
                   field.onChange(e)
                   if (timeoutRef.current) clearTimeout(timeoutRef.current)
