@@ -1,11 +1,13 @@
 "use client"
 import React, { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button, Input, Result, Segmented, Spin, Table } from 'antd'
+import { Button, Image, Input, Result, Segmented, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbArrowBigLeftFilled, TbFileText, TbSearch, TbX } from 'react-icons/tb'
-import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory } from '@/hooks/queries/maintenance'
+import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory, useMaintenanceCase } from '@/hooks/queries/maintenance'
+import { useProjectByCaseNo } from '@/hooks/queries/manage'
 import type { CaseHistoryItem, HistoryCase } from '@/types/maintenance'
+import { parseImageUrls } from '../../data/parseImageUrls'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -74,12 +76,18 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<CaseHistoryItem | null>(null)
   const [searchText, setSearchText] = useState('')
-  const [selectedPeriod, setSelectedPeriod] = useState('THIS_MONTH')
+  const [selectedPeriod, setSelectedPeriod] = useState('TODAY')
 
   const numericId = Number(id)
   const solutionQuery = useMaintenanceSolution(numericId)
   const casesQuery = useMaintenanceCases(numericId)
   const historyQuery = useMaintenanceHistory({ status: 'all' })
+  // "ข้อมูลโครงการ" card in the case modal — only fetches once a row is
+  // selected (case_no known); GET /manage/project/case/{case_no}.
+  const projectByCaseQuery = useProjectByCaseNo(selectedRecord?.case_no)
+  // "การดำเนินการหรือวิธีการแก้ไข" + "รายละเอียดรูปแบบไฟล์" (ก่อนซ่อม/หลังซ่อม)
+  // in the same modal — GET /manage/maintenance/case/{case_no}.
+  const caseDetailQuery = useMaintenanceCase(selectedRecord?.case_no)
 
   // Solution + cases are the core route data. The global history request only
   // enriches fields inside the record modal, so it must never hold the table in
@@ -108,6 +116,16 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const installPointText = historyCase ? [historyCase.location_name, historyCase.road_name].filter(Boolean).join(' - ') || '-' : '-'
   const offlineSinceText = selectedRecord?.reported_at ? dayjs(selectedRecord.reported_at).format('DD MMM BBBB') : '-'
   const offlineDaysText = historyCase?.offline_days ? `${historyCase.offline_days} วัน` : '-'
+  // ข้อมูลโครงการ card — from GET /manage/project/case/{case_no}
+  const projectByCase = projectByCaseQuery.data
+  const contractorText = projectByCase?.contractor?.username || '-'
+  const contractNoText = projectByCase?.contract_no || '-'
+  const warrantyStartText = projectByCase?.warranty_start_date ? dayjs(projectByCase.warranty_start_date).format('DD MMM BBBB') : '-'
+  const warrantyEndText = projectByCase?.warranty_end_date ? dayjs(projectByCase.warranty_end_date).format('DD MMM BBBB') : '-'
+  // การดำเนินการหรือวิธีการแก้ไข + รายละเอียดรูปแบบไฟล์ — from GET /manage/maintenance/case/{case_no}
+  const solutionMethodText = caseDetailQuery.data?.solution_method || '-'
+  const beforeImageUrls = useMemo(() => parseImageUrls(caseDetailQuery.data?.before_image), [caseDetailQuery.data?.before_image])
+  const afterImageUrls = useMemo(() => parseImageUrls(caseDetailQuery.data?.after_image), [caseDetailQuery.data?.after_image])
 
   const filteredCases = useMemo(() => {
     const query = searchText.trim().toLowerCase()
@@ -287,20 +305,20 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               </button>
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {historyQuery.isLoading && (
+              {(historyQuery.isLoading || projectByCaseQuery.isLoading || caseDetailQuery.isLoading) && (
                 <div className='flex items-center gap-2 rounded-xl px-4 py-3' style={{ backgroundColor: '#66AEFF1A', color: '#B2D6F0' }}>
                   <Spin size='small' />
                   <span>กำลังโหลดข้อมูลประกอบเพิ่มเติม...</span>
                 </div>
               )}
-              {historyQuery.isError && (
+              {(historyQuery.isError || projectByCaseQuery.isError || caseDetailQuery.isError) && (
                 <div
                   role='alert'
                   className='flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3'
                   style={{ backgroundColor: '#E94C4C1A', border: '1px solid #E94C4C', color: '#E94C4C' }}
                 >
                   <span>ไม่สามารถโหลดข้อมูลประกอบบางส่วนได้ ข้อมูลหลักของ Case ยังใช้งานได้</span>
-                  <Button size='small' danger onClick={() => { void historyQuery.refetch() }}>
+                  <Button size='small' danger onClick={() => { void historyQuery.refetch(); void projectByCaseQuery.refetch(); void caseDetailQuery.refetch() }}>
                     ลองอีกครั้ง
                   </Button>
                 </div>
@@ -315,11 +333,11 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   </p>
                   <div className='grid grid-cols-3 lg:grid-cols-6 gap-4'>
                     {([
-                      { label: 'ผู้รับจ้าง', value: '-', icon: 'icsc1.png' },
+                      { label: 'ผู้รับจ้าง', value: contractorText, icon: 'icsc1.png' },
                       { label: 'หน่วยงานรับผิดชอบ', value: agencyText, icon: 'icsc2.png' },
-                      { label: 'เลขที่สัญญา', value: '-', icon: 'icsc3.png' },
-                      { label: 'เริ่มต้นการรับประกัน', value: '-', icon: 'icsc4-5.png' },
-                      { label: 'สิ้นสุดการรับประกัน', value: '-', icon: 'icsc4-5.png' },
+                      { label: 'เลขที่สัญญา', value: contractNoText, icon: 'icsc3.png' },
+                      { label: 'เริ่มต้นการรับประกัน', value: warrantyStartText, icon: 'icsc4-5.png' },
+                      { label: 'สิ้นสุดการรับประกัน', value: warrantyEndText, icon: 'icsc4-5.png' },
                       { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
@@ -375,7 +393,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   </div>
                   <div className='mt-3'>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>การดำเนินการหรือวิธีการแก้ไข</p>
-                    <Input.TextArea value={'-'} readOnly autoSize={{ minRows: 2, maxRows: 4 }} style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }} />
+                    <Input.TextArea value={solutionMethodText} readOnly autoSize={{ minRows: 2, maxRows: 4 }} style={{ width: '100%', borderRadius: 10, backgroundColor: '#191919', border: '1px solid #FCD116', color: '#FFFFFF', resize: 'none' }} />
                   </div>
                   <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '16px 0 6px 0' }}>ระยะเวลา</p>
                   <div className='flex flex-col sm:flex-row gap-4'>
@@ -398,17 +416,25 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                   <div className='mb-4'>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>ก่อนซ่อม</p>
                     <div className='flex gap-2 flex-wrap'>
-                      <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <TbFileText size={40} color='#555' />
-                      </div>
+                      {beforeImageUrls.length > 0 ? beforeImageUrls.map((url) => (
+                        <Image key={url} src={url} alt='ก่อนซ่อม' width={160} height={160} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                      )) : (
+                        <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <TbFileText size={40} color='#555' />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
                     <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 8px 0' }}>หลังซ่อม</p>
                     <div className='flex gap-2 flex-wrap'>
-                      <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <TbFileText size={40} color='#555' />
-                      </div>
+                      {afterImageUrls.length > 0 ? afterImageUrls.map((url) => (
+                        <Image key={url} src={url} alt='หลังซ่อม' width={160} height={160} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                      )) : (
+                        <div style={{ width: 160, height: 160, borderRadius: 8, backgroundColor: '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <TbFileText size={40} color='#555' />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

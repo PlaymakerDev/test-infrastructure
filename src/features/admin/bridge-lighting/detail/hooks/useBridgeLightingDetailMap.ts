@@ -9,6 +9,6 @@ export const useBridgeLightingDetailMap = (
 ) =>
   useQuery({
     queryKey: bridgeLightingDetailKeys.mapDetail(String(id ?? ''), deptId, scope),
-     () => getBridgeLightingOverviewAPI(Number(deptId), { solution_id: Number(id) }),
-  enabled: !!deptId && !!id,
+    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId), { solution_id: Number(id) }),
+    enabled: !!deptId && !!id,
   })

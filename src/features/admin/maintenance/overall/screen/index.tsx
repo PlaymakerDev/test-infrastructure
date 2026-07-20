@@ -11,7 +11,7 @@ const MaintenanceContent: React.FC = () => {
   const searchParams = useSearchParams()
   const hasRepair = searchParams.has('repair')
 
-  const period = searchParams.get('period') || undefined
+  const period = searchParams.get('period') || 'TODAY'
 
   const currentTab = useMemo(() => {
     if (hasRepair) return 'REPAIR'

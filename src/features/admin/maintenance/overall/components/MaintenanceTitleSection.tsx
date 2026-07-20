@@ -26,7 +26,7 @@ const MaintenanceTitleSection: React.FC = () => {
   const isMobile = useIsMobile()
   const hasRepair = searchParams.has('repair')
   const currentTab = hasRepair ? 'REPAIR' : 'OVERVIEW'
-  const activePeriod = searchParams.get('period') || 'ALL'
+  const activePeriod = searchParams.get('period') || 'TODAY'
 
   const handleBack = useCallback(() => router.push('/admin/maintenance'), [router])
 

@@ -17,6 +17,7 @@ import {
 } from '../hooks/useMediaLibrary'
 import { postUploadVMSAPI } from '@/services/routes/SharedService'
 import type { VMSMediaItem } from '@/types/vms/media-library-api'
+import { getThumbUrl } from '../utils/thumbnail'
 
 dayjs.extend(relativeTime)
 
@@ -351,13 +352,22 @@ const MediaLibraryTab: React.FC = () => {
                         playsInline
                       />
                     ) : (
-                      <Image
-                        src={it.url}
+                      // Grid uses the .thumb.jpg sibling (~15 KB) instead of
+                      // the full-res original (~2 MB PNG). onError falls back
+                      // to the original url so older uploads that predate the
+                      // backfill still render.
+                      <img
+                        src={getThumbUrl(it.url)}
                         alt={it.name}
-                        preview={false}
-                        width="100%"
-                        height="100%"
-                        style={{ objectFit: 'contain' }}
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget
+                          if (img.dataset.fallback !== '1') {
+                            img.dataset.fallback = '1'
+                            img.src = it.url
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
                     )}
                     {isVideo && (

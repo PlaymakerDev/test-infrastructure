@@ -18,6 +18,7 @@ import type {
 import type {
   APIResponseProject,
   APIResponseProjectListEnvelope,
+  APIResponseProjectByCase,
   APIResponseBudgetYearList,
   APIRequestProject,
   APIRequestProjectUpdate,
@@ -69,6 +70,15 @@ export const getProjectsAPI = (params: ListParams = {}) =>
 export const getProjectByIdAPI = (id: number) =>
   ApiService.fetchData<APIResponseProject>({
     url: `/manage/project/${id}`,
+    method: 'GET',
+  })
+
+/** Resolves a maintenance/repair case number to its parent project — powers
+ *  the "ข้อมูลโครงการ" card (contractor, contract_no, warranty dates) on the
+ *  repair-history case modal. Same bare-object shape as GET /project/{id}. */
+export const getProjectByCaseNoAPI = (caseNo: string) =>
+  ApiService.fetchData<APIResponseProjectByCase>({
+    url: `/manage/project/case/${caseNo}`,
     method: 'GET',
   })
 

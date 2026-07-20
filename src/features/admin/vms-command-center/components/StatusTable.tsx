@@ -334,37 +334,39 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         ),
       },
       {
-        title: 'ชื่อป้าย + สายทาง',
+        title: 'ชื่อป้าย',
         key: 'sign',
-        render: (_: unknown, r) => {
-          const detailsLine = [
-            r.road_code || null,
-            r.sta ? `กม.${r.sta}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')
-          return (
-            <div className="min-w-0">
-              <Tooltip title={r.solution_name || ''} placement="topLeft">
-                <div className="truncate text-sm font-semibold text-white/90">
-                  {r.solution_name || '—'}
-                </div>
-              </Tooltip>
-              {detailsLine && (
-                <div className="text-[11px] text-white/55 truncate">{detailsLine}</div>
-              )}
-              {r.machine_name && (
-                <div
-                  className="text-[10px] text-white/40 truncate"
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
-                >
-                  {r.machine_name}
-                </div>
-              )}
-            </div>
-          )
-        },
-        onCell: () => ({ style: { minWidth: 240 } }),
+        render: (_: unknown, r) => (
+          <div className="min-w-0">
+            <Tooltip title={r.solution_name || ''} placement="topLeft">
+              <div className="truncate text-sm font-semibold text-white/90">
+                {r.solution_name || '—'}
+              </div>
+            </Tooltip>
+            {r.machine_name && (
+              <div
+                className="text-[10px] text-white/40 truncate"
+                style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+              >
+                {r.machine_name}
+              </div>
+            )}
+          </div>
+        ),
+        onCell: () => ({ style: { minWidth: 220 } }),
+      },
+      {
+        title: 'สายทาง',
+        key: 'road',
+        width: 150,
+        render: (_: unknown, r) => (
+          <div className="min-w-0">
+            <div className="truncate text-sm text-(--yellow)">{r.road_code || '—'}</div>
+            {r.sta && (
+              <div className="text-[11px] text-white/50 truncate">กม.{r.sta}</div>
+            )}
+          </div>
+        ),
       },
       {
         title: 'สังกัด',
@@ -456,7 +458,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       {
         title: 'เข้ากลุ่ม',
         key: 'is_centralized',
-        width: 110,
+        width: 130,
         align: 'center',
         fixed: 'right',
         render: (_: unknown, r) => (
@@ -465,6 +467,13 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
             checked={r.is_centralized}
             loading={centralize.isPending && centralize.variables?.wid === r.wid}
             onChange={(next) => handleToggleCentralize(r, next)}
+            checkedChildren="เข้า"
+            unCheckedChildren="ถอด"
+            style={{
+              backgroundColor: r.is_centralized
+                ? 'var(--default-blue)'
+                : 'rgb(220, 38, 38)',
+            }}
           />
         ),
       },
