@@ -305,13 +305,13 @@ export default function Navbar() {
     {
       key: '1',
       label: 'ระบบและการตั้งค่า',
-      icon: <TbSettings />,
+      icon: <TbSettings size={24} />,
       onClick: () => router.push("/admin/settings"),
     },
     {
       key: '2',
       label: 'ออกจากระบบ',
-      icon: <TbLogout />,
+      icon: <TbLogout size={24} />,
       onClick: () => onLogout(),
 
     }
