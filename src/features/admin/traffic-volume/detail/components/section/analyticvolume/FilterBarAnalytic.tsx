@@ -50,7 +50,7 @@ const FilterBarAnalytic: React.FC<Props> = ({
               onDateChange?.(d)
             }}
             placeholder='เลือกวันที่'
-            className='min-w-45'
+            className='w-full! lg:w-72!'
             size='large'
             suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
           />

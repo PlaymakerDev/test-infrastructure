@@ -58,11 +58,28 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
     // (SweetAlert "ต้องการเปิด/ปิดไฟหรือไม่"). ON/OFF affects live wiring
     // and users in the area, so a stray click shouldn't fire the command.
     const isOn = data.send === '1'
+    // Modal.confirm / .success are STATIC methods → they do NOT read the
+    // ConfigProvider theme, so they fall back to antd's default font (not the
+    // app's IBM Plex Sans Thai) and antd Buttons set their own font-family
+    // (don't inherit body). Force the app font token via inline style (beats
+    // antd's CSS) on the text spans, the confirm body, and each button so the
+    // whole popup matches the rest of the app. Body 3 / 14px Regular per the
+    // design's Typography — use exact `text-[14px]` (NOT `fs-14`, which clamps
+    // up to 16px on desktop) + `font-normal` (antd's confirm title is 600-bold).
+    const FONT = 'var(--font-ibm-plex-sans-thai)'
     Modal.confirm({
-      title: isOn ? 'ยืนยันเปิดไฟประดับสะพาน?' : 'ยืนยันปิดไฟประดับสะพาน?',
+      title: (
+        <span className='text-[14px]! font-normal! block' style={{ fontFamily: FONT }}>
+          {isOn ? 'ยืนยันเปิดไฟประดับสะพาน?' : 'ยืนยันปิดไฟประดับสะพาน?'}
+        </span>
+      ),
       icon: <ExclamationCircleFilled style={{ color: isOn ? '#66AEFF' : '#FCD116' }} />,
-      content:
-        'การสั่งงานนี้จะส่งคำสั่งไปยังอุปกรณ์จริงในพื้นที่ กรุณายืนยันก่อนดำเนินการ',
+      content: (
+        <span className='text-[14px]! block' style={{ fontFamily: FONT }}>
+          การสั่งงานนี้จะส่งคำสั่งไปยังอุปกรณ์จริงในพื้นที่ กรุณายืนยันก่อนดำเนินการ
+        </span>
+      ),
+      styles: { body: { fontFamily: FONT } },
       okText: isOn ? 'เปิดไฟ' : 'ปิดไฟ',
       cancelText: 'ยกเลิก',
       okButtonProps: {
@@ -70,13 +87,19 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
           background: isOn ? '#66AEFF' : '#FCD116',
           borderColor: isOn ? '#66AEFF' : '#FCD116',
           color: isOn ? '#fff' : '#212121',
+          fontFamily: FONT,
         },
+      },
+      cancelButtonProps: {
+        style: { fontFamily: FONT },
       },
       centered: true,
       onOk: () =>
         new Promise<void>((resolve, reject) => {
           postOpenBridgeLighting(data, {
             onSuccess: () => {
+              // Success popup is shown by the mutation hook (usePostOpenBridgeLighting)
+              // — do NOT add another here or it stacks two identical modals.
               setEditMode(false)
               onSubmitted?.(isOn)
               resolve()

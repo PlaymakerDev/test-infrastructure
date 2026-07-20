@@ -28,7 +28,7 @@ const TitleSection: React.FC<Props> = (props) => {
 
   const renderIsOnline = useMemo(() => {
     return (
-      <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${isOnline ? 'border-blue-500' : 'border-red-500'} ${isOnline ? 'text-blue-500' : 'text-red-500'} w-full sm:w-auto`}>
+      <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${isOnline ? 'border-(--default-blue)' : 'border-red-500'} ${isOnline ? 'text-(--default-blue)' : 'text-red-500'} w-full sm:w-auto`}>
         {isOnline ? <><TbWifi className='fs-18' />ออนไลน์</> : <><TbWifiOff className='fs-18' />ออฟไลน์</>}
       </span>
     )
