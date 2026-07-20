@@ -32,7 +32,7 @@ const RoadCard: React.FC<{
       <div className='grid grid-cols-1 sm:grid-cols-[1fr_auto] items-start gap-x-3 gap-y-3'>
         <div>
           <h2 className='font-bold text-white leading-tight'>{item.road_code || '-'}</h2>
-          <p className='fs-12 text-gray-400 mt-1'>{item.road_id || '-'}</p>
+          <p className='fs-12 text-gray-400 mt-1'>{item.dept_name || '-'}</p>
         </div>
         <div className='flex flex-col sm:items-center gap-1.5'>
           <p className='fs-12 text-(--yellow)'>รถวิ่งบนสายทาง</p>

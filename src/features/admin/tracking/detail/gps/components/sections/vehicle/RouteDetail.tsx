@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { TbMapPin } from 'react-icons/tb'
 import { useGPSContext } from '../../../context'
 import Image from 'next/image'
@@ -21,6 +21,8 @@ interface VehicleStatus {
   labelClass: string
   key: string
   count: number
+  /** Tab key in `LicenseTabContent` this status should open to by default. */
+  tabKey: string
 }
 
 const VEHICLE_STATUSES: VehicleStatus[] = [
@@ -31,6 +33,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-lime-500',
     key: 'moving',
     count: 0,
+    tabKey: '2',
   },
   {
     img: '/atlas/images/vehicles/status/orange_vehicle.png',
@@ -39,6 +42,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-orange-500',
     key: 'parked',
     count: 0,
+    tabKey: '3',
   },
   {
     img: '/atlas/images/vehicles/status/red_vehicle.png',
@@ -47,12 +51,13 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-red-500',
     key: 'overweight',
     count: 0,
+    tabKey: '4',
   },
 ]
 
 const RouteDetail: React.FC<Props> = (props) => {
   const { road, vehicle } = props
-  const { setLicenseOpen } = useGPSContext()
+  const { setLicenseOpen, setLicenseTab } = useGPSContext()
 
   const countData = useMemo(() => {
     return VEHICLE_STATUSES.map((item) => {
@@ -66,6 +71,11 @@ const RouteDetail: React.FC<Props> = (props) => {
       }
     })
   }, [vehicle?.vehicle_count])
+
+  const renderDeptBureau = useCallback((deptName: string, bureauName: string) => {
+    const arr = [deptName, bureauName]
+    return arr.join(' ').trim().replace(/\s+/g, ' ')
+  }, [])
 
   return (
     <motion.section
@@ -83,8 +93,8 @@ const RouteDetail: React.FC<Props> = (props) => {
             <h3 className='text-(--yellow)'>สายทาง {road?.road_code || '-'}</h3>
           </div>
           <p>{road?.route_name || '-'}</p>
-          {/* <p className='fs-12'>{route.road_name} <span className='text-(--yellow)'>สำนักทางหลวงชนบทที่ 3 (ชลบุรี)</span></p> */}
-          {/* <p className='fs-12 text-gray-400'>จังหวัด ชลบุรี</p> */}
+          <p className='fs-12 text-(--yellow)'>{renderDeptBureau(road?.dept_name || '-', road?.bureau_name || '-')}</p>
+          <p className='fs-12 text-gray-400'>จังหวัด {road?.province || '-'}</p>
           <p className='fs-12 text-blue-500'>ระยะทาง {fmtNumber(Number(road?.length_drr), 3) || 0}</p>
         </div>
 
@@ -108,7 +118,10 @@ const RouteDetail: React.FC<Props> = (props) => {
                 variant='solid'
                 shape='round'
                 block
-                onClick={() => setLicenseOpen(true)}
+                onClick={() => {
+                  setLicenseTab(status.tabKey)
+                  setLicenseOpen(true)
+                }}
               >
                 <span className='font-bold'>{status.count}</span>
               </Button>
