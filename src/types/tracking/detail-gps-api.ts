@@ -24,14 +24,16 @@ export interface AllVehicleLocationData {
 }
 
 export interface VehicleList {
-  road_id: number
-  road_code: string
-  unique_vehicles: number
+  dept_name: string
+  dept_name2: string
   latitude: number
   longitude: number
   normal: string
-  stop: string
   over_weight: string
+  road_code: string
+  road_id: number
+  stop: string
+  unique_vehicles: number
 }
 
 export interface VehicleTotal {
@@ -256,9 +258,13 @@ export interface APIResponseGeoRoad extends Omit<APIResponseAllVehicleLocation, 
 }
 
 export interface GeoRoadData {
-  route_name: string
-  road_code: string
+  bureau_name: string
+  bureau_short_name: string
+  dept_name: string
+  dept_name2: string
   length_drr: string
-  province: string
   position: number[][]
+  province: string
+  road_code: string
+  route_name: string
 }

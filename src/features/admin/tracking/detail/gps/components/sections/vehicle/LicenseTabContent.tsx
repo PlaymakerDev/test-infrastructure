@@ -1,10 +1,11 @@
 "use client"
 import { Tabs } from 'antd'
 import type { TabsProps } from 'antd'
-import React, { useState } from 'react'
+import React from 'react'
 import { VehicleList } from '@/components/list'
 import type { VehicleItem } from '@/components/list'
 import { VehicleLocationData } from '@/types/tracking/detail-gps-api'
+import { useGPSContext } from '../../../context'
 
 interface Props {
   data?: VehicleLocationData
@@ -20,7 +21,7 @@ const MOCK_VEHICLES: VehicleItem[] = [
 
 const LicenseTabContent: React.FC<Props> = (props) => {
   const { data } = props
-  const [tabKey, setTabKey] = useState('1')
+  const { licenseTab, setLicenseTab } = useGPSContext()
 
   const items: TabsProps['items'] = [
     {
@@ -47,9 +48,9 @@ const LicenseTabContent: React.FC<Props> = (props) => {
 
   return (
     <Tabs
-      defaultActiveKey={tabKey}
+      activeKey={licenseTab}
       items={items}
-      onChange={(key) => setTabKey(key)}
+      onChange={(key) => setLicenseTab(key)}
       indicator={{ align: 'center' }}
     />
   )

@@ -138,7 +138,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
-            <div className="text-xs opacity-60 mt-0.5">
+            <div className="fs-12 opacity-60 mt-0.5">
               อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
               {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
             </div>
@@ -147,7 +147,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
         </div>
         {/* Summary counters */}
         {rows.length > 0 && (
-          <div className="flex items-center gap-2 text-[11px] flex-wrap">
+          <div className="flex items-center gap-2 fs-12 flex-wrap">
             {summary.active > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">●</span> กำลังทำงาน {summary.active}</span>}
             {summary.done > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#6b7280' }}>●</span> เสร็จสิ้น {summary.done}</span>}
             {summary.cancel > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#a855f7' }}>●</span> ยกเลิก {summary.cancel}</span>}
@@ -168,7 +168,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
           <Empty description="ไม่มีข้อมูลป้ายที่เลือก" />
         )}
         {vmsIds.length > 0 && !isLoading && rows.length > 0 && visible.length === 0 && (
-          <div className="text-center text-xs text-white/50 py-4">
+          <div className="text-center fs-12 text-white/50 py-4">
             ป้ายทั้งหมดเสร็จสิ้นแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
           </div>
         )}
@@ -213,10 +213,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate flex items-center gap-1.5">
                     {it.road_code && <span className="text-(--yellow) font-semibold">{it.road_code}</span>}
-                    {it.sta && <span className="text-(--default-blue) text-xs">กม.{it.sta}</span>}
+                    {it.sta && <span className="text-(--default-blue) fs-12">กม.{it.sta}</span>}
                     <span className="truncate opacity-80">{it.solution_name || `VMS ${it.vms_id}`}</span>
                   </div>
-                  <div className="text-xs opacity-60">
+                  <div className="fs-12 opacity-60">
                     WID {it.wid} · vms_id {it.vms_id}
                     {it.road_name && <span className="ml-2 opacity-70">· {it.road_name}</span>}
                   </div>
@@ -224,14 +224,14 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tooltip
                     title={
-                      <div className="text-xs">
+                      <div className="fs-12">
                         <div>เชื่อมต่อ: {it.is_online ? 'ออนไลน์' : 'ออฟไลน์'}</div>
                         <div>last_seen: {it.last_seen_at ?? '—'}</div>
                       </div>
                     }
                   >
                     <span
-                      className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded"
+                      className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
                       style={{
                         background: it.is_online ? '#22c55e22' : '#ef444422',
                         color: it.is_online ? '#22c55e' : '#ef4444',
@@ -286,12 +286,12 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                       />
                       {isVideoUrl(it.media_url) && (
                         <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white text-xs">▶</span>
+                          <span className="w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white fs-12">▶</span>
                         </span>
                       )}
                     </div>
                   ) : null}
-                  <div className="min-w-0 flex-1 text-xs opacity-90 space-y-0.5">
+                  <div className="min-w-0 flex-1 fs-12 opacity-90 space-y-0.5">
                     <div>
                       <b>{it.setting_type_name || '-'}</b>
                       {it.command_no != null && <span className="ml-2 opacity-70">คำสั่งที่ {it.command_no}</span>}

@@ -9,6 +9,8 @@ export interface ContextProps {
   setRoute: React.Dispatch<React.SetStateAction<RoadItem>>;
   licenseOpen: boolean;
   setLicenseOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  licenseTab: string;
+  setLicenseTab: React.Dispatch<React.SetStateAction<string>>;
   // API DATA
   selectRoute: VehicleList;
   setSelectRoute: React.Dispatch<React.SetStateAction<VehicleList>>;
@@ -30,6 +32,7 @@ export const GPSProvider = (props: PageProviderProps) => {
     vehicle_count: 0
   })
   const [licenseOpen, setLicenseOpen] = useState(false)
+  const [licenseTab, setLicenseTab] = useState('1')
 
   // API DATA
   const [selectRoute, setSelectRoute] = useState<VehicleList>({
@@ -50,6 +53,8 @@ export const GPSProvider = (props: PageProviderProps) => {
         setRoute,
         licenseOpen,
         setLicenseOpen,
+        licenseTab,
+        setLicenseTab,
         selectRoute,
         setSelectRoute
       }}

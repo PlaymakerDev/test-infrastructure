@@ -133,6 +133,10 @@ const VehicleSection: React.FC = () => {
         <MapSection
           road={geoRoadData?.data.data}
           vehicle={vehicleLocationData?.data.data}
+          vehicleLocationIsLoading={vehicleLocationIsLoading}
+          vehicleLocationIsError={vehicleLocationIsError}
+          geoRoadIsLoading={geoRoadIsLoading}
+          geoRoadIsError={geoRoadIsError}
         />
         {renderRouteDetail}
       </div>

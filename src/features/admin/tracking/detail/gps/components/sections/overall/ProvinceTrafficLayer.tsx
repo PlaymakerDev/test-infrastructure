@@ -63,7 +63,7 @@ const ProvincePopup: React.FC<{ feature: ProvinceFeature }> = ({ feature }) => {
     ['เปรียบเทียบรถบนสายทาง', `${pct}%`],
   ]
   return (
-    <div className='min-w-56 rounded-lg border border-(--yellow) px-4 py-3 bg-(--dark-black)'>
+    <div className='min-w-56 rounded-lg px-4 py-3 bg-(--dark-black)'>
       <p className='fs-14 font-semibold text-white mb-2'>{p.province_name}</p>
       <div className='flex flex-col gap-1.5'>
         {rows.map(([label, value]) => (

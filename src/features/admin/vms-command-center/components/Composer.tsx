@@ -132,15 +132,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
       <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
           <div className="text-sm font-semibold text-(--yellow)">สร้างคำสั่งใหม่</div>
-          <div className="text-xs text-(--default-blue) mt-0.5">{targetSignSummary}</div>
+          <div className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</div>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-medium">เลือกรูป / วิดีโอที่จะแสดง</div>
+              <div className="fs-12 font-medium">เลือกรูป / วิดีโอที่จะแสดง</div>
               {onGotoLibrary && (
                 <button
-                  className="text-xs text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
                   onClick={onGotoLibrary}
                   type="button"
                 >
@@ -163,7 +163,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             </div>
             {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
             {!mediaLoading && mediaItems.length === 0 && (
-              <div className="text-xs text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
+              <div className="fs-12 text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
                 ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ "คลังสื่อ"
               </div>
             )}
@@ -237,7 +237,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                           <TbMaximize size={14} />
                         </span>
                         {m.setting_type_name && (
-                          <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
+                          <div className="px-1.5 py-1 fs-12 text-left truncate bg-black/50 text-(--yellow)">
                             {m.setting_type_name}
                           </div>
                         )}
@@ -260,7 +260,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           <div>
-            <div className="text-xs font-medium mb-1">ข้อความประกอบ (ไม่บังคับ)</div>
+            <div className="fs-12 font-medium mb-1">ข้อความประกอบ (ไม่บังคับ)</div>
             <Input.TextArea
               rows={2}
               value={message}
@@ -270,7 +270,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           <div>
-            <div className="text-xs font-medium mb-1">ชื่อกำหนดการ</div>
+            <div className="fs-12 font-medium mb-1">ชื่อกำหนดการ</div>
             <Input
               value={scheduleName}
               onChange={(e) => setScheduleName(e.target.value)}
@@ -280,7 +280,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs font-medium mb-1">ช่วงวันที่</div>
+              <div className="fs-12 font-medium mb-1">ช่วงวันที่</div>
               <DatePicker.RangePicker
                 value={dateRange}
                 onChange={(v) => v && v[0] && v[1] && setDateRange([v[0], v[1]])}
@@ -289,17 +289,17 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               />
             </div>
             <div>
-              <div className="text-xs font-medium mb-1">โหมด</div>
+              <div className="fs-12 font-medium mb-1">โหมด</div>
               <div className="flex items-center gap-2 h-8">
                 <Switch checked={isAllDay} onChange={setIsAllDay} />
-                <span className="text-xs">{isAllDay ? 'ตลอดวัน' : 'ตามช่วงเวลา'}</span>
+                <span className="fs-12">{isAllDay ? 'ตลอดวัน' : 'ตามช่วงเวลา'}</span>
               </div>
             </div>
           </div>
 
           {!isAllDay && (
             <div>
-              <div className="text-xs font-medium mb-1">ช่วงเวลาแสดงผล</div>
+              <div className="fs-12 font-medium mb-1">ช่วงเวลาแสดงผล</div>
               <TimePicker.RangePicker
                 value={timeRange}
                 onChange={(v) => v && v[0] && v[1] && setTimeRange([v[0], v[1]])}
@@ -311,7 +311,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           )}
 
           <div>
-            <div className="text-xs font-medium mb-1">วันในสัปดาห์</div>
+            <div className="fs-12 font-medium mb-1">วันในสัปดาห์</div>
             <Radio.Group
               value={daysOfWeek.length === 0 ? 'all' : 'custom'}
               onChange={(e) => setDaysOfWeek(e.target.value === 'all' ? [] : [1, 2, 3, 4, 5])}
@@ -321,15 +321,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <Radio.Button value="custom">จันทร์–ศุกร์</Radio.Button>
             </Radio.Group>
             {daysOfWeek.length === 0 && (
-              <div className="text-xs text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
+              <div className="fs-12 text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
             )}
-            <div className="text-xs text-white/40 mt-1">
+            <div className="fs-12 text-white/40 mt-1">
               mask = {isoDaysMask(daysOfWeek) || 127}
             </div>
           </div>
 
           {vmsIds.length === 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) text-xs">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) fs-12">
               <TbAlertTriangle className="fs-16 shrink-0" />
               <span>เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย</span>
             </div>
@@ -366,7 +366,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
             <br />
             {vmsIds.length > 3 && (
-              <span className="text-xs text-white/50">
+              <span className="fs-12 text-white/50">
                 คำสั่งเดิมที่กำลังแสดงอยู่จะถูกทำเครื่องหมาย "ถูกสั่งทับ" (status=7) โดยอัตโนมัติ
               </span>
             )}
@@ -405,7 +405,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                     />
                   )}
                 </div>
-                <div className="mt-3 text-xs text-white/70 flex items-center gap-3 flex-wrap">
+                <div className="mt-3 fs-12 text-white/70 flex items-center gap-3 flex-wrap">
                   {previewing.setting_type_name && (
                     <span>หมวด: <b className="text-white">{previewing.setting_type_name}</b></span>
                   )}
@@ -443,7 +443,7 @@ const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = 
   <button
     type="button"
     onClick={onClick}
-    className="text-[11px] px-2.5 py-0.5 rounded-full transition-colors border"
+    className="fs-12 px-2.5 py-0.5 rounded-full transition-colors border"
     style={{
       background: active ? '#FCD116' : 'transparent',
       color: active ? '#191919' : '#FCD116',
