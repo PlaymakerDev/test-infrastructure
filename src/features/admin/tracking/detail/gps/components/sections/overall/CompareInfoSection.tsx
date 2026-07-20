@@ -19,7 +19,7 @@ const CompareInfoSection: React.FC<Props> = (props) => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['analytic_province_traffic'],
     queryFn: () => getTrackingGPSAnalyticProvinceTrafficAPI({
-      days: 7
+      days: 30
     })
   })
 
