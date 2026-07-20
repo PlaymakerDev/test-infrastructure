@@ -508,3 +508,42 @@ body .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
   background: #FCD116 !important;
   color: #0A0A0A !important;
 }
+
+/* ── Ticket 5 — dropdown / select highlighted-option contrast ─────────────
+ * The SELECTED option in Select/AutoComplete popups and Dropdown menus was
+ * rendering as light/yellow text on a pale-yellow tint (antd's default
+ * colorPrimaryBg + colorPrimary, no dark algorithm) — the two colours sit too
+ * close to read. Force the brand pattern used elsewhere (Segmented/Table/
+ * Pagination): DARK text on SOLID yellow. The descendant `*` rule pulls custom
+ * JSX labels dark too (e.g. MapSearchBox's white road name), so they stay
+ * legible on the yellow. `.light-modal-popup` keeps its own light-theme
+ * selected style (already high-contrast). */
+body .ant-select-dropdown:not(.light-modal-popup) .ant-select-item-option-selected:not(.ant-select-item-option-disabled),
+body .ant-dropdown-menu-item-selected {
+  background: #FCD116 !important;
+}
+body .ant-select-dropdown:not(.light-modal-popup) .ant-select-item-option-selected:not(.ant-select-item-option-disabled),
+body .ant-select-dropdown:not(.light-modal-popup) .ant-select-item-option-selected:not(.ant-select-item-option-disabled) *,
+body .ant-dropdown-menu-item-selected,
+body .ant-dropdown-menu-item-selected * {
+  color: var(--dark-black) !important;
+}
+
+/* ── Ticket 11 — feature search box text fits the box ─────────────────────
+ * The overall-page search inputs use antd `size='large'` (16px), so the long
+ * placeholder "ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ..." overflowed / truncated.
+ * Drop the text to the app's 14px minimum (ticket 2) while keeping the large
+ * box height. Applies to inputs tagged `app-search-input`; placeholder inherits
+ * the input font-size so this covers it too. */
+body .app-search-input.ant-input,
+body .app-search-input .ant-input {
+  font-size: 14px !important;
+}
+/* Widen the search box on tablet/desktop so the full 14px placeholder fits
+ * without shrinking the font. On mobile it stays full-width (its container is
+ * `w-full`), so the min-width only kicks in from sm (640px) up. */
+@media (min-width: 640px) {
+  body .app-search-input {
+    min-width: 300px;
+  }
+}

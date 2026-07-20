@@ -204,7 +204,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const onLogout = useCallback(async () => {
+  const performLogout = useCallback(async () => {
     try {
       const response = await axios.post(`${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/api/auth/logout`, {})
       if (response.status === 200) {
@@ -212,8 +212,7 @@ export default function Navbar() {
         queryClient.clear()
 
         modal.success({
-          title: 'Logout successful',
-          content: 'You have been logged out successfully.',
+          title: 'คุณได้ออกจากระบบเรียบร้อยแล้ว',
           onOk: () => router.push('/auth/login'),
           onCancel: () => Modal.destroyAll(),
         })
@@ -229,6 +228,18 @@ export default function Navbar() {
       }
     }
   }, [modal, router, queryClient])
+
+  // Confirm before logging out — "ออกจากระบบ" (OK) proceeds, "ยกเลิก" (Cancel)
+  // keeps the session. Both the desktop dropdown and the mobile grid call this.
+  const onLogout = useCallback(() => {
+    modal.confirm({
+      title: 'ต้องการออกจากระบบใช่หรือไม่?',
+      content: 'หากออกจากระบบ คุณจะต้องเข้าสู่ระบบใหม่อีกครั้ง',
+      okText: 'ออกจากระบบ',
+      cancelText: 'ยกเลิก',
+      onOk: performLogout,
+    })
+  }, [modal, performLogout])
 
   // Entries for the mobile "..." grid panel — everything the desktop
   // right-icon row offers, now with visible labels (the old label-less
@@ -606,10 +617,10 @@ export default function Navbar() {
             menu={{
               selectedKeys: [mapFocusMode],
               items: [
-                { key: 'off',   label: 'แสดงทั้งหมด',       icon: <TbZoomReset size={16} /> },
-                { key: 'left',  label: 'ซ่อนแผงฝั่งซ้าย',   icon: <TbLayoutSidebarLeftCollapse size={16} /> },
-                { key: 'right', label: 'ซ่อนแผงฝั่งขวา',    icon: <TbLayoutSidebarRightCollapse size={16} /> },
-                { key: 'both',  label: 'ซ่อนทั้งสองฝั่ง',   icon: <TbZoomInArea size={16} /> },
+                { key: 'off', label: 'แสดงทั้งหมด', icon: <TbZoomReset size={16} /> },
+                { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
+                { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                { key: 'both', label: 'ซ่อนทั้งสองฝั่ง', icon: <TbZoomInArea size={16} /> },
               ],
               onClick: ({ key }) =>
                 setMapFocusMode(key as 'off' | 'left' | 'right' | 'both'),

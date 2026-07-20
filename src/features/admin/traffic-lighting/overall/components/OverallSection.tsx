@@ -186,6 +186,7 @@ const OverallSection: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
+            className='app-search-input'
             classNames={{
               root: 'traffic-lighting-search !w-full lg:!w-[360px] lg:!max-w-[360px] !shrink-0 !rounded-[10px]! !h-[46px]! !bg-[#2B2B2B]! !border-[#FCD116]! !overflow-hidden',
               input: 'traffic-lighting-search-input !bg-transparent!',

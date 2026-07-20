@@ -141,8 +141,10 @@ export const theme: ConfigProviderProps = {
         activeBorderColor: "var(--yellow)",
         // Dropdown panel
         colorBgElevated: "var(--dark-black)",
-        optionSelectedBg: "#FCD11620",
-        optionSelectedColor: "var(--yellow)",
+        // Selected option — dark text on solid yellow for legible contrast
+        // (ticket 5). Was a pale #FCD11620 tint + yellow text = too low-contrast.
+        optionSelectedBg: "#FCD116",
+        optionSelectedColor: "var(--dark-black)",
         optionActiveBg: "#2A2A2A",
         colorTextDisabled: "#FFFFFF30",
       },

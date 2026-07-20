@@ -51,7 +51,7 @@ const FormSearchCrosswalk: React.FC<Props> = ({
               {...field}
               name={field.name}
               placeholder={placeholder}
-              className='rounded-lg'
+              className='rounded-lg app-search-input'
               suffix={<TbSearch className='text-(--yellow)' />}
               size='large'
               onChange={(e) => {
