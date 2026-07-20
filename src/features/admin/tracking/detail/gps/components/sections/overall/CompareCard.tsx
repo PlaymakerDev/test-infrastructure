@@ -1,4 +1,14 @@
-import React from 'react'
+import { AnalyticProvinceTrafficData } from '@/types/tracking/detail-gps-api'
+import { fmtNumber } from '@/utils/formatNumber'
+import { getProvinceRegion } from '@/utils/getProvinceRegion'
+import { Empty, Skeleton } from 'antd'
+import React, { useMemo } from 'react'
+
+interface Props {
+  data?: AnalyticProvinceTrafficData[]
+  isLoading?: boolean
+  isError?: boolean
+}
 
 interface RegionData {
   region: string
@@ -7,13 +17,15 @@ interface RegionData {
   dailyAverage: number
 }
 
-const regionData: RegionData[] = [
-  { region: 'ภาคเหนือ', routes: 354, totalTraffic: 5366496, dailyAverage: 40320 },
-  { region: 'ภาคตะวันออกเฉียงเหนือ', routes: 967, totalTraffic: 7334374, dailyAverage: 128042 },
-  { region: 'ภาคตะวันออก', routes: 274, totalTraffic: 2985243, dailyAverage: 23762 },
-  { region: 'ภาคกลาง', routes: 165, totalTraffic: 1495394, dailyAverage: 16395 },
-  { region: 'ภาคตะวันตก', routes: 278, totalTraffic: 3582461, dailyAverage: 56254 },
-  { region: 'ภาคใต้', routes: 237, totalTraffic: 2384187, dailyAverage: 42094 },
+// Fixed display order — positionally matched against `borderClasses` below,
+// so it must stay a 6-item list even when `data` doesn't cover every region yet.
+const REGION_ORDER = [
+  'ภาคเหนือ',
+  'ภาคตะวันออกเฉียงเหนือ',
+  'ภาคตะวันออก',
+  'ภาคกลาง',
+  'ภาคตะวันตก',
+  'ภาคใต้',
 ]
 
 // Breakpoints: 1-col → md:2-col → lg:3-col → xl:3-col → 2xl:6-col
@@ -31,30 +43,58 @@ const borderClasses: string[] = [
   '',
 ]
 
-const CompareCard = () => (
-  <div className='border-2 rounded-lg border-(--yellow) p-5'>
-    <div className='flex flex-wrap'>
-      {regionData.map((item, index) => (
-        <div
-          key={item.region}
-          className={`w-full md:w-1/2 lg:w-1/3 2xl:w-1/6 flex flex-col items-center text-center justify-between gap-2 py-3 px-4 border-(--yellow)/40 ${borderClasses[index]}`}
-        >
-          <div>
-            <h3 className='font-semibold text-white text-sm leading-snug'>{item.region}</h3>
-            <p className='text-white/50 text-sm'>{item.routes.toLocaleString()} สายทาง</p>
-          </div>
-          <div>
-            <p className='text-(--yellow) text-sm mb-0.5'>รถวิ่งผ่านรวม</p>
-            <p className='fs-18 font-bold text-(--yellow) leading-tight'>{item.totalTraffic.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className='text-blue-400 text-sm mb-0.5'>เฉลี่ยต่อวัน</p>
-            <p className='fs-18 font-bold text-blue-400 leading-tight'>{item.dailyAverage.toLocaleString()}</p>
-          </div>
+const CompareCard: React.FC<Props> = (props) => {
+  const { data, isError, isLoading } = props
+
+  const regionData: RegionData[] = useMemo(() => {
+    const totals = new Map<string, { routes: number; totalTraffic: number; dailyAverage: number }>()
+    for (const item of data ?? []) {
+      const region = getProvinceRegion(item.province)
+      if (!region) continue
+      const current = totals.get(region) ?? { routes: 0, totalTraffic: 0, dailyAverage: 0 }
+      current.routes += item.road_count ?? 0
+      current.totalTraffic += item.total_vehicles ?? 0
+      current.dailyAverage += item.avg_per_road_day ?? 0
+      totals.set(region, current)
+    }
+    return REGION_ORDER.map((region) => ({
+      region,
+      ...(totals.get(region) ?? { routes: 0, totalTraffic: 0, dailyAverage: 0 }),
+    }))
+  }, [data])
+
+  const renderContent = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} paragraph={{ rows: 4 }} active />
+    return (
+      <div className='border-2 rounded-lg border-(--yellow) p-5'>
+        <div className='flex flex-wrap'>
+          {regionData.map((item, index) => (
+            <div
+              key={item.region}
+              className={`w-full md:w-1/2 lg:w-1/3 2xl:w-1/6 flex flex-col items-center text-center justify-between gap-2 py-3 px-4 border-(--yellow)/40 ${borderClasses[index]}`}
+            >
+              <div>
+                <h3 className='font-semibold text-white text-sm leading-snug'>{item.region}</h3>
+                <p className='text-white/50 text-sm'>{fmtNumber(Number(item.routes)) || 0} สายทาง</p>
+              </div>
+              <div>
+                <p className='text-(--yellow) text-sm mb-0.5'>รถวิ่งผ่านรวม</p>
+                <p className='fs-18 font-bold text-(--yellow) leading-tight'>{fmtNumber(Number(item.totalTraffic)) || 0}</p>
+              </div>
+              <div>
+                <p className='text-blue-400 text-sm mb-0.5'>เฉลี่ยต่อวัน</p>
+                <p className='fs-18 font-bold text-blue-400 leading-tight'>{fmtNumber(Number(item.dailyAverage)) || 0}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  </div>
-)
+      </div>
+    )
+  }, [isLoading, regionData])
+
+  if (isError) return <Empty description='เกิดข้อผิดพลาดในการโหลดข้อมูล' />
+
+  return renderContent
+}
 
 export default React.memo(CompareCard)

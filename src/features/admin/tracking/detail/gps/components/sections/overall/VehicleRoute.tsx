@@ -3,18 +3,37 @@ import {
   TRACKING_STATIONS,
   type TrackingStationType,
 } from '@/features/admin/tracking/overall/data/trackingStations'
-import { Button, ConfigProvider } from 'antd'
+import { Button, ConfigProvider, Empty, Skeleton } from 'antd'
+import { VehicleHistoryData } from '@/types/tracking/detail-gps-api'
+import dayjs from 'dayjs'
+import { fmtNumber } from '@/utils/formatNumber'
+import { useQuery } from '@tanstack/react-query'
+import { getTrackingGPSVehicleRouteHistoryAPI } from '@/services/routes/TrackingGPSService'
 
 interface Props {
-
+  data?: VehicleHistoryData
+  unitId?: string
 }
 
 type FilterOption = 'วันนี้' | '3 วัน' | '7 วัน'
 const FILTER_OPTIONS: FilterOption[] = ['วันนี้', '3 วัน', '7 วัน']
 
 const VehicleRoute: React.FC<Props> = (props) => {
-  const { } = props
+  const { data, unitId: latestUnitId } = props
   const [activeFilter, setActiveFilter] = useState<FilterOption>('วันนี้')
+
+  const {
+    data: vehicleRouteHistory,
+    isLoading: isLoadingVehicleRouteHistory,
+    isError: isErrorVehicleRouteHistory
+  } = useQuery({
+    queryKey: ['vehicle_route_history_detail', latestUnitId],
+    queryFn: () => getTrackingGPSVehicleRouteHistoryAPI({
+      unit_id: latestUnitId,
+      days: activeFilter === '3 วัน' ? 3 : activeFilter === '7 วัน' ? 7 : undefined
+    }),
+    enabled: !!latestUnitId && (activeFilter === '3 วัน' || activeFilter === '7 วัน'),
+  })
 
   const renderOptionButton = useMemo(() => {
     return FILTER_OPTIONS.map((item) => (
@@ -40,6 +59,62 @@ const VehicleRoute: React.FC<Props> = (props) => {
     ))
   }, [activeFilter])
 
+  const renderLogTimeline = useMemo(() => {
+    if (isLoadingVehicleRouteHistory) return <Skeleton loading={isLoadingVehicleRouteHistory} active paragraph={{ rows: 6 }} />
+    if (isErrorVehicleRouteHistory) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+    // if (Object.keys(vehicleRouteHistory?.data.data.events_by_date || {}).length === 0) return <Empty description="ไม่พบข้อมูลเส้นทาง" />
+
+    return Object.entries(vehicleRouteHistory?.data.data.events_by_date || {}).map(([date, events]) => {
+      if (events.length === 0) {
+        return (
+          <figure key={date} className='block m-auto'>
+            <Empty key={date} description="ไม่พบข้อมูลเส้นทาง" />
+          </figure>
+        )
+      }
+      return events.map((item) => {
+        return (
+          <div key={item.road_id} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
+            <h4>{item.road_name || '-'}</h4>
+            <p className='fs-12 text-gray-400'>{item.event_time ? dayjs(item.event_time).format('DD MMM BBBB HH:mm:ss') : '-'}</p>
+            <p className='fs-12 text-(--yellow)'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>
+          </div>
+        )
+      })
+    })
+  }, [isLoadingVehicleRouteHistory, isErrorVehicleRouteHistory, vehicleRouteHistory])
+
+  const renderCurrentTimeline = useMemo(() => {
+    if (!data?.route_events?.length) {
+      return (
+        <figure className='block m-auto'>
+          <Empty description="ไม่พบข้อมูลเส้นทาง" />
+        </figure>
+      )
+    }
+    return data?.route_events.map((item) => {
+      return (
+        <div key={item.id} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
+          <h4>{item.road_name || '-'}</h4>
+          <p className='fs-12 text-gray-400'>{item.event_time ? dayjs(item.event_time).format('DD MMM BBBB HH:mm:ss') : '-'}</p>
+          <p className='fs-12 text-(--yellow)'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>
+        </div>
+      )
+    })
+  }, [data?.route_events])
+
+  const renderTimelineMode = useMemo(() => {
+    switch (activeFilter) {
+      case 'วันนี้':
+        return renderCurrentTimeline
+      case '3 วัน':
+      case '7 วัน':
+        return renderLogTimeline
+      default:
+        return null
+    }
+  }, [activeFilter, renderCurrentTimeline, renderLogTimeline])
+
   return (
     <div className='rounded-lg p-5 bg-(--gray)'>
       <section>
@@ -50,21 +125,9 @@ const VehicleRoute: React.FC<Props> = (props) => {
           </div>
         </div>
       </section>
-      <section className='mt-5 flex flex-col gap-3'>
-        <div className='rounded-lg px-5 py-3 bg-(--dark-black)'>
-          <h4>WIM สมุทรปราการ (สป.2001) ขวาทาง กม.2+100</h4>
-          <p className='fs-12 text-gray-400'>31 มี.ค. 2569 15:08:42</p>
-          <p className='fs-12 text-(--yellow)'>ความเร็ว : 68 กม./ชม.</p>
-        </div>
-        <div className='rounded-lg px-5 py-3 bg-(--dark-black)'>
-          <h4>WIM สมุทรปราการ (สป.2001) ขวาทาง กม.2+100</h4>
-          <p className='fs-12 text-gray-400'>31 มี.ค. 2569 18:26:48</p>
-          <p className='fs-12 text-(--yellow)'>ความเร็ว : 84 กม./ชม.</p>
-        </div>
-        <div className='rounded-lg px-5 py-3 bg-(--dark-black)'>
-          <h4>แยกทางหลวงหมายเลข 4 (กม.ที่ 70+112) - ถนนสาย ก. ฝั่งเมืองรวมเมืองสะเดา</h4>
-          <p className='fs-12 text-gray-400'>31 มี.ค. 2569 23:18:36</p>
-          <p className='fs-12 text-(--yellow)'>ความเร็ว : 37 กม./ชม.</p>
+      <section className='mt-5 '>
+        <div className='h-100 3xl:h-80 flex flex-col gap-3 overflow-y-auto'>
+          {renderTimelineMode}
         </div>
       </section>
     </div>

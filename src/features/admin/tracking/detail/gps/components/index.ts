@@ -13,8 +13,11 @@ export { default as VehicleRoute } from './sections/overall/VehicleRoute'
 export { default as VehicleDetailSection } from './sections/overall/VehicleDetailSection'
 export { default as VehicleStat } from './sections/overall/VehicleStat'
 export { default as ChartVehicleRatio } from './sections/overall/ChartVehicleRatio'
-export { default as ChartTraffic } from './sections/overall/ChartTraffic'
+export { default as ChartHourTraffic } from './sections/overall/ChartHourTraffic'
+export { default as ChartWeeklyPattern } from './sections/overall/ChartWeeklyPattern'
 export { default as MapOverallSection } from './sections/overall/MapOverallSection'
+export { default as VehicleHistory } from './sections/overall/VehicleHistory'
+export { default as TrafficAndVehicleSection } from './sections/overall/TrafficAndVehicleSection'
 
 // VEHICLE
 export { default as VehicleSection } from './VehicleSection'

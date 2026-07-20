@@ -35,7 +35,7 @@ export interface BarChartProps {
   /** ต่อท้าย className ของการ์ดนอกสุด (เช่น 'h-full' ให้เท่ากันในแถว grid) */
   cardClassName?: string
   /** ชื่อหัวข้อ */
-  title: string
+  title?: string
   /** ขนาด font ของ title (px) */
   titleSize?: number
   /** คำอธิบายใต้ title */
