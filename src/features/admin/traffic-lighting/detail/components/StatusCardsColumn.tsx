@@ -32,7 +32,7 @@ const StatusCardsColumn: React.FC = () => {
         titleColor='#B066FF'
         title='สถานะวงจร'
         status={circuitStatus}
-        icon='/images/Lighting/icel2.png'
+        icon='/atlas/images/Lighting/icel2.png'
         valueFontSize={20}
       />
     </div>

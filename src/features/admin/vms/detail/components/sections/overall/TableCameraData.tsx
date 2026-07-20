@@ -69,6 +69,9 @@ const TableCameraData: React.FC<Props> = () => {
       key: 'no',
       align: 'center',
       width: 80,
+      // Indent first column 28px to match the overall-page list tables.
+      onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
+      onCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
     },
     {
       title: 'ชื่อกล้อง/ป้าย',

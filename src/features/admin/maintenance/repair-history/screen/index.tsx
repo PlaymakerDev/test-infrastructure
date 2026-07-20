@@ -208,7 +208,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{offlineCount}</span>
               </span>
-              <img src='/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
+              <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
             </div>
           </div>
         </section>
@@ -323,7 +323,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
-                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>

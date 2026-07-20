@@ -174,7 +174,7 @@ const StatusDetailContent: React.FC = () => {
                 {detailLabel || '-'}
               </p>
               <img
-                src="/images/statistics/icbt.png"
+                src="/atlas/images/statistics/icbt.png"
                 alt="ดูข้อมูลโครงการ"
                 title="ดูข้อมูลโครงการ"
                 width={25}
@@ -205,7 +205,7 @@ const StatusDetailContent: React.FC = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
               }}>
                 {connectionState !== undefined && (
-                  <img src={connectionState ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
+                  <img src={connectionState ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
                 )}
                 <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
                   {connectionState === true ? 'ออนไลน์' : connectionState === false ? 'ออฟไลน์' : '-'}
@@ -251,7 +251,7 @@ const StatusDetailContent: React.FC = () => {
                   opacity: anydesk ? 1 : 0.5,
                 }}
               >
-                <img src="/images/statistics/icand.png" alt="" width={12} height={12} />
+                <img src="/atlas/images/statistics/icand.png" alt="" width={12} height={12} />
                 <span style={{ fontSize: 10, fontWeight: 500, color: '#000000' }}>
                   Anydesk : {anydesk || '-'}
                 </span>
@@ -290,7 +290,7 @@ const StatusDetailContent: React.FC = () => {
             <Spin spinning={statusQuery.isFetching}>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4" style={{ alignContent: 'start' }}>
                 <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: `2px solid ${status.operation.is_online ? '#66AEFF' : '#E94C4C'}` }}>
-                  <img src="/images/statistics/icc1.png" alt="" width={40} height={40} />
+                  <img src="/atlas/images/statistics/icc1.png" alt="" width={40} height={40} />
                   <p style={{ fontSize: 16, fontWeight: 700, color: '#66AEFF', marginTop: 8 }}>สถานะการทำงานของป้าย</p>
                   <p style={{ fontSize: 32, fontWeight: 700, color: '#FFFFFF', marginTop: 4 }}>{status.operation.label}</p>
                 </div>
@@ -305,14 +305,14 @@ const StatusDetailContent: React.FC = () => {
                   </p>
                 </div>
                 <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: `2px solid ${status.box.is_connected ? '#E98B4C' : '#E94C4C'}` }}>
-                  <img src="/images/statistics/icc3.png" alt="" width={40} height={40} />
+                  <img src="/atlas/images/statistics/icc3.png" alt="" width={40} height={40} />
                   <p style={{ fontSize: 16, fontWeight: 700, color: '#E98B4C', marginTop: 8 }}>Traffic Camera</p>
                   <p style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 4 }}>
                     {status.box.is_connected ? 'Connect' : 'Disconnect'}
                   </p>
                 </div>
                 <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #AFE94C' }}>
-                  <img src="/images/statistics/icc5.png" alt="" width={40} height={40} />
+                  <img src="/atlas/images/statistics/icc5.png" alt="" width={40} height={40} />
                   <p style={{ fontSize: 16, fontWeight: 700, color: '#AFE94C', marginTop: 8 }}>VMS Format</p>
                   <p style={{ fontSize: 24, fontWeight: 700, fontFamily: 'Inter', color: '#FFFFFF', marginTop: 4 }}>
                     {status.last_setting?.media_type || '-'}

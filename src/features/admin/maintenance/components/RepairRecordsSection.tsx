@@ -511,7 +511,9 @@ const RepairRecordsSection: React.FC = () => {
                 <Select
                   placeholder={filter.placeholder}
                   style={{ width: filter.width, height: 40 }}
-                  styles={{ selector: { borderRadius: 10, border: '1px solid #FCD116' } }}
+                  // antd 6 Select semantic styles have no `selector` key — the
+                  // visible box is `root` (same visual result, type-correct).
+                  styles={{ root: { borderRadius: 10, border: '1px solid #FCD116' } }}
                   suffixIcon={<TbChevronDown size={16} color='#FCD116' />}
                   options={[{ label: 'ตัวอย่าง', value: 'example' }]}
                 />

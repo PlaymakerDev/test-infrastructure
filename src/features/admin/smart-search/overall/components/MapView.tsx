@@ -118,7 +118,9 @@ function mapKey(provinces: string[] | null): string {
 let geoPromise: Promise<GeoJson | null> | null = null
 function loadFullGeo(): Promise<GeoJson | null> {
   if (!geoPromise) {
-    geoPromise = fetch("/data/th-provinces.geojson")
+    // Raw fetch is NOT basePath-prefixed by Next — carry it explicitly
+    // ('/atlas' in prod/dev-with-env, '' otherwise).
+    geoPromise = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/th-provinces.geojson`)
       .then((r) => r.json())
       .then((geo: GeoJson) => {
         for (const f of geo.features) {

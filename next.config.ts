@@ -21,7 +21,17 @@ const nextConfig: NextConfig = {
         permanent: false
       }
     ]
-  }
+  },
+  // DEV-ONLY safety net for the ~90 hardcoded '/atlas/images/…' asset paths
+  // sprinkled through maintenance/tracking/statistics components. In prod the
+  // real basePath (/atlas) makes those URLs resolve naturally; in dev there is
+  // no basePath, so rewrite them back to the public root instead of 404ing
+  // (broken icons everywhere). New code should still build paths with
+  // NEXT_PUBLIC_BASE_PATH — this only keeps legacy hardcodes working.
+  rewrites: async () =>
+    process.env.NEXT_PUBLIC_BASE_PATH
+      ? []
+      : [{ source: '/atlas/:path*', destination: '/:path*' }],
 };
 
 export default nextConfig;

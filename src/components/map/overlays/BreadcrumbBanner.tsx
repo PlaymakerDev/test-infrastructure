@@ -33,26 +33,26 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
         boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
       }}
     >
-      <span className="text-[10px] sm:text-[11px] text-[#6b7f9a] whitespace-nowrap shrink-0">
+      <span className="fs-12 text-[#6b7f9a] whitespace-nowrap shrink-0">
         กำลังดู
       </span>
       {province.central ? (
         <>
-          <span className="text-[10px] sm:text-[12px] font-semibold text-(--yellow) whitespace-nowrap shrink-0">
+          <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             ทช. ส่วนกลาง
           </span>
           <span className="text-[#6b7f9a] shrink-0">›</span>
-          <span className="text-[10px] sm:text-[12px] font-semibold text-white whitespace-nowrap shrink-0">
+          <span className="fs-12 font-semibold text-white whitespace-nowrap shrink-0">
             {province.name}
           </span>
         </>
       ) : (
         <>
-          <span className="text-[10px] sm:text-[12px] font-semibold text-(--yellow) whitespace-nowrap shrink-0">
+          <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             สทช.{stchInfo.stch} ({stchInfo.hqProvinceName})
           </span>
           <span className="text-[#6b7f9a] shrink-0">›</span>
-          <span className="text-[10px] sm:text-[12px] font-semibold text-white whitespace-nowrap shrink-0">
+          <span className="fs-12 font-semibold text-white whitespace-nowrap shrink-0">
             ขทช.{province.name}
           </span>
         </>
@@ -60,7 +60,7 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
       {onReset && (
         <button
           onClick={onReset}
-          className="ml-0.5 sm:ml-1 text-[10px] sm:text-[11px] text-[#6b7f9a] hover:text-(--yellow) transition-colors px-1.5 sm:px-2 py-0.5 rounded-full border border-[#6b7f9a]/30 hover:border-[#FCD116]/60 whitespace-nowrap shrink-0"
+          className="ml-0.5 sm:ml-1 fs-12 text-[#6b7f9a] hover:text-(--yellow) transition-colors px-1.5 sm:px-2 py-0.5 rounded-full border border-[#6b7f9a]/30 hover:border-[#FCD116]/60 whitespace-nowrap shrink-0"
           title="กลับไปดูทั่วประเทศ"
         >
           ← ทั่วประเทศ

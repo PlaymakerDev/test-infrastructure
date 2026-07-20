@@ -23,9 +23,9 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorLabel = true }) => (
   <div
-    className='py-3 px-5 rounded-2xl'
+    className='p-3 rounded-2xl'
     style={{
-      border: `1.5px solid ${color}`,
+      border: `2px solid ${color}`,
       background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919',
     }}
   >

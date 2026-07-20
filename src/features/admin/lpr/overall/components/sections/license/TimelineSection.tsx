@@ -55,19 +55,19 @@ const TimelineSection: React.FC = () => {
   }, [selected, detail])
   const metaCards = useMemo(() => {
     const m = detail?.metadata
-    if (!m) return []
-    // Empty/blank → null → card dropped entirely (no "-" placeholders).
+    // Blank/null → "-" placeholder (2026-07-20): dropping blank cards made a
+    // single-value WIM row stretch full width, and an all-null plate showed
+    // no cards at all — every slot now always renders.
     const clean = (v: string | number | null | undefined) =>
-      v != null && String(v).trim() !== '' ? String(v) : null
-    const cards = isWimOnly
-      ? [{ label: 'ประเภทยานพาหนะ', value: clean(m.vehicle_type_name) }]
+      v != null && String(v).trim() !== '' ? String(v) : '-'
+    return isWimOnly
+      ? [{ label: 'ประเภทยานพาหนะ', value: clean(m?.vehicle_type_name) }]
       : [
-          { label: 'ประเภทป้ายทะเบียน', value: clean(m.plate_type) },
-          { label: 'ประเภทยานพาหนะ', value: clean(m.vehicle_type_name) },
-          { label: 'ยี่ห้อ', value: clean(m.vehicle_brand) },
-          { label: 'สียานพาหนะ', value: clean(m.vehicle_color) },
+          { label: 'ประเภทป้ายทะเบียน', value: clean(m?.plate_type) },
+          { label: 'ประเภทยานพาหนะ', value: clean(m?.vehicle_type_name) },
+          { label: 'ยี่ห้อ', value: clean(m?.vehicle_brand) },
+          { label: 'สียานพาหนะ', value: clean(m?.vehicle_color) },
         ]
-    return cards.filter((c): c is { label: string; value: string } => c.value !== null)
   }, [detail, isWimOnly])
 
   return (
@@ -100,9 +100,12 @@ const TimelineSection: React.FC = () => {
         </div>
       </section>
 
-      {/* Vehicle metadata — single card for WIM, 4-field grid for ANPR */}
-      {metaCards.length > 0 && (
-        <section className={isWimOnly ? 'mt-10' : 'mt-10 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4'}>
+      {/* Vehicle metadata — always the same 4-column grid, so a WIM plate's
+        * single card takes ONE cell (same width as the ANPR cards) instead of
+        * stretching full width. Waits for `detail` to avoid a "-" flash while
+        * loading; once loaded, missing values render as "-" cards. */}
+      {detail && (
+        <section className='mt-10 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4'>
           {metaCards.map(({ label, value }) => (
             <div key={label} className='bg-(--yellow)/10 border-2 border-(--yellow) rounded-[20px] p-5'>
               <p className='text-(--yellow)'>{label}</p>

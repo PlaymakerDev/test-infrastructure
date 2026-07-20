@@ -67,7 +67,7 @@ const FormSearchProject: React.FC = () => {
   return (
     <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>ปีงบประมาณ</label>
+        <label className='block fs-12 text-white/70 mb-1'>ปีงบประมาณ</label>
         <Select
           size='large'
           allowClear
@@ -80,7 +80,7 @@ const FormSearchProject: React.FC = () => {
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>ผู้ว่าจ้าง</label>
+        <label className='block fs-12 text-white/70 mb-1'>ผู้ว่าจ้าง</label>
         <Select
           size='large'
           allowClear
@@ -95,7 +95,7 @@ const FormSearchProject: React.FC = () => {
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>ผู้รับจ้าง</label>
+        <label className='block fs-12 text-white/70 mb-1'>ผู้รับจ้าง</label>
         <Select
           size='large'
           allowClear
@@ -110,7 +110,7 @@ const FormSearchProject: React.FC = () => {
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>&nbsp;</label>
+        <label className='block fs-12 text-white/70 mb-1'>&nbsp;</label>
         <Input
           size='large'
           className='rounded-lg'

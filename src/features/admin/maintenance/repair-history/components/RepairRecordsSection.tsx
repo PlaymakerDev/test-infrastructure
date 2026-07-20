@@ -443,7 +443,7 @@ const RepairRecordsSection: React.FC = () => {
       className="inline-flex items-center gap-1 text-[12px] font-normal whitespace-nowrap shrink-0 mt-0.5"
       style={{ padding: '1px 8px', borderRadius: 9999, border: `1px solid ${color}`, color }}
     >
-      <img src={`/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
+      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
       <span style={{ marginTop: 1 }}>{count}</span>
     </span>
   )

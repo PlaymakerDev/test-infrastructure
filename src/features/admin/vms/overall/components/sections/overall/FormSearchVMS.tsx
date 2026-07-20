@@ -35,7 +35,7 @@ const FormSearchVMS: React.FC<Props> = (props) => {
             <Input
               {...field}
               placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-              className='rounded-lg'
+              className='rounded-lg app-search-input'
               suffix={<TbSearch className='text-(--yellow)' />}
               size='large'
               onChange={(e) => {

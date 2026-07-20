@@ -46,9 +46,9 @@ const Card: React.FC<CardProps> = ({
   colorLabel = true,
 }) => (
   <div
-    className='py-3 px-5 rounded-[14px]'
+    className='p-3 rounded-2xl'
     style={{
-      border: `1.5px solid ${color}`,
+      border: `2px solid ${color}`,
       background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919',
     }}
   >

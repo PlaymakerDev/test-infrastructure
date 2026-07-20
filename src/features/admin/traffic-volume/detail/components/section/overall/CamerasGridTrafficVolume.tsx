@@ -127,16 +127,17 @@ const CamerasGridTrafficVolume: React.FC = () => {
   return (
     <div>
       <section>
-        {/* `mode='default'` shows filter pills + view-mode toggle (no search
-          * input / export button). */}
+        {/* Default 'form' mode: filter pills + view-mode toggle + นำออกเอกสาร
+          * button. No `formSearch` passed, so no search input — mirrors the
+          * traffic-signal camera grid toolbar (which carries the export button). */}
         <SearchBar
-          mode='default'
           filters={FILTERS}
           stats={stats}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
         />
       </section>
 

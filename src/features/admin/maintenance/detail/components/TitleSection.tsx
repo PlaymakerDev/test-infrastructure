@@ -53,7 +53,7 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               {warranty}
             </span>
             <img
-              src='/images/statistics/icbt.png'
+              src='/atlas/images/statistics/icbt.png'
               alt='ดูข้อมูลโครงการ'
               title='ดูข้อมูลโครงการ'
               width={26}

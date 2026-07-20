@@ -2,6 +2,10 @@
 import { createContext, useContext } from 'react'
 
 export interface ContextProps {
+  /** Work-status card data (StatusBridgeLighting) — placeholder values until
+   *  the bridge detail API is wired; the component isn't mounted anywhere yet
+   *  but reads these fields, so the type must carry them. */
+  bridge: { statusText: string; lastUpdate: string }
 }
 
 export interface PageProviderProps {
@@ -15,7 +19,7 @@ export const DetailProvider: React.FC<PageProviderProps> = (props) => {
 
   return (
     <DetailContext.Provider value={{
-
+      bridge: { statusText: '-', lastUpdate: '-' },
     }}>
       {children}
     </DetailContext.Provider>

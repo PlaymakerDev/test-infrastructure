@@ -94,7 +94,7 @@ const AlertDetailContent: React.FC = () => {
               {detailLabel || '-'}
             </p>
             <img
-              src="/images/statistics/icbt.png"
+              src="/atlas/images/statistics/icbt.png"
               alt="ดูข้อมูลโครงการ"
               title="ดูข้อมูลโครงการ"
               width={25}
@@ -124,7 +124,7 @@ const AlertDetailContent: React.FC = () => {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
               {device.is_online !== undefined && (
-                <img src={device.is_online ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
+                <img src={device.is_online ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
               )}
               <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
                 {connectionLabel}

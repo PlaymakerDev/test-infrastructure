@@ -48,12 +48,14 @@
   font-size: clamp(0.875rem, 3.73vw, 1rem);
 }
 
+/* 14px is the app-wide minimum font size (ticket 2). fs-12/fs-11 floor at
+   0.875rem (14px) — apply `fs-12` to any element that was rendering smaller. */
 .fs-12 {
-  font-size: clamp(0.75rem, 3vw, 0.875rem);
+  font-size: 0.875rem;
 }
 
 .fs-11 {
-  font-size: clamp(0.6875rem, 2.67vw, 0.75rem);
+  font-size: 0.875rem;
 }
 
 /* ─── Find-on-page (Ctrl+F clone) ────────────────────────────────────────

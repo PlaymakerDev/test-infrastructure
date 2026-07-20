@@ -38,20 +38,20 @@ const StatCard: React.FC<CardProps> = ({
     >
       <div className='flex items-center gap-1.5'>
         {isPrimary && <TbBolt size={16} style={{ color }} />}
-        <span className='text-xs font-semibold' style={{ color }}>
+        <span className='fs-12 font-semibold' style={{ color }}>
           {label}
         </span>
       </div>
       <div className='flex items-baseline gap-1.5'>
         {subLabel && (
-          <span className='text-[11px]' style={{ color }}>
+          <span className='fs-12' style={{ color }}>
             {subLabel}
           </span>
         )}
         <span className='font-bold text-2xl tabular-nums text-white leading-none'>
           {value.toLocaleString(undefined, { minimumFractionDigits: value % 1 === 0 ? 0 : 1 })}
         </span>
-        <span className='text-white/70 text-xs'>{unit}</span>
+        <span className='text-white/70 fs-12'>{unit}</span>
       </div>
     </div>
   )
