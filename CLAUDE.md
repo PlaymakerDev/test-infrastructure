@@ -147,6 +147,18 @@ Use Tailwind 4's `text-(--yellow)` / `bg-(--dark-black)` / `border-(--default-bl
 
 Applies to every admin surface. Introduced after repeated iterations on the VMS Command Center picked off-palette AntD tag colours that clashed with the yellow-on-black brand look.
 
+## Export (นำออกเอกสาร) system — added 2026-07-20
+
+Every "นำออกเอกสาร" button app-wide (27 points across 13 menus) is wired through one shared kit — do NOT hand-roll xlsx/jsPDF/print flows:
+
+- **`src/components/export/ExportFileModal.tsx`** — the white Export File dialog. Pass `onExportPdf` and/or `onExportExcel` (a button renders only when its handler exists — chart/timeline pages are PDF-only by omitting `onExportExcel`); `count` optional.
+- **`src/utils/export/excel.ts`** — `exportExcel({filenameBase, sheetName, columns, rows})`.
+- **`src/utils/export/pdf.tsx`** — `exportTablePdf()` (table report) and `exportReportPdf()` (block report: `kv` stat grids / `image` charts / `table` / `entries` photo-cards). Thai line-wrapping is handled centrally (`prewrapTableArgs`/`wrapPdfText`): @react-pdf textkit's own line breaking corrupts Thai (inserts "-" and drops tail glyphs), so text is pre-wrapped with real `\n` at ICU word boundaries, measured on a SEPARATE fontkit instance (`NotoSansThai__measure` family — measuring on the render font poisons its shaping cache and drops leading glyphs). Never re-enable engine wrapping; never measure on the render family.
+- **`src/utils/export/chart.ts`** — `captureEchartsPng(containerEl)` rasterizes the app's SVG-rendered ECharts to PNG for PDF embedding.
+- **`src/utils/export/image.ts`** — `fetchImageAsDataUrl(url)` for photos in `entries` cards; cross-origin image hosts (wts.drr.go.th sends no CORS headers) go through the session-guarded proxy `src/app/api/export/image-proxy/route.ts` (allowlist `*.drr.go.th` + backend host), re-encoded to JPEG (react-pdf can't decode WebP). Any failure → null → the card renders photo-less instead of failing the export.
+
+**Conventions** (reference implementations: cctv `overall/components/OverallSection.tsx` = table PDF+Excel, traffic-volume `analyticvolume/index.tsx` = chart blocks PDF-only, lpr license `TimelineSection.tsx` = photo cards PDF-only): export columns mirror the on-screen table exactly (same headers/order/format expressions) and export the currently-filtered rows the screen shows; bureau-grouped tables flatten the divider rows into ลำดับ+หน่วยงาน lead columns; action/button columns are skipped; `widthPct` sums to 100 with date-time columns ≥13; `filterNote` states the active filters/search; handlers `await import()` the export utils. Verify a new wiring by exporting a real PDF and eyeballing Thai glyph completeness at the start/end of long cells — tsc cannot catch glyph drops.
+
 ## Data Fetching
 
 Backend integration has expanded well beyond `control-vms/overall` (surveyed 2026-07-04) — most admin features now call the real backend. **Four data-fetching patterns coexist**; know which one a feature already uses before touching it:

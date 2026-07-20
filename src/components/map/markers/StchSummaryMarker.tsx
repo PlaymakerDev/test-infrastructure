@@ -108,7 +108,6 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
                   boxShadow: '0 0 12px rgba(252,209,22,0.55)',
                   border: '2px solid #fff',
                   transition: 'transform 0.15s',
-                  fontFamily: 'ui-sans-serif, system-ui',
                 }}
               >
                 {info.count}
@@ -128,7 +127,6 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
                   lineHeight: 1.2,
                   whiteSpace: 'nowrap',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                  fontFamily: 'ui-sans-serif, system-ui',
                 }}
               >
                 {stchShortLabel(stch)}

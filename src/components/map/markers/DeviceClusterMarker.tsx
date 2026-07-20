@@ -144,7 +144,6 @@ export function DefaultDevicePopup({
       style={{
         padding: '10px 12px',
         minWidth: 210,
-        fontFamily: 'ui-sans-serif,system-ui',
         background: 'rgba(5,13,26,0.96)',
         border: `1px solid ${brightColor}`,
         borderRadius: 10,

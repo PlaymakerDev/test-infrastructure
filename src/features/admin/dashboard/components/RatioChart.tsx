@@ -70,15 +70,18 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
       className="flex flex-col items-center justify-start cursor-pointer group"
       style={{
         width: size,
-        padding: '4px 6px 8px',
+        // Symmetric vertical padding — the old 4px-top/8px-bottom left the
+        // content hugging the bar's top edge once the counts grew to 30px;
+        // equal padding re-centres the block (2026-07-20).
+        padding: compact ? '6px' : '10px 6px',
         background: 'transparent',
         border: 'none',
       }}
     >
       {/* Icon + label header */}
       <div className="flex items-center gap-1.5 mb-1" style={{ color }}>
-        <Icon size={compact ? 16 : 18} />
-        <span className={`font-semibold ${compact ? 'fs-12' : 'text-[14px]'}`}>
+        <Icon size={compact ? 16 : 20} />
+        <span className={`font-semibold ${compact ? 'fs-12' : 'fs-14'}`}>
           {label}
         </span>
       </div>
@@ -92,14 +95,10 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
           marginBottom: compact ? 4 : 6,
         }}
       />
-      {/* Big count */}
-      <div
-        className="font-bold leading-none tabular-nums"
-        style={{
-          color,
-          fontSize: compact ? 22 : 26,
-        }}
-      >
+      {/* Big count — fs-24 = the project clamp scale (30px on desktop,
+        * scaling down with the viewport) instead of the old fixed 22/26px,
+        * per design 2026-07-20. */}
+      <div className="fs-24 font-bold leading-none tabular-nums" style={{ color }}>
         {display}
       </div>
       {/* Unit */}
@@ -200,15 +199,16 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
         backdropFilter: 'blur(5px)',
       }}
     >
+      {/* 140px per tile (was 126) — proportioned for the 30px counts. */}
       {visible.map((t) => (
-        <div key={t.id} className="shrink-0" style={{ width: 126 }}>
+        <div key={t.id} className="shrink-0" style={{ width: 140 }}>
           <Tile
             label={t.label}
             color={t.color}
             Icon={t.Icon}
             count={t.count}
             unit={t.unit}
-            size={126}
+            size={140}
             onClick={() => openFeature(t.route)}
           />
         </div>

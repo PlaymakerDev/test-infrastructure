@@ -1,7 +1,10 @@
 "use client"
 import { App, Button } from 'antd'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
 import {
   useContractorsList,
@@ -26,11 +29,42 @@ import DeleteContactModal from './contact/DeleteContactModal'
 import FormSearchContact from './contact/FormSearchContact'
 import TableContact from './contact/TableContact'
 
+dayjs.extend(buddhistEra)
+
 const DEFAULT_FILTERS: ContractorFilters = { search: '' }
 // The /manage/project endpoint offers no `?contractor_id=` filter, so to
 // compute a per-contractor project count we pull a wide slice on page 1 and
 // tally on the client. Real total is ~348; 1000 leaves ample headroom.
 const PROJECTS_FOR_COUNT_LIMIT = 1000
+
+/** "06/07/2569" — same dd/MM/พ.ศ. format TableContact renders. */
+const fmtThaiDate = (iso: string): string => {
+  if (!iso) return '-'
+  const d = dayjs(iso)
+  return d.isValid() ? d.format('DD/MM/BBBB') : iso
+}
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as TableContact (minus the จัดการ action column), plus ลำดับ (mirrors
+// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
+// (sums to 100). Email/address/username are NOT on the on-screen table so
+// they're not exported; no password field exists on the UI Contractor row.
+const CONTACT_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: Contractor, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'ชื่อบริษัท', width: 36, widthPct: 24, align: 'left', value: (r) => r.companyName || '-' },
+  { header: 'ชื่อย่อ', width: 12, widthPct: 10, value: (r) => r.shortName || '-' },
+  { header: 'ผู้ติดต่อ', width: 20, widthPct: 14, value: (r) => r.contactPerson || '-' },
+  { header: 'เบอร์โทรศัพท์', width: 16, widthPct: 12, value: (r) => r.phone || '-' },
+  { header: 'ตำแหน่ง / บทบาท', width: 18, widthPct: 12, value: (r) => r.role || '-' },
+  { header: 'วันที่ลงทะเบียน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.registeredAt) },
+  { header: 'จำนวนโครงการ', width: 14, widthPct: 10, value: (r) => r.projectCount },
+]
 
 /** Best-effort extractor for the backend's Thai error message, which sits at
  *  `error.response.data.message` when the request is enveloped by the shared
@@ -62,6 +96,7 @@ const ContactSection: React.FC = () => {
     editing: null,
   })
   const [deleteTarget, setDeleteTarget] = useState<Contractor | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Observed height of the outer card — drives the AntD `scroll.y` so the
   // table body always fits the viewport slot allocated by the parent flex
@@ -127,6 +162,14 @@ const ContactSection: React.FC = () => {
   // to the current page's length so the "1-N จาก N" label is still sensible
   // during the initial load before meta_data arrives.
   const total = contractorsQuery.data?.meta_data?.count ?? contractors.length
+
+  // Human-readable note of the active search — printed in the PDF header so
+  // a reader knows what subset they're looking at (the /contractor endpoint
+  // has no other filter fields).
+  const exportFilterNote = useMemo(() => {
+    const q = filters.search.trim()
+    return q ? `ค้นหา "${q}"` : undefined
+  }, [filters.search])
 
   // ── Modal open/close ─────────────────────────────────────────────────────
   const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
@@ -249,6 +292,7 @@ const ContactSection: React.FC = () => {
             size='large'
             shape='round'
             icon={<TbPrinter />}
+            onClick={() => setExportOpen(true)}
             style={{
               background: '#66AEFF',
               color: '#000',
@@ -275,6 +319,33 @@ const ContactSection: React.FC = () => {
           onDelete={handleDeleteRequest}
         />
       </div>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY DISPLAYED rows (server-searched
+          current page), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={contractors.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Settings_Contractors_Report',
+            title: 'รายงานรายชื่อผู้รับจ้าง (Contractor Management)',
+            filterNote: exportFilterNote,
+            columns: CONTACT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: contractors,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Settings_Contractors_Report',
+            sheetName: 'Contractors',
+            columns: CONTACT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: contractors,
+          })
+        }}
+      />
 
       <ContactModal
         open={modalState.open}

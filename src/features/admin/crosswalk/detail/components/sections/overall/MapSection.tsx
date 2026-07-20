@@ -1,8 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbMapPin } from 'react-icons/tb'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import OverlapMarkers, { type OverlapMarkerItem } from '@/components/map/markers/OverlapMarkers'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -10,7 +8,6 @@ import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkCameraItem } from '@/types/crosswalk/detail-api'
-import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
 interface Props {
   /** Optional vignette overlay forwarded to BaseMap. */
@@ -34,7 +31,6 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
       border: '1px solid #2f6db0',
       borderRadius: 12,
       padding: 10,
-      fontFamily: 'ui-sans-serif,system-ui',
     }}
   >
     {/* Player mounts for EVERY camera — including red (offline) pins, per
@@ -53,29 +49,13 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
   </div>
 )
 
-/** Popup shown for the solution-level fallback marker (when the /cameras
- *  endpoint has no coords for this solution). */
-const SolutionFallbackPopup: React.FC<{ location: CrosswalkLocation }> = ({
-  location,
-}) => (
-  <div
-    className='rounded-lg border border-yellow-400 px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
-    style={{ width: 260 }}
-  >
-    <p className='fs-12 font-bold tracking-wide text-yellow-400'>
-      Crosswalk · {location.road.code_name}
-    </p>
-    <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
-      {location.solution.solution_name}
-    </p>
-  </div>
-)
-
 /** Detail map — uses the shared overlap-aware marker layer (`OverlapMarkers`,
  *  same grouping as Incident Detection detail): cameras sharing a coordinate
  *  fan out (spider) into individually-clickable pins, each opening a popup with
- *  a live preview. All pins are white teardrops (`variant='white'`). Falls back
- *  to a single solution-level pin when the /cameras endpoint has no coords. */
+ *  a live preview. All pins are white teardrops (`variant='white'`).
+ *  Cameras WITHOUT lat/lon get NO marker (per design 2026-07-20 — the old
+ *  yellow solution-centroid fallback pin read as a fake camera position); the
+ *  map still centers on the solution's own coordinate so the area is framed. */
 const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
@@ -121,35 +101,13 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
       initialBearing={-10}
       edgeFade={edgeFade}
     >
-      {hasCoordCams ? (
+      {hasCoordCams && (
         <>
-          <FitBoundsEffect coords={coords} padding={60} maxZoom={16} pitch={55} />
+          {/* maxZoom 19 — street-level close-up, per review 2026-07-20
+            * (crosswalk cameras cluster on one junction). */}
+          <FitBoundsEffect coords={coords} padding={60} maxZoom={19} pitch={55} />
           <OverlapMarkers items={markerItems} variant='white' />
         </>
-      ) : (
-        isValidCoord(fallbackCoord) && location && (
-          <HTMLMarker
-            lngLat={fallbackCoord}
-            anchor='bottom'
-            title={location.solution.solution_name}
-            popup={() => <SolutionFallbackPopup location={location} />}
-            popupOptions={{ offset: 18, closeButton: false }}
-          >
-            <div
-              className='flex items-center justify-center cursor-pointer'
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: '#FCD116',
-                boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                border: '2px solid #fff',
-              }}
-            >
-              <TbMapPin size={18} color='#212121' />
-            </div>
-          </HTMLMarker>
-        )
       )}
     </BaseMap>
   )

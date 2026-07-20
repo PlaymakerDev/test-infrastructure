@@ -36,6 +36,8 @@ export const GPSProvider = (props: PageProviderProps) => {
 
   // API DATA
   const [selectRoute, setSelectRoute] = useState<VehicleList>({
+    "dept_name": "",
+    "dept_name2": "",
     "latitude": 0.00,
     "longitude": 0.00,
     "normal": "",

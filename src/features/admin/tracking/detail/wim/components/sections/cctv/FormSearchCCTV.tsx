@@ -7,6 +7,7 @@ interface Props {
   activeFilter: CameraFilter
   onFilterChange: (filter: CameraFilter) => void
   stats: FilterStats
+  onExport?: () => void
 }
 
 const CAMERA_FILTERS: FilterConfig[] = [
@@ -37,7 +38,7 @@ const CAMERA_FILTERS: FilterConfig[] = [
 ]
 
 const FormSearchCCTV: React.FC<Props> = (props) => {
-  const { activeFilter, onFilterChange, stats } = props
+  const { activeFilter, onFilterChange, stats, onExport } = props
 
   return (
     <div>
@@ -47,7 +48,7 @@ const FormSearchCCTV: React.FC<Props> = (props) => {
         activeFilter={activeFilter}
         onFilterChange={(key) => onFilterChange(key as CameraFilter)}
         mode='form'
-        onExport={() => alert('TODO: นำออกเอกสาร')}
+        onExport={onExport}
         hasSwitch={false}
       />
     </div>
