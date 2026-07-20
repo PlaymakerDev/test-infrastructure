@@ -8,7 +8,6 @@ interface Props { }
 const OPTIONS: TabOption[] = [
   { label: 'ควบคุมป้าย VMS', value: 'VMS' },
   { label: 'กำหนดการแสดงผล', value: 'DISPLAY' },
-  { label: 'สถานะการแสดงผล', value: 'STATUS' },
 ]
 
 const TitleSection: React.FC<Props> = () => {

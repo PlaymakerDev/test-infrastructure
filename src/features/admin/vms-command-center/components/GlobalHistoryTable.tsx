@@ -53,7 +53,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
           <Tooltip title={d.format('YYYY-MM-DD HH:mm:ss.SSS')}>
             <div>
               <div className="text-sm">{d.format('DD MMM HH:mm:ss')}</div>
-              <div className="text-xs text-white/50">{d.locale('th').fromNow()}</div>
+              <div className="fs-12 text-white/50">{d.locale('th').fromNow()}</div>
             </div>
           </Tooltip>
         )
@@ -66,10 +66,10 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
         <div className="min-w-0">
           <div className="text-sm truncate flex items-center gap-1.5">
             {r.road_code && <span className="text-(--yellow) font-semibold">{r.road_code}</span>}
-            {r.sta && <span className="text-(--default-blue) text-xs">กม.{r.sta}</span>}
+            {r.sta && <span className="text-(--default-blue) fs-12">กม.{r.sta}</span>}
             <span className="truncate opacity-80">{r.solution_name || `WID ${r.wid ?? '?'}`}</span>
           </div>
-          <div className="text-xs text-white/50">
+          <div className="fs-12 text-white/50">
             WID {r.wid ?? '—'} · {r.command_no != null ? `คำสั่งที่ ${r.command_no}` : `setting #${r.setting_id}`}
           </div>
         </div>
@@ -103,7 +103,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
       dataIndex: 'source',
       key: 'source',
       width: 200,
-      render: (s: string) => <span className="text-xs">{sourceLabel(s)}</span>,
+      render: (s: string) => <span className="fs-12">{sourceLabel(s)}</span>,
     },
     {
       title: '',

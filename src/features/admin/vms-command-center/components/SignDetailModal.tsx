@@ -94,16 +94,16 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
             <div className="px-6 py-4 border-b border-white/10 bg-(--dark-black) rounded-t-xl">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-white/50">WID {detail.wid} · vms_id {detail.vms_id}</div>
+                  <div className="fs-12 text-white/50">WID {detail.wid} · vms_id {detail.vms_id}</div>
                   <div className="text-lg font-semibold truncate flex items-center gap-2 flex-wrap">
                     {detail.road_code && <span className="text-(--yellow)">{detail.road_code}</span>}
                     {detail.sta && <span className="text-(--default-blue) text-sm">กม.{detail.sta}</span>}
                     <span className="truncate">{detail.solution_name || `VMS ${detail.vms_id}`}</span>
                   </div>
                   {detail.road_name && (
-                    <div className="text-xs text-white/50 mt-0.5">สายทาง: {detail.road_name}</div>
+                    <div className="fs-12 text-white/50 mt-0.5">สายทาง: {detail.road_name}</div>
                   )}
-                  <div className="text-xs text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
+                  <div className="fs-12 text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tag
@@ -144,7 +144,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
               <div className="space-y-4">
                 {/* Live desktop screen of the sign itself */}
                 <div className="rounded-lg overflow-hidden border border-white/10 bg-black">
-                  <div className="px-3 py-2 text-white/90 text-xs bg-black/50 flex items-center justify-between">
+                  <div className="px-3 py-2 text-white/90 fs-12 bg-black/50 flex items-center justify-between">
                     <span className="font-medium">Live screen ของป้าย</span>
                     <span className="opacity-70">{screenURL ? 'HLS' : '—'}</span>
                   </div>
@@ -167,7 +167,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                     the card doesn't lie ("กำลังแสดง" for a finished run). */}
                 {activeSettingID && (
                   <div className="rounded-lg border border-white/10 bg-(--dark-black) p-3">
-                    <div className="text-xs text-white/50 mb-1">
+                    <div className="fs-12 text-white/50 mb-1">
                       {(() => {
                         const label = detail.command_no != null
                           ? `คำสั่งที่ ${detail.command_no}`
@@ -214,7 +214,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       )}
                       <div className="min-w-0 flex-1 text-sm space-y-0.5">
                         <div><b>{detail.setting_type_name || '-'}</b></div>
-                        <div className="text-white/60 text-xs">
+                        <div className="text-white/60 fs-12">
                           <span className="opacity-70">วันที่:</span>{' '}
                           {detail.date_since === detail.date_to
                             ? detail.date_since
@@ -224,7 +224,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           const allDay = sc.time_since === '00:00:00' && (sc.time_to === '00:00:00' || sc.time_to === '23:59:00' || sc.time_to === '23:59:59')
                           const daysLabel = formatDaysOfWeek(sc.days_of_week)
                           return (
-                            <div key={sc.id} className="text-white/60 text-xs">
+                            <div key={sc.id} className="text-white/60 fs-12">
                               <span className="opacity-70">เวลา:</span>{' '}
                               {allDay
                                 ? <span className="text-(--yellow)">ตลอดวัน</span>
@@ -258,9 +258,9 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       {cameras.map((cam) => (
                         <div key={cam.camera_id} className="rounded-md overflow-hidden border border-white/10 bg-black">
                           <div className="px-2 py-1.5 bg-black/60 flex items-center justify-between gap-2">
-                            <div className="text-white text-xs truncate">{cam.camera_name || cam.ip_address || cam.camera_id.slice(0, 8)}</div>
+                            <div className="text-white fs-12 truncate">{cam.camera_name || cam.ip_address || cam.camera_id.slice(0, 8)}</div>
                             <span
-                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded"
+                              className="inline-flex items-center gap-1 fs-12 px-1.5 py-0.5 rounded"
                               style={{
                                 background: cam.curl_status ? '#22c55e33' : '#ef444433',
                                 color: cam.curl_status ? '#22c55e' : '#ef4444',
@@ -280,7 +280,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                               showLiveBadge
                             />
                           ) : (
-                            <div className="h-40 flex items-center justify-center text-white/60 text-xs">ไม่มี HLS URL</div>
+                            <div className="h-40 flex items-center justify-center text-white/60 fs-12">ไม่มี HLS URL</div>
                           )}
                         </div>
                       ))}
@@ -321,10 +321,10 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           return (
                             <div key={`${head.setting_id}-${gi}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
                               <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className="text-xs text-(--yellow) font-semibold">
+                                <span className="fs-12 text-(--yellow) font-semibold">
                                   ▸ {label}
                                 </span>
-                                <span className="text-[10px] text-white/50">
+                                <span className="fs-12 text-white/50">
                                   {head.setting_type_name || 'อื่นๆ'} · {group.length} เหตุการณ์
                                 </span>
                               </div>
@@ -370,18 +370,18 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <StatusPill status={r.status} size="sm" />
                                           {r.prev_status != null && r.prev_status !== r.status && (
-                                            <span className="text-xs text-white/50">
+                                            <span className="fs-12 text-white/50">
                                               จาก {statusMeta(r.prev_status).label} →
                                             </span>
                                           )}
-                                          <span className="text-xs text-white/70">{sourceLabel(r.source)}</span>
+                                          <span className="fs-12 text-white/70">{sourceLabel(r.source)}</span>
                                           {run.count > 1 && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
+                                            <span className="fs-12 px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
                                               ×{run.count}
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-xs text-white/50 mt-1">
+                                        <div className="fs-12 text-white/50 mt-1">
                                           <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
                                             <span>
                                               {at.format('DD MMM YYYY HH:mm:ss')}

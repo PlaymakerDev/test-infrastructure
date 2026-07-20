@@ -85,7 +85,7 @@ const StatusList: React.FC<Props> = (props) => {
               <StatusPill
                 status={item.status}
                 size='sm'
-                tooltip={<span className='text-xs'>สถานะ playback ของคำสั่งบนป้าย</span>}
+                tooltip={<span className='fs-12'>สถานะ playback ของคำสั่งบนป้าย</span>}
               />
             </div>
             <span
