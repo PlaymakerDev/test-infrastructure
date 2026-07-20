@@ -17,7 +17,6 @@ const CameraPopup: React.FC<{ cam: IncidentCameraMapItem }> = ({ cam }) => (
       border: '1px solid #2f6db0',
       borderRadius: 12,
       padding: 10,
-      fontFamily: 'ui-sans-serif,system-ui',
     }}
   >
     {/* Player mounts for EVERY camera — including red (offline) pins, per

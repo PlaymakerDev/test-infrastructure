@@ -68,9 +68,12 @@ const CCTVSection: React.FC<Props> = (props) => {
     ))
   }, [data, isLoading, isError, setOpenCCTVData, randomCam])
 
-  // Camera list — hidden on mobile, col 1 on desktop
+  // Camera list — hidden on mobile, col 1 on desktop. Always exactly 3 items
+  // sized via flex-1 to fill the column, so no scroll affordance is needed —
+  // an overflow-y-auto here only ever fired from flexbox's own sub-pixel
+  // rounding, showing a spurious scrollbar.
   return (
-    <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:overflow-y-auto lg:h-full lg:pr-1'>
+    <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:h-full'>
       {renderCCTVList}
     </div>
   )

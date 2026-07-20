@@ -622,13 +622,16 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       ))}
       <StchSummaryMarker summaries={stchSummaries} hideAtZoom={PROVINCE_ZOOM_THRESHOLD} onMarkerClick={onMarkerClick} />
 
+      {/* Vertical rhythm under the navbar: search box 60–~100 → pills 112 →
+        * breadcrumb 164. Pills previously started at 92, overlapping the
+        * search row, with the breadcrumb hugging them at 144 (2026-07-20). */}
       <SystemFilterPills
         value={visibleTypes}
         onChange={setVisibleTypes}
         visible={!!province}
-        top={92}
+        top={112}
       />
-      <BreadcrumbBanner province={province} onReset={resetView} top={144} />
+      <BreadcrumbBanner province={province} onReset={resetView} top={164} />
       {/* Road-code search — nationwide autocomplete against /manage/roads.
         * Uses the already-fetched position payload to fly to the road's first
         * known device without a second network hop. */}

@@ -4,11 +4,16 @@ import { SearchStatusSection, StatusTabContent } from '../../../components'
 import { useVMSSettingStatusCount } from '../../../hooks/useVMSSettingStatusCount'
 
 interface Props {
-
+  /** นำออกเอกสาร wiring, owned by StatusSection — forwarded to the desktop
+   *  SearchStatusSection button (open) and the active StatusTabContent
+   *  pane (modal open/close). */
+  exportOpen: boolean
+  onExportOpen: () => void
+  onExportClose: () => void
 }
 
 const ContentTab: React.FC<Props> = (props) => {
-  const { } = props
+  const { exportOpen, onExportOpen, onExportClose } = props
 
   const { data, isLoading, isError } = useVMSSettingStatusCount()
 
@@ -28,10 +33,10 @@ const ContentTab: React.FC<Props> = (props) => {
       ...(data?.data ?? []).map((item) => ({
         key: String(item.status_id),
         label: renderTabLabel(item.status_name, item.count),
-        children: <StatusTabContent item={item} />,
+        children: <StatusTabContent item={item} exportOpen={exportOpen} onExportClose={onExportClose} />,
       }))
     ]
-  }, [data?.data, renderTabLabel])
+  }, [data?.data, renderTabLabel, exportOpen, onExportClose])
 
   if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
   if (isError) return <Empty description="ไม่พบข้อมูล" />
@@ -50,7 +55,7 @@ const ContentTab: React.FC<Props> = (props) => {
       tabBarExtraContent={{
         right: (
           <div className='hidden lg:block'>
-            <SearchStatusSection />
+            <SearchStatusSection onExport={onExportOpen} />
           </div>
         )
       }}

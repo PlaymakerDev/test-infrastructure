@@ -30,9 +30,14 @@ const tooltipStyle: React.CSSProperties = {
   border: '1px solid #3b82f6',
   borderRadius: 10,
   color: '#f8fafc',
-  fontSize: 12,
+  fontSize: 14, // = .fs-12 (0.875rem)
   padding: '6px 12px',
 }
+
+// Tooltip value line — yellow like the other charts' tooltips; the default
+// recharts behavior colors it with the hovered bar/slice fill, which is
+// unreadable on the dark panel for the darker series colors.
+const tooltipItemStyle: React.CSSProperties = { color: '#FCD116' }
 
 /** Two side-by-side charts on the overview:
  *  - Left: Province Top-10 horizontal bar (mirrors dmon's province summary)
@@ -62,7 +67,7 @@ const BreakdownSection: React.FC = () => {
   return (
     <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
       {/* Province Top-10 */}
-      <div className='bg-(--mid-gray) rounded-2xl p-5 flex flex-col'>
+      <div className='bg-[#000000CC] rounded-2xl p-5 flex flex-col'>
         <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
           <TbMapPin size={20} />
           <h4 className='mb-0'>จังหวัดตรวจจับสูงสุด</h4>
@@ -79,23 +84,25 @@ const BreakdownSection: React.FC = () => {
                 margin={{ top: 4, right: 32, bottom: 0, left: 0 }}
               >
                 <CartesianGrid strokeDasharray='3 3' stroke='#374151' horizontal={false} />
+                {/* fontSize 14 = .fs-12 (0.875rem) on both axes. */}
                 <XAxis
                   type='number'
                   stroke='#9CA3AF'
-                  fontSize={10}
+                  fontSize={14}
                   tickFormatter={(v) => Number(v).toLocaleString('th-TH')}
                 />
                 <YAxis
                   type='category'
                   dataKey='name'
                   stroke='#9CA3AF'
-                  fontSize={11}
-                  width={100}
+                  fontSize={14}
+                  width={110}
                   tick={{ fill: '#CBD5E1' }}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                   contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
                   formatter={((v: unknown) => [
                     `${Number(v).toLocaleString('th-TH')} ครั้ง`,
                     'จำนวน',
@@ -116,7 +123,7 @@ const BreakdownSection: React.FC = () => {
       </div>
 
       {/* Vehicle-type donut */}
-      <div className='bg-(--mid-gray) rounded-2xl p-5 flex flex-col'>
+      <div className='bg-[#000000CC] rounded-2xl p-5 flex flex-col'>
         <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
           <TbTruck size={20} />
           <h4 className='mb-0'>ประเภทยานพาหนะ</h4>
@@ -144,6 +151,7 @@ const BreakdownSection: React.FC = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
                     formatter={((v: unknown, n: unknown) => [
                       `${Number(v).toLocaleString('th-TH')} ครั้ง`,
                       n,
@@ -159,7 +167,10 @@ const BreakdownSection: React.FC = () => {
                 <div className='fs-11 text-gray-400'>ครั้ง</div>
               </div>
             </div>
-            <ul className='flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1'>
+            {/* No scroll cap — the API returns Top 10 at most, so the legend
+              * always shows in full (the old max-h-56 scrollbar also painted
+              * over the % column and clipped "100.0%", 2026-07-20). */}
+            <ul className='flex flex-col gap-1.5'>
               {vehicleData.map((v, i) => {
                 const pct = vehicleTotal > 0 ? (v.value / vehicleTotal) * 100 : 0
                 return (
@@ -175,7 +186,7 @@ const BreakdownSection: React.FC = () => {
                     <span className='tabular-nums text-white font-medium'>
                       {v.value.toLocaleString('th-TH')}
                     </span>
-                    <span className='tabular-nums text-gray-500 w-10 text-right'>
+                    <span className='tabular-nums text-gray-500 w-12 text-right shrink-0'>
                       {pct.toFixed(1)}%
                     </span>
                   </li>

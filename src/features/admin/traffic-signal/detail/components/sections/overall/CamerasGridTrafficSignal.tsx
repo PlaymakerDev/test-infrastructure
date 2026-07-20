@@ -15,6 +15,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { CCTVModalExtraCell } from '@/types/layout'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 export interface CameraEntry {
   id: string
@@ -71,6 +72,28 @@ const FILTERS: FilterConfig[] = [
     badgeActiveClass: 'bg-red-800 text-white',
     badgeIdleClass: 'bg-red-500/20 text-red-400',
   },
+]
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order + format expressions as the TABLE view (TableCameraTrafficSignal):
+// ลำดับที่ → ชื่อกล้อง → Phase → การทำงาน → IP Address → Green Time → Volume
+// → สถานะ (the grid tiles show the same fields). `width` = Excel chars,
+// `widthPct` = PDF table percent (sums to 100).
+const CAMERA_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CameraEntry, index: number) => string | number
+}[] = [
+  { header: 'ลำดับที่', width: 8, widthPct: 6, value: (_r, i) => i + 1 },
+  { header: 'ชื่อกล้อง', width: 40, widthPct: 30, align: 'left', value: (r) => r.code || '-' },
+  { header: 'Phase', width: 8, widthPct: 7, value: (r) => `P${r.phase}` },
+  { header: 'การทำงาน', width: 12, widthPct: 12, value: (r) => r.detectionMode },
+  { header: 'IP Address', width: 16, widthPct: 15, value: (r) => r.ipAddress || '-' },
+  { header: 'Green Time', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? `${r.greenTime}s` : '-') },
+  { header: 'Volume', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? r.volume.toLocaleString() : '-') },
+  { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => (r.connection === 'online' ? 'Connect' : 'Disconnect') },
 ]
 
 /** Single camera tile — HLS player + code + IP + per-mode footer pills.
@@ -131,6 +154,7 @@ const CamerasGridTrafficSignal: React.FC = () => {
   const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Cameras for this signal come from a dedicated endpoint — Counting/StopLine
   // split is derived from `camera_type`.
@@ -199,6 +223,22 @@ const CamerasGridTrafficSignal: React.FC = () => {
     return { counting: inMode('Counting'), stopline: inMode('Stopline') }
   }, [activeFilter, allCameras])
 
+  // Export rows in the SAME order the TABLE view renders: Counting block
+  // first, then Stopline (both already phase-sorted + status-filtered).
+  const exportRows = useMemo(
+    () => [...filtered.counting, ...filtered.stopline],
+    [filtered]
+  )
+
+  // Install point + active status filter — printed in the PDF header so a
+  // reader knows which signal/subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = [project.installPoint]
+    const filterLabel = FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    return parts.filter(Boolean).join(' · ')
+  }, [project.installPoint, activeFilter])
+
   return (
     <div>
       <section>
@@ -209,9 +249,36 @@ const CamerasGridTrafficSignal: React.FC = () => {
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED cameras (same rows
+            the grid/table shows), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Signal_Cameras_Report',
+            title: 'รายงานรายการกล้องแยกสัญญาณไฟจราจร (Traffic Signal Cameras)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Signal_Cameras_Report',
+            sheetName: 'Traffic Signal Cameras',
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
 
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (

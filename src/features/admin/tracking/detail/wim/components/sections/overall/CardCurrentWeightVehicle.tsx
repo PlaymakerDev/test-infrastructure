@@ -24,6 +24,11 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
     return nameArr.join(' ')
   }, [])
 
+  const prerenderLicensePlate = useCallback((plateNo: string, plateProvince: string) => {
+    console.log(plateNo)
+    if (!plateNo) return 'ไม่ระบุทะเบียน'
+    return renderLicensePlate(plateNo, plateProvince)
+  }, [renderLicensePlate])
 
   const renderContent = useMemo(() => {
     if (!data) return (
@@ -34,7 +39,7 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
     return (
       <>
         <section>
-          <h1 className="text-red-500">{renderLicensePlate(data?.lp_head_no || '-', data?.lp_head_province?.name || '-')}</h1>
+          <h1 className="text-red-500">{prerenderLicensePlate(data?.lp_head_no, data?.lp_head_province?.name)}</h1>
           <p>รถน้ำหนักเกิน</p>
           <p className="text-red-500">{dayjs(data?.time_stamp).format('DD MMMM BBBB HH:mm:ss')}</p>
         </section>

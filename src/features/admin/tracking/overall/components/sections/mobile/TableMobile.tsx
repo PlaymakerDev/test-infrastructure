@@ -199,25 +199,28 @@ const TableMobileData: React.FC<Props> = (props) => {
   if (isError) return <Empty description="ไม่พบข้อมูล" />
 
   return (
-    <Table<MobileMasterData>
-      columns={columns}
-      dataSource={data}
-      className='bridge-projects-table'
-      pagination={{
-        current: page,
-        pageSize,
-        total: meta?.total ?? 0,
-        onChange: onPageChange,
-        locale: { items_per_page: "/ หน้า" },
-        showSizeChanger: true,
-        pageSizeOptions: [10, 20, 50, 100],
-        showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
-      }}
-      size="middle"
-      rowKey="TID"
-      scroll={{ x: 'max-content' }}
-      loading={isLoading}
-    />
+    <div>
+      <h3 className='text-(--yellow) font-normal! mb-3'>ตารางจุดตั้งด่านประจำวัน</h3>
+      <Table<MobileMasterData>
+        columns={columns}
+        dataSource={data}
+        className='bridge-projects-table'
+        pagination={{
+          current: page,
+          pageSize,
+          total: meta?.total ?? 0,
+          onChange: onPageChange,
+          locale: { items_per_page: "/ หน้า" },
+          showSizeChanger: true,
+          pageSizeOptions: [10, 20, 50, 100],
+          showTotal: (t, range) => `${range[1] - range[0] + 1} จาก ${t}`,
+        }}
+        size="middle"
+        rowKey="TID"
+        scroll={{ x: 'max-content' }}
+        loading={isLoading}
+      />
+    </div>
   )
 }
 

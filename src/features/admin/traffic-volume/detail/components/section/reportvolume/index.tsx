@@ -14,6 +14,9 @@ import HourlyReportTable from './HourlyReportTable'
 import MonthlyReportTable from './MonthlyReportTable'
 import YearlyReportTable from './YearlyReportTable'
 import VehicleTypeReportTable from './VehicleTypeReportTable'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { fmtNumber } from '@/utils/formatNumber'
+import { VEHICLE_TYPES } from '../overall/data/vehicleTypes'
 import {
   useTrafficVolumeReportSummaryInfinite,
   useTrafficVolumeSolutionCameras,
@@ -35,6 +38,7 @@ import {
   type DailyReportRow,
   type DailyReportSummary,
   type HourlyReportCameraGroup,
+  type HourlyReportRow,
   type MonthlyReportRow,
   type YearlyReportRow,
   type VehicleTypeReportRow,
@@ -206,6 +210,312 @@ const toBackendReportType = (v: string): CountingReportType => {
   }
 }
 
+// ── นำออกเอกสาร (export) ────────────────────────────────────────────────────
+
+/** Shared column config for both PDF and Excel exports — one set per report
+ *  type, mirroring that table's on-screen columns exactly (same headers,
+ *  same order, same formatting). `width` = Excel chars, `widthPct` = PDF
+ *  table percent (each set sums to 100). */
+interface ExportColumn<Row> {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: Row, index: number) => string | number
+}
+
+/** Type-erased spec consumed by the shared export modal — built per active
+ *  report type by `makeExportSpec` so one modal serves all 6 layouts. */
+interface ExportSpec {
+  filenameBase: string
+  title: string
+  sheetName: string
+  columns: ExportColumn<unknown>[]
+  rows: unknown[]
+  /** Data-row count for the modal — excludes appended "รวมเฉลี่ย" rows. */
+  dataCount: number
+}
+
+/** Pairs a typed column set with its rows, then erases the generic — safe
+ *  because columns and rows always travel together. */
+function makeExportSpec<Row>(spec: {
+  filenameBase: string
+  title: string
+  sheetName: string
+  columns: ExportColumn<Row>[]
+  rows: Row[]
+  dataCount: number
+}): ExportSpec {
+  return spec as unknown as ExportSpec
+}
+
+/** Marks an appended "รวมเฉลี่ย" summary row — the first column prints the
+ *  label instead of its date/camera value, every numeric column reads the
+ *  pre-summed fields through the normal value fns (same rendering rule the
+ *  on-screen tables use via their `_summary` flag). */
+interface SummaryFlag {
+  _summaryLabel?: string
+}
+
+const thaiDate = (iso: string) => dayjs(iso).locale('th').format('D MMM BBBB')
+
+/** Cells shared by the daily / hourly / monthly / yearly layouts — the 7
+ *  vehicle-type counts + both totals, same order as every on-screen table.
+ *  Counts stay numeric (Excel-friendly, mirrors the CCTV overview export);
+ *  รวม PCU keeps the screen's 1-decimal formatting. */
+interface VehicleCountCells {
+  motorcycle: number
+  car: number
+  pickup: number
+  taxi: number
+  bus: number
+  truck: number
+  trailer: number
+  totalVehicles: number
+  totalPCU: number
+}
+
+function vehicleCountColumns<Row extends VehicleCountCells>(): ExportColumn<Row>[] {
+  return [
+    { header: 'รถจักรยานยนต์', width: 13, widthPct: 7, value: (r) => r.motorcycle },
+    { header: 'รถยนต์', width: 10, widthPct: 7, value: (r) => r.car },
+    { header: 'รถกระบะ', width: 10, widthPct: 7, value: (r) => r.pickup },
+    { header: 'รถแท็กซี่', width: 10, widthPct: 7, value: (r) => r.taxi },
+    { header: 'รถบัส', width: 9, widthPct: 7, value: (r) => r.bus },
+    { header: 'รถบรรทุก', width: 10, widthPct: 7, value: (r) => r.truck },
+    { header: 'รถพ่วง', width: 9, widthPct: 7, value: (r) => r.trailer },
+    { header: 'รวมยานพาหนะ', width: 13, widthPct: 10, value: (r) => r.totalVehicles },
+    { header: 'รวม PCU', width: 11, widthPct: 10, value: (r) => fmtNumber(r.totalPCU, 1) },
+  ]
+}
+
+function maxPcuColumn<Row extends { maxPCUPerHour: number }>(): ExportColumn<Row> {
+  return { header: 'PCU สูงสุด / ชั่วโมง', width: 16, widthPct: 10, value: (r) => fmtNumber(r.maxPCUPerHour, 0) }
+}
+
+function truckPctColumn<Row extends { truckPercent: number }>(): ExportColumn<Row> {
+  return { header: 'รถบรรทุก (%)', width: 12, widthPct: 8, value: (r) => `${fmtNumber(r.truckPercent, 1)}%` }
+}
+
+type DailyExportRow = DailyReportRow & SummaryFlag
+
+const DAILY_EXPORT_COLUMNS: ExportColumn<DailyExportRow>[] = [
+  {
+    header: 'วันที่',
+    width: 26,
+    widthPct: 13,
+    // Same two lines the on-screen cell shows: "27 มิ.ย. 2569" + weekday.
+    value: (r) =>
+      r._summaryLabel ?? `${thaiDate(r.date)} (วัน${dayjs(r.date).locale('th').format('dddd')})`,
+  },
+  ...vehicleCountColumns<DailyExportRow>(),
+  maxPcuColumn<DailyExportRow>(),
+  truckPctColumn<DailyExportRow>(),
+]
+
+/** Hour rows flattened out of their per-camera groups — the on-screen camera
+ *  header rows become a leading กล้อง column (same treatment the overview
+ *  exports give their per-สำนัก divider rows). */
+type HourlyExportRow = HourlyReportRow & { cameraName: string } & SummaryFlag
+
+const HOURLY_EXPORT_COLUMNS: ExportColumn<HourlyExportRow>[] = [
+  { header: 'กล้อง', width: 20, widthPct: 10, align: 'left', value: (r) => r.cameraName },
+  {
+    header: 'วันที่ / เวลา',
+    width: 26,
+    widthPct: 13,
+    value: (r) =>
+      r._summaryLabel ?? `${thaiDate(r.hourTimestamp)} ${r.hourTimestamp.slice(11, 13)}:00 น.`,
+  },
+  ...vehicleCountColumns<HourlyExportRow>(),
+  truckPctColumn<HourlyExportRow>(),
+]
+
+type MonthlyExportRow = MonthlyReportRow & SummaryFlag
+
+const MONTHLY_EXPORT_COLUMNS: ExportColumn<MonthlyExportRow>[] = [
+  {
+    header: 'เดือน',
+    width: 26,
+    widthPct: 13,
+    value: (r) => {
+      if (r._summaryLabel) return r._summaryLabel
+      const label = dayjs(`${r.year}-${String(r.month).padStart(2, '0')}-01`)
+        .locale('th')
+        .format('MMM BBBB')
+      // Screen hides the sub-label when the count is 0 — mirror that.
+      return r.daysCollected > 0 ? `${label} (เก็บข้อมูล ${fmtNumber(r.daysCollected, 0)} วัน)` : label
+    },
+  },
+  ...vehicleCountColumns<MonthlyExportRow>(),
+  maxPcuColumn<MonthlyExportRow>(),
+  truckPctColumn<MonthlyExportRow>(),
+]
+
+type YearlyExportRow = YearlyReportRow & SummaryFlag
+
+const YEARLY_EXPORT_COLUMNS: ExportColumn<YearlyExportRow>[] = [
+  {
+    header: 'ปี',
+    width: 26,
+    widthPct: 13,
+    // Buddhist Era year, same as the on-screen cell (+543).
+    value: (r) => {
+      if (r._summaryLabel) return r._summaryLabel
+      return r.daysCollected > 0
+        ? `${r.year + 543} (เก็บข้อมูล ${fmtNumber(r.daysCollected, 0)} วัน)`
+        : `${r.year + 543}`
+    },
+  },
+  ...vehicleCountColumns<YearlyExportRow>(),
+  maxPcuColumn<YearlyExportRow>(),
+  truckPctColumn<YearlyExportRow>(),
+]
+
+/** Sum the shared numeric cells across rows — the exported "รวมเฉลี่ย" rows
+ *  aggregate exactly like the on-screen tables' sumRow helpers (plain column
+ *  sums of what's displayed, including maxPCU / truckPercent). */
+function sumNumericCells<Row extends VehicleCountCells & { truckPercent: number }>(
+  rows: Row[]
+): VehicleCountCells & { truckPercent: number; maxPCUPerHour: number; daysCollected: number } {
+  const acc = {
+    motorcycle: 0, car: 0, pickup: 0, taxi: 0, bus: 0, truck: 0, trailer: 0,
+    totalVehicles: 0, totalPCU: 0, truckPercent: 0, maxPCUPerHour: 0, daysCollected: 0,
+  }
+  for (const r of rows) {
+    acc.motorcycle += r.motorcycle
+    acc.car += r.car
+    acc.pickup += r.pickup
+    acc.taxi += r.taxi
+    acc.bus += r.bus
+    acc.truck += r.truck
+    acc.trailer += r.trailer
+    acc.totalVehicles += r.totalVehicles
+    acc.totalPCU += r.totalPCU
+    acc.truckPercent += r.truckPercent
+    acc.maxPCUPerHour += (r as { maxPCUPerHour?: number }).maxPCUPerHour ?? 0
+    acc.daysCollected += (r as { daysCollected?: number }).daysCollected ?? 0
+  }
+  return acc
+}
+
+/** Append the trailing "รวมเฉลี่ย" row (mirrors the on-screen table) to a
+ *  daily/monthly/yearly export row list. No-op when there's no data. `base`
+ *  fills the non-numeric identity fields (date/year/month placeholders) —
+ *  the first column prints the summary label instead of reading them. */
+function withSummaryRow<Row extends VehicleCountCells & { truckPercent: number }>(
+  rows: Row[],
+  base: Partial<Row>
+): (Row & SummaryFlag)[] {
+  if (rows.length === 0) return rows
+  const summary = {
+    ...base,
+    ...sumNumericCells(rows),
+    _summaryLabel: 'รวมเฉลี่ย',
+  } as unknown as Row & SummaryFlag
+  return [...rows, summary]
+}
+
+/** Same label lookup VehicleTypeReportTable builds from VEHICLE_TYPES. */
+const VEHICLE_EXPORT_LABELS: Record<string, string> = Object.fromEntries(
+  VEHICLE_TYPES.map((v) => [v.key, v.label])
+)
+
+const VEHICLE_TYPE_EXPORT_COLUMNS: ExportColumn<VehicleTypeReportRow>[] = [
+  { header: 'ประเภทยานพาหนะ', width: 20, widthPct: 22, align: 'left', value: (r) => VEHICLE_EXPORT_LABELS[r.vehicleKey] ?? r.vehicleKey },
+  { header: 'รวมยานพาหนะ', width: 13, widthPct: 13, value: (r) => r.totalVehicles },
+  { header: 'รวม PCU', width: 11, widthPct: 13, value: (r) => fmtNumber(r.totalPCU, Number.isInteger(r.totalPCU) ? 0 : 1) },
+  { header: 'PCU Factor', width: 11, widthPct: 13, value: (r) => fmtNumber(r.pcuFactor, Number.isInteger(r.pcuFactor) ? 0 : 2) },
+  { header: 'สัดส่วน (%)', width: 11, widthPct: 13, value: (r) => `${fmtNumber(r.sharePercent, 1)}%` },
+  { header: 'PCU เฉลี่ย / ชั่วโมง', width: 16, widthPct: 13, value: (r) => fmtNumber(r.avgPCUPerHour, Number.isInteger(r.avgPCUPerHour) ? 0 : 1) },
+  { header: 'PCU สูงสุด / ชั่วโมง', width: 16, widthPct: 13, value: (r) => fmtNumber(r.maxPCUPerHour, Number.isInteger(r.maxPCUPerHour) ? 0 : 1) },
+]
+
+/** 24 hour-bucket keys "00".."23" — mirrors HourlyMatrixTable's HOURS. */
+const EXPORT_HOURS = Array.from({ length: 24 }, (_, h) => h.toString().padStart(2, '0'))
+
+/** One exported matrix line: camera + date + unit in the label, then a value
+ *  per hour. คัน and PCU lines are separate rows, exactly like the screen. */
+interface MatrixExportRow {
+  label: string
+  /** Per-hour values, keyed by "00".."23". */
+  hourly: Record<string, number>
+}
+
+/** Matrix (วัน × 24 ชม.) columns — วันที่ + 00–23 = 25 columns, landscape.
+ *  The on-screen "รวม" column and the derived "รวมเฉลี่ย" summary rows are
+ *  dropped (data rows only); the camera-group headers fold into the first
+ *  column's label so 24 hour cells fit the page. */
+const MATRIX_EXPORT_COLUMNS: ExportColumn<MatrixExportRow>[] = [
+  { header: 'วันที่', width: 34, widthPct: 16, align: 'left', value: (r) => r.label },
+  ...EXPORT_HOURS.map(
+    (hh): ExportColumn<MatrixExportRow> => ({
+      header: `${hh}:00`,
+      width: 8,
+      widthPct: 3.5,
+      value: (r) => r.hourly[hh] ?? 0,
+    })
+  ),
+]
+
+/** Regroup the hour-bucketed wire rows by camera → date the same way
+ *  HourlyMatrixTable does, emitting one คัน row and one PCU row per date. */
+const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRow[] => {
+  // camera → date → hh → { count, pcu }
+  const cams = new Map<string, Map<string, Map<string, { count: number; pcu: number }>>>()
+  for (const r of rows) {
+    if (typeof r.date !== 'string' || r.date.length < 13) continue
+    const cam = r.camera_name ?? '-'
+    const day = r.date.slice(0, 10)
+    const hh = r.date.slice(11, 13)
+    let dayMap = cams.get(cam)
+    if (!dayMap) {
+      dayMap = new Map()
+      cams.set(cam, dayMap)
+    }
+    let hourMap = dayMap.get(day)
+    if (!hourMap) {
+      hourMap = new Map()
+      dayMap.set(day, hourMap)
+    }
+    hourMap.set(hh, { count: r.total_count, pcu: r.total_pcu })
+  }
+  const out: MatrixExportRow[] = []
+  for (const [cam, dayMap] of cams) {
+    const days = Array.from(dayMap.keys()).sort()
+    // Count rows first, then PCU rows — same order as the on-screen matrix.
+    for (const unit of ['count', 'pcu'] as const) {
+      const unitLabel = unit === 'pcu' ? 'PCU' : 'คัน'
+      // Trailing "รวมเฉลี่ย" per camera × unit — same per-hour sums across
+      // all dates that HourlyMatrixTable's summary rows show.
+      const summed: Record<string, number> = {}
+      for (const hh of EXPORT_HOURS) summed[hh] = 0
+      for (const day of days) {
+        const hourMap = dayMap.get(day)!
+        const hourly: Record<string, number> = {}
+        for (const hh of EXPORT_HOURS) {
+          const v = unit === 'pcu' ? (hourMap.get(hh)?.pcu ?? 0) : (hourMap.get(hh)?.count ?? 0)
+          // PCU keeps 1 decimal (like the screen) but stays numeric so the
+          // Excel cells remain summable.
+          hourly[hh] = unit === 'pcu' ? Math.round(v * 10) / 10 : v
+          summed[hh] += v
+        }
+        out.push({
+          label: `${cam} · ${thaiDate(day)} (${unitLabel})`,
+          hourly,
+        })
+      }
+      if (days.length > 0) {
+        for (const hh of EXPORT_HOURS) {
+          summed[hh] = unit === 'pcu' ? Math.round(summed[hh] * 10) / 10 : summed[hh]
+        }
+        out.push({ label: `${cam} · รวมเฉลี่ย (${unitLabel})`, hourly: summed })
+      }
+    }
+  }
+  return out
+}
+
 /** Tab content for "รายงานการนับปริมาณจราจร".
  *
  *  Layout:
@@ -217,7 +527,7 @@ const toBackendReportType = (v: string): CountingReportType => {
  *  `useTrafficVolumeReportSummary`. Month / year / vehicle_type still
  *  consume mocks until the backend ships their payloads. */
 const ReportVolume: React.FC<Props> = () => {
-  const { id: solutionId } = useDetailContext()
+  const { id: solutionId, location } = useDetailContext()
   const deptId = useDeptId()
   const [reportType, setReportType] = useState<string>('daily')
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
@@ -226,6 +536,7 @@ const ReportVolume: React.FC<Props> = () => {
   // BY_TYPE = per-vehicle-type columns; MATRIX = camera × hour grid with
   // color banding.
   const [hourView, setHourView] = useState<HourView>('BY_TYPE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Switching TO hour report snaps the date range to today (single-day) —
   // hour rollups only make sense for one day at a time. Other report types
@@ -544,6 +855,129 @@ const ReportVolume: React.FC<Props> = () => {
     [reportType, filteredHourRows, allApiRows]
   )
 
+  // ── นำออกเอกสาร ────────────────────────────────────────────────────────
+  // Hour rows flattened with their camera name — same rows the BY_TYPE
+  // table renders inside its camera groups, each group closed by the same
+  // trailing "รวมเฉลี่ย" row the screen shows (sums of that camera's rows).
+  const hourlyExportRows = useMemo<HourlyExportRow[]>(
+    () =>
+      filteredHourlyGroups.flatMap((g) => {
+        const rows: HourlyExportRow[] = g.rows.map((r) => ({ ...r, cameraName: g.cameraName }))
+        if (rows.length > 0) {
+          rows.push({
+            ...sumNumericCells(rows),
+            hourTimestamp: '',
+            cameraName: g.cameraName,
+            _summaryLabel: 'รวมเฉลี่ย',
+          })
+        }
+        return rows
+      }),
+    [filteredHourlyGroups]
+  )
+
+  // Matrix rows are only built while that view is active — the grouping
+  // walks every fetched hour row.
+  const matrixExportRows = useMemo<MatrixExportRow[]>(
+    () =>
+      reportType === 'hour' && hourView === 'MATRIX'
+        ? buildMatrixExportRows(filteredHourRows)
+        : [],
+    [reportType, hourView, filteredHourRows]
+  )
+
+  /** Everything the modal + both handlers need for the ACTIVE report type —
+   *  the same rows the on-screen table renders. Month/year export the whole
+   *  filtered set (every page), not just the visible pagination slice. */
+  const exportSpec = useMemo<ExportSpec>(() => {
+    switch (reportType) {
+      case 'hour':
+        return hourView === 'MATRIX'
+          ? makeExportSpec({
+              filenameBase: 'Traffic_Volume_Hourly_Matrix',
+              title: 'รายงานสรุปรายชั่วโมงปริมาณจราจร แบบ Matrix (Hourly Traffic Volume Matrix)',
+              sheetName: 'Hourly Matrix',
+              columns: MATRIX_EXPORT_COLUMNS,
+              rows: matrixExportRows,
+              // Matrix rows carry embedded "รวมเฉลี่ย" lines — count only data lines.
+              dataCount: matrixExportRows.filter((r) => !r.label.includes('รวมเฉลี่ย')).length,
+            })
+          : makeExportSpec({
+              filenameBase: 'Traffic_Volume_Hourly_Report',
+              title: 'รายงานสรุปรายชั่วโมงปริมาณจราจร (Hourly Traffic Volume Report)',
+              sheetName: 'Hourly Report',
+              columns: HOURLY_EXPORT_COLUMNS,
+              rows: hourlyExportRows,
+              dataCount: hourlyExportRows.filter((r) => !r._summaryLabel).length,
+            })
+      case 'month':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Monthly_Report',
+          title: 'รายงานสรุปรายเดือนปริมาณจราจร (Monthly Traffic Volume Report)',
+          sheetName: 'Monthly Report',
+          columns: MONTHLY_EXPORT_COLUMNS,
+          rows: withSummaryRow(monthlyRowsAll, { year: 0, month: 0 }),
+          dataCount: monthlyRowsAll.length,
+        })
+      case 'year':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Yearly_Report',
+          title: 'รายงานสรุปรายปีปริมาณจราจร (Yearly Traffic Volume Report)',
+          sheetName: 'Yearly Report',
+          columns: YEARLY_EXPORT_COLUMNS,
+          rows: withSummaryRow(yearlyRowsAll, { year: 0 }),
+          dataCount: yearlyRowsAll.length,
+        })
+      case 'vehicle_type':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Vehicle_Type_Report',
+          title: 'รายงานวิเคราะห์ตามประเภทรถ (Vehicle Type Analysis Report)',
+          sheetName: 'Vehicle Type Report',
+          columns: VEHICLE_TYPE_EXPORT_COLUMNS,
+          rows: vehicleTypeRows,
+          dataCount: vehicleTypeRows.length,
+        })
+      case 'daily':
+      default:
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Daily_Report',
+          title: 'รายงานสรุปรายวันปริมาณจราจร (Daily Traffic Volume Report)',
+          sheetName: 'Daily Report',
+          columns: DAILY_EXPORT_COLUMNS,
+          rows: withSummaryRow(dailyRowsAll, { date: '' }),
+          dataCount: dailyRowsAll.length,
+        })
+    }
+  }, [
+    reportType,
+    hourView,
+    matrixExportRows,
+    hourlyExportRows,
+    monthlyRowsAll,
+    yearlyRowsAll,
+    vehicleTypeRows,
+    dailyRowsAll,
+  ])
+
+  // Human-readable "เงื่อนไข" line for the PDF header — install point +
+  // active date range + camera, so a reader knows the exported subset.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const solutionName = location?.solution?.solution_name
+    if (solutionName) parts.push(`จุดติดตั้ง ${solutionName}`)
+    const [start, end] = effectiveRange
+    if (start && end) {
+      parts.push(
+        `ช่วงวันที่ ${start.locale('th').format('D MMM BBBB')} - ${end.locale('th').format('D MMM BBBB')}`
+      )
+    }
+    if (cameraId !== 'all') {
+      const cameraLabel = cameraOptions.find((o) => o.value === cameraId)?.label
+      if (cameraLabel) parts.push(`กล้อง ${cameraLabel}`)
+    }
+    return parts.length ? parts.join(' · ') : undefined
+  }, [location, effectiveRange, cameraId, cameraOptions])
+
   const renderTable = () => {
     switch (reportType) {
       case 'hour':
@@ -636,7 +1070,36 @@ const ReportVolume: React.FC<Props> = () => {
         onCameraChange={setCameraId}
         hourView={hourView}
         onHourViewChange={setHourView}
+        onExport={() => setExportOpen(true)}
       />
+
+      {/* ── นำออกเอกสาร — exports the ACTIVE report type's table through the
+            shared pdf/excel utils (columns + rows swap per exportSpec). */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportSpec.dataCount}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: exportSpec.filenameBase,
+            title: exportSpec.title,
+            filterNote: exportFilterNote,
+            columns: exportSpec.columns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportSpec.rows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: exportSpec.filenameBase,
+            sheetName: exportSpec.sheetName,
+            columns: exportSpec.columns.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportSpec.rows,
+          })
+        }}
+      />
+
       {renderStats()}
       {renderTable()}
     </div>

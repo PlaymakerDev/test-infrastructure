@@ -35,7 +35,14 @@ const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, 
   useEffect(() => {
     if (!map || !isLoaded || coords.length === 0) return
 
-    if (coords.length === 1) {
+    // Count UNIQUE positions — several cameras often share one exact
+    // coordinate (a spiderfy group). Sending an identical-point set through
+    // fitBounds builds a zero-extent bounds, and Mapbox answers with a far-out
+    // camera instead of maxZoom (crosswalk detail opened wide while
+    // traffic-volume flew close, 2026-07-20) — treat it as a single point.
+    const uniquePositions = new Set(coords.map((c) => `${c[0]},${c[1]}`)).size
+
+    if (uniquePositions === 1) {
       map.flyTo({ center: coords[0], zoom: maxZoom, duration, ...(pitch !== undefined && { pitch }) })
       return
     }

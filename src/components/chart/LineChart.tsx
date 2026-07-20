@@ -297,6 +297,10 @@ const LineChart: React.FC<LineChartProps> = ({
         // Render tooltip in <body> so it escapes the card's `overflow: hidden`
         // (otherwise hover near the card edge gets clipped).
         appendToBody: true,
+        // Body-mounted tooltips escape the .mapboxgl/app containers — the
+        // 'echarts-tooltip' class lets custom.css force IBM Plex Sans Thai
+        // over ECharts' inline sans-serif default.
+        className: 'echarts-tooltip',
         backgroundColor: '#1e2533',
         borderColor: '#2e3a4e',
         borderWidth: 1,

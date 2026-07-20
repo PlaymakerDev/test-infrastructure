@@ -3,8 +3,10 @@ import React, { useMemo, useState } from 'react'
 import Image from 'next/image'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { Table, Button, Empty, Input, DatePicker } from 'antd'
+import { Table, Button, ConfigProvider, Empty, Input, DatePicker } from 'antd'
+import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
 import { TbSearch, TbCamera, TbCalendar } from 'react-icons/tb'
 import { useLPRPointPlates } from '@/hooks/queries/lpr'
@@ -13,6 +15,7 @@ import { useLPRDetailContext } from '../context'
 import PlateDetailModal from './PlateDetailModal'
 
 dayjs.extend(relativeTime)
+dayjs.extend(buddhistEra)
 
 const { RangePicker } = DatePicker
 
@@ -223,18 +226,29 @@ const DetectionSection: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className='flex flex-col md:flex-row md:items-center gap-3'>
-          <RangePicker
-            value={dateRange}
-            onChange={(dates) =>
-              setDateRange(
-                (dates ?? [null, null]) as [dayjs.Dayjs | null, dayjs.Dayjs | null],
-              )
-            }
-            format='DD MMM YYYY'
-            placeholder={['จาก', 'ถึง']}
-            allowClear
-          />
+        <div className='flex flex-col md:flex-row md:items-end gap-3'>
+          {/* Date range — Thai BE year + yellow calendar icon, same pattern as
+            * Traffic Volume's FilterBarReport (design 2026-07-20). */}
+          <div className='flex flex-col gap-1'>
+            <span className='fs-12 text-(--yellow)'>วันที่เริ่มต้นและสิ้นสุดแสดงข้อมูล</span>
+            <ConfigProvider locale={thTH}>
+              <RangePicker
+                value={dateRange}
+                onChange={(dates) =>
+                  setDateRange(
+                    (dates ?? [null, null]) as [dayjs.Dayjs | null, dayjs.Dayjs | null],
+                  )
+                }
+                format='D MMM BBBB'
+                placeholder={['วันเริ่ม', 'วันสิ้นสุด']}
+                className='w-full! lg:w-72!'
+                size='large'
+                separator={<span className='text-white'>-</span>}
+                suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
+                allowClear
+              />
+            </ConfigProvider>
+          </div>
           <div className='flex items-center gap-1 bg-(--light-black) rounded-lg p-1'>
             {(['all', 'anpr', 'wim'] as const).map((s) => (
               <button

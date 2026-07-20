@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { FormSearchCCTV, DataDisplaySection, ModalCCTVData } from '../components'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useWIMContext } from '../context'
 import { useCctvList } from '../hooks'
 import type { CameraFilter } from './sections/cctv/FormSearchCCTV'
+import type { CCTVList as CCTVListItem } from '@/types/tracking/overall-api'
 
 interface Props {
 
@@ -11,12 +13,31 @@ interface Props {
 const DEFAULT_PAGE_SIZE = 10
 const STATS_PAGE_SIZE = 100
 
+// Shared column config for both PDF and Excel exports — mirrors the on-screen
+// camera cards (CardCCTVData): ชื่อกล้อง (camera_description), "IP Address :
+// {station_description}", and the online/offline status the card conveys via
+// colour + the filter chips' labels. `width` = Excel chars, `widthPct` = PDF
+// table percent (sums to 100).
+const CCTV_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CCTVListItem, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 8, value: (_r, i) => i + 1 },
+  { header: 'ชื่อกล้อง', width: 44, widthPct: 44, align: 'left', value: (r) => r.camera_description || '-' },
+  { header: 'IP Address', width: 26, widthPct: 28, value: (r) => r.station_description || '-' },
+  { header: 'สถานะ', width: 12, widthPct: 20, value: (r) => (r.camera_status === 'Online' ? 'ออนไลน์' : 'ออฟไลน์') },
+]
+
 const CCTVSection: React.FC<Props> = (props) => {
   const { } = props
   const { id, stationTypeId } = useWIMContext()
   const [activeFilter, setActiveFilter] = useState<CameraFilter>('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [exportOpen, setExportOpen] = useState(false)
 
   const isFiltering = activeFilter !== 'all'
 
@@ -84,6 +105,11 @@ const CCTVSection: React.FC<Props> = (props) => {
   const isLoading = isFiltering ? statsQuery.isLoading : pagedQuery.isLoading
   const isError = isFiltering ? statsQuery.isError : pagedQuery.isError
 
+  // Human-readable note of the active filter — printed in the PDF header so a
+  // reader knows what subset they're looking at.
+  const exportFilterNote =
+    activeFilter !== 'all' ? `สถานะ ${activeFilter === 'online' ? 'ออนไลน์' : 'ออฟไลน์'}` : undefined
+
   return (
     <div>
       <section>
@@ -91,8 +117,37 @@ const CCTVSection: React.FC<Props> = (props) => {
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
           stats={stats}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED camera list (the same
+          full stats-query dataset that drives the badges and the filtered
+          view), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filteredCameras.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Tracking_CCTV_Report',
+            title: 'รายงานกล้อง CCTV ประจำจุดติดตั้ง (Tracking CCTV)',
+            filterNote: exportFilterNote,
+            columns: CCTV_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filteredCameras,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Tracking_CCTV_Report',
+            sheetName: 'Tracking CCTV',
+            columns: CCTV_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filteredCameras,
+          })
+        }}
+      />
       <section className='mt-5'>
         <DataDisplaySection
           data={displayData}

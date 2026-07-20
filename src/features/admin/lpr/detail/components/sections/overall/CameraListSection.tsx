@@ -12,7 +12,9 @@ const CameraListSection: React.FC = () => {
   const cams = point?.camera_names ?? []
 
   return (
-    <div className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3'>
+    // h-full — stretches to the map card beside it (the grid row's h-96), so
+    // the two cards read as one proportioned band; the list scrolls inside.
+    <div className='h-full bg-(--dark-black) rounded-2xl p-4 flex flex-col gap-3'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2 text-(--default-blue)'>
           <TbCamera size={18} />
@@ -23,11 +25,14 @@ const CameraListSection: React.FC = () => {
       {cams.length === 0 ? (
         <div className='py-6 text-center text-gray-500 fs-12'>ไม่พบกล้อง</div>
       ) : (
-        <ul className='flex flex-col gap-1.5 max-h-64 overflow-y-auto'>
+        <ul className='flex-1 min-h-0 flex flex-col gap-1.5 overflow-y-auto'>
+          {/* `shrink-0` — truncate's overflow:hidden zeroes the flex automatic
+            * minimum size, so without it the rows squash into each other when
+            * the list is taller than max-h-64 instead of scrolling. */}
           {cams.map((name) => (
             <li
               key={name}
-              className='fs-12 text-gray-300 bg-(--light-black) rounded-lg px-3 py-1.5 truncate'
+              className='shrink-0 fs-12 text-gray-300 bg-(--light-black) rounded-lg px-3 py-1.5 truncate'
               title={name}
             >
               {name}

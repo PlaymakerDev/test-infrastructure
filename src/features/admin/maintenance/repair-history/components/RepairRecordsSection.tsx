@@ -2,8 +2,9 @@
 import React, { useState, useMemo } from 'react'
 import { Table, Input, Button, ConfigProvider, Segmented, Select, Spin, Drawer, FloatButton } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbSearch, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbChevronDown } from 'react-icons/tb'
+import { TbSearch, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbChevronDown, TbPrinter } from 'react-icons/tb'
 import SwapButton from '@/components/swap-button/SwapButton'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import {
@@ -120,6 +121,30 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   in_progress: { label: 'กำลังดำเนินการ', color: '#66AEFF' },
   completed: { label: 'ปิด Case', color: '#FCD116' },
 }
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen งานซ่อมทั้งหมด table (action-free: Case No. exports
+// as plain text). `width` = Excel chars, `widthPct` = PDF percent (sums 100).
+const REPAIR_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: RepairRecord, index: number) => string | number
+}[] = [
+  { header: 'ภูมิภาค', width: 14, widthPct: 7, value: (r) => r.region || '-' },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.agency || '-' },
+  { header: 'สายทาง', width: 18, widthPct: 10, align: 'left', value: (r) => r.route || '-' },
+  { header: 'จุดติดตั้ง', width: 14, widthPct: 8, value: (r) => r.installPoint || '-' },
+  { header: 'Case No.', width: 18, widthPct: 10, value: (r) => r.caseNo || '-' },
+  { header: 'การค้ำประกัน', width: 12, widthPct: 6, value: (r) => r.warranty },
+  { header: 'ประเภท', width: 14, widthPct: 7, value: (r) => r.type || '-' },
+  { header: 'หมวดหมู่ปัญหา', width: 16, widthPct: 8, value: (r) => r.problemCategory || '-' },
+  { header: 'อุปกรณ์', width: 20, widthPct: 10, align: 'left', value: (r) => r.device || '-' },
+  { header: 'วันที่แจ้งซ่อม', width: 14, widthPct: 8, value: (r) => r.repairDate || '-' },
+  { header: 'จำนวนวันออฟไลน์', width: 14, widthPct: 7, value: (r) => `${r.offlineDays} วัน` },
+  { header: 'สถานะการซ่อม', width: 18, widthPct: 9, value: (r) => STATUS_MAP[r.repairStatus]?.label ?? r.repairStatus },
+]
 
 interface QueryErrorNoticeProps {
   message: string
@@ -345,6 +370,24 @@ const RepairRecordsSection: React.FC = () => {
       router.push('/admin/maintenance?repair')
     }
   }
+
+  // ── นำออกเอกสาร — exports the rows the table currently shows (after the
+  // status tab + every filter/search), through the shared pdf/excel utils.
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const statusLabel = STATUS_TABS.find((t) => t.value === activeStatusTab)?.label
+    if (activeStatusTab !== 'ALL' && statusLabel) parts.push(`สถานะการซ่อม ${statusLabel}`)
+    const periodLabel = PERIOD_OPTIONS.find((p) => p.value === selectedPeriod)?.label
+    if (selectedPeriod !== 'ALL' && periodLabel) parts.push(`ช่วงเวลา ${periodLabel}`)
+    if (filterRegion) parts.push(`ภูมิภาค ${filterRegion}`)
+    if (filterAgency) parts.push(`หน่วยงาน ${filterAgency}`)
+    if (filterRoute) parts.push(`สายทาง ${filterRoute}`)
+    if (filterWarranty) parts.push(`การค้ำประกัน ${filterWarranty}`)
+    if (filterCategory) parts.push(`หมวดหมู่ ${filterCategory}`)
+    if (searchText.trim()) parts.push(`ค้นหา "${searchText.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeStatusTab, selectedPeriod, filterRegion, filterAgency, filterRoute, filterWarranty, filterCategory, searchText])
 
   const columns: ColumnsType<RepairRecord> = [
     {
@@ -803,8 +846,46 @@ const RepairRecordsSection: React.FC = () => {
                 classNames={{ root: 'border! border-(--yellow)!' }}
                 className="shrink-0"
               />
+              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+                <Button
+                  type="primary"
+                  size={isMobile ? 'middle' : 'large'}
+                  shape="round"
+                  icon={<TbPrinter />}
+                  style={{ height: 40 }}
+                  className="shrink-0"
+                  onClick={() => setExportOpen(true)}
+                >
+                  นำออกเอกสาร
+                </Button>
+              </ConfigProvider>
             </div>
           </div>
+
+          <ExportFileModal
+            open={exportOpen}
+            onClose={() => setExportOpen(false)}
+            count={filteredData.length}
+            onExportPdf={async () => {
+              const { exportTablePdf } = await import('@/utils/export/pdf')
+              await exportTablePdf({
+                filenameBase: 'Maintenance_Repair_Records',
+                title: 'รายงานงานซ่อมทั้งหมด (Repair Records)',
+                filterNote: exportFilterNote,
+                columns: REPAIR_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+                rows: filteredData,
+              })
+            }}
+            onExportExcel={async () => {
+              const { exportExcel } = await import('@/utils/export/excel')
+              exportExcel({
+                filenameBase: 'Maintenance_Repair_Records',
+                sheetName: 'Repair Records',
+                columns: REPAIR_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+                rows: filteredData,
+              })
+            }}
+          />
           {/* Filter Selects */}
           <div className="flex flex-wrap items-end gap-3 mb-4">
             {[

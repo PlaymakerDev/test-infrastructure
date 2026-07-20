@@ -6,6 +6,7 @@ import {
   LicenseSection
 } from '../components'
 import { OverallProvider } from '../context'
+import { ProjectInfoModal } from '@/components/modal'
 
 const LPRScreen = () => {
   const [currentTab, setCurrentTab] = useState('LPR')
@@ -28,6 +29,10 @@ const LPRScreen = () => {
         <section className='mt-8'>
           {renderContent}
         </section>
+        {/* Global Project Info modal — opened via Redux from the table's
+          * ContractInfoCell ⓘ and the grid cards' info icon. Mounted once per
+          * screen, same as every other overall screen. */}
+        <ProjectInfoModal />
       </div>
     </OverallProvider>
   )

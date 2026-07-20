@@ -21,7 +21,11 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
   return (
     <div
-      className="absolute z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2 pointer-events-auto max-w-[calc(100vw-160px)] sm:max-w-[calc(100vw-80px)] overflow-x-auto scrollbar-none"
+      // Mobile: near-full-width cap so the usual "กำลังดู สทช.x › ขทช.x
+      // ← ทั่วประเทศ" fits WITHOUT horizontal sliding (the old 160px side
+      // clearance forced a scroll, 2026-07-20); overflow-x stays as a
+      // fallback for extra-long province names only.
+      className="absolute z-20 flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2 pointer-events-auto max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-80px)] overflow-x-auto scrollbar-none"
       style={{
         top,
         left: '50%',

@@ -6,10 +6,11 @@ import { TbPrinter } from 'react-icons/tb';
 interface Props {
   displayType: 'TABLE' | 'GRID'
   setDisplayType: (value: 'TABLE' | 'GRID') => void
+  onExport?: () => void
 }
 
 const FormSearchDailyWeight: React.FC<Props> = (props) => {
-  const { displayType, setDisplayType } = props
+  const { displayType, setDisplayType, onExport } = props
 
   return (
     <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
@@ -26,7 +27,7 @@ const FormSearchDailyWeight: React.FC<Props> = (props) => {
           block
         />
         <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-          <Button type="primary" htmlType="submit" size="large" shape="round" icon={<TbPrinter />} className='w-full! md:w-auto!'>
+          <Button type="primary" size="large" shape="round" icon={<TbPrinter />} className='w-full! md:w-auto!' onClick={() => onExport?.()}>
             <p>นำออกเอกสาร</p>
           </Button>
         </ConfigProvider>

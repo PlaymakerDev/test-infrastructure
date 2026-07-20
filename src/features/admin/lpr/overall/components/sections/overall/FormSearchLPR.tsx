@@ -11,11 +11,12 @@ export interface FormValues {
   search: string
 }
 
-let timeout: NodeJS.Timeout
-
 const FormSearchLPR: React.FC<Props> = (props) => {
   const { onSearch } = props
   const submitRef = useRef<HTMLButtonElement>(null)
+  // Per-instance debounce timer (a module-level `let` would be shared across
+  // mounted instances — same fix as control-vms's search forms).
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -40,8 +41,8 @@ const FormSearchLPR: React.FC<Props> = (props) => {
               size='large'
               onChange={(e) => {
                 field.onChange(e)
-                if (timeout) clearTimeout(timeout)
-                timeout = setTimeout(() => submitRef.current?.click(), 700)
+                if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                timeoutRef.current = setTimeout(() => submitRef.current?.click(), 700)
               }}
             />
           </fieldset>

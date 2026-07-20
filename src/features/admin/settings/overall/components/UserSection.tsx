@@ -1,7 +1,11 @@
 "use client"
 import { Alert, Button, message } from 'antd'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import SwapButton from '@/components/swap-button/SwapButton'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
 import {
@@ -25,11 +29,53 @@ import LDAPSearchModal from './user/LDAPSearchModal'
 import TableUser from './user/TableUser'
 import UserModal from './user/UserModal'
 
+dayjs.extend(buddhistEra)
+
 const initialFilters: UserFilters = {
   role: null,
   status: null,
   search: '',
 }
+
+// Text labels mirrored from RoleBadge / StatusPill so the export reads
+// exactly like the on-screen pills (unknown role slugs fall through raw).
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  operator: 'ผู้ปฏิบัติงาน',
+  viewer: 'ผู้ดูข้อมูล',
+}
+const STATUS_LABELS: Record<User['status'], string> = {
+  active: 'ใช้งาน',
+  inactive: 'ปิดใช้งาน',
+}
+
+/** "5 ก.ค. 2569" — same Thai short-month + Buddhist-year format TableUser renders. */
+const fmtThaiDate = (iso: string | null): string => {
+  if (!iso) return '-'
+  const d = dayjs(iso)
+  return d.isValid() ? d.locale('th').format('D MMM BBBB') : iso
+}
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as TableUser (minus the จัดการ action column), plus ลำดับ (mirrors
+// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
+// (sums to 100). The UI User row carries no password/sensitive fields.
+const USER_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: User, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'Username', width: 20, widthPct: 14, value: (r) => r.username || '-' },
+  { header: 'ชื่อ-นามสกุล', width: 26, widthPct: 17, align: 'left', value: (r) => r.fullName },
+  { header: 'บทบาท', width: 14, widthPct: 11, value: (r) => ROLE_LABELS[r.role] ?? (r.role || '-') },
+  { header: 'ประเภท', width: 10, widthPct: 8, value: (r) => (r.isLdap ? 'LDAP' : 'Local') },
+  { header: 'หน่วยงาน', width: 26, widthPct: 18, align: 'left', value: (r) => r.department },
+  { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => STATUS_LABELS[r.status] },
+  { header: 'สร้างเมื่อ', width: 16, widthPct: 17, value: (r) => fmtThaiDate(r.createdAt) },
+]
 
 // Sub-tab options rendered inside the User tab. Kept module-scope so the
 // SwapButton's `options` reference is stable across renders (matches the
@@ -115,6 +161,7 @@ const UserSection: React.FC = () => {
   // `ldapPrefill` survives the transition so UserModal can seed its form.
   const [ldapSearchOpen, setLdapSearchOpen] = useState(false)
   const [ldapPrefill, setLdapPrefill] = useState<APIResponseSSOUser | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   const departmentsById = useMemo(() => {
     const m = new Map<number, APIResponseDepartment>()
@@ -152,6 +199,17 @@ const UserSection: React.FC = () => {
       return true
     })
   }, [users, filters, subTab])
+
+  // Human-readable note of the active sub-tab/filters/search — printed in
+  // the PDF header so a reader knows what subset they're looking at. The
+  // sub-tab always narrows the rows (Local vs LDAP) so it's always noted.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = [`ประเภท ${subTab === 'ldap' ? 'LDAP' : 'Local'}`]
+    if (filters.role) parts.push(`บทบาท ${ROLE_LABELS[filters.role] ?? filters.role}`)
+    if (filters.status) parts.push(`สถานะ ${STATUS_LABELS[filters.status]}`)
+    if (filters.search.trim()) parts.push(`ค้นหา "${filters.search.trim()}"`)
+    return parts.join(' · ')
+  }, [subTab, filters])
 
   // Local create opens UserModal directly. LDAP create opens the search
   // modal first — the picked row triggers the UserModal transition via
@@ -286,6 +344,7 @@ const UserSection: React.FC = () => {
               size='large'
               shape='round'
               icon={<TbPrinter />}
+              onClick={() => setExportOpen(true)}
               style={{
                 background: '#66AEFF',
                 color: '#000',
@@ -330,6 +389,33 @@ const UserSection: React.FC = () => {
           onChangePassword={setPasswordTarget}
         />
       </div>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filtered.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Settings_Users_Report',
+            title: 'รายงานรายชื่อผู้ใช้งาน (User Management)',
+            filterNote: exportFilterNote,
+            columns: USER_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filtered,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Settings_Users_Report',
+            sheetName: 'Users',
+            columns: USER_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filtered,
+          })
+        }}
+      />
 
       <LDAPSearchModal
         open={ldapSearchOpen}
