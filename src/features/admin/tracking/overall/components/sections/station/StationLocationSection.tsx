@@ -10,10 +10,13 @@ const StationLocationSection: React.FC<Props> = (props) => {
   const { onSearch } = props
 
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 lg:h-[75dvh]'>
+    <div className='grid grid-cols-1 lg:grid-cols-[340px_1fr_340px] gap-4 lg:h-[85dvh]'>
 
-      {/* Camera list — hidden on mobile, col 1 on desktop */}
-      <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:overflow-y-auto lg:h-full lg:pr-1'>
+      {/* Camera list — hidden on mobile, col 1 on desktop. Always exactly 3 items
+          sized via flex-1 to fill the column, so no scroll affordance is needed
+          — an overflow-y-auto here only ever fired from flexbox's own sub-pixel
+          rounding, showing a spurious scrollbar. */}
+      <div className='flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:h-full'>
         <StationCCTVList />
       </div>
 

@@ -3,9 +3,9 @@ import { useSumPlanChart } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo } from 'react'
-import { TbClockBolt } from 'react-icons/tb'
+import { TbClockShield } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 const ChartPredictAccident: React.FC<Props> = () => {
   const { data, isLoading, isError } = useSumPlanChart({
@@ -28,21 +28,21 @@ const ChartPredictAccident: React.FC<Props> = () => {
     return (
       <LineChart
         title='คาดการณ์แนวโน้มการเกิดอุบัติเหตุ'
-        subtitle='เปรียบเทียบจำนวนเที่ยวเดือนอุบัติการณ์ตามประเภทพาหนะ'
-        icon={<TbClockBolt size={18} />}
+        subtitle='เปรียบเทียบจำนวนแจ้งเตือนอุบัติการณ์และคาดการณ์การเกิดเหตุ'
+        icon={<TbClockShield className='fs-22 text-(--default-blue)' />}
         iconCircle={false}
-        accentColor='#FFA94D'
+        accentColor='var(--default-blue)'
         cardBackground='#00000080'
         cardBorderColor='transparent'
         showGlow={false}
         data={chartData}
         lines={[
-          { dataKey: 'plan', color: '#4ADE80', label: 'เส้นเดือนอุบัติการณ์' },
-          { dataKey: 'result', color: '#E94C4C', label: 'คาดการณ์เกิดเหตุ' },
+          { dataKey: 'plan', color: '#4ADE80', label: 'แจ้งเตือนอุบัติการณ์ (ครั้ง)' },
+          { dataKey: 'result', color: '#E94C4C', label: 'คาดการณ์การเกิดเหตุ (จุด)' },
         ]}
         stats={[
-          { value: allSum ? allSum.plan_total.toLocaleString() : '-', label: 'เส้นเดือนอุบัติการณ์ (ครั้ง)', color: '#4ADE80' },
-          { value: allSum ? allSum.result_total.toLocaleString() : '-', label: 'คาดการณ์เกิดเหตุ (จุด)', color: '#E94C4C' },
+          { value: allSum ? allSum.plan_total.toLocaleString() : '-', label: 'แจ้งเตือนอุบัติการณ์ (ครั้ง)', color: '#4ADE80' },
+          { value: allSum ? allSum.result_total.toLocaleString() : '-', label: 'คาดการณ์การเกิดเหตุ (จุด)', color: '#E94C4C' },
         ]}
         onPeriodChange={() => { }}
         height={260}
