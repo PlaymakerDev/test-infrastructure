@@ -5,7 +5,15 @@ import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import type { ViolationFilter } from './filter'
 
-const BACKEND_PAGE_SIZE = 10
+// The คน/รถ status filter is applied CLIENT-SIDE (by `name_th`, see
+// `filteredRows` below) because the backend `crossing_type` param doesn't
+// filter reliably — so we must pull the whole date range before paginating.
+// Fetch 100 rows/request (not 10) to keep the number of sequential round-trips
+// low: a wide range like เดือนนี้ used to take ~1 request per 10 rows, so a few
+// hundred rows meant dozens of serial fetches and a long spinner. At 100/page
+// that's a handful of requests. The infinite loop still walks every page, so
+// completeness is unaffected even if the backend caps `limit` below 100.
+const BACKEND_PAGE_SIZE = 100
 const MAX_AUTO_PAGES = 100
 
 // Backend's `name_en` slugs don't consistently carry a person/vehicle keyword,
