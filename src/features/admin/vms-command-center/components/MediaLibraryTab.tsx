@@ -17,6 +17,7 @@ import {
 } from '../hooks/useMediaLibrary'
 import { postUploadVMSAPI } from '@/services/routes/SharedService'
 import type { VMSMediaItem } from '@/types/vms/media-library-api'
+import { getThumbUrl } from '../utils/thumbnail'
 
 dayjs.extend(relativeTime)
 
@@ -343,22 +344,30 @@ const MediaLibraryTab: React.FC = () => {
                     style={{ aspectRatio: '16/9' }}
                     onClick={() => setPreviewing(it)}
                   >
-                    {isVideo ? (
-                      <video
-                        src={it.url}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <Image
-                        src={it.url}
-                        alt={it.name}
-                        preview={false}
-                        width="100%"
-                        height="100%"
-                        style={{ objectFit: 'contain' }}
-                      />
+                    {/* Grid uses the .thumb.jpg sibling for BOTH images
+                        and videos — backend ffmpeg-extracts the first
+                        frame at upload. Videos fall back to a solid
+                        placeholder if the thumb generation failed,
+                        rather than loading a whole MP4 as a poster. */}
+                    <img
+                      src={getThumbUrl(it.url)}
+                      alt={it.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget
+                        if (img.dataset.fallback !== '1') {
+                          img.dataset.fallback = '1'
+                          // For videos with no thumb, blank the src so
+                          // the play badge overlay speaks for itself.
+                          img.src = isVideo ? '' : it.url
+                        }
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                    {isVideo && (
+                      <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-lg">▶</span>
+                      </span>
                     )}
                     {isVideo && (
                       <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">

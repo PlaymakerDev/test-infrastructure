@@ -17,6 +17,14 @@ export interface ComparisonRecord {
   circuit?: number
   voltAmp?: number
   isChild?: boolean
+  /** Marks a leaf device row (the deepest level — no further children,
+   *  no aggregate counts). Always renders with a solid black row background,
+   *  regardless of expand state. */
+  isDevice?: boolean
+  /** Marks a road row. Always renders with the same (unstyled/transparent)
+   *  background as a top-level row — never gets the expanded-row highlight,
+   *  regardless of collapsed/expanded state. */
+  isRoad?: boolean
   children?: ComparisonRecord[]
 }
 
@@ -77,6 +85,11 @@ export interface StatisticsComparisonTableProps {
   summaryBadges?: SummaryBadge[]
   columns?: ColumnsType<ComparisonRecord>
   useArrowExpand?: boolean
+  /** Auto-expand every top-level (non-`isChild`) row as soon as its data
+   *  arrives, so the first nested level renders with no click required —
+   *  only deeper levels stay collapsed until the user opens them. Leaves
+   *  antd's own (fully click-driven) expand state untouched when omitted. */
+  defaultExpandTopLevel?: boolean
   activePeriod?: string
   onPeriodChange?: (value: string) => void
   showPeriodSelector?: boolean
@@ -89,7 +102,7 @@ export interface StatisticsComparisonTableProps {
   showSummaryBadgesOnError?: boolean
 }
 
-const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, activePeriod: activePeriodProp, onPeriodChange, showPeriodSelector = true, loading, error, showSummaryBadgesOnError = false }) => {
+const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, defaultExpandTopLevel, activePeriod: activePeriodProp, onPeriodChange, showPeriodSelector = true, loading, error, showSummaryBadgesOnError = false }) => {
   const [internalPeriod, setInternalPeriod] = React.useState('TODAY')
   const activePeriod = activePeriodProp ?? internalPeriod
   const handlePeriodChange = (value: string) => {
@@ -98,6 +111,25 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
   }
   const [searchText, setSearchText] = React.useState('')
   const isMobile = useIsMobile()
+
+  // Tracks every currently-expanded row key (controlled, so a row's
+  // background can react to its own expanded state — see onRow below). When
+  // defaultExpandTopLevel is set, top-level keys are also auto-merged in as
+  // soon as they appear, without clobbering keys the user has since
+  // collapsed or expanded deeper down.
+  const [expandedKeys, setExpandedKeys] = React.useState<React.Key[]>([])
+  React.useEffect(() => {
+    if (!defaultExpandTopLevel) return
+    const topLevelKeys = data.filter((r) => !r.isChild).map((r) => r.key)
+    setExpandedKeys((prev) => {
+      const merged = new Set(prev)
+      let changed = false
+      for (const k of topLevelKeys) {
+        if (!merged.has(k)) { merged.add(k); changed = true }
+      }
+      return changed ? Array.from(merged) : prev
+    })
+  }, [data, defaultExpandTopLevel])
 
   // Client-side filter on the agency name. Matches parent rows directly OR
   // child rows by their own name — a parent with no matching children but a
@@ -160,9 +192,36 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
           size="middle"
           rowKey="key"
           scroll={{ x: 'max-content' }}
+          onRow={useArrowExpand ? (record) => {
+            if (record.isDevice) return { style: { background: '#000000' } }
+            // Road rows always match the top-level row's (unstyled) look,
+            // collapsed or expanded — never get the highlight below.
+            if (record.isRoad) return { style: undefined }
+            // Top-level rows are force-expanded (see defaultExpandTopLevel)
+            // and never actually "opened" by the user — only highlight rows
+            // the user genuinely toggled open.
+            const isForcedTopLevel = defaultExpandTopLevel && !record.isChild
+            return {
+              style: !isForcedTopLevel && expandedKeys.includes(record.key)
+                ? { background: '#363636' }
+                : undefined,
+            }
+          } : undefined}
           expandable={useArrowExpand ? {
-            expandIcon: ({ expanded, onExpand, record }) =>
-              record.children?.length ? (
+            // 32 = the icon column's own reserved width (16px glyph + 4px
+            // margin + 12px text padding, see expandIcon/COMPARISON_COLUMNS
+            // below) — matching it here makes each level's expand icon land
+            // exactly under its parent row's text start, like a normal tree.
+            indentSize: 32,
+            expandedRowKeys: expandedKeys,
+            onExpandedRowsChange: (keys) => setExpandedKeys(keys as React.Key[]),
+            expandIcon: ({ expanded, onExpand, record }) => {
+              // Top-level rows are force-expanded via expandedKeys and
+              // never meant to be collapsed — hide their chevron (keep the
+              // reserved width so alignment doesn't shift) so only the
+              // actually-toggleable levels show an arrow.
+              const isForcedTopLevel = defaultExpandTopLevel && !record.isChild
+              return record.children?.length && !isForcedTopLevel ? (
                 <TbChevronRight
                   onClick={(e) => onExpand(record, e as unknown as React.MouseEvent<HTMLElement>)}
                   style={{
@@ -176,7 +235,8 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
                     marginRight: 4,
                   }}
                 />
-              ) : <span style={{ display: 'inline-block', width: 20 }} />,
+              ) : <span style={{ display: 'inline-block', width: 20 }} />
+            },
           } : undefined}
           summary={(rows) => {
             const activeCols = (columns ?? COMPARISON_COLUMNS)

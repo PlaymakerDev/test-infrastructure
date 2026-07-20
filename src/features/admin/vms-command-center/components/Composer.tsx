@@ -1,10 +1,14 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
-import { TbAlertTriangle, TbFolderOpen, TbRocket } from 'react-icons/tb'
+import { Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
+import type { VMSMediaItem } from '@/types/vms/media-library-api'
+
+const isVideoName = (s: string) => isVideoUrl(s)
 
 interface Props {
   vmsIds: number[]
@@ -22,13 +26,33 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const { data: countsData } = useMediaCategoryCounts()
   const counts = countsData?.data ?? []
 
+  // Default to the first non-empty category rather than "ทั้งหมด" —
+  // operators almost always know the setting type they're about to send,
+  // and defaulting to "all" pulled 60+ thumbnails on first paint. Once a
+  // user explicitly clicks "ทั้งหมด" that stays. First non-empty is picked
+  // once when the counts load; a manual filter later is respected.
   const [categoryFilter, setCategoryFilter] = useState<'all' | number>('all')
+  const [categoryTouched, setCategoryTouched] = useState(false)
+  useEffect(() => {
+    if (categoryTouched) return
+    const firstWithItems = counts.find((c) => c.count > 0)
+    if (firstWithItems?.setting_type_id != null) {
+      setCategoryFilter(firstWithItems.setting_type_id)
+    }
+  }, [counts, categoryTouched])
+  const chooseCategory = (v: 'all' | number) => {
+    setCategoryTouched(true)
+    setCategoryFilter(v)
+  }
+  const [pageSize, setPageSize] = useState(12)
   const { data: mediaData, isLoading: mediaLoading } = useMediaLibraryList({
     setting_type_id: categoryFilter === 'all' ? undefined : categoryFilter,
-    limit: 24,
+    limit: pageSize,
     page: 1,
   })
   const mediaItems = mediaData?.data?.res_data ?? []
+  const totalCount = mediaData?.data?.meta_data?.count ?? mediaItems.length
+  const hasMore = mediaItems.length < totalCount
   const [selectedMediaId, setSelectedMediaId] = useState<number | undefined>()
   const selectedMedia = useMemo(
     () => mediaItems.find((m) => m.id === selectedMediaId),
@@ -63,6 +87,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const post = usePostVMSMedia()
+
+  // Preview modal — click the maximize icon on any tile to open the
+  // full-res original in a dark overlay (matches MediaLibraryTab's
+  // preview modal so operators get the same shortcut everywhere).
+  // Selecting a media (click on the card body) is a separate action;
+  // the icon uses stopPropagation so it doesn't double-fire.
+  const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
 
   const canDispatch = vmsIds.length > 0 && (!!selectedMedia?.url || message.trim().length > 0)
 
@@ -120,13 +151,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             </div>
             {/* Category chip filter */}
             <div className="flex items-center gap-1.5 flex-wrap mb-2">
-              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => setCategoryFilter('all')} />
+              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => chooseCategory('all')} />
               {counts.map((c) => (
                 <Chip
                   key={c.setting_type_id ?? 'null'}
                   active={categoryFilter === (c.setting_type_id ?? -1)}
                   label={`${c.setting_type_name} (${c.count})`}
-                  onClick={() => setCategoryFilter(c.setting_type_id ?? -1)}
+                  onClick={() => chooseCategory(c.setting_type_id ?? -1)}
                 />
               ))}
             </div>
@@ -137,43 +168,94 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               </div>
             )}
             {mediaItems.length > 0 && (
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
-              >
-                {mediaItems.map((m) => {
-                  const active = m.id === selectedMediaId
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setSelectedMediaId(m.id)}
-                      className="relative rounded-md overflow-hidden border cursor-pointer group"
-                      style={{
-                        borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
-                        outline: active ? '2px solid #FCD116' : 'none',
-                        outlineOffset: -2,
-                      }}
-                      title={m.name}
-                    >
-                      <div style={{ aspectRatio: '16/9', background: '#000' }}>
-                        <Image
-                          src={m.url}
-                          alt={m.name}
-                          width="100%"
-                          height="100%"
-                          preview={false}
-                          style={{ objectFit: 'contain' }}
-                        />
-                      </div>
-                      {m.setting_type_name && (
-                        <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
-                          {m.setting_type_name}
+              <>
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
+                >
+                  {mediaItems.map((m) => {
+                    const active = m.id === selectedMediaId
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelectedMediaId(m.id)}
+                        className="relative rounded-md overflow-hidden border cursor-pointer group"
+                        style={{
+                          borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
+                          outline: active ? '2px solid #FCD116' : 'none',
+                          outlineOffset: -2,
+                        }}
+                        title={m.name}
+                      >
+                        <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
+                          {/* Composer grid uses the JPEG q85 thumbnail
+                              (~15 KB) instead of the full-res PNG (~2 MB).
+                              Backend ffmpeg-extracts the first frame for
+                              videos so the same <img> path handles both.
+                              onError falls back to original for older
+                              uploads that predate the backfill. */}
+                          <img
+                            src={getThumbUrl(m.url)}
+                            alt={m.name}
+                            loading="lazy"
+                            onError={(e) => {
+                              const img = e.currentTarget
+                              if (img.dataset.fallback !== '1') {
+                                img.dataset.fallback = '1'
+                                img.src = isVideoName(m.filename || m.url) ? '' : m.url
+                              }
+                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                          {isVideoName(m.filename || m.url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+                        {/* Maximize/preview affordance — top-right corner.
+                            stopPropagation so the outer <button>'s
+                            select-media handler doesn't also fire. */}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPreviewing(m)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation()
+                              e.preventDefault()
+                              setPreviewing(m)
+                            }
+                          }}
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/70 hover:bg-black text-white rounded p-1 cursor-pointer"
+                          title="ดูตัวอย่างเต็ม"
+                          aria-label="ดูตัวอย่างเต็ม"
+                        >
+                          <TbMaximize size={14} />
+                        </span>
+                        {m.setting_type_name && (
+                          <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
+                            {m.setting_type_name}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                {hasMore && (
+                  <div className="mt-2 text-center">
+                    <Button
+                      size="small"
+                      onClick={() => setPageSize((n) => n + 12)}
+                    >
+                      โหลดเพิ่ม ({mediaItems.length}/{totalCount})
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -290,6 +372,68 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             )}
           </div>
         </Modal>
+
+        {/* Full-size preview modal — dark shell, matches MediaLibraryTab. */}
+        <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
+          <Modal
+            open={!!previewing}
+            onCancel={() => setPreviewing(null)}
+            footer={null}
+            width={900}
+            title={previewing?.setting_type_name || 'สื่อ'}
+            destroyOnHidden
+            classNames={{ container: 'border-2! border-(--default-blue)!' }}
+          >
+            {previewing && (
+              <div>
+                <div className="bg-black rounded overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                  {isVideoName(previewing.filename || previewing.url) ? (
+                    <video
+                      src={previewing.url}
+                      controls
+                      autoPlay
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <Image
+                      src={previewing.url}
+                      alt={previewing.name}
+                      width="100%"
+                      height="100%"
+                      preview={false}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-white/70 flex items-center gap-3 flex-wrap">
+                  {previewing.setting_type_name && (
+                    <span>หมวด: <b className="text-white">{previewing.setting_type_name}</b></span>
+                  )}
+                  {previewing.name && (
+                    <span className="truncate">ชื่อ: <span className="text-white">{previewing.name}</span></span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button
+                    onClick={() => setPreviewing(null)}
+                  >
+                    ปิด
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      const id = previewing.id
+                      setPreviewing(null)
+                      setSelectedMediaId(id)
+                    }}
+                  >
+                    เลือกสื่อนี้
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </ConfigProvider>
       </div>
     </>
   )

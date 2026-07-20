@@ -1,11 +1,18 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
 import { TbMapPin } from 'react-icons/tb'
 import { useGPSContext } from '../../../context'
 import Image from 'next/image'
 import { Button } from 'antd'
 import type { ButtonColorType } from 'antd/es/button/buttonHelpers'
 import { motion } from 'motion/react'
+import { GeoRoadData, VehicleLocationData } from '@/types/tracking/detail-gps-api'
+import { fmtNumber } from '@/utils/formatNumber'
+
+interface Props {
+  road?: GeoRoadData
+  vehicle?: VehicleLocationData
+}
 
 interface VehicleStatus {
   img: string
@@ -43,8 +50,22 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
   },
 ]
 
-const RouteDetail: React.FC = () => {
-  const { route, setLicenseOpen } = useGPSContext()
+const RouteDetail: React.FC<Props> = (props) => {
+  const { road, vehicle } = props
+  const { setLicenseOpen } = useGPSContext()
+
+  const countData = useMemo(() => {
+    return VEHICLE_STATUSES.map((item) => {
+      let count
+      if (item.label === "รถเคลื่อนที่") count = vehicle?.vehicle_count.normal_vehicle_count
+      if (item.label === "รถจอด") count = vehicle?.vehicle_count.not_moving_count
+      if (item.label === "รถน้ำหนักเกิน") count = vehicle?.vehicle_count.over_weight_history
+      return {
+        ...item,
+        count: fmtNumber(Number(count)) || 0
+      }
+    })
+  }, [vehicle?.vehicle_count])
 
   return (
     <motion.section
@@ -59,17 +80,17 @@ const RouteDetail: React.FC = () => {
         <div>
           <div className='flex items-center gap-2 mb-2'>
             <TbMapPin className='text-(--yellow) fs-24' />
-            <h3 className='text-(--yellow)'>สายทาง {route.road_code}</h3>
+            <h3 className='text-(--yellow)'>สายทาง {road?.road_code || '-'}</h3>
           </div>
-          <p>แยกทางหลวงหมายเลข 331 (กม.ที่ 39+650) - ท่าเรือแหลมฉบัง</p>
-          <p className='fs-12'>{route.road_name} <span className='text-(--yellow)'>สำนักทางหลวงชนบทที่ 3 (ชลบุรี)</span></p>
-          <p className='fs-12 text-gray-400'>จังหวัด ชลบุรี</p>
-          <p className='fs-12 text-blue-500'>ระยะทาง 19.070</p>
+          <p>{road?.route_name || '-'}</p>
+          {/* <p className='fs-12'>{route.road_name} <span className='text-(--yellow)'>สำนักทางหลวงชนบทที่ 3 (ชลบุรี)</span></p> */}
+          {/* <p className='fs-12 text-gray-400'>จังหวัด ชลบุรี</p> */}
+          <p className='fs-12 text-blue-500'>ระยะทาง {fmtNumber(Number(road?.length_drr), 3) || 0}</p>
         </div>
 
         {/* Vehicle Status Cards */}
         <div className='grid grid-cols-3 gap-4 lg:flex lg:gap-6 lg:shrink-0'>
-          {VEHICLE_STATUSES.map((status) => (
+          {countData.map((status) => (
             <div key={status.key} className='flex flex-col items-center gap-2'>
               <Image
                 src={status.img}

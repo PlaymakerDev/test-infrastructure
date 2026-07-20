@@ -1,4 +1,6 @@
 "use client"
+import { CarList } from '@/types/tracking/detail-gps-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import React from 'react'
 
 export type WeightStatus = 'normal' | 'overweight' | 'within_limit'
@@ -14,7 +16,7 @@ export interface VehicleItem {
 }
 
 export interface VehicleListProps {
-  items: VehicleItem[]
+  items: CarList[]
 }
 
 const PILL = 'fs-12 whitespace-nowrap rounded-full px-2.5 py-0.5 border'
@@ -41,23 +43,27 @@ const MOVE_STATUS_LABEL: Record<MoveStatus, string> = {
   parked: 'รถจอด',
 }
 
-const VehicleCard: React.FC<{ item: VehicleItem }> = ({ item }) => (
-  <div className='bg-(--mid-gray) rounded-xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-    <div>
-      <h3 className='font-bold text-white leading-tight'>{item.license}</h3>
-      <p className='fs-12 text-gray-400 mt-0.5'>{item.province}</p>
-      <p className='fs-12 text-(--yellow) mt-2'>ความเร็ว : {item.speed} กม./ชม.</p>
+const VehicleCard: React.FC<{ item: CarList }> = ({ item }) => {
+  const vehicleIdleStatus = item.speed === 0 ? 'parked' : 'moving'
+  const vehicleWeightStatus = item.isoverweight === "Y" ? 'overweight' : 'normal'
+  return (
+    <div className='bg-(--mid-gray) rounded-xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+      <div>
+        <h3 className='font-bold text-white leading-tight'>{item.plate_no || '-'}</h3>
+        <p className='fs-12 text-gray-400 mt-0.5'>{item.plate_province || '-'}</p>
+        <p className='fs-12 text-(--yellow) mt-2'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>
+      </div>
+      <div className='flex flex-row flex-wrap gap-1.5 sm:flex-col sm:items-end sm:shrink-0'>
+        <span className={WEIGHT_STATUS_CLASS[vehicleWeightStatus] ?? 'text-white/40'}>
+          {WEIGHT_STATUS_LABEL[vehicleWeightStatus]}
+        </span>
+        <span className={MOVE_STATUS_CLASS[vehicleIdleStatus] ?? 'text-white/40'}>
+          {MOVE_STATUS_LABEL[vehicleIdleStatus]}
+        </span>
+      </div>
     </div>
-    <div className='flex flex-row flex-wrap gap-1.5 sm:flex-col sm:items-end sm:shrink-0'>
-      <span className={WEIGHT_STATUS_CLASS[item.weightStatus] ?? 'text-white/40'}>
-        {WEIGHT_STATUS_LABEL[item.weightStatus]}
-      </span>
-      <span className={MOVE_STATUS_CLASS[item.moveStatus] ?? 'text-white/40'}>
-        {MOVE_STATUS_LABEL[item.moveStatus]}
-      </span>
-    </div>
-  </div>
-)
+  )
+}
 
 const MemoVehicleCard = React.memo(VehicleCard)
 
@@ -67,7 +73,7 @@ const VehicleList: React.FC<VehicleListProps> = ({ items }) => (
       <p className='text-center text-gray-500 text-sm py-8'>ไม่พบข้อมูล</p>
     )}
     {items.map((item) => (
-      <MemoVehicleCard key={item.id} item={item} />
+      <MemoVehicleCard key={item.plate_no} item={item} />
     ))}
   </div>
 )

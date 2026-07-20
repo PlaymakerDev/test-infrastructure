@@ -1,63 +1,39 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import FormSearchRoute from './FormSearchRoute'
 import { RoadList } from '@/components/list'
 import { useGPSContext } from '../../../context'
-
+import { Empty, Skeleton } from 'antd'
+import { AllVehicleLocationData } from '@/types/tracking/detail-gps-api'
 interface Props {
   openFromDrawer?: boolean
+  data?: AllVehicleLocationData
+  isLoading?: boolean
+  isError?: boolean
+  onSearch?: (search: string) => void
 }
 
 const SearchRouteSection: React.FC<Props> = (props) => {
-  const { openFromDrawer } = props
-  const { setRoute } = useGPSContext()
+  const { openFromDrawer, data, isLoading, isError, onSearch } = props
+  const { setSelectRoute } = useGPSContext()
+
+  const renderRoadList = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 5 }} />
+    if (isError) return <Empty description="ไม่พบข้อมูล" />
+    return (
+      <RoadList
+        data={data?.list || []}
+        onSelect={(item) => setSelectRoute(item)}
+      />
+    )
+  }, [isLoading, isError, setSelectRoute, data?.list])
 
   return (
     <div className={`bg-(--dark-black) rounded-tr-lg ${openFromDrawer ? 'p-5' : 'py-10 px-12'} h-full`}>
       <section>
-        <FormSearchRoute />
+        <FormSearchRoute onSearch={onSearch} />
       </section>
       <section className='mt-5'>
-        <RoadList
-          data={[
-            {
-              id: 1,
-              road_code: 'ชบ.3009',
-              road_name: 'แขวงทางหลวงชนบทชลบุรี',
-              vehicle_count: 455,
-            },
-            {
-              id: 2,
-              road_code: 'สป.2001',
-              road_name: 'แขวงทางหลวงชนบทสมุทรปราการ',
-              vehicle_count: 148,
-            },
-            {
-              id: 3,
-              road_code: 'ปท.3004',
-              road_name: 'แขวงทางหลวงชนบทปทุมธานี',
-              vehicle_count: 132,
-            },
-            {
-              id: 4,
-              road_code: 'นย.3001',
-              road_name: 'แขวงทางหลวงชนบทนครนายก',
-              vehicle_count: 112,
-            },
-            {
-              id: 5,
-              road_code: 'ปท.3010',
-              road_name: 'สำนักทางหลวงชนบทปทุมธานี',
-              vehicle_count: 88,
-            },
-            {
-              id: 6,
-              road_code: 'ฉช.2004',
-              road_name: 'แขวงทางหลวงชนบทฉะเชิงเทรา',
-              vehicle_count: 132,
-            },
-          ]}
-          onSelect={(item) => setRoute(item)}
-        />
+        {renderRoadList}
       </section>
     </div>
   )

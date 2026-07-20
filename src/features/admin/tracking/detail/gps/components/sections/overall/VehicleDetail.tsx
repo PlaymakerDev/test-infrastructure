@@ -1,23 +1,25 @@
+import { VehicleHistoryData } from '@/types/tracking/detail-gps-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import { Col, Row } from 'antd'
 import React from 'react'
 
 interface Props {
-
+  data?: VehicleHistoryData
 }
 
 const VehicleDetail: React.FC<Props> = (props) => {
-  const { } = props
+  const { data } = props
 
   return (
     <div className='rounded-lg p-5 bg-(--mid-gray) lg:-mr-3'>
       <section>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <h2 className='font-bold text-white leading-tight'>71-9621</h2>
-            <p className='fs-12 text-gray-400 text-sm mt-1'>พระนครศรีอยุธยา</p>
+            <h2 className='font-bold text-white leading-tight'>{data?.vehicle.plate_no || '-'}</h2>
+            <p className='fs-12 text-gray-400 text-sm mt-1'>{data?.vehicle.plate_province || '-'}</p>
           </div>
           <span className='inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border border-(--yellow) text-(--yellow) mt-1'>
-            รถเคลื่อนที่
+            {data?.vehicle.kind_desc || '-'}
           </span>
         </div>
       </section>
@@ -28,19 +30,19 @@ const VehicleDetail: React.FC<Props> = (props) => {
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>ยี่ห้อ</p>
-                <p className='fs-12'>UD TRUCKS</p>
+                <p className='fs-12'>{data?.vehicle.brn_desc || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>ประเภท</p>
-                <p className='fs-12'>รถบรรทุกไม่ประจำทาง</p>
+                <p className='fs-12'>{data?.vehicle.type_desc || '-'}</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>น้ำหนัก</p>
-                <p className='fs-12'>8,300 กม.</p>
+                <p className='fs-12'>{fmtNumber(Number(data?.vehicle.wgt)) || 0} กม.</p>
               </div>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>บริษัท</p>
-                <p className='fs-12'>บริษัท หงษ์ทอง วิศวกิจ จำกัด</p>
+                <p className='fs-12'>{data?.vehicle.com_name || '-'}</p>
               </div>
             </section>
           </Col>
@@ -49,7 +51,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>สายทาง</p>
-                <p className='fs-12'>แยกทางหลวงหมายเลข 4 (กม.ที่ 70+112) - ถนนสาย ก. ฝั่งเมืองรวมเมืองสะเดา</p>
+                <p className='fs-12'>{data?.vehicle.road_name || '-'}</p>
               </div>
             </section>
           </Col>

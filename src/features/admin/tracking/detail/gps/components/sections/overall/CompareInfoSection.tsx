@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   CompareCard,
   FormSearchCompare,
   TableCompareData
 } from '@/features/admin/tracking/detail/gps/components/'
 import { TbMap } from 'react-icons/tb'
+import { useQuery } from '@tanstack/react-query'
+import { getTrackingGPSAnalyticProvinceTrafficAPI } from '@/services/routes/TrackingGPSService'
 
 interface Props {
 
@@ -12,6 +14,20 @@ interface Props {
 
 const CompareInfoSection: React.FC<Props> = (props) => {
   const { } = props
+  const [search, setSearch] = useState('')
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['analytic_province_traffic'],
+    queryFn: () => getTrackingGPSAnalyticProvinceTrafficAPI({
+      days: 7
+    })
+  })
+
+  const filteredData = useMemo(() => {
+    const list = data?.data.data ?? []
+    if (!search.trim()) return list
+    return list.filter((item) => item.province.toLowerCase().includes(search.trim().toLowerCase()))
+  }, [data, search])
 
   return (
     <div className='bg-(--dark-black) rounded-lg p-5'>
@@ -20,13 +36,21 @@ const CompareInfoSection: React.FC<Props> = (props) => {
         <h3 className='text-(--yellow)'>พื้นที่ตรวจพบบ่อย 30 วันย้อนหลัง</h3>
       </div>
       <section>
-        <CompareCard />
+        <CompareCard
+          data={data?.data.data}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </section>
       <section className='mt-5'>
-        <FormSearchCompare />
+        <FormSearchCompare onSearch={setSearch} />
       </section>
       <section className='mt-5'>
-        <TableCompareData />
+        <TableCompareData
+          data={filteredData}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </section>
     </div>
   )

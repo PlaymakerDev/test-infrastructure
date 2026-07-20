@@ -26,21 +26,10 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CaseDetail } from '@/types/maintenance'
 import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/shared-api'
 import type { APIResponseProjectDetail } from '@/types/shared'
+import { parseImageUrls } from '../../data/parseImageUrls'
 
 const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
 const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
-
-/** before_image/after_image come back as a JSON-stringified array in a string
- *  field (or the literal text "null", or ""). Never a real array or null. */
-const parseImageUrls = (raw: string | null | undefined): string[] => {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string' && u.length > 0) : []
-  } catch {
-    return []
-  }
-}
 
 /** Go's zero-value time ("0001-01-01T00:00:00Z", any offset) — the backend's
  *  way of saying "never actually recorded", not a real timestamp. */

@@ -6,6 +6,7 @@ export { manageKeys } from './queryKeys'
 // Projects
 export { useProjectsList } from './useProjectsList'
 export { useProjectDetail } from './useProjectDetail'
+export { useProjectByCaseNo } from './useProjectByCaseNo'
 export { useCreateProject } from './useCreateProject'
 export { useUpdateProject } from './useUpdateProject'
 export { useDeleteProject } from './useDeleteProject'

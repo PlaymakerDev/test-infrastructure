@@ -91,7 +91,7 @@ const BASE_CARDS = [
 
 const OverviewSection: React.FC = () => {
   const searchParams = useSearchParams()
-  const period = searchParams.get('period') || 'ALL'
+  const period = searchParams.get('period') || 'TODAY'
   const { startDate, endDate } = useMemo(() => periodToRange(period), [period])
   const {
     data: topPowerRoads,

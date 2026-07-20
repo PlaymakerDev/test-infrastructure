@@ -25,6 +25,9 @@ export const manageKeys = {
       [...manageKeys.projects.all, 'list', listKey(params)] as const,
     detail: (id: string | number) =>
       [...manageKeys.projects.all, 'detail', id] as const,
+    /** GET /manage/project/case/{case_no} — project resolved by repair case_no. */
+    byCaseNo: (caseNo: string) =>
+      [...manageKeys.projects.all, 'by-case-no', caseNo] as const,
   },
 
   contractors: {
