@@ -171,12 +171,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // province.code → dept_id (RBAC-scoped: only provinces the user has access to).
   const provinceDeptMap = useProvinceDeptMap()
 
-  // MAP MARKERS always use the login-time scope (`originalDeptId`), NOT the
-  // live card scope. If markers followed the pan-updated dept, flying into
-  // one province would refetch positions for that single ขทช. and every
-  // OTHER province's markers would vanish mid-flight (user report: an สทช.
-  // summary shows 48 devices, but zooming in left a single marker). With the
-  // login scope the full device pool stays plotted; only the CARDS rescope.
+  // MAP MARKERS use the login-time scope (`originalDeptId`), NOT the live
+  // focused `deptId`. Zooming into a province must KEEP every road's pin on the
+  // map — the whole device pool stays plotted regardless of which boundary is
+  // in focus (product requirement: "ต้องยังคงเห็นหมุดของสายทางอื่นอยู่"). Only
+  // the CARDS rescope to the focused dept via `deptId`. Fetching markers by
+  // `deptId` instead would make the backend return only the focused province's
+  // devices, so every other road's pin would vanish on zoom-in — do NOT do that.
   const { data: position } = useDashboardPosition(originalDeptId)
   // 18 bureau polygons — used for point-in-polygon reclassification of any
   // solution whose road.stch didn't land in 1..18 (บทช. under stch=0, plus

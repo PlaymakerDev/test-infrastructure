@@ -107,6 +107,15 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   useEffect(() => {
     if (!map || !isLoaded) return
 
+    // Bake current visibility into every layer spec. This effect re-runs when
+    // unstable props (e.g. a fresh `color` expression each render) change, which
+    // REBUILDS the layers — and a rebuilt layer defaults to `visible`. Without
+    // this the separate visibility-toggle effect below wouldn't re-fire (its
+    // `visible` dep is unchanged), so a hidden type-layer would silently
+    // reappear on the next unrelated re-render (map move / data load). Setting
+    // it in the spec keeps a rebuilt layer honouring the current `visible`.
+    const vis: 'visible' | 'none' = visible ? 'visible' : 'none'
+
     const sourceSpec: GeoJSONSourceSpecification = {
       type: 'geojson',
       data,
@@ -122,6 +131,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         source: sourceId,
         filter: ['has', 'point_count'],
         ...(minZoom !== undefined && { minzoom: minZoom }),
+        layout: { visibility: vis },
         paint: {
           'circle-color': color,
           'circle-radius': ['step', ['get', 'point_count'], 22, 10, 26, 50, 30, 100, 36],
@@ -139,6 +149,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         source: sourceId,
         filter: ['!', ['has', 'point_count']],
         ...(minZoom !== undefined && { minzoom: minZoom }),
+        layout: { visibility: vis },
         paint: {
           'circle-color': color,
           'circle-radius': size,
@@ -155,6 +166,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         source: sourceId,
         ...(minZoom !== undefined && { minzoom: minZoom }),
         layout: {
+          visibility: vis,
           ...(iconImage && {
             'icon-image': iconImage,
             // Cluster glyph scales WITH the cluster circle (same breakpoints as
@@ -200,6 +212,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
         type: 'circle',
         source: sourceId,
         ...(minZoom !== undefined && { minzoom: minZoom }),
+        layout: { visibility: vis },
         paint: {
           'circle-color': color,
           'circle-radius': size,
@@ -216,6 +229,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           source: sourceId,
           ...(minZoom !== undefined && { minzoom: minZoom }),
           layout: {
+            visibility: vis,
             'icon-image': iconImage,
             'icon-size': iconSize ?? 0.50,
             'icon-allow-overlap': true,
