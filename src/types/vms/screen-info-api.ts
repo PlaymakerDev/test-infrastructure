@@ -12,6 +12,7 @@ export interface ScreenInfoItem {
   solution_id: number
   solution_name: string
   sta: string
+  road_id: number
   road_code: string
   road_name: string
   project_id: number
@@ -19,6 +20,9 @@ export interface ScreenInfoItem {
   department_id: number
   department_name: string
   department_short_name: string
+  bureau_id: number
+  bureau_name: string
+  bureau_short_name: string
 
   // agent heartbeat
   machine_name: string | null
@@ -42,6 +46,14 @@ export interface ScreenInfoItem {
 
   // effective sign screen (falls back through enixma / legacy)
   desktop_screen_url: string | null
+
+  // active setting / status (latest command bound to this sign)
+  setting_id: number | null
+  command_no: number | null
+  setting_status: number | null // 0..7 enum, aligned with vms.tbl_vms_setting_status
+  setting_status_name: string | null
+  setting_type_name: string | null
+  media_url: string | null
 
   // capability gating
   is_controllable: boolean // is_reported AND is_online AND app_version >= min_controllable_version

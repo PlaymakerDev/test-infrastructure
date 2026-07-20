@@ -1,112 +1,57 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   App,
-  Badge,
   Button,
   ConfigProvider,
   Input,
   Skeleton,
   Switch,
   Table,
+  Tag,
   Tooltip,
-  Typography,
+  Tree,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import {
-  TbAlertTriangle,
-  TbCheck,
-  TbExternalLink,
-  TbRefresh,
-  TbSearch,
-  TbWifi,
-  TbWifiOff,
-  TbHelpCircle,
-} from 'react-icons/tb'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/th'
-import type { BureauSelection } from '@/types/control-vms/bureau'
+import type { DataNode, TreeProps } from 'antd/es/tree'
+import { TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
 import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
-import ScopePicker from './ScopePicker'
+import HLSLivePlayer from '@/components/video/HLSLivePlayer'
+import StatusPill from './StatusPill'
 import { useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
-
-dayjs.extend(relativeTime)
 
 interface Props {
   onOpenSignDetail?: (vmsId: number) => void
 }
 
-const emptySelection: BureauSelection = {
-  keys: [],
-  bureaus: [],
-  states: [],
-  routes: [],
-  signs: [],
-}
-
-// Version comparison — dotted-integer, left-to-right (26.7.19.1 style).
-// Falls back to string compare if any segment is non-numeric so we don't
-// blow up on unexpected agent strings; anything unparseable is treated as
-// "lower" than the target so we still surface it as out-of-date.
-const cmpVersion = (a: string | null | undefined, b: string): number => {
-  if (!a) return -1
-  const av = a.split('.').map((x) => Number.parseInt(x, 10))
-  const bv = b.split('.').map((x) => Number.parseInt(x, 10))
-  const n = Math.max(av.length, bv.length)
-  for (let i = 0; i < n; i++) {
-    const ai = Number.isFinite(av[i]) ? av[i] : -1
-    const bi = Number.isFinite(bv[i]) ? bv[i] : -1
-    if (ai !== bi) return ai - bi
-  }
-  return 0
-}
-
-const relTime = (iso: string | null | undefined): string => {
-  if (!iso) return '—'
-  const d = dayjs(iso)
-  return d.isValid() ? d.locale('th').fromNow() : '—'
-}
-
 // ---------------------------------------------------------------------------
-// Pill components — small enough that inlining is cleaner than a shared file
+// Filter model
 // ---------------------------------------------------------------------------
 
-type StatusKind = 'online' | 'offline' | 'never'
+type ScopeFilter =
+  | { level: 'all' }
+  | { level: 'bureau'; id: number }
+  | { level: 'state'; id: number }
+  | { level: 'route'; id: number }
 
-const statusMeta = (item: ScreenInfoItem): { kind: StatusKind; color: string; label: string } => {
-  if (!item.is_reported) return { kind: 'never', color: '#9ca3af', label: 'ยังไม่รายงาน' }
-  if (item.is_online) return { kind: 'online', color: '#22c55e', label: 'Online' }
-  return { kind: 'offline', color: '#ef4444', label: 'Offline' }
+type StatusFilter = 'all' | 'reported' | 'online' | 'offline' | 'never'
+
+// Parse Tree node keys back into a ScopeFilter. Keys are namespaced ('b:', 's:',
+// 'r:') so we can round-trip the selection without extra bookkeeping.
+const parseKey = (key: React.Key): ScopeFilter => {
+  const s = String(key)
+  if (s === 'all') return { level: 'all' }
+  const [prefix, rest] = s.split(':')
+  const id = Number.parseInt(rest ?? '', 10)
+  if (!Number.isFinite(id)) return { level: 'all' }
+  if (prefix === 'b') return { level: 'bureau', id }
+  if (prefix === 's') return { level: 'state', id }
+  if (prefix === 'r') return { level: 'route', id }
+  return { level: 'all' }
 }
 
-const Pill: React.FC<{
-  color: string
-  label: React.ReactNode
-  icon?: React.ReactNode
-  tooltip?: React.ReactNode
-}> = ({ color, label, icon, tooltip }) => {
-  const el = (
-    <span
-      className="inline-flex items-center gap-1 whitespace-nowrap"
-      style={{
-        fontSize: 11,
-        padding: '2px 8px',
-        borderRadius: 999,
-        color,
-        background: `${color}22`,
-        border: `1px solid ${color}55`,
-        fontWeight: 600,
-        lineHeight: 1.4,
-      }}
-    >
-      {icon}
-      {label}
-    </span>
-  )
-  return tooltip !== undefined ? <Tooltip title={tooltip}>{el}</Tooltip> : el
-}
-
+// Chip toggle used by the status filter row. Matches the visual style used
+// elsewhere in Command Center.
 const Chip: React.FC<{ active: boolean; label: React.ReactNode; onClick: () => void }> = ({
   active,
   label,
@@ -127,87 +72,217 @@ const Chip: React.FC<{ active: boolean; label: React.ReactNode; onClick: () => v
   </button>
 )
 
-// AntD's copyable Text wrapped in a mono span so IPs / IDs stay aligned. Empty
-// values render as a dash so the column doesn't collapse.
-const Mono: React.FC<{ value: string | null | undefined; copyable?: boolean }> = ({
-  value,
-  copyable = false,
-}) => {
-  if (!value) return <span className="text-white/30">—</span>
-  return (
-    <Typography.Text
-      className="text-white/85"
-      style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12 }}
-      copyable={copyable ? { text: value } : false}
-    >
-      <span>{value}</span>
-    </Typography.Text>
-  )
+// ---------------------------------------------------------------------------
+// Debounced value hook
+// ---------------------------------------------------------------------------
+
+const useDebounced = <T,>(value: T, delay = 200): T => {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
+
+// ---------------------------------------------------------------------------
+// Tree builder — sort each level alphabetically and group id=0 under "อื่น ๆ"
+// ---------------------------------------------------------------------------
+
+const OTHER_LABEL = 'อื่น ๆ'
+
+interface TreeAcc {
+  bureaus: Map<
+    number,
+    {
+      id: number
+      label: string
+      count: number
+      states: Map<
+        number,
+        {
+          id: number
+          label: string
+          count: number
+          roads: Map<number, { id: number; label: string; count: number }>
+        }
+      >
+    }
+  >
+}
+
+const buildTree = (rows: ScreenInfoItem[]): DataNode[] => {
+  const acc: TreeAcc = { bureaus: new Map() }
+
+  for (const r of rows) {
+    const bId = r.bureau_id ?? 0
+    const bLabel = r.bureau_short_name || (bId === 0 ? OTHER_LABEL : `สำนัก ${bId}`)
+    let bucketB = acc.bureaus.get(bId)
+    if (!bucketB) {
+      bucketB = { id: bId, label: bLabel, count: 0, states: new Map() }
+      acc.bureaus.set(bId, bucketB)
+    }
+    bucketB.count++
+
+    const sId = r.department_id ?? 0
+    const sLabel = r.department_short_name || (sId === 0 ? OTHER_LABEL : `แขวง ${sId}`)
+    let bucketS = bucketB.states.get(sId)
+    if (!bucketS) {
+      bucketS = { id: sId, label: sLabel, count: 0, roads: new Map() }
+      bucketB.states.set(sId, bucketS)
+    }
+    bucketS.count++
+
+    const rId = r.road_id ?? 0
+    const rLabel = r.road_code || (rId === 0 ? OTHER_LABEL : `สายทาง ${rId}`)
+    let bucketR = bucketS.roads.get(rId)
+    if (!bucketR) {
+      bucketR = { id: rId, label: rLabel, count: 0 }
+      bucketS.roads.set(rId, bucketR)
+    }
+    bucketR.count++
+  }
+
+  // Sort helper — "อื่น ๆ" always last, otherwise alphabetical by label.
+  const sortEntries = <V extends { id: number; label: string }>(items: V[]): V[] =>
+    [...items].sort((a, b) => {
+      const aOther = a.id === 0
+      const bOther = b.id === 0
+      if (aOther && !bOther) return 1
+      if (!aOther && bOther) return -1
+      return a.label.localeCompare(b.label, 'th')
+    })
+
+  const bureaus = sortEntries(Array.from(acc.bureaus.values()))
+  const root: DataNode = {
+    key: 'all',
+    title: <span className="font-semibold text-(--yellow)">{`ทั้งหมด (${rows.length})`}</span>,
+    children: bureaus.map((b) => ({
+      key: `b:${b.id}`,
+      title: (
+        <span className="text-white/90">
+          {b.label}
+          <span className="opacity-50 ml-1">({b.count})</span>
+        </span>
+      ),
+      children: sortEntries(Array.from(b.states.values())).map((s) => ({
+        key: `s:${s.id}`,
+        title: (
+          <span className="text-white/85">
+            {s.label}
+            <span className="opacity-50 ml-1">({s.count})</span>
+          </span>
+        ),
+        children: sortEntries(Array.from(s.roads.values())).map((rd) => ({
+          key: `r:${rd.id}`,
+          isLeaf: true,
+          title: (
+            <span className="text-white/80">
+              {rd.label}
+              <span className="opacity-50 ml-1">({rd.count})</span>
+            </span>
+          ),
+        })),
+      })),
+    })),
+  }
+
+  return [root]
 }
 
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
-type StatusFilter = 'all' | 'reported' | 'online' | 'offline' | 'never'
-
 const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
   const { message, modal } = App.useApp()
-  const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useScreenInfo({
+  const { data, isLoading, isFetching, refetch } = useScreenInfo({
     refetchIntervalMs: 30_000,
   })
   const centralize = useCentralizeVMSScreenInfo()
 
-  // useMemo the derived array — the `?? []` fallback creates a fresh literal
-  // on every render otherwise, and downstream memos depend on `rows`.
+  // Keep `rows` stable across renders — the tree/filter memos depend on it.
   const rows: ScreenInfoItem[] = useMemo(() => data?.data?.data ?? [], [data])
   const summary = data?.data?.summary
 
-  // ScopePicker filter — empty selection means "show all"
-  const [selection, setSelection] = useState<BureauSelection>(emptySelection)
-  const selectedVmsIds = useMemo(
-    () => new Set(selection.signs.map((s) => s.vms_id)),
-    [selection.signs]
+  const [filter, setFilter] = useState<ScopeFilter>({ level: 'all' })
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([])
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>(['all'])
+
+  const [searchInput, setSearchInput] = useState('')
+  const search = useDebounced(searchInput, 200)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+
+  // Only one row can be HLS-expanded at a time — 248 concurrent players would
+  // torch the browser. wid is the rowKey.
+  const [expandedWid, setExpandedWid] = useState<number | null>(null)
+
+  const treeData = useMemo(() => buildTree(rows), [rows])
+
+  const clearFilter = useCallback(() => {
+    setFilter({ level: 'all' })
+    setSelectedKeys([])
+  }, [])
+
+  const handleTreeSelect = useCallback<NonNullable<TreeProps['onSelect']>>(
+    (keys) => {
+      // AntD Tree fires with 0 or 1 key in single-select mode. Empty = clicked
+      // the same node again → treat as "clear".
+      if (keys.length === 0) {
+        clearFilter()
+        return
+      }
+      const key = keys[0]
+      const next = parseKey(key)
+      setFilter(next)
+      setSelectedKeys([key])
+
+      // Auto-expand: when the user picks a bureau we open its states so they
+      // can drill further without an extra click.
+      if (next.level === 'bureau' || next.level === 'state') {
+        setExpandedKeys((prev) => Array.from(new Set([...prev, 'all', String(key)])))
+      }
+    },
+    [clearFilter]
   )
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [controllableOnly, setControllableOnly] = useState(false)
-
-  // Filter pipeline — cheap enough (<1000 rows) to run inline; memoized so
-  // sorting/hovering doesn't re-run the whole chain.
+  // Filter pipeline: scope → status → search. All three are cheap so we chain
+  // them in a single pass to keep GC pressure down.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return rows.filter((it) => {
-      if (selectedVmsIds.size > 0 && !selectedVmsIds.has(it.vms_id)) return false
-      if (controllableOnly && !it.is_controllable) return false
+      // Tree scope
+      if (filter.level === 'bureau' && it.bureau_id !== filter.id) return false
+      if (filter.level === 'state' && it.department_id !== filter.id) return false
+      if (filter.level === 'route' && it.road_id !== filter.id) return false
+
+      // Online/offline/reported status
       if (statusFilter !== 'all') {
-        const meta = statusMeta(it)
         if (statusFilter === 'reported' && !it.is_reported) return false
-        if (statusFilter === 'online' && meta.kind !== 'online') return false
-        if (statusFilter === 'offline' && meta.kind !== 'offline') return false
-        if (statusFilter === 'never' && meta.kind !== 'never') return false
+        if (statusFilter === 'online' && !(it.is_reported && it.is_online)) return false
+        if (statusFilter === 'offline' && !(it.is_reported && !it.is_online)) return false
+        if (statusFilter === 'never' && it.is_reported) return false
       }
+
       if (q) {
         const hay = [
           String(it.wid),
           it.solution_name,
           it.road_code,
+          it.bureau_short_name,
+          it.department_short_name,
           it.machine_name,
           it.anydesk_id,
-          it.zt_ip,
-          it.tailscale_ip,
-          it.local_ip,
-          it.project_name,
         ]
           .filter(Boolean)
           .join(' ')
           .toLowerCase()
         if (!hay.includes(q)) return false
       }
+
       return true
     })
-  }, [rows, selectedVmsIds, search, statusFilter, controllableOnly])
+  }, [rows, filter, statusFilter, search])
 
   const handleCentralize = useCallback(
     async (wid: number, next: boolean) => {
@@ -221,8 +296,6 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     [centralize, message]
   )
 
-  // Switch handler — bare toggle for opt-in, imperative Modal.confirm for the
-  // destructive opt-out (matches the Composer / cancel patterns in the app).
   const handleToggleCentralize = useCallback(
     (row: ScreenInfoItem, next: boolean) => {
       if (next) {
@@ -240,9 +313,6 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     },
     [handleCentralize, modal]
   )
-
-  const lastUpdated = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
-  const minVersion = rows[0]?.min_controllable_version || '26.7.19.1'
 
   const columns: ColumnsType<ScreenInfoItem> = useMemo(
     () => [
@@ -264,224 +334,130 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         ),
       },
       {
-        title: 'ป้าย',
+        title: 'ชื่อป้าย + สายทาง',
         key: 'sign',
-        width: 220,
-        render: (_: unknown, r) => (
-          <div className="min-w-0">
-            <div className="truncate text-sm text-white/90">{r.solution_name || '—'}</div>
-            {r.road_code && (
-              <div className="text-[11px] text-white/50 truncate">
-                {r.road_code}
-                {r.sta ? ` · กม.${r.sta}` : ''}
-              </div>
-            )}
-          </div>
-        ),
+        render: (_: unknown, r) => {
+          const detailsLine = [
+            r.road_code || null,
+            r.sta ? `กม.${r.sta}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')
+          return (
+            <div className="min-w-0">
+              <Tooltip title={r.solution_name || ''} placement="topLeft">
+                <div className="truncate text-sm font-semibold text-white/90">
+                  {r.solution_name || '—'}
+                </div>
+              </Tooltip>
+              {detailsLine && (
+                <div className="text-[11px] text-white/55 truncate">{detailsLine}</div>
+              )}
+              {r.machine_name && (
+                <div
+                  className="text-[10px] text-white/40 truncate"
+                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+                >
+                  {r.machine_name}
+                </div>
+              )}
+            </div>
+          )
+        },
+        onCell: () => ({ style: { minWidth: 240 } }),
       },
       {
         title: 'สังกัด',
-        key: 'project',
-        width: 180,
+        key: 'org',
         render: (_: unknown, r) => (
-          <div className="text-xs text-white/80 truncate" title={r.project_name}>
-            {r.project_name || '—'}
+          <div className="min-w-0">
+            <div className="truncate text-sm text-white/85">
+              {r.department_short_name || '—'}
+            </div>
+            {r.bureau_short_name && (
+              <div className="text-[11px] text-white/50 truncate">{r.bureau_short_name}</div>
+            )}
           </div>
         ),
+        onCell: () => ({ style: { minWidth: 200 } }),
       },
       {
-        title: 'สถานะ',
-        key: 'status',
-        width: 128,
+        title: 'สถานะการแสดงผล',
+        key: 'display_status',
         render: (_: unknown, r) => {
-          const m = statusMeta(r)
+          const hasCommand = r.setting_status != null
           return (
-            <Pill
-              color={m.color}
-              label={m.label}
-              icon={
-                m.kind === 'online' ? (
-                  <TbWifi size={12} />
-                ) : m.kind === 'offline' ? (
-                  <TbWifiOff size={12} />
-                ) : (
-                  <TbHelpCircle size={12} />
-                )
-              }
-              tooltip={
-                r.reported_at
-                  ? `รายงานล่าสุด ${relTime(r.reported_at)}`
-                  : 'ยังไม่เคยรายงาน (agent ยังไม่ติดต่อ backend)'
-              }
-            />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {hasCommand ? (
+                <StatusPill
+                  status={r.setting_status}
+                  size="sm"
+                  tooltip={r.setting_status_name || undefined}
+                />
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1 whitespace-nowrap"
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                    color: '#9ca3af',
+                    background: '#9ca3af22',
+                    border: '1px solid #9ca3af55',
+                    fontWeight: 500,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  ยังไม่มีคำสั่ง
+                </span>
+              )}
+              {r.setting_type_name && (
+                <Tag
+                  color="default"
+                  style={{
+                    margin: 0,
+                    fontSize: 10,
+                    lineHeight: 1.4,
+                    padding: '0 6px',
+                    background: 'rgba(255,255,255,0.06)',
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.75)',
+                  }}
+                >
+                  {r.setting_type_name}
+                </Tag>
+              )}
+              {r.media_url && (
+                <Tooltip title={r.media_url}>
+                  <span className="inline-flex items-center text-white/60">
+                    <TbPhoto size={14} />
+                  </span>
+                </Tooltip>
+              )}
+            </div>
           )
         },
+        onCell: () => ({ style: { minWidth: 220 } }),
       },
       {
-        title: 'ควบคุมได้?',
+        title: 'ควบคุม',
         key: 'controllable',
-        width: 132,
+        width: 120,
+        align: 'center',
         render: (_: unknown, r) =>
           r.is_controllable ? (
-            <Pill color="#22c55e" label="ควบคุมได้" icon={<TbCheck size={12} />} />
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-emerald-900/40 border border-emerald-500/40 text-emerald-300">
+              ควบคุมได้
+            </span>
           ) : (
-            <Pill
-              color="#f59e0b"
-              label="เวอร์ชันต่ำ"
-              icon={<TbAlertTriangle size={12} />}
-              tooltip={
-                <div className="text-xs">
-                  <div>ต้องอัพเดต agent ≥ {r.min_controllable_version || minVersion}</div>
-                  <div className="opacity-70">agent ปัจจุบัน: {r.app_version || '—'}</div>
-                </div>
-              }
-            />
+            <span className="text-white/40">—</span>
           ),
       },
       {
-        title: 'Machine',
-        dataIndex: 'machine_name',
-        key: 'machine_name',
-        width: 140,
-        render: (v: string | null) => <Mono value={v} />,
-      },
-      {
-        title: 'Version',
-        dataIndex: 'app_version',
-        key: 'app_version',
-        width: 112,
-        render: (v: string | null, r) => {
-          if (!v) return <span className="text-white/30">—</span>
-          const upToDate = cmpVersion(v, r.min_controllable_version || minVersion) >= 0
-          const color = upToDate ? '#22c55e' : '#eab308'
-          return (
-            <Tooltip
-              title={
-                upToDate
-                  ? `≥ ${r.min_controllable_version || minVersion}`
-                  : `ต่ำกว่า ${r.min_controllable_version || minVersion}`
-              }
-            >
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '1px 6px',
-                  borderRadius: 4,
-                  fontSize: 11,
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                  color,
-                  background: `${color}22`,
-                  border: `1px solid ${color}55`,
-                }}
-              >
-                {v}
-              </span>
-            </Tooltip>
-          )
-        },
-      },
-      {
-        title: 'AnyDesk',
-        dataIndex: 'anydesk_id',
-        key: 'anydesk_id',
-        width: 130,
-        render: (v: string | null) => <Mono value={v} copyable />,
-      },
-      {
-        title: 'ZT IP',
-        dataIndex: 'zt_ip',
-        key: 'zt_ip',
-        width: 130,
-        render: (v: string | null) => <Mono value={v} copyable />,
-      },
-      {
-        title: 'Tailscale',
-        dataIndex: 'tailscale_ip',
-        key: 'tailscale_ip',
-        width: 130,
-        render: (v: string | null) => <Mono value={v} copyable />,
-      },
-      {
-        title: 'LAN',
-        dataIndex: 'local_ip',
-        key: 'local_ip',
-        width: 130,
-        render: (v: string | null) => <Mono value={v} copyable />,
-      },
-      {
-        title: 'Enixma',
-        key: 'enixma',
-        width: 148,
-        render: (_: unknown, r) => {
-          if (r.enixma_status === 'ok' && r.enixma_url) {
-            return (
-              <a
-                href={r.enixma_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[12px]"
-                style={{ color: '#22c55e' }}
-              >
-                <TbExternalLink size={12} />
-                enixma.net
-              </a>
-            )
-          }
-          if (r.enixma_status === 'failed') {
-            return (
-              <Pill
-                color="#ef4444"
-                label="ตรวจสอบไม่ผ่าน"
-                tooltip={r.enixma_last_error || 'เชื่อมต่อ enixma ไม่ได้'}
-              />
-            )
-          }
-          if (r.enixma_status === 'pending') {
-            return <Pill color="#eab308" label="รอ auto" tooltip="กำลังตั้งค่า tunnel อัตโนมัติ" />
-          }
-          return <span className="text-white/30">—</span>
-        },
-      },
-      {
-        title: 'Legacy URL',
-        key: 'legacy_url',
-        width: 92,
-        render: (_: unknown, r) => {
-          const differs =
-            r.desktop_screen_url && r.desktop_screen_url !== r.enixma_url
-          if (!differs) return <span className="text-white/30">—</span>
-          return (
-            <a
-              href={r.desktop_screen_url!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-(--default-blue) hover:underline inline-flex items-center gap-1 text-xs"
-            >
-              <TbExternalLink size={12} />
-              ดู
-            </a>
-          )
-        },
-      },
-      {
-        title: 'อัพเดต',
-        dataIndex: 'screen_info_updated_at',
-        key: 'screen_info_updated_at',
-        width: 128,
-        render: (v: string | null) => (
-          <Tooltip title={v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : 'ไม่มีข้อมูล'}>
-            <span className="text-xs text-white/70">{relTime(v)}</span>
-          </Tooltip>
-        ),
-      },
-      {
-        title: (
-          <Tooltip title='เมื่อเปิด ป้ายนี้จะถูก dispatch จาก Command Center; ปิด = ป้ายจะถูกข้ามในการส่งคำสั่งรวม'>
-            <span>เข้ากลุ่ม?</span>
-          </Tooltip>
-        ),
+        title: 'เข้ากลุ่ม',
         key: 'is_centralized',
-        width: 92,
+        width: 110,
+        align: 'center',
         fixed: 'right',
         render: (_: unknown, r) => (
           <Switch
@@ -493,24 +469,84 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         ),
       },
     ],
-    [centralize.isPending, centralize.variables, handleToggleCentralize, minVersion, onOpenSignDetail]
+    [centralize.isPending, centralize.variables, handleToggleCentralize, onOpenSignDetail]
   )
 
-  return (
-    <div className="h-full grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] gap-3">
-      {/* Left: scope filter panel */}
-      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
-        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
-          <div className="text-xs font-semibold text-(--yellow)">กรองตามโครงสร้าง</div>
-          <Badge count={filtered.length} showZero color="#f59e0b" overflowCount={999} />
-        </div>
-        <div className="flex-1 min-h-0">
-          <ScopePicker
-            onSelectionChange={setSelection}
-            selection={selection}
-            alwaysSelectMode
-            includeOfflineOnSelectAll
+  // AntD's expandable API — only one open at a time to prevent an HLS stampede.
+  const rowExpandable = useCallback(
+    (r: ScreenInfoItem) => Boolean(r.desktop_screen_url || r.enixma_url),
+    []
+  )
+  const expandedRowRender = useCallback((r: ScreenInfoItem) => {
+    const url = r.desktop_screen_url || r.enixma_url || ''
+    return (
+      <div className="p-3 bg-black/40">
+        <div className="max-w-2xl mx-auto">
+          <HLSLivePlayer
+            hlsUrl={url}
+            figureClassName="rounded-md w-full aspect-video"
+            cameraId={String(r.vms_id)}
+            enableViewportPause
           />
+        </div>
+      </div>
+    )
+  }, [])
+
+  const hasFilter = filter.level !== 'all'
+
+  return (
+    <div className="h-full grid grid-cols-1 md:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] gap-3">
+      {/* Left: bureau/state/route tree */}
+      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
+          <div className="text-xs font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
+          {hasFilter && (
+            <Button
+              size="small"
+              type="text"
+              onClick={clearFilter}
+              className="text-white/60 hover:text-white!"
+              style={{ fontSize: 11, height: 22, padding: '0 6px' }}
+            >
+              ล้างตัวกรอง
+            </Button>
+          )}
+        </div>
+        <div className="flex-1 min-h-0 overflow-auto p-1">
+          {isLoading ? (
+            <div className="p-3">
+              <Skeleton active paragraph={{ rows: 6 }} />
+            </div>
+          ) : (
+            <ConfigProvider
+              theme={{
+                components: {
+                  Tree: {
+                    directoryNodeSelectedBg: 'rgba(252, 209, 22, 0.15)',
+                    nodeSelectedBg: 'rgba(252, 209, 22, 0.15)',
+                    nodeHoverBg: 'rgba(255,255,255,0.04)',
+                    colorBgContainer: 'transparent',
+                  },
+                },
+              }}
+            >
+              <Tree
+                treeData={treeData}
+                selectedKeys={selectedKeys}
+                expandedKeys={expandedKeys}
+                onExpand={(keys) => setExpandedKeys(keys)}
+                onSelect={handleTreeSelect}
+                blockNode
+                showLine={false}
+                checkable={false}
+                draggable={false}
+                selectable
+                multiple={false}
+                style={{ background: 'transparent', color: 'rgba(255,255,255,0.85)' }}
+              />
+            </ConfigProvider>
+          )}
         </div>
       </div>
 
@@ -518,14 +554,19 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b border-white/10 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div>
-              <div className="text-sm font-semibold text-(--yellow)">สถานะการแสดงผลของป้ายทั้งหมด</div>
-              <div className="text-xs opacity-60 mt-0.5">
-                รวม {summary?.total ?? rows.length} ป้าย · ออนไลน์ {summary?.online ?? 0} · ควบคุมได้{' '}
-                {summary?.controllable ?? 0} · เข้ากลุ่ม {summary?.centralized ?? 0}
-                {isFetching && <span className="opacity-70"> · กำลังโหลด...</span>}
-              </div>
-              <div className="text-[11px] opacity-40 mt-0.5">อัพเดตล่าสุด {lastUpdated}</div>
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
+                รวม <b className="text-white">{summary?.total ?? rows.length}</b>
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
+                ออนไลน์ <b className="text-emerald-300">{summary?.online ?? 0}</b>
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
+                ควบคุมได้ <b className="text-(--yellow)">{summary?.controllable ?? 0}</b>
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
+                เข้ากลุ่ม <b className="text-white">{summary?.centralized ?? 0}</b>
+              </span>
             </div>
             <Button
               size="small"
@@ -541,11 +582,11 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
             <Input
               size="small"
               allowClear
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               prefix={<TbSearch size={14} className="opacity-60" />}
-              placeholder="ค้นชื่อ / WID / Machine / AnyDesk / IP"
-              style={{ width: 260 }}
+              placeholder="ค้น WID / ป้าย / สายทาง / สังกัด / Machine / AnyDesk"
+              style={{ width: 300 }}
             />
             <div className="flex items-center gap-1.5 flex-wrap">
               <Chip
@@ -573,11 +614,6 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                 label="ยังไม่รายงาน"
                 onClick={() => setStatusFilter('never')}
               />
-              <Chip
-                active={controllableOnly}
-                label={controllableOnly ? 'เฉพาะควบคุมได้ ✓' : 'เฉพาะควบคุมได้'}
-                onClick={() => setControllableOnly((v) => !v)}
-              />
             </div>
           </div>
         </div>
@@ -598,6 +634,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                     rowHoverBg: 'rgba(255,255,255,0.04)',
                     borderColor: 'rgba(255,255,255,0.08)',
                     headerSplitColor: 'rgba(255,255,255,0.08)',
+                    expandIconBg: 'transparent',
                   },
                 },
               }}
@@ -608,15 +645,16 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                 rowKey="wid"
                 size="small"
                 sticky
-                pagination={{
-                  pageSize: 50,
-                  showSizeChanger: true,
-                  pageSizeOptions: ['25', '50', '100', '200'],
-                  size: 'small',
-                }}
-                scroll={{ x: 1720, y: 'calc(100vh - 340px)' }}
+                pagination={false}
+                scroll={{ y: 'calc(100vh - 320px)' }}
                 rowClassName={(r) => (r.is_centralized ? '' : 'opacity-70')}
                 locale={{ emptyText: 'ไม่มีป้ายที่ตรงกับตัวกรอง' }}
+                expandable={{
+                  rowExpandable,
+                  expandedRowRender,
+                  expandedRowKeys: expandedWid != null ? [expandedWid] : [],
+                  onExpand: (open, r) => setExpandedWid(open ? r.wid : null),
+                }}
               />
             </ConfigProvider>
           )}

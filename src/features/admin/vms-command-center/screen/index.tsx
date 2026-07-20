@@ -14,6 +14,7 @@ import StatusTable from '../components/StatusTable'
 import { useScreenInfo } from '../hooks/useScreenInfo'
 import { ControlVMSProvider } from '@/features/admin/control-vms/overall/context'
 import DisplaySection from '@/features/admin/control-vms/overall/components/DisplaySection'
+import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
 
 
 const emptySelection: BureauSelection = {
@@ -24,7 +25,7 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'status'] as const
+const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'status', 'legacy'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -157,6 +158,15 @@ const VMSCommandCenterScreen: React.FC = () => {
               children: (
                 <div className="h-[calc(100vh-160px)]">
                   <StatusTable onOpenSignDetail={openDetail} />
+                </div>
+              ),
+            },
+            {
+              key: 'legacy',
+              label: 'หน้าเดิม (Legacy)',
+              children: (
+                <div className="h-[calc(100vh-160px)] overflow-auto">
+                  <ControlVMSScreen />
                 </div>
               ),
             },
