@@ -36,6 +36,14 @@ export interface BureauListProps {
    *  signs. Default false (safer — offline signs are still individually
    *  selectable via their checkbox). */
   includeOfflineOnSelectAll?: boolean
+
+  /** Hide the sign-level leaves under each route — the tree stops at
+   *  route. Ticking a route still cascades to every sign under it (so
+   *  selection.signs remains complete for downstream consumers), the
+   *  leaves are just not rendered. Used by the Status tab where each
+   *  sign already has its own row + expandable HLS preview on the
+   *  right, making the sidebar preview redundant. */
+  hideSignLeaves?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +183,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     defaultSelectMode = false,
     alwaysSelectMode = false,
     includeOfflineOnSelectAll = false,
+    hideSignLeaves = false,
     defaultExpandAll = false,
     onBureauClick,
     onStateClick,
