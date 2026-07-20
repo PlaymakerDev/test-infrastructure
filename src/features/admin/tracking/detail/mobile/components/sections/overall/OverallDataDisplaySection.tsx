@@ -4,30 +4,26 @@ import {
   MobileDailyWeightList,
   FormSearchDailyWeight
 } from '@/features/admin/tracking/detail/mobile/components'
-import { getTrackingMobileCarAPI } from '@/services/routes/TrackingDetailService';
-import { useQuery } from '@tanstack/react-query';
+import { useMobileCar } from '@/features/admin/tracking/detail/mobile/hooks'
+import { useMobileContext } from '@/features/admin/tracking/detail/mobile/context'
 
 
 interface Props {
-  id: string[] | string | number | undefined;
+
 }
 
 const DEFAULT_PAGE_SIZE = 10
 
-const OverallDataDisplaySection: React.FC<Props> = (props) => {
-  const { id } = props
+const OverallDataDisplaySection: React.FC<Props> = () => {
+  const { id } = useMobileContext()
   const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('TABLE')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['weight_mobile_car', id, page, pageSize],
-    queryFn: () => getTrackingMobileCarAPI({
-      tid: String(id),
-      page,
-      page_size: pageSize
-    }),
-    enabled: !!id,
+  const { data, isLoading, isError } = useMobileCar({
+    tid: String(id),
+    page,
+    page_size: pageSize
   })
 
   const renderContent = useMemo(() => {

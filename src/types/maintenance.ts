@@ -71,6 +71,7 @@ export interface DetailProject {
 export interface DetailRoad {
   road_id: number
   road_name: string
+  road_code: string
   online_count: number
   offline_count: number
   projects_count: number
@@ -113,6 +114,16 @@ export interface SummaryItem {
   type: string
   device_count: number
   location_count: number
+}
+
+/** GET /{prefix}/departments/{id}/{cameras|overview}/uptime-statistics?scope=all
+ *  — per-domain online percentage used by Solution Overview's rings. The
+ *  response also carries a domain-specific `{ total, online, offline }` block
+ *  under a key named after the domain (e.g. `camera`, `traffic`, `lighting`),
+ *  omitted here since only the aggregate percentage is needed. */
+export interface UptimeStatistics {
+  percentage: number
+  is_maintain: boolean
 }
 
 export interface WarrantySummaryItem {
@@ -191,6 +202,9 @@ export interface CaseHistoryItem {
 
 export interface HistoryCase {
   case_no: string
+  /** Present on newer history responses. When absent, callers may only infer
+   *  a solution from an unambiguous camera/type relationship. */
+  solution_id?: number | null
   category: string
   department_name: string
   device_name: string

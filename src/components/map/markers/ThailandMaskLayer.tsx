@@ -45,8 +45,11 @@ export const PROVINCE_HOVER_LINE_ID = 'province-hover-line'
  * Province dim/highlight is hidden until `highlightedProvinceCode` is provided.
  */
 const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
-  thailandUrl = '/atlas/data/thailand.geojson',
-  provincesUrl = '/atlas/data/th-provinces.geojson',
+  // Mapbox fetches these itself (no Next auto-prefix) — carry the deploy
+  // basePath ('/atlas' in prod, '' in dev) explicitly so BOTH environments
+  // resolve public/data correctly.
+  thailandUrl = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
+  provincesUrl = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/th-provinces.geojson`,
   highlightedProvinceCode,
   maskColor = '#0E0D0D',
   maskOpacity = 0.8,

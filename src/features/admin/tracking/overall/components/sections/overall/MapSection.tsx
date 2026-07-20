@@ -2,9 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Button, ConfigProvider, Image, Skeleton } from 'antd'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getTrackingPositionAPI } from '@/services/routes/TrackingService'
 import { useOverallContext } from '../../../context'
+import { usePosition } from '../../../hooks'
 import { APIResponseTrackingPosition, PositionMobile, PositionStation, PositionWim } from '@/types/tracking/overall-api'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { theme } from '@/configs/antd/themeConfig'
@@ -215,12 +214,8 @@ const MapSection: React.FC<Props> = (props) => {
   const [activeFilter, setActiveFilter] = useState<FilterOption>('ทั้งหมด')
   const { searchPosition, setSearchPosition } = useOverallContext()
 
-  const { data, isLoading, isSuccess } = useQuery({
-    queryKey: ['tracking_position', searchPosition?.StationType],
-    queryFn: () => getTrackingPositionAPI({
-      StationType: searchPosition?.StationType,
-    }),
-    placeholderData: keepPreviousData
+  const { data, isLoading, isSuccess } = usePosition({
+    StationType: searchPosition?.StationType,
   })
 
   const onSearch = useCallback((item: FilterOption) => {

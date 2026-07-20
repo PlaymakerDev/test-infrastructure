@@ -50,12 +50,15 @@ const solutionSchema = z.object({
   solution_name: z.string(),
   anydesk: z.string(),
   geo_point: z.array(z.number()),
+  latitude: z.number(),
+  longitude: z.number(),
   project: sharedProjectSchema,
   desktop_screen: z.string(),
   last_connected: z.string(),
   is_online: z.boolean(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
 })
 
 const roadSchema = z.object({
@@ -70,6 +73,7 @@ const subDepartmentSchema = z.object({
   department_short_name: z.string(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
   roads: z.array(roadSchema),
 })
 
@@ -78,6 +82,7 @@ const vmsDepartmentListSchema = z.object({
   department_short_name: z.string(),
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
+  noti_count: z.number(),
   sub_department: z.array(subDepartmentSchema),
 })
 

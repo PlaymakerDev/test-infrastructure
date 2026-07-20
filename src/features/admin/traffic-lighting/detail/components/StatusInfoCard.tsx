@@ -22,6 +22,8 @@ export interface StatusInfoCardProps {
   active?: string
   /** Font size (px) of the big status value. Default 18. */
   valueFontSize?: number
+  /** Compact horizontal layout for narrow side columns. */
+  compact?: boolean
 }
 
 /** Single bordered status card — connection, circuit, or wire status. */
@@ -39,7 +41,54 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
   valueUnitLarge,
   active,
   valueFontSize = 18,
+  compact = false,
 }) => {
+  if (compact) {
+    return (
+      <div
+        className='w-full shrink-0 rounded-[20px] px-3 py-3 flex flex-row items-center gap-3 min-h-[88px]'
+        style={{
+          background: background ?? '#66AEFF1A',
+          border: noBorder ? 'none' : `2px solid ${borderColor}`,
+        }}
+      >
+        {iconNode ?? (icon ? <img src={icon} alt='' width={30} height={30} className='shrink-0 w-8 h-8' /> : null)}
+        <div className='min-w-0 flex-1'>
+          <p className='text-[13px] font-bold m-0 leading-tight truncate' style={{ color: titleColor }}>
+            {title}
+          </p>
+          <div className='flex flex-row items-baseline gap-2 mt-1'>
+            <p className='font-bold m-0 text-white leading-none' style={{ fontSize: valueFontSize }}>
+              {status}
+            </p>
+            {valueUnit && (
+              <span
+                className='font-bold'
+                style={
+                  valueUnitLarge
+                    ? { color: titleColor, fontSize: valueFontSize }
+                    : { color: '#979797', fontSize: 12 }
+                }
+              >
+                {valueUnit}
+              </span>
+            )}
+          </div>
+          {subtitle && (
+            <p className='font-normal m-0 mt-1 truncate' style={{ color: '#979797', fontSize: 11 }}>
+              {subtitle}
+            </p>
+          )}
+          {active && (
+            <p className='font-normal m-0 mt-1' style={{ color: '#979797', fontSize: 11 }}>
+              Active : {active}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const statusIndent = icon || iconNode ? 'pl-[38px]' : 'pl-2'
 
   return (

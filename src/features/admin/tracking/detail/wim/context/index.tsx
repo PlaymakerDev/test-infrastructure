@@ -2,6 +2,7 @@
 import { createContext, useContext, useState } from 'react'
 import dayjs from 'dayjs'
 import type { APIRequestStationDaily } from '@/types/tracking/detail-api'
+import type { CCTVList } from '@/types/tracking/overall-api'
 import { toStationTypeId } from '@/constants/tracking'
 
 export interface ContextProps {
@@ -16,6 +17,8 @@ export interface ContextProps {
   setOpenWeightLogModal: React.Dispatch<React.SetStateAction<ModalWeightLogProps>>
   openCalibrationHistoryModal: ModalWeightLogProps
   setOpenCalibrationHistoryModal: React.Dispatch<React.SetStateAction<ModalWeightLogProps>>
+  openCCTVData: ModalCCTVDataProps
+  setOpenCCTVData: React.Dispatch<React.SetStateAction<ModalCCTVDataProps>>
 }
 
 export interface PageProviderProps {
@@ -36,6 +39,16 @@ export const INIT_MODAL_WEIGHT_LOG: ModalWeightLogProps = {
   open: false,
 }
 
+export interface ModalCCTVDataProps {
+  open: boolean
+  item: CCTVList | null
+}
+
+export const INIT_MODAL_CCTV_DATA: ModalCCTVDataProps = {
+  open: false,
+  item: null,
+}
+
 export const WIMContext = createContext<ContextProps | null>(null)
 
 export const WIMProvider = (props: PageProviderProps) => {
@@ -47,6 +60,7 @@ export const WIMProvider = (props: PageProviderProps) => {
   })
   const [openWeightLogModal, setOpenWeightLogModal] = useState<ModalWeightLogProps>(INIT_MODAL_WEIGHT_LOG)
   const [openCalibrationHistoryModal, setOpenCalibrationHistoryModal] = useState<ModalWeightLogProps>(INIT_MODAL_WEIGHT_LOG)
+  const [openCCTVData, setOpenCCTVData] = useState<ModalCCTVDataProps>(INIT_MODAL_CCTV_DATA)
 
   return (
     <WIMContext.Provider
@@ -62,6 +76,8 @@ export const WIMProvider = (props: PageProviderProps) => {
         setOpenWeightLogModal,
         openCalibrationHistoryModal,
         setOpenCalibrationHistoryModal,
+        openCCTVData,
+        setOpenCCTVData,
       }}
     >
       {children}

@@ -2,8 +2,7 @@
 import React, { useCallback, useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getTrackingPositionAPI } from '@/services/routes/TrackingService'
+import { usePosition } from '@/features/admin/tracking/overall/hooks'
 import { Button, ConfigProvider, Image, Skeleton } from 'antd'
 import { APIResponseTrackingPosition, PositionMobile, PositionStation, PositionWim } from '@/types/tracking/overall-api'
 import { theme } from '@/configs/antd/themeConfig'
@@ -211,12 +210,8 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
 const MobileMap: React.FC<Props> = (props) => {
   const { } = props
 
-  const { data, isLoading, isSuccess } = useQuery({
-    queryKey: ['mobile_position',],
-    queryFn: () => getTrackingPositionAPI({
-      StationType: '2',
-    }),
-    placeholderData: keepPreviousData
+  const { data, isLoading, isSuccess } = usePosition({
+    StationType: '2',
   })
 
   const renderMarkerLayer = useMemo(() => {

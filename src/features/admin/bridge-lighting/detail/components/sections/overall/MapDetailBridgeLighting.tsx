@@ -8,7 +8,7 @@ import React, { useMemo } from 'react'
 
 // Prepend the Next.js basePath — the app is served under `/atlas` in prod,
 // and nginx has a catch-all that 301-redirects unmatched paths into
-// `/dashvue$request_uri`. A bare `/images/...` therefore resolves to
+// `/dashvue$request_uri`. A bare `/atlas/images/...` therefore resolves to
 // `/dashvue/images/...` which does not exist → 404 (and browsers retry the
 // broken <img> aggressively, flooding devtools). `__NEXT_ROUTER_BASEPATH`
 // is empty string in dev, `/atlas` in prod — same helper the rest of the

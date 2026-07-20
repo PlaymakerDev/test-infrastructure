@@ -1,31 +1,16 @@
 "use client"
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
-  getLightingCentralListAPI,
-  getLightingCentralTotalsAPI,
-  getLightingOverviewAPI,
-  getLightingRandomOnlineAPI,
-} from '@/services/routes/LightingService'
-import type { DetailsResponse, LightingOverviewTotals, OverviewCentralItem } from '@/types/lighting'
+  useLightingCentralList,
+  useLightingCentralTotals,
+  useLightingOverview,
+  useLightingRandomOnline,
+  isValidLightingDeptId,
+} from '@/hooks/queries/lighting'
+import type { LightingOverviewTotals } from '@/types/lighting'
 import { mapCentralListToProjects } from '../data/trafficLightingProjects'
 import { useAppSelector } from '@/stores/hooks'
-
-export interface MarkerItem {
-  id: number | string
-  lng: number
-  lat: number
-  no: number
-  imei?: string
-}
-
-const MOCK_MARKERS: MarkerItem[] = [
-  { id: 'mock-1', lng: 100.5, lat: 13.75, no: 5 },
-  { id: 'mock-2', lng: 98.98, lat: 18.79, no: 12 },
-  { id: 'mock-3', lng: 102.83, lat: 16.44, no: 8 },
-  { id: 'mock-4', lng: 102.1, lat: 14.97, no: 3 },
-  { id: 'mock-5', lng: 99.97, lat: 17.01, no: 15 },
-]
 
 const SUMMARY_STAT_DEFS = [
   { label: 'ทั้งหมด', color: '#FCD116', variant: 'filled' as const, get: (t: LightingOverviewTotals) => t.solution.total },
@@ -35,31 +20,28 @@ const SUMMARY_STAT_DEFS = [
   { label: 'หมดค้ำ', color: '#979797', variant: 'outlined' as const, get: (t: LightingOverviewTotals) => t.warranty.expired },
 ]
 
-const LEFT_PANEL_ITEMS = [
-  { id: '1', route: 'อน.3023', cabinet: 'ตู้ที่ 2 กม.6+400', imei: '860946061754746' },
-] as const
+const EMPTY_LEFT_PANEL_ITEM = {
+  id: '-', route: '-', cabinet: '-', imei: '-', equipmentType: '', coord: null,
+} as const
 
 const LEFT_BOTTOM_CARDS = [
-  { border: '#6666FF', icon: '/atlas/images/Lighting/icel1.png', titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
-  { border: '#B066FF', icon: '/atlas/images/Lighting/icel2.png', titleColor: '#B066FF', title: 'สถานะการเชื่อมต่อ', status: 'เชื่อมต่อปกติ' },
+  { border: '#6666FF', icon: '/atlas/images/Lighting/icel1.png', titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: '-' },
+  { border: '#B066FF', icon: '/atlas/images/Lighting/icel2.png', titleColor: '#B066FF', title: 'สถานะวงจร', status: '-' },
 ] as const
 
 const PHASE_METRICS = [
-  { label: 'Volt', value: '240.2' },
-  { label: 'Amp', value: '35.2' },
-  { label: 'Watt', value: '50.27' },
-  { label: 'Pf', value: '0.97' },
-  { label: 'kWh', value: '3.02' },
-  { label: 'Hz', value: '50.03' },
+  { label: 'Volt', value: '-' },
+  { label: 'Amp', value: '-' },
+  { label: 'Watt', value: '-' },
+  { label: 'kWh', value: '-' },
+  { label: 'Hz', value: '-' },
 ] as const
 
 export interface StatCardView {
   title: string
   icon: string
   titleColor: string
-  bg: string
-  border: string
-  value: number
+  value: number | string
   active: string
 }
 
@@ -75,6 +57,8 @@ export interface LeftPanelItem {
   route: string
   cabinet: string
   imei: string
+  equipmentType: string
+  coord: [number, number] | null
 }
 
 export interface LeftBottomCard {
@@ -94,8 +78,9 @@ export interface OverallContextProps {
   deptId: number
   searchQuery: string
   setSearchQuery: (value: string) => void
-  markers: MarkerItem[]
-  markersLoaded: boolean
+  centralListLoaded: boolean
+  centralListError: boolean
+  retryCentralList: () => void
   statCards: StatCardView[]
   summaryStats: SummaryStatView[]
   filteredProjects: ReturnType<typeof mapCentralListToProjects>
@@ -104,7 +89,7 @@ export interface OverallContextProps {
   phaseSubLabel: string
   phaseMetrics: PhaseMetric[]
   leftBottomCards: LeftBottomCard[]
-  diagramUrl: string
+  diagramImei: string
 }
 
 export interface OverallProviderProps {
@@ -117,91 +102,78 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
   const searchParams = useSearchParams()
   const { sidebar } = useAppSelector((state) => state.layout)
   const [searchQuery, setSearchQuery] = useState('')
-  const [markers, setMarkers] = useState<MarkerItem[]>([])
-  const [markersLoaded, setMarkersLoaded] = useState(false)
-  const [centralItems, setCentralItems] = useState<OverviewCentralItem[]>([])
-  const [centralTotals, setCentralTotals] = useState<LightingOverviewTotals | null>(null)
-  const [totalsLoaded, setTotalsLoaded] = useState(false)
-  const [device, setDevice] = useState<DetailsResponse | null>(null)
-  const [deviceLoaded, setDeviceLoaded] = useState(false)
 
+  const urlDeptId = searchParams.get('dept_id')
+  const sidebarDeptId = sidebar[0]?.sub_department[0]?.department_id
   const deptId = Number(
-    searchParams.get('dept_id')
-    || sidebar[0]?.sub_department[0]?.department_id
-    || '0',
+    isValidLightingDeptId(urlDeptId)
+      ? urlDeptId
+      : isValidLightingDeptId(sidebarDeptId)
+        ? sidebarDeptId
+        : 0,
   )
 
-  useEffect(() => {
-    let active = true
-    getLightingOverviewAPI(deptId)
-      .then((res) => {
-        if (!active) return
-        const locs = res.data?.locations ?? []
-        const real = locs
-          .filter((l) => Array.isArray(l.GeometryPoint) && l.GeometryPoint!.length === 2)
-          .map((l) => ({
-            id: l.solution.id,
-            lng: l.GeometryPoint![0],
-            lat: l.GeometryPoint![1],
-            no: l.lighting?.equipment?.count ?? 0,
-          }))
-        const seen = new Set<number | string>()
-        const unique = real.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)))
-        setMarkers(unique.length > 0 ? unique : MOCK_MARKERS)
-      })
-      .catch((err) => {
-        console.error('overview failed, using mock markers:', err)
-        setMarkers(MOCK_MARKERS)
-      })
-      .finally(() => { if (active) setMarkersLoaded(true) })
-    return () => { active = false }
-  }, [deptId])
+  // Overview API (with GeometryPoint + imei) — used to resolve device coordinates
+  const overviewQuery = useLightingOverview(deptId)
+  const centralListQuery = useLightingCentralList(deptId)
+  const centralTotalsQuery = useLightingCentralTotals(deptId)
+  const randomOnlineQuery = useLightingRandomOnline(deptId)
 
-  useEffect(() => {
-    let active = true
-    getLightingCentralListAPI(deptId)
-      .then((res) => { if (active) setCentralItems(res.data ?? []) })
-      .catch((err) => console.error('central/list failed:', err))
-    return () => { active = false }
-  }, [deptId])
+  const centralItems = useMemo(() => centralListQuery.data ?? [], [centralListQuery.data])
+  const centralListLoaded = centralListQuery.isSuccess
+  const centralListError = centralListQuery.isError
+  const centralTotals = centralTotalsQuery.data ?? null
+  const totalsLoaded = centralTotalsQuery.isSuccess
+  const device = randomOnlineQuery.data ?? null
+  const deviceLoaded = !randomOnlineQuery.isLoading
 
-  useEffect(() => {
-    let active = true
-    getLightingCentralTotalsAPI(deptId)
-      .then((res) => { if (active) setCentralTotals(res.data ?? null) })
-      .catch((err) => console.error('central/totals failed:', err))
-      .finally(() => { if (active) setTotalsLoaded(true) })
-    return () => { active = false }
-  }, [deptId])
+  const leftPanelItems = useMemo(() => {
+    if (!deviceLoaded || !device) {
+      return [{ ...EMPTY_LEFT_PANEL_ITEM }]
+    }
+    const centralMatch = centralItems
+      .flatMap((b) => b.sub_department)
+      .flatMap((d) => d.solutions)
+      .find((s) => s.imei === device.imei)
+    // overview/ has GeometryPoint but no imei; resolve via solution.id from central/list match
+    const solId = centralMatch?.solution?.id
+    const overviewMatch = solId != null
+      ? overviewQuery.data?.locations?.find((l) => l.solution?.id === solId)
+      : undefined
+    const equipType = centralMatch?.lighting?.equipment?.type
+      ?? overviewMatch?.lighting?.equipment?.type
+      ?? ''
+    const coord = overviewMatch?.GeometryPoint ?? null
+    return [{
+      id: device.imei,
+      imei: device.imei,
+      route: centralMatch?.road?.code_name ?? overviewMatch?.road?.code_name ?? '-',
+      cabinet: centralMatch?.solution?.solution_name ?? overviewMatch?.solution?.solution_name ?? '-',
+      equipmentType: equipType,
+      coord,
+    }]
+  }, [device, deviceLoaded, centralItems, overviewQuery.data])
 
-  useEffect(() => {
-    let active = true
-    getLightingRandomOnlineAPI(deptId)
-      .then((res) => { if (active && res.data) setDevice(res.data) })
-      .catch((err) => console.error('random-online failed:', err))
-      .finally(() => { if (active) setDeviceLoaded(true) })
-    return () => { active = false }
-  }, [deptId])
-
-  const leftPanelItems = useMemo(
-    () => LEFT_PANEL_ITEMS.map((it) => ({ ...it, imei: deviceLoaded ? (device?.imei ?? it.imei) : '-' })),
-    [device, deviceLoaded],
-  )
-
-  const phaseNum = !deviceLoaded ? null : (device ? device.phase : 3)
+  const phaseNum = !deviceLoaded ? null : (device?.phase ?? null)
   const phaseLabel = phaseNum === null ? '-' : `${phaseNum} Phase`
-  const phaseSubLabel = phaseNum === 1 ? 'Single Phase' : 'Three Phase'
+  const phaseSubLabel = phaseNum === 1
+    ? 'Single Phase'
+    : phaseNum === 3
+      ? 'Three Phase'
+      : '-'
 
   const phaseMetrics = useMemo(() => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
     const e = device?.electricity?.[0]
+    // API values can come back as long floats (e.g. 1209.2671710000002) that
+    // overflow the fixed-width metric card — round to 2dp like the static defaults.
+    const fmt = (n: number) => n.toFixed(2)
     return PHASE_METRICS.map((m) => {
       switch (m.label) {
-        case 'Volt': return { ...m, value: e ? String(e.voltage) : m.value }
-        case 'Amp': return { ...m, value: e ? String(e.amplitude) : m.value }
-        case 'Watt': return { ...m, value: e ? String(e.watt) : m.value }
-        case 'Pf': return { ...m, value: e ? String(e.power_factor) : m.value }
-        case 'Hz': return { ...m, value: e ? String(e.frequency) : m.value }
+        case 'Volt': return { ...m, value: e ? fmt(e.voltage) : '-' }
+        case 'Amp': return { ...m, value: e ? fmt(e.amplitude) : '-' }
+        case 'Watt': return { ...m, value: e ? fmt(e.watt) : '-' }
+        case 'Hz': return { ...m, value: e ? fmt(e.frequency) : '-' }
         default: return m
       }
     })
@@ -209,26 +181,29 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const leftBottomCards = useMemo(() => {
     if (!deviceLoaded) return LEFT_BOTTOM_CARDS.map((c) => ({ ...c, status: '-' }))
-    if (!device) return LEFT_BOTTOM_CARDS.map((c) => ({ ...c }))
-    const status = device.has_broken_wire ? 'สายขาด' : 'เชื่อมต่อปกติ'
-    return LEFT_BOTTOM_CARDS.map((c) => ({ ...c, status }))
+    if (!device) return LEFT_BOTTOM_CARDS.map((c) => ({ ...c, status: '-' }))
+    return LEFT_BOTTOM_CARDS.map((card, index) => ({
+      ...card,
+      status: index === 0
+        ? device.is_online ? 'ออนไลน์' : 'ออฟไลน์'
+        : device.has_broken_wire ? 'สายขาด' : 'เชื่อมต่อปกติ',
+    }))
   }, [device, deviceLoaded])
 
-  const diagramUrl = useMemo(() => {
-    const imei = device?.imei
-    if (!imei || !deviceLoaded) return ''
-    return `${process.env.NEXT_PUBLIC_HOST_BACKEND}/lighting/diagram/view/${imei}?w=500&h=260`
+  const diagramImei = useMemo(() => {
+    if (!deviceLoaded) return ''
+    return device?.imei ?? ''
   }, [device, deviceLoaded])
 
   const statCards = useMemo(() => {
     const base = [
-      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc1.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'โคมไฟในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc2.png', titleColor: '#FCD116', bg: '#FCD1161A', border: '0px solid #FCD116' },
-      { title: 'ในค้ำ', icon: '/atlas/images/Lighting/icc3.png', titleColor: '#05F2DB', bg: '#05F2DB1A', border: '2px solid #05F2DB' },
-      { title: 'หมดค้ำ', icon: '/atlas/images/Lighting/icc4.png', titleColor: '#979797', bg: '#9797971A', border: '0px solid #979797' },
+      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc1.png', titleColor: '#FCD116' },
+      { title: 'โคมไฟในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc2.png', titleColor: '#FCD116' },
+      { title: 'ในค้ำ', icon: '/atlas/images/Lighting/icc3.png', titleColor: '#05F2DB' },
+      { title: 'หมดค้ำ', icon: '/atlas/images/Lighting/icc4.png', titleColor: '#979797' },
     ]
-    if (!markersLoaded) {
-      return base.map((s) => ({ ...s, value: 0, active: '-' }))
+    if (!centralListLoaded) {
+      return base.map((s) => ({ ...s, value: '-', active: '-' }))
     }
     const sols = centralItems.flatMap((b) => b.sub_department).flatMap((s) => s.solutions)
     const of = (type: string) => sols.filter((s) => s.lighting?.equipment?.type === type)
@@ -245,7 +220,7 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
       { value: wExpired.length, active: fmt(online(wExpired), wExpired.length) },
     ]
     return base.map((s, i) => ({ ...s, ...values[i] }))
-  }, [centralItems, markersLoaded])
+  }, [centralItems, centralListLoaded])
 
   const summaryStats = useMemo(
     () => SUMMARY_STAT_DEFS.map((d) => ({
@@ -271,8 +246,9 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
     deptId,
     searchQuery,
     setSearchQuery,
-    markers,
-    markersLoaded,
+    centralListLoaded,
+    centralListError,
+    retryCentralList: () => { void centralListQuery.refetch() },
     statCards,
     summaryStats,
     filteredProjects,
@@ -281,7 +257,7 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
     phaseSubLabel,
     phaseMetrics,
     leftBottomCards,
-    diagramUrl,
+    diagramImei,
   }
 
   return (

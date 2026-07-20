@@ -9,10 +9,13 @@ import {
 
 // SVG icons live in /public/images/icon-marker/ — referenced by URL.
 // Each icon is 43x46 with the pin tip at (21, 27) and shadow extending below.
+// Raw <img src> is NOT auto-prefixed by Next, so the deploy basePath
+// ('/atlas' in prod, '' in dev) is carried explicitly — env-safe for both.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 const ICON_URL_BY_TYPE: Record<TrackingStationType, string> = {
-  wim:     '/atlas/images/icon-marker/Wim.svg',
-  mobile:  '/atlas/images/icon-marker/Moving.svg',
-  station: '/atlas/images/icon-marker/Station.svg',
+  wim:     `${BASE_PATH}/images/icon-marker/Wim.svg`,
+  mobile:  `${BASE_PATH}/images/icon-marker/Moving.svg`,
+  station: `${BASE_PATH}/images/icon-marker/Station.svg`,
 }
 const ICON_WIDTH = 43
 const ICON_HEIGHT = 46

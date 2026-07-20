@@ -42,6 +42,7 @@ import type {
   APIResponseDepartmentList,
   APIResponseRegionList,
 } from '@/types/manage/department-api'
+import { APIResponseNotificationSummary } from '@/types/manage/notification-api'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
 // keys whose value is undefined / null / empty-string. Mirrors the
@@ -274,3 +275,15 @@ export const searchSSOUsersAPI = (body: APIRequestSSOSearch) =>
     method: 'GET',
     params: { keyword: body.keyword },
   }).then((r) => r.data)
+
+// ── Notifications ────────────────────────────────────────────────────────────
+
+/** GET /manage/notifications/summary?start_date=&end_date= → one row per
+ *  source_type (lighting/analytic/vms_setting) with its most-frequent ref_type
+ *  and most-frequent department in range. Bare array — both params required. */
+export const getNotificationsSummaryAPI = (start_date: string, end_date: string) =>
+  ApiService.fetchData<APIResponseNotificationSummary>({
+    url: '/manage/notifications/summary',
+    method: 'GET',
+    params: { start_date, end_date },
+  })

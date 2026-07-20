@@ -1,9 +1,10 @@
 "use client"
 import SwapButton from '@/components/swap-button/SwapButton'
 import { Segmented } from 'antd'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
+import useIsMobile from '@/utils/hooks/useIsMobile'
 
 const TAB_OPTIONS = [
   { label: 'ภาพรวม', value: 'OVERVIEW' },
@@ -18,18 +19,6 @@ const PERIOD_OPTIONS = [
   { label: 'ปีที่ผ่านมา', value: 'LAST_YEAR' },
   { label: 'ทั้งหมด', value: 'ALL' },
 ]
-
-const useIsMobile = (breakpoint = 640) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
-}
 
 const MaintenanceTitleSection: React.FC = () => {
   const router = useRouter()

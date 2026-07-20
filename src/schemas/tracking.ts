@@ -2,6 +2,10 @@ import { z } from 'zod'
 import type {
   APIResponseCalibrationHistoryStatus,
   APIResponseLast7Days,
+  APIResponseMobileCar,
+  APIResponseMobileDailyCount,
+  APIResponseMobileMaster,
+  APIResponseMobileMasterDepartmentByTID,
   APIResponsePCU,
   APIResponsePositionByID,
   APIResponseStationByID,
@@ -15,6 +19,11 @@ import type {
   CalibrateWIM,
   LatestCalibration,
   MetaSummary,
+  MobileCarData,
+  MobileCarList,
+  MobileDailyCountData,
+  MobileMasterData,
+  MobileMasterDepartmentByTIDData,
   PCUData,
   PositionByIDData,
   StationData,
@@ -26,7 +35,41 @@ import type {
   WIMData,
   WIMDailyData,
 } from '@/types/tracking/detail-api'
-import type { APIResponseTrackingCCTVList, CCTVList } from '@/types/tracking/overall-api'
+import type {
+  AllDailySum,
+  AllDepartmentData,
+  APIResponseTrackingAllDepartment,
+  APIResponseTrackingCCTVList,
+  APIResponseTrackingCollaboration,
+  APIResponseTrackingDailySum,
+  APIResponseTrackingMobileMaster,
+  APIResponseTrackingPosition,
+  APIResponseTrackingSumStation,
+  APIResponseTrackingSumWeightYearV2,
+  APIResponseTrackingSumWim,
+  APIResponseTrackingTotalStation,
+  APIResponseTrackingViewSumPlanChart,
+  APIResponseTrackingWeightInspection,
+  CCTVList,
+  CollaborationData,
+  DailySumItem,
+  MobileMasterData as OverallMobileMasterData,
+  PositionLocation,
+  PositionMobile,
+  PositionStation,
+  PositionWim,
+  SumStation,
+  SumWeightData,
+  SumWeightSummary,
+  SumWeightYearData,
+  SumWim,
+  TotalMobile,
+  TotalStation,
+  TotalWim,
+  ViewSumPlanChartAllSum,
+  ViewSumPlanChartItem,
+  WeightInspectionData,
+} from '@/types/tracking/overall-api'
 import type { WIMMetaData } from '@/types/shared'
 
 // ── Shared sub-schemas ──────────────────────────────────────────────────────
@@ -459,3 +502,472 @@ export const apiResponseTrackingCCTVListSchema = z.object({
   meta: wimMetaDataSchema,
   success: z.boolean(),
 }) satisfies z.ZodType<APIResponseTrackingCCTVList>
+
+// ── MOBILE DAILY STATUS COUNT (tracking/detail/mobile) ──────────────────────
+
+const mobileDailyCountDataSchema = z.object({
+  actual: z.number(),
+  axis_over_gross_weight: z.number(),
+  fiscal_year: z.number(),
+  max_grossweight_not_over: z.number(),
+  max_grossweight_over: z.number(),
+  max_grossweight_over_percent: z.number(),
+  open_station_count: z.number(),
+  plan: z.number(),
+  sum_total: z.number(),
+  sum_total_over: z.number(),
+  top_region: z.any(),
+  top_region_open_count: z.number(),
+  top_region_percent: z.number(),
+  total_station_count: z.number(),
+  weight_axis_over_count: z.number(),
+}) satisfies z.ZodType<MobileDailyCountData>
+
+export const apiResponseMobileDailyCountSchema = z.object({
+  success: z.boolean(),
+  data: mobileDailyCountDataSchema,
+}) satisfies z.ZodType<APIResponseMobileDailyCount>
+
+// ── MOBILE MASTER DEPARTMENT BY TID ─────────────────────────────────────────
+
+const mobileMasterDepartmentByTIDDataSchema = z.object({
+  FirstName: z.string(),
+  LastName: z.string(),
+  Title: z.string(),
+  Total: z.string(),
+  TotalOver: z.string(),
+  collaboration: z.string(),
+  create_by: z.string(),
+  create_date: z.string(),
+  dept_id: z.number(),
+  dept_province: z.string(),
+  district: z.string(),
+  image_name1: z.string(),
+  image_name2: z.string(),
+  image_path1: z.string(),
+  image_path2: z.string(),
+  is_open: z.number(),
+  km_from: z.string(),
+  km_to: z.string(),
+  latitude: z.string(),
+  longitude: z.string(),
+  province: z.string(),
+  sub_district: z.string(),
+  tid: z.string(),
+  time_from: z.string(),
+  time_to: z.string(),
+  way_id: z.string(),
+  way_name: z.string(),
+}) satisfies z.ZodType<MobileMasterDepartmentByTIDData>
+
+export const apiResponseMobileMasterDepartmentByTIDSchema = z.object({
+  success: z.boolean(),
+  data: mobileMasterDepartmentByTIDDataSchema,
+}) satisfies z.ZodType<APIResponseMobileMasterDepartmentByTID>
+
+// ── MOBILE CAR ────────────────────────────────────────────────────────────
+
+const mobileCarListSchema = z.object({
+  accept_weight: z.any(),
+  accept_weight_by: z.any(),
+  arrest_id: z.any(),
+  create_date: z.string(),
+  drive_shaft_over: z.string().optional(),
+  driver_name: z.any(),
+  driver_shaft: z.string(),
+  ds_1: z.string(),
+  ds_2: z.string(),
+  ds_3: z.string().optional(),
+  ds_4: z.string().optional(),
+  ds_5: z.string().optional(),
+  ds_6: z.string().optional(),
+  ds_7: z.string().optional(),
+  gross_weight: z.string(),
+  gross_weight_over: z.any(),
+  image_path0: z.string(),
+  image_path1: z.string(),
+  image_path2: z.string(),
+  image_path3: z.string(),
+  image_path4: z.string(),
+  image_path5: z.string(),
+  image_path6: z.string(),
+  is_arrested: z.number(),
+  is_over_weight: z.string(),
+  is_over_weight_desc: z.string(),
+  legal_weight: z.string(),
+  lp_head: z.string(),
+  lp_head_no: z.string(),
+  lp_head_province_id: z.number(),
+  lp_head_province_id_ppa: z.number(),
+  lp_head_province_name: z.string(),
+  lp_tail: z.string(),
+  lp_tail_no: z.string(),
+  lp_tail_province_id: z.number().optional(),
+  lp_tail_province_id_ppa: z.number().optional(),
+  lp_tail_province_name: z.string().optional(),
+  masterial_name: z.string(),
+  t_id: z.string(),
+  td_id: z.string(),
+  tdid_sort: z.number(),
+  vehicle_class_desc: z.string(),
+  vehicle_class_desc2: z.string(),
+  vehicle_class_desc3: z.string(),
+  vehicle_class_id: z.number(),
+  vehicle_class_id_ref: z.number(),
+  vehicle_class_legal_drive_shaft: z.string(),
+  vehicle_class_legal_drive_shaft_ref: z.string(),
+  vehicle_class_legal_weight: z.string(),
+  vehicle_class_name: z.string(),
+}) satisfies z.ZodType<MobileCarList>
+
+const mobileCarDataSchema = z.object({
+  data: z.array(mobileCarListSchema),
+  meta: wimMetaDataSchema,
+}) satisfies z.ZodType<MobileCarData>
+
+export const apiResponseMobileCarSchema = z.object({
+  success: z.boolean(),
+  data: mobileCarDataSchema,
+}) satisfies z.ZodType<APIResponseMobileCar>
+
+// ── MOBILE MASTER ─────────────────────────────────────────────────────────
+
+const mobileMasterDataSchema = z.object({
+  TID: z.string(),
+  DeptID: z.number(),
+  DeptName: z.string(),
+  Collaboration: z.string(),
+  DeptProvince: z.string(),
+  WayID: z.string(),
+  WayName: z.string(),
+  Subdistrict: z.string(),
+  District: z.string(),
+  Province: z.string(),
+  CreateBy: z.string(),
+  Title: z.string(),
+  FirstName: z.string(),
+  LastName: z.string(),
+  image_name1: z.string().optional(),
+  image_path1: z.string().optional(),
+  image_name2: z.string().optional(),
+  image_path2: z.string().optional(),
+  CreateDate: z.string(),
+  TimeFrom: z.string(),
+  TimeTo: z.string(),
+  IsOpen: z.number(),
+  Total: z.string(),
+  TotalOver: z.string(),
+  KMFrom: z.string(),
+  KMTo: z.string(),
+}) satisfies z.ZodType<MobileMasterData>
+
+export const apiResponseMobileMasterSchema = z.object({
+  success: z.boolean(),
+  data: z.array(mobileMasterDataSchema),
+  meta: wimMetaDataSchema,
+}) satisfies z.ZodType<APIResponseMobileMaster>
+
+// ── DAILY SUM (tracking/overall) ────────────────────────────────────────────
+
+const allDailySumSchema = z.object({
+  over: z.number(),
+  total: z.number(),
+}) satisfies z.ZodType<AllDailySum>
+
+const dailySumItemSchema = z.object({
+  create_date: z.string(),
+  over: z.string(),
+  station_type: z.number(),
+  station_type_desc: z.string(),
+  station_type_eng: z.string(),
+  total: z.string(),
+}) satisfies z.ZodType<DailySumItem>
+
+export const apiResponseTrackingDailySumSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    all_sum: allDailySumSchema,
+    items: z.array(dailySumItemSchema),
+  }),
+}) satisfies z.ZodType<APIResponseTrackingDailySum>
+
+// ── TOTAL STATION ────────────────────────────────────────────────────────────
+
+const totalMobileSchema = z.object({
+  total: z.string(),
+  open: z.string(),
+}) satisfies z.ZodType<TotalMobile>
+
+const totalWimSchema = z.object({
+  open: z.string(),
+  total: z.string(),
+}) satisfies z.ZodType<TotalWim>
+
+const totalStationSchema = z.object({
+  open: z.string(),
+  total: z.string(),
+}) satisfies z.ZodType<TotalStation>
+
+export const apiResponseTrackingTotalStationSchema = z.object({
+  mobile: totalMobileSchema,
+  wim: totalWimSchema,
+  station: totalStationSchema,
+}) satisfies z.ZodType<APIResponseTrackingTotalStation>
+
+// ── WEIGHT INSPECTION ────────────────────────────────────────────────────────
+
+const weightInspectionDataSchema = z.object({
+  create_date: z.string(),
+  date_value: z.string(),
+  over: z.string(),
+  over_title: z.string(),
+  total: z.string(),
+  total_title: z.string(),
+}) satisfies z.ZodType<WeightInspectionData>
+
+export const apiResponseTrackingWeightInspectionSchema = z.object({
+  data: z.array(weightInspectionDataSchema),
+  success: z.boolean(),
+}) satisfies z.ZodType<APIResponseTrackingWeightInspection>
+
+// ── SUM WEIGHT YEAR V2 ───────────────────────────────────────────────────────
+
+const sumWeightDataSchema = z.object({
+  all_total: z.number(),
+  arrest_total: z.number(),
+  judge_total: z.number(),
+  note: z.string().optional(),
+  plan_total: z.number(),
+  result_total: z.number(),
+  spot_check_total: z.number(),
+  station_total: z.number(),
+  way_id_total: z.number(),
+  wim_total: z.number(),
+  year_total: z.number(),
+}) satisfies z.ZodType<SumWeightData>
+
+const sumWeightSummarySchema = z.object({
+  all_total: z.string(),
+  arrest_total: z.string(),
+  judge_total: z.string(),
+  note: z.string(),
+  plan_total: z.string(),
+  result_total: z.string(),
+  spot_check_total: z.string(),
+  station_total: z.string(),
+  way_id_total: z.string(),
+  wim_total: z.string(),
+  year_total: z.string(),
+}) satisfies z.ZodType<SumWeightSummary>
+
+const sumWeightYearDataSchema = z.object({
+  data: z.array(sumWeightDataSchema),
+  summary: z.array(sumWeightSummarySchema),
+}) satisfies z.ZodType<SumWeightYearData>
+
+export const apiResponseTrackingSumWeightYearV2Schema = z.object({
+  data: sumWeightYearDataSchema,
+  success: z.boolean(),
+}) satisfies z.ZodType<APIResponseTrackingSumWeightYearV2>
+
+// ── VIEW SUM PLAN CHART ──────────────────────────────────────────────────────
+
+const viewSumPlanChartAllSumSchema = z.object({
+  plan_total: z.number(),
+  result_total: z.number(),
+}) satisfies z.ZodType<ViewSumPlanChartAllSum>
+
+const viewSumPlanChartItemSchema = z.object({
+  month: z.string(),
+  plan: z.number(),
+  result: z.number(),
+  year: z.string(),
+}) satisfies z.ZodType<ViewSumPlanChartItem>
+
+export const apiResponseTrackingViewSumPlanChartSchema = z.object({
+  all_sum: viewSumPlanChartAllSumSchema,
+  item: z.array(viewSumPlanChartItemSchema),
+  plan_year: z.string(),
+}) satisfies z.ZodType<APIResponseTrackingViewSumPlanChart>
+
+// ── POSITION ─────────────────────────────────────────────────────────────────
+
+const positionStationSchema = z.object({
+  StationID: z.number(),
+  StationName: z.string(),
+  StationDescription: z.string(),
+  LocationDescription: z.string(),
+  Latitude: z.string(),
+  Longtitude: z.string(),
+  isEnable: z.number(),
+  Total: z.number(),
+  Over: z.number(),
+}) satisfies z.ZodType<PositionStation>
+
+const positionWimSchema = z.object({
+  StationID: z.number(),
+  StationName: z.string(),
+  StationDescription: z.string(),
+  LocationDescription: z.string(),
+  Latitude: z.string(),
+  Longtitude: z.string(),
+  isEnable: z.number(),
+  Total: z.number(),
+  Over: z.number(),
+}) satisfies z.ZodType<PositionWim>
+
+const positionMobileSchema = z.object({
+  TID: z.number(),
+  Latitude: z.string(),
+  Longtitude: z.string(),
+  WayID: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+}) satisfies z.ZodType<PositionMobile>
+
+const positionLocationSchema = z.object({
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+}) satisfies z.ZodType<PositionLocation>
+
+export const apiResponseTrackingPositionSchema = z.object({
+  station: z.array(positionStationSchema),
+  wim: z.array(positionWimSchema),
+  mobile: z.array(positionMobileSchema),
+  location: z.array(positionLocationSchema),
+}) satisfies z.ZodType<APIResponseTrackingPosition>
+
+// ── SUM STATION ──────────────────────────────────────────────────────────────
+
+const sumStationSchema = z.object({
+  station_id: z.number(),
+  name: z.string(),
+  station_type: z.number(),
+  delivery_year: z.string(),
+  update_year: z.any(),
+  kilometer_position: z.any(),
+  contract_number: z.any(),
+  contractor_name: z.any(),
+  station_type_desc: z.string(),
+  station_type_eng: z.string(),
+  create_date: z.string(),
+  total: z.string(),
+  over: z.string(),
+  total_cctv: z.string(),
+  offline_cctv: z.string(),
+}) satisfies z.ZodType<SumStation>
+
+export const apiResponseTrackingSumStationSchema = z.object({
+  success: z.boolean(),
+  data: z.array(sumStationSchema),
+}) satisfies z.ZodType<APIResponseTrackingSumStation>
+
+// ── SUM WIM ──────────────────────────────────────────────────────────────────
+
+const sumWimSchema = z.object({
+  station_id: z.number(),
+  name: z.string(),
+  station_type: z.number(),
+  delivery_year: z.string().optional(),
+  update_year: z.string().optional(),
+  kilometer_position: z.string().optional(),
+  contract_number: z.string().optional(),
+  contractor_name: z.string().optional(),
+  station_type_desc: z.string(),
+  station_type_eng: z.string(),
+  create_date: z.string(),
+  total: z.string(),
+  over: z.string(),
+  over_10percent: z.string(),
+  total_cctv: z.string(),
+  offline_cctv: z.string(),
+}) satisfies z.ZodType<SumWim>
+
+export const apiResponseTrackingSumWimSchema = z.object({
+  success: z.boolean(),
+  data: z.array(sumWimSchema),
+}) satisfies z.ZodType<APIResponseTrackingSumWim>
+
+// ── COLLABORATION ────────────────────────────────────────────────────────────
+
+const collaborationDataSchema = z.object({
+  uid: z.number(),
+  t_id: z.string(),
+  image_path1: z.string(),
+  image_path2: z.string(),
+  image_name1: z.string(),
+  image_name2: z.string(),
+  way_id: z.number(),
+  way_code: z.string(),
+  collaboration: z.string(),
+  department_id: z.number(),
+  department_name: z.string(),
+  department_province: z.string(),
+  department_name2: z.string(),
+  create_date: z.string(),
+}) satisfies z.ZodType<CollaborationData>
+
+export const apiResponseTrackingCollaborationSchema = z.object({
+  success: z.boolean(),
+  data: z.array(collaborationDataSchema),
+  meta: wimMetaDataSchema,
+}) satisfies z.ZodType<APIResponseTrackingCollaboration>
+
+// ── MOBILE MASTER (tracking/overall — distinct from detail/mobile's own copy) ─
+
+const trackingMobileMasterDataSchema = z.object({
+  TID: z.string(),
+  DeptID: z.number(),
+  DeptName: z.string(),
+  Collaboration: z.string(),
+  DeptProvince: z.string(),
+  WayID: z.string(),
+  WayName: z.string(),
+  Subdistrict: z.string(),
+  District: z.string(),
+  Province: z.string(),
+  CreateBy: z.string(),
+  Title: z.string(),
+  FirstName: z.string(),
+  LastName: z.string(),
+  image_name1: z.string().optional(),
+  image_path1: z.string().optional(),
+  image_name2: z.string().optional(),
+  image_path2: z.string().optional(),
+  CreateDate: z.string(),
+  TimeFrom: z.string(),
+  TimeTo: z.any(),
+  IsOpen: z.number(),
+  Total: z.string(),
+  TotalOver: z.string(),
+  KMFrom: z.string(),
+  KMTo: z.string(),
+}) satisfies z.ZodType<OverallMobileMasterData>
+
+export const apiResponseTrackingMobileMasterSchema = z.object({
+  success: z.boolean(),
+  data: z.array(trackingMobileMasterDataSchema),
+  meta: wimMetaDataSchema,
+}) satisfies z.ZodType<APIResponseTrackingMobileMaster>
+
+// ── ALL DEPARTMENT ───────────────────────────────────────────────────────────
+
+const allDepartmentDataSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  type: z.number(),
+  group: z.number(),
+  province: z.string(),
+  group_drr: z.number(),
+  station_id: z.any(),
+  office_no: z.number().optional(),
+  name2: z.string(),
+  contract_number: z.any(),
+  contractor_name: z.any(),
+  remark: z.any(),
+}) satisfies z.ZodType<AllDepartmentData>
+
+export const apiResponseTrackingAllDepartmentSchema = z.object({
+  success: z.boolean(),
+  data: z.array(allDepartmentDataSchema),
+}) satisfies z.ZodType<APIResponseTrackingAllDepartment>

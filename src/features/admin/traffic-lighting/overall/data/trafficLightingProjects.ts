@@ -1,72 +1,75 @@
-// Types + mapper for Traffic Lighting projects. The overall table sources
-// every row from /overview/central/list (see mapCentralListToProjects) —
-// no static mock data lives here anymore.
+import type { OverviewCentralItem } from '@/types/lighting'
 
-export type WarrantyStatus = 'in-warranty' | 'expired'
-export type ConnectionStatus = 'online' | 'offline'
-export type LineStatus = 'normal' | 'abnormal'
-export type CircuitStatus = 'normal' | 'abnormal'
+export type WarrantyStatus = 'in-warranty' | 'expired' | 'unknown'
+export type ConnectionStatus = 'online' | 'offline' | 'unknown'
+export type LineStatus = 'normal' | 'abnormal' | 'unknown'
+export type CircuitStatus = 'normal' | 'abnormal' | 'unknown'
 export type LightingPhase = 1 | 3
 
 export interface TrafficLightingProject {
   id: string
-  /** รหัสสายทาง เช่น "นย.2024" */
+  /** Real device IMEI. Absent when the central list only identifies a solution. */
+  imei?: string
   roadCode: string
   projectName: string
   installPoint: string
   contractNo: string
   warranty: WarrantyStatus
   connection: ConnectionStatus
-  phase: LightingPhase
+  phase: LightingPhase | null
   lineStatus: LineStatus
   circuitStatus: CircuitStatus
-  /** สำนัก — projects are grouped by this in the table. */
   bureau: string
-  /** [lng, lat] for map marker */
+  /** [lng, lat] for the map marker. */
   coord: [number, number]
-  /** Equipment on this solution — drives which detail layout to show. */
   equipment: { count: number | null; type: string | null }
+  roadId?: number
+  solutionId?: number
+  projectId?: number
+  budgetYear?: number
 }
 
-
-/** Map a /overview/central/list response into the table's TrafficLightingProject[] shape.
- *  Each solution becomes one row; bureau = top-level department_short_name. */
-import type { OverviewCentralItem } from '@/types/lighting'
-
+/** Map the central-list response into the view model used by map, grid and table. */
 export const mapCentralListToProjects = (
   items: OverviewCentralItem[],
 ): TrafficLightingProject[] => {
-  const out: TrafficLightingProject[] = []
-  // Several IMEIs can share one solution_id (e.g. solution 1910 → 8 devices),
-  // so we key rows by imei when present and fall back to solution_id. A
-  // running counter guarantees uniqueness even for empty-imei rows.
-  let seq = 0
+  const projects: TrafficLightingProject[] = []
+  let fallbackSequence = 0
+
   for (const bureau of items) {
-    for (const sub of bureau.sub_department ?? []) {
-      for (const sol of sub.solutions ?? []) {
-        const equip = sol.lighting?.equipment
-        // Phase is only meaningful for "phase" cabinets; lamp arrays show '-'.
-        const phase: LightingPhase = equip?.type === 'phase' ? 3 : 3
-        const imei = sol.imei ?? ''
-        out.push({
-          id: imei || `${sol.solution.id}-${seq++}`,
-          roadCode: sol.road?.code_name ?? '-',
-          projectName: sol.project?.project_name ?? sol.solution?.solution_name ?? '-',
-          installPoint: sol.solution?.solution_name ?? '-',
-          contractNo: sol.project?.contract_no ?? '-',
-          warranty: sol.is_warranty ? 'in-warranty' : 'expired',
-          connection: sol.lighting?.is_online ? 'online' : 'offline',
-          phase,
-          // line/circuit status aren't in central/list — keep 'normal' as a
-          // neutral default; the detail screen reads them per-IMEI.
-          lineStatus: 'normal',
-          circuitStatus: sol.lighting?.has_broken_wire ? 'abnormal' : 'normal',
+    for (const department of bureau.sub_department ?? []) {
+      for (const solution of department.solutions ?? []) {
+        const imei = solution.imei?.trim() ?? ''
+        const lighting = solution.lighting
+
+        projects.push({
+          id: imei || `${solution.solution.id}-${fallbackSequence++}`,
+          imei: imei || undefined,
+          roadCode: solution.road.code_name ?? '-',
+          projectName: solution.project.project_name ?? solution.solution.solution_name ?? '-',
+          installPoint: solution.solution.solution_name ?? '-',
+          contractNo: solution.project.contract_no ?? '-',
+          warranty: solution.is_warranty ? 'in-warranty' : 'expired',
+          connection: lighting.is_online ? 'online' : 'offline',
+          // Phase and line state are not included in central/list. They are
+          // populated only by the per-IMEI detail response.
+          phase: null,
+          lineStatus: 'unknown',
+          circuitStatus: lighting.has_broken_wire ? 'abnormal' : 'normal',
           bureau: bureau.department_short_name ?? '-',
-          coord: sol.GeometryPoint ?? [0, 0],
-          equipment: { count: equip?.count ?? null, type: equip?.type ?? null },
+          coord: solution.GeometryPoint ?? [0, 0],
+          equipment: {
+            count: lighting.equipment.count ?? null,
+            type: lighting.equipment.type ?? null,
+          },
+          roadId: solution.road.id,
+          solutionId: solution.solution.id,
+          projectId: solution.project.id,
+          budgetYear: solution.project.budget_year,
         })
       }
     }
   }
-  return out
+
+  return projects
 }

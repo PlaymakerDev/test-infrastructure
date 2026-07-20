@@ -8,9 +8,8 @@ import {
   AlertSection,
   StatusSection,
 } from '../components'
-import { StatisticsProvider } from '../context'
 
-const StatisticsContent: React.FC = () => {
+const StatisticsScreen: React.FC = () => {
   const searchParams = useSearchParams()
   const hasStatus = searchParams.has('status')
   const hasIncident = searchParams.has('incident')
@@ -45,14 +44,6 @@ const StatisticsContent: React.FC = () => {
         {renderContent}
       </section>
     </div>
-  )
-}
-
-const StatisticsScreen: React.FC = () => {
-  return (
-    <StatisticsProvider>
-      <StatisticsContent />
-    </StatisticsProvider>
   )
 }
 

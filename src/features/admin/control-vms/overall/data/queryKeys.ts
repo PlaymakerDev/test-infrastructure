@@ -1,6 +1,7 @@
 export const controlVmsKeys = {
   all: ['control-vms'] as const,
   departments: () => [...controlVmsKeys.all, 'departments'] as const,
+  departmentsList: (since?: string) => [...controlVmsKeys.departments(), since ?? 'default'] as const,
   settingTypes: () => [...controlVmsKeys.all, 'setting-types'] as const,
   media: () => [...controlVmsKeys.all, 'media'] as const,
   mediaList: (settingTypeId: number | undefined) =>
@@ -32,4 +33,11 @@ export const controlVmsKeys = {
     [...controlVmsKeys.history(), 'setting', settingID ?? 0] as const,
   historyByCrossing: (crossingMasterIndex: string | undefined) =>
     [...controlVmsKeys.history(), 'crossing', crossingMasterIndex ?? ''] as const,
+  latest: () => [...controlVmsKeys.all, 'latest'] as const,
+  vmsStatus: (vmsId?: number | string) =>
+    [...controlVmsKeys.all, 'vms-status', String(vmsId ?? '')] as const,
+  vmsDetails: (solutionId?: number | string) =>
+    [...controlVmsKeys.all, 'vms-details', String(solutionId ?? '')] as const,
+  notifications: (vmsId?: number | string, startDate?: string, endDate?: string) =>
+    [...controlVmsKeys.all, 'notifications', String(vmsId ?? ''), startDate ?? null, endDate ?? null] as const,
 }

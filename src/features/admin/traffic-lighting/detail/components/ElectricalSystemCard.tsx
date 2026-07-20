@@ -15,16 +15,24 @@ const PHASE_METRICS = [
 const ElectricalSystemCard: React.FC = () => {
   const { device, deviceLoaded } = useDetailContext()
 
-  const phaseNum = !deviceLoaded ? null : (device ? device.phase : 3)
+  const phaseNum = !deviceLoaded ? null : (device ? device.phase : null)
   const phaseLabel = phaseNum === null ? '-' : `${phaseNum} Phase`
-  const phaseSubLabel = phaseNum === 1 ? 'Single Phase' : 'Three Phase'
+  const phaseSubLabel = phaseNum === null
+    ? '-'
+    : phaseNum === 1 ? 'Single Phase' : 'Three Phase'
 
   const metrics = useMemo(() => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
     const e = device?.electricity?.[0]
     return PHASE_METRICS.map((m) => {
       if (m.key === 'kwh') return { ...m, value: '-' }
-      return { ...m, value: e ? String(e[m.key as keyof typeof e]) : '-' }
+      if (!e) return { ...m, value: '-' }
+      const raw = e[m.key as keyof typeof e]
+      if (raw == null) return { ...m, value: '-' }
+      const num = Number(raw)
+      // Hz / Pf → 2 decimals; Volt / Amp / Watt → 3 decimals (small values like 0.0002)
+      const decimals = m.key === 'frequency' || m.key === 'power_factor' ? 2 : 3
+      return { ...m, value: isFinite(num) ? num.toFixed(decimals) : String(raw) }
     })
   }, [device, deviceLoaded])
 
@@ -48,7 +56,12 @@ const ElectricalSystemCard: React.FC = () => {
         <img src='/atlas/images/Lighting/arrowdown.png' alt='' width={32} height={32} className='shrink-0' />
       </button>
 
-      <div className='relative z-10 flex flex-row items-start gap-2 pr-10'>
+      {/* pointer-events-none — this row has no clickable children of its own,
+          but its box spans the full card width (including the padded-right
+          area reserved for the button below), and being later in DOM order
+          at the same z-10 stacking level was intercepting clicks meant for
+          the "ดูรายละเอียดระบบไฟฟ้า" button in the top-right corner. */}
+      <div className='relative z-10 flex flex-row items-start gap-2 pr-10 pointer-events-none'>
         <img src='/atlas/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
         <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
       </div>
@@ -58,15 +71,17 @@ const ElectricalSystemCard: React.FC = () => {
         <p className='fs-12 font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
       </div>
 
-      <div className='relative z-10 grid grid-cols-3 gap-2 w-full shrink-0'>
+      <div className='relative z-10 grid grid-cols-3 gap-1.5 w-full shrink-0'>
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className='flex flex-col items-center justify-center rounded-[10px] h-[54px]'
+            className='flex flex-col items-center justify-center rounded-[10px] min-h-[52px] px-1 py-1.5'
             style={{ background: '#191919', border: '1px solid #66AEFF' }}
           >
-            <span className='fs-12 font-normal m-0' style={{ color: '#66AEFF' }}>{metric.label}</span>
-            <span className='fs-12 font-bold m-0 mt-0.5 text-white'>{metric.value}</span>
+            <span className='text-[10px] font-normal m-0 leading-none' style={{ color: '#66AEFF' }}>{metric.label}</span>
+            <span className='text-[10px] font-bold m-0 mt-1 text-white tabular-nums leading-tight text-center w-full'>
+              {metric.value}
+            </span>
           </div>
         ))}
       </div>

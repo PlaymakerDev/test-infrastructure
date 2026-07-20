@@ -1,14 +1,14 @@
 import SwapButton from '@/components/swap-button/SwapButton'
-import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 import { useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
+import { Skeleton } from 'antd'
+import { useMobileMasterDepartmentByTID } from '../hooks'
+import { useMobileContext } from '../context'
 
 interface Props {
-  departmentData?: MobileMasterDepartmentByTIDData
-  setCurrentTab: (value: string) => void;
-}
 
+}
 
 const OPTIONS = [
   {
@@ -21,10 +21,17 @@ const OPTIONS = [
   },
 ]
 
-const TitleSection: React.FC<Props> = (props) => {
-  const { departmentData } = props
-  const { setCurrentTab } = props
+const TitleSection: React.FC<Props> = () => {
+  const { id, setCurrentTab } = useMobileContext()
   const router = useRouter()
+
+  const { data, isLoading, isError } = useMobileMasterDepartmentByTID(id as string | number | undefined)
+
+  const renderTitle = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} />
+    if (isError) return '-'
+    return `ตรวจสอบน้ำหนักเคลื่อนที่ : ${data?.data.data.way_id || '-'}`
+  }, [isLoading, isError, data])
 
   return (
     <div className='px-8'>
@@ -40,7 +47,7 @@ const TitleSection: React.FC<Props> = (props) => {
           onClick={() => router.back()}
         />
         <div>
-          <h1 className='text-(--yellow)'>ตรวจสอบน้ำหนักเคลื่อนที่ : {departmentData?.way_id || '-'}</h1>
+          <h1 className='text-(--yellow)'>{renderTitle}</h1>
           <p className='text-(--yellow)'>ระบบตรวจสอบน้ำหนักเคลื่อนที่ด้วยเจ้าหน้าที่ภาคสนาม</p>
         </div>
       </section>

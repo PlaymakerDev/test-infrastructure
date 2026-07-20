@@ -5,12 +5,26 @@ import { TbArrowBigLeftFilled } from 'react-icons/tb'
 
 interface Props {
   caseId: string
+  /** Derived from the case API relationship, with `?solution_id=` as fallback. */
+  solutionId?: number
+  /** Validated context to restore when returning to the owning detail route. */
+  detailQuery?: string
+  /** The case was opened from the all-repairs table rather than a detail row. */
+  returnToAllRepairs?: boolean
 }
 
-const TitleSection: React.FC<Props> = ({ caseId }) => {
+const TitleSection: React.FC<Props> = ({ caseId, solutionId, detailQuery = '', returnToAllRepairs = false }) => {
   const router = useRouter()
 
   const handleBack = () => {
+    if (returnToAllRepairs) {
+      router.push('/admin/maintenance?repair&all_repairs')
+      return
+    }
+    if (solutionId) {
+      router.push(`/admin/maintenance/detail/${solutionId}${detailQuery ? `?${detailQuery}` : ''}`)
+      return
+    }
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back()
     } else {

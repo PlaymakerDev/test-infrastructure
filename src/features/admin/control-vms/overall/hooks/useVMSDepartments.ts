@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { getVMSDepartmentAPI } from '@/services/routes/ControlVMSService'
 import { controlVmsKeys } from '../data/queryKeys'
 
-export function useVMSDepartments() {
+export function useVMSDepartments(params?: { since?: string }) {
   return useQuery({
-    queryKey: controlVmsKeys.departments(),
-    queryFn: () => getVMSDepartmentAPI(),
+    queryKey: controlVmsKeys.departmentsList(params?.since),
+    queryFn: () => getVMSDepartmentAPI(params),
   })
 }

@@ -1,6 +1,5 @@
-import { getTrackingDailySumAPI, getTrackingTotalStationAPI } from '@/services/routes/TrackingService'
+import { useDailySum, useTotalStation } from '@/features/admin/tracking/overall/hooks'
 import { fmtNumber } from '@/utils/formatNumber'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo } from 'react'
@@ -10,20 +9,12 @@ interface Props { }
 const VehicleStatSection: React.FC<Props> = (props) => {
   const { } = props
 
-  const { data: dailySumData, isLoading: isDailySumLoading, isError: isDailySumError } = useQuery({
-    queryKey: ['daily_sum'],
-    queryFn: () => getTrackingDailySumAPI({
-      date: dayjs().format('YYYY-MM-DD')
-    }),
-    placeholderData: keepPreviousData
+  const { data: dailySumData, isLoading: isDailySumLoading, isError: isDailySumError } = useDailySum({
+    date: dayjs().format('YYYY-MM-DD')
   })
 
-  const { data: totalStationData, isLoading: isTotalStationLoading, isError: isTotalStationError } = useQuery({
-    queryKey: ['total_station'],
-    queryFn: () => getTrackingTotalStationAPI({
-      date: dayjs().format('YYYY-MM-DD')
-    }),
-    placeholderData: keepPreviousData
+  const { data: totalStationData, isLoading: isTotalStationLoading, isError: isTotalStationError } = useTotalStation({
+    date: dayjs().format('YYYY-MM-DD')
   })
 
   const renderVehicleStat = useMemo(() => {

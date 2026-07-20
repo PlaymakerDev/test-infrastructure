@@ -1,8 +1,6 @@
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { useCctvList } from '@/features/admin/tracking/detail/wim/hooks'
-import { useAppDispatch } from '@/stores/hooks'
-import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import { Col, Row } from 'antd'
+import { Col, Empty, Row } from 'antd'
 import React, { useMemo, useState } from 'react'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
@@ -12,8 +10,7 @@ interface Props {
 }
 
 const OverallCCTV: React.FC<Props> = () => {
-  const { id: stationId, stationTypeId } = useWIMContext()
-  const dispatch = useAppDispatch()
+  const { id: stationId, stationTypeId, setOpenCCTVData } = useWIMContext()
   const [randomCam] = useState(() => `${Math.random()}`);
 
   const { data, isLoading, isError } = useCctvList({
@@ -27,17 +24,11 @@ const OverallCCTV: React.FC<Props> = () => {
     const randomCCTV = data?.data?.data?.filter(item => item.camera_status === 'Online')?.sort(() => Number(randomCam) - 0.5).slice(0, 4)
 
     if (!randomCCTV || randomCCTV.length === 0) {
-      return Array.from({ length: 4 }).map((_, index) => (
-        <Col key={index} xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={6}>
-          <figure className='flex-1 min-h-0 rounded-lg overflow-hidden mb-1.5'>
-            <HLSLivePlayer
-              figureClassName='figure-normal lg:h-50! lg:min-h-0! lg:max-h-none! mb-1.5 rounded-lg cursor-pointer'
-            />
-          </figure>
-          <h4 className='fs-12 text-[#66AEFF] leading-snug break-all mb-0.5'>{'-'}</h4>
-          <p className='fs-12 text-gray-400 leading-snug m-0'>{'-'}</p>
-        </Col>
-      ))
+      return (
+        <figure className='block mx-auto my-28'>
+          <Empty description="ไม่พบข้อมูล CCTV ในช่วงเวลานี้" />
+        </figure>
+      )
     }
 
     return randomCCTV?.map((item) => (
@@ -48,14 +39,14 @@ const OverallCCTV: React.FC<Props> = () => {
             hlsUrl={item.stream_url}
             enableViewportPause
             figureClassName='figure-normal lg:h-50! lg:min-h-0! lg:max-h-none! mb-1.5 rounded-lg cursor-pointer'
-            onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.id }))}
+            onClick={() => setOpenCCTVData({ open: true, item: item ?? null })}
           />
         </figure>
-        <h4 className='fs-12 text-[#66AEFF] leading-snug break-all mb-0.5'>{item.camera_description}</h4>
-        <p className='fs-12 text-gray-400 leading-snug m-0'>IP Address : {item.station_description}</p>
+        <h4 className='fs-12 text-(--default-blue) leading-snug break-all mb-0.5'>{item.camera_description}</h4>
+        <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item.station_description}</p>
       </Col>
     ))
-  }, [data, dispatch, randomCam])
+  }, [data, randomCam, setOpenCCTVData])
 
   return (
     <QueryBoundary

@@ -9,26 +9,52 @@ import {
   getEventTypeColor,
   getEventTypeLabel,
 } from '@/features/admin/incident-detection/components/eventTypes'
-import { useIncidentDaily } from '@/hooks/queries/incident-detection'
+import { useIncidentDaily, useIncidentPeakHour } from '@/hooks/queries/incident-detection'
 
 /** Short Thai weekday (0=Sun) — keeps all 7 x-axis labels visible (full names
  *  like "วันอาทิตย์" overlap and ECharts hides half of them). */
 const THAI_DAY_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
 
+interface Props {
+  /** Overrides the route `[id]` param — lets other features (e.g. statistics'
+   *  incident detail page, scoped by `?detail=<solutionId>`) reuse this same
+   *  real-data section without being on the incident-detection detail route. */
+  solutionId?: string
+  /** Card height — default (146) matches the compact incident-detection
+   *  detail-page rail; other consumers can size it to their own layout. */
+  height?: number
+  /** Show the "ช่วงเวลาที่มีปริมาณเหตุการณ์สูงสุดประจำวัน" (today's peak-hour)
+   *  corner badge. Default false — incident-detection/detail already shows
+   *  this same data in its own EventStatsSection card, so it stays off there
+   *  to avoid showing it twice. */
+  showPeakBadge?: boolean
+  /** Override the date range (YYYY-MM-DD). Defaults to last 7 days. */
+  startDate?: string
+  endDate?: string
+}
+
 /** "แนวโน้มเหตุการณ์รายวัน" — 7-day trend, one line per event type that
  *  actually occurred. Source: /analytic/details?solution_id=&start_date=&end_date=. */
-const EventTrendSection: React.FC = () => {
+const EventTrendSection: React.FC<Props> = ({ solutionId: solutionIdProp, height = 146, showPeakBadge = false, startDate, endDate }) => {
   const params = useParams()
-  const solutionId = Array.isArray(params.id) ? params.id[0] : params.id
+  const solutionId = solutionIdProp ?? (Array.isArray(params.id) ? params.id[0] : params.id)
 
-  // Last 7 days inclusive (today − 6 .. today).
-  const end = dayjs().format('YYYY-MM-DD')
-  const start = dayjs().subtract(6, 'day').format('YYYY-MM-DD')
+  // Last 7 days inclusive (today − 6 .. today) unless overridden by props.
+  const end = endDate ?? dayjs().format('YYYY-MM-DD')
+  const start = startDate ?? dayjs().subtract(6, 'day').format('YYYY-MM-DD')
   const { data } = useIncidentDaily({
     solution_id: solutionId,
     start_date: start,
     end_date: end,
   })
+
+  // Today's peak-hour window — GET /analytic/details/peak-hour?solution_id=.
+  // Same source EventStatsSection's card already uses; TanStack Query dedupes
+  // the request when both are mounted on the same page.
+  const { data: peak } = useIncidentPeakHour(showPeakBadge ? solutionId : undefined)
+  const peakBadge = showPeakBadge && peak?.label && peak.count > 0
+    ? { range: `${peak.label} น.`, pct: peak.percentage }
+    : null
 
   // Find every type that has at least one non-zero count across the range —
   // only those become lines. Skipping zeros avoids 9 flat-zero lines crowding

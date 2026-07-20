@@ -1,16 +1,15 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Col, ConfigProvider, DatePicker, Row, Segmented, Table } from 'antd'
+import React, { useMemo, useState } from 'react'
+import { Alert, Button, Col, ConfigProvider, DatePicker, Row, Segmented, Table } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs, { type Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbBolt, TbPrinter } from 'react-icons/tb'
+import { TbBolt } from 'react-icons/tb'
 import BarChart from '@/components/chart/Barchart'
 import type { BarChartDataPoint } from '@/components/chart/Barchart'
-import { getLightingElectricityAPI } from '@/services/routes/LightingService'
-import type { ElectricityAggItem } from '@/types/lighting'
+import { useLightingElectricity } from '@/hooks/queries/lighting'
 import {
   COLOR_AMP_ORANGE,
   COLOR_VOLTAGE_CYAN,
@@ -100,38 +99,36 @@ const SummaryReportSection: React.FC = () => {
   const { imei } = useDetailContext()
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(DEFAULT_DATE_RANGE)
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('DAILY')
-  const [rows, setRows] = useState<ElectricityAggItem[]>([])
-  const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    const start = dateRange?.[0]?.format('YYYY-MM-DD')
-    const end = dateRange?.[1]?.format('YYYY-MM-DD')
-    getLightingElectricityAPI(imei, {
-      start_date: start,
-      end_date: end,
-      report_type: REPORT_TYPE_MAP[reportPeriod],
-      sort: 'ASC',
-    })
-      .then((res) => { if (active) setRows(res.data?.res_data ?? []) })
-      .catch((err) => console.error('electricity failed:', err))
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei, dateRange, reportPeriod])
-
+  const electricityQuery = useLightingElectricity(imei, {
+    start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
+    end_date: dateRange?.[1]?.format('YYYY-MM-DD'),
+    report_type: REPORT_TYPE_MAP[reportPeriod],
+  })
+  const rows = useMemo(
+    () => electricityQuery.data?.res_data ?? [],
+    [electricityQuery.data],
+  )
+  const availablePhaseKeys = useMemo(
+    () => new Set(rows.flatMap((row) => row.phases.map((phase) => `p${phase.phase}`))),
+    [rows],
+  )
+  const voltageBars = useMemo(
+    () => VOLTAGE_BARS.filter((bar) => availablePhaseKeys.has(bar.dataKey)),
+    [availablePhaseKeys],
+  )
+  const ampBars = useMemo(
+    () => AMP_BARS.filter((bar) => availablePhaseKeys.has(bar.dataKey)),
+    [availablePhaseKeys],
+  )
   // Derive chart + table data from the API rows. Each row has a `phases[]`
   // array (phase 1/2/3); we flatten to per-row {p1, p2, p3} for the charts
   // and average the phases for the table row.
   const voltageChartData: BarChartDataPoint[] = useMemo(
-    () => rows.map((r) => {
-      const phases = r.phases ?? []
-      const p1 = phases.find((p) => p.phase === '1')
-      const p2 = phases.find((p) => p.phase === '2')
-      const p3 = phases.find((p) => p.phase === '3')
+    () => rows.filter((r) => r.phases.length > 0).map((r) => {
+      const p1 = r.phases.find((p) => p.phase === '1')
+      const p2 = r.phases.find((p) => p.phase === '2')
+      const p3 = r.phases.find((p) => p.phase === '3')
       return {
         label: r.label,
         p1: p1?.voltage ?? 0,
@@ -142,11 +139,10 @@ const SummaryReportSection: React.FC = () => {
     [rows],
   )
   const ampChartData: BarChartDataPoint[] = useMemo(
-    () => rows.map((r) => {
-      const phases = r.phases ?? []
-      const p1 = phases.find((p) => p.phase === '1')
-      const p2 = phases.find((p) => p.phase === '2')
-      const p3 = phases.find((p) => p.phase === '3')
+    () => rows.filter((r) => r.phases.length > 0).map((r) => {
+      const p1 = r.phases.find((p) => p.phase === '1')
+      const p2 = r.phases.find((p) => p.phase === '2')
+      const p3 = r.phases.find((p) => p.phase === '3')
       return {
         label: r.label,
         p1: p1?.amplitude ?? 0,
@@ -158,13 +154,11 @@ const SummaryReportSection: React.FC = () => {
   )
 
   const tableRows: VoltageAmpTableRow[] = useMemo(
-    () => rows.map((r, i) => {
-      // Average across phases for the headline numbers. BE returns null (not [])
-      // for solutions with no phase data — guard both `.length` and `.reduce`.
-      const phases = r.phases ?? []
-      const avg = (sel: (p: typeof phases[number]) => number) => {
-        if (!phases.length) return 0
-        return phases.reduce((s, p) => s + sel(p), 0) / phases.length
+    () => rows.filter((r) => r.phases.length > 0).map((r, i) => {
+      // Average across phases for the headline numbers.
+      const avg = (sel: (p: typeof r.phases[number]) => number) => {
+        if (!r.phases.length) return 0
+        return r.phases.reduce((s, p) => s + sel(p), 0) / r.phases.length
       }
       return {
         key: `${r.label}-${i}`,
@@ -173,12 +167,13 @@ const SummaryReportSection: React.FC = () => {
         amp: avg((p) => p.amplitude),
         watt: avg((p) => p.watt),
         powerFactor: avg((p) => p.power_factor),
-        kwh: 0, // not provided by the aggregated API
+        kwh: null, // not provided by the aggregated API
         frequency: avg((p) => p.frequency),
       }
     }),
     [rows],
   )
+  const hasData = electricityQuery.isSuccess && tableRows.length > 0
 
   const averages = useMemo(() => {
     const avg = (sel: (r: VoltageAmpTableRow) => number) =>
@@ -188,7 +183,6 @@ const SummaryReportSection: React.FC = () => {
       amp: avg((r) => r.amp),
       watt: avg((r) => r.watt),
       powerFactor: avg((r) => r.powerFactor),
-      kwh: avg((r) => r.kwh),
       frequency: avg((r) => r.frequency),
     }
   }, [tableRows])
@@ -241,7 +235,7 @@ const SummaryReportSection: React.FC = () => {
         key: 'kwh',
         align: 'center',
         width: 170,
-        render: (value: number) => cyanCell(value === 0 ? '-' : value.toFixed(2)),
+        render: (value: number | null) => cyanCell(value == null ? '-' : value.toFixed(2)),
       },
       {
         title: 'ความถี่ (Hz)',
@@ -263,22 +257,22 @@ const SummaryReportSection: React.FC = () => {
           <span style={white}>รวมเฉลี่ย</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={1} align='center'>
-          <span style={white}>{loaded ? averages.voltage.toFixed(2) : '-'}</span>
+          <span style={white}>{hasData ? averages.voltage.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={2} align='center'>
-          <span style={white}>{loaded ? averages.amp.toFixed(2) : '-'}</span>
+          <span style={white}>{hasData ? averages.amp.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={3} align='center'>
-          <span style={white}>{loaded ? averages.watt.toFixed(2) : '-'}</span>
+          <span style={white}>{hasData ? averages.watt.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={4} align='center'>
-          <span style={white}>{loaded ? averages.powerFactor.toFixed(2) : '-'}</span>
+          <span style={white}>{hasData ? averages.powerFactor.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={5} align='center'>
           <span style={white}>-</span>
         </Table.Summary.Cell>
         <Table.Summary.Cell index={6} align='center'>
-          <span style={white}>{loaded ? averages.frequency.toFixed(2) : '-'}</span>
+          <span style={white}>{hasData ? averages.frequency.toFixed(2) : '-'}</span>
         </Table.Summary.Cell>
       </Table.Summary.Row>
     )
@@ -290,6 +284,15 @@ const SummaryReportSection: React.FC = () => {
         แผนภูมิและตารางแสดงค่ากระแสไฟฟ้าและแรงดันไฟฟ้า
       </h3>
 
+      {electricityQuery.isError && (
+        <Alert
+          type='error'
+          showIcon
+          message='ไม่สามารถโหลดรายงานค่ากระแสไฟฟ้าได้'
+          action={<Button size='small' onClick={() => void electricityQuery.refetch()}>ลองใหม่</Button>}
+        />
+      )}
+
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
           <BarChart
@@ -298,10 +301,10 @@ const SummaryReportSection: React.FC = () => {
             icon={<TbBolt size={18} />}
             accentColor={COLOR_VOLTAGE_CYAN}
             data={voltageChartData}
-            bars={[...VOLTAGE_BARS]}
+            bars={voltageBars}
             footer={
               <AvgFooter
-                value={loaded ? `${averages.voltage.toFixed(2)} V` : '-'}
+                value={hasData ? `${averages.voltage.toFixed(2)} V` : '-'}
                 label='Avg Voltage'
                 color={COLOR_VOLTAGE_CYAN}
               />
@@ -315,10 +318,10 @@ const SummaryReportSection: React.FC = () => {
             icon={<TbBolt size={18} />}
             accentColor={COLOR_AMP_ORANGE}
             data={ampChartData}
-            bars={[...AMP_BARS]}
+            bars={ampBars}
             footer={
               <AvgFooter
-                value={loaded ? `${averages.amp.toFixed(2)} A` : '-'}
+                value={hasData ? `${averages.amp.toFixed(2)} A` : '-'}
                 label='Avg Current'
                 color={COLOR_AMP_ORANGE}
               />
@@ -405,17 +408,6 @@ const SummaryReportSection: React.FC = () => {
             </div>
           </div>
 
-          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-            <Button
-              type='primary'
-              size='small'
-              icon={<TbPrinter />}
-              onClick={() => alert('TODO: นำออกเอกสาร')}
-              className='w-[130px]! h-[27px]! rounded-[88px]! px-2! text-xs! inline-flex! items-center! justify-center!'
-            >
-              นำออกเอกสาร
-            </Button>
-          </ConfigProvider>
         </div>
       </div>
 
@@ -424,10 +416,17 @@ const SummaryReportSection: React.FC = () => {
           rowKey='key'
           columns={columns}
           dataSource={tableRows}
+          loading={electricityQuery.isFetching}
           pagination={false}
           size='middle'
           className='bridge-projects-table event-log-table'
-          locale={{ emptyText: loaded ? 'ไม่พบข้อมูล' : 'กำลังโหลด...' }}
+          locale={{
+            emptyText: electricityQuery.isError
+              ? 'ไม่สามารถโหลดข้อมูลได้'
+              : !imei
+                ? 'ไม่มี IMEI — ไม่สามารถโหลดรายงานได้'
+                : electricityQuery.isLoading ? 'กำลังโหลด...' : 'ไม่พบข้อมูล',
+          }}
           summary={tableSummary}
         />
       </div>

@@ -1,6 +1,5 @@
 import LineChart from '@/components/chart/LineChart'
-import { getTrackingSumWeightYearV2API } from '@/services/routes/TrackingService'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useSumWeightYearV2 } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { TbArrowsExchange } from 'react-icons/tb'
@@ -8,11 +7,7 @@ import { TbArrowsExchange } from 'react-icons/tb'
 interface Props {}
 
 const ChartPredictWeighing: React.FC<Props> = () => {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['sum_weight_year_v2'],
-    queryFn: () => getTrackingSumWeightYearV2API({}),
-    placeholderData: keepPreviousData,
-  })
+  const { data, isLoading, isError } = useSumWeightYearV2({})
 
   const chartData = useMemo(() => {
     const items = data?.data?.data?.data ?? []

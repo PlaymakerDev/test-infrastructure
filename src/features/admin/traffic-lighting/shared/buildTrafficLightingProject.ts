@@ -2,21 +2,22 @@ import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/o
 
 const PLACEHOLDER_PROJECT = (id: string, equipmentType: string | null): TrafficLightingProject => ({
   id,
+  imei: undefined,
   roadCode: '-',
   projectName: '-',
   installPoint: '-',
   contractNo: '-',
-  warranty: 'expired',
-  connection: 'offline',
-  phase: 3,
-  lineStatus: 'normal',
-  circuitStatus: 'normal',
+  warranty: 'unknown',
+  connection: 'unknown',
+  phase: null,
+  lineStatus: 'unknown',
+  circuitStatus: 'unknown',
   bureau: '-',
-  coord: [100.5, 13.75],
+  coord: [0, 0],
   equipment: { count: null, type: equipmentType },
 })
 
-/** Build a TrafficLightingProject from stashed row context, mock lookup, or placeholder. */
+/** Build a TrafficLightingProject from navigation context or an honest placeholder. */
 export function buildTrafficLightingProject(
   id: string,
   row: Partial<TrafficLightingProject> | null | undefined,
@@ -27,26 +28,28 @@ export function buildTrafficLightingProject(
   if (row?.roadCode || row?.projectName || row?.installPoint) {
     return {
       id,
+      imei: row.imei,
       roadCode: row.roadCode ?? '-',
       projectName: row.projectName ?? '-',
       installPoint: row.installPoint ?? '-',
       contractNo: row.contractNo ?? '-',
-      warranty: row.warranty ?? 'expired',
-      connection: row.connection ?? 'offline',
-      phase: row.phase ?? 3,
-      lineStatus: row.lineStatus ?? 'normal',
-      circuitStatus: row.circuitStatus ?? 'normal',
+      warranty: row.warranty ?? 'unknown',
+      connection: row.connection ?? 'unknown',
+      phase: row.phase ?? null,
+      lineStatus: row.lineStatus ?? 'unknown',
+      circuitStatus: row.circuitStatus ?? 'unknown',
       bureau: row.bureau ?? '-',
-      coord: row.coord ?? [100.5, 13.75],
+      coord: row.coord ?? [0, 0],
       equipment: {
         count: row.equipment?.count ?? null,
         type: type ?? row.equipment?.type ?? null,
       },
+      roadId: row.roadId,
+      solutionId: row.solutionId,
+      projectId: row.projectId,
+      budgetYear: row.budgetYear,
     }
   }
 
-  // Direct-navigation fallback (no upstream row): render a neutral placeholder
-  // rather than a stale mock lookup. Real detail data still loads from the
-  // per-feature APIs the detail page invokes on mount.
   return PLACEHOLDER_PROJECT(id, type)
 }

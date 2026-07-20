@@ -1,4 +1,10 @@
-import { SharedSolution } from "../shared"
+/** Per-camera solution participation returned on the CCTV camera detail
+ *  endpoint — a non-null field means the camera does that solution. Note:
+ *  uses `solution_id` (not `id` like SharedSolution). */
+export interface CameraSolutionLink {
+  solution_id: number
+  solution_name: string
+}
 
 export interface APIResponseCCTVDetail {
   id: string
@@ -29,10 +35,20 @@ export interface APIResponseCCTVDetail {
   /** Last successful ICMP ping timestamp — may lag `curl_updated_at`. */
   ping_updated_at?: string | null
   // SHARED
-  counting?: SharedSolution
-  analytic?: SharedSolution
-  traffic?: SharedSolution
-  crosswalk?: SharedSolution
-  wim_camera?: SharedSolution
-  vms?: SharedSolution
+  counting?: CameraSolutionLink
+  analytic?: CameraSolutionLink
+  traffic?: CameraSolutionLink
+  crosswalk?: CameraSolutionLink
+  wim_camera?: CameraSolutionLink
+  vms?: CameraSolutionLink
+}
+
+/** GET /cctv/{id} — distinct from GET /cctv/cameras/{id} (APIResponseCCTVDetail
+ *  above). This one carries `road_code`, which the camera-detail endpoint doesn't. */
+export interface APIResponseCCTVRoad {
+  id: string
+  camera_name: string
+  road_code: string
+  hls_url: string
+  solutions: { solution_type_id: number; solution_name: string }[]
 }

@@ -1,11 +1,17 @@
 "use client"
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { Suspense, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
 import { TitleSection } from '../components'
-import { createMaintenanceCaseAPI, getMaintenanceSolutionAPI } from '@/services/routes/MaintenanceService'
+import {
+  useCreateMaintenanceCase,
+  useMaintenanceSolution,
+  useProjectBySolution,
+  useSolutionMapLocation,
+} from '@/hooks/queries/maintenance'
+import { ProjectInfoModal } from '@/components/modal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 
 interface Props {
@@ -29,11 +35,40 @@ interface TableRow {
   password: string
 }
 
-/** Wrapper อ่าน title/subtitle จาก sessionStorage แล้วส่งเข้า TitleSection */
-const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse | null }> = ({ id, data }) => {
-  // title/subtitle มาจาก sessionStorage (ส่งมาจาก tree) ถ้าไม่มีค่อย fallback เป็น solution_name
-  const title = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_title') || data?.solution_name || id) : (data?.solution_name || id)
-  const subtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
+const SOLUTION_PREFIXES = new Set([
+  'cctv',
+  'counting',
+  'analytic',
+  'traffic',
+  'crosswalk',
+  'vms',
+  'lighting',
+  'tunnel',
+  'wim',
+])
+
+interface TitleSectionWithDataProps {
+  id: string
+  data: SolutionDetailResponse | null
+  coord: [number, number] | null
+  resolvedProjectId?: number
+  routeTitle?: string
+  routeSubtitle?: string
+  routeRoadId?: number
+}
+
+/** Route context is URL-scoped; a direct visit falls back to solution API data. */
+const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
+  id,
+  data,
+  coord,
+  resolvedProjectId,
+  routeTitle,
+  routeSubtitle,
+  routeRoadId,
+}) => {
+  const title = routeTitle || data?.solution_name || id
+  const subtitle = routeSubtitle || ''
   const onlineCount = data?.online_count ?? 0
   const offlineCount = data?.offline_count ?? 0
   const warranty = data?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ'
@@ -45,42 +80,69 @@ const TitleSectionWithData: React.FC<{ id: string; data: SolutionDetailResponse 
       onlineCount={onlineCount}
       offlineCount={offlineCount}
       warranty={warranty}
+      projectId={resolvedProjectId}
+      roadId={routeRoadId}
+      coord={coord}
     />
   )
 }
 
 const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { modal } = App.useApp()
-  const [solutionData, setSolutionData] = useState<SolutionDetailResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const numericId = Number(id)
 
-  // Fetch solution detail
-  const fetchSolution = useCallback(async () => {
-    const numericId = Number(id)
-    if (!numericId) return
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await getMaintenanceSolutionAPI(numericId)
-      setSolutionData(res.data)
-    } catch (err) {
-      console.error('Error fetching solution detail:', err)
-      setError('ไม่สามารถโหลดข้อมูลได้')
-    } finally {
-      setLoading(false)
+  // The URL is the source of truth for optional navigation context. Validate
+  // the dynamic prefix before interpolating it into an API path; missing or
+  // invalid/mismatched context simply disables the optional route metadata on
+  // a direct deep link.
+  const routeQuery = searchParams.toString()
+  const routeContext = useMemo(() => {
+    const params = new URLSearchParams(routeQuery)
+    const contextId = Number(params.get('context_id'))
+    if (!Number.isFinite(contextId) || contextId !== numericId) {
+      return { map: null, roadId: undefined, title: undefined, subtitle: undefined }
     }
-  }, [id])
+    const prefix = params.get('prefix')?.toLowerCase() ?? ''
+    const departmentParam = params.get('dept_id')
+    const roadParam = params.get('road_id')
+    const departmentId = departmentParam === null ? Number.NaN : Number(departmentParam)
+    const roadId = roadParam === null ? Number.NaN : Number(roadParam)
+    return {
+      map: SOLUTION_PREFIXES.has(prefix) && Number.isFinite(departmentId) && departmentId >= 0
+        ? { prefix, departmentId }
+        : null,
+      roadId: Number.isFinite(roadId) && roadId >= 0 ? roadId : undefined,
+      title: params.get('title') || undefined,
+      subtitle: params.get('subtitle') || undefined,
+    }
+  }, [numericId, routeQuery])
 
-  useEffect(() => {
-    fetchSolution()
-  }, [fetchSolution])
+  const solutionQuery = useMaintenanceSolution(numericId)
+  const solutionData: SolutionDetailResponse | null = solutionQuery.data ?? null
+  const loading = solutionQuery.isLoading
+  const error = solutionQuery.isError ? 'ไม่สามารถโหลดข้อมูลได้' : null
 
-  // Map API data to table rows
+  // Resolve the owning project from the solution_id (this route's `id`) so the
+  // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no route context.
+  const projectQuery = useProjectBySolution(numericId)
+  const projectId = projectQuery.data?.id
+
+  // Google Map pin — solution/{id} has no coordinates, but the feature's own
+  // overview endpoint (keyed by the URL's prefix + department_id) carries
+  // GeometryPoint filtered to this solution_id.
+  const mapLocationQuery = useSolutionMapLocation(routeContext.map?.prefix, routeContext.map?.departmentId, numericId)
+  const coord = useMemo<[number, number] | null>(() => {
+    const point = mapLocationQuery.data?.locations?.[0]?.GeometryPoint
+    return point && point.length === 2 ? [point[0], point[1]] : null
+  }, [mapLocationQuery.data])
+
+  const createCase = useCreateMaintenanceCase()
+
+  // Map API data to table rows — show every device (both online and offline).
   const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
     key: item.camera_id,
     status: item.status ? 'online' : 'offline',
@@ -126,30 +188,41 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
       key: 'caseNo',
       width: 160,
       align: 'center',
-      render: (text: string | null, record: TableRow) =>
-        text ? (
-          <span
-            style={{ color: '#FCD116', cursor: 'pointer' }}
-            onClick={() => {
-              sessionStorage.setItem('maintenance_detail_id', id)
-              router.push(`/admin/maintenance/case/${text}`)
-            }}
-          >
-            {text}
-          </span>
-        ) : (
-          <button
-            type='button'
-            className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-            style={{ background: '#FCD116', color: '#212121' }}
-            onClick={() => {
-              setSelectedRow(record)
-              setIsModalOpen(true)
-            }}
-          >
-            เปิด Case
-          </button>
-        ),
+      render: (text: string | null, record: TableRow) => {
+        // มี case_no → โชว์ลิงก์ case_no (ทั้ง online และ offline)
+        if (text) {
+          return (
+            <span
+              style={{ color: '#FCD116', cursor: 'pointer' }}
+              onClick={() => {
+                const params = new URLSearchParams(routeQuery)
+                params.set('solution_id', id)
+                router.push(`/admin/maintenance/case/${text}?${params.toString()}`)
+              }}
+            >
+              {text}
+            </span>
+          )
+        }
+        // ไม่มี case_no และ offline → โชว์ปุ่มเปิดเคส
+        if (record.status === 'offline') {
+          return (
+            <button
+              type='button'
+              className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+              style={{ background: '#FCD116', color: '#212121' }}
+              onClick={() => {
+                setSelectedRow(record)
+                setIsModalOpen(true)
+              }}
+            >
+              เปิด Case
+            </button>
+          )
+        }
+        // online และไม่มี case_no → ไม่โชว์ปุ่ม
+        return <span>-</span>
+      },
     },
     { title: 'ประเภท', dataIndex: 'category', key: 'category', width: 120, align: 'center' },
     { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120, align: 'center' },
@@ -181,83 +254,16 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className='main-screen'>
-      <style>{`
-        /* ─── Pagination dark theme ─── */
-        .maintenance-detail-pagination .ant-pagination-item {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-          min-width: 32px !important;
-          height: 32px !important;
-          line-height: 30px !important;
-          transition: all 0.2s ease !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item a {
-          color: #c2c2d3 !important;
-          font-size: 13px !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item:hover {
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item:hover a {
-          color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item-active {
-          background: #FCD116 !important;
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-item-active,
-        .maintenance-detail-pagination .ant-pagination-item-active a,
-        .maintenance-detail-pagination .ant-pagination-item-active span,
-        .maintenance-detail-pagination .ant-pagination-item-active div {
-          color: #212121 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev .ant-pagination-item-link,
-        .maintenance-detail-pagination .ant-pagination-next .ant-pagination-item-link {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev button,
-        .maintenance-detail-pagination .ant-pagination-next button {
-          color: #c2c2d3 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover .ant-pagination-item-link,
-        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover .ant-pagination-item-link {
-          border-color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-prev:not(.ant-pagination-disabled):hover button,
-        .maintenance-detail-pagination .ant-pagination-next:not(.ant-pagination-disabled):hover button {
-          color: #FCD116 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-disabled .ant-pagination-item-link {
-          opacity: 0.3 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-disabled button {
-          color: #555 !important;
-        }
-        .maintenance-detail-pagination .ant-pagination-total-text {
-          color: #979797 !important;
-          font-size: 13px !important;
-        }
-        .maintenance-detail-pagination .ant-select-selector {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid #3c3e4e !important;
-          border-radius: 20px !important;
-          color: #c2c2d3 !important;
-          padding: 0 8px !important;
-          height: 32px !important;
-        }
-        .maintenance-detail-pagination .ant-select-selection-item {
-          color: #c2c2d3 !important;
-          line-height: 30px !important;
-        }
-        .maintenance-detail-pagination .ant-select-arrow {
-          color: #979797 !important;
-        }
-      `}</style>
-      <TitleSectionWithData id={id} data={solutionData} />
-      <section className='maintenance-detail-pagination mt-5 px-3 sm:px-10'>
+      <TitleSectionWithData
+        id={id}
+        data={solutionData}
+        coord={coord}
+        resolvedProjectId={projectId}
+        routeTitle={routeContext.title}
+        routeSubtitle={routeContext.subtitle}
+        routeRoadId={routeContext.roadId}
+      />
+      <section className='mt-5 px-3 sm:px-10'>
         <ConfigProvider
           theme={{
             token: { colorPrimary: '#FCD116', colorBgContainer: '#2a2a2a', colorText: '#c2c2d3' },
@@ -273,12 +279,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
           <Table
             columns={columns}
             dataSource={tableData}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50'],
-              showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
-            }}
+            pagination={false}
             scroll={{ x: 'max-content' }}
             size='middle'
           />
@@ -413,49 +414,53 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 ยกเลิก
               </button>
               <button
-                onClick={async () => {
-                  if (!selectedRow || submitting) return
-                  try {
-                    setSubmitting(true)
-                    await createMaintenanceCaseAPI({ camera_id: selectedRow.cameraId })
-                    setIsModalOpen(false)
-                    await fetchSolution()
-                    modal.success({
-                      title: 'เปิด Case สำเร็จ',
-                      content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
-                      okText: 'ตกลง',
-                      centered: true,
-                    })
-                  } catch (err) {
-                    console.error('Error creating case:', err)
-                    modal.error({
-                      title: 'ไม่สามารถเปิด Case ได้',
-                      content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-                      okText: 'ตกลง',
-                      centered: true,
-                    })
-                  } finally {
-                    setSubmitting(false)
-                  }
+                onClick={() => {
+                  if (!selectedRow || createCase.isPending) return
+                  // `mutate` + callbacks (not mutateAsync) per the canonical
+                  // write pattern — the hook itself invalidates the solution/
+                  // cases/history reads so the device table refreshes.
+                  createCase.mutate({ camera_id: selectedRow.cameraId }, {
+                    onSuccess: () => {
+                      setIsModalOpen(false)
+                      modal.success({
+                        title: 'เปิด Case สำเร็จ',
+                        content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
+                        okText: 'ตกลง',
+                        centered: true,
+                      })
+                    },
+                    onError: (err) => {
+                      console.error('Error creating case:', err)
+                      modal.error({
+                        title: 'ไม่สามารถเปิด Case ได้',
+                        content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+                        okText: 'ตกลง',
+                        centered: true,
+                      })
+                    },
+                  })
                 }}
-                disabled={submitting}
+                disabled={createCase.isPending}
                 style={{
                   padding: '8px 20px',
                   borderRadius: 88,
                   fontSize: 14,
                   fontWeight: 500,
                   border: 'none',
-                  backgroundColor: submitting ? '#C4C4C4' : '#FCD116',
+                  backgroundColor: createCase.isPending ? '#C4C4C4' : '#FCD116',
                   color: '#212121',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  cursor: createCase.isPending ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'กำลังสร้าง...' : 'เปิด Case'}
+                {createCase.isPending ? 'กำลังสร้าง...' : 'เปิด Case'}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Global Project Info modal — opens from the ⓘ icon in the title bar. Reads project_id/road_id from Redux. */}
+      <ProjectInfoModal />
     </div>
   )
 }
