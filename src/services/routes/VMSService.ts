@@ -2,6 +2,11 @@ import { APIRequestVMSList, APIRequestVMSRandomOnline, APIResponseVMSList, APIRe
 import ApiService from "../ApiService"
 import { centralScope } from "./scopeParam"
 import { APIResponseVMSDetail } from "@/types/vms/detail-api"
+import type {
+  APIRequestScreenInfoCentralize,
+  APIResponseScreenInfo,
+  APIResponseScreenInfoCentralize,
+} from "@/types/vms/screen-info-api"
 
 export const getVMSOverviewAPI = async (deptId: string | number) => {
   return ApiService.fetchData<APIResponseVMSOverview>({
@@ -39,5 +44,29 @@ export const getVMSDetailAPI = async (solutionId: string | number) => {
   return ApiService.fetchData<APIResponseVMSDetail>({
     url: `/vms/details/${solutionId}`,
     method: 'GET',
+  })
+}
+
+// Inventory of every registered VMS wid with agent heartbeat + enixma state +
+// centralized opt-in flag. Powers the Command Center STATUS tab and gates the
+// dispatch UI (non-controllable/non-centralized signs are excluded).
+export const getVMSScreenInfoAPI = async () => {
+  return ApiService.fetchData<APIResponseScreenInfo>({
+    url: `/vms/screen-info`,
+    method: 'GET',
+  })
+}
+
+// Toggle a wid into (or out of) the centralized control pool. Backend logs the
+// change + optional reason for audit. Returns the updated row so we can patch
+// the react-query cache without a full refetch.
+export const putVMSScreenInfoCentralizeAPI = async (
+  wid: number,
+  data: APIRequestScreenInfoCentralize
+) => {
+  return ApiService.fetchData<APIResponseScreenInfoCentralize, APIRequestScreenInfoCentralize>({
+    url: `/vms/screen-info/${wid}/centralize`,
+    method: 'PUT',
+    data,
   })
 }

@@ -9,6 +9,13 @@ import { useVMSDepartments } from '@/features/admin/control-vms/overall/hooks/us
 interface Props {
   onSelectionChange: (selection: BureauSelection) => void
   selection: BureauSelection
+  /** Force "select mode" on — checkboxes always visible (default true, matches
+   *  the Command Center dispatch flow). Set false for a click-to-drill-in view. */
+  alwaysSelectMode?: boolean
+  /** Initial value of the "รวมออฟไลน์เมื่อเลือกทั้งหมด" switch. Default false
+   *  (Command Center dispatch). Set true for the STATUS tab where offline
+   *  signs are the whole point. */
+  includeOfflineOnSelectAll?: boolean
 }
 
 const summaryTagStyle: React.CSSProperties = {
@@ -17,14 +24,19 @@ const summaryTagStyle: React.CSSProperties = {
   borderRadius: 6,
 }
 
-const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({ onSelectionChange, selection }) {
+const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
+  onSelectionChange,
+  selection,
+  alwaysSelectMode = true,
+  includeOfflineOnSelectAll = false,
+}) {
   const { data, isLoading, isError } = useVMSDepartments()
   const items: BureauItem[] = useMemo(() => data?.data ?? [], [data])
 
   // Off by default — "เลือกทั้งหมด" then only picks online signs. Offline
   // signs stay visible and individually tickable; operators still get to
   // opt-in when they want to queue up commands for offline boards.
-  const [includeOffline, setIncludeOffline] = useState(false)
+  const [includeOffline, setIncludeOffline] = useState(includeOfflineOnSelectAll)
 
   return (
     <div className="flex flex-col h-full">
@@ -59,7 +71,7 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({ onSelecti
         {!isLoading && !isError && (
           <BureauList
             data={items}
-            alwaysSelectMode
+            alwaysSelectMode={alwaysSelectMode}
             includeOfflineOnSelectAll={includeOffline}
             defaultExpandAll={false}
             onSelectionChange={onSelectionChange}
