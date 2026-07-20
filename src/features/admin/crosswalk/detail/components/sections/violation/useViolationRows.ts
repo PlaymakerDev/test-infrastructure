@@ -47,6 +47,9 @@ export const parseViolationTimestamp = (
 
 interface UseViolationRowsResult {
   pageRows: CrosswalkViolationRow[]
+  /** All rows matching the current filter (every fetched page, unpaginated)
+   *  — feeds the นำออกเอกสาร export, which prints the whole filtered set. */
+  allRows: CrosswalkViolationRow[]
   totalPages: number
   /** Total matching rows (NOT pages) — drives antd Pagination's item count. */
   total: number
@@ -103,5 +106,5 @@ export const useViolationRows = (
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
   const isLoading = infiniteQuery.isLoading || isFetchingNextPage
 
-  return { pageRows, totalPages, total: filteredRows.length, page, setPage, isLoading, pageStart }
+  return { pageRows, allRows: filteredRows, totalPages, total: filteredRows.length, page, setPage, isLoading, pageStart }
 }

@@ -123,6 +123,16 @@ export default function Navbar() {
   // locked the menu ignores hover and stays visible. Persists while navigating
   // (layout doesn't remount); resets on a full page reload.
   const [locked, setLocked] = useState(false)
+  // Post-login intro — the trapezoid shows for 5s when the admin shell first
+  // mounts (login redirect / hard reload) so users learn the menu exists,
+  // then slowly fades back to hover mode; the peek nub below stays as the
+  // permanent hint. Client-side navigation never remounts this, so the intro
+  // plays once per entry into /admin, not on every page change.
+  const [intro, setIntro] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setIntro(false), 5000)
+    return () => clearTimeout(t)
+  }, [])
   // Find-on-page overlay (Ctrl+F clone). Owned here because the trigger
   // buttons live in this nav — the overlay itself renders as a portal-like
   // fixed element that visually attaches under the navbar.
@@ -433,8 +443,30 @@ export default function Navbar() {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
+          {/* Peek nub (ติ่ง) — hangs at top-center while the trapezoid is
+            * hidden so users know the menu lives up here. Sits inside the
+            * hover wrapper, so pointing at it reveals the menu; the nub
+            * itself is pointer-events-none (the wrapper owns the hover). */}
           <div
-            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-300 ${hovered || locked
+            aria-hidden
+            className={`absolute top-0 left-1/2 -translate-x-1/2 flex items-center justify-center transition-opacity duration-500 ${hovered || locked || intro ? 'opacity-0' : 'opacity-100'}`}
+            style={{
+              width: 76,
+              height: 14,
+              // Softer than the trapezoid's #000000E6 — the nub should hint,
+              // not block the map behind it.
+              background: '#00000023',
+              borderInline: '1px solid rgba(252,209,22,0.35)',
+              borderBottom: '1px solid rgba(252,209,22,0.35)',
+              borderRadius: '0 0 10px 10px',
+              boxShadow: '0 2px 10px rgba(252,209,22,0.35)',
+              pointerEvents: 'none',
+            }}
+          >
+            <TbGripHorizontal size={12} className="text-(--yellow)" />
+          </div>
+          <div
+            className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-500 ${hovered || locked || intro
               ? "opacity-100 translate-y-0"
               : "opacity-0 -translate-y-2"
               }`}

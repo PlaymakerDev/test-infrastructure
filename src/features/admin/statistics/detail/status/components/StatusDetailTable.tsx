@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useStatusDetailContext } from '../context'
 import { useVMSNotifications } from '@/features/admin/control-vms/overall/hooks/useVMSNotifications'
 import type { VMSNotificationStatus } from '@/types/control-vms/vms-api'
@@ -97,6 +98,23 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'critical', label: 'Critical', colorPrimary: '#FF0000', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-950 text-white', badgeIdleClass: 'bg-red-700/20 text-red-500' },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (วันที่และเวลา → ประเภทเหตุการณ์ → หมวดหมู่ →
+// สถานะ); สถานะ exports the same label the on-screen badge shows. `width` =
+// Excel chars, `widthPct` = PDF table percent (sums to 100).
+const STATUS_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: StatusRow, index: number) => string | number
+}[] = [
+  { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => r.datetime },
+  { header: 'ประเภทเหตุการณ์', width: 34, widthPct: 35, value: (r) => r.eventType || '-' },
+  { header: 'หมวดหมู่', width: 20, widthPct: 22, value: (r) => r.category || '-' },
+  { header: 'สถานะ', width: 12, widthPct: 18, value: (r) => STATUS_STYLE[r.status]?.label ?? (r.status || '-') },
+]
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface StatusDetailTableProps {
@@ -106,6 +124,7 @@ interface StatusDetailTableProps {
 const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
   const [activeTab, setActiveTab] = React.useState('ALL')
   const [viewMode, setViewMode] = React.useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = React.useState(false)
   const [page, setPage] = React.useState(1)
   const pageSize = 10
   const { dateRange } = useStatusDetailContext()
@@ -182,6 +201,19 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
     [filteredData, page],
   )
 
+  // Human-readable note of the active filter/date range — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = React.useMemo(() => {
+    const parts: string[] = []
+    if (activeTab !== 'ALL') {
+      parts.push(`สถานะ ${FILTER_CONFIG.find((f) => f.key === activeTab)?.label ?? activeTab}`)
+    }
+    if (startDate && endDate) {
+      parts.push(`ช่วงวันที่ ${dayjs(startDate).format('D MMM BBBB')} - ${dayjs(endDate).format('D MMM BBBB')}`)
+    }
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeTab, startDate, endDate])
+
   if (!hasDateRange) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="กรุณาเลือกช่วงวันที่เพื่อดูประวัติการแจ้งเตือน" />
   }
@@ -212,9 +244,39 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
           filterClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
+          onExport={() => setExportOpen(true)}
+          // Deliberately hidden pre-export (original design) — wiring stays so
+          // flipping this flag is all it takes to enable the button.
           showExportButton={false}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED notifications (what the
+          table/grid shows, all pages), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filteredData.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'VMS_Notification_History_Report',
+            title: 'รายงานประวัติการแจ้งเตือนป้าย VMS (VMS Notification History)',
+            filterNote: exportFilterNote,
+            columns: STATUS_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filteredData,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'VMS_Notification_History_Report',
+            sheetName: 'VMS Notifications',
+            columns: STATUS_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filteredData,
+          })
+        }}
+      />
       {viewMode === 'TABLE' ? (
         <Table<StatusRow>
           columns={columns}

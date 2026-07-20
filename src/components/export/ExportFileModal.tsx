@@ -1,31 +1,42 @@
 "use client"
 import React, { useState } from 'react'
-import { Button, ConfigProvider, Modal } from 'antd'
+import { Button, ConfigProvider, Modal, Segmented } from 'antd'
 import { FaFileExcel, FaFilePdf } from 'react-icons/fa'
+
+/** Which rows to export when the page offers a choice (see `scope` prop). */
+export type ExportScope = 'all' | 'page'
 
 interface Props {
   open: boolean
   onClose: () => void
   /** Row count shown as "จำนวนข้อมูล: N รายการ" — omit to hide the line
-   *  (chart-style reports have no meaningful row count). */
+   *  (chart-style reports have no meaningful row count). Ignored when
+   *  `scope` is provided (the picker shows both counts instead). */
   count?: number
+  /** Optional scope picker for paginated tables: renders a
+   *  "ทั้งหมด / หน้าปัจจุบัน" toggle (default ทั้งหมด) and passes the chosen
+   *  scope to both handlers. Omit for the normal single-scope behavior. */
+  scope?: { totalCount: number; pageCount: number }
   /** Export handlers — a button renders only when its handler is passed
    *  (chart-style pages can offer PDF only). Async handlers get a per-button
    *  loading state; the modal closes itself after a successful export. */
-  onExportPdf?: () => void | Promise<void>
-  onExportExcel?: () => void | Promise<void>
+  onExportPdf?: (scope?: ExportScope) => void | Promise<void>
+  onExportExcel?: (scope?: ExportScope) => void | Promise<void>
 }
 
 /** Shared "นำออกเอกสาร" dialog — same layout as the drr-cm-fe original
  *  (white card, red PDF / green Excel buttons). Uses the app's `light-modal`
  *  override so AntD widgets inside stay dark-on-light. */
-const ExportFileModal: React.FC<Props> = ({ open, onClose, count, onExportPdf, onExportExcel }) => {
+const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExportPdf, onExportExcel }) => {
   const [busy, setBusy] = useState<'pdf' | 'excel' | null>(null)
+  // Scope toggle state — default ทั้งหมด (the common report need). Only
+  // rendered when the page passes `scope`.
+  const [scopeValue, setScopeValue] = useState<ExportScope>('all')
 
-  const run = (kind: 'pdf' | 'excel', fn: () => void | Promise<void>) => async () => {
+  const run = (kind: 'pdf' | 'excel', fn: (scope?: ExportScope) => void | Promise<void>) => async () => {
     setBusy(kind)
     try {
-      await fn()
+      await fn(scope ? scopeValue : undefined)
       onClose()
     } catch (e) {
       // Keep the modal open so the user can retry; surface the reason in dev.
@@ -34,6 +45,10 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, onExportPdf, o
       setBusy(null)
     }
   }
+
+  const effectiveCount = scope
+    ? (scopeValue === 'all' ? scope.totalCount : scope.pageCount)
+    : count
 
   return (
     <ConfigProvider
@@ -52,9 +67,23 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, onExportPdf, o
         <p style={{ color: '#212121', fontWeight: 500, marginBottom: 6 }}>
           เลือกรูปแบบไฟล์ที่ต้องการ Export:
         </p>
-        {count != null && (
+        {scope && (
+          <div style={{ marginBottom: 10 }}>
+            <Segmented<ExportScope>
+              size='small'
+              value={scopeValue}
+              onChange={(v) => setScopeValue(v)}
+              disabled={busy !== null}
+              options={[
+                { label: `ทั้งหมด (${scope.totalCount.toLocaleString()})`, value: 'all' },
+                { label: `หน้าปัจจุบัน (${scope.pageCount.toLocaleString()})`, value: 'page' },
+              ]}
+            />
+          </div>
+        )}
+        {effectiveCount != null && (
           <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>
-            จำนวนข้อมูล: {count.toLocaleString()} รายการ
+            จำนวนข้อมูล: {effectiveCount.toLocaleString()} รายการ
           </p>
         )}
 

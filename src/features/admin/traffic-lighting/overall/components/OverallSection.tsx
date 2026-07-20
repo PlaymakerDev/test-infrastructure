@@ -8,6 +8,7 @@ import { useOverallContext } from '../context'
 import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIframe'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import type { TrafficLightingProject } from '../data/trafficLightingProjects'
 import {
   buildLightingDetailUrl,
@@ -23,6 +24,53 @@ const TRAFFIC_LIGHTING_FILTERS: FilterConfig[] = [
   { key: 'offline', label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white', badgeIdleClass: 'bg-red-500/20 text-red-400' },
   { key: 'in-warranty', label: 'ในค้ำ', colorPrimary: '#05F2DB', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#016f64] text-white', badgeIdleClass: 'bg-[#05F2DB]/20 text-[#05F2DB]' },
   { key: 'expired', label: 'หมดค้ำ', colorPrimary: '#979797', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#4a4a4a] text-white', badgeIdleClass: 'bg-[#979797]/20 text-[#979797]' },
+]
+
+// Text-only twins of TableTrafficLighting's pill labels (warranty/connection +
+// LINE_STATUS_LABELS/CIRCUIT_STATUS_LABELS) — the export needs the same
+// visible text, minus colors/icons.
+const EXPORT_WARRANTY_TEXT: Record<TrafficLightingProject['warranty'], string> = {
+  'in-warranty': 'ในค้ำ',
+  expired: 'หมดค้ำ',
+  unknown: '-',
+}
+const EXPORT_CONNECTION_TEXT: Record<TrafficLightingProject['connection'], string> = {
+  online: 'ออนไลน์',
+  offline: 'ออฟไลน์',
+  unknown: '-',
+}
+// lineStatus and circuitStatus share the same normal/abnormal/unknown union
+// and the same on-screen texts (they differ only in pill color).
+const EXPORT_LINE_CIRCUIT_TEXT: Record<TrafficLightingProject['lineStatus'], string> = {
+  normal: 'ปกติ',
+  abnormal: 'ผิดปกติ',
+  unknown: '-',
+}
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen TableTrafficLighting (รหัสสายทาง → ชื่อโครงการ →
+// เลขที่สัญญา → การค้ำประกัน → จุดติดตั้ง → Phase → สถานะการเชื่อมต่อ →
+// สถานะสาย → สถานะวงจร), plus ลำดับ/หน่วยงาน since the export flattens the
+// table's per-สำนัก divider rows (same treatment as CCTV_EXPORT_COLUMNS in
+// cctv/overall). `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const LIGHTING_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: TrafficLightingProject, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || '-' },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => EXPORT_WARRANTY_TEXT[r.warranty] },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 15, align: 'left', value: (r) => r.installPoint || '-' },
+  { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase ?? '-' },
+  { header: 'สถานะการเชื่อมต่อ', width: 16, widthPct: 8, value: (r) => EXPORT_CONNECTION_TEXT[r.connection] },
+  { header: 'สถานะสาย', width: 10, widthPct: 6, value: (r) => EXPORT_LINE_CIRCUIT_TEXT[r.lineStatus] },
+  { header: 'สถานะวงจร', width: 10, widthPct: 6, value: (r) => EXPORT_LINE_CIRCUIT_TEXT[r.circuitStatus] },
 ]
 
 const OverallSection: React.FC = () => {
@@ -46,6 +94,7 @@ const OverallSection: React.FC = () => {
   } = useOverallContext()
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // summaryStats already carries the live totals (from a separate totals
   // endpoint, unaffected by the search box) — reshape into SearchBar's
@@ -72,6 +121,29 @@ const OverallSection: React.FC = () => {
       default: return filteredProjects
     }
   }, [filteredProjects, activeFilter])
+
+  // Export rows in the SAME order the table displays: grouped by สำนัก
+  // (bureau) — mirrors TableTrafficLighting's grouping so the printed report
+  // reads exactly like the screen. Exports the CURRENTLY FILTERED rows.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, TrafficLightingProject[]>()
+    for (const p of displayedProjects) {
+      const list = groups.get(p.bureau) ?? []
+      list.push(p)
+      groups.set(p.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [displayedProjects])
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = TRAFFIC_LIGHTING_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (searchQuery.trim()) parts.push(`ค้นหา "${searchQuery.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, searchQuery])
 
   // Same navigation as TableTrafficLighting's onRow. URL params make the
   // detail route portable; tab-local context only enriches its header.
@@ -250,6 +322,9 @@ const OverallSection: React.FC = () => {
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
+          onExport={() => setExportOpen(true)}
+          // Deliberately hidden by the menu's owner (original design) — the
+          // export wiring stays ready; flipping this flag enables the button.
           showExportButton={false}
           formSearch={
             <Input
@@ -270,6 +345,33 @@ const OverallSection: React.FC = () => {
           }
         />
       </div>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Lighting_Overview_Report',
+            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Traffic Lighting Overview)',
+            filterNote: exportFilterNote,
+            columns: LIGHTING_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Lighting_Overview_Report',
+            sheetName: 'Traffic Lighting Overview',
+            columns: LIGHTING_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
 
       <section className='mt-4'>
         {centralListError ? (

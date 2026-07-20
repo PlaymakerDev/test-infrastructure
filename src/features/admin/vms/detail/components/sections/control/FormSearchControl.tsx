@@ -6,7 +6,11 @@ import { TbPrinter } from 'react-icons/tb'
 
 const { RangePicker } = DatePicker
 
-interface Props {}
+interface Props {
+  /** Opens the shared นำออกเอกสาร modal owned by ControlSection — the same
+   *  modal the SearchBar's export button in this tab opens. */
+  onExport?: () => void
+}
 
 interface FormSearchValues {
   date: [Dayjs | null, Dayjs | null] | null
@@ -28,7 +32,7 @@ const STATUS_OPTIONS = [
   { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const FormSearchControl: React.FC<Props> = () => {
+const FormSearchControl: React.FC<Props> = ({ onExport }) => {
   const { control, handleSubmit } = useForm<FormSearchValues>({
     defaultValues: {
       date: [dayjs(), dayjs()],
@@ -126,6 +130,29 @@ const FormSearchControl: React.FC<Props> = () => {
               </div>
             )}
           />
+        </Col>
+        <Col
+          xs={24}
+          sm={24}
+          md={12}
+          lg={12}
+          xl={8}
+          xxl={6}
+        >
+          {/* Mirrors the SearchBar export button — htmlType defaults to
+              'button' so it never submits the surrounding form. */}
+          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+            <Button
+              type='primary'
+              size='large'
+              shape='round'
+              icon={<TbPrinter />}
+              onClick={onExport}
+              className='w-full! sm:w-auto! sm:min-w-45!'
+            >
+              <p className='fs-12'>นำออกเอกสาร</p>
+            </Button>
+          </ConfigProvider>
         </Col>
       </Row>
     </form>

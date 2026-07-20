@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useAllLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 
@@ -56,6 +57,23 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'DOWN', label: 'DOWN', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white', badgeIdleClass: 'bg-red-500/20 text-red-400' },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (วันที่และเวลา → อุปกรณ์ → เหตุการณ์ → สถานะ);
+// อุปกรณ์ exports the same Warning/Alert level the on-screen badge shows.
+// `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const ALERT_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: AlertItem, index: number) => string | number
+}[] = [
+  { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => (r.timestamp ? dayjs(r.timestamp).format('D MMM BBBB HH:mm:ss') : '-') },
+  { header: 'อุปกรณ์', width: 14, widthPct: 25, value: (r) => levelOf(r.equipment_id) },
+  { header: 'เหตุการณ์', width: 34, widthPct: 32, value: (r) => r.incident || '-' },
+  { header: 'สถานะ', width: 10, widthPct: 18, value: (r) => r.status || '-' },
+]
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface AlertDetailTableProps {
@@ -65,6 +83,7 @@ interface AlertDetailTableProps {
 
 const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
   const [activeTab, setActiveTab] = useState('ALL')
+  const [exportOpen, setExportOpen] = useState(false)
   const [page, setPage] = useState(1)
   const pageSize = 10
 
@@ -123,6 +142,13 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
     return alerts.filter((a) => a.status === activeTab)
   }, [activeTab, alerts])
 
+  // Human-readable note of the active filter — printed in the PDF header so a
+  // reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    if (activeTab === 'ALL') return undefined
+    return `สถานะ ${FILTER_CONFIG.find((f) => f.key === activeTab)?.label ?? activeTab}`
+  }, [activeTab])
+
   // Reset to page 1 whenever the filter (or underlying data) changes, so a
   // filter switch never strands the view on a now-out-of-range page.
   React.useEffect(() => { setPage(1) }, [activeTab, alerts])
@@ -144,9 +170,36 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
           defaultFilter="ALL"
           onFilterChange={(key) => setActiveTab(key)}
           showViewToggle={false}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED alerts (what the table
+          shows, all pages), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filteredData.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Lighting_Alert_History_Report',
+            title: 'รายงานประวัติการแจ้งเตือนไฟฟ้าแสงสว่าง (Lighting Alert History)',
+            filterNote: exportFilterNote,
+            columns: ALERT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filteredData,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Lighting_Alert_History_Report',
+            sheetName: 'Lighting Alerts',
+            columns: ALERT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filteredData,
+          })
+        }}
+      />
       <Table<AlertItem>
         columns={columns}
         dataSource={filteredData}

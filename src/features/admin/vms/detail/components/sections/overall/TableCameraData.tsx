@@ -7,7 +7,7 @@ interface Props {}
 
 type ConnectionStatus = 'Connect' | 'Disconnect'
 
-interface CameraRecord {
+export interface CameraRecord {
   key: string
   no: number
   name: string
@@ -22,7 +22,9 @@ const STATUS_CLASS: Record<ConnectionStatus, string> = {
   Disconnect: 'border-red-500 text-red-500',
 }
 
-const mockData: CameraRecord[] = [
+// Exported so the parent DataDisplaySection can feed the SAME rows the table
+// renders into the นำออกเอกสาร (PDF/Excel) export — still mock data for now.
+export const CAMERA_MOCK_ROWS: CameraRecord[] = [
   {
     key: '1',
     no: 1,
@@ -123,7 +125,7 @@ const TableCameraData: React.FC<Props> = () => {
   return (
     <Table<CameraRecord>
       columns={columns}
-      dataSource={mockData}
+      dataSource={CAMERA_MOCK_ROWS}
       pagination={false}
       size='middle'
       rowKey='key'
