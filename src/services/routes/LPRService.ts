@@ -5,7 +5,54 @@ import type {
   APIResponseLPRPlateDetail,
   APIRequestLPRTimeline,
   APIResponseLPRTimeline,
+  APIResponseLPRPoints,
+  APIRequestLPRPointPlates,
+  APIResponseLPRPointPlates,
+  APIResponseLPRPointStats,
+  LPRSource,
 } from '@/types/lpr/lpr-api'
+
+// Aggregate view for the detail overview page (hourly / province / vehicle).
+export const getLPRPointStatsAPI = (solutionId: string | number) =>
+  ApiService.fetchData<APIResponseLPRPointStats>({
+    url: `/lpr/points/${encodeURIComponent(String(solutionId))}/stats`,
+    method: 'GET',
+  })
+
+// Cursor-paginated stream of every detection captured at any camera owned
+// by this install-point (CCTV solution). Optional date range + plate search
+// + source narrow the query on the backend so we don't over-fetch.
+export const getLPRPointPlatesAPI = (
+  solutionId: string | number,
+  params: APIRequestLPRPointPlates & {
+    from?: string
+    to?: string
+    q?: string
+    source?: LPRSource | 'all'
+  } = {},
+) =>
+  ApiService.fetchData<APIResponseLPRPointPlates>({
+    url: `/lpr/points/${encodeURIComponent(String(solutionId))}/plates`,
+    method: 'GET',
+    params: {
+      ...(params.cursor ? { cursor: params.cursor } : {}),
+      ...(params.from ? { from: params.from } : {}),
+      ...(params.to ? { to: params.to } : {}),
+      ...(params.q ? { q: params.q } : {}),
+      ...(params.source && params.source !== 'all' ? { source: params.source } : {}),
+      limit: params.limit ?? 20,
+    },
+  })
+
+// One row per CCTV solution that has LPR-active cameras — drives the LPR
+// overall page's map + list. Returns raw array (no res_data wrapper). No
+// dept scoping in backend; the FE filters by department_id when the URL
+// carries dept_id.
+export const getLPRPointsAPI = () =>
+  ApiService.fetchData<APIResponseLPRPoints>({
+    url: '/lpr/points',
+    method: 'GET',
+  })
 
 // LPR read API — `/api-v2/lpr/*`, same host + admin JWT as the main backend,
 // so BaseService injects auth automatically. See docs/lpr/API_DOCS.md.

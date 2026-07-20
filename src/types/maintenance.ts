@@ -214,3 +214,32 @@ export interface RegionItem {
   name_th: string
   name_en: string
 }
+
+// One row of the "สรุปผู้รับจ้าง" page — matches
+// GET /manage/maintenance/contractor-summary from the backend.
+// email/phone are '' (never null) so the FE can always render them.
+export interface ContractorSummaryRow {
+  user_id: string
+  short_name: string
+  company_name: string
+  email: string
+  phone: string
+  projects: number
+  roads: number
+
+  cctv_total: number
+  cctv_offline: number
+  traffic_total: number
+  traffic_offline: number
+  vms_total: number
+  vms_offline: number
+  lighting_total: number
+  lighting_offline: number
+  bridge_lighting_total: number
+  bridge_lighting_offline: number
+  wim_total: number
+  wim_offline: number
+
+  total_offline: number
+  open_cases: number
+}

@@ -13,6 +13,7 @@ import type {
   MaintenanceCaseParams,
   MaintenanceHistoryParams,
   RegionItem,
+  ContractorSummaryRow,
 } from "@/types/maintenance"
 
 // --- Summary APIs ---
@@ -109,6 +110,15 @@ export const updateMaintenanceCaseAPI = async (caseNo: string, data: UpdateCaseR
 export const getRegionsAPI = async () => {
   return ApiService.fetchData<RegionItem[]>({
     url: '/manage/regions',
+    method: 'GET',
+  })
+}
+
+/** GET /manage/maintenance/contractor-summary — one row per contractor,
+ *  sorted server-side by total_offline DESC. Full list (~60 rows). */
+export const getContractorSummaryAPI = async () => {
+  return ApiService.fetchData<ContractorSummaryRow[]>({
+    url: '/manage/maintenance/contractor-summary',
     method: 'GET',
   })
 }

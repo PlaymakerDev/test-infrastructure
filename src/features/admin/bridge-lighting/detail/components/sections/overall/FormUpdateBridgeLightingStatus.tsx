@@ -1,6 +1,7 @@
 import { usePostOpenBridgeLighting } from '@/features/admin/bridge-lighting/detail/hooks';
 import { APIResponseBridgeLightingWID, ShellyStatusData } from '@/types/bridge-lighting/overall-api';
-import { Button, Col, ConfigProvider, Radio, Row } from 'antd';
+import { Button, Col, ConfigProvider, Modal, Radio, Row } from 'antd';
+import { ExclamationCircleFilled } from '@ant-design/icons';
 import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
@@ -9,10 +10,17 @@ interface Props {
   shellyStatus?: ShellyStatusData
   editMode: boolean
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>
+  /** Called with the target on/off after a successful send so the parent can
+   *  show a pending overlay until the shelly-status poll flips to that state. */
+  onSubmitted?: (nextIsOn: boolean) => void
 }
 
+// Upstream its-api-go/dashvue/openBridgeLighting accepts send="1" (ON) and
+// send="2" (OFF) — NOT "0". The old dashvue front-end has always sent "2"
+// for the off path; the new UI was sending "0" silently, which the upstream
+// legacy service ignored → users saw "ON works, OFF does nothing".
 interface FormUpdateStatus {
-  send: '0' | '1'
+  send: '1' | '2'
   wid: string
 }
 
@@ -22,16 +30,16 @@ interface FormUpdateStatus {
 // ]
 
 const STATUS = [
-  { label: 'เปิดไฟระดับสะพาน', value: '1', },
-  { label: 'ปิดไฟระดับสะพาน', value: '0', },
+  { label: 'เปิดไฟประดับสะพาน', value: '1' },
+  { label: 'ปิดไฟประดับสะพาน', value: '2' },
 ]
 
 const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
-  const { widData, shellyStatus, setEditMode } = props
+  const { widData, shellyStatus, setEditMode, onSubmitted } = props
 
   const form = useForm<FormUpdateStatus>({
     defaultValues: {
-      send: shellyStatus?.output ? '1' : '0',
+      send: shellyStatus?.output ? '1' : '2',
       wid: String(widData?.wid) || '',
     }
   })
@@ -46,10 +54,38 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
   const { mutate: postOpenBridgeLighting, isPending } = usePostOpenBridgeLighting()
 
   const onSubmit = useCallback((data: FormUpdateStatus) => {
-    postOpenBridgeLighting(data, {
-      onSuccess: () => setEditMode(false),
+    // Confirm before touching the device — same guard dashvue used
+    // (SweetAlert "ต้องการเปิด/ปิดไฟหรือไม่"). ON/OFF affects live wiring
+    // and users in the area, so a stray click shouldn't fire the command.
+    const isOn = data.send === '1'
+    Modal.confirm({
+      title: isOn ? 'ยืนยันเปิดไฟประดับสะพาน?' : 'ยืนยันปิดไฟประดับสะพาน?',
+      icon: <ExclamationCircleFilled style={{ color: isOn ? '#66AEFF' : '#FCD116' }} />,
+      content:
+        'การสั่งงานนี้จะส่งคำสั่งไปยังอุปกรณ์จริงในพื้นที่ กรุณายืนยันก่อนดำเนินการ',
+      okText: isOn ? 'เปิดไฟ' : 'ปิดไฟ',
+      cancelText: 'ยกเลิก',
+      okButtonProps: {
+        style: {
+          background: isOn ? '#66AEFF' : '#FCD116',
+          borderColor: isOn ? '#66AEFF' : '#FCD116',
+          color: isOn ? '#fff' : '#212121',
+        },
+      },
+      centered: true,
+      onOk: () =>
+        new Promise<void>((resolve, reject) => {
+          postOpenBridgeLighting(data, {
+            onSuccess: () => {
+              setEditMode(false)
+              onSubmitted?.(isOn)
+              resolve()
+            },
+            onError: () => reject(),
+          })
+        }),
     })
-  }, [postOpenBridgeLighting, setEditMode])
+  }, [postOpenBridgeLighting, setEditMode, onSubmitted])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

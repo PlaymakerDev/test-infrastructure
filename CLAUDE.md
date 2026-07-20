@@ -125,6 +125,28 @@ Do not create new Context providers with empty `value={{}}` — they add overhea
 - **Video**: HLS live streams via `src/components/video/`.
 - **Animation**: Use `motion` package only. Do NOT use `framer-motion` (both installed but `motion` is the current one).
 
+### Theme colors — never invent (rule set 2026-07-19)
+
+Every colour in the admin UI **must** come from an authoritative source that already exists in the project. Never pick an ad-hoc hex or a stock AntD colour name (`processing`, `cyan`, `geekblue`, `gold`, `volcano`, `green`) unless you can point to a sibling module that already uses that exact token for the same UI element.
+
+**Order of lookup:**
+1. **`src/styles/globals.css` tokens first** — the canonical palette:
+   - `--yellow` (`#FCD116`) — primary / brand
+   - `--default-blue` (`#66AEFF`) — secondary text, accent pills
+   - `--red` (`#FF6666`) — danger, offline
+   - `--light-blue` (`#05F2DB99`) — teal accent
+   - `--dark-black` (`#191919`) — panel bg
+   - `--light-black` (`#212121`) — nested panel bg
+   - `--mid-gray` (`#2B2B2B`) — hover row bg
+   - `--light-gray*` — subdued text
+2. **If globals.css doesn't have it, mirror an existing solution module.** Grep sibling admin features (cctv, traffic-signal, crosswalk, incident-detection, settings, bridge-lighting, traffic-volume, tracking) for the same UI element (Tag, Chip, Badge, StatusPill, Popconfirm palette) and copy the approach — including any `ConfigProvider theme.components.*` block. Do not invent a new scheme.
+3. **For `light-modal` popups** — reuse the existing `body .light-modal .<selector>` overrides in `src/styles/antd.css`; do not roll new ConfigProvider hex tokens per-component.
+4. **If uncertain, ASK — don't guess.**
+
+Use Tailwind 4's `text-(--yellow)` / `bg-(--dark-black)` / `border-(--default-blue)` bracket syntax against the CSS custom properties above — this is the style already used everywhere in the app.
+
+Applies to every admin surface. Introduced after repeated iterations on the VMS Command Center picked off-palette AntD tag colours that clashed with the yellow-on-black brand look.
+
 ## Data Fetching
 
 Backend integration has expanded well beyond `control-vms/overall` (surveyed 2026-07-04) — most admin features now call the real backend. **Four data-fetching patterns coexist**; know which one a feature already uses before touching it:
@@ -251,6 +273,23 @@ These risks are **explicitly accepted** for the current deployment context (inte
 - `src/utils/allowAdmin.ts` — implemented (reads iron-session role)
 - `src/proxy.ts` — gates `/admin/*` routes by `session.role === 'ADMIN'`
 - `src/lib/defaultSession.ts` — `TOKEN_SECRET` now throws in production if not set; dev warns with a safe dev-only fallback (no hardcoded secret in source)
+
+### control-vms — Command Center overhaul (2026-07-19/20)
+
+`/admin/control-vms` is now a **3-tab Command Center**: `?tab=dispatch` (scope picker + composer + real-time monitor with countdown & progress bar) · `?tab=history` (cross-sign timeline table with date pills) · `?tab=media` (first-class media library with categories CRUD + upload + drag-drop preview). `/admin/vms-command-center` is a permanent redirect for old bookmarks. All new code lives under `src/features/admin/vms-command-center/`.
+
+**New backend contract** (bundled in `Klanarm/drr_its_service`, applied on 10.10.0.112 via migrations `2026-07-19_vms_setting_status_history.sql` + `2026-07-19b_vms_media_library.sql`):
+- **`vms.tbl_vms_setting_status_log`** — append-only status history via trigger `vms.fn_log_vms_setting_status()`. Writes only on `NEW.status IS DISTINCT FROM OLD.status`. Every writer opens a tx and `SET LOCAL app.vms_status_source = '<label>'` (+ `app.vms_status_changed_by` when applicable) — trigger reads via `current_setting()`. Labels: `device / admin_override / admin_cancel / admin_edit / watcher_disconnect / watcher_expired / worker_advance / seed`. **Rule going forward:** any new writer of `tbl_vms_setting.status` must set the GUC or it lands as `source='unknown'`.
+- **`vms.tbl_vms_media`** — first-class media library (id, url, name, filename, mime_type, setting_type_id nullable, uploaded_by, uploaded_at, deleted_at, unique-on-active-url). Replaces the earlier "URLs are implicit inside past schedules" model.
+- **13 new endpoints under `/api-v2/vms/`**: `command-center/{monitor,history,sign/:vms_id}`, `settings/media/:id/{cancel,history}`, `crossings/:cmi/history`, `media/*` (CRUD + category-counts + bulk-delete). See project_vms_command_center memory (out-of-tree) or grep `internal/api/router/vms_setting.go` for the wiring.
+- **`command_no`** — running 1..N per-sign command index exposed on every monitor/history/setting-history response. Human-friendly label for the shared `setting.id`. Not sent to devices; device POSTs still key on setting_id.
+
+**Frontend conventions** for anything under vms-command-center or touching the VMS surface:
+- **Every image/video preview** = `aspectRatio: '16/9'` + `background: '#000'` + `objectFit: 'contain'`. Grid cards, upload previews, edit modals, LiveMonitor thumbnails, SignDetailModal HLS players. Letterboxes portrait/4:3 sources cleanly.
+- **Status enum + colours** — `src/features/admin/vms-command-center/constants/vmsStatus.ts` (0..7 with `isActive`, `isTerminal`, `isCancellable`). Consume via `statusMeta(status)` + `<StatusPill>`. Do NOT redefine.
+- **Modals**: light forms use `wrapClassName='light-modal'` + `<ConfigProvider theme={{ components: { Modal, Input, Select } }}>` white overrides + `classNames={{ popup: { root: 'light-modal-popup' } }}` on every Select/DatePicker (Select popups portal outside modal DOM so `.light-modal` doesn't reach them). Dark viewer modals mirror `components/modal/CCTVModal.tsx` (border-2 border-(--default-blue), colorIcon white). App root `themeConfig.ts` now has a `Popover` component override so Popconfirm/Tooltip render on dark bg globally — don't wrap individually.
+- **BureauList** accepts `alwaysSelectMode` (checkboxes stay visible; ยกเลิกทั้งหมด clears ticks instead of exiting select mode) + `includeOfflineOnSelectAll` (default false — "เลือกทั้งหมด" filters online-only; offline signs stay individually tickable).
+- **LiveMonitor** shows live countdown / progress bar / summary counts, dims terminal cards to 0.65 opacity (they stay visible for audit), has a `ซ่อนที่เสร็จแล้ว` toggle. Multi-day schedules resolve to today's `[time_since..time_to]` window when today's ISO weekday matches `days_of_week` mask.
 
 ### control-vms/overall — reference implementation (fully refactored 2026-06-23)
 The first backend-integrated feature. Canonical template for all future backend work. Key patterns:
@@ -476,6 +515,41 @@ Also added `POST /api-v2/gateways/wim/heartbeat {station_id}` (`Klanarm/drr_its_
 **Explicitly out of scope for this slice** (flagged for the `overall/`+`gps`+`license`+`mobile` rollout phase): the `overall/`-scoped `wim_cctv_list` collision above; hardcoded `station_id:'3'`/`'1'` magic values in `overall/`'s WIM/STATION CCTV-list components; 4 near-duplicate CCTV-list implementations across `overall/`; `TableLatestStation`/`TableLatestWIM` near-100%-duplicate presentational components (found this session, not merged — see hooks note above); mock-backed components (`TableOverallDailyWeight`, the VEHICLE tabs, `trackingStations.ts`).
 
 **Verified:** `npx tsc --noEmit` clean (only the 2 pre-existing, unrelated `MaintenanceService.ts` errors remain); ESLint clean on every touched/new file; 109/109 unit tests pass (91 → 109, all 18 new in `tracking.test.ts`); `next build`'s Turbopack compile step succeeds for the whole app (the build's separate full-project TS gate still fails only on the same untouched `MaintenanceService.ts` error). **Not verified:** interactive browser click-through — the route is RBAC/session-gated and no browser automation tool was available in this environment.
+
+## Backend sync worker landscape (added 2026-07-18)
+
+The `drr_worker.service` on 10.10.0.104 runs 8 cron jobs plus 4 aggregations —
+this is where legacy MySQL data flows into new PG (`its_db`), where the
+dashboard's `is_online` flag comes from, and where auto-generated maintenance
+cases originate. Read this before touching any feature that shows install-point
+counts, camera lists, or offline pill colours.
+
+| Job | Cadence | Source → Target |
+|---|---|---|
+| `VMSSync` | :00 + startup | legacy `tbl_work_master (type_name=TrafficSign)` → `vms.tbl_vms` + related |
+| `BridgeLightingSync` | :00 + startup | legacy `tbl_work_master (type_name=BridgeLighting)` → `bridge_lighting.tbl_bridge_lighting` |
+| `SolutionSync` | :30 + startup | legacy `tbl_work_master` (8 types) → `tbl_solution` |
+| `CameraSync` | :45 + startup | legacy `tbl_cctv` → `cctv.tbl_camera` |
+| `EnixmaURL` | :45 + startup | legacy `tbl_vmsscreen_enixma_provision` → `vms.tbl_vms_desktop_screen.desktop_screen` (via dblink) |
+| `CaseAutoOpen` | :10/:30/:50 + startup | offline in-warranty solutions → `tbl_maintenance_case` (+ email vendor) |
+| `VMSStatusProgress` | */5 min | `vms.tbl_vms_setting` stuck at status 0 → 3/4 |
+| `Counting/Traffic/Crosswalk/Lighting agg` | :01 hourly | Hourly buckets |
+
+Migration tracking: `public.tbl_work_master_migration` — composite PK `(wid, type_name)` because legacy tbl_work_master shares `id` across type_names for the same physical install-point.
+
+is_online logic: manage service `/manage/solution/{deptId}/position` returns `is_online: boolean | null` via 6 LEFT JOIN LATERAL blocks gated on `ts.solution_type_id`. Thresholds: CCTV `bool_or(curl_status)` no window · Traffic `connection_status='connected' AND traffic_connected_at > NOW()-15m` · VMS `last_connected > NOW()-30m` · WIM `wim_connected_at > NOW()-30m` · Lighting `MAX(lighting_iot_status.last_update) > NOW()-60m` · BridgeLighting `last_update > NOW()-90m`.
+
+## Maintenance case workflow (added 2026-07-18)
+
+State machine: `open → in_progress → pending_approval → closed` (plus rejected → back to in_progress). `tbl_maintenance_case.camera_id` is nullable now; the row accepts any of `camera_id | project_id | solution_id`. `contractor_id` pins it to the vendor. `POST /manage/maintenance/case/{case_no}/approve` handles the officer close. `GET /manage/maintenance/contractor-summary` feeds `/admin/maintenance/contractor-summary` (per-vendor offline-device rollup). SMTP mailer at `worker/mailer/mailer.go` runs in log-only mode until env vars `SMTP_HOST/PORT/USERNAME/PASSWORD/FROM/FROM_NAME` are set on the service unit.
+
+Contractor emails live in `tbl_contractors.email` (added 2026-07-18). Settings → ผู้รับจ้าง form now has an email input.
+
+## Ticket 15 ก.ค. 2569 — status
+
+All 8 top-level ticket items delivered live 2026-07-18. Session log + open follow-ups: see project-ticket-150769-status memory. FE features live: 18-สำนัก polygon overlay, road-code search, three-way hide dropdown, KPI tile row, CCTV nationwide search, Traffic phase arrows via `is_main_road`, Smart Search markdown-link + inline-image render, contractor summary page, seamless deploy pipeline.
+
+Deploy RULE (2026-07-18 Keng): `/home/kaiser/auto-pull-build-its-new.sh` NEVER stops the service before `next build` — it does `mv .next .next.old → next build → systemctl restart → rm -rf .next.old`. Downtime ~2s, not 30-60s. Old script backed up at `.bak.pre-seamless`.
 
 ## Environment Variables
 

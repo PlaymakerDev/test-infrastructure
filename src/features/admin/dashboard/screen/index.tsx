@@ -52,49 +52,18 @@ const DashboardScreen: React.FC<Props> = () => {
   const [currentDeptId, setCurrentDeptId] = useState<string>(
     () => searchParams.get('dept_id') ?? '0'
   )
-  // Whether this visit LANDED as the nationwide view. `dept_id=0&scope=all`
-  // (navbar/login) = ทั่วประเทศ; plain `dept_id=0` (sidebar ทช.ส่วนกลาง) is a
-  // normal single-department landing — it auto-flies to its own devices and
-  // must NOT get the country-view treatment below.
-  const [landedScopeAll] = useState<boolean>(
-    () => searchParams.get('scope') === 'all'
-  )
-
-  // ── Landing intro: ทั่วประเทศ (dept 0 + scope=all) opens MAP-ONLY ──────────
-  // At the country view the cards are broad aggregates; the first real action
-  // is finding a province on the map, so the map gets the whole screen. The
-  // FIRST drill-in (click a province / a marker, or pan-zoom into one) reveals
-  // the cards, and everything behaves exactly as before from then on — this is
-  // one-shot per visit: zooming back out does NOT re-hide.
-  // Every dept-specific landing (dept ≠ 0, or plain dept 0 = ทช.ส่วนกลาง)
-  // skips the intro entirely — those auto-fly into their own devices, so
-  // map-only would hide the data they came for.
-  const { isMapFocus, setMapFocus } = useMapFocusMode()
-  const introRef = useRef(originalDeptId === '0' && landedScopeAll)
-  const introShownRef = useRef(false)
-
-  useEffect(() => {
-    // Mount-only. Ordering vs the Navbar's route-change reset (which forces
-    // focus OFF on every pathname/search change) is safe: Navbar sits before
-    // {children} in the layout tree, so its effect runs first and this one
-    // wins the landing frame.
-    if (introRef.current) setMapFocus(true)
-  }, [setMapFocus])
-
-  // The intro ends the FIRST time focus turns off — whether from the reveal
-  // below or the user hitting the navbar toggle themselves. After that the
-  // toggle is fully manual again: re-enabling focus and then clicking a
-  // province will NOT force the cards back open.
-  useEffect(() => {
-    if (isMapFocus) introShownRef.current = true
-    else if (introShownRef.current) introRef.current = false
-  }, [isMapFocus])
-
+  // Landing behaviour (2026-07-18 change): the dashboard now opens with ALL
+  // cards visible on every entry — including ทั่วประเทศ (dept 0 + scope=all).
+  // Previously that landing forced map-only "focus mode" until the user drilled
+  // into a province, on the theory that country-level cards were too broad to
+  // be interesting. Since the 18-สำนัก polygon overlay + status pills landed
+  // (commit 17229a59), the country view carries real signal end-to-end and no
+  // longer needs the intro. Users who want a bigger map can still pick
+  // "ซ่อนทั้งสองฝั่ง" from the Navbar focus-mode dropdown.
   const handleProvinceActivate = useCallback(() => {
-    if (!introRef.current) return
-    introRef.current = false
-    setMapFocus(false)
-  }, [setMapFocus])
+    // No-op — kept as a stable reference so ReactMap's optional callback
+    // continues to have a target. Delete both if the map prop is dropped.
+  }, [])
 
   useEffect(() => {
     dispatch(getExampleData())
@@ -106,7 +75,7 @@ const DashboardScreen: React.FC<Props> = () => {
       {/* MAP */}
       <ReactMap
         originalDeptId={originalDeptId}
-        originalScopeAll={landedScopeAll}
+        originalScopeAll={searchParams.get('scope') === 'all'}
         onDeptIdChange={setCurrentDeptId}
         onProvinceActivate={handleProvinceActivate}
       />

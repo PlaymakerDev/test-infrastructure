@@ -13,4 +13,9 @@ export const useBridgeLightingShellyStatus = (
     queryKey: bridgeLightingDetailKeys.shellyStatusDetail(String(id ?? ''), scope),
     queryFn: () => postBridgeLightingShellyStatusAPI({ wid: String(wid) }),
     enabled: !!deptId && !!id && isWidReady,
+    // Idle cadence — real-time confirmation of a just-issued ON/OFF command
+    // is layered on top by BridgeLightingStatus, which calls invalidateQueries
+    // every 2 s while `pendingTarget != null`.
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
   })

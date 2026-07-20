@@ -16,7 +16,7 @@
 export const DEVICE_BADGE = {
   cctv:       { label: 'CCTV',      color: '#4DA3FF' }, // blue   (legend #003F87)
   vms:        { label: 'VMS',       color: '#FF9F45' }, // orange (legend #874600)
-  wim_camera: { label: 'Tracking',  color: '#E879DE' }, // purple (legend #70196D)
+  wim_camera: { label: 'Truck Tracking', color: '#E879DE' }, // purple (legend #70196D)
   counting:   { label: 'Volume',    color: '#2DD4BF' }, // teal   (legend #007787)
   analytic:   { label: 'Incident',  color: '#3DD68C' }, // green  (legend #00873B)
   traffic:    { label: 'Traffic',   color: '#A3E635' }, // lime   (legend #518700)

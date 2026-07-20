@@ -1,6 +1,7 @@
 "use client"
 import { useCallback, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import type { MapFocusMode } from '@/types/layout'
 import {
   setMapFocusMode,
   toggleMapFocusMode,
@@ -8,9 +9,11 @@ import {
   unregisterMapFocusConsumer,
 } from '@/stores/reducers/layout/layoutSlice'
 
-/** Shared read/write access to the global Map Focus Mode flag. When active,
- *  every overall page that hosts a map hides its surrounding cards/panels/
- *  charts and lets the map take the full width. Toggled from the Navbar.
+/** Shared read/write access to the Map Focus Mode. The mode is TRI-STATE
+ *  (plus off): `left`, `right`, `both`, or `off`. Each MapOverlayPanel reads
+ *  the mode and hides itself only when its `position` prop matches the
+ *  hidden side. Consumers that only care about "is anything hidden?" can
+ *  read `isMapFocus` — `true` iff mode !== 'off'.
  *
  *  `focusAvailable` is true while at least one focus-capable layout is
  *  mounted (see useRegisterMapFocusConsumer) — the navbar grays the toggle
@@ -18,8 +21,9 @@ import {
  *  detail TAB without one, e.g. incident-detection's รายงานเหตุการณ์). */
 const useMapFocusMode = () => {
   const dispatch = useAppDispatch()
-  const isMapFocus = useAppSelector((s) => s.layout.map_focus.active)
+  const mode = useAppSelector((s) => s.layout.map_focus.mode)
   const focusAvailable = useAppSelector((s) => s.layout.map_focus.consumers > 0)
+  const isMapFocus = mode !== 'off'
 
   const setMapFocus = useCallback(
     (active: boolean) => {
@@ -28,11 +32,18 @@ const useMapFocusMode = () => {
     [dispatch]
   )
 
+  const setMode = useCallback(
+    (next: MapFocusMode) => {
+      dispatch(setMapFocusMode({ mode: next }))
+    },
+    [dispatch]
+  )
+
   const toggle = useCallback(() => {
     dispatch(toggleMapFocusMode())
   }, [dispatch])
 
-  return { isMapFocus, focusAvailable, setMapFocus, toggle }
+  return { mode, isMapFocus, focusAvailable, setMapFocus, setMode, toggle }
 }
 
 /** Marks the calling component as a focus-capable map layout for as long as

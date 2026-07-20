@@ -261,7 +261,10 @@ const FanLegs: React.FC<{ count: number; length: number }> = memo(function FanLe
 
 const DeviceIcon: React.FC<{ device: Device; size: number }> = memo(function DeviceIcon({ device, size }) {
   const Icon = SYSTEM_ICONS[device.type]
-  const color = SYSTEMS[device.type].color
+  // Offline → mute to slate; unknown / online keep the brand colour so nothing
+  // shifts until BE ships the joined `is_online` field. Matches the Mapbox
+  // symbol-layer expression used by singletons in DeviceClusterMarker.
+  const color = device.isOnline === false ? '#94a3b8' : SYSTEMS[device.type].color
   return (
     <div
       style={{
@@ -273,7 +276,7 @@ const DeviceIcon: React.FC<{ device: Device; size: number }> = memo(function Dev
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: '2px solid #fff',
+        border: `2px solid ${device.isOnline === false ? '#ef4444' : '#fff'}`,
         boxShadow: '0 2px 6px rgba(0,0,0,0.45)',
       }}
     >

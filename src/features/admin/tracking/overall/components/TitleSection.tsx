@@ -35,7 +35,7 @@ const TitleSection: React.FC<Props> = (props) => {
   return (
     <div>
       <section>
-        <h1 className='text-(--yellow)'>Tracking</h1>
+        <h1 className='text-(--yellow)'>Truck Tracking</h1>
         <p className='text-(--yellow)'>ระบบติดตามและตรวจสอบยานพาหนะ</p>
       </section>
       <section className='mt-5'>

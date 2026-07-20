@@ -6,6 +6,8 @@ import {
   TbMenu2,
   TbZoomInArea,
   TbZoomReset,
+  TbLayoutSidebarLeftCollapse,
+  TbLayoutSidebarRightCollapse,
   TbSearch,
   TbBellRinging2,
   TbGripHorizontal,
@@ -140,7 +142,7 @@ export default function Navbar() {
   // grays out whenever NOTHING currently on screen would respond — including
   // detail TABS without a map (e.g. incident-detection's รายงานเหตุการณ์),
   // which a route list could never express.
-  const { isMapFocus, focusAvailable, setMapFocus, toggle: toggleMapFocus } = useMapFocusMode()
+  const { mode: mapFocusMode, isMapFocus, focusAvailable, setMapFocus, setMode: setMapFocusMode, toggle: toggleMapFocus } = useMapFocusMode()
   // MODAL
   const [modal, contextHolder] = Modal.useModal()
   // QUERY CLIENT
@@ -594,26 +596,56 @@ export default function Navbar() {
           </AnimatePresence>
         </div>
         <div className="nav-side-menu">
-          <button
-            type="button"
-            onClick={focusAvailable ? toggleMapFocus : undefined}
+          {/* Focus-mode picker — the old single-button (off ↔ both) is now a
+            * dropdown with 4 modes so users can hide LEFT / RIGHT / BOTH.
+            * Left-click opens the menu; keyboard/`aria-pressed` still track
+            * whether ANY side is currently hidden. */}
+          <Dropdown
+            trigger={focusAvailable ? ['click'] : []}
             disabled={!focusAvailable}
-            className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
-              ? 'text-white/25 cursor-not-allowed'
-              : isMapFocus
-                ? 'text-(--yellow) cursor-pointer'
-                : 'text-inherit hover:text-white cursor-pointer'}`}
-            aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
-            aria-pressed={isMapFocus}
-            aria-disabled={!focusAvailable}
-            title={!focusAvailable
-              ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
-              : isMapFocus ? 'ปิดโหมดเน้นแผนที่' : 'เน้นแผนที่ (ซ่อนการ์ด/แผงด้านข้าง)'}
+            menu={{
+              selectedKeys: [mapFocusMode],
+              items: [
+                { key: 'off',   label: 'แสดงทั้งหมด',       icon: <TbZoomReset size={16} /> },
+                { key: 'left',  label: 'ซ่อนแผงฝั่งซ้าย',   icon: <TbLayoutSidebarLeftCollapse size={16} /> },
+                { key: 'right', label: 'ซ่อนแผงฝั่งขวา',    icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                { key: 'both',  label: 'ซ่อนทั้งสองฝั่ง',   icon: <TbZoomInArea size={16} /> },
+              ],
+              onClick: ({ key }) =>
+                setMapFocusMode(key as 'off' | 'left' | 'right' | 'both'),
+            }}
+            placement="bottomRight"
           >
-            {isMapFocus
-              ? <TbZoomReset className="fs-24" />
-              : <TbZoomInArea className="fs-24" />}
-          </button>
+            <button
+              type="button"
+              disabled={!focusAvailable}
+              className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
+                ? 'text-white/25 cursor-not-allowed'
+                : isMapFocus
+                  ? 'text-(--yellow) cursor-pointer'
+                  : 'text-inherit hover:text-white cursor-pointer'}`}
+              aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
+              aria-pressed={isMapFocus}
+              aria-disabled={!focusAvailable}
+              title={!focusAvailable
+                ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
+                : mapFocusMode === 'left'
+                  ? 'ซ่อนฝั่งซ้าย — คลิกเพื่อเปลี่ยน'
+                  : mapFocusMode === 'right'
+                    ? 'ซ่อนฝั่งขวา — คลิกเพื่อเปลี่ยน'
+                    : mapFocusMode === 'both'
+                      ? 'ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน'
+                      : 'เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)'}
+            >
+              {mapFocusMode === 'left'
+                ? <TbLayoutSidebarLeftCollapse className="fs-24" />
+                : mapFocusMode === 'right'
+                  ? <TbLayoutSidebarRightCollapse className="fs-24" />
+                  : mapFocusMode === 'both'
+                    ? <TbZoomReset className="fs-24" />
+                    : <TbZoomInArea className="fs-24" />}
+            </button>
+          </Dropdown>
           {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
               icon *is* the shortcut. Open state paints the icon yellow with
               a breathing glow; the small "Ctrl+F" chip below only appears on

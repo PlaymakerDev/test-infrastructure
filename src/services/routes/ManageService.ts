@@ -236,6 +236,32 @@ export const getRegionsAPI = () =>
     method: 'GET',
   })
 
+// ── Notifications summary ───────────────────────────────────────────────────
+// GET /manage/notifications/summary?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+// Aggregates tbl_notification_logs by source_type across the window. JWT
+// dept scope is applied server-side — no `dept_id` param.
+export interface APIResponseNotificationSummaryItem {
+  source_type: 'lighting' | 'analytic' | 'vms_setting' | string
+  count: number
+  most_type: { id: number | null; name: string | null } | null
+  most_count: number
+  most_department: {
+    department_id: number
+    department_short_name: string
+    count: number
+  } | null
+}
+
+export const getNotificationSummaryAPI = (params: {
+  start_date: string
+  end_date: string
+}) =>
+  ApiService.fetchData<APIResponseNotificationSummaryItem[]>({
+    url: '/manage/notifications/summary',
+    method: 'GET',
+    params,
+  })
+
 // ── SSO / LDAP search ───────────────────────────────────────────────────────
 // Backend endpoint: GET /api-v2/auth/ldap?keyword=... — routes through the
 // authentication service, which owns the SSO bearer token and the upstream

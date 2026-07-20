@@ -8,7 +8,7 @@ import {
 import { OverallProvider } from '../context'
 
 const LPRScreen = () => {
-  const [currentTab, setCurrentTab] = useState('LICENSE')
+  const [currentTab, setCurrentTab] = useState('LPR')
 
   const renderContent = useMemo(() => {
     switch (currentTab) {

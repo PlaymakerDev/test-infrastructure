@@ -2,8 +2,10 @@
 // Verified live 2026-07-06. GET list is enveloped as
 // `{ res_data: T[], meta_data: {...} }`.
 // IMPORTANT: the primary key field is `user_id` (uuid), NOT `id`.
-// The real API has NO `taxId` and NO `email` — the mock UI's placeholders for
-// those columns are dropped when wiring to the real endpoint.
+// The API grew an `email` column (2026-07-18 migration
+// `2026-07-18c_maintenance_case_project.sql`) so maintenance cases can email
+// the responsible contractor when a device goes offline. `taxId` still has no
+// server-side storage.
 
 export type { ListParams, APIResponseMetaData } from './params'
 import type { APIResponseMetaData } from './params'
@@ -28,6 +30,8 @@ export interface APIResponseContractor {
   /** Contact person name (NOT the company name). */
   name: string | null
   phone: string | null
+  /** Contact email — target for maintenance-case auto-notifications. */
+  email?: string | null
   /** Free-form role/title string. */
   role?: string | null
   created_at: string
@@ -50,6 +54,8 @@ export interface APIRequestRegisterContractor {
   /** Contact person name. */
   name?: string
   phone?: string
+  /** Contact email — target for maintenance-case notifications. */
+  email?: string
   role?: string
 }
 
@@ -62,5 +68,6 @@ export interface APIRequestUpdateContractor {
   name?: string
   password?: string
   phone?: string
+  email?: string
   role?: string
 }

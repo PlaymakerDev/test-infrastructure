@@ -1,7 +1,4 @@
-import {
-  getTrafficLightingById,
-  type TrafficLightingProject,
-} from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
+import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
 
 const PLACEHOLDER_PROJECT = (id: string, equipmentType: string | null): TrafficLightingProject => ({
   id,
@@ -48,5 +45,8 @@ export function buildTrafficLightingProject(
     }
   }
 
-  return getTrafficLightingById(id) ?? PLACEHOLDER_PROJECT(id, type)
+  // Direct-navigation fallback (no upstream row): render a neutral placeholder
+  // rather than a stale mock lookup. Real detail data still loads from the
+  // per-feature APIs the detail page invokes on mount.
+  return PLACEHOLDER_PROJECT(id, type)
 }

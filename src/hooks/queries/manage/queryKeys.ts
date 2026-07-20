@@ -104,4 +104,13 @@ export const manageKeys = {
     /** GET /solution/type — the master list of the ~10 solution kinds. */
     all: () => ['manage', 'solution-types', 'master'] as const,
   },
+
+  // Notifications summary — one bucket per source_type (analytic / lighting /
+  // vms_setting) over a date window. Keyed by the window so the dashboard
+  // pill can share a slot with any drawer that opens the same range.
+  notifications: {
+    all: ['manage', 'notifications'] as const,
+    summary: (params: { start_date: string; end_date: string }) =>
+      [...manageKeys.notifications.all, 'summary', params] as const,
+  },
 } as const

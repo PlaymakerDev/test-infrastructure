@@ -25,7 +25,7 @@ import {
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useRouter } from 'next/navigation'
 import { useMap } from '../hooks/useMap'
-import MarkerLayer from '../primitives/MarkerLayer'
+import MarkerLayer, { type MarkerColor } from '../primitives/MarkerLayer'
 import PopupDetailLink from '../primitives/PopupDetailLink'
 
 const SYSTEM_ICONS: Record<SystemType, IconType> = {
@@ -126,6 +126,16 @@ export function DefaultDevicePopup({
   // a popup border/label on the dark map (per Figma: brighter).
   const brightColor = SYSTEM_BRIGHT[device.type] ?? color
 
+  // Tri-state status pill — hidden entirely when BE hasn't sent is_online for
+  // this marker (isOnline === undefined), so unpatched types don't get a
+  // misleading "ออฟไลน์" label.
+  const statusMeta =
+    device.isOnline === true
+      ? { label: 'ออนไลน์', color: '#22c55e' }
+      : device.isOnline === false
+        ? { label: 'ออฟไลน์', color: '#ef4444' }
+        : null
+
   return (
     <div
       style={{
@@ -137,9 +147,26 @@ export function DefaultDevicePopup({
         borderRadius: 10,
       }}
     >
-      {/* เมนู (device type) */}
-      <div style={{ fontSize: 12, color: brightColor, fontWeight: 700, letterSpacing: 0.5 }}>
-        {SYSTEMS[device.type].label}
+      {/* เมนู (device type) + สถานะ */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 12, color: brightColor, fontWeight: 700, letterSpacing: 0.5, flex: 1 }}>
+          {SYSTEMS[device.type].label}
+        </div>
+        {statusMeta && (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: statusMeta.color,
+              border: `1px solid ${statusMeta.color}`,
+              borderRadius: 999,
+              padding: '2px 6px',
+              lineHeight: 1,
+            }}
+          >
+            {statusMeta.label}
+          </span>
+        )}
       </div>
       {/* จุดติดตั้ง */}
       <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 7, lineHeight: 1.4 }}>
@@ -211,6 +238,11 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
           properties: {
             id: d.id, type: d.type, road: d.road, landmark: d.landmark,
             unitId: d.unitId, stch: d.stch, solutionName: d.solutionName,
+            isOnline: d.isOnline,
+            // Tri-state so the data-driven expression can distinguish
+            // "definitely offline" from "unknown" — 1=online, 0=offline,
+            // -1=unknown (BE hasn't shipped is_online yet).
+            isOnlineFlag: d.isOnline === true ? 1 : d.isOnline === false ? 0 : -1,
           },
           geometry: { type: 'Point' as const, coordinates: d.coord },
         }))
@@ -226,6 +258,17 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
       {systems.map((type) => {
         const visible = visibleTypes ? visibleTypes.has(type) : true
         const color = SYSTEMS[type].color
+
+        // Per-feature colour: offline pins mute to grey; unknown / online keep
+        // the system's brand colour so the visual noise is proportional to the
+        // information (nothing changes until BE ships `is_online`). Mapbox
+        // clusters don't have `isOnlineFlag` on the feature so the fallback
+        // (last arm of `case`) is what cluster bubbles pick up.
+        const colorExpr: MarkerColor = [
+          'case',
+          ['==', ['get', 'isOnlineFlag'], 0], '#94a3b8',
+          color,
+        ]
 
         // Resolve which popup renderer to use:
         // - undefined → DefaultDevicePopup
@@ -250,7 +293,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             id={`device-${type}`}
             data={featureCollections[type]}
             cluster
-            color={color}
+            color={colorExpr}
             iconImage={`icon-${type}`}
             minZoom={minZoom}
             visible={visible}

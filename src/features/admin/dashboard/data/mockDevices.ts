@@ -23,4 +23,10 @@ export type Device = {
   landmark: string
   /** จุดติดตั้ง = solution name (BE `solution.solution_name`) — popup line. */
   solutionName: string
+  /** Online/offline state — sourced by BE from each solution type's authoritative
+   *  status table (cctv.tbl_camera.curl_status, traffic.tbl_traffic_status,
+   *  lighting.tbl_lighting_iot_status, wim.tbl_wim.wim_connected_at, bridge_lighting).
+   *  `true` = online, `false` = offline, `undefined` = BE didn't ship the field yet
+   *  (map falls back to the normal solid colour). */
+  isOnline?: boolean
 }

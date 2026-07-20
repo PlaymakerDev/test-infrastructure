@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import { SettingByRoad } from '@/types/control-vms/display-api'
 import dayjs from 'dayjs'
+import StatusPill from '@/features/admin/vms-command-center/components/StatusPill'
 
 interface Props {
   data: SettingByRoad[];
@@ -77,7 +78,18 @@ const columns: ColumnsType<SettingByRoad> = [
     },
   },
   {
-    title: 'สถานะ',
+    title: 'สถานะการแสดงผล',
+    dataIndex: 'status',
+    key: 'status',
+    align: 'center',
+    width: 150,
+    render: (_: unknown, record: SettingByRoad) => {
+      if (record?.status != null) return <StatusPill status={record.status} size='sm' />
+      return '-'
+    },
+  },
+  {
+    title: 'การเชื่อมต่อ',
     dataIndex: 'is_online',
     key: 'is_online',
     align: 'center',
@@ -85,7 +97,10 @@ const columns: ColumnsType<SettingByRoad> = [
     fixed: 'right',
     render: (_: unknown, record: SettingByRoad) => {
       if (record) return (
-        <span className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${record.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}>
+        <span
+          className={`inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${record.is_online ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}`}
+          title='สถานะการเชื่อมต่อของฮาร์ดแวร์ป้าย (คนละอันกับสถานะการแสดงผล)'
+        >
           {record.is_online ? <TbWifi /> : <TbWifiOff />}
           {record.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
           <Badge color={record.is_online ? 'green' : 'red'} />

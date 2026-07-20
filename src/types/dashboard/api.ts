@@ -71,6 +71,11 @@ export interface DashboardPositionLocation {
     solution_type_name: string
   }
   geometry_point: [number, number] | null
+  /** BE ships this per location once the manage service joins to each
+   *  solution type's status table (cctv.curl_status, traffic connection_status,
+   *  lighting iot updated_at, wim wim_connected_at, etc). Absent while the
+   *  backend patch isn't deployed — markers stay in the neutral solid colour. */
+  is_online?: boolean | null
 }
 
 export interface APIResponseDashboardPosition {

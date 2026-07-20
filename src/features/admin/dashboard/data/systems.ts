@@ -27,7 +27,7 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
   VMS:            { color: "#874600", label: "VMS",             icon: "monitor" },
   BridgeLighting: { color: "#871000", label: "Bridge Lighting", icon: "bridge" },
   Tunnel:         { color: "#4D0087", label: "Tunnel",          icon: "tunnel" },
-  WIM:            { color: "#70196D", label: "Tracking",        icon: "scale" },
+  WIM:            { color: "#70196D", label: "Truck Tracking",  icon: "scale" },
   LPR:            { color: "#87004D", label: "LPR",             icon: "scan" },
 }
 

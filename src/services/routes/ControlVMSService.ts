@@ -18,6 +18,8 @@ import {
   APIRequestVMSMediaUrl,
   APIResponseVMSMediaUrl
 } from "@/types/control-vms/vms-api"
+import { APIRequestVMSStatusHistory, APIResponseVMSStatusHistory } from "@/types/vms/history-api"
+import { APIRequestVMSGlobalHistory, APIResponseVMSGlobalHistory, APIResponseVMSMonitor, APIResponseVMSSignDetail } from "@/types/vms/command-center-api"
 
 // VMS
 export const getVMSDepartmentAPI = async () => {
@@ -187,5 +189,65 @@ export const getVMSMediaUrlAPI = async (params: APIRequestVMSMediaUrl) => {
     url: `/vms/settings/media-urls`,
     method: 'GET',
     params: { ...params }
+  })
+}
+
+// STATUS HISTORY — one setting's full timeline (newest first).
+export const getVMSSettingStatusHistoryAPI = async (
+  settingID: number,
+  params: APIRequestVMSStatusHistory = {}
+) => {
+  return ApiService.fetchData<APIResponseVMSStatusHistory, APIRequestVMSStatusHistory>({
+    url: `/vms/settings/media/${settingID}/history`,
+    method: 'GET',
+    params: { ...params },
+  })
+}
+
+// STATUS HISTORY — one sign's full lifetime timeline (across every setting).
+export const getVMSCrossingStatusHistoryAPI = async (
+  crossingMasterIndex: string,
+  params: APIRequestVMSStatusHistory = {}
+) => {
+  return ApiService.fetchData<APIResponseVMSStatusHistory, APIRequestVMSStatusHistory>({
+    url: `/vms/crossings/${encodeURIComponent(crossingMasterIndex)}/history`,
+    method: 'GET',
+    params: { ...params },
+  })
+}
+
+// CANCEL — stop-mid-way. Flips status→6 without deleting the setting/schedules.
+export const cancelVMSSettingAPI = async (settingID: number) => {
+  return ApiService.fetchData({
+    url: `/vms/settings/media/${settingID}/cancel`,
+    method: 'POST',
+  })
+}
+
+// MONITOR — one row per vms_id with current setting + online/last_seen state.
+// vms_ids is repeated (indexes:null) same as by-vms-ids.
+export const getVMSCommandCenterMonitorAPI = async (vmsIds: number[]) => {
+  return ApiService.fetchData<APIResponseVMSMonitor>({
+    url: `/vms/command-center/monitor`,
+    method: 'GET',
+    params: { vms_ids: vmsIds },
+    paramsSerializer: { indexes: null },
+  })
+}
+
+// GLOBAL HISTORY — cross-sign command timeline (from/to YYYY-MM-DD optional).
+export const getVMSCommandCenterHistoryAPI = async (params: APIRequestVMSGlobalHistory = {}) => {
+  return ApiService.fetchData<APIResponseVMSGlobalHistory, APIRequestVMSGlobalHistory>({
+    url: `/vms/command-center/history`,
+    method: 'GET',
+    params: { ...params },
+  })
+}
+
+// SIGN DETAIL — full detail for fullscreen modal (current setting + schedules + cameras + live screen capture)
+export const getVMSCommandCenterSignAPI = async (vmsId: number) => {
+  return ApiService.fetchData<APIResponseVMSSignDetail>({
+    url: `/vms/command-center/sign/${vmsId}`,
+    method: 'GET',
   })
 }

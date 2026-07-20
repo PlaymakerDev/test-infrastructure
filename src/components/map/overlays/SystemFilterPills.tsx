@@ -93,23 +93,23 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
           <button
             key={type}
             onClick={() => toggle(type)}
-            className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-medium transition-all whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap shrink-0"
             style={{
               background: active ? color : 'transparent',
-              color: active ? '#fff' : 'rgba(255,255,255,0.4)',
-              border: `1px solid ${active ? color : 'rgba(255,255,255,0.12)'}`,
+              color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+              border: `1px solid ${active ? color : 'rgba(255,255,255,0.15)'}`,
               cursor: 'pointer',
             }}
             title={`${active ? 'ซ่อน' : 'แสดง'} ${SYSTEMS[type].label}`}
           >
-            <Icon size={11} />
+            <Icon size={16} />
             <span>{SYSTEMS[type].label}</span>
           </button>
         )
       })}
       <button
         onClick={reset}
-        className="ml-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
+        className="ml-1 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[14px] text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
         title={allOn ? 'ซ่อนทั้งหมด' : 'แสดงทั้งหมด'}
       >
         {noneOn ? '↻ แสดงทั้งหมด' : allOn ? '✕ ซ่อนทั้งหมด' : '↻ รีเซ็ต'}
