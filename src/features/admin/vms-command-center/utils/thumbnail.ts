@@ -5,11 +5,12 @@
 // composer render thumbs so a 200-tile page doesn't pull 100+ MB of
 // full-resolution PNGs.
 
-// Video / PDF uploads have no thumb — the .mp4 and .pdf suffixes get
-// short-circuited here so callers can pass any media URL without
-// branching. Callers should still fall back to the original url `onError`
-// in case an older upload predates the backfill.
-const NON_IMAGE_EXTS = new Set(['.mp4', '.mov', '.webm', '.pdf'])
+// Extensions that have NO thumbnail representation. PDFs don't get a
+// preview generated; return the original url unchanged so callers can
+// render a fallback badge. Videos (.mp4/.webm/.mov) DO get a thumbnail
+// now — backend ffmpeg-extracts frame at t=1s and writes .thumb.jpg —
+// so they're intentionally NOT in this set.
+const NON_THUMBNAILABLE_EXTS = new Set(['.pdf'])
 
 export function getThumbUrl(url: string | null | undefined): string {
   if (!url) return ''
@@ -18,6 +19,11 @@ export function getThumbUrl(url: string | null | undefined): string {
   const lastDot = url.lastIndexOf('.')
   if (lastDot === -1) return url
   const ext = url.slice(lastDot).toLowerCase()
-  if (NON_IMAGE_EXTS.has(ext)) return url
+  if (NON_THUMBNAILABLE_EXTS.has(ext)) return url
   return url.slice(0, lastDot) + '.thumb.jpg'
+}
+
+export function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)
 }

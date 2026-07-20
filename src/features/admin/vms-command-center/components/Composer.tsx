@@ -1,11 +1,14 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, DatePicker, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
-import { TbAlertTriangle, TbFolderOpen, TbRocket } from 'react-icons/tb'
+import { Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
-import { getThumbUrl } from '../utils/thumbnail'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
+import type { VMSMediaItem } from '@/types/vms/media-library-api'
+
+const isVideoName = (s: string) => isVideoUrl(s)
 
 interface Props {
   vmsIds: number[]
@@ -84,6 +87,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const post = usePostVMSMedia()
+
+  // Preview modal — click the maximize icon on any tile to open the
+  // full-res original in a dark overlay (matches MediaLibraryTab's
+  // preview modal so operators get the same shortcut everywhere).
+  // Selecting a media (click on the card body) is a separate action;
+  // the icon uses stopPropagation so it doesn't double-fire.
+  const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
 
   const canDispatch = vmsIds.length > 0 && (!!selectedMedia?.url || message.trim().length > 0)
 
@@ -177,11 +187,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                         }}
                         title={m.name}
                       >
-                        <div style={{ aspectRatio: '16/9', background: '#000' }}>
+                        <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
                           {/* Composer grid uses the JPEG q85 thumbnail
                               (~15 KB) instead of the full-res PNG (~2 MB).
-                              onError falls back to original for uploads that
-                              predate the thumbnail backfill. */}
+                              Backend ffmpeg-extracts the first frame for
+                              videos so the same <img> path handles both.
+                              onError falls back to original for older
+                              uploads that predate the backfill. */}
                           <img
                             src={getThumbUrl(m.url)}
                             alt={m.name}
@@ -190,12 +202,40 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                               const img = e.currentTarget
                               if (img.dataset.fallback !== '1') {
                                 img.dataset.fallback = '1'
-                                img.src = m.url
+                                img.src = isVideoName(m.filename || m.url) ? '' : m.url
                               }
                             }}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                           />
+                          {isVideoName(m.filename || m.url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
+                        {/* Maximize/preview affordance — top-right corner.
+                            stopPropagation so the outer <button>'s
+                            select-media handler doesn't also fire. */}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPreviewing(m)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation()
+                              e.preventDefault()
+                              setPreviewing(m)
+                            }
+                          }}
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/70 hover:bg-black text-white rounded p-1 cursor-pointer"
+                          title="ดูตัวอย่างเต็ม"
+                          aria-label="ดูตัวอย่างเต็ม"
+                        >
+                          <TbMaximize size={14} />
+                        </span>
                         {m.setting_type_name && (
                           <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
                             {m.setting_type_name}
@@ -332,6 +372,68 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             )}
           </div>
         </Modal>
+
+        {/* Full-size preview modal — dark shell, matches MediaLibraryTab. */}
+        <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
+          <Modal
+            open={!!previewing}
+            onCancel={() => setPreviewing(null)}
+            footer={null}
+            width={900}
+            title={previewing?.setting_type_name || 'สื่อ'}
+            destroyOnHidden
+            classNames={{ container: 'border-2! border-(--default-blue)!' }}
+          >
+            {previewing && (
+              <div>
+                <div className="bg-black rounded overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                  {isVideoName(previewing.filename || previewing.url) ? (
+                    <video
+                      src={previewing.url}
+                      controls
+                      autoPlay
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <Image
+                      src={previewing.url}
+                      alt={previewing.name}
+                      width="100%"
+                      height="100%"
+                      preview={false}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-white/70 flex items-center gap-3 flex-wrap">
+                  {previewing.setting_type_name && (
+                    <span>หมวด: <b className="text-white">{previewing.setting_type_name}</b></span>
+                  )}
+                  {previewing.name && (
+                    <span className="truncate">ชื่อ: <span className="text-white">{previewing.name}</span></span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button
+                    onClick={() => setPreviewing(null)}
+                  >
+                    ปิด
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      const id = previewing.id
+                      setPreviewing(null)
+                      setSelectedMediaId(id)
+                    }}
+                  >
+                    เลือกสื่อนี้
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </ConfigProvider>
       </div>
     </>
   )
