@@ -75,7 +75,7 @@ const ChartSection: React.FC<Props> = () => {
       >
         <LineChart
           title='สถานะป้าย VMS รายชั่วโมง'
-          subtitle='เปรียบเทียบจำนวนป้าย Online/Offline'
+          subtitle='เปรียบเทียบจำนวนป้าย ออนไลน์/ออฟไลน์'
           icon={<TbWifi size={20} />}
           accentColor='#ffffff'
           data={HOURS}

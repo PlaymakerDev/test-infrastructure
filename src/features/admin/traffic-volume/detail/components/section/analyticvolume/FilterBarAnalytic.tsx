@@ -1,9 +1,9 @@
 "use client"
 import React, { useState } from 'react'
-import { Button, ConfigProvider, DatePicker } from 'antd'
+import { Button, ConfigProvider, DatePicker, Select } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
-import { TbCalendar, TbPrinter } from 'react-icons/tb'
+import { TbCalendar, TbChevronDown, TbPrinter } from 'react-icons/tb'
 
 // `dayjsThai` extends the Buddhist Era plugin globally; combined with
 // the Thai locale, `D MMM BBBB` outputs "20 เม.ย. 2569".
@@ -23,11 +23,15 @@ interface Props {
  *  + "นำออกเอกสาร" export button. Mirrors the figma — date + camera labels
  *  use the yellow accent, export button uses brand yellow background. */
 const FilterBarAnalytic: React.FC<Props> = ({
+  cameraOptions = [{ value: 'all', label: 'กล้องทั้งหมด' }],
+  defaultCamera = 'all',
+  onCameraChange,
   defaultDate,
   onDateChange,
   onExport,
 }) => {
   const [date, setDate] = useState<Dayjs | null>(defaultDate ?? dayjs())
+  const [camera, setCamera] = useState<string>(defaultCamera)
 
   return (
     <div className='flex flex-wrap items-end gap-3'>
@@ -52,6 +56,24 @@ const FilterBarAnalytic: React.FC<Props> = ({
           />
         </ConfigProvider>
       </div>
+
+      {/* Camera — only rendered when the parent wires camera filtering (the
+        * สถิติรายชั่วโมงแยกตามประเภท tab). Mirrors the รายงาน tab's picker. */}
+      {onCameraChange && (
+        <div className='flex flex-col gap-1 flex-1 min-w-65 max-w-105'>
+          <span className='fs-12 text-(--yellow)'>เลือกกล้อง</span>
+          <Select
+            value={camera}
+            options={cameraOptions}
+            onChange={(v) => {
+              setCamera(v)
+              onCameraChange?.(v)
+            }}
+            size='large'
+            suffixIcon={<TbChevronDown className='text-(--yellow)' size={18} />}
+          />
+        </div>
+      )}
 
       <ConfigProvider
         theme={{

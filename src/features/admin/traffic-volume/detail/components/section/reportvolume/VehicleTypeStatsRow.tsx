@@ -36,22 +36,22 @@ const VehicleTypeStatsRow: React.FC<Props> = ({ summary }) => (
     <Cell
       value={fmtNumber(summary.daysCount, 0)}
       label='จำนวนรายการ'
-      color='#FCD116'
+      color='#007BFF'
     />
     <Cell
       value={fmtNumber(summary.totalVehicles, 0)}
       label='จำนวนยานพาหนะ (คัน)'
-      color='#66AEFF'
+      color='#00DDFF'
     />
     <Cell
       value={fmtNumber(summary.totalPCU, 1)}
       label='รวมเฉลี่ย PCU'
-      color='#00FF55'
+      color='#00FFAA'
     />
     <Cell
       value={summary.dominantVehicleLabel}
       label='ประเภทรถหลัก'
-      color='#00FFDD'
+      color='#00FF00'
     />
     <Cell
       value={`${fmtNumber(summary.dominantVehiclePercent, 1)}%`}
@@ -61,17 +61,17 @@ const VehicleTypeStatsRow: React.FC<Props> = ({ summary }) => (
     <Cell
       value={`${fmtNumber(summary.lightVehiclePercent, 1)}%`}
       label='ยานพาหนะเบา'
-      color='#FCD116'
+      color='#FFC800'
     />
     <Cell
       value={fmtNumber(summary.truckCount, 0)}
       label='จำนวนรถบรรทุก (คัน)'
-      color='#FF9500'
+      color='#FF5E00'
     />
     <Cell
       value={`${fmtNumber(summary.truckPercent, 1)}%`}
       label='รถบรรทุก'
-      color='#FF4444'
+      color='#FF2B00'
     />
   </div>
 )

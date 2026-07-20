@@ -80,6 +80,7 @@ export const trafficVolumeKeys = {
         ...trafficVolumeKeys.detail.all(params.solution_id),
         'count-hour',
         params.date ?? 'today',
+        params.camera_id ?? 'all',
       ] as const,
     countPrevious: (params: APIRequestTrafficVolumeCountPrevious) =>
       [

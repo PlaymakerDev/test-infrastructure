@@ -9,6 +9,8 @@ import { VEHICLE_TYPES } from './data/vehicleTypeKeys'
 
 interface Props {
   date?: string
+  /** Selected camera id ('all' / undefined = every camera). */
+  cameraId?: string
 }
 
 interface Row {
@@ -26,11 +28,12 @@ interface Row {
   isSummary?: boolean
 }
 
-const HourlyDataTable: React.FC<Props> = ({ date }) => {
+const HourlyDataTable: React.FC<Props> = ({ date, cameraId }) => {
   const { id } = useDetailContext()
   const { data: apiData } = useTrafficVolumeCountHour({
     solution_id: id,
     date,
+    camera_id: cameraId && cameraId !== 'all' ? cameraId : undefined,
   })
 
   /** Map API rows → table rows + append an average-summary row at the

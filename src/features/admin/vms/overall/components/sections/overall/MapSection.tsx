@@ -78,7 +78,7 @@ const VMSPopup: React.FC<VMSPopupProps> = ({ feature, isOnline, onNavigate, setO
         <h5>{String(p.solution_name)}</h5>
         <p className='fs-12 tracking-wide text-gray-400'>สายทาง : {String(p.code_name)}</p>
         <p className={`fs-12 font-semibold mt-0.5 ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
-          ● {String(p.status_name)}
+          ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
         </p>
         <p className="fs-12 text-slate-500 mt-0.5">เชื่อมต่อล่าสุด : {String(p.last_connected)}</p>
       </section>

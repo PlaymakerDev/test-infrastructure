@@ -69,7 +69,12 @@ const CrosswalkPopup: React.FC<{
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-12 text-white mt-1.5'>
+      <p
+        className={`fs-12 font-semibold mt-1.5 ${p.is_active ? 'text-emerald-400' : 'text-red-400'}`}
+      >
+        ● {p.is_active ? 'ออนไลน์' : 'ออฟไลน์'}
+      </p>
+      <p className='fs-12 text-white mt-0.5'>
         ทางข้าม: {Number(p.crosswalk_total ?? 0).toLocaleString()} จุด
       </p>
       <p className='fs-12 text-white'>
