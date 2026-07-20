@@ -31,7 +31,7 @@ const TitleSection: React.FC = () => {
   const hasAlert = searchParams.has('alert')
   const currentTab = hasStatus ? 'STATUS' : hasIncident ? 'INCIDENT' : hasAlert ? 'ALERT' : 'OVERVIEW'
 
-  const activePeriod = searchParams.get('period') || 'ALL'
+  const activePeriod = searchParams.get('period') || 'TODAY'
   const showTabsAndPeriod = currentTab !== 'STATUS' && currentTab !== 'ALERT' && currentTab !== 'INCIDENT'
 
   const handleTabChange = (value: string) => {

@@ -98,7 +98,17 @@ const ALERT_COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   {
     title: 'หน่วยงาน', dataIndex: 'agency', key: 'agency', width: 260,
     render: (v: string, r: ComparisonRecord) => (
-      <span style={{ color: isParent(r) ? '#FCD116' : '#ffffff', fontWeight: isParent(r) ? 600 : 400, paddingLeft: 12, display: 'inline-block' }}>{v}</span>
+      <span style={{ color: isParent(r) ? '#FCD116' : '#ffffff', fontWeight: isParent(r) ? 600 : 400, paddingLeft: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        {v}
+        {r.isDevice && (
+          <img
+            src={r.online === 1 ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'}
+            alt={r.online === 1 ? 'online' : 'offline'}
+            width={14}
+            height={14}
+          />
+        )}
+      </span>
     ),
   },
   {
@@ -107,27 +117,33 @@ const ALERT_COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   },
   {
     title: 'ออนไลน์', dataIndex: 'online', key: 'online', align: 'center', width: 100,
-    render: (v: number) => <span style={{ color: '#ffffff' }}>{v}</span>,
+    render: (v: number, r: ComparisonRecord) => r.isDevice ? null : <span style={{ color: '#ffffff' }}>{v}</span>,
     onCell: (r: ComparisonRecord) => ({ style: isParent(r) ? { background: '#3A5692' } : {} }),
   },
   {
     title: 'ออฟไลน์', dataIndex: 'offline', key: 'offline', align: 'center', width: 100,
-    render: (v: number) => <span style={{ color: '#ffffff' }}>{v}</span>,
+    render: (v: number, r: ComparisonRecord) => r.isDevice ? null : <span style={{ color: '#ffffff' }}>{v}</span>,
     onCell: (r: ComparisonRecord) => ({ style: isParent(r) ? { background: '#853434' } : {} }),
   },
   {
     title: 'Line Check', dataIndex: 'lineCheck', key: 'lineCheck', align: 'center', width: 130,
-    render: (v: number) => <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
+    render: (v: number, r: ComparisonRecord) => r.isDevice
+      ? (v === 0 ? <span style={{ color: '#F29F05', fontWeight: 600 }}>FAIL</span> : null)
+      : <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
     onCell: (r: ComparisonRecord) => ({ style: isParent(r) ? { background: '#5C4A0A' } : {} }),
   },
   {
     title: 'Circuit', dataIndex: 'circuit', key: 'circuit', align: 'center', width: 120,
-    render: (v: number) => <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
+    render: (v: number, r: ComparisonRecord) => r.isDevice
+      ? (v === 0 ? <span style={{ color: '#FCD116', fontWeight: 600 }}>FAIL</span> : null)
+      : <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
     onCell: (r: ComparisonRecord) => ({ style: isParent(r) ? { background: '#5C4A0A' } : {} }),
   },
   {
     title: 'Volt / Amp', dataIndex: 'voltAmp', key: 'voltAmp', align: 'center', width: 120,
-    render: (v: number) => <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
+    render: (v: number, r: ComparisonRecord) => r.isDevice
+      ? (v === 0 ? <span style={{ color: '#83F205', fontWeight: 600 }}>FAIL</span> : null)
+      : <span style={{ color: '#ffffff' }}>{v ?? '-'}</span>,
     onCell: (r: ComparisonRecord) => ({ style: isParent(r) ? { background: '#2E4A1A' } : {} }),
   },
 ]
@@ -174,7 +190,7 @@ const AlertSection: React.FC = () => {
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
-  const [activePeriod, setActivePeriod] = useState('ALL')
+  const [activePeriod, setActivePeriod] = useState('TODAY')
   const [searchText, setSearchText] = useState('')
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
@@ -247,28 +263,53 @@ const AlertSection: React.FC = () => {
   // Comparison table data — real API instead of mock. Reuses the same
   // iot-status tree the map/search list uses, but with its OWN period so the
   // comparison table's noti_count can be scoped independently from the
-  // overview cards. Bureau = parent row, แขวง (sub_department) = child rows.
+  // overview cards. Real nested tree — bureau.children = sub_department rows,
+  // sub_department.children = road rows, road.children = device rows — so
+  // antd's own indent mechanism staggers each level consistently (see
+  // indentSize on StatisticsComparisonTable). Bureau rows are auto-expanded
+  // on load via `defaultExpandTopLevel` so sub_department still shows with
+  // no click needed; road and device levels stay collapsed until opened.
+  // Device rows are a single install point with only boolean flags (no
+  // aggregate counts), normalized to 1/0 to fit the same numeric columns.
   const [comparisonPeriod, setComparisonPeriod] = useState('TODAY')
   const comparisonDateRange = React.useMemo(() => periodToSinceUntil(comparisonPeriod), [comparisonPeriod])
   const { data: comparisonTree, isFetching: comparisonFetching, isError: comparisonError } = useIotStatus(0, { scope: 'all', ...comparisonDateRange })
   const comparisonData: ComparisonRecord[] = React.useMemo(() => {
     const bureaus = comparisonTree ?? []
-    const rows: ComparisonRecord[] = []
-    for (const bureau of bureaus) {
-      rows.push({
-        key: `bureau-${bureau.department_id}`,
-        agency: bureau.department_short_name,
-        installations: bureau.install_points,
-        online: bureau.online,
-        offline: bureau.offline,
-        newCmdWeb: 0,
-        newCmdApp: 0,
-        lineCheck: bureau.line_check_fail,
-        circuit: bureau.circuit_fail,
-        voltAmp: bureau.volt_amp_fail,
-      })
-      for (const sub of bureau.sub_department) {
-        rows.push({
+    return bureaus.map((bureau) => {
+      const subRows: ComparisonRecord[] = bureau.sub_department.map((sub) => {
+        const roadRows: ComparisonRecord[] = sub.roads.map((road) => {
+          const deviceRows: ComparisonRecord[] = road.devices.map((device) => ({
+            key: `device-${device.imei}`,
+            agency: device.solution_name,
+            installations: 1,
+            online: device.is_online ? 1 : 0,
+            offline: device.is_online ? 0 : 1,
+            newCmdWeb: 0,
+            newCmdApp: 0,
+            lineCheck: device.line_check_fail ? 1 : 0,
+            circuit: device.circuit_fail ? 1 : 0,
+            voltAmp: device.volt_amp_fail ? 1 : 0,
+            isChild: true,
+            isDevice: true,
+          }))
+          return {
+            key: `road-${road.road_id}`,
+            agency: road.road_code,
+            installations: road.install_points,
+            online: road.online,
+            offline: road.offline,
+            newCmdWeb: 0,
+            newCmdApp: 0,
+            lineCheck: road.line_check_fail,
+            circuit: road.circuit_fail,
+            voltAmp: road.volt_amp_fail,
+            isChild: true,
+            isRoad: true,
+            children: deviceRows.length > 0 ? deviceRows : undefined,
+          }
+        })
+        return {
           key: `sub-${sub.department_id}`,
           agency: sub.department_short_name,
           installations: sub.install_points,
@@ -280,10 +321,23 @@ const AlertSection: React.FC = () => {
           circuit: sub.circuit_fail,
           voltAmp: sub.volt_amp_fail,
           isChild: true,
-        })
+          children: roadRows.length > 0 ? roadRows : undefined,
+        }
+      })
+      return {
+        key: `bureau-${bureau.department_id}`,
+        agency: bureau.department_short_name,
+        installations: bureau.install_points,
+        online: bureau.online,
+        offline: bureau.offline,
+        newCmdWeb: 0,
+        newCmdApp: 0,
+        lineCheck: bureau.line_check_fail,
+        circuit: bureau.circuit_fail,
+        voltAmp: bureau.volt_amp_fail,
+        children: subRows.length > 0 ? subRows : undefined,
       }
-    }
-    return rows
+    })
   }, [comparisonTree])
   const comparisonBadges: SummaryBadge[] = React.useMemo(() => {
     // Aggregate totals across all bureaus (the root already sums each, but a
@@ -361,6 +415,7 @@ const AlertSection: React.FC = () => {
           summaryBadges={comparisonBadges}
           columns={ALERT_COMPARISON_COLUMNS}
           useArrowExpand
+          defaultExpandTopLevel
           activePeriod={comparisonPeriod}
           onPeriodChange={setComparisonPeriod}
           loading={comparisonFetching}

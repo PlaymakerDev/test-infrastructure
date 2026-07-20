@@ -140,7 +140,7 @@ const StatusSection: React.FC = () => {
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
-  const [activePeriod, setActivePeriod] = useState('ALL')
+  const [activePeriod, setActivePeriod] = useState('TODAY')
   const [searchText, setSearchText] = useState('')
   const {
     routeItems,
