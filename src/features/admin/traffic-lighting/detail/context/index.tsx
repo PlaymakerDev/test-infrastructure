@@ -1,6 +1,6 @@
 "use client"
-import { createContext, useContext, useEffect, useState } from 'react'
-import { getLightingDeviceDetailsAPI } from '@/services/routes/LightingService'
+import { createContext, useContext, useMemo, useState } from 'react'
+import { useLightingDeviceDetails } from '@/hooks/queries/lighting'
 import type { DetailsResponse } from '@/types/lighting'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
 
@@ -25,24 +25,27 @@ export const DetailContext = createContext<ContextProps | null>(null)
 
 export const DetailProvider = ({ children, project, imei }: DetailProviderProps) => {
   const [currentTab, setCurrentTab] = useState<TrafficLightingDetailTab>('OVERVIEW')
-  const [device, setDevice] = useState<DetailsResponse | null>(null)
-  const [deviceLoaded, setDeviceLoaded] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setDeviceLoaded(true)
-      return
+  const deviceQuery = useLightingDeviceDetails(imei)
+  const device = deviceQuery.data ?? null
+  // `!isLoading` covers all three of the old flag's cases: no imei (query
+  // disabled → isLoading false → "loaded" immediately), first fetch in
+  // flight (true → not loaded), and settled success/error (false → loaded).
+  const deviceLoaded = !deviceQuery.isLoading
+  const resolvedProject = useMemo<TrafficLightingProject>(() => {
+    if (!device) return project
+    const phase = device.phase === 1 || device.phase === 3 ? device.phase : null
+    return {
+      ...project,
+      imei: imei || project.imei,
+      connection: device.is_online ? 'online' : 'offline',
+      phase,
+      circuitStatus: device.has_broken_wire ? 'abnormal' : 'normal',
     }
-    getLightingDeviceDetailsAPI(imei)
-      .then((res) => { if (active) setDevice(res.data ?? null) })
-      .catch((err) => console.error('imei/details failed:', err))
-      .finally(() => { if (active) setDeviceLoaded(true) })
-    return () => { active = false }
-  }, [imei])
+  }, [device, imei, project])
 
   return (
-    <DetailContext.Provider value={{ project, imei, currentTab, setCurrentTab, device, deviceLoaded }}>
+    <DetailContext.Provider value={{ project: resolvedProject, imei, currentTab, setCurrentTab, device, deviceLoaded }}>
       {children}
     </DetailContext.Provider>
   )

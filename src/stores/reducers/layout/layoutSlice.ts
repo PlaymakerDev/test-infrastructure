@@ -8,6 +8,9 @@ const initialState: LayoutState = {
   drawer: {
     open: false
   },
+  map_panels: {
+    open: true
+  },
   project_info_modal: {
     open: false,
     project_id: null,
@@ -54,6 +57,9 @@ const layoutSlice = createSlice({
     },
     resetDrawerOpen: (state) => {
       state.drawer.open = initialState.drawer.open
+    },
+    setMapPanelsOpen: (state, action) => {
+      state.map_panels.open = action.payload.open
     },
     setProjectInfoModalOpen: (state, action) => {
       state.project_info_modal.open = action.payload.open
@@ -121,6 +127,7 @@ export const {
   setFullscreenLoading,
   setDrawerOpen,
   resetDrawerOpen,
+  setMapPanelsOpen,
   setCCTVModalOpen,
   resetCCTVModalOpen,
   setProjectInfoModalOpen,

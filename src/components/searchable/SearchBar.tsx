@@ -83,6 +83,9 @@ interface Props {
 
   defaultViewMode?: ViewMode
   onViewModeChange?: (mode: ViewMode) => void
+  /** Hide the table/grid Segmented toggle entirely — for tables with no grid
+   *  view to switch to (e.g. a flat event log). Defaults to shown. */
+  showViewToggle?: boolean
   onExport?: () => void
   showExportButton?: boolean
 
@@ -91,6 +94,10 @@ interface Props {
 
   /* HAS SWITCH */
   hasSwitch?: boolean
+  /** Extra classes appended to the filter-button row wrapper (the default is
+   *  a single horizontal scroll line on mobile). Pass e.g. `'flex-wrap'` to
+   *  make the filters wrap onto multiple lines on small screens instead. */
+  filterClassName?: string
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -105,10 +112,12 @@ const SearchBar: React.FC<Props> = ({
   onFilterChange,
   defaultViewMode = 'TABLE',
   onViewModeChange,
+  showViewToggle = true,
   onExport,
   showExportButton = true,
   formSearch,
-  hasSwitch = true
+  hasSwitch = true,
+  filterClassName,
 }) => {
   const initialFilter = defaultFilter ?? filters[0]?.key ?? ''
   const [uncontrolledFilter, setUncontrolledFilter] = useState<string>(initialFilter)
@@ -131,10 +140,11 @@ const SearchBar: React.FC<Props> = ({
     <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
 
       {/* ── Left: filter buttons (form/default) or title (title mode) ── */}
+      {/* Default filter row is a mobile horizontal scroll; `filterClassName` REPLACES it entirely. */}
       {mode === 'title' ? (
         <h3 className='text-(--yellow) mb-0 truncate'>{title}</h3>
       ) : (
-        <div className='flex items-center gap-2 overflow-x-auto pb-0.5 lg:pb-0 lg:flex-wrap'>
+        <div className={filterClassName ?? 'flex items-center gap-2 overflow-x-auto pb-0.5 lg:pb-0 lg:flex-wrap'}>
           {filters.map((f) => {
             const isActive = activeFilter === f.key
             const count = stats[f.statKey ?? f.key]

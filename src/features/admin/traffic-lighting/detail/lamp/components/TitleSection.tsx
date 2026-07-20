@@ -12,11 +12,13 @@ import { useState } from 'react'
 const WARRANTY_COLORS = {
   'in-warranty': '#05F2DB',
   expired: '#979797',
+  unknown: '#979797',
 } as const
 
 const CONNECTION_COLORS = {
   online: '#66AEFF',
   offline: '#E94C4C',
+  unknown: '#979797',
 } as const
 
 /** Lamp header — back arrow + title + pills + Google Map. No tabs (lamp is a
@@ -25,15 +27,28 @@ const LampTitleSection: React.FC = () => {
   const router = useRouter()
   const { project } = useLampContext()
   const isOnline = project.connection === 'online'
-  const isInWarranty = project.warranty === 'in-warranty'
   const [infoProject, setInfoProject] = useState<TrafficLightingProject | null>(null)
+  const warrantyLabel = project.warranty === 'in-warranty'
+    ? 'ในค้ำ'
+    : project.warranty === 'expired' ? 'หมดค้ำ' : '-'
+  const connectionLabel = project.connection === 'online'
+    ? 'ออนไลน์'
+    : project.connection === 'offline' ? 'ออฟไลน์' : '-'
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/admin/traffic-lighting')
+    }
+  }
 
   return (
     <div>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
           className='fs-24 text-[#FCD116] cursor-pointer mt-2 shrink-0'
-          onClick={() => router.push('/admin/traffic-lighting')}
+          onClick={handleBack}
         />
         <div className='flex-1 min-w-0'>
           <h1 className='text-[20px] sm:text-[24px] font-bold text-[#FCD116] m-0'>
@@ -52,20 +67,36 @@ const LampTitleSection: React.FC = () => {
               />
             </div>
             <Pill
-              text={isInWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
+              text={warrantyLabel}
               color={WARRANTY_COLORS[project.warranty]}
             />
             <ConfigProvider
               theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#212121' } }}
             >
-              <Button type='primary' size='middle' shape='round' className='w-full! sm:w-auto!'>
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                className='w-full! sm:w-auto!'
+                onClick={() => {
+                  const [lng, lat] = project.coord ?? [0, 0]
+                  if (lng !== 0 || lat !== 0) {
+                    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank')
+                    return
+                  }
+                  const query = [project.roadCode, project.installPoint].filter(Boolean).join(' ')
+                  window.open(`https://www.google.com/maps?q=${encodeURIComponent(query)}`, '_blank')
+                }}
+              >
                 Google Map
               </Button>
             </ConfigProvider>
             <Pill
-              text={isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+              text={connectionLabel}
               color={CONNECTION_COLORS[project.connection]}
-              icon={isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+              icon={project.connection === 'unknown'
+                ? undefined
+                : isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
             />
           </div>
         </div>

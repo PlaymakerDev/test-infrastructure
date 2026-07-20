@@ -1,16 +1,63 @@
 "use client"
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
-import { App, Button, ConfigProvider, DatePicker, Input, Select, Spin, Upload } from 'antd'
+import React, { Suspense, useCallback, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { App, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
+import type { UploadFile } from 'antd'
+import { AxiosError } from 'axios'
 import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbChevronDown, TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
+import { TbFileText, TbTrash } from 'react-icons/tb'
 import styles from './maintenance-case.module.css'
 import ModalSaveSuccess from '../components/ModalSaveSuccess'
 import { TitleSection } from '../components'
-import { getMaintenanceCaseAPI, updateMaintenanceCaseAPI } from '@/services/routes/MaintenanceService'
+import {
+  useMaintenanceCase,
+  useProjectBySolution,
+  useUpdateMaintenanceCase,
+  useUploadMaintenance,
+} from '@/hooks/queries/maintenance'
+import { useCCTVDetail } from '@/hooks/queries/shared/useCCTVDetail'
+import { useCCTVRoad } from '@/hooks/queries/shared/useCCTVRoad'
+import { CCTVModal } from '@/components/modal'
+import { useAppDispatch } from '@/stores/hooks'
+import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CaseDetail } from '@/types/maintenance'
+import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/shared-api'
+import type { APIResponseProjectDetail } from '@/types/shared'
+
+const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
+const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
+
+/** before_image/after_image come back as a JSON-stringified array in a string
+ *  field (or the literal text "null", or ""). Never a real array or null. */
+const parseImageUrls = (raw: string | null | undefined): string[] => {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string' && u.length > 0) : []
+  } catch {
+    return []
+  }
+}
+
+/** Go's zero-value time ("0001-01-01T00:00:00Z", any offset) — the backend's
+ *  way of saying "never actually recorded", not a real timestamp. */
+const isRealTimestamp = (value: string | null | undefined): boolean =>
+  !!value && !value.startsWith('0001-01-01')
+
+const normalizeSolutionType = (value: string | null): string =>
+  (value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '')
+
+const urlToUploadFile = (url: string, index: number): UploadFile => ({
+  uid: `existing-${index}`,
+  name: url.split('/').pop() || `file-${index}`,
+  status: 'done',
+  url,
+  thumbUrl: url,
+  type: /\.(jpe?g|png|gif)$/i.test(url) ? 'image/*' : undefined,
+})
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -49,12 +96,11 @@ const REPAIR_STATUS_CONFIG: Record<RepairStatus, { label: string; color: string;
 }
 
 const CaseContent: React.FC<Props> = ({ id }) => {
-  const { modal } = App.useApp()
-  const [caseData, setCaseData] = useState<CaseDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { modal, message } = App.useApp()
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
     category: '',
@@ -63,75 +109,162 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     solution: '',
     reportDate: '',
     inspectDate: '',
-    beforeImages: 0,
-    afterImages: 0,
   })
+  const [beforeFiles, setBeforeFiles] = useState<UploadFile[]>([])
+  const [afterFiles, setAfterFiles] = useState<UploadFile[]>([])
   const [closeCaseAfterSave, setCloseCaseAfterSave] = useState(false)
 
-  const fetchCase = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await getMaintenanceCaseAPI(id)
-      const data = (res as any).data ?? res as unknown as CaseDetail
-      setCaseData(data)
-      setFormData({
-        category: data.category || '',
-        agency: data.responsible || '',
-        problem: data.problem || '',
-        solution: data.solution_method || '',
-        reportDate: data.created_at ? dayjs(data.created_at).format('DD MMM BBBB') : '',
-        inspectDate: data.inspection_date ? dayjs(data.inspection_date).format('DD MMM BBBB') : '',
-        beforeImages: 0,
-        afterImages: 0,
-      })
-    } catch (err) {
-      console.error('Error fetching case:', err)
-      setError('ไม่สามารถโหลดข้อมูล Case ได้')
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
+  const caseQuery = useMaintenanceCase(id)
+  const caseData: CaseDetail | null = caseQuery.data ?? null
+  const loading = caseQuery.isLoading
+  const error = caseQuery.isError ? 'ไม่สามารถโหลดข้อมูล Case ได้' : null
 
-  useEffect(() => {
-    fetchCase()
-  }, [fetchCase])
+  // Seed the editable form state from the fetched case — adjusted during
+  // render (React's adjust-state-on-prop-change pattern) so it reruns on
+  // every fresh payload (initial load AND the refetch after save), matching
+  // the old fetchCase()'s seed-on-every-fetch behavior.
+  const [seededFrom, setSeededFrom] = useState<CaseDetail | null>(null)
+  if (caseQuery.data && caseQuery.data !== seededFrom) {
+    const data = caseQuery.data
+    setSeededFrom(data)
+    setFormData({
+      category: data.category || '',
+      agency: data.responsible || '',
+      problem: data.problem || '',
+      solution: data.solution_method || '',
+      reportDate: data.created_at ? dayjs(data.created_at).format('DD MMM BBBB') : '',
+      inspectDate: data.inspection_date ? dayjs(data.inspection_date).format('DD MMM BBBB') : '',
+    })
+    setBeforeFiles(parseImageUrls(data.before_image).map(urlToUploadFile))
+    setAfterFiles(parseImageUrls(data.after_image).map(urlToUploadFile))
+  }
 
-  const handleSave = async () => {
-    if (saving) return
+  // ข้อมูลอุปกรณ์ card — CaseDetail only carries camera_id, so the actual
+  // device name/IP/online status comes from the CCTV camera endpoint;
+  // "จุดติดตั้ง / สายทาง" needs the separate GET /cctv/{id} (road_code).
+  const cameraDetailQuery = useCCTVDetail(caseData?.camera_id)
+  const cameraDetail: APIResponseCCTVDetail | null = cameraDetailQuery.data ?? null
+  const cameraRoadQuery = useCCTVRoad(caseData?.camera_id)
+  const cameraRoad: APIResponseCCTVRoad | null = cameraRoadQuery.data ?? null
+
+  // The explicit URL solution identifies which detail row opened this case.
+  // For older history responses without solution_id, resolve the named
+  // solution_type relationship. A bare direct URL may fall back only when the
+  // camera has exactly one distinct related solution; never silently pick the
+  // first relation when a camera participates in several solutions.
+  const requestedSolutionType = normalizeSolutionType(searchParams.get('solution_type'))
+  const relatedSolutions = cameraDetail
+    ? [
+      { types: ['counting', 'trafficvolume'], solution: cameraDetail.counting },
+      { types: ['analytic', 'trafficanalytic'], solution: cameraDetail.analytic },
+      { types: ['traffic', 'trafficlighting'], solution: cameraDetail.traffic },
+      { types: ['crosswalk'], solution: cameraDetail.crosswalk },
+      { types: ['wim', 'weightinmotion'], solution: cameraDetail.wim_camera },
+      { types: ['vms'], solution: cameraDetail.vms },
+    ]
+    : []
+  const typeMatchedSolutionId = requestedSolutionType
+    ? relatedSolutions.find(({ types }) => types.includes(requestedSolutionType))?.solution?.solution_id
+    : undefined
+  const uniqueRelatedSolutionIds = Array.from(new Set(
+    relatedSolutions
+      .map(({ solution }) => solution?.solution_id)
+      .filter((value): value is number => typeof value === 'number' && value > 0),
+  ))
+  const fallbackSolutionId = typeMatchedSolutionId ?? (
+    !requestedSolutionType && uniqueRelatedSolutionIds.length === 1
+      ? uniqueRelatedSolutionIds[0]
+      : undefined
+  )
+  const parsedSolutionId = Number(searchParams.get('solution_id'))
+  const routeSolutionId = Number.isFinite(parsedSolutionId) && parsedSolutionId > 0
+    ? parsedSolutionId
+    : undefined
+  const solutionId = routeSolutionId ?? fallbackSolutionId
+  const returnToAllRepairs = searchParams.get('source') === 'all_repairs'
+  const parsedContextId = Number(searchParams.get('context_id'))
+  const hasMatchingDetailContext = solutionId !== undefined &&
+    Number.isFinite(parsedContextId) &&
+    parsedContextId === solutionId
+
+  // Preserve detail-page context only when it belongs to this case's solution.
+  // A matching context_id binds the accompanying title/map values to that
+  // exact solution route instead of accepting unrelated URL metadata.
+  const detailParams = new URLSearchParams(searchParams.toString())
+  detailParams.delete('solution_id')
+  const detailQuery = hasMatchingDetailContext && routeSolutionId !== undefined
+    ? detailParams.toString()
+    : ''
+
+  const projectBySolutionQuery = useProjectBySolution(solutionId)
+  const projectDetail: APIResponseProjectDetail | null = projectBySolutionQuery.data ?? null
+
+  const { mutateAsync: uploadMaintenance } = useUploadMaintenance()
+
+  const uploadFile = useCallback(async (file: UploadFile, kind: 'before' | 'after') => {
+    const setFiles = kind === 'before' ? setBeforeFiles : setAfterFiles
+    setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'uploading' } : f)))
     try {
-      setSaving(true)
-      await updateMaintenanceCaseAPI(id, {
-        category: formData.category || undefined,
-        problem: formData.problem || undefined,
-        responsible: formData.agency || undefined,
-        solution_method: formData.solution || undefined,
-        inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
-        is_closed: hasData ? closeCaseAfterSave : undefined,
-      })
-      await fetchCase()
-      setModalOpen(true)
+      const fd = new FormData()
+      fd.append('upload', file.originFileObj as File)
+      const response = await uploadMaintenance(fd)
+      const path = response.data?.path?.trim()
+      if (!path) {
+        throw new Error('อัปโหลดไม่สำเร็จ: ระบบไม่ส่งที่อยู่ไฟล์กลับมา')
+      }
+      setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'done', url: path, thumbUrl: path } : f)))
     } catch (err) {
-      console.error('Error saving case:', err)
-      modal.error({
-        title: 'บันทึกไม่สำเร็จ',
-        content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-        okText: 'ตกลง',
-        centered: true,
-      })
-    } finally {
-      setSaving(false)
+      setFiles(prev => prev.map(f => (f.uid === file.uid ? { ...f, status: 'error' } : f)))
+      message.error(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'อัปโหลดไม่สำเร็จ')
+          : err instanceof Error
+            ? err.message
+            : 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์',
+      )
     }
+  }, [message, uploadMaintenance])
+
+  const updateCase = useUpdateMaintenanceCase(id)
+  const saving = updateCase.isPending
+  const uploading = [...beforeFiles, ...afterFiles].some(file => file.status === 'uploading')
+
+  const handleSave = () => {
+    if (saving || uploading) return
+    // `mutate` + callbacks (not mutateAsync) per the canonical write pattern —
+    // the hook invalidates the case query, whose refetch reseeds the form via
+    // the effect above (same as the old fetchCase()-after-save flow).
+    updateCase.mutate({
+      category: formData.category || undefined,
+      problem: formData.problem || undefined,
+      responsible: formData.agency || undefined,
+      solution_method: formData.solution || undefined,
+      inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
+      before_image: beforeFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
+      after_image: afterFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
+      is_closed: hasData ? closeCaseAfterSave : undefined,
+    }, {
+      onSuccess: () => setModalOpen(true),
+      onError: (err) => {
+        console.error('Error saving case:', err)
+        modal.error({
+          title: 'บันทึกไม่สำเร็จ',
+          content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+          okText: 'ตกลง',
+          centered: true,
+        })
+      },
+    })
   }
 
   const hasData = Boolean(caseData?.inspection_date)
 
-  const handleDeleteBeforeImage = (_index: number) => {
-    setFormData(prev => ({ ...prev, beforeImages: prev.beforeImages - 1 }))
+  const handleDeleteBeforeImage = (uid: string) => {
+    setBeforeFiles(prev => prev.filter(f => f.uid !== uid))
   }
 
-  const handleDeleteAfterImage = (_index: number) => {
-    setFormData(prev => ({ ...prev, afterImages: prev.afterImages - 1 }))
+  const handleDeleteAfterImage = (uid: string) => {
+    setAfterFiles(prev => prev.filter(f => f.uid !== uid))
   }
 
   // Determine repair status from API data
@@ -143,25 +276,34 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
   const statusConfig = REPAIR_STATUS_CONFIG[repairStatus]
 
-  // Placeholder project/device info (API doesn't return these yet)
   const project: ProjectInfo = {
-    projectName: '-',
-    contractor: '-',
-    agency: formData.agency || '-',
-    contractNo: '-',
-    warrantyStart: '-',
-    warrantyEnd: '-',
-    warrantyStatus: 'expired',
+    projectName: projectDetail?.project_name || '-',
+    contractor: projectDetail?.contractor?.username || '-',
+    agency: projectDetail?.department?.department_name || formData.agency || '-',
+    contractNo: projectDetail?.contract_no || '-',
+    warrantyStart: projectDetail?.warranty_start_date ? dayjs(projectDetail.warranty_start_date).format('DD MMM BBBB') : '-',
+    warrantyEnd: projectDetail?.warranty_end_date ? dayjs(projectDetail.warranty_end_date).format('DD MMM BBBB') : '-',
+    warrantyStatus: projectDetail ? (projectDetail.is_warranty ? 'active' : 'expired') : 'expired',
   }
 
+  // "Offline since" only means something when the camera is actually offline
+  // AND the backend has a real curl_updated_at (not the Go zero-value
+  // sentinel it sends when it's never actually checked in).
+  const offlineSince = cameraDetail && !cameraDetail.is_online && isRealTimestamp(cameraDetail.curl_updated_at)
+    ? dayjs(cameraDetail.curl_updated_at)
+    : null
+
   const device: DeviceInfo = {
-    deviceName: caseData?.camera_id || '-',
-    deviceType: '-',
-    installPoint: '-',
-    ipAddress: '-',
-    offlineDate: '-',
-    offlineDays: 0,
-    hasLive: false,
+    deviceName: cameraDetail?.camera_name || caseData?.camera_id || '-',
+    // The case screen's device lookup only ever joins camera_id against the
+    // CCTV camera endpoint (no other device source is wired), so this is
+    // always CCTV.
+    deviceType: 'cctv',
+    installPoint: cameraRoad?.road_code || '-',
+    ipAddress: cameraDetail?.ip_address || '-',
+    offlineDate: offlineSince ? offlineSince.format('DD MMM BBBB') : '-',
+    offlineDays: offlineSince ? Math.max(0, dayjs().diff(offlineSince, 'day')) : 0,
+    hasLive: !!cameraDetail?.is_online && !!cameraDetail?.hls_url,
   }
 
   if (loading) {
@@ -180,6 +322,25 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     )
   }
 
+  // Mirrors TitleSection's own back-arrow handler. The return target comes
+  // from this case's API relationship or its explicit `solution_id` URL param,
+  // never from unscoped state left by another route.
+  const handleCancel = () => {
+    if (returnToAllRepairs) {
+      router.push('/admin/maintenance?repair&all_repairs')
+      return
+    }
+    if (solutionId) {
+      router.push(`/admin/maintenance/detail/${solutionId}${detailQuery ? `?${detailQuery}` : ''}`)
+      return
+    }
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/admin/maintenance')
+    }
+  }
+
   return (
     <div className='main-screen'>
       <style>{`
@@ -190,7 +351,22 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           min-height: unset !important;
         }
       `}</style>
-      <TitleSection caseId={id} />
+      <TitleSection
+        caseId={id}
+        solutionId={solutionId}
+        detailQuery={detailQuery}
+        returnToAllRepairs={returnToAllRepairs}
+      />
+
+      {returnToAllRepairs && !solutionId && !cameraDetailQuery.isLoading && (
+        <div
+          role='alert'
+          className='mx-4 sm:mx-10 mt-4 rounded-xl px-4 py-3 text-[13px]'
+          style={{ border: '1px solid #FCD116', background: '#FCD1161A', color: '#FCD116' }}
+        >
+          ไม่พบ Solution ที่ผูกกับ Case นี้อย่างแน่ชัด จึงไม่แสดงข้อมูลโครงการแทนด้วย Solution อื่น
+        </div>
+      )}
 
       {/* ─── Status Badges ─── */}
       <section className='mt-5 px-4 md:px-10 flex flex-col sm:flex-row gap-3 sm:gap-4'>
@@ -255,36 +431,20 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <div className='pl-0 md:pl-9.5 mt-3 flex flex-col sm:flex-row gap-4'>
                 <div className='flex-1 w-full'>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หมวดหมู่ของปัญหาที่พบ<span style={{ color: '#E94C4C' }}>*</span></p>
-                  <Select
-                    placeholder='กรุณาเลือกหมวดหมู่...'
-                    style={{ width: '100%', height: 40, borderRadius: 10 }}
-                    suffixIcon={<TbChevronDown style={{ color: '#FCD116', fontSize: 16 }} />}
-                    value={formData.category || undefined}
-                    onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    options={[
-                      { label: 'CCTV', value: 'cctv' },
-                      { label: 'Traffic Volume', value: 'traffic_volume' },
-                      { label: 'Incident Detection', value: 'incident_detection' },
-                      { label: 'Traffic Signal', value: 'traffic_signal' },
-                      { label: 'Traffic Lighting', value: 'traffic_lighting' },
-                      { label: 'VMS', value: 'vms' },
-                    ]}
+                  <Input
+                    placeholder='กรุณาระบุหมวดหมู่...'
+                    style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10, color: '#FFFFFF' }}
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   />
                 </div>
                 <div className='flex-1 w-full'>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '0 0 6px 0' }}>หน่วยงานรับผิดชอบหรือมอบหมาย<span style={{ color: '#E94C4C' }}>*</span></p>
-                  <Select
-                    placeholder='กรุณาเลือกหน่วยงาน...'
-                    style={{ width: '100%', height: 40, borderRadius: 10 }}
-                    suffixIcon={<TbChevronDown style={{ color: '#FCD116', fontSize: 16 }} />}
-                    value={formData.agency || undefined}
-                    onChange={(value) => setFormData(prev => ({ ...prev, agency: value }))}
-                    options={[
-                      { label: 'หมวดบำรุงทางหลวงชนบทกัลปพฤกษ์', value: 'agency_1' },
-                      { label: 'สทช. 1 (ปทุมธานี)', value: 'agency_2' },
-                      { label: 'สทช. 2 (นนทบุรี)', value: 'agency_3' },
-                      { label: 'สทช. 3 (สมุทรปราการ)', value: 'agency_4' },
-                    ]}
+                  <Input
+                    placeholder='กรุณาระบุหน่วยงาน...'
+                    style={{ width: '100%', height: 40, background: 'transparent', border: '1px solid #FCD116', borderRadius: 10, color: '#FFFFFF' }}
+                    value={formData.agency}
+                    onChange={(e) => setFormData(prev => ({ ...prev, agency: e.target.value }))}
                   />
                 </div>
               </div>
@@ -355,36 +515,57 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
+                showUploadList={false}
+                multiple
+                beforeUpload={(file) => {
+                  if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+                    message.error('ประเภทไฟล์ไม่ถูกต้อง')
+                    return Upload.LIST_IGNORE
+                  }
+                  if (file.size > MAX_UPLOAD_SIZE) {
+                    message.error('ไม่สามารถอัปโหลดไฟล์ได้ ไฟล์ที่อัปโหลดมีขนาดเกิน 200 MB')
+                    return Upload.LIST_IGNORE
+                  }
+                  return false
+                }}
+                onChange={({ fileList }) => {
+                  const added = fileList.filter(f => !beforeFiles.some(existing => existing.uid === f.uid))
+                  setBeforeFiles(prev => [...prev, ...added])
+                  added.forEach(f => uploadFile(f, 'before'))
+                }}
               >
                 <img src='/atlas/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
-              {formData.beforeImages > 0 && (
+              {beforeFiles.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {Array.from({ length: formData.beforeImages }).map((_, index) => (
-                    <div
-                      key={index}
-                      className={styles.imagePreviewItem}
-                      style={{ background: '#2A2A2A' }}
-                    >
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/atlas/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
-                      </div>
+                  {beforeFiles.map((file) => {
+                    const isImage = file.type?.startsWith('image/')
+                    return (
                       <div
-                        className={styles.imagePreviewOverlay}
-                        onClick={() => handleDeleteBeforeImage(index)}
+                        key={file.uid}
+                        className={styles.imagePreviewItem}
+                        style={{ background: '#2A2A2A' }}
                       >
-                        <TbTrash size={24} color='#FFFFFF' />
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {file.status === 'uploading' ? (
+                            <Spin size='small' />
+                          ) : isImage && file.thumbUrl ? (
+                            <img src={file.thumbUrl} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <TbFileText size={32} color={file.status === 'error' ? '#E94C4C' : '#FCD116'} />
+                          )}
+                        </div>
+                        <div
+                          className={styles.imagePreviewOverlay}
+                          onClick={() => handleDeleteBeforeImage(file.uid)}
+                        >
+                          <TbTrash size={24} color='#FFFFFF' />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {/* PDF mock */}
-                  <div className={styles.imagePreviewItem} style={{ background: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                    <TbFileText size={24} color='#000000' />
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
-                    <span style={{ fontSize: 8, color: '#000000' }}>5.9 MB</span>
-                  </div>
+                    )
+                  })}
                 </div>
               )}
               <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '12px 0 4px 0' }}>หลังซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
@@ -393,36 +574,57 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
                 accept='.mp4,.avi,.mov,.jpg,.jpeg,.png,.gif,.pdf'
+                showUploadList={false}
+                multiple
+                beforeUpload={(file) => {
+                  if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+                    message.error('ประเภทไฟล์ไม่ถูกต้อง')
+                    return Upload.LIST_IGNORE
+                  }
+                  if (file.size > MAX_UPLOAD_SIZE) {
+                    message.error('ไม่สามารถอัปโหลดไฟล์ได้ ไฟล์ที่อัปโหลดมีขนาดเกิน 200 MB')
+                    return Upload.LIST_IGNORE
+                  }
+                  return false
+                }}
+                onChange={({ fileList }) => {
+                  const added = fileList.filter(f => !afterFiles.some(existing => existing.uid === f.uid))
+                  setAfterFiles(prev => [...prev, ...added])
+                  added.forEach(f => uploadFile(f, 'after'))
+                }}
               >
                 <img src='/atlas/images/Maintenance/cloud-upload.png' alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
                 <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
                 <p style={{ color: '#7C7C7C', fontWeight: 400, fontSize: 10, margin: '2px 0 0 0' }}>ไฟล์วิดีโอ MP4, AVI, MOV หรือไฟล์ JPG, PNG, GIF หรือไฟล์ PDF</p>
               </Upload.Dragger>
-              {formData.afterImages > 0 && (
+              {afterFiles.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {Array.from({ length: formData.afterImages }).map((_, index) => (
-                    <div
-                      key={index}
-                      className={styles.imagePreviewItem}
-                      style={{ background: '#2A2A2A' }}
-                    >
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src='/atlas/images/Maintenance/iccf.png' alt='' width={32} height={32} style={{ opacity: 0.5 }} />
-                      </div>
+                  {afterFiles.map((file) => {
+                    const isImage = file.type?.startsWith('image/')
+                    return (
                       <div
-                        className={styles.imagePreviewOverlay}
-                        onClick={() => handleDeleteAfterImage(index)}
+                        key={file.uid}
+                        className={styles.imagePreviewItem}
+                        style={{ background: '#2A2A2A' }}
                       >
-                        <TbTrash size={24} color='#FFFFFF' />
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {file.status === 'uploading' ? (
+                            <Spin size='small' />
+                          ) : isImage && file.thumbUrl ? (
+                            <img src={file.thumbUrl} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <TbFileText size={32} color={file.status === 'error' ? '#E94C4C' : '#FCD116'} />
+                          )}
+                        </div>
+                        <div
+                          className={styles.imagePreviewOverlay}
+                          onClick={() => handleDeleteAfterImage(file.uid)}
+                        >
+                          <TbTrash size={24} color='#FFFFFF' />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {/* PDF mock */}
-                  <div className={styles.imagePreviewItem} style={{ background: '#FCD116', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                    <TbFileText size={24} color='#000000' />
-                    <span style={{ fontSize: 9, fontWeight: 600, color: '#000000', lineHeight: 1.2 }}>เอกสาร PDF</span>
-                    <span style={{ fontSize: 8, color: '#000000' }}>5.9 MB</span>
-                  </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -466,25 +668,20 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               </div>
             )}
             <div className='ml-auto flex flex-wrap items-center gap-3'>
-              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-                <Button type="primary" size="small" shape="round" icon={<TbPrinter />} style={{ height: 31 }}>
-                  นำออกเอกสาร
-                </Button>
-              </ConfigProvider>
-              <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }}>
+              <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }} onClick={handleCancel}>
                 ยกเลิก
               </button>
               <button
                 className={styles.btnPrimary}
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || uploading}
                 style={{
                   ...(hasData ? { background: '#05F2DB', color: '#000000' } : {}),
-                  opacity: saving ? 0.6 : 1,
-                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: saving || uploading ? 0.6 : 1,
+                  cursor: saving || uploading ? 'not-allowed' : 'pointer',
                 }}
               >
-                {saving ? 'กำลังบันทึก...' : hasData ? 'บันทึก + ปิด Case' : 'บันทึก'}
+                {uploading ? 'กำลังอัปโหลด...' : saving ? 'กำลังบันทึก...' : hasData ? 'บันทึก + ปิด Case' : 'บันทึก'}
               </button>
             </div>
           </div>
@@ -572,12 +769,16 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <div className='flex flex-col items-center'>
                 <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays > 0 ? `${device.offlineDays} วัน` : '-'}</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>
               {device.hasLive && (
                 <div className='flex flex-col items-center'>
-                  <div style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                    <img src='/atlas/images/Maintenance/iclive.png' alt='' width={30} height={30} />
+                  <div
+                    className='cursor-pointer'
+                    style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                    onClick={() => caseData?.camera_id && dispatch(setCCTVModalOpen({ open: true, camera_id: caseData.camera_id }))}
+                  >
+                    <img src='/images/Maintenance/iclive.png' alt='' width={30} height={30} />
                     <p style={{ color: '#000000', fontWeight: 400, fontSize: 14, margin: 0 }}>Live</p>
                   </div>
                 </div>
@@ -591,6 +792,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         isClosingCase={hasData}
+        solutionId={solutionId}
+        detailQuery={detailQuery}
+        returnToAllRepairs={returnToAllRepairs}
         data={{
           caseNo: id,
           deviceName: device.deviceName,
@@ -599,6 +803,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           repairDate: formData.reportDate || '-',
         }}
       />
+
+      {/* Global CCTV modal — fires from the "Live" tile in ข้อมูลอุปกรณ์. Reads camera_id from Redux. */}
+      <CCTVModal />
     </div>
   )
 }

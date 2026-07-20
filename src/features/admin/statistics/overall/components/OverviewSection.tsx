@@ -1,28 +1,204 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import { useTopPowerRoads } from '@/hooks/queries/lighting'
+import { useNotificationsSummary } from '@/hooks/queries/manage'
+import { useVMSSettingLatest } from '@/features/admin/control-vms/overall/hooks/useVMSSettingLatest'
+import type { NotificationSourceType, NotificationSummaryItem } from '@/types/manage/notification-api'
 
-const CARDS = [
+dayjs.extend(buddhistEra)
+dayjs.extend(customParseFormat)
+
+// dept_id=0 is the "all departments" aggregate — confirmed against the live
+// API (its top result matches this card's original mock road, ฉช.3001).
+const TOP_POWER_ROADS_DEPT_ID = 0
+
+// Matches TitleSection.tsx's PERIOD_OPTIONS values exactly — that's the
+// component actually driving the `?period=` URL param this section reads.
+// Both card APIs require start_date/end_date, so "ALL" needs real (very wide)
+// bounds rather than omitted params.
+const ALL_TIME_START = '2000-01-01'
+const DATE_FORMAT = 'YYYY-MM-DD'
+
+const periodToRange = (period: string): { startDate: string; endDate: string } => {
+  const now = dayjs()
+  switch (period) {
+    case 'TODAY':
+      return { startDate: now.format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_7_DAYS':
+      return { startDate: now.subtract(6, 'day').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_MONTH':
+      return { startDate: now.startOf('month').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'THIS_YEAR':
+      return { startDate: now.startOf('year').format(DATE_FORMAT), endDate: now.format(DATE_FORMAT) }
+    case 'LAST_YEAR': {
+      const lastYear = now.subtract(1, 'year')
+      return { startDate: lastYear.startOf('year').format(DATE_FORMAT), endDate: lastYear.endOf('year').format(DATE_FORMAT) }
+    }
+    case 'ALL':
+    default:
+      return { startDate: ALL_TIME_START, endDate: now.format(DATE_FORMAT) }
+  }
+}
+
+const pct = (part: number, total: number) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0.0')
+
+// "line_check" (the only literal the API sends for source_type=lighting) → "Line Check".
+const formatTypeName = (name: string) =>
+  name.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
+// buddhistEra adds the `BBBB` FORMAT token but customParseFormat does not
+// parse it. Parsing the backend's `18/07/2569 ...` directly as BBBB silently
+// falls back to the current timestamp, so normalize the year to Gregorian
+// first and only then format it back as Buddhist era for display.
+const formatBackendBuddhistDateTime = (value: string): string => {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{2}:\d{2}:\d{2})$/.exec(value.trim())
+  if (!match) {
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('DD MMM BBBB HH:mm') : '-'
+  }
+  const [, day, month, rawYear, time] = match
+  const numericYear = Number(rawYear)
+  const gregorianYear = numericYear > 2400 ? numericYear - 543 : numericYear
+  const normalized = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${gregorianYear} ${time}`
+  const parsed = dayjs(normalized, 'DD/MM/YYYY HH:mm:ss', true)
+  return parsed.isValid() ? parsed.format('DD MMM BBBB HH:mm') : '-'
+}
+
+const BASE_CARDS = [
   {
-    id: 1, src: '/atlas/images/statistics/Frame1.png', imageBg: true, value: '97,895',
+    id: 1, src: '/images/statistics/Frame1.png', imageBg: true, value: '-',
     label: 'Incident Detection', glowColor: '#66AEFF',
-    detail1: { img: '/atlas/images/statistics/Frame1.1.png', title: 'ประเภทเหตุการณ์ที่พบบ่อย', subtitle: 'รถจอดไหล่ทาง', summary: '33,580 เหตุการณ์ (59.6%)' },
-    detail2: { img: '/atlas/images/statistics/Frame1.2.png', title: 'หน่วยงานที่มีเหตุการณ์มากที่สุด', subtitle: 'แขวงทางหลวงชนบทฉะเชิงเทรา', summary: '4,885 เหตุการณ์ (63.1%)' },
+    detail1: { img: '/images/statistics/Frame1.1.png', title: 'ประเภทเหตุการณ์ที่พบบ่อย', subtitle: '-', summary: '-' },
+    detail2: { img: '/images/statistics/Frame1.2.png', title: 'หน่วยงานที่มีเหตุการณ์มากที่สุด', subtitle: '-', summary: '-' },
   },
   {
-    id: 2, src: '/atlas/images/statistics/Frame2.png', imageBg: true, value: '37,027',
+    id: 2, src: '/images/statistics/Frame2.png', imageBg: true, value: '-',
     label: 'Traffic Lighting', glowColor: '#66FFCA',
-    detail1: { img: '/atlas/images/statistics/Frame2.1.png', title: 'สายทางที่ใช้ไฟมากที่สุด', subtitle: 'ฉช.3001', summary: '3 จุดติดตั้ง (870.5 kW)' },
-    detail2: { img: '/atlas/images/statistics/Frame2.2.png', title: 'ประเภทการแจ้งเตือนมากที่สุด', subtitle: 'Line Check', summary: 'ขทช.ชลบุรี 8,173 เหตุการณ์ (43.9%)' },
+    detail1: { img: '/images/statistics/Frame2.1.png', title: 'สายทางที่ใช้ไฟมากที่สุด', subtitle: '-', summary: '-' },
+    detail2: { img: '/images/statistics/Frame2.2.png', title: 'ประเภทการแจ้งเตือนมากที่สุด', subtitle: '-', summary: '-' },
   },
   {
-    id: 3, src: '/atlas/images/statistics/Frame3.png', imageBg: true, value: '415',
+    id: 3, src: '/images/statistics/Frame3.png', imageBg: true, value: '-',
     label: 'VMS', glowColor: '#BDFF66',
-    detail1: { img: '/atlas/images/statistics/Frame3.1.png', title: 'หมวดหมู่ยอดนิยม', subtitle: 'การท่องเที่ยว', summary: '36 จุดติดตั้ง (59.6%)' },
-    detail2: { img: '/atlas/images/statistics/Frame3.2.png', title: 'ชุดคำสั่งล่าสุด', subtitle: 'ธงชาติไทย', summary: '16 สำนักทางหลวงชนบท (100.0%)' },
+    detail1: { img: '/images/statistics/Frame3.1.png', title: 'หมวดหมู่ยอดนิยม', subtitle: '-', summary: '-' },
+    detail2: { img: '/images/statistics/Frame3.2.png', title: 'ป้าย VMS ที่เชื่อมต่อล่าสุด', subtitle: '-', summary: '-' },
   },
 ]
 
 const OverviewSection: React.FC = () => {
+  const searchParams = useSearchParams()
+  const period = searchParams.get('period') || 'ALL'
+  const { startDate, endDate } = useMemo(() => periodToRange(period), [period])
+  const {
+    data: topPowerRoads,
+    isLoading: topPowerRoadsLoading,
+    isError: topPowerRoadsError,
+  } = useTopPowerRoads(TOP_POWER_ROADS_DEPT_ID, startDate, endDate, 1)
+  const topRoad = topPowerRoads?.[0]
+
+  const {
+    data: notificationsSummary,
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+  } = useNotificationsSummary(startDate, endDate)
+  const bySource = useMemo(() => {
+    const map = {} as Record<NotificationSourceType, NotificationSummaryItem>
+    for (const item of notificationsSummary ?? []) map[item.source_type] = item
+    return map
+  }, [notificationsSummary])
+
+  const {
+    data: vmsLatestRes,
+    isLoading: vmsLatestLoading,
+    isError: vmsLatestError,
+  } = useVMSSettingLatest()
+  const vmsLatest = vmsLatestRes?.data.res_data?.[0]
+
+  const CARDS = useMemo(() => BASE_CARDS.map((card) => {
+    if (card.id === 1) {
+      // Incident Detection
+      const s = bySource.analytic
+      return {
+        ...card,
+        value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
+        detail1: {
+          ...card.detail1,
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type?.name ?? '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_type
+            ? '-'
+            : `${s.most_count.toLocaleString()} เหตุการณ์ (${pct(s.most_count, s.count)}%)`,
+        },
+        detail2: {
+          ...card.detail2,
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_department?.department_short_name ?? '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_department
+            ? '-'
+            : `${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
+        },
+      }
+    }
+    if (card.id === 2) {
+      // Traffic Lighting — detail1 already wired to top-power-roads above.
+      const s = bySource.lighting
+      return {
+        ...card,
+        value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
+        detail1: {
+          ...card.detail1,
+          subtitle: topPowerRoadsLoading || topPowerRoadsError ? '-' : (topRoad?.road.code_name ?? '-'),
+          summary: topPowerRoadsLoading || topPowerRoadsError || !topRoad
+            ? '-'
+            : `${topRoad.install_points} จุดติดตั้ง (${topRoad.total_kw.toFixed(1)} kW)`,
+        },
+        detail2: {
+          ...card.detail2,
+          subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type ? formatTypeName(s.most_type.name) : '-'),
+          summary: notificationsLoading || notificationsError || !s?.most_department
+            ? '-'
+            : `${s.most_department.department_short_name} ${s.most_department.count.toLocaleString()} เหตุการณ์ (${pct(s.most_department.count, s.count)}%)`,
+        },
+      }
+    }
+    // VMS
+    const s = bySource.vms_setting
+    return {
+      ...card,
+      value: notificationsLoading || notificationsError ? '-' : (s?.count.toLocaleString() ?? '0'),
+      detail1: {
+        ...card.detail1,
+        subtitle: notificationsLoading || notificationsError ? '-' : (s?.most_type?.name ?? '-'),
+        summary: notificationsLoading || notificationsError || !s?.most_type
+          ? '-'
+          : `${s.most_count.toLocaleString()} การแจ้งเตือน (${pct(s.most_count, s.count)}%)`,
+      },
+      detail2: {
+        ...card.detail2,
+        // No dedicated "latest command" endpoint exists — this is the most
+        // recently connected VMS sign instead (see getVMSSettingLatestAPI).
+        subtitle: vmsLatestLoading || vmsLatestError ? '-' : (vmsLatest?.solution_name ?? '-'),
+        summary: vmsLatestLoading || vmsLatestError || !vmsLatest?.last_connected
+          ? '-'
+          // Backend sends last_connected pre-formatted as Buddhist-era
+          // DD/MM/BBBB HH:mm:ss (e.g. "18/07/2569 15:21:54"), not ISO.
+          : formatBackendBuddhistDateTime(vmsLatest.last_connected),
+      },
+    }
+  }), [
+    topPowerRoadsLoading,
+    topPowerRoadsError,
+    topRoad,
+    notificationsLoading,
+    notificationsError,
+    bySource,
+    vmsLatestLoading,
+    vmsLatestError,
+    vmsLatest,
+  ])
+
   return (
     <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
       {CARDS.map(card => (

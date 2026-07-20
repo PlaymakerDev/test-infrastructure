@@ -1,11 +1,11 @@
 "use client"
-import React, { Suspense, useCallback, useEffect, useState } from 'react'
+import React, { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input, Segmented, Spin, Table } from 'antd'
+import { Button, Input, Result, Segmented, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbArrowBigLeftFilled, TbFileText, TbPrinter, TbSearch, TbX } from 'react-icons/tb'
-import { getMaintenanceSolutionAPI, getMaintenanceCasesAPI, getMaintenanceHistoryAPI } from '@/services/routes/MaintenanceService'
-import type { CaseHistoryItem, SolutionDetailResponse, HistoryCase } from '@/types/maintenance'
+import { TbArrowBigLeftFilled, TbFileText, TbSearch, TbX } from 'react-icons/tb'
+import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory } from '@/hooks/queries/maintenance'
+import type { CaseHistoryItem, HistoryCase } from '@/types/maintenance'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -26,20 +26,76 @@ const PERIOD_OPTIONS = [
   { label: 'ปีที่ผ่านมา', value: 'LAST_YEAR' },
 ]
 
+const isWithinPeriod = (value: string | null | undefined, period: string): boolean => {
+  if (!value) return false
+  const date = dayjs(value)
+  if (!date.isValid()) return false
+
+  const now = dayjs()
+  let start: dayjs.Dayjs
+  let end: dayjs.Dayjs
+  switch (period) {
+    case 'TODAY':
+      start = now.startOf('day')
+      end = now.endOf('day')
+      break
+    case 'LAST_7_DAYS':
+      start = now.subtract(6, 'day').startOf('day')
+      end = now.endOf('day')
+      break
+    case 'THIS_YEAR':
+      start = now.startOf('year')
+      end = now.endOf('year')
+      break
+    case 'LAST_YEAR':
+      start = now.subtract(1, 'year').startOf('year')
+      end = now.subtract(1, 'year').endOf('year')
+      break
+    case 'THIS_MONTH':
+    default:
+      start = now.startOf('month')
+      end = now.endOf('month')
+      break
+  }
+
+  return !date.isBefore(start) && !date.isAfter(end)
+}
+
 const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
   const warrantyParam = searchParams.get('warranty') || ''
-  const storedSubtitle = typeof window !== 'undefined' ? (sessionStorage.getItem('maintenance_detail_subtitle') || '') : ''
+  const contextId = Number(searchParams.get('context_id'))
+  const routeSubtitle = Number.isFinite(contextId) && contextId === Number(id)
+    ? searchParams.get('subtitle') || ''
+    : ''
 
-  const [loading, setLoading] = useState(true)
-  const [solutionData, setSolutionData] = useState<SolutionDetailResponse | null>(null)
-  const [cases, setCases] = useState<CaseHistoryItem[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<CaseHistoryItem | null>(null)
+  const [searchText, setSearchText] = useState('')
+  const [selectedPeriod, setSelectedPeriod] = useState('THIS_MONTH')
+
+  const numericId = Number(id)
+  const solutionQuery = useMaintenanceSolution(numericId)
+  const casesQuery = useMaintenanceCases(numericId)
+  const historyQuery = useMaintenanceHistory({ status: 'all' })
+
+  // Solution + cases are the core route data. The global history request only
+  // enriches fields inside the record modal, so it must never hold the table in
+  // a loading/error state when the core endpoints are healthy.
+  const loading = solutionQuery.isLoading || casesQuery.isLoading
+  const hasError = solutionQuery.isError || casesQuery.isError
+  const solutionData = solutionQuery.data ?? null
+  const cases = useMemo(() => casesQuery.data ?? [], [casesQuery.data])
   // case_no → HistoryCase lookup (history API has device/project fields the cases API lacks)
-  const [historyMap, setHistoryMap] = useState<Record<string, HistoryCase>>({})
+  const historyMap = useMemo(() => {
+    const map: Record<string, HistoryCase> = {}
+      ; (historyQuery.data ?? []).forEach((region) => {
+        region.cases.forEach((c) => { map[c.case_no] = c })
+      })
+    return map
+  }, [historyQuery.data])
 
   // Derived from API
   const warranty = warrantyParam || (solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ')
@@ -53,37 +109,22 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const offlineSinceText = selectedRecord?.reported_at ? dayjs(selectedRecord.reported_at).format('DD MMM BBBB') : '-'
   const offlineDaysText = historyCase?.offline_days ? `${historyCase.offline_days} วัน` : '-'
 
-  const fetchData = useCallback(async () => {
-    const numericId = Number(id)
-    if (!numericId) return
-    try {
-      setLoading(true)
-      const [solutionRes, casesRes, historyRes] = await Promise.all([
-        getMaintenanceSolutionAPI(numericId),
-        getMaintenanceCasesAPI(numericId),
-        getMaintenanceHistoryAPI({ status: 'all' }),
-      ])
-      setSolutionData(solutionRes.data)
-      setCases(casesRes.data ?? [])
-      // Build case_no → HistoryCase map for the modal's project/device fields
-      const map: Record<string, HistoryCase> = {}
-        ; (historyRes.data ?? []).forEach((region) => {
-          region.cases.forEach((c) => { map[c.case_no] = c })
-        })
-      setHistoryMap(map)
-    } catch (err) {
-      console.error('Error fetching repair history:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const filteredCases = useMemo(() => {
+    const query = searchText.trim().toLowerCase()
+    return cases.filter((item) => {
+      // The segmented control is explicitly labelled "ปิด Case สำเร็จ", so
+      // its period applies to the close timestamp (open cases do not belong in
+      // a successful-close history window).
+      if (!isWithinPeriod(item.closed_at, selectedPeriod)) return false
+      if (!query) return true
+      return [item.case_no, item.camera_name, item.camera_ip, item.problem, item.responsible]
+        .some((value) => value?.toLowerCase().includes(query))
+    })
+  }, [cases, searchText, selectedPeriod])
 
   const handleBack = () => {
-    router.push(`/admin/maintenance/detail/${id}`)
+    const query = searchParams.toString()
+    router.push(`/admin/maintenance/detail/${id}${query ? `?${query}` : ''}`)
   }
 
   const columns: ColumnsType<CaseHistoryItem> = [
@@ -105,6 +146,29 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
     )
   }
 
+  if (hasError) {
+    return (
+      <div className='main-screen flex items-center justify-center min-h-64'>
+        <Result
+          status='error'
+          title='ไม่สามารถโหลดประวัติการซ่อมได้'
+          subTitle='กรุณาลองใหม่อีกครั้ง'
+          extra={(
+            <Button
+              type='primary'
+              onClick={() => {
+                if (solutionQuery.isError) void solutionQuery.refetch()
+                if (casesQuery.isError) void casesQuery.refetch()
+              }}
+            >
+              ลองอีกครั้ง
+            </Button>
+          )}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className='main-screen'>
       <div className='px-4 sm:px-10 pt-3'>
@@ -119,9 +183,9 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               ประวัติการซ่อม
             </h1>
             <div className='flex items-center gap-2 mt-2 flex-wrap'>
-              {(storedSubtitle || solutionData?.solution_name) && (
+              {(routeSubtitle || solutionData?.solution_name) && (
                 <p className='text-[13px] sm:text-[14px] font-normal' style={{ color: '#FFFFFF' }}>
-                  {storedSubtitle || solutionData?.solution_name}
+                  {routeSubtitle || solutionData?.solution_name}
                 </p>
               )}
               <span
@@ -144,15 +208,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{offlineCount}</span>
               </span>
-              <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
-              <button
-                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-                style={{ background: '#66AEFF', color: '#0A0A0A' }}
-                type='button'
-              >
-                <TbPrinter size={14} />
-                นำออกเอกสาร
-              </button>
+              <img src='/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
             </div>
           </div>
         </section>
@@ -166,6 +222,9 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               suffix={<TbSearch size={18} color='#FCD116' />}
               size='middle'
               style={{ width: isMobile ? '100%' : 360, height: 40, borderRadius: 10 }}
+              allowClear
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
             />
           </div>
           <div>
@@ -173,7 +232,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
             <div className='overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               <Segmented
                 options={PERIOD_OPTIONS}
-                defaultValue='THIS_MONTH'
+                value={selectedPeriod}
+                onChange={(value) => setSelectedPeriod(String(value))}
                 size={isMobile ? 'middle' : 'large'}
                 classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
               />
@@ -182,9 +242,10 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
         </div>
         <Table
           columns={columns}
-          dataSource={cases}
+          dataSource={filteredCases}
           rowKey='case_no'
           pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ` }}
+          locale={{ emptyText: 'ไม่พบข้อมูลในช่วงเวลาที่เลือก' }}
           scroll={{ x: 'max-content' }}
           size='middle'
           onRow={(record) => ({
@@ -226,13 +287,31 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               </button>
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {historyQuery.isLoading && (
+                <div className='flex items-center gap-2 rounded-xl px-4 py-3' style={{ backgroundColor: '#66AEFF1A', color: '#B2D6F0' }}>
+                  <Spin size='small' />
+                  <span>กำลังโหลดข้อมูลประกอบเพิ่มเติม...</span>
+                </div>
+              )}
+              {historyQuery.isError && (
+                <div
+                  role='alert'
+                  className='flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3'
+                  style={{ backgroundColor: '#E94C4C1A', border: '1px solid #E94C4C', color: '#E94C4C' }}
+                >
+                  <span>ไม่สามารถโหลดข้อมูลประกอบบางส่วนได้ ข้อมูลหลักของ Case ยังใช้งานได้</span>
+                  <Button size='small' danger onClick={() => { void historyQuery.refetch() }}>
+                    ลองอีกครั้ง
+                  </Button>
+                </div>
+              )}
               {/* Row: ข้อมูลโครงการ + ข้อมูลอุปกรณ์ */}
               <div className='flex flex-col lg:flex-row gap-4'>
                 {/* Card: ข้อมูลโครงการ */}
                 <div className='flex-1 lg:flex-[55] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
                   <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: '0 0 4px 0' }}>ข้อมูลโครงการ</p>
                   <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>
-                    {storedSubtitle || solutionData?.solution_name || '-'}
+                    {routeSubtitle || solutionData?.solution_name || '-'}
                   </p>
                   <div className='grid grid-cols-3 lg:grid-cols-6 gap-4'>
                     {([
@@ -244,7 +323,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
-                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>

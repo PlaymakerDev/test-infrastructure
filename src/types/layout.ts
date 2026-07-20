@@ -7,6 +7,11 @@ export interface LayoutState {
   drawer: DrawerProperties;
   cctv_modal: CCTVModalProperties;
   project_info_modal: ProjectInfoModalProperties;
+  /** Navbar's zoom-in-area icon toggles this to hide/show a page's side
+   *  panels (e.g. StatisticsMapPanel's search list + stat cards). Consumers
+   *  reset it to `open: true` on mount so the toggle never carries over from
+   *  a different page/tab — see StatisticsMapPanel. */
+  map_panels: DrawerProperties;
   sidebar: APIResponseSidebar;
   task_schedules: PromiseModules;
   map_focus: MapFocusProperties;

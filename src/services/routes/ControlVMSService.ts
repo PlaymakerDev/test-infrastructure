@@ -16,15 +16,44 @@ import {
   APIResponsePutVMSSettingType,
   APIResponseDeleteVMSSettingType,
   APIRequestVMSMediaUrl,
-  APIResponseVMSMediaUrl
+  APIResponseVMSMediaUrl,
+  VMSStatusResponse,
+  VMSDetails,
+  APIResponseVMSNotifications
 } from "@/types/control-vms/vms-api"
 import { APIRequestVMSStatusHistory, APIResponseVMSStatusHistory } from "@/types/vms/history-api"
 import { APIRequestVMSGlobalHistory, APIResponseVMSGlobalHistory, APIResponseVMSMonitor, APIResponseVMSSignDetail } from "@/types/vms/command-center-api"
 
 // VMS
-export const getVMSDepartmentAPI = async () => {
+export const getVMSDepartmentAPI = async (params?: { since?: string }) => {
   return ApiService.fetchData<APIResponseVMSDepartment>({
     url: `/vms/settings/departments`,
+    method: 'GET',
+    params,
+  })
+}
+
+// GET NOTIFICATIONS (per-VMS history)
+export const getVMSNotificationsAPI = async (vmsId: number | string, params: { start_date: string; end_date: string }) => {
+  return ApiService.fetchData<APIResponseVMSNotifications>({
+    url: `/vms/vms/${vmsId}/notifications`,
+    method: 'GET',
+    params,
+  })
+}
+
+// GET STATUS (composite health snapshot — operation/stream/box/last_setting)
+export const getVMSStatusAPI = async (vmsId: number | string) => {
+  return ApiService.fetchData<VMSStatusResponse>({
+    url: `/vms/vms/${vmsId}/status`,
+    method: 'GET',
+  })
+}
+
+// GET DETAILS (full solution detail — crossings/desktop_screen/camera/weather)
+export const getVMSDetailsAPI = async (solutionId: number | string) => {
+  return ApiService.fetchData<VMSDetails>({
+    url: `/vms/details/${solutionId}`,
     method: 'GET',
   })
 }
@@ -117,6 +146,17 @@ export const getVMSSettingListAPI = async (params: APIRequestVMSSettingList) => 
     url: `/vms/settings/list`,
     method: 'GET',
     params: { ...params }
+  })
+}
+
+// LATEST — the single most recently connected VMS sign (Statistics overview
+// card's "ชุดคำสั่งล่าสุด"). No dedicated backend endpoint exists for this, so
+// reuse the list endpoint sorted to the same effect instead of a made-up path.
+export const getVMSSettingLatestAPI = async () => {
+  return ApiService.fetchData<APIResponseVMSSettingList, APIRequestVMSSettingList>({
+    url: `/vms/settings/list`,
+    method: 'GET',
+    params: { limit: 1, field: 'last_connected', sort: 'DESC' },
   })
 }
 

@@ -8,8 +8,10 @@ import type {
   Logs4gVoltPoint,
   Logs4gAmpPoint,
   PaginatedAlerts,
-  Logs4gRecord,
+  PaginatedLogs4gCentral,
   PaginatedElectricityAgg,
+  TopPowerRoadItem,
+  LightingDiagram,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -57,6 +59,37 @@ export const getLightingRandomOnlineAPI = async (deptId: number) => {
   })
 }
 
+/** GET /lighting/departments/{id}/overview/top-power-roads?start_date=&end_date=&limit=
+ *  → roads ranked by total kW descending for the date range (both required).
+ *  NOTE: despite the endpoint's camelCase error keys ("startDate"/"endDate"),
+ *  the query params themselves must be snake_case — verified against the
+ *  live backend (camelCase params 400s with "required"). */
+export const getLightingTopPowerRoadsAPI = async (
+  deptId: number,
+  opts: { start_date: string; end_date: string; limit?: number },
+) => {
+  return ApiService.fetchData<TopPowerRoadItem[]>({
+    url: `/lighting/departments/${deptId}/overview/top-power-roads`,
+    method: 'GET',
+    params: {
+      start_date: opts.start_date,
+      end_date: opts.end_date,
+      ...(opts.limit ? { limit: opts.limit } : {}),
+    },
+  })
+}
+
+/** GET /lighting/diagrams/{imei} → circuit diagram data (components + wiring)
+ *  behind the diagram iframe. Used to detect an empty/incomplete diagram
+ *  (components: []) so the UI can show a placeholder instead of rendering
+ *  a blank iframe. */
+export const getLightingDiagramAPI = async (imei: string) => {
+  return ApiService.fetchData<LightingDiagram>({
+    url: `/lighting/diagrams/${imei}`,
+    method: 'GET',
+  })
+}
+
 /** GET /lighting/imei/{imei}/details
  *  → device detail (imei, phase, electricity[], line_checks, is_online, has_broken_wire) */
 export const getLightingDeviceDetailsAPI = async (imei: string) => {
@@ -96,14 +129,31 @@ export const getLightingAlertsAPI = async (
   })
 }
 
-/** GET /lighting/logs4g?imei= → raw IoT log records for today.
- *  NOTE: the backend `date` param returns 0 rows for every format we tried,
- *  so we omit it and always get today's data. */
-export const getLightingLogs4gAPI = async (imei: string) => {
-  return ApiService.fetchData<Logs4gRecord[]>({
-    url: `/lighting/logs4g`,
+/** GET /lighting/logs4g/central?imei=&start_date=&end_date=&data_type=&page=&limit=
+ *  → paginated IoT log records across daily Mongo collections (Asia/Bangkok,
+ *  inclusive range). Unlike the old /lighting/logs4g, `start_date`/`end_date`
+ *  actually filter server-side. Both default to "today" when omitted. */
+export const getLightingLogs4gCentralAPI = async (
+  imei: string,
+  opts?: {
+    start_date?: string
+    end_date?: string
+    data_type?: 'circuit' | 'line_check' | 'volt_amp' | 'etc'
+    page?: number
+    limit?: number
+  },
+) => {
+  return ApiService.fetchData<PaginatedLogs4gCentral>({
+    url: `/lighting/logs4g/central`,
     method: 'GET',
-    params: { imei },
+    params: {
+      imei,
+      ...(opts?.start_date ? { start_date: opts.start_date } : {}),
+      ...(opts?.end_date ? { end_date: opts.end_date } : {}),
+      ...(opts?.data_type ? { data_type: opts.data_type } : {}),
+      ...(opts?.page ? { page: opts.page } : {}),
+      ...(opts?.limit ? { limit: opts.limit } : {}),
+    },
   })
 }
 

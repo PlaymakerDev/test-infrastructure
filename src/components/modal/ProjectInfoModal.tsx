@@ -1,4 +1,4 @@
-import { getContactDetailAPI, getDepartmentByRoadAPI } from '@/services/routes/SharedService'
+import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { APIResponseContactDetail } from '@/types/shared'
@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { TbCalendarEvent, TbClipboard, TbFileDescription, TbHourglass, TbUser, TbUserShield } from 'react-icons/tb'
+import { useContactDetail } from '@/hooks/queries/shared/useContactDetail'
 
 /** Per-status styling for both the title pill and the "ระยะเวลาที่เหลือ"
  *  text. Two separate axes:
@@ -29,10 +30,6 @@ const NEUTRAL_WARRANTY = { badge: '#979797', remainingClass: 'text-gray-400' }
 
 const getWarrantyUi = (status?: string) =>
   (status && WARRANTY_STATE[status]) || NEUTRAL_WARRANTY
-
-interface Props {
-
-}
 
 interface ContentProps {
   data?: APIResponseContactDetail
@@ -143,19 +140,11 @@ const Content = (props: ContentProps) => {
   )
 }
 
-const ProjectInfoModal: React.FC<Props> = (props) => {
-  const { } = props
+const ProjectInfoModal: React.FC = () => {
   const { open, project_id, road_id } = useAppSelector(state => state.layout.project_info_modal)
   const dispatch = useAppDispatch()
 
-  const { data, isLoading, isError } = useQuery({
-    // Include project_id in the key — without it the modal shows the first
-    // clicked row's data for every subsequent row (cached collision).
-    queryKey: ['contact_detail', project_id],
-    queryFn: () => getContactDetailAPI(String(project_id)!),
-    enabled: !!project_id,
-    // placeholderData: keepPreviousData
-  })
+  const { data, isLoading, isError } = useContactDetail(project_id)
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
@@ -215,4 +204,4 @@ const ProjectInfoModal: React.FC<Props> = (props) => {
   )
 }
 
-export default React.memo<Props>(ProjectInfoModal)
+export default React.memo(ProjectInfoModal)

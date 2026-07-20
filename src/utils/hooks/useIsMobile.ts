@@ -1,17 +1,23 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 /** Returns true when viewport width is at or below `breakpoint` (default 640px). */
 const useIsMobile = (breakpoint = 640) => {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+  const query = `(max-width: ${breakpoint}px)`
+
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    const mql = window.matchMedia(query)
+    const handler = () => onStoreChange()
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
-  }, [breakpoint])
-  return isMobile
+  }, [query])
+
+  const getSnapshot = useCallback(
+    () => window.matchMedia(query).matches,
+    [query],
+  )
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
 export default useIsMobile

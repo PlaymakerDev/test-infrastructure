@@ -14,10 +14,15 @@ interface Props {
    *  another tab). Omit for the uncontrolled `defaultActive`-only behaviour. */
   activeValue?: string;
   size?: 'small' | 'middle' | 'large';
+  /** Wrap onto additional lines instead of horizontally scrolling, at every
+   *  viewport width. Default false preserves the original scroll-only
+   *  behaviour (only usage is statistics' TitleSection, so this doesn't
+   *  affect any other caller). */
+  mobileWrap?: boolean;
 }
 
 const SwapButton: React.FC<Props> = (props) => {
-  const { options, setLabelValue, defaultActive, activeValue, size = 'large' } = props
+  const { options, setLabelValue, defaultActive, activeValue, size = 'large', mobileWrap = false } = props
   const [internalActive, setInternalActive] = useState(defaultActive)
   // Controlled value wins; otherwise fall back to internal state. The
   // controlled prop is the source of truth — internal state still tracks click

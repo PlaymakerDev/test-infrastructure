@@ -1,14 +1,12 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbMapPin } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
-import { getLightingAlertsAPI } from '@/services/routes/LightingService'
+import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
+import { useAllLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
 
@@ -53,26 +51,22 @@ const LineStatusBadge = ({ status }: { status: string }) => {
 }
 
 /** Map (left) + event log table (right) below the charts row. The table is
- *  fed by /imei/{imei}/alerts. */
+ *  fed by /imei/{imei}/alerts, fetched in full across as many pages as the
+ *  backend actually has (no pagination UI, no row cap). */
 const MapEventSection: React.FC = () => {
-  const { project, imei } = useDetailContext()
-  const [alerts, setAlerts] = useState<AlertItem[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const { project, imei, device } = useDetailContext()
+  const isOnline = device
+    ? device.is_online
+    : project.connection === 'online'
+      ? true
+      : project.connection === 'offline'
+        ? false
+        : undefined
 
-  useEffect(() => {
-    let active = true
-    if (!imei) {
-      setLoaded(true)
-      return
-    }
-    getLightingAlertsAPI(imei, { limit: 100, sort: 'DESC' })
-      .then((res) => { if (active) setAlerts(res.data?.res_data ?? []) })
-      .catch((err) => console.error('alerts failed:', err))
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [imei])
-
-  const total = alerts.length
+  const { alerts, total, isLoading, isFetching, isError } = useAllLightingAlerts(imei)
+  const alertsUnavailable = !imei || isLoading || isError
+  // Now that the full set is fetched, UP/DOWN reflect the true totals, not
+  // just whatever a single page happened to contain.
   const upCount = alerts.filter((a) => a.status === 'UP').length
   const downCount = alerts.filter((a) => a.status === 'DOWN').length
   const summary = [
@@ -128,29 +122,14 @@ const MapEventSection: React.FC = () => {
       <div
         className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-2xl overflow-hidden bg-[#212121]'
       >
-        <BaseMap
-          style={{ height: '100%', width: '100%' }}
-          initialCenter={project.coord}
-          initialZoom={16}
-          initialPitch={45}
-          edgeFade={{ all: 20 }}
-        >
-          <HTMLMarker lngLat={project.coord} anchor='bottom' title={project.installPoint}>
-            <div
-              className='flex items-center justify-center'
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: '#FCD116',
-                boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                border: '2px solid #fff',
-              }}
-            >
-              <TbMapPin size={20} color='#212121' />
-            </div>
-          </HTMLMarker>
-        </BaseMap>
+        <MapLightingDetail
+          coord={project.coord}
+          imei={imei}
+          isOnline={isOnline}
+          roadCode={project.roadCode}
+          installPoint={project.installPoint}
+          projectName={project.projectName}
+        />
       </div>
 
       {/* Event table */}
@@ -186,7 +165,7 @@ const MapEventSection: React.FC = () => {
                     : { background: stat.color, color: '#212121' }),
                 }}
               >
-                {loaded ? stat.value : '-'}
+                {alertsUnavailable ? '-' : stat.value}
               </span>
             </div>
           ))}
@@ -194,13 +173,20 @@ const MapEventSection: React.FC = () => {
 
         <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
           <Table<AlertItem>
-            rowKey={(r) => `${r.imei}-${r.timestamp}`}
+            rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
             columns={columns}
-            dataSource={alerts}
-            pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (t, range) => `${range[0]}-${range[1]} จาก ${t} รายการ` }}
+            dataSource={isError ? [] : alerts}
+            loading={isFetching}
+            pagination={false}
             size='middle'
             className='bridge-projects-table event-log-table'
-            locale={{ emptyText: 'ไม่พบข้อมูล' }}
+            locale={{
+              emptyText: isError
+                ? 'ไม่สามารถโหลดข้อมูลเหตุการณ์ได้'
+                : !imei
+                  ? 'ไม่มี IMEI — ไม่สามารถโหลดข้อมูลเหตุการณ์ได้'
+                  : isLoading ? 'กำลังโหลด...' : 'ไม่พบข้อมูล',
+            }}
           />
         </div>
       </div>

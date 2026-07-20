@@ -1,7 +1,9 @@
 "use client"
 import React from 'react'
-import { useRouter } from 'next/navigation'
-import { TbArrowBigLeftFilled, TbPrinter } from 'react-icons/tb'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { TbArrowBigLeftFilled } from 'react-icons/tb'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 interface Props {
   id: string
@@ -10,10 +12,17 @@ interface Props {
   onlineCount?: number
   offlineCount?: number
   warranty?: string
+  /** Feeds the ⓘ icon → central Project Info modal. Icon is muted/inert without a projectId. */
+  projectId?: number
+  roadId?: number
+  /** [lng, lat] from the feature's own overview endpoint. Null → fall back to a name-based text search. */
+  coord?: [number, number] | null
 }
 
-const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ' }) => {
+const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ', projectId, roadId, coord = null }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const dispatch = useAppDispatch()
 
   const handleBack = () => {
     router.push('/admin/maintenance?repair')
@@ -43,7 +52,20 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
             >
               {warranty}
             </span>
-            <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0 sm:w-7.5 sm:h-7.5' />
+            <img
+              src='/images/statistics/icbt.png'
+              alt='ดูข้อมูลโครงการ'
+              title='ดูข้อมูลโครงการ'
+              width={26}
+              height={26}
+              className='shrink-0 sm:w-7.5 sm:h-7.5'
+              onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
+                open: true,
+                project_id: projectId,
+                road_id: roadId ?? null,
+              }))}
+              style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
+            />
             <span
               className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
@@ -62,6 +84,14 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap text-white cursor-pointer hover:opacity-80 transition-opacity'
               style={{ background: '#003F87' }}
               type='button'
+              onClick={() => {
+                if (coord) {
+                  window.open(`https://www.google.com/maps?q=${coord[1]},${coord[0]}`, '_blank')
+                  return
+                }
+                const query = [title, subtitle].filter(Boolean).join(' ')
+                window.open(`https://www.google.com/maps?q=${encodeURIComponent(query)}`, '_blank')
+              }}
             >
               Google Map
             </button>
@@ -70,20 +100,11 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               style={{ background: '#FCD116', color: '#212121' }}
               type='button'
               onClick={() => {
-                sessionStorage.setItem('maintenance_detail_title', title)
-                sessionStorage.setItem('maintenance_detail_subtitle', subtitle || '')
-                router.push(`/admin/maintenance/detail/${id}/repair-history`)
+                const query = searchParams.toString()
+                router.push(`/admin/maintenance/detail/${id}/repair-history${query ? `?${query}` : ''}`)
               }}
             >
               ประวัติการซ่อม
-            </button>
-            <button
-              className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-              style={{ background: '#66AEFF', color: '#0A0A0A' }}
-              type='button'
-            >
-              <TbPrinter size={13} />
-              นำออกเอกสาร
             </button>
           </div>
         </div>
