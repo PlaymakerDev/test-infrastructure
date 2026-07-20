@@ -101,6 +101,10 @@ export interface MarkerLayerProps {
   onClick?: (e: MapMouseEvent, feature: GeoJSON.Feature) => void
   /** Click on a cluster bubble — default expands to next zoom */
   onClusterClick?: (e: MapMouseEvent, clusterFeature: GeoJSON.Feature) => void
+  /** Side-effect fired on EVERY cluster click, BEFORE `onClusterClick`/default
+   *  expansion — and without suppressing either. Use for cross-cutting reactions
+   *  (e.g. reveal a hidden panel) that must not replace the zoom-to-expand. */
+  onClusterClickCapture?: (e: MapMouseEvent, clusterFeature: GeoJSON.Feature) => void
   /**
    * Render JSX inside a Mapbox popup when an unclustered feature is clicked.
    * Only one popup is open per map at a time — opening a new one closes the previous.
@@ -136,6 +140,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   visible = true,
   onClick,
   onClusterClick,
+  onClusterClickCapture,
   popup,
   popupOptions,
 }) => {
@@ -148,10 +153,12 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   // Stable refs for handlers so we can detach cleanly + always read latest props
   const onClickRef = useRef(onClick)
   const onClusterClickRef = useRef(onClusterClick)
+  const onClusterClickCaptureRef = useRef(onClusterClickCapture)
   const popupRef = useRef(popup)
   const popupOptionsRef = useRef(popupOptions)
   useEffect(() => { onClickRef.current = onClick }, [onClick])
   useEffect(() => { onClusterClickRef.current = onClusterClick }, [onClusterClick])
+  useEffect(() => { onClusterClickCaptureRef.current = onClusterClickCapture }, [onClusterClickCapture])
   useEffect(() => { popupRef.current = popup }, [popup])
   useEffect(() => { popupOptionsRef.current = popupOptions }, [popupOptions])
 
@@ -310,6 +317,8 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
       const features = map.queryRenderedFeatures(e.point, { layers: [clusterLayerId] })
       const f = features[0]
       if (!f) return
+      // Always fire the capture side-effect first — never suppresses expansion.
+      onClusterClickCaptureRef.current?.(e, f)
       if (onClusterClickRef.current) {
         onClusterClickRef.current(e, f)
         return

@@ -66,6 +66,9 @@ export interface DeviceClusterMarkerProps {
   minZoom?: number
   /** Click on an unclustered device */
   onClick?: (device: Device) => void
+  /** Fired on any cluster-bubble click (in addition to the zoom-to-expand),
+   *  so callers can react without losing the default expansion. */
+  onClusterClick?: () => void
   /**
    * Render JSX inside the popup when a device is clicked.
    * - Pass a function to override the default popup (e.g., add custom actions, link to detail page)
@@ -195,6 +198,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
   visibleTypes,
   minZoom = 6.5,
   onClick,
+  onClusterClick,
   popup,
 }) => {
   const { map, isLoaded } = useMap()
@@ -298,6 +302,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             minZoom={minZoom}
             visible={visible}
             onClick={(_, feature) => onClick?.(feature.properties as Device)}
+            onClusterClickCapture={onClusterClick ? () => onClusterClick() : undefined}
             popup={popupRenderer}
           />
         )

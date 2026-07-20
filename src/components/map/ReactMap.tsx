@@ -14,6 +14,7 @@ import {
 } from '@/features/admin/dashboard/data/systems'
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useProvinceDeptMap } from '@/features/admin/dashboard/data/useProvinceDeptMap'
+import { useDepartments } from '@/hooks/queries/manage'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { DashboardPositionLocation } from '@/types/dashboard/api'
@@ -151,6 +152,8 @@ interface DashboardMapContentProps {
    *  to end its landing "map-only" intro. May fire again on later province
    *  switches — the consumer is expected to be one-shot. */
   onProvinceActivate?: () => void
+  /** Fired when any device marker (singleton or overlap stack) is clicked. */
+  onMarkerClick?: () => void
 }
 
 const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
@@ -158,6 +161,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   originalScopeAll = false,
   onDeptIdChange,
   onProvinceActivate,
+  onMarkerClick,
 }) => {
   const { map, isLoaded } = useMap()
   // Current CARD scope (comes back through DeptIdOverrideContext — the
@@ -178,7 +182,11 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // the CARDS rescope to the focused dept via `deptId`. Fetching markers by
   // `deptId` instead would make the backend return only the focused province's
   // devices, so every other road's pin would vanish on zoom-in — do NOT do that.
-  const { data: position } = useDashboardPosition(originalDeptId)
+  const { data: position, isFetched: positionFetched } = useDashboardPosition(originalDeptId)
+  // Dept list — used to map the landed dept's row id → its สทช. group so the
+  // fly-to can fall back to the bureau polygon when the position endpoint
+  // returns no device coords (see the fly-to effect below).
+  const { data: departments } = useDepartments()
   // 18 bureau polygons — used for point-in-polygon reclassification of any
   // solution whose road.stch didn't land in 1..18 (บทช. under stch=0, plus
   // stch=20 กรมทางหลวง and stch=21 ด่านชั่งน้ำหนัก). Falls back to `null`
@@ -200,47 +208,47 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     if (!map || !isLoaded) return
     if (originalDeptId === '0' && originalScopeAll) return
     if (flownForDeptRef.current === originalDeptId) return
-    const c = position?.centroid
-    if (!Array.isArray(c) || c.length !== 2 || (c[0] === 0 && c[1] === 0)) return
-    markFlown(originalDeptId)
 
-    // Fit to the bounding box of all devices in this dept's scope so the
-    // user lands with EVERY device visible, no matter whether the dept is
-    // a สำนัก (multi-จังหวัด, wide spread) or a แขวง (single จังหวัด,
-    // tight spread). Falls back to a plain flyTo centroid @ 8.5 if there
-    // aren't at least two points to compute a bbox from.
+    // Resolve WHERE this dept's data is, then fly straight in — mirroring what
+    // clicking a สทช. summary marker does (flyTo province zoom), so a non-0
+    // login lands drilled INTO its markers instead of the country overview.
     const pts = (position?.locations ?? [])
       .map((l) => l.geometry_point)
       .filter((p): p is [number, number] =>
         Array.isArray(p) && p.length === 2 && (p[0] !== 0 || p[1] !== 0)
       )
-    if (pts.length >= 2) {
-      let minX = pts[0][0], minY = pts[0][1], maxX = pts[0][0], maxY = pts[0][1]
-      for (const [x, y] of pts) {
-        if (x < minX) minX = x
-        if (x > maxX) maxX = x
-        if (y < minY) minY = y
-        if (y > maxY) maxY = y
-      }
-      map.fitBounds([[minX, minY], [maxX, maxY]], {
-        padding: { top: 90, right: 40, bottom: 100, left: 40 },
-        // Cap at 10.5 so tight ขทช. clusters don't over-zoom past what
-        // the device markers can meaningfully render. maxZoom < 6.5 would
-        // also strand us below the province threshold (STCH summary
-        // markers would still be showing) → guard the low end too.
-        maxZoom: 10.5,
-        pitch: 30,
-        duration: 1400,
-      })
-    } else {
-      map.flyTo({
-        center: c as [number, number],
-        zoom: 8.5,
-        pitch: 30,
-        duration: 1400,
-      })
+    const c = position?.centroid
+    const validCentroid =
+      Array.isArray(c) && c.length === 2 && (c[0] !== 0 || c[1] !== 0)
+        ? (c as [number, number])
+        : null
+
+    // Centre priority: mean of the actual device coords (exactly where the
+    // pins are) → BE-provided centroid → สำนัก polygon centroid (fallback for
+    // scope=all on a สทช. the BE returns empty for; the สทช. row carries its
+    // group=stch in /manage/departments, matched to the static bureau geojson).
+    let center: [number, number] | null = null
+    if (pts.length > 0) {
+      let sx = 0, sy = 0
+      for (const [x, y] of pts) { sx += x; sy += y }
+      center = [sx / pts.length, sy / pts.length]
+    } else if (validCentroid) {
+      center = validCentroid
+    } else if (positionFetched) {
+      // Only fall back once the position query has settled (empty), so a slow
+      // response can still win with the real device centroid above.
+      const groupRaw = departments?.find((d) => d.id === Number(originalDeptId))?.department_group
+      const stch = groupRaw != null ? Number(groupRaw) : NaN
+      const bureau = Number.isFinite(stch) ? bureauFeatures?.find((b) => b.stch === stch) : undefined
+      center = bureau?.centroid ?? null
     }
-  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, markFlown])
+
+    if (!center) return
+    markFlown(originalDeptId)
+    // zoom 9.5 sits above PROVINCE_ZOOM_THRESHOLD (6.5) so the device markers
+    // render (and the country summary bubbles hide) — same as a summary click.
+    map.flyTo({ center, zoom: 9.5, pitch: 35, duration: 1500 })
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown])
 
   // Adapt API locations → Device + aggregate per-สทช. counts for the country-
   // level summary marker layer.
@@ -597,6 +605,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         devices={singletons}
         visibleTypes={visibleTypes}
         minZoom={PROVINCE_ZOOM_THRESHOLD}
+        onClick={() => onMarkerClick?.()}
+        onClusterClick={() => onMarkerClick?.()}
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
@@ -607,9 +617,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
           center={group[0].coord}
           visibleTypes={visibleTypes}
           minZoom={PROVINCE_ZOOM_THRESHOLD}
+          onMarkerClick={onMarkerClick}
         />
       ))}
-      <StchSummaryMarker summaries={stchSummaries} hideAtZoom={PROVINCE_ZOOM_THRESHOLD} />
+      <StchSummaryMarker summaries={stchSummaries} hideAtZoom={PROVINCE_ZOOM_THRESHOLD} onMarkerClick={onMarkerClick} />
 
       <SystemFilterPills
         value={visibleTypes}
@@ -631,6 +642,8 @@ interface ReactMapProps {
   originalScopeAll?: boolean
   onDeptIdChange: (id: string) => void
   onProvinceActivate?: () => void
+  /** Fired when any device marker (singleton or overlap stack) is clicked. */
+  onMarkerClick?: () => void
 }
 
 const ReactMap: React.FC<ReactMapProps> = ({
@@ -638,6 +651,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
   originalScopeAll,
   onDeptIdChange,
   onProvinceActivate,
+  onMarkerClick,
 }) => {
   return (
     <BaseMap
@@ -649,6 +663,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
         originalScopeAll={originalScopeAll}
         onDeptIdChange={onDeptIdChange}
         onProvinceActivate={onProvinceActivate}
+        onMarkerClick={onMarkerClick}
       />
     </BaseMap>
   )
