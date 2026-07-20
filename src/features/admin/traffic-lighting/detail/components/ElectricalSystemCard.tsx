@@ -55,7 +55,7 @@ const ElectricalSystemCard: React.FC = () => {
 
       <div className='relative z-10 flex flex-col items-center justify-center text-center flex-1 py-2'>
         <p className='text-[28px] font-bold m-0 text-white leading-none'>{phaseLabel}</p>
-        <p className='text-[12px] font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
+        <p className='fs-12 font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
       </div>
 
       <div className='relative z-10 grid grid-cols-3 gap-2 w-full shrink-0'>
@@ -65,8 +65,8 @@ const ElectricalSystemCard: React.FC = () => {
             className='flex flex-col items-center justify-center rounded-[10px] h-[54px]'
             style={{ background: '#191919', border: '1px solid #66AEFF' }}
           >
-            <span className='text-[11px] font-normal m-0' style={{ color: '#66AEFF' }}>{metric.label}</span>
-            <span className='text-[13px] font-bold m-0 mt-0.5 text-white'>{metric.value}</span>
+            <span className='fs-12 font-normal m-0' style={{ color: '#66AEFF' }}>{metric.label}</span>
+            <span className='fs-12 font-bold m-0 mt-0.5 text-white'>{metric.value}</span>
           </div>
         ))}
       </div>

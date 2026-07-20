@@ -78,7 +78,7 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
       {/* Icon + label header */}
       <div className="flex items-center gap-1.5 mb-1" style={{ color }}>
         <Icon size={compact ? 16 : 18} />
-        <span className={`font-semibold ${compact ? 'text-[13px]' : 'text-[14px]'}`}>
+        <span className={`font-semibold ${compact ? 'fs-12' : 'text-[14px]'}`}>
           {label}
         </span>
       </div>
@@ -104,7 +104,7 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
       </div>
       {/* Unit */}
       <div
-        className={`${compact ? 'text-[11px]' : 'text-[12px]'} mt-0.5`}
+        className="fs-12 mt-0.5"
         style={{ color: 'rgba(255,255,255,0.65)' }}
       >
         {unit}
