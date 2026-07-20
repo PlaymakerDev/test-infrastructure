@@ -21,6 +21,8 @@ export interface StchSummaryMarkerProps {
   hideAtZoom?: number
   /** flyTo zoom on click (default 9.5) */
   zoomOnClick?: number
+  /** Fired when a summary bubble is clicked — dashboard reveals its overlays. */
+  onMarkerClick?: () => void
 }
 
 /** Friendly name lookup — falls back to a generic label for stch numbers that
@@ -52,6 +54,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
   summaries,
   hideAtZoom = 6.5,
   zoomOnClick = 9.5,
+  onMarkerClick,
 }) => {
   const { map, isLoaded } = useMap()
   const [visible, setVisible] = useState(true)
@@ -78,6 +81,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
             visible={visible}
             title={`${stchLabel(stch)} · ${info.count} อุปกรณ์`}
             onClick={() => {
+              onMarkerClick?.()
               map?.flyTo({
                 center: info.centroid,
                 zoom: zoomOnClick,

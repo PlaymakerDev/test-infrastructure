@@ -14,7 +14,7 @@ import StatusTable from '../components/StatusTable'
 import { useScreenInfo } from '../hooks/useScreenInfo'
 import { ControlVMSProvider } from '@/features/admin/control-vms/overall/context'
 import DisplaySection from '@/features/admin/control-vms/overall/components/DisplaySection'
-import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
+import StatusSection from '@/features/admin/control-vms/overall/components/StatusSection'
 
 
 const emptySelection: BureauSelection = {
@@ -25,7 +25,9 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'status', 'legacy'] as const
+// `vmsinfo` was previously named `status`; the old `status` key now routes to
+// the "สถานะการแสดงผล" tab that used to live inside the (now-removed) legacy screen.
+const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'vmsinfo', 'status'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -87,24 +89,28 @@ const VMSCommandCenterScreen: React.FC = () => {
 
   return (
     <App>
-      <div className="h-[calc(100vh-96px)] w-full p-3">
+      <div className="h-[calc(100vh-96px)] w-full px-10 pt-4 pb-3 flex flex-col">
+        <section>
+          <h1 className='text-(--yellow)'>Control VMS</h1>
+          <p className='text-(--yellow)'>ระบบจัดการป้าย VMS ระยะไกล</p>
+        </section>
         <Tabs
           activeKey={activeTab}
           onChange={changeTab}
           destroyOnHidden
-          className="vms-cc-tabs h-full"
+          className="vms-cc-tabs flex-1 min-h-0 mt-4"
           items={[
             {
               key: 'dispatch',
               label: 'การสั่งงาน + ติดตาม',
               children: (
-                <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
+                <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
                     <ScopePicker onSelectionChange={setSelection} selection={selection} />
                     {excludedCount > 0 && (
-                      <div className="px-3 py-2 border-t border-white/10 text-[11px] text-(--yellow) flex items-start gap-1.5">
+                      <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
                         <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
-                        <Tooltip title="ป้ายที่ agent เวอร์ชันต่ำหรือถูกถอดจากกลุ่มควบคุมรวมจะถูกข้ามอัตโนมัติ — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'สถานะการแสดงผล'">
+                        <Tooltip title="ป้ายที่ agent เวอร์ชันต่ำหรือถูกถอดจากกลุ่มควบคุมรวมจะถูกข้ามอัตโนมัติ — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
                           <span>ข้าม {excludedCount} ป้ายที่ยังควบคุมไม่ได้</span>
                         </Tooltip>
                       </div>
@@ -127,7 +133,7 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'history',
               label: 'ประวัติสั่งงานทั้งหมด',
               children: (
-                <div className="h-[calc(100vh-160px)]">
+                <div className="h-[calc(100vh-240px)]">
                   <GlobalHistoryTable onOpenSign={openDetail} />
                 </div>
               ),
@@ -136,7 +142,7 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'media',
               label: 'คลังสื่อ',
               children: (
-                <div className="h-[calc(100vh-160px)]">
+                <div className="h-[calc(100vh-240px)]">
                   <MediaLibraryTab />
                 </div>
               ),
@@ -145,7 +151,7 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'display',
               label: 'กำหนดการแสดงผล',
               children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
+                <div className="h-[calc(100vh-240px)] overflow-auto">
                   <ControlVMSProvider>
                     <DisplaySection />
                   </ControlVMSProvider>
@@ -153,20 +159,22 @@ const VMSCommandCenterScreen: React.FC = () => {
               ),
             },
             {
-              key: 'status',
-              label: 'สถานะการแสดงผล',
+              key: 'vmsinfo',
+              label: 'ข้อมูลป้าย VMS',
               children: (
-                <div className="h-[calc(100vh-160px)]">
+                <div className="h-[calc(100vh-240px)]">
                   <StatusTable onOpenSignDetail={openDetail} />
                 </div>
               ),
             },
             {
-              key: 'legacy',
-              label: 'หน้าเดิม (Legacy)',
+              key: 'status',
+              label: 'สถานะการแสดงผล',
               children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
-                  <ControlVMSScreen />
+                <div className="h-[calc(100vh-240px)] overflow-auto">
+                  <ControlVMSProvider>
+                    <StatusSection />
+                  </ControlVMSProvider>
                 </div>
               ),
             },

@@ -107,7 +107,7 @@ const CategoryManagerModal: React.FC<Props> = ({ open, onClose }) => {
       styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
     >
       <div className="space-y-3">
-        <div className="text-xs text-slate-500">
+        <div className="fs-12 text-slate-500">
           ใช้จัดหมวดสื่อในคลัง เช่น ไว้อาลัย · ซ่อมแซมถนน · เทศกาล เพื่อกรองง่ายเวลาสร้างคำสั่ง
         </div>
 
@@ -167,7 +167,7 @@ const CategoryManagerModal: React.FC<Props> = ({ open, onClose }) => {
                   ) : (
                     <>
                       <div className="flex-1 text-sm text-slate-800 truncate">{t.name}</div>
-                      <span className="text-[10px] text-slate-400">#{t.id}</span>
+                      <span className="fs-12 text-slate-400">#{t.id}</span>
                       <Button
                         size="small"
                         icon={<TbPencil style={{ verticalAlign: -2 }} />}

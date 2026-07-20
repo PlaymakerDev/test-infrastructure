@@ -62,12 +62,16 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+export const VIEW_TABS = ['โครงการ', 'กม.'] as const
+export type ViewTab = typeof VIEW_TABS[number]
+
 interface Props {
   groups: InstallGroup[]
+  /** Controlled view tab — lifted to the parent so the map can hover-group by
+   *  the same mode (โครงการ = install point, กม. = km marker). */
+  activeTab: ViewTab
+  onTabChange: (tab: ViewTab) => void
 }
-
-const VIEW_TABS = ['โครงการ', 'กม.'] as const
-type ViewTab = typeof VIEW_TABS[number]
 
 // Same status filters as the CCTV detail table (CameraInstallTable). The stats +
 // filteredGroups machinery below already keys off these; without the filter
@@ -81,9 +85,8 @@ const CAMERA_FILTERS: FilterConfig[] = [
 
 const TOTAL_COLS = 7
 
-const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
+const CameraDetailTableCctv: React.FC<Props> = ({ groups, activeTab, onTabChange }) => {
   const dispatch = useAppDispatch()
-  const [activeTab, setActiveTab] = useState<ViewTab>('โครงการ')
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
 
@@ -235,7 +238,7 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups }) => {
         <div className='shrink-0'>
           <Segmented
             value={activeTab}
-            onChange={(v) => setActiveTab(v as ViewTab)}
+            onChange={(v) => onTabChange(v as ViewTab)}
             options={VIEW_TABS.map((tab) => ({ value: tab, label: tab }))}
             size='large'
           />

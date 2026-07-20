@@ -55,10 +55,10 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
             ป้าย {selection.signs.length}
           </Tag>
         </div>
-        <div className="text-xs opacity-60">
+        <div className="fs-12 opacity-60">
           เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — ใช้ checkbox เพื่อรวมหลายป้าย
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 fs-12">
           <Tooltip title='เมื่อกด "เลือกทั้งหมด" ป้ายออฟไลน์จะถูกรวมด้วยหรือไม่ (คำสั่งจะรอส่งเมื่อกลับมาออนไลน์)'>
             <span className="opacity-70">รวมป้ายออฟไลน์เมื่อเลือกทั้งหมด</span>
           </Tooltip>

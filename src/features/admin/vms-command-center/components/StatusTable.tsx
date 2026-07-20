@@ -60,7 +60,7 @@ const Chip: React.FC<{ active: boolean; label: React.ReactNode; onClick: () => v
   <button
     type="button"
     onClick={onClick}
-    className="text-[11px] px-2.5 py-0.5 rounded-full transition-colors border"
+    className="fs-12 px-2.5 py-0.5 rounded-full transition-colors border"
     style={{
       background: active ? '#FCD116' : 'transparent',
       color: active ? '#191919' : '#FCD116',
@@ -345,7 +345,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
             </Tooltip>
             {r.machine_name && (
               <div
-                className="text-[10px] text-white/40 truncate"
+                className="fs-12 text-white/40 truncate"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
               >
                 {r.machine_name}
@@ -363,7 +363,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           <div className="min-w-0">
             <div className="truncate text-sm text-(--yellow)">{r.road_code || '—'}</div>
             {r.sta && (
-              <div className="text-[11px] text-white/50 truncate">กม.{r.sta}</div>
+              <div className="fs-12 text-white/50 truncate">กม.{r.sta}</div>
             )}
           </div>
         ),
@@ -377,7 +377,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
               {r.department_short_name || '—'}
             </div>
             {r.bureau_short_name && (
-              <div className="text-[11px] text-white/50 truncate">{r.bureau_short_name}</div>
+              <div className="fs-12 text-white/50 truncate">{r.bureau_short_name}</div>
             )}
           </div>
         ),
@@ -448,7 +448,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         align: 'center',
         render: (_: unknown, r) =>
           r.is_controllable ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-emerald-900/40 border border-emerald-500/40 text-emerald-300">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 bg-emerald-900/40 border border-emerald-500/40 text-emerald-300">
               ควบคุมได้
             </span>
           ) : (
@@ -509,7 +509,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       {/* Left: bureau/state/route tree */}
       <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
-          <div className="text-xs font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
+          <div className="fs-12 font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
           {hasFilter && (
             <Button
               size="small"
@@ -563,7 +563,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b border-white/10 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-2 flex-wrap fs-12">
               <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
                 รวม <b className="text-white">{summary?.total ?? rows.length}</b>
               </span>
