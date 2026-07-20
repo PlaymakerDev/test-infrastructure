@@ -172,9 +172,16 @@ export interface PaginatedElectricityAgg {
   meta_data: PaginationMeta
 }
 
+/** Alerts' `meta_data` additionally carries the global UP/DOWN split so the
+ *  summary badges don't need to be derived from just the loaded page. */
+export interface AlertsPaginationMeta extends PaginationMeta {
+  count_up: number
+  count_down: number
+}
+
 export interface PaginatedAlerts {
   res_data: AlertItem[]
-  meta_data: PaginationMeta
+  meta_data: AlertsPaginationMeta
 }
 
 /** GET /lighting/logs4g/central?imei=&start_date=&end_date=&data_type=&page=&limit=

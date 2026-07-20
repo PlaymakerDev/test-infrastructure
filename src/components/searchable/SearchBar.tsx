@@ -182,13 +182,13 @@ const SearchBar: React.FC<Props> = ({
       {/* ── Right controls ── */}
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
         {mode === 'form' && formSearch}
-        {hasSwitch && (
+        {hasSwitch && showViewToggle && (
           <Segmented
             value={viewMode}
             onChange={handleViewMode}
             options={[
-              { value: 'TABLE', icon: <AppstoreOutlined /> },
-              { value: 'GRID', icon: <BarsOutlined /> },
+              { value: 'TABLE', icon: <BarsOutlined /> },
+              { value: 'GRID', icon: <AppstoreOutlined /> },
             ]}
             size='large'
             block

@@ -367,6 +367,14 @@ body .bridge-projects-table .ant-pagination .ant-pagination-item-active a {
   color: #212121;
   font-weight: 700;
 }
+/* The generic `.ant-pagination-item:hover a` rule above has higher
+ * specificity (4 classes) than `.ant-pagination-item-active a` (3 classes),
+ * so right after clicking a page — cursor still resting on the now-active
+ * button — the hover rule wins and turns the number yellow-on-yellow
+ * (invisible/washed out). Pin it back to dark text on hover too. */
+body .bridge-projects-table .ant-pagination .ant-pagination-item-active:hover a {
+  color: #212121;
+}
 
 /* Prev/Next arrow icons */
 body .bridge-projects-table .ant-pagination .ant-pagination-prev .ant-pagination-item-link,

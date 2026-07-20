@@ -23,9 +23,9 @@ const SHARED_CHART_PROPS = {
 /** Two line charts (Volt / Amp) for the OVERVIEW tab. Replaces the old
  *  ExampleCardsRow image pair. Each chart pulls 24h hourly data from the
  *  logs4g graph endpoints for the given IMEI. */
-const VoltageAmpChartsRow: React.FC<{ imei: string }> = ({ imei }) => {
-  const voltQuery = useLightingVoltGraph(imei)
-  const ampQuery = useLightingAmpGraph(imei)
+const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phaseReady?: boolean }> = ({ imei, phase, phaseReady = true }) => {
+  const voltQuery = useLightingVoltGraph(imei, phase, phaseReady)
+  const ampQuery = useLightingAmpGraph(imei, phase, phaseReady)
   // Map the API points to the LineChart data shape (label = hour, value key).
   const voltData: LineChartDataPoint[] = useMemo(
     () => (voltQuery.data ?? [])

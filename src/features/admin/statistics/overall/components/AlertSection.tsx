@@ -365,7 +365,7 @@ const AlertSection: React.FC = () => {
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
-      <section className="flex items-start gap-3 px-3">
+      <section className="flex items-start gap-3 px-3 sm:px-10">
         <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
         <div>
           <h1 className="text-(--yellow)">ไฟฟ้าแจ้งเตือน</h1>
@@ -398,7 +398,8 @@ const AlertSection: React.FC = () => {
           markerItemOverflowColor="#E94C4C"
           useModernMarkers
           detailUrl="/admin/statistics/detail/alert"
-          hideIndexBadge
+          badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
+          badgeValueFn={(item) => item.notiTotal ?? 0}
           searchText={searchText}
           onSearchChange={setSearchText}
           statsCards={alertCards}

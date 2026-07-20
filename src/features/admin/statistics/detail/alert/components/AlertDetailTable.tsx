@@ -5,7 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
+import SearchBar, { type FilterConfig } from '@/components/searchable/SearchBar'
 import { useAllLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 
@@ -46,42 +46,7 @@ const LineStatusBadge = ({ status }: { status: string }) => {
   )
 }
 
-// ── Grid view (Segmented "appstore" mode) — mirrors incident-detection's
-// IncidentGridView card style (statistics/detail/incident), adapted to AlertItem. ──
-
 const alertKey = (r: AlertItem) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`
-
-const AlertCard: React.FC<{ record: AlertItem }> = ({ record }) => {
-  const level = levelOf(record.equipment_id)
-  const levelColor = level === 'Warning' ? '#FF9D00' : '#E94C4C'
-  return (
-    <div className='flex flex-col gap-2 rounded-2xl p-4' style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex items-center gap-2'>
-          <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: levelColor }} />
-          <h4 className='mb-0 font-semibold' style={{ color: levelColor }}>{level}</h4>
-        </div>
-        <LineStatusBadge status={record.status} />
-      </div>
-      <p className='fs-11 text-gray-400 mb-0'>
-        {record.timestamp ? dayjs(record.timestamp).format('D MMM BBBB HH:mm:ss') : '-'}
-      </p>
-      <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
-      <p className='fs-11 leading-snug mb-0' style={{ color: '#66AEFF' }}>{record.incident}</p>
-    </div>
-  )
-}
-
-const AlertGridView: React.FC<{ records: AlertItem[] }> = ({ records }) => {
-  if (records.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
-  }
-  return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-      {records.map((r) => <AlertCard key={alertKey(r)} record={r} />)}
-    </div>
-  )
-}
 
 // ── Filter config ──────────────────────────────────────────────────────────────
 
@@ -100,7 +65,8 @@ interface AlertDetailTableProps {
 
 const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
   const [activeTab, setActiveTab] = useState('ALL')
-  const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [page, setPage] = useState(1)
+  const pageSize = 10
 
   // Full alert history (fetches every page — the old raw fetch here was
   // silently capped at the backend's 100-row-per-request limit).
@@ -157,6 +123,10 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
     return alerts.filter((a) => a.status === activeTab)
   }, [activeTab, alerts])
 
+  // Reset to page 1 whenever the filter (or underlying data) changes, so a
+  // filter switch never strands the view on a now-out-of-range page.
+  React.useEffect(() => { setPage(1) }, [activeTab, alerts])
+
   if (isError) {
     return <Alert type="error" showIcon message="ไม่สามารถโหลดประวัติการแจ้งเตือนได้" />
   }
@@ -173,24 +143,25 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
           stats={stats}
           defaultFilter="ALL"
           onFilterChange={(key) => setActiveTab(key)}
-          defaultViewMode={viewMode}
-          onViewModeChange={setViewMode}
-          showExportButton={false}
+          showViewToggle={false}
+          onExport={() => alert('TODO: นำออกเอกสาร')}
         />
       </section>
-      {viewMode === 'TABLE' ? (
-        <Table<AlertItem>
-          columns={columns}
-          dataSource={filteredData}
-          loading={false}
-          pagination={false}
-          size="middle"
-          rowKey={alertKey}
-          scroll={{ x: 'max-content' }}
-        />
-      ) : (
-        <AlertGridView records={filteredData} />
-      )}
+      <Table<AlertItem>
+        columns={columns}
+        dataSource={filteredData}
+        loading={false}
+        pagination={{
+          current: page,
+          pageSize,
+          total: filteredData.length,
+          onChange: setPage,
+          showSizeChanger: false,
+        }}
+        size="middle"
+        rowKey={alertKey}
+        scroll={{ x: 'max-content' }}
+      />
     </div>
   )
 }

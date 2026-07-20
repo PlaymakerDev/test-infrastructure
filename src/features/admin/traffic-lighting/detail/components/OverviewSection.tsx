@@ -12,7 +12,7 @@ import { useDetailContext } from '../context'
  *  the overall page's map + corner stat cards. Below: charts + map/event
  *  section. */
 const OverviewSection: React.FC = () => {
-  const { imei } = useDetailContext()
+  const { imei, project, deviceLoaded } = useDetailContext()
 
   return (
     <div className='w-full flex flex-col'>
@@ -38,7 +38,7 @@ const OverviewSection: React.FC = () => {
           <StatusCardsColumn />
         </div>
       </div>
-      <VoltageAmpChartsRow imei={imei} />
+      <VoltageAmpChartsRow imei={imei} phase={project.phase} phaseReady={deviceLoaded} />
       <MapEventSection />
     </div>
   )

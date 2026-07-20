@@ -15,7 +15,7 @@ const CHART_CARD = {
   height: 240,
 } as const
 
-interface Props { imei: string }
+interface Props { imei: string; phase?: number | null; phaseReady?: boolean }
 
 const UnavailableCard: React.FC = () => (
   <div className='h-[240px] rounded-[20px] border border-[#1f2d3d] bg-[#00000080] p-4 flex flex-col'>
@@ -29,8 +29,8 @@ const UnavailableCard: React.FC = () => (
   </div>
 )
 
-const LampChartsSection: React.FC<Props> = ({ imei }) => {
-  const ampQuery = useLightingAmpGraph(imei)
+const LampChartsSection: React.FC<Props> = ({ imei, phase, phaseReady = true }) => {
+  const ampQuery = useLightingAmpGraph(imei, phase, phaseReady)
   const ampData: LineChartDataPoint[] = (ampQuery.data ?? [])
     .filter((point) => point.amp !== null)
     .map((point) => ({

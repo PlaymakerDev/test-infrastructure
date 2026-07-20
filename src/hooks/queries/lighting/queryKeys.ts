@@ -26,8 +26,10 @@ export const lightingKeys = {
   randomOnline: (deptId: string | number) =>
     [...lightingKeys.overview.root(deptId), 'randomOnline'] as const,
   deviceDetails: (imei: string) => [...lightingKeys.all, 'deviceDetails', imei] as const,
-  voltGraph: (imei: string) => [...lightingKeys.all, 'voltGraph', imei] as const,
-  ampGraph: (imei: string) => [...lightingKeys.all, 'ampGraph', imei] as const,
+  voltGraph: (imei: string, phase?: number | null) =>
+    [...lightingKeys.all, 'voltGraph', imei, phase ?? null] as const,
+  ampGraph: (imei: string, phase?: number | null) =>
+    [...lightingKeys.all, 'ampGraph', imei, phase ?? null] as const,
   logs4gCentral: (
     imei: string,
     startDate: string | undefined,
