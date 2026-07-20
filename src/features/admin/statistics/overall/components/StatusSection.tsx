@@ -112,22 +112,22 @@ const buildStatusCards = (
   routeDataUnavailable: boolean,
 ): StatCard[] => [
     {
-      borderColor: '#66AEFF', icon: '/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF',
+      borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF',
       value: routeDataUnavailable ? '-' : String(summary.totalInstallPoints), unit: 'จุดติดตั้ง',
       sub: !routeDataUnavailable && summary.topBureauByInstall ? `${summary.topBureauByInstall.name} (${summary.topBureauByInstall.percentage.toFixed(1)}%)` : '-',
     },
     {
-      borderColor: '#666BFF', icon: '/images/statistics/c2.png', label: 'การแจ้งเตือนทั้งหมด', labelColor: '#666BFF',
+      borderColor: '#666BFF', icon: '/atlas/images/statistics/c2.png', label: 'การแจ้งเตือนทั้งหมด', labelColor: '#666BFF',
       value: routeDataUnavailable ? '-' : String(summary.totalNotiCount), unit: 'การแจ้งเตือน',
       sub: !routeDataUnavailable && summary.topBureauByNoti ? `${summary.topBureauByNoti.name} (${summary.topBureauByNoti.percentage.toFixed(1)}%)` : '-',
     },
     {
-      borderColor: '#C300FF', icon: '/images/statistics/c3.png', label: 'หน่วยงานที่มีการแจ้งเตือน', labelColor: '#C300FF',
+      borderColor: '#C300FF', icon: '/atlas/images/statistics/c3.png', label: 'หน่วยงานที่มีการแจ้งเตือน', labelColor: '#C300FF',
       value: routeDataUnavailable ? '-' : String(summary.departmentsWithNoti), unit: 'หน่วยงาน',
       sub: !routeDataUnavailable && summary.topSubDepartmentByNoti ? `${summary.topSubDepartmentByNoti.name} (${summary.topSubDepartmentByNoti.count} การแจ้งเตือน)` : '-',
     },
     {
-      borderColor: '#FC1691', icon: '/images/statistics/c4.png', label: 'หมวดหมู่ยอดนิยม', labelColor: '#FC1691',
+      borderColor: '#FC1691', icon: '/atlas/images/statistics/c4.png', label: 'หมวดหมู่ยอดนิยม', labelColor: '#FC1691',
       value: vmsNotificationLoading ? '-' : (vmsNotificationSummary?.most_type?.name ?? '-'),
       sub: vmsNotificationLoading || !vmsNotificationSummary?.most_type
         ? '-'

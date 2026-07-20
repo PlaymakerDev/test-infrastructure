@@ -157,7 +157,7 @@ const OverallSection: React.FC = () => {
                 style={{ background: '#191919CC' }}
               >
                 <div className='flex flex-row items-start gap-2 shrink-0'>
-                  <img src='/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
+                  <img src='/atlas/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
                   <p className='text-[14px] sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
                 </div>
                 <div className='flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-3 min-h-[56px]'>

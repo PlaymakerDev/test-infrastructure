@@ -152,8 +152,8 @@ const IncidentDetailSidebar: React.FC = () => {
                                 <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                   {typeof d !== 'string' && d.is_online === false
-                                    ? <img src="/images/statistics/iconnoconnect.png" alt="no connect" width={20} height={20} />
-                                    : <img src="/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
+                                    ? <img src="/atlas/images/statistics/iconnoconnect.png" alt="no connect" width={20} height={20} />
+                                    : <img src="/atlas/images/statistics/iconconnect.png" alt="connected" width={20} height={20} />
                                   }
                                 </div>
                               </div>

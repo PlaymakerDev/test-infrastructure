@@ -778,7 +778,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                     style={{ width: 90, height: 69, borderRadius: 10, background: '#66AEFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                     onClick={() => caseData?.camera_id && dispatch(setCCTVModalOpen({ open: true, camera_id: caseData.camera_id }))}
                   >
-                    <img src='/images/Maintenance/iclive.png' alt='' width={30} height={30} />
+                    <img src='/atlas/images/Maintenance/iclive.png' alt='' width={30} height={30} />
                     <p style={{ color: '#000000', fontWeight: 400, fontSize: 14, margin: 0 }}>Live</p>
                   </div>
                 </div>

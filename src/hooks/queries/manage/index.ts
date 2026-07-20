@@ -43,6 +43,8 @@ export { useSsoSearch } from './useSsoSearch'
 
 // Notifications summary — one row per source_type over a date window.
 export { useNotificationSummary } from './useNotificationSummary'
+// Per-source aggregate over an explicit date range (Statistics overview/status).
+export { useNotificationsSummary } from './useNotificationsSummary'
 
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'

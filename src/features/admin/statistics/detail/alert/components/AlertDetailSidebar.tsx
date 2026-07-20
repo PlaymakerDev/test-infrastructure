@@ -155,7 +155,7 @@ const AlertDetailSidebar: React.FC = () => {
                                       >
                                         <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                          <img src={isOnline ? '/images/statistics/iconconnect.png' : '/images/statistics/iconnoconnect.png'} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
+                                          <img src={isOnline ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
                                         </div>
                                       </div>
                                     )

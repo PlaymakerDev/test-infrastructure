@@ -10,7 +10,8 @@ import { manageKeys } from './queryKeys'
  *  instead of serving a cached count for up to the global 60s staleTime. */
 export const useNotificationsSummary = (startDate: string, endDate: string) =>
   useQuery({
-    queryKey: manageKeys.notifications.summary(startDate, endDate),
+    // Key factory takes ONE params object (mirrors the service's query params).
+    queryKey: manageKeys.notifications.summary({ start_date: startDate, end_date: endDate }),
     queryFn: () => getNotificationsSummaryAPI(startDate, endDate).then((r) => r.data ?? []),
     staleTime: 0,
   })

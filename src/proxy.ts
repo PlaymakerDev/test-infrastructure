@@ -3,8 +3,12 @@ import { getIronSession } from 'iron-session'
 import { SessionData, sessionOptions } from '@/lib/defaultSession'
 import menu from './configs/menu'
 
-// `new URL('/foo', request.url)` strips basePath; manually prepend so deploys under /atlas keep their prefix.
-const BASE_PATH = '/atlas'
+// `new URL('/foo', request.url)` strips basePath; manually prepend so deploys
+// under /atlas keep their prefix. MUST come from the env ('' in dev): a
+// hardcoded '/atlas' made dev redirect to /atlas/auth/login, whose pathname
+// no longer matches the '/auth/login' guard below → infinite redirect loop
+// (ERR_TOO_MANY_REDIRECTS on every page, found 2026-07-20).
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 const withBase = (p: string, requestUrl: string) =>
   new URL(`${BASE_PATH}${p}`, requestUrl)
 

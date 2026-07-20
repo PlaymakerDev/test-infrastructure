@@ -62,7 +62,7 @@ const ElectricalSystemCard: React.FC = () => {
           at the same z-10 stacking level was intercepting clicks meant for
           the "ดูรายละเอียดระบบไฟฟ้า" button in the top-right corner. */}
       <div className='relative z-10 flex flex-row items-start gap-2 pr-10 pointer-events-none'>
-        <img src='/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
+        <img src='/atlas/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
         <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
       </div>
 

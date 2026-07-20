@@ -37,6 +37,9 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
       fontFamily: 'ui-sans-serif,system-ui',
     }}
   >
+    {/* Player mounts for EVERY camera — including red (offline) pins, per
+      * product decision 2026-07-20: the is_online flag can lag reality, so
+      * the stream always gets a chance to load like the other menus. */}
     <HLSLivePlayer
       cameraId={cam.id}
       hlsUrl={cam.hls_url}
