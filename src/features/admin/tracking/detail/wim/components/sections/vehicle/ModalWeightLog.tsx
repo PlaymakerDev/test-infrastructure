@@ -1,4 +1,4 @@
-import { Modal } from 'antd'
+import { ConfigProvider, Modal } from 'antd'
 import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -82,18 +82,27 @@ const ModalWeightLog: React.FC<Props> = (props) => {
   const { openWeightLogModal, setOpenWeightLogModal } = useWIMContext()
 
   return (
-    <Modal
-      title={false}
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={openWeightLogModal.open}
-      onOk={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
-      onCancel={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
-      footer={null}
-      destroyOnHidden
-      width={1700}
+    <ConfigProvider
+      theme={{
+        token: {
+          colorIcon: '#FFFFFF',
+          colorIconHover: '#FFFFFF80',
+        },
+      }}
     >
-      <Content />
-    </Modal>
+      <Modal
+        title={false}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={openWeightLogModal.open}
+        onOk={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
+        onCancel={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
+        footer={null}
+        destroyOnHidden
+        width={1700}
+      >
+        <Content />
+      </Modal>
+    </ConfigProvider>
   )
 }
 

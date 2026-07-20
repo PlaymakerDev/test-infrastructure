@@ -1,5 +1,5 @@
 "use client"
-import { Modal } from 'antd'
+import { ConfigProvider, Modal } from 'antd'
 import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -124,18 +124,27 @@ const ModalMobileLog: React.FC<Props> = () => {
   const { open, record } = openMobileLog
 
   return (
-    <Modal
-      title={false}
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={open}
-      onOk={() => setOpenMobileLog(INIT_OPEN_MOBILE_LOG)}
-      onCancel={() => setOpenMobileLog(INIT_OPEN_MOBILE_LOG)}
-      footer={null}
-      destroyOnHidden
-      width={1700}
+    <ConfigProvider
+      theme={{
+        token: {
+          colorIcon: '#FFFFFF',
+          colorIconHover: '#FFFFFF80',
+        },
+      }}
     >
-      <Content record={record} />
-    </Modal>
+      <Modal
+        title={false}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={open}
+        onOk={() => setOpenMobileLog(INIT_OPEN_MOBILE_LOG)}
+        onCancel={() => setOpenMobileLog(INIT_OPEN_MOBILE_LOG)}
+        footer={null}
+        destroyOnHidden
+        width={1700}
+      >
+        <Content record={record} />
+      </Modal>
+    </ConfigProvider>
   )
 }
 
