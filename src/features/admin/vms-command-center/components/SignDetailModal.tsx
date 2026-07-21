@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo } from 'react'
 import { App, Badge, Button, ConfigProvider, Empty, Image, Modal, Popconfirm, Skeleton, Tag, Timeline, Tooltip } from 'antd'
-import { TbCircleCheckFilled, TbPlayerStop, TbRefresh, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbAppWindow, TbCircleCheckFilled, TbPlayerStop, TbRefresh, TbWifi, TbWifiOff } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
@@ -106,13 +106,39 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   <div className="fs-12 text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Tag
-                    icon={detail.is_online ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
-                    color={detail.is_online ? 'success' : 'error'}
-                    style={{ fontSize: 12 }}
+                  {/* Online / offline pill — themed (see feedback_theme_no_invent):
+                      online = --default-blue tint, offline = --red tint. */}
+                  <span
+                    className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                    style={{
+                      background: `color-mix(in srgb, var(${detail.is_online ? '--default-blue' : '--red'}) 12%, transparent)`,
+                      border: `1px solid var(${detail.is_online ? '--default-blue' : '--red'})`,
+                      color: `var(${detail.is_online ? '--default-blue' : '--red'})`,
+                    }}
                   >
+                    {detail.is_online ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
                     {detail.is_online ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
-                  </Tag>
+                  </span>
+                  {/* Anydesk deep-link — uses the `anydesk:` URL scheme so
+                      clicking hands off to the native client (same pattern as
+                      legacy DetailTitle.tsx). Disabled visual if no id. */}
+                  <Tooltip title={detail.anydesk_id ? `เปิด Anydesk #${detail.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+                    <Button
+                      icon={<TbAppWindow style={{ verticalAlign: -2 }} />}
+                      disabled={!detail.anydesk_id}
+                      onClick={() => {
+                        if (!detail.anydesk_id) return
+                        window.location.href = `anydesk:${detail.anydesk_id}`
+                      }}
+                      style={{
+                        background: detail.anydesk_id ? 'color-mix(in srgb, var(--default-blue) 12%, transparent)' : undefined,
+                        borderColor: detail.anydesk_id ? 'var(--default-blue)' : undefined,
+                        color: detail.anydesk_id ? 'var(--default-blue)' : undefined,
+                      }}
+                    >
+                      Anydesk : {detail.anydesk_id || '-'}
+                    </Button>
+                  </Tooltip>
                   <StatusPill
                     status={detail.status ?? 0}
                     tooltip={
@@ -353,7 +379,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                   const lastAt = dayjs(run.last.reported_at)
                                   return {
                                     color: meta.color,
-                                    dot: (
+                                    icon: (
                                       <span
                                         style={{
                                           width: 10,
@@ -365,7 +391,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                         }}
                                       />
                                     ),
-                                    children: (
+                                    content: (
                                       <div>
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <StatusPill status={r.status} size="sm" />

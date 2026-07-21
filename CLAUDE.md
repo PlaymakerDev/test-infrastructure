@@ -147,11 +147,13 @@ Use Tailwind 4's `text-(--yellow)` / `bg-(--dark-black)` / `border-(--default-bl
 
 Applies to every admin surface. Introduced after repeated iterations on the VMS Command Center picked off-palette AntD tag colours that clashed with the yellow-on-black brand look.
 
-## Export (นำออกเอกสาร) system — added 2026-07-20
+## Export (นำออกเอกสาร) system — added 2026-07-20, full sweep 2026-07-21
 
-Every "นำออกเอกสาร" button app-wide (27 points across 13 menus) is wired through one shared kit — do NOT hand-roll xlsx/jsPDF/print flows:
+Every "นำออกเอกสาร" button app-wide (~42 points across 16 menus, incl. in-modal tables and detail tabs) is wired through one shared kit — do NOT hand-roll xlsx/jsPDF/print flows.
 
-- **`src/components/export/ExportFileModal.tsx`** — the white Export File dialog. Pass `onExportPdf` and/or `onExportExcel` (a button renders only when its handler exists — chart/timeline pages are PDF-only by omitting `onExportExcel`); `count` optional.
+**⚠ SearchBar renders the export button BY DEFAULT** (`src/components/searchable/SearchBar.tsx`: `showExportButton = true`, hidden only in `mode='default'`). Any new page using SearchBar (or the shared FilterBar* toolbars) MUST either pass `onExport` (wire it through ExportFileModal per the conventions below) or explicitly pass `showExportButton={false}` — otherwise it ships a dead button (this exact miss caused two full wiring sweeps). Pages that deliberately hide it today: traffic-lighting overall, statistics detail incident/status (their wiring exists — flip the flag to enable).
+
+- **`src/components/export/ExportFileModal.tsx`** — the white Export File dialog. Pass `onExportPdf` and/or `onExportExcel` (a button renders only when its handler exists — chart/timeline pages are PDF-only by omitting `onExportExcel`); `count` optional. For server-paginated tables pass `scope={{totalCount, pageCount}}` to render a small ทั้งหมด/หน้าปัจจุบัน toggle (default ทั้งหมด) — handlers then receive `'all' | 'page'` and must fetch the full filtered set for `'all'` (two-step fetch: page 1 @100 → refetch at `meta.count`; reference: incident-detection `EventSection.tsx`, tracking `VehicleSection.tsx`).
 - **`src/utils/export/excel.ts`** — `exportExcel({filenameBase, sheetName, columns, rows})`.
 - **`src/utils/export/pdf.tsx`** — `exportTablePdf()` (table report) and `exportReportPdf()` (block report: `kv` stat grids / `image` charts / `table` / `entries` photo-cards). Thai line-wrapping is handled centrally (`prewrapTableArgs`/`wrapPdfText`): @react-pdf textkit's own line breaking corrupts Thai (inserts "-" and drops tail glyphs), so text is pre-wrapped with real `\n` at ICU word boundaries, measured on a SEPARATE fontkit instance (`NotoSansThai__measure` family — measuring on the render font poisons its shaping cache and drops leading glyphs). Never re-enable engine wrapping; never measure on the render family.
 - **`src/utils/export/chart.ts`** — `captureEchartsPng(containerEl)` rasterizes the app's SVG-rendered ECharts to PNG for PDF embedding.

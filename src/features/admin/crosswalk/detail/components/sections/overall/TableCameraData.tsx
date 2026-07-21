@@ -55,16 +55,18 @@ const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
 }
 
 /** Pull "กม.<n>+<m>" out of the camera name, which follows the
- *  "…-กม.0+700-…" convention. Returns "-" when no match. */
-const extractKm = (name: string): string => {
+ *  "…-กม.0+700-…" convention. Returns "-" when no match.
+ *  Exported so DataDisplaySection's export uses the exact same expression. */
+export const extractKm = (name: string): string => {
   const m = name.match(/กม\.\s*(\d+\+\d+)/)
   return m ? m[1] : '-'
 }
 
 /** "cctv" is the base type; append every solution the camera participates in
  *  (non-null flag). Returns DEVICE_BADGE keys — same source & colors as every
- *  other menu's การทำงาน column. */
-const deriveFunctions = (c: CrosswalkCameraItem): DeviceBadgeKey[] => {
+ *  other menu's การทำงาน column.
+ *  Exported so DataDisplaySection's export uses the exact same expression. */
+export const deriveFunctions = (c: CrosswalkCameraItem): DeviceBadgeKey[] => {
   const fns: DeviceBadgeKey[] = ['cctv']
   if (c.counting) fns.push('counting')
   if (c.analytic) fns.push('analytic')

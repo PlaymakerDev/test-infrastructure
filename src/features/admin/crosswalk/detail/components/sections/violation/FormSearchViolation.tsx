@@ -31,7 +31,8 @@ const PERIOD_OPTIONS: { label: string; value: ViolationPeriod }[] = [
   // { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const STATUS_OPTIONS: { label: string; value: ViolationStatus }[] = [
+// Exported so ViolationSection's export filter-note reuses the same labels.
+export const STATUS_OPTIONS: { label: string; value: ViolationStatus }[] = [
   { label: 'คนฝ่าฝืน', value: 'PEDESTRIAN_VIOLATION' },
   { label: 'รถฝ่าฝืน', value: 'VEHICLE_VIOLATION' },
   { label: 'ทั้งหมด', value: 'ALL' },

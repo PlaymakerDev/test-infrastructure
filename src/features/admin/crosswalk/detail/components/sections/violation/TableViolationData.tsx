@@ -8,7 +8,7 @@ import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import { type ViolationFilter } from './filter'
 import AppPagination from '@/components/pagination/AppPagination'
-import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
+import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
@@ -67,11 +67,18 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       title: 'ประเภทเหตุการณ์',
       key: 'eventType',
       width: 260,
-      render: (_, row) => (
-        <span className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border border-[#E94C4C] text-[#E94C4C]'>
-          {row.crosswalk.name_th}
-        </span>
-      ),
+      render: (_, row) => {
+        // รถ (vehicle) → orange; คน (pedestrian) → the original red.
+        const color = isVehicleViolation(row.crosswalk.name_th) ? '#FF7B00' : '#E94C4C'
+        return (
+          <span
+            className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border'
+            style={{ borderColor: color, color }}
+          >
+            {row.crosswalk.name_th}
+          </span>
+        )
+      },
     },
     {
       title: 'กล้อง',

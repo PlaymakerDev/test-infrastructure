@@ -1,8 +1,10 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, ConfigProvider, DatePicker, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { Button, ConfigProvider, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import thTH from 'antd/locale/th_TH'
 import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
+import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
 import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
@@ -128,16 +130,16 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   }
 
   return (
-    <>
+    <ConfigProvider locale={thTH}>
       <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
-          <div className="text-sm font-semibold text-(--yellow)">สร้างคำสั่งใหม่</div>
-          <div className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</div>
+          <h4 className="text-(--yellow)">สร้างคำสั่งใหม่</h4>
+          <p className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <div className="fs-12 font-medium">เลือกรูป / วิดีโอที่จะแสดง</div>
+              <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
               {onGotoLibrary && (
                 <button
                   className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
@@ -260,72 +262,108 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           <div>
-            <div className="fs-12 font-medium mb-1">ข้อความประกอบ (ไม่บังคับ)</div>
+            <label className="text-(--yellow) block mb-1">ข้อความประกอบ (ไม่บังคับ)</label>
             <Input.TextArea
               rows={2}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="ข้อความที่จะขึ้นบนป้าย (ถ้าเป็น message-only ให้ปล่อยรูปว่างได้)"
+              size="large"
             />
           </div>
 
           <div>
-            <div className="fs-12 font-medium mb-1">ชื่อกำหนดการ</div>
+            <label className="text-(--yellow) block mb-1">ชื่อกำหนดการ</label>
             <Input
               value={scheduleName}
               onChange={(e) => setScheduleName(e.target.value)}
               placeholder="เช่น ประกาศเช้า"
+              size="large"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="fs-12 font-medium mb-1">ช่วงวันที่</div>
-              <DatePicker.RangePicker
-                value={dateRange}
-                onChange={(v) => v && v[0] && v[1] && setDateRange([v[0], v[1]])}
+              <label className="text-(--yellow) block mb-1">
+                เริ่มต้นการแสดงผล <span className="text-red-500">*</span>
+              </label>
+              <BuddhistDatePicker
+                value={dateRange[0]}
+                onChange={(date) => {
+                  if (!date) return
+                  const next = date as Dayjs
+                  setDateRange((prev) => {
+                    const end = prev[1] && next.isAfter(prev[1], 'day') ? next : prev[1]
+                    return [next, end ?? next]
+                  })
+                }}
                 allowClear={false}
-                style={{ width: '100%' }}
+                className="w-full"
+                format="DD MMMM BBBB"
+                size="large"
+                placeholder="กรุณาเลือกวันที่เริ่มต้น..."
               />
             </div>
             <div>
-              <div className="fs-12 font-medium mb-1">โหมด</div>
-              <div className="flex items-center gap-2 h-8">
-                <Switch checked={isAllDay} onChange={setIsAllDay} />
-                <span className="fs-12">{isAllDay ? 'ตลอดวัน' : 'ตามช่วงเวลา'}</span>
-              </div>
+              <label className="text-(--yellow) block mb-1">
+                สิ้นสุดการแสดงผล <span className="text-red-500">*</span>
+              </label>
+              <BuddhistDatePicker
+                value={dateRange[1]}
+                onChange={(date) => {
+                  if (!date) return
+                  setDateRange((prev) => [prev[0], date as Dayjs])
+                }}
+                disabledDate={(current) => !!dateRange[0] && current.isBefore(dateRange[0], 'day')}
+                allowClear={false}
+                className="w-full"
+                format="DD MMMM BBBB"
+                size="large"
+                placeholder="กรุณาเลือกวันที่สิ้นสุด..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-(--yellow) block mb-1">เงื่อนไขการทำงาน</label>
+            <div className="flex items-center gap-2 h-10">
+              <Switch checked={isAllDay} onChange={setIsAllDay} />
+              <span>{isAllDay ? 'แสดงผลตลอดเวลา' : 'เลือกช่วงเวลาที่ต้องการแสดงผล'}</span>
             </div>
           </div>
 
           {!isAllDay && (
             <div>
-              <div className="fs-12 font-medium mb-1">ช่วงเวลาแสดงผล</div>
+              <label className="text-(--yellow) block mb-1">
+                ช่วงเวลาแสดงผล <span className="text-red-500">*</span>
+              </label>
               <TimePicker.RangePicker
                 value={timeRange}
                 onChange={(v) => v && v[0] && v[1] && setTimeRange([v[0], v[1]])}
                 format="HH:mm"
                 allowClear={false}
-                style={{ width: '100%' }}
+                className="w-full"
+                size="large"
+                needConfirm={false}
               />
             </div>
           )}
 
           <div>
-            <div className="fs-12 font-medium mb-1">วันในสัปดาห์</div>
+            <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
             <Radio.Group
               value={daysOfWeek.length === 0 ? 'all' : 'custom'}
               onChange={(e) => setDaysOfWeek(e.target.value === 'all' ? [] : [1, 2, 3, 4, 5])}
-              size="small"
             >
               <Radio.Button value="all">ทุกวัน</Radio.Button>
               <Radio.Button value="custom">จันทร์–ศุกร์</Radio.Button>
             </Radio.Group>
             {daysOfWeek.length === 0 && (
-              <div className="fs-12 text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
+              <p className="fs-12 text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</p>
             )}
-            <div className="fs-12 text-white/40 mt-1">
+            <p className="fs-12 text-white/40 mt-1">
               mask = {isoDaysMask(daysOfWeek) || 127}
-            </div>
+            </p>
           </div>
 
           {vmsIds.length === 0 && (
@@ -374,7 +412,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
         </Modal>
 
         {/* Full-size preview modal — dark shell, matches MediaLibraryTab. */}
-        <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
+        <ConfigProvider locale={thTH} theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
           <Modal
             open={!!previewing}
             onCancel={() => setPreviewing(null)}
@@ -435,7 +473,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </Modal>
         </ConfigProvider>
       </div>
-    </>
+    </ConfigProvider>
   )
 })
 

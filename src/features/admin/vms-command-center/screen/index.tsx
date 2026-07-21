@@ -1,7 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import { App, Tabs, Tooltip } from 'antd'
-import { TbAlertTriangle } from 'react-icons/tb'
+import { TbAlertTriangle, TbClockPause } from 'react-icons/tb'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { BureauSelection } from '@/types/control-vms/bureau'
 import ScopePicker from '../components/ScopePicker'
@@ -25,9 +25,12 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-// `vmsinfo` was previously named `status`; the old `status` key now routes to
-// the "สถานะการแสดงผล" tab that used to live inside the (now-removed) legacy screen.
-const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'vmsinfo', 'status'] as const
+// Order reflects the operator workflow: primary actions first (dispatch, media
+// prep, scheduling), then observation (status, history), then rarely-touched
+// device config (vmsinfo) last. `vmsinfo` was previously named `status`; the
+// current `status` key now routes to the "สถานะการแสดงผล" tab that used to
+// live inside the (now-removed) legacy screen.
+const VALID_TABS = ['dispatch', 'media', 'display', 'status', 'history', 'vmsinfo'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -57,23 +60,49 @@ const VMSCommandCenterScreen: React.FC = () => {
   // STATUS tab (that one polls 30s); here we mainly need it for filtering, so
   // 60s is plenty and any change made in STATUS is broadcast via invalidation.
   const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: 60_000 })
-  const eligibleVmsIds = useMemo(() => {
+
+  // Split eligibility into three buckets so operators can queue-ahead:
+  //   immediate: is_centralized && is_controllable        → dispatched now
+  //   queued:    is_centralized && is_reported && !is_online  → stored, plays
+  //                                                          when the agent
+  //                                                          reconnects
+  //   dropped:   everything else (not centralized, or the agent has never
+  //              provisioned, or its version is too old to be controllable)
+  const { immediateIds, queuedIds } = useMemo(() => {
     const items = screenInfoResp?.data?.data ?? []
-    // Fail-open: if screen-info hasn't loaded yet we don't punish the operator
-    // by hiding every sign — Composer's own validation still catches empty
-    // dispatch. Once data arrives, non-controllable / non-centralized signs
-    // are silently dropped from the outbound vms_ids list.
-    if (items.length === 0) return null // sentinel: "no filter"
-    return new Set(items.filter((i) => i.is_controllable && i.is_centralized).map((i) => i.vms_id))
+    if (items.length === 0) return { immediateIds: null as Set<number> | null, queuedIds: new Set<number>() }
+    const immediate = new Set<number>()
+    const queued = new Set<number>()
+    for (const i of items) {
+      if (!i.is_centralized) continue
+      if (i.is_controllable) {
+        immediate.add(i.vms_id)
+      } else if (i.is_reported && !i.is_online) {
+        // Sign was provisioned before + agent version was OK (only offline
+        // knocks out is_controllable) → queue-ahead is safe.
+        queued.add(i.vms_id)
+      }
+    }
+    return { immediateIds: immediate, queuedIds: queued }
   }, [screenInfoResp])
 
   // Full set from ScopePicker
   const allSelectedIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
-  // What Composer actually sends — post-filter for controllable + centralized
+  // What Composer sends — union of immediate + queued (queue-ahead supported).
+  // If screen-info hasn't loaded (immediateIds === null), fail-open: send
+  // the full selection.
   const vmsIds = useMemo(() => {
-    if (!eligibleVmsIds) return allSelectedIds
-    return allSelectedIds.filter((id) => eligibleVmsIds.has(id))
-  }, [allSelectedIds, eligibleVmsIds])
+    if (immediateIds === null) return allSelectedIds
+    return allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id))
+  }, [allSelectedIds, immediateIds, queuedIds])
+  const immediateCount = useMemo(
+    () => (immediateIds === null ? allSelectedIds.length : allSelectedIds.filter((id) => immediateIds.has(id)).length),
+    [allSelectedIds, immediateIds]
+  )
+  const queuedCount = useMemo(
+    () => allSelectedIds.filter((id) => queuedIds.has(id)).length,
+    [allSelectedIds, queuedIds]
+  )
   const excludedCount = allSelectedIds.length - vmsIds.length
 
   const targetSummary = useMemo(() => {
@@ -83,9 +112,10 @@ const VMSCommandCenterScreen: React.FC = () => {
     if (selection.states.length) parts.push(`${selection.states.length} แขวง`)
     if (selection.routes.length) parts.push(`${selection.routes.length} สายทาง`)
     parts.push(`${selection.signs.length} ป้าย`)
-    if (excludedCount > 0) parts.push(`(ข้าม ${excludedCount} ป้ายที่ควบคุมไม่ได้)`)
+    if (queuedCount > 0) parts.push(`(queue ${queuedCount} ป้าย offline)`)
+    if (excludedCount > 0) parts.push(`(ข้าม ${excludedCount} ป้ายที่ไม่รองรับ)`)
     return `เป้าหมาย: ${parts.join(' / ')}`
-  }, [selection, excludedCount])
+  }, [selection, excludedCount, queuedCount])
 
   return (
     <App>
@@ -97,23 +127,36 @@ const VMSCommandCenterScreen: React.FC = () => {
         <Tabs
           activeKey={activeTab}
           onChange={changeTab}
-          destroyOnHidden
+          // Keep all tab panes mounted — operators sit in this feature and
+          // switch (dispatch ↔ media ↔ status) constantly. Destroying on
+          // hide reset the LiveMonitor timer ("ล่าสุด —"), the ScopePicker
+          // scroll position, MediaLibrary filters, etc. Trade-off is a few
+          // background polls (all payloads small); worth it for continuous
+          // context. Selection state was already persisted in parent scope.
           className="vms-cc-tabs flex-1 min-h-0 mt-4"
           items={[
             {
               key: 'dispatch',
-              label: 'การสั่งงาน + ติดตาม',
+              label: 'การสั่งงาน',
               children: (
                 <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
                     <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                    {queuedCount > 0 && (
+                      <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
+                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
+                          <TbClockPause className="fs-14 shrink-0 mt-0.5" />
+                          <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
+                        </div>
+                      </Tooltip>
+                    )}
                     {excludedCount > 0 && (
-                      <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
-                        <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
-                        <Tooltip title="ป้ายที่ agent เวอร์ชันต่ำหรือถูกถอดจากกลุ่มควบคุมรวมจะถูกข้ามอัตโนมัติ — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
-                          <span>ข้าม {excludedCount} ป้ายที่ยังควบคุมไม่ได้</span>
-                        </Tooltip>
-                      </div>
+                      <Tooltip title="ป้ายที่ยังไม่เคย provision, agent เวอร์ชันเก่าเกินไป, หรือถูกถอดจากกลุ่มควบคุมรวม — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
+                          <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
+                          <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
+                        </div>
+                      </Tooltip>
                     )}
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
@@ -126,15 +169,6 @@ const VMSCommandCenterScreen: React.FC = () => {
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
                     <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
                   </div>
-                </div>
-              ),
-            },
-            {
-              key: 'history',
-              label: 'ประวัติสั่งงานทั้งหมด',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <GlobalHistoryTable onOpenSign={openDetail} />
                 </div>
               ),
             },
@@ -159,15 +193,6 @@ const VMSCommandCenterScreen: React.FC = () => {
               ),
             },
             {
-              key: 'vmsinfo',
-              label: 'ข้อมูลป้าย VMS',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <StatusTable onOpenSignDetail={openDetail} />
-                </div>
-              ),
-            },
-            {
               key: 'status',
               label: 'สถานะการแสดงผล',
               children: (
@@ -175,6 +200,24 @@ const VMSCommandCenterScreen: React.FC = () => {
                   <ControlVMSProvider>
                     <StatusSection />
                   </ControlVMSProvider>
+                </div>
+              ),
+            },
+            {
+              key: 'history',
+              label: 'ประวัติสั่งงานทั้งหมด',
+              children: (
+                <div className="h-[calc(100vh-240px)]">
+                  <GlobalHistoryTable onOpenSign={openDetail} />
+                </div>
+              ),
+            },
+            {
+              key: 'vmsinfo',
+              label: 'ข้อมูลป้าย VMS',
+              children: (
+                <div className="h-[calc(100vh-240px)]">
+                  <StatusTable onOpenSignDetail={openDetail} />
                 </div>
               ),
             },

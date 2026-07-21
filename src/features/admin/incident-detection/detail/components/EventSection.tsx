@@ -149,17 +149,40 @@ const EventSection: React.FC<Props> = () => {
     return parts.join(' · ')
   }, [filters])
 
+  // Export scope = EVERY event matching the current filters (date window +
+  // type), not just the visible page — the on-screen pagination is only a
+  // viewport (user request 2026-07-21: picking a wide date range must not cap
+  // the report at the 10-row page). Same two-step full-fetch pattern as the
+  // tracking weight-log exports: page 1 @100, then refetch at the reported
+  // total when it exceeds the first batch.
+  const fetchAllEvents = async (): Promise<IncidentTransactionItem[]> => {
+    const { getIncidentTransactionsAPI } = await import('@/services/routes/AnalyticService')
+    const baseParams = {
+      // useParams can be undefined pre-hydration, but the export button only
+      // exists once the page (and its solution-scoped query) has rendered.
+      solution_id: solutionId ?? '',
+      start_date: filters.date ? filters.date[0].format('YYYY-MM-DD') : undefined,
+      end_date: filters.date ? filters.date[1].format('YYYY-MM-DD') : undefined,
+      analytic_type_id: typeNameToId(filters.eventType),
+    }
+    const first = await getIncidentTransactionsAPI({ ...baseParams, page: 1, limit: 100 })
+    const count = first.data?.meta_data?.count ?? 0
+    if (count <= 100) return first.data?.res_data ?? []
+    const full = await getIncidentTransactionsAPI({ ...baseParams, page: 1, limit: count })
+    return full.data?.res_data ?? []
+  }
+
   // PDF = photo cards mirroring the on-screen event cards (snapshot + ประเภท
-  // + วันเวลา + camera fields). Exports the SAME rows the table/grid currently
-  // shows (this page of the paginated list). Snapshots are pre-fetched and
-  // re-encoded (utils/export/image.ts); any image that fails just renders its
-  // card photo-less.
-  const handleExportPdf = async () => {
+  // + วันเวลา + camera fields). Snapshots are pre-fetched and re-encoded
+  // (utils/export/image.ts); any image that fails just renders its card
+  // photo-less. `scope` comes from the modal's ทั้งหมด/หน้าปัจจุบัน toggle.
+  const handleExportPdf = async (scope?: 'all' | 'page') => {
     const [{ exportReportPdf }, { fetchImageAsDataUrl }] = await Promise.all([
       import('@/utils/export/pdf'),
       import('@/utils/export/image'),
     ])
-    const images = await Promise.all(events.map((ev) => fetchImageAsDataUrl(ev.image_path)))
+    const rows = scope === 'page' ? events : await fetchAllEvents()
+    const images = await Promise.all(rows.map((ev) => fetchImageAsDataUrl(ev.image_path)))
     await exportReportPdf({
       filenameBase: 'Incident_Detection_Events_Report',
       title: 'รายงานเหตุการณ์ที่ตรวจจับได้ (Incident Detection Events)',
@@ -168,7 +191,7 @@ const EventSection: React.FC<Props> = () => {
         {
           type: 'entries',
           title: 'ตารางแสดงเหตุการณ์',
-          items: events.map((ev, i) => ({
+          items: rows.map((ev, i) => ({
             image: images[i],
             heading: getEventTypeLabel(ev.analytic_type_info.id, ev.analytic_type_info.analytic_type_name_th),
             subheading: `${fmtThaiDate(ev.date_time)} ${fmtTime(ev.date_time)}`,
@@ -198,20 +221,22 @@ const EventSection: React.FC<Props> = () => {
       </section>
 
       {/* นำออกเอกสาร — PDF = photo cards (snapshot ต่อเหตุการณ์), Excel = flat
-          table with the same columns as TableEventData. Both export the rows
-          currently displayed (this page, current filters). */}
+          table with the same columns as TableEventData. The modal's scope
+          toggle picks between ทั้งหมด (every event matching the filters —
+          fetched in full at export time) and หน้าปัจจุบัน (the visible page). */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={events.length}
+        scope={{ totalCount: total, pageCount: events.length }}
         onExportPdf={handleExportPdf}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const { exportExcel } = await import('@/utils/export/excel')
+          const rows = scope === 'page' ? events : await fetchAllEvents()
           exportExcel({
             filenameBase: 'Incident_Detection_Events_Report',
             sheetName: 'Incident Events',
             columns: EVENT_EXPORT_COLUMNS,
-            rows: events,
+            rows,
           })
         }}
       />

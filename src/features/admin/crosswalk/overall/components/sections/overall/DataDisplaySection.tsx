@@ -14,6 +14,7 @@ import { useCrosswalkCentralList } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
 import type { CrosswalkCentralSolution } from '@/types/crosswalk/overview-api'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 interface Props { }
 
@@ -86,12 +87,42 @@ const apiSolutionToProject = (
   totalCrosswalks: item.crosswalk.total,
 })
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → ชื่อโครงการ → จุดติดตั้ง →
+// เลขที่สัญญา → การค้ำประกัน → สถานะ → counts), plus ลำดับ/หน่วยงาน since the
+// export flattens the table's per-แขวง divider rows. `width` = Excel chars,
+// `widthPct` = PDF table percent (sums to 100).
+const CROSSWALK_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CrosswalkProject, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName ?? '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
+  // Same fallback ContractInfoCell renders on screen: no contract → budget year.
+  {
+    header: 'เลขที่สัญญา', width: 20, widthPct: 10,
+    value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+  },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
+  { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.onlineCount },
+  { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.offlineCount },
+]
+
 const OverallDataDisplaySection: React.FC<Props> = () => {
   const deptId = useDeptId()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   const { data, isLoading } = useCrosswalkCentralList(deptId)
 
@@ -148,6 +179,29 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     })
   }, [activeFilter, search, projects])
 
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = CROSSWALK_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
+
+  // Export rows in the SAME order the table displays: grouped by แขวง
+  // (bureau) — mirrors TableCrosswalkData's groupByBureau so the printed
+  // report reads exactly like the screen.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, CrosswalkProject[]>()
+    for (const p of filtered) {
+      const list = groups.get(p.bureau) ?? []
+      list.push(p)
+      groups.set(p.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [filtered])
+
   const cardItems = useMemo<ProjectCardItem[]>(
     () =>
       filtered.map((p) => ({
@@ -180,8 +234,37 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           formSearch={<FormSearchCrosswalk onSearchChange={setSearch} />}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+            shows), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filtered.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Crosswalk_Overview_Report',
+            title: 'รายงานสรุปภาพรวมสัญญาณไฟทางข้ามอัจฉริยะ (Crosswalk Overview)',
+            filterNote: exportFilterNote,
+            columns: CROSSWALK_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Crosswalk_Overview_Report',
+            sheetName: 'Crosswalk Overview',
+            columns: CROSSWALK_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
           <TableCrosswalkData projects={filtered} loading={isLoading} />

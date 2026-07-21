@@ -7,7 +7,7 @@ interface Props {}
 
 type ActionType = 'เปลี่ยนข้อความ' | 'ข้อผิดพลาด'
 
-interface ControlRecord {
+export interface ControlRecord {
   key: string
   no: number
   date: string
@@ -26,7 +26,9 @@ const ACTION_CLASS: Record<ActionType, string> = {
 
 const PLACEHOLDER = 'https://static.beebom.com/wp-content/uploads/2026/02/Sparkle-and-Sparxie-relation-explained.jpg'
 
-const mockData: ControlRecord[] = [
+// Exported so the parent ControlSection can feed the SAME rows the table
+// renders into the นำออกเอกสาร (PDF/Excel) export — still mock data for now.
+export const CONTROL_MOCK_ROWS: ControlRecord[] = [
   {
     key: '1',
     no: 1,
@@ -147,7 +149,7 @@ const TableControlData: React.FC<Props> = () => {
   return (
     <Table<ControlRecord>
       columns={columns}
-      dataSource={mockData}
+      dataSource={CONTROL_MOCK_ROWS}
       pagination={{
         pageSize: 10,
         total: 31,

@@ -11,6 +11,8 @@ import ModalTunnelViewer, {
   type TunnelViewerTarget,
 } from './ModalTunnelViewer'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { groupByBureau } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import { useTunnelCentralList } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
@@ -98,12 +100,41 @@ const apiSolutionToProject = (
   }
 }
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen TableTunnelData (รหัสสายทาง → ชื่อโครงการ →
+// จุดติดตั้ง → เลขที่สัญญา → การค้ำประกัน → สถานะ → กล้องทั้งหมด →
+// ไฟส่องสว่าง), plus ลำดับ/หน่วยงาน since the export flattens the table's
+// per-สำนัก divider rows (same treatment as CCTV_EXPORT_COLUMNS in
+// cctv/overall). `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const TUNNEL_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: TunnelProject, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.projectName || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.installPoint || '-' },
+  // Mirrors ContractInfoCell's visible label: contract no → ปีงบประมาณ → '-'.
+  {
+    header: 'เลขที่สัญญา', width: 20, widthPct: 12,
+    value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+  },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'สถานะ', width: 12, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
+  { header: 'ไฟส่องสว่าง', width: 12, widthPct: 7, value: (r) => r.totalLighting },
+]
 
 const OverallDataDisplaySection: React.FC<Props> = () => {
   const deptId = useDeptId()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
   // Modal state is local — the viewer is only ever shown from this section,
   // so hoisting to Context would add noise without any real reuse.
   const [viewerTarget, setViewerTarget] = useState<TunnelViewerTarget | null>(
@@ -171,6 +202,24 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     })
   }, [activeFilter, search, projects])
 
+  // Export rows in the SAME order the table displays: run the filtered list
+  // through the same groupByBureau helper TableTunnelData renders from, then
+  // keep only the project rows — exports exactly the filtered rows on screen.
+  const exportRows = useMemo<TunnelProject[]>(
+    () => groupByBureau(filtered).flatMap((r) => (r.kind === 'project' ? [r.project] : [])),
+    [filtered],
+  )
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = TUNNEL_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
+
   const cardItems = useMemo<ProjectCardItem[]>(
     () =>
       filtered.map((p) => ({
@@ -203,8 +252,37 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           formSearch={<FormSearchTunnel onSearchChange={setSearch} />}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Tunnel_Overview_Report',
+            title: 'รายงานสรุปภาพรวมอุโมงค์ (Tunnel Overview)',
+            filterNote: exportFilterNote,
+            columns: TUNNEL_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Tunnel_Overview_Report',
+            sheetName: 'Tunnel Overview',
+            columns: TUNNEL_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
           <TableTunnelData
