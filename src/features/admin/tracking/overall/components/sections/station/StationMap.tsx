@@ -30,7 +30,7 @@ const StationPopup: React.FC<{ data: PositionStation; router: ReturnType<typeof 
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)`}>
       <section>
-        <p className='fs-12 mb-1.5'>{data.LocationDescription || '-'}</p>
+        <p className='fs-12 mb-1.5'>{data.StationName || '-'}</p>
         <p className='fs-12 mb-1.5 text-white/50'>เปิดด่านล่าสุด : {'-'}</p>
         <p className={`fs-12 mb-1.5 ${data.isEnable ? 'text-[#05F2DB]' : 'text-red-500'}`}>สถานะ : {data.isEnable ? 'เปิดปกติ' : 'ปิด'} ●</p>
         <p className='fs-12 mb-1.5 text-(--yellow)'>รถเข้าชั่งทั้งหมด {fmtNumber(Number(data.Total)) || 0}</p>
@@ -58,7 +58,7 @@ const WIMPopup: React.FC<{ data: PositionWim; router: ReturnType<typeof useRoute
   return (
     <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)`}>
       <section>
-        <p className='fs-12 mb-1.5'>{data.LocationDescription || '-'}</p>
+        <p className='fs-12 mb-1.5'>{data.StationName || '-'}</p>
         <p className='fs-12 mb-1.5 text-white/50'>เปิดด่านล่าสุด : {'-'}</p>
         <p className={`fs-12 mb-1.5 ${data.isEnable ? 'text-[#05F2DB]' : 'text-red-500'}`}>สถานะ : {data.isEnable ? 'เปิดปกติ' : 'ปิด'} ●</p>
         <p className='fs-12 mb-1.5 text-(--yellow)'>รถเข้าชั่งทั้งหมด {fmtNumber(Number(data.Total)) || 0}</p>
