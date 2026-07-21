@@ -100,7 +100,12 @@ const VMSCommandCenterScreen: React.FC = () => {
         <Tabs
           activeKey={activeTab}
           onChange={changeTab}
-          destroyOnHidden
+          // Keep all tab panes mounted — operators sit in this feature and
+          // switch (dispatch ↔ media ↔ status) constantly. Destroying on
+          // hide reset the LiveMonitor timer ("ล่าสุด —"), the ScopePicker
+          // scroll position, MediaLibrary filters, etc. Trade-off is a few
+          // background polls (all payloads small); worth it for continuous
+          // context. Selection state was already persisted in parent scope.
           className="vms-cc-tabs flex-1 min-h-0 mt-4"
           items={[
             {
