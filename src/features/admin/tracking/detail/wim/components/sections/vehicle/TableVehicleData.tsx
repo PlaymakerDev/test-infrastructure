@@ -1,14 +1,19 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button, ConfigProvider, Empty, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
 import { useDailyTable } from '@/features/admin/tracking/detail/wim/hooks'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
+import type { StationDailyData } from '@/types/tracking/detail-api'
 
 interface Props {
-
+  /** Reports the raw rows currently visible on this table's page + the meta
+   *  total (pagination is internal) so the parent's export dialog can offer a
+   *  ทั้งหมด/หน้าปัจจุบัน scope. WIM rows are a structural superset of
+   *  StationDailyData, so one row type covers both station types. */
+  onPageRowsChange?: (rows: StationDailyData[], total: number, page: number, pageSize: number) => void
 }
 
 type StatusType = 'เปิดปกติ' | 'ระบบขัดข้อง' | 'ไม่ส่งข้อมูล'
@@ -40,7 +45,7 @@ const STATUS_COLOR: Record<StatusType, string> = {
 
 const DEFAULT_PAGE_SIZE = 10
 
-const TableVehicleData: React.FC<Props> = () => {
+const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
   const { id, stationType, vehicleSearchParams, setOpenWeightLogModal } = useWIMContext()
   const { start_date: startDate, end_date: endDate, station_status: stationStatus } = vehicleSearchParams
   const [page, setPage] = useState(1)
@@ -53,6 +58,13 @@ const TableVehicleData: React.FC<Props> = () => {
   }
 
   const result = useDailyTable(id as string | number | undefined, stationType, { page, pageSize, startDate, endDate, stationStatus })
+
+  const resultPayload = result.data
+  useEffect(() => {
+    // page/pageSize ride along so the export's หน้าปัจจุบัน scope can print
+    // the same continuing ลำดับ numbers this table shows ((page-1)*size+i+1).
+    onPageRowsChange?.(resultPayload?.data ?? [], resultPayload?.meta?.total ?? 0, page, pageSize)
+  }, [resultPayload, onPageRowsChange, page, pageSize])
 
   const getStatus = useCallback((remark: string, total: number): StatusType => {
     if (total > 0) return 'เปิดปกติ'

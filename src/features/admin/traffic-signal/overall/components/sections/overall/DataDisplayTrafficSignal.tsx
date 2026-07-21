@@ -19,6 +19,7 @@ import type {
 } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {}
 
@@ -73,12 +74,13 @@ const TRAFFIC_SIGNAL_EXPORT_COLUMNS: {
   { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
   { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
   { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
   { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
   { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase },
   { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
   { header: 'Stream', width: 12, widthPct: 6, value: (r) => (r.stream ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
-  { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode },
+  { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode || '-' },
 ]
 
 /** Adapter: central-list solution row → UI `TrafficSignalProject`.
@@ -256,7 +258,7 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
             filenameBase: 'Traffic_Signal_Overview_Report',
             title: 'รายงานสรุปภาพรวมสัญญาณไฟจราจร (Traffic Signal Overview)',
             filterNote: exportFilterNote,
-            columns: TRAFFIC_SIGNAL_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(TRAFFIC_SIGNAL_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -265,7 +267,7 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Traffic_Signal_Overview_Report',
             sheetName: 'Traffic Signal Overview',
-            columns: TRAFFIC_SIGNAL_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(TRAFFIC_SIGNAL_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

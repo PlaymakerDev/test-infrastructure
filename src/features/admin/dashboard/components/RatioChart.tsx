@@ -7,12 +7,15 @@ import {
   TbDeviceDesktop,
   TbBolt,
   TbWalk,
-  TbBuildingBridge,
 } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
+import IconLPR from '@/components/icon/IconLPR'
+import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
+import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
 // One row per KPI: which solution_type_name to count in the /position payload,
@@ -42,7 +45,12 @@ const TILES: TileConfig[] = [
   { id: 'vms',            label: 'VMS',       color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด',   route: '/admin/vms' },
   { id: 'lighting',       label: 'Lighting',  color: '#D9FF66', Icon: TbBolt,           apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
   { id: 'crosswalk',      label: 'Crosswalk', color: '#66F0FF', Icon: TbWalk,           apiTypeName: 'Crosswalk',      unit: 'จุด',   route: '/admin/crosswalk' },
-  { id: 'bridgelighting', label: 'B.Light',   color: '#6685FF', Icon: TbBuildingBridge, apiTypeName: 'BridgeLighting', unit: 'จุด',   route: '/admin/bridge-lighting' },
+  // LPR replaced B.Light in this slot (2026-07-21 request). LPR is NOT a
+  // solution type in /position — its count comes from GET /lpr/points
+  // (see `lprCount` below); `apiTypeName` here is a placeholder key that
+  // never matches the /position payload. Colour = SYSTEM_BRIGHT.LPR so the
+  // tile matches the map marker (per request, same day).
+  { id: 'lpr',            label: 'LPR',       color: SYSTEM_BRIGHT.LPR, Icon: IconLPR,  apiTypeName: 'LPR',            unit: 'จุด',   route: '/admin/lpr' },
   { id: 'wim',            label: 'WIM',       color: '#66FFB5', Icon: IconTracking,     apiTypeName: 'WIM',            unit: 'จุด',   route: '/admin/tracking' },
 ]
 
@@ -122,10 +130,14 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   const deptId = useDeptId()
 
   // Every tile links to its feature's overall page, dept-scoped. Same URL
-  // shape the sidebar uses so the target page hydrates its own scope
-  // correctly (no `scope=all` here — we're inside a specific dept view).
+  // shape the sidebar uses — INCLUDING `scope=all` when the dashboard itself
+  // is in the nationwide/สำนัก scope (dropping it sent dept_id=0 without
+  // scope to the target page, which BE answers with empty/null payloads —
+  // vms overall crashed on its null centroid; bug reported 2026-07-21).
   const openFeature = (route: string) => {
-    const q = deptId ? `?dept_id=${encodeURIComponent(String(deptId))}` : ''
+    const q = deptId
+      ? `?dept_id=${encodeURIComponent(String(deptId))}${scopeQuerySuffix()}`
+      : ''
     router.push(`${route}${q}`)
   }
   // Every tile — CCTV included now — derives its count from a single
@@ -135,6 +147,18 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // devices-per-solution rather than install-points — didn't match the
   // pins and confused users.)
   const { data: position } = useDashboardPosition(deptId)
+
+  // LPR is the one tile NOT fed by /position (BE has no LPR solution type
+  // there) — it counts GET /lpr/points instead, FE-scoped by department_id
+  // the same way lpr/overall's DataDisplaySection does. `null` = loading.
+  const { data: lprPoints } = useLPRPoints()
+  const lprCount = useMemo(() => {
+    if (!lprPoints) return null
+    const scoped = !deptId || String(deptId) === '0'
+      ? lprPoints
+      : lprPoints.filter((p) => p.department_id === Number(deptId))
+    return scoped.length
+  }, [lprPoints, deptId])
 
   const countsByType = useMemo(() => {
     const acc: Record<string, number> = {}
@@ -152,10 +176,12 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // simply doesn't own — mirrors the previous donut behaviour.
   const items = useMemo(() => {
     return TILES.map((t) => {
-      const count = position ? (countsByType[t.apiTypeName] ?? 0) : null
+      const count = t.id === 'lpr'
+        ? lprCount
+        : position ? (countsByType[t.apiTypeName] ?? 0) : null
       return { ...t, count }
     })
-  }, [position, countsByType])
+  }, [position, countsByType, lprCount])
 
   const visible = items.filter((t) => t.count !== 0)
 

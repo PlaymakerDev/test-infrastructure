@@ -9,6 +9,7 @@ import { ContractInfoCell } from '@/components/modal'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { APIResponseBridgeLightingList, BridgeLightingSolution } from '@/types/bridge-lighting/overall-api'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   data?: APIResponseBridgeLightingList
@@ -32,7 +33,8 @@ type DataRow = {
 
 type Row = HeaderRow | DataRow
 
-const TOTAL_COLS = 6
+// Dept header row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 6 : 5
 
 /** Outlined pill — reused across การค้ำประกัน / สถานะ cells. Same look as the
  *  crosswalk / traffic-signal / vms overall-list tables. */
@@ -112,8 +114,8 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ data, loading }) => {
     [router, deptId],
   )
 
-  const columns: ColumnsType<Row> = useMemo(
-    () => [
+  const columns: ColumnsType<Row> = useMemo(() => {
+    const all: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -219,9 +221,10 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ data, loading }) => {
           )
         },
       },
-    ],
-    [goToDetail],
-  )
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [goToDetail])
 
   return (
     <Table<Row>

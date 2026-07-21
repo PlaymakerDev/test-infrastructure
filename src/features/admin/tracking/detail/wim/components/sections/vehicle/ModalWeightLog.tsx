@@ -6,6 +6,7 @@ import 'dayjs/locale/th'
 import { INIT_MODAL_WEIGHT_LOG, useWIMContext } from '../../../context'
 import { FormSearchWeightLog, TableWeightLog, OverallDailyWeightList } from '../../../components'
 import { useDailyWeightLogList } from '../../../hooks'
+import type { DailyWeightLogRow } from '../../../hooks'
 import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '../../../data/weightFilters'
 import { DAILY_WEIGHT_LOG_EXPORT_COLUMNS, fetchDailyWeightLogExportRows } from '../../../data/dailyWeightLogExport'
 import type { FilterStats, ViewMode } from '@/components/searchable/SearchBar'
@@ -25,6 +26,9 @@ const Content: React.FC<Props> = () => {
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [weightFilter, setWeightFilter] = useState<WeightFilter>('all')
   const [exportOpen, setExportOpen] = useState(false)
+  // Rows currently visible in the table/grid (both paginate internally and
+  // report up via onPageRowsChange) — the export dialog's หน้าปัจจุบัน scope.
+  const [pageRows, setPageRows] = useState<DailyWeightLogRow[]>([])
 
   const stationLabel = stationType === 'STATION' ? 'สถานี' : 'Weight in Motion (WIM)'
 
@@ -76,7 +80,7 @@ const Content: React.FC<Props> = () => {
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} />
+        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} onPageRowsChange={setPageRows} />
       case 'GRID':
         return (
           <OverallDailyWeightList
@@ -84,6 +88,7 @@ const Content: React.FC<Props> = () => {
             stationType={stationType}
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
             date={date}
+            onPageRowsChange={setPageRows}
           />
         )
       default:
@@ -118,11 +123,11 @@ const Content: React.FC<Props> = () => {
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={exportCount}
-        onExportPdf={async () => {
+        scope={{ totalCount: exportCount ?? 0, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Weight_Log_Detail',
@@ -132,10 +137,10 @@ const Content: React.FC<Props> = () => {
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Weight_Log_Detail',

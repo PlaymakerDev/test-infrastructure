@@ -98,6 +98,10 @@ const Content: React.FC<ContentProps> = (props) => {
   // meta the table's pagination reads.
   const exportCount = data?.data.data.meta.total
 
+  // Rows currently visible in the table/grid (both render this same page of
+  // data) — the export dialog's หน้าปัจจุบัน scope.
+  const pageRows = useMemo<MobileCarList[]>(() => data?.data.data.data ?? [], [data])
+
   // Human-readable note of the modal's scope — printed in the PDF header so a
   // reader knows which checkpoint/day/filter subset they're looking at.
   const exportFilterNote = useMemo(() => {
@@ -188,11 +192,11 @@ const Content: React.FC<ContentProps> = (props) => {
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={exportCount}
-        onExportPdf={async () => {
+        scope={{ totalCount: exportCount ?? 0, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Mobile_Weight_Log',
@@ -202,10 +206,10 @@ const Content: React.FC<ContentProps> = (props) => {
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Mobile_Weight_Log',

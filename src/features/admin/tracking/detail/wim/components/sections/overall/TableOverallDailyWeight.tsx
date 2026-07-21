@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Empty, Table } from 'antd'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -15,12 +15,15 @@ dayjs.locale('th')
 
 interface Props {
   isOverWeight?: 'Y' | 'N';
+  /** Reports the rows currently visible on this table's page (pagination is
+   *  internal) so the parent's export dialog can offer a หน้าปัจจุบัน scope. */
+  onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 10
 
 const TableOverallDailyWeight: React.FC<Props> = (props) => {
-  const { isOverWeight } = props
+  const { isOverWeight, onPageRowsChange } = props
   const { id: stationId, stationType } = useWIMContext()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -38,6 +41,10 @@ const TableOverallDailyWeight: React.FC<Props> = (props) => {
     pageSize,
     isOverWeight
   )
+
+  useEffect(() => {
+    onPageRowsChange?.(data)
+  }, [data, onPageRowsChange])
 
   const columns = getDailyWeightLogColumns()
 

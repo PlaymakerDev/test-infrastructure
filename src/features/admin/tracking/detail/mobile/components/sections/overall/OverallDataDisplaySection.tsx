@@ -67,6 +67,10 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     page_size: pageSize
   })
 
+  // Rows currently visible in the table/grid (both render this same page of
+  // data) — the export dialog's หน้าปัจจุบัน scope.
+  const pageRows = useMemo<MobileCarList[]>(() => data?.data.data.data ?? [], [data])
+
   // The table/grid server-paginates, so the export fetches the full result set
   // through the same endpoint (same params as the on-screen read) at click time.
   const fetchExportRows = async (): Promise<MobileCarList[]> => {
@@ -130,15 +134,17 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
       </section>
 
       {/* นำออกเอกสาร — exports the daily-weighing vehicle rows the table/grid
-          shows (same columns/format as TableMobileDailyWeight, minus images). */}
+          shows (same columns/format as TableMobileDailyWeight, minus images).
+          The scope toggle picks ทั้งหมด (full set, fetched at export time) vs
+          หน้าปัจจุบัน (the rows the table/grid shows). */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={data?.data.data.meta.total}
-        onExportPdf={async () => {
+        scope={{ totalCount: data?.data.data.meta.total ?? 0, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Mobile_Daily_Weight_Report',
@@ -147,10 +153,10 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Mobile_Daily_Weight_Report',

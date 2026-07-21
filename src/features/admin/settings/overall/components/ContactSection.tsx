@@ -16,6 +16,7 @@ import {
 import type {
   APIRequestRegisterContractor,
   APIRequestUpdateContractor,
+  APIResponseContractor,
 } from '@/types/manage/contractor-api'
 import type {
   Contractor,
@@ -84,6 +85,27 @@ const readErrorMessage = (error: unknown, fallback: string): string => {
   return fallback
 }
 
+/** Maps the raw /contractor row → UI Contractor shape — shared by the table's
+ *  `contractors` memo and the export-'ทั้งหมด' full-fetch path so both render
+ *  the identical projection (incl. the client-tallied projectCount). */
+const toContractor = (
+  c: APIResponseContractor,
+  projectCountByContractorId: Map<string, number>,
+): Contractor => ({
+  id: c.user_id,
+  companyName: c.company_name,
+  shortName: c.short_name,
+  contactPerson: c.name ?? '',
+  phone: c.phone ?? '',
+  email: c.email ?? '',
+  address: c.address ?? '',
+  role: c.role ?? '',
+  registeredAt: c.created_at,
+  username: c.user?.username ?? '',
+  isActive: c.user?.is_active ?? true,
+  projectCount: projectCountByContractorId.get(c.user_id) ?? 0,
+})
+
 const ContactSection: React.FC = () => {
   const { message } = App.useApp()
 
@@ -142,20 +164,7 @@ const ContactSection: React.FC = () => {
   //  the client.)
   const contractors = useMemo<Contractor[]>(() => {
     const rows = contractorsQuery.data?.res_data ?? []
-    return rows.map<Contractor>((c) => ({
-      id: c.user_id,
-      companyName: c.company_name,
-      shortName: c.short_name,
-      contactPerson: c.name ?? '',
-      phone: c.phone ?? '',
-      email: c.email ?? '',
-      address: c.address ?? '',
-      role: c.role ?? '',
-      registeredAt: c.created_at,
-      username: c.user?.username ?? '',
-      isActive: c.user?.is_active ?? true,
-      projectCount: projectCountByContractorId.get(c.user_id) ?? 0,
-    }))
+    return rows.map((c) => toContractor(c, projectCountByContractorId))
   }, [contractorsQuery.data, projectCountByContractorId])
 
   // Server-reported total row count for the pagination footer. Falls back
@@ -170,6 +179,23 @@ const ContactSection: React.FC = () => {
     const q = filters.search.trim()
     return q ? `ค้นหา "${q}"` : undefined
   }, [filters.search])
+
+  // Export scope 'ทั้งหมด' — fetch EVERY page of the current server-side
+  // search at export time (two-step like incident-detection's EventSection:
+  // page 1 @100, then refetch at the reported total when it exceeds 100).
+  // The /contractor endpoint has no other filter fields, so no client-side
+  // narrowing applies here — the server total IS the exported row count.
+  const fetchAllContractors = async (): Promise<Contractor[]> => {
+    const { getContractorsAPI } = await import('@/services/routes/ManageService')
+    const search = filters.search.trim()
+    const first = await getContractorsAPI({ page: 1, limit: 100, search })
+    const count = first.data?.meta_data?.count ?? 0
+    const rows =
+      count <= 100
+        ? first.data?.res_data ?? []
+        : (await getContractorsAPI({ page: 1, limit: count, search })).data?.res_data ?? []
+    return rows.map((c) => toContractor(c, projectCountByContractorId))
+  }
 
   // ── Modal open/close ─────────────────────────────────────────────────────
   const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
@@ -320,29 +346,34 @@ const ContactSection: React.FC = () => {
         />
       </div>
 
-      {/* นำออกเอกสาร — exports the CURRENTLY DISPLAYED rows (server-searched
-          current page), through the shared pdf/excel utils like cctv overall. */}
+      {/* นำออกเอกสาร — scope toggle: ทั้งหมด = every contractor matching the
+          current server-side search (fetched in full at export time),
+          หน้าปัจจุบัน = the server page the table shows. totalCount = the
+          server's meta_data.count for the current search — exact, since this
+          endpoint has no client-side narrowing. */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={contractors.length}
-        onExportPdf={async () => {
+        scope={{ totalCount: total, pageCount: contractors.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? contractors : await fetchAllContractors()
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: 'Settings_Contractors_Report',
             title: 'รายงานรายชื่อผู้รับจ้าง (Contractor Management)',
             filterNote: exportFilterNote,
             columns: CONTACT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows: contractors,
+            rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? contractors : await fetchAllContractors()
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Settings_Contractors_Report',
             sheetName: 'Contractors',
             columns: CONTACT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
-            rows: contractors,
+            rows,
           })
         }}
       />

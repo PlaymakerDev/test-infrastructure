@@ -4,6 +4,7 @@ import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TableOverallDailyWeight, OverallDailyWeightList } from '@/features/admin/tracking/detail/wim/components'
 import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
+import type { DailyWeightLogRow } from '@/features/admin/tracking/detail/wim/hooks'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '@/features/admin/tracking/detail/wim/data/weightFilters'
 import {
@@ -26,6 +27,9 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
   const [displayType, setDisplayType] = useState<'TABLE' | 'GRID'>('TABLE')
   const [weightFilter, setWeightFilter] = useState<WeightFilter>('all')
   const [exportOpen, setExportOpen] = useState(false)
+  // Rows currently visible in the table/grid (both paginate internally and
+  // report up via onPageRowsChange) — the export dialog's หน้าปัจจุบัน scope.
+  const [pageRows, setPageRows] = useState<DailyWeightLogRow[]>([])
 
   // Unfiltered (page_size 1) read, purely for meta.summary — the 3 filter badges
   // must always show all/normal/overweight counts together, regardless of which
@@ -76,6 +80,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
         return (
           <TableOverallDailyWeight
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
+            onPageRowsChange={setPageRows}
           />
         )
       case 'GRID':
@@ -84,6 +89,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             stationId={stationId}
             stationType={stationType}
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
+            onPageRowsChange={setPageRows}
           />
         )
       default:
@@ -112,15 +118,17 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
       </section>
 
       {/* นำออกเอกสาร — exports today's weight-log rows for the CURRENT filter
-          (same columns/format as TableOverallDailyWeight, minus image columns). */}
+          (same columns/format as TableOverallDailyWeight, minus image columns).
+          The scope toggle picks ทั้งหมด (full filtered set, fetched at export
+          time) vs หน้าปัจจุบัน (the rows the table/grid shows). */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={exportCount}
-        onExportPdf={async () => {
+        scope={{ totalCount: exportCount ?? 0, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Today_Weight_Log',
@@ -130,10 +138,10 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Today_Weight_Log',

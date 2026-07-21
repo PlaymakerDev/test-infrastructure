@@ -10,6 +10,7 @@ import {
   type BureauGroupedRow,
 } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   /** Filtered + searched tunnel projects */
@@ -35,13 +36,14 @@ const Pill: React.FC<{
 
 type Row = BureauGroupedRow<TunnelProject>
 
-const TOTAL_COLS = 8
+// Bureau header row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 const TableTunnelData: React.FC<Props> = ({ projects, loading, onOpenTunnel }) => {
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
-  const columns: ColumnsType<Row> = useMemo(
-    () => [
+  const columns: ColumnsType<Row> = useMemo(() => {
+    const all: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -165,9 +167,10 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading, onOpenTunnel }) =
             <span className='font-semibold'>{row.project.totalLighting}</span>
           ) : null,
       },
-    ],
-    [onOpenTunnel],
-  )
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [onOpenTunnel])
 
   return (
     <Table<Row>

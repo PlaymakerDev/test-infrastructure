@@ -15,6 +15,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
 import type { CrosswalkCentralSolution } from '@/types/crosswalk/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props { }
 
@@ -250,7 +251,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             filenameBase: 'Crosswalk_Overview_Report',
             title: 'รายงานสรุปภาพรวมสัญญาณไฟทางข้ามอัจฉริยะ (Crosswalk Overview)',
             filterNote: exportFilterNote,
-            columns: CROSSWALK_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(CROSSWALK_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -259,7 +260,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Crosswalk_Overview_Report',
             sheetName: 'Crosswalk Overview',
-            columns: CROSSWALK_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(CROSSWALK_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

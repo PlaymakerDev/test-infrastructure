@@ -153,6 +153,15 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
   // filter switch never strands the view on a now-out-of-range page.
   React.useEffect(() => { setPage(1) }, [activeTab, alerts])
 
+  // Rows visible on the current pagination page — the table is client-side
+  // paginated (dataSource = full filteredData, AntD slices by current/pageSize)
+  // and `page` is already controlled here, so this slice matches the screen
+  // exactly. Feeds the export modal's 'หน้าปัจจุบัน' scope.
+  const pageRows = useMemo(
+    () => filteredData.slice((page - 1) * pageSize, page * pageSize),
+    [filteredData, page, pageSize],
+  )
+
   if (isError) {
     return <Alert type="error" showIcon message="ไม่สามารถโหลดประวัติการแจ้งเตือนได้" />
   }
@@ -174,29 +183,33 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
         />
       </section>
 
-      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED alerts (what the table
-          shows, all pages), through the shared pdf/excel utils. */}
+      {/* นำออกเอกสาร — scope toggle: ทั้งหมด = the full CURRENTLY FILTERED
+          alert list (already fetched in full — client-side pagination),
+          หน้าปัจจุบัน = the 10-row slice the table shows. Both counts are
+          exact. */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={filteredData.length}
-        onExportPdf={async () => {
+        scope={{ totalCount: filteredData.length, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? pageRows : filteredData
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: 'Lighting_Alert_History_Report',
             title: 'รายงานประวัติการแจ้งเตือนไฟฟ้าแสงสว่าง (Lighting Alert History)',
             filterNote: exportFilterNote,
             columns: ALERT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows: filteredData,
+            rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? pageRows : filteredData
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Lighting_Alert_History_Report',
             sheetName: 'Lighting Alerts',
             columns: ALERT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
-            rows: filteredData,
+            rows,
           })
         }}
       />

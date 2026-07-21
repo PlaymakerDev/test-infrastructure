@@ -13,6 +13,7 @@ import {
   type BureauGroupedRow,
 } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   /** Filtered + searched crosswalk projects */
@@ -48,7 +49,8 @@ const CountBadge: React.FC<{ value: number; color: string }> = ({ value, color }
 
 type Row = BureauGroupedRow<CrosswalkProject>
 
-const TOTAL_COLS = 9
+// Bureau header row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 9 : 8
 
 const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
@@ -66,8 +68,8 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
 
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
-  const columns: ColumnsType<Row> = useMemo(
-    () => [
+  const columns: ColumnsType<Row> = useMemo(() => {
+    const all: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -201,9 +203,10 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
             <CountBadge value={row.project.offlineCount} color='#E94C4C' />
           ) : null,
       },
-    ],
-    [goToDetail],
-  )
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [goToDetail])
 
   return (
     <Table<Row>

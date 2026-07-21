@@ -98,7 +98,7 @@ export const getCrosswalkGraphAPI = (params: APIRequestCrosswalkGraph) =>
   })
 
 // Paginated violation events for the ViolationSection table. Optional filters
-// (crossing_type / search / field+sort) forwarded only when set so the URL
+// (crosswalk_type / search / field+sort) forwarded only when set so the URL
 // stays clean for the common "no filter" case.
 export const getCrosswalkViolationListAPI = (
   params: APIRequestCrosswalkViolationList
@@ -109,7 +109,7 @@ export const getCrosswalkViolationListAPI = (
     params: {
       ...(params.start_date ? { start_date: params.start_date } : {}),
       ...(params.end_date ? { end_date: params.end_date } : {}),
-      ...(params.crossing_type != null ? { crossing_type: params.crossing_type } : {}),
+      ...(params.crosswalk_type != null ? { crosswalk_type: params.crosswalk_type } : {}),
       ...(params.search ? { search: params.search } : {}),
       ...(params.field ? { field: params.field } : {}),
       ...(params.sort ? { sort: params.sort } : {}),

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Empty, Table } from 'antd'
 import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
 import type { DailyWeightLogRow } from '@/features/admin/tracking/detail/wim/hooks'
@@ -8,12 +8,15 @@ import { getDailyWeightLogColumns } from '@/features/admin/tracking/detail/wim/d
 
 interface Props {
   isOverWeight?: 'Y' | 'N';
+  /** Reports the rows currently visible on this table's page (pagination is
+   *  internal) so the parent's export dialog can offer a หน้าปัจจุบัน scope. */
+  onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 10
 
 const TableWeightLog: React.FC<Props> = (props) => {
-  const { isOverWeight } = props
+  const { isOverWeight, onPageRowsChange } = props
   const { openWeightLogModal } = useWIMContext()
   const { stationId, stationType, date } = openWeightLogModal
   const [page, setPage] = useState(1)
@@ -33,6 +36,10 @@ const TableWeightLog: React.FC<Props> = (props) => {
     isOverWeight,
     date
   )
+
+  useEffect(() => {
+    onPageRowsChange?.(data)
+  }, [data, onPageRowsChange])
 
   const columns = getDailyWeightLogColumns({ showImages: false })
 

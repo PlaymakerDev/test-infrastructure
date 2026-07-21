@@ -1,20 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useCrosswalkViolationListInfinite } from '@/hooks/queries/crosswalk'
+import { useState } from 'react'
+import { useCrosswalkViolationList } from '@/hooks/queries/crosswalk'
 import { THAI_MONTHS } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
-import type { ViolationFilter } from './filter'
-
-// The คน/รถ status filter is applied CLIENT-SIDE (by `name_th`, see
-// `filteredRows` below) because the backend `crossing_type` param doesn't
-// filter reliably — so we must pull the whole date range before paginating.
-// Fetch 100 rows/request (not 10) to keep the number of sequential round-trips
-// low: a wide range like เดือนนี้ used to take ~1 request per 10 rows, so a few
-// hundred rows meant dozens of serial fetches and a long spinner. At 100/page
-// that's a handful of requests. The infinite loop still walks every page, so
-// completeness is unaffected even if the backend caps `limit` below 100.
-const BACKEND_PAGE_SIZE = 100
-const MAX_AUTO_PAGES = 100
+import { CROSSING_TYPE_MAP, type ViolationFilter } from './filter'
 
 // Backend's `name_en` slugs don't consistently carry a person/vehicle keyword,
 // but the Thai label always starts with "คน" (person) or "รถ" (vehicle).
@@ -53,6 +42,10 @@ interface UseViolationRowsResult {
   totalPages: number
   /** Total matching rows (NOT pages) — drives antd Pagination's item count. */
   total: number
+  /** Server-reported TRUE total for the date range (before the client-side
+   *  status filter and before the MAX_AUTO_PAGES walk cap) — can be far
+   *  larger than `total` on wide ranges (e.g. 110k rows @1,110 pages). */
+  serverTotal: number | null
   page: number
   setPage: (n: number) => void
   isLoading: boolean
@@ -73,38 +66,39 @@ export const useViolationRows = (
     setPage(1)
   }
 
-  const infiniteQuery = useCrosswalkViolationListInfinite({
+  // Every status pages SERVER-SIDE, one page at a time: `crosswalk_type`
+  // (2=คน, 3=รถ per CROSSING_TYPE_MAP) filters on the backend — verified live
+  // 2026-07-21 (2→939 คน / 3→14,263 รถ, partitioning the 15,202 baseline
+  // exactly). NOTE the param NAME: the old code sent `crossing_type`, which
+  // the backend silently ignored — that typo was the entire reason this hook
+  // used to walk the whole range client-side.
+  const crosswalkType =
+    filter.status === 'ALL' ? undefined : CROSSING_TYPE_MAP[filter.status]
+
+  const pageQuery = useCrosswalkViolationList({
     solution_id: id,
     start_date: filter.startDate || undefined,
     end_date: filter.endDate || undefined,
-    limit: BACKEND_PAGE_SIZE,
+    crosswalk_type: crosswalkType,
+    limit: pageSize,
+    page,
   })
 
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = infiniteQuery
-  const pagesFetched = infiniteQuery.data?.pages.length ?? 0
-  useEffect(() => {
-    if (!hasNextPage || isFetchingNextPage) return
-    if (pagesFetched >= MAX_AUTO_PAGES) return
-    fetchNextPage()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, pagesFetched])
-
-  const allRawRows = useMemo<CrosswalkViolationRow[]>(
-    () => infiniteQuery.data?.pages.flatMap((p) => p.rows) ?? [],
-    [infiniteQuery.data],
-  )
-
-  const filteredRows = useMemo(() => {
-    if (filter.status === 'ALL') return allRawRows
-    return allRawRows.filter((r) => {
-      const vehicle = isVehicleViolation(r.crosswalk.name_th)
-      return filter.status === 'VEHICLE_VIOLATION' ? vehicle : !vehicle
-    })
-  }, [allRawRows, filter.status])
-
   const pageStart = (page - 1) * pageSize
-  const pageRows = filteredRows.slice(pageStart, pageStart + pageSize)
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
-  const isLoading = infiniteQuery.isLoading || isFetchingNextPage
+  const rows = pageQuery.data?.rows ?? []
+  const serverCount = pageQuery.data?.count ?? rows.length
 
-  return { pageRows, allRows: filteredRows, totalPages, total: filteredRows.length, page, setPage, isLoading, pageStart }
+  return {
+    pageRows: rows,
+    // Only the CURRENT page lives here — callers that need the full set (the
+    // export's ทั้งหมด scope) fetch it themselves via fetchViolationPages.
+    allRows: rows,
+    totalPages: pageQuery.data?.totalPages ?? Math.max(1, Math.ceil(serverCount / pageSize)),
+    total: serverCount,
+    serverTotal: pageQuery.data?.count ?? null,
+    page,
+    setPage,
+    isLoading: pageQuery.isLoading || pageQuery.isFetching,
+    pageStart,
+  }
 }

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button, ConfigProvider, Empty, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { MobileMasterData } from '@/types/tracking/detail-api'
@@ -14,7 +14,10 @@ dayjs.extend(buddhistEra)
 dayjs.locale('th')
 
 interface Props {
-
+  /** Reports the rows currently visible on this table's page + the meta total
+   *  (pagination is internal) so the parent's export dialog can offer a
+   *  ทั้งหมด/หน้าปัจจุบัน scope. */
+  onPageRowsChange?: (rows: MobileMasterData[], total: number) => void
 }
 
 const NA = <span className="text-white/30">ไม่ระบุ</span>
@@ -28,7 +31,7 @@ const STATUS_COLOR: Record<StatusType, string> = {
 
 const DEFAULT_PAGE_SIZE = 10
 
-const TableVehicleData: React.FC<Props> = () => {
+const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
   const { searchParams, setOpenMobileLog } = useMobileContext()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -46,6 +49,11 @@ const TableVehicleData: React.FC<Props> = () => {
     page,
     page_size: pageSize,
   })
+
+  const payload = data?.data
+  useEffect(() => {
+    onPageRowsChange?.(payload?.data ?? [], payload?.meta.total ?? 0)
+  }, [payload, onPageRowsChange])
 
   const columns: ColumnsType<MobileMasterData> = [
     {

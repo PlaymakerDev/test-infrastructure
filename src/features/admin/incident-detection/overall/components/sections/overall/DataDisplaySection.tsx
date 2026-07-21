@@ -10,6 +10,7 @@ import { useIncidentCentralList, useIncidentCentralTotals } from '@/hooks/querie
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 const ID_FILTERS: FilterConfig[] = [
   { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
@@ -206,7 +207,7 @@ const DataDisplaySection: React.FC = () => {
             filenameBase: 'Incident_Detection_Overview_Report',
             title: 'รายงานสรุปภาพรวมระบบตรวจจับเหตุการณ์ (Incident Detection Overview)',
             filterNote: exportFilterNote,
-            columns: ID_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(ID_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -215,7 +216,7 @@ const DataDisplaySection: React.FC = () => {
           exportExcel({
             filenameBase: 'Incident_Detection_Overview_Report',
             sheetName: 'Incident Detection Overview',
-            columns: ID_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(ID_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

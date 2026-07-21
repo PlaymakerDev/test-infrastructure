@@ -396,23 +396,30 @@ export default function Navbar() {
     return navEntries.map((item) => {
       const { OverrideIcon, active } = item
       return (
-        // Hover mirrors the active look instantly (soft-yellow icon + label
-        // below) — replaces the native `title` tooltip, whose OS delay made
-        // the icons hard to identify. Active stays full brand yellow.
+        // Hover mirrors the active look (soft-yellow icon + label below) —
+        // replaces the native `title` tooltip, whose OS delay made the icons
+        // hard to identify. Active stays full brand yellow.
+        //
+        // The label animates open via max-width+opacity instead of a
+        // display:none↔block flip — the instant flip made the whole row
+        // jump sideways on every icon the cursor swept across (reported
+        // 2026-07-21). max-w-36 (144px) covers the longest label
+        // ("Incident Detection" ≈ 110px @13px); overflow-hidden clips
+        // during the tween so the text wipes open smoothly.
         <button
           key={item.key}
           onClick={() => router.push(item.href)}
           aria-label={item.title}
-          className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
+          className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
             }`}
         >
-          <span className="transition-colors">
+          <span className="transition-colors duration-300">
             {OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}
           </span>
           <span
-            className={`hidden text-[13px] font-medium whitespace-nowrap ${active
-              ? "lg:block text-(--yellow)"
-              : "lg:group-hover:block text-[#FFE97A]"
+            className={`hidden lg:block overflow-hidden text-[13px] font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${active
+              ? "max-w-36 opacity-100 text-(--yellow)"
+              : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
               }`}
           >
             {item.label}

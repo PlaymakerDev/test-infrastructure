@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -60,6 +60,15 @@ const MOBILE_EXPORT_COLUMNS: {
 const VehicleSection: React.FC<Props> = () => {
   const { id, searchParams, setSearchParams } = useMobileContext()
   const [exportOpen, setExportOpen] = useState(false)
+  // Rows currently visible in the table + its meta total (TableVehicleData
+  // paginates internally and reports up) — feeds the export dialog's
+  // ทั้งหมด/หน้าปัจจุบัน scope toggle. Stable callback so the table's report
+  // effect doesn't re-fire every parent render.
+  const [pageData, setPageData] = useState<{ rows: MobileMasterData[]; total: number }>({ rows: [], total: 0 })
+  const handlePageRowsChange = useCallback(
+    (rows: MobileMasterData[], total: number) => setPageData({ rows, total }),
+    [],
+  )
 
   // Same query key as OverallSection's fetch — shares the cache entry instead
   // of re-fetching when the user has already visited the ภาพรวม tab.
@@ -100,19 +109,22 @@ const VehicleSection: React.FC<Props> = () => {
         <VehicleStatCard />
       </section>
       <section className='mt-5'>
-        <TableVehicleData />
+        <TableVehicleData onPageRowsChange={handlePageRowsChange} />
       </section>
       <ModalMobileLog />
 
       {/* นำออกเอกสาร — exports the checkpoint rows for the CURRENT search
-          (same columns/format as TableVehicleData). */}
+          (same columns/format as TableVehicleData). The scope toggle picks
+          ทั้งหมด (full filtered set, fetched at export time) vs หน้าปัจจุบัน
+          (the rows the table shows). */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        onExportPdf={async () => {
+        scope={{ totalCount: pageData.total, pageCount: pageData.rows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageData.rows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Mobile_Report',
@@ -122,10 +134,10 @@ const VehicleSection: React.FC<Props> = () => {
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageData.rows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Mobile_Report',
