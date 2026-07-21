@@ -399,7 +399,10 @@ const LineChart: React.FC<LineChartProps> = ({
         itemStyle: { color: line.color },
         symbol: 'circle',
         symbolSize: 8,
-        showSymbol: false,
+        // A single point has no line segment to draw, so it'd otherwise be
+        // completely invisible (showSymbol only turns on for >1 point, where
+        // the line itself is already visible without a symbol on every point).
+        showSymbol: data.length <= 1,
         emphasis: { showSymbol: true, scale: 1.4 },
         areaStyle: null,
         // Force dashed reference lines above the real data curve so they
