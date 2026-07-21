@@ -25,9 +25,12 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-// `vmsinfo` was previously named `status`; the old `status` key now routes to
-// the "สถานะการแสดงผล" tab that used to live inside the (now-removed) legacy screen.
-const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'vmsinfo', 'status'] as const
+// Order reflects the operator workflow: primary actions first (dispatch, media
+// prep, scheduling), then observation (status, history), then rarely-touched
+// device config (vmsinfo) last. `vmsinfo` was previously named `status`; the
+// current `status` key now routes to the "สถานะการแสดงผล" tab that used to
+// live inside the (now-removed) legacy screen.
+const VALID_TABS = ['dispatch', 'media', 'display', 'status', 'history', 'vmsinfo'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -102,7 +105,7 @@ const VMSCommandCenterScreen: React.FC = () => {
           items={[
             {
               key: 'dispatch',
-              label: 'การสั่งงาน + ติดตาม',
+              label: 'การสั่งงาน',
               children: (
                 <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
@@ -130,15 +133,6 @@ const VMSCommandCenterScreen: React.FC = () => {
               ),
             },
             {
-              key: 'history',
-              label: 'ประวัติสั่งงานทั้งหมด',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <GlobalHistoryTable onOpenSign={openDetail} />
-                </div>
-              ),
-            },
-            {
               key: 'media',
               label: 'คลังสื่อ',
               children: (
@@ -159,15 +153,6 @@ const VMSCommandCenterScreen: React.FC = () => {
               ),
             },
             {
-              key: 'vmsinfo',
-              label: 'ข้อมูลป้าย VMS',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <StatusTable onOpenSignDetail={openDetail} />
-                </div>
-              ),
-            },
-            {
               key: 'status',
               label: 'สถานะการแสดงผล',
               children: (
@@ -175,6 +160,24 @@ const VMSCommandCenterScreen: React.FC = () => {
                   <ControlVMSProvider>
                     <StatusSection />
                   </ControlVMSProvider>
+                </div>
+              ),
+            },
+            {
+              key: 'history',
+              label: 'ประวัติสั่งงานทั้งหมด',
+              children: (
+                <div className="h-[calc(100vh-240px)]">
+                  <GlobalHistoryTable onOpenSign={openDetail} />
+                </div>
+              ),
+            },
+            {
+              key: 'vmsinfo',
+              label: 'ข้อมูลป้าย VMS',
+              children: (
+                <div className="h-[calc(100vh-240px)]">
+                  <StatusTable onOpenSignDetail={openDetail} />
                 </div>
               ),
             },

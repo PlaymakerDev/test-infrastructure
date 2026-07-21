@@ -340,7 +340,10 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
   };
 
   const handleErrorCallback = (error: any) => {
-    console.error(`❌ Camera [${cameraId}]: Error`, error);
+    // Downgrade to warn — the ERROR handler upstream already decides the
+    // severity level once (see hls.on(ERROR, …)). Avoids the double
+    // `console.error` per failure that used to spam the console on every
+    // retry cycle for offline VMS signs / unreachable HLS endpoints.
     if (onError) {
       onError(error);
     }
@@ -638,7 +641,20 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
             return;
           }
 
-          console.error(`❌ Camera [${cameraId}]: HLS Error`, data);
+          // Recoverable network errors (manifest fetch timeout / not found)
+          // fire in a tight retry loop while HLS.js reconnects — surface them
+          // as warn once per event, and only escalate to error when retries
+          // truly exhaust below.
+          const isTransientNetwork =
+            data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+            (data.details === 'manifestLoadError' || data.details === 'manifestLoadTimeOut');
+          if (isTransientNetwork) {
+            console.warn(`⚠️ Camera [${cameraId}]: HLS transient — ${data.details}`);
+          } else if (data.fatal) {
+            console.error(`❌ Camera [${cameraId}]: HLS Error`, data);
+          } else {
+            console.warn(`⚠️ Camera [${cameraId}]: HLS Warning`, data);
+          }
           handleErrorCallback(data);
 
           if (data.fatal) {

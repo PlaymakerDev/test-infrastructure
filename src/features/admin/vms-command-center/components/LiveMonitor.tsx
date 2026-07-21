@@ -101,6 +101,12 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
     return () => clearInterval(id)
   }, [])
 
+  // Terminal states (cancelled/done/overwrite/lost) linger for a grace window
+  // so the operator gets a visual confirmation that the sign really transitioned
+  // (e.g. "just cancelled" pill visible ~10 min after they clicked หยุด), then
+  // auto-hide. Toggling `hideFinished` bypasses the grace and hides them
+  // immediately for operators who want a strictly-active view. Long-form history
+  // is in the ประวัติสั่งงานทั้งหมด tab.
   const [hideFinished, setHideFinished] = useState(false)
 
   const handleCancel = async (settingID?: number) => {
@@ -130,7 +136,16 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
     return s
   }, [rows])
 
-  const visible = hideFinished ? rows.filter((r) => statusMeta(r.status ?? undefined).isActive) : rows
+  // Show all non-terminal rows always; terminal rows only within `TERMINAL_GRACE_MS`
+  // of their last transition. `nowMs` ticks every 1s so cards fade out live.
+  const TERMINAL_GRACE_MS = 10 * 60 * 1000
+  const visible = rows.filter((r) => {
+    const meta = statusMeta(r.status ?? undefined)
+    if (!meta.isTerminal) return true
+    if (hideFinished) return false
+    const t = r.status_updated_at ? dayjs(r.status_updated_at).valueOf() : 0
+    return t > 0 && nowMs - t < TERMINAL_GRACE_MS
+  })
 
   return (
     <div className="flex flex-col h-full">
@@ -169,7 +184,9 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
         )}
         {vmsIds.length > 0 && !isLoading && rows.length > 0 && visible.length === 0 && (
           <div className="text-center fs-12 text-white/50 py-4">
-            ป้ายทั้งหมดเสร็จสิ้นแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
+            {hideFinished
+              ? 'ป้ายทั้งหมดจบไปแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" หรือดูใน ประวัติสั่งงานทั้งหมด'
+              : 'ป้ายทั้งหมดจบไปแล้ว (เกิน 10 นาที) — ดูย้อนหลังในแท็บ ประวัติสั่งงานทั้งหมด'}
           </div>
         )}
         {visible.map((it) => {
@@ -257,6 +274,15 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                         : 'ยังไม่มีคำสั่ง'
                     }
                   />
+                  <Tooltip title="ดูรายละเอียด">
+                    <Button
+                      size="small"
+                      type="primary"
+                      ghost
+                      icon={<TbEye style={{ verticalAlign: -2 }} />}
+                      onClick={() => onOpenSignDetail?.(it.vms_id)}
+                    />
+                  </Tooltip>
                 </div>
               </div>
 
@@ -328,17 +354,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                 </div>
               )}
 
-              <div className="mt-2 flex items-center gap-2 justify-end">
-                <Button
-                  size="small"
-                  type="primary"
-                  ghost
-                  icon={<TbEye style={{ verticalAlign: -2 }} />}
-                  onClick={() => onOpenSignDetail?.(it.vms_id)}
-                >
-                  ดูรายละเอียด
-                </Button>
-                {hasActive && meta.isCancellable && (
+              {hasActive && meta.isCancellable && (
+                <div className="mt-2 flex items-center gap-2 justify-end">
                   <Popconfirm
                     title="หยุดการแสดงผลป้ายนี้?"
                     description="คำสั่งจะถูกทำเครื่องหมาย 'ยกเลิก' และป้ายจะเคลียร์จอในรอบ poll ถัดไป"
@@ -356,8 +373,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                       หยุด
                     </Button>
                   </Popconfirm>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )
         })}
