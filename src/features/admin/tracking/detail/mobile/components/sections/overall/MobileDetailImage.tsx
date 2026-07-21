@@ -11,7 +11,7 @@ const MobileDetailImage: React.FC<Props> = (props) => {
   const { departmentData } = props
 
   return (
-    <div className="h-full rounded-lg p-5 bg-(--dark-black)">
+    <div className="h-full rounded-2xl p-5 bg-(--dark-black)">
       <div className='mb-1.5'>
         <figure className='h-52 overflow-hidden rounded-lg'>
           <Image

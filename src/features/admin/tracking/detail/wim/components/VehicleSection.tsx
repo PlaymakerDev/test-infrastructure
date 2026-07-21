@@ -10,6 +10,7 @@ import {
 } from '../components'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { useWIMContext } from '../context'
+import { usePositionById } from '../hooks'
 import type { StationDailyData } from '@/types/tracking/detail-api'
 
 dayjs.extend(buddhistEra)
@@ -69,8 +70,12 @@ const buildVehicleExportColumns = (stationType: string | null | undefined): {
 ]
 
 const VehicleSection: React.FC<Props> = () => {
-  const { id, stationType, vehicleSearchParams, setVehicleSearchParams } = useWIMContext()
+  const { id, stationType, stationTypeId, vehicleSearchParams, setVehicleSearchParams } = useWIMContext()
   const [exportOpen, setExportOpen] = useState(false)
+
+  // Same query key as OverallSection's fetch — shares the cache entry instead
+  // of re-fetching when the user has already visited the ภาพรวม tab.
+  const { data: positionByID } = usePositionById(id as string | number | undefined, stationTypeId)
 
   const exportColumns = useMemo(() => buildVehicleExportColumns(stationType), [stationType])
 
@@ -109,7 +114,7 @@ const VehicleSection: React.FC<Props> = () => {
   return (
     <div>
       <section>
-        <FormSearchVehicle onSearch={setVehicleSearchParams} onExport={() => setExportOpen(true)} />
+        <FormSearchVehicle positionByID={positionByID?.data} onSearch={setVehicleSearchParams} onExport={() => setExportOpen(true)} />
       </section>
       <section className='mt-5'>
         <VehicleStatCard />

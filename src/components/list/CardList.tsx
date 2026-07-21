@@ -75,7 +75,7 @@ const EXPANDED_SPAN: Record<1 | 2 | 3 | 4, string> = {
 export const DEFAULT_STATUS_MAP: Record<string, string> = {
   'น้ำหนักปกติ': 'text-white/40',
   'น้ำหนักเกิน': 'text-red-400',
-  'แจ้งเตือนน้ำหนัก': 'bg-(--yellow) text-black rounded-full px-2 py-0.5 text-xs',
+  'แจ้งเตือนน้ำหนัก': 'bg-(--yellow) text-black rounded-full px-2 py-0.5 fs-12',
 }
 
 const LAYOUT_TRANSITION: Transition = { type: 'spring', stiffness: 350, damping: 30 }
@@ -118,7 +118,7 @@ const CardImageSwiper: React.FC<CardImageSwiperProps> = ({ images, plate }) => {
         >
           <TbChevronLeft className='text-white text-base' />
         </button>
-        <span className='text-white/70 text-xs'>
+        <span className='text-white/70 fs-12'>
           {images[activeIndex]?.description}
         </span>
         <button
@@ -136,42 +136,44 @@ const CardImageSwiper: React.FC<CardImageSwiperProps> = ({ images, plate }) => {
 const DataRows: React.FC<{ item: DataType }> = ({ item }) => (
   <div className='flex flex-col gap-1.5'>
     <div className='flex justify-between gap-4'>
-      <span className='text-white/60 text-sm whitespace-nowrap'>น้ำหนักที่ชั่งได้ :</span>
-      <span className='text-white text-sm'>{item.actualWeight}</span>
+      <span className='text-white fs-12 whitespace-nowrap'>น้ำหนักที่ชั่งได้ :</span>
+      <span className='text-white fs-12'>{item.actualWeight}</span>
     </div>
     <div className='flex justify-between gap-4'>
-      <span className='text-white/60 text-sm whitespace-nowrap'>น้ำหนักตามกำหนด :</span>
-      <span className='text-(--yellow) text-sm'>{item.stdWeight}</span>
+      <span className='text-(--yellow) fs-12 whitespace-nowrap'>น้ำหนักตามกำหนด :</span>
+      <span className='text-(--yellow) fs-12'>{item.stdWeight}</span>
     </div>
     <div className='flex justify-between gap-4'>
-      <span className={`text-sm whitespace-nowrap ${parseFloat(item.overweight) > 0 ? 'text-red-500' : 'text-white/60'}`}>
+      {/* <span className={`fs-12 whitespace-nowrap ${parseFloat(item.overweight) > 0 ? 'text-red-500' : 'text-white/60'}`}> */}
+      <span className={`fs-12 whitespace-nowrap text-red-500`}>
         น้ำหนักเกิน :
       </span>
-      <span className={`text-sm ${parseFloat(item.overweight) > 0 ? 'text-red-500' : 'text-white/25'}`}>
+      {/* <span className={`fs-12 ${parseFloat(item.overweight) > 0 ? 'text-red-500' : 'text-white/25'}`}> */}
+      <span className={`fs-12 text-red-500`}>
         {item.overweight}
       </span>
     </div>
     {item.laneAcceptance !== undefined && (
       <div className='flex justify-between gap-4'>
-        <span className='text-white/60 text-sm whitespace-nowrap'>ช่องยอมรับบรรทุก :</span>
-        <span className='text-white text-sm'>{item.laneAcceptance}</span>
+        <span className='text-white fs-12 whitespace-nowrap'>ช่องยอมรับบรรทุก :</span>
+        <span className='text-white fs-12'>{item.laneAcceptance}</span>
       </div>
     )}
     {item.cargo !== undefined && (
       <div className='flex justify-between gap-4'>
-        <span className='text-white/60 text-sm whitespace-nowrap'>สิ่งของที่บรรทุก :</span>
-        <span className='text-white text-sm'>{item.cargo}</span>
+        <span className='text-white fs-12 whitespace-nowrap'>สิ่งของที่บรรทุก :</span>
+        <span className='text-white fs-12'>{item.cargo}</span>
       </div>
     )}
     {item.speed !== undefined && (
       <div className='flex justify-between gap-4'>
-        <span className='text-white/60 text-sm whitespace-nowrap'>ความเร็ว :</span>
-        <span className='text-white text-sm'>{item.speed}</span>
+        <span className='text-white/60 fs-12 whitespace-nowrap'>ความเร็ว :</span>
+        <span className='text-white/60 fs-12'>{item.speed}</span>
       </div>
     )}
     <div className='flex justify-between gap-4'>
-      <span className='text-white/60 text-sm whitespace-nowrap'>วันที่และเวลา :</span>
-      <span className='text-white text-sm'>{item.datetime}</span>
+      <span className='text-white/60 fs-12 whitespace-nowrap'>วันที่และเวลา :</span>
+      <span className='text-white/60 fs-12'>{item.datetime}</span>
     </div>
   </div>
 )
@@ -219,7 +221,7 @@ const CardList: React.FC<CardListProps> = ({
         transition={LAYOUT_TRANSITION}
         onClick={() => toggle(item.id)}
         className={[
-          'bg-[#2D2D2D] rounded-xl p-4 cursor-pointer transition-colors duration-300 overflow-hidden',
+          'bg-[#2D2D2D] rounded-2xl p-4 cursor-pointer transition-colors duration-300 overflow-hidden',
           isExpanded
             ? `border-2 border-(--yellow) ${expandedSpanClass}`
             : 'border-2 border-transparent',
@@ -227,8 +229,8 @@ const CardList: React.FC<CardListProps> = ({
       >
         {/* Header */}
         <motion.div layout='position' className='flex items-start justify-between gap-2 mb-1'>
-          <h4 className='text-[#66AEFF] font-bold mb-0 leading-snug'>{item.plate}</h4>
-          <span className={`text-xs whitespace-nowrap pt-0.5 ${statusMap[item.status] ?? 'text-white/40'}`}>
+          <h3 className='text-[#66AEFF] font-normal! mb-0 leading-snug'>{item.plate}</h3>
+          <span className={`fs-12 whitespace-nowrap pt-0.5 ${statusMap[item.status] ?? 'text-white/40'}`}>
             {item.status}
           </span>
         </motion.div>
@@ -252,7 +254,7 @@ const CardList: React.FC<CardListProps> = ({
                   {images.length > 0 ? (
                     <CardImageSwiper images={images} plate={String(item.plate)} />
                   ) : (
-                    <div className='w-full aspect-video rounded-lg bg-white/10 flex items-center justify-center text-white/30 text-xs'>
+                    <div className='w-full aspect-video rounded-lg bg-white/10 flex items-center justify-center text-white/30 fs-12'>
                       ไม่มีภาพ
                     </div>
                   )}

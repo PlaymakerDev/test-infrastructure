@@ -47,7 +47,7 @@ const VehicleCard: React.FC<{ item: CarList }> = ({ item }) => {
   const vehicleIdleStatus = item.speed === 0 ? 'parked' : 'moving'
   const vehicleWeightStatus = item.isoverweight === "Y" ? 'overweight' : 'normal'
   return (
-    <div className='bg-(--mid-gray) rounded-xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+    <div className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
       <div>
         <h3 className='font-bold text-white leading-tight'>{item.plate_no || 'ไม่ระบุทะเบียน'}</h3>
         <p className='fs-12 text-gray-400 mt-0.5'>{item.plate_province || '-'}</p>

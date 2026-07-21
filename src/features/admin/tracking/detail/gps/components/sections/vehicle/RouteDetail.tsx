@@ -90,12 +90,12 @@ const RouteDetail: React.FC<Props> = (props) => {
         <div>
           <div className='flex items-center gap-2 mb-2'>
             <TbMapPin className='text-(--yellow) fs-24' />
-            <h3 className='text-(--yellow)'>สายทาง {road?.road_code || '-'}</h3>
+            <h3 className='text-(--yellow) font-normal!'>สายทาง {road?.road_code || '-'}</h3>
           </div>
           <p>{road?.route_name || '-'}</p>
           <p className='fs-12 text-(--yellow)'>{renderDeptBureau(road?.dept_name || '-', road?.bureau_name || '-')}</p>
           <p className='fs-12 text-gray-400'>จังหวัด {road?.province || '-'}</p>
-          <p className='fs-12 text-blue-500'>ระยะทาง {fmtNumber(Number(road?.length_drr), 3) || 0}</p>
+          <p className='fs-12 text-(--default-blue)'>ระยะทาง {fmtNumber(Number(road?.length_drr), 3) || 0}</p>
         </div>
 
         {/* Vehicle Status Cards */}

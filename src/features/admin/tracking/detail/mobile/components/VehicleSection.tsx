@@ -10,6 +10,7 @@ import {
 } from '../components'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { useMobileContext } from '../context'
+import { useMobileMasterDepartmentByTID } from '../hooks'
 import { fmtNumber } from '@/utils/formatNumber'
 import type { MobileMasterData } from '@/types/tracking/detail-api'
 
@@ -57,8 +58,13 @@ const MOBILE_EXPORT_COLUMNS: {
 ]
 
 const VehicleSection: React.FC<Props> = () => {
-  const { searchParams, setSearchParams } = useMobileContext()
+  const { id, searchParams, setSearchParams } = useMobileContext()
   const [exportOpen, setExportOpen] = useState(false)
+
+  // Same query key as OverallSection's fetch — shares the cache entry instead
+  // of re-fetching when the user has already visited the ภาพรวม tab.
+  const { data: departmentResponse } = useMobileMasterDepartmentByTID(id as string | number | undefined)
+  const departmentData = departmentResponse?.data.data
 
   // Human-readable note of the active search — printed in the PDF header so a
   // reader knows what subset they're looking at.
@@ -88,7 +94,7 @@ const VehicleSection: React.FC<Props> = () => {
   return (
     <div>
       <section>
-        <FormSearchVehicle onSearch={setSearchParams} onExport={() => setExportOpen(true)} />
+        <FormSearchVehicle departmentData={departmentData} onSearch={setSearchParams} onExport={() => setExportOpen(true)} />
       </section>
       <section className='mt-5'>
         <VehicleStatCard />

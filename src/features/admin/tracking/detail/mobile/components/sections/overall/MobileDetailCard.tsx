@@ -48,12 +48,12 @@ const MobileDetailCard: React.FC<Props> = (props) => {
   }, [isCountLoading, isCountError, countData])
 
   return (
-    <div className="h-full rounded-lg p-5 bg-(--dark-black)">
+    <div className="h-full rounded-2xl p-5 bg-(--dark-black)">
       <h3 className='text-(--yellow)'>ข้อมูลหน่วยจัดตั้งเคลื่อนที่</h3>
       <section className='mt-5'>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-            <h3 className='text-(--yellow) mb-3'>ข้อมูลสายทาง</h3>
+            <h4 className='text-(--yellow) font-normal! mb-3'>ข้อมูลสายทาง</h4>
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>รหัสสายทาง</p>
@@ -82,7 +82,7 @@ const MobileDetailCard: React.FC<Props> = (props) => {
             </section>
           </Col>
           <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-            <h3 className='text-(--yellow) mb-3'>ข้อมูลหน่วยจัดตั้ง</h3>
+            <h4 className='text-(--yellow) font-normal! mb-3'>ข้อมูลหน่วยจัดตั้ง</h4>
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='text-gray-500'>ขื่อหน่วยชั่งยานพาหนะ</p>
@@ -103,7 +103,7 @@ const MobileDetailCard: React.FC<Props> = (props) => {
             </section>
           </Col>
           <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-            <h3 className='text-(--yellow) mb-3'>ประวัติการจัดตั้ง</h3>
+            <h4 className='text-(--yellow) font-normal! mb-3'>ประวัติการจัดตั้ง</h4>
             {renderCountContent}
           </Col>
         </Row>

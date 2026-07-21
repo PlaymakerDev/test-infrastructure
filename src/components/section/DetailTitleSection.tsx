@@ -118,7 +118,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
             {/* Google Map + Anydesk buttons (Google Map first per Figma). */}
             {showGoogleMap && (
               <ConfigProvider
-                theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}
+                theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}
               >
                 <Button
                   type='primary'
@@ -135,7 +135,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
                     )
                   }}
                 >
-                  <p>Google Map</p>
+                  <p className='fs-12'>Google Map</p>
                 </Button>
               </ConfigProvider>
             )}

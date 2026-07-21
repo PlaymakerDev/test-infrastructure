@@ -7,6 +7,7 @@ import {
 import { TbMap } from 'react-icons/tb'
 import { useQuery } from '@tanstack/react-query'
 import { getTrackingGPSAnalyticProvinceTrafficAPI } from '@/services/routes/TrackingGPSService'
+import dayjs from 'dayjs'
 
 interface Props {
 
@@ -30,10 +31,10 @@ const CompareInfoSection: React.FC<Props> = (props) => {
   }, [data, search])
 
   return (
-    <div className='bg-(--dark-black) rounded-lg p-5'>
+    <div className='bg-(--dark-black) rounded-2xl p-5'>
       <div className='flex items-center gap-2 mb-4'>
         <TbMap className='fs-22 text-(--yellow) shrink-0' />
-        <h3 className='text-(--yellow)'>พื้นที่ตรวจพบบ่อย 30 วันย้อนหลัง</h3>
+        <h4 className='text-(--yellow) font-normal!'>ข้อมูลเปรียบเทียบรถวิ่งผ่าน <span className='text-white'>เดือน{dayjs().format('MMMM')}</span></h4>
       </div>
       <section>
         <CompareCard

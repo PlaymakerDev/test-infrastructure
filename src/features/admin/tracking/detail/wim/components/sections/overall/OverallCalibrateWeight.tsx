@@ -17,7 +17,7 @@ const OverallCalibrateWeight: React.FC<Props> = (props) => {
   const { id, stationTypeId, setOpenCalibrationHistoryModal } = useWIMContext()
 
   return (
-    <div className="h-full bg-[#FFFFFF1A] border-2 rounded-lg p-5 border-white">
+    <div className="h-full bg-[#FFFFFF1A] border-2 rounded-2xl p-5 border-white">
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6'>
         <h3 className='mb-0'>ข้อมูลการ Calibrate เครื่องชั่ง</h3>
         <ConfigProvider

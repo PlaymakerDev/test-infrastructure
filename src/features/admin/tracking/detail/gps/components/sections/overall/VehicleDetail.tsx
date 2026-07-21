@@ -11,7 +11,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
   const { data } = props
 
   return (
-    <div className='rounded-lg p-5 bg-(--mid-gray) lg:-mr-3'>
+    <div className='rounded-2xl p-5 bg-(--mid-gray) lg:-mr-3'>
       <section>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
@@ -26,7 +26,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={12}>
-            <h4 className='text-(--yellow) mb-3'>ข้อมูลรถบรรทุก</h4>
+            <h4 className='text-(--default-blue) font-normal! mb-3'>ข้อมูลรถบรรทุก</h4>
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>ยี่ห้อ</p>
@@ -47,7 +47,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
             </section>
           </Col>
           <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={12} xxxl={12}>
-            <h4 className='text-(--yellow) mb-3'>ข้อมูลสายทาง</h4>
+            <h4 className='text-(--default-blue) font-normal! mb-3'>ข้อมูลสายทาง</h4>
             <section>
               <div className='flex flex-col gap-1 mb-2.5'>
                 <p className='fs-12 text-gray-500'>สายทาง</p>

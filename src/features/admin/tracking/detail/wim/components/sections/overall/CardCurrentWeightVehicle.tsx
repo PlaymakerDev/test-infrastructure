@@ -158,10 +158,10 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
         </section>
       </>
     )
-  }, [data, renderLicensePlate, showVehiclePhotos])
+  }, [data, showVehiclePhotos, prerenderLicensePlate])
 
   return (
-    <div className="border-2 rounded-lg p-5 border-red-500 overflow-hidden">
+    <div className="border-2 rounded-2xl p-5 border-red-500 overflow-hidden">
       {renderContent}
     </div>
   )

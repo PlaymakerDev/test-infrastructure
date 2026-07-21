@@ -86,9 +86,9 @@ const MobileStationData: React.FC<Props> = (props) => {
               </Swiper>
             </figure>
             <section className='shrink-0 pt-2'>
-              <p className='text-pink-500'>หน่วยงาน : {item.department_name || '-'}</p>
-              <p className='text-gray-400'>ร่วมบูรณาการ : {item.collaboration || '-'}</p>
-              <p className='text-yellow-500'>วันที่จัดตั้ง : {dayjs(item.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')}</p>
+              <p className='fs-12 text-pink-500'>หน่วยงาน : {item.department_name || '-'}</p>
+              <p className='fs-12 text-gray-400'>ร่วมบูรณาการ : {item.collaboration || '-'}</p>
+              <p className='fs-12 text-(--yellow)'>วันที่จัดตั้ง : {dayjs(item.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')}</p>
             </section>
           </div>
         )

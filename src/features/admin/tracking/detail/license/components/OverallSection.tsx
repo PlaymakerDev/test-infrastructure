@@ -1,6 +1,6 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
-import { Button, Empty } from 'antd'
+import { Button, ConfigProvider, Empty } from 'antd'
 import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
@@ -35,15 +35,17 @@ const MapSection: React.FC = () => {
       </div>
 
       {/* Google Map button */}
-      <Button
-        type='primary'
-        size='small'
-        href={googleMapsUrl}
-        target='_blank'
-        className='absolute! top-3 right-3 z-10'
-      >
-        Google Map
-      </Button>
+      <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+        <Button
+          type='primary'
+          size='small'
+          href={googleMapsUrl}
+          target='_blank'
+          className='absolute! top-3 right-3 z-10'
+        >
+          Google Map
+        </Button>
+      </ConfigProvider>
 
       {/* Location overlay */}
       {latest && (

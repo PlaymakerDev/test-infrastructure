@@ -59,7 +59,7 @@ const TitleSection: React.FC<Props> = (props) => {
               />
               {renderIsWarranty}
             </div>
-            <ConfigProvider theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}>
+            <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
               <Button
                 type='primary'
                 size='middle'
@@ -67,7 +67,7 @@ const TitleSection: React.FC<Props> = (props) => {
                 className='w-full sm:w-auto'
                 onClick={() => window.open(`https://maps.google.com/?q=${data?.solution.geometry_point[1]},${data?.solution.geometry_point[0]}`, '_blank')}
               >
-                <p>Google Map</p>
+                <p className='fs-12'>Google Map</p>
               </Button>
             </ConfigProvider>
             <ConfigProvider

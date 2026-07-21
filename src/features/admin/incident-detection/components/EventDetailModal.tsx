@@ -258,7 +258,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
               <button
                 type='button'
                 className='absolute top-3 right-3 rounded-full px-4 py-1 fs-12 font-medium cursor-pointer'
-                style={{ background: '#1B3F8B', color: '#fff' }}
+                style={{ background: '#003F87', color: '#fff' }}
                 onClick={() =>
                   window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
                 }

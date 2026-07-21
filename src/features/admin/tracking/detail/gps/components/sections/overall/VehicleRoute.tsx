@@ -115,10 +115,10 @@ const VehicleRoute: React.FC<Props> = (props) => {
   }, [activeFilter, renderCurrentTimeline, renderLogTimeline])
 
   return (
-    <div className='rounded-lg p-5 bg-(--gray)'>
+    <div className='rounded-2xl p-5 bg-(--gray)'>
       <section>
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <h3 className='font-bold text-(--yellow) leading-tight'>เส้นทางการเคลื่อนที่</h3>
+          <h4 className='font-normal! text-(--yellow) leading-tight'>เส้นทางการเคลื่อนที่</h4>
           <div className='bg-[#A2A2A233] rounded-3xl p-1.5 flex items-center'>
             {renderOptionButton}
           </div>

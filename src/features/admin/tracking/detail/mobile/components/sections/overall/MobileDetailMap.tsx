@@ -66,7 +66,7 @@ const MobileDetailMap: React.FC<Props> = (props) => {
       </BaseMap>
 
       {/* Google Map button */}
-      <ConfigProvider theme={{ token: { colorPrimary: '#1A73E8', colorTextLightSolid: '#FFFFFF' } }}>
+      <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
         <Button
           type='primary'
           size='small'

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button, ConfigProvider, Image, Skeleton } from 'antd'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
@@ -7,6 +8,7 @@ import { usePosition } from '../../../hooks'
 import { APIResponseTrackingPosition, PositionMobile, PositionStation, PositionWim } from '@/types/tracking/overall-api'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { theme } from '@/configs/antd/themeConfig'
+import { fmtNumber } from '@/utils/formatNumber'
 
 const STATION_ICON = '/atlas/images/icon-marker/Station.svg'
 const WIM_ICON = '/atlas/images/icon-marker/Wim.svg'
@@ -25,21 +27,15 @@ interface TrackingPosition {
 type FilterOption = 'ทั้งหมด' | 'สถานี' | 'WIM' | 'เคลื่อนที่'
 const FILTER_OPTIONS: FilterOption[] = ['ทั้งหมด', 'สถานี', 'WIM', 'เคลื่อนที่']
 
-const StationPopup: React.FC<{ data: PositionStation }> = ({ data }) => {
+const StationPopup: React.FC<{ data: PositionStation; router: ReturnType<typeof useRouter> }> = ({ data, router }) => {
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)  ${data.isEnable ? `border-green-400` : 'border-red-400'}`}>
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)`}>
       <section>
-        <p className='fs-12'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
-        <p className='fs-12'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
-      </section>
-      <hr className='my-3' />
-      <section className='mt-1.5'>
-        <p className='fs-12'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
-        <p className='fs-12'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
-      </section>
-      <hr className='my-3' />
-      <section className='mt-1.5'>
-        <p className='fs-12'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+        <p className='fs-12 mb-1.5'>{data.LocationDescription || '-'}</p>
+        <p className='fs-12 mb-1.5 text-white/50'>เปิดด่านล่าสุด : {'-'}</p>
+        <p className={`fs-12 mb-1.5 ${data.isEnable ? 'text-[#05F2DB]' : 'text-red-500'}`}>สถานะ : {data.isEnable ? 'เปิดปกติ' : 'ปิด'} ●</p>
+        <p className='fs-12 mb-1.5 text-(--yellow)'>รถเข้าชั่งทั้งหมด {fmtNumber(Number(data.Total)) || 0}</p>
+        <p className='fs-12 mb-1.5 text-red-500'>รถเข้าน้ำหนักเกิน {fmtNumber(Number(data.Over)) || 0}</p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -49,8 +45,9 @@ const StationPopup: React.FC<{ data: PositionStation }> = ({ data }) => {
             size='small'
             shape='round'
             block
+            onClick={() => router.push(`/admin/tracking/detail/station/${data.StationID}?station_type=STATION`)}
           >
-            <p className='fs-12'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูรายละเอียด</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -58,21 +55,15 @@ const StationPopup: React.FC<{ data: PositionStation }> = ({ data }) => {
   )
 }
 
-const WIMPopup: React.FC<{ data: PositionWim }> = ({ data }) => {
+const WIMPopup: React.FC<{ data: PositionWim; router: ReturnType<typeof useRouter> }> = ({ data, router }) => {
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) ${data.isEnable ? `border-(--yellow)` : 'border-red-400'}`}>
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)`}>
       <section>
-        <p className='fs-12'>ชื่อสถานี: <strong>{data.StationName || '-'}</strong></p>
-        <p className='fs-12'>ชื่อ WIM: <strong>{data.LocationDescription || '-'}</strong></p>
-      </section>
-      <hr className='my-3' />
-      <section className='mt-1.5'>
-        <p className='fs-12'>จำนวนรถเข้าชั่ง: <strong>{data.Total || 0}</strong></p>
-        <p className='fs-12'>จำนวนบรรจุเกิน: <strong>{data.Over || 0}</strong></p>
-      </section>
-      <hr className='my-3' />
-      <section className='mt-1.5'>
-        <p className='fs-12'>สถานะ: <strong>{data.isEnable ? 'ออนไลน์' : 'ออฟไลน์'}</strong></p>
+        <p className='fs-12 mb-1.5'>{data.LocationDescription || '-'}</p>
+        <p className='fs-12 mb-1.5 text-white/50'>เปิดด่านล่าสุด : {'-'}</p>
+        <p className={`fs-12 mb-1.5 ${data.isEnable ? 'text-[#05F2DB]' : 'text-red-500'}`}>สถานะ : {data.isEnable ? 'เปิดปกติ' : 'ปิด'} ●</p>
+        <p className='fs-12 mb-1.5 text-(--yellow)'>รถเข้าชั่งทั้งหมด {fmtNumber(Number(data.Total)) || 0}</p>
+        <p className='fs-12 mb-1.5 text-red-500'>รถเข้าน้ำหนักเกิน {fmtNumber(Number(data.Over)) || 0}</p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -82,8 +73,9 @@ const WIMPopup: React.FC<{ data: PositionWim }> = ({ data }) => {
             size='small'
             shape='round'
             block
+            onClick={() => router.push(`/admin/tracking/detail/wim/${data.StationID}?station_type=WIM`)}
           >
-            <p className='fs-12'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูรายละเอียด</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -91,8 +83,7 @@ const WIMPopup: React.FC<{ data: PositionWim }> = ({ data }) => {
   )
 }
 
-const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
-
+const MobilePopup: React.FC<{ data: PositionMobile; router: ReturnType<typeof useRouter> }> = ({ data, router }) => {
   const renderName = useCallback((firstName: string, lastName: string) => {
     const fullName = [firstName, lastName]
 
@@ -100,10 +91,10 @@ const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
   }, [])
 
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-pink-400`}>
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black)`}>
       <section>
-        <p className='fs-12'>ชื่อสถานี: <strong>{data.WayID || '-'}</strong></p>
-        <p className='fs-12'>ผู้จัดตั้งด่าน: <strong>{renderName(data.first_name, data.last_name) || '-'}</strong></p>
+        <p className='fs-12 mb-1.5'>{data.WayID || '-'}</p>
+        <p className='fs-12 text-white/50 mb-1.5'>ผู้จัดตั้งด่าน: {renderName(data.first_name, data.last_name) || '-'}</p>
       </section>
       <section className='mt-3'>
         <ConfigProvider theme={{ ...theme.theme }}>
@@ -113,8 +104,9 @@ const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
             size='small'
             shape='round'
             block
+            onClick={() => router.push(`/admin/tracking/detail/mobile/${data.TID}`)}
           >
-            <p className='fs-12'>ดูเพิ่มเติม</p>
+            <p className='fs-12'>ดูรายละเอียด</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -124,7 +116,13 @@ const MobilePopup: React.FC<{ data: PositionMobile }> = ({ data }) => {
 
 const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
   const { data, isReady } = props
-
+  // Popups render into a detached React root created by mapbox's popup DOM
+  // node (see showReactPopup in components/map/primitives/popupHelper.ts), so
+  // they have no AppRouterContext of their own — useRouter() inside a popup
+  // throws "invariant expected app router to be mounted". Resolve it here,
+  // where the component is actually mounted in the app tree, and pass the
+  // instance down as a plain prop instead.
+  const router = useRouter()
 
   const renderStationMarker = useMemo(() => {
     return data?.station.map((item) => {
@@ -135,7 +133,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
           anchor="bottom"
           offset={[0, 19]}
           title={item.StationName}
-          popup={() => <StationPopup data={item} />}
+          popup={() => <StationPopup data={item} router={router} />}
           popupOptions={{ offset: 10, closeButton: false }}
         >
           <Image
@@ -148,7 +146,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
         </HTMLMarker>
       )
     })
-  }, [data?.station])
+  }, [data?.station, router])
 
   const renderWIMMarker = useMemo(() => {
     return data?.wim.map((item) => {
@@ -159,7 +157,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
           anchor="bottom"
           offset={[0, 19]}
           title={item.StationName}
-          popup={() => <WIMPopup data={item} />}
+          popup={() => <WIMPopup data={item} router={router} />}
           popupOptions={{ offset: 10, closeButton: false }}
         >
           <Image
@@ -172,7 +170,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
         </HTMLMarker>
       )
     })
-  }, [data?.wim])
+  }, [data?.wim, router])
 
   const renderMobileMarker = useMemo(() => {
     return data?.mobile.map((item) => {
@@ -183,7 +181,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
           anchor="bottom"
           offset={[0, 19]}
           title={item.WayID}
-          popup={() => <MobilePopup data={item} />}
+          popup={() => <MobilePopup data={item} router={router} />}
           popupOptions={{ offset: 10, closeButton: false }}
         >
           <Image
@@ -196,7 +194,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
         </HTMLMarker>
       )
     })
-  }, [data?.mobile])
+  }, [data?.mobile, router])
 
   if (!isReady) return
 

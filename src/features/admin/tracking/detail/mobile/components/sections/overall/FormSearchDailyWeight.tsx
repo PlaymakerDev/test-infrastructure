@@ -14,7 +14,7 @@ const FormSearchDailyWeight: React.FC<Props> = (props) => {
 
   return (
     <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
-      <h3 className='text-(--yellow)'>ตารางข้อมูลรถเข้าชั่งประจำวัน</h3>
+      <h3 className='text-(--yellow) font-normal!'>ตารางข้อมูลรถเข้าชั่งประจำวัน</h3>
       <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
         <Segmented
           value={displayType}
@@ -28,7 +28,7 @@ const FormSearchDailyWeight: React.FC<Props> = (props) => {
         />
         <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
           <Button type="primary" size="large" shape="round" icon={<TbPrinter />} className='w-full! md:w-auto!' onClick={() => onExport?.()}>
-            <p>นำออกเอกสาร</p>
+            <p className='fs-12'>นำออกเอกสาร</p>
           </Button>
         </ConfigProvider>
       </div>

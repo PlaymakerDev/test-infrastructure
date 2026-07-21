@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import dayjs, { Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -6,6 +6,7 @@ import 'dayjs/locale/th'
 import { Button, Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { TbPrinter } from "react-icons/tb";
+import type { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -19,6 +20,7 @@ export interface MobileVehicleSearchParams {
 }
 
 interface Props {
+  departmentData?: MobileMasterDepartmentByTIDData
   onSearch?: (params: MobileVehicleSearchParams) => void
   onExport?: () => void
 }
@@ -66,9 +68,15 @@ const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchVal
 }
 
 const FormSearchVehicle: React.FC<Props> = (props) => {
-  const { onSearch, onExport } = props
+  const { departmentData, onSearch, onExport } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const googleMapsUrl = useMemo(() => {
+    const { latitude, longitude } = departmentData ?? {}
+    if (latitude == null || longitude == null) return 'https://www.google.com/maps'
+    return `https://www.google.com/maps?q=${latitude},${longitude}`
+  }, [departmentData])
 
   useEffect(() => {
     return () => {
@@ -200,14 +208,14 @@ const FormSearchVehicle: React.FC<Props> = (props) => {
         </Col>
         <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={6}>
           <div className='flex gap-3'>
-            <ConfigProvider theme={{ token: { colorPrimary: '#1B3F8B', colorTextLightSolid: '#FFFFFF' } }}>
-              <Button type="primary" size="large" shape="round">
-                <p>Google Map</p>
+            <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+              <Button type="primary" size="large" shape="round" href={googleMapsUrl} target="_blank">
+                <p className='fs-12'>Google Map</p>
               </Button>
             </ConfigProvider>
             <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
               <Button type="primary" size="large" shape="round" icon={<TbPrinter />} onClick={() => onExport?.()}>
-                <p>นำออกเอกสาร</p>
+                <p className='fs-12'>นำออกเอกสาร</p>
               </Button>
             </ConfigProvider>
           </div>

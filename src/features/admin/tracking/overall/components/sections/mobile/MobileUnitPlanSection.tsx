@@ -3,6 +3,7 @@ import { TbCalendarWeekFilled } from "react-icons/tb";
 import { ChartMobileUnitPlan, FormSearchUnitPlan } from '../../../components';
 import { APIResponseTrackingViewSumPlanChart } from '@/types/tracking/overall-api';
 import { Empty, Skeleton } from 'antd';
+import dayjs from 'dayjs';
 
 interface Props {
   data?: APIResponseTrackingViewSumPlanChart
@@ -26,8 +27,8 @@ const MobileUnitPlanSection: React.FC<Props> = (props) => {
           <div className='flex items-center gap-3 text-(--yellow)'>
             <TbCalendarWeekFilled className='fs-24' />
             <div>
-              <h4 className='mb-0'>แผนงานและผลการจัดตั้งหน่วยชั่งเคลื่อนที่</h4>
-              <p className='fs-12 text-white/50'>ประจำปีงบประมาณ 2569</p>
+              <h4 className='mb-0 font-normal!'>แผนงานและผลการจัดตั้งหน่วยชั่งเคลื่อนที่</h4>
+              <p className='fs-12 text-white/50'>ประจำปีงบประมาณ {dayjs().format('BBBB')}</p>
             </div>
           </div>
           <div className='w-full lg:max-w-xl'>
