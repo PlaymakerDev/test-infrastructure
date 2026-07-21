@@ -28,6 +28,9 @@ export interface RouteSubDepartment {
   connected: boolean
   /** Displayed as online/total. */
   count?: string
+  /** Sum of noti_count across all solutions/devices under this แขวง — backs the
+   *  sub-level badge (mirrors RouteItem.notiTotal one level down). */
+  notiTotal?: number
 }
 
 export interface RouteItem {

@@ -398,8 +398,11 @@ const AlertSection: React.FC = () => {
           markerItemOverflowColor="#E94C4C"
           useModernMarkers
           detailUrl="/admin/statistics/detail/alert"
+          markerOverflowThreshold={99}
           badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
           badgeValueFn={(item) => item.notiTotal ?? 0}
+          subBadgeColorFn={(sub) => (sub.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
+          subBadgeValueFn={(sub) => sub.notiTotal ?? 0}
           searchText={searchText}
           onSearchChange={setSearchText}
           statsCards={alertCards}

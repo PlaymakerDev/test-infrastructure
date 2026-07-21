@@ -14,7 +14,7 @@ import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import { SearchCard } from '@/components/search-card'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
-import { type RouteItem, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
+import { type RouteItem, type RouteSubDepartment, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
 
 // basePath ('/atlas' in prod, '' in dev) — raw <img src> is NOT prefixed
 // automatically like next/link, so prepend it manually (same as the sidebar
@@ -51,6 +51,13 @@ export interface StatisticsMapPanelProps {
    *  `item.sub3.length` (sub-department count) — override when the badge
    *  should reflect something else, e.g. `item.notiTotal` (incident count). */
   badgeValueFn?: (item: RouteItem, index: number) => number
+  /** Sub-level (แขวง) badge value — mirrors `badgeValueFn` one level down.
+   *  Defaults to `sub.detail.length` (the แขวง's own child count, mirroring the
+   *  bureau default of `item.sub3.length`). */
+  subBadgeValueFn?: (sub: RouteSubDepartment, index: number) => number
+  /** Sub-level (แขวง) badge color — mirrors `badgeColorFn` one level down.
+   *  Defaults to the same 0-gray / >263-red / else-green rule as the bureau. */
+  subBadgeColorFn?: (sub: RouteSubDepartment, index: number) => string
   /** Numeric count backing the DEFAULT marker color/label threshold (green
    *  unless > 263, then red + "263+") AND the modern-marker cluster-bubble
    *  sum. Defaults to `item.sub3.length` when sub3 holds one entry per
@@ -118,6 +125,34 @@ const renderCount = (count: string) => {
   )
 }
 
+// The rounded pill (dot + value) shown on the right of each bureau AND แขวง
+// row. `maxChars` sizes every pill to one uniform width so short ("2") and long
+// ("12867") values share the same footprint. Shared by both levels so they
+// stay visually identical.
+const renderBadge = (value: number | string, color: string, maxChars: number) => (
+  <span
+    style={{
+      fontSize: 12,
+      fontWeight: 500,
+      fontVariantNumeric: 'tabular-nums',
+      color,
+      minWidth: `calc(${maxChars}ch + 30px)`,
+      height: 22,
+      borderRadius: 88,
+      border: `1px solid ${color}`,
+      boxSizing: 'border-box',
+      paddingInline: 8,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    }}
+  >
+    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
+    {value}
+  </span>
+)
+
 const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerColor = '#B2FF00',
   markerAltColor,
@@ -134,6 +169,8 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
   markerLabelFn,
   badgeColorFn,
   badgeValueFn,
+  subBadgeValueFn,
+  subBadgeColorFn,
   markerCountFn,
   routeItems = EMPTY_ROUTE_ITEMS,
   useModernMarkers = false,
@@ -294,6 +331,17 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
     return lengths.length ? Math.max(...lengths) : 1
   }, [filteredRoutes, badgeValueFn, hideIndexBadge])
 
+  // Same uniform-width treatment for the แขวง (sub) badges — measured across
+  // every sub row in the current (filtered) list so all sub pills share one
+  // width, independent of the bureau pill width above.
+  const maxSubBadgeChars = React.useMemo(() => {
+    if (hideIndexBadge) return 0
+    const lengths = filteredRoutes.flatMap((item) =>
+      item.sub3.map((sub, i) => String(subBadgeValueFn ? subBadgeValueFn(sub, i) : sub.detail.length).length),
+    )
+    return lengths.length ? Math.max(...lengths) : 1
+  }, [filteredRoutes, subBadgeValueFn, hideIndexBadge])
+
   const searchCardCollapse = (
     <Collapse
       ghost
@@ -312,29 +360,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   ? badgeColorFn(item, index)
                   : item.sub3.length === 0 ? '#979797' : item.sub3.length > 263 ? '#E94C4C' : '#B2FF00'
                 const badgeValue = badgeValueFn ? badgeValueFn(item, index) : item.sub3.length
-                return (
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      fontVariantNumeric: 'tabular-nums',
-                      color: badgeColor,
-                      minWidth: `calc(${maxBadgeChars}ch + 30px)`,
-                      height: 22,
-                      borderRadius: 88,
-                      border: `1px solid ${badgeColor}`,
-                      boxSizing: 'border-box',
-                      paddingInline: 8,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: badgeColor, flexShrink: 0 }} />
-                    {badgeValue}
-                  </span>
-                )
+                return renderBadge(badgeValue, badgeColor, maxBadgeChars)
               })()}
               {!hideCount && renderCount(item.count)}
             </div>
@@ -352,12 +378,21 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               </span>
             )}
             style={{ marginTop: 4 }}
-            items={item.sub3.map((sub) => ({
+            items={item.sub3.map((sub, subIndex) => ({
               key: `${item.name}-${sub.label}`,
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#FCD116', flexShrink: 0, marginLeft: 8 }}>{sub.detail.length}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
+                    {!hideIndexBadge && (() => {
+                      const subBadgeColor = subBadgeColorFn
+                        ? subBadgeColorFn(sub, subIndex)
+                        : sub.detail.length === 0 ? '#979797' : sub.detail.length > 263 ? '#E94C4C' : '#B2FF00'
+                      const subBadgeValue = subBadgeValueFn ? subBadgeValueFn(sub, subIndex) : sub.detail.length
+                      return renderBadge(subBadgeValue, subBadgeColor, maxSubBadgeChars)
+                    })()}
+                    {!hideCount && sub.count && renderCount(sub.count)}
+                  </div>
                 </div>
               ),
               style: { marginBottom: 4 },

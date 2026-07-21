@@ -60,6 +60,7 @@ export function useLiveAlertRouteItems(dateRange?: { start_date?: string; end_da
           detail,
           connected,
           count: `${dept.online}/${dept.online + dept.offline}`,
+          notiTotal: dept.noti_count,
         }
       })
 
