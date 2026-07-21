@@ -349,7 +349,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
                     size="small"
                     showInfo={false}
                     strokeColor="#22c55e"
-                    trailColor="rgba(255,255,255,0.08)"
+                    railColor="rgba(255,255,255,0.08)"
                   />
                 </div>
               )}

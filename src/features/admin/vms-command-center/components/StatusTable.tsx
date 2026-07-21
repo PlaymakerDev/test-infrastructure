@@ -36,13 +36,19 @@ type ScopeFilter =
 
 type StatusFilter = 'all' | 'reported' | 'online' | 'offline' | 'never'
 
-// Parse Tree node keys back into a ScopeFilter. Keys are namespaced ('b:', 's:',
-// 'r:') so we can round-trip the selection without extra bookkeeping.
+// Parse Tree node keys back into a ScopeFilter. Keys are namespaced ('b:',
+// 's:', 'r:') with the full hierarchy prefixed so the tree can hold the SAME
+// road/state under multiple parents without duplicate-key warnings (real data
+// has roads crossing several แขวง). The entity's own id is the LAST segment.
+//   b:{bureau_id}
+//   s:{bureau_id}:{state_id}
+//   r:{bureau_id}:{state_id}:{road_id}
 const parseKey = (key: React.Key): ScopeFilter => {
   const s = String(key)
   if (s === 'all') return { level: 'all' }
-  const [prefix, rest] = s.split(':')
-  const id = Number.parseInt(rest ?? '', 10)
+  const parts = s.split(':')
+  const prefix = parts[0]
+  const id = Number.parseInt(parts[parts.length - 1] ?? '', 10)
   if (!Number.isFinite(id)) return { level: 'all' }
   if (prefix === 'b') return { level: 'bureau', id }
   if (prefix === 's') return { level: 'state', id }
@@ -166,7 +172,10 @@ const buildTree = (rows: ScreenInfoItem[]): DataNode[] => {
         </span>
       ),
       children: sortEntries(Array.from(b.states.values())).map((s) => ({
-        key: `s:${s.id}`,
+        // Prefix parents so the tree accepts the same state/road id under
+        // different bureaus without React's duplicate-key warning (a road can
+        // straddle multiple แขวง / สำนัก in the real data).
+        key: `s:${b.id}:${s.id}`,
         title: (
           <span className="text-white/85">
             {s.label}
@@ -174,7 +183,7 @@ const buildTree = (rows: ScreenInfoItem[]): DataNode[] => {
           </span>
         ),
         children: sortEntries(Array.from(s.roads.values())).map((rd) => ({
-          key: `r:${rd.id}`,
+          key: `r:${b.id}:${s.id}:${rd.id}`,
           isLeaf: true,
           title: (
             <span className="text-white/80">

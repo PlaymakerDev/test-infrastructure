@@ -379,7 +379,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                   const lastAt = dayjs(run.last.reported_at)
                                   return {
                                     color: meta.color,
-                                    dot: (
+                                    icon: (
                                       <span
                                         style={{
                                           width: 10,
@@ -391,7 +391,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                         }}
                                       />
                                     ),
-                                    children: (
+                                    content: (
                                       <div>
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <StatusPill status={r.status} size="sm" />
