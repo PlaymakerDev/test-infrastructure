@@ -489,7 +489,8 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     };
 
     const onError = (e: Event) => {
-      console.error(`❌ Camera [${cameraId}]: Video error (direct)`, e);
+      // Recoverable — retryConnection() below reconnects.
+      console.warn(`⚠️ Camera [${cameraId}]: Video error (direct)`, e);
       handleErrorCallback(e);
       setHasError(true);
       setIsLoading(false);
@@ -648,12 +649,16 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
           const isTransientNetwork =
             data.type === Hls.ErrorTypes.NETWORK_ERROR &&
             (data.details === 'manifestLoadError' || data.details === 'manifestLoadTimeOut');
+          // Every HLS.ERROR path below has its own recovery — `retryConnection`,
+          // `hls.startLoad()`, `hls.recoverMediaError()` — so keep all of these
+          // at warn. Only when retries are truly exhausted (see the recovery
+          // branches below) do we let the caller escalate via handleErrorCallback.
           if (isTransientNetwork) {
             console.warn(`⚠️ Camera [${cameraId}]: HLS transient — ${data.details}`);
           } else if (data.fatal) {
-            console.error(`❌ Camera [${cameraId}]: HLS Error`, data);
+            console.warn(`⚠️ Camera [${cameraId}]: HLS fatal — ${data.details ?? 'unknown'} (recovering)`, data);
           } else {
-            console.warn(`⚠️ Camera [${cameraId}]: HLS Warning`, data);
+            console.warn(`⚠️ Camera [${cameraId}]: HLS ${data.details ?? 'warning'}`, data);
           }
           handleErrorCallback(data);
 
@@ -790,7 +795,8 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         };
 
         const handleVideoError = (e: Event) => {
-          console.error(`❌ Camera [${cameraId}]: Video error`, e);
+          // Recoverable — retry state below reconnects.
+          console.warn(`⚠️ Camera [${cameraId}]: Video error`, e);
           handleErrorCallback(e);
           setHasError(true);
           setIsLoading(false);
