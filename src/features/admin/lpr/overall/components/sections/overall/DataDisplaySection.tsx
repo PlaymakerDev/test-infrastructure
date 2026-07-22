@@ -196,6 +196,8 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
           exportExcel({
             filenameBase: 'LPR_Overview_Report',
             sheetName: 'LPR Overview',
+            title: 'รายงานสรุปภาพรวมจุดติดตั้ง LPR (LPR Overview)',
+            filterNote: exportFilterNote,
             columns: hideProjectNameColumns(LPR_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: filtered,
           })

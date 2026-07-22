@@ -272,6 +272,8 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
           exportExcel({
             filenameBase: 'VMS_Notification_History_Report',
             sheetName: 'VMS Notifications',
+            title: 'รายงานประวัติการแจ้งเตือนป้าย VMS (VMS Notification History)',
+            filterNote: exportFilterNote,
             columns: STATUS_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: filteredData,
           })

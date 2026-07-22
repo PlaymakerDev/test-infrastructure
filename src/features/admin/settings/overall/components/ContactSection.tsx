@@ -372,6 +372,8 @@ const ContactSection: React.FC = () => {
           exportExcel({
             filenameBase: 'Settings_Contractors_Report',
             sheetName: 'Contractors',
+            title: 'รายงานรายชื่อผู้รับจ้าง (Contractor Management)',
+            filterNote: exportFilterNote,
             columns: CONTACT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

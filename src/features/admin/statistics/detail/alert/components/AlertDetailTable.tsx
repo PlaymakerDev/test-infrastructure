@@ -216,6 +216,8 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
           exportExcel({
             filenameBase: 'Lighting_Alert_History_Report',
             sheetName: 'Lighting Alerts',
+            title: 'รายงานประวัติการแจ้งเตือนไฟฟ้าแสงสว่าง (Lighting Alert History)',
+            filterNote: exportFilterNote,
             columns: ALERT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

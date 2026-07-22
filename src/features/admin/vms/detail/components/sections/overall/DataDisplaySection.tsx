@@ -104,6 +104,7 @@ const DataDisplaySection: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'VMS_Camera_List',
+            title: 'รายงานข้อมูลกล้องและป้าย VMS (VMS Camera List)',
             sheetName: 'VMS Cameras',
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: CAMERA_MOCK_ROWS,

@@ -50,7 +50,8 @@ export const mapCentralListToProjects = (
           roadCode: solution.road.code_name ?? '-',
           projectName: solution.project.project_name ?? solution.solution.solution_name ?? '-',
           installPoint: solution.solution.solution_name ?? '-',
-          contractNo: solution.project.contract_no ?? '-',
+          // Empty (not '-') so ContractInfoCell can fall back to the budget year.
+          contractNo: solution.project.contract_no ?? '',
           warranty: solution.is_warranty ? 'in-warranty' : 'expired',
           connection: lighting.is_online ? 'online' : 'offline',
           // Phase and line state are not included in central/list. They are

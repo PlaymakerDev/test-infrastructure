@@ -274,6 +274,8 @@ const ViolationSection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Crosswalk_Violations_Report',
             sheetName: 'Crosswalk Violations',
+            title: 'รายงานการฝ่าฝืนสัญญาณไฟทางข้าม (Crosswalk Violations)',
+            filterNote: exportNote,
             columns,
             rows,
           })

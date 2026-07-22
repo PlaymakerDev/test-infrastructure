@@ -271,6 +271,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'VMS_Overview_Report',
+            title: 'รายงานสรุปภาพรวมป้าย VMS (VMS Overview)',
+            filterNote: exportFilterNote,
             sheetName: 'VMS Overview',
             columns: hideProjectNameColumns(VMS_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,

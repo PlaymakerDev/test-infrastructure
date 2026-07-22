@@ -277,6 +277,8 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Tunnel_Overview_Report',
+            title: 'รายงานสรุปภาพรวมอุโมงค์ (Tunnel Overview)',
+            filterNote: exportFilterNote,
             sheetName: 'Tunnel Overview',
             columns: hideProjectNameColumns(TUNNEL_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,

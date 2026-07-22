@@ -161,6 +161,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Mobile_Daily_Weight_Report',
             sheetName: 'Daily Weight',
+            title: 'รายงานข้อมูลรถเข้าชั่งประจำวัน',
             columns: DAILY_WEIGHT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

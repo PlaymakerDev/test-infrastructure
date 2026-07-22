@@ -280,6 +280,8 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
           exportExcel({
             filenameBase: 'CCTV_Install_Point_Cameras_Report',
             sheetName: 'CCTV Install Point',
+            title: 'รายงานรายการกล้อง CCTV จุดติดตั้ง (CCTV Install Point Cameras)',
+            filterNote: exportFilterNote,
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

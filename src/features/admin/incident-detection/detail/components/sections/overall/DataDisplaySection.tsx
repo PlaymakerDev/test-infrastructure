@@ -339,6 +339,8 @@ const DataDisplaySection: React.FC = () => {
           exportExcel({
             filenameBase: 'Incident_Detection_Camera_Report',
             sheetName: 'Incident Cameras',
+            title: 'รายงานกล้องวิเคราะห์ประจำจุดติดตั้ง (Incident Detection Cameras)',
+            filterNote: exportFilterNote,
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

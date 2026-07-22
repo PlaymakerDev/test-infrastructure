@@ -193,6 +193,8 @@ const CamerasGridTrafficVolume: React.FC = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Traffic_Volume_Camera_List',
+            title: 'รายงานรายการกล้องนับปริมาณจราจร (Traffic Volume Camera List)',
+            filterNote: exportFilterNote,
             sheetName: 'Camera List',
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: filtered,

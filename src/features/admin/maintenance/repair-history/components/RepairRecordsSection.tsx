@@ -881,6 +881,8 @@ const RepairRecordsSection: React.FC = () => {
               exportExcel({
                 filenameBase: 'Maintenance_Repair_Records',
                 sheetName: 'Repair Records',
+                title: 'รายงานงานซ่อมทั้งหมด (Repair Records)',
+                filterNote: exportFilterNote,
                 columns: REPAIR_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
                 rows: filteredData,
               })

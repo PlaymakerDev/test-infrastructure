@@ -1121,6 +1121,8 @@ const ReportVolume: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: exportSpec.filenameBase,
+            title: exportSpec.title,
+            filterNote: exportFilterNote,
             sheetName: exportSpec.sheetName,
             columns: exportSpec.columns.map(({ header, width, value }) => ({ header, width, value })),
             rows: scope === 'page' && exportSpec.pageRows ? exportSpec.pageRows : exportSpec.rows,

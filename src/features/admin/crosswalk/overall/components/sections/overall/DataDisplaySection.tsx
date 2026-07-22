@@ -260,6 +260,8 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Crosswalk_Overview_Report',
             sheetName: 'Crosswalk Overview',
+            title: 'รายงานสรุปภาพรวมสัญญาณไฟทางข้ามอัจฉริยะ (Crosswalk Overview)',
+            filterNote: exportFilterNote,
             columns: hideProjectNameColumns(CROSSWALK_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

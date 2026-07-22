@@ -9,6 +9,7 @@ import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIfram
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 import type { TrafficLightingProject } from '../data/trafficLightingProjects'
 import {
   buildLightingDetailUrl,
@@ -39,20 +40,14 @@ const EXPORT_CONNECTION_TEXT: Record<TrafficLightingProject['connection'], strin
   offline: 'ออฟไลน์',
   unknown: '-',
 }
-// lineStatus and circuitStatus share the same normal/abnormal/unknown union
-// and the same on-screen texts (they differ only in pill color).
-const EXPORT_LINE_CIRCUIT_TEXT: Record<TrafficLightingProject['lineStatus'], string> = {
-  normal: 'ปกติ',
-  abnormal: 'ผิดปกติ',
-  unknown: '-',
-}
-
 // Shared column config for both PDF and Excel exports — SAME columns, SAME
 // order as the on-screen TableTrafficLighting (รหัสสายทาง → ชื่อโครงการ →
-// เลขที่สัญญา → การค้ำประกัน → จุดติดตั้ง → Phase → สถานะการเชื่อมต่อ →
-// สถานะสาย → สถานะวงจร), plus ลำดับ/หน่วยงาน since the export flattens the
-// table's per-สำนัก divider rows (same treatment as CCTV_EXPORT_COLUMNS in
+// จุดติดตั้ง → เลขที่สัญญา → การค้ำประกัน → Phase → สถานะการเชื่อมต่อ →
+// สถานะสาย), plus ลำดับ/หน่วยงาน since the export flattens the table's
+// per-สำนัก divider rows (same treatment as CCTV_EXPORT_COLUMNS in
 // cctv/overall). `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+// สถานะวงจร was merged into สถานะสาย (has_broken_wire, 2026-07-21) — the
+// export mirrors the on-screen สายขาด/เชื่อมต่อ pill texts.
 const LIGHTING_EXPORT_COLUMNS: {
   header: string
   width: number
@@ -64,13 +59,20 @@ const LIGHTING_EXPORT_COLUMNS: {
   { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
   { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
   { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || '-' },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => EXPORT_WARRANTY_TEXT[r.warranty] },
   { header: 'จุดติดตั้ง', width: 34, widthPct: 15, align: 'left', value: (r) => r.installPoint || '-' },
-  { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase ?? '-' },
-  { header: 'สถานะการเชื่อมต่อ', width: 16, widthPct: 8, value: (r) => EXPORT_CONNECTION_TEXT[r.connection] },
-  { header: 'สถานะสาย', width: 10, widthPct: 6, value: (r) => EXPORT_LINE_CIRCUIT_TEXT[r.lineStatus] },
-  { header: 'สถานะวงจร', width: 10, widthPct: 6, value: (r) => EXPORT_LINE_CIRCUIT_TEXT[r.circuitStatus] },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 9, value: (r) => EXPORT_WARRANTY_TEXT[r.warranty] },
+  // Mirrors the on-screen Phase cell (equipment count, not the phase field).
+  { header: 'Phase', width: 8, widthPct: 6, value: (r) => r.equipment.count ?? '-' },
+  { header: 'สถานะการเชื่อมต่อ', width: 16, widthPct: 10, value: (r) => EXPORT_CONNECTION_TEXT[r.connection] },
+  {
+    header: 'สถานะสาย',
+    width: 10,
+    widthPct: 8,
+    value: (r) =>
+      r.hasBrokenWire == null ? '-' : r.hasBrokenWire ? 'สายขาด' : 'เชื่อมต่อ',
+  },
 ]
 
 const OverallSection: React.FC = () => {
@@ -308,13 +310,6 @@ const OverallSection: React.FC = () => {
       </section>
 
       <div className='mt-4'>
-        <style>{`
-          .traffic-lighting-search-input::placeholder {
-            color: #FFFFFF80 !important;
-            font-weight: 400;
-            font-size: 14px;
-          }
-        `}</style>
         <SearchBar
           filters={TRAFFIC_LIGHTING_FILTERS}
           stats={filterStats}
@@ -323,23 +318,17 @@ const OverallSection: React.FC = () => {
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => setExportOpen(true)}
-          // Deliberately hidden by the menu's owner (original design) — the
-          // export wiring stays ready; flipping this flag enables the button.
-          showExportButton={false}
           formSearch={
+            // Same input as every other overall menu's search form (see
+            // FormSearchCctv) — the previous bespoke 46px/360px styling made
+            // this bar visibly taller/narrower than its siblings.
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder='ค้นหาหน่วยงาน สายทาง หรือชื่อโครงการ...'
-              classNames={{
-                root: 'traffic-lighting-search !w-full sm:!w-[360px] sm:!max-w-[360px] !shrink-0 !rounded-[10px]! !h-[46px]! !bg-[#2B2B2B]! !border-[#FCD116]! !overflow-hidden',
-                input: 'traffic-lighting-search-input !bg-transparent!',
-              }}
-              styles={{
-                root: { height: 46, background: '#2B2B2B', borderRadius: 10 },
-                input: { background: 'transparent', fontSize: 14, fontWeight: 400, color: '#FFFFFF' },
-              }}
-              suffix={<TbSearch style={{ color: '#FCD116', fontSize: 18 }} />}
+              className='rounded-lg app-search-input'
+              suffix={<TbSearch className='text-(--yellow)' />}
+              size='large'
               allowClear
             />
           }
@@ -358,7 +347,7 @@ const OverallSection: React.FC = () => {
             filenameBase: 'Traffic_Lighting_Overview_Report',
             title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Traffic Lighting Overview)',
             filterNote: exportFilterNote,
-            columns: LIGHTING_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(LIGHTING_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -367,7 +356,9 @@ const OverallSection: React.FC = () => {
           exportExcel({
             filenameBase: 'Traffic_Lighting_Overview_Report',
             sheetName: 'Traffic Lighting Overview',
-            columns: LIGHTING_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Traffic Lighting Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(LIGHTING_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

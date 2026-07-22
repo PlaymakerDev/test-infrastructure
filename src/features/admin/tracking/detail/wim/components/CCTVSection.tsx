@@ -143,6 +143,8 @@ const CCTVSection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'Tracking_CCTV_Report',
             sheetName: 'Tracking CCTV',
+            title: 'รายงานกล้อง CCTV ประจำจุดติดตั้ง (Tracking CCTV)',
+            filterNote: exportFilterNote,
             columns: CCTV_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: filteredCameras,
           })

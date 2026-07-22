@@ -235,6 +235,8 @@ const EventSection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Incident_Detection_Events_Report',
             sheetName: 'Incident Events',
+            title: 'รายงานเหตุการณ์ที่ตรวจจับได้ (Incident Detection Events)',
+            filterNote: exportNote,
             columns: EVENT_EXPORT_COLUMNS,
             rows,
           })

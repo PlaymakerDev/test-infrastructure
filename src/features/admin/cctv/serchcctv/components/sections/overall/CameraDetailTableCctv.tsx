@@ -331,6 +331,8 @@ const CameraDetailTableCctv: React.FC<Props> = ({ groups, activeTab, onTabChange
           exportExcel({
             filenameBase: 'CCTV_Road_Cameras_Report',
             sheetName: 'CCTV Cameras by Road',
+            title: 'รายงานรายการกล้อง CCTV รายสายทาง (CCTV Cameras by Road)',
+            filterNote: exportFilterNote,
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

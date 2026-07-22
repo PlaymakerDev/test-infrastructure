@@ -260,6 +260,8 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           exportExcel({
             filenameBase: 'CCTV_Overview_Report',
             sheetName: 'CCTV Overview',
+            title: 'รายงานสรุปภาพรวมกล้องวงจรปิด (CCTV Overview)',
+            filterNote: exportFilterNote,
             columns: hideProjectNameColumns(CCTV_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

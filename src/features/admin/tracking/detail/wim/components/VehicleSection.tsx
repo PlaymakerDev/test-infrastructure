@@ -174,6 +174,8 @@ const VehicleSection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Vehicle_Daily_Report',
             sheetName: 'Vehicle Daily',
+            title: 'รายงานข้อมูลรถเข้าชั่งรายวัน',
+            filterNote: exportFilterNote,
             columns: columnsForScope(scope).map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

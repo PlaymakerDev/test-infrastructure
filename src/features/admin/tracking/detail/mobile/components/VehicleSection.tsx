@@ -142,6 +142,8 @@ const VehicleSection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Mobile_Report',
             sheetName: 'Mobile',
+            title: 'รายงานข้อมูลการจัดตั้งด่านชั่งน้ำหนัก (Mobile)',
+            filterNote: exportFilterNote,
             columns: MOBILE_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

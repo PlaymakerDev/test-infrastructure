@@ -316,6 +316,8 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
           exportExcel({
             filenameBase: 'Incident_Events_Report',
             sheetName: 'Incident Events',
+            title: 'รายงานเหตุการณ์ที่ตรวจพบ (Incident Events)',
+            filterNote: exportFilterNote,
             columns: INCIDENT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: filteredData,
           })

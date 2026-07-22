@@ -271,6 +271,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'Bridge_Lighting_Overview_Report',
             sheetName: 'Bridge Lighting Overview',
+            title: 'รายงานสรุปภาพรวมไฟประดับสะพาน (Bridge Lighting Overview)',
+            filterNote: exportFilterNote,
             columns: hideProjectNameColumns(BRIDGE_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

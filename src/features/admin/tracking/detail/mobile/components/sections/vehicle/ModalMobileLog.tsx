@@ -214,6 +214,8 @@ const Content: React.FC<ContentProps> = (props) => {
           exportExcel({
             filenameBase: 'Tracking_Mobile_Weight_Log',
             sheetName: 'Mobile Weight Log',
+            title: 'รายงานรายละเอียดรถเข้าชั่ง ด่านชั่งน้ำหนักเคลื่อนที่ (Mobile Weight Log)',
+            filterNote: exportFilterNote,
             columns: MOBILE_LOG_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

@@ -151,6 +151,8 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Today_Weight_Log',
             sheetName: 'Today Weight Log',
+            title: 'รายงานข้อมูลรถเข้าชั่งน้ำหนักวันนี้ (Today Weight Log)',
+            filterNote: exportFilterNote,
             columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

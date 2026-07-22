@@ -8,6 +8,7 @@ import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkCameraItem } from '@/types/crosswalk/detail-api'
+import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
 interface Props {
   /** Optional vignette overlay forwarded to BaseMap. */
@@ -49,13 +50,44 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
   </div>
 )
 
+/** Install-point info popup — shown on the WHITE fallback pin when none of
+ *  the solution's cameras carry lat/lon. Labeled "ข้อมูลจุดติดตั้ง" explicitly
+ *  so it can't be mistaken for a camera position (the objection that killed
+ *  the old yellow fallback pin, 2026-07-20). */
+const SolutionPopup: React.FC<{ location: CrosswalkLocation }> = ({ location }) => (
+  <div
+    style={{
+      width: 250,
+      background: 'rgba(14,14,14,0.97)',
+      border: '1px solid #2f6db0',
+      borderRadius: 12,
+      padding: 10,
+    }}
+  >
+    <p className='fs-12' style={{ color: '#94a3b8', margin: 0 }}>ข้อมูลจุดติดตั้ง</p>
+    <p className='fs-12' style={{ color: '#66AEFF', fontWeight: 600, lineHeight: 1.35, margin: '2px 0 0' }}>
+      {location.solution.solution_name}
+    </p>
+    <p className='fs-12' style={{ color: '#ffffff', margin: '2px 0 0' }}>
+      สายทาง {location.road.code_name}
+    </p>
+    <div className='fs-12' style={{ display: 'flex', gap: 10, marginTop: 6, fontWeight: 600 }}>
+      <span style={{ color: '#66AEFF' }}>กล้อง {location.camera.total}</span>
+      <span style={{ color: location.crosswalk.is_online ? '#66AEFF' : '#FF6666' }}>
+        ทางข้าม {location.crosswalk.total} · {location.crosswalk.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
+      </span>
+    </div>
+  </div>
+)
+
 /** Detail map — uses the shared overlap-aware marker layer (`OverlapMarkers`,
  *  same grouping as Incident Detection detail): cameras sharing a coordinate
  *  fan out (spider) into individually-clickable pins, each opening a popup with
  *  a live preview. All pins are white teardrops (`variant='white'`).
- *  Cameras WITHOUT lat/lon get NO marker (per design 2026-07-20 — the old
- *  yellow solution-centroid fallback pin read as a fake camera position); the
- *  map still centers on the solution's own coordinate so the area is framed. */
+ *  Cameras WITHOUT lat/lon fall back to ONE white pin at the solution's own
+ *  coordinate whose popup is explicitly labeled ข้อมูลจุดติดตั้ง (restored
+ *  2026-07-20 — the earlier no-pin state left the map looking broken; the
+ *  even earlier YELLOW pin read as a fake camera position). */
 const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
@@ -88,6 +120,21 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const fallbackCoord = location?.GeometryPoint
   const hasCoordCams = cameras.length > 0
 
+  // White install-point pin when no camera has a coordinate — same
+  // OverlapMarkers plumbing as the camera pins so the popup behavior matches.
+  const fallbackItems = useMemo<OverlapMarkerItem[]>(() => {
+    if (hasCoordCams || !location || !isValidCoord(location.GeometryPoint)) return []
+    return [
+      {
+        id: `solution-${location.solution.id}`,
+        coord: location.GeometryPoint,
+        title: location.solution.solution_name,
+        popup: <SolutionPopup location={location} />,
+        popupOptions: { offset: 22, closeButton: false, maxWidth: '280px' },
+      },
+    ]
+  }, [hasCoordCams, location])
+
   const initialCenter: [number, number] = hasCoordCams
     ? (isValidCoord(data?.centroid) ? data!.centroid! : coords[0])
     : (isValidCoord(fallbackCoord) ? fallbackCoord : FALLBACK_CENTER)
@@ -109,6 +156,7 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
           <OverlapMarkers items={markerItems} variant='white' />
         </>
       )}
+      {fallbackItems.length > 0 && <OverlapMarkers items={fallbackItems} variant='white' />}
     </BaseMap>
   )
 }

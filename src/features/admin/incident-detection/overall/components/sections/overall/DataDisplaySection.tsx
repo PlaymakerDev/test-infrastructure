@@ -216,6 +216,8 @@ const DataDisplaySection: React.FC = () => {
           exportExcel({
             filenameBase: 'Incident_Detection_Overview_Report',
             sheetName: 'Incident Detection Overview',
+            title: 'รายงานสรุปภาพรวมระบบตรวจจับเหตุการณ์ (Incident Detection Overview)',
+            filterNote: exportFilterNote,
             columns: hideProjectNameColumns(ID_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

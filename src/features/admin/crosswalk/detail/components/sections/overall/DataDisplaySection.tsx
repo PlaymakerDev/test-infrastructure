@@ -159,6 +159,8 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'Crosswalk_Camera_Report',
             sheetName: 'Crosswalk Cameras',
+            title: 'รายงานกล้องประจำจุดติดตั้งสัญญาณไฟทางข้าม (Crosswalk Cameras)',
+            filterNote: exportFilterNote,
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

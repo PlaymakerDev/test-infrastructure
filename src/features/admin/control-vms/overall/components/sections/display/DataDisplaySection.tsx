@@ -115,6 +115,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'VMS_Display_Schedule_Report',
             sheetName: 'VMS Display Schedule',
+            title: 'รายงานสายทางที่มีตารางเวลาป้าย VMS (VMS Display Schedule)',
+            filterNote: exportFilterNote,
             columns: DISPLAY_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

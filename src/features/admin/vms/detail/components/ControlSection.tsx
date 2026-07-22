@@ -80,6 +80,7 @@ const ControlSection: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'VMS_Control_Log',
+            title: 'รายงานข้อมูลการควบคุมป้าย VMS (VMS Control Log)',
             sheetName: 'VMS Control Log',
             columns: CONTROL_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: CONTROL_MOCK_ROWS,

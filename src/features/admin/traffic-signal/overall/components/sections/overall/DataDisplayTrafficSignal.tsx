@@ -266,6 +266,8 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Traffic_Signal_Overview_Report',
+            title: 'รายงานสรุปภาพรวมสัญญาณไฟจราจร (Traffic Signal Overview)',
+            filterNote: exportFilterNote,
             sheetName: 'Traffic Signal Overview',
             columns: hideProjectNameColumns(TRAFFIC_SIGNAL_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,

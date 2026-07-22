@@ -446,6 +446,8 @@ const UserSection: React.FC = () => {
           exportExcel({
             filenameBase: 'Settings_Users_Report',
             sheetName: 'Users',
+            title: 'รายงานรายชื่อผู้ใช้งาน (User Management)',
+            filterNote: exportFilterNote,
             columns: USER_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

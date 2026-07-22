@@ -150,6 +150,8 @@ const Content: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Weight_Log_Detail',
             sheetName: 'Weight Log Detail',
+            title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
+            filterNote: exportFilterNote,
             columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

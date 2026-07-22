@@ -205,6 +205,8 @@ const ProjectSection: React.FC = () => {
           exportExcel({
             filenameBase: 'Settings_Projects_Report',
             sheetName: 'Projects',
+            title: 'รายงานรายชื่อโครงการ (Project Management)',
+            filterNote: exportFilterNote,
             columns: PROJECT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })

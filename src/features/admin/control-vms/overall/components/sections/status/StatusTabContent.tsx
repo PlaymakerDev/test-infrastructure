@@ -125,6 +125,8 @@ const StatusTabContent: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'VMS_Display_Status_Report',
             sheetName: 'VMS Display Status',
+            title: 'รายงานสถานะการแสดงผลป้าย VMS (VMS Display Status)',
+            filterNote: exportFilterNote,
             columns: STATUS_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: filteredData,
           })

@@ -274,6 +274,8 @@ const CamerasGridTrafficSignal: React.FC = () => {
           exportExcel({
             filenameBase: 'Traffic_Signal_Cameras_Report',
             sheetName: 'Traffic Signal Cameras',
+            title: 'รายงานรายการกล้องแยกสัญญาณไฟจราจร (Traffic Signal Cameras)',
+            filterNote: exportFilterNote,
             columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })

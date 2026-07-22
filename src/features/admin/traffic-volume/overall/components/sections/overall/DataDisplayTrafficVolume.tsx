@@ -261,6 +261,8 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Traffic_Volume_Overview_Report',
+            title: 'รายงานสรุปภาพรวมปริมาณจราจร (Traffic Volume Overview)',
+            filterNote: exportFilterNote,
             sheetName: 'Traffic Volume Overview',
             columns: hideProjectNameColumns(TRAFFIC_VOLUME_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
