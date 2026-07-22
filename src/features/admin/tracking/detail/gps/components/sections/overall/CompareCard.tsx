@@ -73,17 +73,19 @@ const CompareCard: React.FC<Props> = (props) => {
               key={item.region}
               className={`w-full md:w-1/2 lg:w-1/3 2xl:w-1/6 flex flex-col items-center text-center justify-between gap-2 py-3 px-4 border-(--yellow)/40 ${borderClasses[index]}`}
             >
+              {/* Sizes per design 2026-07-20: region name + numbers = fs-14
+                * (16px desktop), sub-labels = fs-12 (14px). */}
               <div>
-                <h3 className='font-semibold text-white text-sm leading-snug'>{item.region}</h3>
-                <p className='text-white/50 text-sm'>{fmtNumber(Number(item.routes)) || 0} สายทาง</p>
+                <h3 className='fs-14 font-semibold text-white leading-snug'>{item.region}</h3>
+                <p className='fs-12 text-white/50'>{fmtNumber(Number(item.routes)) || 0} สายทาง</p>
               </div>
               <div>
-                <p className='text-(--yellow) text-sm mb-0.5'>รถวิ่งผ่านรวม</p>
-                <p className='fs-18 font-bold text-(--yellow) leading-tight'>{fmtNumber(Number(item.totalTraffic)) || 0}</p>
+                <p className='fs-12 text-(--yellow) mb-0.5'>รถวิ่งผ่านรวม</p>
+                <p className='fs-14 font-bold text-(--yellow) leading-tight'>{fmtNumber(Number(item.totalTraffic)) || 0}</p>
               </div>
               <div>
-                <p className='text-blue-400 text-sm mb-0.5'>เฉลี่ยต่อวัน</p>
-                <p className='fs-18 font-bold text-blue-400 leading-tight'>{fmtNumber(Number(item.dailyAverage)) || 0}</p>
+                <p className='fs-12 text-blue-400 mb-0.5'>เฉลี่ยต่อวัน</p>
+                <p className='fs-14 font-bold text-blue-400 leading-tight'>{fmtNumber(Number(item.dailyAverage)) || 0}</p>
               </div>
             </div>
           ))}
