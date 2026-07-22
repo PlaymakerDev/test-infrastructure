@@ -185,8 +185,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
             {summary.lost > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-red-500">●</span> ขาดเชื่อมต่อ {summary.lost}</span>}
             {summary.pending > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="opacity-60">●</span> ยังไม่มีคำสั่ง {summary.pending}</span>}
             {rows.length > visible.length && (
-              <Tooltip title="Terminal state (จบไปแล้ว) เกิน 10 นาที ระบบซ่อนอัตโนมัติ ดูย้อนหลังในแท็บ 'ประวัติสั่งงานทั้งหมด'">
-                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> ซ่อน {rows.length - visible.length}</span>
+              <Tooltip title="Command จบไปแล้ว (เสร็จสิ้น / ยกเลิก / ถูกสั่งทับ / ขาดการเชื่อมต่อ) เกิน 10 นาที — ระบบซ่อนอัตโนมัติเพื่อไม่ให้บัง view. ดูย้อนหลังในแท็บ 'ประวัติสั่งงานทั้งหมด'">
+                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> จบไปแล้ว {rows.length - visible.length} (ซ่อนอัตโนมัติ)</span>
               </Tooltip>
             )}
             {excludedCount > 0 && (
