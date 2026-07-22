@@ -18,13 +18,12 @@ const MobileSection = () => {
   }
 
   const { data, isLoading, isError } = useMobileMaster({
-    start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
-    end_date: dayjs().endOf('month').format('YYYY-MM-DD'),
+    start_date: dayjs().format('YYYY-MM-DD'),
+    end_date: dayjs().format('YYYY-MM-DD'),
     page,
     page_size: pageSize,
     ordering: 'asc',
     search: searchMobileMaster?.search || '',
-    is_open: 1
   })
 
   const {

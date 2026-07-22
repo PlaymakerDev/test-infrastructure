@@ -21,8 +21,8 @@ const MobileInfoCard: React.FC<Props> = (props) => {
           <TbUserShield className='fs-22 text-yellow-500 shrink-0' />
           <h4 className='text-yellow-500 mb-0'>ด่านเคลื่อนที่ทั้งหมด</h4>
         </div>
-        <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.total_station_count)) || 0}</span> <span className='fs-14'>ด่าน</span></p>
-        <p className='fs-12 text-gray-400 mb-0'>{fmtNumber(Number(data?.top_region))} ({fmtNumber(Number(data?.top_region_percent))}%)</p>
+        <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.open_station_count)) || 0}</span> <span className='fs-14'>ด่าน</span></p>
+        <p className='fs-12 text-gray-400 mb-0'>{data?.top_region || '-'} ({fmtNumber(Number(data?.top_region_percent))}%)</p>
       </div>
       <div className='bg-[#66AEFF1A] border border-blue-500 py-3 px-5 rounded-2xl'>
         <div className='flex items-center gap-2 mb-2'>

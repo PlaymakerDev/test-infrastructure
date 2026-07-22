@@ -2,6 +2,7 @@ import { Image } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import type { DailyWeightLogRow } from '../hooks/useDailyWeightLogList'
+import { FALLBACK } from '@/constants'
 
 export interface DailyWeightLogColumnsOptions {
   /** TableWeightLog (modal drill-down) omits the plate/vehicle image columns — defaults to true for TableOverallDailyWeight. */
@@ -94,7 +95,7 @@ export const getDailyWeightLogColumns = (
       align: 'center',
       width: 130,
       render: (src?: string) => (
-        src ? <Image src={src} width={100} height={60} className='rounded object-cover' alt='plate' /> : '-'
+        src ? <Image src={src} width={100} height={60} className='rounded object-cover' alt='plate' fallback={FALLBACK} /> : '-'
       ),
     },
     {
@@ -104,7 +105,7 @@ export const getDailyWeightLogColumns = (
       align: 'center',
       width: 130,
       render: (src?: string) => (
-        src ? <Image src={src} width={100} height={60} className='rounded object-cover' alt='vehicle' /> : '-'
+        src ? <Image src={src} width={100} height={60} className='rounded object-cover' alt='vehicle' fallback={FALLBACK} /> : '-'
       ),
     },
     {

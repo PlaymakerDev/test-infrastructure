@@ -21,7 +21,11 @@ const MapSection: React.FC<Props> = (props) => {
   return (
     <div className='h-full w-full'>
       <div className="map-wrapper h-full">
-        <BaseMap initialCenter={[101.0, 14.5]} initialZoom={5.4}>
+        <BaseMap
+          initialCenter={[101.0, 14.5]}
+          initialZoom={5.4}
+          edgeFade={{ all: 10 }}
+        >
           <ThailandMaskLayer />
           <RouteLineLayer positions={road?.position} />
           <VehicleMarkerLayer cars={vehicle?.car_list} />
