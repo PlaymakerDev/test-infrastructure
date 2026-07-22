@@ -250,8 +250,15 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
         )}
         {monitorVisible.map((it) => {
           const meta = statusMeta(it.status ?? undefined)
-          const hasActive = it.setting_id != null
+          // A sign is "relevant" for dispatch prep only if it has a command
+          // that is currently playing / queued to play. Terminal states
+          // (cancelled / done / overwritten / lost) are historical noise — the
+          // operator explicitly said "ฉันไม่สนใจว่าเคยทำอะไรมา" and history
+          // is available in the ประวัติสั่งงานทั้งหมด tab. Cards for
+          // terminal-only signs render exactly like empty signs.
           const isTerminal = meta.isTerminal
+          const settingExists = it.setting_id != null
+          const hasActive = settingExists && !isTerminal
           const win = hasActive ? getSlotWindow(it, nowMs) : null
           const now = dayjs(nowMs)
 
@@ -285,7 +292,11 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
           // instantly distinguishable from cards that are actually playing.
           // Terminal cards (done/cancelled/overwrite/lost) fade further to
           // signal they're on the grace-window countdown to auto-hide.
-          const preview = !hasActive && !isTerminal
+          // Terminal states now fall into the same "preview" (empty) bucket
+          // — same dashed border, same subtle dim — so the operator sees the
+          // sign as "ready to receive a new command" not "still hung up on
+          // the last cancellation from three days ago".
+          const preview = !hasActive
           return (
             <div
               key={it.vms_id}
@@ -294,7 +305,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                   ? 'border-dashed border-white/15 bg-white/[.02]'
                   : 'border-white/10 bg-white/[.04]'
               }`}
-              style={{ opacity: isTerminal ? 0.65 : preview ? 0.85 : 1 }}
+              style={{ opacity: preview ? 0.85 : 1 }}
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
@@ -380,11 +391,9 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
               </div>
 
               {/* Only render the media/schedule detail block for actively-running
-                  commands. Terminal cards (cancelled/done/overwrite/lost) would
-                  otherwise misleadingly display date/time/day rows from a
-                  command that will never run — the pill above already says
-                  what happened; more detail belongs in ประวัติสั่งงานทั้งหมด. */}
-              {hasActive && !isTerminal && (
+                  or queued-to-run commands (hasActive already excludes terminal
+                  states). History belongs in ประวัติสั่งงานทั้งหมด. */}
+              {hasActive && (
                 <div className="mt-2 flex items-center gap-3">
                   {it.media_url ? (
                     <div
