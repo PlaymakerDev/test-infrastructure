@@ -9,6 +9,7 @@ import { useLiveAlertRouteItems } from '../../../data/useLiveAlertRouteItems'
 import VoltageAmpChartsRow from '@/features/admin/traffic-lighting/detail/components/VoltageAmpChartsRow'
 import { ProjectInfoModal } from '@/components/modal'
 import { useAppDispatch } from '@/stores/hooks'
+import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 const AlertDetailContent: React.FC = () => {
@@ -80,7 +81,8 @@ const AlertDetailContent: React.FC = () => {
   const circuitLabel = (failed: boolean | undefined) => failed === true ? 'Disconnect' : failed === false ? 'Connect' : '-'
 
   return (
-    <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col" style={{ paddingBottom: 60 }}>
+    <div className="main-screen px-4 sm:px-6 lg:px-10 flex flex-col statistics-font-min-14" style={{ paddingBottom: 60 }}>
+      <StatisticsMinimumFontSize />
       <section className="flex items-start gap-3">
         <TbArrowBigLeftFilled
           className="fs-24 text-(--yellow) cursor-pointer"

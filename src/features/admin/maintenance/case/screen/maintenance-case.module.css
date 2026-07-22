@@ -2,7 +2,7 @@
   height: 31px;
   padding: 0 20px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   border: none;
@@ -19,7 +19,7 @@
   height: 31px;
   padding: 0 20px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid #3c3e4e;
@@ -98,7 +98,7 @@
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 28px;
-  font-size: 13px;
+  font-size: 14px;
   color: #FFFFFF;
   display: flex;
   flex-direction: column;

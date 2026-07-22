@@ -11,13 +11,22 @@ import type { LineConfig } from '@/components/chart/LineChart'
 // Title color is always the project yellow; the chart line itself keeps its
 // semantic color (cyan for Volt, orange for Amp) for readability.
 const COLOR_TITLE = '#FCD116'
+const CHART_HEIGHT = 400
+// Keep the axis fixed to a complete day, including the 24.00 endpoint. The
+// API may omit future/no-reading hours, but those labels must still be visible.
+const HOUR_LABELS = Array.from({ length: 25 }, (_, hour) => `${String(hour).padStart(2, '0')}.00`)
 
 const SHARED_CHART_PROPS = {
   iconCircle: false,
   showGlow: false,
   cardBackground: '#00000080',
   cardBorderColor: '#1f2d3d',
-  height: 220,
+  height: CHART_HEIGHT,
+  axisLabelColor: '#FFFFFF80',
+  xAxisLabelEvery: 2,
+  forceShowMaxXAxisLabel: true,
+  xAxisBoundaryGap: true,
+  preserveNullValues: true,
 } as const
 
 // The logs4g graph endpoints always return all 3 phase columns regardless of
@@ -38,6 +47,11 @@ const AMP_LINES_THREE_PHASE: LineConfig[] = [
   { dataKey: 'amp3', color: COLOR_AMP_ORANGE, label: 'Phase 3', unit: 'A' },
 ]
 
+const hourFromPeriod = (period: string) => {
+  const match = period.match(/^\s*(\d{1,2})/)
+  return match ? Number(match[1]) : null
+}
+
 /** Two line charts (Volt / Amp) for the OVERVIEW tab. Replaces the old
  *  ExampleCardsRow image pair. Each chart pulls 24h hourly data from the
  *  logs4g graph endpoints for the given IMEI. */
@@ -51,26 +65,42 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
   // hide the other phases' real readings at that hour).
   const voltData: LineChartDataPoint[] = useMemo(() => {
     const raw = voltQuery.data ?? []
+    const byHour = new Map(raw.flatMap((point) => {
+      const hour = hourFromPeriod(point.Period_Name)
+      return hour === null || hour < 0 || hour > 24 ? [] : [[hour, point] as const]
+    }))
     if (isThreePhase) {
-      return raw
-        .filter((p) => p.volt !== null || p.volt2 !== null || p.volt3 !== null)
-        .map((p) => ({ label: p.Period_Name, volt: p.volt ?? 0, volt2: p.volt2 ?? 0, volt3: p.volt3 ?? 0 }))
+      return HOUR_LABELS.map((label, hour) => {
+        const point = byHour.get(hour)
+        return { label, volt: point?.volt ?? null, volt2: point?.volt2 ?? null, volt3: point?.volt3 ?? null }
+      })
     }
-    return raw
-      .filter((p) => p.volt !== null)
-      .map((p) => ({ label: p.Period_Name, volt: p.volt as number }))
+    return HOUR_LABELS.map((label, hour) => ({ label, volt: byHour.get(hour)?.volt ?? null }))
   }, [voltQuery.data, isThreePhase])
   const ampData: LineChartDataPoint[] = useMemo(() => {
     const raw = ampQuery.data ?? []
+    const byHour = new Map(raw.flatMap((point) => {
+      const hour = hourFromPeriod(point.Period_Name)
+      return hour === null || hour < 0 || hour > 24 ? [] : [[hour, point] as const]
+    }))
     if (isThreePhase) {
-      return raw
-        .filter((p) => p.amp !== null || p.amp2 !== null || p.amp3 !== null)
-        .map((p) => ({ label: p.Period_Name, amp: p.amp ?? 0, amp2: p.amp2 ?? 0, amp3: p.amp3 ?? 0 }))
+      return HOUR_LABELS.map((label, hour) => {
+        const point = byHour.get(hour)
+        return { label, amp: point?.amp ?? null, amp2: point?.amp2 ?? null, amp3: point?.amp3 ?? null }
+      })
     }
-    return raw
-      .filter((p) => p.amp !== null)
-      .map((p) => ({ label: p.Period_Name, amp: p.amp as number }))
+    return HOUR_LABELS.map((label, hour) => ({ label, amp: byHour.get(hour)?.amp ?? null }))
   }, [ampQuery.data, isThreePhase])
+  const hasVoltData = (voltQuery.data ?? []).some((point) =>
+    isThreePhase
+      ? point.volt !== null || point.volt2 !== null || point.volt3 !== null
+      : point.volt !== null,
+  )
+  const hasAmpData = (ampQuery.data ?? []).some((point) =>
+    isThreePhase
+      ? point.amp !== null || point.amp2 !== null || point.amp3 !== null
+      : point.amp !== null,
+  )
   const voltLines = isThreePhase ? VOLT_LINES_THREE_PHASE : VOLT_LINES_SINGLE
   const ampLines = isThreePhase ? AMP_LINES_THREE_PHASE : AMP_LINES_SINGLE
 
@@ -78,12 +108,12 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
     <div className='flex flex-col md:flex-row w-full gap-3 mt-4'>
       <div className='flex-1 min-w-0'>
         {voltQuery.isLoading ? (
-          <div className='h-[220px] flex items-center justify-center'><Spin /></div>
+          <div className='h-[400px] flex items-center justify-center'><Spin /></div>
         ) : voltQuery.isError ? (
-          <div className='h-[220px] flex items-center justify-center'>
+          <div className='h-[400px] flex items-center justify-center'>
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่สามารถโหลดข้อมูลแรงดันไฟฟ้าได้' />
           </div>
-        ) : voltData.length > 0 ? (
+        ) : hasVoltData ? (
           <LineChart
             {...SHARED_CHART_PROPS}
             title='แรงดันไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Volt)'
@@ -95,19 +125,19 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             yAxisDomain={['auto', 'auto']}
           />
         ) : (
-          <div className='h-[220px] flex items-center justify-center'>
+          <div className='h-[400px] flex items-center justify-center'>
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่พบข้อมูลแรงดันไฟฟ้า' />
           </div>
         )}
       </div>
       <div className='flex-1 min-w-0'>
         {ampQuery.isLoading ? (
-          <div className='h-[220px] flex items-center justify-center'><Spin /></div>
+          <div className='h-[400px] flex items-center justify-center'><Spin /></div>
         ) : ampQuery.isError ? (
-          <div className='h-[220px] flex items-center justify-center'>
+          <div className='h-[400px] flex items-center justify-center'>
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่สามารถโหลดข้อมูลกระแสไฟฟ้าได้' />
           </div>
-        ) : ampData.length > 0 ? (
+        ) : hasAmpData ? (
           <LineChart
             {...SHARED_CHART_PROPS}
             title='กระแสไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Amp)'
@@ -119,7 +149,7 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             yAxisDomain={['auto', 'auto']}
           />
         ) : (
-          <div className='h-[220px] flex items-center justify-center'>
+          <div className='h-[400px] flex items-center justify-center'>
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่พบข้อมูลกระแสไฟฟ้า' />
           </div>
         )}

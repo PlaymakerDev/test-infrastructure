@@ -329,6 +329,12 @@ body .event-log-table .ant-table-body {
   max-height: none !important;
 }
 
+/* Traffic Lighting incident log: the Figma heading row uses Regular, unlike
+ * other data tables that retain AntD's default semibold header weight. */
+body .incident-event-log-table .ant-table-thead > tr > th {
+  font-weight: 400 !important;
+}
+
 /* ── Dark-theme pagination for the bridge/projects tables.
  * Antd ships a light pagination by default, which clashes with the dark
  * table surface. Scope it under .bridge-projects-table so only these tables

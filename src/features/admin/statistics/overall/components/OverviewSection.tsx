@@ -204,7 +204,7 @@ const OverviewSection: React.FC = () => {
       {CARDS.map(card => (
         <div
           key={card.id}
-          className="relative rounded-2xl overflow-hidden w-full h-auto min-h-115 sm:min-h-145 lg:min-h-175"
+          className="relative rounded-2xl overflow-hidden w-full h-auto min-h-135 sm:min-h-165 lg:min-h-195"
           style={{ backgroundColor: '#191919' }}
         >
           {card.imageBg && (
@@ -224,8 +224,8 @@ const OverviewSection: React.FC = () => {
                 alt={`overview-card-${card.id}`}
                 className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] lg:w-[150px] lg:h-[150px]"
               />
-              <p className="mt-3 sm:mt-4 text-center text-2xl sm:text-3xl lg:text-[40px] font-bold text-white">{card.value}</p>
-              <p className="mt-1 sm:mt-2 text-center text-lg sm:text-2xl lg:text-[32px] font-bold" style={{ color: card.glowColor }}>{card.label}</p>
+              <p className="mt-3 sm:mt-4 text-center font-bold text-white" style={{ fontSize: 40 }}>{card.value}</p>
+              <p className="mt-1 sm:mt-2 text-center font-bold" style={{ color: card.glowColor, fontSize: 32 }}>{card.label}</p>
               <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm lg:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
               <div className="flex flex-col gap-2 sm:gap-[10px] mt-6 sm:mt-8 lg:mt-10 w-full">
                 <div

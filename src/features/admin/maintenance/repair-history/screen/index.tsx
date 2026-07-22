@@ -12,6 +12,7 @@ import useIsMobile from '@/utils/hooks/useIsMobile'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
+import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -188,7 +189,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   }
 
   return (
-    <div className='main-screen'>
+    <div className='main-screen maintenance-font-min-14'>
+      <MaintenanceMinimumFontSize />
       <div className='px-4 sm:px-10 pt-3'>
         <section className='flex items-start gap-3'>
           <TbArrowBigLeftFilled

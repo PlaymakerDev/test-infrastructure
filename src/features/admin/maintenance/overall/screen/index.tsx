@@ -6,6 +6,7 @@ import {
   MaintenanceOverviewSection,
 } from '../components'
 import { RepairRecordsSection } from '../../repair-history/components'
+import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
 const MaintenanceContent: React.FC = () => {
   const searchParams = useSearchParams()
@@ -30,8 +31,9 @@ const MaintenanceContent: React.FC = () => {
   }, [currentTab, period])
 
   return (
-    <div className="main-screen">
-      <div className={hasRepair ? 'px-0' : 'px-3 sm:px-10'}>
+    <div className="main-screen maintenance-font-min-14">
+      <MaintenanceMinimumFontSize />
+      <div className="px-3 sm:px-10">
         <MaintenanceTitleSection />
       </div>
       <section className={hasRepair ? '' : 'mt-8 px-3 sm:px-10'}>

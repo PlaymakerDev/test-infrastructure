@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import OverlapMarkers from '@/components/map/markers/OverlapMarkers'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useLightingOverview } from '@/hooks/queries/lighting'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -13,11 +13,6 @@ const isValidCoord = (g: unknown): g is [number, number] =>
   Array.isArray(g) && g.length === 2 &&
   typeof g[0] === 'number' && typeof g[1] === 'number' &&
   (g[0] !== 0 || g[1] !== 0)
-
-type LightingFeatureCollection = GeoJSON.FeatureCollection<
-  GeoJSON.Point,
-  Record<string, unknown>
->
 
 export interface MapLightingDetailProps {
   /** [lng, lat] — may be [0,0] when central/list omits GeometryPoint */
@@ -73,7 +68,7 @@ function useResolvedCoord(coord: [number, number], imei?: string): [number, numb
   return loc && isValidCoord(loc.GeometryPoint) ? loc.GeometryPoint! : null
 }
 
-/** Detail-page map — Thailand mask + Lighting device pin (same stack as overall map). */
+/** Detail-page map — Thailand mask + the shared white detail-page pin. */
 const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
   coord,
   imei,
@@ -90,10 +85,9 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
     [resolvedCoord],
   )
 
-  const data = useMemo<LightingFeatureCollection>(() => ({
-    type: 'FeatureCollection',
-    features: resolvedCoord
-      ? [{
+  const markerFeature = useMemo<GeoJSON.Feature<GeoJSON.Point> | null>(() => (
+    resolvedCoord
+      ? {
           type: 'Feature',
           properties: {
             is_online: isOnline,
@@ -102,9 +96,9 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
             project_name: projectName,
           },
           geometry: { type: 'Point', coordinates: resolvedCoord },
-        }]
-      : [],
-  }), [installPoint, isOnline, projectName, resolvedCoord, roadCode])
+        }
+      : null
+  ), [installPoint, isOnline, projectName, resolvedCoord, roadCode])
 
   return (
     <div className='relative w-full h-full min-h-[inherit]'>
@@ -116,17 +110,18 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
         edgeFade={{ all: 20 }}
       >
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-        {resolvedCoord && (
+        {resolvedCoord && markerFeature && (
           <>
             <FitBoundsEffect coords={coords} padding={56} maxZoom={16} pitch={55} />
-            <DeviceMarkerLayer
-              type='Lighting'
-              id={`traffic-lighting-detail-${imei ?? 'pin'}`}
-              data={data}
-              cluster={false}
-              size={20}
-              popup={(f) => <DetailMapPopup feature={f} />}
-              popupOptions={{ offset: 10, closeButton: false }}
+            <OverlapMarkers
+              variant='white'
+              items={[{
+                id: `traffic-lighting-detail-${imei ?? 'pin'}`,
+                coord: resolvedCoord,
+                title: installPoint,
+                popup: <DetailMapPopup feature={markerFeature} />,
+                popupOptions: { offset: 18, closeButton: false },
+              }]}
             />
           </>
         )}

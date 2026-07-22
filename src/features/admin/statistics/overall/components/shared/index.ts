@@ -1,5 +1,7 @@
 export { default as StatisticsMapPanel } from './StatisticsMapPanel'
 export { default as StatisticsComparisonTable } from './StatisticsComparisonTable'
 export { default as DrawerMapSearchCard } from './DrawerMapSearchCard'
+export { default as StatisticsRouteSearchList } from './StatisticsRouteSearchList'
+export { default as StatisticsMinimumFontSize } from './StatisticsMinimumFontSize'
 export type { StatisticsMapPanelProps, StatCard } from './StatisticsMapPanel'
 export type { StatisticsComparisonTableProps, ComparisonRecord, SummaryBadge } from './StatisticsComparisonTable'
