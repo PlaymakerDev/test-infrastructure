@@ -41,9 +41,8 @@ type Row =
       roadCodeSpan: number
     }
 
-// Bureau header row spans every visible column — 8 since the สถานะวงจร
-// column was merged into สถานะสาย (has_broken_wire, 2026-07-21), one less
-// while ชื่อโครงการ is hidden.
+// Bureau header row spans every visible column — one less while ชื่อโครงการ
+// is hidden.
 const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 
@@ -199,9 +198,11 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         align: 'left',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? (
-            <span className='text-white'>{row.project.equipment.count ?? '-'}</span>
-          ) : null,
+          row.kind === 'project'
+            ? (row.project.equipment.type === 'lamp'
+                ? null
+                : <span className='text-white'>{row.project.equipment.count ?? '-'}</span>)
+            : null,
       },
       {
         title: 'สถานะการเชื่อมต่อ',
@@ -224,9 +225,27 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
+          // Lamp rows are represented by a plain aggregate text, not a
+          // line-status badge. Controller/phase rows retain their badge.
+          if (row.project.equipment.type === 'lamp') {
+            const total = row.project.equipment.count
+            const online = row.project.connection === 'online' ? total : 0
+            return (
+              <span className='text-white whitespace-nowrap'>
+                จำนวนโคมไฟ{' '}
+                {total !== null ? (
+                  <>
+                    <span className='text-(--red)'>{online}</span>
+                    <span className='text-(--yellow)'>/{total}</span>
+                  </>
+                ) : (
+                  '-'
+                )}
+              </span>
+            )
+          }
           const broken = row.project.hasBrokenWire
           if (broken === null || broken === undefined) return <Pill text='-' color='#979797' />
-          // has_broken_wire === true ⇒ สายขาด (broken), false ⇒ เชื่อมต่อ (intact).
           return broken
             ? <Pill text='สายขาด' color='#E94C4C' icon={<TbUnlink size={14} />} />
             : <Pill text='เชื่อมต่อ' color='#66AEFF' icon={<TbLink size={14} />} />

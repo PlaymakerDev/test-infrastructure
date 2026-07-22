@@ -26,6 +26,7 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CaseDetail } from '@/types/maintenance'
 import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/shared-api'
 import type { APIResponseProjectDetail } from '@/types/shared'
+import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 import { parseImageUrls } from '../../data/parseImageUrls'
 
 const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
@@ -331,7 +332,8 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   }
 
   return (
-    <div className='main-screen'>
+    <div className='main-screen maintenance-font-min-14'>
+      <MaintenanceMinimumFontSize />
       <style>{`
         .maintenance-upload-dragger .ant-upload {
           padding: 8px !important;

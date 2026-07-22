@@ -23,7 +23,7 @@ const TabSection: React.FC = () => {
               type='button'
               onClick={() => setCurrentTab(tab.value)}
               className={[
-                'px-4 py-2 rounded-full text-[13px] sm:text-[14px] font-semibold whitespace-nowrap',
+                'min-w-[160px] px-4 py-2 rounded-full text-[13px] sm:text-[14px] font-normal whitespace-nowrap',
                 'border-0 cursor-pointer transition-all duration-200 shrink-0',
                 isActive
                   ? 'bg-[#FCD116] text-[#212121] shadow-none'

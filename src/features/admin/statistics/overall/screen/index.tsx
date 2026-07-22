@@ -8,6 +8,7 @@ import {
   AlertSection,
   StatusSection,
 } from '../components'
+import { StatisticsMinimumFontSize } from '../components/shared'
 
 const StatisticsScreen: React.FC = () => {
   const searchParams = useSearchParams()
@@ -38,7 +39,8 @@ const StatisticsScreen: React.FC = () => {
   }, [currentTab])
 
   return (
-    <div className={`main-screen ${(currentTab === 'STATUS' || currentTab === 'ALERT' || currentTab === 'INCIDENT') ? 'px-0' : 'px-3 sm:px-10'}`}>
+    <div className={`main-screen statistics-font-min-14 ${(currentTab === 'STATUS' || currentTab === 'ALERT' || currentTab === 'INCIDENT') ? 'px-0' : 'px-3 sm:px-10'}`}>
+      <StatisticsMinimumFontSize />
       <TitleSection />
       <section className={(currentTab === 'STATUS' || currentTab === 'ALERT' || currentTab === 'INCIDENT') ? 'mt-2' : 'mt-8'}>
         {renderContent}

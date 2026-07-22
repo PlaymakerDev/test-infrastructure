@@ -22,6 +22,7 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
+import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 
 dayjs.extend(buddhistEra)
 dayjs.extend(customParseFormat)
@@ -158,7 +159,8 @@ const StatusDetailContent: React.FC = () => {
   }
 
   return (
-    <div className="main-screen flex flex-col">
+    <div className="main-screen flex flex-col statistics-font-min-14">
+      <StatisticsMinimumFontSize />
       <div className="px-3 xl:pr-3 xl:pl-0">
         <section className="flex items-start gap-3">
           <TbArrowBigLeftFilled

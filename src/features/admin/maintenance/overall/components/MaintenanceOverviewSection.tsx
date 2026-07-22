@@ -43,14 +43,14 @@ const LINE_COLUMNS: ColumnsType<LineRecord> = [
 const SOLUTION_COLORS: Record<string, string> = {
   CCTV: '#FF8566',
   Traffic: '#FFC766',
+  Crosswalk: '#D9FF66',
+  VMS: '#70FF66',
+  Lighting: '#66FFB5',
+  Tunnel: '#66F0FF',
+  WIM: '#668CFF',
   Counting: '#D9FF66',
   Analytic: '#70FF66',
   'Traffic Signal': '#66FFB5',
-  Crosswalk: '#66F0FF',
-  VMS: '#668CFF',
-  Lighting: '#FF8566',
-  Tunnel: '#FF8566',
-  WIM: '#66F0FF',
 }
 
 const getSolutionColor = (type: string): string => {
@@ -176,7 +176,7 @@ const MaintenanceOverviewSection: React.FC<{
             <img src="/atlas/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
-          <p className="text-xs font-normal text-[#979797] mt-1 hidden sm:block">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
+          <p className="font-normal text-[#979797] mt-1 hidden sm:block" style={{ fontSize: 14 }}>ภาพรวมสถานะการทำงานของอุปกรณ์</p>
           <div className="mt-3 sm:mt-5 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
             {summaryData.filter((item) => !HIDDEN_SOLUTION_TYPES.has(item.type)).map((item, idx) => {
               const color = getSolutionColor(item.type)
@@ -188,13 +188,13 @@ const MaintenanceOverviewSection: React.FC<{
                 <div key={`${item.solution_type_id}-${idx}`} className="flex flex-col items-center gap-1 sm:gap-2">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24">
                     <svg className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 -rotate-90" viewBox="0 0 96 96">
-                      <circle cx="48" cy="48" r="40" fill="none" stroke="#333333" strokeWidth="10" />
+                      <circle cx="48" cy="48" r="40" fill="none" stroke="#333333" strokeWidth="13" />
                       <circle
                         cx="48" cy="48" r="40" fill="none"
                         stroke={ringColor}
-                        strokeWidth="10"
+                        strokeWidth="13"
                         strokeDasharray={`${(boundedPercent / 100) * 251.33} 251.33`}
-                        strokeLinecap="round"
+                        strokeLinecap="butt"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -219,7 +219,7 @@ const MaintenanceOverviewSection: React.FC<{
             <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
           </div>
-          <p className="text-xs font-normal text-[#9E9CA8] mt-0.5 hidden sm:block">{displayTimestamp}</p>
+          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(inWarranty ? [
               { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
@@ -236,8 +236,8 @@ const MaintenanceOverviewSection: React.FC<{
                 className={`text-center py-1 px-0.5 ${i < 7 ? 'border-r border-r-white/10' : ''}`}
               >
                 <div className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
-                <div className="flex flex-col items-center justify-center gap-0.5 mt-0.5">
-                  <img src={item.icon} alt="" width={12} height={12} className="w-3 h-3" />
+                <div className="flex flex-row items-center justify-center gap-1 mt-0.5">
+                  <img src={item.icon} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
                   <span className="text-[9px] sm:text-[10px] font-normal text-[#979797] whitespace-nowrap">{item.label}</span>
                 </div>
               </div>
@@ -248,10 +248,24 @@ const MaintenanceOverviewSection: React.FC<{
         {/* งานหมดค้ำ */}
         <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
-            <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานหมดค้ำ</h2>
+            <span
+              aria-hidden
+              className="inline-block w-6 h-6 sm:w-7.5 sm:h-7.5 shrink-0"
+              style={{
+                backgroundColor: '#979797',
+                WebkitMaskImage: 'url(/atlas/images/Maintenance/ics2.png)',
+                maskImage: 'url(/atlas/images/Maintenance/ics2.png)',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+              }}
+            />
+            <h2 className="text-lg sm:text-[32px] font-bold text-[#979797]">งานหมดค้ำ</h2>
           </div>
-          <p className="text-xs font-normal text-[#9E9CA8] mt-0.5 hidden sm:block">{displayTimestamp}</p>
+          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(outWarranty ? [
               { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
@@ -268,8 +282,8 @@ const MaintenanceOverviewSection: React.FC<{
                 className={`text-center py-1 px-0.5 ${i < 7 ? 'border-r border-r-white/10' : ''}`}
               >
                 <div className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 mt-0.5">
-                  <img src={item.icon} alt="" width={14} height={14} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <div className="flex flex-row items-center justify-center gap-1 mt-0.5">
+                  <img src={item.icon} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
                   <span className="text-[10px] sm:text-sm font-normal text-[#979797] whitespace-nowrap">{item.label}</span>
                 </div>
               </div>
@@ -284,6 +298,7 @@ const MaintenanceOverviewSection: React.FC<{
           <img src="/atlas/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
           <h2 className="text-lg sm:text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
         </div>
+        <p className="font-normal text-[#9E9CA8] mt-1" style={{ fontSize: 14 }}>รวมสายทางที่มีอุปกรณ์ดับทุกจุดติดตั้งล่าสุด</p>
         <div className="mt-3 sm:mt-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Input
             placeholder="ค้นหาสายทาง..."

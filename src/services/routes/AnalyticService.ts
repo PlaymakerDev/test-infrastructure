@@ -213,20 +213,24 @@ export const getIncidentSummaryAPI = (
     range: { since: string; until: string }
     installation_points: {
       total: number
-      top_region: { region_id: number; name_th: string; name_en: string; count: number; percentage: number }
+      // Same nullability as the other top_* fields below — guard before accessing.
+      top_region: { region_id: number; name_th: string; name_en: string; count: number; percentage: number } | null
     }
     incidents: {
       total: number
-      top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+      // null when there are zero incidents in the selected period — verified live (no top
+      // department to report). Do not access its fields without a null guard.
+      top_department: { department_id: number; department_short_name: string; count: number; percentage: number } | null
       departments_with_incidents: number
     }
+    // null when there are zero incidents in the selected period. Guard before accessing fields.
     top_incident_type: {
       id: number
       name_en: string
       name_th: string
       count: number
       percentage: number
-    }
+    } | null
   }>({
     url: `${analyticBase(deptId)}/overview/incidents-summary`,
     method: 'GET',
@@ -304,11 +308,13 @@ export interface IotStatusSummary {
   installation_points: { total: number; phase_1: number; phase_3: number }
   line_broken: {
     total: number
-    top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+    // null when there are zero events in the selected period — mirrors the same
+    // nullability as incidents-summary's top_department. Guard before accessing fields.
+    top_department: { department_id: number; department_short_name: string; count: number; percentage: number } | null
   }
   circuit_abnormal: {
     total: number
-    top_department: { department_id: number; department_short_name: string; count: number; percentage: number }
+    top_department: { department_id: number; department_short_name: string; count: number; percentage: number } | null
   }
   normal: { total: number; percentage: number }
   notifications: { total: number }

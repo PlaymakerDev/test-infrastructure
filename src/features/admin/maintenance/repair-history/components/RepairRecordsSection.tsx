@@ -156,7 +156,7 @@ const QueryErrorNotice: React.FC<QueryErrorNoticeProps> = ({ message, onRetry })
     role="alert"
     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E94C4C] bg-[#E94C4C]/10 px-4 py-3"
   >
-    <span className="text-[13px] text-[#E94C4C]">{message}</span>
+    <span className="text-[14px] text-[#E94C4C]">{message}</span>
     <Button size="small" danger onClick={onRetry}>
       ลองอีกครั้ง
     </Button>
@@ -470,10 +470,10 @@ const RepairRecordsSection: React.FC = () => {
 
   const renderBadge = (count: number, color: string) => (
     <span
-      className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 text-[14px] font-normal whitespace-nowrap"
       style={{ padding: '2px 12px', borderRadius: 9999, border: `1px solid ${color}`, color, minWidth: 70, textAlign: 'center' }}
     >
-      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
+      <span aria-hidden className="inline-block rounded-full shrink-0" style={{ width: 10, height: 10, backgroundColor: color }} />
       <span style={{ marginTop: 2 }}>{count}</span>
     </span>
   )
@@ -483,8 +483,8 @@ const RepairRecordsSection: React.FC = () => {
   // devices metadata, which hides below sm) since it's the status the user tracks.
   const renderCountBadge = (count: number, color: string) => (
     <span
-      className="inline-flex items-center gap-1 text-[12px] font-normal whitespace-nowrap shrink-0 mt-0.5"
-      style={{ padding: '1px 8px', borderRadius: 9999, border: `1px solid ${color}`, color }}
+      className="inline-flex items-center justify-center gap-1 text-[14px] font-normal whitespace-nowrap shrink-0 mt-0.5"
+      style={{ padding: '1px 8px', borderRadius: 9999, border: `1px solid ${color}`, color, width: 72 }}
     >
       <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
       <span style={{ marginTop: 1 }}>{count}</span>
@@ -492,6 +492,8 @@ const RepairRecordsSection: React.FC = () => {
   )
 
   const selectedSummary = summaryData.find(s => s.type === selectedType)
+  const selectedTypeIconIdx = summaryData.findIndex(s => s.type === selectedType)
+  const selectedTypeIcon = `/atlas/images/Maintenance/st${selectedTypeIconIdx >= 0 ? selectedTypeIconIdx + 1 : 1}.png`
 
   return (
     <div className="flex flex-col h-full">
@@ -514,9 +516,9 @@ const RepairRecordsSection: React.FC = () => {
             ].join(' ')}>
               <div className="w-md h-full overflow-y-auto p-5">
                 <p className="text-[16px] font-normal" style={{ color: '#66AEFF' }}>Solution Types</p>
-                <p className="text-[12px] font-normal mt-1" style={{ color: '#979797' }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
+                <p className="font-normal mt-1" style={{ color: '#979797', fontSize: 14 }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
                 <div className="mt-4 flex flex-col gap-2">
-                  {summaryData.map((item) => (
+                  {summaryData.map((item, idx) => (
                     <div
                       key={item.type}
                       className="flex items-center justify-between px-3 py-2 rounded-[10px] cursor-pointer"
@@ -526,8 +528,11 @@ const RepairRecordsSection: React.FC = () => {
                       }}
                       onClick={() => setSelectedType(item.type)}
                     >
-                      <span className="text-[12px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
-                      <span className="text-[12px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <img src={`/atlas/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
+                        <span className="text-[14px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
+                      </span>
+                      <span className="text-[14px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
                         {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
                       </span>
                     </div>
@@ -573,9 +578,9 @@ const RepairRecordsSection: React.FC = () => {
           >
             <div style={{ height: '50vh', overflow: 'auto' }}>
               <div className="p-4">
-                <p className="text-[12px] font-normal mt-1" style={{ color: '#979797' }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
+                <p className="font-normal mt-1" style={{ color: '#979797', fontSize: 14 }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
                 <div className="mt-3 flex flex-col gap-2">
-                  {summaryData.map((item) => (
+                  {summaryData.map((item, idx) => (
                     <div
                       key={item.type}
                       className="flex items-center justify-between px-3 py-2 rounded-[10px] cursor-pointer"
@@ -588,8 +593,11 @@ const RepairRecordsSection: React.FC = () => {
                         setDrawerOpen(false)
                       }}
                     >
-                      <span className="text-[12px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
-                      <span className="text-[12px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <img src={`/atlas/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
+                        <span className="text-[14px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
+                      </span>
+                      <span className="text-[14px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
                         {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
                       </span>
                     </div>
@@ -622,15 +630,30 @@ const RepairRecordsSection: React.FC = () => {
             ) : (summaryQuery.isError && summaryData.length === 0) || (detailQuery.isError && detailData.length === 0) ? null : (
               <>
                 <div className="flex items-center gap-4">
+                  <span
+                    aria-hidden
+                    className="inline-block w-10 h-10 shrink-0"
+                    style={{
+                      backgroundColor: '#FCD116',
+                      WebkitMaskImage: `url(${selectedTypeIcon})`,
+                      maskImage: `url(${selectedTypeIcon})`,
+                      WebkitMaskSize: 'contain',
+                      maskSize: 'contain',
+                      WebkitMaskRepeat: 'no-repeat',
+                      maskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      maskPosition: 'center',
+                    }}
+                  />
                   <span className="text-[18px] sm:text-[24px] font-bold" style={{ color: '#FCD116' }}>{selectedType}</span>
                   {renderBadge(detailStats.online, '#66AEFF')}
                   {renderBadge(detailStats.offline, '#E94C4C')}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3">
-                  <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{detailStats.departments} หน่วยงาน</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{detailStats.projects} โครงการ</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{selectedSummary?.location_count.toLocaleString() ?? 0} จุดติดตั้ง</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{selectedSummary?.device_count.toLocaleString() ?? 0} อุปกรณ์</span>
+                  <span className="text-[14px] font-normal" style={{ color: '#E9D682' }}>{detailStats.departments} หน่วยงาน</span>
+                  <span className="text-[14px] font-normal" style={{ color: '#E9D682' }}>{detailStats.projects} โครงการ</span>
+                  <span className="text-[14px] font-normal" style={{ color: '#E9D682' }}>{selectedSummary?.location_count.toLocaleString() ?? 0} จุดติดตั้ง</span>
+                  <span className="text-[14px] font-normal" style={{ color: '#E9D682' }}>{selectedSummary?.device_count.toLocaleString() ?? 0} อุปกรณ์</span>
                 </div>
 
                 {/* Tree Structure from API — bureau (plain label) > department > road > project >
@@ -641,13 +664,15 @@ const RepairRecordsSection: React.FC = () => {
                   <React.Fragment key={bureau.bureau_id}>
                     {/* Bureau Level — plain section label, always expanded (no card, no chevron).
                         A blank bureau_name (see DetailBureau sample data) is HQ's implicit bucket. */}
-                    <div className="mt-4 flex items-center gap-4 flex-wrap px-1">
+                    <div className="mt-4 flex items-center gap-4 flex-wrap px-3">
                       <span className="text-[14px] sm:text-[16px] font-medium" style={{ color: '#FFFFFF' }}>{bureau.bureau_name || 'ส่วนกลาง'}</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.projects_count} โครงการ</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.location_count} จุดติดตั้ง</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.device_count} อุปกรณ์</span>
-                      {renderCountBadge(bureau.online_count, '#66AEFF')}
-                      {renderCountBadge(bureau.offline_count, '#E94C4C')}
+                      <span className="text-[14px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.projects_count} โครงการ</span>
+                      <span className="text-[14px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.location_count} จุดติดตั้ง</span>
+                      <span className="text-[14px] font-normal" style={{ color: '#B4B4B4' }}>{bureau.device_count} อุปกรณ์</span>
+                      <span className="ml-auto flex items-center gap-2 shrink-0">
+                        {renderCountBadge(bureau.online_count, '#66AEFF')}
+                        {renderCountBadge(bureau.offline_count, '#E94C4C')}
+                      </span>
                     </div>
 
                     {sortByName(bureau.departments, (d) => d.department_name).map((dept) => (
@@ -658,17 +683,19 @@ const RepairRecordsSection: React.FC = () => {
                           style={{ background: '#292828' }}
                           onClick={() => setExpandedDept(prev => prev === dept.department_id ? null : dept.department_id)}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-center gap-4">
                             <TbChevronDown
-                              className="text-[16px] shrink-0 transition-transform duration-200 mt-1"
+                              className="text-[16px] shrink-0 transition-transform duration-200"
                               style={{ color: '#FCD116', transform: expandedDept === dept.department_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                             />
-                            <span className="text-[14px] sm:text-[16px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={dept.department_name}>{dept.department_name}</span>
-                            <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.projects_count} โครงการ</span>
-                            <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.location_count} จุดติดตั้ง</span>
-                            <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{dept.device_count} อุปกรณ์</span>
-                            {renderCountBadge(dept.online_count, '#66AEFF')}
-                            {renderCountBadge(dept.offline_count, '#E94C4C')}
+                            <span className="text-[14px] sm:text-[16px] font-normal min-w-0 shrink break-words" style={{ color: '#FCD116' }} title={dept.department_name}>{dept.department_name}</span>
+                            <span className="text-[14px] font-normal hidden sm:inline shrink-0 ml-2" style={{ color: '#B4B4B4' }}>{dept.projects_count} โครงการ</span>
+                            <span className="text-[14px] font-normal hidden sm:inline shrink-0" style={{ color: '#B4B4B4' }}>{dept.location_count} จุดติดตั้ง</span>
+                            <span className="text-[14px] font-normal hidden sm:inline shrink-0" style={{ color: '#B4B4B4' }}>{dept.device_count} อุปกรณ์</span>
+                            <span className="ml-auto flex items-center gap-2 shrink-0">
+                              {renderCountBadge(dept.online_count, '#66AEFF')}
+                              {renderCountBadge(dept.offline_count, '#E94C4C')}
+                            </span>
                           </div>
                         </div>
 
@@ -678,7 +705,7 @@ const RepairRecordsSection: React.FC = () => {
                             <div
                               className="mt-1 rounded-[10px] cursor-pointer"
                               style={{
-                                background: '#151515',
+                                background: '#292828',
                                 paddingLeft: 36,
                                 paddingRight: 12,
                                 paddingTop: 8,
@@ -687,17 +714,19 @@ const RepairRecordsSection: React.FC = () => {
                               }}
                               onClick={() => setExpandedRoad(prev => prev === road.road_id ? null : road.road_id)}
                             >
-                              <div className="flex items-start gap-4">
+                              <div className="flex items-center gap-4">
                                 <TbChevronDown
-                                  className="text-[16px] shrink-0 transition-transform duration-200 mt-1"
+                                  className="text-[16px] shrink-0 transition-transform duration-200"
                                   style={{ color: '#FCD116', transform: expandedRoad === road.road_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                 />
-                                <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={formatRoadLabel(road.road_code, road.road_name)}>{formatRoadLabel(road.road_code, road.road_name)}</span>
-                                <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
-                                <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
-                                <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
-                                {renderCountBadge(road.online_count, '#66AEFF')}
-                                {renderCountBadge(road.offline_count, '#E94C4C')}
+                                <span className="text-[14px] font-normal min-w-0 shrink break-words" style={{ color: '#FCD116' }} title={formatRoadLabel(road.road_code, road.road_name)}>{formatRoadLabel(road.road_code, road.road_name)}</span>
+                                <span className="text-[14px] font-normal hidden sm:inline shrink-0 ml-2" style={{ color: '#B4B4B4' }}>{road.projects_count} โครงการ</span>
+                                <span className="text-[14px] font-normal hidden sm:inline shrink-0" style={{ color: '#B4B4B4' }}>{road.location_count} จุดติดตั้ง</span>
+                                <span className="text-[14px] font-normal hidden sm:inline shrink-0" style={{ color: '#B4B4B4' }}>{road.device_count} อุปกรณ์</span>
+                                <span className="ml-auto flex items-center gap-2 shrink-0">
+                                  {renderCountBadge(road.online_count, '#66AEFF')}
+                                  {renderCountBadge(road.offline_count, '#E94C4C')}
+                                </span>
                               </div>
                             </div>
 
@@ -719,16 +748,18 @@ const RepairRecordsSection: React.FC = () => {
                                   }}
                                   onClick={() => setExpandedProject(prev => prev === proj.project_id ? null : proj.project_id)}
                                 >
-                                  <div className="flex items-start gap-4">
+                                  <div className="flex items-center gap-4">
                                     <TbChevronDown
-                                      className="text-[16px] shrink-0 transition-transform duration-200 mt-1"
+                                      className="text-[16px] shrink-0 transition-transform duration-200"
                                       style={{ color: '#FCD116', transform: expandedProject === proj.project_id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                     />
-                                    <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={proj.project_name}>{proj.project_name || 'โปรดระบุชื่อโครงการ'}</span>
-                                    <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{proj.location_count} จุดติดตั้ง</span>
-                                    <span className="text-[12px] font-normal hidden sm:inline shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{proj.device_count} อุปกรณ์</span>
-                                    {renderCountBadge(proj.online_count, '#66AEFF')}
-                                    {renderCountBadge(proj.offline_count, '#E94C4C')}
+                                    <span className="text-[14px] font-normal min-w-0 shrink break-words" style={{ color: '#FCD116' }} title={proj.project_name}>{proj.project_name || 'โปรดระบุชื่อโครงการ'}</span>
+                                    <span className="text-[14px] font-normal hidden sm:inline shrink-0 ml-2" style={{ color: '#B4B4B4' }}>{proj.location_count} จุดติดตั้ง</span>
+                                    <span className="text-[14px] font-normal hidden sm:inline shrink-0" style={{ color: '#B4B4B4' }}>{proj.device_count} อุปกรณ์</span>
+                                    <span className="ml-auto flex items-center gap-2 shrink-0">
+                                      {renderCountBadge(proj.online_count, '#66AEFF')}
+                                      {renderCountBadge(proj.offline_count, '#E94C4C')}
+                                    </span>
                                   </div>
                                 </div>
 
@@ -741,7 +772,7 @@ const RepairRecordsSection: React.FC = () => {
                                   sortByName(loc.solution ?? [], (s) => s.solution_name).map((sol) => (
                                     <div
                                       key={sol.solution_id}
-                                      className="mt-1 rounded-[10px] cursor-pointer flex items-start gap-4"
+                                      className="mt-1 rounded-[10px] cursor-pointer flex items-center gap-4"
                                       style={{ background: '#151515', paddingLeft: 72, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
                                       onClick={() => {
                                         // A road+project can own several installation points (see the
@@ -764,10 +795,12 @@ const RepairRecordsSection: React.FC = () => {
                                         router.push(`/admin/maintenance/detail/${sol.solution_id}?${params.toString()}`)
                                       }}
                                     >
-                                      <span className="text-[14px] font-normal min-w-0 flex-1 break-words" style={{ color: '#FCD116' }} title={sol.solution_name || loc.solution_location_name}>{sol.solution_name || loc.solution_location_name}</span>
-                                      <span className="text-[12px] font-normal shrink-0 mt-1" style={{ color: '#B4B4B4' }}>{loc.solution_location_name}</span>
-                                      {renderCountBadge(sol.online_count, '#66AEFF')}
-                                      {renderCountBadge(sol.offline_count, '#E94C4C')}
+                                      <span className="text-[14px] font-normal min-w-0 shrink break-words" style={{ color: '#FCD116' }} title={sol.solution_name || loc.solution_location_name}>{sol.solution_name || loc.solution_location_name}</span>
+                                      <span className="text-[14px] font-normal shrink-0 ml-2" style={{ color: '#B4B4B4' }}>{loc.solution_location_name}</span>
+                                      <span className="ml-auto flex items-center gap-2 shrink-0">
+                                        {renderCountBadge(sol.online_count, '#66AEFF')}
+                                        {renderCountBadge(sol.offline_count, '#E94C4C')}
+                                      </span>
                                     </div>
                                   ))
                                 )}

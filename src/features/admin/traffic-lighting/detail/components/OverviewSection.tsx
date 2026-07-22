@@ -5,6 +5,7 @@ import RemoteControlCard from './RemoteControlCard'
 import StatusCardsColumn from './StatusCardsColumn'
 import VoltageAmpChartsRow from './VoltageAmpChartsRow'
 import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIframe'
+import { MapEdgeFade } from '@/components/map/BaseMap'
 import { useDetailContext } from '../context'
 
 /** OVERVIEW tab layout — full-size diagram iframe with the remote control
@@ -22,7 +23,7 @@ const OverviewSection: React.FC = () => {
         </div>
 
         {/* Center — circuit diagram iframe for this device. */}
-        <div className='flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-stretch justify-center min-h-[310px]'>
+        <div className='relative flex-1 min-w-0 rounded-2xl overflow-hidden bg-[#191919CC] flex items-stretch justify-center min-h-[310px]'>
           {imei ? (
             // `items-stretch` (not `items-center`) on the parent so the
             // iframe fills the full card instead of hugging its own content
@@ -32,6 +33,7 @@ const OverviewSection: React.FC = () => {
           ) : (
             <p className='text-white/50 text-sm m-0 self-center'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
           )}
+          <MapEdgeFade left={10} right={10} top={10} bottom={10} />
         </div>
 
         <div className='w-full md:w-[300px] md:absolute md:top-0 md:right-0 md:z-10'>

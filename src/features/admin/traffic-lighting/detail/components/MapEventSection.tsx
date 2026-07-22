@@ -21,14 +21,13 @@ const SUMMARY_STATS: { key: StatusFilter; label: string; color: string }[] = [
   { key: 'DOWN', label: 'DOWN', color: '#E94C4C' },
 ]
 
-// Detect the alert level from the equipment_id prefix.
-const levelOf = (equipmentId: string): 'Warning' | 'Alert' => {
-  if (/^alert/i.test(equipmentId)) return 'Alert'
-  return 'Warning'
-}
+// Alert level follows the device state: UP is a warning/recovery event and
+// DOWN is an active alert.
+const levelOf = (status: string): 'Warning' | 'Alert' =>
+  status === 'DOWN' ? 'Alert' : 'Warning'
 
-const LevelBadge = ({ equipmentId }: { equipmentId: string }) => {
-  const level = levelOf(equipmentId)
+const LevelBadge = ({ status }: { status: string }) => {
+  const level = levelOf(status)
   const color = level === 'Warning' ? '#FF9D00' : '#E94C4C'
   return (
     <span
@@ -92,8 +91,10 @@ const MapEventSection: React.FC = () => {
         title: 'วันที่และเวลา',
         dataIndex: 'timestamp',
         key: 'timestamp',
-        align: 'center',
-        width: 180,
+        align: 'left',
+        width: '24%',
+        onHeaderCell: () => ({ style: { paddingLeft: 20 } }),
+        onCell: () => ({ style: { paddingLeft: 20 } }),
         render: (t: string) => (
           <span className='text-white'>
             {t ? dayjs(t).format('D MMM BBBB HH:mm:ss') : '-'}
@@ -104,23 +105,37 @@ const MapEventSection: React.FC = () => {
         title: 'อุปกรณ์',
         dataIndex: 'equipment_id',
         key: 'equipment_id',
-        align: 'center',
-        width: 200,
-        render: (eid: string) => <LevelBadge equipmentId={eid} />,
+        align: 'left',
+        width: '35%',
+        onHeaderCell: () => ({ style: { paddingLeft: 20 } }),
+        onCell: () => ({ style: { paddingLeft: 20 } }),
+        render: (eid: string, record: AlertItem) => (
+          <div className='flex items-center justify-start gap-2 whitespace-nowrap'>
+            <LevelBadge status={record.status} />
+            <span className='text-white'>{eid || '-'}</span>
+          </div>
+        ),
       },
       {
         title: 'เหตุการณ์',
         dataIndex: 'incident',
         key: 'incident',
-        align: 'center',
-        render: (v: string) => <span style={{ color: '#66AEFF' }}>{v}</span>,
+        align: 'left',
+        width: '25%',
+        onHeaderCell: () => ({ style: { paddingLeft: 20 } }),
+        onCell: () => ({ style: { paddingLeft: 20 } }),
+        render: (v: string) => (
+          <span style={{ color: v === 'กลับมาใช้งานได้' ? '#66AEFF' : '#FFFFFF' }}>
+            {v}
+          </span>
+        ),
       },
       {
         title: 'สถานะ',
         dataIndex: 'status',
         key: 'status',
         align: 'center',
-        width: 100,
+        width: '16%',
         render: (s: string) => <LineStatusBadge status={s} />,
       },
     ],
@@ -128,10 +143,10 @@ const MapEventSection: React.FC = () => {
   )
 
   return (
-    <div className='flex flex-col lg:flex-row lg:items-start w-full gap-3 mt-4 pb-5'>
+    <div className='flex flex-col lg:flex-row lg:items-stretch w-full gap-3 mt-4 pb-5'>
       {/* Map */}
       <div
-        className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-[480px] rounded-2xl overflow-hidden bg-[#212121]'
+        className='relative w-full lg:w-[45%] xl:w-[42%] shrink-0 min-h-[300px] h-[300px] sm:h-[400px] lg:h-auto lg:self-stretch rounded-2xl overflow-hidden bg-[#212121]'
       >
         <MapLightingDetail
           coord={project.coord}
@@ -144,12 +159,12 @@ const MapEventSection: React.FC = () => {
       </div>
 
       {/* Event table */}
-      <div className='flex-1 min-w-0 flex flex-col gap-3'>
-        <h3 className='text-[#FCD116] text-base sm:text-lg font-bold m-0'>
+      <div className='flex-1 min-w-0 flex flex-col'>
+        <h3 className='text-[#FCD116] m-0' style={{ fontSize: 20, fontWeight: 400 }}>
           ตารางข้อมูลรายเหตุการณ์
         </h3>
 
-        <div className='flex flex-row flex-wrap items-center gap-2'>
+        <div className='mt-3 flex flex-row flex-wrap items-center gap-2'>
           {SUMMARY_STATS.map((stat) => {
             const isActive = statusFilter === stat.key
             return (
@@ -189,7 +204,7 @@ const MapEventSection: React.FC = () => {
           })}
         </div>
 
-        <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
+        <div className='mt-5 w-full min-w-0 overflow-x-auto overflow-y-hidden'>
           <Table<AlertItem>
             rowKey={(r) => `${r.imei}-${r.timestamp}-${r.equipment_id}-${r.incident}-${r.status}`}
             columns={columns}
@@ -203,7 +218,8 @@ const MapEventSection: React.FC = () => {
               onChange: setPage,
             }}
             size='middle'
-            className='bridge-projects-table event-log-table'
+            tableLayout='fixed'
+            className='bridge-projects-table event-log-table incident-event-log-table'
             locale={{
               emptyText: isError
                 ? 'ไม่สามารถโหลดข้อมูลเหตุการณ์ได้'

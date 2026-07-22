@@ -36,7 +36,7 @@ const PhaseLayout: React.FC = () => {
   return (
     <>
       <TitleSection />
-      {renderContent && <section className='mt-8'>{renderContent}</section>}
+      {renderContent && <section className='mt-8 px-10 pb-8'>{renderContent}</section>}
     </>
   )
 }

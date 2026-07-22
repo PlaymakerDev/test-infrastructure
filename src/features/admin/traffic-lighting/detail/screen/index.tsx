@@ -5,6 +5,7 @@ import { DetailProvider } from '../context'
 import { resolveLightingImei } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useLightingProject } from '@/features/admin/traffic-lighting/shared/useLightingProject'
 import PhaseLayout from '../layouts/PhaseLayout'
+import TrafficLightingMinimumFontSize from '../../shared/TrafficLightingMinimumFontSize'
 
 interface Props {
   id: string
@@ -29,10 +30,11 @@ const TrafficLightingDetailScreen: React.FC<Props> = ({ id, imeiParam, typeParam
 
   return (
     <DetailProvider project={project} imei={imei}>
-      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3'>
+      <div className='main-screen traffic-lighting-font-min-14'>
+        <TrafficLightingMinimumFontSize />
         {projectQuery.isError && (
           <Alert
-            className='mb-4'
+            className='mx-10 mb-4'
             type='error'
             showIcon
             message='ไม่สามารถโหลดข้อมูลโครงการได้'

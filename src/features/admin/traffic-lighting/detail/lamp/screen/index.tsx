@@ -11,6 +11,7 @@ import LampTitleSection from '../components/TitleSection'
 import { resolveLightingImei } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useLightingProject } from '@/features/admin/traffic-lighting/shared/useLightingProject'
 import { useLightingAmpGraph, useLightingDeviceDetails } from '@/hooks/queries/lighting'
+import TrafficLightingMinimumFontSize from '../../../shared/TrafficLightingMinimumFontSize'
 
 interface Props {
   id: string
@@ -55,7 +56,8 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
 
   return (
     <LampProvider project={resolvedProject}>
-      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-6'>
+      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-6 traffic-lighting-font-min-14'>
+        <TrafficLightingMinimumFontSize />
         {projectQuery.isError && (
           <Alert
             className='mb-4'

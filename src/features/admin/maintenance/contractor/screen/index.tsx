@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { TbSearch, TbMail, TbPhone } from 'react-icons/tb'
 import { getContractorSummaryAPI } from '@/services/routes/MaintenanceService'
 import type { ContractorSummaryRow } from '@/types/maintenance'
+import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
 /** "หน้าสรุปผู้รับจ้าง" — one row per contractor with offline device totals
  *  per solution type + open case count. Sorted by total_offline (highest =
@@ -148,7 +149,8 @@ const ContractorSummaryScreen: React.FC = () => {
   ]
 
   return (
-    <div className='main-screen px-10 pt-8 pb-8'>
+    <div className='main-screen px-10 pt-8 pb-8 maintenance-font-min-14'>
+      <MaintenanceMinimumFontSize />
       <div className='mb-6'>
         <h1 className='text-white text-2xl font-semibold mb-1'>สรุปผู้รับจ้าง</h1>
         <p className='text-white/50 text-sm'>

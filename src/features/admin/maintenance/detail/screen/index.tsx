@@ -4,6 +4,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import { TitleSection } from '../components'
 import {
   useCreateMaintenanceCase,
@@ -11,8 +14,13 @@ import {
   useProjectBySolution,
   useSolutionMapLocation,
 } from '@/hooks/queries/maintenance'
+import { useContactDetail } from '@/hooks/queries/shared/useContactDetail'
 import { ProjectInfoModal } from '@/components/modal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
+import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
 
 interface Props {
   id: string
@@ -128,8 +136,24 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   // Resolve the owning project from the solution_id (this route's `id`) so the
   // ⓘ "ดูข้อมูลโครงการ" modal opens even on a direct visit with no route context.
+  // Also backs the "ยืนยันเปิด Case" confirm dialog's project-info box below.
   const projectQuery = useProjectBySolution(numericId)
-  const projectId = projectQuery.data?.id
+  const projectDetail = projectQuery.data
+  const projectId = projectDetail?.id
+  // `projectDetail.contractor.username` is a short login/code (e.g. "ftd"), not the
+  // display-worthy company name — the full name (e.g. "บริษัท เฟิร์สเทค ดีไซน์ จำกัด")
+  // only lives on the contract/contact-detail endpoint (same one the ⓘ ProjectInfoModal
+  // uses via `company_name`).
+  const contactDetailQuery = useContactDetail(projectId)
+  const contractorName = contactDetailQuery.data?.data.company_name
+  const warrantyRangeText = useMemo(() => {
+    if (!projectDetail?.warranty_start_date || !projectDetail?.warranty_end_date) return '-'
+    const start = dayjs(projectDetail.warranty_start_date)
+    const end = dayjs(projectDetail.warranty_end_date)
+    if (!start.isValid() || !end.isValid()) return '-'
+    const years = end.diff(start, 'year')
+    return `${start.format('DD MMM BBBB')} - ${end.format('DD MMM BBBB')} (${years} ปี)`
+  }, [projectDetail?.warranty_start_date, projectDetail?.warranty_end_date])
 
   // Google Map pin — solution/{id} has no coordinates, but the feature's own
   // overview endpoint (keyed by the URL's prefix + department_id) carries
@@ -253,7 +277,8 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   }
 
   return (
-    <div className='main-screen'>
+    <div className='main-screen maintenance-font-min-14'>
+      <MaintenanceMinimumFontSize />
       <TitleSectionWithData
         id={id}
         data={solutionData}
@@ -355,7 +380,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             {/* รูป */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src='/atlas/images/Maintenance/icmd1.png'
+                src={warranty === 'ในค้ำ' ? '/atlas/images/Maintenance/icmd2.png' : '/atlas/images/Maintenance/icmd1.png'}
                 alt='maintenance'
                 style={{ width: 100, height: 100, objectFit: 'contain' }}
               />
@@ -378,13 +403,16 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 gap: 6,
                 padding: 16,
                 borderRadius: 12,
-                backgroundColor: '#E94C4C33',
-                border: '2px solid #E94C4C',
+                backgroundColor: warranty === 'ในค้ำ' ? '#66AEFF33' : '#E94C4C33',
+                border: `2px solid ${warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C'}`,
               }}
             >
-              <div><span style={{ color: '#979797' }}>ชื่ออุปกรณ์ : </span><span style={{ color: '#212121' }}>{selectedRow?.cameraName || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>IP Address : </span><span style={{ color: '#212121' }}>{selectedRow?.ipAddress || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: '#E94C4C', fontWeight: 700, fontSize: 14 }}>{warranty}</span></div>
+              <div><span style={{ color: '#979797' }}>ชื่อโครงการ : </span><span style={{ color: '#212121' }}>{projectDetail?.project_name || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>ผู้รับจ้าง : </span><span style={{ color: '#212121' }}>{contractorName || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>หน่วยงานรับผิดชอบ : </span><span style={{ color: '#212121' }}>{projectDetail?.department?.department_short_name || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>เลขที่สัญญา : </span><span style={{ color: '#212121' }}>{projectDetail?.contract_no || '-'}</span></div>
+              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C', fontWeight: 700, fontSize: 14 }}>{warranty}</span></div>
+              <div><span style={{ color: '#979797' }}>วันที่เริ่มต้น - สิ้นสุดการค้ำประกัน : </span><span style={{ color: '#212121' }}>{warrantyRangeText}</span></div>
             </div>
 
             {/* ปุ่ม */}
