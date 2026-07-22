@@ -340,7 +340,12 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
                 </div>
               </div>
 
-              {hasActive && (
+              {/* Only render the media/schedule detail block for actively-running
+                  commands. Terminal cards (cancelled/done/overwrite/lost) would
+                  otherwise misleadingly display date/time/day rows from a
+                  command that will never run — the pill above already says
+                  what happened; more detail belongs in ประวัติสั่งงานทั้งหมด. */}
+              {hasActive && !isTerminal && (
                 <div className="mt-2 flex items-center gap-3">
                   {it.media_url ? (
                     <div
