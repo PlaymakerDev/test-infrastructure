@@ -73,6 +73,14 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     }
   }, [mediaItems, selectedMediaId])
 
+  // Media and message are mutually exclusive on the sign (mirrors legacy
+  // FormUpdateSchedule.tsx's radio: 'รูปภาพหรือวิดิโอ' vs 'ข้อความ' — the
+  // backend/firmware contract is "populate exactly one of media_url/message,
+  // leave the other empty"). Media auto-selects on load, so the message field
+  // stays hidden by default — showing it unconditionally invited operators to
+  // type a caption alongside an auto-picked media, which would have sent BOTH
+  // fields non-empty and produced undefined behavior on the physical sign.
+  const [isMessageOnly, setIsMessageOnly] = useState(false)
   const [message, setMessage] = useState<string>('')
   const [scheduleName, setScheduleName] = useState<string>('ประกาศ')
   const today = dayjs()
@@ -97,7 +105,8 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   // the icon uses stopPropagation so it doesn't double-fire.
   const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
 
-  const canDispatch = vmsIds.length > 0 && (!!selectedMedia?.url || message.trim().length > 0)
+  const canDispatch =
+    vmsIds.length > 0 && (isMessageOnly ? message.trim().length > 0 : !!selectedMedia?.url)
 
   const buildPayload = () => ({
     vms_ids: vmsIds,
@@ -109,8 +118,10 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     schedules: [
       {
         schedule_name: scheduleName || 'ประกาศ',
-        media_url: selectedMedia?.url ?? '',
-        message: message,
+        // Enforced mutually exclusive regardless of leftover state in the
+        // other field — only the active mode's content goes out.
+        media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
+        message: isMessageOnly ? message : '',
         time_since: isAllDay ? '00:00:00' : timeRange[0].format(timeFmt),
         time_to: isAllDay ? '23:59:59' : timeRange[1].format(timeFmt),
         days_of_week: daysOfWeek,
@@ -137,6 +148,20 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           <p className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</p>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {/* Content mode toggle — media and message are mutually exclusive
+              on the sign itself, so only one input surface shows at a time
+              instead of both being visible and risking both fields being
+              non-empty on submit. */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-md bg-white/[.03] border border-white/10">
+            <span className="fs-12 font-medium">โหมดเนื้อหา</span>
+            <div className="flex items-center gap-2 fs-12">
+              <span className={!isMessageOnly ? 'text-(--yellow)' : 'opacity-60'}>รูป/วิดีโอ</span>
+              <Switch checked={isMessageOnly} onChange={setIsMessageOnly} />
+              <span className={isMessageOnly ? 'text-(--yellow)' : 'opacity-60'}>ข้อความอย่างเดียว</span>
+            </div>
+          </div>
+
+          {!isMessageOnly && (
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
@@ -260,17 +285,22 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               </>
             )}
           </div>
+          )}
 
+          {isMessageOnly && (
           <div>
-            <label className="text-(--yellow) block mb-1">ข้อความประกอบ (ไม่บังคับ)</label>
+            <label className="text-(--yellow) block mb-1">
+              ข้อความที่จะขึ้นบนป้าย <span className="text-red-500">*</span>
+            </label>
             <Input.TextArea
-              rows={2}
+              rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="ข้อความที่จะขึ้นบนป้าย (ถ้าเป็น message-only ให้ปล่อยรูปว่างได้)"
+              placeholder="พิมพ์ข้อความที่จะแสดงบนป้าย..."
               size="large"
             />
           </div>
+          )}
 
           <div>
             <label className="text-(--yellow) block mb-1">ชื่อกำหนดการ</label>
@@ -396,7 +426,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           title="ยืนยันการส่งคำสั่งควบคุม"
         >
           <div className="text-sm">
-            จะส่งคำสั่ง <b>{selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}</b> ไปยัง <b>{vmsIds.length}</b> ป้าย
+            จะส่งคำสั่ง{' '}
+            <b>
+              {isMessageOnly
+                ? `ข้อความ: "${message.trim()}"`
+                : selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}
+            </b>{' '}
+            ไปยัง <b>{vmsIds.length}</b> ป้าย
             <br />
             ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
             {isAllDay
