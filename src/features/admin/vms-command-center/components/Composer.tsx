@@ -367,6 +367,12 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <label className="text-(--yellow) block mb-1">
                 ช่วงเวลาแสดงผล <span className="text-red-500">*</span>
               </label>
+              {/* needConfirm defaults to true here (unlike the legacy form's
+                  single TimePicker, which is a same-panel confirm-on-pick
+                  since there's only one side) — this is a RangePicker with
+                  start+end in one control, so an explicit OK gives the
+                  operator a beat to review both ends before committing a
+                  schedule that affects a live sign. */}
               <TimePicker.RangePicker
                 value={timeRange}
                 onChange={(v) => v && v[0] && v[1] && setTimeRange([v[0], v[1]])}
@@ -374,7 +380,6 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                 allowClear={false}
                 className="w-full"
                 size="large"
-                needConfirm={false}
               />
             </div>
           )}
