@@ -63,7 +63,7 @@ const ChartTraffic: React.FC<Props> = () => {
         data={periodData}
         lines={LINES}
         periods={['กลางวัน', 'กลางคืน']}
-        defaultPeriod='กลางวัน'
+        activePeriod={period}
         onPeriodChange={(p) => setPeriod(p as Period)}
         tooltipDate={dayjs().format('DD MMM BBBB')}
         tooltipUnit='คัน'
