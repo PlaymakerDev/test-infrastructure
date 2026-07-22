@@ -145,7 +145,11 @@ const VMSCommandCenterScreen: React.FC = () => {
               children: (
                 <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
-                    <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                    <ScopePicker
+                      onSelectionChange={setSelection}
+                      selection={selection}
+                      onlineOverrideIds={immediateIds}
+                    />
                     {queuedCount > 0 && (
                       <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
                         <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">

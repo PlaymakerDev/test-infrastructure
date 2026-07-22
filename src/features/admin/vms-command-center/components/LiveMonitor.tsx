@@ -326,20 +326,31 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Card pill is driven by the eligibility bucket (screen-info's
+                      is_controllable / is_reported / is_centralized) rather than
+                      the raw tv.last_connected flag the monitor endpoint carries.
+                      Otherwise a sign whose legacy heartbeat is alive but whose
+                      drr-agent has never provisioned would show ออนไลน์ on the
+                      card AND Offline in the summary chip — same sign, two
+                      labels, operator can't reconcile. */}
+                  {(() => {
+                    const canDispatchNow = immediateIds ? immediateIds.has(it.vms_id) : it.is_online
+                    return (
                   <Tooltip
                     title={
                       <div className="fs-12">
-                        <div>เชื่อมต่อ: {it.is_online ? 'ออนไลน์' : 'ออฟไลน์'}</div>
+                        <div>เชื่อมต่อ: {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}</div>
                         <div>last_seen: {it.last_seen_at ?? '—'}</div>
+                        {!canDispatchNow && <div className="opacity-70">คำสั่งจะ queue จนกว่า agent จะกลับมา online</div>}
                       </div>
                     }
                   >
                     <span
                       className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
                       style={{
-                        background: it.is_online ? '#22c55e22' : '#ef444422',
-                        color: it.is_online ? '#22c55e' : '#ef4444',
-                        border: `1px solid ${it.is_online ? '#22c55e55' : '#ef444455'}`,
+                        background: canDispatchNow ? '#22c55e22' : '#ef444422',
+                        color: canDispatchNow ? '#22c55e' : '#ef4444',
+                        border: `1px solid ${canDispatchNow ? '#22c55e55' : '#ef444455'}`,
                       }}
                     >
                       <span
@@ -347,12 +358,14 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                           width: 6,
                           height: 6,
                           borderRadius: '50%',
-                          background: it.is_online ? '#22c55e' : '#ef4444',
+                          background: canDispatchNow ? '#22c55e' : '#ef4444',
                         }}
                       />
-                      {it.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
+                      {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}
                     </span>
                   </Tooltip>
+                    )
+                  })()}
                   {hasActive ? (
                     <StatusPill
                       status={it.status ?? 0}

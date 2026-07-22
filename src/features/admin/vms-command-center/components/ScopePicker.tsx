@@ -12,6 +12,12 @@ interface Props {
   /** Force "select mode" on — checkboxes always visible (default true, matches
    *  the Command Center dispatch flow). Set false for a click-to-drill-in view. */
   alwaysSelectMode?: boolean
+  /** vms_ids that should render as online in the tree, regardless of the
+   *  departments-API's own is_online flag. Used by the Command Center to align
+   *  sidebar with the eligibility (screen-info) source of truth — otherwise
+   *  the tree can show a sign as ออนไลน์ while the LiveMonitor bucket says
+   *  Offline (different agent stacks, different heartbeats). */
+  onlineOverrideIds?: Set<number>
 }
 
 const summaryTagBase: React.CSSProperties = {
@@ -40,9 +46,31 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
   onSelectionChange,
   selection,
   alwaysSelectMode = true,
+  onlineOverrideIds,
 }) {
   const { data, isLoading, isError } = useVMSDepartments()
-  const items: BureauItem[] = useMemo(() => data?.data ?? [], [data])
+  const rawItems: BureauItem[] = useMemo(() => data?.data ?? [], [data])
+  // Walk the tree once per (data, override) and rewrite `is_online` on every
+  // sign — cheap because BureauItem is <1000 signs total in prod. Preserves
+  // rest of the sign shape so BureauList doesn't need to know an override
+  // existed. Field names come from VMSDepartmentList → SubDepartment → Road →
+  // Solution (see types/control-vms/vms-api.ts).
+  const items: BureauItem[] = useMemo(() => {
+    if (!onlineOverrideIds) return rawItems
+    return rawItems.map((bureau) => ({
+      ...bureau,
+      sub_department: bureau.sub_department.map((state) => ({
+        ...state,
+        roads: state.roads.map((route) => ({
+          ...route,
+          solution: route.solution.map((s) => ({
+            ...s,
+            is_online: onlineOverrideIds.has(s.vms_id),
+          })),
+        })),
+      })),
+    }))
+  }, [rawItems, onlineOverrideIds])
 
   return (
     <div className="flex flex-col h-full">
