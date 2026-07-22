@@ -106,12 +106,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
     return () => clearInterval(id)
   }, [])
 
-  // Terminal states (cancelled/done/overwrite/lost) linger for a grace window
-  // so the operator gets a visual confirmation that the sign really transitioned
-  // (e.g. "just cancelled" pill visible ~10 min after they clicked หยุด), then
-  // auto-hide. Toggling `hideFinished` bypasses the grace and hides them
-  // immediately for operators who want a strictly-active view. Long-form history
-  // is in the ประวัติสั่งงานทั้งหมด tab.
+  // Operator explicit filter for terminal (done/cancelled/overwrite/lost)
+  // cards. Off by default — mental model is "I selected these signs, show
+  // me all of them regardless of past state" (fresh dispatch prep flow).
+  // Toggle ON when the operator wants a strictly-active view.
   const [hideFinished, setHideFinished] = useState(false)
 
   const handleCancel = async (settingID?: number) => {
@@ -126,16 +124,15 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
 
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
-  // Show all non-terminal rows always; terminal rows only within `TERMINAL_GRACE_MS`
-  // of their last transition. `nowMs` ticks every 1s so cards fade out live.
-  const TERMINAL_GRACE_MS = 10 * 60 * 1000
-  const visible = rows.filter((r) => {
-    const meta = statusMeta(r.status ?? undefined)
-    if (!meta.isTerminal) return true
-    if (hideFinished) return false
-    const t = r.status_updated_at ? dayjs(r.status_updated_at).valueOf() : 0
-    return t > 0 && nowMs - t < TERMINAL_GRACE_MS
-  })
+  // Show every selected sign — operator's mental model is "I picked these,
+  // let me see them all". The only filter is the explicit hideFinished switch
+  // for operators who want a strictly-active view. (Previously terminal cards
+  // auto-hid after a 10-minute grace window; that hid signs the operator was
+  // actively preparing to dispatch to just because their DB row still held a
+  // stale cancelled-from-last-week state.)
+  const visible = hideFinished
+    ? rows.filter((r) => !statusMeta(r.status ?? undefined).isTerminal)
+    : rows
 
   // Summary counts — driven by `visible` (what the operator actually sees on
   // screen) so the numbers reconcile with the cards. Hidden-by-grace-window
@@ -174,8 +171,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
           </Tooltip>
         </div>
         {/* Summary counters — reconcile "why 4 selected but N in monitor":
-            includes hidden-by-grace-window and excluded-by-eligibility chips
-            so operators never have to guess where the missing signs went. */}
+            includes a hidden-by-switch chip and an excluded-by-eligibility
+            chip so operators never have to guess where the missing signs went. */}
         {(rows.length > 0 || excludedCount > 0) && (
           <div className="flex items-center gap-2 fs-12 flex-wrap">
             {summary.active > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">●</span> กำลังทำงาน {summary.active}</span>}
@@ -185,8 +182,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
             {summary.lost > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-red-500">●</span> ขาดเชื่อมต่อ {summary.lost}</span>}
             {summary.pending > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="opacity-60">●</span> ยังไม่มีคำสั่ง {summary.pending}</span>}
             {rows.length > visible.length && (
-              <Tooltip title="Command จบไปแล้ว (เสร็จสิ้น / ยกเลิก / ถูกสั่งทับ / ขาดการเชื่อมต่อ) เกิน 10 นาที — ระบบซ่อนอัตโนมัติเพื่อไม่ให้บัง view. ดูย้อนหลังในแท็บ 'ประวัติสั่งงานทั้งหมด'">
-                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> จบไปแล้ว {rows.length - visible.length} (ซ่อนอัตโนมัติ)</span>
+              <Tooltip title="ป้ายเหล่านี้มี command ที่จบไปแล้ว (เสร็จสิ้น / ยกเลิก / ถูกสั่งทับ / ขาดการเชื่อมต่อ) — ปิดสวิตช์ 'ซ่อนที่เสร็จแล้ว' เพื่อให้แสดง">
+                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> ซ่อน {rows.length - visible.length} (ปิดสวิตช์เพื่อดู)</span>
               </Tooltip>
             )}
             {excludedCount > 0 && (
@@ -209,9 +206,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
         )}
         {vmsIds.length > 0 && !isLoading && rows.length > 0 && visible.length === 0 && (
           <div className="text-center fs-12 text-white/50 py-4">
-            {hideFinished
-              ? 'ป้ายทั้งหมดจบไปแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" หรือดูใน ประวัติสั่งงานทั้งหมด'
-              : 'ป้ายทั้งหมดจบไปแล้ว (เกิน 10 นาที) — ดูย้อนหลังในแท็บ ประวัติสั่งงานทั้งหมด'}
+            ป้ายทั้งหมดจบไปแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
           </div>
         )}
         {visible.map((it) => {
