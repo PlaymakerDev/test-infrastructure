@@ -167,7 +167,7 @@ const VMSCommandCenterScreen: React.FC = () => {
                     />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                    <LiveMonitor vmsIds={vmsIds} excludedCount={excludedCount} onOpenSignDetail={openDetail} />
                   </div>
                 </div>
               ),

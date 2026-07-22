@@ -16,6 +16,11 @@ dayjs.extend(relativeTime)
 
 interface Props {
   vmsIds: number[]
+  /** Signs the operator SELECTED but the eligibility filter dropped
+   *  (not centralized / never provisioned / agent too old). Rendered as a
+   *  yellow chip in the summary row so the operator can reconcile
+   *  "why 4 selected but 3 in monitor". */
+  excludedCount?: number
   onOpenSignDetail?: (vmsId: number) => void
 }
 
@@ -87,7 +92,7 @@ const formatDuration = (ms: number): string => {
   return `${sec} วินาที`
 }
 
-const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, onOpenSignDetail }) {
+const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, excludedCount = 0, onOpenSignDetail }) {
   const { data, isLoading, isFetching, dataUpdatedAt } = useCommandCenterMonitor(vmsIds, { refetchIntervalMs: 5_000 })
   const rows: VMSMonitorItem[] = data?.data ?? []
   const cancel = useCancelVMSSetting()
@@ -158,10 +163,14 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
               {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
             </div>
           </div>
-          <Badge count={rows.length} showZero color="#f59e0b" overflowCount={999} />
+          <Tooltip title={rows.length !== visible.length ? `แสดง ${visible.length} จาก ${rows.length} ป้าย — ${rows.length - visible.length} ป้ายถูกซ่อน` : undefined}>
+            <Badge count={visible.length} showZero color="#f59e0b" overflowCount={999} />
+          </Tooltip>
         </div>
-        {/* Summary counters */}
-        {rows.length > 0 && (
+        {/* Summary counters — reconcile "why 4 selected but N in monitor":
+            includes hidden-by-grace-window and excluded-by-eligibility chips
+            so operators never have to guess where the missing signs went. */}
+        {(rows.length > 0 || excludedCount > 0) && (
           <div className="flex items-center gap-2 fs-12 flex-wrap">
             {summary.active > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">●</span> กำลังทำงาน {summary.active}</span>}
             {summary.done > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#6b7280' }}>●</span> เสร็จสิ้น {summary.done}</span>}
@@ -169,6 +178,16 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
             {summary.overwrite > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#eab308' }}>●</span> ถูกสั่งทับ {summary.overwrite}</span>}
             {summary.lost > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-red-500">●</span> ขาดเชื่อมต่อ {summary.lost}</span>}
             {summary.pending > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="opacity-60">●</span> ยังไม่มีคำสั่ง {summary.pending}</span>}
+            {rows.length > visible.length && (
+              <Tooltip title="Terminal state (จบไปแล้ว) เกิน 10 นาที ระบบซ่อนอัตโนมัติ ดูย้อนหลังในแท็บ 'ประวัติสั่งงานทั้งหมด'">
+                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> ซ่อน {rows.length - visible.length}</span>
+              </Tooltip>
+            )}
+            {excludedCount > 0 && (
+              <Tooltip title="ป้ายที่เลือกแต่ไม่รองรับ command center (ยังไม่เคย provision / agent เวอร์ชันเก่า / ไม่ centralized) — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">⚠</span> ไม่รองรับ {excludedCount}</span>
+              </Tooltip>
+            )}
             <span className="ml-auto flex items-center gap-1.5 opacity-70">
               <span>ซ่อนที่เสร็จแล้ว</span>
               <Switch size="small" checked={hideFinished} onChange={setHideFinished} />
