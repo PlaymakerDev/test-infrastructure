@@ -105,7 +105,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
   excludedSigns = [],
   onOpenSignDetail,
 }) {
-  const [bucketFilter, setBucketFilter] = useState<BucketFilter>('all')
+  // Default filter is "รอคำสั่ง" — the operator's mental model is "I selected
+  // these signs, show me the ones that will actually receive the dispatch".
+  // Offline (queue-ahead) and excluded signs are one click away via their chips.
+  const [bucketFilter, setBucketFilter] = useState<BucketFilter>('ready')
   const { data, isLoading, isFetching, dataUpdatedAt } = useCommandCenterMonitor(vmsIds, { refetchIntervalMs: 5_000 })
   const rows: VMSMonitorItem[] = data?.data ?? []
   const cancel = useCancelVMSSetting()
