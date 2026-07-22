@@ -16,14 +16,6 @@ dayjs.extend(relativeTime)
 
 interface Props {
   vmsIds: number[]
-  /** Set of vms_ids that will receive the dispatch immediately (agent online
-   *  + controllable + centralized). Used to bucket rows for the filter chips. */
-  immediateIds?: Set<number>
-  /** Set of vms_ids that will queue-ahead (currently offline or never
-   *  provisioned — command plays when the agent connects). Matches the
-   *  "offline" state the sidebar's BureauList shows for the same signs so
-   *  the two panels never disagree. */
-  queuedIds?: Set<number>
   /** Signs the operator selected but the sign is explicitly opted-out
    *  (is_centralized=false in vmsinfo). Rendered as read-only placeholder
    *  cards under the "ไม่รองรับ" filter. */
@@ -103,8 +95,6 @@ type BucketFilter = 'all' | 'ready' | 'offline' | 'excluded'
 
 const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
   vmsIds,
-  immediateIds = null,
-  queuedIds,
   excludedSigns = [],
   onOpenSignDetail,
 }) {
@@ -144,18 +134,15 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
   // Bucket each row by eligibility so filter chips (ready / offline / excluded)
-  // can toggle the visible list. Rows are already limited to immediate+queued
-  // by the parent, so "ready" = rows in immediateIds, "offline" = rows in
-  // queuedIds. Excluded signs are separate — parent passes them as metadata
-  // for placeholder cards.
-  const readyRows = useMemo(() => {
-    if (immediateIds === null) return rows
-    return rows.filter((r) => immediateIds.has(r.vms_id))
-  }, [rows, immediateIds])
-  const offlineRows = useMemo(() => {
-    if (!queuedIds) return []
-    return rows.filter((r) => queuedIds.has(r.vms_id))
-  }, [rows, queuedIds])
+  // can toggle the visible list. Every row from /command-center/monitor now
+  // carries is_controllable directly (same tbl_vms_screen_info join as
+  // /vms/screen-info and the departments/sidebar endpoint) — no separate
+  // fetch or parent-computed Set needed. Rows are already limited to
+  // immediate+queued signs by the parent (excluded signs are never queried),
+  // so a plain is_controllable split is exact. Excluded signs are separate —
+  // parent passes them as metadata for placeholder cards.
+  const readyRows = useMemo(() => rows.filter((r) => r.is_controllable), [rows])
+  const offlineRows = useMemo(() => rows.filter((r) => !r.is_controllable), [rows])
 
   const readyCount = readyRows.length
   const offlineCount = offlineRows.length
@@ -326,15 +313,14 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Card pill is driven by the eligibility bucket (screen-info's
-                      is_controllable / is_reported / is_centralized) rather than
-                      the raw tv.last_connected flag the monitor endpoint carries.
-                      Otherwise a sign whose legacy heartbeat is alive but whose
-                      drr-agent has never provisioned would show ออนไลน์ on the
-                      card AND Offline in the summary chip — same sign, two
-                      labels, operator can't reconcile. */}
+                  {/* it.is_controllable (backend-computed, tbl_vms_screen_info
+                      join) drives the pill — NOT it.is_online, which is the
+                      legacy tv.last_connected heartbeat from a different agent
+                      stack. Same field the bucket chips and sidebar dot use,
+                      so a sign never shows ออนไลน์ here while reading Offline
+                      elsewhere. */}
                   {(() => {
-                    const canDispatchNow = immediateIds ? immediateIds.has(it.vms_id) : it.is_online
+                    const canDispatchNow = it.is_controllable
                     return (
                   <Tooltip
                     title={

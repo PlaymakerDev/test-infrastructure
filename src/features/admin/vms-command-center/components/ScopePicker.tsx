@@ -12,12 +12,6 @@ interface Props {
   /** Force "select mode" on — checkboxes always visible (default true, matches
    *  the Command Center dispatch flow). Set false for a click-to-drill-in view. */
   alwaysSelectMode?: boolean
-  /** vms_ids that should render as online in the tree, regardless of the
-   *  departments-API's own is_online flag. Used by the Command Center to align
-   *  sidebar with the eligibility (screen-info) source of truth — otherwise
-   *  the tree can show a sign as ออนไลน์ while the LiveMonitor bucket says
-   *  Offline (different agent stacks, different heartbeats). */
-  onlineOverrideIds?: Set<number>
   /** Opens the sign-detail modal for the clicked sign — same eye icon /
    *  same modal as LiveMonitor's cards, so the sidebar tree offers the same
    *  "inspect before you dispatch" shortcut. */
@@ -50,32 +44,29 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
   onSelectionChange,
   selection,
   alwaysSelectMode = true,
-  onlineOverrideIds,
   onViewSign,
 }) {
   const { data, isLoading, isError } = useVMSDepartments()
   const rawItems: BureauItem[] = useMemo(() => data?.data ?? [], [data])
-  // Walk the tree once per (data, override) and rewrite `is_online` on every
-  // sign — cheap because BureauItem is <1000 signs total in prod. Preserves
-  // rest of the sign shape so BureauList doesn't need to know an override
-  // existed. Field names come from VMSDepartmentList → SubDepartment → Road →
-  // Solution (see types/control-vms/vms-api.ts).
-  const items: BureauItem[] = useMemo(() => {
-    if (!onlineOverrideIds) return rawItems
-    return rawItems.map((bureau) => ({
-      ...bureau,
-      sub_department: bureau.sub_department.map((state) => ({
-        ...state,
-        roads: state.roads.map((route) => ({
-          ...route,
-          solution: route.solution.map((s) => ({
-            ...s,
-            is_online: onlineOverrideIds.has(s.vms_id),
-          })),
+  // The departments API's own `is_online` is a LEGACY heartbeat
+  // (tv.last_connected within 30 min) — a different agent stack than the one
+  // Command Center dispatches through. Rewrite it to `is_controllable`
+  // (same tbl_vms_screen_info join used everywhere else in Command Center)
+  // so the sidebar dot always agrees with LiveMonitor's buckets and the
+  // sign-detail modal. Cheap — BureauItem is <1000 signs total in prod.
+  const items: BureauItem[] = useMemo(() => rawItems.map((bureau) => ({
+    ...bureau,
+    sub_department: bureau.sub_department.map((state) => ({
+      ...state,
+      roads: state.roads.map((route) => ({
+        ...route,
+        solution: route.solution.map((s) => ({
+          ...s,
+          is_online: s.is_controllable,
         })),
       })),
-    }))
-  }, [rawItems, onlineOverrideIds])
+    })),
+  })), [rawItems])
 
   return (
     <div className="flex flex-col h-full">

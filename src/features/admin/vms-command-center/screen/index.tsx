@@ -11,7 +11,6 @@ import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
 import MediaLibraryTab from '../components/MediaLibraryTab'
 import StatusTable from '../components/StatusTable'
-import { useScreenInfo } from '../hooks/useScreenInfo'
 import { ControlVMSProvider } from '@/features/admin/control-vms/overall/context'
 import DisplaySection from '@/features/admin/control-vms/overall/components/DisplaySection'
 import StatusSection from '@/features/admin/control-vms/overall/components/StatusSection'
@@ -56,40 +55,31 @@ const VMSCommandCenterScreen: React.FC = () => {
   const openDetail = useCallback((id: number) => setDetailVmsId(id), [])
   const closeDetail = useCallback(() => setDetailVmsId(null), [])
 
-  // Poll screen-info so dispatch can gate on capability. Slower cadence than
-  // STATUS tab (that one polls 30s); here we mainly need it for filtering, so
-  // 60s is plenty and any change made in STATUS is broadcast via invalidation.
-  const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: 60_000 })
-
-  // Split eligibility into three buckets, driven by every SELECTED sign
-  // (not just what screen-info returned) so signs missing from screen-info
-  // still land somewhere sensible. Signs that aren't in screen-info yet
-  // (never-provisioned agents) get treated as "offline queue-ahead" so the
-  // LiveMonitor bucketing agrees with what the sidebar already tells the
-  // operator ("this sign is offline"). Buckets:
-  //   immediate: has screen-info row + is_centralized + is_controllable
-  //              → dispatched now
-  //   queued:    is_centralized (assumed true when unknown) + not immediate
-  //              → stored, plays when the agent connects (first-time OK)
-  //   excluded:  has screen-info row + is_centralized === false
-  //              (operator explicitly opted the sign out in the ข้อมูลป้าย VMS
-  //              tab — dispatching would be silently discarded)
+  // Split eligibility into three buckets. selection.signs (BureauSign =
+  // departments API's Solution type) now carries is_controllable/is_centralized
+  // directly from the backend — same tbl_vms_screen_info join used by
+  // /vms/screen-info and /vms/command-center/monitor, so no separate fetch or
+  // client-side merge is needed here anymore; every VMS endpoint in this app
+  // agrees on eligibility by construction.
+  //   immediate: is_centralized && is_controllable  → dispatched now
+  //   queued:    is_centralized && !is_controllable → stored, plays when the
+  //              agent connects (covers offline AND never-provisioned signs)
+  //   excluded:  is_centralized === false — operator explicitly opted the
+  //              sign out in the ข้อมูลป้าย VMS tab (dispatching would be
+  //              silently discarded)
   const { immediateIds, queuedIds } = useMemo(() => {
-    const items = screenInfoResp?.data?.data ?? []
-    const infoByVmsId = new Map(items.map((i) => [i.vms_id, i]))
     const immediate = new Set<number>()
     const queued = new Set<number>()
     for (const s of selection.signs) {
-      const info = infoByVmsId.get(s.vms_id)
-      if (info && info.is_centralized === false) continue  // excluded
-      if (info?.is_controllable) {
+      if (s.is_centralized === false) continue  // excluded
+      if (s.is_controllable) {
         immediate.add(s.vms_id)
       } else {
         queued.add(s.vms_id)
       }
     }
     return { immediateIds: immediate, queuedIds: queued }
-  }, [screenInfoResp, selection.signs])
+  }, [selection.signs])
 
   // Full set from ScopePicker
   const allSelectedIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
@@ -148,7 +138,6 @@ const VMSCommandCenterScreen: React.FC = () => {
                     <ScopePicker
                       onSelectionChange={setSelection}
                       selection={selection}
-                      onlineOverrideIds={immediateIds}
                       onViewSign={openDetail}
                     />
                     {queuedCount > 0 && (
@@ -178,8 +167,6 @@ const VMSCommandCenterScreen: React.FC = () => {
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
                     <LiveMonitor
                       vmsIds={vmsIds}
-                      immediateIds={immediateIds}
-                      queuedIds={queuedIds}
                       excludedSigns={excludedSelectedSigns}
                       onOpenSignDetail={openDetail}
                     />

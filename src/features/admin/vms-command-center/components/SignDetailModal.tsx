@@ -6,7 +6,6 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
 import { useSignDetail } from '../hooks/useSignDetail'
-import { useScreenInfo } from '../hooks/useScreenInfo'
 import { useVMSCrossingHistory } from '@/features/admin/control-vms/overall/hooks/useVMSCrossingHistory'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta, sourceLabel } from '../constants/vmsStatus'
@@ -71,24 +70,14 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const cameras: VMSSignCamera[] = detail?.cameras ?? []
   const screenURL = detail?.desktop_screen_url
 
-  // Self-sufficient eligibility check — screen-info is the same source of
-  // truth used by LiveMonitor's bucket chips / card pills and the sidebar
-  // tree override. `detail.is_online` (from the monitor/sign endpoint) is
-  // the LEGACY tv.last_connected heartbeat and can disagree with it, so this
-  // modal derives its own connectivity pill instead of trusting `detail`.
-  // Polling only while open; slower than the 5s monitor refresh since
-  // eligibility changes far less often than playback status.
-  const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: open ? 30_000 : false })
-  const screenInfo = useMemo(
-    () => screenInfoResp?.data?.data?.find((i) => i.vms_id === vmsId),
-    [screenInfoResp, vmsId]
-  )
-  // Explicitly opted out in the ข้อมูลป้าย VMS tab — dispatching would be
-  // silently discarded regardless of connectivity.
-  const isExcluded = screenInfo ? screenInfo.is_centralized === false : false
-  // Fall back to detail.is_online only when screen-info hasn't returned this
-  // sign at all (e.g. brand-new agent, first paint before screen-info loads).
-  const canDispatchNow = screenInfo ? screenInfo.is_controllable : (detail?.is_online ?? false)
+  // detail.is_controllable / is_centralized come straight from the
+  // /vms/command-center/sign/:id endpoint's own tbl_vms_screen_info join —
+  // same formula as the departments (sidebar) and monitor endpoints, so this
+  // modal always agrees with LiveMonitor's bucket chips and the sidebar dot
+  // without a separate fetch. detail.is_online is the LEGACY tv.last_connected
+  // heartbeat and is NOT used for the connectivity pill below.
+  const isExcluded = detail?.is_centralized === false
+  const canDispatchNow = detail?.is_controllable ?? false
 
   return (
     <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
