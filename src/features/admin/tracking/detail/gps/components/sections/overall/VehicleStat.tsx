@@ -4,6 +4,7 @@ import { Col, Empty, Row, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { TbNavigation, TbPlayerPauseFilled, TbTruck, TbTruckDelivery, TbWeight } from 'react-icons/tb'
 import { fmtNumber } from '@/utils/formatNumber'
+import { NavigationIcon } from '@/components/icon'
 
 interface Props {
 
@@ -29,17 +30,22 @@ const VehicleStat: React.FC<Props> = (props) => {
     return (
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-          <div className="h-full bg-[#66AEFF1A] border-2 rounded-2xl p-5 border-blue-500">
-            <TbNavigation className='fs-24 text-blue-500 mb-1' />
-            <h3 className='text-blue-500'>รถในระบบทั้งหมด</h3>
+          <div className="h-full bg-[#66AEFF1A] border-2 rounded-2xl p-5 border-(--default-blue)">
+            {/* <TbNavigation className='fs-24 text-(--default-blue) mb-1' /> */}
+            <NavigationIcon
+              width='30'
+              height='30'
+              className='mb-1'
+            />
+            <h3 className='text-(--default-blue)'>รถในระบบทั้งหมด</h3>
             <p><span className='fs-24 font-bold'>{fmtNumber(Number(data?.data.total_vehicles)) || 0}</span> คัน</p>
             <p className='fs-12 text-gray-400'>Active : {fmtNumber(Number(data?.data.fresh)) || 0} ({freshPct})</p>
           </div>
         </Col>
         <Col xs={24} sm={12} md={8} lg={8} xl={8} xxl={8} xxxl={8}>
-          <div className="h-full bg-[#FFB1001A] border-2 rounded-2xl p-5 border-yellow-500">
-            <TbTruck className='fs-24 text-yellow-500 mb-1' />
-            <h3 className='text-yellow-500'>รถบนสายทาง ทช.</h3>
+          <div className="h-full bg-[#FFB1001A] border-2 rounded-2xl p-5 border-(--yellow)">
+            <TbTruck className='fs-24 text-(--yellow) mb-1' />
+            <h3 className='text-(--yellow)'>รถบนสายทาง ทช.</h3>
             <p><span className='fs-24 font-bold'>{fmtNumber(Number(data?.data.on_drr_road)) || 0}</span> คัน</p>
             <p className='fs-12 text-gray-400'>{onDrrPct} ของรถที่ active</p>
           </div>
