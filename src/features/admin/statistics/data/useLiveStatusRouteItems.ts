@@ -95,6 +95,7 @@ export function useLiveStatusRouteItems(since?: string): LiveStatusRouteData {
           detail,
           connected: online > 0,
           count: `${online}/${online + offline}`,
+          notiTotal: dept.noti_count,
         }
       })
 

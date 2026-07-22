@@ -250,17 +250,19 @@ const IncidentSection: React.FC = () => {
       )}
       {activeSubTab === 'OVERVIEW' && (
         <StatisticsMapPanel
-          markerColor="#4CE99A"
+          markerColor="#B2FF00"
           markerAltColor="#E94C4C"
           markerTextColor="#000000"
-          markerShadowColor="rgba(76, 233, 154, 0.5)"
-          markerItemColor="#4CE99A"
+          markerShadowColor="rgba(178, 255, 0, 0.5)"
+          markerItemColor="#FCD116"
           markerItemOverflowColor="#E94C4C"
           useModernMarkers
           detailUrl="/admin/statistics/detail/incident"
           markerOverflowThreshold={99}
           badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
           badgeValueFn={(item) => item.notiTotal ?? 0}
+          subBadgeColorFn={(sub) => (sub.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
+          subBadgeValueFn={(sub) => sub.notiTotal ?? 0}
           searchText={searchText}
           onSearchChange={setSearchText}
           statsCards={incidentCards}

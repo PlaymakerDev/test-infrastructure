@@ -70,13 +70,21 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
         roadId: sol.road.id,
       }))
       let deptConnected = false
+      // Per-แขวง tallies — back the sub-level online/total count + noti badge
+      // (same aggregation the bureau does, one level down).
+      let deptOnline = 0
+      let deptTotal = 0
+      let deptNoti = 0
 
       for (const sol of solutions) {
         totalCount += 1
+        deptTotal += 1
         notiTotal += sol.noti_count ?? 0
+        deptNoti += sol.noti_count ?? 0
         const online = sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))
         if (online > 0) {
           onlineCount += 1
+          deptOnline += 1
           deptConnected = true
         }
         if (!lngLat && Array.isArray(sol.geometry_point) && sol.geometry_point.length === 2) {
@@ -84,7 +92,7 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
         }
       }
 
-      return { label: dept.department_short_name, detail, connected: deptConnected }
+      return { label: dept.department_short_name, detail, connected: deptConnected, count: `${deptOnline}/${deptTotal}`, notiTotal: deptNoti }
     })
 
     return {
@@ -102,12 +110,21 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
     for (const bureau of centralList ?? []) {
       for (const dept of bureau.sub_department) {
         for (const sol of dedupeSolutions(dept.solutions)) {
-          if (Array.isArray(sol.geometry_point) && sol.geometry_point.length === 2) {
+          const noti = sol.noti_count ?? 0
+          // Incident map plots event hotspots — a solution with 0 events today
+          // is not a hotspot, so it's omitted from the map entirely (no "0"
+          // dot / cluster). The search list still lists it (0 shown there).
+          if (noti > 0 && Array.isArray(sol.geometry_point) && sol.geometry_point.length === 2) {
+            const online = sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))
             items.push({
               routeKey: String(bureau.department_id),
               detailKey: String(sol.solution.id),
               lngLat: sol.geometry_point,
-              count: sol.noti_count ?? 0,
+              // Number on the pin = event (noti) count; colour = the solution's
+              // online/offline status (yellow online / red offline), uniform
+              // with the alert + status maps.
+              count: noti,
+              offline: !(online > 0),
             })
           }
         }

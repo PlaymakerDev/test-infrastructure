@@ -15,13 +15,11 @@ dayjs.locale('th')
 
 // ── Badges ─────────────────────────────────────────────────────────────────────
 
-const levelOf = (equipmentId: string): 'Warning' | 'Alert' => {
-  if (/^alert/i.test(equipmentId)) return 'Alert'
-  return 'Warning'
-}
+// Alert level is derived from the raw UP/DOWN status — UP = Warning, DOWN = Alert.
+const levelOf = (status: string): 'Warning' | 'Alert' => (status === 'DOWN' ? 'Alert' : 'Warning')
 
-const LevelBadge = ({ equipmentId }: { equipmentId: string }) => {
-  const level = levelOf(equipmentId)
+const LevelBadge = ({ status }: { status: string }) => {
+  const level = levelOf(status)
   const color = level === 'Warning' ? '#FF9D00' : '#E94C4C'
   return (
     <span style={{
@@ -98,11 +96,16 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
       key: 'timestamp',
       align: 'center',
       width: 200,
-      render: (t: string) => (
-        <span style={{ color: '#FFFFFF' }}>
-          {t ? dayjs(t).format('D MMM BBBB HH:mm:ss') : '-'}
-        </span>
-      ),
+      render: (t: string) => {
+        if (!t) return <span style={{ color: '#FFFFFF' }}>-</span>
+        const d = dayjs(t).locale('th')
+        return (
+          <div style={{ lineHeight: 1.35 }}>
+            <div style={{ color: '#FFFFFF' }}>{d.format('D MMM BBBB')}</div>
+            <div style={{ color: '#979797' }}>{d.format('HH:mm:ss')}</div>
+          </div>
+        )
+      },
     },
     {
       title: 'อุปกรณ์',
@@ -110,7 +113,12 @@ const AlertDetailTable: React.FC<AlertDetailTableProps> = ({ imei }) => {
       key: 'equipment_id',
       align: 'center',
       width: 260,
-      render: (eid: string) => <LevelBadge equipmentId={eid} />,
+      render: (eid: string, record: AlertItem) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <LevelBadge status={record.status} />
+          <span style={{ color: '#FFFFFF' }}>{eid}</span>
+        </div>
+      ),
     },
     {
       title: 'เหตุการณ์',

@@ -10,6 +10,10 @@ import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 import { useIncidentDetailContext } from '../context'
 import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
+
+dayjs.extend(buddhistEra)
 
 export type IncidentStatusType = 'รถเกิดอุบัติเหตุ' | 'รถจอดเสีย' | 'รถจอดไหล่ทาง' | 'งานก่อสร้าง' | 'ปิดกั้นทาง' | 'รถย้อนเลน' | 'รถบรรทุกวิ่งเลนขวา' | 'รถความเร็วเกินกำหนด' | 'จราจรติดขัด'
 
@@ -152,7 +156,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     // produce a duplicate React key and silently drop/duplicate rows.
     return items.map((item, index) => ({
       key: `${item.id}-${index}`,
-      datetime: dayjs(item.date_time).format('DD/MM/YYYY HH:mm'),
+      datetime: dayjs(item.date_time).locale('th').format('D MMM BBBB HH:mm:ss'),
       eventType: (item.analytic_type_info?.analytic_type_name_th ?? 'อื่นๆ') as IncidentStatusType,
       cameraName: item.camera?.camera_name ?? '-',
       ipAddress: item.camera?.ip_address ?? '-',
@@ -165,7 +169,15 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
   const columns: ColumnsType<IncidentRecord> = React.useMemo(() => [
     {
       title: 'วันที่และเวลา', dataIndex: 'datetime', key: 'datetime', align: 'center', width: 160,
-      render: (v: string) => <span style={{ color: '#FFFFFF', whiteSpace: 'pre' }}>{v}</span>,
+      render: (_v: string, record: IncidentRecord) => {
+        const d = dayjs(record.raw.date_time).locale('th')
+        return (
+          <div style={{ lineHeight: 1.35 }}>
+            <div style={{ color: '#FFFFFF' }}>{d.format('D MMM BBBB')}</div>
+            <div style={{ color: '#979797' }}>{d.format('HH:mm:ss')}</div>
+          </div>
+        )
+      },
     },
     {
       title: 'ประเภทเหตุการณ์', dataIndex: 'eventType', key: 'eventType', align: 'center', width: 160,
@@ -211,6 +223,22 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     }
   }, [data, records.length])
 
+  // Hide a type tab when its count is 0 — only event types with at least one
+  // record are shown. "ทั้งหมด" (ALL) always stays.
+  const visibleFilters = React.useMemo(
+    () => FILTER_CONFIG.filter((f) => f.key === 'ALL' || Number((stats as Record<string, number>)[f.statKey ?? f.key] ?? 0) > 0),
+    [stats],
+  )
+
+  // If the active type tab is no longer visible (its count dropped to 0 after a
+  // date-range change), fall back to ALL so the table isn't stuck filtering by
+  // a hidden, empty type.
+  React.useEffect(() => {
+    if (activeTab !== 'ALL' && !visibleFilters.some((f) => f.key === activeTab)) {
+      setActiveTab('ALL')
+    }
+  }, [activeTab, visibleFilters])
+
   const filteredData = React.useMemo(() => {
     if (activeTab === 'ALL') return records
     return records.filter((r) => r.status === activeTab)
@@ -251,9 +279,9 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     <div>
       <section className="mb-4">
         <SearchBar
-          filters={FILTER_CONFIG}
+          filters={visibleFilters}
           stats={stats}
-          defaultFilter="ALL"
+          activeFilter={activeTab}
           onFilterChange={(key) => setActiveTab(key)}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}

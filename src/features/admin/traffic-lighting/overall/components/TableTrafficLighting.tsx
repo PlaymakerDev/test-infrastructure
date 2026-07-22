@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbWifi, TbWifiOff, TbLink, TbUnlink } from 'react-icons/tb'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
 import {
   buildLightingDetailUrl,
@@ -37,18 +37,6 @@ type Row =
       project: TrafficLightingProject
       roadCodeSpan: number
     }
-
-const LINE_STATUS_LABELS = {
-  normal: { text: 'ปกติ', color: '#4CE99A' },
-  abnormal: { text: 'ผิดปกติ', color: '#E94C4C' },
-  unknown: { text: '-', color: '#979797' },
-} as const
-
-const CIRCUIT_STATUS_LABELS = {
-  normal: { text: 'ปกติ', color: '#4CD1E9' },
-  abnormal: { text: 'ผิดปกติ', color: '#E99A4C' },
-  unknown: { text: '-', color: '#979797' },
-} as const
 
 const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
@@ -93,7 +81,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
     return out
   }, [projects])
 
-  const TOTAL_COLS = 9
+  const TOTAL_COLS = 8
 
   const columns: ColumnsType<Row> = useMemo(() => {
     return [
@@ -172,7 +160,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <span className='text-white'>{row.project.phase ?? '-'}</span>
+            <span className='text-white'>{row.project.equipment.count ?? '-'}</span>
           ) : null,
       },
       {
@@ -191,23 +179,17 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
       {
         title: 'สถานะสาย',
         key: 'lineStatus',
-        width: 120,
+        width: 130,
+        align: 'center',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
-          const status = LINE_STATUS_LABELS[row.project.lineStatus]
-          return <Pill text={status.text} color={status.color} />
-        },
-      },
-      {
-        title: 'สถานะวงจร',
-        key: 'circuitStatus',
-        width: 120,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) => {
-          if (row.kind !== 'project') return null
-          const status = CIRCUIT_STATUS_LABELS[row.project.circuitStatus]
-          return <Pill text={status.text} color={status.color} />
+          const broken = row.project.hasBrokenWire
+          if (broken === null || broken === undefined) return <Pill text='-' color='#979797' />
+          // has_broken_wire === true ⇒ สายขาด (broken), false ⇒ เชื่อมต่อ (intact).
+          return broken
+            ? <Pill text='สายขาด' color='#E94C4C' icon={<TbUnlink size={14} />} />
+            : <Pill text='เชื่อมต่อ' color='#66AEFF' icon={<TbLink size={14} />} />
         },
       },
     ]

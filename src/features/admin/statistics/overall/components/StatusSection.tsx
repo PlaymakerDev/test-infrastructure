@@ -246,7 +246,14 @@ const StatusSection: React.FC = () => {
         <StatisticsMapPanel
           markerColorFn={() => '#B2FF00'}
           markerLabelFn={(_item, index) => index + 1}
-          badgeColorFn={() => '#FCD116'}
+          markerTextColor="#000000"
+          markerItemColor="#FCD116"
+          markerItemOverflowColor="#E94C4C"
+          markerOverflowThreshold={99}
+          badgeColorFn={(item) => (item.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
+          badgeValueFn={(item) => item.notiTotal ?? 0}
+          subBadgeColorFn={(sub) => (sub.notiTotal ?? 0) === 0 ? '#979797' : '#FCD116'}
+          subBadgeValueFn={(sub) => sub.notiTotal ?? 0}
           useModernMarkers
           routeItems={routeItems}
           markerItems={markerItems}

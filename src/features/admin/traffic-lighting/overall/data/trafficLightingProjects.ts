@@ -23,6 +23,8 @@ export interface TrafficLightingProject {
   /** [lng, lat] for the map marker. */
   coord: [number, number]
   equipment: { count: number | null; type: string | null }
+  /** Raw `lighting.has_broken_wire` from central/list — backs the สถานะสาย badge. */
+  hasBrokenWire?: boolean | null
   roadId?: number
   solutionId?: number
   projectId?: number
@@ -62,6 +64,7 @@ export const mapCentralListToProjects = (
             count: lighting.equipment.count ?? null,
             type: lighting.equipment.type ?? null,
           },
+          hasBrokenWire: lighting.has_broken_wire ?? null,
           roadId: solution.road.id,
           solutionId: solution.solution.id,
           projectId: solution.project.id,
