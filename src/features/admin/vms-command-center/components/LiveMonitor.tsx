@@ -16,11 +16,15 @@ dayjs.extend(relativeTime)
 
 interface Props {
   vmsIds: number[]
-  /** Signs the operator SELECTED but the eligibility filter dropped
-   *  (not centralized / never provisioned / agent too old). Rendered as a
-   *  yellow chip in the summary row so the operator can reconcile
-   *  "why 4 selected but 3 in monitor". */
-  excludedCount?: number
+  /** Set of vms_ids that will receive the dispatch immediately (agent online
+   *  + controllable + centralized). Used to bucket rows for the filter chips. */
+  immediateIds?: Set<number> | null
+  /** Set of vms_ids that will queue-ahead (centralized + provisioned but
+   *  currently offline — command plays when the agent reconnects). */
+  queuedIds?: Set<number>
+  /** Signs the operator selected but the eligibility filter dropped. Rendered
+   *  as read-only placeholder cards under the "ไม่รองรับ" filter. */
+  excludedSigns?: Array<{ vms_id: number; solution_name?: string; road_code?: string; sta?: string }>
   onOpenSignDetail?: (vmsId: number) => void
 }
 
@@ -92,7 +96,16 @@ const formatDuration = (ms: number): string => {
   return `${sec} วินาที`
 }
 
-const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, excludedCount = 0, onOpenSignDetail }) {
+type BucketFilter = 'all' | 'ready' | 'offline' | 'excluded'
+
+const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
+  vmsIds,
+  immediateIds = null,
+  queuedIds,
+  excludedSigns = [],
+  onOpenSignDetail,
+}) {
+  const [bucketFilter, setBucketFilter] = useState<BucketFilter>('all')
   const { data, isLoading, isFetching, dataUpdatedAt } = useCommandCenterMonitor(vmsIds, { refetchIntervalMs: 5_000 })
   const rows: VMSMonitorItem[] = data?.data ?? []
   const cancel = useCancelVMSSetting()
@@ -124,36 +137,34 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
 
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
-  // Show every selected sign — operator's mental model is "I picked these,
-  // let me see them all". The only filter is the explicit hideFinished switch
-  // for operators who want a strictly-active view. (Previously terminal cards
-  // auto-hid after a 10-minute grace window; that hid signs the operator was
-  // actively preparing to dispatch to just because their DB row still held a
-  // stale cancelled-from-last-week state.)
-  const visible = hideFinished
-    ? rows.filter((r) => !statusMeta(r.status ?? undefined).isTerminal)
-    : rows
+  // Bucket each row by eligibility so filter chips (ready / offline / excluded)
+  // can toggle the visible list. Rows are already limited to immediate+queued
+  // by the parent, so "ready" = rows in immediateIds, "offline" = rows in
+  // queuedIds. Excluded signs are separate — parent passes them as metadata
+  // for placeholder cards.
+  const readyRows = useMemo(() => {
+    if (immediateIds === null) return rows
+    return rows.filter((r) => immediateIds.has(r.vms_id))
+  }, [rows, immediateIds])
+  const offlineRows = useMemo(() => {
+    if (!queuedIds) return []
+    return rows.filter((r) => queuedIds.has(r.vms_id))
+  }, [rows, queuedIds])
 
-  // Summary counts — driven by `visible` (what the operator actually sees on
-  // screen) so the numbers reconcile with the cards. Hidden-by-grace-window
-  // rows are surfaced via the separate "ซ่อน N" chip below. A sign with no
-  // setting_id gets counted as pending (ยังไม่มีคำสั่ง) — the previous logic
-  // fell through statusMeta(null) → status 0 → isActive=true and misreported
-  // every "no command" sign as "กำลังทำงาน".
-  const summary = useMemo(() => {
-    const s = { active: 0, done: 0, cancel: 0, overwrite: 0, lost: 0, pending: 0 }
-    for (const it of visible) {
-      if (it.setting_id == null) { s.pending++; continue }
-      const m = statusMeta(it.status ?? undefined)
-      if (m.isActive) s.active++
-      else if (m.id === 4) s.done++
-      else if (m.id === 5) s.lost++
-      else if (m.id === 6) s.cancel++
-      else if (m.id === 7) s.overwrite++
-      else s.pending++
-    }
-    return s
-  }, [visible])
+  const readyCount = readyRows.length
+  const offlineCount = offlineRows.length
+  const excludedCount = excludedSigns.length
+
+  // Apply the operator's chip filter + explicit "ซ่อนที่เสร็จแล้ว" switch.
+  const monitorVisible = useMemo(() => {
+    let list = rows
+    if (bucketFilter === 'ready') list = readyRows
+    else if (bucketFilter === 'offline') list = offlineRows
+    else if (bucketFilter === 'excluded') list = []  // placeholder cards only
+    if (hideFinished) list = list.filter((r) => !statusMeta(r.status ?? undefined).isTerminal)
+    return list
+  }, [rows, readyRows, offlineRows, bucketFilter, hideFinished])
+  const showExcludedPlaceholders = bucketFilter === 'all' || bucketFilter === 'excluded'
 
   return (
     <div className="flex flex-col h-full">
@@ -166,30 +177,53 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
               {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
             </div>
           </div>
-          <Tooltip title={rows.length !== visible.length ? `แสดง ${visible.length} จาก ${rows.length} ป้าย — ${rows.length - visible.length} ป้ายถูกซ่อน` : undefined}>
-            <Badge count={visible.length} showZero color="#f59e0b" overflowCount={999} />
-          </Tooltip>
+          <Badge count={readyCount + offlineCount + excludedCount} showZero color="#f59e0b" overflowCount={999} />
         </div>
-        {/* Summary counters — reconcile "why 4 selected but N in monitor":
-            includes a hidden-by-switch chip and an excluded-by-eligibility
-            chip so operators never have to guess where the missing signs went. */}
-        {(rows.length > 0 || excludedCount > 0) && (
+        {/* Three-bucket filter chips — click to filter cards below. Reflects
+            eligibility for dispatch, NOT per-sign command status (that's
+            per-card via StatusPill). Total badge = ready + offline + excluded
+            = ป้ายที่เลือกทั้งหมด. */}
+        {(readyCount + offlineCount + excludedCount) > 0 && (
           <div className="flex items-center gap-2 fs-12 flex-wrap">
-            {summary.active > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">●</span> กำลังทำงาน {summary.active}</span>}
-            {summary.done > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#6b7280' }}>●</span> เสร็จสิ้น {summary.done}</span>}
-            {summary.cancel > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#a855f7' }}>●</span> ยกเลิก {summary.cancel}</span>}
-            {summary.overwrite > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span style={{ color: '#eab308' }}>●</span> ถูกสั่งทับ {summary.overwrite}</span>}
-            {summary.lost > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-red-500">●</span> ขาดเชื่อมต่อ {summary.lost}</span>}
-            {summary.pending > 0 && <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="opacity-60">●</span> ยังไม่มีคำสั่ง {summary.pending}</span>}
-            {rows.length > visible.length && (
-              <Tooltip title="ป้ายเหล่านี้มี command ที่จบไปแล้ว (เสร็จสิ้น / ยกเลิก / ถูกสั่งทับ / ขาดการเชื่อมต่อ) — ปิดสวิตช์ 'ซ่อนที่เสร็จแล้ว' เพื่อให้แสดง">
-                <span className="px-1.5 py-0.5 rounded bg-white/5 opacity-70"><span className="opacity-60">◌</span> ซ่อน {rows.length - visible.length} (ปิดสวิตช์เพื่อดู)</span>
-              </Tooltip>
+            <ChipToggle
+              active={bucketFilter === 'all'}
+              onClick={() => setBucketFilter('all')}
+              tooltip="แสดงป้ายทั้งหมดที่เลือก"
+              label={<span>ทั้งหมด {readyCount + offlineCount + excludedCount}</span>}
+            />
+            <ChipToggle
+              active={bucketFilter === 'ready'}
+              onClick={() => setBucketFilter(bucketFilter === 'ready' ? 'all' : 'ready')}
+              tooltip="ป้ายพร้อมรับคำสั่งทันที (online + controllable + centralized)"
+              label={
+                <span>
+                  <span style={{ color: '#22c55e' }}>●</span> รอคำสั่ง {readyCount}
+                </span>
+              }
+            />
+            {offlineCount > 0 && (
+              <ChipToggle
+                active={bucketFilter === 'offline'}
+                onClick={() => setBucketFilter(bucketFilter === 'offline' ? 'all' : 'offline')}
+                tooltip="ป้ายที่ยังออฟไลน์ — คำสั่งจะถูก queue ไว้ เล่นเมื่อ agent กลับมาออนไลน์"
+                label={
+                  <span>
+                    <span className="text-(--default-blue)">●</span> Offline {offlineCount}
+                  </span>
+                }
+              />
             )}
             {excludedCount > 0 && (
-              <Tooltip title="ป้ายที่เลือกแต่ไม่รองรับ command center (ยังไม่เคย provision / agent เวอร์ชันเก่า / ไม่ centralized) — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
-                <span className="px-1.5 py-0.5 rounded bg-white/5"><span className="text-(--yellow)">⚠</span> ไม่รองรับ {excludedCount}</span>
-              </Tooltip>
+              <ChipToggle
+                active={bucketFilter === 'excluded'}
+                onClick={() => setBucketFilter(bucketFilter === 'excluded' ? 'all' : 'excluded')}
+                tooltip="ป้ายที่ไม่รองรับ command center (ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized) — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
+                label={
+                  <span>
+                    <span className="text-(--yellow)">⚠</span> ไม่รองรับ {excludedCount}
+                  </span>
+                }
+              />
             )}
             <span className="ml-auto flex items-center gap-1.5 opacity-70">
               <span>ซ่อนที่เสร็จแล้ว</span>
@@ -199,17 +233,22 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
         )}
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {vmsIds.length === 0 && <Empty description="เลือกป้ายจากคอลัมน์ซ้ายเพื่อเริ่มติดตาม" />}
+        {(vmsIds.length + excludedCount) === 0 && <Empty description="เลือกป้ายจากคอลัมน์ซ้ายเพื่อเริ่มติดตาม" />}
         {vmsIds.length > 0 && isLoading && <Skeleton active paragraph={{ rows: 4 }} />}
-        {vmsIds.length > 0 && !isLoading && rows.length === 0 && (
+        {vmsIds.length > 0 && !isLoading && rows.length === 0 && excludedCount === 0 && (
           <Empty description="ไม่มีข้อมูลป้ายที่เลือก" />
         )}
-        {vmsIds.length > 0 && !isLoading && rows.length > 0 && visible.length === 0 && (
+        {monitorVisible.length === 0 && rows.length > 0 && (bucketFilter === 'ready' || bucketFilter === 'offline') && (
+          <div className="text-center fs-12 text-white/50 py-4">
+            {bucketFilter === 'ready' ? 'ไม่มีป้ายพร้อมรับคำสั่งในกลุ่มที่เลือก' : 'ไม่มีป้าย offline ในกลุ่มที่เลือก'}
+          </div>
+        )}
+        {monitorVisible.length === 0 && rows.length > 0 && bucketFilter === 'all' && excludedCount === 0 && hideFinished && (
           <div className="text-center fs-12 text-white/50 py-4">
             ป้ายทั้งหมดจบไปแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
           </div>
         )}
-        {visible.map((it) => {
+        {monitorVisible.map((it) => {
           const meta = statusMeta(it.status ?? undefined)
           const hasActive = it.setting_id != null
           const isTerminal = meta.isTerminal
@@ -437,9 +476,68 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
             </div>
           )
         })}
+        {/* Placeholder cards for excluded (ไม่รองรับ) signs — read-only,
+            no polling, just so the operator can visually reconcile "which
+            of my 4 selected signs are unsupported" without cross-referencing
+            the ScopePicker column. */}
+        {showExcludedPlaceholders && excludedSigns.map((s) => (
+          <div
+            key={`excluded-${s.vms_id}`}
+            className="rounded-lg border border-dashed border-(--yellow)/40 bg-(--yellow)/[.03] p-3 opacity-80"
+          >
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                  {s.road_code && <span className="text-(--yellow) font-semibold">{s.road_code}</span>}
+                  {s.sta && <span className="text-(--default-blue) fs-12">กม.{s.sta}</span>}
+                  <span className="truncate opacity-80">{s.solution_name || `VMS ${s.vms_id}`}</span>
+                </div>
+                <div className="fs-12 opacity-60">vms_id {s.vms_id}</div>
+              </div>
+              <Tooltip title="ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized — เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
+                <span
+                  className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
+                  style={{
+                    background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                    color: 'var(--yellow)',
+                    border: '1px solid var(--yellow)',
+                  }}
+                >
+                  ⚠ ไม่รองรับ
+                </span>
+              </Tooltip>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
 })
+
+// Filter chip — same visual language as MediaLibraryTab's Chip but scoped
+// to LiveMonitor so click-to-filter reads as a cohesive control row.
+const ChipToggle: React.FC<{
+  active: boolean
+  onClick: () => void
+  label: React.ReactNode
+  tooltip?: string
+}> = ({ active, onClick, label, tooltip }) => {
+  const inner = (
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-2 py-0.5 rounded-full transition-colors border fs-12"
+      style={{
+        background: active ? '#FCD116' : 'transparent',
+        color: active ? '#191919' : '#FCD116',
+        borderColor: '#FCD116',
+        fontWeight: active ? 600 : 400,
+      }}
+    >
+      {label}
+    </button>
+  )
+  return tooltip ? <Tooltip title={tooltip}>{inner}</Tooltip> : inner
+}
 
 export default LiveMonitor

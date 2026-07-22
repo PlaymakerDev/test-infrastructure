@@ -105,6 +105,17 @@ const VMSCommandCenterScreen: React.FC = () => {
   )
   const excludedCount = allSelectedIds.length - vmsIds.length
 
+  // Excluded (ไม่รองรับ) sign objects — passed to LiveMonitor so it can render
+  // placeholder cards for them (they aren't in the /monitor payload because
+  // Composer never sends to them).
+  const excludedSelectedSigns = useMemo(
+    () => {
+      if (immediateIds === null) return []
+      return selection.signs.filter((s) => !immediateIds.has(s.vms_id) && !queuedIds.has(s.vms_id))
+    },
+    [selection.signs, immediateIds, queuedIds]
+  )
+
   const targetSummary = useMemo(() => {
     if (selection.signs.length === 0) return 'ยังไม่ได้เลือกป้าย'
     const parts: string[] = []
@@ -167,7 +178,13 @@ const VMSCommandCenterScreen: React.FC = () => {
                     />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <LiveMonitor vmsIds={vmsIds} excludedCount={excludedCount} onOpenSignDetail={openDetail} />
+                    <LiveMonitor
+                      vmsIds={vmsIds}
+                      immediateIds={immediateIds}
+                      queuedIds={queuedIds}
+                      excludedSigns={excludedSelectedSigns}
+                      onOpenSignDetail={openDetail}
+                    />
                   </div>
                 </div>
               ),
