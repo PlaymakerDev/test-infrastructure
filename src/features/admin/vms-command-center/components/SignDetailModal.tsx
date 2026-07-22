@@ -70,13 +70,18 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const cameras: VMSSignCamera[] = detail?.cameras ?? []
   const screenURL = detail?.desktop_screen_url
 
-  // detail.is_controllable / is_centralized come straight from the
-  // /vms/command-center/sign/:id endpoint's own tbl_vms_screen_info join —
+  // detail.is_controllable / is_centralized / is_reported come straight from
+  // the /vms/command-center/sign/:id endpoint's own tbl_vms_screen_info join —
   // same formula as the departments (sidebar) and monitor endpoints, so this
   // modal always agrees with LiveMonitor's bucket chips and the sidebar dot
   // without a separate fetch. detail.is_online is the LEGACY tv.last_connected
   // heartbeat and is NOT used for the connectivity pill below.
-  const isExcluded = detail?.is_centralized === false
+  //
+  // is_reported=false (never provisioned, ever) is grouped into "ไม่รองรับ"
+  // alongside is_centralized=false (explicitly opted out) — both need a
+  // technician/admin action before this sign can ever be controllable,
+  // unlike a normal offline sign which just needs to reconnect on its own.
+  const isExcluded = detail?.is_centralized === false || detail?.is_reported === false
   const canDispatchNow = detail?.is_controllable ?? false
 
   return (
@@ -121,7 +126,13 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                         ออนไลน์   (blue)    — controllable right now
                         ออฟไลน์   (red)     — will queue-ahead on dispatch */}
                   {isExcluded ? (
-                    <Tooltip title="ป้ายนี้ถูกถอดจากกลุ่มควบคุมรวม — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                    <Tooltip
+                      title={
+                        detail?.is_reported === false
+                          ? 'agent ยังไม่เคย provision ป้ายนี้เลย — ต้องส่งช่างไปติดตั้ง/เริ่ม agent ก่อน'
+                          : "ป้ายนี้ถูกถอดจากกลุ่มควบคุมรวม — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
+                      }
+                    >
                       <span
                         className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
                         style={{

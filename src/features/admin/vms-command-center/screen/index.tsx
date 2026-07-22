@@ -56,22 +56,25 @@ const VMSCommandCenterScreen: React.FC = () => {
   const closeDetail = useCallback(() => setDetailVmsId(null), [])
 
   // Split eligibility into three buckets. selection.signs (BureauSign =
-  // departments API's Solution type) now carries is_controllable/is_centralized
-  // directly from the backend — same tbl_vms_screen_info join used by
-  // /vms/screen-info and /vms/command-center/monitor, so no separate fetch or
+  // departments API's Solution type) now carries is_controllable/is_centralized/
+  // is_reported directly from the backend — same tbl_vms_screen_info join used
+  // by /vms/screen-info and /vms/command-center/monitor, so no separate fetch or
   // client-side merge is needed here anymore; every VMS endpoint in this app
   // agrees on eligibility by construction.
-  //   immediate: is_centralized && is_controllable  → dispatched now
-  //   queued:    is_centralized && !is_controllable → stored, plays when the
-  //              agent connects (covers offline AND never-provisioned signs)
-  //   excluded:  is_centralized === false — operator explicitly opted the
-  //              sign out in the ข้อมูลป้าย VMS tab (dispatching would be
-  //              silently discarded)
+  //   immediate: is_centralized && is_controllable
+  //              → dispatched now
+  //   queued:    is_centralized && is_reported && !is_controllable
+  //              → agent has checked in before, just currently offline/old
+  //              version — queue-ahead is a safe bet, it'll likely reconnect
+  //   excluded:  is_centralized === false (operator opted the sign out in the
+  //              ข้อมูลป้าย VMS tab) OR is_reported === false (agent has NEVER
+  //              checked in — queue-ahead would be misleading, this needs a
+  //              technician to install/start the agent, not "just wait")
   const { immediateIds, queuedIds } = useMemo(() => {
     const immediate = new Set<number>()
     const queued = new Set<number>()
     for (const s of selection.signs) {
-      if (s.is_centralized === false) continue  // excluded
+      if (s.is_centralized === false || !s.is_reported) continue  // excluded
       if (s.is_controllable) {
         immediate.add(s.vms_id)
       } else {
@@ -149,7 +152,7 @@ const VMSCommandCenterScreen: React.FC = () => {
                       </Tooltip>
                     )}
                     {excludedCount > 0 && (
-                      <Tooltip title="ป้ายที่ยังไม่เคย provision, agent เวอร์ชันเก่าเกินไป, หรือถูกถอดจากกลุ่มควบคุมรวม — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                      <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
                         <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
                           <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
                           <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>

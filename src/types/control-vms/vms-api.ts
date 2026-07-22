@@ -50,6 +50,9 @@ export interface Solution {
   /** Same tbl_vms_screen_info-derived truth as /vms/screen-info and
    *  /vms/command-center/monitor — single source for dispatch eligibility. */
   is_centralized: boolean
+  /** Has this sign's agent EVER checked in. False = never provisioned —
+   *  needs a technician, not a "wait for it to reconnect" queue-ahead. */
+  is_reported: boolean
   is_controllable: boolean
 }
 

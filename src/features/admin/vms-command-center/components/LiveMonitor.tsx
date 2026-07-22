@@ -210,7 +210,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
               <ChipToggle
                 active={bucketFilter === 'excluded'}
                 onClick={() => setBucketFilter(bucketFilter === 'excluded' ? 'all' : 'excluded')}
-                tooltip="ป้ายที่ไม่รองรับ command center (ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized) — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
+                tooltip="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจาก centralized — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
                 label={
                   <span>
                     <span className="text-(--yellow)">⚠</span> ไม่รองรับ {excludedCount}
@@ -509,7 +509,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                 <div className="fs-12 opacity-60">vms_id {s.vms_id}</div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Tooltip title="ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized — เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
+                <Tooltip title="agent ยังไม่เคย provision เลย หรือถูกถอดจาก centralized — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
                   <span
                     className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
                     style={{
