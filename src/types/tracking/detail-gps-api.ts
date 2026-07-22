@@ -24,14 +24,16 @@ export interface AllVehicleLocationData {
 }
 
 export interface VehicleList {
-  road_id: number
-  road_code: string
-  unique_vehicles: number
+  dept_name: string
+  dept_name2: string
   latitude: number
   longitude: number
   normal: string
-  stop: string
   over_weight: string
+  road_code: string
+  road_id: number
+  stop: string
+  unique_vehicles: number
 }
 
 export interface VehicleTotal {
@@ -216,4 +218,53 @@ export interface APIResponseAnalyticWeeklyPattern extends Omit<APIResponseAllVeh
 export interface AnalyticWeeklyPatternData {
   dow: number
   avg_vehicles: number
+}
+
+// VEHICLE LOCATION
+export interface APIRequestVehicleLocation {
+  road_id?: string | number
+}
+
+export interface APIResponseVehicleLocation extends Omit<APIResponseAllVehicleLocation, 'data'> {
+  data: VehicleLocationData
+}
+
+export interface VehicleLocationData {
+  car_list: CarList[]
+  vehicle_count: VehicleCount
+}
+
+export interface CarList {
+  plate_no?: string
+  plate_province: string
+  speed: number
+  car_location: string
+  isoverweight: string
+  distance_from_road: number
+  com_name?: string
+}
+
+export interface VehicleCount {
+  normal_vehicle_count: number
+  not_moving_count: number
+  over_weight_history: number
+}
+
+// GEO ROAD
+export type APIRequestGeoRoad = APIRequestVehicleLocation
+
+export interface APIResponseGeoRoad extends Omit<APIResponseAllVehicleLocation, 'data'> {
+  data: GeoRoadData
+}
+
+export interface GeoRoadData {
+  bureau_name: string
+  bureau_short_name: string
+  dept_name: string
+  dept_name2: string
+  length_drr: string
+  position: number[][]
+  province: string
+  road_code: string
+  route_name: string
 }

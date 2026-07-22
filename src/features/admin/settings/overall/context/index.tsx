@@ -59,7 +59,9 @@ export const OverallContext = createContext<ContextProps | null>(null)
 // "ขทช.สมุทรปราการ" instead of a raw numeric id. Roads are left empty on the
 // list because the list endpoint doesn't return `project_road`; the edit
 // modal calls useProjectDetail(id) when it needs them.
-const mapProject = (
+// Exported so ProjectSection's export-'ทั้งหมด' path can map its full fetch
+// with the exact same projection the table renders.
+export const mapProject = (
   api: APIResponseProject,
   departments: APIResponseDepartment[] | undefined,
 ): Project => {

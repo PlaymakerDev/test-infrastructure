@@ -1,11 +1,16 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, DatePicker, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
-import { TbAlertTriangle, TbFolderOpen, TbRocket } from 'react-icons/tb'
+import { Button, ConfigProvider, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import thTH from 'antd/locale/th_TH'
+import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
+import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
-import { getThumbUrl } from '../utils/thumbnail'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
+import type { VMSMediaItem } from '@/types/vms/media-library-api'
+
+const isVideoName = (s: string) => isVideoUrl(s)
 
 interface Props {
   vmsIds: number[]
@@ -68,6 +73,14 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     }
   }, [mediaItems, selectedMediaId])
 
+  // Media and message are mutually exclusive on the sign (mirrors legacy
+  // FormUpdateSchedule.tsx's radio: 'รูปภาพหรือวิดิโอ' vs 'ข้อความ' — the
+  // backend/firmware contract is "populate exactly one of media_url/message,
+  // leave the other empty"). Media auto-selects on load, so the message field
+  // stays hidden by default — showing it unconditionally invited operators to
+  // type a caption alongside an auto-picked media, which would have sent BOTH
+  // fields non-empty and produced undefined behavior on the physical sign.
+  const [isMessageOnly, setIsMessageOnly] = useState(false)
   const [message, setMessage] = useState<string>('')
   const [scheduleName, setScheduleName] = useState<string>('ประกาศ')
   const today = dayjs()
@@ -85,7 +98,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
   const post = usePostVMSMedia()
 
-  const canDispatch = vmsIds.length > 0 && (!!selectedMedia?.url || message.trim().length > 0)
+  // Preview modal — click the maximize icon on any tile to open the
+  // full-res original in a dark overlay (matches MediaLibraryTab's
+  // preview modal so operators get the same shortcut everywhere).
+  // Selecting a media (click on the card body) is a separate action;
+  // the icon uses stopPropagation so it doesn't double-fire.
+  const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
+
+  const canDispatch =
+    vmsIds.length > 0 && (isMessageOnly ? message.trim().length > 0 : !!selectedMedia?.url)
 
   const buildPayload = () => ({
     vms_ids: vmsIds,
@@ -97,8 +118,10 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     schedules: [
       {
         schedule_name: scheduleName || 'ประกาศ',
-        media_url: selectedMedia?.url ?? '',
-        message: message,
+        // Enforced mutually exclusive regardless of leftover state in the
+        // other field — only the active mode's content goes out.
+        media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
+        message: isMessageOnly ? message : '',
         time_since: isAllDay ? '00:00:00' : timeRange[0].format(timeFmt),
         time_to: isAllDay ? '23:59:59' : timeRange[1].format(timeFmt),
         days_of_week: daysOfWeek,
@@ -118,19 +141,33 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   }
 
   return (
-    <>
+    <ConfigProvider locale={thTH}>
       <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
-          <div className="text-sm font-semibold text-(--yellow)">สร้างคำสั่งใหม่</div>
-          <div className="text-xs text-(--default-blue) mt-0.5">{targetSignSummary}</div>
+          <h4 className="text-(--yellow)">สร้างคำสั่งใหม่</h4>
+          <p className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {/* Content mode toggle — media and message are mutually exclusive
+              on the sign itself, so only one input surface shows at a time
+              instead of both being visible and risking both fields being
+              non-empty on submit. */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-md bg-white/[.03] border border-white/10">
+            <span className="fs-12 font-medium">โหมดเนื้อหา</span>
+            <div className="flex items-center gap-2 fs-12">
+              <span className={!isMessageOnly ? 'text-(--yellow)' : 'opacity-60'}>รูป/วิดีโอ</span>
+              <Switch checked={isMessageOnly} onChange={setIsMessageOnly} />
+              <span className={isMessageOnly ? 'text-(--yellow)' : 'opacity-60'}>ข้อความอย่างเดียว</span>
+            </div>
+          </div>
+
+          {!isMessageOnly && (
           <div>
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-medium">เลือกรูป / วิดีโอที่จะแสดง</div>
+              <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
               {onGotoLibrary && (
                 <button
-                  className="text-xs text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
                   onClick={onGotoLibrary}
                   type="button"
                 >
@@ -153,7 +190,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             </div>
             {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
             {!mediaLoading && mediaItems.length === 0 && (
-              <div className="text-xs text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
+              <div className="fs-12 text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
                 ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ "คลังสื่อ"
               </div>
             )}
@@ -177,11 +214,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                         }}
                         title={m.name}
                       >
-                        <div style={{ aspectRatio: '16/9', background: '#000' }}>
+                        <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
                           {/* Composer grid uses the JPEG q85 thumbnail
                               (~15 KB) instead of the full-res PNG (~2 MB).
-                              onError falls back to original for uploads that
-                              predate the thumbnail backfill. */}
+                              Backend ffmpeg-extracts the first frame for
+                              videos so the same <img> path handles both.
+                              onError falls back to original for older
+                              uploads that predate the backfill. */}
                           <img
                             src={getThumbUrl(m.url)}
                             alt={m.name}
@@ -190,14 +229,42 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                               const img = e.currentTarget
                               if (img.dataset.fallback !== '1') {
                                 img.dataset.fallback = '1'
-                                img.src = m.url
+                                img.src = isVideoName(m.filename || m.url) ? '' : m.url
                               }
                             }}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                           />
+                          {isVideoName(m.filename || m.url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
+                        {/* Maximize/preview affordance — top-right corner.
+                            stopPropagation so the outer <button>'s
+                            select-media handler doesn't also fire. */}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPreviewing(m)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation()
+                              e.preventDefault()
+                              setPreviewing(m)
+                            }
+                          }}
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/70 hover:bg-black text-white rounded p-1 cursor-pointer"
+                          title="ดูตัวอย่างเต็ม"
+                          aria-label="ดูตัวอย่างเต็ม"
+                        >
+                          <TbMaximize size={14} />
+                        </span>
                         {m.setting_type_name && (
-                          <div className="px-1.5 py-1 text-[10px] text-left truncate bg-black/50 text-(--yellow)">
+                          <div className="px-1.5 py-1 fs-12 text-left truncate bg-black/50 text-(--yellow)">
                             {m.setting_type_name}
                           </div>
                         )}
@@ -218,78 +285,124 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               </>
             )}
           </div>
+          )}
 
+          {isMessageOnly && (
           <div>
-            <div className="text-xs font-medium mb-1">ข้อความประกอบ (ไม่บังคับ)</div>
+            <label className="text-(--yellow) block mb-1">
+              ข้อความที่จะขึ้นบนป้าย <span className="text-red-500">*</span>
+            </label>
             <Input.TextArea
-              rows={2}
+              rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="ข้อความที่จะขึ้นบนป้าย (ถ้าเป็น message-only ให้ปล่อยรูปว่างได้)"
+              placeholder="พิมพ์ข้อความที่จะแสดงบนป้าย..."
+              size="large"
             />
           </div>
+          )}
 
           <div>
-            <div className="text-xs font-medium mb-1">ชื่อกำหนดการ</div>
+            <label className="text-(--yellow) block mb-1">ชื่อกำหนดการ</label>
             <Input
               value={scheduleName}
               onChange={(e) => setScheduleName(e.target.value)}
               placeholder="เช่น ประกาศเช้า"
+              size="large"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs font-medium mb-1">ช่วงวันที่</div>
-              <DatePicker.RangePicker
-                value={dateRange}
-                onChange={(v) => v && v[0] && v[1] && setDateRange([v[0], v[1]])}
+              <label className="text-(--yellow) block mb-1">
+                เริ่มต้นการแสดงผล <span className="text-red-500">*</span>
+              </label>
+              <BuddhistDatePicker
+                value={dateRange[0]}
+                onChange={(date) => {
+                  if (!date) return
+                  const next = date as Dayjs
+                  setDateRange((prev) => {
+                    const end = prev[1] && next.isAfter(prev[1], 'day') ? next : prev[1]
+                    return [next, end ?? next]
+                  })
+                }}
                 allowClear={false}
-                style={{ width: '100%' }}
+                className="w-full"
+                format="DD MMMM BBBB"
+                size="large"
+                placeholder="กรุณาเลือกวันที่เริ่มต้น..."
               />
             </div>
             <div>
-              <div className="text-xs font-medium mb-1">โหมด</div>
-              <div className="flex items-center gap-2 h-8">
-                <Switch checked={isAllDay} onChange={setIsAllDay} />
-                <span className="text-xs">{isAllDay ? 'ตลอดวัน' : 'ตามช่วงเวลา'}</span>
-              </div>
+              <label className="text-(--yellow) block mb-1">
+                สิ้นสุดการแสดงผล <span className="text-red-500">*</span>
+              </label>
+              <BuddhistDatePicker
+                value={dateRange[1]}
+                onChange={(date) => {
+                  if (!date) return
+                  setDateRange((prev) => [prev[0], date as Dayjs])
+                }}
+                disabledDate={(current) => !!dateRange[0] && current.isBefore(dateRange[0], 'day')}
+                allowClear={false}
+                className="w-full"
+                format="DD MMMM BBBB"
+                size="large"
+                placeholder="กรุณาเลือกวันที่สิ้นสุด..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-(--yellow) block mb-1">เงื่อนไขการทำงาน</label>
+            <div className="flex items-center gap-2 h-10">
+              <Switch checked={isAllDay} onChange={setIsAllDay} />
+              <span>{isAllDay ? 'แสดงผลตลอดเวลา' : 'เลือกช่วงเวลาที่ต้องการแสดงผล'}</span>
             </div>
           </div>
 
           {!isAllDay && (
             <div>
-              <div className="text-xs font-medium mb-1">ช่วงเวลาแสดงผล</div>
+              <label className="text-(--yellow) block mb-1">
+                ช่วงเวลาแสดงผล <span className="text-red-500">*</span>
+              </label>
+              {/* needConfirm defaults to true here (unlike the legacy form's
+                  single TimePicker, which is a same-panel confirm-on-pick
+                  since there's only one side) — this is a RangePicker with
+                  start+end in one control, so an explicit OK gives the
+                  operator a beat to review both ends before committing a
+                  schedule that affects a live sign. */}
               <TimePicker.RangePicker
                 value={timeRange}
                 onChange={(v) => v && v[0] && v[1] && setTimeRange([v[0], v[1]])}
                 format="HH:mm"
                 allowClear={false}
-                style={{ width: '100%' }}
+                className="w-full"
+                size="large"
               />
             </div>
           )}
 
           <div>
-            <div className="text-xs font-medium mb-1">วันในสัปดาห์</div>
+            <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
             <Radio.Group
               value={daysOfWeek.length === 0 ? 'all' : 'custom'}
               onChange={(e) => setDaysOfWeek(e.target.value === 'all' ? [] : [1, 2, 3, 4, 5])}
-              size="small"
             >
               <Radio.Button value="all">ทุกวัน</Radio.Button>
               <Radio.Button value="custom">จันทร์–ศุกร์</Radio.Button>
             </Radio.Group>
             {daysOfWeek.length === 0 && (
-              <div className="text-xs text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</div>
+              <p className="fs-12 text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</p>
             )}
-            <div className="text-xs text-white/40 mt-1">
+            <p className="fs-12 text-white/40 mt-1">
               mask = {isoDaysMask(daysOfWeek) || 127}
-            </div>
+            </p>
           </div>
 
           {vmsIds.length === 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) text-xs">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) fs-12">
               <TbAlertTriangle className="fs-16 shrink-0" />
               <span>เลือกอย่างน้อย 1 ป้ายจากคอลัมน์ซ้าย</span>
             </div>
@@ -318,7 +431,13 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           title="ยืนยันการส่งคำสั่งควบคุม"
         >
           <div className="text-sm">
-            จะส่งคำสั่ง <b>{selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}</b> ไปยัง <b>{vmsIds.length}</b> ป้าย
+            จะส่งคำสั่ง{' '}
+            <b>
+              {isMessageOnly
+                ? `ข้อความ: "${message.trim()}"`
+                : selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}
+            </b>{' '}
+            ไปยัง <b>{vmsIds.length}</b> ป้าย
             <br />
             ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
             {isAllDay
@@ -326,14 +445,76 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
             <br />
             {vmsIds.length > 3 && (
-              <span className="text-xs text-white/50">
+              <span className="fs-12 text-white/50">
                 คำสั่งเดิมที่กำลังแสดงอยู่จะถูกทำเครื่องหมาย "ถูกสั่งทับ" (status=7) โดยอัตโนมัติ
               </span>
             )}
           </div>
         </Modal>
+
+        {/* Full-size preview modal — dark shell, matches MediaLibraryTab. */}
+        <ConfigProvider locale={thTH} theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
+          <Modal
+            open={!!previewing}
+            onCancel={() => setPreviewing(null)}
+            footer={null}
+            width={900}
+            title={previewing?.setting_type_name || 'สื่อ'}
+            destroyOnHidden
+            classNames={{ container: 'border-2! border-(--default-blue)!' }}
+          >
+            {previewing && (
+              <div>
+                <div className="bg-black rounded overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                  {isVideoName(previewing.filename || previewing.url) ? (
+                    <video
+                      src={previewing.url}
+                      controls
+                      autoPlay
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <Image
+                      src={previewing.url}
+                      alt={previewing.name}
+                      width="100%"
+                      height="100%"
+                      preview={false}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  )}
+                </div>
+                <div className="mt-3 fs-12 text-white/70 flex items-center gap-3 flex-wrap">
+                  {previewing.setting_type_name && (
+                    <span>หมวด: <b className="text-white">{previewing.setting_type_name}</b></span>
+                  )}
+                  {previewing.name && (
+                    <span className="truncate">ชื่อ: <span className="text-white">{previewing.name}</span></span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button
+                    onClick={() => setPreviewing(null)}
+                  >
+                    ปิด
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      const id = previewing.id
+                      setPreviewing(null)
+                      setSelectedMediaId(id)
+                    }}
+                  >
+                    เลือกสื่อนี้
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </ConfigProvider>
       </div>
-    </>
+    </ConfigProvider>
   )
 })
 
@@ -341,7 +522,7 @@ const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = 
   <button
     type="button"
     onClick={onClick}
-    className="text-[11px] px-2.5 py-0.5 rounded-full transition-colors border"
+    className="fs-12 px-2.5 py-0.5 rounded-full transition-colors border"
     style={{
       background: active ? '#FCD116' : 'transparent',
       color: active ? '#191919' : '#FCD116',

@@ -8,10 +8,11 @@ interface Props {
   stats: FilterStats
   displayType: ViewMode
   onDisplayTypeChange: (mode: ViewMode) => void
+  onExport?: () => void
 }
 
 const FormSearchMobileLog: React.FC<Props> = (props) => {
-  const { activeFilter, onFilterChange, stats, displayType, onDisplayTypeChange } = props
+  const { activeFilter, onFilterChange, stats, displayType, onDisplayTypeChange, onExport } = props
 
   return (
     <SearchBar
@@ -21,6 +22,7 @@ const FormSearchMobileLog: React.FC<Props> = (props) => {
       onFilterChange={(key) => onFilterChange(key as MobileWeightFilter)}
       defaultViewMode={displayType}
       onViewModeChange={onDisplayTypeChange}
+      onExport={onExport}
     />
   )
 }

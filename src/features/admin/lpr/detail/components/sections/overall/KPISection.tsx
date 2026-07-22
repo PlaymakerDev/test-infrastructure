@@ -14,23 +14,20 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, label, value, sub, color, accent }) => (
+  // Flat tint only — the old blurred corner-glow read as a gradient fill;
+  // removed per design 2026-07-20 ("สีปกติ ไม่ไล่สี").
   <div
-    className='h-full rounded-2xl p-4 border-2 flex flex-col gap-1 relative overflow-hidden'
+    className='h-full rounded-2xl p-4 border-2 flex flex-col gap-1'
     style={{ borderColor: `${color}55`, background: `${color}12` }}
   >
-    {/* Subtle accent glow */}
-    <span
-      className='absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-40 pointer-events-none'
-      style={{ background: color }}
-    />
-    <div className='flex items-center gap-2 relative' style={{ color }}>
+    <div className='flex items-center gap-2' style={{ color }}>
       {icon}
       <span className='fs-13 font-semibold'>{label}</span>
     </div>
-    <p className='mb-0 leading-none relative'>
+    <p className='mb-0 leading-none'>
       <span className='fs-24 font-bold tabular-nums text-white'>{value}</span>
     </p>
-    <p className='fs-11 mb-0 relative' style={{ color: accent ?? '#94a3b8' }}>
+    <p className='fs-11 mb-0' style={{ color: accent ?? '#94a3b8' }}>
       {sub || ''}
     </p>
   </div>

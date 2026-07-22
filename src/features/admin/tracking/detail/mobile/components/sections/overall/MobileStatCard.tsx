@@ -17,7 +17,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
 
       {/* รถบรรทุกเข้าชั่ง */}
-      <div className="flex bg-[#66AEFF1A] border-2 rounded-xl border-blue-500 overflow-hidden min-h-32.5">
+      <div className="flex bg-[#66AEFF1A] border-2 rounded-2xl border-blue-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -35,7 +35,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       </div>
 
       {/* รถบรรทุกน้ำหนักรวมเกิน */}
-      <div className="flex bg-[#E982821A] border-2 rounded-xl border-red-500 overflow-hidden min-h-32.5">
+      <div className="flex bg-[#E982821A] border-2 rounded-2xl border-red-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -57,7 +57,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       </div>
 
       {/* รถบรรทุกน้ำหนักเพลาเกิน */}
-      <div className="flex bg-[#FF7B001A] border-2 rounded-xl border-orange-500 overflow-hidden min-h-32.5">
+      <div className="flex bg-[#FF7B001A] border-2 rounded-2xl border-orange-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -79,7 +79,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       </div>
 
       {/* ยอมรับน้ำหนัก */}
-      {/* <div className="flex bg-[#05F2DB1A] border-2 rounded-xl border-teal-400 overflow-hidden min-h-32.5">
+      {/* <div className="flex bg-[#05F2DB1A] border-2 rounded-2xl border-teal-400 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
@@ -101,7 +101,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       </div> */}
 
       {/* ดำเนินคดี */}
-      {/* <div className="flex bg-[#EB66FF1A] border-2 rounded-xl border-pink-500 overflow-hidden min-h-32.5">
+      {/* <div className="flex bg-[#EB66FF1A] border-2 rounded-2xl border-pink-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>

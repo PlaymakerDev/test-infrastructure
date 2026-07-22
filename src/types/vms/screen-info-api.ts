@@ -59,6 +59,13 @@ export interface ScreenInfoItem {
   is_controllable: boolean // is_reported AND is_online AND app_version >= min_controllable_version
   min_controllable_version: string // e.g. "26.7.19.1"
   is_centralized: boolean
+  // Gates whether this sign appears in the departments (sidebar) tree at
+  // all — an INNER JOIN filter, unlike is_centralized which is a soft
+  // opt-out that still shows the sign, just excludes it from dispatch.
+  // Every automated crossing-creation path defaults this false; an admin
+  // must review and flip it here (or via PUT .../allow-settings) before a
+  // newly-synced sign becomes visible anywhere else in Command Center.
+  is_allowed_settings: boolean
 }
 
 export interface ScreenInfoSummary {
@@ -84,3 +91,10 @@ export interface APIRequestScreenInfoCentralize {
 }
 
 export type APIResponseScreenInfoCentralize = ScreenInfoItem
+
+// PUT /api-v2/vms/screen-info/:wid/allow-settings
+export interface APIRequestScreenInfoAllowSettings {
+  is_allowed_settings: boolean
+}
+
+export type APIResponseScreenInfoAllowSettings = ScreenInfoItem

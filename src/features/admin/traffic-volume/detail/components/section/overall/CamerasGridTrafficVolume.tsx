@@ -7,6 +7,7 @@ import SearchBar, {
   type ViewMode,
 } from '@/components/searchable/SearchBar'
 import TableCameraTrafficVolume from './TableCameraTrafficVolume'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTrafficVolumeSolutionCamerasList } from '@/hooks/queries/traffic-volume'
@@ -55,6 +56,25 @@ const FILTERS: FilterConfig[] = [
   },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen camera table (ลำดับที่ → ชื่อกล้อง → IP Address →
+// สถานะ), which is the tabular form of what each grid card shows. The HLS
+// stream itself has no exportable value. `width` = Excel chars, `widthPct`
+// = PDF table percent (sums to 100).
+const CAMERA_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CameraEntry, index: number) => string | number
+}[] = [
+  { header: 'ลำดับที่', width: 8, widthPct: 10, value: (_r, i) => i + 1 },
+  { header: 'ชื่อกล้อง', width: 40, widthPct: 45, align: 'left', value: (r) => r.code || '-' },
+  { header: 'IP Address', width: 18, widthPct: 25, value: (r) => r.ipAddress || '-' },
+  // Same wording as the table's StatusPill (Connect / Disconnect).
+  { header: 'สถานะ', width: 12, widthPct: 20, value: (r) => (r.connection === 'online' ? 'Connect' : 'Disconnect') },
+]
+
 const CameraTile: React.FC<{
   cam: CameraEntry
   onOpen: (cam: CameraEntry) => void
@@ -83,12 +103,13 @@ const CameraTile: React.FC<{
 
 const CamerasGridTrafficVolume: React.FC = () => {
   const deptId = useDeptId()
-  const { id } = useDetailContext()
+  const { id, location } = useDetailContext()
   const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
   // GRID is the design default — TABLE shows a flat list with name + coord
   // + status when the list icon is clicked.
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Rich per-solution camera list — response carries `ip_address` and
   // `status.is_online` inline, so no per-camera follow-up fetch is needed.
@@ -116,6 +137,17 @@ const CamerasGridTrafficVolume: React.FC = () => {
     [activeFilter, allCameras]
   )
 
+  // Human-readable note of the install point + active filter — printed in
+  // the PDF header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const solutionName = location?.solution?.solution_name
+    if (solutionName) parts.push(`จุดติดตั้ง ${solutionName}`)
+    const filterLabel = FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [location, activeFilter])
+
   /** Open the global CCTV modal (`<CCTVModal />` mounted in the detail screen).
    *  Pattern mirrors VMS — the modal fetches its own data from
    *  `getCCTVDetailAPI(camera_id)` so the caller only needs to dispatch
@@ -137,9 +169,38 @@ const CamerasGridTrafficVolume: React.FC = () => {
           onFilterChange={setActiveFilter}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED cameras (what the
+            grid/table shows), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filtered.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Volume_Camera_List',
+            title: 'รายงานรายการกล้องนับปริมาณจราจร (Traffic Volume Camera List)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filtered,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Volume_Camera_List',
+            title: 'รายงานรายการกล้องนับปริมาณจราจร (Traffic Volume Camera List)',
+            filterNote: exportFilterNote,
+            sheetName: 'Camera List',
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filtered,
+          })
+        }}
+      />
 
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (

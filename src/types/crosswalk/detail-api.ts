@@ -109,17 +109,17 @@ export interface APIResponseCrosswalkGraph {
 
 // ── GET /crosswalk/solutions/{id}/details/list?start_date=…&end_date=… ───────
 // Paginated violation events for the ViolationSection table on the detail page.
-// Filters: crossing_type (2=คนฝ่าฝืน, others=รถฝ่าฝืน per backend), search,
+// Filters: crosswalk_type (2=คนฝ่าฝืน, 3=รถฝ่าฝืน — verified live 2026-07-21), search,
 // field+sort. Backend defaults page=1, limit=10.
 
 export interface APIRequestCrosswalkViolationList {
-  solution_id: string | number
+  solution_id?: string | number
   /** YYYY-MM-DD */
   start_date?: string
   /** YYYY-MM-DD */
   end_date?: string
-  /** Filter by violation type. */
-  crossing_type?: string | number
+  /** Filter by violation type — backend param name is crosswalk_type (2=คน, 3=รถ). */
+  crosswalk_type?: string | number
   search?: string
   /** Column name to sort by (e.g. "ip_address"). */
   field?: string

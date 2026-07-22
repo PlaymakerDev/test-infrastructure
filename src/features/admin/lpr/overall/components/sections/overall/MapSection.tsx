@@ -2,21 +2,24 @@
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import BaseMap from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
+import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
-import { WhiteTeardropPin } from '@/components/map/markers/OverlapMarkers'
+import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
+import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
-
-// Country-view fallback — sits over central Thailand until the fitBounds
-// effect kicks in after the points fetch resolves.
-const FALLBACK_CENTER: [number, number] = [100.5, 13.75]
 
 interface Props {
   deptId?: string | string[] | number
 }
 
+/** Overview map — one marker per LPR install-point, rendered with the shared
+ *  `DeviceMarkerLayer` (menu glyph + SYSTEMS color + clustering) and the same
+ *  dark popup + ดูเพิ่มเติม button as every other overall map (mirrors
+ *  incident-detection's MapSection — replaced the hand-rolled teardrop pins
+ *  with native `title` tooltips, 2026-07-20). */
 const MapSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   const router = useRouter()
   const deptIdFromUrl = useDeptId()
@@ -24,52 +27,76 @@ const MapSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   const { data: points } = useLPRPoints()
 
   // Filter by department when a specific dept is selected. dept_id=0 means
-  // system-wide, so no client-side filter — the API returns all 14 install
-  // points and we render them all.
+  // system-wide, so no client-side filter. A non-finite coord would make
+  // Mapbox reject the whole GeoJSON source, so those rows are dropped here.
   const visible = useMemo(() => {
-    if (!points) return []
-    if (!deptId || deptId === '0') return points
+    const all = (points ?? []).filter(
+      (p) => Number.isFinite(p.lng) && Number.isFinite(p.lat),
+    )
+    if (!deptId || deptId === '0') return all
     const target = Number(deptId)
-    return points.filter((p) => p.department_id === target)
+    return all.filter((p) => p.department_id === target)
   }, [points, deptId])
 
-  const coords = useMemo(
-    () => visible.map((p) => [p.lng, p.lat] as [number, number]),
+  const coords = useMemo<[number, number][]>(
+    () => visible.map((p) => [p.lng, p.lat]),
+    [visible],
+  )
+
+  const data = useMemo(
+    () => ({
+      type: 'FeatureCollection' as const,
+      features: visible.map((p) => ({
+        type: 'Feature' as const,
+        properties: {
+          solutionId: p.solution_id,
+          codeName: p.road_code ?? '',
+          solutionName: p.solution_name,
+          cameraCount: p.camera_count,
+          eventsToday: p.events_today,
+        },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [p.lng, p.lat] as [number, number],
+        },
+      })),
+    }),
     [visible],
   )
 
   return (
-    <div className="relative w-full h-full">
-      <BaseMap
-        initialCenter={FALLBACK_CENTER}
-        initialZoom={5.5}
-        edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
-      >
-        {visible.map((p) => (
-          <HTMLMarker
-            key={p.solution_id}
-            lngLat={[p.lng, p.lat]}
-            anchor="bottom"
-            title={`${p.solution_name}\n${p.road_code ?? ''} · ${p.camera_count} กล้อง\nวันนี้ ${p.events_today.toLocaleString('th-TH')} ครั้ง · ชั่วโมงล่าสุด ${p.events_hour.toLocaleString('th-TH')}`}
-            onClick={() =>
-              router.push(
-                `/admin/lpr/detail/${p.solution_id}?dept_id=${deptId}${scopeQuerySuffix()}`,
-              )
-            }
-          >
-            <WhiteTeardropPin color={p.events_hour > 0 ? '#FCD116' : undefined} />
-          </HTMLMarker>
-        ))}
-        {coords.length > 0 && (
-          <FitBoundsEffect
-            coords={coords}
-            maxZoom={11}
-            pitch={0}
-            padding={{ top: 60, bottom: 60, left: 60, right: 60 }}
-          />
+    <BaseMap initialZoom={5.4} edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}>
+      <FitBoundsEffect coords={coords} padding={56} maxZoom={12} />
+      <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+      <DeviceMarkerLayer
+        type='LPR'
+        id='lpr-locations'
+        data={data}
+        cluster
+        size={18}
+        strokeColor='#ffffff'
+        popupOptions={{ offset: 10, closeButton: false }}
+        popup={(f) => (
+          <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: `1px solid ${SYSTEM_BRIGHT.LPR}`, minWidth: 170 }}>
+            <div style={{ fontSize: 10, color: SYSTEM_BRIGHT.LPR, fontWeight: 700 }}>LPR</div>
+            <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName || '-'}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: 11, fontWeight: 600 }}>
+              <span style={{ color: '#66AEFF' }}>กล้อง {Number(f.properties?.cameraCount ?? 0).toLocaleString()}</span>
+              <span style={{ color: '#FCD116' }}>วันนี้ {Number(f.properties?.eventsToday ?? 0).toLocaleString()}</span>
+            </div>
+            {f.properties?.solutionId != null && (
+              <div>
+                <PopupDetailLink
+                  url={`/admin/lpr/detail/${f.properties?.solutionId}?dept_id=${deptId}${scopeQuerySuffix()}`}
+                  onNavigate={(u) => router.push(u)}
+                />
+              </div>
+            )}
+          </div>
         )}
-      </BaseMap>
-    </div>
+      />
+    </BaseMap>
   )
 }
 

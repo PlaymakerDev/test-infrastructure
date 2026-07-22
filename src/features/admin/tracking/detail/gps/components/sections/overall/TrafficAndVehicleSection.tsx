@@ -49,7 +49,7 @@ const TrafficAndVehicleSection: React.FC<Props> = (props) => {
   }, [activeFilter])
 
   return (
-    <div className='bg-black/80 p-5 rounded-lg'>
+    <div className='bg-black/80 p-5 rounded-2xl'>
       <section>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div className='flex items-center gap-2'>

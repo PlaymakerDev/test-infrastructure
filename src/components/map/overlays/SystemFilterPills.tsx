@@ -72,7 +72,10 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
     <div
       // mobile: leave 80px each side so the notification badge has clearance
       // sm+: only need 40px per side
-      className="absolute z-20 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 sm:py-1.5 pointer-events-auto scrollbar-none max-w-[calc(100vw-160px)] sm:max-w-[calc(100vw-80px)]"
+      // Mobile: pills sit on their own row (below the search row since the
+      // 2026-07-20 respace), so the bar can run nearly edge-to-edge; labeled
+      // pills scroll horizontally inside it. Desktop keeps side clearance.
+      className="absolute z-20 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1 sm:py-1.5 pointer-events-auto scrollbar-none max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-80px)]"
       style={{
         top,
         left: '50%',
@@ -90,10 +93,14 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
         const Icon = SYSTEM_ICONS[type]
         const color = SYSTEMS[type].color
         return (
+          // Icon-only pill — the label slides out on hover (max-width tween),
+          // so an 11-system row stays compact at all times (the full labeled
+          // row outgrew the map width, 2026-07-20). Selected state reads from
+          // the fill color alone: system color = shown, gray outline = hidden.
           <button
             key={type}
             onClick={() => toggle(type)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap shrink-0"
+            className="group flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap shrink-0"
             style={{
               background: active ? color : 'transparent',
               color: active ? '#fff' : 'rgba(255,255,255,0.5)',
@@ -103,7 +110,11 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
             title={`${active ? 'ซ่อน' : 'แสดง'} ${SYSTEMS[type].label}`}
           >
             <Icon size={16} />
-            <span>{SYSTEMS[type].label}</span>
+            {/* Mobile (< sm): label always visible — touch has no hover, so
+              * icon-only pills would be unlabeled. Desktop: hover-expand. */}
+            <span className="max-w-40 opacity-100 ml-1.5 sm:max-w-0 sm:opacity-0 sm:ml-0 overflow-hidden transition-all duration-200 ease-out sm:group-hover:max-w-40 sm:group-hover:opacity-100 sm:group-hover:ml-1.5">
+              {SYSTEMS[type].label}
+            </span>
           </button>
         )
       })}

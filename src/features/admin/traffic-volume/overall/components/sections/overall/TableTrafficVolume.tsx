@@ -13,6 +13,7 @@ import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/traffic-volume/components/LicenseModal'
 import { useDeptId } from '@/hooks/useDeptId'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import {
   groupByBureau,
   type BureauGroupedRow,
@@ -41,6 +42,9 @@ const Pill: React.FC<{
 
 type Row = BureauGroupedRow<TrafficVolumeProject>
 
+// Bureau-divider colSpan must match the number of VISIBLE columns.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 10 : 9
+
 const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
   const deptId = useDeptId()
@@ -59,10 +63,8 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
 
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
-  const TOTAL_COLS = 10
-
   const columns: ColumnsType<Row> = useMemo(() => {
-    return [
+    const cols: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -236,6 +238,8 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
+    // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
+    return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')
   }, [goToDetail, openLicense])
 
   return (

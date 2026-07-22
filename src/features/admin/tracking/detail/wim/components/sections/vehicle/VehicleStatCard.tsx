@@ -22,7 +22,7 @@ const VehicleStatCard: React.FC<Props> = () => {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
-        <div className='h-full bg-[#66AEFF1A] border border-blue-500 py-3 px-5 rounded-lg'>
+        <div className='h-full bg-[#66AEFF1A] border border-blue-500 py-3 px-5 rounded-2xl'>
           <TbTruck className='fs-22 text-blue-500 mb-1' />
           <h4 className='text-blue-500 mb-1'>รถเข้าชั่งทั้งหมด</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_total) || 0}</span> <span className='fs-14'>คัน</span></p>
@@ -30,7 +30,7 @@ const VehicleStatCard: React.FC<Props> = () => {
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
-        <div className='h-full bg-[#66AEFF1A] border border-red-500 py-3 px-5 rounded-lg'>
+        <div className='h-full bg-[#66AEFF1A] border border-red-500 py-3 px-5 rounded-2xl'>
           <TbTruck className='fs-22 text-red-500 mb-1' />
           <h4 className='text-red-500 mb-1'>รถน้ำหนักเกิน</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_total_over) || 0}</span> <span className='fs-14'>คัน</span></p>
@@ -38,7 +38,7 @@ const VehicleStatCard: React.FC<Props> = () => {
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
-        <div className='h-full bg-[#66AEFF1A] border border-orange-500 py-3 px-5 rounded-lg'>
+        <div className='h-full bg-[#66AEFF1A] border border-orange-500 py-3 px-5 rounded-2xl'>
           <TbTruck className='fs-22 text-orange-500 mb-1' />
           <h4 className='text-orange-500 mb-1'>รถน้ำหนักเกิน 10%</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_isover_10percent) || 0}</span> <span className='fs-14'>คัน</span></p>
@@ -46,7 +46,7 @@ const VehicleStatCard: React.FC<Props> = () => {
         </div>
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={5}>
-        <div className='h-full bg-[#66AEFF1A] border border-white py-3 px-5 rounded-lg'>
+        <div className='h-full bg-[#66AEFF1A] border border-white py-3 px-5 rounded-2xl'>
           <TbFlag className='fs-22 mb-1' />
           <h4 className='mb-1'>สถานะ WIM</h4>
           <div className='flex flex-wrap gap-2'>
@@ -63,7 +63,7 @@ const VehicleStatCard: React.FC<Props> = () => {
         </div>
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={5}>
-        <div className='h-full bg-[#66AEFF1A] border border-white py-3 px-5 rounded-lg'>
+        <div className='h-full bg-[#66AEFF1A] border border-white py-3 px-5 rounded-2xl'>
           <TbVideo className='fs-22 mb-1' />
           <h4 className='mb-1'>สถานะกล้อง</h4>
           <div className='flex flex-wrap gap-2'>

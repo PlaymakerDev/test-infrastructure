@@ -18,6 +18,8 @@ import type {
   OperatingMode,
 } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/overview-api'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {}
 
@@ -52,6 +54,33 @@ const TRAFFIC_SIGNAL_FILTERS: FilterConfig[] = [
     badgeActiveClass: 'bg-[#4a4a4a] text-white',
     badgeIdleClass: 'bg-[#979797]/20 text-[#979797]',
   },
+]
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → ชื่อโครงการ → จุดติดตั้ง →
+// เลขที่สัญญา → การค้ำประกัน → Phase → สถานะ → Stream → โหมดการทำงาน), plus
+// ลำดับ/หน่วยงาน since the export flattens the table's per-แขวง divider rows
+// (mirrors CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF
+// table percent (sums to 100).
+const TRAFFIC_SIGNAL_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: TrafficSignalProject, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase },
+  { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'Stream', width: 12, widthPct: 6, value: (r) => (r.stream ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
+  { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode || '-' },
 ]
 
 /** Adapter: central-list solution row → UI `TrafficSignalProject`.
@@ -92,6 +121,7 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   const goToDetail = useCallback((p: TrafficSignalProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
@@ -157,6 +187,29 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
     })
   }, [activeFilter, search, projects])
 
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = TRAFFIC_SIGNAL_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
+
+  // Export rows in the SAME order the table displays: grouped by แขวง
+  // (bureau) — mirrors TableTrafficSignal's grouping so the printed report
+  // reads exactly like the screen.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, TrafficSignalProject[]>()
+    for (const p of filtered) {
+      const list = groups.get(p.bureau) ?? []
+      list.push(p)
+      groups.set(p.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [filtered])
+
   const cardItems = useMemo<ProjectCardItem[]>(
     () =>
       filtered.map((p) => ({
@@ -189,9 +242,39 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
           formSearch={<FormSearchTrafficSignal onSearchChange={setSearch} />}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+            shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Signal_Overview_Report',
+            title: 'รายงานสรุปภาพรวมสัญญาณไฟจราจร (Traffic Signal Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(TRAFFIC_SIGNAL_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Signal_Overview_Report',
+            title: 'รายงานสรุปภาพรวมสัญญาณไฟจราจร (Traffic Signal Overview)',
+            filterNote: exportFilterNote,
+            sheetName: 'Traffic Signal Overview',
+            columns: hideProjectNameColumns(TRAFFIC_SIGNAL_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
           <TableTrafficSignal projects={filtered} />

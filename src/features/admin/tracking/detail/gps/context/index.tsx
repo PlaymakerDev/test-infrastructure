@@ -1,12 +1,19 @@
 "use client"
 import { RoadItem } from '@/components/list';
+import { VehicleList } from '@/types/tracking/detail-gps-api';
 import { createContext, useContext, useState } from 'react'
 
 export interface ContextProps {
+  // MOCK DATA
   route: RoadItem;
   setRoute: React.Dispatch<React.SetStateAction<RoadItem>>;
   licenseOpen: boolean;
   setLicenseOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  licenseTab: string;
+  setLicenseTab: React.Dispatch<React.SetStateAction<string>>;
+  // API DATA
+  selectRoute: VehicleList;
+  setSelectRoute: React.Dispatch<React.SetStateAction<VehicleList>>;
 }
 
 export interface PageProviderProps {
@@ -17,6 +24,7 @@ export const GPSContext = createContext<ContextProps | null>(null)
 
 export const GPSProvider = (props: PageProviderProps) => {
   const { children } = props
+  // MOCK DATA
   const [route, setRoute] = useState<RoadItem>({
     id: "",
     road_code: "",
@@ -24,6 +32,21 @@ export const GPSProvider = (props: PageProviderProps) => {
     vehicle_count: 0
   })
   const [licenseOpen, setLicenseOpen] = useState(false)
+  const [licenseTab, setLicenseTab] = useState('1')
+
+  // API DATA
+  const [selectRoute, setSelectRoute] = useState<VehicleList>({
+    "dept_name": "",
+    "dept_name2": "",
+    "latitude": 0.00,
+    "longitude": 0.00,
+    "normal": "",
+    "over_weight": "",
+    "road_code": "",
+    "road_id": 0,
+    "stop": "0",
+    "unique_vehicles": 0
+  })
 
   return (
     <GPSContext.Provider
@@ -32,6 +55,10 @@ export const GPSProvider = (props: PageProviderProps) => {
         setRoute,
         licenseOpen,
         setLicenseOpen,
+        licenseTab,
+        setLicenseTab,
+        selectRoute,
+        setSelectRoute
       }}
     >
       {children}

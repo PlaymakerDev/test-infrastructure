@@ -10,6 +10,8 @@ import SearchBar, {
 } from '@/components/searchable/SearchBar'
 import CameraGridView, { type InstallGroup, type CameraRow } from './sections/CameraGridView'
 import { CameraFunctionTag } from '@/features/admin/cctv/components/cameraFunctions'
+import { DEVICE_BADGE, type DeviceBadgeKey } from '@/constants/cctv'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
@@ -63,6 +65,33 @@ const CAMERA_FILTERS: FilterConfig[] = [
 
 const TOTAL_COLS = 7
 
+// One export row = a camera + its install-point group (the on-screen divider
+// row's data, flattened into columns — mirrors CCTV_EXPORT_COLUMNS in the
+// overall page which does the same for its per-แขวง divider rows).
+type CameraExportRow = { camera: CameraRow; group?: InstallGroup }
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (ลำดับที่ → ชื่อกล้อง → กม.ที่ → การทำงาน →
+// IP → Stream/Device Status), plus จุดติดตั้ง/การค้ำประกัน from the divider
+// rows. `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const CAMERA_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CameraExportRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับที่', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'จุดติดตั้ง', width: 40, widthPct: 21, align: 'left', value: (r) => r.group?.label || '-' },
+  { header: 'การค้ำประกัน', width: 12, widthPct: 8, value: (r) => (r.group ? (r.group.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') : '-') },
+  { header: 'ชื่อกล้อง', width: 34, widthPct: 21, align: 'left', value: (r) => r.camera.name || '-' },
+  { header: 'กม.ที่', width: 10, widthPct: 7, value: (r) => r.camera.km || '-' },
+  { header: 'การทำงาน', width: 24, widthPct: 12, value: (r) => r.camera.functions.map((fn) => DEVICE_BADGE[fn as DeviceBadgeKey]?.label ?? fn).join(', ') || '-' },
+  { header: 'IP Address', width: 16, widthPct: 10, value: (r) => r.camera.ip || '-' },
+  { header: 'Stream Status', width: 13, widthPct: 8, value: (r) => (r.camera.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
+  { header: 'Device Status', width: 13, widthPct: 8, value: (r) => (r.camera.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+]
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -74,6 +103,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
   const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode]         = useState<ViewMode>('GRID')
+  const [exportOpen, setExportOpen]     = useState(false)
 
   const allCameras = useMemo(() => groups.flatMap((g) => g.cameras), [groups])
 
@@ -104,6 +134,25 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
     }
     return out
   }, [filteredGroups])
+
+  // Export rows = the CURRENTLY DISPLAYED camera rows in display order —
+  // derived from the same `data` memo the table renders (grouped by install
+  // point), joined back to their group for the flattened จุดติดตั้ง/
+  // การค้ำประกัน columns.
+  const exportRows = useMemo<CameraExportRow[]>(() => {
+    const groupOf = new Map<string, InstallGroup>()
+    for (const g of filteredGroups) for (const c of g.cameras) groupOf.set(c.id, g)
+    return data
+      .filter((r): r is Extract<Row, { kind: 'camera' }> => r.kind === 'camera')
+      .map((r) => ({ camera: r.camera, group: groupOf.get(r.camera.id) }))
+  }, [data, filteredGroups])
+
+  // Human-readable note of the active filter — printed in the PDF header so a
+  // reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const filterLabel = CAMERA_FILTERS.find((f) => f.key === activeFilter)?.label
+    return activeFilter !== 'all' && filterLabel ? `สถานะ ${filterLabel}` : undefined
+  }, [activeFilter])
 
   const columns: ColumnsType<Row> = useMemo(() => [
     {
@@ -207,7 +256,36 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
         onFilterChange={setActiveFilter}
         defaultViewMode={viewMode}
         onViewModeChange={setViewMode}
-        onExport={() => alert('TODO: นำออกเอกสาร')}
+        onExport={() => setExportOpen(true)}
+      />
+
+      {/* นำออกเอกสาร — exports the CURRENTLY DISPLAYED camera rows through
+          the shared pdf/excel utils, like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'CCTV_Install_Point_Cameras_Report',
+            title: 'รายงานรายการกล้อง CCTV จุดติดตั้ง (CCTV Install Point Cameras)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'CCTV_Install_Point_Cameras_Report',
+            sheetName: 'CCTV Install Point',
+            title: 'รายงานรายการกล้อง CCTV จุดติดตั้ง (CCTV Install Point Cameras)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
       />
 
       {viewMode === 'TABLE' ? (

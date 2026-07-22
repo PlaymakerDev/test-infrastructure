@@ -1,8 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
-import { TbMapPin } from 'react-icons/tb'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
-import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import OverlapMarkers, { type OverlapMarkerItem } from '@/components/map/markers/OverlapMarkers'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -34,7 +32,6 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
       border: '1px solid #2f6db0',
       borderRadius: 12,
       padding: 10,
-      fontFamily: 'ui-sans-serif,system-ui',
     }}
   >
     {/* Player mounts for EVERY camera — including red (offline) pins, per
@@ -53,29 +50,44 @@ const CameraPopup: React.FC<{ cam: CrosswalkCameraItem }> = ({ cam }) => (
   </div>
 )
 
-/** Popup shown for the solution-level fallback marker (when the /cameras
- *  endpoint has no coords for this solution). */
-const SolutionFallbackPopup: React.FC<{ location: CrosswalkLocation }> = ({
-  location,
-}) => (
+/** Install-point info popup — shown on the WHITE fallback pin when none of
+ *  the solution's cameras carry lat/lon. Labeled "ข้อมูลจุดติดตั้ง" explicitly
+ *  so it can't be mistaken for a camera position (the objection that killed
+ *  the old yellow fallback pin, 2026-07-20). */
+const SolutionPopup: React.FC<{ location: CrosswalkLocation }> = ({ location }) => (
   <div
-    className='rounded-lg border border-yellow-400 px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
-    style={{ width: 260 }}
+    style={{
+      width: 250,
+      background: 'rgba(14,14,14,0.97)',
+      border: '1px solid #2f6db0',
+      borderRadius: 12,
+      padding: 10,
+    }}
   >
-    <p className='fs-12 font-bold tracking-wide text-yellow-400'>
-      Crosswalk · {location.road.code_name}
-    </p>
-    <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
+    <p className='fs-12' style={{ color: '#94a3b8', margin: 0 }}>ข้อมูลจุดติดตั้ง</p>
+    <p className='fs-12' style={{ color: '#66AEFF', fontWeight: 600, lineHeight: 1.35, margin: '2px 0 0' }}>
       {location.solution.solution_name}
     </p>
+    <p className='fs-12' style={{ color: '#ffffff', margin: '2px 0 0' }}>
+      สายทาง {location.road.code_name}
+    </p>
+    <div className='fs-12' style={{ display: 'flex', gap: 10, marginTop: 6, fontWeight: 600 }}>
+      <span style={{ color: '#66AEFF' }}>กล้อง {location.camera.total}</span>
+      <span style={{ color: location.crosswalk.is_online ? '#66AEFF' : '#FF6666' }}>
+        ทางข้าม {location.crosswalk.total} · {location.crosswalk.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
+      </span>
+    </div>
   </div>
 )
 
 /** Detail map — uses the shared overlap-aware marker layer (`OverlapMarkers`,
  *  same grouping as Incident Detection detail): cameras sharing a coordinate
  *  fan out (spider) into individually-clickable pins, each opening a popup with
- *  a live preview. All pins are white teardrops (`variant='white'`). Falls back
- *  to a single solution-level pin when the /cameras endpoint has no coords. */
+ *  a live preview. All pins are white teardrops (`variant='white'`).
+ *  Cameras WITHOUT lat/lon fall back to ONE white pin at the solution's own
+ *  coordinate whose popup is explicitly labeled ข้อมูลจุดติดตั้ง (restored
+ *  2026-07-20 — the earlier no-pin state left the map looking broken; the
+ *  even earlier YELLOW pin read as a fake camera position). */
 const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const deptId = useDeptId()
   const { id, location } = useDetailContext()
@@ -108,6 +120,21 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
   const fallbackCoord = location?.GeometryPoint
   const hasCoordCams = cameras.length > 0
 
+  // White install-point pin when no camera has a coordinate — same
+  // OverlapMarkers plumbing as the camera pins so the popup behavior matches.
+  const fallbackItems = useMemo<OverlapMarkerItem[]>(() => {
+    if (hasCoordCams || !location || !isValidCoord(location.GeometryPoint)) return []
+    return [
+      {
+        id: `solution-${location.solution.id}`,
+        coord: location.GeometryPoint,
+        title: location.solution.solution_name,
+        popup: <SolutionPopup location={location} />,
+        popupOptions: { offset: 22, closeButton: false, maxWidth: '280px' },
+      },
+    ]
+  }, [hasCoordCams, location])
+
   const initialCenter: [number, number] = hasCoordCams
     ? (isValidCoord(data?.centroid) ? data!.centroid! : coords[0])
     : (isValidCoord(fallbackCoord) ? fallbackCoord : FALLBACK_CENTER)
@@ -121,36 +148,15 @@ const MapSection: React.FC<Props> = ({ edgeFade = { all: 20 } }) => {
       initialBearing={-10}
       edgeFade={edgeFade}
     >
-      {hasCoordCams ? (
+      {hasCoordCams && (
         <>
-          <FitBoundsEffect coords={coords} padding={60} maxZoom={16} pitch={55} />
+          {/* maxZoom 19 — street-level close-up, per review 2026-07-20
+            * (crosswalk cameras cluster on one junction). */}
+          <FitBoundsEffect coords={coords} padding={60} maxZoom={19} pitch={55} />
           <OverlapMarkers items={markerItems} variant='white' />
         </>
-      ) : (
-        isValidCoord(fallbackCoord) && location && (
-          <HTMLMarker
-            lngLat={fallbackCoord}
-            anchor='bottom'
-            title={location.solution.solution_name}
-            popup={() => <SolutionFallbackPopup location={location} />}
-            popupOptions={{ offset: 18, closeButton: false }}
-          >
-            <div
-              className='flex items-center justify-center cursor-pointer'
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: '#FCD116',
-                boxShadow: '0 4px 12px rgba(252,209,22,0.6)',
-                border: '2px solid #fff',
-              }}
-            >
-              <TbMapPin size={18} color='#212121' />
-            </div>
-          </HTMLMarker>
-        )
       )}
+      {fallbackItems.length > 0 && <OverlapMarkers items={fallbackItems} variant='white' />}
     </BaseMap>
   )
 }

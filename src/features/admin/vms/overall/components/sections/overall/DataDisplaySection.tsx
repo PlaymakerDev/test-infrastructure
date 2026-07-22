@@ -10,6 +10,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVMSOverviewListAPI, getVMSOverviewTotalAPI } from '@/services/routes/VMSService'
 import { useScopeAll } from '@/hooks/useScopeAll'
 import type { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 
 interface Props {
@@ -60,6 +62,35 @@ const VMS_FILTERS: FilterConfig[] = [
   },
 ]
 
+// Export row = one solution flattened out of the dept → sub-dept tree, tagged
+// with the สำนัก header label the on-screen table groups by.
+type VMSExportRow = ListSolution & { bureau: string }
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → ชื่อโครงการ → จุดติดตั้ง →
+// เลขที่สัญญา → การค้ำประกัน → สถานะ → Stream → กล้อง), plus ลำดับ/หน่วยงาน
+// since the export flattens the table's per-สำนัก header rows. `width` =
+// Excel chars, `widthPct` = PDF table percent (sums to 100).
+const VMS_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: VMSExportRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road.code_name || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.project.project_name || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.solution.solution_name || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'สถานะ', width: 10, widthPct: 8, value: (r) => (r.vms.status.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'Stream', width: 11, widthPct: 7.5, value: (r) => (r.vms.hls_url ? 'Connect' : 'Disconnect') },
+  { header: 'กล้อง', width: 11, widthPct: 7.5, value: (r) => (r.vms.desktop_screen ? 'Connect' : 'ไม่มีกล้อง') },
+]
+
 const DataDisplaySection: React.FC<Props> = (props) => {
   const { deptId } = props
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
@@ -69,6 +100,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [exportOpen, setExportOpen] = useState(false)
   const { vms_list } = useAppSelector(state => state.vms_overview)
 
   // Fetch totals directly instead of reading from Redux — same query key as
@@ -170,6 +202,32 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     }
   }, [displayType, filteredData, isLoading, cardItems])
 
+  // Export rows in the SAME order the table displays: flattened dept →
+  // sub-dept → solutions, each tagged with the สำนัก header label the table
+  // groups by — so the printed report reads exactly like the screen.
+  const exportRows = useMemo<VMSExportRow[]>(() => {
+    const out: VMSExportRow[] = []
+    for (const dept of filteredData ?? []) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          out.push({ ...sol, bureau: dept.department_short_name })
+        }
+      }
+    }
+    return out
+  }, [filteredData])
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = VMS_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    const term = vms_list.search.search?.trim()
+    if (term) parts.push(`ค้นหา "${term}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, vms_list.search.search])
+
   const onSearch = useCallback((formData: FormValues) => {
     dispatch(setSearchVMSList({
       ...vms_list.search,
@@ -189,8 +247,39 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
           formSearch={<FormSearchVMS onSearch={onSearch} />}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the
+            table/card grid shows), mirroring the CCTV overview report. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'VMS_Overview_Report',
+            title: 'รายงานสรุปภาพรวมป้าย VMS (VMS Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(VMS_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'VMS_Overview_Report',
+            title: 'รายงานสรุปภาพรวมป้าย VMS (VMS Overview)',
+            filterNote: exportFilterNote,
+            sheetName: 'VMS Overview',
+            columns: hideProjectNameColumns(VMS_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {renderContent}
       </section>

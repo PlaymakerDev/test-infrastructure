@@ -9,6 +9,8 @@ import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/Projec
 import { useIncidentCentralList, useIncidentCentralTotals } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 const ID_FILTERS: FilterConfig[] = [
   { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
@@ -18,12 +20,45 @@ const ID_FILTERS: FilterConfig[] = [
   { key: 'expired', label: 'หมดค้ำ', colorPrimary: '#979797', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#4a4a4a] text-white', badgeIdleClass: 'bg-[#979797]/20 text-[#979797]' },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → … → Stream), plus ลำดับ/หน่วยงาน
+// since the export flattens the per-แขวง divider rows (mirrors
+// CCTV_EXPORT_COLUMNS). The License column is skipped — it's an action button
+// (fetch-on-click modal), not row data. `width` = Excel chars, `widthPct` =
+// PDF table percent (sums to 100).
+const ID_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: IncidentRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 16, align: 'left', value: (r) => r.projectName || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 16, align: 'left', value: (r) => r.installPoint || '-' },
+  {
+    header: 'เลขที่สัญญา',
+    width: 20,
+    widthPct: 11,
+    // Same fallback chain as the on-screen ContractInfoCell.
+    value: (r) => (r.contractNo?.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+  },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'กล้องวิเคราะห์', width: 13, widthPct: 8, value: (r) => r.totalCameras },
+  { header: 'เหตุการณ์', width: 10, widthPct: 6, value: (r) => r.events },
+  { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.onlineCameras > 0 ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'Stream', width: 11, widthPct: 6, value: (r) => (r.onlineCameras > 0 ? 'Connect' : 'Disconnect') },
+]
+
 const DataDisplaySection: React.FC = () => {
   const deptId = useDeptId()
   const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [exportOpen, setExportOpen] = useState(false)
 
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
@@ -101,6 +136,29 @@ const DataDisplaySection: React.FC = () => {
     })
   }, [allRows, activeFilter, search])
 
+  // Export rows in the SAME order the table displays: grouped by แขวง (bureau)
+  // — mirrors TableIncidentDetectionData's grouping so the printed report
+  // reads exactly like the screen.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, IncidentRow[]>()
+    for (const r of filtered) {
+      const list = groups.get(r.bureau) ?? []
+      list.push(r)
+      groups.set(r.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [filtered])
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = ID_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
+
   const cardItems = useMemo<ProjectCardItem[]>(
     () =>
       filtered.map((r) => ({
@@ -133,9 +191,39 @@ const DataDisplaySection: React.FC = () => {
           defaultViewMode={displayType}
           onViewModeChange={setDisplayType}
           formSearch={<FormSearchIncidentDetection onSearchChange={setSearch} />}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Incident_Detection_Overview_Report',
+            title: 'รายงานสรุปภาพรวมระบบตรวจจับเหตุการณ์ (Incident Detection Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(ID_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Incident_Detection_Overview_Report',
+            sheetName: 'Incident Detection Overview',
+            title: 'รายงานสรุปภาพรวมระบบตรวจจับเหตุการณ์ (Incident Detection Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(ID_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {displayType === 'TABLE' ? (
           <TableIncidentDetectionData rows={filtered} loading={isLoading} />

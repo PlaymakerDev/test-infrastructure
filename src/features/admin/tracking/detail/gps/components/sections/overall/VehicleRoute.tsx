@@ -1,8 +1,4 @@
 import React, { useMemo, useState } from 'react'
-import {
-  TRACKING_STATIONS,
-  type TrackingStationType,
-} from '@/features/admin/tracking/overall/data/trackingStations'
 import { Button, ConfigProvider, Empty, Skeleton } from 'antd'
 import { VehicleHistoryData } from '@/types/tracking/detail-gps-api'
 import dayjs from 'dayjs'
@@ -22,17 +18,19 @@ const VehicleRoute: React.FC<Props> = (props) => {
   const { data, unitId: latestUnitId } = props
   const [activeFilter, setActiveFilter] = useState<FilterOption>('วันนี้')
 
+  const days = activeFilter === '3 วัน' ? 3 : activeFilter === '7 วัน' ? 7 : undefined
+
   const {
     data: vehicleRouteHistory,
     isLoading: isLoadingVehicleRouteHistory,
     isError: isErrorVehicleRouteHistory
   } = useQuery({
-    queryKey: ['vehicle_route_history_detail', latestUnitId],
+    queryKey: ['vehicle_route_history_detail', latestUnitId, days],
     queryFn: () => getTrackingGPSVehicleRouteHistoryAPI({
       unit_id: latestUnitId,
-      days: activeFilter === '3 วัน' ? 3 : activeFilter === '7 วัน' ? 7 : undefined
+      days
     }),
-    enabled: !!latestUnitId && (activeFilter === '3 วัน' || activeFilter === '7 วัน'),
+    enabled: !!latestUnitId && !!days,
   })
 
   const renderOptionButton = useMemo(() => {
@@ -108,6 +106,7 @@ const VehicleRoute: React.FC<Props> = (props) => {
       case 'วันนี้':
         return renderCurrentTimeline
       case '3 วัน':
+        return renderLogTimeline
       case '7 วัน':
         return renderLogTimeline
       default:
@@ -116,10 +115,10 @@ const VehicleRoute: React.FC<Props> = (props) => {
   }, [activeFilter, renderCurrentTimeline, renderLogTimeline])
 
   return (
-    <div className='rounded-lg p-5 bg-(--gray)'>
+    <div className='rounded-2xl p-5 bg-(--gray)'>
       <section>
         <div className='flex flex-wrap items-center justify-between gap-3'>
-          <h3 className='font-bold text-(--yellow) leading-tight'>เส้นทางการเคลื่อนที่</h3>
+          <h4 className='font-normal! text-(--yellow) leading-tight'>เส้นทางการเคลื่อนที่</h4>
           <div className='bg-[#A2A2A233] rounded-3xl p-1.5 flex items-center'>
             {renderOptionButton}
           </div>

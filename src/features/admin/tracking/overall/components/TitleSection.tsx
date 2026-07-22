@@ -1,10 +1,8 @@
 "use client"
 import SwapButton from '@/components/swap-button/SwapButton'
 import React from 'react'
-
-interface Props {
-  setCurrentTab: (value: string) => void;
-}
+import { useRouter } from 'next/navigation'
+import { useOverallContext } from '../context'
 
 const OPTIONS = [
   {
@@ -29,8 +27,9 @@ const OPTIONS = [
   },
 ]
 
-const TitleSection: React.FC<Props> = (props) => {
-  const { setCurrentTab } = props
+const TitleSection: React.FC = () => {
+  const { currentTab, setCurrentTab } = useOverallContext()
+  const router = useRouter()
 
   return (
     <div>
@@ -41,12 +40,23 @@ const TitleSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <SwapButton
           options={OPTIONS}
-          defaultActive="OVERALL"
-          setLabelValue={(value) => setCurrentTab(value)}
+          activeValue={currentTab}
+          setLabelValue={(value) => {
+            // GPS has no inline content — it's a shortcut into its own detail
+            // route, not a real overview tab, so it must never become
+            // `currentTab` (that would get persisted to the URL and loop:
+            // back-navigation would land on ?tab=TRACK_GPS and redirect
+            // straight back into the same detail page).
+            if (value === 'TRACK_GPS') {
+              router.push('/admin/tracking/detail/gps')
+              return
+            }
+            setCurrentTab(value)
+          }}
         />
       </section>
     </div>
   )
 }
 
-export default React.memo<Props>(TitleSection)
+export default React.memo(TitleSection)

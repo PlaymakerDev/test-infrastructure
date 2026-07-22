@@ -17,12 +17,32 @@ export const usePostOpenBridgeLighting = () => {
     mutationFn: postOpenBridgeLightingAPI,
     onSuccess: (_res, vars) => {
       const isOn = vars.send === '1'
+      // Modal.success is a STATIC method → it doesn't read the ConfigProvider
+      // theme, so force the app font (IBM Plex Sans Thai) + 14px on the text
+      // spans / body / button to match the confirm popup and the rest of the app.
+      const FONT = 'var(--font-ibm-plex-sans-thai)'
       Modal.success({
-        title: isOn ? 'เปิดไฟประดับสะพานสำเร็จ' : 'ปิดไฟประดับสะพานสำเร็จ',
-        icon: <CheckCircleFilled style={{ color: isOn ? '#66AEFF' : '#FCD116' }} />,
-        content:
-          'ระบบส่งคำสั่งไปยังอุปกรณ์เรียบร้อยแล้ว สถานะจะอัพเดตอัตโนมัติภายในไม่กี่วินาที',
+        title: (
+          <span className='text-[14px]! font-normal! block' style={{ fontFamily: FONT }}>
+            {isOn ? 'เปิดไฟประดับสะพานสำเร็จ' : 'ปิดไฟประดับสะพานสำเร็จ'}
+          </span>
+        ),
+        icon: <CheckCircleFilled style={{ color: '#66AEFF' }} />,
+        content: (
+          <span className='text-[14px]! block' style={{ fontFamily: FONT }}>
+            ระบบส่งคำสั่งไปยังอุปกรณ์เรียบร้อยแล้ว สถานะจะอัพเดตอัตโนมัติภายในไม่กี่วินาที
+          </span>
+        ),
+        styles: { body: { fontFamily: FONT } },
         okText: 'ตกลง',
+        okButtonProps: {
+          style: {
+            background: '#66AEFF',
+            borderColor: '#66AEFF',
+            color: '#fff',
+            fontFamily: FONT,
+          },
+        },
         centered: true,
       })
       queryClient.invalidateQueries({ queryKey: bridgeLightingDetailKeys.shellyStatus() })

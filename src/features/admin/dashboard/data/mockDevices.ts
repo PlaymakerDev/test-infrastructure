@@ -29,4 +29,10 @@ export type Device = {
    *  `true` = online, `false` = offline, `undefined` = BE didn't ship the field yet
    *  (map falls back to the normal solid colour). */
   isOnline?: boolean
+  /** Id to use in the popup's detail link when it differs from `id`. LPR
+   *  devices come from GET /lpr/points (not /position) and prefix their `id`
+   *  with `lpr-` so a point that is ALSO a /position solution (LPR rides on
+   *  existing cameras) can't collide in marker keys — the detail page still
+   *  needs the bare solution_id. */
+  detailId?: string
 }

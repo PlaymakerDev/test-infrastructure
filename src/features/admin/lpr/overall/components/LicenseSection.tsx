@@ -82,7 +82,7 @@ const MapSection: React.FC = () => {
       <button
         type='button'
         className='absolute top-3 right-3 z-10 rounded-full px-4 py-1 fs-12 font-medium cursor-pointer'
-        style={{ background: '#1B3F8B', color: '#fff' }}
+        style={{ background: '#003F87', color: '#fff' }}
         onClick={() => window.open(googleMapsUrl, '_blank')}
       >
         Google Map

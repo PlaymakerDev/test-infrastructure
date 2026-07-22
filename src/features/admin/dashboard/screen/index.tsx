@@ -52,14 +52,37 @@ const DashboardScreen: React.FC<Props> = () => {
   const [currentDeptId, setCurrentDeptId] = useState<string>(
     () => searchParams.get('dept_id') ?? '0'
   )
-  // Landing behaviour (2026-07-18 change): the dashboard now opens with ALL
-  // cards visible on every entry — including ทั่วประเทศ (dept 0 + scope=all).
-  // Previously that landing forced map-only "focus mode" until the user drilled
-  // into a province, on the theory that country-level cards were too broad to
-  // be interesting. Since the 18-สำนัก polygon overlay + status pills landed
-  // (commit 17229a59), the country view carries real signal end-to-end and no
-  // longer needs the intro. Users who want a bigger map can still pick
-  // "ซ่อนทั้งสองฝั่ง" from the Navbar focus-mode dropdown.
+  // Snapshot scope on first mount (mirrors originalDeptId). scope=all + dept 0
+  // is the nationwide overview; anything else is a dept-scoped landing.
+  const [originalScopeAll] = useState<boolean>(
+    () => searchParams.get('scope') === 'all'
+  )
+  // The map-only landing intro applies ONLY to the country overview. A
+  // dept-scoped URL (?dept_id=50) auto-zooms into its own markers (handled in
+  // ReactMap) and shows every card immediately — no intro.
+  const isCountryLanding = originalDeptId === '0' && originalScopeAll
+  // Landing behaviour: the dashboard opens map-only — every overlay card is
+  // hidden (Map Focus Mode 'both') so the user sees just the map first. The
+  // moment they click a device marker the hidden cards slide back in.
+  const { setMode } = useMapFocusMode()
+
+  useEffect(() => {
+    // Country overview → hide all overlays on entry (map-only), reveal on the
+    // first marker click. Dept-scoped landing → show everything right away.
+    // Always restore on leave so focus mode never leaks to another page.
+    if (!isCountryLanding) {
+      setMode('off')
+      return
+    }
+    setMode('both')
+    return () => setMode('off')
+  }, [setMode, isCountryLanding])
+
+  // Reveal the hidden overlays once a marker is clicked.
+  const handleMarkerClick = useCallback(() => {
+    setMode('off')
+  }, [setMode])
+
   const handleProvinceActivate = useCallback(() => {
     // No-op — kept as a stable reference so ReactMap's optional callback
     // continues to have a target. Delete both if the map prop is dropped.
@@ -75,20 +98,23 @@ const DashboardScreen: React.FC<Props> = () => {
       {/* MAP */}
       <ReactMap
         originalDeptId={originalDeptId}
-        originalScopeAll={searchParams.get('scope') === 'all'}
+        originalScopeAll={originalScopeAll}
         onDeptIdChange={setCurrentDeptId}
         onProvinceActivate={handleProvinceActivate}
+        onMarkerClick={handleMarkerClick}
       />
 
       {isDesktop === true && (
         <>
           {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
-          {/* bottom: 200 (was 180) — the donut row below grew ~20px taller
-            * (py-4 + label gap), keep the same visual gap above it. */}
+          {/* bottom: 160 — the stack is bottom-anchored (flex-1 spacer above), so
+            * this pins AccidentChart's lower edge ~12px above the KPI tile strip
+            * (strip top ≈ 16 + ~132px bar) — same 12px rhythm as the panel's own
+            * gap-3 between StatusChart and AccidentChart (2026-07-20). */}
           <MapOverlayPanel
             position="left"
             className="absolute left-4 z-10 flex flex-col gap-3"
-            style={{ top: 52, bottom: 200, width: 620 }}
+            style={{ top: 52, bottom: 160, width: 620 }}
           >
             <div className="flex-1" />
             {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
@@ -98,8 +124,8 @@ const DashboardScreen: React.FC<Props> = () => {
             <AccidentChart />
           </MapOverlayPanel>
 
-          {/* DESKTOP: donut row — width follows content (126px per visible
-            * donut inside RatioChart); 7 donuts ≈ the old fixed 880. */}
+          {/* DESKTOP: KPI tile row — width follows content (140px per visible
+            * tile inside RatioChart). */}
           <MapOverlayPanel
             position="bottom"
             className="absolute left-4 z-10 flex"

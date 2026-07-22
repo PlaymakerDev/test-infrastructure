@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { Table, Empty } from 'antd'
+import { Table, Empty, ConfigProvider, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { SumStation } from '@/types/tracking/overall-api'
@@ -14,10 +14,10 @@ interface Props {
 
 type StatusType = 'เปิดปกติ' | 'ระบบขัดข้อง' | 'ไม่ส่งข้อมูล'
 
-const STATUS_CLASS: Record<StatusType, string> = {
-  'เปิดปกติ': 'border-(--default-blue) text-(--default-blue)',
-  'ระบบขัดข้อง': 'border-(--yellow) text-(--yellow)',
-  'ไม่ส่งข้อมูล': 'border-red-500 text-red-500',
+const STATUS_COLOR: Record<StatusType, string> = {
+  'เปิดปกติ': '#66AEFF',
+  'ระบบขัดข้อง': '#FCD116',
+  'ไม่ส่งข้อมูล': '#EF4444',
 }
 
 const TableStation: React.FC<Props> = (props) => {
@@ -158,10 +158,24 @@ const TableStation: React.FC<Props> = (props) => {
         else if (totalCCTV > 0) status = 'ไม่ส่งข้อมูล'
         else status = 'ระบบขัดข้อง'
 
+        const color = STATUS_COLOR[status]
         return (
-          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status]}`}>
-            {status}
-          </span>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: color,
+                colorTextLightSolid: 'black'
+              }
+            }}
+          >
+            <Button
+              type="primary"
+              shape="round"
+              onClick={() => router.push(`/admin/tracking/detail/station/${record.station_id}?station_type=STATION`)}
+            >
+              <p className='fs-12'>{status}</p>
+            </Button>
+          </ConfigProvider>
         )
       },
     },
@@ -184,12 +198,6 @@ const TableStation: React.FC<Props> = (props) => {
       rowKey="station_id"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
-      onRow={(record) => {
-        return {
-          onClick: () => router.push(`/admin/tracking/detail/station/${record.station_id}?station_type=STATION`),
-          className: 'cursor-pointer',
-        }
-      }}
     />
   )
 }

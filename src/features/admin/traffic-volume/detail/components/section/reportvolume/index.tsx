@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { TbArrowLeft, TbArrowRight } from 'react-icons/tb'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
+import AppPagination from '@/components/pagination/AppPagination'
 import FilterBarReport, {
   type DateRange,
   type HourView,
@@ -14,6 +14,9 @@ import HourlyReportTable from './HourlyReportTable'
 import MonthlyReportTable from './MonthlyReportTable'
 import YearlyReportTable from './YearlyReportTable'
 import VehicleTypeReportTable from './VehicleTypeReportTable'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { fmtNumber } from '@/utils/formatNumber'
+import { VEHICLE_TYPES } from '../overall/data/vehicleTypes'
 import {
   useTrafficVolumeReportSummaryInfinite,
   useTrafficVolumeSolutionCameras,
@@ -21,7 +24,6 @@ import {
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import {
-  buildPageList,
   computeReportSummary,
   groupByCamera,
 } from '@/features/admin/traffic-volume/shared/utils/reportSummary'
@@ -36,6 +38,7 @@ import {
   type DailyReportRow,
   type DailyReportSummary,
   type HourlyReportCameraGroup,
+  type HourlyReportRow,
   type MonthlyReportRow,
   type YearlyReportRow,
   type VehicleTypeReportRow,
@@ -193,89 +196,6 @@ const EMPTY_VEHICLE_TYPE_SUMMARY: VehicleTypeReportSummary = {
   truckPercent: 0,
 }
 
-interface BluePaginationProps {
-  current: number
-  total: number
-  onChange: (page: number) => void
-}
-
-/** Numbered pagination styled per the report-tab design — round blue
- *  active pill, blue page numbers, ก่อนหน้า / ถัดไป labels with arrows.
- *  Built locally instead of using `antd/Pagination` because the design
- *  diverges from Antd's defaults (round active state + Thai prev/next
- *  labels with custom layout). */
-const BluePagination: React.FC<BluePaginationProps> = ({
-  current,
-  total,
-  onChange,
-}) => {
-  const pages = buildPageList(current, total)
-  const prevDisabled = current === 1
-  const nextDisabled = current >= total
-  const BLUE = '#66AEFF'
-  return (
-    <nav className='flex items-center justify-end gap-2 mt-2 select-none'>
-      <button
-        type='button'
-        disabled={prevDisabled}
-        onClick={() => onChange(Math.max(1, current - 1))}
-        className={`inline-flex items-center gap-2 px-2 py-1 fs-14 ${
-          prevDisabled
-            ? 'text-white/35 cursor-not-allowed'
-            : 'cursor-pointer hover:opacity-80'
-        }`}
-        style={{ color: prevDisabled ? undefined : BLUE }}
-      >
-        <TbArrowLeft size={18} />
-        <span>ก่อนหน้า</span>
-      </button>
-      {pages.map((p, i) =>
-        p === '...' ? (
-          <span
-            key={`ellipsis-${i}`}
-            className='inline-flex items-center justify-center w-8 h-8 fs-14'
-            style={{ color: BLUE }}
-          >
-            ...
-          </span>
-        ) : p === current ? (
-          <span
-            key={p}
-            className='inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-semibold fs-14'
-            style={{ background: BLUE }}
-          >
-            {p}
-          </span>
-        ) : (
-          <button
-            key={p}
-            type='button'
-            onClick={() => onChange(p)}
-            className='inline-flex items-center justify-center w-8 h-8 rounded-full fs-14 hover:bg-white/5 cursor-pointer'
-            style={{ color: BLUE }}
-          >
-            {p}
-          </button>
-        )
-      )}
-      <button
-        type='button'
-        disabled={nextDisabled}
-        onClick={() => onChange(Math.min(total, current + 1))}
-        className={`inline-flex items-center gap-2 px-2 py-1 fs-14 ${
-          nextDisabled
-            ? 'text-white/35 cursor-not-allowed'
-            : 'cursor-pointer hover:opacity-80'
-        }`}
-        style={{ color: nextDisabled ? undefined : BLUE }}
-      >
-        <span>ถัดไป</span>
-        <TbArrowRight size={18} />
-      </button>
-    </nav>
-  )
-}
-
 /** Map the FE dropdown value to the API's `report_type` enum. Same values
  *  apart from the legacy `daily` key (the backend uses the same literal). */
 const toBackendReportType = (v: string): CountingReportType => {
@@ -290,6 +210,321 @@ const toBackendReportType = (v: string): CountingReportType => {
   }
 }
 
+// ── นำออกเอกสาร (export) ────────────────────────────────────────────────────
+
+/** Shared column config for both PDF and Excel exports — one set per report
+ *  type, mirroring that table's on-screen columns exactly (same headers,
+ *  same order, same formatting). `width` = Excel chars, `widthPct` = PDF
+ *  table percent (each set sums to 100). */
+interface ExportColumn<Row> {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: Row, index: number) => string | number
+}
+
+/** Type-erased spec consumed by the shared export modal — built per active
+ *  report type by `makeExportSpec` so one modal serves all 6 layouts. */
+interface ExportSpec {
+  filenameBase: string
+  title: string
+  sheetName: string
+  columns: ExportColumn<unknown>[]
+  rows: unknown[]
+  /** Data-row count for the modal — excludes appended "รวมเฉลี่ย" rows. */
+  dataCount: number
+  /** Present only for report types whose on-screen table paginates (month /
+   *  year): the visible page's rows with a "รวมเฉลี่ย" summed from just that
+   *  slice — used when the modal's scope toggle picks หน้าปัจจุบัน. Absent →
+   *  the modal renders without the scope toggle. */
+  pageRows?: unknown[]
+  /** Data-row count of `pageRows` — excludes its "รวมเฉลี่ย" row. */
+  pageDataCount?: number
+}
+
+/** Pairs a typed column set with its rows, then erases the generic — safe
+ *  because columns and rows always travel together. */
+function makeExportSpec<Row>(spec: {
+  filenameBase: string
+  title: string
+  sheetName: string
+  columns: ExportColumn<Row>[]
+  rows: Row[]
+  dataCount: number
+  pageRows?: Row[]
+  pageDataCount?: number
+}): ExportSpec {
+  return spec as unknown as ExportSpec
+}
+
+/** Marks an appended "รวมเฉลี่ย" summary row — the first column prints the
+ *  label instead of its date/camera value, every numeric column reads the
+ *  pre-summed fields through the normal value fns (same rendering rule the
+ *  on-screen tables use via their `_summary` flag). */
+interface SummaryFlag {
+  _summaryLabel?: string
+}
+
+const thaiDate = (iso: string) => dayjs(iso).locale('th').format('D MMM BBBB')
+
+/** Cells shared by the daily / hourly / monthly / yearly layouts — the 7
+ *  vehicle-type counts + both totals, same order as every on-screen table.
+ *  Counts stay numeric (Excel-friendly, mirrors the CCTV overview export);
+ *  รวม PCU keeps the screen's 1-decimal formatting. */
+interface VehicleCountCells {
+  motorcycle: number
+  car: number
+  pickup: number
+  taxi: number
+  bus: number
+  truck: number
+  trailer: number
+  totalVehicles: number
+  totalPCU: number
+}
+
+function vehicleCountColumns<Row extends VehicleCountCells>(): ExportColumn<Row>[] {
+  return [
+    { header: 'รถจักรยานยนต์', width: 13, widthPct: 7, value: (r) => r.motorcycle },
+    { header: 'รถยนต์', width: 10, widthPct: 7, value: (r) => r.car },
+    { header: 'รถกระบะ', width: 10, widthPct: 7, value: (r) => r.pickup },
+    { header: 'รถแท็กซี่', width: 10, widthPct: 7, value: (r) => r.taxi },
+    { header: 'รถบัส', width: 9, widthPct: 7, value: (r) => r.bus },
+    { header: 'รถบรรทุก', width: 10, widthPct: 7, value: (r) => r.truck },
+    { header: 'รถพ่วง', width: 9, widthPct: 7, value: (r) => r.trailer },
+    { header: 'รวมยานพาหนะ', width: 13, widthPct: 10, value: (r) => r.totalVehicles },
+    { header: 'รวม PCU', width: 11, widthPct: 10, value: (r) => fmtNumber(r.totalPCU, 1) },
+  ]
+}
+
+function maxPcuColumn<Row extends { maxPCUPerHour: number }>(): ExportColumn<Row> {
+  return { header: 'PCU สูงสุด / ชั่วโมง', width: 16, widthPct: 10, value: (r) => fmtNumber(r.maxPCUPerHour, 0) }
+}
+
+function truckPctColumn<Row extends { truckPercent: number }>(): ExportColumn<Row> {
+  return { header: 'รถบรรทุก (%)', width: 12, widthPct: 8, value: (r) => `${fmtNumber(r.truckPercent, 1)}%` }
+}
+
+type DailyExportRow = DailyReportRow & SummaryFlag
+
+const DAILY_EXPORT_COLUMNS: ExportColumn<DailyExportRow>[] = [
+  {
+    header: 'วันที่',
+    width: 26,
+    widthPct: 13,
+    // Same two lines the on-screen cell shows: "27 มิ.ย. 2569" + weekday.
+    value: (r) =>
+      r._summaryLabel ?? `${thaiDate(r.date)} (วัน${dayjs(r.date).locale('th').format('dddd')})`,
+  },
+  ...vehicleCountColumns<DailyExportRow>(),
+  maxPcuColumn<DailyExportRow>(),
+  truckPctColumn<DailyExportRow>(),
+]
+
+/** Hour rows flattened out of their per-camera groups — the on-screen camera
+ *  header rows become a leading กล้อง column (same treatment the overview
+ *  exports give their per-สำนัก divider rows). */
+type HourlyExportRow = HourlyReportRow & { cameraName: string } & SummaryFlag
+
+const HOURLY_EXPORT_COLUMNS: ExportColumn<HourlyExportRow>[] = [
+  { header: 'กล้อง', width: 20, widthPct: 10, align: 'left', value: (r) => r.cameraName },
+  {
+    header: 'วันที่ / เวลา',
+    width: 26,
+    widthPct: 13,
+    value: (r) =>
+      r._summaryLabel ?? `${thaiDate(r.hourTimestamp)} ${r.hourTimestamp.slice(11, 13)}:00 น.`,
+  },
+  ...vehicleCountColumns<HourlyExportRow>(),
+  truckPctColumn<HourlyExportRow>(),
+]
+
+type MonthlyExportRow = MonthlyReportRow & SummaryFlag
+
+const MONTHLY_EXPORT_COLUMNS: ExportColumn<MonthlyExportRow>[] = [
+  {
+    header: 'เดือน',
+    width: 26,
+    widthPct: 13,
+    value: (r) => {
+      if (r._summaryLabel) return r._summaryLabel
+      const label = dayjs(`${r.year}-${String(r.month).padStart(2, '0')}-01`)
+        .locale('th')
+        .format('MMM BBBB')
+      // Screen hides the sub-label when the count is 0 — mirror that.
+      return r.daysCollected > 0 ? `${label} (เก็บข้อมูล ${fmtNumber(r.daysCollected, 0)} วัน)` : label
+    },
+  },
+  ...vehicleCountColumns<MonthlyExportRow>(),
+  maxPcuColumn<MonthlyExportRow>(),
+  truckPctColumn<MonthlyExportRow>(),
+]
+
+type YearlyExportRow = YearlyReportRow & SummaryFlag
+
+const YEARLY_EXPORT_COLUMNS: ExportColumn<YearlyExportRow>[] = [
+  {
+    header: 'ปี',
+    width: 26,
+    widthPct: 13,
+    // Buddhist Era year, same as the on-screen cell (+543).
+    value: (r) => {
+      if (r._summaryLabel) return r._summaryLabel
+      return r.daysCollected > 0
+        ? `${r.year + 543} (เก็บข้อมูล ${fmtNumber(r.daysCollected, 0)} วัน)`
+        : `${r.year + 543}`
+    },
+  },
+  ...vehicleCountColumns<YearlyExportRow>(),
+  maxPcuColumn<YearlyExportRow>(),
+  truckPctColumn<YearlyExportRow>(),
+]
+
+/** Sum the shared numeric cells across rows — the exported "รวมเฉลี่ย" rows
+ *  aggregate exactly like the on-screen tables' sumRow helpers (plain column
+ *  sums of what's displayed, including maxPCU / truckPercent). */
+function sumNumericCells<Row extends VehicleCountCells & { truckPercent: number }>(
+  rows: Row[]
+): VehicleCountCells & { truckPercent: number; maxPCUPerHour: number; daysCollected: number } {
+  const acc = {
+    motorcycle: 0, car: 0, pickup: 0, taxi: 0, bus: 0, truck: 0, trailer: 0,
+    totalVehicles: 0, totalPCU: 0, truckPercent: 0, maxPCUPerHour: 0, daysCollected: 0,
+  }
+  for (const r of rows) {
+    acc.motorcycle += r.motorcycle
+    acc.car += r.car
+    acc.pickup += r.pickup
+    acc.taxi += r.taxi
+    acc.bus += r.bus
+    acc.truck += r.truck
+    acc.trailer += r.trailer
+    acc.totalVehicles += r.totalVehicles
+    acc.totalPCU += r.totalPCU
+    acc.truckPercent += r.truckPercent
+    acc.maxPCUPerHour += (r as { maxPCUPerHour?: number }).maxPCUPerHour ?? 0
+    acc.daysCollected += (r as { daysCollected?: number }).daysCollected ?? 0
+  }
+  return acc
+}
+
+/** Append the trailing "รวมเฉลี่ย" row (mirrors the on-screen table) to a
+ *  daily/monthly/yearly export row list. No-op when there's no data. `base`
+ *  fills the non-numeric identity fields (date/year/month placeholders) —
+ *  the first column prints the summary label instead of reading them. */
+function withSummaryRow<Row extends VehicleCountCells & { truckPercent: number }>(
+  rows: Row[],
+  base: Partial<Row>
+): (Row & SummaryFlag)[] {
+  if (rows.length === 0) return rows
+  const summary = {
+    ...base,
+    ...sumNumericCells(rows),
+    _summaryLabel: 'รวมเฉลี่ย',
+  } as unknown as Row & SummaryFlag
+  return [...rows, summary]
+}
+
+/** Same label lookup VehicleTypeReportTable builds from VEHICLE_TYPES. */
+const VEHICLE_EXPORT_LABELS: Record<string, string> = Object.fromEntries(
+  VEHICLE_TYPES.map((v) => [v.key, v.label])
+)
+
+const VEHICLE_TYPE_EXPORT_COLUMNS: ExportColumn<VehicleTypeReportRow>[] = [
+  { header: 'ประเภทยานพาหนะ', width: 20, widthPct: 22, align: 'left', value: (r) => VEHICLE_EXPORT_LABELS[r.vehicleKey] ?? r.vehicleKey },
+  { header: 'รวมยานพาหนะ', width: 13, widthPct: 13, value: (r) => r.totalVehicles },
+  { header: 'รวม PCU', width: 11, widthPct: 13, value: (r) => fmtNumber(r.totalPCU, Number.isInteger(r.totalPCU) ? 0 : 1) },
+  { header: 'PCU Factor', width: 11, widthPct: 13, value: (r) => fmtNumber(r.pcuFactor, Number.isInteger(r.pcuFactor) ? 0 : 2) },
+  { header: 'สัดส่วน (%)', width: 11, widthPct: 13, value: (r) => `${fmtNumber(r.sharePercent, 1)}%` },
+  { header: 'PCU เฉลี่ย / ชั่วโมง', width: 16, widthPct: 13, value: (r) => fmtNumber(r.avgPCUPerHour, Number.isInteger(r.avgPCUPerHour) ? 0 : 1) },
+  { header: 'PCU สูงสุด / ชั่วโมง', width: 16, widthPct: 13, value: (r) => fmtNumber(r.maxPCUPerHour, Number.isInteger(r.maxPCUPerHour) ? 0 : 1) },
+]
+
+/** 24 hour-bucket keys "00".."23" — mirrors HourlyMatrixTable's HOURS. */
+const EXPORT_HOURS = Array.from({ length: 24 }, (_, h) => h.toString().padStart(2, '0'))
+
+/** One exported matrix line: camera + date + unit in the label, then a value
+ *  per hour. คัน and PCU lines are separate rows, exactly like the screen. */
+interface MatrixExportRow {
+  label: string
+  /** Per-hour values, keyed by "00".."23". */
+  hourly: Record<string, number>
+}
+
+/** Matrix (วัน × 24 ชม.) columns — วันที่ + 00–23 = 25 columns, landscape.
+ *  The on-screen "รวม" column and the derived "รวมเฉลี่ย" summary rows are
+ *  dropped (data rows only); the camera-group headers fold into the first
+ *  column's label so 24 hour cells fit the page. */
+const MATRIX_EXPORT_COLUMNS: ExportColumn<MatrixExportRow>[] = [
+  { header: 'วันที่', width: 34, widthPct: 16, align: 'left', value: (r) => r.label },
+  ...EXPORT_HOURS.map(
+    (hh): ExportColumn<MatrixExportRow> => ({
+      header: `${hh}:00`,
+      width: 8,
+      widthPct: 3.5,
+      value: (r) => r.hourly[hh] ?? 0,
+    })
+  ),
+]
+
+/** Regroup the hour-bucketed wire rows by camera → date the same way
+ *  HourlyMatrixTable does, emitting one คัน row and one PCU row per date. */
+const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRow[] => {
+  // camera → date → hh → { count, pcu }
+  const cams = new Map<string, Map<string, Map<string, { count: number; pcu: number }>>>()
+  for (const r of rows) {
+    if (typeof r.date !== 'string' || r.date.length < 13) continue
+    const cam = r.camera_name ?? '-'
+    const day = r.date.slice(0, 10)
+    const hh = r.date.slice(11, 13)
+    let dayMap = cams.get(cam)
+    if (!dayMap) {
+      dayMap = new Map()
+      cams.set(cam, dayMap)
+    }
+    let hourMap = dayMap.get(day)
+    if (!hourMap) {
+      hourMap = new Map()
+      dayMap.set(day, hourMap)
+    }
+    hourMap.set(hh, { count: r.total_count, pcu: r.total_pcu })
+  }
+  const out: MatrixExportRow[] = []
+  for (const [cam, dayMap] of cams) {
+    const days = Array.from(dayMap.keys()).sort()
+    // Count rows first, then PCU rows — same order as the on-screen matrix.
+    for (const unit of ['count', 'pcu'] as const) {
+      const unitLabel = unit === 'pcu' ? 'PCU' : 'คัน'
+      // Trailing "รวมเฉลี่ย" per camera × unit — same per-hour sums across
+      // all dates that HourlyMatrixTable's summary rows show.
+      const summed: Record<string, number> = {}
+      for (const hh of EXPORT_HOURS) summed[hh] = 0
+      for (const day of days) {
+        const hourMap = dayMap.get(day)!
+        const hourly: Record<string, number> = {}
+        for (const hh of EXPORT_HOURS) {
+          const v = unit === 'pcu' ? (hourMap.get(hh)?.pcu ?? 0) : (hourMap.get(hh)?.count ?? 0)
+          // PCU keeps 1 decimal (like the screen) but stays numeric so the
+          // Excel cells remain summable.
+          hourly[hh] = unit === 'pcu' ? Math.round(v * 10) / 10 : v
+          summed[hh] += v
+        }
+        out.push({
+          label: `${cam} · ${thaiDate(day)} (${unitLabel})`,
+          hourly,
+        })
+      }
+      if (days.length > 0) {
+        for (const hh of EXPORT_HOURS) {
+          summed[hh] = unit === 'pcu' ? Math.round(summed[hh] * 10) / 10 : summed[hh]
+        }
+        out.push({ label: `${cam} · รวมเฉลี่ย (${unitLabel})`, hourly: summed })
+      }
+    }
+  }
+  return out
+}
+
 /** Tab content for "รายงานการนับปริมาณจราจร".
  *
  *  Layout:
@@ -301,7 +536,7 @@ const toBackendReportType = (v: string): CountingReportType => {
  *  `useTrafficVolumeReportSummary`. Month / year / vehicle_type still
  *  consume mocks until the backend ships their payloads. */
 const ReportVolume: React.FC<Props> = () => {
-  const { id: solutionId } = useDetailContext()
+  const { id: solutionId, location } = useDetailContext()
   const deptId = useDeptId()
   const [reportType, setReportType] = useState<string>('daily')
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
@@ -310,6 +545,7 @@ const ReportVolume: React.FC<Props> = () => {
   // BY_TYPE = per-vehicle-type columns; MATRIX = camera × hour grid with
   // color banding.
   const [hourView, setHourView] = useState<HourView>('BY_TYPE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Switching TO hour report snaps the date range to today (single-day) —
   // hour rollups only make sense for one day at a time. Other report types
@@ -382,7 +618,9 @@ const ReportVolume: React.FC<Props> = () => {
   // cascading render.
   // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [monthlyPage, setMonthlyPage] = useState(1)
+  const [monthlyPageSize, setMonthlyPageSize] = useState(10)
   const [yearlyPage, setYearlyPage] = useState(1)
+  const [yearlyPageSize, setYearlyPageSize] = useState(10)
   const resetKey = `${reportType}|${startDate ?? ''}|${endDate ?? ''}|${cameraId}`
   const [prevResetKey, setPrevResetKey] = useState(resetKey)
   if (prevResetKey !== resetKey) {
@@ -538,8 +776,7 @@ const ReportVolume: React.FC<Props> = () => {
     return map
   }, [dailyHelperRows])
 
-  // Monthly — same shape as daily; client-paginated at 10 per page.
-  const MONTHLY_PAGE_SIZE = 10
+  // Monthly — same shape as daily; client-paginated (page size selectable).
   const monthlyRowsAll = useMemo<MonthlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -550,18 +787,13 @@ const ReportVolume: React.FC<Props> = () => {
     [allApiRows, daysCollectedByMonth]
   )
   const monthlyRows = useMemo<MonthlyReportRow[]>(() => {
-    const start = (monthlyPage - 1) * MONTHLY_PAGE_SIZE
-    return monthlyRowsAll.slice(start, start + MONTHLY_PAGE_SIZE)
-  }, [monthlyRowsAll, monthlyPage])
-  const monthlyTotalPages = Math.max(
-    1,
-    Math.ceil(monthlyRowsAll.length / MONTHLY_PAGE_SIZE)
-  )
+    const start = (monthlyPage - 1) * monthlyPageSize
+    return monthlyRowsAll.slice(start, start + monthlyPageSize)
+  }, [monthlyRowsAll, monthlyPage, monthlyPageSize])
   const showMonthlyPagination =
-    reportType === 'month' && monthlyTotalPages > 1
+    reportType === 'month' && monthlyRowsAll.length > 0
 
-  // Yearly — same shape as daily/monthly; client-paginated at 10 per page.
-  const YEARLY_PAGE_SIZE = 10
+  // Yearly — same shape as daily/monthly; client-paginated (page size selectable).
   const yearlyRowsAll = useMemo<YearlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -572,15 +804,11 @@ const ReportVolume: React.FC<Props> = () => {
     [allApiRows, daysCollectedByYear]
   )
   const yearlyRows = useMemo<YearlyReportRow[]>(() => {
-    const start = (yearlyPage - 1) * YEARLY_PAGE_SIZE
-    return yearlyRowsAll.slice(start, start + YEARLY_PAGE_SIZE)
-  }, [yearlyRowsAll, yearlyPage])
-  const yearlyTotalPages = Math.max(
-    1,
-    Math.ceil(yearlyRowsAll.length / YEARLY_PAGE_SIZE)
-  )
+    const start = (yearlyPage - 1) * yearlyPageSize
+    return yearlyRowsAll.slice(start, start + yearlyPageSize)
+  }, [yearlyRowsAll, yearlyPage, yearlyPageSize])
   const showYearlyPagination =
-    reportType === 'year' && yearlyTotalPages > 1
+    reportType === 'year' && yearlyRowsAll.length > 0
 
   // Hourly — group every fetched row by camera (now we have ALL rows so
   // each group contains the camera's full hour list). Narrow by the
@@ -636,6 +864,140 @@ const ReportVolume: React.FC<Props> = () => {
     [reportType, filteredHourRows, allApiRows]
   )
 
+  // ── นำออกเอกสาร ────────────────────────────────────────────────────────
+  // Hour rows flattened with their camera name — same rows the BY_TYPE
+  // table renders inside its camera groups, each group closed by the same
+  // trailing "รวมเฉลี่ย" row the screen shows (sums of that camera's rows).
+  const hourlyExportRows = useMemo<HourlyExportRow[]>(
+    () =>
+      filteredHourlyGroups.flatMap((g) => {
+        const rows: HourlyExportRow[] = g.rows.map((r) => ({ ...r, cameraName: g.cameraName }))
+        if (rows.length > 0) {
+          rows.push({
+            ...sumNumericCells(rows),
+            hourTimestamp: '',
+            cameraName: g.cameraName,
+            _summaryLabel: 'รวมเฉลี่ย',
+          })
+        }
+        return rows
+      }),
+    [filteredHourlyGroups]
+  )
+
+  // Matrix rows are only built while that view is active — the grouping
+  // walks every fetched hour row.
+  const matrixExportRows = useMemo<MatrixExportRow[]>(
+    () =>
+      reportType === 'hour' && hourView === 'MATRIX'
+        ? buildMatrixExportRows(filteredHourRows)
+        : [],
+    [reportType, hourView, filteredHourRows]
+  )
+
+  /** Everything the modal + both handlers need for the ACTIVE report type —
+   *  the same rows the on-screen table renders. Month/year default to the
+   *  whole filtered set (every page) and additionally carry `pageRows` so the
+   *  modal's หน้าปัจจุบัน scope can export just the visible slice. */
+  const exportSpec = useMemo<ExportSpec>(() => {
+    switch (reportType) {
+      case 'hour':
+        return hourView === 'MATRIX'
+          ? makeExportSpec({
+              filenameBase: 'Traffic_Volume_Hourly_Matrix',
+              title: 'รายงานสรุปรายชั่วโมงปริมาณจราจร แบบ Matrix (Hourly Traffic Volume Matrix)',
+              sheetName: 'Hourly Matrix',
+              columns: MATRIX_EXPORT_COLUMNS,
+              rows: matrixExportRows,
+              // Matrix rows carry embedded "รวมเฉลี่ย" lines — count only data lines.
+              dataCount: matrixExportRows.filter((r) => !r.label.includes('รวมเฉลี่ย')).length,
+            })
+          : makeExportSpec({
+              filenameBase: 'Traffic_Volume_Hourly_Report',
+              title: 'รายงานสรุปรายชั่วโมงปริมาณจราจร (Hourly Traffic Volume Report)',
+              sheetName: 'Hourly Report',
+              columns: HOURLY_EXPORT_COLUMNS,
+              rows: hourlyExportRows,
+              dataCount: hourlyExportRows.filter((r) => !r._summaryLabel).length,
+            })
+      case 'month':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Monthly_Report',
+          title: 'รายงานสรุปรายเดือนปริมาณจราจร (Monthly Traffic Volume Report)',
+          sheetName: 'Monthly Report',
+          columns: MONTHLY_EXPORT_COLUMNS,
+          rows: withSummaryRow(monthlyRowsAll, { year: 0, month: 0 }),
+          dataCount: monthlyRowsAll.length,
+          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
+          // re-summed from just that slice.
+          pageRows: withSummaryRow(monthlyRows, { year: 0, month: 0 }),
+          pageDataCount: monthlyRows.length,
+        })
+      case 'year':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Yearly_Report',
+          title: 'รายงานสรุปรายปีปริมาณจราจร (Yearly Traffic Volume Report)',
+          sheetName: 'Yearly Report',
+          columns: YEARLY_EXPORT_COLUMNS,
+          rows: withSummaryRow(yearlyRowsAll, { year: 0 }),
+          dataCount: yearlyRowsAll.length,
+          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
+          // re-summed from just that slice.
+          pageRows: withSummaryRow(yearlyRows, { year: 0 }),
+          pageDataCount: yearlyRows.length,
+        })
+      case 'vehicle_type':
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Vehicle_Type_Report',
+          title: 'รายงานวิเคราะห์ตามประเภทรถ (Vehicle Type Analysis Report)',
+          sheetName: 'Vehicle Type Report',
+          columns: VEHICLE_TYPE_EXPORT_COLUMNS,
+          rows: vehicleTypeRows,
+          dataCount: vehicleTypeRows.length,
+        })
+      case 'daily':
+      default:
+        return makeExportSpec({
+          filenameBase: 'Traffic_Volume_Daily_Report',
+          title: 'รายงานสรุปรายวันปริมาณจราจร (Daily Traffic Volume Report)',
+          sheetName: 'Daily Report',
+          columns: DAILY_EXPORT_COLUMNS,
+          rows: withSummaryRow(dailyRowsAll, { date: '' }),
+          dataCount: dailyRowsAll.length,
+        })
+    }
+  }, [
+    reportType,
+    hourView,
+    matrixExportRows,
+    hourlyExportRows,
+    monthlyRowsAll,
+    monthlyRows,
+    yearlyRowsAll,
+    yearlyRows,
+    vehicleTypeRows,
+    dailyRowsAll,
+  ])
+
+  // Human-readable "เงื่อนไข" line for the PDF header — install point +
+  // active date range + camera, so a reader knows the exported subset.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const solutionName = location?.solution?.solution_name
+    if (solutionName) parts.push(`จุดติดตั้ง ${solutionName}`)
+    const [start, end] = effectiveRange
+    if (start && end) {
+      parts.push(
+        `ช่วงวันที่ ${start.locale('th').format('D MMM BBBB')} - ${end.locale('th').format('D MMM BBBB')}`
+      )
+    }
+    if (cameraId !== 'all') {
+      const cameraLabel = cameraOptions.find((o) => o.value === cameraId)?.label
+      if (cameraLabel) parts.push(`กล้อง ${cameraLabel}`)
+    }
+    return parts.length ? parts.join(' · ') : undefined
+  }, [location, effectiveRange, cameraId, cameraOptions])
+
   const renderTable = () => {
     switch (reportType) {
       case 'hour':
@@ -654,10 +1016,14 @@ const ReportVolume: React.FC<Props> = () => {
           <div className='flex flex-col gap-3'>
             <MonthlyReportTable rows={monthlyRows} />
             {showMonthlyPagination && (
-              <BluePagination
+              <AppPagination
                 current={monthlyPage}
-                total={monthlyTotalPages}
-                onChange={setMonthlyPage}
+                pageSize={monthlyPageSize}
+                total={monthlyRowsAll.length}
+                onChange={(p, s) => {
+                  setMonthlyPage(p)
+                  setMonthlyPageSize(s)
+                }}
               />
             )}
           </div>
@@ -667,10 +1033,14 @@ const ReportVolume: React.FC<Props> = () => {
           <div className='flex flex-col gap-3'>
             <YearlyReportTable rows={yearlyRows} />
             {showYearlyPagination && (
-              <BluePagination
+              <AppPagination
                 current={yearlyPage}
-                total={yearlyTotalPages}
-                onChange={setYearlyPage}
+                pageSize={yearlyPageSize}
+                total={yearlyRowsAll.length}
+                onChange={(p, s) => {
+                  setYearlyPage(p)
+                  setYearlyPageSize(s)
+                }}
               />
             )}
           </div>
@@ -720,7 +1090,46 @@ const ReportVolume: React.FC<Props> = () => {
         onCameraChange={setCameraId}
         hourView={hourView}
         onHourViewChange={setHourView}
+        onExport={() => setExportOpen(true)}
       />
+
+      {/* ── นำออกเอกสาร — exports the ACTIVE report type's table through the
+            shared pdf/excel utils (columns + rows swap per exportSpec). The
+            ทั้งหมด/หน้าปัจจุบัน scope toggle appears only for month/year —
+            the only report types whose on-screen table paginates (exportSpec
+            carries `pageRows` for them); the rest keep the plain count. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportSpec.dataCount}
+        scope={
+          exportSpec.pageRows
+            ? { totalCount: exportSpec.dataCount, pageCount: exportSpec.pageDataCount ?? 0 }
+            : undefined
+        }
+        onExportPdf={async (scope) => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: exportSpec.filenameBase,
+            title: exportSpec.title,
+            filterNote: exportFilterNote,
+            columns: exportSpec.columns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: scope === 'page' && exportSpec.pageRows ? exportSpec.pageRows : exportSpec.rows,
+          })
+        }}
+        onExportExcel={async (scope) => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: exportSpec.filenameBase,
+            title: exportSpec.title,
+            filterNote: exportFilterNote,
+            sheetName: exportSpec.sheetName,
+            columns: exportSpec.columns.map(({ header, width, value }) => ({ header, width, value })),
+            rows: scope === 'page' && exportSpec.pageRows ? exportSpec.pageRows : exportSpec.rows,
+          })
+        }}
+      />
+
       {renderStats()}
       {renderTable()}
     </div>

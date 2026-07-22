@@ -344,42 +344,41 @@ const MediaLibraryTab: React.FC = () => {
                     style={{ aspectRatio: '16/9' }}
                     onClick={() => setPreviewing(it)}
                   >
-                    {isVideo ? (
-                      <video
-                        src={it.url}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      // Grid uses the .thumb.jpg sibling (~15 KB) instead of
-                      // the full-res original (~2 MB PNG). onError falls back
-                      // to the original url so older uploads that predate the
-                      // backfill still render.
-                      <img
-                        src={getThumbUrl(it.url)}
-                        alt={it.name}
-                        loading="lazy"
-                        onError={(e) => {
-                          const img = e.currentTarget
-                          if (img.dataset.fallback !== '1') {
-                            img.dataset.fallback = '1'
-                            img.src = it.url
-                          }
-                        }}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
+                    {/* Grid uses the .thumb.jpg sibling for BOTH images
+                        and videos — backend ffmpeg-extracts the first
+                        frame at upload. Videos fall back to a solid
+                        placeholder if the thumb generation failed,
+                        rather than loading a whole MP4 as a poster. */}
+                    <img
+                      src={getThumbUrl(it.url)}
+                      alt={it.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget
+                        if (img.dataset.fallback !== '1') {
+                          img.dataset.fallback = '1'
+                          // For videos with no thumb, blank the src so
+                          // the play badge overlay speaks for itself.
+                          img.src = isVideo ? '' : it.url
+                        }
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                    {isVideo && (
+                      <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-lg">▶</span>
+                      </span>
                     )}
                     {isVideo && (
-                      <span className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">
+                      <span className="absolute top-2 left-2 fs-12 px-1.5 py-0.5 rounded bg-black/70 text-white">
                         VIDEO
                       </span>
                     )}
                   </div>
                   <div className="p-2">
-                    <div className="text-xs flex items-center justify-between gap-2">
+                    <div className="fs-12 flex items-center justify-between gap-2">
                       <span
-                        className="px-1.5 py-0.5 rounded text-[10px] font-medium truncate"
+                        className="px-1.5 py-0.5 rounded fs-12 font-medium truncate"
                         style={{
                           background: it.setting_type_name ? '#FCD11622' : 'rgba(255,255,255,0.08)',
                           color: it.setting_type_name ? '#FCD116' : 'rgba(255,255,255,0.6)',
@@ -388,7 +387,7 @@ const MediaLibraryTab: React.FC = () => {
                         {it.setting_type_name || 'อื่นๆ'}
                       </span>
                       <Tooltip title={dayjs(it.uploaded_at).format('YYYY-MM-DD HH:mm')}>
-                        <span className="text-white/50 text-[10px]">
+                        <span className="text-white/50 fs-12">
                           {dayjs(it.uploaded_at).locale('th').fromNow()}
                         </span>
                       </Tooltip>
@@ -451,7 +450,7 @@ const MediaLibraryTab: React.FC = () => {
 
       {/* Paging */}
       {meta && meta.total_pages > 1 && (
-        <div className="px-4 py-2 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
+        <div className="px-4 py-2 border-t border-white/10 flex items-center justify-between fs-12 text-white/60">
           <div>
             หน้า {meta.page} / {meta.total_pages} · {meta.count} รายการ
             {isFetching && <span className="ml-2 opacity-70">(กำลังโหลด…)</span>}
@@ -511,7 +510,7 @@ const MediaLibraryTab: React.FC = () => {
       >
         <div className="space-y-3">
           <div>
-            <div className="text-xs text-slate-500 mb-1">หมวดหมู่ (ไม่บังคับ)</div>
+            <div className="fs-12 text-slate-500 mb-1">หมวดหมู่ (ไม่บังคับ)</div>
             <Select
               placeholder="ปล่อยว่างไว้ = 'อื่นๆ'"
               allowClear
@@ -563,7 +562,7 @@ const MediaLibraryTab: React.FC = () => {
                 <TbCloudUpload size={48} />
               </div>
               <div className="mt-2 text-sm text-slate-700">ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือก</div>
-              <div className="text-xs text-slate-500 mt-1">
+              <div className="fs-12 text-slate-500 mt-1">
                 รองรับรูปภาพและวิดีโอ · 1 ไฟล์ต่อครั้ง · ขนาดไม่เกิน {MAX_MB}MB
               </div>
             </div>
@@ -594,7 +593,7 @@ const MediaLibraryTab: React.FC = () => {
                       />
                     )}
                     {s.status === 'done' && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white fs-12 px-2 py-1 rounded">
                         <TbCircleCheckFilled size={14} /> อัปโหลดสำเร็จ
                       </div>
                     )}
@@ -609,7 +608,7 @@ const MediaLibraryTab: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center justify-between fs-12 text-slate-500">
                     <span>
                       {(s.file.size / 1024 / 1024).toFixed(2)} MB · {isVideoMime(s.file.type) ? 'วิดีโอ' : 'รูปภาพ'}
                     </span>
@@ -631,7 +630,7 @@ const MediaLibraryTab: React.FC = () => {
                     />
                   )}
                   {s.status === 'error' && (
-                    <div className="text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                    <div className="fs-12 text-red-500 mt-0.5 flex items-center gap-1">
                       <TbAlertTriangle size={12} /> {s.errorMsg}
                     </div>
                   )}
@@ -688,7 +687,7 @@ const MediaLibraryTab: React.FC = () => {
               )}
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-1">หมวดหมู่</div>
+              <div className="fs-12 text-slate-500 mb-1">หมวดหมู่</div>
               <Select
                 placeholder="อื่นๆ"
                 allowClear
@@ -737,7 +736,7 @@ const MediaLibraryTab: React.FC = () => {
                   />
                 )}
               </div>
-              <div className="mt-3 text-xs text-white/70 flex items-center gap-3 flex-wrap">
+              <div className="mt-3 fs-12 text-white/70 flex items-center gap-3 flex-wrap">
                 <span>หมวด: <b className="text-white">{previewing.setting_type_name || 'อื่นๆ'}</b></span>
                 <span>อัปโหลด: {dayjs(previewing.uploaded_at).format('DD MMM YYYY HH:mm')} · {dayjs(previewing.uploaded_at).locale('th').fromNow()}</span>
               </div>
@@ -783,7 +782,7 @@ const MediaLibraryTab: React.FC = () => {
 const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = ({ active, label, onClick }) => (
   <button
     onClick={onClick}
-    className="text-xs px-3 py-1 rounded-full transition-colors border"
+    className="fs-12 px-3 py-1 rounded-full transition-colors border"
     style={{
       background: active ? '#FCD116' : 'transparent',
       color: active ? '#191919' : '#FCD116',

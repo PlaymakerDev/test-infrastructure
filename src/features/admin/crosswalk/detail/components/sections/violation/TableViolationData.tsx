@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Image, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
@@ -7,11 +7,14 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import { type ViolationFilter } from './filter'
-import BluePagination from './BluePagination'
-import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
+import AppPagination from '@/components/pagination/AppPagination'
+import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
+  /** Reports pagination up to the parent section so the export modal's
+   *  หน้าปัจจุบัน scope can mirror the exact rows this table shows. */
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
 interface Row extends CrosswalkViolationRow {
@@ -20,11 +23,12 @@ interface Row extends CrosswalkViolationRow {
 
 const PAGE_SIZE = 10
 
-const TableViolationData: React.FC<Props> = ({ filter }) => {
+const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
-  const { pageRows, totalPages, page, setPage, isLoading, pageStart } =
-    useViolationRows(filter, PAGE_SIZE)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+  const { pageRows, total, page, setPage, isLoading, pageStart } =
+    useViolationRows(filter, pageSize)
 
   // `/details/list` returns `camera.sta` that's often empty. Look up the real
   // ip_address from the cached `/cameras` list — a single request shared with
@@ -66,11 +70,18 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
       title: 'ประเภทเหตุการณ์',
       key: 'eventType',
       width: 260,
-      render: (_, row) => (
-        <span className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border border-[#E94C4C] text-[#E94C4C]'>
-          {row.crosswalk.name_th}
-        </span>
-      ),
+      render: (_, row) => {
+        // รถ (vehicle) → orange; คน (pedestrian) → the original red.
+        const color = isVehicleViolation(row.crosswalk.name_th) ? '#FF7B00' : '#E94C4C'
+        return (
+          <span
+            className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border'
+            style={{ borderColor: color, color }}
+          >
+            {row.crosswalk.name_th}
+          </span>
+        )
+      },
     },
     {
       title: 'กล้อง',
@@ -108,7 +119,7 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
     },
   ]
 
-  const showPagination = totalPages > 1
+  const showPagination = total > 0
 
   return (
     <div className='flex flex-col gap-3'>
@@ -123,7 +134,16 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
         className='bridge-projects-table'
       />
       {showPagination && (
-        <BluePagination current={page} total={totalPages} onChange={setPage} />
+        <AppPagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={(p, s) => {
+            setPage(p)
+            setPageSize(s)
+            onPageChange?.(p, s)
+          }}
+        />
       )}
     </div>
   )

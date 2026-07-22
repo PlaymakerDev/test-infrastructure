@@ -153,7 +153,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
             {icon}
           </div>
         )}
-        <h2 style={{ color: '#FCD116', fontSize: titleSize }}>
+        <h2 className='font-normal!' style={{ color: '#FCD116', fontSize: titleSize }}>
           {title}
         </h2>
       </div>
@@ -162,7 +162,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
       <div className='flex items-start gap-4'>
 
         {/* Gauge canvas */}
-        <div className='flex-shrink-0' style={{ width: '52%' }}>
+        <div className='shrink-0' style={{ width: '52%' }}>
           <ReactECharts
             option={option}
             style={{ height }}

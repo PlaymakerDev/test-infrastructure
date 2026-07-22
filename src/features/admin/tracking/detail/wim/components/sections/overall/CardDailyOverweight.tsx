@@ -28,7 +28,7 @@ const CardDailyOverweight: React.FC<Props> = (props) => {
   }, [findGrossWeightOver, data?.data])
 
   return (
-    <div className="flex h-full bg-[#E982821A] border-2 rounded-xl border-red-500 overflow-hidden min-h-32.5">
+    <div className="flex h-full bg-[#E982821A] border-2 rounded-2xl border-red-500 overflow-hidden min-h-32.5">
       <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
         <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
       </div>

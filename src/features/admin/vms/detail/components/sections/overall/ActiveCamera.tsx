@@ -24,20 +24,23 @@ const ActiveCamera: React.FC<Props> = (props) => {
         loop={cameras.length > 1}
         modules={[Pagination]}
         pagination={{ clickable: true }}
-        autoHeight
-        className='w-full'
+        className='w-full flex-1 min-h-0'
       >
         {cameras.map((item, index) => (
-          <SwiperSlide key={item.id ?? index} className='bg-transparent! pb-7'>
+          <SwiperSlide key={item.id ?? index} className='bg-transparent! h-full! flex flex-col pb-7'>
             <HLSLivePlayer
               cameraId={String(item.camera.id)}
               hlsUrl={item.camera.hls_url}
               enableViewportPause
-              figureClassName='figure-extra-large lg:h-60! lg:min-h-0! lg:max-h-none! w-full mb-2 rounded-2xl overflow-hidden cursor-pointer'
+              figureClassName='flex-1 min-h-0 w-full mb-2 rounded-2xl overflow-hidden cursor-pointer'
               onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.camera_id }))}
             />
-            <h4 className='text-(--default-blue) font-normal! truncate'>{item.camera.camera_name || '-'}</h4>
-            <p className='fs-12 text-gray-400'>IP Address : {item.camera.ip_address || '-'}</p>
+            {/* Same caption design as the VMS overall random-camera card
+              * (CCTVSection): `camera-code` wraps long names via word-break and
+              * `camera-location` for the IP line — so a long VMS caption (e.g.
+              * "TrafficSign : …") wraps inside the card instead of overflowing. */}
+            <h4 className='camera-code'>{item.camera.camera_name || '-'}</h4>
+            <p className='camera-location'>IP Address : {item.camera.ip_address || '-'}</p>
           </SwiperSlide>
         ))}
       </Swiper>

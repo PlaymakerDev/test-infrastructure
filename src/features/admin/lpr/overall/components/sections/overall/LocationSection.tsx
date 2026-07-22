@@ -21,9 +21,12 @@ const LocationSection: React.FC<Props> = (props) => {
       <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
         <MapSection deptId={deptId!} />
       </div>
+      {/* Right rail mirrors incident-detection's: no overflow-y-auto — the
+        * antd-Row negative margins used to poke past the panel edge and spawn
+        * a horizontal scrollbar under the KPI cards (2026-07-20). */}
       <MapOverlayPanel
         position='right'
-        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:overflow-y-auto lg:h-full flex flex-col gap-4'
+        className='row-start-3 lg:row-start-1 lg:col-start-3 lg:h-full min-h-0 flex flex-col'
       >
         <InfoCardSection deptId={deptId!} />
       </MapOverlayPanel>

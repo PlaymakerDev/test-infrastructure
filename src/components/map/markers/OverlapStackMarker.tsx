@@ -49,6 +49,9 @@ export interface OverlapStackMarkerProps {
   /** Only render at/above this zoom (the country-level STCH summary owns the
    *  lower zooms). Mirrors `DeviceClusterMarker.minZoom`. */
   minZoom?: number
+  /** Fired on ANY interaction with this stack (expand, single pin, or a fanned
+   *  device). The dashboard uses it to reveal its map-only landing overlays. */
+  onMarkerClick?: () => void
 }
 
 // Match the normal MarkerLayer pin diameter (circleRadius 16 → 32 px). Keeps
@@ -75,6 +78,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   center,
   visibleTypes,
   minZoom = 6.5,
+  onMarkerClick,
 }) => {
   const { map, isLoaded } = useMap()
   // Captured here (inside the App Router provider) so the detached-root popup
@@ -128,7 +132,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
       <HTMLMarker
         lngLat={center}
         title={d.id}
-        onClick={() => showPopup(d)}
+        onClick={() => { onMarkerClick?.(); showPopup(d) }}
       >
         <DeviceIcon device={d} size={MARKER_SIZE} />
       </HTMLMarker>
@@ -153,6 +157,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
           type='button'
           onClick={(e) => {
             e.stopPropagation()
+            onMarkerClick?.()
             setExpanded((v) => !v)
           }}
           title={
@@ -191,6 +196,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
                 type='button'
                 onClick={(e) => {
                   e.stopPropagation()
+                  onMarkerClick?.()
                   showPopup(d)
                 }}
                 title={`${SYSTEMS[d.type].label} · ${d.id}`}

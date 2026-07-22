@@ -3,14 +3,13 @@ import React, { useCallback, useMemo, useState } from 'react'
 import {
   TbHome,
   TbVideo,
-  TbTruckDelivery,
+  TbCar,
   TbTrafficLights,
   TbWalk,
   TbBolt,
   TbDeviceDesktop,
   TbBuildingBridge,
   TbBuildingBridge2,
-  TbTopologyStar3,
   TbAdjustmentsHorizontal,
   TbBriefcase,
   // TbChartBar,
@@ -22,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
 import IconLPR from '@/components/icon/IconLPR'
+import IconTracking from '@/components/icon/IconTracking'
 import IconAIChat from '@/components/icon/IconAIChat'
 import menu from '@/configs/menu'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
@@ -31,7 +31,7 @@ import { APIResponseSidebar } from '@/types/layout/api';
 const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "Dashboard": TbHome,
   "CCTV": TbVideo,
-  "Traffic Volume": TbTruckDelivery,
+  "Traffic Volume": TbCar,
   "Incident Detection": TbCarCrash,
   "Traffic Signal": TbTrafficLights,
   "Crosswalk": TbWalk,
@@ -39,7 +39,7 @@ const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string
   "VMS": TbDeviceDesktop,
   "Bridge Lighting": TbBuildingBridge,
   "Tunnel": TbBuildingBridge2,
-  "Tracking": TbTopologyStar3,
+  "Tracking": IconTracking,
   // Same custom scan-frame glyph as the navbar's LPR menu (IconLPR).
   "LPR": IconLPR,
   "Control VMS": TbAdjustmentsHorizontal,

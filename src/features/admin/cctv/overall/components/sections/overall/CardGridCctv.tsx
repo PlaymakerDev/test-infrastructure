@@ -12,6 +12,7 @@ import {
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { CCTVOverviewListItem, CCTVOverviewRow } from '@/types/cctv/overview-api'
 
 // ── Pill badge ───────────────────────────────────────────────────────────────
@@ -56,13 +57,15 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
     >
       {/* Title — project name (ชื่อโครงการ). Clamped so long names don't make
         * cards wildly different heights; full text on hover. */}
-      <h4
-        className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
-        style={{ color: 'var(--yellow)' }}
-        title={item.project.project_name}
-      >
-        {item.project.project_name}
-      </h4>
+      {SHOW_PROJECT_NAME && (
+        <h4
+          className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
+          style={{ color: 'var(--yellow)' }}
+          title={item.project.project_name}
+        >
+          {item.project.project_name}
+        </h4>
+      )}
 
       {/* Badges row */}
       <div className='flex flex-wrap items-center gap-2'>

@@ -22,6 +22,7 @@ const WIMSection = () => {
       <section>
         <WIMLocationSection
           onSearch={setSearchText}
+          searchText={deferredSearch}
         />
       </section>
       <section className='mt-5'>

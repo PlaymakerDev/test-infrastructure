@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { APIResponseStationDaily, StationDailyData } from '@/types/tracking/detail-api'
@@ -19,6 +19,12 @@ const STATUS_CLASS: Record<StatusType, string> = {
 
 const TableLatestStation: React.FC<Props> = (props) => {
   const { data } = props
+
+  const sortedData = useMemo(() => {
+    return [...(data?.data ?? [])].sort((a, b) =>
+      dayjs(b.date_time, 'DD/MM/BBBB').valueOf() - dayjs(a.date_time, 'DD/MM/BBBB').valueOf()
+    )
+  }, [data?.data])
 
   const getStatus = useCallback((remark: string, total: number) => {
     if (total > 0) return 'เปิดปกติ'
@@ -93,7 +99,7 @@ const TableLatestStation: React.FC<Props> = (props) => {
   return (
     <Table<StationDailyData>
       columns={columns}
-      dataSource={data?.data}
+      dataSource={sortedData}
       pagination={false}
       size="middle"
       rowKey="key"

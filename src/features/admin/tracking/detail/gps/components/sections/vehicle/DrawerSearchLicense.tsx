@@ -3,8 +3,14 @@ import { Drawer } from 'antd'
 import React, { useEffect, useState } from 'react'
 import SearchLicenseSection from './SearchLicenseSection'
 import { useGPSContext } from '../../../context'
+import { VehicleLocationData } from '@/types/tracking/detail-gps-api'
 
-const DrawerSearchLicense: React.FC = () => {
+interface Props {
+  data?: VehicleLocationData
+}
+
+const DrawerSearchLicense: React.FC<Props> = (props) => {
+  const { data } = props
   const { licenseOpen, setLicenseOpen } = useGPSContext()
   const [isXl, setIsXl] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1280px)').matches : false
@@ -32,8 +38,12 @@ const DrawerSearchLicense: React.FC = () => {
         close: { color: 'white' },
       }}
       title='รายการทะเบียน'
+      size={600}
     >
-      <SearchLicenseSection openFromDrawer={true} />
+      <SearchLicenseSection
+        openFromDrawer={true}
+        data={data}
+      />
     </Drawer>
   )
 }

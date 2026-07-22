@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { TbPhotoOff } from 'react-icons/tb'
 import SearchBar, { type FilterConfig, type ViewMode } from '@/components/searchable/SearchBar'
 import EventDetailModal from '@/features/admin/incident-detection/components/EventDetailModal'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useIncidentTransactions } from '@/hooks/queries/incident-detection'
 import type { IncidentTransactionItem } from '@/types/incident-detection/details-api'
 import { useIncidentDetailContext } from '../context'
@@ -108,6 +109,24 @@ const FILTER_CONFIG: FilterConfig[] = [
   { key: 'ปิดกั้นทาง', label: 'ปิดกั้นทาง', colorPrimary: '#FF00F2', colorTextLightSolid: '#0A0A0A', badgeActiveClass: 'bg-[#7a0075] text-white', badgeIdleClass: 'bg-[#FF00F2]/20 text-[#FF00F2]' },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (วันที่และเวลา → ประเภทเหตุการณ์ → ชื่อกล้อง →
+// IP Address). ภาพขณะเกิดเหตุ is a click-to-preview image with no text value,
+// so it has no export column. `width` = Excel chars, `widthPct` = PDF table
+// percent (sums to 100).
+const INCIDENT_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: IncidentRecord, index: number) => string | number
+}[] = [
+  { header: 'วันที่และเวลา', width: 18, widthPct: 16, value: (r) => r.datetime },
+  { header: 'ประเภทเหตุการณ์', width: 22, widthPct: 20, value: (r) => r.eventType },
+  { header: 'ชื่อกล้อง', width: 40, widthPct: 44, align: 'left', value: (r) => r.cameraName || '-' },
+  { header: 'IP Address', width: 18, widthPct: 20, value: (r) => r.ipAddress || '-' },
+]
+
 interface IncidentDetailTableProps {
   /** Already validated against the selected route by the parent screen. */
   solutionId: string
@@ -118,6 +137,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
   const [activeTab, setActiveTab] = React.useState('ALL')
   const [viewMode, setViewMode] = React.useState<ViewMode>('TABLE')
   const [selected, setSelected] = React.useState<IncidentTransactionItem | null>(null)
+  const [exportOpen, setExportOpen] = React.useState(false)
   const { dateRange } = useIncidentDetailContext()
 
   const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
@@ -227,6 +247,19 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
   // from `stats`/`records` (the full unsliced set), so counts stay accurate.
   const tableData = React.useMemo(() => filteredData.slice(0, 10), [filteredData])
 
+  // Human-readable note of the active filter/date range — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = React.useMemo(() => {
+    const parts: string[] = []
+    if (activeTab !== 'ALL') {
+      parts.push(`ประเภทเหตุการณ์ ${FILTER_CONFIG.find((f) => f.key === activeTab)?.label ?? activeTab}`)
+    }
+    if (startDate && endDate) {
+      parts.push(`ช่วงวันที่ ${dayjs(startDate).format('DD/MM/YYYY')} - ${dayjs(endDate).format('DD/MM/YYYY')}`)
+    }
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeTab, startDate, endDate])
+
   if (isLoading) {
     return <div className="min-h-48 flex items-center justify-center"><Spin size="large" /></div>
   }
@@ -252,12 +285,44 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
           onFilterChange={(key) => setActiveTab(key)}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
+          onExport={() => setExportOpen(true)}
+          // Deliberately hidden pre-export (original design) — wiring stays so
+          // flipping this flag is all it takes to enable the button.
           showExportButton={false}
           // Mobile: 2-column grid so each tab fills half the row (2 per line,
           // no scrollbar). Desktop: flex row as usual.
           filterClassName="grid grid-cols-2 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED events (what the
+          table/grid shows), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filteredData.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Incident_Events_Report',
+            title: 'รายงานเหตุการณ์ที่ตรวจพบ (Incident Events)',
+            filterNote: exportFilterNote,
+            columns: INCIDENT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: filteredData,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Incident_Events_Report',
+            sheetName: 'Incident Events',
+            title: 'รายงานเหตุการณ์ที่ตรวจพบ (Incident Events)',
+            filterNote: exportFilterNote,
+            columns: INCIDENT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: filteredData,
+          })
+        }}
+      />
       {viewMode === 'TABLE' ? (
         <Table<IncidentRecord>
           columns={columns}

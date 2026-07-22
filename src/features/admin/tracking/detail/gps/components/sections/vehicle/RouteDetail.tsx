@@ -1,11 +1,18 @@
 "use client"
-import React from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { TbMapPin } from 'react-icons/tb'
 import { useGPSContext } from '../../../context'
 import Image from 'next/image'
 import { Button } from 'antd'
 import type { ButtonColorType } from 'antd/es/button/buttonHelpers'
 import { motion } from 'motion/react'
+import { GeoRoadData, VehicleLocationData } from '@/types/tracking/detail-gps-api'
+import { fmtNumber } from '@/utils/formatNumber'
+
+interface Props {
+  road?: GeoRoadData
+  vehicle?: VehicleLocationData
+}
 
 interface VehicleStatus {
   img: string
@@ -14,6 +21,8 @@ interface VehicleStatus {
   labelClass: string
   key: string
   count: number
+  /** Tab key in `LicenseTabContent` this status should open to by default. */
+  tabKey: string
 }
 
 const VEHICLE_STATUSES: VehicleStatus[] = [
@@ -24,6 +33,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-lime-500',
     key: 'moving',
     count: 0,
+    tabKey: '2',
   },
   {
     img: '/atlas/images/vehicles/status/orange_vehicle.png',
@@ -32,6 +42,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-orange-500',
     key: 'parked',
     count: 0,
+    tabKey: '3',
   },
   {
     img: '/atlas/images/vehicles/status/red_vehicle.png',
@@ -40,11 +51,31 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     labelClass: 'text-red-500',
     key: 'overweight',
     count: 0,
+    tabKey: '4',
   },
 ]
 
-const RouteDetail: React.FC = () => {
-  const { route, setLicenseOpen } = useGPSContext()
+const RouteDetail: React.FC<Props> = (props) => {
+  const { road, vehicle } = props
+  const { setLicenseOpen, setLicenseTab } = useGPSContext()
+
+  const countData = useMemo(() => {
+    return VEHICLE_STATUSES.map((item) => {
+      let count
+      if (item.label === "รถเคลื่อนที่") count = vehicle?.vehicle_count.normal_vehicle_count
+      if (item.label === "รถจอด") count = vehicle?.vehicle_count.not_moving_count
+      if (item.label === "รถน้ำหนักเกิน") count = vehicle?.vehicle_count.over_weight_history
+      return {
+        ...item,
+        count: fmtNumber(Number(count)) || 0
+      }
+    })
+  }, [vehicle?.vehicle_count])
+
+  const renderDeptBureau = useCallback((deptName: string, bureauName: string) => {
+    const arr = [deptName, bureauName]
+    return arr.join(' ').trim().replace(/\s+/g, ' ')
+  }, [])
 
   return (
     <motion.section
@@ -59,17 +90,17 @@ const RouteDetail: React.FC = () => {
         <div>
           <div className='flex items-center gap-2 mb-2'>
             <TbMapPin className='text-(--yellow) fs-24' />
-            <h3 className='text-(--yellow)'>สายทาง {route.road_code}</h3>
+            <h3 className='text-(--yellow) font-normal!'>สายทาง {road?.road_code || '-'}</h3>
           </div>
-          <p>แยกทางหลวงหมายเลข 331 (กม.ที่ 39+650) - ท่าเรือแหลมฉบัง</p>
-          <p className='fs-12'>{route.road_name} <span className='text-(--yellow)'>สำนักทางหลวงชนบทที่ 3 (ชลบุรี)</span></p>
-          <p className='fs-12 text-gray-400'>จังหวัด ชลบุรี</p>
-          <p className='fs-12 text-blue-500'>ระยะทาง 19.070</p>
+          <p>{road?.route_name || '-'}</p>
+          <p className='fs-12 text-(--yellow)'>{renderDeptBureau(road?.dept_name || '-', road?.bureau_name || '-')}</p>
+          <p className='fs-12 text-gray-400'>จังหวัด {road?.province || '-'}</p>
+          <p className='fs-12 text-(--default-blue)'>ระยะทาง {fmtNumber(Number(road?.length_drr), 3) || 0}</p>
         </div>
 
         {/* Vehicle Status Cards */}
         <div className='grid grid-cols-3 gap-4 lg:flex lg:gap-6 lg:shrink-0'>
-          {VEHICLE_STATUSES.map((status) => (
+          {countData.map((status) => (
             <div key={status.key} className='flex flex-col items-center gap-2'>
               <Image
                 src={status.img}
@@ -87,7 +118,10 @@ const RouteDetail: React.FC = () => {
                 variant='solid'
                 shape='round'
                 block
-                onClick={() => setLicenseOpen(true)}
+                onClick={() => {
+                  setLicenseTab(status.tabKey)
+                  setLicenseOpen(true)
+                }}
               >
                 <span className='font-bold'>{status.count}</span>
               </Button>

@@ -66,6 +66,9 @@ export interface DeviceClusterMarkerProps {
   minZoom?: number
   /** Click on an unclustered device */
   onClick?: (device: Device) => void
+  /** Fired on any cluster-bubble click (in addition to the zoom-to-expand),
+   *  so callers can react without losing the default expansion. */
+  onClusterClick?: () => void
   /**
    * Render JSX inside the popup when a device is clicked.
    * - Pass a function to override the default popup (e.g., add custom actions, link to detail page)
@@ -87,6 +90,7 @@ const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
   VMS: 'vms',
   CrossWalk: 'crosswalk',
   BridgeLighting: 'bridge-lighting',
+  LPR: 'lpr',
 }
 
 /** Default popup body — เมนู (device type) + จุดติดตั้ง + สายทาง, plus a
@@ -119,8 +123,11 @@ export function DefaultDevicePopup({
     (typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('dept_id')
       : null)
+  // `detailId ?? id` — LPR devices prefix their marker id (`lpr-<solution_id>`)
+  // to avoid key collisions with the same solution's /position marker; the
+  // detail route needs the bare solution_id carried in `detailId`.
   const detailUrl = route
-    ? `/admin/${route}/detail/${device.id}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`
+    ? `/admin/${route}/detail/${device.detailId ?? device.id}${deptId ? `?dept_id=${deptId}${scopeQuerySuffix()}` : ''}`
     : null
   // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
   // a popup border/label on the dark map (per Figma: brighter).
@@ -141,7 +148,6 @@ export function DefaultDevicePopup({
       style={{
         padding: '10px 12px',
         minWidth: 210,
-        fontFamily: 'ui-sans-serif,system-ui',
         background: 'rgba(5,13,26,0.96)',
         border: `1px solid ${brightColor}`,
         borderRadius: 10,
@@ -195,6 +201,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
   visibleTypes,
   minZoom = 6.5,
   onClick,
+  onClusterClick,
   popup,
 }) => {
   const { map, isLoaded } = useMap()
@@ -239,6 +246,11 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             id: d.id, type: d.type, road: d.road, landmark: d.landmark,
             unitId: d.unitId, stch: d.stch, solutionName: d.solutionName,
             isOnline: d.isOnline,
+            // Must survive the GeoJSON round-trip — the popup rebuilds the
+            // Device from f.properties, and LPR detail links need the bare
+            // solution_id carried here (omitting it sent /detail/lpr-<id>,
+            // an empty page; reported 2026-07-21).
+            detailId: d.detailId,
             // Tri-state so the data-driven expression can distinguish
             // "definitely offline" from "unknown" — 1=online, 0=offline,
             // -1=unknown (BE hasn't shipped is_online yet).
@@ -298,6 +310,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             minZoom={minZoom}
             visible={visible}
             onClick={(_, feature) => onClick?.(feature.properties as Device)}
+            onClusterClickCapture={onClusterClick ? () => onClusterClick() : undefined}
             popup={popupRenderer}
           />
         )

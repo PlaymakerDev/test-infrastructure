@@ -1,7 +1,11 @@
 "use client"
 import { Alert, Button, message } from 'antd'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPlus, TbPrinter } from 'react-icons/tb'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import SwapButton from '@/components/swap-button/SwapButton'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
 import {
@@ -25,11 +29,53 @@ import LDAPSearchModal from './user/LDAPSearchModal'
 import TableUser from './user/TableUser'
 import UserModal from './user/UserModal'
 
+dayjs.extend(buddhistEra)
+
 const initialFilters: UserFilters = {
   role: null,
   status: null,
   search: '',
 }
+
+// Text labels mirrored from RoleBadge / StatusPill so the export reads
+// exactly like the on-screen pills (unknown role slugs fall through raw).
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  operator: 'ผู้ปฏิบัติงาน',
+  viewer: 'ผู้ดูข้อมูล',
+}
+const STATUS_LABELS: Record<User['status'], string> = {
+  active: 'ใช้งาน',
+  inactive: 'ปิดใช้งาน',
+}
+
+/** "5 ก.ค. 2569" — same Thai short-month + Buddhist-year format TableUser renders. */
+const fmtThaiDate = (iso: string | null): string => {
+  if (!iso) return '-'
+  const d = dayjs(iso)
+  return d.isValid() ? d.locale('th').format('D MMM BBBB') : iso
+}
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as TableUser (minus the จัดการ action column), plus ลำดับ (mirrors
+// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
+// (sums to 100). The UI User row carries no password/sensitive fields.
+const USER_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: User, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'Username', width: 20, widthPct: 14, value: (r) => r.username || '-' },
+  { header: 'ชื่อ-นามสกุล', width: 26, widthPct: 17, align: 'left', value: (r) => r.fullName },
+  { header: 'บทบาท', width: 14, widthPct: 11, value: (r) => ROLE_LABELS[r.role] ?? (r.role || '-') },
+  { header: 'ประเภท', width: 10, widthPct: 8, value: (r) => (r.isLdap ? 'LDAP' : 'Local') },
+  { header: 'หน่วยงาน', width: 26, widthPct: 18, align: 'left', value: (r) => r.department },
+  { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => STATUS_LABELS[r.status] },
+  { header: 'สร้างเมื่อ', width: 16, widthPct: 17, value: (r) => fmtThaiDate(r.createdAt) },
+]
 
 // Sub-tab options rendered inside the User tab. Kept module-scope so the
 // SwapButton's `options` reference is stable across renders (matches the
@@ -66,6 +112,29 @@ const toUser = (
     // just in case an older row is missing the field.
     isLdap: row.is_ldap ?? false,
   }
+}
+
+/** Client-side narrowing (sub-tab / role / status / search) shared by the
+ *  table's `filtered` memo and the export-'ทั้งหมด' path — see the
+ *  SERVER-SEARCH BUG WORKAROUND block in UserSection for why every one of
+ *  these filters must be applied client-side. */
+const applyUserFilters = (
+  rows: User[],
+  filters: UserFilters,
+  subTab: 'local' | 'ldap',
+): User[] => {
+  const q = filters.search.trim().toLowerCase()
+  const wantLdap = subTab === 'ldap'
+  return rows.filter((u) => {
+    if (u.isLdap !== wantLdap) return false
+    if (filters.role && u.role !== filters.role) return false
+    if (filters.status && u.status !== filters.status) return false
+    if (q) {
+      const haystack = `${u.username} ${u.fullName}`.toLowerCase()
+      if (!haystack.includes(q)) return false
+    }
+    return true
+  })
 }
 
 const UserSection: React.FC = () => {
@@ -115,6 +184,7 @@ const UserSection: React.FC = () => {
   // `ldapPrefill` survives the transition so UserModal can seed its form.
   const [ldapSearchOpen, setLdapSearchOpen] = useState(false)
   const [ldapPrefill, setLdapPrefill] = useState<APIResponseSSOUser | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   const departmentsById = useMemo(() => {
     const m = new Map<number, APIResponseDepartment>()
@@ -138,20 +208,37 @@ const UserSection: React.FC = () => {
   // block above for why search is not sent to the server. The subTab
   // gate narrows to Local (`!isLdap`) or LDAP (`isLdap`) users; the
   // backend has no `is_ldap` query param so this must stay client-side.
-  const filtered = useMemo(() => {
-    const q = filters.search.trim().toLowerCase()
-    const wantLdap = subTab === 'ldap'
-    return users.filter((u) => {
-      if (u.isLdap !== wantLdap) return false
-      if (filters.role && u.role !== filters.role) return false
-      if (filters.status && u.status !== filters.status) return false
-      if (q) {
-        const haystack = `${u.username} ${u.fullName}`.toLowerCase()
-        if (!haystack.includes(q)) return false
-      }
-      return true
-    })
-  }, [users, filters, subTab])
+  const filtered = useMemo(
+    () => applyUserFilters(users, filters, subTab),
+    [users, filters, subTab],
+  )
+
+  // Human-readable note of the active sub-tab/filters/search — printed in
+  // the PDF header so a reader knows what subset they're looking at. The
+  // sub-tab always narrows the rows (Local vs LDAP) so it's always noted.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = [`ประเภท ${subTab === 'ldap' ? 'LDAP' : 'Local'}`]
+    if (filters.role) parts.push(`บทบาท ${ROLE_LABELS[filters.role] ?? filters.role}`)
+    if (filters.status) parts.push(`สถานะ ${STATUS_LABELS[filters.status]}`)
+    if (filters.search.trim()) parts.push(`ค้นหา "${filters.search.trim()}"`)
+    return parts.join(' · ')
+  }, [subTab, filters])
+
+  // Export scope 'ทั้งหมด' — fetch EVERY user at export time (pagination is
+  // server-side; `?search` is broken server-side so it is NOT forwarded — see
+  // workaround block above) then run the exact client filter the table uses.
+  // Same two-step full-fetch pattern as incident-detection's EventSection:
+  // page 1 @100, then refetch at the reported total when it exceeds 100.
+  const fetchAllUsers = async (): Promise<User[]> => {
+    const { getGeneralUsersAPI } = await import('@/services/routes/ManageService')
+    const first = await getGeneralUsersAPI({ page: 1, limit: 100 })
+    const count = first.data?.meta_data?.count ?? 0
+    const rows =
+      count <= 100
+        ? first.data?.res_data ?? []
+        : (await getGeneralUsersAPI({ page: 1, limit: count })).data?.res_data ?? []
+    return applyUserFilters(rows.map((r) => toUser(r, departmentsById)), filters, subTab)
+  }
 
   // Local create opens UserModal directly. LDAP create opens the search
   // modal first — the picked row triggers the UserModal transition via
@@ -286,6 +373,7 @@ const UserSection: React.FC = () => {
               size='large'
               shape='round'
               icon={<TbPrinter />}
+              onClick={() => setExportOpen(true)}
               style={{
                 background: '#66AEFF',
                 color: '#000',
@@ -330,6 +418,41 @@ const UserSection: React.FC = () => {
           onChangePassword={setPasswordTarget}
         />
       </div>
+
+      {/* นำออกเอกสาร — scope toggle: ทั้งหมด = every user matching the current
+          sub-tab/filters (fetched in full at export time), หน้าปัจจุบัน = the
+          filtered rows the table shows. NOTE: totalCount is the server's
+          pre-filter total (meta_data.count) — the filtered size of the full
+          set isn't knowable until the export-time fetch, so the label is an
+          approximate upper bound; the exported rows themselves are exact. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        scope={{ totalCount: total, pageCount: filtered.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllUsers()
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Settings_Users_Report',
+            title: 'รายงานรายชื่อผู้ใช้งาน (User Management)',
+            filterNote: exportFilterNote,
+            columns: USER_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows,
+          })
+        }}
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllUsers()
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Settings_Users_Report',
+            sheetName: 'Users',
+            title: 'รายงานรายชื่อผู้ใช้งาน (User Management)',
+            filterNote: exportFilterNote,
+            columns: USER_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows,
+          })
+        }}
+      />
 
       <LDAPSearchModal
         open={ldapSearchOpen}

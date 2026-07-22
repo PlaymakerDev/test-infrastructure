@@ -18,7 +18,7 @@ import { TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
 import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import StatusPill from './StatusPill'
-import { useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
+import { useAllowSettingsVMSScreenInfo, useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
 
 interface Props {
   onOpenSignDetail?: (vmsId: number) => void
@@ -36,13 +36,19 @@ type ScopeFilter =
 
 type StatusFilter = 'all' | 'reported' | 'online' | 'offline' | 'never'
 
-// Parse Tree node keys back into a ScopeFilter. Keys are namespaced ('b:', 's:',
-// 'r:') so we can round-trip the selection without extra bookkeeping.
+// Parse Tree node keys back into a ScopeFilter. Keys are namespaced ('b:',
+// 's:', 'r:') with the full hierarchy prefixed so the tree can hold the SAME
+// road/state under multiple parents without duplicate-key warnings (real data
+// has roads crossing several แขวง). The entity's own id is the LAST segment.
+//   b:{bureau_id}
+//   s:{bureau_id}:{state_id}
+//   r:{bureau_id}:{state_id}:{road_id}
 const parseKey = (key: React.Key): ScopeFilter => {
   const s = String(key)
   if (s === 'all') return { level: 'all' }
-  const [prefix, rest] = s.split(':')
-  const id = Number.parseInt(rest ?? '', 10)
+  const parts = s.split(':')
+  const prefix = parts[0]
+  const id = Number.parseInt(parts[parts.length - 1] ?? '', 10)
   if (!Number.isFinite(id)) return { level: 'all' }
   if (prefix === 'b') return { level: 'bureau', id }
   if (prefix === 's') return { level: 'state', id }
@@ -60,7 +66,7 @@ const Chip: React.FC<{ active: boolean; label: React.ReactNode; onClick: () => v
   <button
     type="button"
     onClick={onClick}
-    className="text-[11px] px-2.5 py-0.5 rounded-full transition-colors border"
+    className="fs-12 px-2.5 py-0.5 rounded-full transition-colors border"
     style={{
       background: active ? '#FCD116' : 'transparent',
       color: active ? '#191919' : '#FCD116',
@@ -166,7 +172,10 @@ const buildTree = (rows: ScreenInfoItem[]): DataNode[] => {
         </span>
       ),
       children: sortEntries(Array.from(b.states.values())).map((s) => ({
-        key: `s:${s.id}`,
+        // Prefix parents so the tree accepts the same state/road id under
+        // different bureaus without React's duplicate-key warning (a road can
+        // straddle multiple แขวง / สำนัก in the real data).
+        key: `s:${b.id}:${s.id}`,
         title: (
           <span className="text-white/85">
             {s.label}
@@ -174,7 +183,7 @@ const buildTree = (rows: ScreenInfoItem[]): DataNode[] => {
           </span>
         ),
         children: sortEntries(Array.from(s.roads.values())).map((rd) => ({
-          key: `r:${rd.id}`,
+          key: `r:${b.id}:${s.id}:${rd.id}`,
           isLeaf: true,
           title: (
             <span className="text-white/80">
@@ -200,6 +209,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     refetchIntervalMs: 30_000,
   })
   const centralize = useCentralizeVMSScreenInfo()
+  const allowSettings = useAllowSettingsVMSScreenInfo()
 
   // Keep `rows` stable across renders — the tree/filter memos depend on it.
   const rows: ScreenInfoItem[] = useMemo(() => data?.data?.data ?? [], [data])
@@ -314,6 +324,29 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     [handleCentralize, modal]
   )
 
+  const handleAllowSettings = useCallback(
+    async (wid: number, next: boolean) => {
+      try {
+        await allowSettings.mutateAsync({ wid, data: { is_allowed_settings: next } })
+        message.success(next ? 'แสดงป้ายนี้ใน Command Center แล้ว' : 'ซ่อนป้ายนี้จาก Command Center แล้ว')
+      } catch {
+        message.error('อัพเดตสถานะไม่สำเร็จ')
+      }
+    },
+    [allowSettings, message]
+  )
+
+  // No confirm-before-disable here (unlike centralize) — is_allowed_settings
+  // defaults false for every newly-synced sign, so turning it OFF is the
+  // common/expected state, not a surprising downgrade an admin needs a
+  // safety prompt for.
+  const handleToggleAllowSettings = useCallback(
+    (row: ScreenInfoItem, next: boolean) => {
+      void handleAllowSettings(row.wid, next)
+    },
+    [handleAllowSettings]
+  )
+
   const columns: ColumnsType<ScreenInfoItem> = useMemo(
     () => [
       {
@@ -345,7 +378,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
             </Tooltip>
             {r.machine_name && (
               <div
-                className="text-[10px] text-white/40 truncate"
+                className="fs-12 text-white/40 truncate"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
               >
                 {r.machine_name}
@@ -363,7 +396,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           <div className="min-w-0">
             <div className="truncate text-sm text-(--yellow)">{r.road_code || '—'}</div>
             {r.sta && (
-              <div className="text-[11px] text-white/50 truncate">กม.{r.sta}</div>
+              <div className="fs-12 text-white/50 truncate">กม.{r.sta}</div>
             )}
           </div>
         ),
@@ -377,7 +410,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
               {r.department_short_name || '—'}
             </div>
             {r.bureau_short_name && (
-              <div className="text-[11px] text-white/50 truncate">{r.bureau_short_name}</div>
+              <div className="fs-12 text-white/50 truncate">{r.bureau_short_name}</div>
             )}
           </div>
         ),
@@ -448,12 +481,38 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         align: 'center',
         render: (_: unknown, r) =>
           r.is_controllable ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-emerald-900/40 border border-emerald-500/40 text-emerald-300">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 bg-emerald-900/40 border border-emerald-500/40 text-emerald-300">
               ควบคุมได้
             </span>
           ) : (
             <span className="text-white/40">—</span>
           ),
+      },
+      {
+        title: (
+          <Tooltip title="ป้ายที่เพิ่ง sync เข้ามาจะปิดอยู่โดย default — ต้องตรวจสอบแล้วเปิดเองก่อนจะไปโผล่ในแถบด้านซ้ายของ Command Center">
+            <span>แสดงผล</span>
+          </Tooltip>
+        ),
+        key: 'is_allowed_settings',
+        width: 130,
+        align: 'center',
+        fixed: 'right',
+        render: (_: unknown, r) => (
+          <Switch
+            size="small"
+            checked={r.is_allowed_settings}
+            loading={allowSettings.isPending && allowSettings.variables?.wid === r.wid}
+            onChange={(next) => handleToggleAllowSettings(r, next)}
+            checkedChildren="แสดง"
+            unCheckedChildren="ซ่อน"
+            style={{
+              backgroundColor: r.is_allowed_settings
+                ? 'var(--default-blue)'
+                : 'rgb(220, 38, 38)',
+            }}
+          />
+        ),
       },
       {
         title: 'เข้ากลุ่ม',
@@ -478,7 +537,15 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         ),
       },
     ],
-    [centralize.isPending, centralize.variables, handleToggleCentralize, onOpenSignDetail]
+    [
+      centralize.isPending,
+      centralize.variables,
+      handleToggleCentralize,
+      allowSettings.isPending,
+      allowSettings.variables,
+      handleToggleAllowSettings,
+      onOpenSignDetail,
+    ]
   )
 
   // AntD's expandable API — only one open at a time to prevent an HLS stampede.
@@ -509,7 +576,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       {/* Left: bureau/state/route tree */}
       <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
-          <div className="text-xs font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
+          <div className="fs-12 font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
           {hasFilter && (
             <Button
               size="small"
@@ -563,7 +630,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b border-white/10 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-2 flex-wrap fs-12">
               <span className="px-2 py-0.5 rounded bg-white/5 text-white/80">
                 รวม <b className="text-white">{summary?.total ?? rows.length}</b>
               </span>

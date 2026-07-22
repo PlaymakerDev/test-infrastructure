@@ -3,6 +3,7 @@ import { fmtNumber } from '@/utils/formatNumber'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo } from 'react'
+import { TbFlag, TbMapPin, TbUserShield, TbWeight } from 'react-icons/tb'
 
 interface Props { }
 
@@ -29,17 +30,20 @@ const VehicleStatSection: React.FC<Props> = (props) => {
         {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--yellow)/50 border-b sm:border-r lg:border-b-0'>
           <section className='text-center'>
-            <h3 className='text-xs font-semibold text-white sm:text-sm'>รวมรถเข้าชั่งวันนี้</h3>
-            <p className='text-xs text-gray-400'>รวมรถเข้าชั่งวันนี้</p>
+            <div className='flex flex-wrap items-center justify-center gap-2 mb-1'>
+              <TbWeight className='fs-22' />
+              <h3 className='font-normal! text-white'>รวมรถเข้าชั่งวันนี้</h3>
+            </div>
+            <p className='fs-12 text-gray-400'>รวมรถเข้าชั่งวันนี้</p>
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='text-xs text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='text-2xl font-bold leading-tight text-(--yellow) lg:text-3xl'>{fmtNumber(Number(dailySumData?.data.data.all_sum.total || 0))}</h2>
+              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(dailySumData?.data.data.all_sum.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='text-xs text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='text-2xl font-bold leading-tight text-red-400 lg:text-3xl'>{fmtNumber(Number(dailySumData?.data.data.all_sum.over || 0))}</h2>
+              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(dailySumData?.data.data.all_sum.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -47,17 +51,20 @@ const VehicleStatSection: React.FC<Props> = (props) => {
         {/* f2 — xs: border-b | sm: border-b (rightmost, no border-r) | lg: border-b-0 + border-r */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--yellow)/50 border-b lg:border-b-0 lg:border-r'>
           <section className='text-center'>
-            <h3 className='text-xs font-semibold text-white sm:text-sm'>สถานีตรวจสอบน้ำหนัก</h3>
-            <p className='text-xs text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.station.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.station.total || 0))}</p>
+            <div className='flex flex-wrap items-center justify-center gap-2 mb-1'>
+              <TbMapPin className='fs-22' />
+              <h3 className='font-normal! text-white'>สถานีตรวจสอบน้ำหนัก</h3>
+            </div>
+            <p className='fs-12 text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.station.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.station.total || 0))}</p>
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='text-xs text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='text-2xl font-bold leading-tight text-(--yellow) lg:text-3xl'>{fmtNumber(Number(station?.total || 0))}</h2>
+              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(station?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='text-xs text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='text-2xl font-bold leading-tight text-red-400 lg:text-3xl'>{fmtNumber(Number(station?.over || 0))}</h2>
+              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(station?.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -65,17 +72,20 @@ const VehicleStatSection: React.FC<Props> = (props) => {
         {/* f3 — xs: border-b | sm: border-b-0 + border-r | lg: border-r */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--yellow)/50 border-b sm:border-b-0 sm:border-r'>
           <section className='text-center'>
-            <h3 className='text-xs font-semibold text-white sm:text-sm'>WIM (Weight-In-Motion)</h3>
-            <p className='text-xs text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.wim.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.wim.total || 0))}</p>
+            <div className='flex flex-wrap items-center justify-center gap-2 mb-1'>
+              <TbFlag className='fs-22' />
+              <h3 className='font-normal! text-white'>WIM (Weight-In-Motion)</h3>
+            </div>
+            <p className='fs-12 text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.wim.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.wim.total || 0))}</p>
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='text-xs text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='text-2xl font-bold leading-tight text-(--yellow) lg:text-3xl'>{fmtNumber(Number(wim?.total || 0))}</h2>
+              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(wim?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='text-xs text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='text-2xl font-bold leading-tight text-red-400 lg:text-3xl'>{fmtNumber(Number(wim?.over || 0))}</h2>
+              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(wim?.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -83,17 +93,20 @@ const VehicleStatSection: React.FC<Props> = (props) => {
         {/* f4 — last item, no border needed at any breakpoint */}
         <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6'>
           <section className='text-center'>
-            <h3 className='text-xs font-semibold text-white sm:text-sm'>หน่วยตรวจสอบน้ำหนักเคลื่อนที่</h3>
-            <p className='text-xs text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.mobile.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.mobile.total || 0))}</p>
+            <div className='flex flex-wrap items-center justify-center gap-2 mb-1'>
+              <TbUserShield className='fs-22' />
+              <h3 className='font-normal! text-white'>หน่วยตรวจสอบน้ำหนักเคลื่อนที่</h3>
+            </div>
+            <p className='fs-12 text-gray-400'>เปิดใช้งาน <span className='text-(--yellow)'>{fmtNumber(Number(totalStationData?.data.mobile.open || 0))}</span> / {fmtNumber(Number(totalStationData?.data.mobile.total || 0))}</p>
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='text-xs text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='text-2xl font-bold leading-tight text-(--yellow) lg:text-3xl'>{fmtNumber(Number(spot?.total || 0))}</h2>
+              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(spot?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='text-xs text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='text-2xl font-bold leading-tight text-red-400 lg:text-3xl'>{fmtNumber(Number(spot?.over || 0))}</h2>
+              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(spot?.over || 0))}</h2>
             </div>
           </section>
         </figure>

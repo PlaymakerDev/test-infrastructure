@@ -15,6 +15,7 @@ import {
 } from '@/hooks/queries/incident-detection'
 import type { IncidentCameraListItem } from '@/types/incident-detection/camera-api'
 import CameraGridView, { EventCountTag, type InstallGroup, type CameraRow } from './CameraGridView'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 type ConnectStatus = 'connect' | 'disconnect'
 
@@ -56,6 +57,32 @@ const FILTERS: FilterConfig[] = [
 
 const TOTAL_COLS = 7
 
+/** Camera row + its install-point label — the export flattens the table's
+ *  group-header row (จุดติดตั้ง) into a leading column, like the overall
+ *  exports flatten their per-แขวง divider rows. */
+type ExportCameraRow = CameraRow & { point: string }
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (ลำดับที่ → ชื่อกล้อง → กม.ที่ → เหตุการณ์ →
+// IP Address → Stream/Device Status). `width` = Excel chars, `widthPct` =
+// PDF table percent (sums to 100).
+const CAMERA_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: ExportCameraRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 20, align: 'left', value: (r) => r.point || '-' },
+  { header: 'ชื่อกล้อง', width: 40, widthPct: 25, align: 'left', value: (r) => r.name || '-' },
+  { header: 'กม.ที่', width: 10, widthPct: 8, value: (r) => r.km || '-' },
+  { header: 'เหตุการณ์', width: 10, widthPct: 8, value: (r) => r.events },
+  { header: 'IP Address', width: 18, widthPct: 12, value: (r) => r.ip || '-' },
+  { header: 'Stream Status', width: 14, widthPct: 11, value: (r) => (r.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
+  { header: 'Device Status', width: 14, widthPct: 11, value: (r) => (r.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+]
+
 /** Adapter — /cameras/list row → CameraRow. The analytic endpoint doesn't
  *  carry per-camera function flags, so we derive them: every camera here is
  *  Analytic by definition (it's listed by /analytic); add CCTV when an
@@ -93,6 +120,7 @@ const DataDisplaySection: React.FC = () => {
 
   const [activeFilter, setActiveFilter] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Server-side `limit` is capped at 100 — sending >100 makes BE return only 2
   // rows with no meta_data (verified live 2026-06-23). For solutions with more
@@ -173,6 +201,20 @@ const DataDisplaySection: React.FC = () => {
     })
     return out
   }, [filteredGroup])
+
+  // Export rows = the CURRENTLY FILTERED cameras (what the table/grid shows),
+  // each tagged with its group-header install point.
+  const exportRows = useMemo<ExportCameraRow[]>(
+    () => (filteredGroup ? filteredGroup.cameras.map((c) => ({ ...c, point: filteredGroup.label })) : []),
+    [filteredGroup]
+  )
+
+  // Human-readable note of the active filter — printed in the PDF header so a
+  // reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const filterLabel = FILTERS.find((f) => f.key === activeFilter)?.label
+    return activeFilter !== 'all' && filterLabel ? `สถานะ ${filterLabel}` : undefined
+  }, [activeFilter])
 
   const columns: ColumnsType<Row> = useMemo(() => [
     {
@@ -273,7 +315,36 @@ const DataDisplaySection: React.FC = () => {
         onFilterChange={setActiveFilter}
         defaultViewMode={viewMode}
         onViewModeChange={setViewMode}
-        onExport={() => alert('TODO: นำออกเอกสาร')}
+        onExport={() => setExportOpen(true)}
+      />
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED cameras (what the
+          table/grid shows), through the shared pdf/excel utils. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Incident_Detection_Camera_Report',
+            title: 'รายงานกล้องวิเคราะห์ประจำจุดติดตั้ง (Incident Detection Cameras)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Incident_Detection_Camera_Report',
+            sheetName: 'Incident Cameras',
+            title: 'รายงานกล้องวิเคราะห์ประจำจุดติดตั้ง (Incident Detection Cameras)',
+            filterNote: exportFilterNote,
+            columns: CAMERA_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
       />
 
       {viewMode === 'TABLE' ? (

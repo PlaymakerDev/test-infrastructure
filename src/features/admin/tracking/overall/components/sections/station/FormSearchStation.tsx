@@ -11,7 +11,7 @@ const FormSearchStation: React.FC<Props> = ({ onSearch }) => (
     placeholder="ค้นหาสถานี..."
     className='rounded-lg'
     suffix={<TbSearch className='text-(--yellow)' />}
-    // size='large'
+    size='large'
     allowClear
     onChange={(e) => onSearch?.(e.target.value)}
   />

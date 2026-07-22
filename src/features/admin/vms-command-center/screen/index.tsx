@@ -1,7 +1,7 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import { App, Tabs, Tooltip } from 'antd'
-import { TbAlertTriangle } from 'react-icons/tb'
+import { TbAlertTriangle, TbClockPause } from 'react-icons/tb'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { BureauSelection } from '@/types/control-vms/bureau'
 import ScopePicker from '../components/ScopePicker'
@@ -11,10 +11,9 @@ import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
 import MediaLibraryTab from '../components/MediaLibraryTab'
 import StatusTable from '../components/StatusTable'
-import { useScreenInfo } from '../hooks/useScreenInfo'
 import { ControlVMSProvider } from '@/features/admin/control-vms/overall/context'
 import DisplaySection from '@/features/admin/control-vms/overall/components/DisplaySection'
-import ControlVMSScreen from '@/features/admin/control-vms/overall/screen'
+import StatusSection from '@/features/admin/control-vms/overall/components/StatusSection'
 
 
 const emptySelection: BureauSelection = {
@@ -25,7 +24,12 @@ const emptySelection: BureauSelection = {
   signs: [],
 }
 
-const VALID_TABS = ['dispatch', 'history', 'media', 'display', 'status', 'legacy'] as const
+// Order reflects the operator workflow: primary actions first (dispatch, media
+// prep, scheduling), then observation (status, history), then rarely-touched
+// device config (vmsinfo) last. `vmsinfo` was previously named `status`; the
+// current `status` key now routes to the "สถานะการแสดงผล" tab that used to
+// live inside the (now-removed) legacy screen.
+const VALID_TABS = ['dispatch', 'media', 'display', 'status', 'history', 'vmsinfo'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
 const VMSCommandCenterScreen: React.FC = () => {
@@ -51,28 +55,52 @@ const VMSCommandCenterScreen: React.FC = () => {
   const openDetail = useCallback((id: number) => setDetailVmsId(id), [])
   const closeDetail = useCallback(() => setDetailVmsId(null), [])
 
-  // Poll screen-info so dispatch can gate on capability. Slower cadence than
-  // STATUS tab (that one polls 30s); here we mainly need it for filtering, so
-  // 60s is plenty and any change made in STATUS is broadcast via invalidation.
-  const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: 60_000 })
-  const eligibleVmsIds = useMemo(() => {
-    const items = screenInfoResp?.data?.data ?? []
-    // Fail-open: if screen-info hasn't loaded yet we don't punish the operator
-    // by hiding every sign — Composer's own validation still catches empty
-    // dispatch. Once data arrives, non-controllable / non-centralized signs
-    // are silently dropped from the outbound vms_ids list.
-    if (items.length === 0) return null // sentinel: "no filter"
-    return new Set(items.filter((i) => i.is_controllable && i.is_centralized).map((i) => i.vms_id))
-  }, [screenInfoResp])
+  // Split eligibility into three buckets. selection.signs (BureauSign =
+  // departments API's Solution type) now carries is_controllable/is_centralized/
+  // is_reported directly from the backend — same tbl_vms_screen_info join used
+  // by /vms/screen-info and /vms/command-center/monitor, so no separate fetch or
+  // client-side merge is needed here anymore; every VMS endpoint in this app
+  // agrees on eligibility by construction.
+  //   immediate: is_centralized && is_controllable
+  //              → dispatched now
+  //   queued:    is_centralized && is_reported && !is_controllable
+  //              → agent has checked in before, just currently offline/old
+  //              version — queue-ahead is a safe bet, it'll likely reconnect
+  //   excluded:  is_centralized === false (operator opted the sign out in the
+  //              ข้อมูลป้าย VMS tab) OR is_reported === false (agent has NEVER
+  //              checked in — queue-ahead would be misleading, this needs a
+  //              technician to install/start the agent, not "just wait")
+  const { immediateIds, queuedIds } = useMemo(() => {
+    const immediate = new Set<number>()
+    const queued = new Set<number>()
+    for (const s of selection.signs) {
+      if (s.is_centralized === false || !s.is_reported) continue  // excluded
+      if (s.is_controllable) {
+        immediate.add(s.vms_id)
+      } else {
+        queued.add(s.vms_id)
+      }
+    }
+    return { immediateIds: immediate, queuedIds: queued }
+  }, [selection.signs])
 
   // Full set from ScopePicker
   const allSelectedIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
-  // What Composer actually sends — post-filter for controllable + centralized
-  const vmsIds = useMemo(() => {
-    if (!eligibleVmsIds) return allSelectedIds
-    return allSelectedIds.filter((id) => eligibleVmsIds.has(id))
-  }, [allSelectedIds, eligibleVmsIds])
+  // What Composer sends — union of immediate + queued (queue-ahead supported).
+  const vmsIds = useMemo(
+    () => allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id)),
+    [allSelectedIds, immediateIds, queuedIds]
+  )
+  const queuedCount = queuedIds.size
   const excludedCount = allSelectedIds.length - vmsIds.length
+
+  // Excluded (ไม่รองรับ) sign objects — passed to LiveMonitor so it can render
+  // placeholder cards for them (they aren't in the /monitor payload because
+  // Composer never sends to them).
+  const excludedSelectedSigns = useMemo(
+    () => selection.signs.filter((s) => !immediateIds.has(s.vms_id) && !queuedIds.has(s.vms_id)),
+    [selection.signs, immediateIds, queuedIds]
+  )
 
   const targetSummary = useMemo(() => {
     if (selection.signs.length === 0) return 'ยังไม่ได้เลือกป้าย'
@@ -81,33 +109,55 @@ const VMSCommandCenterScreen: React.FC = () => {
     if (selection.states.length) parts.push(`${selection.states.length} แขวง`)
     if (selection.routes.length) parts.push(`${selection.routes.length} สายทาง`)
     parts.push(`${selection.signs.length} ป้าย`)
-    if (excludedCount > 0) parts.push(`(ข้าม ${excludedCount} ป้ายที่ควบคุมไม่ได้)`)
+    if (queuedCount > 0) parts.push(`(queue ${queuedCount} ป้าย offline)`)
+    if (excludedCount > 0) parts.push(`(ข้าม ${excludedCount} ป้ายที่ไม่รองรับ)`)
     return `เป้าหมาย: ${parts.join(' / ')}`
-  }, [selection, excludedCount])
+  }, [selection, excludedCount, queuedCount])
 
   return (
     <App>
-      <div className="h-[calc(100vh-96px)] w-full p-3">
+      <div className="h-[calc(100vh-96px)] w-full px-10 pt-4 pb-3 flex flex-col">
+        <section>
+          <h1 className='text-(--yellow)'>Control VMS</h1>
+          <p className='text-(--yellow)'>ระบบจัดการป้าย VMS ระยะไกล</p>
+        </section>
         <Tabs
           activeKey={activeTab}
           onChange={changeTab}
-          destroyOnHidden
-          className="vms-cc-tabs h-full"
+          // Keep all tab panes mounted — operators sit in this feature and
+          // switch (dispatch ↔ media ↔ status) constantly. Destroying on
+          // hide reset the LiveMonitor timer ("ล่าสุด —"), the ScopePicker
+          // scroll position, MediaLibrary filters, etc. Trade-off is a few
+          // background polls (all payloads small); worth it for continuous
+          // context. Selection state was already persisted in parent scope.
+          className="vms-cc-tabs flex-1 min-h-0 mt-4"
           items={[
             {
               key: 'dispatch',
-              label: 'การสั่งงาน + ติดตาม',
+              label: 'การสั่งงาน',
               children: (
-                <div className="h-[calc(100vh-160px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
+                <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
-                    <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                    <ScopePicker
+                      onSelectionChange={setSelection}
+                      selection={selection}
+                      onViewSign={openDetail}
+                    />
+                    {queuedCount > 0 && (
+                      <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
+                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
+                          <TbClockPause className="fs-14 shrink-0 mt-0.5" />
+                          <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
+                        </div>
+                      </Tooltip>
+                    )}
                     {excludedCount > 0 && (
-                      <div className="px-3 py-2 border-t border-white/10 text-[11px] text-(--yellow) flex items-start gap-1.5">
-                        <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
-                        <Tooltip title="ป้ายที่ agent เวอร์ชันต่ำหรือถูกถอดจากกลุ่มควบคุมรวมจะถูกข้ามอัตโนมัติ — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'สถานะการแสดงผล'">
-                          <span>ข้าม {excludedCount} ป้ายที่ยังควบคุมไม่ได้</span>
-                        </Tooltip>
-                      </div>
+                      <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
+                          <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
+                          <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
+                        </div>
+                      </Tooltip>
                     )}
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
@@ -118,17 +168,12 @@ const VMSCommandCenterScreen: React.FC = () => {
                     />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                    <LiveMonitor
+                      vmsIds={vmsIds}
+                      excludedSigns={excludedSelectedSigns}
+                      onOpenSignDetail={openDetail}
+                    />
                   </div>
-                </div>
-              ),
-            },
-            {
-              key: 'history',
-              label: 'ประวัติสั่งงานทั้งหมด',
-              children: (
-                <div className="h-[calc(100vh-160px)]">
-                  <GlobalHistoryTable onOpenSign={openDetail} />
                 </div>
               ),
             },
@@ -136,7 +181,7 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'media',
               label: 'คลังสื่อ',
               children: (
-                <div className="h-[calc(100vh-160px)]">
+                <div className="h-[calc(100vh-240px)]">
                   <MediaLibraryTab />
                 </div>
               ),
@@ -145,7 +190,7 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'display',
               label: 'กำหนดการแสดงผล',
               children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
+                <div className="h-[calc(100vh-240px)] overflow-auto">
                   <ControlVMSProvider>
                     <DisplaySection />
                   </ControlVMSProvider>
@@ -156,17 +201,28 @@ const VMSCommandCenterScreen: React.FC = () => {
               key: 'status',
               label: 'สถานะการแสดงผล',
               children: (
-                <div className="h-[calc(100vh-160px)]">
-                  <StatusTable onOpenSignDetail={openDetail} />
+                <div className="h-[calc(100vh-240px)] overflow-auto">
+                  <ControlVMSProvider>
+                    <StatusSection />
+                  </ControlVMSProvider>
                 </div>
               ),
             },
             {
-              key: 'legacy',
-              label: 'หน้าเดิม (Legacy)',
+              key: 'history',
+              label: 'ประวัติสั่งงานทั้งหมด',
               children: (
-                <div className="h-[calc(100vh-160px)] overflow-auto">
-                  <ControlVMSScreen />
+                <div className="h-[calc(100vh-240px)]">
+                  <GlobalHistoryTable onOpenSign={openDetail} />
+                </div>
+              ),
+            },
+            {
+              key: 'vmsinfo',
+              label: 'ข้อมูลป้าย VMS',
+              children: (
+                <div className="h-[calc(100vh-240px)]">
+                  <StatusTable onOpenSignDetail={openDetail} />
                 </div>
               ),
             },

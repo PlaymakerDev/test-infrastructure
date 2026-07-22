@@ -1,4 +1,4 @@
-import { Modal } from 'antd'
+import { ConfigProvider, Modal } from 'antd'
 import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -6,8 +6,11 @@ import 'dayjs/locale/th'
 import { INIT_MODAL_WEIGHT_LOG, useWIMContext } from '../../../context'
 import { FormSearchWeightLog, TableWeightLog, OverallDailyWeightList } from '../../../components'
 import { useDailyWeightLogList } from '../../../hooks'
-import { IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '../../../data/weightFilters'
+import type { DailyWeightLogRow } from '../../../hooks'
+import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '../../../data/weightFilters'
+import { getDailyWeightLogExportColumns, fetchDailyWeightLogExportRows } from '../../../data/dailyWeightLogExport'
 import type { FilterStats, ViewMode } from '@/components/searchable/SearchBar'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { fmtNumber } from '@/utils/formatNumber'
 
 dayjs.extend(buddhistEra)
@@ -22,6 +25,10 @@ const Content: React.FC<Props> = () => {
   const { stationId, stationType, stationName, date } = openWeightLogModal
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
   const [weightFilter, setWeightFilter] = useState<WeightFilter>('all')
+  const [exportOpen, setExportOpen] = useState(false)
+  // Rows currently visible in the table/grid (both paginate internally and
+  // report up via onPageRowsChange) — the export dialog's หน้าปัจจุบัน scope.
+  const [pageRows, setPageRows] = useState<DailyWeightLogRow[]>([])
 
   const stationLabel = stationType === 'STATION' ? 'สถานี' : 'Weight in Motion (WIM)'
 
@@ -36,10 +43,49 @@ const Content: React.FC<Props> = () => {
     overweight: fmtNumber(Number(summary?.overweight)),
   }), [summary])
 
+  // Row count for the export dialog — the active filter's badge number (raw,
+  // unformatted), from the same meta.summary the badges read.
+  const exportCount = useMemo(() => {
+    if (!summary) return undefined
+    const n = weightFilter === 'overweight'
+      ? Number(summary.overweight)
+      : weightFilter === 'normal'
+        ? Number(summary.total) - Number(summary.overweight)
+        : Number(summary.total)
+    return Number.isFinite(n) ? n : undefined
+  }, [summary, weightFilter])
+
+  // Human-readable note of the modal's scope — printed in the PDF header so a
+  // reader knows which station/day/filter subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    if (stationName) parts.push(`${stationLabel} ${stationName}`)
+    if (date) parts.push(`วันที่ ${dayjs(date).format('DD/MM/BBBB')}`)
+    const filterLabel = WEIGHT_FILTERS.find((f) => f.key === weightFilter)?.label
+    if (weightFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [stationLabel, stationName, date, weightFilter])
+
+  const exportColumns = useMemo(
+    () => getDailyWeightLogExportColumns({ hideSpeed: stationType === 'STATION' }),
+    [stationType]
+  )
+
+  // The table server-paginates internally, so the export fetches the full
+  // result set for the modal's day + CURRENT filter through the same endpoint
+  // the table reads (station vs wim log) at click time.
+  const fetchExportRows = () =>
+    fetchDailyWeightLogExportRows({
+      stationId: stationId as string | number | undefined,
+      stationType,
+      isOverWeight: IS_OVER_WEIGHT_BY_FILTER[weightFilter],
+      date,
+    })
+
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} />
+        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} onPageRowsChange={setPageRows} />
       case 'GRID':
         return (
           <OverallDailyWeightList
@@ -47,6 +93,7 @@ const Content: React.FC<Props> = () => {
             stationType={stationType}
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
             date={date}
+            onPageRowsChange={setPageRows}
           />
         )
       default:
@@ -68,11 +115,48 @@ const Content: React.FC<Props> = () => {
           stats={stats}
           displayType={displayType}
           onDisplayTypeChange={setDisplayType}
+          onExport={() => setExportOpen(true)}
         />
       </section>
       <section className='mt-5'>
         {renderContent}
       </section>
+
+      {/* นำออกเอกสาร — exports the modal's single-day weight-log rows for the
+          CURRENT filter (same columns/format as TableWeightLog). Mounted inside
+          the log modal; antd stacks the nested modal itself. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        scope={{ totalCount: exportCount ?? 0, pageCount: pageRows.length }}
+        onExportPdf={async (scope) => {
+          const [{ exportTablePdf }, rows] = await Promise.all([
+            import('@/utils/export/pdf'),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
+          ])
+          await exportTablePdf({
+            filenameBase: 'Tracking_Weight_Log_Detail',
+            title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
+            filterNote: exportFilterNote,
+            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows,
+          })
+        }}
+        onExportExcel={async (scope) => {
+          const [{ exportExcel }, rows] = await Promise.all([
+            import('@/utils/export/excel'),
+            scope === 'page' ? Promise.resolve(pageRows) : fetchExportRows(),
+          ])
+          exportExcel({
+            filenameBase: 'Tracking_Weight_Log_Detail',
+            sheetName: 'Weight Log Detail',
+            title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
+            filterNote: exportFilterNote,
+            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
+            rows,
+          })
+        }}
+      />
     </div>
   )
 }
@@ -82,18 +166,27 @@ const ModalWeightLog: React.FC<Props> = (props) => {
   const { openWeightLogModal, setOpenWeightLogModal } = useWIMContext()
 
   return (
-    <Modal
-      title={false}
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={openWeightLogModal.open}
-      onOk={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
-      onCancel={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
-      footer={null}
-      destroyOnHidden
-      width={1700}
+    <ConfigProvider
+      theme={{
+        token: {
+          colorIcon: '#FFFFFF',
+          colorIconHover: '#FFFFFF80',
+        },
+      }}
     >
-      <Content />
-    </Modal>
+      <Modal
+        title={false}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={openWeightLogModal.open}
+        onOk={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
+        onCancel={() => setOpenWeightLogModal(INIT_MODAL_WEIGHT_LOG)}
+        footer={null}
+        destroyOnHidden
+        width={1700}
+      >
+        <Content />
+      </Modal>
+    </ConfigProvider>
   )
 }
 

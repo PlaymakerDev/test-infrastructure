@@ -6,6 +6,7 @@ import { Pagination } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/pagination'
+import { FALLBACK } from '@/constants'
 
 interface Props {
 
@@ -27,7 +28,7 @@ const MobileStationData: React.FC<Props> = (props) => {
   const [randomCollaboration] = useState(() => `${Math.random()}`);
 
   const { data, isLoading, isError } = useCollaboration({
-    start_date: dayjs().startOf('month').format('YYYY-MM-DD'),
+    start_date: dayjs().format('YYYY-MM-DD'),
     end_date: dayjs().format('YYYY-MM-DD'),
     page: 1,
     page_size: 10,
@@ -79,6 +80,7 @@ const MobileStationData: React.FC<Props> = (props) => {
                         width={"100%"}
                         height={"100%"}
                         className='object-cover object-center w-full h-full'
+                        fallback={FALLBACK}
                       />
                     </SwiperSlide>
                   )
@@ -86,9 +88,9 @@ const MobileStationData: React.FC<Props> = (props) => {
               </Swiper>
             </figure>
             <section className='shrink-0 pt-2'>
-              <p className='text-pink-500'>หน่วยงาน : {item.department_name || '-'}</p>
-              <p className='text-gray-400'>ร่วมบูรณาการ : {item.collaboration || '-'}</p>
-              <p className='text-yellow-500'>วันที่จัดตั้ง : {dayjs(item.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')}</p>
+              <p className='fs-12 text-pink-500'>หน่วยงาน : {item.department_name || '-'}</p>
+              <p className='fs-12 text-gray-400'>ร่วมบูรณาการ : {item.collaboration || '-'}</p>
+              <p className='fs-12 text-(--yellow)'>วันที่จัดตั้ง : {dayjs(item.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')}</p>
             </section>
           </div>
         )

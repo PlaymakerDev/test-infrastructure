@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 
 interface Props {
@@ -52,7 +53,8 @@ type TableRow =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | { kind: 'project'; id: string; item: IncidentRow; roadCodeSpan: number }
 
-const TOTAL_COLS = 8
+// Bureau-divider colSpan must match the number of VISIBLE columns.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 /** Tab 1 — summary view (mirrors the traffic-signal summary table). */
 const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
@@ -89,7 +91,8 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
     router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
-  const columns: ColumnsType<TableRow> = useMemo(() => [
+  const columns: ColumnsType<TableRow> = useMemo(() => {
+    const cols: ColumnsType<TableRow> = [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
@@ -197,7 +200,10 @@ const SummaryTableIncidentDetection: React.FC<Props> = ({ rows, loading }) => {
         return <CountBadge value={row.item.offlineCameras} color='#E94C4C' highlight={single} />
       },
     },
-  ], [goToDetail])
+    ]
+    // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
+    return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')
+  }, [goToDetail])
 
   return (
     <Table<TableRow>

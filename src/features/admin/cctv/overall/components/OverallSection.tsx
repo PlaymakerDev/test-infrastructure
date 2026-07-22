@@ -22,6 +22,8 @@ import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 import MapFocusGrid from '@/components/section/MapFocusGrid'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import { useScopeAll } from '@/hooks/useScopeAll'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {
   deptId?: string | null
@@ -71,12 +73,48 @@ const CCTV_FILTERS: FilterConfig[] = [
   },
 ]
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → ชื่อโครงการ → จุดติดตั้ง →
+// เลขที่สัญญา → การค้ำประกัน → counts), plus ลำดับ/หน่วยงาน since the export
+// flattens the table's per-แขวง divider rows. `width` = Excel chars,
+// `widthPct` = PDF table percent (sums to 100).
+const CCTV_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: CCTVOverviewRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road?.code_name || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.project?.project_name || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.solution?.solution_name || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project?.contract_no || (r.project?.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'อยู่ในค้ำ' : 'หมดค้ำ') },
+  { header: 'กล้องทั้งหมด', width: 12, widthPct: 8, value: (r) => r.camera?.total ?? '-' },
+  { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.online ?? '-' },
+  { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.offline ?? '-' },
+]
+
 const OverallSection: React.FC<Props> = ({ deptId }) => {
   const router = useRouter()
   const scopeAll = useScopeAll()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = CCTV_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
 
   // Bureau-aware list — nested bureau → sub-department (แขวง) → solutions.
   // Flatten into rows tagged with their แขวง so the table can group by it
@@ -125,6 +163,19 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
       return true
     })
   }, [allItems, activeFilter, search])
+
+  // Export rows in the SAME order the table displays: grouped by แขวง
+  // (bureau) — mirrors CamerasTableCctv's grouping so the printed report
+  // reads exactly like the screen.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, CCTVOverviewRow[]>()
+    for (const it of filtered) {
+      const list = groups.get(it.bureau) ?? []
+      list.push(it)
+      groups.set(it.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [filtered])
 
   if (listLoading) return <Skeleton active paragraph={{ rows: 8 }} />
 
@@ -184,9 +235,38 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           formSearch={<FormSearchCctv onSearchChange={setSearch} />}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+            shows), matching the old drr-cm-fe CCTV overview report columns. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={filtered.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'CCTV_Overview_Report',
+            title: 'รายงานสรุปภาพรวมกล้องวงจรปิด (CCTV Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(CCTV_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'CCTV_Overview_Report',
+            sheetName: 'CCTV Overview',
+            title: 'รายงานสรุปภาพรวมกล้องวงจรปิด (CCTV Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(CCTV_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
 
       {/* ── Table / Card grid ── */}
       <section>

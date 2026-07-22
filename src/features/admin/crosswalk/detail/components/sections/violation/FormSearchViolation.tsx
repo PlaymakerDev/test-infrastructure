@@ -3,7 +3,7 @@ import React from 'react'
 import dayjs, { type Dayjs } from 'dayjs'
 import 'dayjs/locale/th'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
-import { Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
+import { ConfigProvider, DatePicker, Segmented } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { TbCalendar } from 'react-icons/tb'
 import {
@@ -31,7 +31,8 @@ const PERIOD_OPTIONS: { label: string; value: ViolationPeriod }[] = [
   // { label: 'ทั้งหมด', value: 'ALL' },
 ]
 
-const STATUS_OPTIONS: { label: string; value: ViolationStatus }[] = [
+// Exported so ViolationSection's export filter-note reuses the same labels.
+export const STATUS_OPTIONS: { label: string; value: ViolationStatus }[] = [
   { label: 'คนฝ่าฝืน', value: 'PEDESTRIAN_VIOLATION' },
   { label: 'รถฝ่าฝืน', value: 'VEHICLE_VIOLATION' },
   { label: 'ทั้งหมด', value: 'ALL' },
@@ -66,59 +67,60 @@ const FormSearchViolation: React.FC<Props> = ({ value, onChange }) => {
   }
 
   return (
-    <Row gutter={[16, 16]} align='bottom'>
-      <Col xs={24} sm={24} md={24} lg={24} xl={8} xxl={6} xxxl={6}>
-        <fieldset>
-          <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
-          <ConfigProvider locale={thTH}>
-            <RangePicker
-              value={rangeValue}
-              onChange={handleRangeChange}
-              placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
-              format='D MMM BBBB'
-              size='large'
-              className='w-full! rounded-xl!'
-              separator={<span className='text-white'>-</span>}
-              suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
-            />
-          </ConfigProvider>
-        </fieldset>
-      </Col>
-      <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
-        <div>
-          <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
-          <div className='overflow-x-auto'>
-            <Segmented
-              block
-              value={value.period}
-              onChange={handlePeriodChange}
-              options={PERIOD_OPTIONS}
-              size='large'
-              classNames={{
-                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
-              }}
-            />
-          </div>
+    // Flex layout mirroring Incident Detection's FormSearchEvent: controls sit
+    // adjacent on lg+ and stack on mobile; `items-end` aligns baselines. This
+    // lets the date field use `w-full! lg:w-72!` responsively (full-width on
+    // mobile, fixed 288px on desktop) instead of fighting a Row/Col grid.
+    <div className='flex flex-col lg:flex-row lg:flex-wrap lg:items-end gap-4'>
+      {/* วันที่แสดงข้อมูล */}
+      <fieldset className='min-w-0'>
+        <label className='block fs-12 text-(--yellow) mb-1'>วันที่แสดงข้อมูล</label>
+        <ConfigProvider locale={thTH}>
+          <RangePicker
+            value={rangeValue}
+            onChange={handleRangeChange}
+            placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
+            format='D MMM BBBB'
+            size='large'
+            className='w-full! lg:w-72!'
+            separator={<span className='text-white'>-</span>}
+            suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
+          />
+        </ConfigProvider>
+      </fieldset>
+
+      {/* ช่วงเวลา */}
+      <div className='min-w-0'>
+        <label className='block fs-12 text-(--yellow) mb-1'>ช่วงเวลา</label>
+        <div className='overflow-x-auto'>
+          <Segmented
+            value={value.period}
+            onChange={handlePeriodChange}
+            options={PERIOD_OPTIONS}
+            size='large'
+            classNames={{
+              root: 'min-w-max border! border-(--yellow)!',
+            }}
+          />
         </div>
-      </Col>
-      <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} xxxl={6}>
-        <div>
-          <label className='block fs-12 text-(--yellow)'>สถานะ</label>
-          <div className='overflow-x-auto'>
-            <Segmented
-              block
-              value={value.status}
-              onChange={handleStatusChange}
-              options={STATUS_OPTIONS}
-              size='large'
-              classNames={{
-                root: 'min-w-max border! border-(--yellow)! rounded-xl! [&_.ant-segmented-item]:rounded-xl! [&_.ant-segmented-thumb]:rounded-xl!',
-              }}
-            />
-          </div>
+      </div>
+
+      {/* สถานะ */}
+      <div className='min-w-0'>
+        <label className='block fs-12 text-(--yellow) mb-1'>สถานะ</label>
+        <div className='overflow-x-auto'>
+          <Segmented
+            value={value.status}
+            onChange={handleStatusChange}
+            options={STATUS_OPTIONS}
+            size='large'
+            classNames={{
+              root: 'min-w-max border! border-(--yellow)!',
+            }}
+          />
         </div>
-      </Col>
-    </Row>
+      </div>
+    </div>
   )
 }
 

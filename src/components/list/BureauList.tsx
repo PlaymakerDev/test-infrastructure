@@ -1,7 +1,7 @@
 "use client"
-import { Badge, Checkbox, ConfigProvider, Tooltip } from 'antd'
+import { Badge, Button, Checkbox, ConfigProvider, Tooltip } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TbChevronDown, TbChevronRight } from 'react-icons/tb'
+import { TbChevronDown, TbChevronRight, TbEye } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { BureauItem, BureauState, BureauRoute, BureauSign, BureauSelection } from '@/types/control-vms/bureau'
 
@@ -44,6 +44,11 @@ export interface BureauListProps {
    *  sign already has its own row + expandable HLS preview on the
    *  right, making the sidebar preview redundant. */
   hideSignLeaves?: boolean
+
+  /** When set, renders an eye icon next to each sign's status badge that
+   *  opens the caller's sign-detail view (same modal LiveMonitor's cards
+   *  use) instead of requiring the operator to select the sign first. */
+  onViewSign?: (sign: BureauSign) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +194,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     onStateClick,
     onRouteClick,
     onSignClick,
+    onViewSign,
     showControls = true,
   } = props
 
@@ -321,13 +327,26 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                 >
                   <Badge color={sign.is_online ? "var(--default-blue)" : "red"} />
                 </ConfigProvider>
+                {onViewSign && (
+                  <Tooltip title="ดูรายละเอียด">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<TbEye style={{ verticalAlign: -2 }} />}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onViewSign(sign)
+                      }}
+                    />
+                  </Tooltip>
+                )}
               </div>
             </div>
           </div>
         </div>
       )
     })
-  }, [selectedSign, selectMode, checkedKeys, toggleCheck, onSignClick])
+  }, [selectedSign, selectMode, checkedKeys, toggleCheck, onSignClick, onViewSign])
 
   const renderRouteItem = useCallback((routes: BureauRoute[], parentBureau: BureauItem, parentState: BureauState) => {
     if (!routes || routes.length === 0) return null

@@ -1,15 +1,18 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbWifi, TbWifiOff, TbLink, TbUnlink } from 'react-icons/tb'
+import ContractInfoCell from '@/components/modal/ContractInfoCell'
+import DetailLinkText from '@/components/table/DetailLinkText'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
 import {
   buildLightingDetailUrl,
   resolveLightingImei,
 } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useOverallContext } from '../context'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   projects: TrafficLightingProject[]
@@ -38,9 +41,25 @@ type Row =
       roadCodeSpan: number
     }
 
+// Bureau header row spans every visible column — 8 since the สถานะวงจร
+// column was merged into สถานะสาย (has_broken_wire, 2026-07-21), one less
+// while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
+
+
 const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
   const { deptId } = useOverallContext()
+
+  // Standard navigation cells (yellow DetailLinkText on รหัสสายทาง/จุดติดตั้ง,
+  // same as every other overall table) — replaces the old whole-row onClick,
+  // which also swallowed the ⓘ ContractInfoCell click and navigated away.
+  const goToDetail = useCallback((project: TrafficLightingProject) => {
+    const { id, imei: projectImei, equipment } = project
+    const type = equipment.type ?? ''
+    const imei = resolveLightingImei(id, projectImei)
+    router.push(buildLightingDetailUrl({ routeId: id, imei, type, deptId }))
+  }, [router, deptId])
 
   const data = useMemo<Row[]>(() => {
     const groups = new Map<string, TrafficLightingProject[]>()
@@ -81,13 +100,14 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
     return out
   }, [projects])
 
-  const TOTAL_COLS = 8
-
   const columns: ColumnsType<Row> = useMemo(() => {
-    return [
+    const all: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
+        // Shared 28px first-column indent (antd.css `col-road-code`) — same
+        // as every other overall table; was the one table missing it.
+        className: 'col-road-code',
         width: 160,
         onCell: (row) => {
           if (row.kind === 'bureau') {
@@ -105,14 +125,20 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
                   className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                  style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+                  // White pill — same as every other overall table's bureau
+                  // divider (see CamerasTableCctv/TableTrafficSignal).
+                  style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ
                 </span>
               </div>
             )
           }
-          return row.project.roadCode
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.roadCode}
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -124,12 +150,34 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
           row.kind === 'project' ? row.project.projectName : null,
       },
       {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 220,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.project)}>
+              {row.project.installPoint}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
         title: 'เลขที่สัญญา',
         key: 'contractNo',
         width: 180,
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        // Shared เลขที่สัญญา cell (same as every other overall table):
+        // contract number + ⓘ Project-Info modal, falling back to the
+        // budget year when the project has no contract on record.
         render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? row.project.contractNo : null,
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.project.contractNo}
+              budgetYear={row.project.budgetYear}
+              projectId={row.project.projectId}
+              roadId={row.project.roadId}
+            />
+          ) : null,
       },
       {
         title: 'การค้ำประกัน',
@@ -145,18 +193,10 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         },
       },
       {
-        title: 'จุดติดตั้ง',
-        key: 'installPoint',
-        width: 220,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_: unknown, row: Row) =>
-          row.kind === 'project' ? row.project.installPoint : null,
-      },
-      {
         title: 'Phase',
         key: 'phase',
         width: 90,
-        align: 'center',
+        align: 'left',
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
@@ -193,7 +233,9 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         },
       },
     ]
-  }, [])
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [goToDetail])
 
   return (
     <Table<Row>
@@ -206,21 +248,6 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
       scroll={{ x: 1400 }}
       className='bridge-projects-table'
       rowClassName={(row) => (row.kind === 'project' ? 'project-row' : '')}
-      onRow={(row) =>
-        row.kind === 'project'
-          ? {
-              onClick: () => {
-                const {
-                  id, imei: projectImei, equipment,
-                } = row.project
-                const type = equipment.type ?? ''
-                const imei = resolveLightingImei(id, projectImei)
-                router.push(buildLightingDetailUrl({ routeId: id, imei, type, deptId }))
-              },
-              style: { cursor: 'pointer' },
-            }
-          : {}
-      }
       locale={{ emptyText: 'ไม่พบข้อมูล' }}
     />
   )

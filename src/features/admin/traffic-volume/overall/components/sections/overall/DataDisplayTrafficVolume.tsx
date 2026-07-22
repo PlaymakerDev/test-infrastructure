@@ -10,10 +10,12 @@ import SearchBar, {
 import FormSearchTrafficVolume from './FormSearchTrafficVolume'
 import TableTrafficVolume from './TableTrafficVolume'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import { useTrafficVolumeCentralList } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 import type { CountingCentralSolution } from '@/types/traffic-volume/overview-api'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props { }
 
@@ -80,12 +82,50 @@ const apiSolutionToProject = (
   }
 }
 
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen table (รหัสสายทาง → ชื่อโครงการ → จุดติดตั้ง →
+// เลขที่สัญญา → การค้ำประกัน → กล้องนับรถ → ปริมาณจราจร → สถานะ), plus
+// ลำดับ/หน่วยงาน since the export flattens the table's per-สำนัก divider
+// rows (mirrors CCTV_EXPORT_COLUMNS). License (action) + Stream columns are
+// skipped. `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const TRAFFIC_VOLUME_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: TrafficVolumeProject, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 19, align: 'left', value: (r) => r.projectName || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 19, align: 'left', value: (r) => r.installPoint || '-' },
+  {
+    header: 'เลขที่สัญญา',
+    width: 20,
+    widthPct: 12,
+    // Mirrors ContractInfoCell: contract number, falling back to the
+    // budget year when the project has no contract on record.
+    value: (r) =>
+      r.contractNo.trim()
+        ? r.contractNo
+        : r.budgetYear
+          ? `ปีงบประมาณ ${r.budgetYear}`
+          : '-',
+  },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'กล้องนับรถ', width: 11, widthPct: 6, value: (r) => r.totalDevices },
+  { header: 'ปริมาณจราจร (คัน)', width: 15, widthPct: 6, value: (r) => r.trafficCount ?? '-' },
+  { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+]
+
 const DataDisplayTrafficVolume: React.FC<Props> = () => {
   const deptId = useDeptId()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   const goToDetail = useCallback((p: TrafficVolumeProject) => {
     const params = new URLSearchParams({ dept_id: deptId })
@@ -142,6 +182,29 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
     })
   }, [activeFilter, search, projects])
 
+  // Export rows in the SAME order the table displays: grouped by สำนัก
+  // (bureau) — mirrors TableTrafficVolume's groupByBureau bucketing so the
+  // printed report reads exactly like the screen.
+  const exportRows = useMemo(() => {
+    const groups = new Map<string, TrafficVolumeProject[]>()
+    for (const p of filtered) {
+      const list = groups.get(p.bureau) ?? []
+      list.push(p)
+      groups.set(p.bureau, list)
+    }
+    return [...groups.values()].flat()
+  }, [filtered])
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = TRAFFIC_VOLUME_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
+
   const cardItems = useMemo<ProjectCardItem[]>(
     () =>
       filtered.map((p) => ({
@@ -174,9 +237,39 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
           formSearch={<FormSearchTrafficVolume onSearchChange={setSearch} />}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+            shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Volume_Overview_Report',
+            title: 'รายงานสรุปภาพรวมปริมาณจราจร (Traffic Volume Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(TRAFFIC_VOLUME_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Volume_Overview_Report',
+            title: 'รายงานสรุปภาพรวมปริมาณจราจร (Traffic Volume Overview)',
+            filterNote: exportFilterNote,
+            sheetName: 'Traffic Volume Overview',
+            columns: hideProjectNameColumns(TRAFFIC_VOLUME_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
+
       <section className='mt-5'>
         {viewMode === 'TABLE' ? (
           <TableTrafficVolume projects={filtered} loading={isLoading} />

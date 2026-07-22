@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo } from 'react'
 import { App, Badge, Button, ConfigProvider, Empty, Image, Modal, Popconfirm, Skeleton, Tag, Timeline, Tooltip } from 'antd'
-import { TbCircleCheckFilled, TbPlayerStop, TbRefresh, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbAppWindow, TbCircleCheckFilled, TbPlayerStop, TbRefresh, TbWifi, TbWifiOff } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
@@ -9,6 +9,7 @@ import { useSignDetail } from '../hooks/useSignDetail'
 import { useVMSCrossingHistory } from '@/features/admin/control-vms/overall/hooks/useVMSCrossingHistory'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta, sourceLabel } from '../constants/vmsStatus'
+import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import StatusPill from './StatusPill'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { VMSSignCamera } from '@/types/vms/command-center-api'
@@ -69,6 +70,20 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const cameras: VMSSignCamera[] = detail?.cameras ?? []
   const screenURL = detail?.desktop_screen_url
 
+  // detail.is_controllable / is_centralized / is_reported come straight from
+  // the /vms/command-center/sign/:id endpoint's own tbl_vms_screen_info join —
+  // same formula as the departments (sidebar) and monitor endpoints, so this
+  // modal always agrees with LiveMonitor's bucket chips and the sidebar dot
+  // without a separate fetch. detail.is_online is the LEGACY tv.last_connected
+  // heartbeat and is NOT used for the connectivity pill below.
+  //
+  // is_reported=false (never provisioned, ever) is grouped into "ไม่รองรับ"
+  // alongside is_centralized=false (explicitly opted out) — both need a
+  // technician/admin action before this sign can ever be controllable,
+  // unlike a normal offline sign which just needs to reconnect on its own.
+  const isExcluded = detail?.is_centralized === false || detail?.is_reported === false
+  const canDispatchNow = detail?.is_controllable ?? false
+
   return (
     <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
     <Modal
@@ -93,25 +108,76 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
             <div className="px-6 py-4 border-b border-white/10 bg-(--dark-black) rounded-t-xl">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-white/50">WID {detail.wid} · vms_id {detail.vms_id}</div>
+                  <div className="fs-12 text-white/50">WID {detail.wid} · vms_id {detail.vms_id}</div>
                   <div className="text-lg font-semibold truncate flex items-center gap-2 flex-wrap">
                     {detail.road_code && <span className="text-(--yellow)">{detail.road_code}</span>}
                     {detail.sta && <span className="text-(--default-blue) text-sm">กม.{detail.sta}</span>}
                     <span className="truncate">{detail.solution_name || `VMS ${detail.vms_id}`}</span>
                   </div>
                   {detail.road_name && (
-                    <div className="text-xs text-white/50 mt-0.5">สายทาง: {detail.road_name}</div>
+                    <div className="fs-12 text-white/50 mt-0.5">สายทาง: {detail.road_name}</div>
                   )}
-                  <div className="text-xs text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
+                  <div className="fs-12 text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Tag
-                    icon={detail.is_online ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
-                    color={detail.is_online ? 'success' : 'error'}
-                    style={{ fontSize: 12 }}
-                  >
-                    {detail.is_online ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
-                  </Tag>
+                  {/* Connectivity pill — themed (see feedback_theme_no_invent).
+                      Three states, matching LiveMonitor's bucket chips exactly:
+                        ไม่รองรับ (yellow)  — opted out of centralized control
+                        ออนไลน์   (blue)    — controllable right now
+                        ออฟไลน์   (red)     — will queue-ahead on dispatch */}
+                  {isExcluded ? (
+                    <Tooltip
+                      title={
+                        detail?.is_reported === false
+                          ? 'agent ยังไม่เคย provision ป้ายนี้เลย — ต้องส่งช่างไปติดตั้ง/เริ่ม agent ก่อน'
+                          : "ป้ายนี้ถูกถอดจากกลุ่มควบคุมรวม — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
+                      }
+                    >
+                      <span
+                        className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                        style={{
+                          background: 'color-mix(in srgb, var(--yellow) 12%, transparent)',
+                          border: '1px solid var(--yellow)',
+                          color: 'var(--yellow)',
+                        }}
+                      >
+                        <TbWifiOff style={{ verticalAlign: -2 }} />
+                        ไม่รองรับ
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                      style={{
+                        background: `color-mix(in srgb, var(${canDispatchNow ? '--default-blue' : '--red'}) 12%, transparent)`,
+                        border: `1px solid var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                        color: `var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                      }}
+                    >
+                      {canDispatchNow ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
+                      {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
+                    </span>
+                  )}
+                  {/* Anydesk deep-link — uses the `anydesk:` URL scheme so
+                      clicking hands off to the native client (same pattern as
+                      legacy DetailTitle.tsx). Disabled visual if no id. */}
+                  <Tooltip title={detail.anydesk_id ? `เปิด Anydesk #${detail.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+                    <Button
+                      icon={<TbAppWindow style={{ verticalAlign: -2 }} />}
+                      disabled={!detail.anydesk_id}
+                      onClick={() => {
+                        if (!detail.anydesk_id) return
+                        window.location.href = `anydesk:${detail.anydesk_id}`
+                      }}
+                      style={{
+                        background: detail.anydesk_id ? 'color-mix(in srgb, var(--default-blue) 12%, transparent)' : undefined,
+                        borderColor: detail.anydesk_id ? 'var(--default-blue)' : undefined,
+                        color: detail.anydesk_id ? 'var(--default-blue)' : undefined,
+                      }}
+                    >
+                      Anydesk : {detail.anydesk_id || '-'}
+                    </Button>
+                  </Tooltip>
                   <StatusPill
                     status={detail.status ?? 0}
                     tooltip={
@@ -143,7 +209,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
               <div className="space-y-4">
                 {/* Live desktop screen of the sign itself */}
                 <div className="rounded-lg overflow-hidden border border-white/10 bg-black">
-                  <div className="px-3 py-2 text-white/90 text-xs bg-black/50 flex items-center justify-between">
+                  <div className="px-3 py-2 text-white/90 fs-12 bg-black/50 flex items-center justify-between">
                     <span className="font-medium">Live screen ของป้าย</span>
                     <span className="opacity-70">{screenURL ? 'HLS' : '—'}</span>
                   </div>
@@ -166,7 +232,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                     the card doesn't lie ("กำลังแสดง" for a finished run). */}
                 {activeSettingID && (
                   <div className="rounded-lg border border-white/10 bg-(--dark-black) p-3">
-                    <div className="text-xs text-white/50 mb-1">
+                    <div className="fs-12 text-white/50 mb-1">
                       {(() => {
                         const label = detail.command_no != null
                           ? `คำสั่งที่ ${detail.command_no}`
@@ -188,21 +254,32 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                     <div className="flex items-center gap-3">
                       {detail.media_url && (
                         <div
-                          className="rounded overflow-hidden bg-black flex-shrink-0"
+                          className="rounded overflow-hidden bg-black flex-shrink-0 relative"
                           style={{ width: 160, aspectRatio: '16/9' }}
                         >
+                          {/* Thumbnail sibling (~15 KB) — click to
+                              preview reuses AntD Image's built-in
+                              overlay + still loads full-res on tap. */}
                           <Image
-                            src={detail.media_url}
+                            src={getThumbUrl(detail.media_url)}
+                            preview={{
+                              mask: 'ดูรูปใหญ่',
+                              src: detail.media_url,
+                            }}
                             width="100%"
                             height="100%"
-                            preview={{ mask: 'ดูรูปใหญ่' }}
                             style={{ objectFit: 'contain' }}
                           />
+                          {isVideoUrl(detail.media_url) && (
+                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white text-sm">▶</span>
+                            </span>
+                          )}
                         </div>
                       )}
                       <div className="min-w-0 flex-1 text-sm space-y-0.5">
                         <div><b>{detail.setting_type_name || '-'}</b></div>
-                        <div className="text-white/60 text-xs">
+                        <div className="text-white/60 fs-12">
                           <span className="opacity-70">วันที่:</span>{' '}
                           {detail.date_since === detail.date_to
                             ? detail.date_since
@@ -212,7 +289,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           const allDay = sc.time_since === '00:00:00' && (sc.time_to === '00:00:00' || sc.time_to === '23:59:00' || sc.time_to === '23:59:59')
                           const daysLabel = formatDaysOfWeek(sc.days_of_week)
                           return (
-                            <div key={sc.id} className="text-white/60 text-xs">
+                            <div key={sc.id} className="text-white/60 fs-12">
                               <span className="opacity-70">เวลา:</span>{' '}
                               {allDay
                                 ? <span className="text-(--yellow)">ตลอดวัน</span>
@@ -246,9 +323,9 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       {cameras.map((cam) => (
                         <div key={cam.camera_id} className="rounded-md overflow-hidden border border-white/10 bg-black">
                           <div className="px-2 py-1.5 bg-black/60 flex items-center justify-between gap-2">
-                            <div className="text-white text-xs truncate">{cam.camera_name || cam.ip_address || cam.camera_id.slice(0, 8)}</div>
+                            <div className="text-white fs-12 truncate">{cam.camera_name || cam.ip_address || cam.camera_id.slice(0, 8)}</div>
                             <span
-                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded"
+                              className="inline-flex items-center gap-1 fs-12 px-1.5 py-0.5 rounded"
                               style={{
                                 background: cam.curl_status ? '#22c55e33' : '#ef444433',
                                 color: cam.curl_status ? '#22c55e' : '#ef4444',
@@ -268,7 +345,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                               showLiveBadge
                             />
                           ) : (
-                            <div className="h-40 flex items-center justify-center text-white/60 text-xs">ไม่มี HLS URL</div>
+                            <div className="h-40 flex items-center justify-center text-white/60 fs-12">ไม่มี HLS URL</div>
                           )}
                         </div>
                       ))}
@@ -309,10 +386,10 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           return (
                             <div key={`${head.setting_id}-${gi}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
                               <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className="text-xs text-(--yellow) font-semibold">
+                                <span className="fs-12 text-(--yellow) font-semibold">
                                   ▸ {label}
                                 </span>
-                                <span className="text-[10px] text-white/50">
+                                <span className="fs-12 text-white/50">
                                   {head.setting_type_name || 'อื่นๆ'} · {group.length} เหตุการณ์
                                 </span>
                               </div>
@@ -341,7 +418,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                   const lastAt = dayjs(run.last.reported_at)
                                   return {
                                     color: meta.color,
-                                    dot: (
+                                    icon: (
                                       <span
                                         style={{
                                           width: 10,
@@ -353,23 +430,23 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                                         }}
                                       />
                                     ),
-                                    children: (
+                                    content: (
                                       <div>
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <StatusPill status={r.status} size="sm" />
                                           {r.prev_status != null && r.prev_status !== r.status && (
-                                            <span className="text-xs text-white/50">
+                                            <span className="fs-12 text-white/50">
                                               จาก {statusMeta(r.prev_status).label} →
                                             </span>
                                           )}
-                                          <span className="text-xs text-white/70">{sourceLabel(r.source)}</span>
+                                          <span className="fs-12 text-white/70">{sourceLabel(r.source)}</span>
                                           {run.count > 1 && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
+                                            <span className="fs-12 px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
                                               ×{run.count}
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-xs text-white/50 mt-1">
+                                        <div className="fs-12 text-white/50 mt-1">
                                           <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
                                             <span>
                                               {at.format('DD MMM YYYY HH:mm:ss')}

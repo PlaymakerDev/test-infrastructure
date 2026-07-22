@@ -3,10 +3,19 @@ import { toWeightInspectionChartData } from '@/features/admin/tracking/overall/d
 import { useWeightInspection } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { TbUserCheck } from 'react-icons/tb'
 
 interface Props { }
+
+type Period = 'วัน' | 'เดือน' | 'ปี'
+type DateType = '7Day' | 'month' | 'year'
+
+const PERIOD_DATE_TYPE: Record<Period, DateType> = {
+  'วัน': '7Day',
+  'เดือน': 'month',
+  'ปี': 'year',
+}
 
 const BARS = [
   { color: '#66AEFF', dataKey: 'total', label: 'รถเข้าชั่งทั้งหมด' },
@@ -14,13 +23,8 @@ const BARS = [
 ]
 
 const ChartMobile: React.FC<Props> = () => {
-  const [dateType, setDateType] = useState<'7Day' | 'month' | 'year'>('7Day')
-
-  const handlePeriodChange = useCallback((period: 'วัน' | 'เดือน' | 'ปี') => {
-    if (period === 'วัน') setDateType('7Day')
-    else if (period === 'เดือน') setDateType('month')
-    else setDateType('year')
-  }, [])
+  const [period, setPeriod] = useState<Period>('วัน')
+  const dateType = PERIOD_DATE_TYPE[period]
 
   const { data, isLoading, isError, isPlaceholderData } = useWeightInspection({
     date: dayjs().format('YYYY-MM-DD'),
@@ -46,12 +50,12 @@ const ChartMobile: React.FC<Props> = () => {
         bars={BARS}
         data={chartData}
         periods={['วัน', 'เดือน', 'ปี']}
-        defaultPeriod='วัน'
-        onPeriodChange={(item) => handlePeriodChange(item as 'วัน' | 'เดือน' | 'ปี')}
+        activePeriod={period}
+        onPeriodChange={(item) => setPeriod(item as Period)}
         cardBorderColor='transparent'
       />
     )
-  }, [isLoading, isPlaceholderData, isError, chartData, handlePeriodChange])
+  }, [isLoading, isPlaceholderData, isError, chartData, period])
 
   return renderChart
 }

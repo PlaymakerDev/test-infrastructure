@@ -8,6 +8,7 @@ import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
@@ -49,6 +50,9 @@ const MODE_COLORS: Record<TrafficSignalProject['operatingMode'], string> = {
   Auto: '#FFFFFF',          // white
   Flashing24Hr: '#FFFFFF',  // white
 }
+
+// Bureau-divider colSpan must match the number of VISIBLE columns.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 9 : 8
 
 const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   const router = useRouter()
@@ -100,10 +104,8 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
     return out
   }, [projects])
 
-  const TOTAL_COLS = 9
-
   const columns: ColumnsType<Row> = useMemo(() => {
-    return [
+    const cols: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -251,6 +253,8 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
         },
       },
     ]
+    // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
+    return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')
   }, [goToDetail])
 
   return (

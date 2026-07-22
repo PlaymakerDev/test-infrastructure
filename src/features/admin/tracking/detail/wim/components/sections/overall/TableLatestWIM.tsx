@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { APIResponseWIMDaily, WIMDailyData } from '@/types/tracking/detail-api'
@@ -20,6 +20,12 @@ const STATUS_CLASS: Record<StatusType, string> = {
 
 const TableLatestWIM: React.FC<Props> = (props) => {
   const { data } = props
+
+  const sortedData = useMemo(() => {
+    return [...(data?.data ?? [])].sort((a, b) =>
+      dayjs(b.date_time, 'DD/MM/BBBB').valueOf() - dayjs(a.date_time, 'DD/MM/BBBB').valueOf()
+    )
+  }, [data?.data])
 
   const getStatus = useCallback((remark: string, total: number) => {
     if (total > 0) return 'เปิดปกติ'
@@ -94,7 +100,7 @@ const TableLatestWIM: React.FC<Props> = (props) => {
   return (
     <Table<WIMDailyData>
       columns={columns}
-      dataSource={data?.data}
+      dataSource={sortedData}
       pagination={false}
       size="middle"
       rowKey="key"

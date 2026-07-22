@@ -1,15 +1,18 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Empty, Image } from 'antd'
 import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
-import BluePagination from './BluePagination'
-import { parseViolationTimestamp, useViolationRows } from './useViolationRows'
+import AppPagination from '@/components/pagination/AppPagination'
+import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from './useViolationRows'
 
 interface Props {
   filter: ViolationFilter
+  /** Reports pagination up to the parent section so the export modal's
+   *  หน้าปัจจุบัน scope can mirror the exact rows this grid shows. */
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
 const PAGE_SIZE = 10
@@ -21,11 +24,12 @@ const VIOLATION_COLOR = '#E94C4C'
 const GRID_CLASSES =
   'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
 
-const CCTVViolationData: React.FC<Props> = ({ filter }) => {
+const CCTVViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
-  const { pageRows, totalPages, page, setPage, isLoading, pageStart } =
-    useViolationRows(filter, PAGE_SIZE)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+  const { pageRows, total, page, setPage, isLoading, pageStart } =
+    useViolationRows(filter, pageSize)
 
   const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
   const ipByCameraId = useMemo(() => {
@@ -34,7 +38,7 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
     return m
   }, [camerasData])
 
-  const showPagination = totalPages > 1
+  const showPagination = total > 0
 
   if (isLoading && pageRows.length === 0) {
     return (
@@ -61,7 +65,11 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
     <div className='flex flex-col gap-3'>
       <div className={GRID_CLASSES}>
         {pageRows.map((r, i) => {
-          const color = VIOLATION_COLOR
+          // Vehicle (รถ) violations are orange to match the stat card; the
+          // default red (VIOLATION_COLOR) stays for pedestrian (คน).
+          const color = isVehicleViolation(r.crosswalk.name_th)
+            ? '#FF7B00'
+            : VIOLATION_COLOR
           const ip = ipByCameraId.get(r.camera.id) || r.camera.sta || '-'
           return (
             <div
@@ -107,7 +115,16 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
         })}
       </div>
       {showPagination && (
-        <BluePagination current={page} total={totalPages} onChange={setPage} />
+        <AppPagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={(p, s) => {
+            setPage(p)
+            setPageSize(s)
+            onPageChange?.(p, s)
+          }}
+        />
       )}
     </div>
   )

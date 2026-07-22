@@ -22,6 +22,14 @@ export interface PanelCamera {
   functions?: string[]
   /** [lng, lat] — used to plot the camera on the detail map. */
   coord?: [number, number]
+  /**
+   * Install-point (solution_location) id this camera belongs to. Optional —
+   * only the route-search map sets it, to hover-highlight every pin sharing an
+   * install point and dim the rest. Absent on the single-install detail map.
+   */
+  groupId?: string
+  /** Install-point (จุดติดตั้ง) display name — shown on hover next to the pin. */
+  groupName?: string
 }
 
 export interface CctvInstallDetail {

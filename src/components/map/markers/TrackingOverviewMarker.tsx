@@ -70,7 +70,6 @@ export function DefaultStationPopup({
       style={{
         padding: '14px 16px',
         minWidth: 240,
-        fontFamily: 'ui-sans-serif,system-ui',
         background: '#000000CC',
         border: `1px solid ${color}`,
         borderRadius: 12,

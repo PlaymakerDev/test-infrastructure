@@ -7,6 +7,8 @@ import { COUNT_FIELD_BY_TYPE, VEHICLE_TYPES } from './data/vehicleTypeKeys'
 
 interface Props {
   date?: string
+  /** Selected camera id ('all' / undefined = every camera). */
+  cameraId?: string
 }
 
 /** Pick the vehicle type with the highest count for a given bucket. */
@@ -27,11 +29,12 @@ const dominantType = (b: CountingHourBucket) => {
 
 /** Top-5 hours by `total_count`. Each card shows the time, totals, and the
  *  dominant vehicle type for that hour. */
-const PeakHourCards: React.FC<Props> = ({ date }) => {
+const PeakHourCards: React.FC<Props> = ({ date, cameraId }) => {
   const { id } = useDetailContext()
   const { data: apiData } = useTrafficVolumeCountHour({
     solution_id: id,
     date,
+    camera_id: cameraId && cameraId !== 'all' ? cameraId : undefined,
   })
 
   const topHours = useMemo(() => {

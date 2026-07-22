@@ -12,15 +12,18 @@ import { VEHICLE_TYPES } from './data/vehicleTypeKeys'
 interface Props {
   /** YYYY-MM-DD — propagated from the tab-level FilterBar. */
   date?: string
+  /** Selected camera id ('all' / undefined = every camera). */
+  cameraId?: string
 }
 
 /** Build a 24-row dataset (00:00 → 23:00), one column per hour, with per-
  *  vehicle-type counts as separate keys. */
-const StackedHourlyBarChart: React.FC<Props> = ({ date }) => {
+const StackedHourlyBarChart: React.FC<Props> = ({ date, cameraId }) => {
   const { id } = useDetailContext()
   const { data: apiData } = useTrafficVolumeCountHour({
     solution_id: id,
     date,
+    camera_id: cameraId && cameraId !== 'all' ? cameraId : undefined,
   })
 
   const data = useMemo<BarChartDataPoint[]>(() => {

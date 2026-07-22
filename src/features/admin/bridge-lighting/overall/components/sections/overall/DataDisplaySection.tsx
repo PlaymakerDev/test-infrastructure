@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SummaryTableBridgeLighting } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 import FormSearchBridgeLighting from './FormSearchBridgeLighting'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import { useScopeAll } from '@/hooks/useScopeAll'
@@ -55,6 +57,33 @@ const BRIDGE_FILTERS: FilterConfig[] = [
   },
 ]
 
+// Export row = one solution tagged with the top-level department the table's
+// group-header row shows — the export flattens those divider rows into a
+// หน่วยงาน column (same treatment as CCTV_EXPORT_COLUMNS in cctv/overall).
+type BridgeLightingExportRow = BridgeLightingSolution & { bureau: string }
+
+// Shared column config for both PDF and Excel exports — SAME columns, SAME
+// order as the on-screen SummaryTableBridgeLighting (รหัสสายทาง → ชื่อโครงการ
+// → จุดติดตั้ง → เลขที่สัญญา → การค้ำประกัน → สถานะ), plus ลำดับ/หน่วยงาน up
+// front. `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+const BRIDGE_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: BridgeLightingExportRow, index: number) => string | number
+}[] = [
+  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+  { header: 'หน่วยงาน', width: 16, widthPct: 12, value: (r) => r.bureau || '-' },
+  { header: 'รหัสสายทาง', width: 13, widthPct: 11, value: (r) => r.road.code_name || '-' },
+  { header: 'ชื่อโครงการ', width: 34, widthPct: 22, align: 'left', value: (r) => r.project.project_name || '-' },
+  { header: 'จุดติดตั้ง', width: 34, widthPct: 22, align: 'left', value: (r) => r.solution.solution_name || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
+  { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
+]
+
 interface Props {
   deptId: string | string[] | number
 }
@@ -68,6 +97,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const [activeFilter, setActiveFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Same query key InfoCardSection uses — both hit the same cache entry,
   // no extra request.
@@ -127,6 +157,31 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }))
       .filter((dept) => dept.sub_department.length > 0)
   }, [data, activeFilter, search])
+
+  // Export rows in the SAME order the table displays: grouped by top-level
+  // dept (SummaryTableBridgeLighting's header rows), each solution tagged with
+  // that dept's short name — exports exactly the filtered rows on screen.
+  const exportRows = useMemo<BridgeLightingExportRow[]>(() => {
+    const out: BridgeLightingExportRow[] = []
+    for (const dept of filteredData) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          out.push({ ...sol, bureau: dept.department_short_name })
+        }
+      }
+    }
+    return out
+  }, [filteredData])
+
+  // Human-readable note of the active filter/search — printed in the PDF
+  // header so a reader knows what subset they're looking at.
+  const exportFilterNote = useMemo(() => {
+    const parts: string[] = []
+    const filterLabel = BRIDGE_FILTERS.find((f) => f.key === activeFilter)?.label
+    if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
+    if (search.trim()) parts.push(`ค้นหา "${search.trim()}"`)
+    return parts.length ? parts.join(' · ') : undefined
+  }, [activeFilter, search])
 
   // Flatten dept → sub-dept → solutions into card items, tagging each with its
   // sub-dept short name so ProjectCardGrid groups by แขวง out of the box —
@@ -191,9 +246,38 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           formSearch={<FormSearchBridgeLighting onSearchChange={setSearch} />}
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
-          onExport={() => alert('TODO: นำออกเอกสาร')}
+          onExport={() => setExportOpen(true)}
         />
       </section>
+
+      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
+          shows), through the shared pdf/excel utils like cctv overall. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Bridge_Lighting_Overview_Report',
+            title: 'รายงานสรุปภาพรวมไฟประดับสะพาน (Bridge Lighting Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(BRIDGE_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Bridge_Lighting_Overview_Report',
+            sheetName: 'Bridge Lighting Overview',
+            title: 'รายงานสรุปภาพรวมไฟประดับสะพาน (Bridge Lighting Overview)',
+            filterNote: exportFilterNote,
+            columns: hideProjectNameColumns(BRIDGE_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
+            rows: exportRows,
+          })
+        }}
+      />
       <section id='bridge-lighting-summary-table' className='mt-5 scroll-mt-24'>
         {renderContent}
       </section>

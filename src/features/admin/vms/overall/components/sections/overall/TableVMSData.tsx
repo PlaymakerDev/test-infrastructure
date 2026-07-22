@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   data?: APIResponseVMSList
@@ -30,7 +31,8 @@ type DataRow = {
 
 type Row = HeaderRow | DataRow
 
-const TOTAL_COLS = 8
+// Dept header row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 /** Bordered rounded pill — shared visual language with the crosswalk overall
  *  table. Used for การค้ำประกัน + สถานะ (with an optional leading icon). */
@@ -60,7 +62,10 @@ const StreamButton: React.FC<{ url: string }> = ({ url }) => {
 const CameraButton: React.FC<{ url: string }> = ({ url }) => {
   if (!url) {
     return (
-      <span className='text-xs whitespace-nowrap' style={{ color: '#666' }}>
+      <span
+        className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+        style={{ border: '1px solid #979797', color: '#979797' }}
+      >
         ไม่มีกล้อง
       </span>
     )
@@ -68,7 +73,7 @@ const CameraButton: React.FC<{ url: string }> = ({ url }) => {
   return (
     <span
       className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap cursor-pointer hover:opacity-80'
-      style={{ border: '1px solid rgba(255,255,255,0.6)', color: 'rgba(255,255,255,0.6)' }}
+      style={{ border: '1px solid #66AEFF', color: '#66AEFF' }}
     >
       Connect
     </span>
@@ -131,12 +136,20 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
     [router],
   )
 
-  const columns: ColumnsType<Row> = useMemo(() => [
+  const columns: ColumnsType<Row> = useMemo(() => {
+    const all: ColumnsType<Row> = [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
       className: 'col-road-code',
       width: 150,
+      // NOTE: no antd `rowSpan` here. Merging the road-code column via rowSpan
+      // while the dept header row spans all columns (colSpan) made antd drop the
+      // road-code <td> on continuation rows, shifting every column one to the
+      // LEFT — worst when a filter clusters many rows onto one road (big span).
+      // Instead we keep a <td> on every row and only PRINT the code on the
+      // first row of each road group (blank below), so it still reads grouped
+      // and the columns never misalign.
       onCell: (row) => {
         if (row.type === 'header') {
           return {
@@ -144,7 +157,7 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
             style: { background: '#2a2a2a', padding: '10px 16px' },
           }
         }
-        return { rowSpan: row.roadCodeRowSpan }
+        return {}
       },
       render: (_: unknown, row: Row) => {
         if (row.type === 'header') {
@@ -160,6 +173,9 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
             </div>
           )
         }
+        // Continuation row of the same road group → blank cell (still occupies
+        // the column so the row keeps all 8 cells).
+        if (row.roadCodeRowSpan === 0) return null
         return (
           <DetailLinkText onClick={() => goToDetail(row.data)}>
             <span className='font-medium'>{row.data.road.code_name}</span>
@@ -267,7 +283,10 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         return <CameraButton url={row.data.vms.desktop_screen} />
       },
     },
-  ], [goToDetail])
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [goToDetail])
 
   return (
     <Table<Row>

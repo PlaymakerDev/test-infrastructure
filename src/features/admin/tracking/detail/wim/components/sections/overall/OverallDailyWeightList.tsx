@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Empty, Pagination } from 'antd'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -7,6 +7,7 @@ import 'dayjs/locale/th'
 import CardList, { DataType } from '@/components/list/CardList'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
+import type { DailyWeightLogRow } from '@/features/admin/tracking/detail/wim/hooks'
 import { VEHICLE_PROPERTIES } from '@/constants'
 
 dayjs.extend(buddhistEra)
@@ -17,6 +18,9 @@ interface Props {
   stationType: string | null | undefined;
   isOverWeight?: 'Y' | 'N';
   date?: string;
+  /** Reports the rows currently visible on this list's page (pagination is
+   *  internal) so the parent's export dialog can offer a หน้าปัจจุบัน scope. */
+  onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
 }
 
 const STATUS_MAP: Record<string, string> = {
@@ -27,7 +31,7 @@ const STATUS_MAP: Record<string, string> = {
 const DEFAULT_PAGE_SIZE = 10
 
 const OverallDailyWeightList: React.FC<Props> = (props) => {
-  const { stationId, stationType, isOverWeight, date } = props
+  const { stationId, stationType, isOverWeight, date, onPageRowsChange } = props
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
@@ -45,6 +49,10 @@ const OverallDailyWeightList: React.FC<Props> = (props) => {
     isOverWeight,
     date
   )
+
+  useEffect(() => {
+    onPageRowsChange?.(data)
+  }, [data, onPageRowsChange])
 
   const cards = useMemo<DataType[]>(() => data.map((row) => {
     const images = [

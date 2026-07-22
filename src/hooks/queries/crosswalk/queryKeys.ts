@@ -73,7 +73,9 @@ export const crosswalkKeys = {
       ] as const,
     violationList: (params: APIRequestCrosswalkViolationList) =>
       [
-        ...crosswalkKeys.detail.all(params.solution_id),
+        // solution_id is optional on this request — same 'all' fallback as
+        // the `cameras` key above (params in the key disambiguates fully).
+        ...crosswalkKeys.detail.all(params.solution_id ?? 'all'),
         'violation-list',
         params,
       ] as const,

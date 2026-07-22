@@ -68,7 +68,12 @@ const TrafficVolumePopup: React.FC<{
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className='fs-12 text-slate-500 mt-1.5'>
+      <p
+        className={`fs-12 font-semibold mt-1.5 ${p.is_active ? 'text-emerald-400' : 'text-red-400'}`}
+      >
+        ● {p.is_active ? 'ออนไลน์' : 'ออฟไลน์'}
+      </p>
+      <p className='fs-12 text-slate-500 mt-0.5'>
         ปริมาณจราจร: {Number(p.total_count ?? 0).toLocaleString()} คัน
       </p>
       {p.id != null && (

@@ -4,8 +4,17 @@ import React, { useState } from 'react'
 import { TbSearch } from 'react-icons/tb'
 import SearchRouteSection from './SearchRouteSection'
 import { useGPSContext } from '../../../context'
+import { AllVehicleLocationData } from '@/types/tracking/detail-gps-api'
 
-const DrawerSearchSection: React.FC = () => {
+interface Props {
+  data?: AllVehicleLocationData
+  isLoading?: boolean
+  isError?: boolean
+  onSearch?: (search: string) => void
+}
+
+const DrawerSearchSection: React.FC<Props> = (props) => {
+  const { data, isLoading, isError, onSearch } = props
   const [open, setOpen] = useState(false)
   const { route } = useGPSContext()
 
@@ -45,8 +54,15 @@ const DrawerSearchSection: React.FC = () => {
           close: { color: 'white' },
         }}
         title='ค้นหาสายทาง'
+        size={600}
       >
-        <SearchRouteSection openFromDrawer={true} />
+        <SearchRouteSection
+          openFromDrawer={true}
+          data={data}
+          isLoading={isLoading}
+          isError={isError}
+          onSearch={onSearch}
+        />
       </Drawer>
     </>
   )
