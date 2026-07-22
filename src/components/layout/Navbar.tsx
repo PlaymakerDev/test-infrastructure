@@ -670,10 +670,17 @@ export default function Navbar() {
             disabled={!focusAvailable}
             menu={{
               selectedKeys: [mapFocusMode],
+              // Truck Tracking overall (/admin/tracking): only ทั้งหมด/ซ่อนทั้งคู่ —
+              // its tabs' side rails are one visual unit, so per-side hiding
+              // reads broken there (2026-07-22).
               items: [
                 { key: 'off', label: 'แสดงทั้งหมด', icon: <TbZoomReset size={16} /> },
-                { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
-                { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                ...(pathname === '/admin/tracking'
+                  ? []
+                  : [
+                      { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
+                      { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                    ]),
                 { key: 'both', label: 'ซ่อนทั้งสองฝั่ง', icon: <TbZoomInArea size={16} /> },
               ],
               onClick: ({ key }) =>
