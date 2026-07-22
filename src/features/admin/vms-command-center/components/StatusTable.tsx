@@ -18,7 +18,7 @@ import { TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
 import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import StatusPill from './StatusPill'
-import { useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
+import { useAllowSettingsVMSScreenInfo, useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
 
 interface Props {
   onOpenSignDetail?: (vmsId: number) => void
@@ -209,6 +209,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     refetchIntervalMs: 30_000,
   })
   const centralize = useCentralizeVMSScreenInfo()
+  const allowSettings = useAllowSettingsVMSScreenInfo()
 
   // Keep `rows` stable across renders — the tree/filter memos depend on it.
   const rows: ScreenInfoItem[] = useMemo(() => data?.data?.data ?? [], [data])
@@ -321,6 +322,29 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       })
     },
     [handleCentralize, modal]
+  )
+
+  const handleAllowSettings = useCallback(
+    async (wid: number, next: boolean) => {
+      try {
+        await allowSettings.mutateAsync({ wid, data: { is_allowed_settings: next } })
+        message.success(next ? 'แสดงป้ายนี้ใน Command Center แล้ว' : 'ซ่อนป้ายนี้จาก Command Center แล้ว')
+      } catch {
+        message.error('อัพเดตสถานะไม่สำเร็จ')
+      }
+    },
+    [allowSettings, message]
+  )
+
+  // No confirm-before-disable here (unlike centralize) — is_allowed_settings
+  // defaults false for every newly-synced sign, so turning it OFF is the
+  // common/expected state, not a surprising downgrade an admin needs a
+  // safety prompt for.
+  const handleToggleAllowSettings = useCallback(
+    (row: ScreenInfoItem, next: boolean) => {
+      void handleAllowSettings(row.wid, next)
+    },
+    [handleAllowSettings]
   )
 
   const columns: ColumnsType<ScreenInfoItem> = useMemo(
@@ -465,6 +489,32 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           ),
       },
       {
+        title: (
+          <Tooltip title="ป้ายที่เพิ่ง sync เข้ามาจะปิดอยู่โดย default — ต้องตรวจสอบแล้วเปิดเองก่อนจะไปโผล่ในแถบด้านซ้ายของ Command Center">
+            <span>แสดงผล</span>
+          </Tooltip>
+        ),
+        key: 'is_allowed_settings',
+        width: 130,
+        align: 'center',
+        fixed: 'right',
+        render: (_: unknown, r) => (
+          <Switch
+            size="small"
+            checked={r.is_allowed_settings}
+            loading={allowSettings.isPending && allowSettings.variables?.wid === r.wid}
+            onChange={(next) => handleToggleAllowSettings(r, next)}
+            checkedChildren="แสดง"
+            unCheckedChildren="ซ่อน"
+            style={{
+              backgroundColor: r.is_allowed_settings
+                ? 'var(--default-blue)'
+                : 'rgb(220, 38, 38)',
+            }}
+          />
+        ),
+      },
+      {
         title: 'เข้ากลุ่ม',
         key: 'is_centralized',
         width: 130,
@@ -487,7 +537,15 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         ),
       },
     ],
-    [centralize.isPending, centralize.variables, handleToggleCentralize, onOpenSignDetail]
+    [
+      centralize.isPending,
+      centralize.variables,
+      handleToggleCentralize,
+      allowSettings.isPending,
+      allowSettings.variables,
+      handleToggleAllowSettings,
+      onOpenSignDetail,
+    ]
   )
 
   // AntD's expandable API — only one open at a time to prevent an HLS stampede.

@@ -3,8 +3,10 @@ import ApiService from "../ApiService"
 import { centralScope } from "./scopeParam"
 import { APIResponseVMSDetail } from "@/types/vms/detail-api"
 import type {
+  APIRequestScreenInfoAllowSettings,
   APIRequestScreenInfoCentralize,
   APIResponseScreenInfo,
+  APIResponseScreenInfoAllowSettings,
   APIResponseScreenInfoCentralize,
 } from "@/types/vms/screen-info-api"
 
@@ -66,6 +68,21 @@ export const putVMSScreenInfoCentralizeAPI = async (
 ) => {
   return ApiService.fetchData<APIResponseScreenInfoCentralize, APIRequestScreenInfoCentralize>({
     url: `/vms/screen-info/${wid}/centralize`,
+    method: 'PUT',
+    data,
+  })
+}
+
+// Gates whether a sign appears in the departments (sidebar) tree at all —
+// every automated crossing-creation path defaults this false, so newly
+// migrated/synced signs need this reviewed once before they show up
+// anywhere else in Command Center.
+export const putVMSScreenInfoAllowSettingsAPI = async (
+  wid: number,
+  data: APIRequestScreenInfoAllowSettings
+) => {
+  return ApiService.fetchData<APIResponseScreenInfoAllowSettings, APIRequestScreenInfoAllowSettings>({
+    url: `/vms/screen-info/${wid}/allow-settings`,
     method: 'PUT',
     data,
   })
