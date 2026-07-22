@@ -52,8 +52,15 @@ export interface BarChartProps {
   stats?: BarChartStat[]
   /** ตัวเลือก tab period — ถ้าไม่ส่งจะไม่แสดง tab */
   periods?: string[]
-  /** period ที่ active เริ่มต้น */
+  /** period ที่ active เริ่มต้น (ใช้ตอน mount ครั้งแรกเท่านั้น — ถ้าต้องคุมค่าจาก
+   *  parent ตลอด อายุ component ให้ใช้ `activePeriod` แทน) */
   defaultPeriod?: string
+  /** period ที่ active แบบ controlled — ส่ง state ของฝั่ง parent เข้ามาเพื่อให้
+   *  tab ที่เลือกไว้ไม่รีเซ็ตกลับไปที่ `defaultPeriod` เวลา component ตัวนี้ถูก
+   *  unmount/remount ระหว่างรอ fetch (เช่น parent สลับไปโชว์ Skeleton ระหว่าง
+   *  isLoading แล้วสลับกลับมา — internal state ที่ seed จาก defaultPeriod ตอน
+   *  mount จะหายไปพร้อม unmount). ถ้าไม่ส่งจะ fallback ไปใช้ internal state เดิม */
+  activePeriod?: string
   /** callback เมื่อเปลี่ยน period */
   onPeriodChange?: (period: string) => void
   /** ความสูง chart (default 280) */
@@ -108,6 +115,7 @@ const BarChart: React.FC<BarChartProps> = ({
   stats,
   periods,
   defaultPeriod,
+  activePeriod: controlledActivePeriod,
   onPeriodChange,
   height = 280,
   yAxisTicks,
@@ -125,10 +133,11 @@ const BarChart: React.FC<BarChartProps> = ({
   tooltipShowPercent = false,
   tooltipUnit,
 }) => {
-  const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
+  const [internalActivePeriod, setInternalActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
+  const activePeriod = controlledActivePeriod ?? internalActivePeriod
 
   const handlePeriod = (p: string) => {
-    setActivePeriod(p)
+    if (controlledActivePeriod === undefined) setInternalActivePeriod(p)
     onPeriodChange?.(p)
   }
 

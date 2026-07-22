@@ -84,7 +84,7 @@ const ChartPreviousWeightVehicle: React.FC<Props> = () => {
         data={chartData}
         lines={LINES}
         periods={['วันนี้', 'เดือน', 'ปี']}
-        defaultPeriod='วันนี้'
+        activePeriod={period}
         onPeriodChange={(p) => setPeriod(p as Period)}
         tooltipShowDot
         height={260}

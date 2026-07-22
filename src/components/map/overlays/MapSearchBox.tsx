@@ -141,55 +141,59 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
             <TbSearch size={18} className='text-white/70' />
           </button>
         ) : (
-        <AutoComplete
-          value={term}
-          onChange={setTerm}
-          options={options}
-          notFoundContent={
-            enabled ? (
-              roads.isFetching ? (
-                <div className='text-white/60 py-2 text-center'>กำลังค้นหา…</div>
+          <AutoComplete
+            value={term}
+            onChange={setTerm}
+            options={options}
+            notFoundContent={
+              enabled ? (
+                roads.isFetching ? (
+                  <div className='text-white/60 py-2 text-center'>กำลังค้นหา…</div>
+                ) : (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={<span className='text-white/60'>ไม่พบสายทาง</span>}
+                  />
+                )
               ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={<span className='text-white/60'>ไม่พบสายทาง</span>}
-                />
+                <div className='text-white/50 py-2 text-center text-[12px]'>
+                  พิมพ์อย่างน้อย 2 ตัวอักษร เช่น ชม.3035
+                </div>
               )
-            ) : (
-              <div className='text-white/50 py-2 text-center text-[12px]'>
-                พิมพ์อย่างน้อย 2 ตัวอักษร เช่น ชม.3035
-              </div>
-            )
-          }
-          onSelect={(val) => {
-            const id = Number(val)
-            if (!Number.isFinite(id)) return
-            flyToRoad(id)
-            const road = roads.data?.res_data.find((r) => r.id === id)
-            if (road) setTerm(road.road_code)
-          }}
-          style={{ width: '100%' }}
-          popupClassName='map-road-search-popup'
-        >
-          <Input
-            allowClear
-            size='large'
-            autoFocus={isMobile}
-            prefix={<TbSearch size={16} className='text-white/60' />}
-            placeholder='ค้นหาสายทาง (เช่น ชม.3035)'
-            // Collapse back to the button when leaving an EMPTY field — a
-            // typed term keeps the box open so the searched code stays visible.
-            onBlur={() => {
-              if (isMobile && term.trim() === '') setExpanded(false)
+            }
+            onSelect={(val) => {
+              const id = Number(val)
+              if (!Number.isFinite(id)) return
+              flyToRoad(id)
+              const road = roads.data?.res_data.find((r) => r.id === id)
+              if (road) setTerm(road.road_code)
             }}
-            style={{
-              background: 'rgba(5,13,26,0.85)',
-              borderColor: 'rgba(255,255,255,0.12)',
-              color: '#fff',
-              backdropFilter: 'blur(8px)',
+            style={{ width: '100%' }}
+            classNames={{
+              popup: {
+                root: 'map-road-search-popup'
+              }
             }}
-          />
-        </AutoComplete>
+          >
+            <Input
+              allowClear
+              size='large'
+              autoFocus={isMobile}
+              prefix={<TbSearch size={16} className='text-white/60' />}
+              placeholder='ค้นหาสายทาง (เช่น ชม.3035)'
+              // Collapse back to the button when leaving an EMPTY field — a
+              // typed term keeps the box open so the searched code stays visible.
+              onBlur={() => {
+                if (isMobile && term.trim() === '') setExpanded(false)
+              }}
+              style={{
+                background: 'rgba(5,13,26,0.85)',
+                borderColor: 'rgba(255,255,255,0.12)',
+                color: '#fff',
+                backdropFilter: 'blur(8px)',
+              }}
+            />
+          </AutoComplete>
         )}
       </div>
     </ConfigProvider>
