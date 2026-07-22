@@ -39,7 +39,7 @@ const TableOverallDailyWeight: React.FC<Props> = (props) => {
     isOverWeight
   )
 
-  const columns = getDailyWeightLogColumns()
+  const columns = getDailyWeightLogColumns({ hideSpeed: stationType === 'STATION' })
 
   if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description='ไม่พบข้อมูล' />
 

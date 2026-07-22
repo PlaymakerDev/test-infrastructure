@@ -7,7 +7,7 @@ import { INIT_MODAL_WEIGHT_LOG, useWIMContext } from '../../../context'
 import { FormSearchWeightLog, TableWeightLog, OverallDailyWeightList } from '../../../components'
 import { useDailyWeightLogList } from '../../../hooks'
 import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '../../../data/weightFilters'
-import { DAILY_WEIGHT_LOG_EXPORT_COLUMNS, fetchDailyWeightLogExportRows } from '../../../data/dailyWeightLogExport'
+import { getDailyWeightLogExportColumns, fetchDailyWeightLogExportRows } from '../../../data/dailyWeightLogExport'
 import type { FilterStats, ViewMode } from '@/components/searchable/SearchBar'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { fmtNumber } from '@/utils/formatNumber'
@@ -61,6 +61,11 @@ const Content: React.FC<Props> = () => {
     if (weightFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
     return parts.length ? parts.join(' · ') : undefined
   }, [stationLabel, stationName, date, weightFilter])
+
+  const exportColumns = useMemo(
+    () => getDailyWeightLogExportColumns({ hideSpeed: stationType === 'STATION' }),
+    [stationType]
+  )
 
   // The table server-paginates internally, so the export fetches the full
   // result set for the modal's day + CURRENT filter through the same endpoint
@@ -128,7 +133,7 @@ const Content: React.FC<Props> = () => {
             filenameBase: 'Tracking_Weight_Log_Detail',
             title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
             filterNote: exportFilterNote,
-            columns: DAILY_WEIGHT_LOG_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows,
           })
         }}
@@ -140,7 +145,7 @@ const Content: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Weight_Log_Detail',
             sheetName: 'Weight Log Detail',
-            columns: DAILY_WEIGHT_LOG_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })
         }}

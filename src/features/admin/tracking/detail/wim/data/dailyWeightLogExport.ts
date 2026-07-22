@@ -10,39 +10,61 @@ dayjs.locale('th')
 // export refetches with the reported total so nothing is cut off.
 const EXPORT_PAGE_SIZE = 100
 
+export interface DailyWeightLogExportColumnsOptions {
+  /** STATION is a static weighbridge with no speed sensor (unlike WIM) — pass
+   *  true (station_type === 'STATION') to omit the ความเร็ว column, mirroring
+   *  getDailyWeightLogColumns' hideSpeed option so the export matches the
+   *  on-screen table exactly. */
+  hideSpeed?: boolean
+}
+
+type DailyWeightLogExportColumn = {
+  key: string
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: DailyWeightLogRow, index: number) => string | number
+}
+
 /** Shared column config for both PDF and Excel exports of the daily weight-log
  *  tables — SAME columns, SAME order and cell text as getDailyWeightLogColumns
  *  (TableOverallDailyWeight, OVERALL tab + TableWeightLog, drill-down modal),
  *  minus the two image columns (ภาพป้ายทะเบียน/ภาพลักษณะรถ render as pictures
  *  on screen — skipped in a printed report), plus ลำดับ so a printed row can be
  *  referenced. `width` = Excel chars, `widthPct` = PDF table percent (sums to 100). */
-export const DAILY_WEIGHT_LOG_EXPORT_COLUMNS: {
-  header: string
-  width: number
-  widthPct: number
-  align?: 'left' | 'center' | 'right'
-  value: (row: DailyWeightLogRow, index: number) => string | number
-}[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  {
-    header: 'วันที่และเวลา',
-    width: 24,
-    widthPct: 14,
-    value: (r) => (r.time_stamp ? `${dayjs(r.time_stamp).format('DD MMM BBBB HH:mm:ss')} น.` : '-'),
-  },
-  {
-    header: 'ทะเบียนรถ',
-    width: 20,
-    widthPct: 13,
-    value: (r) => [r.lp_head_no, r.lp_head_province_name].filter(Boolean).join(' ') || '-',
-  },
-  { header: 'ประเภทรถ', width: 34, widthPct: 22, align: 'left', value: (r) => r.vehicle_class_desc || '-' },
-  { header: 'น้ำหนักที่ชั่งได้', width: 15, widthPct: 10, value: (r) => `${Number(r.gross_weight ?? 0).toFixed(3)} ตัน` },
-  { header: 'น้ำหนักตามกำหนด', width: 17, widthPct: 10, value: (r) => `${Number(r.legal_weight ?? 0).toFixed(3)} ตัน` },
-  { header: 'น้ำหนักเกิน', width: 13, widthPct: 9, value: (r) => `${Number(r.gross_weight_over ?? 0).toFixed(3)} ตัน` },
-  { header: 'ความเร็ว', width: 12, widthPct: 8, value: (r) => (r.speed ? `${Number(r.speed).toFixed(2)} กม./ชม.` : '-') },
-  { header: 'สถานะ', width: 13, widthPct: 9, value: (r) => r.is_over_weight_desc || '-' },
-]
+export const getDailyWeightLogExportColumns = (
+  options?: DailyWeightLogExportColumnsOptions
+): DailyWeightLogExportColumn[] => {
+  const { hideSpeed = false } = options ?? {}
+
+  const columns: DailyWeightLogExportColumn[] = [
+    { key: 'no', header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    {
+      key: 'datetime',
+      header: 'วันที่และเวลา',
+      width: 24,
+      widthPct: 14,
+      value: (r) => (r.time_stamp ? `${dayjs(r.time_stamp).format('DD MMM BBBB HH:mm:ss')} น.` : '-'),
+    },
+    {
+      key: 'plate',
+      header: 'ทะเบียนรถ',
+      width: 20,
+      widthPct: 13,
+      value: (r) => [r.lp_head_no, r.lp_head_province_name].filter(Boolean).join(' ') || '-',
+    },
+    { key: 'vehicle_class_desc', header: 'ประเภทรถ', width: 34, widthPct: 22, align: 'left', value: (r) => r.vehicle_class_desc || '-' },
+    { key: 'gross_weight', header: 'น้ำหนักที่ชั่งได้', width: 15, widthPct: 10, value: (r) => `${Number(r.gross_weight ?? 0).toFixed(3)} ตัน` },
+    { key: 'legal_weight', header: 'น้ำหนักตามกำหนด', width: 17, widthPct: 10, value: (r) => `${Number(r.legal_weight ?? 0).toFixed(3)} ตัน` },
+    { key: 'gross_weight_over', header: 'น้ำหนักเกิน', width: 13, widthPct: 9, value: (r) => `${Number(r.gross_weight_over ?? 0).toFixed(3)} ตัน` },
+    { key: 'speed', header: 'ความเร็ว', width: 12, widthPct: 8, value: (r) => (r.speed ? `${Number(r.speed).toFixed(2)} กม./ชม.` : '-') },
+    { key: 'is_over_weight_desc', header: 'สถานะ', width: 13, widthPct: 9, value: (r) => r.is_over_weight_desc || '-' },
+  ]
+
+  if (!hideSpeed) return columns
+  return columns.filter((column) => column.key !== 'speed')
+}
 
 /** Fetches the FULL weight-log result set for the current filter (the tables
  *  server-paginate internally) through the same endpoint pair the tables read

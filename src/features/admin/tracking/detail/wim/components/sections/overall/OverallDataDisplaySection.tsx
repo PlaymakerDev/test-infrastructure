@@ -7,7 +7,7 @@ import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hook
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import { WEIGHT_FILTERS, IS_OVER_WEIGHT_BY_FILTER, WeightFilter } from '@/features/admin/tracking/detail/wim/data/weightFilters'
 import {
-  DAILY_WEIGHT_LOG_EXPORT_COLUMNS,
+  getDailyWeightLogExportColumns,
   fetchDailyWeightLogExportRows,
 } from '@/features/admin/tracking/detail/wim/data/dailyWeightLogExport'
 import SearchBar, { FilterStats } from '@/components/searchable/SearchBar'
@@ -59,6 +59,11 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     if (weightFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
     return parts.join(' · ')
   }, [weightFilter])
+
+  const exportColumns = useMemo(
+    () => getDailyWeightLogExportColumns({ hideSpeed: stationType === 'STATION' }),
+    [stationType]
+  )
 
   // The table server-paginates internally, so the export fetches the full
   // result set for the CURRENT filter through the same endpoint the table
@@ -126,7 +131,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             filenameBase: 'Tracking_Today_Weight_Log',
             title: 'รายงานข้อมูลรถเข้าชั่งน้ำหนักวันนี้ (Today Weight Log)',
             filterNote: exportFilterNote,
-            columns: DAILY_WEIGHT_LOG_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows,
           })
         }}
@@ -138,7 +143,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tracking_Today_Weight_Log',
             sheetName: 'Today Weight Log',
-            columns: DAILY_WEIGHT_LOG_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })
         }}

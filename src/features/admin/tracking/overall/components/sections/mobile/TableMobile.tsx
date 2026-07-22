@@ -149,17 +149,17 @@ const TableMobileData: React.FC<Props> = (props) => {
         return <p className='fs-12 text-red-500'>-</p>
       }
     },
-    {
-      title: 'จำนวนรถน้ำหนักเกิน 10%',
-      dataIndex: 'TotalOver10Percent',
-      key: 'TotalOver10Percent',
-      align: 'center',
-      width: 190,
-      render: (item) => {
-        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
-        return <p className='fs-12 text-(--yellow)'>-</p>
-      }
-    },
+    // {
+    //   title: 'จำนวนรถน้ำหนักเกิน 10%',
+    //   dataIndex: 'TotalOver10Percent',
+    //   key: 'TotalOver10Percent',
+    //   align: 'center',
+    //   width: 190,
+    //   render: (item) => {
+    //     if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
+    //     return <p className='fs-12 text-(--yellow)'>-</p>
+    //   }
+    // },
     {
       title: 'สถานะ',
       dataIndex: 'IsOpen',

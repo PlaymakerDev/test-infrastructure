@@ -4,10 +4,11 @@ import { WIMCCTVList, WIMMap, WIMSearchPanel } from '@/features/admin/tracking/o
 
 interface Props {
   onSearch?: (value: string) => void
+  searchText?: string
 }
 
 const WIMLocationSection: React.FC<Props> = (props) => {
-  const { onSearch } = props
+  const { onSearch, searchText } = props
 
   return (
     <div className='grid grid-cols-1 lg:grid-cols-[340px_1fr_340px] gap-4 lg:h-[85dvh]'>
@@ -22,7 +23,7 @@ const WIMLocationSection: React.FC<Props> = (props) => {
 
       {/* Map — row 1 on mobile (top), col 2 on desktop */}
       <div className='row-start-1 lg:col-start-2 lg:row-start-1 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-        <WIMMap />
+        <WIMMap searchText={searchText} />
       </div>
 
       {/* Search / stats panel — row 3 on mobile, col 3 on desktop */}

@@ -22,6 +22,7 @@ const StationSection: React.FC = () => {
       <section>
         <StationLocationSection
           onSearch={setSearchText}
+          searchText={deferredSearch}
         />
       </section>
       <section className='mt-5'>

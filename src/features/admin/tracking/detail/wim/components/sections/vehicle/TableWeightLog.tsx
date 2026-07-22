@@ -34,7 +34,7 @@ const TableWeightLog: React.FC<Props> = (props) => {
     date
   )
 
-  const columns = getDailyWeightLogColumns({ showImages: false })
+  const columns = getDailyWeightLogColumns({ showImages: false, hideSpeed: stationType === 'STATION' })
 
   if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description='ไม่พบข้อมูล' />
 
