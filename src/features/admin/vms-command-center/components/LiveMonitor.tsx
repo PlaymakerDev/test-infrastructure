@@ -126,21 +126,6 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
 
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
 
-  // Summary counts by status kind
-  const summary = useMemo(() => {
-    const s = { active: 0, done: 0, cancel: 0, overwrite: 0, lost: 0, pending: 0 }
-    for (const it of rows) {
-      const m = statusMeta(it.status ?? undefined)
-      if (m.isActive) s.active++
-      else if (m.id === 4) s.done++
-      else if (m.id === 5) s.lost++
-      else if (m.id === 6) s.cancel++
-      else if (m.id === 7) s.overwrite++
-      else s.pending++
-    }
-    return s
-  }, [rows])
-
   // Show all non-terminal rows always; terminal rows only within `TERMINAL_GRACE_MS`
   // of their last transition. `nowMs` ticks every 1s so cards fade out live.
   const TERMINAL_GRACE_MS = 10 * 60 * 1000
@@ -151,6 +136,27 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
     const t = r.status_updated_at ? dayjs(r.status_updated_at).valueOf() : 0
     return t > 0 && nowMs - t < TERMINAL_GRACE_MS
   })
+
+  // Summary counts — driven by `visible` (what the operator actually sees on
+  // screen) so the numbers reconcile with the cards. Hidden-by-grace-window
+  // rows are surfaced via the separate "ซ่อน N" chip below. A sign with no
+  // setting_id gets counted as pending (ยังไม่มีคำสั่ง) — the previous logic
+  // fell through statusMeta(null) → status 0 → isActive=true and misreported
+  // every "no command" sign as "กำลังทำงาน".
+  const summary = useMemo(() => {
+    const s = { active: 0, done: 0, cancel: 0, overwrite: 0, lost: 0, pending: 0 }
+    for (const it of visible) {
+      if (it.setting_id == null) { s.pending++; continue }
+      const m = statusMeta(it.status ?? undefined)
+      if (m.isActive) s.active++
+      else if (m.id === 4) s.done++
+      else if (m.id === 5) s.lost++
+      else if (m.id === 6) s.cancel++
+      else if (m.id === 7) s.overwrite++
+      else s.pending++
+    }
+    return s
+  }, [visible])
 
   return (
     <div className="flex flex-col h-full">
@@ -296,14 +302,37 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, e
                       {it.is_online ? 'ออนไลน์' : 'ออฟไลน์'}
                     </span>
                   </Tooltip>
-                  <StatusPill
-                    status={it.status ?? 0}
-                    tooltip={
-                      hasActive
-                        ? `อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`
-                        : 'ยังไม่มีคำสั่ง'
-                    }
-                  />
+                  {hasActive ? (
+                    <StatusPill
+                      status={it.status ?? 0}
+                      tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
+                    />
+                  ) : (
+                    // Distinct "no command at all" pill — muted gray, clearly
+                    // separate from status=0 ("รอส่งคำสั่ง" = queued command
+                    // agent hasn't picked up yet). Without this, an empty sign
+                    // and a queued sign looked identical.
+                    <Tooltip title="ยังไม่มีคำสั่งในระบบสำหรับป้ายนี้">
+                      <span
+                        className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          color: 'rgba(255,255,255,0.6)',
+                          border: '1px dashed rgba(255,255,255,0.2)',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.3)',
+                          }}
+                        />
+                        ไม่มีคำสั่ง
+                      </span>
+                    </Tooltip>
+                  )}
                   <Tooltip title="ดูรายละเอียด">
                     <Button
                       size="small"
