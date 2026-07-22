@@ -220,11 +220,22 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({ vmsIds, o
             }
           }
 
+          // Visual hint: cards WITHOUT an active setting are in "preview"
+          // state — operator is inspecting who they're about to dispatch to,
+          // no command has been sent yet. Dashed border + subtle dim so it's
+          // instantly distinguishable from cards that are actually playing.
+          // Terminal cards (done/cancelled/overwrite/lost) fade further to
+          // signal they're on the grace-window countdown to auto-hide.
+          const preview = !hasActive && !isTerminal
           return (
             <div
               key={it.vms_id}
-              className="rounded-lg border border-white/10 bg-white/[.04] p-3 transition-opacity"
-              style={{ opacity: isTerminal ? 0.65 : 1 }}
+              className={`rounded-lg border p-3 transition-opacity ${
+                preview
+                  ? 'border-dashed border-white/15 bg-white/[.02]'
+                  : 'border-white/10 bg-white/[.04]'
+              }`}
+              style={{ opacity: isTerminal ? 0.65 : preview ? 0.85 : 1 }}
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
