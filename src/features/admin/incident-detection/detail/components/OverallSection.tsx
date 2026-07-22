@@ -58,9 +58,10 @@ const OverallSection: React.FC<Props> = ({ onShowAllEvents }) => {
           className='hidden xl:flex flex-col absolute z-10 top-4 right-10 gap-3 pointer-events-none xl:w-90 2xl:w-115'
           style={{ bottom: 16 }}
         >
-          {/* Stat cards — pinned to the right edge of the rail; w-70 (280px)
-            * matches the crosswalk-detail info-card rail width. */}
-          <div className='pointer-events-auto self-end xl:w-70'>
+          {/* Stat cards — pinned to the right edge of the rail; w-90 (360px)
+            * matches the traffic-volume / crosswalk info-card rail width so the
+            * cards size identically across solutions. */}
+          <div className='pointer-events-auto self-end xl:w-90'>
             <EventStatsSection />
           </div>
           {/* Donut + line chart — full right-rail width. `shrink-0` wrappers keep

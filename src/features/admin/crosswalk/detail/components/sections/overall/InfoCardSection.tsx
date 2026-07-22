@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { Col, Row, Skeleton } from 'antd'
+import { Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import { TbHandClick, TbTruck, TbUser, TbUserX } from 'react-icons/tb'
 import { fmtNumber } from '@/utils/formatNumber'
@@ -19,36 +19,49 @@ interface CardProps {
   isLoading?: boolean
 }
 
-const COLOR_MAP: Record<CardProps['color'], { border: string; text: string }> = {
-  white: { border: 'border-[#FFFFFF]', text: 'text-[#FFFFFF]' },
-  blue: { border: 'border-[#66AEFF]', text: 'text-[#66AEFF]' },
-  red: { border: 'border-[#E94C4C]', text: 'text-[#E94C4C]' },
-  orange: { border: 'border-[#FF7B00]', text: 'text-[#FF7B00]' },
-  yellow: { border: 'border-[#FCD116]', text: 'text-[#FCD116]' },
-  lime: { border: 'border-[#B2FF00]', text: 'text-[#B2FF00]' },
+// Hex per accent — border + icon + label tint. Matches Traffic Volume's card sizing.
+const COLOR_HEX: Record<CardProps['color'], string> = {
+  white: '#FFFFFF',
+  blue: '#66AEFF',
+  red: '#E94C4C',
+  orange: '#FF7B00',
+  yellow: '#FCD116',
+  lime: '#B2FF00',
 }
 
-// Card metrics mirror incident-detection detail tab 1 (`EventStatsSection`):
-// p-3 / rounded-2xl / border-2, value 22px semibold, unit in gray.
+// Card dimensions/typography mirror `InfoCardsTrafficVolume` exactly:
+// p-3 / rounded-2xl / border 2px, icon fs-22, label fs-14 font-medium leading-none,
+// value fs-22 font-bold leading-none (white), unit fs-12.
 const Card: React.FC<CardProps> = ({ icon, label, color, value, unit, isLoading }) => {
-  const c = COLOR_MAP[color]
+  const c = COLOR_HEX[color]
+  const colorLabel = color !== 'white'
   return (
     <div
-      className={`border-2 ${c.border} p-3 rounded-2xl`}
-      style={{ background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919' }}
+      className='p-3 rounded-2xl'
+      style={{
+        border: `2px solid ${c}`,
+        background: 'linear-gradient(#66AEFF1A, #66AEFF1A), #191919',
+      }}
     >
-      <div className='flex items-center gap-1.5 mb-1'>
-        <span className={`fs-22 shrink-0 ${c.text} flex items-center`}>{icon}</span>
-        <h4 className={`${c.text} mb-0 leading-tight`}>{label}</h4>
+      <div className='flex items-center gap-2 mb-1'>
+        <span style={{ color: c }} className='flex items-center fs-22 shrink-0'>
+          {icon}
+        </span>
+        <span
+          className='fs-14 font-medium leading-none'
+          style={{ color: colorLabel ? c : '#ffffff' }}
+        >
+          {label}
+        </span>
       </div>
       {isLoading ? (
         <Skeleton active paragraph={false} title={{ width: 120 }} />
       ) : (
-        <p className='mb-0.5 leading-tight'>
-          <span className='font-semibold' style={{ fontSize: 22 }}>
-            {fmtNumber(value, unit === 'km/h' ? 2 : 0)}
-          </span>{' '}
-          <span className='fs-14 text-gray-400'>{unit}</span>
+        <p className='mb-0 font-bold leading-none fs-22' style={{ color: '#ffffff' }}>
+          {fmtNumber(value, unit === 'km/h' ? 2 : 0)}{' '}
+          <span className='fs-12 font-normal' style={{ color: '#979797' }}>
+            {unit}
+          </span>
         </p>
       )}
     </div>
@@ -66,68 +79,56 @@ const InfoCardSection: React.FC<Props> = () => {
   const counting = data?.counting
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbUser />}
-          label='คนข้ามทั้งหมด'
-          color='white'
-          value={crossing?.total ?? 0}
-          unit='คน'
-          isLoading={isLoading}
-        />
-      </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbHandClick />}
-          label='การกดปุ่ม'
-          color='blue'
-          value={crossing?.button_pressed ?? 0}
-          unit='ครั้ง'
-          isLoading={isLoading}
-        />
-      </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbUserX />}
-          label='คนข้ามฝ่าฝืนสัญญาณไฟ'
-          color='red'
-          value={crossing?.violation ?? 0}
-          unit='คน'
-          isLoading={isLoading}
-        />
-      </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbTruck />}
-          label='รถข้ามฝ่าฝืนสัญญาณไฟ'
-          color='orange'
-          value={crossing?.red_light_violation ?? 0}
-          unit='คัน'
-          isLoading={isLoading}
-        />
-      </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbTruck />}
-          label='ปริมาณจราจรประจำวัน'
-          color='yellow'
-          value={counting?.total_count ?? 0}
-          unit='คัน'
-          isLoading={isLoading}
-        />
-      </Col>
-      <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24}>
-        <Card
-          icon={<TbTruck />}
-          label='ความเร็วเฉลี่ยประจำวัน'
-          color='lime'
-          value={counting?.avg_speed ?? 0}
-          unit='km/h'
-          isLoading={isLoading}
-        />
-      </Col>
-    </Row>
+    <div className='flex flex-col gap-3 w-full'>
+      <Card
+        icon={<TbUser />}
+        label='คนข้ามทั้งหมด'
+        color='white'
+        value={crossing?.total ?? 0}
+        unit='คน'
+        isLoading={isLoading}
+      />
+      <Card
+        icon={<TbHandClick />}
+        label='การกดปุ่ม'
+        color='blue'
+        value={crossing?.button_pressed ?? 0}
+        unit='ครั้ง'
+        isLoading={isLoading}
+      />
+      <Card
+        icon={<TbUserX />}
+        label='คนข้ามฝ่าฝืนสัญญาณไฟ'
+        color='red'
+        value={crossing?.violation ?? 0}
+        unit='คน'
+        isLoading={isLoading}
+      />
+      <Card
+        icon={<TbTruck />}
+        label='รถข้ามฝ่าฝืนสัญญาณไฟ'
+        color='orange'
+        value={crossing?.red_light_violation ?? 0}
+        unit='คัน'
+        isLoading={isLoading}
+      />
+      <Card
+        icon={<TbTruck />}
+        label='ปริมาณจราจรประจำวัน'
+        color='yellow'
+        value={counting?.total_count ?? 0}
+        unit='คัน'
+        isLoading={isLoading}
+      />
+      <Card
+        icon={<TbTruck />}
+        label='ความเร็วเฉลี่ยประจำวัน'
+        color='lime'
+        value={counting?.avg_speed ?? 0}
+        unit='km/h'
+        isLoading={isLoading}
+      />
+    </div>
   )
 }
 

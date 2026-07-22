@@ -12,6 +12,42 @@ import { getEventTypeLabel } from '@/features/admin/incident-detection/component
 // Overlay tint over a solid dark base — readable when floating over the map.
 const CARD_BG = 'linear-gradient(#66AEFF1A, #66AEFF1A), #0e0e0e'
 
+interface CardProps {
+  icon: React.ReactNode
+  label: string
+  value: React.ReactNode
+  sublabel: React.ReactNode
+  /** Border + icon + label tint. */
+  color: string
+  /** When false, label stays white (matches Figma for the white-bordered card). */
+  colorLabel?: boolean
+}
+
+// Card dimensions/typography mirror `InfoCardsTrafficVolume` exactly:
+// p-3 / rounded-2xl / border 2px, icon fs-22, label fs-14 font-medium leading-none,
+// value fs-22 font-bold leading-none (white), sublabel fs-12.
+const Card: React.FC<CardProps> = ({ icon, label, value, sublabel, color, colorLabel = true }) => (
+  <div className='rounded-2xl p-3' style={{ background: CARD_BG, border: `2px solid ${color}` }}>
+    <div className='flex items-center gap-2 mb-1'>
+      <span style={{ color }} className='flex items-center fs-22 shrink-0'>
+        {icon}
+      </span>
+      <span
+        className='fs-14 font-medium leading-none'
+        style={{ color: colorLabel ? color : '#ffffff' }}
+      >
+        {label}
+      </span>
+    </div>
+    <p className='mb-0 font-bold leading-none fs-22' style={{ color: '#ffffff' }}>
+      {value}
+    </p>
+    <p className='fs-12 mb-0 mt-1' style={{ color: '#9aa7b8' }}>
+      {sublabel}
+    </p>
+  </div>
+)
+
 /** 2 compact summary cards (most-frequent event + peak hour) — overlay on map. */
 const EventStatsSection: React.FC = () => {
   const params = useParams()
@@ -48,44 +84,22 @@ const EventStatsSection: React.FC = () => {
   }, [peak])
 
   return (
-    <div className='flex flex-col gap-3'>
-      {/* เหตุการณ์เกิดขึ้นมากที่สุด */}
-      <div
-        className='rounded-2xl p-3'
-        style={{ background: CARD_BG, border: '2px solid #ffffff' }}
-      >
-        <div className='flex items-center gap-1.5 mb-1'>
-          <TbCarCrash size={24} className='shrink-0 text-white' />
-          <h4 className='mb-0 fs-14 font-semibold leading-tight text-white'>
-            เหตุการณ์เกิดขึ้นมากที่สุด
-          </h4>
-        </div>
-        <p className='font-semibold text-white leading-tight mb-0.5 fs-14'>
-          {topType?.label ?? '—'}
-        </p>
-        <p className='fs-12 text-gray-400 mb-0'>
-          {topType ? `${topType.count.toLocaleString()} เหตุการณ์` : 'ยังไม่มีข้อมูล'}
-        </p>
-      </div>
-
-      {/* ช่วงเวลาที่มีเหตุการณ์มากที่สุด */}
-      <div
-        className='rounded-2xl p-3'
-        style={{ background: CARD_BG, border: '2px solid #FFB100' }}
-      >
-        <div className='flex items-center gap-1.5 mb-1'>
-          <TbHourglass size={24} className='shrink-0' style={{ color: '#FFB100' }} />
-          <h4 className='mb-0 fs-14 font-semibold leading-tight' style={{ color: '#FFB100' }}>
-            ช่วงเวลาที่มีเหตุการณ์มากที่สุด
-          </h4>
-        </div>
-        <p className='font-semibold text-white leading-tight mb-0.5 fs-22'>
-          {peakHour?.range ?? '—'}
-        </p>
-        <p className='fs-12 text-gray-400 mb-0'>
-          {peakHour ? `(${peakHour.pct}%)` : 'ยังไม่มีข้อมูล'}
-        </p>
-      </div>
+    <div className='flex flex-col gap-3 w-full'>
+      <Card
+        icon={<TbCarCrash />}
+        label='เหตุการณ์เกิดขึ้นมากที่สุด'
+        value={topType?.label ?? '—'}
+        sublabel={topType ? `${topType.count.toLocaleString()} เหตุการณ์` : 'ยังไม่มีข้อมูล'}
+        color='#ffffff'
+        colorLabel={false}
+      />
+      <Card
+        icon={<TbHourglass />}
+        label='ช่วงเวลาที่มีเหตุการณ์มากที่สุด'
+        value={peakHour?.range ?? '—'}
+        sublabel={peakHour ? `(${peakHour.pct}%)` : 'ยังไม่มีข้อมูล'}
+        color='#FFB100'
+      />
     </div>
   )
 }
