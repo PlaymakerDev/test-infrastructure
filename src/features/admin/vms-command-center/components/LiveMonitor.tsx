@@ -522,18 +522,29 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                 </div>
                 <div className="fs-12 opacity-60">vms_id {s.vms_id}</div>
               </div>
-              <Tooltip title="ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized — เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
-                <span
-                  className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                  style={{
-                    background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
-                    color: 'var(--yellow)',
-                    border: '1px solid var(--yellow)',
-                  }}
-                >
-                  ⚠ ไม่รองรับ
-                </span>
-              </Tooltip>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Tooltip title="ยังไม่เคย provision / agent เวอร์ชันเก่า / ถูกถอดจาก centralized — เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
+                  <span
+                    className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
+                    style={{
+                      background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                      color: 'var(--yellow)',
+                      border: '1px solid var(--yellow)',
+                    }}
+                  >
+                    ⚠ ไม่รองรับ
+                  </span>
+                </Tooltip>
+                <Tooltip title="ดูรายละเอียด">
+                  <Button
+                    size="small"
+                    type="primary"
+                    ghost
+                    icon={<TbEye style={{ verticalAlign: -2 }} />}
+                    onClick={() => onOpenSignDetail?.(s.vms_id)}
+                  />
+                </Tooltip>
+              </div>
             </div>
           </div>
         ))}

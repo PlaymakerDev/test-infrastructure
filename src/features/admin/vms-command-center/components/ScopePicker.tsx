@@ -18,6 +18,10 @@ interface Props {
    *  the tree can show a sign as ออนไลน์ while the LiveMonitor bucket says
    *  Offline (different agent stacks, different heartbeats). */
   onlineOverrideIds?: Set<number>
+  /** Opens the sign-detail modal for the clicked sign — same eye icon /
+   *  same modal as LiveMonitor's cards, so the sidebar tree offers the same
+   *  "inspect before you dispatch" shortcut. */
+  onViewSign?: (vmsId: number) => void
 }
 
 const summaryTagBase: React.CSSProperties = {
@@ -47,6 +51,7 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
   selection,
   alwaysSelectMode = true,
   onlineOverrideIds,
+  onViewSign,
 }) {
   const { data, isLoading, isError } = useVMSDepartments()
   const rawItems: BureauItem[] = useMemo(() => data?.data ?? [], [data])
@@ -102,6 +107,7 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
             alwaysSelectMode={alwaysSelectMode}
             defaultExpandAll={false}
             onSelectionChange={onSelectionChange}
+            onViewSign={onViewSign ? (sign) => onViewSign(sign.vms_id) : undefined}
           />
         )}
       </div>

@@ -149,6 +149,7 @@ const VMSCommandCenterScreen: React.FC = () => {
                       onSelectionChange={setSelection}
                       selection={selection}
                       onlineOverrideIds={immediateIds}
+                      onViewSign={openDetail}
                     />
                     {queuedCount > 0 && (
                       <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">

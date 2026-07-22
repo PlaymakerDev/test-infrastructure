@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/th'
 import { useSignDetail } from '../hooks/useSignDetail'
+import { useScreenInfo } from '../hooks/useScreenInfo'
 import { useVMSCrossingHistory } from '@/features/admin/control-vms/overall/hooks/useVMSCrossingHistory'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta, sourceLabel } from '../constants/vmsStatus'
@@ -70,6 +71,25 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const cameras: VMSSignCamera[] = detail?.cameras ?? []
   const screenURL = detail?.desktop_screen_url
 
+  // Self-sufficient eligibility check — screen-info is the same source of
+  // truth used by LiveMonitor's bucket chips / card pills and the sidebar
+  // tree override. `detail.is_online` (from the monitor/sign endpoint) is
+  // the LEGACY tv.last_connected heartbeat and can disagree with it, so this
+  // modal derives its own connectivity pill instead of trusting `detail`.
+  // Polling only while open; slower than the 5s monitor refresh since
+  // eligibility changes far less often than playback status.
+  const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: open ? 30_000 : false })
+  const screenInfo = useMemo(
+    () => screenInfoResp?.data?.data?.find((i) => i.vms_id === vmsId),
+    [screenInfoResp, vmsId]
+  )
+  // Explicitly opted out in the ข้อมูลป้าย VMS tab — dispatching would be
+  // silently discarded regardless of connectivity.
+  const isExcluded = screenInfo ? screenInfo.is_centralized === false : false
+  // Fall back to detail.is_online only when screen-info hasn't returned this
+  // sign at all (e.g. brand-new agent, first paint before screen-info loads).
+  const canDispatchNow = screenInfo ? screenInfo.is_controllable : (detail?.is_online ?? false)
+
   return (
     <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
     <Modal
@@ -106,19 +126,38 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   <div className="fs-12 text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Online / offline pill — themed (see feedback_theme_no_invent):
-                      online = --default-blue tint, offline = --red tint. */}
-                  <span
-                    className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
-                    style={{
-                      background: `color-mix(in srgb, var(${detail.is_online ? '--default-blue' : '--red'}) 12%, transparent)`,
-                      border: `1px solid var(${detail.is_online ? '--default-blue' : '--red'})`,
-                      color: `var(${detail.is_online ? '--default-blue' : '--red'})`,
-                    }}
-                  >
-                    {detail.is_online ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
-                    {detail.is_online ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
-                  </span>
+                  {/* Connectivity pill — themed (see feedback_theme_no_invent).
+                      Three states, matching LiveMonitor's bucket chips exactly:
+                        ไม่รองรับ (yellow)  — opted out of centralized control
+                        ออนไลน์   (blue)    — controllable right now
+                        ออฟไลน์   (red)     — will queue-ahead on dispatch */}
+                  {isExcluded ? (
+                    <Tooltip title="ป้ายนี้ถูกถอดจากกลุ่มควบคุมรวม — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                      <span
+                        className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                        style={{
+                          background: 'color-mix(in srgb, var(--yellow) 12%, transparent)',
+                          border: '1px solid var(--yellow)',
+                          color: 'var(--yellow)',
+                        }}
+                      >
+                        <TbWifiOff style={{ verticalAlign: -2 }} />
+                        ไม่รองรับ
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                      style={{
+                        background: `color-mix(in srgb, var(${canDispatchNow ? '--default-blue' : '--red'}) 12%, transparent)`,
+                        border: `1px solid var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                        color: `var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                      }}
+                    >
+                      {canDispatchNow ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
+                      {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
+                    </span>
+                  )}
                   {/* Anydesk deep-link — uses the `anydesk:` URL scheme so
                       clicking hands off to the native client (same pattern as
                       legacy DetailTitle.tsx). Disabled visual if no id. */}
