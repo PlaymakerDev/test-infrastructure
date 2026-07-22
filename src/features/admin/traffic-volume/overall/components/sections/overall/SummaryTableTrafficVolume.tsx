@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import {
   groupByBureau,
   type BureauGroupedRow,
@@ -58,6 +59,9 @@ const WarrantyPill: React.FC<{
 
 type Row = BureauGroupedRow<TrafficVolumeProject>
 
+// Bureau-divider colSpan must match the number of VISIBLE columns.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
+
 const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   const router = useRouter()
   const deptId = useDeptId()
@@ -67,10 +71,8 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
   }, [router, deptId])
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
-  const TOTAL_COLS = 8
-
   const columns: ColumnsType<Row> = useMemo(() => {
-    return [
+    const cols: ColumnsType<Row> = [
       {
         title: 'รหัสสายทาง',
         key: 'roadCode',
@@ -210,6 +212,8 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
         },
       },
     ]
+    // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
+    return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')
   }, [goToDetail])
 
   return (

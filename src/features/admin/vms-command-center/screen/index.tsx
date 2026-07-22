@@ -11,7 +11,6 @@ import GlobalHistoryTable from '../components/GlobalHistoryTable'
 import SignDetailModal from '../components/SignDetailModal'
 import MediaLibraryTab from '../components/MediaLibraryTab'
 import StatusTable from '../components/StatusTable'
-import { useScreenInfo } from '../hooks/useScreenInfo'
 import { ControlVMSProvider } from '@/features/admin/control-vms/overall/context'
 import DisplaySection from '@/features/admin/control-vms/overall/components/DisplaySection'
 import StatusSection from '@/features/admin/control-vms/overall/components/StatusSection'
@@ -56,54 +55,52 @@ const VMSCommandCenterScreen: React.FC = () => {
   const openDetail = useCallback((id: number) => setDetailVmsId(id), [])
   const closeDetail = useCallback(() => setDetailVmsId(null), [])
 
-  // Poll screen-info so dispatch can gate on capability. Slower cadence than
-  // STATUS tab (that one polls 30s); here we mainly need it for filtering, so
-  // 60s is plenty and any change made in STATUS is broadcast via invalidation.
-  const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: 60_000 })
-
-  // Split eligibility into three buckets so operators can queue-ahead:
-  //   immediate: is_centralized && is_controllable        → dispatched now
-  //   queued:    is_centralized && is_reported && !is_online  → stored, plays
-  //                                                          when the agent
-  //                                                          reconnects
-  //   dropped:   everything else (not centralized, or the agent has never
-  //              provisioned, or its version is too old to be controllable)
+  // Split eligibility into three buckets. selection.signs (BureauSign =
+  // departments API's Solution type) now carries is_controllable/is_centralized/
+  // is_reported directly from the backend — same tbl_vms_screen_info join used
+  // by /vms/screen-info and /vms/command-center/monitor, so no separate fetch or
+  // client-side merge is needed here anymore; every VMS endpoint in this app
+  // agrees on eligibility by construction.
+  //   immediate: is_centralized && is_controllable
+  //              → dispatched now
+  //   queued:    is_centralized && is_reported && !is_controllable
+  //              → agent has checked in before, just currently offline/old
+  //              version — queue-ahead is a safe bet, it'll likely reconnect
+  //   excluded:  is_centralized === false (operator opted the sign out in the
+  //              ข้อมูลป้าย VMS tab) OR is_reported === false (agent has NEVER
+  //              checked in — queue-ahead would be misleading, this needs a
+  //              technician to install/start the agent, not "just wait")
   const { immediateIds, queuedIds } = useMemo(() => {
-    const items = screenInfoResp?.data?.data ?? []
-    if (items.length === 0) return { immediateIds: null as Set<number> | null, queuedIds: new Set<number>() }
     const immediate = new Set<number>()
     const queued = new Set<number>()
-    for (const i of items) {
-      if (!i.is_centralized) continue
-      if (i.is_controllable) {
-        immediate.add(i.vms_id)
-      } else if (i.is_reported && !i.is_online) {
-        // Sign was provisioned before + agent version was OK (only offline
-        // knocks out is_controllable) → queue-ahead is safe.
-        queued.add(i.vms_id)
+    for (const s of selection.signs) {
+      if (s.is_centralized === false || !s.is_reported) continue  // excluded
+      if (s.is_controllable) {
+        immediate.add(s.vms_id)
+      } else {
+        queued.add(s.vms_id)
       }
     }
     return { immediateIds: immediate, queuedIds: queued }
-  }, [screenInfoResp])
+  }, [selection.signs])
 
   // Full set from ScopePicker
   const allSelectedIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
   // What Composer sends — union of immediate + queued (queue-ahead supported).
-  // If screen-info hasn't loaded (immediateIds === null), fail-open: send
-  // the full selection.
-  const vmsIds = useMemo(() => {
-    if (immediateIds === null) return allSelectedIds
-    return allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id))
-  }, [allSelectedIds, immediateIds, queuedIds])
-  const immediateCount = useMemo(
-    () => (immediateIds === null ? allSelectedIds.length : allSelectedIds.filter((id) => immediateIds.has(id)).length),
-    [allSelectedIds, immediateIds]
+  const vmsIds = useMemo(
+    () => allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id)),
+    [allSelectedIds, immediateIds, queuedIds]
   )
-  const queuedCount = useMemo(
-    () => allSelectedIds.filter((id) => queuedIds.has(id)).length,
-    [allSelectedIds, queuedIds]
-  )
+  const queuedCount = queuedIds.size
   const excludedCount = allSelectedIds.length - vmsIds.length
+
+  // Excluded (ไม่รองรับ) sign objects — passed to LiveMonitor so it can render
+  // placeholder cards for them (they aren't in the /monitor payload because
+  // Composer never sends to them).
+  const excludedSelectedSigns = useMemo(
+    () => selection.signs.filter((s) => !immediateIds.has(s.vms_id) && !queuedIds.has(s.vms_id)),
+    [selection.signs, immediateIds, queuedIds]
+  )
 
   const targetSummary = useMemo(() => {
     if (selection.signs.length === 0) return 'ยังไม่ได้เลือกป้าย'
@@ -141,7 +138,11 @@ const VMSCommandCenterScreen: React.FC = () => {
               children: (
                 <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
-                    <ScopePicker onSelectionChange={setSelection} selection={selection} />
+                    <ScopePicker
+                      onSelectionChange={setSelection}
+                      selection={selection}
+                      onViewSign={openDetail}
+                    />
                     {queuedCount > 0 && (
                       <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
                         <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
@@ -151,7 +152,7 @@ const VMSCommandCenterScreen: React.FC = () => {
                       </Tooltip>
                     )}
                     {excludedCount > 0 && (
-                      <Tooltip title="ป้ายที่ยังไม่เคย provision, agent เวอร์ชันเก่าเกินไป, หรือถูกถอดจากกลุ่มควบคุมรวม — ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                      <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
                         <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
                           <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
                           <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
@@ -167,7 +168,11 @@ const VMSCommandCenterScreen: React.FC = () => {
                     />
                   </div>
                   <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <LiveMonitor vmsIds={vmsIds} onOpenSignDetail={openDetail} />
+                    <LiveMonitor
+                      vmsIds={vmsIds}
+                      excludedSigns={excludedSelectedSigns}
+                      onOpenSignDetail={openDetail}
+                    />
                   </div>
                 </div>
               ),

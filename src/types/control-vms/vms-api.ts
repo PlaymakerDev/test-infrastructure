@@ -41,10 +41,19 @@ export interface Solution {
   project: SharedProject
   desktop_screen: string
   last_connected: string
+  /** LEGACY heartbeat (tv.last_connected within 30 min) — does NOT mean
+   *  "can receive a Command Center dispatch". Use is_controllable for that. */
   is_online: boolean
   camera_online_count: number
   camera_offline_count: number
   noti_count: number
+  /** Same tbl_vms_screen_info-derived truth as /vms/screen-info and
+   *  /vms/command-center/monitor — single source for dispatch eligibility. */
+  is_centralized: boolean
+  /** Has this sign's agent EVER checked in. False = never provisioned —
+   *  needs a technician, not a "wait for it to reconnect" queue-ahead. */
+  is_reported: boolean
+  is_controllable: boolean
 }
 
 // NOTIFICATIONS (per-VMS history — GET /vms/{vms_id}/notifications)

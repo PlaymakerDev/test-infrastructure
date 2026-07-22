@@ -10,6 +10,7 @@ import 'dayjs/locale/th'
 dayjs.extend(relativeTime)
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { LPRRow } from '../../../data/lprRows'
@@ -20,7 +21,8 @@ type TableRow =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | { kind: 'project'; id: string; item: LPRRow; roadCodeSpan: number }
 
-const TOTAL_COLS = 8
+// Visible column count — the bureau divider row spans all of them.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 interface Props {
   /** Filtered + display-ordered rows from DataDisplaySection. */
@@ -75,7 +77,7 @@ const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
   )
 
   const columns: ColumnsType<TableRow> = useMemo(
-    () => [
+    () => ([
       {
         title: 'รหัสสายทาง',
         key: 'road_code',
@@ -208,7 +210,7 @@ const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
               : '-'
             : null,
       },
-    ],
+    ] satisfies ColumnsType<TableRow>).filter((c) => SHOW_PROJECT_NAME || c.title !== 'ชื่อโครงการ'),
     [goToDetail],
   )
 

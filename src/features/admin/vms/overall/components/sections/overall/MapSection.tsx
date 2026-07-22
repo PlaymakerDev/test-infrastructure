@@ -176,10 +176,13 @@ const MapSection: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData
   })
 
-  const centroidValid = data?.data.centroid[0] !== 0 || data?.data.centroid[1] !== 0
-  const initialCenter = centroidValid
-    ? (data?.data.centroid as [number, number])
-    : FALLBACK_CENTER
+  // BE sends `centroid: null` when the scope has no VMS at all (e.g. landing
+  // on dept_id=0 WITHOUT scope=all) — reading [0] off it crashed the whole
+  // page ("Cannot read properties of null"; reported 2026-07-21). Validate
+  // shape before touching indices.
+  const centroid = data?.data.centroid
+  const centroidValid = isValidCoord(centroid)
+  const initialCenter = centroidValid ? centroid : FALLBACK_CENTER
 
   return (
     <div className="relative w-full h-full">

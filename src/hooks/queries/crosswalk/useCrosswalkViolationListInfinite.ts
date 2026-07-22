@@ -15,19 +15,24 @@ import { crosswalkKeys } from './queryKeys'
 export interface ViolationListPage {
   rows: CrosswalkViolationRow[]
   totalPages: number | null
+  /** Server-reported TOTAL matching rows (meta_data.count) — the true size of
+   *  the date-range result set, independent of how many pages the client has
+   *  walked so far. Null when the envelope is missing. */
+  count: number | null
 }
 
 export const useCrosswalkViolationListInfinite = (
-  params: Omit<Partial<APIRequestCrosswalkViolationList>, 'page'>
+  params: Omit<Partial<APIRequestCrosswalkViolationList>, 'page'>,
+  options?: { enabled?: boolean }
 ) => {
-  const enabled = !!params.solution_id
+  const enabled = (options?.enabled ?? true) && !!params.solution_id
   return useInfiniteQuery<ViolationListPage>({
     queryKey: [
       ...crosswalkKeys.detail.violationList({
         solution_id: params.solution_id ?? '',
         start_date: params.start_date,
         end_date: params.end_date,
-        crossing_type: params.crossing_type,
+        crosswalk_type: params.crosswalk_type,
         search: params.search,
         field: params.field,
         sort: params.sort,
@@ -40,7 +45,7 @@ export const useCrosswalkViolationListInfinite = (
         solution_id: params.solution_id!,
         start_date: params.start_date,
         end_date: params.end_date,
-        crossing_type: params.crossing_type,
+        crosswalk_type: params.crosswalk_type,
         search: params.search,
         field: params.field,
         sort: params.sort,
@@ -50,6 +55,7 @@ export const useCrosswalkViolationListInfinite = (
       return {
         rows: r.data.res_data ?? [],
         totalPages: r.data.meta_data?.total_pages ?? null,
+        count: r.data.meta_data?.count ?? null,
       }
     },
     initialPageParam: 1,

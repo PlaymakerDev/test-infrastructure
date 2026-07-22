@@ -8,6 +8,7 @@ import SearchBar, {
   type ViewMode,
 } from '@/components/searchable/SearchBar'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 import { TableLPRData, LPRList, FormSearchLPR } from '../../../components'
 import type { LPRRow } from '../../../data/lprRows'
 import { useLPRPoints } from '@/hooks/queries/lpr'
@@ -186,7 +187,7 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
             filenameBase: 'LPR_Overview_Report',
             title: 'รายงานสรุปภาพรวมจุดติดตั้ง LPR (LPR Overview)',
             filterNote: exportFilterNote,
-            columns: LPR_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(LPR_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: filtered,
           })
         }}
@@ -195,7 +196,7 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
           exportExcel({
             filenameBase: 'LPR_Overview_Report',
             sheetName: 'LPR Overview',
-            columns: LPR_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(LPR_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: filtered,
           })
         }}

@@ -16,6 +16,7 @@ import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useProvinceDeptMap } from '@/features/admin/dashboard/data/useProvinceDeptMap'
 import { useDepartments } from '@/hooks/queries/manage'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
+import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { DashboardPositionLocation } from '@/types/dashboard/api'
 import BaseMap from './BaseMap'
@@ -183,6 +184,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // `deptId` instead would make the backend return only the focused province's
   // devices, so every other road's pin would vanish on zoom-in — do NOT do that.
   const { data: position, isFetched: positionFetched } = useDashboardPosition(originalDeptId)
+  // LPR install points — /position has no LPR solution type, so the pins come
+  // from the feature's own GET /lpr/points (same source as the LPR tile in
+  // RatioChart and the lpr/overall page; solid, one fetch, 60s refetch).
+  const { data: lprPoints } = useLPRPoints()
   // Dept list — used to map the landed dept's row id → its สทช. group so the
   // fly-to can fall back to the bureau polygon when the position endpoint
   // returns no device coords (see the fly-to effect below).
@@ -273,9 +278,32 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // country view shows exactly 18 (+1 central) markers instead of the
     // scattered 21-bucket set the BE returns raw.
     const stchAcc: Record<number, { count: number; sumLng: number; sumLat: number }> = {}
-    for (const loc of position?.locations ?? []) {
-      const dev = apiLocationToDevice(loc)
-      if (!dev) continue
+    // LPR pins ride alongside the /position devices. Scoping mirrors the
+    // RatioChart LPR tile (FE filter by department_id — /lpr/points is not
+    // dept-scoped by BE). `lpr-` id prefix: an LPR point can be the SAME
+    // solution as an existing /position marker (LPR rides on cameras), so a
+    // bare solution_id could collide in marker keys; the popup's detail link
+    // uses `detailId` (bare id) instead. stch=0 → the point-in-polygon
+    // reclassification below files it under the right สทช. bucket.
+    const lprDevices: Device[] = (lprPoints ?? [])
+      .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat) && !(p.lng === 0 && p.lat === 0))
+      .filter((p) => !originalDeptId || originalDeptId === '0' || p.department_id === Number(originalDeptId))
+      .map((p) => ({
+        id: `lpr-${p.solution_id}`,
+        detailId: String(p.solution_id),
+        type: 'LPR' as SystemType,
+        unitId: p.department_id ?? 0,
+        stch: 0,
+        coord: [p.lng, p.lat] as [number, number],
+        roadId: p.road_id ?? 0,
+        road: p.road_code ?? '',
+        landmark: '',
+        solutionName: p.solution_name,
+      }))
+    const positionDevices = (position?.locations ?? [])
+      .map(apiLocationToDevice)
+      .filter((d): d is Device => d !== null)
+    for (const dev of [...positionDevices, ...lprDevices]) {
       const key = `${dev.coord[0].toFixed(6)},${dev.coord[1].toFixed(6)}`
       const arr = byCoord.get(key)
       if (arr) arr.push(dev)
@@ -318,7 +346,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       }
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries }
-  }, [position, bureauFeatures])
+  }, [position, lprPoints, originalDeptId, bureauFeatures])
 
   // Refs keep the click handler's closure fresh without re-registering the
   // Mapbox listener on every render.

@@ -6,6 +6,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
 
 /** Count cell — the filled box appears only for single-state rows (all online
@@ -48,7 +49,8 @@ type Row =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | { kind: 'project'; id: string; item: CCTVOverviewRow; roadCodeSpan: number }
 
-const TOTAL_COLS = 8
+// Visible column count — the bureau divider row spans all of them.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 interface Props {
   items: CCTVOverviewRow[]
@@ -95,7 +97,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     return out
   }, [items])
 
-  const columns: ColumnsType<Row> = useMemo(() => [
+  const columns: ColumnsType<Row> = useMemo(() => ([
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
@@ -207,7 +209,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
         return <CountBadge value={row.item.camera.offline} color='#E94C4C' highlight={single} />
       },
     },
-  ], [goToDetail])
+  ] satisfies ColumnsType<Row>).filter((c) => SHOW_PROJECT_NAME || c.title !== 'ชื่อโครงการ'), [goToDetail])
 
   return (
     <Table<Row>

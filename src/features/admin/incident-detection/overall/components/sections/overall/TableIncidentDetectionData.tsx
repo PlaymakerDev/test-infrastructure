@@ -8,6 +8,7 @@ import { TbWifi, TbWifiOff, TbShieldCheckFilled } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
 import LicenseModal, { type LicenseModalSolution } from '@/features/admin/incident-detection/components/LicenseModal'
 
@@ -69,7 +70,8 @@ type TableRow =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | { kind: 'project'; id: string; item: IncidentRow; roadCodeSpan: number }
 
-const TOTAL_COLS = 10
+// Bureau-divider colSpan must match the number of VISIBLE columns.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 10 : 9
 
 /** Tab 2 — detail view. Columns after จุดติดตั้ง: กล้องวิเคราะห์ · เหตุการณ์ ·
  *  License · สถานะ · Stream (the incident-specific columns). */
@@ -112,7 +114,8 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
     router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
-  const columns: ColumnsType<TableRow> = useMemo(() => [
+  const columns: ColumnsType<TableRow> = useMemo(() => {
+    const cols: ColumnsType<TableRow> = [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
@@ -246,7 +249,10 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
       onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
       render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
     },
-  ], [goToDetail, openLicense])
+    ]
+    // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
+    return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')
+  }, [goToDetail, openLicense])
 
   return (
     <>

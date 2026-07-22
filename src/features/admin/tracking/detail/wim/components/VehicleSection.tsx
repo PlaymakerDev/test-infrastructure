@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -72,12 +72,33 @@ const buildVehicleExportColumns = (stationType: string | null | undefined): {
 const VehicleSection: React.FC<Props> = () => {
   const { id, stationType, stationTypeId, vehicleSearchParams, setVehicleSearchParams } = useWIMContext()
   const [exportOpen, setExportOpen] = useState(false)
+  // Rows currently visible in the table + its meta total (TableVehicleData
+  // paginates internally and reports up) — feeds the export dialog's
+  // ทั้งหมด/หน้าปัจจุบัน scope toggle. Stable callback so the table's report
+  // effect doesn't re-fire every parent render.
+  const [pageData, setPageData] = useState<{ rows: StationDailyData[]; total: number; offset: number }>({ rows: [], total: 0, offset: 0 })
+  const handlePageRowsChange = useCallback(
+    (rows: StationDailyData[], total: number, page: number, pageSize: number) =>
+      setPageData({ rows, total, offset: (page - 1) * pageSize }),
+    [],
+  )
 
   // Same query key as OverallSection's fetch — shares the cache entry instead
   // of re-fetching when the user has already visited the ภาพรวม tab.
   const { data: positionByID } = usePositionById(id as string | number | undefined, stationTypeId)
 
   const exportColumns = useMemo(() => buildVehicleExportColumns(stationType), [stationType])
+
+  // หน้าปัจจุบัน scope: the on-screen table numbers rows continuously across
+  // pages ((page-1)*size+i+1) — offset the exported ลำดับ to match it.
+  const columnsForScope = (scope?: 'all' | 'page') =>
+    scope === 'page'
+      ? exportColumns.map((c) =>
+          c.header === 'ลำดับ'
+            ? { ...c, value: (_r: StationDailyData, i: number) => pageData.offset + i + 1 }
+            : c,
+        )
+      : exportColumns
 
   // Human-readable note of the active search — printed in the PDF header so a
   // reader knows what subset they're looking at.
@@ -120,37 +141,40 @@ const VehicleSection: React.FC<Props> = () => {
         <VehicleStatCard />
       </section>
       <section className='mt-5'>
-        <TableVehicleData />
+        <TableVehicleData onPageRowsChange={handlePageRowsChange} />
       </section>
       <ModalWeightLog />
 
       {/* นำออกเอกสาร — exports the daily-weighing rows for the CURRENT search
-          (same columns/format as TableVehicleData). */}
+          (same columns/format as TableVehicleData). The scope toggle picks
+          ทั้งหมด (full filtered set, fetched at export time) vs หน้าปัจจุบัน
+          (the rows the table shows). */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        onExportPdf={async () => {
+        scope={{ totalCount: pageData.total, pageCount: pageData.rows.length }}
+        onExportPdf={async (scope) => {
           const [{ exportTablePdf }, rows] = await Promise.all([
             import('@/utils/export/pdf'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageData.rows) : fetchExportRows(),
           ])
           await exportTablePdf({
             filenameBase: 'Tracking_Vehicle_Daily_Report',
             title: 'รายงานข้อมูลรถเข้าชั่งรายวัน',
             filterNote: exportFilterNote,
-            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: columnsForScope(scope).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const [{ exportExcel }, rows] = await Promise.all([
             import('@/utils/export/excel'),
-            fetchExportRows(),
+            scope === 'page' ? Promise.resolve(pageData.rows) : fetchExportRows(),
           ])
           exportExcel({
             filenameBase: 'Tracking_Vehicle_Daily_Report',
             sheetName: 'Vehicle Daily',
-            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
+            columns: columnsForScope(scope).map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })
         }}

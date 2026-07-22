@@ -234,6 +234,13 @@ interface ExportSpec {
   rows: unknown[]
   /** Data-row count for the modal — excludes appended "รวมเฉลี่ย" rows. */
   dataCount: number
+  /** Present only for report types whose on-screen table paginates (month /
+   *  year): the visible page's rows with a "รวมเฉลี่ย" summed from just that
+   *  slice — used when the modal's scope toggle picks หน้าปัจจุบัน. Absent →
+   *  the modal renders without the scope toggle. */
+  pageRows?: unknown[]
+  /** Data-row count of `pageRows` — excludes its "รวมเฉลี่ย" row. */
+  pageDataCount?: number
 }
 
 /** Pairs a typed column set with its rows, then erases the generic — safe
@@ -245,6 +252,8 @@ function makeExportSpec<Row>(spec: {
   columns: ExportColumn<Row>[]
   rows: Row[]
   dataCount: number
+  pageRows?: Row[]
+  pageDataCount?: number
 }): ExportSpec {
   return spec as unknown as ExportSpec
 }
@@ -887,8 +896,9 @@ const ReportVolume: React.FC<Props> = () => {
   )
 
   /** Everything the modal + both handlers need for the ACTIVE report type —
-   *  the same rows the on-screen table renders. Month/year export the whole
-   *  filtered set (every page), not just the visible pagination slice. */
+   *  the same rows the on-screen table renders. Month/year default to the
+   *  whole filtered set (every page) and additionally carry `pageRows` so the
+   *  modal's หน้าปัจจุบัน scope can export just the visible slice. */
   const exportSpec = useMemo<ExportSpec>(() => {
     switch (reportType) {
       case 'hour':
@@ -918,6 +928,10 @@ const ReportVolume: React.FC<Props> = () => {
           columns: MONTHLY_EXPORT_COLUMNS,
           rows: withSummaryRow(monthlyRowsAll, { year: 0, month: 0 }),
           dataCount: monthlyRowsAll.length,
+          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
+          // re-summed from just that slice.
+          pageRows: withSummaryRow(monthlyRows, { year: 0, month: 0 }),
+          pageDataCount: monthlyRows.length,
         })
       case 'year':
         return makeExportSpec({
@@ -927,6 +941,10 @@ const ReportVolume: React.FC<Props> = () => {
           columns: YEARLY_EXPORT_COLUMNS,
           rows: withSummaryRow(yearlyRowsAll, { year: 0 }),
           dataCount: yearlyRowsAll.length,
+          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
+          // re-summed from just that slice.
+          pageRows: withSummaryRow(yearlyRows, { year: 0 }),
+          pageDataCount: yearlyRows.length,
         })
       case 'vehicle_type':
         return makeExportSpec({
@@ -954,7 +972,9 @@ const ReportVolume: React.FC<Props> = () => {
     matrixExportRows,
     hourlyExportRows,
     monthlyRowsAll,
+    monthlyRows,
     yearlyRowsAll,
+    yearlyRows,
     vehicleTypeRows,
     dailyRowsAll,
   ])
@@ -1074,28 +1094,36 @@ const ReportVolume: React.FC<Props> = () => {
       />
 
       {/* ── นำออกเอกสาร — exports the ACTIVE report type's table through the
-            shared pdf/excel utils (columns + rows swap per exportSpec). */}
+            shared pdf/excel utils (columns + rows swap per exportSpec). The
+            ทั้งหมด/หน้าปัจจุบัน scope toggle appears only for month/year —
+            the only report types whose on-screen table paginates (exportSpec
+            carries `pageRows` for them); the rest keep the plain count. */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
         count={exportSpec.dataCount}
-        onExportPdf={async () => {
+        scope={
+          exportSpec.pageRows
+            ? { totalCount: exportSpec.dataCount, pageCount: exportSpec.pageDataCount ?? 0 }
+            : undefined
+        }
+        onExportPdf={async (scope) => {
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: exportSpec.filenameBase,
             title: exportSpec.title,
             filterNote: exportFilterNote,
             columns: exportSpec.columns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows: exportSpec.rows,
+            rows: scope === 'page' && exportSpec.pageRows ? exportSpec.pageRows : exportSpec.rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: exportSpec.filenameBase,
             sheetName: exportSpec.sheetName,
             columns: exportSpec.columns.map(({ header, width, value }) => ({ header, width, value })),
-            rows: exportSpec.rows,
+            rows: scope === 'page' && exportSpec.pageRows ? exportSpec.pageRows : exportSpec.rows,
           })
         }}
       />

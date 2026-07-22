@@ -23,6 +23,7 @@ import MapFocusGrid from '@/components/section/MapFocusGrid'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import { useScopeAll } from '@/hooks/useScopeAll'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {
   deptId?: string | null
@@ -89,7 +90,8 @@ const CCTV_EXPORT_COLUMNS: {
   { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road?.code_name || '-' },
   { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.project?.project_name || '-' },
   { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.solution?.solution_name || '-' },
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project?.contract_no || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project?.contract_no || (r.project?.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
   { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'อยู่ในค้ำ' : 'หมดค้ำ') },
   { header: 'กล้องทั้งหมด', width: 12, widthPct: 8, value: (r) => r.camera?.total ?? '-' },
   { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.online ?? '-' },
@@ -249,7 +251,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
             filenameBase: 'CCTV_Overview_Report',
             title: 'รายงานสรุปภาพรวมกล้องวงจรปิด (CCTV Overview)',
             filterNote: exportFilterNote,
-            columns: CCTV_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(CCTV_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -258,7 +260,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           exportExcel({
             filenameBase: 'CCTV_Overview_Report',
             sheetName: 'CCTV Overview',
-            columns: CCTV_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(CCTV_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

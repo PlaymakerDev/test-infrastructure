@@ -58,15 +58,17 @@ export const dateRangeForPeriod = (
   }
 }
 
-/** Backend's `crossing_type` mapping. `2` is verified against the Postman
- *  sample (`type: 2, name_en: "unbuttoned-crossing"`); vehicle is a best-
- *  guess until backend confirms — flip the value here if it's wrong. */
+/** Backend's `crosswalk_type` mapping — verified LIVE against
+ *  /crosswalk/solutions/{id}/details/list on 2026-07-21 (2 → 939 คน rows,
+ *  3 → 14,263 รถ rows, partitioning the 15,202 baseline exactly). The param
+ *  name is crosswalk_type — the old code sent `crossing_type`, which the
+ *  backend silently ignored and forced a client-side walk. */
 export const CROSSING_TYPE_MAP: Record<
   Exclude<ViolationStatus, 'ALL'>,
   number
 > = {
   PEDESTRIAN_VIOLATION: 2,
-  VEHICLE_VIOLATION: 1,
+  VEHICLE_VIOLATION: 3,
 }
 
 /** Initial filter — TODAY + ALL status matches the "current-day snapshot on

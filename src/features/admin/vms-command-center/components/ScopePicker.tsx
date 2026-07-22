@@ -12,6 +12,10 @@ interface Props {
   /** Force "select mode" on — checkboxes always visible (default true, matches
    *  the Command Center dispatch flow). Set false for a click-to-drill-in view. */
   alwaysSelectMode?: boolean
+  /** Opens the sign-detail modal for the clicked sign — same eye icon /
+   *  same modal as LiveMonitor's cards, so the sidebar tree offers the same
+   *  "inspect before you dispatch" shortcut. */
+  onViewSign?: (vmsId: number) => void
 }
 
 const summaryTagBase: React.CSSProperties = {
@@ -40,9 +44,29 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
   onSelectionChange,
   selection,
   alwaysSelectMode = true,
+  onViewSign,
 }) {
   const { data, isLoading, isError } = useVMSDepartments()
-  const items: BureauItem[] = useMemo(() => data?.data ?? [], [data])
+  const rawItems: BureauItem[] = useMemo(() => data?.data ?? [], [data])
+  // The departments API's own `is_online` is a LEGACY heartbeat
+  // (tv.last_connected within 30 min) — a different agent stack than the one
+  // Command Center dispatches through. Rewrite it to `is_controllable`
+  // (same tbl_vms_screen_info join used everywhere else in Command Center)
+  // so the sidebar dot always agrees with LiveMonitor's buckets and the
+  // sign-detail modal. Cheap — BureauItem is <1000 signs total in prod.
+  const items: BureauItem[] = useMemo(() => rawItems.map((bureau) => ({
+    ...bureau,
+    sub_department: bureau.sub_department.map((state) => ({
+      ...state,
+      roads: state.roads.map((route) => ({
+        ...route,
+        solution: route.solution.map((s) => ({
+          ...s,
+          is_online: s.is_controllable,
+        })),
+      })),
+    })),
+  })), [rawItems])
 
   return (
     <div className="flex flex-col h-full">
@@ -74,6 +98,7 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
             alwaysSelectMode={alwaysSelectMode}
             defaultExpandAll={false}
             onSelectionChange={onSelectionChange}
+            onViewSign={onViewSign ? (sign) => onViewSign(sign.vms_id) : undefined}
           />
         )}
       </div>

@@ -10,6 +10,9 @@ import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from '.
 
 interface Props {
   filter: ViolationFilter
+  /** Reports pagination up to the parent section so the export modal's
+   *  หน้าปัจจุบัน scope can mirror the exact rows this grid shows. */
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
 const PAGE_SIZE = 10
@@ -21,7 +24,7 @@ const VIOLATION_COLOR = '#E94C4C'
 const GRID_CLASSES =
   'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
 
-const CCTVViolationData: React.FC<Props> = ({ filter }) => {
+const CCTVViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
@@ -119,6 +122,7 @@ const CCTVViolationData: React.FC<Props> = ({ filter }) => {
           onChange={(p, s) => {
             setPage(p)
             setPageSize(s)
+            onPageChange?.(p, s)
           }}
         />
       )}

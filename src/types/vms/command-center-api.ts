@@ -7,9 +7,18 @@ export interface VMSMonitorItem {
   road_code?: string
   road_name?: string
   anydesk_id?: string
+  /** LEGACY heartbeat (tv.last_connected within 30 min) — does NOT mean
+   *  "can receive a Command Center dispatch". Use is_controllable for that. */
   is_online: boolean
   last_seen_at?: string
   last_connected?: string
+  /** Same tbl_vms_screen_info-derived truth as /vms/screen-info and the
+   *  departments (sidebar) endpoint — single source for dispatch eligibility. */
+  is_centralized: boolean
+  /** Has this sign's agent EVER checked in. False = never provisioned —
+   *  needs a technician, not a "wait for it to reconnect" queue-ahead. */
+  is_reported: boolean
+  is_controllable: boolean
   setting_id?: number
   command_no?: number
   status?: number

@@ -7,7 +7,8 @@ import React, { useMemo, useState } from 'react'
 import { TbLayoutGrid, TbList, TbPlus, TbPrinter } from 'react-icons/tb'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { useContainerHeight } from '@/hooks/useContainerHeight'
-import { useOverallContext } from '../context'
+import { useDepartments } from '@/hooks/queries/manage'
+import { mapProject, useOverallContext } from '../context'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
 import type { Project, WarrantyStatus } from '../types/project'
 import DeleteProjectModal from './project/DeleteProjectModal'
@@ -55,7 +56,10 @@ const PROJECT_EXPORT_COLUMNS: {
 ]
 
 const ProjectSection: React.FC = () => {
-  const { viewMode, setViewMode, filtered, filters } = useOverallContext()
+  const { viewMode, setViewMode, filtered, filters, total } = useOverallContext()
+  // Same cached /departments list the context uses — needed to resolve the
+  // owner (ผู้ว่าจ้าง) label when mapping the export-'ทั้งหมด' full fetch.
+  const { data: departments } = useDepartments()
   const [projectModal, setProjectModal] = useState<{ open: boolean; editing: Project | null }>({
     open: false,
     editing: null,
@@ -75,6 +79,31 @@ const ProjectSection: React.FC = () => {
     if (filters.search.trim()) parts.push(`ค้นหา "${filters.search.trim()}"`)
     return parts.length ? parts.join(' · ') : undefined
   }, [filters])
+
+  // Export scope 'ทั้งหมด' — fetch EVERY page of the current server-side
+  // search at export time (two-step like incident-detection's EventSection:
+  // page 1 @100, then refetch at the reported total when it exceeds 100),
+  // then apply the same client-side dropdown narrowing the context's
+  // `filtered` memo applies to the on-screen page.
+  const fetchAllProjects = async (): Promise<Project[]> => {
+    const { getProjectsAPI } = await import('@/services/routes/ManageService')
+    const search = filters.search.trim() || undefined
+    const first = await getProjectsAPI({ page: 1, limit: 100, search })
+    const count = first.data?.meta_data?.count ?? 0
+    const rows =
+      count <= 100
+        ? first.data?.res_data ?? []
+        : (await getProjectsAPI({ page: 1, limit: count, search })).data?.res_data ?? []
+    // Mirrors the dropdown-filter predicate in context's `filtered` memo.
+    return rows
+      .map((r) => mapProject(r, departments))
+      .filter((p) => {
+        if (filters.budgetYear && p.budgetYear !== filters.budgetYear) return false
+        if (filters.owner && p.owner !== filters.owner) return false
+        if (filters.contractor && p.contractor !== filters.contractor) return false
+        return true
+      })
+  }
 
   const openCreate = () => setProjectModal({ open: true, editing: null })
   const openEdit = (project: Project) => setProjectModal({ open: true, editing: project })
@@ -148,29 +177,36 @@ const ProjectSection: React.FC = () => {
         />
       </div>
 
-      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
-          shows), through the shared pdf/excel utils like cctv overall. */}
+      {/* นำออกเอกสาร — scope toggle: ทั้งหมด = every project matching the
+          current server-side search + client dropdown filters (fetched in
+          full at export time), หน้าปัจจุบัน = the rows the table shows. NOTE:
+          totalCount is the server total of the current search BEFORE the
+          client dropdown filters — the filtered size of the full set isn't
+          knowable until the export-time fetch, so the label is an approximate
+          upper bound; the exported rows themselves are exact. */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={filtered.length}
-        onExportPdf={async () => {
+        scope={{ totalCount: total, pageCount: filtered.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllProjects()
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: 'Settings_Projects_Report',
             title: 'รายงานรายชื่อโครงการ (Project Management)',
             filterNote: exportFilterNote,
             columns: PROJECT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows: filtered,
+            rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllProjects()
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Settings_Projects_Report',
             sheetName: 'Projects',
             columns: PROJECT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
-            rows: filtered,
+            rows,
           })
         }}
       />

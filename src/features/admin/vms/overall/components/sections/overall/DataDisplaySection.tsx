@@ -11,6 +11,7 @@ import { getVMSOverviewListAPI, getVMSOverviewTotalAPI } from '@/services/routes
 import { useScopeAll } from '@/hooks/useScopeAll'
 import type { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 
 interface Props {
@@ -82,7 +83,8 @@ const VMS_EXPORT_COLUMNS: {
   { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road.code_name || '-' },
   { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.project.project_name || '-' },
   { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.solution.solution_name || '-' },
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
   { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
   { header: 'สถานะ', width: 10, widthPct: 8, value: (r) => (r.vms.status.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
   { header: 'Stream', width: 11, widthPct: 7.5, value: (r) => (r.vms.hls_url ? 'Connect' : 'Disconnect') },
@@ -261,7 +263,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
             filenameBase: 'VMS_Overview_Report',
             title: 'รายงานสรุปภาพรวมป้าย VMS (VMS Overview)',
             filterNote: exportFilterNote,
-            columns: VMS_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(VMS_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -270,7 +272,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'VMS_Overview_Report',
             sheetName: 'VMS Overview',
-            columns: VMS_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(VMS_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

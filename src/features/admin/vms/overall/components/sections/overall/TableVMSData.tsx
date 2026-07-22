@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 
 interface Props {
   data?: APIResponseVMSList
@@ -30,7 +31,8 @@ type DataRow = {
 
 type Row = HeaderRow | DataRow
 
-const TOTAL_COLS = 8
+// Dept header row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 
 /** Bordered rounded pill — shared visual language with the crosswalk overall
  *  table. Used for การค้ำประกัน + สถานะ (with an optional leading icon). */
@@ -134,7 +136,8 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
     [router],
   )
 
-  const columns: ColumnsType<Row> = useMemo(() => [
+  const columns: ColumnsType<Row> = useMemo(() => {
+    const all: ColumnsType<Row> = [
     {
       title: 'รหัสสายทาง',
       key: 'roadCode',
@@ -280,7 +283,10 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
         return <CameraButton url={row.data.vms.desktop_screen} />
       },
     },
-  ], [goToDetail])
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')
+  }, [goToDetail])
 
   return (
     <Table<Row>

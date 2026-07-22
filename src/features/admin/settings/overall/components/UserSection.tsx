@@ -114,6 +114,29 @@ const toUser = (
   }
 }
 
+/** Client-side narrowing (sub-tab / role / status / search) shared by the
+ *  table's `filtered` memo and the export-'ทั้งหมด' path — see the
+ *  SERVER-SEARCH BUG WORKAROUND block in UserSection for why every one of
+ *  these filters must be applied client-side. */
+const applyUserFilters = (
+  rows: User[],
+  filters: UserFilters,
+  subTab: 'local' | 'ldap',
+): User[] => {
+  const q = filters.search.trim().toLowerCase()
+  const wantLdap = subTab === 'ldap'
+  return rows.filter((u) => {
+    if (u.isLdap !== wantLdap) return false
+    if (filters.role && u.role !== filters.role) return false
+    if (filters.status && u.status !== filters.status) return false
+    if (q) {
+      const haystack = `${u.username} ${u.fullName}`.toLowerCase()
+      if (!haystack.includes(q)) return false
+    }
+    return true
+  })
+}
+
 const UserSection: React.FC = () => {
   const [filters, setFiltersState] = useState<UserFilters>(initialFilters)
   const [page, setPage] = useState(1)
@@ -185,20 +208,10 @@ const UserSection: React.FC = () => {
   // block above for why search is not sent to the server. The subTab
   // gate narrows to Local (`!isLdap`) or LDAP (`isLdap`) users; the
   // backend has no `is_ldap` query param so this must stay client-side.
-  const filtered = useMemo(() => {
-    const q = filters.search.trim().toLowerCase()
-    const wantLdap = subTab === 'ldap'
-    return users.filter((u) => {
-      if (u.isLdap !== wantLdap) return false
-      if (filters.role && u.role !== filters.role) return false
-      if (filters.status && u.status !== filters.status) return false
-      if (q) {
-        const haystack = `${u.username} ${u.fullName}`.toLowerCase()
-        if (!haystack.includes(q)) return false
-      }
-      return true
-    })
-  }, [users, filters, subTab])
+  const filtered = useMemo(
+    () => applyUserFilters(users, filters, subTab),
+    [users, filters, subTab],
+  )
 
   // Human-readable note of the active sub-tab/filters/search — printed in
   // the PDF header so a reader knows what subset they're looking at. The
@@ -210,6 +223,22 @@ const UserSection: React.FC = () => {
     if (filters.search.trim()) parts.push(`ค้นหา "${filters.search.trim()}"`)
     return parts.join(' · ')
   }, [subTab, filters])
+
+  // Export scope 'ทั้งหมด' — fetch EVERY user at export time (pagination is
+  // server-side; `?search` is broken server-side so it is NOT forwarded — see
+  // workaround block above) then run the exact client filter the table uses.
+  // Same two-step full-fetch pattern as incident-detection's EventSection:
+  // page 1 @100, then refetch at the reported total when it exceeds 100.
+  const fetchAllUsers = async (): Promise<User[]> => {
+    const { getGeneralUsersAPI } = await import('@/services/routes/ManageService')
+    const first = await getGeneralUsersAPI({ page: 1, limit: 100 })
+    const count = first.data?.meta_data?.count ?? 0
+    const rows =
+      count <= 100
+        ? first.data?.res_data ?? []
+        : (await getGeneralUsersAPI({ page: 1, limit: count })).data?.res_data ?? []
+    return applyUserFilters(rows.map((r) => toUser(r, departmentsById)), filters, subTab)
+  }
 
   // Local create opens UserModal directly. LDAP create opens the search
   // modal first — the picked row triggers the UserModal transition via
@@ -390,29 +419,35 @@ const UserSection: React.FC = () => {
         />
       </div>
 
-      {/* นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the table
-          shows), through the shared pdf/excel utils like cctv overall. */}
+      {/* นำออกเอกสาร — scope toggle: ทั้งหมด = every user matching the current
+          sub-tab/filters (fetched in full at export time), หน้าปัจจุบัน = the
+          filtered rows the table shows. NOTE: totalCount is the server's
+          pre-filter total (meta_data.count) — the filtered size of the full
+          set isn't knowable until the export-time fetch, so the label is an
+          approximate upper bound; the exported rows themselves are exact. */}
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        count={filtered.length}
-        onExportPdf={async () => {
+        scope={{ totalCount: total, pageCount: filtered.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllUsers()
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: 'Settings_Users_Report',
             title: 'รายงานรายชื่อผู้ใช้งาน (User Management)',
             filterNote: exportFilterNote,
             columns: USER_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows: filtered,
+            rows,
           })
         }}
-        onExportExcel={async () => {
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? filtered : await fetchAllUsers()
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Settings_Users_Report',
             sheetName: 'Users',
             columns: USER_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
-            rows: filtered,
+            rows,
           })
         }}
       />

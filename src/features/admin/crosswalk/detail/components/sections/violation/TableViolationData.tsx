@@ -12,6 +12,9 @@ import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from '.
 
 interface Props {
   filter: ViolationFilter
+  /** Reports pagination up to the parent section so the export modal's
+   *  หน้าปัจจุบัน scope can mirror the exact rows this table shows. */
+  onPageChange?: (page: number, pageSize: number) => void
 }
 
 interface Row extends CrosswalkViolationRow {
@@ -20,7 +23,7 @@ interface Row extends CrosswalkViolationRow {
 
 const PAGE_SIZE = 10
 
-const TableViolationData: React.FC<Props> = ({ filter }) => {
+const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
   const deptId = useDeptId()
   const { id } = useDetailContext()
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
@@ -138,6 +141,7 @@ const TableViolationData: React.FC<Props> = ({ filter }) => {
           onChange={(p, s) => {
             setPage(p)
             setPageSize(s)
+            onPageChange?.(p, s)
           }}
         />
       )}

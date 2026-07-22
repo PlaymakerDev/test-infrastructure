@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SummaryTableBridgeLighting } from '../../../components'
 import SearchBar, { type FilterConfig, type FilterStats, type ViewMode } from '@/components/searchable/SearchBar'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 import FormSearchBridgeLighting from './FormSearchBridgeLighting'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import { useScopeAll } from '@/hooks/useScopeAll'
@@ -77,7 +78,8 @@ const BRIDGE_EXPORT_COLUMNS: {
   { header: 'รหัสสายทาง', width: 13, widthPct: 11, value: (r) => r.road.code_name || '-' },
   { header: 'ชื่อโครงการ', width: 34, widthPct: 22, align: 'left', value: (r) => r.project.project_name || '-' },
   { header: 'จุดติดตั้ง', width: 34, widthPct: 22, align: 'left', value: (r) => r.solution.solution_name || '-' },
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || '-' },
+  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
   { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
   { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
 ]
@@ -260,7 +262,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
             filenameBase: 'Bridge_Lighting_Overview_Report',
             title: 'รายงานสรุปภาพรวมไฟประดับสะพาน (Bridge Lighting Overview)',
             filterNote: exportFilterNote,
-            columns: BRIDGE_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(BRIDGE_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -269,7 +271,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           exportExcel({
             filenameBase: 'Bridge_Lighting_Overview_Report',
             sheetName: 'Bridge Lighting Overview',
-            columns: BRIDGE_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(BRIDGE_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

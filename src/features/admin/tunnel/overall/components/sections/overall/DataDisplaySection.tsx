@@ -12,6 +12,7 @@ import ModalTunnelViewer, {
 } from './ModalTunnelViewer'
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 import { groupByBureau } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import { useTunnelCentralList } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -268,7 +269,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
             filenameBase: 'Tunnel_Overview_Report',
             title: 'รายงานสรุปภาพรวมอุโมงค์ (Tunnel Overview)',
             filterNote: exportFilterNote,
-            columns: TUNNEL_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(TUNNEL_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -277,7 +278,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Tunnel_Overview_Report',
             sheetName: 'Tunnel Overview',
-            columns: TUNNEL_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(TUNNEL_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

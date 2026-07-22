@@ -12,6 +12,7 @@ import {
 } from 'react-icons/tb'
 
 dayjs.extend(relativeTime)
+import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { useAppDispatch } from '@/stores/hooks'
@@ -46,13 +47,15 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
       style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
     >
       {/* Title — project name, clamped to keep card heights even. */}
-      <h4
-        className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
-        style={{ color: 'var(--yellow)' }}
-        title={p.project_name}
-      >
-        {p.project_name || '-'}
-      </h4>
+      {SHOW_PROJECT_NAME && (
+        <h4
+          className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
+          style={{ color: 'var(--yellow)' }}
+          title={p.project_name}
+        >
+          {p.project_name || '-'}
+        </h4>
+      )}
 
       {/* Badges row */}
       <div className='flex flex-wrap items-center gap-2'>

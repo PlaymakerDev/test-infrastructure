@@ -15,6 +15,7 @@ import { useTrafficVolumeCentralList } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 import type { CountingCentralSolution } from '@/types/traffic-volume/overview-api'
+import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props { }
 
@@ -252,7 +253,7 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
             filenameBase: 'Traffic_Volume_Overview_Report',
             title: 'รายงานสรุปภาพรวมปริมาณจราจร (Traffic Volume Overview)',
             filterNote: exportFilterNote,
-            columns: TRAFFIC_VOLUME_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: hideProjectNameColumns(TRAFFIC_VOLUME_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
           })
         }}
@@ -261,7 +262,7 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
           exportExcel({
             filenameBase: 'Traffic_Volume_Overview_Report',
             sheetName: 'Traffic Volume Overview',
-            columns: TRAFFIC_VOLUME_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: hideProjectNameColumns(TRAFFIC_VOLUME_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
           })
         }}

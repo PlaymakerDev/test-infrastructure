@@ -70,6 +70,20 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const cameras: VMSSignCamera[] = detail?.cameras ?? []
   const screenURL = detail?.desktop_screen_url
 
+  // detail.is_controllable / is_centralized / is_reported come straight from
+  // the /vms/command-center/sign/:id endpoint's own tbl_vms_screen_info join —
+  // same formula as the departments (sidebar) and monitor endpoints, so this
+  // modal always agrees with LiveMonitor's bucket chips and the sidebar dot
+  // without a separate fetch. detail.is_online is the LEGACY tv.last_connected
+  // heartbeat and is NOT used for the connectivity pill below.
+  //
+  // is_reported=false (never provisioned, ever) is grouped into "ไม่รองรับ"
+  // alongside is_centralized=false (explicitly opted out) — both need a
+  // technician/admin action before this sign can ever be controllable,
+  // unlike a normal offline sign which just needs to reconnect on its own.
+  const isExcluded = detail?.is_centralized === false || detail?.is_reported === false
+  const canDispatchNow = detail?.is_controllable ?? false
+
   return (
     <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
     <Modal
@@ -106,19 +120,44 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   <div className="fs-12 text-white/50 mt-0.5 font-mono">{detail.crossing_master_index}</div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Online / offline pill — themed (see feedback_theme_no_invent):
-                      online = --default-blue tint, offline = --red tint. */}
-                  <span
-                    className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
-                    style={{
-                      background: `color-mix(in srgb, var(${detail.is_online ? '--default-blue' : '--red'}) 12%, transparent)`,
-                      border: `1px solid var(${detail.is_online ? '--default-blue' : '--red'})`,
-                      color: `var(${detail.is_online ? '--default-blue' : '--red'})`,
-                    }}
-                  >
-                    {detail.is_online ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
-                    {detail.is_online ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
-                  </span>
+                  {/* Connectivity pill — themed (see feedback_theme_no_invent).
+                      Three states, matching LiveMonitor's bucket chips exactly:
+                        ไม่รองรับ (yellow)  — opted out of centralized control
+                        ออนไลน์   (blue)    — controllable right now
+                        ออฟไลน์   (red)     — will queue-ahead on dispatch */}
+                  {isExcluded ? (
+                    <Tooltip
+                      title={
+                        detail?.is_reported === false
+                          ? 'agent ยังไม่เคย provision ป้ายนี้เลย — ต้องส่งช่างไปติดตั้ง/เริ่ม agent ก่อน'
+                          : "ป้ายนี้ถูกถอดจากกลุ่มควบคุมรวม — เปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'"
+                      }
+                    >
+                      <span
+                        className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                        style={{
+                          background: 'color-mix(in srgb, var(--yellow) 12%, transparent)',
+                          border: '1px solid var(--yellow)',
+                          color: 'var(--yellow)',
+                        }}
+                      >
+                        <TbWifiOff style={{ verticalAlign: -2 }} />
+                        ไม่รองรับ
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1.5 fs-12 px-2.5 py-1 rounded"
+                      style={{
+                        background: `color-mix(in srgb, var(${canDispatchNow ? '--default-blue' : '--red'}) 12%, transparent)`,
+                        border: `1px solid var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                        color: `var(${canDispatchNow ? '--default-blue' : '--red'})`,
+                      }}
+                    >
+                      {canDispatchNow ? <TbWifi style={{ verticalAlign: -2 }} /> : <TbWifiOff style={{ verticalAlign: -2 }} />}
+                      {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
+                    </span>
+                  )}
                   {/* Anydesk deep-link — uses the `anydesk:` URL scheme so
                       clicking hands off to the native client (same pattern as
                       legacy DetailTitle.tsx). Disabled visual if no id. */}
