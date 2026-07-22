@@ -187,10 +187,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
             <ChipToggle
               active={bucketFilter === 'ready'}
               onClick={() => setBucketFilter(bucketFilter === 'ready' ? 'all' : 'ready')}
-              tooltip="ป้าย online + พร้อมรับคำสั่ง (controllable + centralized) — ตรงกับสีเขียวใน sidebar"
+              tooltip="ป้าย online + พร้อมรับคำสั่งทันที (controllable + centralized) — ตรงกับสีเขียวใน sidebar"
               label={
                 <span>
-                  <span style={{ color: '#22c55e' }}>●</span> Online {readyCount}
+                  <span style={{ color: '#22c55e' }}>●</span> พร้อมรับคำสั่ง {readyCount}
                 </span>
               }
             />
@@ -201,7 +201,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                 tooltip="ป้ายที่ยังออฟไลน์ — คำสั่งจะถูก queue ไว้ เล่นเมื่อ agent กลับมาออนไลน์"
                 label={
                   <span>
-                    <span className="text-(--default-blue)">●</span> Offline {offlineCount}
+                    <span className="text-(--default-blue)">●</span> ออฟไลน์ {offlineCount}
                   </span>
                 }
               />
