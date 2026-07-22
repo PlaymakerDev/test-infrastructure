@@ -61,58 +61,51 @@ const VMSCommandCenterScreen: React.FC = () => {
   // 60s is plenty and any change made in STATUS is broadcast via invalidation.
   const { data: screenInfoResp } = useScreenInfo({ refetchIntervalMs: 60_000 })
 
-  // Split eligibility into three buckets so operators can queue-ahead:
-  //   immediate: is_centralized && is_controllable        → dispatched now
-  //   queued:    is_centralized && is_reported && !is_online  → stored, plays
-  //                                                          when the agent
-  //                                                          reconnects
-  //   dropped:   everything else (not centralized, or the agent has never
-  //              provisioned, or its version is too old to be controllable)
+  // Split eligibility into three buckets, driven by every SELECTED sign
+  // (not just what screen-info returned) so signs missing from screen-info
+  // still land somewhere sensible. Signs that aren't in screen-info yet
+  // (never-provisioned agents) get treated as "offline queue-ahead" so the
+  // LiveMonitor bucketing agrees with what the sidebar already tells the
+  // operator ("this sign is offline"). Buckets:
+  //   immediate: has screen-info row + is_centralized + is_controllable
+  //              → dispatched now
+  //   queued:    is_centralized (assumed true when unknown) + not immediate
+  //              → stored, plays when the agent connects (first-time OK)
+  //   excluded:  has screen-info row + is_centralized === false
+  //              (operator explicitly opted the sign out in the ข้อมูลป้าย VMS
+  //              tab — dispatching would be silently discarded)
   const { immediateIds, queuedIds } = useMemo(() => {
     const items = screenInfoResp?.data?.data ?? []
-    if (items.length === 0) return { immediateIds: null as Set<number> | null, queuedIds: new Set<number>() }
+    const infoByVmsId = new Map(items.map((i) => [i.vms_id, i]))
     const immediate = new Set<number>()
     const queued = new Set<number>()
-    for (const i of items) {
-      if (!i.is_centralized) continue
-      if (i.is_controllable) {
-        immediate.add(i.vms_id)
-      } else if (i.is_reported && !i.is_online) {
-        // Sign was provisioned before + agent version was OK (only offline
-        // knocks out is_controllable) → queue-ahead is safe.
-        queued.add(i.vms_id)
+    for (const s of selection.signs) {
+      const info = infoByVmsId.get(s.vms_id)
+      if (info && info.is_centralized === false) continue  // excluded
+      if (info?.is_controllable) {
+        immediate.add(s.vms_id)
+      } else {
+        queued.add(s.vms_id)
       }
     }
     return { immediateIds: immediate, queuedIds: queued }
-  }, [screenInfoResp])
+  }, [screenInfoResp, selection.signs])
 
   // Full set from ScopePicker
   const allSelectedIds = useMemo(() => selection.signs.map((s) => s.vms_id), [selection.signs])
   // What Composer sends — union of immediate + queued (queue-ahead supported).
-  // If screen-info hasn't loaded (immediateIds === null), fail-open: send
-  // the full selection.
-  const vmsIds = useMemo(() => {
-    if (immediateIds === null) return allSelectedIds
-    return allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id))
-  }, [allSelectedIds, immediateIds, queuedIds])
-  const immediateCount = useMemo(
-    () => (immediateIds === null ? allSelectedIds.length : allSelectedIds.filter((id) => immediateIds.has(id)).length),
-    [allSelectedIds, immediateIds]
+  const vmsIds = useMemo(
+    () => allSelectedIds.filter((id) => immediateIds.has(id) || queuedIds.has(id)),
+    [allSelectedIds, immediateIds, queuedIds]
   )
-  const queuedCount = useMemo(
-    () => allSelectedIds.filter((id) => queuedIds.has(id)).length,
-    [allSelectedIds, queuedIds]
-  )
+  const queuedCount = queuedIds.size
   const excludedCount = allSelectedIds.length - vmsIds.length
 
   // Excluded (ไม่รองรับ) sign objects — passed to LiveMonitor so it can render
   // placeholder cards for them (they aren't in the /monitor payload because
   // Composer never sends to them).
   const excludedSelectedSigns = useMemo(
-    () => {
-      if (immediateIds === null) return []
-      return selection.signs.filter((s) => !immediateIds.has(s.vms_id) && !queuedIds.has(s.vms_id))
-    },
+    () => selection.signs.filter((s) => !immediateIds.has(s.vms_id) && !queuedIds.has(s.vms_id)),
     [selection.signs, immediateIds, queuedIds]
   )
 

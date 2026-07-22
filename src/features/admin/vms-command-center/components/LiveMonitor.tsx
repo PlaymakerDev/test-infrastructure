@@ -18,12 +18,15 @@ interface Props {
   vmsIds: number[]
   /** Set of vms_ids that will receive the dispatch immediately (agent online
    *  + controllable + centralized). Used to bucket rows for the filter chips. */
-  immediateIds?: Set<number> | null
-  /** Set of vms_ids that will queue-ahead (centralized + provisioned but
-   *  currently offline — command plays when the agent reconnects). */
+  immediateIds?: Set<number>
+  /** Set of vms_ids that will queue-ahead (currently offline or never
+   *  provisioned — command plays when the agent connects). Matches the
+   *  "offline" state the sidebar's BureauList shows for the same signs so
+   *  the two panels never disagree. */
   queuedIds?: Set<number>
-  /** Signs the operator selected but the eligibility filter dropped. Rendered
-   *  as read-only placeholder cards under the "ไม่รองรับ" filter. */
+  /** Signs the operator selected but the sign is explicitly opted-out
+   *  (is_centralized=false in vmsinfo). Rendered as read-only placeholder
+   *  cards under the "ไม่รองรับ" filter. */
   excludedSigns?: Array<{ vms_id: number; solution_name?: string; road_code?: string; sta?: string }>
   onOpenSignDetail?: (vmsId: number) => void
 }
@@ -197,10 +200,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
             <ChipToggle
               active={bucketFilter === 'ready'}
               onClick={() => setBucketFilter(bucketFilter === 'ready' ? 'all' : 'ready')}
-              tooltip="ป้ายพร้อมรับคำสั่งทันที (online + controllable + centralized)"
+              tooltip="ป้าย online + พร้อมรับคำสั่ง (controllable + centralized) — ตรงกับสีเขียวใน sidebar"
               label={
                 <span>
-                  <span style={{ color: '#22c55e' }}>●</span> รอคำสั่ง {readyCount}
+                  <span style={{ color: '#22c55e' }}>●</span> Online {readyCount}
                 </span>
               }
             />
@@ -356,11 +359,11 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                       tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
                     />
                   ) : (
-                    // Distinct "no command at all" pill — muted gray, clearly
-                    // separate from status=0 ("รอส่งคำสั่ง" = queued command
-                    // agent hasn't picked up yet). Without this, an empty sign
-                    // and a queued sign looked identical.
-                    <Tooltip title="ยังไม่มีคำสั่งในระบบสำหรับป้ายนี้">
+                    // Card pill for a sign with no relevant command — reads
+                    // as "ready to receive a dispatch" (รอคำสั่ง). Terminal
+                    // states (cancelled/done/overwrite/lost) fall through
+                    // here too because `hasActive` now excludes them.
+                    <Tooltip title="ป้ายพร้อมรับคำสั่งใหม่ — ยังไม่มี command ที่กำลังเล่นหรือกำลังจะเล่น">
                       <span
                         className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
                         style={{
@@ -377,7 +380,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                             background: 'rgba(255,255,255,0.3)',
                           }}
                         />
-                        ไม่มีคำสั่ง
+                        รอคำสั่ง
                       </span>
                     </Tooltip>
                   )}
