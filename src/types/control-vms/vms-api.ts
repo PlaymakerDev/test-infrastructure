@@ -54,6 +54,10 @@ export interface Solution {
    *  needs a technician, not a "wait for it to reconnect" queue-ahead. */
   is_reported: boolean
   is_controllable: boolean
+  /** is_reported && version_ok, WITHOUT the is_online check is_controllable
+   *  has — "has a real, correctly-versioned agent" regardless of whether
+   *  it's reachable right now. Drives the sidebar's "เลือกทั้งหมด". */
+  has_valid_agent: boolean
 }
 
 // NOTIFICATIONS (per-VMS history — GET /vms/{vms_id}/notifications)

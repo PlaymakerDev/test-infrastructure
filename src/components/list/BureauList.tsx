@@ -29,13 +29,15 @@ export interface BureauListProps {
   showControls?: boolean
 
   /** Command Center mode — checkboxes always visible; "ยกเลิกทั้งหมด" clears
-   *  ticks but doesn't hide the checkboxes, and "เลือกทั้งหมด" excludes
-   *  offline signs by default. */
+   *  ticks but doesn't hide the checkboxes. */
   alwaysSelectMode?: boolean
-  /** When alwaysSelectMode, whether "เลือกทั้งหมด" should include offline
-   *  signs. Default false (safer — offline signs are still individually
-   *  selectable via their checkbox). */
-  includeOfflineOnSelectAll?: boolean
+  /** When alwaysSelectMode, whether "เลือกทั้งหมด" requires has_valid_agent
+   *  (real, correctly-versioned agent — online or offline, just not "never
+   *  provisioned"). Default true. Online/offline eligibility itself is NOT
+   *  filtered here — that distinction is surfaced once, visibly, by
+   *  LiveMonitor's bucket chips after selection; pre-filtering it here too
+   *  was confusing double-filtering ("why didn't select-all select all?"). */
+  requireValidAgentOnSelectAll?: boolean
 
   /** Hide the sign-level leaves under each route — the tree stops at
    *  route. Ticking a route still cascades to every sign under it (so
@@ -80,10 +82,16 @@ const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id
   })
 }
 
-// includeOffline = true collects every sign; false skips offline signs at
-// the leaf and prunes empty parent aggregate keys (bureau/state/route) so
+// requireValidAgent = true skips signs with no real/correctly-versioned agent
+// (has_valid_agent false — never provisioned, or version below threshold) at
+// the leaf, and prunes empty parent aggregate keys (bureau/state/route) so
 // their tri-state checkbox isn't stuck "checked" while no leaf is picked.
-const getAllKeys = (data: BureauItem[], includeOffline = true): Set<string> => {
+// false collects every sign, including ones with no agent at all. Deliberately
+// NOT filtering on is_online/is_controllable here — a sign with a valid agent
+// that's merely offline right now is still worth selecting (queue-ahead);
+// LiveMonitor's bucket chips show that distinction after selection, once,
+// instead of the tree silently pre-filtering it.
+const getAllKeys = (data: BureauItem[], requireValidAgent = true): Set<string> => {
   const keys = new Set<string>()
   for (const bureau of data) {
     let bureauHasAny = false
@@ -94,7 +102,7 @@ const getAllKeys = (data: BureauItem[], includeOffline = true): Set<string> => {
         const rk = routeKey(bureau, state, route)
         let routeHasAny = false
         for (const sign of route.solution || []) {
-          if (!includeOffline && !sign.is_online) continue
+          if (requireValidAgent && !sign.has_valid_agent) continue
           keys.add(signKey(bureau, state, route, sign))
           routeHasAny = true
         }
@@ -187,13 +195,13 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     defaultCheckedKeys,
     defaultSelectMode = false,
     alwaysSelectMode = false,
-    // Default true — LiveMonitor's bucket chips (Online/Offline/ไม่รองรับ)
-    // already split by is_controllable downstream, so "เลือกทั้งหมด"
-    // pre-filtering offline signs at the sidebar was redundant double-
-    // filtering that just confused operators ("why doesn't select-all
-    // select all?"). Select everything here; eligibility is sorted out
-    // once, visibly, after selection.
-    includeOfflineOnSelectAll = true,
+    // Default true — require a real, correctly-versioned agent to be
+    // included in "เลือกทั้งหมด" (excludes never-provisioned signs, which
+    // can never receive a dispatch no matter how long you wait). Online vs
+    // offline is NOT filtered here — LiveMonitor's bucket chips split that
+    // downstream, once, visibly, instead of the tree silently
+    // double-filtering it.
+    requireValidAgentOnSelectAll = true,
     hideSignLeaves = false,
     defaultExpandAll = false,
     onBureauClick,
@@ -236,8 +244,8 @@ const BureauList: React.FC<BureauListProps> = (props) => {
 
   const enterSelectMode = useCallback((selectAll: boolean) => {
     setSelectMode(true)
-    if (selectAll) setCheckedKeys(getAllKeys(data, includeOfflineOnSelectAll))
-  }, [data, includeOfflineOnSelectAll])
+    if (selectAll) setCheckedKeys(getAllKeys(data, requireValidAgentOnSelectAll))
+  }, [data, requireValidAgentOnSelectAll])
 
   // In alwaysSelectMode we only clear ticks — the checkboxes stay visible so
   // operators can immediately pick a fresh set without re-entering select
@@ -631,9 +639,9 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   className='cursor-pointer hover:text-(--yellow) transition-colors'
                   onClick={() => enterSelectMode(true)}
                   title={
-                    includeOfflineOnSelectAll
-                      ? 'เลือกทุกป้ายรวมทั้งออฟไลน์'
-                      : 'เลือกเฉพาะป้ายออนไลน์ (ออฟไลน์ต้องติ๊กเอง)'
+                    requireValidAgentOnSelectAll
+                      ? 'เลือกทุกป้ายที่มี agent ติดตั้งแล้ว (รวมป้ายออฟไลน์ — ป้ายที่ไม่เคย provision ต้องติ๊กเอง)'
+                      : 'เลือกทุกป้ายจริงๆ ไม่กรองอะไรเลย'
                   }
                 >
                   เลือกทั้งหมด
