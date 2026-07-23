@@ -75,7 +75,7 @@ const ChartPreviousWeightVehicle: React.FC<Props> = () => {
       <LineChart
         title='เปรียบเทียบรถเข้าชั่งน้ำหนัก'
         subtitle='แนวโน้มย้อนหลัง 7 วัน'
-        icon={<TbCalendarMonth size={18} />}
+        icon={<TbCalendarMonth className='fs-22' />}
         iconCircle={false}
         // accentColor='#FCD116'
         // cardBackground='#00000080'
@@ -87,7 +87,7 @@ const ChartPreviousWeightVehicle: React.FC<Props> = () => {
         activePeriod={period}
         onPeriodChange={(p) => setPeriod(p as Period)}
         tooltipShowDot
-        height={260}
+        fillHeight
       />
     </QueryBoundary>
   )

@@ -35,6 +35,7 @@ const OverallAvgSpeed: React.FC<Props> = () => {
       <GaugeChart
         title='ความเร็วเฉลี่ยวันนี้'
         icon={<TbGauge className='fs-22 text-(--yellow) shrink-0' />}
+        iconCircle={false}
         value={avgSpeed}
         unit='กม./ชม.'
         min={0}

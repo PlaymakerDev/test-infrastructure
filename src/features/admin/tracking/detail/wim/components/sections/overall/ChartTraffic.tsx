@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import LineChart from '@/components/chart/LineChart'
-import { TbMoon, TbSun } from 'react-icons/tb'
+import { TbCar, TbMoon, TbSun } from 'react-icons/tb'
 import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
@@ -39,22 +39,24 @@ const ChartTraffic: React.FC<Props> = () => {
     }))
   }, [data?.data])
 
-  // Boundary hour (noon) is shared by both tabs so each line touches the other's edge.
+  // Boundary hours (06:00, 18:00) are shared by both tabs so each line touches
+  // the other's edge. กลางคืน wraps past midnight, so it's reassembled as
+  // 18:00..23:00 followed by 00:00..06:00 rather than relying on the API's
+  // ascending pid order (a plain filter would leave it as 00:00..06:00, 18:00..23:00).
   const periodData = useMemo(() => {
-    return period === 'กลางวัน'
-      ? chartData.filter(item => item.pid <= 12)
-      : chartData.filter(item => item.pid >= 12)
+    if (period === 'กลางวัน') {
+      return chartData.filter(item => item.pid >= 6 && item.pid <= 18)
+    }
+    const evening = chartData.filter(item => item.pid >= 18)
+    const earlyMorning = chartData.filter(item => item.pid <= 6)
+    return [...evening, ...earlyMorning]
   }, [chartData, period])
 
   return (
     <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={10}>
       <LineChart
         title='ข้อมูลจราจรรายชั่วโมง'
-        icon={
-          period === 'กลางวัน'
-            ? <TbSun size={18} />
-            : <TbMoon size={18} />
-        }
+        icon={<TbCar className='fs-22' />}
         iconCircle={false}
         accentColor='#FCD116'
         cardBackground='#00000080'
@@ -63,12 +65,16 @@ const ChartTraffic: React.FC<Props> = () => {
         data={periodData}
         lines={LINES}
         periods={['กลางวัน', 'กลางคืน']}
+        periodIcons={{
+          'กลางวัน': <TbSun className='fs-14' />,
+          'กลางคืน': <TbMoon className='fs-14' />,
+        }}
         activePeriod={period}
         onPeriodChange={(p) => setPeriod(p as Period)}
         tooltipDate={dayjs().format('DD MMM BBBB')}
         tooltipUnit='คัน'
         tooltipShowDot
-        height={260}
+        fillHeight
       />
     </QueryBoundary>
   )

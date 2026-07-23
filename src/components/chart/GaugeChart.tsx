@@ -28,6 +28,9 @@ export interface GaugeChartProps {
   tableRows?: GaugeTableRow[]
   /** height of the ECharts canvas (default 260) */
   height?: number
+  /** ห่อ icon ในวงกลม yellow tint (default `true`) ตั้ง false เพื่อแสดง icon ตรงๆ */
+  iconCircle?: boolean
+
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -45,6 +48,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
   tableValueLabel = 'ความเร็วเฉลี่ย',
   tableRows = [],
   height = 270,
+  iconCircle = true,
 }) => {
   const option = useMemo(() => {
     const pct = Math.min(Math.max((value - min) / (max - min), 0), 1)
@@ -146,12 +150,18 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
       {/* ── Header ── */}
       <div className='flex items-center gap-3 mb-1'>
         {icon && (
-          <div
-            className='flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0'
-            style={{ background: 'rgba(252,209,22,0.15)' }}
-          >
-            {icon}
-          </div>
+          iconCircle ? (
+            <div
+              className='flex items-center justify-center w-9 h-9 rounded-full shrink-0'
+              style={{ background: 'rgba(252,209,22,0.15)' }}
+            >
+              {icon}
+            </div>
+          ) : (
+            <div className='shrink-0'>
+              {icon}
+            </div>
+          )
         )}
         <h2 className='font-normal!' style={{ color: '#FCD116', fontSize: titleSize }}>
           {title}
@@ -204,7 +214,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
                 <div className='flex items-center gap-2'>
                   {/* Dot — invisible on non-highlighted rows but preserves alignment */}
                   <span
-                    className='w-2 h-2 rounded-full flex-shrink-0'
+                    className='w-2 h-2 rounded-full shrink-0'
                     style={{
                       background: '#FCD116',
                       opacity: row.highlighted ? 1 : 0,

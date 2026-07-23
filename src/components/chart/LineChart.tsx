@@ -84,6 +84,8 @@ export interface LineChartProps {
   activePeriod?: string
   /** callback เมื่อเปลี่ยน period */
   onPeriodChange?: (period: string) => void
+  /** icon แสดงหน้าชื่อ tab ของแต่ละ period (key ต้องตรงกับค่าใน `periods`) — ไม่ส่งจะไม่แสดง icon */
+  periodIcons?: Record<string, React.ReactNode>
   /** ความสูง chart (default 260) */
   height?: number
   /** ให้พื้นที่กราฟยืดเต็ม card แทนความสูงคงที่ (card ต้องมี h-full/height กำหนดจากภายนอก) */
@@ -185,6 +187,7 @@ const LineChart: React.FC<LineChartProps> = ({
   defaultPeriod,
   activePeriod: controlledActivePeriod,
   onPeriodChange,
+  periodIcons,
   height = 260,
   fillHeight = false,
   gridBottom = 28,
@@ -514,13 +517,14 @@ const LineChart: React.FC<LineChartProps> = ({
               <button
                 key={p}
                 onClick={() => handlePeriod(p)}
-                className='px-4 py-1 rounded-full transition-colors cursor-pointer'
+                className='px-4 py-1 rounded-full transition-colors cursor-pointer flex items-center gap-1.5'
                 style={
                   activePeriod === p
                     ? { background: '#0d0d0d', color: '#eab308', fontWeight: 600 }
                     : { color: '#c9b97a' }
                 }
               >
+                {periodIcons?.[p]}
                 {p}
               </button>
             ))}
