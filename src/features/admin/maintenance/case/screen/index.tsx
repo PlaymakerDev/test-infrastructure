@@ -8,7 +8,7 @@ import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { TbFileText, TbTrash } from 'react-icons/tb'
+import { TbFileText, TbPrinter, TbTrash } from 'react-icons/tb'
 import styles from './maintenance-case.module.css'
 import ModalSaveSuccess from '../components/ModalSaveSuccess'
 import { TitleSection } from '../components'
@@ -28,6 +28,8 @@ import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/sh
 import type { APIResponseProjectDetail } from '@/types/shared'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 import { parseImageUrls } from '../../data/parseImageUrls'
+import ExportFileModal from '@/components/export/ExportFileModal'
+import type { PdfReportBlock } from '@/utils/export/pdf'
 
 const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
 const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
@@ -91,6 +93,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
 
   const [formData, setFormData] = useState({
     category: '',
@@ -294,6 +297,81 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     offlineDate: offlineSince ? offlineSince.format('DD MMM BBBB') : '-',
     offlineDays: offlineSince ? Math.max(0, dayjs().diff(offlineSince, 'day')) : 0,
     hasLive: !!cameraDetail?.is_online && !!cameraDetail?.hls_url,
+  }
+
+  // นำออกเอกสาร — single-case report (PDF only, no Excel — a photo report
+  // has no meaningful spreadsheet form). ก่อนซ่อม/หลังซ่อม photos are
+  // pre-fetched as data URLs; a failed fetch just renders that card photo-less
+  // (same fallback as the LPR timeline export).
+  const handleExportPdf = async () => {
+    const [{ exportReportPdf }, { fetchImageAsDataUrl }] = await Promise.all([
+      import('@/utils/export/pdf'),
+      import('@/utils/export/image'),
+    ])
+    const beforeUrls = beforeFiles.map(f => f.url).filter((url): url is string => !!url)
+    const afterUrls = afterFiles.map(f => f.url).filter((url): url is string => !!url)
+    const [beforeImages, afterImages] = await Promise.all([
+      Promise.all(beforeUrls.map(fetchImageAsDataUrl)),
+      Promise.all(afterUrls.map(fetchImageAsDataUrl)),
+    ])
+
+    const blocks: PdfReportBlock[] = [
+      {
+        type: 'kv',
+        title: 'ข้อมูลการแจ้งซ่อม',
+        items: [
+          { label: 'สถานะซ่อมแซม', value: statusConfig.label },
+          { label: 'หมวดหมู่ของปัญหาที่พบ', value: formData.category || '-' },
+          { label: 'หน่วยงานรับผิดชอบหรือมอบหมาย', value: formData.agency || '-' },
+          { label: 'ปัญหาที่พบ', value: formData.problem || '-' },
+          { label: 'การดำเนินการหรือวิธีการแก้ไข', value: formData.solution || '-' },
+          { label: 'วันที่แจ้งซ่อม', value: formData.reportDate || '-' },
+          { label: 'วันที่ตรวจสอบ', value: formData.inspectDate || '-' },
+        ],
+      },
+      {
+        type: 'kv',
+        title: 'ข้อมูลโครงการ',
+        items: [
+          { label: 'ชื่อโครงการ', value: project.projectName },
+          { label: 'ผู้รับจ้าง', value: project.contractor },
+          { label: 'หน่วยงานรับผิดชอบ', value: project.agency },
+          { label: 'เลขที่สัญญา', value: project.contractNo },
+          { label: 'เริ่มต้นการรับประกัน', value: project.warrantyStart },
+          { label: 'สิ้นสุดการรับประกัน', value: project.warrantyEnd },
+          { label: 'สถานะค้ำประกัน', value: project.warrantyStatus === 'expired' ? 'หมดค้ำ' : 'ในค้ำ' },
+        ],
+      },
+      {
+        type: 'kv',
+        title: 'ข้อมูลอุปกรณ์',
+        items: [
+          { label: 'ชื่ออุปกรณ์', value: device.deviceName },
+          { label: 'ประเภทอุปกรณ์', value: device.deviceType },
+          { label: 'จุดติดตั้ง / สายทาง', value: device.installPoint },
+          { label: 'IP Address', value: device.ipAddress },
+          { label: 'วันที่เริ่มออฟไลน์', value: device.offlineDate || '-' },
+          { label: 'จำนวนวันออฟไลน์', value: device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-' },
+        ],
+      },
+      {
+        type: 'entries',
+        title: 'ก่อนซ่อม',
+        items: beforeUrls.map((_, i) => ({ image: beforeImages[i], heading: `รูปที่ ${i + 1}`, fields: [] })),
+      },
+      {
+        type: 'entries',
+        title: 'หลังซ่อม',
+        items: afterUrls.map((_, i) => ({ image: afterImages[i], heading: `รูปที่ ${i + 1}`, fields: [] })),
+      },
+    ]
+
+    await exportReportPdf({
+      filenameBase: `Maintenance_Case_${id}`,
+      title: `รายงานบันทึกแจ้งซ่อม - Case No. ${id}`,
+      subtitleNote: device.deviceName,
+      blocks,
+    })
   }
 
   if (loading) {
@@ -659,6 +737,14 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               </div>
             )}
             <div className='ml-auto flex flex-wrap items-center gap-3'>
+              <button
+                className={styles.btnSecondary}
+                style={{ background: '#66AEFF', color: '#0A0A0A', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                onClick={() => setExportOpen(true)}
+              >
+                <TbPrinter size={16} />
+                นำออกเอกสาร
+              </button>
               <button className={styles.btnSecondary} style={{ background: '#C4C4C4', color: '#000000' }} onClick={handleCancel}>
                 ยกเลิก
               </button>
@@ -755,12 +841,12 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <div className='flex flex-col items-center'>
                 <img src='/atlas/images/Maintenance/icsc4-5.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>วันที่เริ่มออฟไลน์</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDate || '-'}</p>
+                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDate || '-'}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src='/atlas/images/Maintenance/icsc6.png' alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                 <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
+                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>
               {device.hasLive && (
                 <div className='flex flex-col items-center'>
@@ -778,6 +864,12 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           </div>
         </div>
       </section>
+
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExportPdf={handleExportPdf}
+      />
 
       <ModalSaveSuccess
         open={modalOpen}

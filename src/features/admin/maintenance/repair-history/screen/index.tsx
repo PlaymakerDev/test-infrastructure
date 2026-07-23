@@ -1,18 +1,22 @@
 "use client"
-import React, { Suspense, useMemo, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Image, Input, Result, Segmented, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbArrowBigLeftFilled, TbFileText, TbSearch, TbX } from 'react-icons/tb'
-import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory, useMaintenanceCase } from '@/hooks/queries/maintenance'
+import { TbArrowBigLeftFilled, TbChevronLeft, TbChevronRight, TbFileText, TbPrinter, TbSearch, TbX } from 'react-icons/tb'
+import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory, useMaintenanceCase, useProjectBySolution } from '@/hooks/queries/maintenance'
 import { useProjectByCaseNo } from '@/hooks/queries/manage'
-import type { CaseHistoryItem, HistoryCase } from '@/types/maintenance'
+import type { CameraItem, CaseHistoryItem, HistoryCase } from '@/types/maintenance'
 import { parseImageUrls } from '../../data/parseImageUrls'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { ProjectInfoModal } from '@/components/modal'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -27,6 +31,40 @@ const PERIOD_OPTIONS = [
   { label: 'เดือนนี้', value: 'THIS_MONTH' },
   { label: 'ปีนี้', value: 'THIS_YEAR' },
   { label: 'ปีที่ผ่านมา', value: 'LAST_YEAR' },
+]
+
+interface ExportRow {
+  caseNo: string
+  repairCount: number
+  category: string
+  hostname: string
+  ip: string
+  problem: string
+  responsible: string
+  reportedAt: string
+  inspectionDate: string
+  closedAt: string
+}
+
+// Shared column config for both PDF and Excel exports — same columns/order as
+// the on-screen table (text-only twin of the case_no/date-formatted cells).
+const EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (r: ExportRow) => string | number
+}[] = [
+  { header: 'Case No.', width: 18, widthPct: 13, value: (r) => r.caseNo },
+  { header: 'จำนวนครั้งซ่อมแซม', width: 14, widthPct: 9, align: 'center', value: (r) => r.repairCount },
+  { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
+  { header: 'Hostname', width: 16, widthPct: 10, value: (r) => r.hostname },
+  { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ip },
+  { header: 'หมวดหมู่ของปัญหาที่พบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.problem },
+  { header: 'หน่วยงานรับผิดชอบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.responsible },
+  { header: 'วันที่แจ้งซ่อม', width: 14, widthPct: 9, value: (r) => r.reportedAt },
+  { header: 'วันที่ตรวจสอบ', width: 14, widthPct: 9, value: (r) => r.inspectionDate },
+  { header: 'วันที่ปิด Case', width: 14, widthPct: 7, value: (r) => r.closedAt },
 ]
 
 const isWithinPeriod = (value: string | null | undefined, period: string): boolean => {
@@ -64,23 +102,39 @@ const isWithinPeriod = (value: string | null | undefined, period: string): boole
   return !date.isBefore(start) && !date.isAfter(end)
 }
 
+const formatTableDate = (value: string | null | undefined): string => {
+  if (!value) return '-'
+  const date = dayjs(value)
+  return date.isValid() ? date.format('DD MMM BBBB') : '-'
+}
+
 const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const dispatch = useAppDispatch()
   const isMobile = useIsMobile()
   const warrantyParam = searchParams.get('warranty') || ''
   const contextId = Number(searchParams.get('context_id'))
-  const routeSubtitle = Number.isFinite(contextId) && contextId === Number(id)
+  const subtitleParam = Number.isFinite(contextId) && contextId === Number(id)
     ? searchParams.get('subtitle') || ''
     : ''
+  const roadIdParam = Number(searchParams.get('road_id'))
+  const roadId = Number.isFinite(roadIdParam) && roadIdParam >= 0 ? roadIdParam : undefined
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<CaseHistoryItem | null>(null)
   const [searchText, setSearchText] = useState('')
   const [selectedPeriod, setSelectedPeriod] = useState('TODAY')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [exportOpen, setExportOpen] = useState(false)
+  const pageSize = 10
 
   const numericId = Number(id)
   const solutionQuery = useMaintenanceSolution(numericId)
+  // Resolves the owning project id/road id so the ⓘ ProjectInfoModal opens
+  // even on a direct visit with no route context — mirrors the detail page.
+  const projectQuery = useProjectBySolution(numericId)
+  const projectId = projectQuery.data?.id
   const casesQuery = useMaintenanceCases(numericId)
   const historyQuery = useMaintenanceHistory({ status: 'all' })
   // "ข้อมูลโครงการ" card in the case modal — only fetches once a row is
@@ -96,6 +150,9 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const loading = solutionQuery.isLoading || casesQuery.isLoading
   const hasError = solutionQuery.isError || casesQuery.isError
   const solutionData = solutionQuery.data ?? null
+  // Fallback subtitle ("<project name> — <solution name>") reconstructed from
+  // already-fetched data when the URL doesn't carry one — mirrors detail/screen.
+  const routeSubtitle = subtitleParam || [projectQuery.data?.project_name, solutionData?.solution_name].filter(Boolean).join(' — ')
   const cases = useMemo(() => casesQuery.data ?? [], [casesQuery.data])
   // case_no → HistoryCase lookup (history API has device/project fields the cases API lacks)
   const historyMap = useMemo(() => {
@@ -105,6 +162,20 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
       })
     return map
   }, [historyQuery.data])
+  // camera_ip → CameraItem lookup — solution's device list carries ประเภท/Hostname,
+  // fields the cases API itself doesn't return.
+  const cameraInfoByIp = useMemo(() => {
+    const map: Record<string, CameraItem> = {}
+      ; (solutionData?.lists ?? []).forEach((item) => { map[item.camera_ip] = item })
+    return map
+  }, [solutionData])
+  // camera_ip → total case count across this solution's full (unfiltered) history —
+  // จำนวนครั้งซ่อมแซม is a per-device lifetime tally, not scoped to the active period/search filter.
+  const repairCountByIp = useMemo(() => {
+    const map: Record<string, number> = {}
+      ; cases.forEach((item) => { map[item.camera_ip] = (map[item.camera_ip] ?? 0) + 1 })
+    return map
+  }, [cases])
 
   // Derived from API
   const warranty = warrantyParam || (solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ')
@@ -141,20 +212,43 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
     })
   }, [cases, searchText, selectedPeriod])
 
+  const totalPages = Math.ceil(filteredCases.length / pageSize)
+
+  // นำออกเอกสาร — mirrors the currently-filtered (search + period) table rows,
+  // not just the current page, per the app's export convention.
+  const exportRows: ExportRow[] = useMemo(() => filteredCases.map((item) => ({
+    caseNo: item.case_no,
+    repairCount: repairCountByIp[item.camera_ip] ?? 1,
+    category: cameraInfoByIp[item.camera_ip]?.category || '-',
+    hostname: cameraInfoByIp[item.camera_ip]?.hostname || '-',
+    ip: item.camera_ip,
+    problem: item.problem || '-',
+    responsible: item.responsible || '-',
+    reportedAt: formatTableDate(item.reported_at),
+    inspectionDate: formatTableDate(item.inspection_date),
+    closedAt: formatTableDate(item.closed_at),
+  })), [filteredCases, repairCountByIp, cameraInfoByIp])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchText, selectedPeriod])
+
   const handleBack = () => {
     const query = searchParams.toString()
     router.push(`/admin/maintenance/detail/${id}${query ? `?${query}` : ''}`)
   }
 
   const columns: ColumnsType<CaseHistoryItem> = [
-    { title: 'Case No.', dataIndex: 'case_no', key: 'case_no', width: 180 },
-    { title: 'ชื่ออุปกรณ์', dataIndex: 'camera_name', key: 'camera_name', width: 200 },
+    { title: 'Case No.', dataIndex: 'case_no', key: 'case_no', width: 180, onCell: () => ({ style: { paddingLeft: 20 } }), onHeaderCell: () => ({ style: { paddingLeft: 20 } }) },
+    { title: 'จำนวนครั้งซ่อมแซม', dataIndex: 'camera_ip', key: 'repair_count', width: 150, align: 'center', render: (ip: string) => repairCountByIp[ip] ?? 1 },
+    { title: 'ประเภท', dataIndex: 'camera_ip', key: 'category', width: 140, render: (ip: string) => cameraInfoByIp[ip]?.category || '-' },
+    { title: 'Hostname', dataIndex: 'camera_ip', key: 'hostname', width: 160, render: (ip: string) => cameraInfoByIp[ip]?.hostname || '-' },
     { title: 'IP Address', dataIndex: 'camera_ip', key: 'camera_ip', width: 140 },
     { title: 'หมวดหมู่ของปัญหาที่พบ', dataIndex: 'problem', key: 'problem', width: 200 },
     { title: 'หน่วยงานรับผิดชอบ', dataIndex: 'responsible', key: 'responsible', width: 250 },
-    { title: 'วันที่แจ้งซ่อม', dataIndex: 'reported_at', key: 'reported_at', width: 140 },
-    { title: 'วันที่ตรวจสอบ', dataIndex: 'inspection_date', key: 'inspection_date', width: 140 },
-    { title: 'วันที่ปิด Case', dataIndex: 'closed_at', key: 'closed_at', width: 140 },
+    { title: 'วันที่แจ้งซ่อม', dataIndex: 'reported_at', key: 'reported_at', width: 140, render: formatTableDate },
+    { title: 'วันที่ตรวจสอบ', dataIndex: 'inspection_date', key: 'inspection_date', width: 140, render: formatTableDate },
+    { title: 'วันที่ปิด Case', dataIndex: 'closed_at', key: 'closed_at', width: 140, render: formatTableDate },
   ]
 
   if (loading) {
@@ -228,11 +322,57 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{offlineCount}</span>
               </span>
-              <img src='/atlas/images/statistics/icbt.png' alt='' width={26} height={26} className='shrink-0' />
+              <img
+                src='/atlas/images/statistics/icbt.png'
+                alt='ดูข้อมูลโครงการ'
+                title='ดูข้อมูลโครงการ'
+                width={26}
+                height={26}
+                className='shrink-0'
+                onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
+                  open: true,
+                  project_id: projectId,
+                  road_id: roadId ?? null,
+                }))}
+                style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
+              />
+              <button
+                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+                style={{ background: '#66AEFF', color: '#0A0A0A' }}
+                type='button'
+                onClick={() => setExportOpen(true)}
+              >
+                <TbPrinter size={14} />
+                นำออกเอกสาร
+              </button>
             </div>
           </div>
         </section>
       </div>
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={exportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Maintenance_Repair_History',
+            title: `รายงานประวัติการซ่อม - ${routeSubtitle || solutionData?.solution_name || id}`,
+            columns: EXPORT_COLUMNS,
+            rows: exportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Maintenance_Repair_History',
+            sheetName: 'RepairHistory',
+            title: `รายงานประวัติการซ่อม - ${routeSubtitle || solutionData?.solution_name || id}`,
+            columns: EXPORT_COLUMNS,
+            rows: exportRows,
+          })
+        }}
+      />
       <section className='mt-5 px-4 sm:px-10'>
         <div className='flex flex-col sm:flex-row sm:items-end gap-3 mb-4'>
           <div className='w-full sm:w-auto'>
@@ -261,10 +401,11 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
           </div>
         </div>
         <Table
+          className='bridge-projects-table'
           columns={columns}
-          dataSource={filteredCases}
+          dataSource={filteredCases.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
           rowKey='case_no'
-          pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'], showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ` }}
+          pagination={false}
           locale={{ emptyText: 'ไม่พบข้อมูลในช่วงเวลาที่เลือก' }}
           scroll={{ x: 'max-content' }}
           size='middle'
@@ -276,6 +417,48 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
             style: { cursor: 'pointer' },
           })}
         />
+        {/* Custom Pagination */}
+        <div className='flex items-center justify-center gap-1 mt-3 flex-wrap px-1'>
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors'
+          >
+            <TbChevronLeft size={14} />
+          </button>
+
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum = i + 1
+            if (totalPages > 5 && currentPage > 3) {
+              pageNum = currentPage - 2 + i
+              if (pageNum > totalPages) pageNum = totalPages - (4 - i)
+            }
+            return (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${currentPage === pageNum
+                    ? 'bg-[#FCD116] text-[#191919]'
+                    : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
+                  }`}
+              >
+                {pageNum}
+              </button>
+            )
+          })}
+
+          {totalPages > 5 && currentPage < totalPages - 2 && (
+            <span className='text-white/50 text-xs px-1'>...</span>
+          )}
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || filteredCases.length === 0}
+            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors'
+          >
+            <TbChevronRight size={14} />
+          </button>
+        </div>
       </section>
 
       {/* Modal */}
@@ -445,6 +628,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
           </div>
         </div>
       )}
+      <ProjectInfoModal />
     </div>
   )
 }

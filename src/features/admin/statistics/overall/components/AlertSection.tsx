@@ -9,6 +9,8 @@ import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
 import { useLiveAlertRouteItems } from '../../data/useLiveAlertRouteItems'
 import type { MapMarkerItem } from '../../data/routeItems'
 import { useIotStatus, useIotStatusSummary } from '@/hooks/queries/incident-detection'
+import { useLightingDeviceDetails } from '@/hooks/queries/lighting'
+import { QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import type { ColumnsType } from 'antd/es/table'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 
@@ -22,6 +24,29 @@ interface AlertPopupDevice {
   key: string
   label: string
   isOnline: boolean
+  /** Device IMEI — `key` above IS the imei (see useLiveAlertRouteItems), kept
+   *  as its own field so the intent at each call site is explicit. */
+  imei: string
+}
+
+/** ต้องมี Phase separately fetched — the iot-status list endpoint that builds
+ *  this popup carries no `phase` field, but `/lighting/imei/{imei}/details`
+ *  (same endpoint traffic-lighting/detail's ElectricalSystemCard uses) does.
+ *  Renders nothing while loading/unavailable rather than a placeholder pill. */
+const DevicePhaseBadge: React.FC<{ imei: string }> = ({ imei }) => {
+  const { data } = useLightingDeviceDetails(imei)
+  const phase = data?.phase
+  if (phase !== 1 && phase !== 3) return null
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', flexShrink: 0,
+      height: 26, borderRadius: 88, padding: '0 12px',
+      border: '1px solid #FCD116',
+      fontSize: 12, fontWeight: 500, color: '#FCD116', whiteSpace: 'nowrap',
+    }}>
+      {phase} Phase
+    </span>
+  )
 }
 
 const AlertMapPopup: React.FC<{
@@ -32,35 +57,38 @@ const AlertMapPopup: React.FC<{
 }> = ({ roadCode, departmentName, devices, onViewDetails }) => (
   <div style={{
     background: '#000000CC', borderRadius: 16, padding: '20px 24px',
-    minWidth: 320, maxWidth: 380,
+    minWidth: 320, width: 'max-content', maxWidth: 520,
     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
     border: '1px solid rgba(255,255,255,0.08)',
   }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <TbBolt size={22} color="#FCD116" />
-      <span style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF' }}>สายทาง : {roadCode}</span>
+      <span style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap' }}>สายทาง : {roadCode}</span>
     </div>
-    <p style={{ fontSize: 13, fontWeight: 500, color: '#FCD116', marginTop: 6, marginLeft: 32 }}>
+    <p style={{ fontSize: 13, fontWeight: 500, color: '#FCD116', marginTop: 6, marginLeft: 32, whiteSpace: 'nowrap' }}>
       หน่วยงานรับผิดชอบ : {departmentName}
     </p>
     <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {devices.map((d) => (
         <div key={d.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#FFFFFF', flex: 1, minWidth: 0 }}>{d.label}</span>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            height: 26, borderRadius: 88, padding: '0 12px',
-            border: `1px solid ${d.isOnline ? '#66AEFF' : '#E94C4C'}`,
-            fontSize: 12, fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap',
-          }}>
-            <img
-              src={d.isOnline ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'}
-              alt=""
-              width={14}
-              height={14}
-            />
-            {d.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
-          </span>
+          <span style={{ fontSize: 13, color: '#FFFFFF', flex: 1, whiteSpace: 'nowrap' }}>{d.label}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <DevicePhaseBadge imei={d.imei} />
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
+              height: 26, borderRadius: 88, padding: '0 12px',
+              border: `1px solid ${d.isOnline ? '#66AEFF' : '#E94C4C'}`,
+              fontSize: 12, fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap',
+            }}>
+              <img
+                src={d.isOnline ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'}
+                alt=""
+                width={14}
+                height={14}
+              />
+              {d.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+            </span>
+          </div>
         </div>
       ))}
     </div>
@@ -195,6 +223,12 @@ const AlertSection: React.FC = () => {
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
+  // showReactPopup renders popup content into its OWN detached React root
+  // (see popupHelper.ts) — outside the app tree, so it doesn't inherit any
+  // context, including QueryClientProvider. DevicePhaseBadge needs useQuery,
+  // so the popup content is re-wrapped in the ambient client below.
+  const queryClient = useQueryClient()
+
   // Period → { since, until }. Shared by the stat cards AND the map/search-list
   // so they always agree. Part of the TanStack Query cache key AND the backend's
   // Redis cache key, so changing the period refetches automatically.
@@ -237,10 +271,10 @@ const AlertSection: React.FC = () => {
 
   // Devices that share the exact same coordinate (a "stuck" cluster —
   // StatisticsMapPanel already detected this) show this popup instead of
-  // navigating straight to the detail page. NOTE: there's no per-device
-  // "Phase" field anywhere in the lighting IoT-status API (same gap already
-  // found on the alert detail header), so unlike the reference design this
-  // only shows the real fields — road, department, and online status.
+  // navigating straight to the detail page. The iot-status list endpoint
+  // itself carries no "Phase" field, but `marker.detailKey` IS the device's
+  // imei (see useLiveAlertRouteItems), so AlertMapPopup's DevicePhaseBadge
+  // fetches it per-device from /lighting/imei/{imei}/details instead.
   const handleMarkerGroupClick = useCallback((items: MapMarkerItem[]): React.ReactNode => {
     const rows = items
       .map((it) => ({ marker: it, info: deviceInfoByKey.get(it.detailKey) }))
@@ -248,14 +282,16 @@ const AlertSection: React.FC = () => {
     if (rows.length === 0) return null
     const first = rows[0]
     return (
-      <AlertMapPopup
-        roadCode={first.info.roadCode}
-        departmentName={first.info.subDeptName}
-        devices={rows.map(({ marker, info }) => ({ key: marker.detailKey, label: info.label, isOnline: info.isOnline }))}
-        onViewDetails={() => router.push(`/admin/statistics/detail/alert?route=${encodeURIComponent(first.marker.routeKey)}&detail=${encodeURIComponent(first.marker.detailKey)}`)}
-      />
+      <QueryClientProvider client={queryClient}>
+        <AlertMapPopup
+          roadCode={first.info.roadCode}
+          departmentName={first.info.subDeptName}
+          devices={rows.map(({ marker, info }) => ({ key: marker.detailKey, label: info.label, isOnline: info.isOnline, imei: marker.detailKey }))}
+          onViewDetails={() => router.push(`/admin/statistics/detail/alert?route=${encodeURIComponent(first.marker.routeKey)}&detail=${encodeURIComponent(first.marker.detailKey)}`)}
+        />
+      </QueryClientProvider>
     )
-  }, [deviceInfoByKey, router])
+  }, [deviceInfoByKey, router, queryClient])
 
   // Stat cards data — real API instead of mock.
   const { data: summaryData } = useIotStatusSummary(0, { scope: 'all', ...summaryDateRange })
@@ -364,7 +400,7 @@ const AlertSection: React.FC = () => {
   }, [summaryData])
 
   return (
-    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 80px)', paddingBottom: 40 }}>
+    <div className="flex flex-col">
       <section className="flex items-start gap-3 px-3 sm:px-10">
         <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
         <div>

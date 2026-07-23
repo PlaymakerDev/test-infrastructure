@@ -131,7 +131,7 @@ const IncidentDetailContent: React.FC = () => {
             />
             {warranty !== null && (
               <div style={{
-                height: 22, borderRadius: 88,
+                height: 28, borderRadius: 88,
                 border: `1px solid ${warrantyColor}`,
                 padding: '4px 10px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -141,7 +141,7 @@ const IncidentDetailContent: React.FC = () => {
             )}
             {routeItem && (
               <div style={{
-                height: 22, borderRadius: 88,
+                height: 28, borderRadius: 88,
                 border: `1px solid ${(routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00'}`,
                 padding: '4px 10px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -153,7 +153,7 @@ const IncidentDetailContent: React.FC = () => {
               </div>
             )}
             <div style={{
-              height: 22, borderRadius: 88,
+              height: 28, borderRadius: 88,
               border: `1px solid ${statusColor}`,
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
@@ -169,7 +169,7 @@ const IncidentDetailContent: React.FC = () => {
                 window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
               }}
               style={{
-                height: 22, borderRadius: 88,
+                height: 28, borderRadius: 88,
                 backgroundColor: '#003F87',
                 padding: '4px 10px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -198,7 +198,11 @@ const IncidentDetailContent: React.FC = () => {
         <div className="flex flex-col flex-1 gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 min-w-0"><IncidentDonutSection solutionId={detail} startDate={startDate} endDate={endDate} /></div>
-            <div className="flex-1 min-w-0"><EventTrendSection solutionId={detail} height={260} showPeakBadge startDate={startDate} endDate={endDate} /></div>
+            {/* Deliberately NOT bound to the page's dateRange filter (which
+                defaults to a 3-day window) — a "daily trend" needs its own
+                fixed rolling 7-day window to show a real pattern; falls back
+                to EventTrendSection's internal last-7-days default. */}
+            <div className="flex-1 min-w-0"><EventTrendSection solutionId={detail} height={284} showPeakBadge /></div>
           </div>
           <IncidentDetailTable solutionId={detail} roadCode={roadCode} />
         </div>

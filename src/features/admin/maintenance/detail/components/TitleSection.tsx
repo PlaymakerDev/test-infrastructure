@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbArrowBigLeftFilled } from 'react-icons/tb'
+import { TbArrowBigLeftFilled, TbPrinter } from 'react-icons/tb'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
@@ -17,9 +17,11 @@ interface Props {
   roadId?: number
   /** [lng, lat] from the feature's own overview endpoint. Null → fall back to a name-based text search. */
   coord?: [number, number] | null
+  /** Opens the นำออกเอกสาร export modal — omit to hide the button. */
+  onExport?: () => void
 }
 
-const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ', projectId, roadId, coord = null }) => {
+const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ', projectId, roadId, coord = null, onExport }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
@@ -106,6 +108,17 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
             >
               ประวัติการซ่อม
             </button>
+            {onExport && (
+              <button
+                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+                style={{ background: '#66AEFF', color: '#0A0A0A' }}
+                type='button'
+                onClick={onExport}
+              >
+                <TbPrinter size={14} />
+                นำออกเอกสาร
+              </button>
+            )}
           </div>
         </div>
       </section>

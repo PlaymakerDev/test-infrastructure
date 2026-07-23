@@ -775,22 +775,18 @@ const RepairRecordsSection: React.FC = () => {
                                       className="mt-1 rounded-[10px] cursor-pointer flex items-center gap-4"
                                       style={{ background: '#151515', paddingLeft: 72, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
                                       onClick={() => {
-                                        // A road+project can own several installation points (see the
-                                        // flatMap above) — append the solution's own name so the detail
-                                        // page's subtitle actually distinguishes which point this is,
-                                        // instead of showing the same road+project text for all of them.
-                                        const solutionLabel = sol.solution_name || loc.solution_location_name
                                         // Keep route context in the URL so a direct/deep navigation can
                                         // never inherit another solution's stale browser state.
-                                        // `prefix` + `dept_id` resolve the map endpoint; project detail is
-                                        // resolved independently from the route's solution id.
+                                        // `prefix` + `dept_id` resolve the map endpoint; project name +
+                                        // solution name (the subtitle) are resolved independently on the
+                                        // detail page itself from the route's solution id — no need to
+                                        // stuff long Thai text into the query string here.
                                         const params = new URLSearchParams({
                                           context_id: String(sol.solution_id),
                                           prefix: selectedType.toLowerCase(),
                                           dept_id: String(dept.department_id),
                                           road_id: String(road.road_id),
                                           title: road.road_name || sol.solution_name || String(sol.solution_id),
-                                          subtitle: `${proj.project_name} — ${solutionLabel}`,
                                         })
                                         router.push(`/admin/maintenance/detail/${sol.solution_id}?${params.toString()}`)
                                       }}

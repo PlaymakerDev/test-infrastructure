@@ -277,6 +277,9 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
 
   return (
     <div>
+      <h3 className="text-[#FCD116] m-0 mb-3" style={{ fontSize: 20, fontWeight: 400 }}>
+        ตารางข้อมูลรายเหตุการณ์
+      </h3>
       <section className="mb-4">
         <SearchBar
           filters={visibleFilters}
@@ -286,9 +289,6 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => setExportOpen(true)}
-          // Deliberately hidden pre-export (original design) — wiring stays so
-          // flipping this flag is all it takes to enable the button.
-          showExportButton={false}
           // Mobile: 2-column grid so each tab fills half the row (2 per line,
           // no scrollbar). Desktop: flex row as usual.
           filterClassName="grid grid-cols-2 gap-2 pb-0.5 lg:flex lg:flex-wrap lg:items-center"

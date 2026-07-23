@@ -7,6 +7,7 @@ import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import { TbCalendarEvent, TbClipboard, TbFileDescription, TbHourglass, TbUser, TbUserShield } from 'react-icons/tb'
 import { useContactDetail } from '@/hooks/queries/shared/useContactDetail'
+import { useDepartments, useProjectDetail } from '@/hooks/queries/manage'
 
 /** Per-status styling for both the title pill and the "ระยะเวลาที่เหลือ"
  *  text. Two separate axes:
@@ -34,10 +35,11 @@ const getWarrantyUi = (status?: string) =>
 interface ContentProps {
   data?: APIResponseContactDetail
   roadId?: number | string | null;
+  projectId?: number | string | null;
 }
 
 const Content = (props: ContentProps) => {
-  const { data, roadId } = props
+  const { data, roadId, projectId } = props
 
   const { data: roadData, isLoading: roadLoading, isError: roadError } = useQuery({
     // Include roadId in the key — without it TanStack Query reuses the first
@@ -48,6 +50,20 @@ const Content = (props: ContentProps) => {
     // placeholderData: keepPreviousData
   })
 
+  // `/manage/contract/{id}` (the `data` prop above) always sends `department_name: ""` —
+  // it's not a real data source. "ผู้ว่าจ้าง" is the PROJECT's own owning department
+  // (project.department_id), same field the settings ผู้ว่าจ้าง dropdown edits —
+  // resolved here via `/manage/project/{id}` + a client-side join against the
+  // department list (mirrors ProjectModal.tsx's `ownerOptions`).
+  const { data: projectDetail, isLoading: projectLoading, isError: projectError } = useProjectDetail(
+    projectId != null ? Number(projectId) : null
+  )
+  const { data: departments } = useDepartments()
+  const ownerDepartmentName = useMemo(() => {
+    if (projectDetail?.department_id == null) return undefined
+    return (departments ?? []).find((d) => d.id === projectDetail.department_id)?.department_short_name
+  }, [departments, projectDetail])
+
   // Backend computes `warranty_date` (remaining days) + `warranty_status`
   // directly. No more FE date parsing — just consume.
   const warrantyUi = getWarrantyUi(data?.warranty_status)
@@ -57,6 +73,12 @@ const Content = (props: ContentProps) => {
     if (roadError) return <span className='text-red-500'>-</span>
     return roadData?.data.department_name || '-'
   }, [roadData, roadLoading, roadError])
+
+  const renderOwnerName = useMemo(() => {
+    if (projectLoading) return <Skeleton loading={projectLoading} active paragraph={false} />
+    if (projectError) return <span className='text-red-500'>-</span>
+    return ownerDepartmentName || '-'
+  }, [ownerDepartmentName, projectLoading, projectError])
 
   return (
     <>
@@ -82,7 +104,7 @@ const Content = (props: ContentProps) => {
         <div className='flex flex-col items-center text-center'>
           <TbUser className='fs-22 text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>ผู้ว่าจ้าง</p>
-          <p className='fs-12 text-white mb-0'>{data?.department_name || '-'}</p>
+          <div className='fs-12 text-white mb-0'>{renderOwnerName}</div>
         </div>
       </div>
 
@@ -149,8 +171,8 @@ const ProjectInfoModal: React.FC = () => {
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 10 }} />
     if (isError) return <Empty description="ไม่พบข้อมูลโครงการ" />
-    return <Content data={data?.data} roadId={road_id} />
-  }, [isLoading, isError, data, road_id])
+    return <Content data={data?.data} roadId={road_id} projectId={project_id} />
+  }, [isLoading, isError, data, road_id, project_id])
 
   // Warranty pill style for the title — text uses the BE Thai label as-is.
   const warrantyStatus = data?.data?.warranty_status
