@@ -187,7 +187,13 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     defaultCheckedKeys,
     defaultSelectMode = false,
     alwaysSelectMode = false,
-    includeOfflineOnSelectAll = false,
+    // Default true — LiveMonitor's bucket chips (Online/Offline/ไม่รองรับ)
+    // already split by is_controllable downstream, so "เลือกทั้งหมด"
+    // pre-filtering offline signs at the sidebar was redundant double-
+    // filtering that just confused operators ("why doesn't select-all
+    // select all?"). Select everything here; eligibility is sorted out
+    // once, visibly, after selection.
+    includeOfflineOnSelectAll = true,
     hideSignLeaves = false,
     defaultExpandAll = false,
     onBureauClick,

@@ -86,7 +86,7 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
           </Tag>
         </div>
         <div className="fs-12 opacity-60">
-          เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — "เลือกทั้งหมด" ติ๊กเฉพาะป้ายออนไลน์ (ป้ายออฟไลน์ต้องติ๊กเอง)
+          เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — "เลือกทั้งหมด" ติ๊กทุกป้าย แล้วดูสถานะพร้อมสั่งงานได้ที่คอลัมน์ขวา
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
