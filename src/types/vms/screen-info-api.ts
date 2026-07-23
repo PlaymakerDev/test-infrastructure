@@ -57,6 +57,12 @@ export interface ScreenInfoItem {
 
   // capability gating
   is_controllable: boolean // is_reported AND is_online AND app_version >= min_controllable_version
+  // is_reported AND app_version >= min_controllable_version — WITHOUT the
+  // is_online check. An inventory/audit signal ("has this sign ever
+  // installed the right agent version") independent of current
+  // connectivity. Use is_controllable (not this) for anything dispatch-flow
+  // related — LiveMonitor buckets, sidebar dot, etc.
+  has_valid_agent: boolean
   min_controllable_version: string // e.g. "26.7.19.1"
   is_centralized: boolean
   // Gates whether this sign appears in the departments (sidebar) tree at

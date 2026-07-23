@@ -14,7 +14,7 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { DataNode, TreeProps } from 'antd/es/tree'
-import { TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
+import { TbAppWindow, TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
 import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import StatusPill from './StatusPill'
@@ -487,6 +487,59 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           ) : (
             <span className="text-white/40">—</span>
           ),
+      },
+      {
+        title: (
+          <Tooltip title="มี agent เวอร์ชันถูกต้องติดตั้งอยู่ไหม (ไม่เช็คว่า online ตอนนี้หรือเปล่า) — ต่างจาก 'ควบคุม' ที่เช็ค real-time">
+            <span>Agent</span>
+          </Tooltip>
+        ),
+        key: 'has_valid_agent',
+        width: 100,
+        align: 'center',
+        render: (_: unknown, r) =>
+          r.has_valid_agent ? (
+            <Tooltip title={`เวอร์ชัน ${r.app_version || '-'}`}>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 bg-sky-900/40 border border-sky-500/40 text-sky-300">
+                ✓ มี
+              </span>
+            </Tooltip>
+          ) : (
+            <span className="text-white/40">—</span>
+          ),
+      },
+      {
+        title: 'Anydesk',
+        key: 'anydesk',
+        width: 140,
+        align: 'center',
+        render: (_: unknown, r) => (
+          <Tooltip title={r.anydesk_id ? `เปิด Anydesk #${r.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+            <button
+              type="button"
+              disabled={!r.anydesk_id}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!r.anydesk_id) return
+                window.location.href = `anydesk:${r.anydesk_id}`
+              }}
+              className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded disabled:opacity-40 disabled:cursor-default"
+              style={
+                r.anydesk_id
+                  ? {
+                      background: 'color-mix(in srgb, var(--default-blue) 12%, transparent)',
+                      border: '1px solid var(--default-blue)',
+                      color: 'var(--default-blue)',
+                      cursor: 'pointer',
+                    }
+                  : { color: 'rgba(255,255,255,0.4)' }
+              }
+            >
+              <TbAppWindow style={{ verticalAlign: -2 }} />
+              {r.anydesk_id || '-'}
+            </button>
+          </Tooltip>
+        ),
       },
       {
         title: (
