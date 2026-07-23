@@ -38,7 +38,7 @@ const TableLatestStation: React.FC<Props> = (props) => {
       title: 'วันที่',
       dataIndex: 'date_time',
       key: 'date_time',
-      align: 'center',
+      align: 'left',
       width: 180,
       render: (value) => {
         if (value) return dayjs(value, 'DD/MM/BBBB').format('DD MMM BBBB')

@@ -30,7 +30,7 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       title: 'ลำดับ',
       dataIndex: 'no',
       key: 'no',
-      align: 'center',
+      align: 'left',
       width: 70,
       fixed: 'left',
       render: (_, __, index) => {

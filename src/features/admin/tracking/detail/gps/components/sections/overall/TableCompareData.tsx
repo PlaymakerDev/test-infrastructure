@@ -20,7 +20,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'ลำดับ',
       dataIndex: 'rank',
       key: 'rank',
-      align: 'center',
+      align: 'left',
       width: 80,
       render: (_, __, index) => index + 1
     },
@@ -28,7 +28,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'จังหวัด',
       dataIndex: 'province',
       key: 'province',
-      align: 'center',
+      align: 'left',
       width: 180,
       render: (item) => {
         if (item) return item
@@ -39,7 +39,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'ภาค',
       dataIndex: 'province',
       key: 'region',
-      align: 'center',
+      align: 'left',
       width: 220,
       render: (item) => {
         return getProvinceRegion(item) ?? '-'
@@ -49,7 +49,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'สายทาง',
       dataIndex: 'road_count',
       key: 'road_count',
-      align: 'center',
+      align: 'left',
       width: 100,
       render: (item) => {
         if (item) return fmtNumber(item)
@@ -60,7 +60,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'รถวิ่งผ่านรวม',
       dataIndex: 'total_vehicles',
       key: 'total_vehicles',
-      align: 'center',
+      align: 'left',
       width: 150,
       render: (item) => {
         if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
@@ -71,7 +71,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       title: 'เฉลี่ยต่อวัน',
       dataIndex: 'avg_per_road_day',
       key: 'avg_per_road_day',
-      align: 'center',
+      align: 'left',
       width: 130,
       render: (item) => {
         if (item) return <p className='fs-12 text-(--default-blue)'>{fmtNumber(item)}</p>

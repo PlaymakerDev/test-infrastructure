@@ -3,6 +3,7 @@ import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import type { DailyWeightLogRow } from '../hooks/useDailyWeightLogList'
 import { FALLBACK, ITS_WEIGHT_STATUS } from '@/constants'
+import { fmtNumber } from '@/utils/formatNumber'
 
 export interface DailyWeightLogColumnsOptions {
   /** TableWeightLog (modal drill-down) omits the plate/vehicle image columns — defaults to true for TableOverallDailyWeight. */
@@ -24,7 +25,7 @@ export const getDailyWeightLogColumns = (
     {
       title: 'วันที่และเวลา',
       key: 'datetime',
-      align: 'center',
+      align: 'left',
       width: 140,
       render: (_, record) => (
         <div>
@@ -36,7 +37,7 @@ export const getDailyWeightLogColumns = (
     {
       title: 'ทะเบียนรถ',
       key: 'plate',
-      align: 'center',
+      align: 'left',
       width: 160,
       render: (_, record) => [record.lp_head_no, record.lp_head_province_name].filter(Boolean).join(' ') || '-',
     },
@@ -44,7 +45,7 @@ export const getDailyWeightLogColumns = (
       title: 'ประเภทรถ',
       dataIndex: 'vehicle_class_desc',
       key: 'vehicle_class_desc',
-      align: 'center',
+      align: 'left',
       width: 220,
       render: (value?: string) => value || '-',
     },
@@ -52,29 +53,33 @@ export const getDailyWeightLogColumns = (
       title: 'น้ำหนักที่ชั่งได้',
       dataIndex: 'gross_weight',
       key: 'gross_weight',
-      align: 'center',
+      align: 'left',
       width: 140,
-      render: (value?: string) => `${Number(value ?? 0).toFixed(3)} ตัน`,
+      render: (value?: string) => {
+        const numeric = Number(value ?? 0)
+        return <span className={numeric > 0 ? '' : 'text-white/25'}>{fmtNumber(numeric, 2)} ตัน</span>
+      },
     },
     {
       title: 'น้ำหนักตามกำหนด',
       dataIndex: 'legal_weight',
       key: 'legal_weight',
-      align: 'center',
+      align: 'left',
       width: 160,
-      render: (value?: string) => (
-        <span className='text-(--yellow)'>{Number(value ?? 0).toFixed(3)} ตัน</span>
-      ),
+      render: (value?: string) => {
+        const numeric = Number(value ?? 0)
+        return <span className={numeric > 0 ? 'text-(--yellow)' : 'text-white/25'}>{fmtNumber(numeric, 2)} ตัน</span>
+      },
     },
     {
       title: 'น้ำหนักเกิน',
       dataIndex: 'gross_weight_over',
       key: 'gross_weight_over',
-      align: 'center',
+      align: 'left',
       width: 130,
       render: (value?: string) => {
         const numeric = Number(value ?? 0)
-        return <span className={numeric > 0 ? 'text-red-500' : 'text-white/25'}>{numeric.toFixed(3)} ตัน</span>
+        return <span className={numeric > 0 ? 'text-red-500' : 'text-white/25'}>{fmtNumber(numeric, 2)} ตัน</span>
       },
     },
     {
@@ -84,9 +89,9 @@ export const getDailyWeightLogColumns = (
       title: 'ความเร็ว',
       dataIndex: 'speed',
       key: 'speed',
-      align: 'center',
+      align: 'left',
       width: 120,
-      render: (value?: string) => value ? `${Number(value).toFixed(2)} กม./ชม.` : '-',
+      render: (value?: string) => value ? `${fmtNumber(Number(value), 2)} กม./ชม.` : '-',
     },
     {
       title: 'ภาพป้ายทะเบียน',

@@ -33,7 +33,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'ลำดับ',
       dataIndex: 'no',
       key: 'no',
-      align: 'center',
+      align: 'left',
       width: 70,
       fixed: 'left',
       render: (_, __, index) => {
@@ -44,7 +44,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'รหัสสายทาง',
       dataIndex: 'WayID',
       key: 'WayID',
-      align: 'center',
+      align: 'left',
       width: 120,
       sorter: (a, b) => (a.WayID || '').localeCompare(b.WayID || ''),
       render: (item) => {
@@ -56,7 +56,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'จังหวัด',
       dataIndex: 'Province',
       key: 'Province',
-      align: 'center',
+      align: 'left',
       width: 140,
       sorter: (a, b) => (a.Province || '').localeCompare(b.Province || ''),
       render: (item) => {
@@ -68,7 +68,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'หน่วยที่จัดตั้ง',
       dataIndex: 'DeptName',
       key: 'DeptName',
-      align: 'center',
+      align: 'left',
       width: 200,
       sorter: (a, b) => (a.DeptName || '').localeCompare(b.DeptName || ''),
       render: (item) => {
@@ -80,7 +80,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'บูรณาการ',
       dataIndex: 'Collaboration',
       key: 'Collaboration',
-      align: 'center',
+      align: 'left',
       width: 160,
       sorter: (a, b) => (a.Collaboration || '').localeCompare(b.Collaboration || ''),
       render: (item) => {
@@ -92,7 +92,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'เวลาตั้งด่าน',
       dataIndex: 'TimeFrom',
       key: 'TimeFrom',
-      align: 'center',
+      align: 'left',
       width: 120,
       sorter: (a, b) => (a.TimeFrom || '').localeCompare(b.TimeFrom || ''),
       render: (item) => {
@@ -104,7 +104,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       title: 'เวลาสิ้นสุด',
       dataIndex: 'TimeTo',
       key: 'TimeTo',
-      align: 'center',
+      align: 'left',
       width: 140,
       sorter: (a, b) => (a.TimeTo || '').localeCompare(b.TimeTo || ''),
       render: (item) => {

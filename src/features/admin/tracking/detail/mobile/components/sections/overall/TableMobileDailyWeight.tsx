@@ -106,7 +106,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       title: 'ลำดับ',
       dataIndex: 'no',
       key: 'no',
-      align: 'center',
+      align: 'left',
       width: 70,
       fixed: 'left',
       render: (_, __, index) => {
@@ -117,7 +117,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       title: 'วันที่และเวลา',
       dataIndex: 'create_date',
       key: 'create_date',
-      align: 'center',
+      align: 'left',
       width: 150,
       render: (item) => {
         if (item) {
@@ -135,7 +135,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       title: 'ทะเบียนรถ',
       dataIndex: 'lp_head',
       key: 'lp_head',
-      align: 'center',
+      align: 'left',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -146,7 +146,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       title: 'ประเภทรถบรรทุก',
       dataIndex: 'vehicle_class_desc',
       key: 'vehicle_class_desc',
-      align: 'center',
+      align: 'left',
       width: 240,
       render: (item) => {
         if (item) return item
@@ -157,33 +157,33 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       title: 'น้ำหนักที่ชั่งได้',
       dataIndex: 'gross_weight',
       key: 'gross_weight',
-      align: 'center',
+      align: 'left',
       width: 140,
       render: (item) => {
-        if (item) return fmtNumber(Number(item), 2)
-        return '-'
+        if (item) return `${fmtNumber(Number(item), 2)} ตัน`
+        return <p className='fs-12 text-white/25'>0.00 ตัน</p>
       }
     },
     {
       title: 'น้ำหนักตามกำหนด',
       dataIndex: 'legal_weight',
       key: 'legal_weight',
-      align: 'center',
+      align: 'left',
       width: 160,
       render: (item) => {
-        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(Number(item), 2)}</p>
-        return '-'
+        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(Number(item), 2)} ตัน</p>
+        return <p className='fs-12 text-white/25'>0.00 ตัน</p>
       }
     },
     {
       title: 'น้ำหนักเกิน',
       dataIndex: 'gross_weight_over',
       key: 'gross_weight_over',
-      align: 'center',
+      align: 'left',
       width: 130,
       render: (item) => {
-        if (item) return <p className='fs-12 text-red-500'>{fmtNumber(Number(item), 2)}</p>
-        return <p className='fs-12 text-white/25'>0</p>
+        if (item) return <p className='fs-12 text-red-500'>{fmtNumber(Number(item), 2)} ตัน</p>
+        return <p className='fs-12 text-white/25'>0.00 ตัน</p>
       }
     },
     {

@@ -29,7 +29,7 @@ const TableStation: React.FC<Props> = (props) => {
       title: 'ลำดับ',
       dataIndex: 'no',
       key: 'no',
-      align: 'center',
+      align: 'left',
       width: 70,
       fixed: 'left',
       render: (_, __, index) => {
@@ -40,7 +40,7 @@ const TableStation: React.FC<Props> = (props) => {
       title: 'สถานี',
       dataIndex: 'name',
       key: 'name',
-      align: 'center',
+      align: 'left',
       width: 300,
       sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
       render: (item) => {
