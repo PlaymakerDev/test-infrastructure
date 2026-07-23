@@ -22,14 +22,14 @@ const StationCCTVList: React.FC<Props> = (props) => {
   const { data: firstPage, isLoading: isFirstLoading, isError: isFirstError } = useCctvList({
     page: 1,
     page_size: DISCOVERY_PAGE_SIZE,
-    station_id: '1'
+    station_type_id: '1'
   })
 
   const total = firstPage?.data?.meta?.total ?? 0
   const hasMore = total > DISCOVERY_PAGE_SIZE
 
   const { data: allPages, isLoading: isAllLoading, isError: isAllError } = useCctvList(
-    { page: 1, page_size: total, station_id: '1' },
+    { page: 1, page_size: total, station_type_id: '1' },
     hasMore
   )
 
