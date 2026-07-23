@@ -794,3 +794,18 @@ export const RECENT_WEIGHT_STATUS = {
     "fontColor": "#FFFFFF",
   },
 }
+
+export const ITS_WEIGHT_STATUS = {
+  "Y": {
+    "text": "น้ำหนักเกิน",
+    "color": "#E94C4C",
+  },
+  "N": {
+    "text": "น้ำหนักปกติ",
+    "color": "#FCD116",
+  },
+  "P": {
+    "text": "น้ำหนักเกิน (เพลาเกิน)",
+    "color": "#FF6900"
+  },
+}

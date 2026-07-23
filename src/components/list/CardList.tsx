@@ -76,6 +76,7 @@ const EXPANDED_SPAN: Record<1 | 2 | 3 | 4, string> = {
 export const DEFAULT_STATUS_MAP: Record<string, string> = {
   'น้ำหนักปกติ': 'text-white/40',
   'น้ำหนักเกิน': 'text-red-400',
+  'น้ำหนักเกิน (เพลาเกิน)': 'text-[#FF6900]',
   'แจ้งเตือนน้ำหนัก': 'bg-(--yellow) text-black rounded-full px-2 py-0.5 fs-12',
 }
 

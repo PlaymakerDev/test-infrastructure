@@ -46,32 +46,32 @@ const OverallCalibrateWeight: React.FC<Props> = (props) => {
         <div className='flex flex-col items-center text-center'>
           <TbClipboardList className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>Calibrate ครั้งล่าสุด</p>
-          <p className='fs-12 text-[#66AEFF] mb-0.5'>{dayjs(calibrationHistory?.latestCalibration?.calibrationDate).format('DD MMM BBBB')}</p>
+          <p className='fs-12 text-(--default-blue) mb-0.5'>{dayjs(calibrationHistory?.latestCalibration?.calibrationDate).format('DD MMM BBBB')}</p>
           <p className='fs-12 text-white mb-0'>({dayjs(calibrationHistory?.latestCalibration?.calibrationDate).fromNow()})</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbCalendarStats className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>กำหนด Calibrate ครั้งถัดไป</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>{dayjs(calibrationHistory?.latestCalibration?.nextCalibrationDate).format('DD MMM BBBB')}</p>
+          <p className='fs-12 text-(--default-blue) mb-0'>{dayjs(calibrationHistory?.latestCalibration?.nextCalibrationDate).format('DD MMM BBBB')}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbArticle className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>เลขที่ Certificate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.certificateNo || '-'}</p>
+          <p className='fs-12 text-(--default-blue) mb-0'>{calibrationHistory?.latestCalibration?.certificateNo || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbUser className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>ผู้ทำการ Calibrate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.calibrationBy || '-'}</p>
+          <p className='fs-12 text-(--default-blue) mb-0'>{calibrationHistory?.latestCalibration?.calibrationBy || '-'}</p>
         </div>
 
         <div className='flex flex-col items-center text-center'>
           <TbBrandCoinbase className='text-5xl text-white mb-2' />
           <p className='fs-12 text-gray-400 mb-0.5'>บริษัททำการ Calibrate</p>
-          <p className='fs-12 text-[#66AEFF] mb-0'>{calibrationHistory?.latestCalibration?.calibrationCompany || '-'}</p>
+          <p className='fs-12 text-(--default-blue) mb-0'>{calibrationHistory?.latestCalibration?.calibrationCompany || '-'}</p>
         </div>
       </div>
     </div>

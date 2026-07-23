@@ -40,8 +40,8 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
       <>
         <section>
           <h1 className="text-red-500">{prerenderLicensePlate(data?.lp_head_no, data?.lp_head_province?.name)}</h1>
-          <p>รถน้ำหนักเกิน</p>
-          <p className="text-red-500">{dayjs(data?.time_stamp).format('DD MMMM BBBB HH:mm:ss')}</p>
+          <p className='text-gray-400'>รถน้ำหนักเกิน</p>
+          <p className="fs-12 text-red-500/50">{dayjs(data?.time_stamp).format('DD MMMM BBBB HH:mm:ss')}</p>
         </section>
         <section className='mt-5 flex flex-col gap-4 md:flex-row md:flex-wrap'>
           <AnimatePresence initial={false}>
@@ -110,35 +110,35 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
             {/* f1 — xs: border-b | sm: border-b + border-r | lg: border-r only */}
             <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-r lg:border-b-0'>
               <section className='text-center'>
-                <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>{data?.vehicle_class_id || '-'}</h1>
-                <p className='text-xs text-gray-400'>{data?.vehicle_class?.vehicle_class_desc || '-'}</p>
+                <h1 className='text-(--yellow)'>{data?.vehicle_class_id || '-'}</h1>
+                <p className='fs-12 text-gray-400'>{data?.vehicle_class?.vehicle_class_desc || '-'}</p>
               </section>
             </figure>
 
             {/* f2 — xs: border-b | sm: border-b (rightmost, no border-r) | lg: border-b-0 + border-r */}
             <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b lg:border-b-0 lg:border-r'>
               <section className='text-center'>
-                <h1 className='text-xs font-semibold text-(--yellow) sm:text-sm'>{data?.legal_weight || '-'}</h1>
-                <p className='text-xs text-gray-400'>น้ำหนักมาตราฐาน</p>
-                <p className='text-xs text-gray-400'>(ตัน)</p>
+                <h1 className='text-(--yellow)'>{data?.legal_weight || '-'}</h1>
+                <p className='fs-12 text-gray-400'>น้ำหนักมาตราฐาน</p>
+                <p className='fs-12 text-gray-400'>(ตัน)</p>
               </section>
             </figure>
 
             {/* f3 — xs: border-b | sm: border-b-0 + border-r | lg: border-r */}
             <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-b-0 sm:border-r'>
               <section className='text-center'>
-                <h1 className='text-xs font-semibold text-white sm:text-sm'>{data?.gross_weight || '-'}</h1>
-                <p className='text-xs text-gray-400'>น้ำหนักที่ชั่ง</p>
-                <p className='text-xs text-gray-400'>(ตัน)</p>
+                <h1 className='text-white'>{data?.gross_weight || '-'}</h1>
+                <p className='fs-12 text-gray-400'>น้ำหนักที่ชั่ง</p>
+                <p className='fs-12 text-gray-400'>(ตัน)</p>
               </section>
             </figure>
 
             {/* f4 — xs: border-b | sm: border-b-0, no border-r (rightmost at sm) | lg: border-r only while f5 is shown (otherwise f4 is the last column) */}
-            <figure className={`flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 border-b sm:border-b-0 ${showVehiclePhotos ? 'lg:border-r' : ''}`}>
+            <figure className={`flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 border-(--white)/50 ${showVehiclePhotos ? 'lg:border-r border-b sm:border-b-0' : ''}`}>
               <section className='text-center'>
-                <h1 className={`text-xs font-semibold text-red-500 sm:text-sm`}>{data?.gross_weight_over || '-'}</h1>
-                <p className='text-xs text-gray-400'>น้ำหนักเกิน</p>
-                <p className='text-xs text-gray-400'>(ตัน)</p>
+                <h1 className={`text-red-500`}>{data?.gross_weight_over || '-'}</h1>
+                <p className='fs-12 text-gray-400'>น้ำหนักเกิน</p>
+                <p className='fs-12 text-gray-400'>(ตัน)</p>
               </section>
             </figure>
 
@@ -148,9 +148,9 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
             {showVehiclePhotos && (
               <figure className='flex flex-col items-center gap-2 py-3 px-2 sm:px-4 lg:px-6 sm:col-span-2 lg:col-span-1'>
                 <section className='text-center'>
-                  <h1 className={`text-xs font-semibold text-(--yellow) sm:text-sm`}>{(data && 'speed' in data && data.speed) || '-'}</h1>
-                  <p className='text-xs text-gray-400'>ความเร็ว</p>
-                  <p className='text-xs text-gray-400'>(กม./ชม.)</p>
+                  <h1 className={`text-(--yellow)`}>{(data && 'speed' in data && data.speed) || '-'}</h1>
+                  <p className='fs-12 text-gray-400'>ความเร็ว</p>
+                  <p className='fs-12 text-gray-400'>(กม./ชม.)</p>
                 </section>
               </figure>
             )}

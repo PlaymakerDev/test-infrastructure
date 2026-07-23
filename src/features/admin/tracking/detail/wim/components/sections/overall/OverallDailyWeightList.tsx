@@ -8,7 +8,7 @@ import CardList, { DataType } from '@/components/list/CardList'
 import QueryBoundary from '@/components/common/QueryBoundary'
 import { useDailyWeightLogList } from '@/features/admin/tracking/detail/wim/hooks'
 import type { DailyWeightLogRow } from '@/features/admin/tracking/detail/wim/hooks'
-import { VEHICLE_PROPERTIES } from '@/constants'
+import { ITS_WEIGHT_STATUS, VEHICLE_PROPERTIES } from '@/constants'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -23,9 +23,13 @@ interface Props {
   onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
 }
 
+// Tailwind's scanner needs literal `text-[#hex]` strings to detect arbitrary
+// values at build time — can't compute them from ITS_WEIGHT_STATUS.color via
+// template literal (same gotcha CardList's own class maps guard against).
 const STATUS_MAP: Record<string, string> = {
-  'น้ำหนักปกติ': 'text-green-400',
-  'น้ำหนักเกิน': 'text-red-400',
+  [ITS_WEIGHT_STATUS.N.text]: 'text-[#FCD116]',
+  [ITS_WEIGHT_STATUS.Y.text]: 'text-[#E94C4C]',
+  [ITS_WEIGHT_STATUS.P.text]: 'text-[#FF5733]',
 }
 
 const DEFAULT_PAGE_SIZE = 10
@@ -64,7 +68,7 @@ const OverallDailyWeightList: React.FC<Props> = (props) => {
       id: row.key,
       plate: [row.lp_head_no, row.lp_head_province_name].filter(Boolean).join(' ') || '-',
       vehicleType: row.vehicle_class_desc || '-',
-      status: row.is_over_weight_desc || '-',
+      status: ITS_WEIGHT_STATUS[row.is_over_weight as keyof typeof ITS_WEIGHT_STATUS]?.text || '-',
       actualWeight: `${Number(row.gross_weight ?? 0).toFixed(3)} ตัน`,
       stdWeight: `${Number(row.legal_weight ?? 0).toFixed(3)} ตัน`,
       overweight: `${Number(row.gross_weight_over ?? 0).toFixed(3)} ตัน`,

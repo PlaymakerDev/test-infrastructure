@@ -8,16 +8,34 @@ interface Props {
 
 }
 
+// Cheap discovery page — small enough to learn `meta.total` without paying for
+// a large payload up front. When the real total exceeds it, a second request
+// fetches everything in one shot so "online" filtering covers every camera,
+// not just whatever fit on page 1.
+const DISCOVERY_PAGE_SIZE = 10
+
 const WIMCCTVList: React.FC<Props> = (props) => {
   const { } = props
   const { setOpenCCTVData } = useOverallContext()
   const [randomCam] = useState(() => `${Math.random()}`);
 
-  const { data, isLoading, isError } = useCctvList({
+  const { data: firstPage, isLoading: isFirstLoading, isError: isFirstError } = useCctvList({
     page: 1,
-    page_size: 100,
+    page_size: DISCOVERY_PAGE_SIZE,
     station_id: '3'
   })
+
+  const total = firstPage?.data?.meta?.total ?? 0
+  const hasMore = total > DISCOVERY_PAGE_SIZE
+
+  const { data: allPages, isLoading: isAllLoading, isError: isAllError } = useCctvList(
+    { page: 1, page_size: total, station_id: '3' },
+    hasMore
+  )
+
+  const data = hasMore ? allPages : firstPage
+  const isLoading = isFirstLoading || (hasMore && isAllLoading)
+  const isError = isFirstError || (hasMore && isAllError)
 
   const renderCCTVList = useMemo(() => {
     // RENDER COMPONENT LOADING

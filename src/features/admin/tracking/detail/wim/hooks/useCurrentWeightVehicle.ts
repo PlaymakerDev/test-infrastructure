@@ -15,18 +15,18 @@ export function useCurrentWeightVehicle(
   stationType: string | null | undefined,
   stationTypeId: number | null | undefined
 ) {
-  const monthStart = dayjs().startOf('month').format('YYYY-MM-DD')
+  // const monthStart = dayjs().startOf('month').format('YYYY-MM-DD')
   const today = dayjs().format('YYYY-MM-DD')
 
   const isStation = stationType === 'STATION'
   const isWim = stationType === 'WIM'
 
   const stationLog = useWeightStationLog(
-    { start_date: monthStart, end_date: today, is_over_weight: 'Y', station: id as number },
+    { start_date: today, end_date: today, is_over_weight: 'Y', station: id as number },
     isStation
   )
   const wimLog = useWeightWimLog(
-    { start_date: monthStart, end_date: today, is_over_weight: 'Y', station: id as number },
+    { start_date: today, end_date: today, is_over_weight: 'Y', station: id as number },
     isWim
   )
 

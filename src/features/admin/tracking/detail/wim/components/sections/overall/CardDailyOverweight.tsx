@@ -36,7 +36,7 @@ const CardDailyOverweight: React.FC<Props> = (props) => {
         <h4 className="text-red-500 mb-0">รถบรรทุกน้ำหนักเกินวันนี้</h4>
         <p className="mb-0">
           <span className="fs-22 font-bold">{fmtNumber(data?.meta.summary.overweight) || 0}</span>{' '}
-          <span className="fs-12 text-gray-300">คัน</span>
+          <span className="fs-12 text-gray-400">คัน</span>
         </p>
         <section>
           <p className="fs-12 text-gray-400 mb-0">น้ำหนักเกินสูงสุด/คัน</p>

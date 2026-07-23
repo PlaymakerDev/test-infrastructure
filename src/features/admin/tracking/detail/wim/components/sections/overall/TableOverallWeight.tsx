@@ -15,11 +15,11 @@ const TableOverallWeight: React.FC<Props> = () => {
   const { id: stationId, stationType } = useWIMContext()
 
   const result = useDailyTable(stationId as string | number | undefined, stationType, {
-    startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
-    endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+    startDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
   })
 
-  const renderTableData = () => {
+  const renderTableData = React.useMemo(() => {
     if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description="ไม่พบข้อมูล" />
     return (
       <QueryBoundary isLoading={result.isLoading} isError={result.isError}>
@@ -28,12 +28,12 @@ const TableOverallWeight: React.FC<Props> = () => {
           : <TableLatestWIM data={result.data} />}
       </QueryBoundary>
     )
-  }
+  }, [stationType, result])
 
   return (
     <div>
       <h3 className='text-(--yellow) font-normal! mb-5'>ตารางข้อมูลรถเข้าชั่งน้ำหนัก 7 วันย้อนหลัง</h3>
-      {renderTableData()}
+      {renderTableData}
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { Image } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import type { DailyWeightLogRow } from '../hooks/useDailyWeightLogList'
-import { FALLBACK } from '@/constants'
+import { FALLBACK, ITS_WEIGHT_STATUS } from '@/constants'
 
 export interface DailyWeightLogColumnsOptions {
   /** TableWeightLog (modal drill-down) omits the plate/vehicle image columns — defaults to true for TableOverallDailyWeight. */
@@ -110,19 +110,22 @@ export const getDailyWeightLogColumns = (
     },
     {
       title: 'สถานะ',
-      dataIndex: 'is_over_weight_desc',
-      key: 'is_over_weight_desc',
+      dataIndex: 'is_over_weight',
+      key: 'is_over_weight',
       align: 'center',
       width: 130,
       fixed: 'right',
-      render: (value: string, record) => (
-        <span
-          className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${record.is_over_weight === 'Y' ? 'border-red-500 text-red-500' : 'border-(--yellow) text-(--yellow)'
-            }`}
-        >
-          {value || '-'}
-        </span>
-      ),
+      render: (value: string) => {
+        const status = ITS_WEIGHT_STATUS[value as keyof typeof ITS_WEIGHT_STATUS]
+        return (
+          <span
+            className='inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border'
+            style={{ borderColor: status?.color, color: status?.color }}
+          >
+            {status?.text || '-'}
+          </span>
+        )
+      },
     },
   ]
 

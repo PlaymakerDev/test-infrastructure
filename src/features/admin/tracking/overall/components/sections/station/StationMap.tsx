@@ -180,7 +180,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
           popupOptions={{ offset: 10, closeButton: false }}
         >
           <Image
-            src={item.isEnable ? STATION_ICON : OFFLINE_ICON}
+            src={STATION_ICON}
             alt="station-pin"
             width={item.isEnable ? 52 : 43}
             height={item.isEnable ? 55 : 46}
@@ -204,7 +204,7 @@ const TrackingMarkerLayer: React.FC<TrackingPosition> = (props) => {
           popupOptions={{ offset: 10, closeButton: false }}
         >
           <Image
-            src={item.isEnable ? WIM_ICON : OFFLINE_ICON}
+            src={WIM_ICON}
             alt="wim-pin"
             width={item.isEnable ? 52 : 43}
             height={item.isEnable ? 55 : 46}

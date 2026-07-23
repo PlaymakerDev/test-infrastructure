@@ -9,16 +9,39 @@ interface Props {
 
 }
 
+// Cheap discovery page — small enough to learn `meta.total` without paying for
+// a large payload up front. When the real total exceeds it, a second request
+// fetches everything in one shot so "online" filtering covers every camera,
+// not just whatever fit on page 1.
+const DISCOVERY_PAGE_SIZE = 10
+
 const OverallCCTV: React.FC<Props> = () => {
   const { id: stationId, stationTypeId, setOpenCCTVData } = useWIMContext()
   const [randomCam] = useState(() => `${Math.random()}`);
 
-  const { data, isLoading, isError } = useCctvList({
+  const { data: firstPage, isLoading: isFirstLoading, isError: isFirstError } = useCctvList({
     station_id: stationId as string,
     station_type_id: stationTypeId as number,
     page: 1,
-    page_size: 100
+    page_size: DISCOVERY_PAGE_SIZE
   })
+
+  const total = firstPage?.data?.meta?.total ?? 0
+  const hasMore = total > DISCOVERY_PAGE_SIZE
+
+  const { data: allPages, isLoading: isAllLoading, isError: isAllError } = useCctvList(
+    {
+      station_id: stationId as string,
+      station_type_id: stationTypeId as number,
+      page: 1,
+      page_size: total
+    },
+    hasMore
+  )
+
+  const data = hasMore ? allPages : firstPage
+  const isLoading = isFirstLoading || (hasMore && isAllLoading)
+  const isError = isFirstError || (hasMore && isAllError)
 
   const renderCCTVList = useMemo(() => {
     const randomCCTV = data?.data?.data?.filter(item => item.camera_status === 'Online')?.sort(() => Number(randomCam) - 0.5).slice(0, 4)

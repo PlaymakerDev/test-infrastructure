@@ -7,7 +7,7 @@ import 'dayjs/locale/th'
 import CardList, { DataType } from '@/components/list/CardList'
 import { MobileCarData } from '@/types/tracking/detail-api'
 import { fmtNumber } from '@/utils/formatNumber'
-import { VEHICLE_PROPERTIES } from '@/constants'
+import { ITS_WEIGHT_STATUS, VEHICLE_PROPERTIES } from '@/constants'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -22,10 +22,15 @@ interface Props {
   onPageChange?: (page: number, pageSize: number) => void
 }
 
+// Tailwind's scanner needs literal `text-[#hex]` strings to detect arbitrary
+// values at build time — can't compute them from ITS_WEIGHT_STATUS.color via
+// template literal (see OverallDailyWeightList.tsx's STATUS_MAP).
 const STATUS_MAP: Record<string, string> = {
-  'น้ำหนักปกติ': 'text-(--yellow)',
   'ยอมรับน้ำหนัก': 'text-teal-400',
   'ดำเนินคดี': 'text-pink-500',
+  [ITS_WEIGHT_STATUS.N.text]: 'text-[#FCD116]',
+  [ITS_WEIGHT_STATUS.Y.text]: 'text-[#E94C4C]',
+  [ITS_WEIGHT_STATUS.P.text]: 'text-[#FF5733]',
 }
 
 const MobileDailyWeightList: React.FC<Props> = (props) => {
@@ -41,7 +46,7 @@ const MobileDailyWeightList: React.FC<Props> = (props) => {
       ? 'ดำเนินคดี'
       : row.accept_weight
         ? 'ยอมรับน้ำหนัก'
-        : (row.is_over_weight_desc || 'น้ำหนักปกติ')
+        : (ITS_WEIGHT_STATUS[row.is_over_weight as keyof typeof ITS_WEIGHT_STATUS]?.text || ITS_WEIGHT_STATUS.N.text)
 
     return {
       id: row.td_id,
