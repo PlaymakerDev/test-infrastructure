@@ -40,6 +40,7 @@ const TableLatestStation: React.FC<Props> = (props) => {
       key: 'date_time',
       align: 'left',
       width: 180,
+      className: 'col-road-code',
       render: (value) => {
         if (value) return dayjs(value, 'DD/MM/BBBB').format('DD MMM BBBB')
         return '-'
@@ -107,6 +108,7 @@ const TableLatestStation: React.FC<Props> = (props) => {
         x: 'max-content',
         y: 300
       }}
+      className='bridge-projects-table'
     />
   )
 }

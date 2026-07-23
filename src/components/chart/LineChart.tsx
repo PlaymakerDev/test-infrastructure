@@ -155,11 +155,18 @@ export interface LineChartProps {
   tooltipUnit?: string
   /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
   tooltipShowDot?: boolean
+  /** Render the tooltip header as a single left-aligned grey line (just
+   *  `headerDate`, no border/second axisValue line) — use when `tooltipDateKey`
+   *  already carries the full "date (weekday)" string. Default `false` keeps
+   *  the original centered two-line header. */
+  tooltipSimpleHeader?: boolean
   /** Extra rows shown in tooltip but NOT rendered as visible lines.
    *  Reads values from each data point via `dataKey`. */
   tooltipExtras?: TooltipExtra[]
   /** HTML ที่ต่อท้าย tooltip rows + extras — รับ `dataIndex` ของจุดที่ hover */
   tooltipFooter?: (dataIndex: number) => string
+  /** สีของ subtitle (default: white/50) */
+  subtitleColor?: string
 }
 
 interface TooltipParam {
@@ -179,6 +186,7 @@ const LineChart: React.FC<LineChartProps> = ({
   titleSize = 16,
   subtitle,
   subtitleSize = "var(--fs-12)",
+  subtitleColor = '#8a9ab5',
   icon,
   data,
   lines,
@@ -217,6 +225,7 @@ const LineChart: React.FC<LineChartProps> = ({
   tooltipDateSuffix = ' น.',
   tooltipUnit,
   tooltipShowDot = false,
+  tooltipSimpleHeader = false,
   tooltipExtras,
   tooltipFooter,
 }) => {
@@ -362,10 +371,12 @@ const LineChart: React.FC<LineChartProps> = ({
               : undefined
           const headerDate = perPointDate ?? tooltipDate
           const header = headerDate
-            ? `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;">
+            ? (tooltipSimpleHeader
+              ? `<div style="color:rgba(255,255,255,0.6);font-size:15px;margin-bottom:12px;">${headerDate}</div>`
+              : `<div style="text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;">
                  <div style="color:#fff;font-size:13px;font-weight:600;">${headerDate}</div>
                  <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">${params[0]?.axisValue ?? ''}${tooltipDateSuffix}</div>
-               </div>`
+               </div>`)
             : // When labels are truncated, surface the full category in the tooltip.
             typeof xAxisLabelMaxWidth === 'number' && params[0]?.axisValue
               ? `<div style="color:#fff;font-weight:600;margin-bottom:6px;max-width:260px;white-space:normal;line-height:1.4">${params[0].axisValue}</div>`
@@ -453,7 +464,7 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
 
   return (
     <div
@@ -502,7 +513,7 @@ const LineChart: React.FC<LineChartProps> = ({
               </h2>
             )}
             {subtitle && (
-              <p style={{ color: '#8a9ab5', fontSize: subtitleSize }}>{subtitle}</p>
+              <p style={{ color: subtitleColor, fontSize: subtitleSize }}>{subtitle}</p>
             )}
           </div>
         </div>

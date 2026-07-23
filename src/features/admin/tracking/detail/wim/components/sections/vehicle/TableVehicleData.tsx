@@ -95,6 +95,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
       key: 'no',
       align: 'left',
       width: 80,
+      className: 'col-road-code',
     },
     {
       title: 'วันที่',

@@ -3,6 +3,7 @@ import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { APIResponsePositionByID, PositionByIDData } from '@/types/tracking/detail-api'
 import { Badge, Image } from 'antd'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   positionByID?: APIResponsePositionByID
@@ -22,8 +23,8 @@ const PositionPopup: React.FC<PositionPopupProps> = (props) => {
       <section>
         <p className='fs-12'>{data?.StationName || '-'}</p>
         <p className={`fs-12 ${data?.isEnable ? 'text-green-500' : 'text-red-500'}`}>สถานะ {data?.isEnable ? 'เปิดปกติ' : 'ปิด'} <Badge color={data?.isEnable ? 'green' : 'red'} /></p>
-        <p className='fs-12 text-(--yellow)'>รถเข้าชั่งทั้งหมด: {data?.Total || 0}</p>
-        <p className='fs-12 text-red-500'>รถเข้าน้ำหนักเกิน: {data?.Over || 0}</p>
+        <p className='fs-12 text-(--yellow)'>รถเข้าชั่งทั้งหมด {fmtNumber(Number(data?.Total)) || 0}</p>
+        <p className='fs-12 text-red-500'>รถเข้าน้ำหนักเกิน {fmtNumber(Number(data?.Over)) || 0}</p>
       </section>
     </div>
   )

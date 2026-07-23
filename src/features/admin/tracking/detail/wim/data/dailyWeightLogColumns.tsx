@@ -27,6 +27,7 @@ export const getDailyWeightLogColumns = (
       key: 'datetime',
       align: 'left',
       width: 140,
+      className: 'col-road-code',
       render: (_, record) => (
         <div>
           <p className='fs-12 mb-0'>{dayjs(record.time_stamp, "DD/MM/BBBB  HH:mm:ss").format('DD MMM BBBB')}</p>

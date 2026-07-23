@@ -33,6 +33,7 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       align: 'left',
       width: 70,
       fixed: 'left',
+      className: 'col-road-code',
       render: (_, __, index) => {
         return index + 1
       }
@@ -136,6 +137,7 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       rowKey="station_id"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
+      className='bridge-projects-table'
     />
   )
 }

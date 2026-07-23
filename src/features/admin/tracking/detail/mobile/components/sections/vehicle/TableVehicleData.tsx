@@ -62,6 +62,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
       align: 'left',
       width: 70,
       fixed: 'left',
+      className: 'col-road-code',
       render: (_, __, index) => index + 1,
     },
     {
@@ -173,6 +174,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
       rowKey="TID"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
+      className='bridge-projects-table'
     />
   )
 }

@@ -22,6 +22,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       key: 'rank',
       align: 'left',
       width: 80,
+      className: 'col-road-code',
       render: (_, __, index) => index + 1
     },
     {
@@ -91,6 +92,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       rowKey="key"
       scroll={{ y: 240 }}
       loading={isLoading}
+      className='bridge-projects-table'
     />
   )
 }

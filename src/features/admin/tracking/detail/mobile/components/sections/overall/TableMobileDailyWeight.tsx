@@ -109,6 +109,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       align: 'left',
       width: 70,
       fixed: 'left',
+      className: 'col-road-code',
       render: (_, __, index) => {
         return index + 1
       }
@@ -301,6 +302,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       rowKey="key"
       scroll={{ x: 'max-content' }}
       loading={isLoading}
+      className='bridge-projects-table'
     />
   )
 }

@@ -32,6 +32,7 @@ const TableStation: React.FC<Props> = (props) => {
       align: 'left',
       width: 70,
       fixed: 'left',
+      className: 'col-road-code',
       render: (_, __, index) => {
         return index + 1
       }

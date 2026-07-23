@@ -75,6 +75,8 @@ const ChartPreviousWeightVehicle: React.FC<Props> = () => {
       <LineChart
         title='เปรียบเทียบรถเข้าชั่งน้ำหนัก'
         subtitle='แนวโน้มย้อนหลัง 7 วัน'
+        subtitleSize={16}
+        subtitleColor='var(--yellow)'
         icon={<TbCalendarMonth className='fs-22' />}
         iconCircle={false}
         // accentColor='#FCD116'
