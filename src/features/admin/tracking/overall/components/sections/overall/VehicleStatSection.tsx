@@ -38,8 +38,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(dailySumData?.data.data.all_sum.total || 0))}</h2>
+              <p className='fs-12 text-(--default-blue)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(dailySumData?.data.data.all_sum.total || 0))}</h2>
             </div>
             <div className='text-center'>
               <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
@@ -59,8 +59,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(station?.total || 0))}</h2>
+              <p className='fs-12 text-(--default-blue)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(station?.total || 0))}</h2>
             </div>
             <div className='text-center'>
               <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
@@ -80,8 +80,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(wim?.total || 0))}</h2>
+              <p className='fs-12 text-(--default-blue)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(wim?.total || 0))}</h2>
             </div>
             <div className='text-center'>
               <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
@@ -101,8 +101,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
           </section>
           <section className='flex items-center gap-4 lg:gap-8'>
             <div className='text-center'>
-              <p className='fs-12 text-(--yellow)'>รถเข้าชั่ง</p>
-              <h2 className='font-bold leading-tight text-(--yellow)'>{fmtNumber(Number(spot?.total || 0))}</h2>
+              <p className='fs-12 text-(--default-blue)'>รถเข้าชั่ง</p>
+              <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(spot?.total || 0))}</h2>
             </div>
             <div className='text-center'>
               <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
