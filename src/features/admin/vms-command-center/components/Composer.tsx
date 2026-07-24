@@ -25,8 +25,6 @@ interface Props {
 const dateFmt = 'YYYY-MM-DD'
 const timeFmt = 'HH:mm:ss'
 
-const isoDaysMask = (days: number[]) => days.reduce((m, d) => m | (1 << (d - 1)), 0)
-
 const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetSignSummary, onDispatched, onGotoLibrary }) {
   const { data: countsData } = useMediaCategoryCounts()
   const counts = countsData?.data ?? []
@@ -417,9 +415,6 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             {daysOfWeek.length === 0 && (
               <p className="fs-12 text-white/50 mt-1">ไม่เลือกวันไหน = ทำงานทุกวันในช่วงวันที่</p>
             )}
-            <p className="fs-12 text-white/40 mt-1">
-              mask = {isoDaysMask(daysOfWeek) || 127}
-            </p>
           </div>
 
           {vmsIds.length === 0 && (
