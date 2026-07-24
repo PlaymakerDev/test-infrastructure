@@ -15,6 +15,7 @@ const ChartPredictAccident: React.FC<Props> = () => {
   const chartData = useMemo(() => {
     return (data?.data?.item ?? []).map((item) => ({
       label: item.month,
+      monthYearLabel: `${item.month} ${item.year}`,
       plan: item.plan,
       result: item.result,
     }))
@@ -28,7 +29,7 @@ const ChartPredictAccident: React.FC<Props> = () => {
     return (
       <LineChart
         title='แผนงานและผลการจัดตั้งหน่วยชั่งเคลื่อนที่'
-        subtitle={`ประจำปีงบประมาณ ${dayjs().format('BBBB')}`}
+        subtitle={`ประจำปีงบประมาณ ${data?.data.plan_year || '-'}`}
         icon={<TbClockShield className='fs-22 text-(--default-blue)' />}
         iconCircle={false}
         accentColor='var(--default-blue)'
@@ -47,6 +48,8 @@ const ChartPredictAccident: React.FC<Props> = () => {
         onPeriodChange={() => { }}
         height={260}
         tooltipShowDot
+        tooltipDateKey='monthYearLabel'
+        tooltipSimpleHeader
       />
     )
   }, [isLoading, isError, chartData, allSum])

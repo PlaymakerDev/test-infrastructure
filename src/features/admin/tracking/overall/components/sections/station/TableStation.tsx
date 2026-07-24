@@ -125,18 +125,18 @@ const TableStation: React.FC<Props> = (props) => {
         return '-'
       }
     },
-    {
-      title: 'เลขที่สัญญา',
-      dataIndex: 'contract_number',
-      key: 'contract_number',
-      align: 'center',
-      width: 150,
-      sorter: (a, b) => (a.contract_number || '').localeCompare(b.contract_number || ''),
-      render: (item) => {
-        if (item) return item
-        return '-'
-      }
-    },
+    // {
+    //   title: 'เลขที่สัญญา',
+    //   dataIndex: 'contract_number',
+    //   key: 'contract_number',
+    //   align: 'center',
+    //   width: 150,
+    //   sorter: (a, b) => (a.contract_number || '').localeCompare(b.contract_number || ''),
+    //   render: (item) => {
+    //     if (item) return item
+    //     return '-'
+    //   }
+    // },
     {
       title: 'สถานะ',
       dataIndex: 'total_cctv',
@@ -172,6 +172,7 @@ const TableStation: React.FC<Props> = (props) => {
             <Button
               type="primary"
               shape="round"
+              className='min-w-28'
               onClick={() => router.push(`/admin/tracking/detail/station/${record.station_id}?station_type=STATION`)}
             >
               <p className='fs-12'>{status}</p>

@@ -32,7 +32,7 @@ const CardDailyWeight: React.FC<Props> = (props) => {
         </p>
         <section>
           <p className="fs-12 text-gray-400 mb-0">น้ำหนักที่ชั่งได้สูงสุด/คัน</p>
-          <p className="mb-0">{fmtNumber(findGrossWeight) || 0} ตัน</p>
+          <p className="mb-0">{fmtNumber(findGrossWeight, 1) || 0} ตัน</p>
         </section>
       </div>
     </div>

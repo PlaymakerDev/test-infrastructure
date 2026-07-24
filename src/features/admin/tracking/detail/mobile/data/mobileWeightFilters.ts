@@ -21,7 +21,7 @@ export const MOBILE_WEIGHT_FILTERS: FilterConfig[] = [
   },
   {
     key: 'overweight',
-    label: 'น้ำหนักเกิน',
+    label: 'น้ำหนักรวมเกิน',
     colorPrimary: '#ef4444',
     colorTextLightSolid: '#ffffff',
     badgeActiveClass: 'bg-red-800 text-white',

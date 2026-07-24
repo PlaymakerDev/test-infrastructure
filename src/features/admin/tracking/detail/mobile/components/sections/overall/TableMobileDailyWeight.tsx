@@ -144,7 +144,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       }
     },
     {
-      title: 'ประเภทรถบรรทุก',
+      title: 'ประเภทรถ',
       dataIndex: 'vehicle_class_desc',
       key: 'vehicle_class_desc',
       align: 'left',

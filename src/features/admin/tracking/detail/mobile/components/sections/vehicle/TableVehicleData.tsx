@@ -141,6 +141,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
             <Button
               type="primary"
               shape="round"
+              className='min-w-28'
               onClick={() => setOpenMobileLog({ open: true, record })}
             >
               <p className='fs-12'>{statusText}</p>
