@@ -269,6 +269,12 @@ const LineChart: React.FC<LineChartProps> = ({
         fontSize: 11,
         // Full integer with thousands separator — no `K` suffix.
         formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+        // Same fix as the x-axis: when the card (esp. a `fillHeight` one)
+        // shrinks on a small/resized screen, the plot area gets short enough
+        // that the ~5 auto-computed ticks no longer have room between them
+        // and their labels render on top of each other. `hideOverlap` drops
+        // whichever labels collide instead of stacking them illegibly.
+        hideOverlap: true,
       },
       splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
     }
@@ -332,6 +338,7 @@ const LineChart: React.FC<LineChartProps> = ({
               color: axisLabelColor,
               fontSize: 11,
               formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+              hideOverlap: true,
             },
             // Only the primary axis draws grid split-lines — a second set
             // at a different scale would misalign and clutter the plot.
@@ -564,7 +571,7 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className={`relative ${fillHeight ? ' flex-1 min-h-0' : ''}`}>
+      <div className={`relative ${fillHeight ? ' figure-large lg:h-72! lg:min-h-0! lg:max-h-none!' : ''}`}>
         <ReactECharts
           option={option}
           style={{ height: fillHeight ? '100%' : height }}
