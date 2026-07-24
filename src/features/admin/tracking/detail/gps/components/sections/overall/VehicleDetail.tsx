@@ -35,12 +35,12 @@ const VehicleDetail: React.FC<Props> = (props) => {
             <p className='fs-12 text-gray-400 mt-1'>{data?.vehicle.plate_province || '-'}</p>
           </div>
           {pill && (
-            <span
+            <div
               className='inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border mt-1'
               style={{ borderColor: pill.color, color: pill.color }}
             >
-              {pill.label}
-            </span>
+              <p className='fs-12'>{pill.label}</p>
+            </div>
           )}
         </div>
       </section>
