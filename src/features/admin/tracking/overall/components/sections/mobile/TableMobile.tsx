@@ -110,7 +110,7 @@ const TableMobileData: React.FC<Props> = (props) => {
       sorter: (a, b) => (a.TimeTo || '').localeCompare(b.TimeTo || ''),
       render: (item) => {
         if (item) return item
-        return <p className='fs-12 text-orange-400'>ยังไม่สิ้นสุด</p>
+        return <p className='fs-12 text-white/50'>ยังไม่สิ้นสุด</p>
       }
     },
     {
@@ -187,6 +187,7 @@ const TableMobileData: React.FC<Props> = (props) => {
             <Button
               type="primary"
               shape="round"
+              className='min-w-28'
               onClick={() => router.push(`/admin/tracking/detail/mobile/${record.TID}`)}
             >
               <p className='fs-12'>{statusText}</p>

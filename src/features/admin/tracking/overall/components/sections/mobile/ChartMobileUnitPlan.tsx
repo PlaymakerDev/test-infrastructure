@@ -16,12 +16,19 @@ const ChartMobileUnitPlan: React.FC<Props> = (props) => {
   const { data } = props
 
   const chartData = useMemo(() => {
-    return (data?.item ?? []).map((item) => ({
-      label: item.month,
-      plan: item.plan,
-      result: item.result,
-      diff: item.plan - item.result,
-    }))
+    return (data?.item ?? []).map((item) => {
+      const diff = item.plan - item.result
+      const total = item.plan + item.result
+      const percent = total > 0 ? Math.round((Math.abs(diff) / total) * 1000) / 10 : 0
+      const sign = diff >= 0 ? '+' : '-'
+      const color = diff >= 0 ? 'var(--default-blue)' : 'var(--red)'
+      return {
+        label: item.month,
+        plan: item.plan,
+        result: item.result,
+        diff: `${diff.toLocaleString()} <span style="color:${color};font-weight:700">(${sign}${percent}%)</span>`,
+      }
+    })
   }, [data])
 
   return (

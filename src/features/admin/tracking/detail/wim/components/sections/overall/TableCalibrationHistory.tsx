@@ -48,7 +48,7 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
           return (
             <div>
               <p className='fs-12 mb-0'>{dayjs(item).format('DD MMM BBBB')}</p>
-              <p className='fs-12 mb-0 text-white/60'>{dayjs(item).fromNow()}</p>
+              <p className='fs-12 mb-0 text-white/60'>({dayjs(item).fromNow()})</p>
             </div>
           )
         }

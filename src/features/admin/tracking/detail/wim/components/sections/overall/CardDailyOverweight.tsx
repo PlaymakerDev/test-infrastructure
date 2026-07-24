@@ -40,7 +40,7 @@ const CardDailyOverweight: React.FC<Props> = (props) => {
         </p>
         <section>
           <p className="fs-12 text-gray-400 mb-0">น้ำหนักเกินสูงสุด/คัน</p>
-          <p className="mb-0">{fmtNumber(findGrossWeightOver) || 0} ตัน</p>
+          <p className="mb-0">{fmtNumber(findGrossWeightOver, 1) || 0} ตัน</p>
         </section>
         <div className="flex items-center justify-end gap-1">
           <InfoCircleOutlined className="text-xs! text-red-500!" />

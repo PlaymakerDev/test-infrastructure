@@ -160,6 +160,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
             <Button
               type="primary"
               shape="round"
+              className='min-w-28'
               onClick={() => setOpenWeightLogModal({
                 open: true,
                 stationId: record.station_id,

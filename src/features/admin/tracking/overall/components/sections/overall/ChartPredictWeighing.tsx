@@ -16,6 +16,7 @@ const ChartPredictWeighing: React.FC<Props> = () => {
       .sort((a, b) => a.year_total - b.year_total)
       .map((item) => ({
         label: String(item.year_total),
+        yearLabel: `ปีงบประมาณ ${item.year_total}`,
         station: item.station_total,
         wim: item.wim_total,
         mobile: item.spot_check_total,
@@ -52,6 +53,8 @@ const ChartPredictWeighing: React.FC<Props> = () => {
           ]}
         height={260}
         tooltipShowDot
+        tooltipDateKey='yearLabel'
+        tooltipSimpleHeader
       />
     )
   }, [isLoading, isError, chartData, summary])

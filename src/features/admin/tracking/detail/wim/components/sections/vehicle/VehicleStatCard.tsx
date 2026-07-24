@@ -67,8 +67,8 @@ const VehicleStatCard: React.FC<Props> = () => {
           <TbVideo className='fs-22 mb-1' />
           <h4 className='mb-1'>สถานะกล้อง</h4>
           <div className='flex flex-wrap gap-2'>
-            <div className='bg-[#66AEFF1A] border border-(--yellow) px-3 py-1 rounded-3xl'>
-              <p className='fs-12 text-(--yellow) mb-0'>{fmtNumber(totalCamera) || 0} ทั้งหมด</p>
+            <div className='bg-[#66AEFF1A] border border-white px-3 py-1 rounded-3xl'>
+              <p className='fs-12 text-white mb-0'>{fmtNumber(totalCamera) || 0} ทั้งหมด</p>
             </div>
             <div className='bg-[#66AEFF1A] border border-(--default-blue) px-3 py-1 rounded-3xl'>
               <p className='fs-12 text-(--default-blue) mb-0'>{fmtNumber(dailyCount.data?.camera_online) || 0} ออนไลน์</p>

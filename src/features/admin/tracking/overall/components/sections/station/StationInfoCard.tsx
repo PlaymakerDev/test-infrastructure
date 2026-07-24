@@ -77,8 +77,8 @@ const StationInfoCard: React.FC<Props> = (props) => {
           <h4 className='mb-0'>สถานะกล้อง</h4>
         </div>
         <div className='flex flex-wrap gap-1.5'>
-          <div className='bg-[#66AEFF1A] border border-(--yellow) px-2 py-1 rounded-3xl'>
-            <p className='fs-12 text-(--yellow) text-center'>{fmtNumber(Number(totalCamera)) || 0} ทั้งหมด</p>
+          <div className='bg-[#66AEFF1A] border border-white px-2 py-1 rounded-3xl'>
+            <p className='fs-12 text-white text-center'>{fmtNumber(Number(totalCamera)) || 0} ทั้งหมด</p>
           </div>
           <div className='bg-[#66AEFF1A] border border-(--default-blue) px-2 py-1 rounded-3xl'>
             <p className='fs-12 text-(--default-blue) text-center'>{fmtNumber(Number(data?.camera_online)) || 0} ออนไลน์</p>
