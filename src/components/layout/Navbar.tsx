@@ -518,22 +518,24 @@ export default function Navbar() {
             {renderTrapezoidNav}
             {/* Lock toggle (last item) — pins the menu open so it no longer
               * auto-hides on mouse-leave; click again to return to hover mode.
-              * Sits inline with the menu icons (no frame/chip, so it stays
-              * inside the trapezoid); hover grows / tap presses, the icon
-              * springs+rotates on toggle, and while locked the icon ITSELF
-              * breathes a yellow glow (drop-shadow) — no background circle. */}
+              * Built with the SAME column layout as the menu items above
+              * (24px icon + hover/active label), so it sits flush on the same
+              * row — no size or vertical offset. While locked the icon breathes
+              * a yellow glow and its label stays lit like an active item;
+              * unlocked, the label wipes in on hover just like the others. */}
             <motion.button
               type="button"
               onClick={() => setLocked((v) => !v)}
               title={locked ? "ปลดล็อก (ซ่อนเมนูอัตโนมัติ)" : "ล็อกเมนูให้แสดงตลอด"}
-              className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-white"
+              aria-pressed={locked}
+              aria-label={locked ? "ปลดล็อกเมนู" : "ล็อกเมนู"}
+              className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
                 }`}
-              whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
             >
               <motion.span
                 key={locked ? "locked" : "unlocked"}
-                className="flex"
+                className="flex transition-colors duration-300"
                 initial={{ rotate: -35, scale: 0.5, opacity: 0 }}
                 animate={
                   locked
@@ -556,8 +558,16 @@ export default function Navbar() {
                   ...(locked ? { filter: { duration: 2, repeat: Infinity, ease: "easeInOut" } } : {}),
                 }}
               >
-                {locked ? <TbLock size={20} /> : <TbLockOpen size={20} />}
+                {locked ? <TbLock size={24} /> : <TbLockOpen size={24} />}
               </motion.span>
+              <span
+                className={`hidden lg:block overflow-hidden text-[13px] font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${locked
+                  ? "max-w-36 opacity-100 text-(--yellow)"
+                  : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
+                  }`}
+              >
+                {locked ? "ปลดล็อก" : "ล็อกเมนู"}
+              </span>
             </motion.button>
           </div>
         </div>

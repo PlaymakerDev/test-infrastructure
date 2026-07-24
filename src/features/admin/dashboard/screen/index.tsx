@@ -125,9 +125,12 @@ const DashboardScreen: React.FC<Props> = () => {
           </MapOverlayPanel>
 
           {/* DESKTOP: KPI tile row — width follows content (140px per visible
-            * tile inside RatioChart). */}
+            * tile inside RatioChart). position="left" so the hide toggle slides
+            * it off the LEFT edge (not down) — it's a left-rail card, so it also
+            * hides together with the left panels under 'left' focus mode
+            * (2026-07-24 request). */}
           <MapOverlayPanel
-            position="bottom"
+            position="left"
             className="absolute left-4 z-10 flex"
             style={{ bottom: 16, maxWidth: 'calc(100vw - 32px)' }}
           >
