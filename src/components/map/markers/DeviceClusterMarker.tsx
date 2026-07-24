@@ -82,6 +82,19 @@ export interface DeviceClusterMarkerProps {
  *  `/admin/{route}/detail/{solution_id}` page get a "ดูเพิ่มเติม" link; types
  *  without one (WIM / Lighting / Tunnel) are omitted, so the popup just shows
  *  the info lines for them. */
+// Per-feature colour: offline pins mute to grey; unknown / online keep the
+// system's brand colour so the visual noise is proportional to the
+// information. Mapbox clusters don't have `isOnlineFlag` on the feature so
+// the fallback (last arm of `case`) is what cluster bubbles pick up.
+// Built ONCE at module scope — a fresh expression array per render made
+// MarkerLayer's rebuild effect tear down + re-add every layer on each
+// ReactMap re-render, which flashed the canvas markers whenever the user
+// clicked around the dashboard (reported 2026-07-24).
+const COLOR_EXPR = SYSTEM_TYPES.reduce((acc, t) => {
+  acc[t] = ['case', ['==', ['get', 'isOnlineFlag'], 0], '#94a3b8', SYSTEMS[t].color]
+  return acc
+}, {} as Record<SystemType, MarkerColor>)
+
 const DETAIL_ROUTE: Partial<Record<SystemType, string>> = {
   CCTV: 'cctv',
   Analytic: 'incident-detection',
@@ -270,17 +283,7 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
       {systems.map((type) => {
         const visible = visibleTypes ? visibleTypes.has(type) : true
         const color = SYSTEMS[type].color
-
-        // Per-feature colour: offline pins mute to grey; unknown / online keep
-        // the system's brand colour so the visual noise is proportional to the
-        // information (nothing changes until BE ships `is_online`). Mapbox
-        // clusters don't have `isOnlineFlag` on the feature so the fallback
-        // (last arm of `case`) is what cluster bubbles pick up.
-        const colorExpr: MarkerColor = [
-          'case',
-          ['==', ['get', 'isOnlineFlag'], 0], '#94a3b8',
-          color,
-        ]
+        const colorExpr = COLOR_EXPR[type]
 
         // Resolve which popup renderer to use:
         // - undefined → DefaultDevicePopup
@@ -305,6 +308,13 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             id={`device-${type}`}
             data={featureCollections[type]}
             cluster
+            // Break clusters apart once the user is IN the device tier:
+            // beyond z12 every point renders individually (they re-cluster
+            // when zooming back out). The defaults (maxZoom 14 / radius 60)
+            // kept nearby-but-distinct devices glued into a "2" bubble all
+            // the way to street zoom (reported 2026-07-24).
+            clusterMaxZoom={12}
+            clusterRadius={45}
             color={colorExpr}
             iconImage={`icon-${type}`}
             minZoom={minZoom}

@@ -28,6 +28,8 @@ import ThailandMaskLayer, {
 import DeviceClusterMarker from './markers/DeviceClusterMarker'
 import OverlapStackMarker from './markers/OverlapStackMarker'
 import StchSummaryMarker, { type StchSummary } from './markers/StchSummaryMarker'
+import DeptSummaryMarker, { type DeptSummary } from './markers/DeptSummaryMarker'
+import RoadSummaryMarker, { type RoadSummary } from './markers/RoadSummaryMarker'
 import BureauMaskLayer, {
   BUREAU_CLICK_LAYER_ID,
   BUREAU_HOVER_FILL_ID,
@@ -44,6 +46,10 @@ const COUNTRY_VIEW = {
   zoom: 5.2,
 }
 const PROVINCE_ZOOM_THRESHOLD = 6.5
+// Aggregation ladder (2026-07-24): สทช. bubbles below 6.5 → ขทช./แขวง
+// bubbles 6.5–9 → สายทาง (road) bubbles 9–11.5 → raw device markers above.
+const ROAD_ZOOM_THRESHOLD = 9
+const DEVICE_ZOOM_THRESHOLD = 11.5
 // Above this zoom, drop the province/bureau hover chrome (yellow outlines,
 // parent-สำนัก glow, tooltip, pointer cursor). It's a country/province-picker
 // affordance; once the user has drilled in enough to see roads/markers, the
@@ -169,6 +175,23 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // parent screen feeds our own onDeptIdChange broadcasts into it). Used
   // only to compare before re-broadcasting; the markers do NOT use it.
   const deptId = useDeptId()
+  // "Road focus" — set when the user clicks a สายทาง bubble. While focused,
+  // the road bubbles hide and the raw device markers render from the road
+  // band (z ≥ 9) instead of z ≥ 11.5, so fitBounds can land WHEREVER the
+  // whole road fits and every device on it stays in view (the previous
+  // fixed clamp to the marker band cut long roads off — reported
+  // 2026-07-24). Cleared when the user zooms back out past the ขทช. tier.
+  const [roadFocus, setRoadFocus] = useState(false)
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    const onZoom = () => {
+      if (map.getZoom() < ROAD_ZOOM_THRESHOLD) setRoadFocus(false)
+    }
+    map.on('zoom', onZoom)
+    return () => {
+      map.off('zoom', onZoom)
+    }
+  }, [map, isLoaded])
   const [visibleTypes, setVisibleTypes] = useState<Set<SystemType>>(
     () => new Set(SYSTEM_TYPES)
   )
@@ -192,6 +215,12 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // fly-to can fall back to the bureau polygon when the position endpoint
   // returns no device coords (see the fly-to effect below).
   const { data: departments } = useDepartments()
+  // department id → short name (ขทช.xxx) — labels for the middle summary tier.
+  const deptNameById = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const d of departments ?? []) m.set(d.id, d.department_short_name)
+    return m
+  }, [departments])
   // 18 bureau polygons — used for point-in-polygon reclassification of any
   // solution whose road.stch didn't land in 1..18 (บทช. under stch=0, plus
   // stch=20 กรมทางหลวง and stch=21 ด่านชั่งน้ำหนัก). Falls back to `null`
@@ -266,7 +295,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   //     OverlapStackMarker which collapses them to a count badge + spider
   //     fan-out on click. Keeps the API coord untouched (no jitter), so
   //     "where it is on the map" still matches reality.
-  const { singletons, overlapGroups, stchSummaries } = useMemo(() => {
+  const { singletons, overlapGroups, stchSummaries, deptSummaries, roadSummaries } = useMemo(() => {
     const byCoord = new Map<string, Device[]>()
     // Per-stch accumulator — sum coords as we go, then divide at the end to
     // get the centroid. The marker lands on real devices instead of the mock
@@ -278,6 +307,38 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // country view shows exactly 18 (+1 central) markers instead of the
     // scattered 21-bucket set the BE returns raw.
     const stchAcc: Record<number, { count: number; sumLng: number; sumLat: number }> = {}
+    // Per-ขทช. accumulator — keyed on road.department_id (dev.unitId).
+    // Drives the middle DeptSummaryMarker tier (สทช. → ขทช. → สายทาง →
+    // device markers). `t*` fields accumulate TRUSTED coords only (device
+    // sits inside its own สทช.'s polygon) — a หลุดจังหวัด coordinate (e.g.
+    // ขทช.พัทลุง devices stored at lat 20.29 = Laos, found 2026-07-24)
+    // otherwise drags the bubble into the sea. Untrusted devices still count
+    // and still render as markers; they just don't steer the bubble.
+    const deptAcc: Record<number, {
+      count: number; sumLng: number; sumLat: number
+      tCount: number; tSumLng: number; tSumLat: number
+    }> = {}
+    // Per-สายทาง accumulator (keyed on road id) — third tier. Tracks the
+    // device bbox too so clicking a road bubble can fit the whole stretch;
+    // bbox likewise prefers trusted coords.
+    const roadAcc: Record<number, {
+      count: number; sumLng: number; sumLat: number; label: string
+      minLng: number; minLat: number; maxLng: number; maxLat: number
+      tCount: number; tSumLng: number; tSumLat: number
+      tMinLng: number; tMinLat: number; tMaxLng: number; tMaxLat: number
+    }> = {}
+    // Coord sanity check — inside the bureau polygon the device CLAIMS via
+    // road.stch. No polygon to check against (บทช./unknown stch, geojson not
+    // loaded yet) → trust as-is.
+    const isTrustedCoord = (dev: Device): boolean => {
+      if (!bureauFeatures) return true
+      const bf = bureauFeatures.find((b) => b.stch === dev.stch)
+      if (!bf) return true
+      const [minX, minY, maxX, maxY] = bf.bbox
+      const [lng, lat] = dev.coord
+      if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
+      return booleanPointInPolygon(dev.coord, bf.feature)
+    }
     // LPR pins ride alongside the /position devices. Scoping mirrors the
     // RatioChart LPR tile (FE filter by department_id — /lpr/points is not
     // dept-scoped by BE). `lpr-` id prefix: an LPR point can be the SAME
@@ -331,6 +392,45 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       a.count++
       a.sumLng += dev.coord[0]
       a.sumLat += dev.coord[1]
+
+      const ok = isTrustedCoord(dev)
+
+      const d = deptAcc[dev.unitId] ?? (deptAcc[dev.unitId] = {
+        count: 0, sumLng: 0, sumLat: 0, tCount: 0, tSumLng: 0, tSumLat: 0,
+      })
+      d.count++
+      d.sumLng += dev.coord[0]
+      d.sumLat += dev.coord[1]
+      if (ok) {
+        d.tCount++
+        d.tSumLng += dev.coord[0]
+        d.tSumLat += dev.coord[1]
+      }
+
+      const rid = dev.roadId ?? 0
+      const r = roadAcc[rid] ?? (roadAcc[rid] = {
+        count: 0, sumLng: 0, sumLat: 0,
+        label: dev.road || `สายทาง #${rid}`,
+        minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity,
+        tCount: 0, tSumLng: 0, tSumLat: 0,
+        tMinLng: Infinity, tMinLat: Infinity, tMaxLng: -Infinity, tMaxLat: -Infinity,
+      })
+      r.count++
+      r.sumLng += dev.coord[0]
+      r.sumLat += dev.coord[1]
+      r.minLng = Math.min(r.minLng, dev.coord[0])
+      r.minLat = Math.min(r.minLat, dev.coord[1])
+      r.maxLng = Math.max(r.maxLng, dev.coord[0])
+      r.maxLat = Math.max(r.maxLat, dev.coord[1])
+      if (ok) {
+        r.tCount++
+        r.tSumLng += dev.coord[0]
+        r.tSumLat += dev.coord[1]
+        r.tMinLng = Math.min(r.tMinLng, dev.coord[0])
+        r.tMinLat = Math.min(r.tMinLat, dev.coord[1])
+        r.tMaxLng = Math.max(r.tMaxLng, dev.coord[0])
+        r.tMaxLat = Math.max(r.tMaxLat, dev.coord[1])
+      }
     }
     const singles: Device[] = []
     const groups: Device[][] = []
@@ -345,7 +445,32 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         centroid: [a.sumLng / a.count, a.sumLat / a.count],
       }
     }
-    return { singletons: singles, overlapGroups: groups, stchSummaries: summaries }
+    // Trusted coords steer the bubbles; fall back to the plain mean only when
+    // a bucket has NO in-polygon device at all (then the data is wrong
+    // wholesale and there is no better anchor).
+    const deptSums: Record<number, DeptSummary> = {}
+    for (const [id, a] of Object.entries(deptAcc)) {
+      deptSums[Number(id)] = {
+        count: a.count,
+        centroid: a.tCount > 0
+          ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
+          : [a.sumLng / a.count, a.sumLat / a.count],
+      }
+    }
+    const roadSums: Record<number, RoadSummary> = {}
+    for (const [id, a] of Object.entries(roadAcc)) {
+      roadSums[Number(id)] = {
+        count: a.count,
+        centroid: a.tCount > 0
+          ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
+          : [a.sumLng / a.count, a.sumLat / a.count],
+        label: a.label,
+        bounds: a.tCount > 0
+          ? [a.tMinLng, a.tMinLat, a.tMaxLng, a.tMaxLat]
+          : [a.minLng, a.minLat, a.maxLng, a.maxLat],
+      }
+    }
+    return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
   }, [position, lprPoints, originalDeptId, bureauFeatures])
 
   // Refs keep the click handler's closure fresh without re-registering the
@@ -628,11 +753,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         * to the province layer at PROVINCE_ZOOM_THRESHOLD. Hover + click are
         * wired below via the exported BUREAU_CLICK_LAYER_ID. */}
       <BureauMaskLayer hideAtZoom={PROVINCE_ZOOM_THRESHOLD} />
-      {/* Unique-coord devices → normal Mapbox cluster (icon per system type). */}
+      {/* Unique-coord devices → normal Mapbox cluster (icon per system type).
+        * Device markers start at DEVICE_ZOOM_THRESHOLD — the 6.5–9 band
+        * belongs to the ขทช. summary tier below. */}
       <DeviceClusterMarker
         devices={singletons}
         visibleTypes={visibleTypes}
-        minZoom={PROVINCE_ZOOM_THRESHOLD}
+        minZoom={roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD}
         onClick={() => onMarkerClick?.()}
         onClusterClick={() => onMarkerClick?.()}
       />
@@ -644,11 +771,45 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
           group={group}
           center={group[0].coord}
           visibleTypes={visibleTypes}
-          minZoom={PROVINCE_ZOOM_THRESHOLD}
+          minZoom={roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD}
           onMarkerClick={onMarkerClick}
         />
       ))}
-      <StchSummaryMarker summaries={stchSummaries} hideAtZoom={PROVINCE_ZOOM_THRESHOLD} onMarkerClick={onMarkerClick} />
+      {/* Country tier — สทช. bubbles. zoomOnClick 8 lands inside the ขทช.
+        * band (6.5–9) so drilling reads สทช. → ขทช. → markers. */}
+      <StchSummaryMarker
+        summaries={stchSummaries}
+        hideAtZoom={PROVINCE_ZOOM_THRESHOLD}
+        zoomOnClick={8}
+        onMarkerClick={onMarkerClick}
+      />
+      {/* Middle tier — ขทช./แขวง bubbles (6.5 ≤ z < 9). Clicking flies into
+        * the สายทาง band + rescopes the dashboard cards to that แขวง. */}
+      <DeptSummaryMarker
+        summaries={deptSummaries}
+        labels={deptNameById}
+        minZoom={PROVINCE_ZOOM_THRESHOLD}
+        hideAtZoom={ROAD_ZOOM_THRESHOLD}
+        onSelect={(deptId) => {
+          onMarkerClick?.()
+          const next = String(deptId)
+          markFlown(next)
+          if (next !== deptIdRef.current) onDeptIdChangeRef.current(next)
+        }}
+      />
+      {/* Third tier — สายทาง bubbles (9 ≤ z < 11.5). Clicking fits the road's
+        * device bbox, hides this tier, and lets the raw markers render at the
+        * fitted zoom (road-focus mode) so the WHOLE road stays in view. */}
+      <RoadSummaryMarker
+        summaries={roadSummaries}
+        minZoom={ROAD_ZOOM_THRESHOLD}
+        hideAtZoom={DEVICE_ZOOM_THRESHOLD}
+        suppressed={roadFocus}
+        onSelect={() => {
+          onMarkerClick?.()
+          setRoadFocus(true)
+        }}
+      />
 
       {/* Vertical rhythm under the navbar: search box 60–~100 → pills 112 →
         * breadcrumb 164. Pills previously started at 92, overlapping the

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Marker as MapboxMarker, PopupOptions } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
-import { showReactPopup } from './popupHelper'
+import { closeReactPopup, showReactPopup } from './popupHelper'
 
 export interface HTMLMarkerProps {
   /** [lng, lat] */
@@ -89,6 +89,11 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
       // Don't let the click reach the map (otherwise map's closeOnClick on the popup
       // would immediately close any popup we're about to open).
       e.stopPropagation()
+      // No popup of our own → dismiss whatever popup is lingering from an
+      // earlier marker. stopPropagation above means the map's closeOnClick
+      // never sees marker clicks, so without this a popup stayed open while
+      // the user clicked summary bubbles / stack badges (reported 2026-07-24).
+      if (!popupRef.current && map) closeReactPopup(map)
       if (onClickRef.current && markerRef.current) {
         onClickRef.current(markerRef.current)
       }

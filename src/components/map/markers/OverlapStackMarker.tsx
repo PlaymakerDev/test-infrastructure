@@ -1,5 +1,5 @@
 "use client"
-import React, { memo, useEffect, useMemo, useState, createElement, useCallback } from 'react'
+import React, { memo, useEffect, useMemo, useRef, useState, createElement, useCallback } from 'react'
 import type { IconType } from 'react-icons'
 import {
   TbVideo,
@@ -57,6 +57,10 @@ export interface OverlapStackMarkerProps {
 // Match the normal MarkerLayer pin diameter (circleRadius 16 → 32 px). Keeps
 // the spider center indistinguishable in size from singleton pins next to it.
 const MARKER_SIZE = 32
+// Street-level zoom — stacks fan out automatically at/above this and fold
+// back when the camera zooms away (crossing-based, so click-toggle wins
+// between crossings).
+const AUTO_EXPAND_ZOOM = 14.5
 // Leg length must exceed the marker radius (so the tip clears the center) +
 // half a tip width. 44 px works well for marker sizes up to ~36.
 const LEG_PX = 44
@@ -87,11 +91,25 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [zoomVisible, setZoomVisible] = useState(false)
+  // Which side of AUTO_EXPAND_ZOOM the camera was on at the last zoom event —
+  // auto expand/collapse fires only when CROSSING the line, so a manual
+  // click-toggle between crossings isn't fought by the effect.
+  const wasStreetZoomRef = useRef<boolean | null>(null)
 
-  // Track zoom — hide while the country-level STCH summary owns the view.
+  // Track zoom — hide while the country-level STCH summary owns the view;
+  // fan out automatically at street zoom + fold back up when zooming away
+  // (per 2026-07-24 request — clicking still toggles at any zoom).
   useEffect(() => {
     if (!map || !isLoaded) return
-    const update = () => setZoomVisible(map.getZoom() >= minZoom)
+    const update = () => {
+      const z = map.getZoom()
+      setZoomVisible(z >= minZoom)
+      const street = z >= AUTO_EXPAND_ZOOM
+      if (street !== wasStreetZoomRef.current) {
+        wasStreetZoomRef.current = street
+        setExpanded(street)
+      }
+    }
     update()
     map.on('zoom', update)
     return () => { map.off('zoom', update) }
@@ -166,15 +184,20 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
               : `${n} อุปกรณ์ที่จุดนี้ — คลิกเพื่อขยาย`
           }
           style={{
-            width: MARKER_SIZE,
-            height: MARKER_SIZE,
+            // Expanded → the count is gone (per 2026-07-24 request): the
+            // badge shrinks into a dim ✕ chip so the fanned pins carry the
+            // information, while the center stays clickable to fold back.
+            width: expanded ? 22 : MARKER_SIZE,
+            height: expanded ? 22 : MARKER_SIZE,
             borderRadius: '50%',
-            background: '#FCD116',
-            color: '#050d1a',
-            fontSize: 14,
+            background: expanded ? 'rgba(5,13,26,0.9)' : '#FCD116',
+            color: expanded ? '#FCD116' : '#050d1a',
+            fontSize: expanded ? 11 : 14,
             fontWeight: 700,
-            border: '2px solid #fff',
-            boxShadow: '0 0 8px rgba(252,209,22,0.7), 0 2px 6px rgba(0,0,0,0.45)',
+            border: expanded ? '1px solid rgba(252,209,22,0.6)' : '2px solid #fff',
+            boxShadow: expanded
+              ? '0 2px 6px rgba(0,0,0,0.45)'
+              : '0 0 8px rgba(252,209,22,0.7), 0 2px 6px rgba(0,0,0,0.45)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -182,9 +205,11 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
             padding: 0,
             position: 'relative',
             zIndex: 2,
+            margin: expanded ? (MARKER_SIZE - 22) / 2 : 0,
+            transition: 'width 0.15s, height 0.15s, background 0.15s',
           }}
         >
-          {n}
+          {expanded ? '✕' : n}
         </button>
 
         {expanded &&
