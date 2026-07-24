@@ -371,11 +371,28 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         key: 'sign',
         render: (_: unknown, r) => (
           <div className="min-w-0">
-            <Tooltip title={r.solution_name || ''} placement="topLeft">
-              <div className="truncate text-sm font-semibold text-white/90">
-                {r.solution_name || '—'}
-              </div>
-            </Tooltip>
+            <div className="flex items-center gap-1.5">
+              <Tooltip title={r.solution_name || ''} placement="topLeft">
+                <div className="truncate text-sm font-semibold text-white/90">
+                  {r.solution_name || '—'}
+                </div>
+              </Tooltip>
+              <Tooltip title={r.anydesk_id ? `เปิด Anydesk #${r.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+                <button
+                  type="button"
+                  disabled={!r.anydesk_id}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!r.anydesk_id) return
+                    window.location.href = `anydesk:${r.anydesk_id}`
+                  }}
+                  className="inline-flex items-center shrink-0 disabled:opacity-30 disabled:cursor-default"
+                  style={{ color: r.anydesk_id ? 'var(--default-blue)' : 'rgba(255,255,255,0.4)', cursor: r.anydesk_id ? 'pointer' : 'default' }}
+                >
+                  <TbAppWindow size={13} />
+                </button>
+              </Tooltip>
+            </div>
             {r.machine_name && (
               <div
                 className="fs-12 text-white/40 truncate"
@@ -507,39 +524,6 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           ) : (
             <span className="text-white/40">—</span>
           ),
-      },
-      {
-        title: 'Anydesk',
-        key: 'anydesk',
-        width: 140,
-        align: 'center',
-        render: (_: unknown, r) => (
-          <Tooltip title={r.anydesk_id ? `เปิด Anydesk #${r.anydesk_id}` : 'ไม่มี Anydesk ID'}>
-            <button
-              type="button"
-              disabled={!r.anydesk_id}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (!r.anydesk_id) return
-                window.location.href = `anydesk:${r.anydesk_id}`
-              }}
-              className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded disabled:opacity-40 disabled:cursor-default"
-              style={
-                r.anydesk_id
-                  ? {
-                      background: 'color-mix(in srgb, var(--default-blue) 12%, transparent)',
-                      border: '1px solid var(--default-blue)',
-                      color: 'var(--default-blue)',
-                      cursor: 'pointer',
-                    }
-                  : { color: 'rgba(255,255,255,0.4)' }
-              }
-            >
-              <TbAppWindow style={{ verticalAlign: -2 }} />
-              {r.anydesk_id || '-'}
-            </button>
-          </Tooltip>
-        ),
       },
       {
         title: (
