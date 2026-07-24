@@ -72,8 +72,8 @@ const VehicleList: React.FC<VehicleListProps> = ({ items }) => (
     {items.length === 0 && (
       <p className='text-center text-gray-500 text-sm py-8'>ไม่พบข้อมูล</p>
     )}
-    {items.map((item) => (
-      <MemoVehicleCard key={item.plate_no} item={item} />
+    {items.map((item, index) => (
+      <MemoVehicleCard key={`${item.plate_no ?? 'unknown'}-${item.plate_province}-${index}`} item={item} />
     ))}
   </div>
 )

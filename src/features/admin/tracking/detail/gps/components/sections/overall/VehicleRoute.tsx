@@ -70,9 +70,9 @@ const VehicleRoute: React.FC<Props> = (props) => {
           </figure>
         )
       }
-      return events.map((item) => {
+      return events.map((item, index) => {
         return (
-          <div key={item.road_id} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
+          <div key={`${date}-${item.event_time}-${item.road_id}-${index}`} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
             <h4>{item.road_name || '-'}</h4>
             <p className='fs-12 text-gray-400'>{item.event_time ? dayjs(item.event_time).format('DD MMM BBBB HH:mm:ss') : '-'}</p>
             <p className='fs-12 text-(--yellow)'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>

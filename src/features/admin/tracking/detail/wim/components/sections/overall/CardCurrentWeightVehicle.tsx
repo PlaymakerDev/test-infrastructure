@@ -25,7 +25,6 @@ const CardCurrentWeightVehicle: React.FC<Props> = (props) => {
   }, [])
 
   const prerenderLicensePlate = useCallback((plateNo: string, plateProvince: string) => {
-    console.log(plateNo)
     if (!plateNo) return 'ไม่ระบุทะเบียน'
     return renderLicensePlate(plateNo, plateProvince)
   }, [renderLicensePlate])

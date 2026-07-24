@@ -54,19 +54,27 @@ const StationCCTVList: React.FC<Props> = (props) => {
     const randomCCTV = data?.data?.data?.filter(item => item.camera_status === 'Online')?.sort(() => Number(randomCam) - 0.5).slice(0, 3)
 
     if (!randomCCTV || randomCCTV.length === 0) {
-      return Array.from({ length: 3 }).map((_, index) => {
-        return (
-          <div key={index} className='flex-1 flex flex-col min-h-0'>
-            <HLSLivePlayer
-
-              figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg cursor-pointer'
-            />
-            <h4 className="camera-code">{'-'}</h4>
-            <p className="camera-location">{'-'}</p>
-          </div>
-        )
-      })
+      return (
+        <figure className='block m-auto'>
+          <Empty description="ไม่พบข้อมูล CCTV ในช่วงเวลานี้" />
+        </figure>
+      )
     }
+
+    // if (!randomCCTV || randomCCTV.length === 0) {
+    //   return Array.from({ length: 3 }).map((_, index) => {
+    //     return (
+    //       <div key={index} className='flex-1 flex flex-col min-h-0'>
+    //         <HLSLivePlayer
+
+    //           figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg cursor-pointer'
+    //         />
+    //         <h4 className="camera-code">{'-'}</h4>
+    //         <p className="camera-location">{'-'}</p>
+    //       </div>
+    //     )
+    //   })
+    // }
 
     return randomCCTV?.map((item) => (
       <div key={item.id} className='flex-1 flex flex-col min-h-0'>

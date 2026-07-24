@@ -104,7 +104,7 @@ const TableLatestWIM: React.FC<Props> = (props) => {
       dataSource={sortedData}
       pagination={false}
       size="middle"
-      rowKey="key"
+      rowKey={(record) => `${record.station_id}-${record.date_time}`}
       scroll={{
         x: 'max-content',
         y: 300

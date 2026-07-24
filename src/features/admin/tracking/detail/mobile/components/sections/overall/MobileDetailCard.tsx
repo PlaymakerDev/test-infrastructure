@@ -25,7 +25,7 @@ const MobileDetailCard: React.FC<Props> = (props) => {
         </div>
         <div className='flex flex-col gap-1 mb-2.5'>
           <p className='text-gray-500'>จำนวนรถเข้าชั่ง</p>
-          <p className='text-blue-500'>{fmtNumber(Number(countData?.sum_total)) || 0} ครั้ง</p>
+          <p className='text-(--default-blue)'>{fmtNumber(Number(countData?.sum_total)) || 0} ครั้ง</p>
         </div>
         <div className='flex flex-col gap-1 mb-2.5'>
           <p className='text-gray-500'>จำนวนรถน้ำหนักรวมเกิน</p>

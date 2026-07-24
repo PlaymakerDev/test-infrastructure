@@ -1,4 +1,6 @@
 import axios, { type AxiosError } from "axios"
+import { getGlobalStore } from "@/stores/store"
+import { setAuthTokenState, resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/authSlice"
 
 declare module "axios" {
 	interface InternalAxiosRequestConfig {
@@ -22,6 +24,17 @@ const SESSION_CACHE_TTL = 15_000
 function invalidateSessionCache() {
 	sessionPromise = null
 	sessionCacheAt = 0
+}
+
+// Mirrors the live access token into `authSlice` (`auth_token`) whenever it
+// changes — login, silent refresh, or a rotation-race recovery — so any
+// component reading `useAppSelector(s => s.auth.auth_token)` stays current
+// without polling. `refresh_token` never leaves the server (RISK-01
+// mitigation — see CLAUDE.md) so it's always dispatched as null here.
+export async function syncAuthTokenToStore(): Promise<void> {
+	invalidateSessionCache()
+	const { access_token } = await fetchSessionJSON()
+	getGlobalStore()?.dispatch(setAuthTokenState({ access_token: access_token ?? null, refresh_token: null }))
 }
 
 async function fetchSessionJSON(): Promise<SessionJSON> {
@@ -174,7 +187,7 @@ async function runScheduledRefresh() {
 	isRefreshing = true
 	try {
 		await refreshWithRetry()
-		invalidateSessionCache()
+		await syncAuthTokenToStore()
 		isRefreshing = false
 		proactiveCooldownUntil = 0
 		notifyRefreshed()
@@ -200,6 +213,8 @@ const logout = async () => {
 	}
 	invalidateSessionCache()
 	clearRefreshTimer()
+	getGlobalStore()?.dispatch(resetAuthTokenState())
+	getGlobalStore()?.dispatch(resetAuthInfoState())
 	// Clean redirect (no modal); ?session_expired=1 lets the login page show a notice.
 	if (typeof window !== "undefined") {
 		window.location.href = `${BASE_PATH}${LOGIN_PATH}?session_expired=1`
@@ -225,7 +240,7 @@ BaseService.interceptors.request.use(
 				isRefreshing = true
 				try {
 					await refreshWithRetry()
-					invalidateSessionCache()
+					await syncAuthTokenToStore()
 					isRefreshing = false
 					proactiveCooldownUntil = 0
 					notifyRefreshed()
@@ -264,7 +279,7 @@ async function handleTokenExpired(error: AxiosError) {
 	const tokenBefore = (await fetchSessionJSON()).access_token
 	try {
 		await refreshWithRetry()
-		invalidateSessionCache()
+		await syncAuthTokenToStore()
 		isRefreshing = false
 		proactiveCooldownUntil = 0
 		notifyRefreshed()
@@ -277,6 +292,7 @@ async function handleTokenExpired(error: AxiosError) {
 			invalidateSessionCache()
 			const current = (await fetchSessionJSON()).access_token
 			if (current && current !== tokenBefore) {
+				getGlobalStore()?.dispatch(setAuthTokenState({ access_token: current, refresh_token: null }))
 				notifyRefreshed()
 				return BaseService(config)
 			}

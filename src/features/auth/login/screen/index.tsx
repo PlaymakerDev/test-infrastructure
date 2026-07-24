@@ -12,10 +12,13 @@ import {
 } from 'react-icons/tb'
 import menu from '@/configs/menu'
 import { getDepartmentsAPI } from '@/services/routes/ManageService'
+import { getAuthInfoAPI } from '@/services/routes/AdminService'
 import { resolveHomeDeptId, deptQuery } from '@/hooks/queries/manage'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setLoading } from '@/stores/reducers/layout/layoutSlice'
+import { setAuthInfoState } from '@/stores/reducers/auth/authSlice'
+import { syncAuthTokenToStore } from '@/services/BaseService'
 
 interface Props {
   username?: string
@@ -90,6 +93,16 @@ const AuthScreen: React.FC<Props> = (props) => {
           // Drop any cached data from a previous user so this session's
           // token-scoped queries (departments, etc.) refetch fresh.
           queryClient.clear()
+          // Populate `authSlice` right after the session cookie is set — token
+          // first (so it's never stale), then the profile info. Non-fatal: a
+          // failed info fetch shouldn't block the user from reaching the app.
+          await syncAuthTokenToStore()
+          try {
+            const info = await getAuthInfoAPI()
+            dispatch(setAuthInfoState(info.data))
+          } catch {
+            // profile info fetch failed — keep going, info stays at initialState
+          }
           if (remember && value.username) {
             localStorage.setItem(REMEMBER_KEY, value.username)
           } else {
