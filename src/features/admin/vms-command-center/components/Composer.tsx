@@ -1,8 +1,8 @@
 "use client"
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, ConfigProvider, Empty, Image, Input, Modal, Popover, Skeleton, Switch, TimePicker } from 'antd'
 import thTH from 'antd/locale/th_TH'
-import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
+import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbPlus, TbRocket, TbX } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import DayList from '@/components/list/DayList'
@@ -14,6 +14,15 @@ import type { VMSMediaItem } from '@/types/vms/media-library-api'
 import type { ScheduleByVMSID } from '@/types/control-vms/display-api'
 
 const isVideoName = (s: string) => isVideoUrl(s)
+
+interface TimeSlot {
+  id: number
+  range: [Dayjs, Dayjs]
+}
+
+const toMinutes = (d: Dayjs) => d.hour() * 60 + d.minute()
+const slotsOverlap = (a: [Dayjs, Dayjs], b: [Dayjs, Dayjs]) =>
+  toMinutes(a[0]) < toMinutes(b[1]) && toMinutes(b[0]) < toMinutes(a[1])
 
 interface Props {
   vmsIds: number[]
@@ -87,14 +96,62 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const today = dayjs()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([today, today])
   const [isAllDay, setIsAllDay] = useState(false)
-  // Default the slot to "now → now + 1 hr" so a one-tap dispatch actually
-  // covers the current moment. Round to the nearest minute so the picker
-  // shows clean values (13:07 rather than 13:07:42).
-  const [timeRange, setTimeRange] = useState<[Dayjs, Dayjs]>(() => {
+  // Default the first slot to "now → now + 1 hr" so a one-tap dispatch
+  // actually covers the current moment. Round to the nearest minute so the
+  // picker shows clean values (13:07 rather than 13:07:42). Mirrors legacy's
+  // FormAddDetail — an operator can add more slots (e.g. 08:00-09:00 AND
+  // 17:00-18:00 for rush hour) instead of being limited to one window.
+  const slotIdRef = useRef(1)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
     const now = dayjs().startOf('minute')
-    return [now, now.add(1, 'hour')]
+    return [{ id: 0, range: [now, now.add(1, 'hour')] }]
   })
+  const addTimeSlot = () => {
+    setTimeSlots((prev) => {
+      const lastEnd = prev[prev.length - 1].range[1]
+      return [...prev, { id: slotIdRef.current++, range: [lastEnd, lastEnd.add(1, 'hour')] }]
+    })
+  }
+  const removeTimeSlot = (id: number) => {
+    setTimeSlots((prev) => (prev.length > 1 ? prev.filter((s) => s.id !== id) : prev))
+  }
+  const updateTimeSlot = (id: number, range: [Dayjs, Dayjs]) => {
+    setTimeSlots((prev) => prev.map((s) => (s.id === id ? { ...s, range } : s)))
+  }
+  const overlappingSlotIds = useMemo(() => {
+    const bad = new Set<number>()
+    for (let i = 0; i < timeSlots.length; i++) {
+      for (let j = i + 1; j < timeSlots.length; j++) {
+        if (slotsOverlap(timeSlots[i].range, timeSlots[j].range)) {
+          bad.add(timeSlots[i].id)
+          bad.add(timeSlots[j].id)
+        }
+      }
+    }
+    return bad
+  }, [timeSlots])
+
+  // Which weekdays actually fall inside the date range — mirrors legacy's
+  // FormAddDetail.tsx exactly. A 1-2 day range can only ever hit 1-2
+  // distinct weekdays, so offering all 7 toggles is misleading; a 7+ day
+  // range can hit any weekday, so nothing gets disabled.
+  const availableDays = useMemo(() => {
+    const [start, end] = dateRange
+    if (!start.isValid() || !end.isValid() || end.isBefore(start, 'day')) return [1, 2, 3, 4, 5, 6, 7]
+    if (end.diff(start, 'day') >= 6) return [1, 2, 3, 4, 5, 6, 7]
+    const days = new Set<number>()
+    for (let i = 0; i <= end.diff(start, 'day'); i++) {
+      const d = start.add(i, 'day').day()
+      days.add(d === 0 ? 7 : d)
+    }
+    return Array.from(days).sort((a, b) => a - b)
+  }, [dateRange])
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
+  // Full resync (not prune-only) on every range change, same as legacy —
+  // widening the range back out has to bring previously-pruned days back.
+  useEffect(() => {
+    setDaysOfWeek(availableDays)
+  }, [availableDays])
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const post = usePostVMSMedia()
@@ -131,7 +188,9 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const [previewing, setPreviewing] = useState<VMSMediaItem | null>(null)
 
   const canDispatch =
-    vmsIds.length > 0 && (isMessageOnly ? message.trim().length > 0 : !!selectedMedia?.url)
+    vmsIds.length > 0 &&
+    (isMessageOnly ? message.trim().length > 0 : !!selectedMedia?.url) &&
+    (isAllDay || overlappingSlotIds.size === 0)
 
   const buildPayload = () => ({
     vms_ids: vmsIds,
@@ -140,18 +199,31 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     date_since: dateRange[0].format(dateFmt),
     date_to: dateRange[1].format(dateFmt),
     is_all_day: isAllDay,
-    schedules: [
-      {
-        schedule_name: scheduleName || 'ประกาศ',
-        // Enforced mutually exclusive regardless of leftover state in the
-        // other field — only the active mode's content goes out.
-        media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
-        message: isMessageOnly ? message : '',
-        time_since: isAllDay ? '00:00:00' : timeRange[0].format(timeFmt),
-        time_to: isAllDay ? '23:59:59' : timeRange[1].format(timeFmt),
-        days_of_week: daysOfWeek,
-      },
-    ],
+    // Enforced mutually exclusive regardless of leftover state in the other
+    // field — only the active mode's content goes out. An all-day dispatch
+    // collapses to a single 00:00-23:59 schedule regardless of how many
+    // time slots are configured (they'd all be identical, all-day windows);
+    // otherwise one schedule per configured slot, e.g. 08:00-09:00 AND
+    // 17:00-18:00 for rush-hour signage.
+    schedules: isAllDay
+      ? [
+          {
+            schedule_name: scheduleName || 'ประกาศ',
+            media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
+            message: isMessageOnly ? message : '',
+            time_since: '00:00:00',
+            time_to: '23:59:59',
+            days_of_week: daysOfWeek,
+          },
+        ]
+      : timeSlots.map((slot, i) => ({
+          schedule_name: timeSlots.length > 1 ? `${scheduleName || 'ประกาศ'} (${i + 1})` : (scheduleName || 'ประกาศ'),
+          media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
+          message: isMessageOnly ? message : '',
+          time_since: slot.range[0].format(timeFmt),
+          time_to: slot.range[1].format(timeFmt),
+          days_of_week: daysOfWeek,
+        })),
   })
 
   const dispatch = async () => {
@@ -389,33 +461,66 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
           {!isAllDay && (
             <div>
-              <label className="text-(--yellow) block mb-1">
-                ช่วงเวลาแสดงผล <span className="text-red-500">*</span>
-              </label>
-              {/* needConfirm defaults to true here (unlike the legacy form's
-                  single TimePicker, which is a same-panel confirm-on-pick
-                  since there's only one side) — this is a RangePicker with
-                  start+end in one control, so an explicit OK gives the
-                  operator a beat to review both ends before committing a
-                  schedule that affects a live sign. */}
-              <TimePicker.RangePicker
-                value={timeRange}
-                onChange={(v) => v && v[0] && v[1] && setTimeRange([v[0], v[1]])}
-                format="HH:mm"
-                allowClear={false}
-                className="w-full"
-                size="large"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-(--yellow) block">
+                  ช่วงเวลาแสดงผล <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={addTimeSlot}
+                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
+                >
+                  <TbPlus size={14} />
+                  <span>เพิ่มช่วงเวลา</span>
+                </button>
+              </div>
+              <div className="space-y-2">
+                {timeSlots.map((slot) => {
+                  const overlapping = overlappingSlotIds.has(slot.id)
+                  return (
+                    <div key={slot.id} className="flex items-center gap-2">
+                      {/* needConfirm defaults to true here (unlike the legacy form's
+                          single TimePicker, which is a same-panel confirm-on-pick
+                          since there's only one side) — this is a RangePicker with
+                          start+end in one control, so an explicit OK gives the
+                          operator a beat to review both ends before committing a
+                          schedule that affects a live sign. */}
+                      <TimePicker.RangePicker
+                        value={slot.range}
+                        onChange={(v) => v && v[0] && v[1] && updateTimeSlot(slot.id, [v[0], v[1]])}
+                        format="HH:mm"
+                        allowClear={false}
+                        className="w-full"
+                        size="large"
+                        status={overlapping ? 'error' : undefined}
+                      />
+                      {timeSlots.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeTimeSlot(slot.id)}
+                          className="text-white/50 hover:text-white shrink-0"
+                          aria-label="ลบช่วงเวลานี้"
+                        >
+                          <TbX size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {overlappingSlotIds.size > 0 && (
+                <p className="fs-12 text-red-400 mt-1">ช่วงเวลาที่เลือกซ้อนกันอยู่ — แก้ให้ไม่ทับกันก่อนส่งคำสั่ง</p>
+              )}
             </div>
           )}
 
-          <div>
-            <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
-            <DayList value={daysOfWeek} onChange={setDaysOfWeek} />
-            {daysOfWeek.length === 0 && (
-              <p className="fs-12 text-white/50 mt-1">ไม่เลือกวันไหน = ทำงานทุกวันในช่วงวันที่</p>
-            )}
-          </div>
+          {availableDays.length > 1 && (
+            <div>
+              <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
+              <DayList value={daysOfWeek} onChange={setDaysOfWeek} disabledDate={(day) => !availableDays.includes(day)} />
+              <p className="fs-12 text-white/50 mt-1">เลือกได้เฉพาะวันที่อยู่ในช่วงวันที่ด้านบน — ไม่เลือกวันไหนเลย = ทำงานทุกวันในช่วงนั้น</p>
+            </div>
+          )}
 
           {vmsIds.length === 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--yellow)/60 bg-[#FCD1161A] text-(--yellow) fs-12">
@@ -485,11 +590,17 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                 </b> ไปยัง <b className="text-black">{vmsIds.length}</b> ป้าย
               </p>
               <p className="fs-12 text-(--light-gray) mt-1 mb-0">
-                ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
-                {isAllDay
-                  ? '(ตลอดวัน)'
-                  : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
+                ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}
               </p>
+              {isAllDay ? (
+                <p className="fs-12 text-(--light-gray) mt-1 mb-0">เวลา: ตลอดวัน</p>
+              ) : (
+                <ul className="fs-12 text-(--light-gray) mt-1 mb-0 pl-4">
+                  {timeSlots.map((slot) => (
+                    <li key={slot.id}>{slot.range[0].format('HH:mm')} – {slot.range[1].format('HH:mm')}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </Modal>
