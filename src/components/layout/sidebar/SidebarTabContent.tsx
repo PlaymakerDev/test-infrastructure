@@ -3,6 +3,7 @@ import { Tabs, type TabsProps } from 'antd'
 import React from 'react'
 import SidebarContent from './SidebarContent'
 import SidebarSetting from './SidebarSetting'
+import SidebarRoute from './SidebarRoute'
 // import SidebarManagement from './SidebarManagement'
 
 interface Props {
@@ -17,6 +18,11 @@ const SidebarTabContent: React.FC<Props> = (props) => {
       key: 'DEPARTMENT',
       label: 'สำนัก',
       children: <SidebarContent data={data} />,
+    },
+    {
+      key: 'ROUTE',
+      label: 'สายทาง',
+      children: <SidebarRoute />,
     },
     {
       key: 'SYSTEM_SETTINGS',

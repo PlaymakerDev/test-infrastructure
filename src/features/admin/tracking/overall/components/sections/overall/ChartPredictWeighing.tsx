@@ -1,4 +1,5 @@
 import LineChart from '@/components/chart/LineChart'
+import { FlexArrowIcon } from '@/components/icon'
 import { useSumWeightYearV2 } from '@/features/admin/tracking/overall/hooks'
 import { Empty, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
@@ -30,7 +31,7 @@ const ChartPredictWeighing: React.FC<Props> = () => {
       <LineChart
         title='แนวโน้มจำนวนรถเข้าชั่ง 10 ปีล่าสุด'
         subtitle='เปรียบเทียบจำนวนรถเข้าชั่งแยกตามประเภท (สถานีตรวจสอบน้ำหนัก  WIM และหน่วยตรวจสอบน้ำหนักเคลื่อนที่)'
-        icon={<TbArrowsExchange className='fs-22 text-(--default-blue)' />}
+        icon={<FlexArrowIcon />}
         iconCircle={false}
         accentColor='var(--default-blue)'
         cardBackground='#00000080'

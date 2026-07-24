@@ -75,6 +75,10 @@ const VALID_DEPARTMENT_TREE = [
                 camera_online_count: 2,
                 camera_offline_count: 0,
                 noti_count: 1,
+                is_centralized: true,
+                is_reported: true,
+                is_controllable: true,
+                has_valid_agent: true,
               },
             ],
           },
@@ -265,6 +269,7 @@ describe('apiResponseVMSSettingByStatusSchema', () => {
     road_code: 'RC-01',
     solution_name: 'VMS-001',
     screen_capture_url: 'https://example.com/screen.jpg',
+    anydesk_id: '123456789',
     cameras: [{ camera_id: 'CAM-1', camera_name: 'กล้อง 1', hls_url: 'https://example.com/live.m3u8' }],
     schedules: [{ days_of_week: [1, 2], schedule_id: 1, schedule_name: 'ตารางที่ 1', time_since: '08:00', time_to: '18:00' }],
   }]

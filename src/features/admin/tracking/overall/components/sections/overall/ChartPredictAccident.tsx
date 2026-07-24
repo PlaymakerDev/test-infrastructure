@@ -27,8 +27,8 @@ const ChartPredictAccident: React.FC<Props> = () => {
     if (isError) return <Empty description="ไม่พบข้อมูล" />
     return (
       <LineChart
-        title='คาดการณ์แนวโน้มการเกิดอุบัติเหตุ'
-        subtitle='เปรียบเทียบจำนวนแจ้งเตือนอุบัติการณ์และคาดการณ์การเกิดเหตุ'
+        title='แผนงานและผลการจัดตั้งหน่วยชั่งเคลื่อนที่'
+        subtitle={`ประจำปีงบประมาณ ${dayjs().format('BBBB')}`}
         icon={<TbClockShield className='fs-22 text-(--default-blue)' />}
         iconCircle={false}
         accentColor='var(--default-blue)'
@@ -37,12 +37,12 @@ const ChartPredictAccident: React.FC<Props> = () => {
         showGlow={false}
         data={chartData}
         lines={[
-          { dataKey: 'plan', color: '#4ADE80', label: 'แจ้งเตือนอุบัติการณ์ (ครั้ง)' },
-          { dataKey: 'result', color: '#E94C4C', label: 'คาดการณ์การเกิดเหตุ (จุด)' },
+          { dataKey: 'plan', color: '#4ADE80', label: 'แผนที่วางไว้' },
+          { dataKey: 'result', color: '#E94C4C', label: 'ผลที่ดำเนินการ' },
         ]}
         stats={[
-          { value: allSum ? allSum.plan_total.toLocaleString() : '-', label: 'แจ้งเตือนอุบัติการณ์ (ครั้ง)', color: '#4ADE80' },
-          { value: allSum ? allSum.result_total.toLocaleString() : '-', label: 'คาดการณ์การเกิดเหตุ (จุด)', color: '#E94C4C' },
+          { value: allSum ? allSum.plan_total.toLocaleString() : '-', label: 'แผนที่วางไว้', color: '#4ADE80' },
+          { value: allSum ? allSum.result_total.toLocaleString() : '-', label: 'ผลที่ดำเนินการ', color: '#E94C4C' },
         ]}
         onPeriodChange={() => { }}
         height={260}
