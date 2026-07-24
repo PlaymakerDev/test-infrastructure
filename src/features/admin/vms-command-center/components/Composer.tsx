@@ -1,14 +1,17 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, ConfigProvider, Image, Input, Modal, Radio, Skeleton, Switch, TimePicker } from 'antd'
+import { Button, ConfigProvider, Empty, Image, Input, Modal, Popover, Skeleton, Switch, TimePicker } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { TbAlertTriangle, TbFolderOpen, TbMaximize, TbRocket } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
+import DayList from '@/components/list/DayList'
 import { useMediaCategoryCounts, useMediaLibraryList } from '../hooks/useMediaLibrary'
 import { usePostVMSMedia } from '@/features/admin/control-vms/overall/hooks/usePostVMSMedia'
+import { useVMSSettingByVMSID } from '@/features/admin/control-vms/overall/hooks/useVMSSettingByVMSID'
 import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import type { VMSMediaItem } from '@/types/vms/media-library-api'
+import type { ScheduleByVMSID } from '@/types/control-vms/display-api'
 
 const isVideoName = (s: string) => isVideoUrl(s)
 
@@ -97,6 +100,30 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const post = usePostVMSMedia()
+
+  // What's currently playing on the target signs — fetched only while the
+  // confirm modal is open (mirrors legacy's ContentConfirmCreate) so the
+  // operator can see exactly what's about to get overwritten, not just a
+  // "3 signs will be affected" count.
+  const { data: currentSettingData, isLoading: currentSettingLoading } = useVMSSettingByVMSID(vmsIds, confirmOpen)
+  const currentSettings = currentSettingData?.data ?? []
+
+  const formatScheduleDuration = (timeSince: string, timeTo: string) => {
+    const diffMinutes = dayjs(timeTo, 'HH:mm').diff(dayjs(timeSince, 'HH:mm'), 'minute', true)
+    const diffHours = diffMinutes / 60
+    if (diffHours >= 1) return `${Math.round(diffHours * 100) / 100} ชั่วโมง`
+    if (diffMinutes >= 1) return `${Math.round(diffMinutes * 100) / 100} นาที`
+    return `${Math.round(diffMinutes * 60 * 100) / 100} วินาที`
+  }
+
+  const renderScheduleTimes = (schedule: ScheduleByVMSID[] | undefined) => {
+    if (!schedule?.length) return <li>-</li>
+    return schedule.map((item) => (
+      <li key={`${item.schedule_name}-${item.time_since}`}>
+        {item.schedule_name} {item.time_since}–{item.time_to} ({formatScheduleDuration(item.time_since, item.time_to)})
+      </li>
+    ))
+  }
 
   // Preview modal — click the maximize icon on any tile to open the
   // full-res original in a dark overlay (matches MediaLibraryTab's
@@ -386,15 +413,9 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
           <div>
             <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
-            <Radio.Group
-              value={daysOfWeek.length === 0 ? 'all' : 'custom'}
-              onChange={(e) => setDaysOfWeek(e.target.value === 'all' ? [] : [1, 2, 3, 4, 5])}
-            >
-              <Radio.Button value="all">ทุกวัน</Radio.Button>
-              <Radio.Button value="custom">จันทร์–ศุกร์</Radio.Button>
-            </Radio.Group>
+            <DayList value={daysOfWeek} onChange={setDaysOfWeek} />
             {daysOfWeek.length === 0 && (
-              <p className="fs-12 text-white/50 mt-1">ปล่อยว่าง = ทำงานทุกวันในช่วงวันที่</p>
+              <p className="fs-12 text-white/50 mt-1">ไม่เลือกวันไหน = ทำงานทุกวันในช่วงวันที่</p>
             )}
             <p className="fs-12 text-white/40 mt-1">
               mask = {isoDaysMask(daysOfWeek) || 127}
@@ -429,26 +450,52 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           okText="ยืนยันการส่ง"
           cancelText="ยกเลิก"
           title="ยืนยันการส่งคำสั่งควบคุม"
+          confirmLoading={post.isPending}
         >
-          <div className="text-sm">
-            จะส่งคำสั่ง{' '}
-            <b>
-              {isMessageOnly
-                ? `ข้อความ: "${message.trim()}"`
-                : selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}
-            </b>{' '}
-            ไปยัง <b>{vmsIds.length}</b> ป้าย
-            <br />
-            ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
-            {isAllDay
-              ? '(ตลอดวัน)'
-              : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
-            <br />
-            {vmsIds.length > 3 && (
-              <span className="fs-12 text-white/50">
-                คำสั่งเดิมที่กำลังแสดงอยู่จะถูกทำเครื่องหมาย "ถูกสั่งทับ" (status=7) โดยอัตโนมัติ
-              </span>
+          <div className="text-sm space-y-3">
+            {currentSettingLoading && <Skeleton active paragraph={{ rows: 2 }} />}
+            {!currentSettingLoading && currentSettings.length > 0 && (
+              <div className="bg-orange-500/20 border-2 border-orange-500 rounded-lg px-4 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-black! m-0">คำสั่งเดิม (จะถูกทับ)</h4>
+                  {currentSettings.length > 1 && (
+                    <Popover
+                      placement="right"
+                      content={currentSettings.slice(1).map((item, i) => (
+                        <div key={`${item.solution_name}-${i}`} className="mb-2 last:mb-0">
+                          <p className="fs-12 text-(--light-gray) m-0">จุดติดตั้ง: <span className="text-black">{item.solution_name || '-'}</span></p>
+                          <ul className="fs-12 text-black m-0 pl-4">{renderScheduleTimes(item.schedule)}</ul>
+                        </div>
+                      ))}
+                    >
+                      <p className="fs-12 text-black underline cursor-pointer m-0">และอีก {currentSettings.length - 1} ป้าย</p>
+                    </Popover>
+                  )}
+                </div>
+                <p className="fs-12 text-(--light-gray) mt-1 mb-0">จุดติดตั้ง: <span className="text-black">{currentSettings[0].solution_name || '-'}</span></p>
+                <ul className="fs-12 text-black mt-0.5 mb-0 pl-4">{renderScheduleTimes(currentSettings[0].schedule)}</ul>
+                <p className="fs-12 text-(--light-gray) mt-1 mb-0">สถานะ: <span className="text-orange-600 font-bold">{currentSettings[0].status_name || '-'}</span></p>
+              </div>
             )}
+            {!currentSettingLoading && currentSettings.length === 0 && vmsIds.length > 0 && (
+              <Empty description="ป้ายที่เลือกยังไม่มีคำสั่งแสดงผลอยู่" className="my-2" />
+            )}
+            <div className="bg-blue-500/20 border-2 border-blue-500 rounded-lg px-4 py-2">
+              <h4 className="text-black! m-0">คำสั่งใหม่</h4>
+              <p className="fs-12 text-(--light-gray) mt-1 mb-0">
+                จะส่ง <b className="text-black">
+                  {isMessageOnly
+                    ? `ข้อความ: "${message.trim()}"`
+                    : selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}
+                </b> ไปยัง <b className="text-black">{vmsIds.length}</b> ป้าย
+              </p>
+              <p className="fs-12 text-(--light-gray) mt-1 mb-0">
+                ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}{' '}
+                {isAllDay
+                  ? '(ตลอดวัน)'
+                  : `(${timeRange[0].format('HH:mm')} – ${timeRange[1].format('HH:mm')})`}
+              </p>
+            </div>
           </div>
         </Modal>
 
