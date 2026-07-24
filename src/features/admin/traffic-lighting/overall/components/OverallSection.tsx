@@ -98,19 +98,31 @@ const OverallSection: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
   const [exportOpen, setExportOpen] = useState(false)
 
-  // summaryStats already carries the live totals (from a separate totals
-  // endpoint, unaffected by the search box) — reshape into SearchBar's
-  // {key: value} stats lookup instead of refetching anything new.
+  // With no search, badge counts come from summaryStats (the live totals
+  // endpoint, unaffected by the search box) — reshaped into SearchBar's
+  // {key: value} lookup. Once a search is active, they re-tally the
+  // already-search-filtered projects so the badges track the search
+  // (requested 2026-07-24).
   const filterStats: FilterStats = useMemo(() => {
-    const byLabel = new Map(summaryStats.map((s) => [s.label, s.value]))
-    return {
-      all: byLabel.get('ทั้งหมด'),
-      online: byLabel.get('ออนไลน์'),
-      offline: byLabel.get('ออฟไลน์'),
-      'in-warranty': byLabel.get('ในค้ำ'),
-      expired: byLabel.get('หมดค้ำ'),
+    const hasSearch = searchQuery.trim().length > 0
+    if (!hasSearch) {
+      const byLabel = new Map(summaryStats.map((s) => [s.label, s.value]))
+      return {
+        all: byLabel.get('ทั้งหมด'),
+        online: byLabel.get('ออนไลน์'),
+        offline: byLabel.get('ออฟไลน์'),
+        'in-warranty': byLabel.get('ในค้ำ'),
+        expired: byLabel.get('หมดค้ำ'),
+      }
     }
-  }, [summaryStats])
+    return {
+      all: filteredProjects.length,
+      online: filteredProjects.filter((p) => p.connection === 'online').length,
+      offline: filteredProjects.filter((p) => p.connection === 'offline').length,
+      'in-warranty': filteredProjects.filter((p) => p.warranty === 'in-warranty').length,
+      expired: filteredProjects.filter((p) => p.warranty === 'expired').length,
+    }
+  }, [summaryStats, searchQuery, filteredProjects])
 
   // filteredProjects (context) is already search-filtered; apply the status
   // filter on top, same as crosswalk's OverallDataDisplaySection.

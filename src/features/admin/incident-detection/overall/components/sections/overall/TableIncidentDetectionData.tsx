@@ -109,6 +109,15 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
     return out
   }, [rows])
 
+  // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
+  // rowKey but its span changes across a filter toggle — merged cells then
+  // overlap and the table visibly breaks. Remount the table whenever the
+  // merged-row structure (ids + spans) changes so rowSpans rebuild cleanly.
+  const tableKey = useMemo(
+    () => data.map((d) => (d.kind === 'project' ? `${d.id}:${d.roadCodeSpan}` : d.id)).join('|'),
+    [data],
+  )
+
   const goToDetail = useCallback((r: IncidentRow) => {
     const params = new URLSearchParams({ dept_id: deptId })
     router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
@@ -257,6 +266,7 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
   return (
     <>
       <Table<TableRow>
+        key={tableKey}
         rowKey='id'
         columns={columns}
         dataSource={data}

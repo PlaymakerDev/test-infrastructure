@@ -103,38 +103,54 @@ const DataDisplaySection: React.FC = () => {
     return rows
   }, [central])
 
+  // Rows matching the search box ONLY (independent of the status filter) — base
+  // set for both the badge counts and the table.
+  const searchFiltered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return allRows
+    return allRows.filter((r) => {
+      const hay = `${r.roadCode} ${r.projectName} ${r.installPoint} ${r.contractNo} ${r.bureau}`.toLowerCase()
+      return hay.includes(term)
+    })
+  }, [allRows, search])
+
   // Chip counts are SOLUTION-level so they match what each filter shows (a chip
-  // filters rows, not cameras). all/ในค้ำ/หมดค้ำ come from central/totals
-  // (authoritative, same scope as the table). online/offline stay row-derived:
-  // the analytic totals API only exposes camera-level online/offline, not
-  // per-solution status, so counting rows is the only way to match the filter.
-  const stats: FilterStats = useMemo(
-    () => ({
-      all: totals ? totals.warranty.active + totals.warranty.expired : allRows.length,
-      online: allRows.filter((r) => r.onlineCameras > 0).length,
-      offline: allRows.filter((r) => r.offlineCameras > 0).length,
-      inWarranty: totals?.warranty.active ?? allRows.filter((r) => r.warranty === 'in-warranty').length,
-      expired: totals?.warranty.expired ?? allRows.filter((r) => r.warranty === 'expired').length,
-    }),
-    [totals, allRows]
-  )
+  // filters rows, not cameras). With no search, all/ในค้ำ/หมดค้ำ come from
+  // central/totals (authoritative, same scope as the table) and online/offline
+  // stay row-derived (the analytic totals API only exposes camera-level
+  // online/offline). Once a search is active, every count re-tallies the
+  // matching rows so the badges track the search (requested 2026-07-24).
+  const stats: FilterStats = useMemo(() => {
+    const hasSearch = search.trim().length > 0
+    if (!hasSearch) {
+      return {
+        all: totals ? totals.warranty.active + totals.warranty.expired : allRows.length,
+        online: allRows.filter((r) => r.onlineCameras > 0).length,
+        offline: allRows.filter((r) => r.offlineCameras > 0).length,
+        inWarranty: totals?.warranty.active ?? allRows.filter((r) => r.warranty === 'in-warranty').length,
+        expired: totals?.warranty.expired ?? allRows.filter((r) => r.warranty === 'expired').length,
+      }
+    }
+    return {
+      all: searchFiltered.length,
+      online: searchFiltered.filter((r) => r.onlineCameras > 0).length,
+      offline: searchFiltered.filter((r) => r.offlineCameras > 0).length,
+      inWarranty: searchFiltered.filter((r) => r.warranty === 'in-warranty').length,
+      expired: searchFiltered.filter((r) => r.warranty === 'expired').length,
+    }
+  }, [search, totals, allRows, searchFiltered])
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return allRows.filter((r) => {
+    return searchFiltered.filter((r) => {
       switch (activeFilter) {
-        case 'online': if (r.onlineCameras === 0) return false; break
-        case 'offline': if (r.offlineCameras === 0) return false; break
-        case 'in-warranty': if (r.warranty !== 'in-warranty') return false; break
-        case 'expired': if (r.warranty !== 'expired') return false; break
+        case 'online': return r.onlineCameras > 0
+        case 'offline': return r.offlineCameras > 0
+        case 'in-warranty': return r.warranty === 'in-warranty'
+        case 'expired': return r.warranty === 'expired'
+        default: return true
       }
-      if (term) {
-        const hay = `${r.roadCode} ${r.projectName} ${r.installPoint} ${r.contractNo} ${r.bureau}`.toLowerCase()
-        if (!hay.includes(term)) return false
-      }
-      return true
     })
-  }, [allRows, activeFilter, search])
+  }, [searchFiltered, activeFilter])
 
   // Export rows in the SAME order the table displays: grouped by แขวง (bureau)
   // — mirrors TableIncidentDetectionData's grouping so the printed report

@@ -136,33 +136,57 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
     return rows
   }, [centralData])
 
-  const stats: FilterStats = useMemo(
-    () => ({
-      all: allItems.length,
-      online: allItems.filter((i) => i.camera.online > 0).length,
-      offline: allItems.filter((i) => i.camera.offline > 0).length,
-      inWarranty: allItems.filter((i) => i.is_warranty).length,
-      expired: allItems.filter((i) => !i.is_warranty).length,
-    }),
-    [allItems]
-  )
+  // Rows matching the search box ONLY (independent of the active status
+  // filter) — the base set for both the badge counts and the table.
+  const searchFiltered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return allItems
+    return allItems.filter((item) => {
+      const haystack = `${item.bureau} ${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
+      return haystack.includes(term)
+    })
+  }, [allItems, search])
+
+  // Filter badge counts mirror the right-rail stat cards (API camera counts),
+  // NOT the installation-point row counts: ทั้งหมด/ออนไลน์/ออฟไลน์ = camera
+  // tallies, ในค้ำ/หมดค้ำ = warranty จุด. With no search we read the API
+  // `totals` (exact match to the cards); once a search is active we re-tally
+  // the matching rows so the badges track the search (requested 2026-07-24).
+  const stats: FilterStats = useMemo(() => {
+    const hasSearch = search.trim().length > 0
+    if (!hasSearch) {
+      return {
+        all: totals?.camera.total ?? 0,
+        online: totals?.camera.online ?? 0,
+        offline: totals?.camera.offline ?? 0,
+        inWarranty: totals?.warranty.active ?? 0,
+        expired: totals?.warranty.expired ?? 0,
+      }
+    }
+    return searchFiltered.reduce(
+      (acc, i) => {
+        acc.all += i.camera.total
+        acc.online += i.camera.online
+        acc.offline += i.camera.offline
+        if (i.is_warranty) acc.inWarranty += 1
+        else acc.expired += 1
+        return acc
+      },
+      { all: 0, online: 0, offline: 0, inWarranty: 0, expired: 0 }
+    )
+  }, [search, totals, searchFiltered])
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return allItems.filter((item) => {
+    return searchFiltered.filter((item) => {
       switch (activeFilter) {
-        case 'online': if (item.camera.online === 0) return false; break
-        case 'offline': if (item.camera.offline === 0) return false; break
-        case 'in-warranty': if (!item.is_warranty) return false; break
-        case 'expired': if (item.is_warranty) return false; break
+        case 'online': return item.camera.online > 0
+        case 'offline': return item.camera.offline > 0
+        case 'in-warranty': return item.is_warranty
+        case 'expired': return !item.is_warranty
+        default: return true
       }
-      if (term) {
-        const haystack = `${item.bureau} ${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
-        if (!haystack.includes(term)) return false
-      }
-      return true
     })
-  }, [allItems, activeFilter, search])
+  }, [searchFiltered, activeFilter])
 
   // Export rows in the SAME order the table displays: grouped by แขวง
   // (bureau) — mirrors CamerasTableCctv's grouping so the printed report

@@ -75,6 +75,22 @@ const DEPT_SCOPED_KEYS = new Set([
   "lpr",
 ]);
 
+// Overall pages where the focus-mode picker collapses to a single click:
+// instead of opening the left/right/both dropdown, clicking the button just
+// toggles "ซ่อนทั้งสองฝั่ง" (off ↔ both) directly (requested 2026-07-24).
+const DIRECT_FOCUS_TOGGLE_ROUTES = new Set([
+  "/admin/crosswalk",
+  "/admin/cctv",
+  "/admin/traffic-volume",
+  "/admin/incident-detection",
+  "/admin/traffic-signal",
+  "/admin/vms",
+  "/admin/bridge-lighting",
+  "/admin/tunnel",
+  "/admin/lpr",
+  "/admin/tracking",
+]);
+
 /* VARIABLE */
 dayjs.extend(buddhistEra);
 dayjs().format("BBBB BB");
@@ -154,6 +170,9 @@ export default function Navbar() {
   // detail TABS without a map (e.g. incident-detection's รายงานเหตุการณ์),
   // which a route list could never express.
   const { mode: mapFocusMode, isMapFocus, focusAvailable, setMapFocus, setMode: setMapFocusMode, toggle: toggleMapFocus } = useMapFocusMode()
+  // On the listed overall pages the picker becomes a plain click-to-toggle
+  // (off ↔ both) — no dropdown, per 2026-07-24 request.
+  const directFocusToggle = focusAvailable && DIRECT_FOCUS_TOGGLE_ROUTES.has(pathname)
   // MODAL
   const [modal, contextHolder] = Modal.useModal()
   // QUERY CLIENT
@@ -499,22 +518,24 @@ export default function Navbar() {
             {renderTrapezoidNav}
             {/* Lock toggle (last item) — pins the menu open so it no longer
               * auto-hides on mouse-leave; click again to return to hover mode.
-              * Sits inline with the menu icons (no frame/chip, so it stays
-              * inside the trapezoid); hover grows / tap presses, the icon
-              * springs+rotates on toggle, and while locked the icon ITSELF
-              * breathes a yellow glow (drop-shadow) — no background circle. */}
+              * Built with the SAME column layout as the menu items above
+              * (24px icon + hover/active label), so it sits flush on the same
+              * row — no size or vertical offset. While locked the icon breathes
+              * a yellow glow and its label stays lit like an active item;
+              * unlocked, the label wipes in on hover just like the others. */}
             <motion.button
               type="button"
               onClick={() => setLocked((v) => !v)}
               title={locked ? "ปลดล็อก (ซ่อนเมนูอัตโนมัติ)" : "ล็อกเมนูให้แสดงตลอด"}
-              className={`relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-white"
+              aria-pressed={locked}
+              aria-label={locked ? "ปลดล็อกเมนู" : "ล็อกเมนู"}
+              className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
                 }`}
-              whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
             >
               <motion.span
                 key={locked ? "locked" : "unlocked"}
-                className="flex"
+                className="flex transition-colors duration-300"
                 initial={{ rotate: -35, scale: 0.5, opacity: 0 }}
                 animate={
                   locked
@@ -537,8 +558,16 @@ export default function Navbar() {
                   ...(locked ? { filter: { duration: 2, repeat: Infinity, ease: "easeInOut" } } : {}),
                 }}
               >
-                {locked ? <TbLock size={20} /> : <TbLockOpen size={20} />}
+                {locked ? <TbLock size={24} /> : <TbLockOpen size={24} />}
               </motion.span>
+              <span
+                className={`hidden lg:block overflow-hidden text-[13px] font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${locked
+                  ? "max-w-36 opacity-100 text-(--yellow)"
+                  : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
+                  }`}
+              >
+                {locked ? "ปลดล็อก" : "ล็อกเมนู"}
+              </span>
             </motion.button>
           </div>
         </div>
@@ -669,8 +698,8 @@ export default function Navbar() {
             * Left-click opens the menu; keyboard/`aria-pressed` still track
             * whether ANY side is currently hidden. */}
           <Dropdown
-            trigger={focusAvailable ? ['click'] : []}
-            disabled={!focusAvailable}
+            trigger={focusAvailable && !directFocusToggle ? ['click'] : []}
+            disabled={!focusAvailable || directFocusToggle}
             menu={{
               selectedKeys: [mapFocusMode],
               // Truck Tracking overall (/admin/tracking): only ทั้งหมด/ซ่อนทั้งคู่ —
@@ -694,6 +723,7 @@ export default function Navbar() {
             <button
               type="button"
               disabled={!focusAvailable}
+              onClick={directFocusToggle ? () => toggleMapFocus() : undefined}
               className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
                 ? 'text-white/25 cursor-not-allowed'
                 : isMapFocus
@@ -704,13 +734,15 @@ export default function Navbar() {
               aria-disabled={!focusAvailable}
               title={!focusAvailable
                 ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
-                : mapFocusMode === 'left'
-                  ? 'ซ่อนฝั่งซ้าย — คลิกเพื่อเปลี่ยน'
-                  : mapFocusMode === 'right'
-                    ? 'ซ่อนฝั่งขวา — คลิกเพื่อเปลี่ยน'
-                    : mapFocusMode === 'both'
-                      ? 'ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน'
-                      : 'เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)'}
+                : directFocusToggle
+                  ? (isMapFocus ? 'แสดงทั้งหมด' : 'ซ่อนทั้งสองฝั่ง')
+                  : mapFocusMode === 'left'
+                    ? 'ซ่อนฝั่งซ้าย — คลิกเพื่อเปลี่ยน'
+                    : mapFocusMode === 'right'
+                      ? 'ซ่อนฝั่งขวา — คลิกเพื่อเปลี่ยน'
+                      : mapFocusMode === 'both'
+                        ? 'ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน'
+                        : 'เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)'}
             >
               {mapFocusMode === 'left'
                 ? <TbLayoutSidebarLeftCollapse className="fs-24" />

@@ -42,6 +42,15 @@ const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
 const TableTunnelData: React.FC<Props> = ({ projects, loading, onOpenTunnel }) => {
   const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
 
+  // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
+  // rowKey but its span changes across a filter toggle — merged cells then
+  // overlap and the table visibly breaks. Remount whenever the merged-row
+  // structure (ids + spans) changes so rowSpans rebuild cleanly.
+  const tableKey = useMemo(
+    () => data.map((d) => (d.kind === 'project' ? `${d.id}:${d.roadCodeSpan}` : d.id)).join('|'),
+    [data],
+  )
+
   const columns: ColumnsType<Row> = useMemo(() => {
     const all: ColumnsType<Row> = [
       {
@@ -174,6 +183,7 @@ const TableTunnelData: React.FC<Props> = ({ projects, loading, onOpenTunnel }) =
 
   return (
     <Table<Row>
+      key={tableKey}
       rowKey='id'
       columns={columns}
       dataSource={data}

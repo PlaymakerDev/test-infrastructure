@@ -1,10 +1,11 @@
 "use client"
-import React, { useMemo } from 'react'
-import { Empty, Skeleton, Tag } from 'antd'
-import { TbBuilding, TbMapPin, TbRoad, TbSignRight } from 'react-icons/tb'
+import React, { useDeferredValue, useMemo, useState } from 'react'
+import { Empty, Input, Skeleton, Tag, Tooltip } from 'antd'
+import { TbBuilding, TbInfoCircle, TbMapPin, TbRoad, TbSearch, TbSignRight } from 'react-icons/tb'
 import BureauList from '@/components/list/BureauList'
 import type { BureauItem, BureauSelection } from '@/types/control-vms/bureau'
 import { useVMSDepartments } from '@/features/admin/control-vms/overall/hooks/useVMSDepartments'
+import { filterBureauData } from '@/utils/bureauFilter'
 
 interface Props {
   onSelectionChange: (selection: BureauSelection) => void
@@ -68,35 +69,54 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
     })),
   })), [rawItems])
 
+  const [searchTerm, setSearchTerm] = useState('')
+  const deferredTerm = useDeferredValue(searchTerm)
+  const filteredItems = useMemo(() => filterBureauData(items, deferredTerm), [items, deferredTerm])
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 py-3 border-b border-white/10 space-y-2">
-        <div className="grid grid-cols-4 gap-2">
-          <Tag variant="filled" style={tintTag('--default-blue')} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
-            สำนัก {selection.bureaus.length}
-          </Tag>
-          <Tag variant="filled" style={tintTag('--light-blue')} icon={<TbMapPin style={{ verticalAlign: -2 }} />}>
-            แขวง {selection.states.length}
-          </Tag>
-          <Tag variant="filled" style={tintTag('--light-gray-3')} icon={<TbRoad style={{ verticalAlign: -2 }} />}>
-            สายทาง {selection.routes.length}
-          </Tag>
-          <Tag variant="filled" style={tintTag('--yellow')} icon={<TbSignRight style={{ verticalAlign: -2 }} />}>
-            ป้าย {selection.signs.length}
-          </Tag>
+        <div className="flex items-center gap-2">
+          <div className="grid grid-cols-4 gap-2 flex-1">
+            <Tag variant="filled" style={tintTag('--default-blue')} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
+              สำนัก {selection.bureaus.length}
+            </Tag>
+            <Tag variant="filled" style={tintTag('--light-blue')} icon={<TbMapPin style={{ verticalAlign: -2 }} />}>
+              แขวง {selection.states.length}
+            </Tag>
+            <Tag variant="filled" style={tintTag('--light-gray-3')} icon={<TbRoad style={{ verticalAlign: -2 }} />}>
+              สายทาง {selection.routes.length}
+            </Tag>
+            <Tag variant="filled" style={tintTag('--yellow')} icon={<TbSignRight style={{ verticalAlign: -2 }} />}>
+              ป้าย {selection.signs.length}
+            </Tag>
+          </div>
+          <Tooltip title='เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — "เลือกทั้งหมด" ติ๊กทุกป้าย แล้วดูสถานะพร้อมสั่งงานได้ที่คอลัมน์ขวา'>
+            <span className="opacity-60 cursor-help shrink-0">
+              <TbInfoCircle size={16} />
+            </span>
+          </Tooltip>
         </div>
-        <div className="fs-12 opacity-60">
-          เลือกได้ทั้งระดับสำนัก / แขวง / สายทาง หรือทีละป้าย — "เลือกทั้งหมด" ติ๊กทุกป้าย แล้วดูสถานะพร้อมสั่งงานได้ที่คอลัมน์ขวา
-        </div>
+        <Input
+          placeholder="ค้นหาสายทาง, ป้าย VMS..."
+          suffix={<TbSearch className="text-(--yellow)" />}
+          allowClear
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
       <div className="flex-1 overflow-y-auto">
         {isLoading && <div className="p-3"><Skeleton active paragraph={{ rows: 6 }} /></div>}
         {isError && <div className="p-6"><Empty description="โหลดโครงสร้างองค์กรไม่สำเร็จ" /></div>}
-        {!isLoading && !isError && (
+        {!isLoading && !isError && deferredTerm && filteredItems.length === 0 && (
+          <div className="p-6"><Empty description="ไม่พบผลการค้นหา" /></div>
+        )}
+        {!isLoading && !isError && !(deferredTerm && filteredItems.length === 0) && (
           <BureauList
-            data={items}
+            key={deferredTerm ? 'filtered' : 'full'}
+            data={filteredItems}
             alwaysSelectMode={alwaysSelectMode}
-            defaultExpandAll={false}
+            defaultExpandAll={!!deferredTerm}
             onSelectionChange={onSelectionChange}
             onViewSign={onViewSign ? (sign) => onViewSign(sign.vms_id) : undefined}
           />

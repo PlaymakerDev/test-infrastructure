@@ -108,20 +108,44 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData,
   })
 
-  const stats: FilterStats = useMemo(() => ({
-    all: totals?.data.solution.total ?? 0,
-    online: totals?.data.solution.online ?? 0,
-    offline: totals?.data.solution.offline ?? 0,
-    inWarranty: totals?.data.warranty.active ?? 0,
-    expired: totals?.data.warranty.expired ?? 0,
-  }), [totals])
-
   const { data, isLoading } = useQuery({
     queryKey: ['bridge_lighting_list', String(deptId ?? ''), scope],
     queryFn: () => getBridgeLightingListAPI(String(deptId)!, { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
+
+  // With no search, badge counts come from the authoritative totals endpoint
+  // (whole-dept, same as InfoCardSection). Once a search is active, they
+  // re-tally the search-matching solutions in the loaded list so the badges
+  // track the search (requested 2026-07-24).
+  const stats: FilterStats = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) {
+      return {
+        all: totals?.data.solution.total ?? 0,
+        online: totals?.data.solution.online ?? 0,
+        offline: totals?.data.solution.offline ?? 0,
+        inWarranty: totals?.data.warranty.active ?? 0,
+        expired: totals?.data.warranty.expired ?? 0,
+      }
+    }
+    let all = 0, online = 0, offline = 0, inWarranty = 0, expired = 0
+    for (const dept of data?.data ?? []) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          const hay = `${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no} ${sub.department_short_name}`.toLowerCase()
+          if (!hay.includes(term)) continue
+          all++
+          if (sol.is_online) online++
+          else offline++
+          if (sol.is_warranty) inWarranty++
+          else expired++
+        }
+      }
+    }
+    return { all, online, offline, inWarranty, expired }
+  }, [totals, data, search])
 
   // Client-side filter — the API's request params only carry `scope` (no
   // status/warranty/search params), so both the SearchBar filter buttons and

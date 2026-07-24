@@ -114,14 +114,6 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData,
   })
 
-  const vmsStats = useMemo<FilterStats>(() => ({
-    all: totals?.data.solution.total ?? 0,
-    online: totals?.data.solution.online ?? 0,
-    offline: totals?.data.solution.offline ?? 0,
-    inWarranty: totals?.data.warranty.active ?? 0,
-    expired: totals?.data.warranty.expired ?? 0,
-  }), [totals])
-
   const { data, isLoading } = useQuery({
     // dept + scope in the key — previously only the search text, so switching
     // departments/entry point reused the other's cached list.
@@ -130,6 +122,36 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
+
+  // With no search, badge counts come from the authoritative totals endpoint.
+  // Once a search is active, the list query is already server-filtered by the
+  // search term, so re-tally its solutions (all statuses) to make the badges
+  // track the search (requested 2026-07-24).
+  const vmsStats = useMemo<FilterStats>(() => {
+    const term = vms_list.search.search?.trim()
+    if (!term) {
+      return {
+        all: totals?.data.solution.total ?? 0,
+        online: totals?.data.solution.online ?? 0,
+        offline: totals?.data.solution.offline ?? 0,
+        inWarranty: totals?.data.warranty.active ?? 0,
+        expired: totals?.data.warranty.expired ?? 0,
+      }
+    }
+    let all = 0, online = 0, offline = 0, inWarranty = 0, expired = 0
+    for (const dept of data?.data ?? []) {
+      for (const sub of dept.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
+          all++
+          if (sol.vms.status.is_online) online++
+          else offline++
+          if (sol.warranty.is_warranty) inWarranty++
+          else expired++
+        }
+      }
+    }
+    return { all, online, offline, inWarranty, expired }
+  }, [totals, data, vms_list.search.search])
 
   // Client-side filter — the API's status_name/warranty_name params don't
   // match the FilterConfig keys ('online'/'offline'/'in-warranty'/'expired'),
