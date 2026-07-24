@@ -16,6 +16,7 @@ import {
 } from '@/hooks/queries/maintenance'
 import { useContactDetail } from '@/hooks/queries/shared/useContactDetail'
 import { ProjectInfoModal } from '@/components/modal'
+import ExportFileModal from '@/components/export/ExportFileModal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
@@ -55,6 +56,30 @@ const SOLUTION_PREFIXES = new Set([
   'wim',
 ])
 
+// Shared column config for both PDF and Excel exports — same columns/order as
+// the on-screen device table (text-only twins of the badge/link cells).
+// `width` = Excel chars, `widthPct` = PDF percent (sums 100).
+const DEVICE_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (r: TableRow) => string | number
+}[] = [
+  { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.status === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'Case No.', width: 16, widthPct: 9, value: (r) => r.caseNo || '-' },
+  { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
+  { header: 'ยี่ห้อ', width: 12, widthPct: 8, value: (r) => r.brand },
+  { header: 'รุ่น', width: 12, widthPct: 8, value: (r) => r.model },
+  { header: 'ชื่ออุปกรณ์', width: 20, widthPct: 12, align: 'left', value: (r) => r.cameraName },
+  { header: 'Hostname', width: 14, widthPct: 9, value: (r) => r.hostname },
+  { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
+  { header: 'Anydesk', width: 13, widthPct: 8, value: (r) => r.anydesk },
+  { header: 'ZeroTier', width: 13, widthPct: 8, value: (r) => r.zerotier },
+  { header: 'Username', width: 12, widthPct: 7, value: (r) => r.username },
+  { header: 'Password', width: 12, widthPct: 6, value: (r) => r.password },
+]
+
 interface TitleSectionWithDataProps {
   id: string
   data: SolutionDetailResponse | null
@@ -63,6 +88,7 @@ interface TitleSectionWithDataProps {
   routeTitle?: string
   routeSubtitle?: string
   routeRoadId?: number
+  onExport?: () => void
 }
 
 /** Route context is URL-scoped; a direct visit falls back to solution API data. */
@@ -74,6 +100,7 @@ const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
   routeTitle,
   routeSubtitle,
   routeRoadId,
+  onExport,
 }) => {
   const title = routeTitle || data?.solution_name || id
   const subtitle = routeSubtitle || ''
@@ -91,6 +118,7 @@ const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
       projectId={resolvedProjectId}
       roadId={routeRoadId}
       coord={coord}
+      onExport={onExport}
     />
   )
 }
@@ -101,6 +129,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const { modal } = App.useApp()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const numericId = Number(id)
 
   // The URL is the source of truth for optional navigation context. Validate
@@ -146,6 +175,10 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   // uses via `company_name`).
   const contactDetailQuery = useContactDetail(projectId)
   const contractorName = contactDetailQuery.data?.data.company_name
+  // Fallback subtitle ("<project name> — <solution name>") reconstructed from
+  // already-fetched data when the URL doesn't carry one — avoids requiring
+  // every navigation entry point to stuff long Thai text into the query string.
+  const apiSubtitle = [projectDetail?.project_name, solutionData?.solution_name].filter(Boolean).join(' — ')
   const warrantyRangeText = useMemo(() => {
     if (!projectDetail?.warranty_start_date || !projectDetail?.warranty_end_date) return '-'
     const start = dayjs(projectDetail.warranty_start_date)
@@ -285,8 +318,36 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
         coord={coord}
         resolvedProjectId={projectId}
         routeTitle={routeContext.title}
-        routeSubtitle={routeContext.subtitle}
+        routeSubtitle={routeContext.subtitle || apiSubtitle}
         routeRoadId={routeContext.roadId}
+        onExport={() => setExportOpen(true)}
+      />
+      {/* นำออกเอกสาร — this table has no pagination (pagination={false} below,
+          tableData is already the full device list), so a single-scope export
+          matches the on-screen rows exactly. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        count={tableData.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Maintenance_Solution_Devices',
+            title: `รายงานรายการอุปกรณ์ - ${routeContext.title || solutionData?.solution_name || id}`,
+            columns: DEVICE_EXPORT_COLUMNS,
+            rows: tableData,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Maintenance_Solution_Devices',
+            sheetName: 'Devices',
+            title: `รายงานรายการอุปกรณ์ - ${routeContext.title || solutionData?.solution_name || id}`,
+            columns: DEVICE_EXPORT_COLUMNS,
+            rows: tableData,
+          })
+        }}
       />
       <section className='mt-5 px-3 sm:px-10'>
         <ConfigProvider

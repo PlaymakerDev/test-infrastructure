@@ -1,8 +1,9 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { ConfigProvider, DatePicker, Segmented, Table } from 'antd'
+import { Button, ConfigProvider, DatePicker, Segmented, Table } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
+import { TbPrinter } from 'react-icons/tb'
 import dayjs, { type Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -10,6 +11,7 @@ import { useLightingLogs4gCentral } from '@/hooks/queries/lighting'
 import type { Logs4gCentralItem, Logs4gCircuitStatus } from '@/types/lighting'
 import { useDetailContext } from '../context'
 import Pill from './Pill'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -17,13 +19,13 @@ dayjs.locale('th')
 // Map each backend data_type to a display label + color, matching the
 // original MonitorSection event-type colors.
 const DATA_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  line_check: { label: 'Line Check', color: '#FCD116' },
-  FMTS: { label: 'FMTS', color: '#E94C4C' },
-  UPS1: { label: 'UPS1', color: '#E94C4C' },
-  UPS2: { label: 'UPS2', color: '#E94C4C' },
-  UPS3: { label: 'UPS3', color: '#E94C4C' },
+  line_check: { label: 'Line Check', color: '#F0FF66' },
+  FMTS: { label: 'FMTS', color: '#FF668A' },
+  UPS1: { label: 'UPS1', color: '#FF668A' },
+  UPS2: { label: 'UPS2', color: '#FF668A' },
+  UPS3: { label: 'UPS3', color: '#FF668A' },
   volt_amp: { label: 'Volt/Amp', color: '#66AEFF' },
-  circuit: { label: 'Circuit', color: '#05F2DB' },
+  circuit: { label: 'Circuit', color: '#8FFF66' },
 }
 
 // eventCategory for the segmented filter — derived from data_type. Values
@@ -114,6 +116,47 @@ const renderStatus = (r: Logs4gCentralItem) => {
   }
 }
 
+// Plain-text twin of renderStatus for the นำออกเอกสาร export (PDF/Excel can't
+// render the on-screen badge groups, so flatten each data_type's status shape
+// into one readable string using the same field labels as the screen).
+const formatStatusForExport = (r: Logs4gCentralItem): string => {
+  const { status } = r
+  switch (r.data_type) {
+    case 'line_check': {
+      const checks = Array.isArray(status) ? status : []
+      const label = (c: number | null) => (c === 1 ? 'OK' : c === 0 ? 'FAIL' : '-')
+      return checks.map((c, i) => `L${i + 1}:${label(c)}`).join(' ')
+    }
+    case 'circuit': {
+      if (!isCircuitStatus(status)) return '-'
+      const fields: [string, number | null][] = [
+        ['ST', status.ST], ['MB', status.MB], ['PS', status.PS],
+        ['MC1', status.MC1], ['MC2', status.MC2],
+        ['CB1', status.CB1], ['CB2', status.CB2], ['CB3', status.CB3], ['CB4', status.CB4],
+        ['TFM', status.TFM],
+      ]
+      return fields.map(([key, value]) => `${key}:${value ?? '-'}`).join(' ')
+    }
+    default:
+      return typeof status === 'string' ? status : '-'
+  }
+}
+
+// Shared column config for both PDF and Excel exports — same columns/order as
+// the on-screen table. `width` = Excel chars, `widthPct` = PDF percent (sums 100).
+const MONITOR_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (r: Logs4gCentralItem) => string | number
+}[] = [
+  { header: 'วันที่และเวลา', width: 22, widthPct: 22, value: (r) => dayjs(r.created_at, 'YYYY-MM-DD HH:mm:ss').format('DD MMM BBBB HH:mm:ss') },
+  { header: 'ประเภท', width: 14, widthPct: 18, value: (r) => DATA_TYPE_LABELS[r.data_type]?.label ?? r.data_type },
+  { header: 'Phase', width: 8, widthPct: 10, value: (r) => r.phase ?? '-' },
+  { header: 'สถานะ', width: 40, widthPct: 50, align: 'left', value: (r) => formatStatusForExport(r) },
+]
+
 type PeriodBounds = [Dayjs, Dayjs] | null
 
 const periodToBounds = (p: PeriodFilter): PeriodBounds => {
@@ -132,6 +175,7 @@ const MonitorSection: React.FC = () => {
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
   const [period, setPeriod] = useState<PeriodFilter>('TODAY')
   const [page, setPage] = useState(1)
+  const [exportOpen, setExportOpen] = useState(false)
   const pageSize = 50
 
   // Explicit date-range picker wins over the period preset when both are set;
@@ -158,6 +202,23 @@ const MonitorSection: React.FC = () => {
   })
   const records = logsQuery.data?.res_data ?? []
   const loaded = !logsQuery.isLoading
+  const totalCount = logsQuery.data?.meta_data?.count ?? 0
+
+  // "ทั้งหมด" export scope — the on-screen table only ever holds one page
+  // (pageSize=50), so fetch the full filtered set separately at export time
+  // rather than paging through it client-side.
+  const fetchAllRecordsForExport = async (): Promise<Logs4gCentralItem[]> => {
+    if (totalCount === 0) return []
+    const { getLightingLogs4gCentralAPI } = await import('@/services/routes/LightingService')
+    const res = await getLightingLogs4gCentralAPI(imei, {
+      start_date: effectiveRange?.[0].format('YYYY-MM-DD'),
+      end_date: effectiveRange?.[1].format('YYYY-MM-DD'),
+      data_type: dataTypeParam,
+      page: 1,
+      limit: totalCount,
+    })
+    return res.data.res_data ?? []
+  }
 
   // `_rowKey` disambiguates records that share created_at/data_type/phase —
   // the backend can log more than one reading within the same second.
@@ -176,7 +237,7 @@ const MonitorSection: React.FC = () => {
         key: 'created_at',
         align: 'center',
         width: 180,
-        render: (t: string) => <span className='text-white'>{dayjs(t, 'YYYY-MM-DD HH:mm:ss').format('DD/MM/BBBB HH:mm:ss')}</span>,
+        render: (t: string) => <span className='text-white'>{dayjs(t, 'YYYY-MM-DD HH:mm:ss').format('DD MMM BBBB HH:mm:ss')}</span>,
       },
       {
         title: 'ประเภท',
@@ -218,7 +279,7 @@ const MonitorSection: React.FC = () => {
 
   return (
     <div className='flex flex-col gap-4 pb-5'>
-      <h3 className='text-[#FCD116] text-base sm:text-lg font-bold m-0'>
+      <h3 className='text-[#FCD116] text-base sm:text-lg m-0' style={{ fontWeight: 400 }}>
         ตารางแสดงรายละเอียดและการทำงานของตู้ควบคุมไฟ (Log)
       </h3>
 
@@ -307,8 +368,49 @@ const MonitorSection: React.FC = () => {
             </div>
           </div>
 
+          <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+            <Button
+              type='primary'
+              shape='round'
+              icon={<TbPrinter />}
+              style={{ height: 40 }}
+              className='shrink-0'
+              onClick={() => setExportOpen(true)}
+            >
+              นำออกเอกสาร
+            </Button>
+          </ConfigProvider>
         </div>
       </div>
+
+      {/* นำออกเอกสาร — "ทั้งหมด" fetches the full filtered set separately
+          (fetchAllRecordsForExport); "หน้าปัจจุบัน" exports the loaded page. */}
+      <ExportFileModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        scope={{ totalCount, pageCount: filteredRecords.length }}
+        onExportPdf={async (scope) => {
+          const rows = scope === 'page' ? filteredRecords : await fetchAllRecordsForExport()
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Traffic_Lighting_Monitor_Log',
+            title: 'รายงานตารางแสดงรายละเอียดและการทำงานของตู้ควบคุมไฟ (Log)',
+            columns: MONITOR_EXPORT_COLUMNS,
+            rows,
+          })
+        }}
+        onExportExcel={async (scope) => {
+          const rows = scope === 'page' ? filteredRecords : await fetchAllRecordsForExport()
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Traffic_Lighting_Monitor_Log',
+            sheetName: 'Monitor Log',
+            title: 'รายงานตารางแสดงรายละเอียดและการทำงานของตู้ควบคุมไฟ (Log)',
+            columns: MONITOR_EXPORT_COLUMNS,
+            rows,
+          })
+        }}
+      />
 
       <div className='w-full min-w-0 overflow-x-auto overflow-y-hidden'>
         <Table<Logs4gCentralItem & { _rowKey: string }>

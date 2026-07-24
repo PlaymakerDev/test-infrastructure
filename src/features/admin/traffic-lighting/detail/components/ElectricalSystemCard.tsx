@@ -28,8 +28,15 @@ const ElectricalSystemCard: React.FC = () => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
     const e = device?.electricity?.[0]
     return PHASE_METRICS.map((m) => {
-      if (m.key === 'kwh') return { ...m, value: '-' }
       if (!e) return { ...m, value: '-' }
+      // Not provided directly by the API — derived from watt assuming the
+      // reading held for the full hour: kWh = (watt * 3600) / 3,600,000
+      // (reduces to watt / 1000). Same formula as the Summary Report table.
+      if (m.key === 'kwh') {
+        const wattNum = e.watt == null ? NaN : Number(e.watt)
+        if (!isFinite(wattNum)) return { ...m, value: '-' }
+        return { ...m, value: ((wattNum * 3600) / 3600000).toFixed(3) }
+      }
       const raw = e[m.key as keyof typeof e]
       if (raw == null) return { ...m, value: '-' }
       const num = Number(raw)

@@ -235,6 +235,9 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
 
   return (
     <div className="pb-6">
+      <h3 className="text-[#FCD116] m-0 mb-3" style={{ fontSize: 20, fontWeight: 400 }}>
+        ตารางข้อมูลรายเหตุการณ์
+      </h3>
       <section className="mb-4">
         <SearchBar
           filters={FILTER_CONFIG}

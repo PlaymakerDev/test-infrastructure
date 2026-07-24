@@ -27,6 +27,29 @@
   display: none !important;
 }
 
+/* Mapbox positions its default close button at the literal top-right corner
+ * (top:0; right:0) of .mapboxgl-popup-content — since that wrapper's padding
+ * is stripped to 0 above, the square button sits flush on the corner and
+ * pokes past the inner card's own rounded border, looking like it overflows.
+ * Inset it and recolor to the app's default-blue accent (matches the X used
+ * in other in-app modals) instead of Mapbox's default dark square button. */
+.react-popup .mapboxgl-popup-close-button {
+  top: 16px !important;
+  right: 16px !important;
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 22px !important;
+  line-height: 24px !important;
+  color: #66AEFF !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.react-popup .mapboxgl-popup-close-button:hover {
+  background: rgba(102, 174, 255, 0.15) !important;
+  border-radius: 50% !important;
+}
+
 /* ── Cooperative gesture hint ──────────────────────────────────────────────
  * Mapbox v3 uses `.mapboxgl-scroll-zoom-blocker` (desktop) and
  * `.mapboxgl-touch-pan-blocker` (mobile). Default is a fullscreen black

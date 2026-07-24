@@ -60,9 +60,12 @@ const EventTrendSection: React.FC<Props> = ({ solutionId: solutionIdProp, height
   // only those become lines. Skipping zeros avoids 9 flat-zero lines crowding
   // the chart on quiet days.
   const { chartData, lines, yMax } = useMemo(() => {
-    // API returns buckets newest-first; sort ascending by date so the latest
-    // day sits on the RIGHT of the x-axis (oldest → newest, left → right).
-    const buckets = [...(data ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+    // Fixed weekday axis order ส. อา. จ. อ. พ. พฤ. ศ. (Sat→Fri), not a
+    // chronological rolling window — any 7-day range covers each weekday
+    // exactly once, so this reorders them into a stable, always-the-same
+    // axis layout instead of shifting with "today".
+    const weekOrder = (dateStr: string) => (dayjs(dateStr).day() + 1) % 7
+    const buckets = [...(data ?? [])].sort((a, b) => weekOrder(a.date) - weekOrder(b.date))
     // typeId → row dataKey (`t-${id}`) → highest count seen.
     const activeTypes = new Map<number, { label: string; maxCount: number }>()
     for (const bucket of buckets) {
@@ -127,7 +130,7 @@ const EventTrendSection: React.FC<Props> = ({ solutionId: solutionIdProp, height
       data={chartData}
       lines={lines}
       yAxisTicks={yAxisTicks}
-      height={132}
+      height={height}
       // Card has spare space — pull the plot down (default 28 leaves a big gap
       // under the labels) and up closer to the title.
       gridBottom={8}
