@@ -1,9 +1,10 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { App, Tabs, Tooltip } from 'antd'
+import { App, Tooltip } from 'antd'
 import { TbAlertTriangle, TbClockPause } from 'react-icons/tb'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { BureauSelection } from '@/types/control-vms/bureau'
+import TitleSection from '@/components/section/TitleSection'
 import ScopePicker from '../components/ScopePicker'
 import Composer from '../components/Composer'
 import LiveMonitor from '../components/LiveMonitor'
@@ -32,6 +33,31 @@ const emptySelection: BureauSelection = {
 const VALID_TABS = ['dispatch', 'media', 'display', 'status', 'history', 'vmsinfo'] as const
 type TabKey = (typeof VALID_TABS)[number]
 
+// Tab labels, in workflow order — fed to the shared TitleSection's SwapButton
+// so this screen wears the same yellow-pill tab bar as every other admin menu
+// (statistics is the closest sibling), instead of a bespoke antd <Tabs>.
+const TAB_OPTIONS: { label: string; value: TabKey }[] = [
+  { label: 'การสั่งงาน', value: 'dispatch' },
+  { label: 'คลังสื่อ', value: 'media' },
+  { label: 'กำหนดการแสดงผล', value: 'display' },
+  { label: 'สถานะการแสดงผล', value: 'status' },
+  { label: 'ประวัติสั่งงานทั้งหมด', value: 'history' },
+  { label: 'ข้อมูลป้าย VMS', value: 'vmsinfo' },
+]
+
+// Lightweight "ขั้นที่ N" wayfinding label rendered above each dispatch panel.
+// Keeps each panel's own internal header intact (no duplicate chrome) while
+// giving the dispatch flow a clear 1 → 2 → 3 reading order.
+const StepLabel: React.FC<{ n: number; title: string; hint?: string }> = ({ n, title, hint }) => (
+  <div className="flex items-center gap-2 mb-2 px-0.5">
+    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-(--yellow) text-(--dark-black) fs-12 font-bold shrink-0">
+      {n}
+    </span>
+    <span className="text-(--yellow) font-medium">{title}</span>
+    {hint && <span className="fs-12 text-white/40 hidden sm:inline">· {hint}</span>}
+  </div>
+)
+
 const VMSCommandCenterScreen: React.FC = () => {
   const router = useRouter()
   const pathname = usePathname()
@@ -41,8 +67,16 @@ const VMSCommandCenterScreen: React.FC = () => {
     ? (tabParam as TabKey)
     : 'dispatch'
 
+  // Track which tabs have been opened at least once. Panels mount lazily on
+  // first visit, then stay mounted (hidden via CSS) — same as the previous
+  // antd <Tabs> default (destroy-on-hide off). Operators switch between
+  // dispatch ↔ media ↔ status constantly; unmounting would reset the
+  // LiveMonitor countdown, ScopePicker scroll, and MediaLibrary filters.
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabKey>>(() => new Set([activeTab]))
+
   const changeTab = useCallback(
     (key: string) => {
+      setVisitedTabs((prev) => (prev.has(key as TabKey) ? prev : new Set(prev).add(key as TabKey)))
       const params = new URLSearchParams(searchParams.toString())
       params.set('tab', key)
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -114,120 +148,115 @@ const VMSCommandCenterScreen: React.FC = () => {
     return `เป้าหมาย: ${parts.join(' / ')}`
   }, [selection, excludedCount, queuedCount])
 
+  // ── Dispatch tab — 3-column workspace, fits one viewport ─────────────────
+  // Three full-height columns side by side, no page scroll: ① เลือกป้าย (pick,
+  // fixed narrow) · ② เขียนคำสั่ง (compose, widest) · ③ จอมอนิเตอร์สด (real-time
+  // status monitor, right-hand column). Each column keeps its own internal
+  // scroll. Below xl the columns stack into one scrolling column.
+  //
+  // `min-h-0` on every flex ancestor is required so the inner overflow-y-auto
+  // scroll regions get a bounded height instead of growing the column.
+  const colH = 'flex flex-col min-h-0 h-[calc(100dvh-320px)] min-h-[340px] xl:h-auto xl:min-h-0'
+  const dispatchTab = (
+    <div className="h-full grid grid-cols-1 xl:grid-cols-[minmax(300px,360px)_minmax(0,1.25fr)_minmax(0,1fr)] gap-5 overflow-y-auto xl:overflow-hidden pb-2 xl:pb-0">
+      {/* Step 1 — pick signs */}
+      <div className={colH}>
+        <StepLabel n={1} title="เลือกป้าย VMS" hint="สำนัก / แขวง / สายทาง หรือทีละป้าย" />
+        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col flex-1 min-h-0">
+          <ScopePicker
+            onSelectionChange={setSelection}
+            selection={selection}
+            onViewSign={openDetail}
+          />
+          {queuedCount > 0 && (
+            <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
+              <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
+                <TbClockPause className="fs-14 shrink-0 mt-0.5" />
+                <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
+              </div>
+            </Tooltip>
+          )}
+          {excludedCount > 0 && (
+            <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+              <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
+                <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
+                <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
+              </div>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+
+      {/* Step 2 — compose command (widest column) */}
+      <div className={colH}>
+        <StepLabel n={2} title="เขียนคำสั่ง & กำหนดการ" hint="เลือกสื่อ / ข้อความ และช่วงเวลาแสดงผล" />
+        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex-1 min-h-0">
+          <Composer
+            vmsIds={vmsIds}
+            targetSignSummary={targetSummary}
+            onGotoLibrary={() => changeTab('media')}
+          />
+        </div>
+      </div>
+
+      {/* Step 3 — real-time status monitor (right-hand column) */}
+      <div className={colH}>
+        <StepLabel n={3} title="จอมอนิเตอร์สด" hint="ติดตามสถานะการแสดงผลแบบเรียลไทม์" />
+        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex-1 min-h-0">
+          <LiveMonitor
+            vmsIds={vmsIds}
+            excludedSigns={excludedSelectedSigns}
+            onOpenSignDetail={openDetail}
+          />
+        </div>
+      </div>
+    </div>
+  )
+
+  // Render a panel only after its tab has been visited (lazy mount), then keep
+  // it mounted and toggle visibility with `hidden` so switching tabs never
+  // resets a panel's internal state.
+  const renderPanel = (key: TabKey, node: React.ReactNode) => (
+    <div key={key} className={key === activeTab ? 'h-full' : 'hidden'}>
+      {visitedTabs.has(key) || key === activeTab ? node : null}
+    </div>
+  )
+
   return (
-    <App>
-      <div className="h-[calc(100vh-96px)] w-full px-10 pt-4 pb-3 flex flex-col">
-        <section>
-          <h1 className='text-(--yellow)'>Control VMS</h1>
-          <p className='text-(--yellow)'>ระบบจัดการป้าย VMS ระยะไกล</p>
-        </section>
-        <Tabs
-          activeKey={activeTab}
-          onChange={changeTab}
-          // Keep all tab panes mounted — operators sit in this feature and
-          // switch (dispatch ↔ media ↔ status) constantly. Destroying on
-          // hide reset the LiveMonitor timer ("ล่าสุด —"), the ScopePicker
-          // scroll position, MediaLibrary filters, etc. Trade-off is a few
-          // background polls (all payloads small); worth it for continuous
-          // context. Selection state was already persisted in parent scope.
-          className="vms-cc-tabs flex-1 min-h-0 mt-4"
-          items={[
-            {
-              key: 'dispatch',
-              label: 'การสั่งงาน',
-              children: (
-                <div className="h-[calc(100vh-240px)] grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(360px,1fr)_minmax(360px,1fr)] gap-3">
-                  <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
-                    <ScopePicker
-                      onSelectionChange={setSelection}
-                      selection={selection}
-                      onViewSign={openDetail}
-                    />
-                    {queuedCount > 0 && (
-                      <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
-                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
-                          <TbClockPause className="fs-14 shrink-0 mt-0.5" />
-                          <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
-                        </div>
-                      </Tooltip>
-                    )}
-                    {excludedCount > 0 && (
-                      <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
-                        <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
-                          <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
-                          <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
-                        </div>
-                      </Tooltip>
-                    )}
-                  </div>
-                  <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <Composer
-                      vmsIds={vmsIds}
-                      targetSignSummary={targetSummary}
-                      onGotoLibrary={() => changeTab('media')}
-                    />
-                  </div>
-                  <div className="rounded-xl bg-(--dark-black) overflow-hidden">
-                    <LiveMonitor
-                      vmsIds={vmsIds}
-                      excludedSigns={excludedSelectedSigns}
-                      onOpenSignDetail={openDetail}
-                    />
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 'media',
-              label: 'คลังสื่อ',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <MediaLibraryTab />
-                </div>
-              ),
-            },
-            {
-              key: 'display',
-              label: 'กำหนดการแสดงผล',
-              children: (
-                <div className="h-[calc(100vh-240px)] overflow-auto">
-                  <ControlVMSProvider>
-                    <DisplaySection />
-                  </ControlVMSProvider>
-                </div>
-              ),
-            },
-            {
-              key: 'status',
-              label: 'สถานะการแสดงผล',
-              children: (
-                <div className="h-[calc(100vh-240px)] overflow-auto">
-                  <ControlVMSProvider>
-                    <StatusSection />
-                  </ControlVMSProvider>
-                </div>
-              ),
-            },
-            {
-              key: 'history',
-              label: 'ประวัติสั่งงานทั้งหมด',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <GlobalHistoryTable onOpenSign={openDetail} />
-                </div>
-              ),
-            },
-            {
-              key: 'vmsinfo',
-              label: 'ข้อมูลป้าย VMS',
-              children: (
-                <div className="h-[calc(100vh-240px)]">
-                  <StatusTable onOpenSignDetail={openDetail} />
-                </div>
-              ),
-            },
-          ]}
+    // antd App renders a wrapping <div class="ant-app"> — give it h-full so
+    // main-screen's height:100% chains cleanly from <main class="h-screen">.
+    <App className="h-full">
+      <div className="main-screen px-10 flex flex-col">
+        <TitleSection
+          title="Control VMS"
+          subtitle="ระบบจัดการป้าย VMS ระยะไกล"
+          tabOptions={TAB_OPTIONS}
+          defaultTab={activeTab}
+          activeTab={activeTab}
+          onTabChange={changeTab}
         />
+        <section className="mt-6 flex-1 min-h-0">
+          {renderPanel('dispatch', dispatchTab)}
+          {renderPanel('media', <MediaLibraryTab />)}
+          {renderPanel(
+            'display',
+            <div className="h-full overflow-auto">
+              <ControlVMSProvider>
+                <DisplaySection />
+              </ControlVMSProvider>
+            </div>
+          )}
+          {renderPanel(
+            'status',
+            <div className="h-full overflow-auto">
+              <ControlVMSProvider>
+                <StatusSection />
+              </ControlVMSProvider>
+            </div>
+          )}
+          {renderPanel('history', <GlobalHistoryTable onOpenSign={openDetail} />)}
+          {renderPanel('vmsinfo', <StatusTable onOpenSignDetail={openDetail} />)}
+        </section>
       </div>
       <SignDetailModal open={detailVmsId !== null} onClose={closeDetail} vmsId={detailVmsId} />
     </App>
