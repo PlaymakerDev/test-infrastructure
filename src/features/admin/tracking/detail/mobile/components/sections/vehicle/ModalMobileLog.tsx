@@ -36,21 +36,21 @@ const MOBILE_LOG_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: MobileCarList, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  {
-    header: 'วันที่และเวลา',
-    width: 24,
-    widthPct: 14,
-    value: (r) => (r.create_date ? dayjs(r.create_date, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB HH:mm:ss') : '-'),
-  },
-  { header: 'ทะเบียนรถ', width: 20, widthPct: 12, value: (r) => r.lp_head || '-' },
-  { header: 'ประเภทรถบรรทุก', width: 34, widthPct: 23, align: 'left', value: (r) => r.vehicle_class_desc || '-' },
-  { header: 'น้ำหนักที่ชั่งได้', width: 15, widthPct: 10, value: (r) => (r.gross_weight ? fmtNumber(Number(r.gross_weight), 2) : '-') },
-  { header: 'น้ำหนักตามกำหนด', width: 17, widthPct: 10, value: (r) => (r.legal_weight ? fmtNumber(Number(r.legal_weight), 2) : '-') },
-  { header: 'น้ำหนักเกิน', width: 13, widthPct: 8, value: (r) => (r.gross_weight_over ? fmtNumber(Number(r.gross_weight_over), 2) : '0') },
-  { header: 'สถานะน้ำหนักรวม', width: 16, widthPct: 9, value: (r) => (r.is_over_weight === 'Y' ? 'น้ำหนักเกิน' : 'น้ำหนักปกติ') },
-  { header: 'สถานะเพลา', width: 13, widthPct: 9, value: (r) => (r.is_over_weight === 'P' ? 'น้ำหนักเกิน' : 'น้ำหนักปกติ') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    {
+      header: 'วันที่และเวลา',
+      width: 24,
+      widthPct: 14,
+      value: (r) => (r.create_date ? dayjs(r.create_date, 'DD/MM/BBBB HH:mm:ss').format('DD MMM BBBB HH:mm:ss') : '-'),
+    },
+    { header: 'ทะเบียนรถ', width: 20, widthPct: 12, value: (r) => r.lp_head || '-' },
+    { header: 'ประเภทรถบรรทุก', width: 34, widthPct: 23, align: 'left', value: (r) => r.vehicle_class_desc || '-' },
+    { header: 'น้ำหนักที่ชั่งได้', width: 15, widthPct: 10, value: (r) => (r.gross_weight ? fmtNumber(Number(r.gross_weight), 2) : '-') },
+    { header: 'น้ำหนักตามกำหนด', width: 17, widthPct: 10, value: (r) => (r.legal_weight ? fmtNumber(Number(r.legal_weight), 2) : '-') },
+    { header: 'น้ำหนักเกิน', width: 13, widthPct: 8, value: (r) => (r.gross_weight_over ? fmtNumber(Number(r.gross_weight_over), 2) : '0') },
+    { header: 'สถานะน้ำหนักรวม', width: 16, widthPct: 9, value: (r) => (r.is_over_weight === 'Y' ? 'น้ำหนักเกิน' : 'น้ำหนักปกติ') },
+    { header: 'สถานะเพลา', width: 13, widthPct: 9, value: (r) => (r.is_over_weight === 'P' ? 'น้ำหนักเกิน' : 'น้ำหนักปกติ') },
+  ]
 
 interface ContentProps {
   record: MobileMasterData | null
@@ -81,18 +81,27 @@ const Content: React.FC<ContentProps> = (props) => {
     page_size: pageSize,
   })
 
+  const normalWeightCount = Number(data?.data.data.meta.total) - Number(data?.data.data.meta.total_over) - Number(data?.data.data.meta.axis_over)
+
   // Dedicated page_size:1 reads purely for badge totals — MobileCarData's meta has
   // no summary breakdown (unlike wim's weightWIMLogMeta.summary), so each filter's
   // count needs its own request rather than coming free with the main table fetch.
-  const allCount = useMobileCar({ tid: record?.TID, page: 1, page_size: 1 })
-  const normalCount = useMobileCar({ tid: record?.TID, is_over_weight: MOBILE_IS_OVER_WEIGHT_BY_FILTER.normal, page: 1, page_size: 1 })
-  const overweightCount = useMobileCar({ tid: record?.TID, is_over_weight: MOBILE_IS_OVER_WEIGHT_BY_FILTER.overweight, page: 1, page_size: 1 })
+  // const allCount = useMobileCar({ tid: record?.TID, page: 1, page_size: 1 })
+  // const normalCount = useMobileCar({ tid: record?.TID, is_over_weight: MOBILE_IS_OVER_WEIGHT_BY_FILTER.normal, page: 1, page_size: 1 })
+  // const overweightCount = useMobileCar({ tid: record?.TID, is_over_weight: MOBILE_IS_OVER_WEIGHT_BY_FILTER.overweight, page: 1, page_size: 1 })
 
-  const stats: FilterStats = useMemo(() => ({
-    all: allCount.data?.data.data.meta.total,
-    normal: normalCount.data?.data.data.meta.total,
-    overweight: overweightCount.data?.data.data.meta.total,
-  }), [allCount.data, normalCount.data, overweightCount.data])
+  // const stats: FilterStats = useMemo(() => ({
+  //   all: allCount.data?.data.data.meta.total,
+  //   normal: normalCount.data?.data.data.meta.total,
+  //   overweight: overweightCount.data?.data.data.meta.total,
+  // }), [allCount.data, normalCount.data, overweightCount.data])
+
+  const stats = useMemo<FilterStats>(() => ({
+    all: fmtNumber(Number(data?.data.data.meta.total)) || 0,
+    normal: fmtNumber(Number(normalWeightCount)) || 0,
+    overweight: fmtNumber(Number(data?.data.data.meta.total_over)) || 0,
+    axisover: fmtNumber(Number(data?.data.data.meta.axis_over)) || 0
+  }), [data?.data.data.meta.total, data?.data.data.meta.total_over, data?.data.data.meta.axis_over, normalWeightCount])
 
   // Row count for the export dialog — the CURRENT filter's total, from the same
   // meta the table's pagination reads.

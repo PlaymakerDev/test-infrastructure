@@ -1,6 +1,6 @@
 import type { FilterConfig } from '@/components/searchable/SearchBar'
 
-export type MobileWeightFilter = 'all' | 'normal' | 'overweight'
+export type MobileWeightFilter = 'all' | 'normal' | 'overweight' | 'axisover'
 
 export const MOBILE_WEIGHT_FILTERS: FilterConfig[] = [
   {
@@ -27,13 +27,22 @@ export const MOBILE_WEIGHT_FILTERS: FilterConfig[] = [
     badgeActiveClass: 'bg-red-800 text-white',
     badgeIdleClass: 'bg-red-500/20 text-red-400',
   },
+  {
+    key: 'axisover',
+    label: 'น้ำหนักเพลาเกิน',
+    colorPrimary: '#FF7B00',
+    colorTextLightSolid: '#ffffff',
+    badgeActiveClass: 'bg-orange-800 text-white',
+    badgeIdleClass: 'bg-orange-500/20 text-orange-400',
+  },
 ]
 
 // Per product spec, mobile's is_over_weight convention is inverted from wim's 'Y'/'N':
 // normal weight sends 1, overweight sends 0. 'all' omits the param entirely
 // (BaseService/axios drops undefined params).
 export const MOBILE_IS_OVER_WEIGHT_BY_FILTER: Record<MobileWeightFilter, number | undefined> = {
-  all: undefined,
-  normal: 1,
-  overweight: 0,
+  all: 0,
+  normal: 0,
+  overweight: 2,
+  axisover: 3
 }

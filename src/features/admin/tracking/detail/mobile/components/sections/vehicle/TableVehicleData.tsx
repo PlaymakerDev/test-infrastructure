@@ -107,8 +107,18 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
     },
     {
       title: 'จำนวนรถน้ำหนักรวมเกิน',
-      dataIndex: 'TotalOver',
-      key: 'TotalOver',
+      dataIndex: 'TotalOverWeight',
+      key: 'TotalOverWeight',
+      align: 'center',
+      width: 200,
+      render: (val: string) => (
+        <span className={Number(val) > 0 ? 'text-red-500' : 'text-white/25'}>{fmtNumber(Number(val)) || 0}</span>
+      ),
+    },
+    {
+      title: 'จำนวนรถน้ำหนักเพลาเกิน',
+      dataIndex: 'AxisOver',
+      key: 'AxisOver',
       align: 'center',
       width: 200,
       render: (val: string) => (

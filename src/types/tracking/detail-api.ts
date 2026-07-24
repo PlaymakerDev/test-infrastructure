@@ -891,7 +891,13 @@ export interface APIResponseMobileCar extends Omit<APIResponseStationByID, 'data
 
 export interface MobileCarData {
   data: MobileCarList[]
-  meta: WIMMetaData
+  meta: MobileCarMetaData
+}
+
+export interface MobileCarMetaData extends WIMMetaData {
+  axis_over: number
+  total: number
+  total_over: number
 }
 
 export interface MobileCarList {
@@ -899,16 +905,16 @@ export interface MobileCarList {
   accept_weight_by: any
   arrest_id: any
   create_date: string
-  drive_shaft_over?: string
+  drive_shaft_over: string
   driver_name: any
   driver_shaft: string
   ds_1: string
   ds_2: string
-  ds_3?: string
-  ds_4?: string
-  ds_5?: string
-  ds_6?: string
-  ds_7?: string
+  ds_3: string
+  ds_4: string
+  ds_5: string
+  ds_6: string
+  ds_7: any
   gross_weight: string
   gross_weight_over: any
   image_path0: string
@@ -929,9 +935,9 @@ export interface MobileCarList {
   lp_head_province_name: string
   lp_tail: string
   lp_tail_no: string
-  lp_tail_province_id?: number
-  lp_tail_province_id_ppa?: number
-  lp_tail_province_name?: string
+  lp_tail_province_id: number
+  lp_tail_province_id_ppa: number
+  lp_tail_province_name: string
   masterial_name: string
   t_id: string
   td_id: string
@@ -1055,30 +1061,32 @@ export interface APIResponseMobileMaster extends Omit<APIResponseStationByID, 'd
 }
 
 export interface MobileMasterData {
-  TID: string
+  AxisOver: string
+  Collaboration: string
+  CreateBy: string
+  CreateDate: string
   DeptID: number
   DeptName: string
-  Collaboration: string
   DeptProvince: string
-  WayID: string
-  WayName: string
-  Subdistrict: string
   District: string
-  Province: string
-  CreateBy: string
-  Title: string
   FirstName: string
-  LastName: string
-  image_name1?: string
-  image_path1?: string
-  image_name2?: string
-  image_path2?: string
-  CreateDate: string
-  TimeFrom: string
-  TimeTo: string
   IsOpen: number
-  Total: string
-  TotalOver: string
   KMFrom: string
   KMTo: string
+  LastName: string
+  Province: string
+  Subdistrict: string
+  TID: string
+  TimeFrom: string
+  TimeTo: any
+  Title: string
+  Total: string
+  TotalOver: string
+  TotalOverWeight: string
+  WayID: string
+  WayName: string
+  image_name1: string
+  image_name2: string
+  image_path1: string
+  image_path2: string
 }
