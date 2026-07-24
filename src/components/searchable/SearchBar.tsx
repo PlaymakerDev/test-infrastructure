@@ -144,7 +144,7 @@ const SearchBar: React.FC<Props> = ({
       {mode === 'title' ? (
         <h3 className='text-(--yellow) mb-0 truncate'>{title}</h3>
       ) : (
-        <div className={filterClassName ?? 'flex items-center gap-2 overflow-x-auto pb-0.5 lg:pb-0 lg:flex-wrap'}>
+        <div className={filterClassName ?? 'flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5 lg:pb-0 lg:flex-wrap'}>
           {filters.map((f) => {
             const isActive = activeFilter === f.key
             const count = stats[f.statKey ?? f.key]

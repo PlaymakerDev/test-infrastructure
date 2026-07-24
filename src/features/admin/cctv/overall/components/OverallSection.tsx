@@ -136,15 +136,19 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
     return rows
   }, [centralData])
 
+  // Filter badge counts mirror the right-rail stat cards (API camera counts),
+  // NOT the installation-point row counts: ทั้งหมด/ออนไลน์/ออฟไลน์ come from
+  // `totals.camera`, ในค้ำ/หมดค้ำ from `totals.warranty` — same numbers the
+  // cards show (requested 2026-07-24).
   const stats: FilterStats = useMemo(
     () => ({
-      all: allItems.length,
-      online: allItems.filter((i) => i.camera.online > 0).length,
-      offline: allItems.filter((i) => i.camera.offline > 0).length,
-      inWarranty: allItems.filter((i) => i.is_warranty).length,
-      expired: allItems.filter((i) => !i.is_warranty).length,
+      all: totals?.camera.total ?? 0,
+      online: totals?.camera.online ?? 0,
+      offline: totals?.camera.offline ?? 0,
+      inWarranty: totals?.warranty.active ?? 0,
+      expired: totals?.warranty.expired ?? 0,
     }),
-    [allItems]
+    [totals]
   )
 
   const filtered = useMemo(() => {
