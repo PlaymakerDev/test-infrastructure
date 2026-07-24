@@ -1,12 +1,23 @@
 "use client"
 import { Badge, Button, Checkbox, ConfigProvider, Tooltip } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TbChevronDown, TbChevronRight, TbEye } from 'react-icons/tb'
+import { TbChecks, TbChevronDown, TbChevronRight, TbEraser, TbEye } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import type { BureauItem, BureauState, BureauRoute, BureauSign, BureauSelection } from '@/types/control-vms/bureau'
 
 // Re-export so consumers importing from '@/components/list' keep working.
 export type { BureauItem, BureauState, BureauRoute, BureauSign, BureauSelection }
+
+// Header action pills (เลือกทั้งหมด / ล้างที่เลือก). Rounded, padded, icon-led
+// buttons in theme colours — replaces the bare hover-text links that looked
+// cramped at the top of the picker. Yellow outline = the primary "select all";
+// muted white outline = the secondary "clear".
+const HEADER_BTN_BASE =
+  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full fs-12 leading-none transition-colors cursor-pointer select-none'
+const SELECT_ALL_BTN =
+  `${HEADER_BTN_BASE} border border-(--yellow)/50 text-(--yellow) hover:bg-(--yellow)/10 hover:border-(--yellow)`
+const CLEAR_BTN =
+  `${HEADER_BTN_BASE} border border-white/15 text-white/60 hover:text-white hover:border-white/30 hover:bg-white/5`
 
 // ---------------------------------------------------------------------------
 // Props
@@ -631,12 +642,13 @@ const BureauList: React.FC<BureauListProps> = (props) => {
   return (
     <div>
       {showControls && (
-        <section>
-          <div className='flex flex-wrap justify-between items-center gap-3'>
+        <section className='pt-3 px-0.5'>
+          <div className='flex flex-wrap justify-between items-center gap-2'>
             {alwaysSelectMode ? (
               <>
-                <p
-                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                <button
+                  type='button'
+                  className={SELECT_ALL_BTN}
                   onClick={() => enterSelectMode(true)}
                   title={
                     requireValidAgentOnSelectAll
@@ -644,29 +656,32 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                       : 'เลือกทุกป้ายจริงๆ ไม่กรองอะไรเลย'
                   }
                 >
+                  <TbChecks className='fs-14' />
                   เลือกทั้งหมด
-                </p>
-                <p
-                  className='cursor-pointer hover:text-(--yellow) transition-colors'
-                  onClick={exitSelectMode}
-                >
+                </button>
+                <button type='button' className={CLEAR_BTN} onClick={exitSelectMode}>
+                  <TbEraser className='fs-14' />
                   ล้างที่เลือก
-                </p>
+                </button>
               </>
             ) : (
               <>
-                <p
-                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                <button
+                  type='button'
+                  className={selectMode ? CLEAR_BTN : SELECT_ALL_BTN}
                   onClick={() => selectMode ? exitSelectMode() : enterSelectMode(false)}
                 >
+                  {selectMode ? <TbEraser className='fs-14' /> : <TbChecks className='fs-14' />}
                   {selectMode ? 'ยกเลิก' : 'เลือก'}
-                </p>
-                <p
-                  className='cursor-pointer hover:text-(--yellow) transition-colors'
+                </button>
+                <button
+                  type='button'
+                  className={SELECT_ALL_BTN}
                   onClick={() => selectMode ? exitSelectMode() : enterSelectMode(true)}
                 >
+                  <TbChecks className='fs-14' />
                   {selectMode ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
-                </p>
+                </button>
               </>
             )}
           </div>

@@ -150,6 +150,7 @@ export interface VMSSettingByStatus {
   road_code: string
   solution_name: string
   screen_capture_url: string
+  anydesk_id: string
   cameras: CameraByStatus[]
   schedules: ScheduleByStatus[]
 }

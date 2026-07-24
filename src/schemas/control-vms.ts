@@ -59,6 +59,10 @@ const solutionSchema = z.object({
   camera_online_count: z.number(),
   camera_offline_count: z.number(),
   noti_count: z.number(),
+  is_centralized: z.boolean(),
+  is_reported: z.boolean(),
+  is_controllable: z.boolean(),
+  has_valid_agent: z.boolean(),
 })
 
 const roadSchema = z.object({
@@ -234,6 +238,7 @@ const vmsSettingByStatusSchema = z.object({
   road_code: z.string(),
   solution_name: z.string(),
   screen_capture_url: z.string(),
+  anydesk_id: z.string(),
   cameras: z.array(cameraByStatusSchema),
   schedules: z.array(scheduleByStatusSchema),
 })
