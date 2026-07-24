@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react'
 import PageLayout from '@/components/layout/Layout'
 import ScopeUrlSync from '@/components/provider/ScopeUrlSync'
+import AuthHydrator from '@/components/provider/AuthHydrator'
 import BackToTop from '@/components/common/BackToTop'
 
 interface Props {
@@ -20,6 +21,7 @@ const AdminLayoutClient: React.FC<Props> = (props) => {
       <Suspense fallback={null}>
         <ScopeUrlSync />
       </Suspense>
+      <AuthHydrator />
       <PageLayout>
         {children}
       </PageLayout>

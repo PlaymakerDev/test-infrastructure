@@ -17,12 +17,12 @@ const MobileStatCard: React.FC<Props> = (props) => {
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
 
       {/* รถบรรทุกเข้าชั่ง */}
-      <div className="flex bg-[#66AEFF1A] border-2 rounded-2xl border-blue-500 overflow-hidden min-h-32.5">
+      <div className="flex bg-[#66AEFF1A] border-2 rounded-2xl border-(--default-blue) overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
           <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
-          <h4 className="text-blue-500 mb-0">รถบรรทุกเข้าชั่ง</h4>
+          <h4 className="text-(--default-blue) mb-0">รถบรรทุกเข้าชั่ง</h4>
           <p className="mb-0">
             <span className="fs-22 font-bold">{fmtNumber(Number(data?.sum_total)) || 0}</span>{' '}
             <span className="fs-12 text-gray-300">คัน</span>

@@ -208,11 +208,11 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         const isVisible = entry.isIntersecting;
         setIsInViewport(isVisible);
 
-        console.log(`📹 Camera [${cameraId}]: ${isVisible ? 'ENTERED' : 'LEFT'} viewport`, {
-          intersectionRatio: entry.intersectionRatio,
-          isVisible,
-          timestamp: new Date().toISOString()
-        });
+        // console.log(`📹 Camera [${cameraId}]: ${isVisible ? 'ENTERED' : 'LEFT'} viewport`, {
+        //   intersectionRatio: entry.intersectionRatio,
+        //   isVisible,
+        //   timestamp: new Date().toISOString()
+        // });
 
         if (onVisibilityChange) {
           onVisibilityChange(isVisible);
@@ -238,7 +238,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
   }, [enableViewportPause, cameraId, hlsUrl]);
 
   const handleVisibilityEnter = () => {
-    console.log(`✅ Camera [${cameraId}]: ACTIVATING`);
+    // console.log(`✅ Camera [${cameraId}]: ACTIVATING`);
     setIsPausedByViewport(false);
 
     if (videoRef.current && videoRef.current.paused && !hasError) {
@@ -255,7 +255,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     }
 
     if (useHLS && !hlsRef.current && hlsUrl && !hasError) {
-      console.log(`🔄 Camera [${cameraId}]: Reinitializing HLS`);
+      // console.log(`🔄 Camera [${cameraId}]: Reinitializing HLS`);
       initHLS();
     }
 
@@ -265,7 +265,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
   };
 
   const handleVisibilityLeave = () => {
-    console.log(`⏸️  Camera [${cameraId}]: PAUSING (out of viewport)`);
+    // console.log(`⏸️  Camera [${cameraId}]: PAUSING (out of viewport)`);
     setIsPausedByViewport(true);
 
     captureLastFrame();
@@ -277,7 +277,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
     if (useHLS && hlsRef.current) {
       try {
-        console.log(`🗑️  Camera [${cameraId}]: Destroying HLS instance`);
+        // console.log(`🗑️  Camera [${cameraId}]: Destroying HLS instance`);
         hlsRef.current.destroy();
         hlsRef.current = null;
       } catch (e) {
@@ -318,7 +318,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
           if (frameUrl && frameUrl.length > 1000) {
             setLastFrameUrl(frameUrl);
-            console.log(`📸 Camera [${cameraId}]: Frame captured (${frameUrl.length} bytes)`);
+            // console.log(`📸 Camera [${cameraId}]: Frame captured (${frameUrl.length} bytes)`);
           }
         }
       } catch (e) {
@@ -333,7 +333,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     }
 
     setConnectionStatus(status);
-    console.log(`📊 Camera [${cameraId}]: Status = ${status}`, error || '');
+    // console.log(`📊 Camera [${cameraId}]: Status = ${status}`, error || '');
     if (onStatusChange) {
       onStatusChange(status, error);
     }
@@ -387,7 +387,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
   const smartReconnect = () => {
     if (enableViewportPause && !isInViewport) {
-      console.log(`⏭️  Camera [${cameraId}]: Skipping reconnect (not in viewport)`);
+      // console.log(`⏭️  Camera [${cameraId}]: Skipping reconnect (not in viewport)`);
       return;
     }
 
@@ -409,7 +409,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
   const retryConnection = () => {
     if (enableViewportPause && !isInViewport) {
-      console.log(`⏭️  Camera [${cameraId}]: Skipping retry (not in viewport)`);
+      // console.log(`⏭️  Camera [${cameraId}]: Skipping retry (not in viewport)`);
       return;
     }
 
@@ -444,11 +444,11 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     if (!hlsUrl || !videoRef.current) return;
 
     if (enableViewportPause && !isInViewport) {
-      console.log(`⏭️  Camera [${cameraId}]: Skipping direct-video init (not in viewport)`);
+      // console.log(`⏭️  Camera [${cameraId}]: Skipping direct-video init (not in viewport)`);
       return;
     }
 
-    console.log(`🎬 Camera [${cameraId}]: Initializing direct video`);
+    // console.log(`🎬 Camera [${cameraId}]: Initializing direct video`);
     setIsReconnecting(wasConnectedBefore);
     setIsLoading(!wasConnectedBefore);
     setHasError(false);
@@ -459,7 +459,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     // Remove previous listeners by cloning (simplest safe approach)
     // We'll attach named handlers so we can remove them properly
     const onCanPlay = () => {
-      console.log(`✅ Camera [${cameraId}]: Can play (direct)`);
+      // console.log(`✅ Camera [${cameraId}]: Can play (direct)`);
       setIsLoading(false);
       setIsReconnecting(false);
       updateStatus('connected');
@@ -473,7 +473,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         video.play()
           .then(() => {
             setIsPlaying(true);
-            console.log(`▶️  Camera [${cameraId}]: Playing (direct)`);
+            // console.log(`▶️  Camera [${cameraId}]: Playing (direct)`);
             setTimeout(() => {
               if (video.readyState >= 2) {
                 setLastFrameUrl('');
@@ -482,7 +482,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
             }, 1000);
           })
           .catch(err => {
-            console.warn(`Camera [${cameraId}]: Auto-play failed (direct):`, err);
+            // console.warn(`Camera [${cameraId}]: Auto-play failed (direct):`, err);
             updateStatus('ready');
           });
       }
@@ -490,7 +490,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
     const onError = (e: Event) => {
       // Recoverable — retryConnection() below reconnects.
-      console.warn(`⚠️ Camera [${cameraId}]: Video error (direct)`, e);
+      // console.warn(`⚠️ Camera [${cameraId}]: Video error (direct)`, e);
       handleErrorCallback(e);
       setHasError(true);
       setIsLoading(false);
@@ -505,7 +505,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
     const onEnded = () => {
       // For VOD mp4 that finished — mark as ended rather than error
-      console.log(`🏁 Camera [${cameraId}]: Video ended`);
+      // console.log(`🏁 Camera [${cameraId}]: Video ended`);
       setIsPlaying(false);
       updateStatus('ended');
     };
@@ -533,11 +533,11 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     if (!hlsUrl || !videoRef.current) return;
 
     if (enableViewportPause && !isInViewport) {
-      console.log(`⏭️  Camera [${cameraId}]: Skipping HLS init (not in viewport)`);
+      // console.log(`⏭️  Camera [${cameraId}]: Skipping HLS init (not in viewport)`);
       return;
     }
 
-    console.log(`🚀 Camera [${cameraId}]: Initializing HLS`);
+    // console.log(`🚀 Camera [${cameraId}]: Initializing HLS`);
     setIsReconnecting(wasConnectedBefore);
     setIsLoading(!wasConnectedBefore);
     setHasError(false);
@@ -607,7 +607,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         hlsRef.current = hls;
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log(`✅ Camera [${cameraId}]: Manifest parsed`);
+          // console.log(`✅ Camera [${cameraId}]: Manifest parsed`);
           setIsLoading(false);
           setIsReconnecting(false);
           updateStatus('connected');
@@ -621,7 +621,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
             videoRef.current.play()
               .then(() => {
                 setIsPlaying(true);
-                console.log(`▶️  Camera [${cameraId}]: Playing`);
+                // console.log(`▶️  Camera [${cameraId}]: Playing`);
 
                 setTimeout(() => {
                   if (videoRef.current && videoRef.current.readyState >= 2) {
@@ -672,12 +672,12 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 if (data.details === 'manifestLoadTimeOut' || data.details === 'manifestLoadError') {
                   setErrorMessage('กำลังโหลดสตรีม กรุณารอสักครู่...');
-                  console.log(`🔄 Camera [${cameraId}]: Manifest timeout - quick retry`);
+                  // console.log(`🔄 Camera [${cameraId}]: Manifest timeout - quick retry`);
 
                   if (retryCount < maxRetries) {
                     setTimeout(() => retryConnection(), 500);
                   } else {
-                    console.log(`🔄 Camera [${cameraId}]: Max retries - fresh connection`);
+                    // console.log(`🔄 Camera [${cameraId}]: Max retries - fresh connection`);
                     setTimeout(() => {
                       setRetryCount(0);
                       setHasError(false);
@@ -686,7 +686,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
                   }
                 } else {
                   setErrorMessage(wasConnectedBefore ? 'Connection lost - reconnecting...' : 'Network error - Check connection');
-                  console.log(`🔄 Camera [${cameraId}]: Network error - recovery attempt`);
+                  // console.log(`🔄 Camera [${cameraId}]: Network error - recovery attempt`);
                   try {
                     hls.startLoad();
                     setTimeout(() => {
@@ -704,7 +704,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
 
               case Hls.ErrorTypes.MEDIA_ERROR:
                 setErrorMessage('Media error - Recovering...');
-                console.log(`🔄 Camera [${cameraId}]: Media error - recovery attempt`);
+                // console.log(`🔄 Camera [${cameraId}]: Media error - recovery attempt`);
                 try {
                   hls.recoverMediaError();
                   setTimeout(() => {
@@ -743,11 +743,11 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         });
 
         hls.on(Hls.Events.BUFFER_FLUSHING, () => {
-          console.log(`🔄 Camera [${cameraId}]: Buffer flushing`);
+          // console.log(`🔄 Camera [${cameraId}]: Buffer flushing`);
         });
 
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-          console.log(`📊 Camera [${cameraId}]: Quality switched to level ${data.level}`);
+          // console.log(`📊 Camera [${cameraId}]: Quality switched to level ${data.level}`);
         });
 
         hls.on(Hls.Events.FRAG_PARSING_METADATA, () => {
@@ -764,7 +764,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         videoRef.current.src = formattedUrl;
 
         const handleCanPlay = () => {
-          console.log(`✅ Camera [${cameraId}]: Can play`);
+          // console.log(`✅ Camera [${cameraId}]: Can play`);
           setIsLoading(false);
           setIsReconnecting(false);
           updateStatus('connected');
@@ -778,7 +778,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
             videoRef.current.play()
               .then(() => {
                 setIsPlaying(true);
-                console.log(`▶️  Camera [${cameraId}]: Playing`);
+                // console.log(`▶️  Camera [${cameraId}]: Playing`);
 
                 setTimeout(() => {
                   if (videoRef.current && videoRef.current.readyState >= 2) {
@@ -899,7 +899,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         );
 
         if (hasRealProblem) {
-          console.log(`⚠️ Camera [${cameraId}]: Real connection problem detected`);
+          // console.log(`⚠️ Camera [${cameraId}]: Real connection problem detected`);
           updateStatus('error');
           setHasError(true);
           setErrorMessage('Connection lost - reconnecting...');

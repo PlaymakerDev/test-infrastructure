@@ -46,6 +46,7 @@ import buddhistEra from 'dayjs/plugin/buddhistEra';
 import th from 'dayjs/locale/th';
 import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
+import { resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/authSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import IconTracking from "@/components/icon/IconTracking";
@@ -220,6 +221,8 @@ export default function Navbar() {
       if (response.status === 200) {
         // Drop this user's cached (token-scoped) data so the next login starts clean.
         queryClient.clear()
+        dispatch(resetAuthTokenState())
+        dispatch(resetAuthInfoState())
 
         modal.success({
           title: 'คุณได้ออกจากระบบเรียบร้อยแล้ว',
@@ -237,7 +240,7 @@ export default function Navbar() {
         })
       }
     }
-  }, [modal, router, queryClient])
+  }, [modal, router, queryClient, dispatch])
 
   // Confirm before logging out — "ออกจากระบบ" (OK) proceeds, "ยกเลิก" (Cancel)
   // keeps the session. Both the desktop dropdown and the mobile grid call this.
@@ -678,9 +681,9 @@ export default function Navbar() {
                 ...(pathname === '/admin/tracking'
                   ? []
                   : [
-                      { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
-                      { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
-                    ]),
+                    { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
+                    { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                  ]),
                 { key: 'both', label: 'ซ่อนทั้งสองฝั่ง', icon: <TbZoomInArea size={16} /> },
               ],
               onClick: ({ key }) =>

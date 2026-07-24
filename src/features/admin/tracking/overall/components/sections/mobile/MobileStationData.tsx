@@ -50,6 +50,15 @@ const MobileStationData: React.FC<Props> = (props) => {
     if (isError) return <Empty description="ไม่พบข้อมูล" />
     // RENDER COMPONENT WITH DATA
     const collabList = data?.data?.data?.sort(() => Number(randomCollaboration) - 0.5).slice(0, 2)
+
+    if (!collabList || collabList.length === 0) {
+      return (
+        <figure className='block m-auto'>
+          <Empty description="ไม่พบข้อมูลการร่วมบูรณาการในช่วงเวลานี้" />
+        </figure>
+      )
+    }
+
     return collabList?.map((item) => {
       const IMAGES = [
         {

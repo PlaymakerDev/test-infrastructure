@@ -89,7 +89,7 @@ const TableCompareData: React.FC<Props> = (props) => {
       dataSource={data}
       pagination={false}
       size="middle"
-      rowKey="key"
+      rowKey="province"
       scroll={{ y: 240 }}
       loading={isLoading}
       className='bridge-projects-table'

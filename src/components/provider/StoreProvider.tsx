@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Provider } from 'react-redux'
-import { makeStore, AppStore } from '@/stores/store'
+import { makeStore, AppStore, setGlobalStore } from '@/stores/store'
 // Side-effect import: registers dayjs' `buddhistEra` plugin once at the app
 // root so the `BBBB` format token works app-wide (BuddhistDatePicker + any
 // Thai-formatted date labels). Must run before any tree that renders a
@@ -14,7 +14,11 @@ export default function StoreProvider({
 }: {
   children: React.ReactNode
 }) {
-  const [store] = useState<AppStore>(() => makeStore())
+  const [store] = useState<AppStore>(() => {
+    const newStore = makeStore()
+    setGlobalStore(newStore)
+    return newStore
+  })
 
   return <Provider store={store}>{children}</Provider>
 }
