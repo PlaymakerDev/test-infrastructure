@@ -100,6 +100,18 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ data, loading }) => {
   const deptId = useDeptId()
   const rows = useMemo(() => buildRows(data ?? []), [data])
 
+  // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
+  // rowKey but its span changes across a filter toggle — merged cells then
+  // overlap and the table visibly breaks. Remount whenever the merged-row
+  // structure (ids + spans) changes so rowSpans rebuild cleanly.
+  const tableKey = useMemo(
+    () =>
+      rows
+        .map((r) => (r.type === 'data' ? `${r.id}:${r.roadCodeRowSpan}:${r.projectRowSpan}` : r.id))
+        .join('|'),
+    [rows],
+  )
+
   const goToDetail = useCallback(
     (sol: BridgeLightingSolution) => {
       // dept_id + is_warranty, plus the current page's scope forwarded via
@@ -228,6 +240,7 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ data, loading }) => {
 
   return (
     <Table<Row>
+      key={tableKey}
       rowKey={(row) => String(row.id)}
       columns={columns}
       dataSource={rows}

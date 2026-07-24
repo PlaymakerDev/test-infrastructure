@@ -174,34 +174,40 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     return out
   }, [data])
 
+  // Rows matching the search box ONLY (independent of the status filter) — the
+  // base set for both the badge counts and the table, so ทั้งหมด/ออนไลน์/… track
+  // the search (requested 2026-07-24).
+  const searchFiltered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return projects
+    return projects.filter((p) => {
+      const haystack = `${p.roadCode} ${p.projectName ?? ''} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
+      return haystack.includes(term)
+    })
+  }, [projects, search])
+
   const stats: FilterStats = useMemo(
     () => ({
-      all: projects.length,
-      online: projects.filter((p) => p.connection === 'online').length,
-      offline: projects.filter((p) => p.connection === 'offline').length,
-      inWarranty: projects.filter((p) => p.warranty === 'in-warranty').length,
-      expired: projects.filter((p) => p.warranty === 'expired').length,
+      all: searchFiltered.length,
+      online: searchFiltered.filter((p) => p.connection === 'online').length,
+      offline: searchFiltered.filter((p) => p.connection === 'offline').length,
+      inWarranty: searchFiltered.filter((p) => p.warranty === 'in-warranty').length,
+      expired: searchFiltered.filter((p) => p.warranty === 'expired').length,
     }),
-    [projects],
+    [searchFiltered],
   )
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return projects.filter((p) => {
+    return searchFiltered.filter((p) => {
       switch (activeFilter) {
-        case 'online': if (p.connection !== 'online') return false; break
-        case 'offline': if (p.connection !== 'offline') return false; break
-        case 'in-warranty': if (p.warranty !== 'in-warranty') return false; break
-        case 'expired': if (p.warranty !== 'expired') return false; break
-        case 'all': break
+        case 'online': return p.connection === 'online'
+        case 'offline': return p.connection === 'offline'
+        case 'in-warranty': return p.warranty === 'in-warranty'
+        case 'expired': return p.warranty === 'expired'
+        default: return true
       }
-      if (term) {
-        const haystack = `${p.roadCode} ${p.projectName ?? ''} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-        if (!haystack.includes(term)) return false
-      }
-      return true
     })
-  }, [activeFilter, search, projects])
+  }, [searchFiltered, activeFilter])
 
   // Export rows in the SAME order the table displays: run the filtered list
   // through the same groupByBureau helper TableTunnelData renders from, then

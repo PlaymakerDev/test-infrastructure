@@ -148,10 +148,24 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
     return out
   }, [data])
 
-  // Stats prefer backend totals (whole-dept count, immune to pagination).
-  // Falls back to client-side counting if totals haven't loaded yet.
+  // Rows matching the search box ONLY (independent of the status filter) — base
+  // set for both the badge counts and the table.
+  const searchFiltered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return projects
+    return projects.filter((p) => {
+      const haystack = `${p.roadCode} ${p.projectName} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
+      return haystack.includes(term)
+    })
+  }, [projects, search])
+
+  // With no search, stats prefer backend totals (whole-dept count, immune to
+  // pagination; falls back to client-side counting until totals load). Once a
+  // search is active, counts re-tally the matching rows so the badges track the
+  // search (requested 2026-07-24).
   const stats: FilterStats = useMemo(() => {
-    if (totals) {
+    const hasSearch = search.trim().length > 0
+    if (!hasSearch && totals) {
       return {
         all: totals.solution.total,
         online: totals.solution.online,
@@ -161,31 +175,25 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
       }
     }
     return {
-      all: projects.length,
-      online: projects.filter((p) => p.connection === 'online').length,
-      offline: projects.filter((p) => p.connection === 'offline').length,
-      inWarranty: projects.filter((p) => p.warranty === 'in-warranty').length,
-      expired: projects.filter((p) => p.warranty === 'expired').length,
+      all: searchFiltered.length,
+      online: searchFiltered.filter((p) => p.connection === 'online').length,
+      offline: searchFiltered.filter((p) => p.connection === 'offline').length,
+      inWarranty: searchFiltered.filter((p) => p.warranty === 'in-warranty').length,
+      expired: searchFiltered.filter((p) => p.warranty === 'expired').length,
     }
-  }, [totals, projects])
+  }, [totals, search, searchFiltered])
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return projects.filter((p) => {
+    return searchFiltered.filter((p) => {
       switch (activeFilter) {
-        case 'online':      if (p.connection !== 'online') return false; break
-        case 'offline':     if (p.connection !== 'offline') return false; break
-        case 'in-warranty': if (p.warranty !== 'in-warranty') return false; break
-        case 'expired':     if (p.warranty !== 'expired') return false; break
-        case 'all':         break
+        case 'online':      return p.connection === 'online'
+        case 'offline':     return p.connection === 'offline'
+        case 'in-warranty': return p.warranty === 'in-warranty'
+        case 'expired':     return p.warranty === 'expired'
+        default:            return true
       }
-      if (term) {
-        const haystack = `${p.roadCode} ${p.projectName} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-        if (!haystack.includes(term)) return false
-      }
-      return true
     })
-  }, [activeFilter, search, projects])
+  }, [searchFiltered, activeFilter])
 
   // Human-readable note of the active filter/search — printed in the PDF
   // header so a reader knows what subset they're looking at.

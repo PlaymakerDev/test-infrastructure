@@ -126,29 +126,36 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
       )
   }, [points, deptId, deptNameById])
 
+  // Rows matching the search box ONLY (independent of the status filter) — the
+  // base set for both the badge counts and the table, so ทั้งหมด/Active/Idle
+  // track the search (requested 2026-07-24).
+  const searchFiltered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return allRows
+    return allRows.filter((r) => {
+      const hay = `${r.bureau} ${r.road_code ?? ''} ${r.project_name ?? ''} ${r.solution_name} ${r.contract_no ?? ''}`.toLowerCase()
+      return hay.includes(term)
+    })
+  }, [allRows, search])
+
   const stats: FilterStats = useMemo(
     () => ({
-      all: allRows.length,
-      active: allRows.filter((r) => r.events_hour > 0).length,
-      idle: allRows.filter((r) => r.events_hour === 0).length,
+      all: searchFiltered.length,
+      active: searchFiltered.filter((r) => r.events_hour > 0).length,
+      idle: searchFiltered.filter((r) => r.events_hour === 0).length,
     }),
-    [allRows],
+    [searchFiltered],
   )
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return allRows.filter((r) => {
+    return searchFiltered.filter((r) => {
       switch (activeFilter) {
-        case 'active': if (r.events_hour === 0) return false; break
-        case 'idle': if (r.events_hour > 0) return false; break
+        case 'active': return r.events_hour > 0
+        case 'idle': return r.events_hour === 0
+        default: return true
       }
-      if (term) {
-        const hay = `${r.bureau} ${r.road_code ?? ''} ${r.project_name ?? ''} ${r.solution_name} ${r.contract_no ?? ''}`.toLowerCase()
-        if (!hay.includes(term)) return false
-      }
-      return true
     })
-  }, [allRows, activeFilter, search])
+  }, [searchFiltered, activeFilter])
 
   // Human-readable note of the active filter/search — printed in the PDF
   // header so a reader knows what subset they're looking at.
