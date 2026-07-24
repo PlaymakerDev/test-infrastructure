@@ -83,10 +83,15 @@ const DashboardScreen: React.FC<Props> = () => {
     setMode('off')
   }, [setMode])
 
+  // Reveal them on province/สำนัก drill-in too — ReactMap fires this when the
+  // province context activates (polygon click → flyTo, or zooming past the
+  // province threshold). Was reduced to a no-op in 5e53337, which left the
+  // cards permanently hidden when the user drilled in via polygons instead of
+  // markers (reported 2026-07-23). Marker clicks + province drill-ins now
+  // both end the map-only intro.
   const handleProvinceActivate = useCallback(() => {
-    // No-op — kept as a stable reference so ReactMap's optional callback
-    // continues to have a target. Delete both if the map prop is dropped.
-  }, [])
+    setMode('off')
+  }, [setMode])
 
   useEffect(() => {
     dispatch(getExampleData())

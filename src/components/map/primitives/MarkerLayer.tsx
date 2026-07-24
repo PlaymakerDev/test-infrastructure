@@ -389,12 +389,23 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     }
     // `data` is intentionally not a dep — handled by the separate setData effect below
     //  to avoid rebuilding all layers on every data change.
+    // `minZoom` is intentionally not a dep — the zoom-range effect below
+    // applies changes in place. Rebuilding here instead made every marker
+    // layer flash when ReactMap toggled road-focus (minZoom 11.5 ↔ 9).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
     cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor, strokeWidth, clusterStrokeWidth,
-    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor, minZoom,
+    iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor,
   ])
+
+  // Apply minZoom changes without tearing the layers down.
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    for (const lid of [clusterLayerId, pointLayerId, symbolLayerId]) {
+      if (map.getLayer(lid)) map.setLayerZoomRange(lid, minZoom ?? 0, 24)
+    }
+  }, [map, isLoaded, minZoom, clusterLayerId, pointLayerId, symbolLayerId])
 
   // Update data without rebuilding layers
   useEffect(() => {

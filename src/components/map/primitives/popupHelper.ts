@@ -30,6 +30,13 @@ interface ShowPopupArgs {
  * - Renders JSX synchronously (via flushSync) so the popup never appears empty.
  * - Calls `root.unmount()` on popup close to free React resources.
  */
+/** Close the map's current shared popup (if any). Used by markers that have
+ *  no popup of their own (summary bubbles, stack badges) so a lingering popup
+ *  from an earlier marker doesn't stay open through flyTo / fan toggles. */
+export function closeReactPopup(map: MapboxMap): void {
+  popupByMap.get(map)?.remove()
+}
+
 export function showReactPopup({
   map,
   mb,

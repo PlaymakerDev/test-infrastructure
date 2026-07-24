@@ -344,7 +344,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                       Badge: {
                         dotSize: 12,
                         statusSize: 12,
-                        textFontSize: 12,
+                        textFontSize: 14,
                         indicatorHeight: 12
                       }
                     }
@@ -425,7 +425,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }
@@ -443,7 +443,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }
@@ -513,7 +513,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }
@@ -531,7 +531,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }
@@ -599,7 +599,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }
@@ -617,7 +617,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                           Badge: {
                             dotSize: 12,
                             statusSize: 12,
-                            textFontSize: 12,
+                            textFontSize: 14,
                             indicatorHeight: 12
                           }
                         }

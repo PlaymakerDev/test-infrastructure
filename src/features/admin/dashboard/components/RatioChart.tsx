@@ -41,9 +41,9 @@ interface TileConfig {
 
 const TILES: TileConfig[] = [
   { id: 'cctv',           label: 'CCTV',      color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'จุด',   route: '/admin/cctv' },
-  { id: 'traffic',        label: 'Traffic',   color: '#FFC766', Icon: TbTrafficLights,  apiTypeName: 'Traffic',        unit: 'จุด',   route: '/admin/traffic-signal' },
+  { id: 'traffic',        label: 'Traffic Signal', color: '#FFC766', Icon: TbTrafficLights, apiTypeName: 'Traffic',   unit: 'จุด',   route: '/admin/traffic-signal' },
   { id: 'vms',            label: 'VMS',       color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด',   route: '/admin/vms' },
-  { id: 'lighting',       label: 'Lighting',  color: '#D9FF66', Icon: TbBolt,           apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
+  { id: 'lighting',       label: 'Traffic Lighting', color: '#D9FF66', Icon: TbBolt,    apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
   { id: 'crosswalk',      label: 'Crosswalk', color: '#66F0FF', Icon: TbWalk,           apiTypeName: 'Crosswalk',      unit: 'จุด',   route: '/admin/crosswalk' },
   // LPR replaced B.Light in this slot (2026-07-21 request). LPR is NOT a
   // solution type in /position — its count comes from GET /lpr/points
@@ -61,13 +61,17 @@ interface TileProps {
   count: number | null
   unit: string
   size: number
+  /** Desktop strip mode — tile grows to fit long labels (Traffic Lighting)
+   *  on one line instead of wrapping inside the fixed width. The mobile
+   *  grid keeps fixed cells (wrapping there is contained by the grid). */
+  fluid?: boolean
   onClick: () => void
 }
 
 /** Compact KPI tile — icon + label header, big count, unit line. Matches the
  *  "no more online/offline donuts" direction (Keng, 2026-07-18): count is the
  *  primary metric; live status shows on the map markers via `is_online`. */
-const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick }: TileProps) {
+const Tile = memo(function Tile({ label, color, Icon, count, unit, size, fluid = false, onClick }: TileProps) {
   const compact = size < 130
   const display = count == null ? '—' : count.toLocaleString('th-TH')
   return (
@@ -77,7 +81,8 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
       title={`ดูรายละเอียด ${label}`}
       className="flex flex-col items-center justify-start cursor-pointer group"
       style={{
-        width: size,
+        width: fluid ? 'auto' : size,
+        minWidth: fluid ? size : undefined,
         // Symmetric vertical padding — the old 4px-top/8px-bottom left the
         // content hugging the bar's top edge once the counts grew to 30px;
         // equal padding re-centres the block (2026-07-20).
@@ -89,7 +94,7 @@ const Tile = memo(function Tile({ label, color, Icon, count, unit, size, onClick
       {/* Icon + label header */}
       <div className="flex items-center gap-1.5 mb-1" style={{ color }}>
         <Icon size={compact ? 16 : 20} />
-        <span className={`font-semibold ${compact ? 'fs-12' : 'fs-14'}`}>
+        <span className={`font-semibold ${compact ? 'fs-12' : 'fs-14'} ${fluid ? 'whitespace-nowrap' : ''}`}>
           {label}
         </span>
       </div>
@@ -225,9 +230,10 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
         backdropFilter: 'blur(5px)',
       }}
     >
-      {/* 140px per tile (was 126) — proportioned for the 30px counts. */}
+      {/* ≥140px per tile (was fixed 140) — fluid so full menu names
+        * ("Traffic Lighting") stay on one line instead of wrapping. */}
       {visible.map((t) => (
-        <div key={t.id} className="shrink-0" style={{ width: 140 }}>
+        <div key={t.id} className="shrink-0" style={{ minWidth: 140 }}>
           <Tile
             label={t.label}
             color={t.color}
@@ -235,6 +241,7 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
             count={t.count}
             unit={t.unit}
             size={140}
+            fluid
             onClick={() => openFeature(t.route)}
           />
         </div>

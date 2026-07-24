@@ -359,8 +359,8 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           <button
             type="button"
             onClick={() => onOpenSignDetail?.(r.vms_id)}
-            className="text-(--yellow) hover:underline"
-            style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12 }}
+            className="text-(--yellow) hover:underline fs-12"
+            style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
           >
             {v}
           </button>
@@ -448,9 +448,8 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                 />
               ) : (
                 <span
-                  className="inline-flex items-center gap-1 whitespace-nowrap"
+                  className="inline-flex items-center gap-1 whitespace-nowrap fs-12"
                   style={{
-                    fontSize: 11,
                     padding: '2px 8px',
                     borderRadius: 999,
                     color: '#9ca3af',
@@ -466,9 +465,9 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
               {r.setting_type_name && (
                 <Tag
                   color="default"
+                  className="fs-12"
                   style={{
                     margin: 0,
-                    fontSize: 10,
                     lineHeight: 1.4,
                     padding: '0 6px',
                     background: 'rgba(255,255,255,0.06)',
@@ -619,8 +618,8 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
               size="small"
               type="text"
               onClick={clearFilter}
-              className="text-white/60 hover:text-white!"
-              style={{ fontSize: 11, height: 22, padding: '0 6px' }}
+              className="text-white/60 hover:text-white! fs-12"
+              style={{ height: 22, padding: '0 6px' }}
             >
               ล้างตัวกรอง
             </Button>

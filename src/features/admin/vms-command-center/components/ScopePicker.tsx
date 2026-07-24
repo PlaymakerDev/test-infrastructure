@@ -20,7 +20,6 @@ interface Props {
 }
 
 const summaryTagBase: React.CSSProperties = {
-  fontSize: 12,
   padding: '2px 8px',
   borderRadius: 6,
   margin: 0,
@@ -78,16 +77,16 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
       <div className="px-3 py-3 border-b border-white/10 space-y-2">
         <div className="flex items-center gap-2">
           <div className="grid grid-cols-4 gap-2 flex-1">
-            <Tag variant="filled" style={tintTag('--default-blue')} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" className="fs-12" style={tintTag('--default-blue')} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
               สำนัก {selection.bureaus.length}
             </Tag>
-            <Tag variant="filled" style={tintTag('--light-blue')} icon={<TbMapPin style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" className="fs-12" style={tintTag('--light-blue')} icon={<TbMapPin style={{ verticalAlign: -2 }} />}>
               แขวง {selection.states.length}
             </Tag>
-            <Tag variant="filled" style={tintTag('--light-gray-3')} icon={<TbRoad style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" className="fs-12" style={tintTag('--light-gray-3')} icon={<TbRoad style={{ verticalAlign: -2 }} />}>
               สายทาง {selection.routes.length}
             </Tag>
-            <Tag variant="filled" style={tintTag('--yellow')} icon={<TbSignRight style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" className="fs-12" style={tintTag('--yellow')} icon={<TbSignRight style={{ verticalAlign: -2 }} />}>
               ป้าย {selection.signs.length}
             </Tag>
           </div>
