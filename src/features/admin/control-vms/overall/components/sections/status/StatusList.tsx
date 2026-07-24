@@ -1,7 +1,8 @@
 import DayList from '@/components/list/DayList'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import { VMSSettingByStatus } from '@/types/control-vms/display-api'
-import { Button, ConfigProvider } from 'antd'
+import { Button, ConfigProvider, Tooltip } from 'antd'
+import { TbAppWindow } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import React, { useCallback, useMemo } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -77,7 +78,24 @@ const StatusList: React.FC<Props> = (props) => {
         </Button>
       </div>
       <section className='mt-3'>
-        <h4 className='text-(--yellow)'>{item.solution_name || '-'}</h4>
+        <div className='flex items-center gap-1.5'>
+          <h4 className='text-(--yellow)'>{item.solution_name || '-'}</h4>
+          <Tooltip title={item.anydesk_id ? `เปิด Anydesk #${item.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+            <button
+              type='button'
+              disabled={!item.anydesk_id}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!item.anydesk_id) return
+                window.location.href = `anydesk:${item.anydesk_id}`
+              }}
+              className='inline-flex items-center shrink-0 disabled:opacity-30 disabled:cursor-default'
+              style={{ color: item.anydesk_id ? 'var(--default-blue)' : 'rgba(255,255,255,0.4)', cursor: item.anydesk_id ? 'pointer' : 'default' }}
+            >
+              <TbAppWindow size={14} />
+            </button>
+          </Tooltip>
+        </div>
         <div className='mt-3'>
           <div className='flex flex-wrap items-center gap-3'>
             <div className='flex items-center gap-2'>
