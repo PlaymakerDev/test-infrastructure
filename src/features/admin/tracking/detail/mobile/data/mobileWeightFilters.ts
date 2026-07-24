@@ -42,7 +42,7 @@ export const MOBILE_WEIGHT_FILTERS: FilterConfig[] = [
 // (BaseService/axios drops undefined params).
 export const MOBILE_IS_OVER_WEIGHT_BY_FILTER: Record<MobileWeightFilter, number | undefined> = {
   all: 0,
-  normal: 0,
+  normal: 1,
   overweight: 2,
   axisover: 3
 }
