@@ -187,7 +187,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
             <ChipToggle
               active={bucketFilter === 'ready'}
               onClick={() => setBucketFilter(bucketFilter === 'ready' ? 'all' : 'ready')}
-              tooltip="ป้าย online + พร้อมรับคำสั่งทันที (controllable + centralized) — ตรงกับสีเขียวใน sidebar"
+              tooltip="ป้ายพร้อมรับคำสั่งทันที"
+              accent="#22c55e"
               label={
                 <span>
                   <span style={{ color: '#22c55e' }}>●</span> พร้อมรับคำสั่ง {readyCount}
@@ -198,10 +199,11 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
               <ChipToggle
                 active={bucketFilter === 'offline'}
                 onClick={() => setBucketFilter(bucketFilter === 'offline' ? 'all' : 'offline')}
-                tooltip="ป้ายที่ยังออฟไลน์ — คำสั่งจะถูก queue ไว้ เล่นเมื่อ agent กลับมาออนไลน์"
+                tooltip="ป้ายไม่พร้อมใช้งาน"
+                accent="#ef4444"
                 label={
                   <span>
-                    <span className="text-(--default-blue)">●</span> ออฟไลน์ {offlineCount}
+                    <span style={{ color: '#ef4444' }}>●</span> ไม่พร้อมใช้งาน {offlineCount}
                   </span>
                 }
               />
@@ -293,11 +295,10 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
           return (
             <div
               key={it.vms_id}
-              className={`rounded-lg border p-3 transition-opacity ${
-                preview
-                  ? 'border-dashed border-white/15 bg-white/[.02]'
-                  : 'border-white/10 bg-white/[.04]'
-              }`}
+              className={`rounded-lg border p-3 transition-opacity ${preview
+                ? 'border-dashed border-white/15 bg-white/[.02]'
+                : 'border-white/10 bg-white/[.04]'
+                }`}
               style={{ opacity: preview ? 0.85 : 1 }}
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -322,34 +323,34 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                   {(() => {
                     const canDispatchNow = it.is_controllable
                     return (
-                  <Tooltip
-                    title={
-                      <div className="fs-12">
-                        <div>เชื่อมต่อ: {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}</div>
-                        <div>last_seen: {it.last_seen_at ?? '—'}</div>
-                        {!canDispatchNow && <div className="opacity-70">คำสั่งจะ queue จนกว่า agent จะกลับมา online</div>}
-                      </div>
-                    }
-                  >
-                    <span
-                      className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                      style={{
-                        background: canDispatchNow ? '#22c55e22' : '#ef444422',
-                        color: canDispatchNow ? '#22c55e' : '#ef4444',
-                        border: `1px solid ${canDispatchNow ? '#22c55e55' : '#ef444455'}`,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: canDispatchNow ? '#22c55e' : '#ef4444',
-                        }}
-                      />
-                      {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}
-                    </span>
-                  </Tooltip>
+                      <Tooltip
+                        title={
+                          <div className="fs-12">
+                            <div>เชื่อมต่อ: {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}</div>
+                            <div>last_seen: {it.last_seen_at ?? '—'}</div>
+                            {!canDispatchNow && <div className="opacity-70">คำสั่งจะ queue จนกว่า agent จะกลับมา online</div>}
+                          </div>
+                        }
+                      >
+                        <span
+                          className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
+                          style={{
+                            background: canDispatchNow ? '#22c55e22' : '#ef444422',
+                            color: canDispatchNow ? '#22c55e' : '#ef4444',
+                            border: `1px solid ${canDispatchNow ? '#22c55e55' : '#ef444455'}`,
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              background: canDispatchNow ? '#22c55e' : '#ef4444',
+                            }}
+                          />
+                          {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}
+                        </span>
+                      </Tooltip>
                     )
                   })()}
                   {hasActive ? (
@@ -443,8 +444,8 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                       {it.is_all_day
                         ? <span className="text-(--yellow)">ตลอดวัน</span>
                         : it.time_since && it.time_to
-                        ? `${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`
-                        : '—'}
+                          ? `${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`
+                          : '—'}
                       <span className="opacity-70 ml-2">· วัน:</span>{' '}
                       {formatDaysOfWeek(it.days_of_week)}
                     </div>
@@ -546,16 +547,18 @@ const ChipToggle: React.FC<{
   onClick: () => void
   label: React.ReactNode
   tooltip?: string
-}> = ({ active, onClick, label, tooltip }) => {
+  /** Accent color for border + text (+ fill when active). Default brand yellow. */
+  accent?: string
+}> = ({ active, onClick, label, tooltip, accent = '#FCD116' }) => {
   const inner = (
     <button
       type="button"
       onClick={onClick}
       className="px-2 py-0.5 rounded-full transition-colors border fs-12"
       style={{
-        background: active ? '#FCD116' : 'transparent',
-        color: active ? '#191919' : '#FCD116',
-        borderColor: '#FCD116',
+        background: active ? accent : 'transparent',
+        color: active ? '#191919' : accent,
+        borderColor: accent,
         fontWeight: active ? 600 : 400,
       }}
     >
