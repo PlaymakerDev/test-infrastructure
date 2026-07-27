@@ -7,6 +7,7 @@ import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getRowNumber } from '@/utils/pagination'
 import { useMobileMaster } from '../../../hooks'
 import { useMobileContext } from '../../../context'
 
@@ -63,7 +64,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
       width: 70,
       fixed: 'left',
       className: 'col-road-code',
-      render: (_, __, index) => index + 1,
+      render: (_, __, index) => getRowNumber(page, pageSize, index),
     },
     {
       title: 'วันที่',

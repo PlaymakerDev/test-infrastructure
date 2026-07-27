@@ -1,5 +1,5 @@
 import { ConfigProvider, Modal } from 'antd'
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
@@ -12,6 +12,7 @@ import { getDailyWeightLogExportColumns, fetchDailyWeightLogExportRows } from '.
 import type { FilterStats, ViewMode } from '@/components/searchable/SearchBar'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getPageOffset } from '@/utils/pagination'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -29,6 +30,14 @@ const Content: React.FC<Props> = () => {
   // Rows currently visible in the table/grid (both paginate internally and
   // report up via onPageRowsChange) — the export dialog's หน้าปัจจุบัน scope.
   const [pageRows, setPageRows] = useState<DailyWeightLogRow[]>([])
+  // (page-1)*pageSize of the table/grid's current page — offsets the exported
+  // ลำดับ column so it continues from the on-screen number instead of resetting to 1.
+  const [pageOffset, setPageOffset] = useState(0)
+  // Stable callback so the table/grid's report effect doesn't re-fire every parent render.
+  const handlePageRowsChange = useCallback((rows: DailyWeightLogRow[], page: number, pageSize: number) => {
+    setPageRows(rows)
+    setPageOffset(getPageOffset(page, pageSize))
+  }, [])
 
   const stationLabel = stationType === 'STATION' ? 'สถานี' : 'Weight in Motion (WIM)'
 
@@ -71,6 +80,15 @@ const Content: React.FC<Props> = () => {
     [stationType]
   )
 
+  // หน้าปัจจุบัน scope: the on-screen table/grid numbers rows continuously
+  // across pages ((page-1)*size+i+1) — offset the exported ลำดับ to match it.
+  const columnsForScope = (scope?: 'all' | 'page') =>
+    scope === 'page'
+      ? exportColumns.map((c) =>
+          c.key === 'no' ? { ...c, value: (_r: DailyWeightLogRow, i: number) => pageOffset + i + 1 } : c,
+        )
+      : exportColumns
+
   // The table server-paginates internally, so the export fetches the full
   // result set for the modal's day + CURRENT filter through the same endpoint
   // the table reads (station vs wim log) at click time.
@@ -85,7 +103,7 @@ const Content: React.FC<Props> = () => {
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} onPageRowsChange={setPageRows} />
+        return <TableWeightLog isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]} onPageRowsChange={handlePageRowsChange} />
       case 'GRID':
         return (
           <OverallDailyWeightList
@@ -93,13 +111,13 @@ const Content: React.FC<Props> = () => {
             stationType={stationType}
             isOverWeight={IS_OVER_WEIGHT_BY_FILTER[weightFilter]}
             date={date}
-            onPageRowsChange={setPageRows}
+            onPageRowsChange={handlePageRowsChange}
           />
         )
       default:
         return null
     }
-  }, [displayType, stationId, stationType, weightFilter, date])
+  }, [displayType, stationId, stationType, weightFilter, date, handlePageRowsChange])
 
   return (
     <div>
@@ -138,7 +156,7 @@ const Content: React.FC<Props> = () => {
             filenameBase: 'Tracking_Weight_Log_Detail',
             title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
             filterNote: exportFilterNote,
-            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: columnsForScope(scope).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows,
           })
         }}
@@ -152,7 +170,7 @@ const Content: React.FC<Props> = () => {
             sheetName: 'Weight Log Detail',
             title: 'รายงานรายละเอียดรถเข้าชั่ง (Weight Log Detail)',
             filterNote: exportFilterNote,
-            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
+            columns: columnsForScope(scope).map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })
         }}

@@ -1,10 +1,13 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import { Table, Empty, ConfigProvider, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { SumStation } from '@/types/tracking/overall-api'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getRowNumber } from '@/utils/pagination'
+
+const DEFAULT_PAGE_SIZE = 10
 
 interface Props {
   data?: SumStation[]
@@ -23,6 +26,11 @@ const STATUS_COLOR: Record<StatusType, string> = {
 const TableStation: React.FC<Props> = (props) => {
   const { data, isLoading, isError } = props;
   const router = useRouter()
+  // Table paginates client-side over the full `data` array (no server pagination),
+  // so ลำดับ must track the antd-reported page/pageSize itself to keep numbering
+  // continuous instead of resetting to 1 on every page.
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const columns: ColumnsType<SumStation> = [
     {
@@ -33,9 +41,7 @@ const TableStation: React.FC<Props> = (props) => {
       width: 70,
       fixed: 'left',
       className: 'col-road-code',
-      render: (_, __, index) => {
-        return index + 1
-      }
+      render: (_, __, index) => getRowNumber(page, pageSize, index),
     },
     {
       title: 'สถานี',
@@ -86,17 +92,17 @@ const TableStation: React.FC<Props> = (props) => {
         return <p className='fs-12 text-red-500'>-</p>
       }
     },
-    {
-      title: 'จำนวนรถน้ำหนักเกิน 10%',
-      dataIndex: 'over_10',
-      key: 'over_10',
-      align: 'center',
-      width: 150,
-      render: (item) => {
-        if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
-        return <p className='fs-12 text-(--yellow)'>-</p>
-      }
-    },
+    // {
+    //   title: 'จำนวนรถน้ำหนักเกิน 10%',
+    //   dataIndex: 'over_10',
+    //   key: 'over_10',
+    //   align: 'center',
+    //   width: 150,
+    //   render: (item) => {
+    //     if (item) return <p className='fs-12 text-(--yellow)'>{fmtNumber(item)}</p>
+    //     return <p className='fs-12 text-(--yellow)'>-</p>
+    //   }
+    // },
     {
       title: 'กล้อง CCTV',
       dataIndex: 'total_cctv',
@@ -122,7 +128,7 @@ const TableStation: React.FC<Props> = (props) => {
       sorter: (a, b) => (a.delivery_year || '').localeCompare(b.delivery_year || ''),
       render: (item) => {
         if (item) return item
-        return '-'
+        return <p className='fs-12 text-white/50'>ไม่ระบุ</p>
       }
     },
     // {
@@ -191,6 +197,12 @@ const TableStation: React.FC<Props> = (props) => {
       dataSource={data}
       className='bridge-projects-table'
       pagination={{
+        current: page,
+        pageSize,
+        onChange: (nextPage, nextPageSize) => {
+          setPage(nextPage)
+          setPageSize(nextPageSize)
+        },
         locale: { items_per_page: "/ หน้า" },
         showSizeChanger: true,
         pageSizeOptions: [10, 20, 50, 100],

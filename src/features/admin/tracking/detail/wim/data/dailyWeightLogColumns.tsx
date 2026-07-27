@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import type { DailyWeightLogRow } from '../hooks/useDailyWeightLogList'
 import { FALLBACK, ITS_WEIGHT_STATUS } from '@/constants'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getRowNumber } from '@/utils/pagination'
 
 export interface DailyWeightLogColumnsOptions {
   /** TableWeightLog (modal drill-down) omits the plate/vehicle image columns — defaults to true for TableOverallDailyWeight. */
@@ -11,6 +12,10 @@ export interface DailyWeightLogColumnsOptions {
   /** STATION is a static weighbridge with no speed sensor (unlike WIM) — pass
    *  true (station_type === 'STATION') to hide the ความเร็ว column entirely. */
   hideSpeed?: boolean
+  /** Current pagination state so ลำดับ continues across pages instead of
+   *  resetting to 1 on every page — see `getRowNumber` in `@/utils/pagination`. */
+  page?: number
+  pageSize?: number
 }
 
 /** Shared column set for `DailyWeightLogRow` — used by both TableOverallDailyWeight
@@ -19,9 +24,19 @@ export interface DailyWeightLogColumnsOptions {
 export const getDailyWeightLogColumns = (
   options?: DailyWeightLogColumnsOptions
 ): ColumnsType<DailyWeightLogRow> => {
-  const { showImages = true, hideSpeed = false } = options ?? {}
+  const { showImages = true, hideSpeed = false, page = 1, pageSize = 10 } = options ?? {}
 
   const columns: ColumnsType<DailyWeightLogRow> = [
+    {
+      title: 'ลำดับ',
+      dataIndex: 'no',
+      key: 'no',
+      align: 'left',
+      width: 70,
+      fixed: 'left',
+      className: 'col-road-code',
+      render: (_, __, index) => getRowNumber(page, pageSize, index),
+    },
     {
       title: 'วันที่และเวลา',
       key: 'datetime',
@@ -124,12 +139,12 @@ export const getDailyWeightLogColumns = (
       render: (value: string) => {
         const status = ITS_WEIGHT_STATUS[value as keyof typeof ITS_WEIGHT_STATUS]
         return (
-          <span
-            className='inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border'
+          <div
+            className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border`}
             style={{ borderColor: status?.color, color: status?.color }}
           >
-            {status?.text || '-'}
-          </span>
+            <p className='fs-12'>{status?.text || '-'}</p>
+          </div>
         )
       },
     },

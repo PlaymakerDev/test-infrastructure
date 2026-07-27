@@ -131,6 +131,7 @@ export interface CalibrationHistoryData {
   certificateNo: string
   createdAt: string
   createdBy: string
+  daysUntilExpiry: number
   department: any
   departmentId: any
   id: number
@@ -139,6 +140,7 @@ export interface CalibrationHistoryData {
   station: CalibrateHistoryStation
   stationId: number
   stationType: number
+  status: string
   updatedAt: string
   updatedBy: any
   wim: CalibrateHistoryWIM

@@ -5,8 +5,11 @@ import type { ColumnsType } from 'antd/es/table'
 import { MobileCarByTDIDData, MobileCarData, MobileCarList } from '@/types/tracking/detail-api'
 import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getRowNumber } from '@/utils/pagination'
 import { WEIGHT_STATUS_WITH_PROPERTIES } from '@/constants/vehicle'
 import { FALLBACK } from '@/constants'
+
+const DEFAULT_PAGE_SIZE = 10
 
 interface Props {
   data?: MobileCarData
@@ -110,9 +113,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
       width: 70,
       fixed: 'left',
       className: 'col-road-code',
-      render: (_, __, index) => {
-        return index + 1
-      }
+      render: (_, __, index) => getRowNumber(page ?? 1, pageSize ?? DEFAULT_PAGE_SIZE, index),
     },
     {
       title: 'วันที่และเวลา',

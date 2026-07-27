@@ -4,6 +4,7 @@ import { Button, ConfigProvider, Empty, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
+import { getRowNumber } from '@/utils/pagination'
 import { useDailyTable } from '@/features/admin/tracking/detail/wim/hooks'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import type { StationDailyData } from '@/types/tracking/detail-api'
@@ -76,7 +77,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
     const rows = result.data?.data ?? []
     return rows.map((item, index) => ({
       key: `${item.station_id}-${item.date_time}`,
-      no: (page - 1) * pageSize + index + 1,
+      no: getRowNumber(page, pageSize, index),
       date: item.date_time ? dayjs(item.date_time, 'DD/MM/BBBB').format('DD MMM BBBB') : '-',
       dateISO: item.date_time ? dayjs(item.date_time, 'DD/MM/BBBB').format('YYYY-MM-DD') : undefined,
       station_id: item.station_id,
@@ -136,7 +137,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
       align: 'center',
       width: 210,
       render: (value: number) => (
-        <span className={value > 0 ? 'text-red-500' : 'text-white/25'}>{fmtNumber(value)}</span>
+        <span className={value > 0 ? 'text-orange-500' : 'text-white/25'}>{fmtNumber(value)}</span>
       ),
     },
     {

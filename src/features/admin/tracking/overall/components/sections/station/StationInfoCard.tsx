@@ -18,10 +18,10 @@ const StationInfoCard: React.FC<Props> = (props) => {
       <div className='bg-[#66AEFF1A] border-2 border-(--yellow) p-3 rounded-2xl'>
         <div className='flex items-center gap-2 mb-2'>
           <TbFlag className='fs-22 text-(--yellow) shrink-0' />
-          <h4 className='text-(--yellow) mb-0'>ด่านทั้งหมด</h4>
+          <h4 className='text-(--yellow) mb-0'>สถานีทั้งหมด</h4>
         </div>
-        <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.total)) || 0}</span> <span className='fs-14'>ด่าน</span></p>
-        <p className='fs-12 text-gray-400 mb-0'>{data?.top_region || '-'} ({fmtNumber(Number(data?.top_region_percent)) || 0}%)</p>
+        <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.total)) || 0}</span> <span className='fs-14'>สถานี</span></p>
+        <p className='fs-12 text-gray-400 mb-0'>{data?.top_region || '-'} ({fmtNumber(Number(data?.top_region_percent), 1) || 0}%)</p>
       </div>
       <div className='bg-[#66AEFF1A] border-2 border-(--default-blue) p-3 rounded-2xl'>
         <div className='flex items-center gap-2 mb-2'>
@@ -30,7 +30,7 @@ const StationInfoCard: React.FC<Props> = (props) => {
         </div>
         <div>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.sum_total)) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_not_over)) || 0} ตัน)</p>
+          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_not_over), 1) || 0} ตัน)</p>
         </div>
       </div>
       <div className='bg-[#66AEFF1A] border-2 border-red-500 p-3 rounded-2xl'>
@@ -40,13 +40,13 @@ const StationInfoCard: React.FC<Props> = (props) => {
         </div>
         <div>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(data?.sum_total_over)) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_over)) || 0} ตัน)</p>
+          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(data?.max_grossweight_over), 1) || 0} ตัน)</p>
         </div>
       </div>
       <div className='bg-[#66AEFF1A] border-2 border-white p-3 rounded-2xl'>
         <div className='flex items-center gap-2 mb-2'>
           <TbFlag className='fs-22 shrink-0' />
-          <h4 className='mb-0'>สถานะด่าน</h4>
+          <h4 className='mb-0'>สถานะสถานี</h4>
         </div>
         <div className='flex flex-wrap gap-1.5'>
           <div className='bg-[#66AEFF1A] border border-(--default-blue) px-2 py-1 rounded-3xl'>

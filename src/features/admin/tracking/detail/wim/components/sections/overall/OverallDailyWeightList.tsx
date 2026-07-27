@@ -18,9 +18,10 @@ interface Props {
   stationType: string | null | undefined;
   isOverWeight?: 'Y' | 'N';
   date?: string;
-  /** Reports the rows currently visible on this list's page (pagination is
-   *  internal) so the parent's export dialog can offer a หน้าปัจจุบัน scope. */
-  onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
+  /** Reports the rows currently visible on this list's page + the current
+   *  page/pageSize (pagination is internal) so the parent's export dialog can
+   *  offer a หน้าปัจจุบัน scope that matches the table's continuing ลำดับ. */
+  onPageRowsChange?: (rows: DailyWeightLogRow[], page: number, pageSize: number) => void;
 }
 
 // Tailwind's scanner needs literal `text-[#hex]` strings to detect arbitrary
@@ -55,8 +56,8 @@ const OverallDailyWeightList: React.FC<Props> = (props) => {
   )
 
   useEffect(() => {
-    onPageRowsChange?.(data)
-  }, [data, onPageRowsChange])
+    onPageRowsChange?.(data, page, pageSize)
+  }, [data, onPageRowsChange, page, pageSize])
 
   const cards = useMemo<DataType[]>(() => data.map((row) => {
     const images = [

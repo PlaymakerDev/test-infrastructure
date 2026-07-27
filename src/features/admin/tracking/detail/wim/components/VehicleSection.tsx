@@ -9,6 +9,7 @@ import {
   ModalWeightLog
 } from '../components'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { getPageOffset } from '@/utils/pagination'
 import { useWIMContext } from '../context'
 import { usePositionById } from '../hooks'
 import type { StationDailyData } from '@/types/tracking/detail-api'
@@ -79,7 +80,7 @@ const VehicleSection: React.FC<Props> = () => {
   const [pageData, setPageData] = useState<{ rows: StationDailyData[]; total: number; offset: number }>({ rows: [], total: 0, offset: 0 })
   const handlePageRowsChange = useCallback(
     (rows: StationDailyData[], total: number, page: number, pageSize: number) =>
-      setPageData({ rows, total, offset: (page - 1) * pageSize }),
+      setPageData({ rows, total, offset: getPageOffset(page, pageSize) }),
     [],
   )
 

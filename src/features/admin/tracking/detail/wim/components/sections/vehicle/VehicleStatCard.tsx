@@ -26,7 +26,7 @@ const VehicleStatCard: React.FC<Props> = () => {
           <TbTruck className='fs-22 text-(--default-blue) mb-1' />
           <h4 className='text-(--default-blue) mb-1'>รถเข้าชั่งทั้งหมด</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_total) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_not_over) || 0} ตัน)</p>
+          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_not_over, 1) || 0} ตัน)</p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
@@ -34,7 +34,7 @@ const VehicleStatCard: React.FC<Props> = () => {
           <TbTruck className='fs-22 text-red-500 mb-1' />
           <h4 className='text-red-500 mb-1'>รถน้ำหนักเกิน</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_total_over) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_over) || 0} ตัน)</p>
+          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_over, 1) || 0} ตัน)</p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
@@ -42,7 +42,7 @@ const VehicleStatCard: React.FC<Props> = () => {
           <TbTruck className='fs-22 text-orange-500 mb-1' />
           <h4 className='text-orange-500 mb-1'>รถน้ำหนักเกิน 10%</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(dailyCount.data?.sum_isover_10percent) || 0}</span> <span className='fs-14'>คัน</span></p>
-          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_over) || 0} ตัน)</p>
+          <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(dailyCount.data?.max_grossweight_over, 1) || 0} ตัน)</p>
         </div>
       </Col>
       <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={5}>

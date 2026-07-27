@@ -36,7 +36,7 @@ const VehicleStatCard: React.FC<Props> = () => {
       <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={4}>
         <div className='h-full bg-[#66AEFF1A] border-2 border-red-500 p-3 rounded-2xl'>
           <TbTruck className='fs-22 text-red-500 mb-1' />
-          <h4 className='text-red-500 mb-1'>รถน้ำหนักเกิน</h4>
+          <h4 className='text-red-500 mb-1'>รถน้ำหนักรวมเกิน</h4>
           <p className='mb-0.5'><span className='fs-18 font-bold'>{fmtNumber(Number(countData?.sum_total_over)) || 0}</span> <span className='fs-14'>คัน</span></p>
           <p className='fs-12 text-gray-400 mb-0'>น้ำหนักที่ชั่งได้สูงสุด/คัน ({fmtNumber(Number(countData?.max_grossweight_over), 1) || 0} ตัน)</p>
         </div>

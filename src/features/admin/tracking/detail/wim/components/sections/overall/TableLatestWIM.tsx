@@ -76,7 +76,7 @@ const TableLatestWIM: React.FC<Props> = (props) => {
       align: 'center',
       width: 200,
       render: (value) => {
-        if (value) return <span className={value > 0 ? 'text-red-500' : 'text-white/25'}>{fmtNumber(value)}</span>
+        if (value) return <span className={value > 0 ? 'text-(--yellow)' : 'text-white/25'}>{fmtNumber(value)}</span>
         return '-'
       }
     },

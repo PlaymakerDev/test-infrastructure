@@ -9,6 +9,8 @@ interface Props {
 }
 
 const TRUCK_IMG = '/atlas/images/vehicles/placeholder/truck-icon.svg'
+const TRUCK_OVERWEIGHT_IMG = '/atlas/images/vehicles/placeholder/truck-overweight-icon.svg'
+const TRUCK_AXLE_OVER_IMG = '/atlas/images/vehicles/placeholder/truck-axleover-icon.svg'
 
 const MobileStatCard: React.FC<Props> = (props) => {
   const { data } = props
@@ -37,7 +39,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       {/* รถบรรทุกน้ำหนักรวมเกิน */}
       <div className="flex bg-[#E982821A] border-2 rounded-2xl border-red-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
-          <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
+          <Image src={TRUCK_OVERWEIGHT_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
           <h4 className="text-red-500 mb-0">รถบรรทุกน้ำหนักรวมเกิน</h4>
@@ -59,7 +61,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
       {/* รถบรรทุกน้ำหนักเพลาเกิน */}
       <div className="flex bg-[#FF7B001A] border-2 rounded-2xl border-orange-500 overflow-hidden min-h-32.5">
         <div className="flex items-center justify-center p-3 w-2/5 shrink-0">
-          <Image src={TRUCK_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
+          <Image src={TRUCK_AXLE_OVER_IMG} alt="truck" width={110} height={160} className="object-contain drop-shadow-lg" />
         </div>
         <div className="flex flex-col justify-between p-4 flex-1 text-right">
           <h4 className="text-orange-500 mb-0">รถบรรทุกน้ำหนักเพลาเกิน</h4>

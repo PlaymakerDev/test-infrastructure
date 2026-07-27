@@ -15,9 +15,10 @@ dayjs.locale('th')
 
 interface Props {
   isOverWeight?: 'Y' | 'N';
-  /** Reports the rows currently visible on this table's page (pagination is
-   *  internal) so the parent's export dialog can offer a หน้าปัจจุบัน scope. */
-  onPageRowsChange?: (rows: DailyWeightLogRow[]) => void;
+  /** Reports the rows currently visible on this table's page + the current
+   *  page/pageSize (pagination is internal) so the parent's export dialog can
+   *  offer a หน้าปัจจุบัน scope that matches the on-screen continuing ลำดับ. */
+  onPageRowsChange?: (rows: DailyWeightLogRow[], page: number, pageSize: number) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 10
@@ -43,10 +44,10 @@ const TableOverallDailyWeight: React.FC<Props> = (props) => {
   )
 
   useEffect(() => {
-    onPageRowsChange?.(data)
-  }, [data, onPageRowsChange])
+    onPageRowsChange?.(data, page, pageSize)
+  }, [data, onPageRowsChange, page, pageSize])
 
-  const columns = getDailyWeightLogColumns({ hideSpeed: stationType === 'STATION' })
+  const columns = getDailyWeightLogColumns({ hideSpeed: stationType === 'STATION', page, pageSize })
 
   if (stationType !== 'STATION' && stationType !== 'WIM') return <Empty description='ไม่พบข้อมูล' />
 

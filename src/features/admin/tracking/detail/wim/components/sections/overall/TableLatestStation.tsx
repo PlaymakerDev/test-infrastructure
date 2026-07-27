@@ -68,17 +68,17 @@ const TableLatestStation: React.FC<Props> = (props) => {
         return '-'
       }
     },
-    {
-      title: 'รถน้ำหนักเกิน 10%',
-      dataIndex: 'isover_10percent',
-      key: 'isover_10percent',
-      align: 'center',
-      width: 200,
-      render: (value) => {
-        if (value) return <span className={value > 0 ? 'text-red-500' : 'text-white/25'}>{fmtNumber(value)}</span>
-        return '-'
-      }
-    },
+    // {
+    //   title: 'รถน้ำหนักเกิน 10%',
+    //   dataIndex: 'isover_10percent',
+    //   key: 'isover_10percent',
+    //   align: 'center',
+    //   width: 200,
+    //   render: (value) => {
+    //     if (value) return <span className={value > 0 ? 'text-(--yellow)' : 'text-white/25'}>{fmtNumber(value)}</span>
+    //     return '-'
+    //   }
+    // },
     {
       title: 'สถานะ',
       dataIndex: 'remark',

@@ -2,10 +2,13 @@ import { CalibrationHistoryData } from '@/types/tracking/detail-api'
 import { Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import React from 'react'
+import React, { useState } from 'react'
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { getRowNumber } from '@/utils/pagination'
 
 dayjs.extend(relativeTime);
+
+const DEFAULT_PAGE_SIZE = 10
 
 
 interface Props {
@@ -15,15 +18,39 @@ interface Props {
 
 type StatusType = 'valid' | 'near_expiry' | 'expired' | 'no_record'
 
-const STATUS_CLASS: Record<StatusType, string> = {
-  'valid': 'border-[#52c41a] text-[#52c41a]',
-  'near_expiry': 'border-[#faad14] text-[#faad14]',
-  'expired': 'border-[#ff4d4f] text-[#ff4d4f]',
-  'no_record': 'border-[#d9d9d9] text-[#d9d9d9]',
+// Mirrors this feature's own status palette (TableVehicleData/TableStation/TableWIM's
+// เปิดปกติ=blue / ระบบขัดข้อง=yellow / ไม่ส่งข้อมูล=red triad) instead of AntD's
+// default success/warning/error/disabled colors, which clash with the app's theme.
+const STATUS_CLASS: Record<StatusType, { className: string; color: string; text: string }> = {
+  'valid': {
+    className: 'border-(--default-blue) text-(--default-blue)',
+    color: 'var(--default-blue)',
+    text: 'อยู่ในระยะใช้งาน'
+  },
+  'near_expiry': {
+    className: 'border-(--yellow) text-(--yellow)',
+    color: 'var(--yellow)',
+    text: 'ใกล้หมดอายุ'
+  },
+  'expired': {
+    className: 'border-(--default-red) text-(--default-red)',
+    color: 'var(--default-red)',
+    text: 'หมดอายุ'
+  },
+  'no_record': {
+    className: 'border-(--light-gray-3) text-(--light-gray-3)',
+    color: 'var(--light-gray-3)',
+    text: 'ไม่มีข้อมูล'
+  },
 }
 
 const TableCalibrationHistory: React.FC<Props> = (props) => {
   const { data, isLoading } = props
+  // Table paginates client-side over the full `data` array (no server pagination),
+  // so ลำดับ must track the antd-reported page/pageSize itself to keep numbering
+  // continuous instead of resetting to 1 on every page.
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const columns: ColumnsType<CalibrationHistoryData> = [
     {
@@ -34,9 +61,7 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       width: 70,
       fixed: 'left',
       className: 'col-road-code',
-      render: (_, __, index) => {
-        return index + 1
-      }
+      render: (_, __, index) => getRowNumber(page, pageSize, index),
     },
     {
       title: 'วันที่ Calibrate',
@@ -113,15 +138,18 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       width: 120,
       fixed: 'right',
       render: (item) => {
-        if (item) {
+        const status = STATUS_CLASS[item as StatusType]
+        if (status) {
           return (
-            <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[item as StatusType]}`}>
-              {item}
-            </span>
+            <div
+              className={`inline-block py-0.5 px-3 rounded-lg whitespace-nowrap border`}
+              style={{ borderColor: status?.color, color: status?.color }}
+            >
+              <p className='fs-12'>{status?.text || '-'}</p>
+            </div>
           )
         }
         return '-'
-
       },
     },
   ]
@@ -131,6 +159,12 @@ const TableCalibrationHistory: React.FC<Props> = (props) => {
       columns={columns}
       dataSource={data}
       pagination={{
+        current: page,
+        pageSize,
+        onChange: (nextPage, nextPageSize) => {
+          setPage(nextPage)
+          setPageSize(nextPageSize)
+        },
         locale: { items_per_page: "/ หน้า" },
       }}
       size="middle"

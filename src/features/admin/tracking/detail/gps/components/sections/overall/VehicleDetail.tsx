@@ -36,7 +36,7 @@ const VehicleDetail: React.FC<Props> = (props) => {
           </div>
           {pill && (
             <div
-              className='inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border mt-1'
+              className='inline-block py-0.5 px-3.5 rounded-full whitespace-nowrap border'
               style={{ borderColor: pill.color, color: pill.color }}
             >
               <p className='fs-12'>{pill.label}</p>

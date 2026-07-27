@@ -27,8 +27,8 @@ interface FormSearchValues {
 
 const PERIOD_OPTIONS: Array<{ label: string; value: FormSearchValues['period'] }> = [
   { label: "วันนี้", value: "TODAY" },
-  { label: "เมื่อวานนี้", value: "YESTERDAY" },
-  { label: "7 วันที่ผ่านมา", value: "LAST_7_DAYS" },
+  { label: "เมื่อวาน", value: "YESTERDAY" },
+  { label: "7 วัน", value: "LAST_7_DAYS" },
   { label: "เดือนนี้", value: "THIS_MONTH" },
 ]
 

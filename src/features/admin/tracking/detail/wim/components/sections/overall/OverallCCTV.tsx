@@ -65,8 +65,8 @@ const OverallCCTV: React.FC<Props> = () => {
             onClick={() => setOpenCCTVData({ open: true, item: item ?? null })}
           />
         </figure>
-        <h4 className='fs-12 text-(--default-blue) leading-snug break-all mb-0.5'>{item.camera_description}</h4>
-        <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item.station_description}</p>
+        <h4 className='fs-12 text-(--default-blue) leading-snug break-all mb-0.5'>{item.camera_description || '-'}</h4>
+        <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item.camera_ip || '-'}</p>
       </Col>
     ))
   }, [data, randomCam, setOpenCCTVData])
