@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { TbCar } from 'react-icons/tb'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -48,6 +48,28 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
   const { id } = useDetailContext()
   const { data, isLoading } = useTrafficVolumeCountHour({ solution_id: id })
   const breakdown = data?.daily_vehicle_count
+
+  // Stretch the antd table to fill the card's spare height. A pure-CSS height
+  // chain can't reliably thread a definite height through antd's nested spin/
+  // table wrappers, so we measure the available box (the `flex-1` wrapper) and
+  // set the real <table>'s height — a table taller than its content hands the
+  // extra height to its rows, distributing it evenly down to the summary row.
+  const fillRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const box = fillRef.current
+    if (!box) return
+    const apply = () => {
+      const table = box.querySelector<HTMLTableElement>('.ant-table-content > table')
+      if (table) table.style.height = `${box.clientHeight}px`
+    }
+    apply()
+    // `box` is a `flex-1 min-h-0` item — its height comes from the flex column,
+    // not its content, so setting the table height can't feed back into it
+    // (no resize loop). Re-measure whenever the card is resized.
+    const ro = new ResizeObserver(apply)
+    ro.observe(box)
+    return () => ro.disconnect()
+  }, [])
 
   const rows = useMemo<Row[]>(() => {
     const list = VEHICLE_TYPES.map<Row>((t) => {
@@ -176,17 +198,20 @@ const VehicleBreakdownTable: React.FC<Props> = () => {
         </span>
       </div>
 
-      {/* Cell padding bumped via `.vehicle-breakdown-table` (see antd.css) so
-        * rows stretch to fill the card and balance the donut next to it. */}
-      <Table<Row>
-        rowKey='key'
-        columns={columns}
-        dataSource={rows}
-        pagination={false}
-        size='middle'
-        loading={isLoading}
-        className='bridge-projects-table vehicle-breakdown-table'
-      />
+      {/* `flex-1` gives this box the card's spare height; the effect above then
+        * sets the inner <table>'s height to match so its rows distribute evenly
+        * to fill — no dead space below the summary row on a tall card. */}
+      <div ref={fillRef} className='flex-1 min-h-0 flex flex-col'>
+        <Table<Row>
+          rowKey='key'
+          columns={columns}
+          dataSource={rows}
+          pagination={false}
+          size='middle'
+          loading={isLoading}
+          className='bridge-projects-table vehicle-breakdown-table'
+        />
+      </div>
     </div>
   )
 }

@@ -43,7 +43,10 @@ const BarChart7day: React.FC<Props> = () => {
       iconCircle={false}
       data={days}
       bars={[{ dataKey: 'total', color: '#66AEFF', label: 'ปริมาณจราจร' }]}
-      height={200}
+      // Match the hourly line chart above: same chart height + `pb-4` (BarChart's
+      // base card uses `pb-1`, LineChart's uses `pb-4`) ⇒ the two cards are equal.
+      height={250}
+      cardClassName='pb-6'
     />
   )
 }

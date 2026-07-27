@@ -32,7 +32,9 @@ export interface BarChartStat {
 }
 
 export interface BarChartProps {
-  /** ต่อท้าย className ของการ์ดนอกสุด (เช่น 'h-full' ให้เท่ากันในแถว grid) */
+  /** ต่อท้าย className ของการ์ดนอกสุด (เช่น 'h-full' ให้เท่ากันในแถว grid) —
+   *  เพิ่มเข้าไปหลัง base class `relative rounded-2xl pt-5 px-5 pb-1 w-full
+   *  overflow-hidden` ไม่ได้ไปแทนที่ */
   cardClassName?: string
   /** ชื่อหัวข้อ */
   title?: string
@@ -106,7 +108,7 @@ export interface BarChartProps {
 const BarChart: React.FC<BarChartProps> = ({
   title,
   titleSize = 16,
-  cardClassName = 'relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden',
+  cardClassName = '',
   subtitle,
   subtitleSize = 'var(--fs-12)',
   icon,
@@ -263,7 +265,7 @@ const BarChart: React.FC<BarChartProps> = ({
 
   return (
     <div
-      className={cardClassName}
+      className={`relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden ${cardClassName}`.trim()}
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (

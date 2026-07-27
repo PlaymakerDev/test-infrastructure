@@ -74,7 +74,9 @@ const LineChartHour: React.FC<Props> = () => {
       lines={[
         { dataKey: 'total', color: '#66AEFF', label: 'รวมทั้งหมด', unit: 'คัน' },
       ]}
-      fillHeight
+      // Fixed height (not `fillHeight`) so this card matches the 7-day bar
+      // chart below it exactly — same chart height + same header ⇒ equal cards.
+      height={260}
       tooltipDateKey='dateLabel'
       tooltipExtras={tooltipExtras}
     // โชว์ทุกชั่วโมง 00.00–23.00 ไม่เว้น — หมุน 45° ให้ label ไม่ทับกัน
