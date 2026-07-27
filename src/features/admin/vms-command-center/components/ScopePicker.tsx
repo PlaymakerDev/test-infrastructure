@@ -1,7 +1,7 @@
 "use client"
 import React, { useDeferredValue, useMemo, useState } from 'react'
 import { Empty, Input, Skeleton, Tag, Tooltip } from 'antd'
-import { TbBuilding, TbInfoCircle, TbMapPin, TbRoad, TbSearch, TbSignRight } from 'react-icons/tb'
+import { TbInfoCircle, TbSearch } from 'react-icons/tb'
 import BureauList from '@/components/list/BureauList'
 import type { BureauItem, BureauSelection } from '@/types/control-vms/bureau'
 import { useVMSDepartments } from '@/features/admin/control-vms/overall/hooks/useVMSDepartments'
@@ -35,6 +35,10 @@ const summaryTagBase: React.CSSProperties = {
 // same CSS var used for the border + text so a single palette move updates all.
 const tintTag = (cssVar: string): React.CSSProperties => ({
   ...summaryTagBase,
+  // Inline — antd v6's Tag font-size rule has the same (single-class)
+  // specificity as a Tailwind text-* utility and loads after it, so a className
+  // loses the tie. An inline style beats antd's stylesheet.
+  fontSize: 14,
   background: `color-mix(in srgb, var(${cssVar}) 12%, transparent)`,
   border: `1px solid var(${cssVar})`,
   color: `var(${cssVar})`,
@@ -77,16 +81,16 @@ const ScopePicker: React.FC<Props> = React.memo(function ScopePicker({
       <div className="px-3 py-3 border-b border-white/10 space-y-2">
         <div className="flex items-center gap-2">
           <div className="grid grid-cols-4 gap-2 flex-1">
-            <Tag variant="filled" className="fs-12" style={tintTag('--default-blue')} icon={<TbBuilding style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" style={tintTag('--default-blue')}>
               สำนัก {selection.bureaus.length}
             </Tag>
-            <Tag variant="filled" className="fs-12" style={tintTag('--light-blue')} icon={<TbMapPin style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" style={tintTag('--light-blue')}>
               แขวง {selection.states.length}
             </Tag>
-            <Tag variant="filled" className="fs-12" style={tintTag('--light-gray-3')} icon={<TbRoad style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" style={tintTag('--light-gray-3')}>
               สายทาง {selection.routes.length}
             </Tag>
-            <Tag variant="filled" className="fs-12" style={tintTag('--yellow')} icon={<TbSignRight style={{ verticalAlign: -2 }} />}>
+            <Tag variant="filled" style={tintTag('--yellow')}>
               ป้าย {selection.signs.length}
             </Tag>
           </div>

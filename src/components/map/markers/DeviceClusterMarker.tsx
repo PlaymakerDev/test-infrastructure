@@ -318,6 +318,9 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             color={colorExpr}
             iconImage={`icon-${type}`}
             minZoom={minZoom}
+            // จุดติดตั้ง name on hover — canvas pins have no DOM title like
+            // the stack markers do (requested 2026-07-27).
+            tooltipProperty='solutionName'
             visible={visible}
             onClick={(_, feature) => onClick?.(feature.properties as Device)}
             onClusterClickCapture={onClusterClick ? () => onClusterClick() : undefined}

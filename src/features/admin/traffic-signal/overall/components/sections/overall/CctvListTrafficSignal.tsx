@@ -79,14 +79,14 @@ const CctvListTrafficSignal: React.FC<Props> = () => {
               <p className='camera-location mb-0 whitespace-nowrap'>IP : {ipAddress}</p>
               {/* Phase pill — blue outline */}
               <span
-                className='inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap'
+                className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
                 style={{ border: '1px solid #66AEFF', color: '#66AEFF' }}
               >
                 {phaseCount ?? '-'} Phase
               </span>
               {/* Detection mode pill — yellow=Counting, white=StopLine */}
               <span
-                className='inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] whitespace-nowrap'
+                className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
                 style={{ border: `1px solid ${modeColor}`, color: modeColor }}
               >
                 {modeText}

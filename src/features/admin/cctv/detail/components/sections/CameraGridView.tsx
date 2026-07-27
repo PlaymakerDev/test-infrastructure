@@ -76,7 +76,9 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
 
     <p
       className='fs-12 font-normal leading-snug line-clamp-2 cursor-pointer hover:underline'
-      style={{ color: '#66AEFF' }}
+      // Offline camera → red name, same rule as the rail in OverallSection
+      // (per Figma, 2026-07-27); online keeps blue.
+      style={{ color: camera.deviceStatus === 'disconnect' ? '#E94C4C' : '#66AEFF' }}
       title={camera.name}
       onClick={onSelect}
     >

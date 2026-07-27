@@ -561,6 +561,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       if (map.getZoom() >= HOVER_MAX_ZOOM) { clearHover(); return }
       // Cursor is over an HTML overlay (marker/badge/popup) — not the map.
       if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
+      // Cursor is over a canvas-drawn device pin — the pin's own จุดติดตั้ง
+      // tooltip owns that spot; showing the province box too stacked two
+      // tooltips on top of each other (reported 2026-07-27).
+      const overDevicePin = map
+        .queryRenderedFeatures(e.point)
+        .some((f) => f.layer?.id?.startsWith('markerlayer-') && f.layer.id.includes('device-'))
+      if (overDevicePin) { clearHover(); return }
       const code = e.features?.[0]?.properties?.code as string | undefined
       const province = code ? (PROVINCE_BY_CODE[code] as Province | undefined) : undefined
       const accessible = code != null && provinceDeptMapRef.current.has(code)

@@ -190,7 +190,7 @@ const PhaseTimingTrafficSignal: React.FC = () => {
             </span>
           )}
         </div>
-        <p className='mb-0' style={{ color: activeColor, fontSize: 13 }}>
+        <p className='mb-0 fs-12' style={{ color: activeColor }}>
           {inGreen ? 'Green Time' : 'Red Time'} : {remaining}s
         </p>
       </div>
@@ -232,7 +232,7 @@ const PhaseTimingTrafficSignal: React.FC = () => {
                   className='inline-block rounded-full'
                   style={{ width: 6, height: 6, background: '#16FC2D' }}
                 />
-                <span className='text-white' style={{ fontSize: 12 }}>
+                <span className='text-white fs-12'>
                   {p.greenSec}s
                 </span>
               </div>
@@ -241,7 +241,7 @@ const PhaseTimingTrafficSignal: React.FC = () => {
                   className='inline-block rounded-full'
                   style={{ width: 6, height: 6, background: '#ef4444' }}
                 />
-                <span className='text-white' style={{ fontSize: 12 }}>
+                <span className='text-white fs-12'>
                   {p.redSec}s
                 </span>
               </div>

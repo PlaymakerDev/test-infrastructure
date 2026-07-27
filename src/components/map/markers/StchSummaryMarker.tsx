@@ -79,7 +79,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
             key={stch}
             lngLat={info.centroid}
             visible={visible}
-            title={`${stchLabel(stch)} · ${info.count} อุปกรณ์`}
+            title={`${stchLabel(stch)} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               onMarkerClick?.()
               map?.flyTo({

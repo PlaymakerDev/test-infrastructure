@@ -1,5 +1,5 @@
 "use client"
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   App,
   Button,
@@ -96,6 +96,15 @@ const useDebounced = <T,>(value: T, delay = 200): T => {
 // ---------------------------------------------------------------------------
 
 const OTHER_LABEL = 'อื่น ๆ'
+
+// แสดงผล/เข้ากลุ่ม switch inner labels: force 12px (the small-switch default
+// is tinier and hard to read) and dark text on the blue checked track —
+// white-on-#66AEFF was near-invisible; same dark-on-blue pairing as
+// DetailTitleSection's Anydesk button. Unchecked (red track) keeps white.
+const SWITCH_LABEL_CLS =
+  '[&_.ant-switch-inner-checked]:text-xs! [&_.ant-switch-inner-unchecked]:text-xs! ' +
+  '[&_.ant-switch-inner-checked]:text-[#0A0A0A]! [&_.ant-switch-inner-checked]:font-medium! ' +
+  '[&_.ant-switch-inner-unchecked]:text-white! [&_.ant-switch-inner-unchecked]:font-medium!'
 
 interface TreeAcc {
   bureaus: Map<
@@ -537,6 +546,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         render: (_: unknown, r) => (
           <Switch
             size="small"
+            className={SWITCH_LABEL_CLS}
             checked={r.is_allowed_settings}
             loading={allowSettings.isPending && allowSettings.variables?.wid === r.wid}
             onChange={(next) => handleToggleAllowSettings(r, next)}
@@ -559,6 +569,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         render: (_: unknown, r) => (
           <Switch
             size="small"
+            className={SWITCH_LABEL_CLS}
             checked={r.is_centralized}
             loading={centralize.isPending && centralize.variables?.wid === r.wid}
             onChange={(next) => handleToggleCentralize(r, next)}
@@ -607,10 +618,23 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
 
   const hasFilter = filter.level !== 'all'
 
+  // Table scroll region — antd sticky header pins to this container (the page
+  // itself never scrolls on this screen, so the default window container would
+  // never stick).
+  const tableScrollRef = useRef<HTMLDivElement>(null)
+
   return (
-    <div className="h-full grid grid-cols-1 md:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] gap-3">
+    // `md:grid-rows-[minmax(0,1fr)]` bounds the single row to the grid's own
+    // height — without it the row sizes to content (min-height:auto), so a
+    // tall tree/table pushed the panels past the viewport bottom edge with no
+    // margin and nothing scrollable (reported 2026-07-27: "ตารางติดขอบ
+    // เบราเซอร์"). Below md the panels stack and the grid scrolls instead.
+    // md:pb-6 — breathing room so the panels don't sit flush against the
+    // browser's bottom edge (requested for this tab only; other tabs keep
+    // their own layout).
+    <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)] gap-3 overflow-y-auto md:overflow-hidden pb-2 md:pb-6">
       {/* Left: bureau/state/route tree */}
-      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
+      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col min-h-0 max-h-[45dvh] md:max-h-none">
         <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
           <div className="fs-12 font-semibold text-(--yellow)">ค้นหาตามหน่วยงาน</div>
           {hasFilter && (
@@ -663,7 +687,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       </div>
 
       {/* Right: summary + filters + table */}
-      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col">
+      <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col min-h-0">
         <div className="px-4 py-3 border-b border-white/10 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap fs-12">
@@ -730,7 +754,11 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* px-3/pb-3 gutter matches every other table page (the table and its
+            scrollbar used to sit flush against the panel edge). The wrapper is
+            the scroll container for both axes; no top padding so the sticky
+            header pins seamlessly at 0. */}
+        <div ref={tableScrollRef} className="flex-1 min-h-0 overflow-auto px-3 pb-3">
           {isLoading ? (
             <div className="p-6">
               <Skeleton active paragraph={{ rows: 8 }} />
@@ -742,8 +770,15 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                   Table: {
                     headerBg: '#1f1f1f',
                     headerColor: 'rgba(255,255,255,0.85)',
-                    colorBgContainer: 'transparent',
-                    rowHoverBg: 'rgba(255,255,255,0.04)',
+                    // Solid --dark-black, NOT 'transparent' — fixed columns
+                    // inherit this as their cell bg, and transparent let the
+                    // scrolling columns show through under the switches.
+                    // Visually identical to transparent (panel bg is #191919).
+                    colorBgContainer: '#191919',
+                    // Opaque --mid-gray (globals.css hover-row token), not a
+                    // translucent white — hovered fixed cells went see-through
+                    // and the scrolled-under columns bled into the switches.
+                    rowHoverBg: '#2B2B2B',
                     borderColor: 'rgba(255,255,255,0.08)',
                     headerSplitColor: 'rgba(255,255,255,0.08)',
                     expandIconBg: 'transparent',
@@ -756,9 +791,14 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                 columns={columns}
                 rowKey="wid"
                 size="small"
-                sticky
+                sticky={{ getContainer: () => tableScrollRef.current ?? window }}
                 pagination={false}
-                scroll={{ y: 'calc(100vh - 320px)' }}
+                // scroll.x (not the old hardcoded `y: calc(100vh - 320px)`):
+                // without it, narrow windows / OS zoom crushed the columns
+                // (header text stacked one glyph per line) instead of
+                // scrolling horizontally, and the fixed columns had no scroll
+                // context. 1400 ≈ the sum of the column widths above.
+                scroll={{ x: 1400 }}
                 rowClassName={(r) => (r.is_centralized ? '' : 'opacity-70')}
                 locale={{ emptyText: 'ไม่มีป้ายที่ตรงกับตัวกรอง' }}
                 expandable={{

@@ -68,7 +68,7 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
             key={deptId}
             lngLat={info.centroid}
             visible={visible}
-            title={`${label} · ${info.count} อุปกรณ์`}
+            title={`${label} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               map?.flyTo({
                 center: info.centroid,

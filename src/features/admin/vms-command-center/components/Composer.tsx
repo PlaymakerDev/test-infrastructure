@@ -239,12 +239,12 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
   return (
     <ConfigProvider locale={thTH}>
-      <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
+      <div className="flex flex-col h-full rounded-xl text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
           <h4 className="text-(--yellow)">สร้างคำสั่งใหม่</h4>
           <p className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        <div className="flex-1 px-4 py-3 space-y-4">
           {/* Content mode toggle — media and message are mutually exclusive
               on the sign itself, so only one input surface shows at a time
               instead of both being visible and risking both fields being
@@ -264,7 +264,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
               {onGotoLibrary && (
                 <button
-                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  className="fs-12 px-2 py-0.5 rounded-full border border-(--yellow) bg-(--yellow) text-(--dark-black) font-semibold inline-flex items-center gap-1 transition-colors hover:bg-(--yellow)/90"
                   onClick={onGotoLibrary}
                   type="button"
                 >
@@ -288,7 +288,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
             {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
             {!mediaLoading && mediaItems.length === 0 && (
               <div className="fs-12 text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
-                ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ "คลังสื่อ"
+                ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ &quot;คลังสื่อ&quot;
               </div>
             )}
             {mediaItems.length > 0 && (
@@ -479,16 +479,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                   const overlapping = overlappingSlotIds.has(slot.id)
                   return (
                     <div key={slot.id} className="flex items-center gap-2">
-                      {/* needConfirm defaults to true here (unlike the legacy form's
-                          single TimePicker, which is a same-panel confirm-on-pick
-                          since there's only one side) — this is a RangePicker with
-                          start+end in one control, so an explicit OK gives the
-                          operator a beat to review both ends before committing a
-                          schedule that affects a live sign. */}
+                      {/* needConfirm={false} — no "ตกลง" button. Picking the
+                          start minute auto-advances to the end field, and picking
+                          the end minute commits + closes the panel immediately, so
+                          the operator flows straight into the next slot. */}
                       <TimePicker.RangePicker
                         value={slot.range}
                         onChange={(v) => v && v[0] && v[1] && updateTimeSlot(slot.id, [v[0], v[1]])}
                         format="HH:mm"
+                        needConfirm={false}
                         allowClear={false}
                         className="w-full"
                         size="large"
@@ -530,18 +529,33 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           )}
         </div>
         <div className="px-4 py-3 border-t border-white/10">
-          <Button
-            type="primary"
-            danger
-            block
-            size="large"
-            icon={<TbRocket style={{ verticalAlign: -2 }} />}
-            disabled={!canDispatch || post.isPending}
-            loading={post.isPending}
-            onClick={() => setConfirmOpen(true)}
+          {/* Blue dispatch button — --default-blue (#66AEFF). Text is
+              --dark-black for legibility (the light blue fails contrast with
+              white). Hover/active are lighter/darker shades of the same hue. */}
+          <ConfigProvider
+            theme={{
+              components: {
+                Button: {
+                  colorPrimary: '#66AEFF',
+                  colorPrimaryHover: '#85BFFF',
+                  colorPrimaryActive: '#4D9DFF',
+                  primaryColor: '#191919',
+                },
+              },
+            }}
           >
-            ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
-          </Button>
+            <Button
+              type="primary"
+              block
+              size="large"
+              icon={<TbRocket style={{ verticalAlign: -2 }} />}
+              disabled={!canDispatch || post.isPending}
+              loading={post.isPending}
+              onClick={() => setConfirmOpen(true)}
+            >
+              ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
+            </Button>
+          </ConfigProvider>
         </div>
         <Modal
           open={confirmOpen}
@@ -554,48 +568,51 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
         >
           <div className="text-sm space-y-3">
             {currentSettingLoading && <Skeleton active paragraph={{ rows: 2 }} />}
+            {/* Dark confirm modal text scheme (2026-07-27): bold/headings →
+                yellow, body text → white; STATUS values keep their own
+                state colours (orange รอดำเนินการ ฯลฯ). */}
             {!currentSettingLoading && currentSettings.length > 0 && (
               <div className="bg-orange-500/20 border-2 border-orange-500 rounded-lg px-4 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-black! m-0">คำสั่งเดิม (จะถูกทับ)</h4>
+                  <h4 className="text-(--yellow)! m-0">คำสั่งเดิม (จะถูกทับ)</h4>
                   {currentSettings.length > 1 && (
                     <Popover
                       placement="right"
                       content={currentSettings.slice(1).map((item, i) => (
                         <div key={`${item.solution_name}-${i}`} className="mb-2 last:mb-0">
-                          <p className="fs-12 text-(--light-gray) m-0">จุดติดตั้ง: <span className="text-black">{item.solution_name || '-'}</span></p>
-                          <ul className="fs-12 text-black m-0 pl-4">{renderScheduleTimes(item.schedule)}</ul>
+                          <p className="fs-12 text-white m-0">จุดติดตั้ง: <span className="text-white">{item.solution_name || '-'}</span></p>
+                          <ul className="fs-12 text-white m-0 pl-4">{renderScheduleTimes(item.schedule)}</ul>
                         </div>
                       ))}
                     >
-                      <p className="fs-12 text-black underline cursor-pointer m-0">และอีก {currentSettings.length - 1} ป้าย</p>
+                      <p className="fs-12 text-white underline cursor-pointer m-0">และอีก {currentSettings.length - 1} ป้าย</p>
                     </Popover>
                   )}
                 </div>
-                <p className="fs-12 text-(--light-gray) mt-1 mb-0">จุดติดตั้ง: <span className="text-black">{currentSettings[0].solution_name || '-'}</span></p>
-                <ul className="fs-12 text-black mt-0.5 mb-0 pl-4">{renderScheduleTimes(currentSettings[0].schedule)}</ul>
-                <p className="fs-12 text-(--light-gray) mt-1 mb-0">สถานะ: <span className="text-orange-600 font-bold">{currentSettings[0].status_name || '-'}</span></p>
+                <p className="fs-12 text-white mt-1 mb-0">จุดติดตั้ง: <span className="text-white">{currentSettings[0].solution_name || '-'}</span></p>
+                <ul className="fs-12 text-white mt-0.5 mb-0 pl-4">{renderScheduleTimes(currentSettings[0].schedule)}</ul>
+                <p className="fs-12 text-white mt-1 mb-0">สถานะ: <span className="text-orange-600 font-bold">{currentSettings[0].status_name || '-'}</span></p>
               </div>
             )}
             {!currentSettingLoading && currentSettings.length === 0 && vmsIds.length > 0 && (
               <Empty description="ป้ายที่เลือกยังไม่มีคำสั่งแสดงผลอยู่" className="my-2" />
             )}
             <div className="bg-blue-500/20 border-2 border-blue-500 rounded-lg px-4 py-2">
-              <h4 className="text-black! m-0">คำสั่งใหม่</h4>
-              <p className="fs-12 text-(--light-gray) mt-1 mb-0">
-                จะส่ง <b className="text-black">
+              <h4 className="text-(--yellow)! m-0">คำสั่งใหม่</h4>
+              <p className="fs-12 text-white mt-1 mb-0">
+                จะส่ง <b className="text-(--yellow)">
                   {isMessageOnly
                     ? `ข้อความ: "${message.trim()}"`
                     : selectedMedia?.setting_type_name || selectedMedia?.name || 'ประกาศ'}
-                </b> ไปยัง <b className="text-black">{vmsIds.length}</b> ป้าย
+                </b> ไปยัง <b className="text-(--yellow)">{vmsIds.length}</b> ป้าย
               </p>
-              <p className="fs-12 text-(--light-gray) mt-1 mb-0">
+              <p className="fs-12 text-white mt-1 mb-0">
                 ช่วง {dateRange[0].format(dateFmt)} → {dateRange[1].format(dateFmt)}
               </p>
               {isAllDay ? (
-                <p className="fs-12 text-(--light-gray) mt-1 mb-0">เวลา: ตลอดวัน</p>
+                <p className="fs-12 text-white mt-1 mb-0">เวลา: ตลอดวัน</p>
               ) : (
-                <ul className="fs-12 text-(--light-gray) mt-1 mb-0 pl-4">
+                <ul className="fs-12 text-white mt-1 mb-0 pl-4">
                   {timeSlots.map((slot) => (
                     <li key={slot.id}>{slot.range[0].format('HH:mm')} – {slot.range[1].format('HH:mm')}</li>
                   ))}

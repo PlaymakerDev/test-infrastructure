@@ -61,7 +61,15 @@ const CameraList: React.FC<Props> = ({ activeFilter = 'all' }) => {
                 cameraId={cam.id}
               />
             </div>
-            <h4 className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.camera_name}</h4>
+            {/* Offline camera → red name, same rule as the CCTV detail rail
+              * (Figma). Inline fontWeight 400 — the h4 otherwise renders
+              * heavier than the other menus' <p>-based grid names. */}
+            <h4
+              className='mb-0 fs-12 font-normal leading-snug line-clamp-2'
+              style={{ fontWeight: 400, color: cam.is_online ? '#66AEFF' : '#E94C4C' }}
+            >
+              {cam.camera_name}
+            </h4>
             <p className='fs-12 text-gray-400 mb-0'>
               IP Address : {cam.ip_address ?? extractIpFromHlsUrl(cam.hls_url)}
             </p>
