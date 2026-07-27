@@ -96,6 +96,8 @@ export interface PieChartProps {
   outerLabels?: PieChartOuterLabel[]
   /** Radius (px from donut center) for outer labels. Default `donutSize/2 + 20`. */
   outerLabelRadius?: number
+  /** Font size (px) of the outer-label subtitle (e.g. "15s"). Default 11. */
+  outerLabelSubtitleSize?: number
   /** Cap legend height (px) and enable internal scroll — keeps the card compact
    *  when there are many entries (e.g. 10+ event types on one road). */
   legendMaxHeight?: number
@@ -144,6 +146,7 @@ const PieChart: React.FC<PieChartProps> = ({
   showLegend,
   outerLabels,
   outerLabelRadius,
+  outerLabelSubtitleSize = 11,
   legendMaxHeight,
 }) => {
   const [activePeriod, setActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
@@ -363,7 +366,7 @@ const PieChart: React.FC<PieChartProps> = ({
                     {lp.label.subtitle && (
                       <span
                         className='flex items-center gap-1 text-white mt-1'
-                        style={{ fontSize: 11 }}
+                        style={{ fontSize: outerLabelSubtitleSize }}
                       >
                         <span
                           className='inline-block rounded-full'

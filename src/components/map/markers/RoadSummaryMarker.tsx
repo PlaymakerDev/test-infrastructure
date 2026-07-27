@@ -68,7 +68,7 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
             key={roadId}
             lngLat={info.centroid}
             visible={visible && !suppressed}
-            title={`${info.label} · ${info.count} อุปกรณ์`}
+            title={`${info.label} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               if (map) {
                 // Fit the WHOLE road's devices — no upward clamp: road-focus

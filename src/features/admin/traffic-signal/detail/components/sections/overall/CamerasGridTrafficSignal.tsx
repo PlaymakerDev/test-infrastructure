@@ -120,7 +120,7 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
         cameraId={cam.id}
       />
       <span
-        className='absolute top-2 right-2 text-[12px] px-2.5 py-1 rounded-full'
+        className='absolute top-2 right-2 fs-12 px-2.5 py-1 rounded-full'
         style={{
           background: 'rgba(0,0,0,0.6)',
           // Counting → yellow; Stopline stays white (per Figma).
@@ -130,7 +130,13 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
         P{cam.phase} - {cam.detectionMode}
       </span>
     </div>
-    <p className='text-blue-400 mb-0 fs-12 font-normal leading-snug line-clamp-2'>{cam.code}</p>
+    {/* Offline camera → red name, same rule as the CCTV detail rail (Figma). */}
+    <p
+      className='mb-0 fs-12 font-normal leading-snug line-clamp-2'
+      style={{ color: cam.connection === 'offline' ? '#E94C4C' : '#66AEFF' }}
+    >
+      {cam.code}
+    </p>
     {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma.
       * No flex-wrap: IP truncates (min-w-0) so the pills stay on the same line. */}
     <div className='flex items-center justify-between gap-2 mt-1'>

@@ -5,10 +5,18 @@ import type {
   ExpressionSpecification,
   GeoJSONSource,
   GeoJSONSourceSpecification,
+  Map as MapboxMap,
   MapMouseEvent,
   PopupOptions,
   SymbolLayerSpecification,
 } from 'mapbox-gl'
+
+// One hover-tooltip element PER MAP, shared by every MarkerLayer instance —
+// a tooltip per layer (11 system layers on the dashboard) stacked multiple
+// boxes when overlapping pins from different layers sat under the cursor
+// (reported 2026-07-27). `data-owner` tracks which layer wrote it last so a
+// stray mouseleave from a neighbouring layer can't hide the active one.
+const tooltipByMap = new WeakMap<MapboxMap, HTMLDivElement>()
 
 /** Color may be a static string (most cases) or a Mapbox data-driven
  *  expression (e.g. `['case', ['get', 'is_online'], '#22d3ee', '#ef4444']`)
@@ -47,6 +55,9 @@ export interface MarkerLayerProps {
   /** Circle marker color (also used for cluster bubble). Accepts a plain hex
    *  string OR a Mapbox expression for data-driven colouring. */
   color: MarkerColor
+  /** Feature property shown in a floating hover tooltip on unclustered
+   *  points (e.g. 'solutionName') — canvas markers can't carry a DOM title. */
+  tooltipProperty?: string
   /** Circle radius for unclustered points (default 16) */
   size?: number
   /** Stroke around circle (default white 2px for unclustered, 2.5px for cluster) */
@@ -137,6 +148,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   textSize = 12,
   textColor = '#ffffff',
   minZoom,
+  tooltipProperty,
   visible = true,
   onClick,
   onClusterClick,
@@ -360,14 +372,54 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     const enter = setCursor('pointer')
     const leave = setCursor('')
 
+    // Hover tooltip — canvas-drawn markers have no DOM element, so a native
+    // `title` can't work like the HTML markers' one. A floating div (same
+    // look as ReactMap's province tooltip) shows `tooltipProperty` instead
+    // (จุดติดตั้ง name; reported missing on singleton pins 2026-07-27).
+    // The element is SHARED map-wide (tooltipByMap) so overlapping pins from
+    // different type-layers show one box, not a stack.
+    const showTooltip = (e: MapMouseEvent) => {
+      if (!tooltipProperty) return
+      const f = (e as MapMouseEvent & { features?: GeoJSON.Feature[] }).features?.[0]
+      const text = f?.properties?.[tooltipProperty]
+      if (!text) return
+      let el = tooltipByMap.get(map)
+      if (!el || !el.isConnected) {
+        el = document.createElement('div')
+        el.dataset.markerTooltip = '1'
+        el.style.cssText =
+          'position:absolute;z-index:30;pointer-events:none;display:none;' +
+          'padding:5px 9px;border-radius:8px;background:rgba(5,13,26,0.95);' +
+          'border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 10px rgba(0,0,0,0.5);' +
+          'font-size:12px;line-height:1.35;white-space:nowrap;color:#fff;max-width:340px;' +
+          'overflow:hidden;text-overflow:ellipsis'
+        map.getContainer().appendChild(el)
+        tooltipByMap.set(map, el)
+      }
+      el.dataset.owner = pointLayerId
+      el.textContent = String(text)
+      el.style.display = 'block'
+      el.style.left = `${e.point.x + 12}px`
+      el.style.top = `${e.point.y + 14}px`
+    }
+    const hideTooltip = () => {
+      const el = tooltipByMap.get(map)
+      // Only the layer that wrote the tooltip may hide it — leaving pin A
+      // while entering overlapping pin B must not blank B's box.
+      if (el && el.dataset.owner === pointLayerId) el.style.display = 'none'
+    }
+    const pointEnter = (e: MapMouseEvent) => { enter(); showTooltip(e) }
+    const pointLeave = () => { leave(); hideTooltip() }
+
     if (cluster) {
       map.on('click', clusterLayerId, handleClusterClick)
       map.on('mouseenter', clusterLayerId, enter)
       map.on('mouseleave', clusterLayerId, leave)
     }
     map.on('click', pointLayerId, handlePointClick)
-    map.on('mouseenter', pointLayerId, enter)
-    map.on('mouseleave', pointLayerId, leave)
+    map.on('mouseenter', pointLayerId, pointEnter)
+    map.on('mousemove', pointLayerId, showTooltip)
+    map.on('mouseleave', pointLayerId, pointLeave)
 
     return () => {
       try {
@@ -377,8 +429,11 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
           map.off('mouseleave', clusterLayerId, leave)
         }
         map.off('click', pointLayerId, handlePointClick)
-        map.off('mouseenter', pointLayerId, enter)
-        map.off('mouseleave', pointLayerId, leave)
+        map.off('mouseenter', pointLayerId, pointEnter)
+        map.off('mousemove', pointLayerId, showTooltip)
+        map.off('mouseleave', pointLayerId, pointLeave)
+        // Shared element stays for sibling layers — just hide if we own it.
+        hideTooltip()
         if (map.getLayer(symbolLayerId)) map.removeLayer(symbolLayerId)
         if (map.getLayer(pointLayerId)) map.removeLayer(pointLayerId)
         if (map.getLayer(clusterLayerId)) map.removeLayer(clusterLayerId)
@@ -397,6 +452,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
     map, isLoaded, id, sourceId, clusterLayerId, pointLayerId, symbolLayerId,
     cluster, clusterMaxZoom, clusterRadius, color, size, strokeColor, strokeWidth, clusterStrokeWidth,
     iconImage, iconSize, unclusteredCountProperty, clusterSumProperty, clusterColorSumProperty, countCapThreshold, textAnchor, textOffset, textSize, textColor,
+    tooltipProperty,
   ])
 
   // Apply minZoom changes without tearing the layers down.

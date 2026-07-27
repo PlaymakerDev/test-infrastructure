@@ -59,6 +59,9 @@ const TrafficCycleTrafficSignal: React.FC = () => {
       outerLabelRadius={100}
       segmentBorderWidth={0}
       outerLabels={outerLabels}
+      // Per-second times (e.g. "15s") at fs-12 (14px), matching the Phase
+      // Timing card (2026-07-24).
+      outerLabelSubtitleSize={14}
       centerValue={`${total}s`}
       centerValueColor='#FCD116'
       centerValueSize={28}

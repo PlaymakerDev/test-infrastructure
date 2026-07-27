@@ -96,7 +96,15 @@ const CameraTile: React.FC<{
         cameraId={cam.id}
       />
     </div>
-    <h4 className='camera-code'>{cam.code}</h4>
+    {/* Offline camera → red name, same rule as the CCTV detail rail (Figma);
+      * online keeps .camera-code's blue. fontWeight 400 overrides the
+      * class's 500 so the name weight matches the other menus' grids. */}
+    <h4
+      className='camera-code'
+      style={{ fontWeight: 400, ...(cam.connection === 'offline' && { color: '#E94C4C' }) }}
+    >
+      {cam.code}
+    </h4>
     <p className='camera-location text-(--light-gray-3)!'>IP Address : {cam.ipAddress || '-'}</p>
   </div>
 )

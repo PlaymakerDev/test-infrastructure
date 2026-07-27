@@ -149,7 +149,8 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
     return (
       <HTMLMarker
         lngLat={center}
-        title={d.id}
+        // จุดติดตั้ง name, not the raw solution id (tooltip audit 2026-07-27).
+        title={d.solutionName}
         onClick={() => { onMarkerClick?.(); showPopup(d) }}
       >
         <DeviceIcon device={d} size={MARKER_SIZE} />
@@ -180,8 +181,8 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
           }}
           title={
             expanded
-              ? `ปิด — ${n} อุปกรณ์ที่จุดนี้`
-              : `${n} อุปกรณ์ที่จุดนี้ — คลิกเพื่อขยาย`
+              ? `ปิด — ${n} จุดติดตั้งที่ตำแหน่งนี้`
+              : `${n} จุดติดตั้งที่ตำแหน่งนี้ — คลิกเพื่อขยาย`
           }
           style={{
             // Expanded → the count is gone (per 2026-07-24 request): the
@@ -224,7 +225,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
                   onMarkerClick?.()
                   showPopup(d)
                 }}
-                title={`${SYSTEMS[d.type].label} · ${d.id}`}
+                title={`${SYSTEMS[d.type].label} · ${d.solutionName}`}
                 style={{
                   position: 'absolute',
                   left: '50%',
