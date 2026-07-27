@@ -35,6 +35,7 @@ type FormLogin = {
 // we prepend it manually to keep the logo + hero image working under /atlas.
 const BASE_PATH = process.env.__NEXT_ROUTER_BASEPATH ?? ''
 const HERO_SRC = `${BASE_PATH}/images/login/login-hero.png`
+const LOGO_SRC = `${BASE_PATH}/images/login/drr-logo.png`
 
 const REMEMBER_KEY = 'drr_remember_username'
 
@@ -231,6 +232,46 @@ const AuthScreen: React.FC<Props> = (props) => {
             {/* Card bg = #000000B2 (semi-transparent black over the hero, no
                 backdrop blur — mirrors Login.svg). Compact, content-height. */}
             <div className='rounded-[18px] bg-[#000000B2] px-7 py-10 sm:px-9 xl:px-12 2xl:px-16'>
+              {/* logo + org name — restored 2026-07-24 (was accidentally
+                * dropped with the left-side icons during the hero simplification). */}
+              <div className='flex flex-col items-center text-center'>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={LOGO_SRC}
+                  alt='กรมทางหลวงชนบท'
+                  width={124}
+                  height={124}
+                  className='select-none'
+                  draggable={false}
+                />
+                <h2 className='font-bold text-white mt-3' style={{ fontSize: 26 }}>
+                  กรมทางหลวงชนบท
+                </h2>
+                <p className='text-white' style={{ fontSize: 14 }}>Department of Rural Roads</p>
+              </div>
+
+              {/* divider (paint10: yellow centre → blue ends) — a crisp line
+                * over a blurred copy of itself, mirroring Figma's "line + Layer
+                * blur 4" glow. */}
+              <div className='my-5 flex justify-center'>
+                <div className='relative w-3/5'>
+                  <span
+                    aria-hidden
+                    className='absolute inset-x-0 top-1/2 -translate-y-1/2 h-1'
+                    style={{
+                      background: `linear-gradient(90deg,${BLUE} 0%,${YELLOW} 50%,${BLUE} 100%)`,
+                      filter: 'blur(4px)',
+                    }}
+                  />
+                  <span
+                    className='relative block h-0.5'
+                    style={{
+                      background: `linear-gradient(90deg,${BLUE} 0%,${YELLOW} 50%,${BLUE} 100%)`,
+                    }}
+                  />
+                </div>
+              </div>
+
               <div className='text-center'>
                 <p className='font-bold' style={{ color: BLUE, fontSize: 22 }}>
                   เข้าสู่ระบบ
