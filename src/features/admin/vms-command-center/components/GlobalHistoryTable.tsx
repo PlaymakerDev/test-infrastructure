@@ -1,10 +1,12 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Badge, Button, DatePicker, Empty, Radio, Skeleton, Table, Tooltip } from 'antd'
+import { Badge, Button, ConfigProvider, DatePicker, Empty, Segmented, Skeleton, Table, Tooltip } from 'antd'
+import thTH from 'antd/locale/th_TH'
 import type { ColumnsType } from 'antd/es/table'
-import { TbEye, TbRefresh } from 'react-icons/tb'
+import { TbCalendar, TbEye, TbRefresh } from 'react-icons/tb'
 import dayjs, { Dayjs } from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { useGlobalHistory } from '../hooks/useGlobalHistory'
 import StatusPill from './StatusPill'
@@ -12,8 +14,13 @@ import { statusMeta, sourceLabel } from '../constants/vmsStatus'
 import type { VMSGlobalHistoryItem } from '@/types/vms/command-center-api'
 
 dayjs.extend(relativeTime)
+// `BBBB` (Buddhist-Era year) for the custom-range picker's Thai display.
+dayjs.extend(buddhistEra)
 
-type RangePreset = 'today' | '7d' | '30d' | 'custom'
+// Same preset set + wording as crosswalk detail tab 2 (FormSearchViolation):
+// วันนี้ / เมื่อวานนี้ / 7 วันที่ผ่านมา / เดือนนี้; 'custom' = the user picked
+// dates in the RangePicker (no pill highlighted, like crosswalk's ALL).
+type RangePreset = 'today' | 'yesterday' | '7d' | 'month' | 'custom'
 
 interface Props {
   onOpenSign: (vmsId: number) => void
@@ -28,10 +35,14 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
     switch (preset) {
       case 'today':
         return { from: today.format('YYYY-MM-DD'), to: today.format('YYYY-MM-DD') }
+      case 'yesterday': {
+        const y = today.subtract(1, 'day')
+        return { from: y.format('YYYY-MM-DD'), to: y.format('YYYY-MM-DD') }
+      }
       case '7d':
         return { from: today.subtract(6, 'day').format('YYYY-MM-DD'), to: today.format('YYYY-MM-DD') }
-      case '30d':
-        return { from: today.subtract(29, 'day').format('YYYY-MM-DD'), to: today.format('YYYY-MM-DD') }
+      case 'month':
+        return { from: today.startOf('month').format('YYYY-MM-DD'), to: today.format('YYYY-MM-DD') }
       case 'custom':
         return customRange
           ? { from: customRange[0].format('YYYY-MM-DD'), to: customRange[1].format('YYYY-MM-DD') }
@@ -134,19 +145,47 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-wrap">
           <div className="text-sm font-semibold text-(--yellow)">ประวัติสั่งงานทั้งหมด</div>
-          <Radio.Group value={preset} onChange={(e) => setPreset(e.target.value)} size="small">
-            <Radio.Button value="today">วันนี้</Radio.Button>
-            <Radio.Button value="7d">7 วันล่าสุด</Radio.Button>
-            <Radio.Button value="30d">30 วัน</Radio.Button>
-            <Radio.Button value="custom">กำหนดเอง</Radio.Button>
-          </Radio.Group>
-          {preset === 'custom' && (
+          {/* Same date-filter look + wording as crosswalk detail tab 2
+              (FormSearchViolation): yellow-bordered Segmented pills + Thai
+              Buddhist-era RangePicker, always visible and reflecting the
+              active preset's range; picking dates manually un-highlights the
+              pills ('custom', like crosswalk's ALL). Data behaviour
+              unchanged. */}
+          <Segmented
+            value={preset}
+            onChange={(v) => {
+              const next = v as typeof preset
+              // Entering กำหนดเอง always starts fresh: clear the range so the
+              // picker shows its placeholders and the user picks new dates
+              // (re-entering after another preset must reset, not remember).
+              if (next === 'custom') setCustomRange(null)
+              setPreset(next)
+            }}
+            options={[
+              { label: 'วันนี้', value: 'today' },
+              { label: 'เมื่อวานนี้', value: 'yesterday' },
+              { label: '7 วันที่ผ่านมา', value: '7d' },
+              { label: 'เดือนนี้', value: 'month' },
+              { label: 'กำหนดเอง', value: 'custom' },
+            ]}
+            classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+          />
+          <ConfigProvider locale={thTH}>
             <DatePicker.RangePicker
-              size="small"
-              value={customRange ?? undefined}
-              onChange={(v) => v && v[0] && v[1] && setCustomRange([v[0], v[1]])}
+              value={[from ? dayjs(from) : null, to ? dayjs(to) : null]}
+              onChange={(v) => {
+                if (v && v[0] && v[1]) {
+                  setCustomRange([v[0], v[1]])
+                  setPreset('custom')
+                }
+              }}
+              placeholder={['เลือกวันที่เริ่มต้น', 'เลือกวันที่สิ้นสุด']}
+              format='D MMM BBBB'
+              className='w-72!'
+              separator={<span className='text-white'>-</span>}
+              suffixIcon={<TbCalendar className='text-(--yellow)' size={18} />}
             />
-          )}
+          </ConfigProvider>
           <div className="ml-auto flex items-center gap-2">
             <Badge count={rowCount} showZero color="#0ea5e9" overflowCount={9999} />
             <Tooltip title={`อัพเดตอัตโนมัติทุก 15 วิ · ล่าสุด ${lastUpdated}`}>
@@ -173,7 +212,10 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
               rowKey="id"
               columns={columns}
               dataSource={rows}
-              pagination={{ pageSize: 20, showSizeChanger: true, pageSizeOptions: [20, 50, 100] }}
+              // `defaultPageSize`, not `pageSize` — the fixed prop overrode
+              // every size the user picked, so the 20/50/100 dropdown looked
+              // dead (reported 2026-07-27).
+              pagination={{ defaultPageSize: 20, showSizeChanger: true, pageSizeOptions: [20, 50, 100] }}
               scroll={{ x: 900 }}
               onRow={(r) => ({ onClick: () => r.vms_id && onOpenSign(r.vms_id), style: { cursor: r.vms_id ? 'pointer' : 'default' } })}
             />

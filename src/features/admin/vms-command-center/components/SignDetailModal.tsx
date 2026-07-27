@@ -158,26 +158,33 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
                     </span>
                   )}
-                  {/* Anydesk deep-link — uses the `anydesk:` URL scheme so
-                      clicking hands off to the native client (same pattern as
-                      legacy DetailTitle.tsx). Disabled visual if no id. */}
-                  <Tooltip title={detail.anydesk_id ? `เปิด Anydesk #${detail.anydesk_id}` : 'ไม่มี Anydesk ID'}>
+                  {/* Anydesk deep-link — same button as the shared
+                      DetailTitleSection on every detail page (solid blue
+                      round, gray tokens when no id; real `disabled` avoided
+                      so the title tooltip keeps firing). */}
+                  <ConfigProvider
+                    theme={{
+                      token: detail.anydesk_id
+                        ? { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' }
+                        : { colorPrimary: '#3F3F3F', colorTextLightSolid: '#9CA3AF' },
+                    }}
+                  >
                     <Button
-                      icon={<TbAppWindow style={{ verticalAlign: -2 }} />}
-                      disabled={!detail.anydesk_id}
+                      type='primary'
+                      size='middle'
+                      shape='round'
+                      icon={<TbAppWindow />}
+                      style={{ cursor: detail.anydesk_id ? 'pointer' : 'not-allowed' }}
+                      title={detail.anydesk_id ? `เปิด AnyDesk : ${detail.anydesk_id}` : 'ไม่มีรหัส AnyDesk'}
                       onClick={() => {
                         if (!detail.anydesk_id) return
+                        // `anydesk:` protocol opens the installed desktop client.
                         window.location.href = `anydesk:${detail.anydesk_id}`
                       }}
-                      style={{
-                        background: detail.anydesk_id ? 'color-mix(in srgb, var(--default-blue) 12%, transparent)' : undefined,
-                        borderColor: detail.anydesk_id ? 'var(--default-blue)' : undefined,
-                        color: detail.anydesk_id ? 'var(--default-blue)' : undefined,
-                      }}
                     >
-                      Anydesk : {detail.anydesk_id || '-'}
+                      <p className='fs-12'>Anydesk : {detail.anydesk_id || '-'}</p>
                     </Button>
-                  </Tooltip>
+                  </ConfigProvider>
                   <StatusPill
                     status={detail.status ?? 0}
                     tooltip={
@@ -194,8 +201,16 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       cancelText="ไม่"
                       okButtonProps={{ danger: true }}
                     >
-                      <Button danger icon={<TbPlayerStop style={{ verticalAlign: -2 }} />} loading={cancel.isPending}>
-                        หยุด
+                      {/* Solid red round — same button as ยกเลิกคำสั่ง in the
+                          สถานะการแสดงผล tab (StatusList), wording kept. */}
+                      <Button
+                        type='primary'
+                        shape='round'
+                        danger
+                        icon={<TbPlayerStop style={{ verticalAlign: -2 }} />}
+                        loading={cancel.isPending}
+                      >
+                        <p className='fs-12 text-white'>หยุด</p>
                       </Button>
                     </Popconfirm>
                   )}
@@ -354,13 +369,19 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                 </div>
               </div>
 
-              {/* Right column: timeline */}
-              <div className="rounded-lg border border-white/10 bg-(--dark-black) overflow-hidden">
-                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+              {/* Right column: timeline. On lg+ the panel absolute-fills its
+                  grid cell, so its height always equals the LEFT column's
+                  (screen + cameras) and the list scrolls inside — previously
+                  a fixed max-h-[720px] left a dead gap beside a tall camera
+                  grid (reported 2026-07-27). Mobile (1-col) keeps normal
+                  flow with its own cap. */}
+              <div className="relative rounded-lg border border-white/10 bg-(--dark-black) overflow-hidden">
+                <div className="lg:absolute lg:inset-0 flex flex-col">
+                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between shrink-0">
                   <div className="text-sm font-semibold">ประวัติสถานะ (300 รายการล่าสุด)</div>
                   <TbRefresh className="text-white/40" />
                 </div>
-                <div className="max-h-[720px] overflow-y-auto p-3">
+                <div className="max-h-[560px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto p-3">
                   {history.length === 0 ? (
                     <Empty description="ยังไม่มีประวัติ" />
                   ) : (
@@ -467,6 +488,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       })()}
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             </div>

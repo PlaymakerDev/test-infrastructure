@@ -238,7 +238,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
         )}
         {monitorVisible.length === 0 && rows.length > 0 && bucketFilter === 'all' && excludedCount === 0 && hideFinished && (
           <div className="text-center fs-12 text-white/50 py-4">
-            ป้ายทั้งหมดจบไปแล้ว — ปิด "ซ่อนที่เสร็จแล้ว" เพื่อดูอีกครั้ง
+            ป้ายทั้งหมดจบไปแล้ว — ปิด &quot;ซ่อนที่เสร็จแล้ว&quot; เพื่อดูอีกครั้ง
           </div>
         )}
         {monitorVisible.map((it) => {
@@ -476,13 +476,17 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                     cancelText="ไม่"
                     okButtonProps={{ danger: true }}
                   >
+                    {/* Solid red round — same button as ยกเลิกคำสั่ง in the
+                        สถานะการแสดงผล tab (StatusList), wording kept. */}
                     <Button
                       size="small"
+                      type="primary"
+                      shape="round"
                       danger
                       icon={<TbPlayerStop style={{ verticalAlign: -2 }} />}
                       loading={cancel.isPending}
                     >
-                      หยุด
+                      <span className="fs-12 text-white">หยุด</span>
                     </Button>
                   </Popconfirm>
                 </div>
