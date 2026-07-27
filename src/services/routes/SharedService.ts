@@ -2,11 +2,15 @@ import { APIResponseCCTVDetail, APIResponseCCTVRoad } from "@/types/cctv/shared-
 import ApiService from "../ApiService"
 import {
   APIRequestDepartmentByRoad,
+  APIRequestRoad,
   APIRequestRoadList,
+  APIRequestSideMenuRoad,
   APIResponseContactDetail,
   APIResponseDepartmentByRoad,
   APIResponseProjectDetail,
+  APIResponseRoad,
   APIResponseRoadList,
+  APIResponseSideMenuRoad,
   UploadResponse,
 } from "@/types/shared"
 
@@ -63,5 +67,21 @@ export const getRoadListAPI = async (params: APIRequestRoadList) => {
     url: `/manage/roads`,
     method: 'GET',
     params: { is_exist: true, ...params }
+  })
+}
+
+export const getRoadAPI = async (params: APIRequestRoad) => {
+  return ApiService.fetchData<APIResponseRoad, APIRequestRoad>({
+    url: `/manage/roads`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getSideMenuRoadAPI = async (params: APIRequestSideMenuRoad) => {
+  return ApiService.fetchData<APIResponseSideMenuRoad, APIRequestSideMenuRoad>({
+    url: `/manage/departments/side_menu/roads`,
+    method: 'GET',
+    params,
   })
 }
