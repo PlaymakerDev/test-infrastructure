@@ -239,12 +239,12 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
 
   return (
     <ConfigProvider locale={thTH}>
-      <div className="flex flex-col h-full text-white/90 bg-(--dark-black)">
+      <div className="flex flex-col h-full rounded-xl text-white/90 bg-(--dark-black)">
         <div className="px-4 py-3 border-b border-white/10">
           <h4 className="text-(--yellow)">สร้างคำสั่งใหม่</h4>
           <p className="fs-12 text-(--default-blue) mt-0.5">{targetSignSummary}</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        <div className="flex-1 px-4 py-3 space-y-4">
           {/* Content mode toggle — media and message are mutually exclusive
               on the sign itself, so only one input surface shows at a time
               instead of both being visible and risking both fields being
@@ -264,7 +264,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
               {onGotoLibrary && (
                 <button
-                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  className="fs-12 px-2 py-0.5 rounded-full border border-(--yellow) bg-(--yellow) text-(--dark-black) font-semibold inline-flex items-center gap-1 transition-colors hover:bg-(--yellow)/90"
                   onClick={onGotoLibrary}
                   type="button"
                 >
@@ -479,16 +479,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                   const overlapping = overlappingSlotIds.has(slot.id)
                   return (
                     <div key={slot.id} className="flex items-center gap-2">
-                      {/* needConfirm defaults to true here (unlike the legacy form's
-                          single TimePicker, which is a same-panel confirm-on-pick
-                          since there's only one side) — this is a RangePicker with
-                          start+end in one control, so an explicit OK gives the
-                          operator a beat to review both ends before committing a
-                          schedule that affects a live sign. */}
+                      {/* needConfirm={false} — no "ตกลง" button. Picking the
+                          start minute auto-advances to the end field, and picking
+                          the end minute commits + closes the panel immediately, so
+                          the operator flows straight into the next slot. */}
                       <TimePicker.RangePicker
                         value={slot.range}
                         onChange={(v) => v && v[0] && v[1] && updateTimeSlot(slot.id, [v[0], v[1]])}
                         format="HH:mm"
+                        needConfirm={false}
                         allowClear={false}
                         className="w-full"
                         size="large"
@@ -530,18 +529,33 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           )}
         </div>
         <div className="px-4 py-3 border-t border-white/10">
-          <Button
-            type="primary"
-            danger
-            block
-            size="large"
-            icon={<TbRocket style={{ verticalAlign: -2 }} />}
-            disabled={!canDispatch || post.isPending}
-            loading={post.isPending}
-            onClick={() => setConfirmOpen(true)}
+          {/* Blue dispatch button — --default-blue (#66AEFF). Text is
+              --dark-black for legibility (the light blue fails contrast with
+              white). Hover/active are lighter/darker shades of the same hue. */}
+          <ConfigProvider
+            theme={{
+              components: {
+                Button: {
+                  colorPrimary: '#66AEFF',
+                  colorPrimaryHover: '#85BFFF',
+                  colorPrimaryActive: '#4D9DFF',
+                  primaryColor: '#191919',
+                },
+              },
+            }}
           >
-            ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
-          </Button>
+            <Button
+              type="primary"
+              block
+              size="large"
+              icon={<TbRocket style={{ verticalAlign: -2 }} />}
+              disabled={!canDispatch || post.isPending}
+              loading={post.isPending}
+              onClick={() => setConfirmOpen(true)}
+            >
+              ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
+            </Button>
+          </ConfigProvider>
         </div>
         <Modal
           open={confirmOpen}

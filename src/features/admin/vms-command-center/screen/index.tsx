@@ -148,49 +148,69 @@ const VMSCommandCenterScreen: React.FC = () => {
     return `เป้าหมาย: ${parts.join(' / ')}`
   }, [selection, excludedCount, queuedCount])
 
-  // ── Dispatch tab — 3-column workspace, fits one viewport ─────────────────
-  // Three full-height columns side by side, no page scroll: ① เลือกป้าย (pick,
-  // fixed narrow) · ② เขียนคำสั่ง (compose, widest) · ③ จอมอนิเตอร์สด (real-time
-  // status monitor, right-hand column). Each column keeps its own internal
-  // scroll. Below xl the columns stack into one scrolling column.
+  // ── Dispatch tab — 3-column workspace, center-form driven ────────────────
+  // ① เลือกป้าย (pick, fixed narrow) · ② เขียนคำสั่ง (compose, widest — the
+  // FOCUS column) · ③ จอมอนิเตอร์สด (real-time monitor, right-hand column).
   //
-  // `min-h-0` on every flex ancestor is required so the inner overflow-y-auto
-  // scroll regions get a bounded height instead of growing the column.
-  const colH = 'flex flex-col min-h-0 h-[calc(100dvh-320px)] min-h-[340px] xl:h-auto xl:min-h-0'
+  // The MIDDLE column (Composer) drives the whole row's height — no per-column
+  // scrollbar on it. The dispatch grid is `min-h-full`, so at 100% zoom the
+  // panels fill the viewport even when the form is short; when the form grows
+  // taller than the viewport the row grows with it and the page's main scroll
+  // region (the parent <section>) scrolls the whole thing.
+  //
+  // The two side columns are pinned to the middle column's height ONLY at xl+:
+  // their box is `xl:relative xl:flex-1` and the panel lives in an
+  // `xl:absolute xl:inset-0` child, so the side content contributes NO intrinsic
+  // height to the grid track — only the middle column does. `items-stretch`
+  // (grid default) then stretches both sides to exactly the middle column's
+  // height, and each side scrolls internally if its content overflows.
+  //
+  // Below xl the columns STACK into one column. There the same side box drops
+  // its absolute pinning and renders at natural height in normal flow, so the
+  // whole stack shares the single page scrollbar (no per-form scrollbars) —
+  // keeping the narrow-screen layout consistent with the desktop one.
+  const sideCol = 'flex flex-col min-w-0'
+  const sideBox = 'rounded-xl bg-(--dark-black) overflow-hidden xl:relative xl:flex-1 xl:min-h-0'
   const dispatchTab = (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-[minmax(300px,360px)_minmax(0,1.25fr)_minmax(0,1fr)] gap-5 overflow-y-auto xl:overflow-hidden pb-2 xl:pb-0">
-      {/* Step 1 — pick signs */}
-      <div className={colH}>
+    <div className="grid min-h-full grid-cols-1 xl:grid-cols-[minmax(300px,360px)_minmax(0,1.25fr)_minmax(0,1fr)] gap-5 items-stretch pb-2">
+      {/* Step 1 — pick signs (xl: pinned to center height; stacked: natural) */}
+      <div className={sideCol}>
         <StepLabel n={1} title="เลือกป้าย VMS" hint="สำนัก / แขวง / สายทาง หรือทีละป้าย" />
-        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex flex-col flex-1 min-h-0">
-          <ScopePicker
-            onSelectionChange={setSelection}
-            selection={selection}
-            onViewSign={openDetail}
-          />
-          {queuedCount > 0 && (
-            <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
-              <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
-                <TbClockPause className="fs-14 shrink-0 mt-0.5" />
-                <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
-              </div>
-            </Tooltip>
-          )}
-          {excludedCount > 0 && (
-            <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
-              <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
-                <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
-                <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
-              </div>
-            </Tooltip>
-          )}
+        <div className={sideBox}>
+          <div className="flex flex-col xl:absolute xl:inset-0">
+            <ScopePicker
+              onSelectionChange={setSelection}
+              selection={selection}
+              onViewSign={openDetail}
+            />
+            {queuedCount > 0 && (
+              <Tooltip title="ป้ายที่ยัง offline จะเก็บคำสั่งไว้ในระบบ — เมื่อ agent กลับมาออนไลน์จะ sync แล้วเริ่มเล่นตามช่วงเวลา/วันที่ที่กำหนด">
+                <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--default-blue) flex items-start gap-1.5">
+                  <TbClockPause className="fs-14 shrink-0 mt-0.5" />
+                  <span>{queuedCount} ป้าย queue-ahead (จะรับคำสั่งเมื่อกลับมาออนไลน์)</span>
+                </div>
+              </Tooltip>
+            )}
+            {excludedCount > 0 && (
+              <Tooltip title="ป้ายที่ agent ยังไม่เคย provision เลย หรือถูกถอดจากกลุ่มควบคุมรวม — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน ตรวจสอบและเปิดใช้งานได้ในแท็บ 'ข้อมูลป้าย VMS'">
+                <div className="px-3 py-2 border-t border-white/10 fs-12 text-(--yellow) flex items-start gap-1.5">
+                  <TbAlertTriangle className="fs-14 shrink-0 mt-0.5" />
+                  <span>ข้าม {excludedCount} ป้ายที่ไม่รองรับ</span>
+                </div>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Step 2 — compose command (widest column) */}
-      <div className={colH}>
+      {/* Step 2 — compose command (widest column, the FOCUS column). Its box
+          `flex-1` fills the viewport when the form is short and grows with the
+          form when it's tall (driving the page scroll + the side columns'
+          height). No `overflow-hidden` here — on a flex item it zeroes the
+          min-content and would clip a tall form instead of growing the page. */}
+      <div className="flex flex-col min-w-0">
         <StepLabel n={2} title="เขียนคำสั่ง & กำหนดการ" hint="เลือกสื่อ / ข้อความ และช่วงเวลาแสดงผล" />
-        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex-1 min-h-0">
+        <div className="flex-1 rounded-xl bg-(--dark-black)">
           <Composer
             vmsIds={vmsIds}
             targetSignSummary={targetSummary}
@@ -199,15 +219,17 @@ const VMSCommandCenterScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Step 3 — real-time status monitor (right-hand column) */}
-      <div className={colH}>
+      {/* Step 3 — real-time monitor (xl: pinned to center height; stacked: natural) */}
+      <div className={sideCol}>
         <StepLabel n={3} title="จอมอนิเตอร์สด" hint="ติดตามสถานะการแสดงผลแบบเรียลไทม์" />
-        <div className="rounded-xl bg-(--dark-black) overflow-hidden flex-1 min-h-0">
-          <LiveMonitor
-            vmsIds={vmsIds}
-            excludedSigns={excludedSelectedSigns}
-            onOpenSignDetail={openDetail}
-          />
+        <div className={sideBox}>
+          <div className="xl:absolute xl:inset-0">
+            <LiveMonitor
+              vmsIds={vmsIds}
+              excludedSigns={excludedSelectedSigns}
+              onOpenSignDetail={openDetail}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -216,6 +238,11 @@ const VMSCommandCenterScreen: React.FC = () => {
   // Render a panel only after its tab has been visited (lazy mount), then keep
   // it mounted and toggle visibility with `hidden` so switching tabs never
   // resets a panel's internal state.
+  //
+  // All panels fill the section (`h-full`) so their children can resolve
+  // percentage/`min-h-full` heights against a definite box. The dispatch grid
+  // is `min-h-full`: it fills the viewport when the center form is short and
+  // grows past it (spilling into the section's single scrollbar) when tall.
   const renderPanel = (key: TabKey, node: React.ReactNode) => (
     <div key={key} className={key === activeTab ? 'h-full' : 'hidden'}>
       {visitedTabs.has(key) || key === activeTab ? node : null}
@@ -235,7 +262,7 @@ const VMSCommandCenterScreen: React.FC = () => {
           activeTab={activeTab}
           onTabChange={changeTab}
         />
-        <section className="mt-6 flex-1 min-h-0">
+        <section className="mt-6 flex-1 min-h-0 overflow-y-auto">
           {renderPanel('dispatch', dispatchTab)}
           {renderPanel('media', <MediaLibraryTab />)}
           {renderPanel(

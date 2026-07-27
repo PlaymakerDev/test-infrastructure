@@ -172,3 +172,47 @@ export interface WIMMetaData {
   page_size: number
   total: number
 }
+
+// ROADS
+export interface APIRequestRoad {
+  department_id?: number
+  is_exist?: boolean
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: 'ASC' | 'DESC'
+}
+
+export interface APIResponseRoad {
+  meta_data: MetaData
+  res_data: RoadData[]
+}
+
+export interface RoadData {
+  created_at: string
+  created_by: string
+  department_id: number
+  distance: number
+  district: string
+  end_sta: string
+  id: number
+  province: string
+  road_code: string
+  road_name: string
+  start_sta: string
+  subdistrict: string
+}
+
+// SIDE MENU ROAD
+export interface APIRequestSideMenuRoad {
+  road_id?: number
+}
+
+export type APIResponseSideMenuRoad = SideMenuRoadData[]
+
+export interface SideMenuRoadData {
+  roads_count?: number
+  solution_type_id?: number
+  solution_type_name: string
+}
