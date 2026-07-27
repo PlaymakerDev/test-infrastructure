@@ -145,24 +145,26 @@ const TableWIM: React.FC<Props> = (props) => {
     // },
     {
       title: 'สถานะ',
-      dataIndex: 'total_cctv',
-      key: 'status',
+      dataIndex: 'total',
+      key: 'total',
       align: 'center',
       width: 150,
       fixed: 'right',
       render: (item, record) => {
-        const totalCCTV = Number(item || 0);
-        const inactiveCCTV = Number(record.offline_cctv || 0);
-        const activeCCTV = totalCCTV - inactiveCCTV;
+        const total = Number(item) || 0;
+        const totalCCTV = Number(record.total_cctv) || 0;
+        const offlineCCTV = Number(record.offline_cctv) || 0;
+        const onlineCCTV = totalCCTV - offlineCCTV;
 
-        // Priority ordered so a station with cameras that are ALL offline
-        // renders "ไม่ส่งข้อมูล" (yellow) instead of "เปิดปกติ" (green) — the
-        // previous conditional cascade compared totalCCTV to 0 in every
-        // branch, making the middle "no active but total > 0" case
-        // unreachable (activeCCTV can never be > 0 while totalCCTV === 0).
+        // Priority ordered so a station with all cameras offline renders
+        // "ไม่ส่งข้อมูล" (yellow) rather than "เปิดปกติ" (green). The old
+        // cascade tested totalCCTV against 0 in every branch, leaving the
+        // middle case unreachable (activeCCTV can never be > 0 when
+        // totalCCTV === 0 by arithmetic).
         let status: StatusType
-        if (activeCCTV > 0) status = 'เปิดปกติ'
-        else if (totalCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        if (total > 0) status = 'เปิดปกติ'
+        else if (total === 0 && onlineCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        else if (total === 0 && onlineCCTV === 0) status = 'ระบบขัดข้อง'
         else status = 'ระบบขัดข้อง'
 
         const color = STATUS_COLOR[status]

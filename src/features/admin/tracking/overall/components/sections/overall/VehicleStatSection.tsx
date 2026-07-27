@@ -42,8 +42,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
               <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(dailySumData?.data.data.all_sum.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(dailySumData?.data.data.all_sum.over || 0))}</h2>
+              <p className='fs-12 text-(--default-red)'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-(--default-red)'>{fmtNumber(Number(dailySumData?.data.data.all_sum.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -63,8 +63,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
               <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(station?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(station?.over || 0))}</h2>
+              <p className='fs-12 text-(--default-red)'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-(--default-red)'>{fmtNumber(Number(station?.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -84,8 +84,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
               <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(wim?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(wim?.over || 0))}</h2>
+              <p className='fs-12 text-(--default-red)'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-(--default-red)'>{fmtNumber(Number(wim?.over || 0))}</h2>
             </div>
           </section>
         </figure>
@@ -105,8 +105,8 @@ const VehicleStatSection: React.FC<Props> = (props) => {
               <h2 className='font-bold leading-tight text-(--default-blue)'>{fmtNumber(Number(spot?.total || 0))}</h2>
             </div>
             <div className='text-center'>
-              <p className='fs-12 text-red-400'>น้ำหนักเกิน</p>
-              <h2 className='font-bold leading-tight text-red-400'>{fmtNumber(Number(spot?.over || 0))}</h2>
+              <p className='fs-12 text-(--default-red)'>น้ำหนักเกิน</p>
+              <h2 className='font-bold leading-tight text-(--default-red)'>{fmtNumber(Number(spot?.over || 0))}</h2>
             </div>
           </section>
         </figure>

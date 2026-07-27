@@ -145,15 +145,16 @@ const TableStation: React.FC<Props> = (props) => {
     // },
     {
       title: 'สถานะ',
-      dataIndex: 'total_cctv',
-      key: 'status',
+      dataIndex: 'total',
+      key: 'total',
       align: 'center',
       width: 150,
       fixed: 'right',
       render: (item, record) => {
-        const totalCCTV = Number(item || 0);
-        const inactiveCCTV = Number(record.offline_cctv || 0);
-        const activeCCTV = totalCCTV - inactiveCCTV;
+        const total = Number(item) || 0;
+        const totalCCTV = Number(record.total_cctv) || 0;
+        const offlineCCTV = Number(record.offline_cctv) || 0;
+        const onlineCCTV = totalCCTV - offlineCCTV;
 
         // Priority ordered so a station with all cameras offline renders
         // "ไม่ส่งข้อมูล" (yellow) rather than "เปิดปกติ" (green). The old
@@ -161,8 +162,9 @@ const TableStation: React.FC<Props> = (props) => {
         // middle case unreachable (activeCCTV can never be > 0 when
         // totalCCTV === 0 by arithmetic).
         let status: StatusType
-        if (activeCCTV > 0) status = 'เปิดปกติ'
-        else if (totalCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        if (total > 0) status = 'เปิดปกติ'
+        else if (total === 0 && onlineCCTV > 0) status = 'ไม่ส่งข้อมูล'
+        else if (total === 0 && onlineCCTV === 0) status = 'ระบบขัดข้อง'
         else status = 'ระบบขัดข้อง'
 
         const color = STATUS_COLOR[status]

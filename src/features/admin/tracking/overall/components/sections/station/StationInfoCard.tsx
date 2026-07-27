@@ -11,7 +11,7 @@ interface Props {
 const StationInfoCard: React.FC<Props> = (props) => {
   const { data } = props
 
-  const totalCamera = fmtNumber(Number(data?.camera_online)) + fmtNumber(Number(data?.camera_offline))
+  const totalCamera = Number(data?.camera_online) + Number(data?.camera_offline)
 
   return (
     <div className='flex flex-col gap-4'>
