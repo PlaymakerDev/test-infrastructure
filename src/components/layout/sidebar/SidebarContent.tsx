@@ -1,77 +1,19 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import {
-  TbHome,
-  TbVideo,
-  TbCar,
-  TbTrafficLights,
-  TbWalk,
-  TbBolt,
-  TbDeviceDesktop,
-  TbBuildingBridge,
-  TbBuildingBridge2,
-  TbAdjustmentsHorizontal,
-  TbBriefcase,
-  // TbChartBar,
-  // TbTool,
-  TbShieldHalf,
-  TbCarCrash,
-  TbChevronRight,
-} from "react-icons/tb";
+import { TbChevronRight } from "react-icons/tb";
 import { motion, AnimatePresence } from 'motion/react'
 // import mockData from '@/mock/test.json'
-import IconLPR from '@/components/icon/IconLPR'
-import IconTracking from '@/components/icon/IconTracking'
-import IconAIChat from '@/components/icon/IconAIChat'
-import menu from '@/configs/menu'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 // import { useAppSelector } from '@/stores/hooks';
 import { APIResponseSidebar } from '@/types/layout/api';
-
-const SOLUTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  "Dashboard": TbHome,
-  "CCTV": TbVideo,
-  "Traffic Volume": TbCar,
-  "Incident Detection": TbCarCrash,
-  "Traffic Signal": TbTrafficLights,
-  "Crosswalk": TbWalk,
-  "Traffic Lighting": TbBolt,
-  "VMS": TbDeviceDesktop,
-  "Bridge Lighting": TbBuildingBridge,
-  "Tunnel": TbBuildingBridge2,
-  "Tracking": IconTracking,
-  // Same custom scan-frame glyph as the navbar's LPR menu (IconLPR).
-  "LPR": IconLPR,
-  "Control VMS": TbAdjustmentsHorizontal,
-  "Statistic": TbBriefcase,
-  "Maintenance": TbShieldHalf,
-  // AI-chat glyph (Hugeicons ai-chat-01) — same as the navbar shortcut.
-  "Smart Search": IconAIChat,
-}
-
-// Display-name overrides for API solution_type_name values. Key = raw API
-// string, value = label rendered in the sidebar. Icon/route lookups still
-// key off the API string above.
-const SOLUTION_DISPLAY_LABEL: Record<string, string> = {
-  "Tracking": "Truck Tracking",
-}
-
-const collapseVariants = {
-  open: { height: "auto", opacity: 1, transition: { duration: 0.28, ease: "easeInOut" as const } },
-  closed: { height: 0, opacity: 0, transition: { duration: 0.22, ease: "easeInOut" as const } },
-}
-
-const solutionContainerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.045 } },
-}
-
-const solutionItemVariants = {
-  hidden: { opacity: 0, x: -12 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" as const } },
-}
-
-type RouteEntry = { path: string; path_active: string; path_list: string[] }
+import {
+  SOLUTION_ICON_MAP,
+  SOLUTION_DISPLAY_LABEL,
+  buildPathMap,
+  collapseVariants,
+  solutionContainerVariants,
+  solutionItemVariants,
+} from './solutionMenu'
 
 interface Props {
   data?: APIResponseSidebar
@@ -89,13 +31,7 @@ const SidebarContent: React.FC<Props> = (props) => {
   const activeDeptId = searchParams.get('dept_id')
   // const { sidebar } = useAppSelector(state => state.layout)
 
-  const pathMap = useMemo<Record<string, RouteEntry>>(() => {
-    const map: Record<string, RouteEntry> = {}
-    for (const item of menu["ADMIN"]) {
-      map[item.label] = { path: item.path, path_active: item.path_active, path_list: item.path_list ?? [] }
-    }
-    return map
-  }, [])
+  const pathMap = useMemo(() => buildPathMap(), [])
 
   const toggleGroup = useCallback((index: number) => {
     setOpenGroups(prev => {

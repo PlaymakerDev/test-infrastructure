@@ -5,7 +5,13 @@ import { TbSearch } from 'react-icons/tb'
 import { useRoadsInfinite } from '@/hooks/queries/shared/useRoadsInfinite'
 
 interface Props {
-
+  /** Fired when the user picks a suggestion — feeds SidebarRoute's
+   *  DataDisplaySection, which calls getSideMenuRoadAPI with this road's id.
+   *  `departmentId` (the road's own department_id) is carried along so the
+   *  solution-list redirect can attach `?dept_id=` like SidebarContent does,
+   *  instead of `?road_id=`. Fired with `null` when the field is cleared, so
+   *  the parent resets back to the "กรุณากรอกสายที่ต้องการค้นหา" empty state. */
+  onSelectRoad?: (road: { id: number; code: string; departmentId: number } | null) => void
 }
 
 interface FormSearchRouteProps {
@@ -15,7 +21,7 @@ interface FormSearchRouteProps {
 let timeout: NodeJS.Timeout
 
 const FormSearchRoute: React.FC<Props> = (props) => {
-  const { } = props
+  const { onSelectRoad } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   // Debounced text actually sent to getRoadAPI's `search` param — updated once
   // per submit (the existing 700ms-after-typing debounce below), not on every
@@ -51,10 +57,14 @@ const FormSearchRoute: React.FC<Props> = (props) => {
   const options = useMemo(
     () => enabled
       ? roadPages?.pages.flatMap((p) => p.data.res_data ?? []).map((road) => ({
-          value: road.road_code,
-          label: `${road.road_code}${road.road_name ? ' - ' + road.road_name : ''}`,
-          roadName: road.road_name,
-        })) ?? []
+        // AutoComplete runs rc-select in combobox mode internally, which
+        // warns/requires option `value` to be a string, not a number.
+        value: String(road.id),
+        label: `${road.road_code}${road.road_name ? ' - ' + road.road_name : ''}`,
+        roadCode: road.road_code,
+        roadName: road.road_name,
+        departmentId: road.department_id,
+      })) ?? []
       : [],
     [enabled, roadPages],
   )
@@ -80,7 +90,7 @@ const FormSearchRoute: React.FC<Props> = (props) => {
               options={options}
               optionRender={(option) => (
                 <div className='min-w-0'>
-                  <div className='truncate'>{String(option.value)}</div>
+                  <div className='truncate'>{option.data.roadCode}</div>
                   <div className='truncate text-white/50 fs-12'>{option.data.roadName}</div>
                 </div>
               )}
@@ -93,11 +103,32 @@ const FormSearchRoute: React.FC<Props> = (props) => {
               suffixIcon={<TbSearch className='text-(--yellow)' />}
               size='large'
               className='w-full!'
+              allowClear
               onPopupScroll={handlePopupScroll}
+              onSelect={(value, option) => {
+                // Reset the box to the readable road code (not the raw id
+                // used as `value`) and hand the id up to DataDisplaySection.
+                field.onChange(option.roadCode)
+                onSelectRoad?.({ id: Number(value), code: option.roadCode, departmentId: option.departmentId })
+              }}
+              onClear={() => {
+                if (timeout) clearTimeout(timeout)
+                setSearch('')
+                onSelectRoad?.(null)
+              }}
               onChange={(e) => {
                 field.onChange(e)
 
                 if (timeout) clearTimeout(timeout)
+
+                // Cleared by backspacing to empty (not the × button) — reset
+                // immediately instead of waiting out the debounce.
+                if (!e) {
+                  setSearch('')
+                  onSelectRoad?.(null)
+                  return
+                }
+
                 timeout = setTimeout(() => {
                   submitRef.current?.click()
                 }, 700)

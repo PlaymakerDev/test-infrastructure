@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import FormSearchRoute from './FormSearchRoute'
 import DataDisplaySection from './DataDisplaySection'
 
@@ -8,14 +8,15 @@ interface Props {
 
 const SidebarRoute: React.FC<Props> = (props) => {
   const { } = props
+  const [selectedRoad, setSelectedRoad] = useState<{ id: number; code: string; departmentId: number } | null>(null)
 
   return (
     <div>
       <section>
-        <FormSearchRoute />
+        <FormSearchRoute onSelectRoad={setSelectedRoad} />
       </section>
       <section className='mt-5'>
-        <DataDisplaySection />
+        <DataDisplaySection road={selectedRoad} />
       </section>
     </div>
   )
