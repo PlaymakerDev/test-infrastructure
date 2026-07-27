@@ -476,13 +476,32 @@ body .bridge-projects-table td.ant-table-cell.col-project-name .detail-link {
 }
 
 /* ── Vehicle breakdown table — traffic-volume detail page.
- * Composes on top of `.bridge-projects-table`. The card on the right of the
- * pie chart needs the 9-row table to fill its container so it visually
- * balances against the donut. We bump cell padding so each row is taller. */
+ * Composes on top of `.bridge-projects-table`. The card needs the 8-row table
+ * to fill its container so it balances against the charts/donut beside it.
+ *
+ * The fill is driven from JS (VehicleBreakdownTable measures the card's spare
+ * height and sets the <table> element's height directly), because a pure-CSS
+ * height chain can't reliably thread a definite height through antd's nested
+ * spin/table wrapper divs. A real <table> with an explicit height taller than
+ * its content hands the spare height to its rows, distributing it evenly.
+ *
+ * These wrappers still need to pass the available height down so the <table>
+ * has room to grow into and the measurement reads the full card height. */
+body .vehicle-breakdown-table,
+body .vehicle-breakdown-table .ant-spin-nested-loading,
+body .vehicle-breakdown-table .ant-spin-container,
+body .vehicle-breakdown-table .ant-table,
+body .vehicle-breakdown-table .ant-table-container,
+body .vehicle-breakdown-table .ant-table-content {
+  height: 100%;
+  min-height: 0;
+}
+/* Modest base cell padding — the JS row-fill stretches beyond this. Keeps rows
+ * from collapsing too tight on a short card with no spare height to give. */
 body .vehicle-breakdown-table .ant-table-thead > tr > th,
 body .vehicle-breakdown-table .ant-table-tbody > tr > td {
-  padding-top: 18px !important;
-  padding-bottom: 18px !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
 }
 
 /* ── RangePicker — dark-theme range/hover cells.
