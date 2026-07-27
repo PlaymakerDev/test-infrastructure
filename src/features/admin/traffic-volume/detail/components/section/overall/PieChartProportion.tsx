@@ -76,51 +76,56 @@ const VehicleProportionChart: React.FC<Props> = () => {
         <span className='fs-14 font-normal text-(--yellow)'>สัดส่วนยานพาหนะ</span>
       </div>
 
-      {/* Donut — uses the central PieChart but with its card chrome disabled
-        * so it nests cleanly inside our outer card. Negative `-mt-4` pulls
-        * the donut up against the section title. */}
-      <div className='-mt-6'>
-        <PieChart
-          title=''
-          icon={null}
-          showGlow={false}
-          iconCircle={false}
-          cardBackground='transparent'
-          cardBorderColor='transparent'
-          data={pieData}
-          centerLabel='ปริมาณจราจรทั้งหมด'
-          centerValue={fmtNumber(total, 0)}
-          centerUnit='คัน'
-          height={280}
-          donutSize={280}
-          showLegend={false}
-          tooltipUnit='คัน'
-        />
-      </div>
+      {/* Donut + legend as one group, vertically centered in the card's spare
+        * height (`flex-1` + `justify-center`). This keeps the two together and
+        * balanced when the card is stretched to match its siblings, instead of
+        * top-packing them and leaving dead space at the bottom. */}
+      <div className='flex-1 min-h-0 flex flex-col justify-center'>
+        {/* Donut — uses the central PieChart with its card chrome disabled so it
+          * nests cleanly. `-mt-6` cancels the nested PieChart's own top chrome. */}
+        <div className='flex items-center justify-center -mt-6'>
+          <PieChart
+            title=''
+            icon={null}
+            showGlow={false}
+            iconCircle={false}
+            cardBackground='transparent'
+            cardBorderColor='transparent'
+            data={pieData}
+            centerLabel='ปริมาณจราจรทั้งหมด'
+            centerValue={fmtNumber(total, 0)}
+            centerUnit='คัน'
+            height={280}
+            donutSize={280}
+            showLegend={false}
+            tooltipUnit='คัน'
+          />
+        </div>
 
-      {/* Legend list — name · count · percentage. Uses API-provided
-        * `percentage` so legend numbers match the breakdown table exactly. */}
-      <div className='mt-3 flex flex-col gap-1.5'>
-        {rows.map((r) => (
-          <div
-            key={r.key}
-            className='flex items-center justify-between gap-2 fs-12'
-          >
-            <div className='flex items-center gap-2 min-w-0'>
-              <span
-                className='inline-block w-2 h-2 rounded-full shrink-0'
-                style={{ background: r.color }}
-              />
-              <span className='text-white/80 truncate'>{r.label}</span>
+        {/* Legend list — name · count · percentage. Uses API-provided
+          * `percentage` so legend numbers match the breakdown table exactly. */}
+        <div className='mt-3 flex flex-col gap-3'>
+          {rows.map((r) => (
+            <div
+              key={r.key}
+              className='flex items-center justify-between gap-2 fs-12'
+            >
+              <div className='flex items-center gap-2 min-w-0'>
+                <span
+                  className='inline-block w-2 h-2 rounded-full shrink-0'
+                  style={{ background: r.color }}
+                />
+                <span className='text-white/80 truncate'>{r.label}</span>
+              </div>
+              <div className='flex items-center gap-4 shrink-0 text-white/80'>
+                <span className='tabular-nums'>{fmtNumber(r.count, 0)}</span>
+                <span className='tabular-nums text-white/60 w-12 text-right'>
+                  {fmtNumber(r.pct, 1)}%
+                </span>
+              </div>
             </div>
-            <div className='flex items-center gap-4 shrink-0 text-white/80'>
-              <span className='tabular-nums'>{fmtNumber(r.count, 0)}</span>
-              <span className='tabular-nums text-white/60 w-12 text-right'>
-                {fmtNumber(r.pct, 1)}%
-              </span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
