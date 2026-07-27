@@ -264,7 +264,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
               {onGotoLibrary && (
                 <button
-                  className="fs-12 text-(--yellow) hover:underline inline-flex items-center gap-1"
+                  className="fs-12 px-2 py-0.5 rounded-full border border-(--yellow) bg-(--yellow) text-(--dark-black) font-semibold inline-flex items-center gap-1 transition-colors hover:bg-(--yellow)/90"
                   onClick={onGotoLibrary}
                   type="button"
                 >
