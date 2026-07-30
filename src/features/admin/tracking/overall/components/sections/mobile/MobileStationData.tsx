@@ -6,7 +6,7 @@ import { Pagination } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/pagination'
-import { FALLBACK } from '@/constants'
+import { EMPTY_FALLBACK } from '@/constants'
 
 interface Props {
 
@@ -89,7 +89,7 @@ const MobileStationData: React.FC<Props> = (props) => {
                         width={"100%"}
                         height={"100%"}
                         className='object-cover object-center w-full h-full'
-                        fallback={FALLBACK}
+                        fallback={EMPTY_FALLBACK}
                       />
                     </SwiperSlide>
                   )

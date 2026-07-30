@@ -7,7 +7,7 @@ import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
 import { getRowNumber } from '@/utils/pagination'
 import { WEIGHT_STATUS_WITH_PROPERTIES } from '@/constants/vehicle'
-import { FALLBACK } from '@/constants'
+import { EMPTY_FALLBACK } from '@/constants'
 
 const DEFAULT_PAGE_SIZE = 10
 
@@ -202,7 +202,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
             height={60}
             className='rounded object-cover'
             alt='vehicle'
-            fallback={FALLBACK}
+            fallback={EMPTY_FALLBACK}
           />
         )
       },
@@ -221,7 +221,7 @@ const TableMobileDailyWeight: React.FC<Props> = (props) => {
             height={60}
             className='rounded object-cover'
             alt='slip'
-            fallback={FALLBACK}
+            fallback={EMPTY_FALLBACK}
           />
         )
       },

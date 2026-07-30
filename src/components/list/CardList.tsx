@@ -7,7 +7,7 @@ import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 import type { Swiper as SwiperClass } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
-import { FALLBACK } from '@/constants'
+import { EMPTY_FALLBACK } from '@/constants'
 
 export interface DataType {
   id: string | number
@@ -271,7 +271,7 @@ const CardList: React.FC<CardListProps> = ({
                         height={expandedImageHeight}
                         className='object-left object-contain'
                         preview={false}
-                        fallback={FALLBACK}
+                        fallback={EMPTY_FALLBACK}
                       />
                     </div>
                   )}
@@ -302,7 +302,7 @@ const CardList: React.FC<CardListProps> = ({
                       height={collapsedImageHeight}
                       className='object-left object-contain'
                       preview={false}
-                      fallback={FALLBACK}
+                      fallback={EMPTY_FALLBACK}
                     />
                   </div>
                 )}

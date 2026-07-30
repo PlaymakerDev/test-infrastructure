@@ -1,4 +1,4 @@
-import { FALLBACK } from '@/constants'
+import { EMPTY_FALLBACK } from '@/constants'
 import { MobileMasterDepartmentByTIDData } from '@/types/tracking/detail-api'
 import { Image } from 'antd'
 import React from 'react'
@@ -20,7 +20,7 @@ const MobileDetailImage: React.FC<Props> = (props) => {
             width={'100%'}
             height={'100%'}
             className='object-center object-cover'
-            fallback={FALLBACK}
+            fallback={EMPTY_FALLBACK}
           />
         </figure>
         <p className='text-(--yellow) mt-2.5'>กั้นการจราจร</p>
@@ -33,7 +33,7 @@ const MobileDetailImage: React.FC<Props> = (props) => {
             width={'100%'}
             height={'100%'}
             className='object-center object-cover'
-            fallback={FALLBACK}
+            fallback={EMPTY_FALLBACK}
           />
         </figure>
         <p className='text-(--yellow) mt-2.5'>บุคคลผู้ร่วมบูรณาการ</p>
