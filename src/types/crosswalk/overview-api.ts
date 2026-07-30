@@ -41,6 +41,9 @@ export interface CrosswalkDevice {
 
 export interface APIRequestCrosswalkOverview {
   solution_id?: string | number
+  road_code?: string
+  contract_no?: string
+  road_id?: string | number
 }
 
 export interface CrosswalkLocation {
@@ -76,11 +79,19 @@ export interface APIResponseCrosswalkTotals {
   }
 }
 
+export interface APIRequestCrosswalkTotals {
+  scope?: string
+  road_id?: string | number
+}
+
 // ── GET /crosswalk/departments/{deptId}/cameras/random-online ────────────────
 // Random online cameras for the left-rail CCTV preview list.
 
 export interface APIRequestCrosswalkRandomCameras {
   limit?: number
+  solution_id?: string | number
+  scope?: string
+  road_id?: string | number
 }
 
 export interface CrosswalkRandomCamera {
@@ -106,6 +117,10 @@ export interface APIRequestCrosswalkCentralList {
   page?: number
   limit?: number
   solution_id?: string | number
+
+  // ADDED
+  scope?: string
+  road_id?: string | number
 }
 
 export interface CrosswalkCentralSolution {

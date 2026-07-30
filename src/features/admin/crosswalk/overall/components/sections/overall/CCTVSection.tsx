@@ -7,16 +7,19 @@ import { useCrosswalkRandomCameras } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 /** Left rail — live CCTV camera previews for crosswalk stations.
  *  Data: `GET /crosswalk/departments/{deptId}/cameras/random-online?limit=3` */
-const CCTVSection: React.FC<Props> = () => {
+const CCTVSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const dispatch = useAppDispatch()
   const openCamera = (id: string) =>
     dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
-  const { data, isLoading } = useCrosswalkRandomCameras(deptId, 3)
+  const { data, isLoading } = useCrosswalkRandomCameras(deptId, roadId ? { road_id: roadId, limit: 3 } : { limit: 3 })
   // Prefer online cameras; if none are online, still show the (offline) cards
   // rather than a blank slot (backend random-online backfills offline anyway).
   const cameras = data?.data ?? []

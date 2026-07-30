@@ -6,15 +6,20 @@ import { useCrosswalkCentralList, useCrosswalkTotals } from '@/hooks/queries/cro
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
+interface Props {
+  roadId: string | null
+}
+
 /** Right rail — 3 stat cards summarising the crosswalk fleet. Counts come
  *  from `/overview/central/totals`. Per-card "Active" lines (solutions with
  *  online crosswalk device per warranty bucket) are derived from
  *  `/overview/central/list` — same cache the table consumes, no extra
  *  request. Pattern mirrors `InfoCardTrafficSignal.tsx`. */
-const InfoCardSection: React.FC = () => {
+const InfoCardSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data, isLoading } = useCrosswalkTotals(deptId)
-  const { data: central } = useCrosswalkCentralList(deptId)
+  const { data, isLoading } = useCrosswalkTotals(deptId, roadId ? { road_id: roadId } : {})
+  const { data: central } = useCrosswalkCentralList(deptId, roadId ? { road_id: roadId, page: 1, limit: 100 } : { page: 1, limit: 100 })
 
   const cards = useMemo(() => {
     const solutionTotal = data?.solution.total ?? 0

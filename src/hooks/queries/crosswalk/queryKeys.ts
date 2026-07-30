@@ -4,6 +4,8 @@ import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestCrosswalkCentralList,
   APIRequestCrosswalkOverview,
+  APIRequestCrosswalkRandomCameras,
+  APIRequestCrosswalkTotals,
 } from '@/types/crosswalk/overview-api'
 import type {
   APIRequestCrosswalkCameras,
@@ -33,14 +35,22 @@ export const crosswalkKeys = {
         'central-list',
         params,
       ] as const,
-    randomCameras: (deptId: string | number, limit: number) =>
+    randomCameras: (deptId: string | number, params: APIRequestCrosswalkRandomCameras) =>
       [
         ...crosswalkKeys.overview.root(deptId),
         'random-cameras',
-        limit,
+        params,
       ] as const,
-    totals: (deptId: string | number) =>
-      [...crosswalkKeys.overview.root(deptId), 'totals'] as const,
+    // randomCameras: (deptId: string | number, limit: number) =>
+    //   [
+    //     ...crosswalkKeys.overview.root(deptId),
+    //     'random-cameras',
+    //     limit,
+    //   ] as const,
+    totals: (deptId: string | number, params: APIRequestCrosswalkTotals) =>
+      [...crosswalkKeys.overview.root(deptId), 'totals', params] as const,
+    // totals: (deptId: string | number) =>
+    //   [...crosswalkKeys.overview.root(deptId), 'totals'] as const,
   },
 
   detail: {

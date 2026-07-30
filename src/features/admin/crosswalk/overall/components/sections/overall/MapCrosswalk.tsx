@@ -11,7 +11,9 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { CrosswalkLocation } from '@/types/crosswalk/overview-api'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -176,9 +178,10 @@ const CrosswalkMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 // ─── Map shell ─────────────────────────────────────────────────────────────────
 
-const MapCrosswalk: React.FC<Props> = () => {
+const MapCrosswalk: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data, isLoading, isSuccess } = useCrosswalkOverview(deptId)
+  const { data, isLoading, isSuccess } = useCrosswalkOverview(deptId, roadId ? { road_id: roadId } : {})
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

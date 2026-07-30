@@ -7,11 +7,11 @@ import { crosswalkKeys } from './queryKeys'
  *  narrow to a single solution (deep-link). */
 export const useCrosswalkOverview = (
   deptId: string | number | null | undefined,
-  params: APIRequestCrosswalkOverview = {}
+  params?: APIRequestCrosswalkOverview
 ) =>
   useQuery({
-    queryKey: crosswalkKeys.overview.map(deptId ?? '', params),
+    queryKey: crosswalkKeys.overview.map(deptId ?? '', { ...params }),
     queryFn: () =>
-      getCrosswalkOverviewAPI(deptId!, params).then((r) => r.data),
+      getCrosswalkOverviewAPI(deptId!, { ...params }).then((r) => r.data),
     enabled: !!deptId,
   })

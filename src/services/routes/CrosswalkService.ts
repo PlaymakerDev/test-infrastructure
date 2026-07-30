@@ -8,6 +8,7 @@ import type {
   APIRequestCrosswalkRandomCameras,
   APIResponseCrosswalkRandomCameras,
   APIResponseCrosswalkTotals,
+  APIRequestCrosswalkTotals,
 } from '@/types/crosswalk/overview-api'
 import type {
   APIRequestCrosswalkCameras,
@@ -30,13 +31,13 @@ const crosswalkDeptBase = (deptId: string | number) =>
 // response to a single solution when set (deep-link style).
 export const getCrosswalkOverviewAPI = (
   deptId: string | number,
-  params: APIRequestCrosswalkOverview = {}
+  params: APIRequestCrosswalkOverview
 ) =>
   ApiService.fetchData<APIResponseCrosswalkOverview>({
     url: `${crosswalkDeptBase(deptId)}/overview`,
     method: 'GET',
     params: {
-      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...params,
       ...centralScope(deptId),
     },
   })
@@ -45,20 +46,29 @@ export const getCrosswalkOverviewAPI = (
 // to match the design (3 stacked cards).
 export const getCrosswalkRandomCamerasAPI = (
   deptId: string | number,
-  params: APIRequestCrosswalkRandomCameras = {}
+  params: APIRequestCrosswalkRandomCameras
 ) =>
-  ApiService.fetchData<APIResponseCrosswalkRandomCameras>({
+  ApiService.fetchData<APIResponseCrosswalkRandomCameras, APIRequestCrosswalkRandomCameras>({
     url: `${crosswalkDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 3, ...centralScope(deptId) },
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 
 // Aggregated counters for the right-rail InfoCards — solution + warranty totals.
-export const getCrosswalkTotalsAPI = (deptId: string | number) =>
+export const getCrosswalkTotalsAPI = (
+  deptId: string | number,
+  params: APIRequestCrosswalkTotals
+) =>
   ApiService.fetchData<APIResponseCrosswalkTotals>({
     url: `${crosswalkDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 // ── Detail page ───────────────────────────────────────────────────────────────
@@ -138,9 +148,9 @@ export const getCrosswalkCamerasAPI = (
 // `camera.offline_count` (and the extra `crosswalk` field) differ.
 export const getCrosswalkCentralListAPI = (
   deptId: string | number,
-  params: APIRequestCrosswalkCentralList = {}
+  params: APIRequestCrosswalkCentralList
 ) =>
-  ApiService.fetchData<APIResponseCrosswalkCentralList>({
+  ApiService.fetchData<APIResponseCrosswalkCentralList, APIRequestCrosswalkCentralList>({
     url: `${crosswalkDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
     params: { ...params, ...centralScope(deptId) },

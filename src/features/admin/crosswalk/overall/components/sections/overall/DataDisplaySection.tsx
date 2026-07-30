@@ -17,7 +17,9 @@ import type { CrosswalkCentralSolution } from '@/types/crosswalk/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 const CROSSWALK_FILTERS: FilterConfig[] = [
   {
@@ -100,24 +102,25 @@ const CROSSWALK_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: CrosswalkProject, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName ?? '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
-  // Same fallback ContractInfoCell renders on screen: no contract → budget year.
-  {
-    header: 'เลขที่สัญญา', width: 20, widthPct: 10,
-    value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
-  },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
-  { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.onlineCount },
-  { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.offlineCount },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName ?? '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
+    // Same fallback ContractInfoCell renders on screen: no contract → budget year.
+    {
+      header: 'เลขที่สัญญา', width: 20, widthPct: 10,
+      value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+    },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
+    { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.onlineCount },
+    { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.offlineCount },
+  ]
 
-const OverallDataDisplaySection: React.FC<Props> = () => {
+const OverallDataDisplaySection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
@@ -125,7 +128,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('TABLE')
   const [exportOpen, setExportOpen] = useState(false)
 
-  const { data, isLoading } = useCrosswalkCentralList(deptId)
+  const { data, isLoading } = useCrosswalkCentralList(deptId, roadId ? { road_id: roadId, page: 1, limit: 100 } : { page: 1, limit: 100 })
 
   const goToDetail = useCallback(
     (p: CrosswalkProject) => {
