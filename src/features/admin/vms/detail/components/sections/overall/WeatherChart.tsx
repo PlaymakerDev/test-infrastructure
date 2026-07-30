@@ -28,7 +28,7 @@ const WeatherChart: React.FC<Props> = (props) => {
     <LineChart
       title='สถิติอุณหภูมิรายชั่วโมงประจำวัน'
       subtitle='เปรียบเทียบอุณหภูมิและค่า PM 2.5 รายชั่วโมง'
-      icon={<TbTemperaturePlus className='fs-18' />}
+      icon={<TbTemperaturePlus className='fs-22' />}
       iconCircle={false}
       accentColor='var(--default-blue)'
       cardBackground='#00000080'

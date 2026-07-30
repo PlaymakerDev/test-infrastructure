@@ -208,7 +208,7 @@ const ChartElectricalBridgeLighting: React.FC<Props> = ({
         <div className='flex-1 min-h-0'>
           <LineChart
             title='แรงดันไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Volt)'
-            icon={<TbBolt size={18} />}
+            icon={<TbBolt className='fs-22' />}
             data={voltageData}
             lines={VOLTAGE_LINES}
             fillHeight
@@ -239,7 +239,7 @@ const ChartElectricalBridgeLighting: React.FC<Props> = ({
         <div className='flex-1 min-h-0'>
           <LineChart
             title='กระแสไฟฟ้าภายในตู้ควบคุม 24 ชั่วโมง (Amp)'
-            icon={<TbBolt size={18} />}
+            icon={<TbBolt className='fs-22' />}
             data={currentData}
             lines={CURRENT_LINES}
             fillHeight
