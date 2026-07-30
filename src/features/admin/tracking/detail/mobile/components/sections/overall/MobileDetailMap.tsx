@@ -37,6 +37,31 @@ const MobileDetailMap: React.FC<Props> = (props) => {
 
   const coords = hasCoords ? formatCoords(Number(departmentData!.latitude!), Number(departmentData!.longitude!)) : null
 
+  const renderCoordsPanel = useMemo(() => {
+    if (hasCoords) {
+      return (
+        <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
+          <div className='flex items-center gap-2'>
+            <TbMapPin className='text-(--yellow) fs-22' />
+            <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
+          </div>
+          <p className='text-white leading-snug fs-12'>{departmentData?.way_name || '-'}</p>
+          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
+        </div>
+      )
+    }
+    return (
+      <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
+        <div className='flex items-center gap-2'>
+          <TbMapPin className='text-(--yellow) fs-22' />
+          <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
+        </div>
+        <p className='text-white leading-snug fs-12'>ไม่ระบุจุดตั้งด่าน</p>
+        {coords && <p className='fs-12 text-white/60'>ไม่ระบุพิกัด</p>}
+      </div>
+    )
+  }, [coords, departmentData?.way_name, hasCoords])
+
   return (
     <div className='relative h-full min-h-80 rounded-xl overflow-hidden'>
       <BaseMap
@@ -66,31 +91,24 @@ const MobileDetailMap: React.FC<Props> = (props) => {
       </BaseMap>
 
       {/* Google Map button */}
-      <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
-        <Button
-          type='primary'
-          size='small'
-          href={googleMapsUrl}
-          target='_blank'
-          className='absolute! top-3 right-3 z-10'
-          shape='round'
-        >
-          Google Map
-        </Button>
-      </ConfigProvider>
+      {hasCoords && (
+        <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+          <Button
+            type='primary'
+            size='small'
+            href={googleMapsUrl}
+            target='_blank'
+            className='absolute! top-3 right-3 z-10'
+            shape='round'
+          >
+            Google Map
+          </Button>
+        </ConfigProvider>
+      )}
 
       {/* Location overlay */}
-      {hasCoords && (
-        <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
-          <div className='flex items-center gap-2'>
-            <TbMapPin className='text-(--yellow) fs-22' />
-            <h5 className='text-(--yellow) font-medium'>จุดตั้งด่าน</h5>
-          </div>
-          <p className='text-white leading-snug fs-12'>{departmentData?.way_name || '-'}</p>
-          {coords && <p className='fs-12 text-white/60'>{coords}</p>}
-        </div>
-      )}
-    </div>
+      {renderCoordsPanel}
+    </div >
   )
 }
 
