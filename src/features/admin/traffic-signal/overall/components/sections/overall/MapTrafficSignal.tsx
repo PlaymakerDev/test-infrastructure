@@ -11,7 +11,9 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { TrafficLocation } from '@/types/traffic-signal/overview-api'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -143,13 +145,14 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 // ─── Map shell ─────────────────────────────────────────────────────────────────
 
-const MapTrafficSignal: React.FC<Props> = () => {
+const MapTrafficSignal: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   // Overall map shows EVERY signal in the department — same approach as the
   // cctv / incident-detection overall maps. (Earlier this read `solution_id`
   // from the URL and filtered the request, which made the markers disappear
   // when the deep-link param was carried over from another menu.)
-  const { data, isLoading, isSuccess } = useTrafficOverview(deptId)
+  const { data, isLoading, isSuccess } = useTrafficOverview(deptId, roadId ? { road_id: roadId } : {})
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

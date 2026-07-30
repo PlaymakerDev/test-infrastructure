@@ -5,16 +5,19 @@ import { useTrafficCentralList, useTrafficTotals } from '@/hooks/queries/traffic
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 /** Right rail — 3 stat cards summarising the traffic-signal fleet. Counts come
  *  from `/overview/totals`. Per-card "Active" lines (solutions with online
  *  controllers per warranty bucket) are derived from `/overview/central/list`
  *  — same cache the table consumes, no extra request. */
-const InfoCardTrafficSignal: React.FC<Props> = () => {
+const InfoCardTrafficSignal: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data: totals, isLoading } = useTrafficTotals(deptId)
-  const { data: central } = useTrafficCentralList(deptId)
+  const { data: totals, isLoading } = useTrafficTotals(deptId, roadId ? { road_id: roadId } : {})
+  const { data: central } = useTrafficCentralList(deptId, roadId ? { road_id: roadId } : {})
 
   const stats = useMemo(() => {
     const total = totals?.solution.total ?? 0

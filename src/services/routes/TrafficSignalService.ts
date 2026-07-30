@@ -16,6 +16,8 @@ import type {
   APIResponseTrafficCameraCentralList,
   APIRequestTrafficCameraDropdowns,
   APIResponseTrafficCameraDropdowns,
+  APIRequestTrafficTotals,
+  APIRequestTrafficCentralList,
 } from '@/types/traffic-signal/overview-api'
 import type {
   APIResponseTrafficContractInfo,
@@ -38,15 +40,13 @@ const trafficDeptBase = (deptId: string | number) =>
 
 export const getTrafficOverviewAPI = (
   deptId: string | number,
-  params: APIRequestTrafficOverview = {}
+  params: APIRequestTrafficOverview
 ) =>
-  ApiService.fetchData<APIResponseTrafficOverview>({
+  ApiService.fetchData<APIResponseTrafficOverview, APIRequestTrafficOverview>({
     url: `${trafficDeptBase(deptId)}/overview`,
     method: 'GET',
-    // Only forward solution_id when present — keeps the URL clean for the
-    // "show all" case.
     params: {
-      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...params,
       ...centralScope(deptId),
     },
   })
@@ -54,11 +54,17 @@ export const getTrafficOverviewAPI = (
 // Use the `/central/` variant — when the dept is a bureau (department_type=1)
 // it aggregates totals across every sub-dept in the bureau's group, which is
 // what the overall page needs. Falls back to the dept's own scope otherwise.
-export const getTrafficTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseTrafficTotals>({
+export const getTrafficTotalsAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficTotals
+) =>
+  ApiService.fetchData<APIResponseTrafficTotals, APIRequestTrafficTotals>({
     url: `${trafficDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 export const getTrafficListAPI = (
@@ -74,11 +80,17 @@ export const getTrafficListAPI = (
 // Bureau-aware list — returns nested bureau → sub-dept → solutions and carries
 // extra fields (`project.project_name`, per-solution camera online/offline
 // counts) the flat `/list` endpoint omits.
-export const getTrafficCentralListAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseTrafficCentralList>({
+export const getTrafficCentralListAPI = (
+  deptId: string | number,
+  params: APIRequestTrafficCentralList
+) =>
+  ApiService.fetchData<APIResponseTrafficCentralList, APIRequestTrafficCentralList>({
     url: `${trafficDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 export const getTrafficOverviewDropdownsAPI = (
@@ -95,10 +107,13 @@ export const getTrafficRandomCamerasAPI = (
   deptId: string | number,
   params: APIRequestTrafficRandomCameras
 ) =>
-  ApiService.fetchData<APIResponseTrafficRandomCameras>({
+  ApiService.fetchData<APIResponseTrafficRandomCameras, APIRequestTrafficRandomCameras>({
     url: `${trafficDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 4, ...centralScope(deptId) },
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 export const getTrafficCameraListAPI = (

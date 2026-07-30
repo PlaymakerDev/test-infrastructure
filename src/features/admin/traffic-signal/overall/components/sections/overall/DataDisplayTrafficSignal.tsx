@@ -21,7 +21,9 @@ import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/over
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
-interface Props {}
+interface Props {
+  roadId?: string | null
+}
 
 const TRAFFIC_SIGNAL_FILTERS: FilterConfig[] = [
   {
@@ -69,19 +71,19 @@ const TRAFFIC_SIGNAL_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: TrafficSignalProject, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
-  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase },
-  { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'Stream', width: 12, widthPct: 6, value: (r) => (r.stream ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
-  { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode || '-' },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.installPoint || '-' },
+    // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+    { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase },
+    { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'Stream', width: 12, widthPct: 6, value: (r) => (r.stream ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
+    { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode || '-' },
+  ]
 
 /** Adapter: central-list solution row → UI `TrafficSignalProject`.
  *  Central endpoint carries every field the table needs (project_name +
@@ -115,7 +117,8 @@ const apiSolutionToProject = (
   offlineCameras: item.offline_count,
 })
 
-const DataDisplayTrafficSignal: React.FC<Props> = () => {
+const DataDisplayTrafficSignal: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
@@ -130,9 +133,9 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
 
   // Bureau-aware list — single round-trip, no pagination, carries every
   // field the table needs (project name + camera counts + sub-dept grouping).
-  const { data } = useTrafficCentralList(deptId)
+  const { data } = useTrafficCentralList(deptId, roadId ? { road_id: roadId } : {})
   // Authoritative stats from backend.
-  const { data: totals } = useTrafficTotals(deptId)
+  const { data: totals } = useTrafficTotals(deptId, roadId ? { road_id: roadId } : {})
 
   // Flatten the bureau → sub-dept → solutions tree, tagging each row with its
   // sub-dept short name so the table groups by bureau out of the box.
@@ -186,11 +189,11 @@ const DataDisplayTrafficSignal: React.FC<Props> = () => {
   const filtered = useMemo(() => {
     return searchFiltered.filter((p) => {
       switch (activeFilter) {
-        case 'online':      return p.connection === 'online'
-        case 'offline':     return p.connection === 'offline'
+        case 'online': return p.connection === 'online'
+        case 'offline': return p.connection === 'offline'
         case 'in-warranty': return p.warranty === 'in-warranty'
-        case 'expired':     return p.warranty === 'expired'
-        default:            return true
+        case 'expired': return p.warranty === 'expired'
+        default: return true
       }
     })
   }, [searchFiltered, activeFilter])

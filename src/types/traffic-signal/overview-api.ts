@@ -28,6 +28,7 @@ export interface TrafficProject {
 
 export interface APIRequestTrafficOverview {
   solution_id?: string | number
+  road_id?: string | number
 }
 
 export interface APIResponseTrafficOverview {
@@ -59,6 +60,12 @@ export interface APIResponseTrafficTotals {
     active: number
     expired: number
   }
+}
+
+// ADDED
+export interface APIRequestTrafficTotals {
+  scope?: string
+  road_id?: string | number
 }
 
 // ── 3. GET /traffic/departments/{deptId}/overview/list ────────────────────────
@@ -122,6 +129,12 @@ export interface TrafficOverviewCentralItem {
 
 export type APIResponseTrafficCentralList = TrafficOverviewCentralItem[]
 
+// ADDED
+export interface APIRequestTrafficCentralList {
+  scope?: string
+  road_id?: string | number
+}
+
 export interface APIResponseTrafficList {
   res_data: TrafficOverviewListItem[]
   meta_data: MetaData
@@ -142,7 +155,10 @@ export interface APIResponseTrafficOverviewDropdowns {
 // ── 5. GET /traffic/departments/{deptId}/cameras/random-online ────────────────
 
 export interface APIRequestTrafficRandomCameras {
+  solution_id?: string | number
   limit?: number
+  scope?: string
+  road_id?: string
 }
 
 export interface TrafficRandomCamera {

@@ -11,6 +11,9 @@ import type {
   APIRequestTrafficOverviewDropdowns,
   APIRequestTrafficCameraList,
   APIRequestTrafficCameraDropdowns,
+  APIRequestTrafficRandomCameras,
+  APIRequestTrafficTotals,
+  APIRequestTrafficCentralList,
 } from '@/types/traffic-signal/overview-api'
 import type {
   APIRequestTrafficSummary,
@@ -27,16 +30,20 @@ export const trafficSignalKeys = {
       [...trafficSignalKeys.all, 'overview', deptId, scopeKey()] as const,
     map: (deptId: string | number, params: APIRequestTrafficOverview = {}) =>
       [...trafficSignalKeys.overview.root(deptId), 'map', params] as const,
-    totals: (deptId: string | number) =>
-      [...trafficSignalKeys.overview.root(deptId), 'totals'] as const,
+    totals: (deptId: string | number, params: APIRequestTrafficTotals) =>
+      [...trafficSignalKeys.overview.root(deptId), 'totals', params] as const,
+    // totals: (deptId: string | number) =>
+    //   [...trafficSignalKeys.overview.root(deptId), 'totals'] as const,
     list: (deptId: string | number, params: APIRequestTrafficList) =>
       [...trafficSignalKeys.overview.root(deptId), 'list', params] as const,
-    centralList: (deptId: string | number) =>
-      [...trafficSignalKeys.overview.root(deptId), 'central-list'] as const,
+    centralList: (deptId: string | number, params: APIRequestTrafficCentralList) =>
+      [...trafficSignalKeys.overview.root(deptId), 'central-list', params] as const,
+    // centralList: (deptId: string | number) =>
+    //   [...trafficSignalKeys.overview.root(deptId), 'central-list'] as const,
     dropdowns: (deptId: string | number, params: APIRequestTrafficOverviewDropdowns) =>
       [...trafficSignalKeys.overview.root(deptId), 'dropdowns', params] as const,
-    randomCameras: (deptId: string | number, limit: number) =>
-      [...trafficSignalKeys.overview.root(deptId), 'random-cameras', limit] as const,
+    randomCameras: (deptId: string | number, params: APIRequestTrafficRandomCameras) =>
+      [...trafficSignalKeys.overview.root(deptId), 'random-cameras', params] as const,
     cameraList: (deptId: string | number, params: APIRequestTrafficCameraList) =>
       [...trafficSignalKeys.overview.root(deptId), 'camera-list', params] as const,
     cameraCentralList: (deptId: string | number) =>

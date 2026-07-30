@@ -7,10 +7,10 @@ import { trafficSignalKeys } from './queryKeys'
  *  Pass `solution_id` to narrow the map to a single signal (deep-link). */
 export const useTrafficOverview = (
   deptId: string | number | null | undefined,
-  params: APIRequestTrafficOverview = {}
+  params?: APIRequestTrafficOverview
 ) =>
   useQuery({
     queryKey: trafficSignalKeys.overview.map(deptId ?? '', params),
-    queryFn: () => getTrafficOverviewAPI(deptId!, params).then((r) => r.data),
+    queryFn: () => getTrafficOverviewAPI(deptId!, { ...params }).then((r) => r.data),
     enabled: !!deptId,
   })

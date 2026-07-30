@@ -3,16 +3,22 @@ import React from 'react'
 import LocationTrafficSignal from './sections/overall/LocationTrafficSignal'
 import DataDisplayTrafficSignal from './sections/overall/DataDisplayTrafficSignal'
 
-interface Props {}
+interface Props {
+  roadId?: string | null
+}
 
-const OverallSection: React.FC<Props> = () => {
+const OverallSection: React.FC<Props> = ({ roadId }) => {
   return (
     <div>
       <section>
-        <LocationTrafficSignal />
+        <LocationTrafficSignal
+          roadId={roadId}
+        />
       </section>
       <section className='mt-5'>
-        <DataDisplayTrafficSignal />
+        <DataDisplayTrafficSignal
+          roadId={roadId}
+        />
       </section>
     </div>
   )
