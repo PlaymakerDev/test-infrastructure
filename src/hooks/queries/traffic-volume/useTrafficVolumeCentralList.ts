@@ -7,7 +7,7 @@ import { trafficVolumeKeys } from './queryKeys'
  *  with per-row warranty status and camera online counts. */
 export const useTrafficVolumeCentralList = (
   deptId: string | number | null | undefined,
-  params: APIRequestTrafficVolumeCentralList = {}
+  params: APIRequestTrafficVolumeCentralList
 ) =>
   useQuery({
     queryKey: trafficVolumeKeys.overview.centralList(deptId ?? '', params),

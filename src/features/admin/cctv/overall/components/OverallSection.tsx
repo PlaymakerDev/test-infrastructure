@@ -27,6 +27,7 @@ import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {
   deptId?: string | null
+  roadId?: string | null
 }
 
 const CCTV_FILTERS: FilterConfig[] = [
@@ -85,20 +86,20 @@ const CCTV_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: CCTVOverviewRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road?.code_name || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.project?.project_name || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.solution?.solution_name || '-' },
-  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project?.contract_no || (r.project?.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'อยู่ในค้ำ' : 'หมดค้ำ') },
-  { header: 'กล้องทั้งหมด', width: 12, widthPct: 8, value: (r) => r.camera?.total ?? '-' },
-  { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.online ?? '-' },
-  { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.offline ?? '-' },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road?.code_name || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.project?.project_name || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.solution?.solution_name || '-' },
+    // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+    { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project?.contract_no || (r.project?.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'อยู่ในค้ำ' : 'หมดค้ำ') },
+    { header: 'กล้องทั้งหมด', width: 12, widthPct: 8, value: (r) => r.camera?.total ?? '-' },
+    { header: 'ออนไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.online ?? '-' },
+    { header: 'ออฟไลน์', width: 9, widthPct: 6, value: (r) => r.camera?.offline ?? '-' },
+  ]
 
-const OverallSection: React.FC<Props> = ({ deptId }) => {
+const OverallSection: React.FC<Props> = ({ deptId, roadId }) => {
   const router = useRouter()
   const scopeAll = useScopeAll()
   const [activeFilter, setActiveFilter] = useState<string>('all')
@@ -119,9 +120,9 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
   // Bureau-aware list — nested bureau → sub-department (แขวง) → solutions.
   // Flatten into rows tagged with their แขวง so the table can group by it
   // (like traffic-signal). No pagination — returns the whole department.
-  const { data: centralData, isLoading: listLoading } = useCctvOverviewCentralList(deptId)
-  const { data: totals } = useCctvOverviewCentralTotals(deptId)
-  const { data: randomOnlineRes } = useCctvRandomOnline(deptId, 3)
+  const { data: centralData, isLoading: listLoading } = useCctvOverviewCentralList(deptId, roadId ? { road_id: Number(roadId) } : {})
+  const { data: totals } = useCctvOverviewCentralTotals(deptId, roadId ? { road_id: Number(roadId) } : {})
+  const { data: randomOnlineRes } = useCctvRandomOnline(deptId, roadId ? { limit: 3, road_id: Number(roadId) } : { limit: 3 })
   const randomOnline = randomOnlineRes?.data ?? []
 
   const allItems = useMemo<CCTVOverviewRow[]>(() => {
@@ -218,7 +219,11 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
 
         {/* CENTER — Map */}
         <div className='row-start-1 lg:col-start-2 relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
-          <MapSectionCctv deptId={deptId} edgeFade={{ all: 20 }} />
+          <MapSectionCctv
+            deptId={deptId}
+            roadId={roadId}
+            edgeFade={{ all: 20 }}
+          />
         </div>
 
         {/* RIGHT — search button + stats cards */}
@@ -245,7 +250,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
           >
             ค้นหากล้อง CCTV รายสายทาง
           </Button>
-          <StatsSectionCctv totals={totals ?? null} />
+          <StatsSectionCctv totals={totals ?? null} roadId={roadId} />
         </MapOverlayPanel>
       </MapFocusGrid>
 

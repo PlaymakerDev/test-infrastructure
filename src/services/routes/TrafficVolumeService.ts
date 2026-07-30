@@ -8,6 +8,7 @@ import type {
   APIRequestTrafficVolumeRandomCameras,
   APIResponseTrafficVolumeRandomCameras,
   APIResponseTrafficVolumeTotals,
+  APIRequestTrafficVolumeTotals,
 } from '@/types/traffic-volume/overview-api'
 import type {
   APIRequestTrafficVolumeCameras,
@@ -41,13 +42,13 @@ const countingDeptBase = (deptId: string | number) =>
 // response to a single solution when set (deep-link style).
 export const getTrafficVolumeOverviewAPI = (
   deptId: string | number,
-  params: APIRequestTrafficVolumeOverview = {}
+  params: APIRequestTrafficVolumeOverview
 ) =>
-  ApiService.fetchData<APIResponseTrafficVolumeOverview>({
+  ApiService.fetchData<APIResponseTrafficVolumeOverview, APIRequestTrafficVolumeOverview>({
     url: `${countingDeptBase(deptId)}/overview`,
     method: 'GET',
     params: {
-      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...params,
       ...centralScope(deptId),
     },
   })
@@ -57,9 +58,9 @@ export const getTrafficVolumeOverviewAPI = (
 // so the URL stays clean for the common "all rows" case.
 export const getTrafficVolumeCentralListAPI = (
   deptId: string | number,
-  params: APIRequestTrafficVolumeCentralList = {}
+  params: APIRequestTrafficVolumeCentralList
 ) =>
-  ApiService.fetchData<APIResponseTrafficVolumeCentralList>({
+  ApiService.fetchData<APIResponseTrafficVolumeCentralList, APIRequestTrafficVolumeCentralList>({
     url: `${countingDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
     params: { ...params, ...centralScope(deptId) },
@@ -69,22 +70,28 @@ export const getTrafficVolumeCentralListAPI = (
 // to match the design (3 stacked cards).
 export const getTrafficVolumeRandomCamerasAPI = (
   deptId: string | number,
-  params: APIRequestTrafficVolumeRandomCameras = {}
+  params: APIRequestTrafficVolumeRandomCameras
 ) =>
-  ApiService.fetchData<APIResponseTrafficVolumeRandomCameras>({
+  ApiService.fetchData<APIResponseTrafficVolumeRandomCameras, APIRequestTrafficVolumeRandomCameras>({
     url: `${countingDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit: params.limit ?? 3, ...centralScope(deptId) },
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 // Aggregated counters for the InfoCard right rail — camera + warranty totals.
 // Uses central/totals (bureau-aware, matches the central/list table + honours
 // scope=all at dept 0) so the cards agree with the list and the ส่วนกลาง view.
-export const getTrafficVolumeTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseTrafficVolumeTotals>({
+export const getTrafficVolumeTotalsAPI = (deptId: string | number, params: APIRequestTrafficVolumeTotals) =>
+  ApiService.fetchData<APIResponseTrafficVolumeTotals, APIRequestTrafficVolumeTotals>({
     url: `${countingDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 // Camera license keys for ONE solution. `{id}` = solution_id. Not dept-scoped.

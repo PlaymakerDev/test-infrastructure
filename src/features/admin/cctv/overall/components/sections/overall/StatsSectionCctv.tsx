@@ -9,14 +9,15 @@ import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   totals: APIResponseCCTVOverviewTotals | null
+  roadId?: string | null
 }
 
 /** Right-rail stat cards. Active sub-lines on cards 2 & 3 derive from
- *  `/overview/central/list` (same cache as the table — no extra request).
- *  Active = solutions with ≥1 online camera. */
-const StatsSectionCctv: React.FC<Props> = ({ totals }) => {
+ *  `/overview/central/list` (same cache as the table — no extra request, as
+ *  long as this passes the SAME road_id filter as OverallSection's own call). */
+const StatsSectionCctv: React.FC<Props> = ({ totals, roadId }) => {
   const deptId = useDeptId()
-  const { data: central } = useCctvOverviewCentralList(deptId)
+  const { data: central } = useCctvOverviewCentralList(deptId, roadId ? { road_id: Number(roadId) } : {})
 
   const camera = totals?.camera
   const warranty = totals?.warranty

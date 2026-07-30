@@ -12,11 +12,12 @@ import { useRouter } from 'next/navigation'
 
 interface Props {
   deptId?: string | null
+  roadId?: string | null
   edgeFade?: MapEdgeFadeProps
 }
 
-const MapSectionCctv: React.FC<Props> = ({ deptId, edgeFade }) => {
-  const { data: overview } = useCctvOverview(deptId)
+const MapSectionCctv: React.FC<Props> = ({ deptId, roadId, edgeFade }) => {
+  const { data: overview } = useCctvOverview(deptId, roadId ? { road_id: Number(roadId) } : {})
   const router = useRouter()
   // Guaranteed dept id for the popup's detail link (matches how the overall
   // table navigates). The detail page self-derives project_id / road_id.

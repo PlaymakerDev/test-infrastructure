@@ -7,7 +7,7 @@ import { trafficVolumeKeys } from './queryKeys'
  *  narrow to a single solution (deep-link). */
 export const useTrafficVolumeOverview = (
   deptId: string | number | null | undefined,
-  params: APIRequestTrafficVolumeOverview = {}
+  params: APIRequestTrafficVolumeOverview
 ) =>
   useQuery({
     queryKey: trafficVolumeKeys.overview.map(deptId ?? '', params),

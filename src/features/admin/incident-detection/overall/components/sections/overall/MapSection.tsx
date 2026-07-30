@@ -10,13 +10,16 @@ import { useIncidentOverview } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 /** Overview map — one marker per analytic solution. Frames all solutions that
  *  have a coordinate (bureau → แขวง → สายทาง) instead of a fixed centroid zoom. */
-const MapSection: React.FC<Props> = () => {
+const MapSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data: overview } = useIncidentOverview(deptId)
+  const { data: overview } = useIncidentOverview(deptId, roadId ? { road_id: Number(roadId) } : {})
   const router = useRouter()
 
   // Only solutions with a valid [lng, lat]. A feature with `coordinates: null`

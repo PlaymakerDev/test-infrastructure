@@ -109,3 +109,10 @@ export interface APIResponseIncidentRandomOnline {
   limit: number
   data: IncidentRandomOnlineCamera[]
 }
+
+export interface APIRequestIncidentRandomOnline {
+  solution_id?: number | string
+  limit?: number
+  scope?: string
+  road_id?: number | string
+}

@@ -42,11 +42,26 @@ export interface APIResponseIncidentOverview {
   centroid: [number, number] | null
 }
 
+export interface APIRequestIncidentOverview {
+  solution_id?: number | string
+  road_code?: string
+  contract_no?: string
+  road_id?: number
+}
+
 // ── GET /analytic/departments/{id}/overview/totals ────────────────────────────
 
 export interface APIResponseIncidentTotals {
   camera: { total: number; online: number; offline: number }
   warranty: { active: number; expired: number }
+}
+
+// ADDED
+export interface APIRequestIncidentTotals {
+  scope?: string
+  road_id?: number
+  start_date?: string
+  end_date?: string
 }
 
 // ── GET /analytic/departments/{id}/overview/central/list ──────────────────────
@@ -83,6 +98,9 @@ export interface IncidentCentralItem {
 }
 
 export type APIResponseIncidentCentralList = IncidentCentralItem[]
+
+// ADDED
+export type APIRequestIncidentCentralList = APIRequestIncidentTotals
 
 // ── GET /analytic/departments/{id}/overview/list ──────────────────────────────
 // Flat paginated list (has `offline_count` directly).

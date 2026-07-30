@@ -40,7 +40,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   // No useMemo: React Compiler auto-memoizes when `reactCompiler: true`
   // (next.config.ts). Manual useMemo with nested for-loops + early return
   // blocked the compiler ("could not preserve existing memoization").
-  const { data: centralData } = useTrafficVolumeCentralList(deptId)
+  const { data: centralData } = useTrafficVolumeCentralList(deptId, {})
   const match = (centralData ?? [])
     .flatMap((bureau) => bureau.sub_department)
     .flatMap((subDept) => subDept.solutions)

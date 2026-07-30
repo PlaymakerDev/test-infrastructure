@@ -6,14 +6,17 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useIncidentRandomOnline } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 
-interface Props {}
+interface Props {
+  roadId?: string | null
+}
 
 /** Overview left-rail — live preview of a few random online analytic cameras. */
-const CCTVSection: React.FC<Props> = () => {
+const CCTVSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const dispatch = useAppDispatch()
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
-  const { data } = useIncidentRandomOnline(deptId, 3)
+  const { data } = useIncidentRandomOnline(deptId, roadId ? { road_id: Number(roadId), limit: 3 } : { limit: 3 })
   // Prefer online cameras; if none are online, still show the (offline) cards
   // rather than a blank slot (backend random-online backfills offline anyway).
   const cameras = data?.data ?? []

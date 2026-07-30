@@ -6,15 +6,17 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTrafficVolumeRandomCameras } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 
-interface Props {}
+interface Props {
+  roadId?: string | null
+}
 
 /** Left rail — live CCTV camera previews for traffic-volume counting stations.
  *  Data: `GET /counting/departments/{deptId}/cameras/random-online?limit=3` */
-const CctvListTrafficVolume: React.FC<Props> = () => {
+const CctvListTrafficVolume: React.FC<Props> = ({ roadId }) => {
   const deptId = useDeptId()
   const dispatch = useAppDispatch()
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
-  const { data, isLoading } = useTrafficVolumeRandomCameras(deptId, 3)
+  const { data, isLoading } = useTrafficVolumeRandomCameras(deptId, roadId ? { road_id: roadId, limit: 3 } : { limit: 3 })
   // Prefer online cameras; if none are online, still show the (offline) cards
   // rather than a blank slot (backend random-online backfills offline anyway).
   const cameras = data?.data ?? []

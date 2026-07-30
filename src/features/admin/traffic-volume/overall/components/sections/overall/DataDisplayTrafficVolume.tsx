@@ -17,7 +17,9 @@ import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overa
 import type { CountingCentralSolution } from '@/types/traffic-volume/overview-api'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 const TRAFFIC_VOLUME_FILTERS: FilterConfig[] = [
   {
@@ -95,31 +97,31 @@ const TRAFFIC_VOLUME_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: TrafficVolumeProject, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 19, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 19, align: 'left', value: (r) => r.installPoint || '-' },
-  {
-    header: 'เลขที่สัญญา',
-    width: 20,
-    widthPct: 12,
-    // Mirrors ContractInfoCell: contract number, falling back to the
-    // budget year when the project has no contract on record.
-    value: (r) =>
-      r.contractNo.trim()
-        ? r.contractNo
-        : r.budgetYear
-          ? `ปีงบประมาณ ${r.budgetYear}`
-          : '-',
-  },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'กล้องนับรถ', width: 11, widthPct: 6, value: (r) => r.totalDevices },
-  { header: 'ปริมาณจราจร (คัน)', width: 15, widthPct: 6, value: (r) => r.trafficCount ?? '-' },
-  { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 19, align: 'left', value: (r) => r.projectName || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 19, align: 'left', value: (r) => r.installPoint || '-' },
+    {
+      header: 'เลขที่สัญญา',
+      width: 20,
+      widthPct: 12,
+      // Mirrors ContractInfoCell: contract number, falling back to the
+      // budget year when the project has no contract on record.
+      value: (r) =>
+        r.contractNo.trim()
+          ? r.contractNo
+          : r.budgetYear
+            ? `ปีงบประมาณ ${r.budgetYear}`
+            : '-',
+    },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'กล้องนับรถ', width: 11, widthPct: 6, value: (r) => r.totalDevices },
+    { header: 'ปริมาณจราจร (คัน)', width: 15, widthPct: 6, value: (r) => r.trafficCount ?? '-' },
+    { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+  ]
 
-const DataDisplayTrafficVolume: React.FC<Props> = () => {
+const DataDisplayTrafficVolume: React.FC<Props> = ({ roadId }) => {
   const deptId = useDeptId()
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState<string>('all')
@@ -134,7 +136,11 @@ const DataDisplayTrafficVolume: React.FC<Props> = () => {
 
   // Backend defaults are page=1, limit=100; pin them here so the URL is stable
   // for cache key + matches the Postman sample we verified against.
-  const { data, isLoading } = useTrafficVolumeCentralList(deptId, {
+  const { data, isLoading } = useTrafficVolumeCentralList(deptId, roadId ? {
+    road_id: roadId,
+    page: 1,
+    limit: 100,
+  } : {
     page: 1,
     limit: 100,
   })

@@ -1,13 +1,23 @@
 import React from 'react'
 import { DataDisplaySection, LocationSection } from '../components'
 
-interface Props {}
+interface Props {
+  roadId?: string | null
+}
 
-const OverallSection: React.FC<Props> = () => {
+const OverallSection: React.FC<Props> = ({ roadId }) => {
   return (
     <div>
-      <section><LocationSection /></section>
-      <section className='mt-5'><DataDisplaySection /></section>
+      <section>
+        <LocationSection
+          roadId={roadId}
+        />
+      </section>
+      <section className='mt-5'>
+        <DataDisplaySection
+          roadId={roadId}
+        />
+      </section>
     </div>
   )
 }
