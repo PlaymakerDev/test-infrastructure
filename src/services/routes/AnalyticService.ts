@@ -6,6 +6,9 @@ import type {
   APIResponseIncidentCentralList,
   APIRequestIncidentList,
   APIResponseIncidentList,
+  APIRequestIncidentTotals,
+  APIRequestIncidentCentralList,
+  APIRequestIncidentOverview,
 } from '@/types/incident-detection/overview-api'
 import type {
   APIRequestIncidentCameras,
@@ -15,6 +18,7 @@ import type {
   APIResponseIncidentCameraList,
   APIRequestIncidentCameraTotals,
   APIResponseIncidentCameraTotals,
+  APIRequestIncidentRandomOnline,
 } from '@/types/incident-detection/camera-api'
 import type { APIResponseIncidentLicense } from '@/types/incident-detection/license-api'
 import type {
@@ -32,35 +36,46 @@ const analyticBase = (deptId: string | number) => `/analytic/departments/${deptI
 // ── Overview (solution-level) ─────────────────────────────────────────────────
 
 /** Map markers (one per solution) + centroid. */
-export const getIncidentOverviewAPI = (deptId: string | number) =>
+export const getIncidentOverviewAPI = (
+  deptId: string | number,
+  params: APIRequestIncidentOverview
+) =>
   ApiService.fetchData<APIResponseIncidentOverview>({
     url: `${analyticBase(deptId)}/overview`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 /** Bureau-scoped totals — same shape, but counts match `/overview/central/list`
  *  (the table source). Use this for the overview chips/cards so the numbers
  *  agree with the table. */
-export const getIncidentCentralTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseIncidentTotals>({
+export const getIncidentCentralTotalsAPI = (
+  deptId: string | number,
+  params: APIRequestIncidentTotals
+) =>
+  ApiService.fetchData<APIResponseIncidentTotals, APIRequestIncidentTotals>({
     url: `${analyticBase(deptId)}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging. */
 export const getIncidentCentralListAPI = (
   deptId: string | number,
-  params: { scope?: string; start_date?: string; end_date?: string } = {},
+  params: APIRequestIncidentCentralList
 ) =>
-  ApiService.fetchData<APIResponseIncidentCentralList>({
+  ApiService.fetchData<APIResponseIncidentCentralList, APIRequestIncidentCentralList>({
     url: `${analyticBase(deptId)}/overview/central/list`,
     method: 'GET',
     params: {
-      ...(params.scope ? { scope: params.scope } : centralScope(deptId)),
-      start_date: params.start_date,
-      end_date: params.end_date,
+      ...params,
+      ...centralScope(deptId),
     },
   })
 
@@ -92,12 +107,15 @@ export const getIncidentCamerasAPI = (
 /** Random online cameras — overview left-rail live preview. */
 export const getIncidentRandomOnlineAPI = (
   deptId: string | number,
-  limit = 3
+  params: APIRequestIncidentRandomOnline
 ) =>
-  ApiService.fetchData<APIResponseIncidentRandomOnline>({
+  ApiService.fetchData<APIResponseIncidentRandomOnline, APIRequestIncidentRandomOnline>({
     url: `${analyticBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit, ...centralScope(deptId) },
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 
 /** Paginated per-camera list for ONE solution — detail Tab1 table. */

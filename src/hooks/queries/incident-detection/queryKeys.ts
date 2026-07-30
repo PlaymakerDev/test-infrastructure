@@ -1,9 +1,10 @@
 // Query key factory for the Incident Detection (/analytic) feature.
 import { scopeKey } from '@/services/routes/scopeParam'
-import type { APIRequestIncidentList } from '@/types/incident-detection/overview-api'
+import type { APIRequestIncidentList, APIRequestIncidentOverview, APIRequestIncidentTotals } from '@/types/incident-detection/overview-api'
 import type {
   APIRequestIncidentCameraList,
   APIRequestIncidentCameraTotals,
+  APIRequestIncidentRandomOnline,
 } from '@/types/incident-detection/camera-api'
 import type {
   APIRequestIncidentDaily,
@@ -17,12 +18,18 @@ export const incidentKeys = {
     // `scopeKey()` keys the cache apart per URL scope — see scopeParam.ts.
     root: (deptId: string | number) =>
       [...incidentKeys.all, 'overview', deptId, scopeKey()] as const,
-    map: (deptId: string | number, scope?: string) =>
-      [...incidentKeys.overview.root(deptId), 'map', scope ?? ''] as const,
-    centralTotals: (deptId: string | number) =>
-      [...incidentKeys.overview.root(deptId), 'central-totals'] as const,
-    centralList: (deptId: string | number, scope?: string, dateRange?: { start_date?: string; end_date?: string }) =>
-      [...incidentKeys.overview.root(deptId), 'central-list', scope ?? '', dateRange ?? {}] as const,
+    map: (deptId: string | number, params?: APIRequestIncidentOverview) =>
+      [...incidentKeys.overview.root(deptId), 'map', params] as const,
+    // map: (deptId: string | number, scope?: string) =>
+    //   [...incidentKeys.overview.root(deptId), 'map', scope ?? ''] as const,
+    centralTotals: (deptId: string | number, params: APIRequestIncidentTotals) =>
+      [...incidentKeys.overview.root(deptId), 'central-totals', params] as const,
+    // centralTotals: (deptId: string | number) =>
+    //   [...incidentKeys.overview.root(deptId), 'central-totals'] as const,
+    centralList: (deptId: string | number, params: APIRequestIncidentTotals) =>
+      [...incidentKeys.overview.root(deptId), 'central-list', params] as const,
+    // centralList: (deptId: string | number, scope?: string, dateRange?: { start_date?: string; end_date?: string }) =>
+    //   [...incidentKeys.overview.root(deptId), 'central-list', scope ?? '', dateRange ?? {}] as const,
     list: (deptId: string | number, params: APIRequestIncidentList) =>
       [...incidentKeys.overview.root(deptId), 'list', params] as const,
   },
@@ -32,8 +39,10 @@ export const incidentKeys = {
       [...incidentKeys.all, 'cameras', deptId, scopeKey()] as const,
     bySolution: (deptId: string | number, solutionId: string | number) =>
       [...incidentKeys.cameras.root(deptId), 'by-solution', solutionId] as const,
-    randomOnline: (deptId: string | number, limit: number) =>
-      [...incidentKeys.cameras.root(deptId), 'random-online', limit] as const,
+    randomOnline: (deptId: string | number, params: APIRequestIncidentRandomOnline) =>
+      [...incidentKeys.cameras.root(deptId), 'random-online', params] as const,
+    // randomOnline: (deptId: string | number, limit: number) =>
+    //   [...incidentKeys.cameras.root(deptId), 'random-online', limit] as const,
     list: (deptId: string | number, params: APIRequestIncidentCameraList) =>
       [...incidentKeys.cameras.root(deptId), 'list', params] as const,
     totals: (deptId: string | number, params: APIRequestIncidentCameraTotals) =>

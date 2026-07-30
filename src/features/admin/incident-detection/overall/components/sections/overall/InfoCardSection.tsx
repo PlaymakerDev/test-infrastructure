@@ -8,17 +8,20 @@ import {
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
-const InfoCardSection: React.FC<Props> = () => {
+const InfoCardSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   // central/totals — same scope as the table (/overview/central/list).
-  const { data: totals } = useIncidentCentralTotals(deptId)
+  const { data: totals } = useIncidentCentralTotals(deptId, roadId ? { road_id: Number(roadId) } : {})
   // central/list lets us count "active" solutions per warranty bucket — a
   // solution counts as Active when at least one of its cameras is online. The
   // API doesn't expose this split directly so we derive it here. Same source
   // the table consumes, so no extra request.
-  const { data: central } = useIncidentCentralList(deptId)
+  const { data: central } = useIncidentCentralList(deptId, roadId ? { road_id: Number(roadId) } : {})
 
   const camera = totals?.camera
   const warranty = totals?.warranty

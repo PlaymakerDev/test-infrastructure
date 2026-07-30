@@ -12,6 +12,10 @@ import type { IncidentRow } from '@/features/admin/incident-detection/overall/da
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
+interface Props {
+  roadId?: string | null
+}
+
 const ID_FILTERS: FilterConfig[] = [
   { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
   { key: 'online', label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white', badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
@@ -33,26 +37,27 @@ const ID_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: IncidentRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 16, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 16, align: 'left', value: (r) => r.installPoint || '-' },
-  {
-    header: 'เลขที่สัญญา',
-    width: 20,
-    widthPct: 11,
-    // Same fallback chain as the on-screen ContractInfoCell.
-    value: (r) => (r.contractNo?.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
-  },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'กล้องวิเคราะห์', width: 13, widthPct: 8, value: (r) => r.totalCameras },
-  { header: 'เหตุการณ์', width: 10, widthPct: 6, value: (r) => r.events },
-  { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.onlineCameras > 0 ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'Stream', width: 11, widthPct: 6, value: (r) => (r.onlineCameras > 0 ? 'Connect' : 'Disconnect') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 8, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 16, align: 'left', value: (r) => r.projectName || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 16, align: 'left', value: (r) => r.installPoint || '-' },
+    {
+      header: 'เลขที่สัญญา',
+      width: 20,
+      widthPct: 11,
+      // Same fallback chain as the on-screen ContractInfoCell.
+      value: (r) => (r.contractNo?.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+    },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'กล้องวิเคราะห์', width: 13, widthPct: 8, value: (r) => r.totalCameras },
+    { header: 'เหตุการณ์', width: 10, widthPct: 6, value: (r) => r.events },
+    { header: 'สถานะ', width: 10, widthPct: 7, value: (r) => (r.onlineCameras > 0 ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'Stream', width: 11, widthPct: 6, value: (r) => (r.onlineCameras > 0 ? 'Connect' : 'Disconnect') },
+  ]
 
-const DataDisplaySection: React.FC = () => {
+const DataDisplaySection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const router = useRouter()
   const [displayType, setDisplayType] = useState<ViewMode>('TABLE')
@@ -65,8 +70,8 @@ const DataDisplaySection: React.FC = () => {
     router.push(`/admin/incident-detection/detail/${r.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
 
-  const { data: central, isLoading } = useIncidentCentralList(deptId)
-  const { data: totals } = useIncidentCentralTotals(deptId)
+  const { data: central, isLoading } = useIncidentCentralList(deptId, roadId ? { road_id: Number(roadId) } : {})
+  const { data: totals } = useIncidentCentralTotals(deptId, roadId ? { road_id: Number(roadId) } : {})
 
   // Flatten bureau → sub-dept(แขวง) → solutions, tagging each row with its แขวง
   // so both tables group by bureau. The central-list `camera` object is
