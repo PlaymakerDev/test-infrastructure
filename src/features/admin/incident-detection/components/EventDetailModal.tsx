@@ -47,7 +47,7 @@ const fmtThaiDateTime = (iso: string): string => {
 /** Outlined pill — used by ประเภทเหตุการณ์ / การทำงาน / Stream / Device. */
 const Pill: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => (
   <span
-    className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {children}
@@ -232,12 +232,12 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                         hlsUrl={event.camera.hls_url}
                         showLiveBadge
                         enableViewportPause
-                        figureClassName='h-24 min-h-0 max-h-none w-full mb-1.5 rounded-md overflow-hidden'
+                        figureClassName='h-32 min-h-0 max-h-none w-full mb-1.5 rounded-md overflow-hidden'
                       />
-                      <p style={{ fontSize: 11, color: '#66AEFF', fontWeight: 600, lineHeight: 1.3, margin: '0 0 3px', wordBreak: 'break-all' }}>
+                      <p className='fs-12' style={{ color: '#66AEFF', fontWeight: 600, lineHeight: 1.3, margin: '0 0 3px', wordBreak: 'break-all' }}>
                         {event.camera.camera_name}
                       </p>
-                      <p style={{ fontSize: 10, color: '#9ca3af', margin: 0 }}>
+                      <p className='fs-12' style={{ color: '#9ca3af', margin: 0 }}>
                         IP : {event.camera.ip_address}
                       </p>
                     </div>
