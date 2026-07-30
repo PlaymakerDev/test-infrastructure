@@ -32,7 +32,7 @@ const ActiveCamera: React.FC<Props> = (props) => {
               cameraId={String(item.camera.id)}
               hlsUrl={item.camera.hls_url}
               enableViewportPause
-              figureClassName='flex-1 min-h-0 w-full mb-2 rounded-2xl overflow-hidden cursor-pointer'
+              figureClassName='flex-1 min-h-0 w-full mb-2 rounded-lg overflow-hidden cursor-pointer'
               onClick={() => dispatch(setCCTVModalOpen({ open: true, camera_id: item.camera_id }))}
             />
             {/* Same caption design as the VMS overall random-camera card

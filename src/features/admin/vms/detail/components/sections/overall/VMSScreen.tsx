@@ -19,7 +19,7 @@ const VMSScreen: React.FC<Props> = (props) => {
         cameraId={String(data?.desktop_screen.id)}
         hlsUrl={data?.desktop_screen.desktop_screen}
         enableViewportPause
-        figureClassName='figure-large min-h-0 overflow-hidden rounded-2xl lg:flex-1 lg:max-h-none cursor-pointer'
+        figureClassName='figure-large min-h-0 overflow-hidden rounded-lg lg:flex-1 lg:max-h-none cursor-pointer'
         onClick={() => setOpenVMSScreen({ open: true, data })}
       />
       <ModalVMSScreen />
