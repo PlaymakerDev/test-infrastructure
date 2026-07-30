@@ -35,12 +35,12 @@ const PERIOD_DATE_TYPE: Record<Period, DateType> = {
 const EN_DAY_BY_INDEX = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const LINES = [
-  { dataKey: 'current', color: '#66AEFF', label: 'รถเข้าชั่งทั้งหมด' },
-  { dataKey: 'previous', color: '#E94C4C', label: 'รถเข้าชั่งทั้งหมด' },
+  { dataKey: 'current', color: '#66AEFF', label: 'รถทั้งหมด' },
+  { dataKey: 'previous', color: '#E94C4C', label: 'รถน้ำหนักเกิน' },
 ]
 
 const ChartPreviousWeightVehicle: React.FC<Props> = () => {
-  const { id: stationId } = useWIMContext()
+  const { id: stationId, stationType } = useWIMContext()
   const [period, setPeriod] = useState<Period>('วันนี้')
   const dateType = PERIOD_DATE_TYPE[period]
 
@@ -168,8 +168,8 @@ const ChartPreviousWeightVehicle: React.FC<Props> = () => {
   return (
     <QueryBoundary isLoading={isLoading} isError={isError} skeletonRows={10}>
       <LineChart
-        title='เปรียบเทียบรถเข้าชั่งน้ำหนัก'
-        subtitle='แนวโน้มย้อนหลัง 7 วัน'
+        title={stationType === 'WIM' ? 'เปรียบเทียบรถเข้าชั่งน้ำหนัก' : 'เปรียบเทียบรถเข้าชั่งน้ำหนักแนวโน้มย้อนหลัง 7 วัน'}
+        subtitle={stationType === 'WIM' ? 'แนวโน้มย้อนหลัง 7 วัน' : null}
         subtitleSize={16}
         subtitleColor='var(--yellow)'
         icon={<TbCalendarMonth className='fs-22' />}

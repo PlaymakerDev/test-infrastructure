@@ -60,7 +60,7 @@ export interface LineChartProps {
   /** ขนาด font ของ title (px) */
   titleSize?: number
   /** คำอธิบายใต้ title */
-  subtitle?: string
+  subtitle?: string | null
   /** ขนาด font ของ subtitle (px) */
   subtitleSize?: number
   /** icon แสดงด้านซ้ายของ title */
