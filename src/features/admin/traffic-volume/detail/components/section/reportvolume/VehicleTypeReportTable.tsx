@@ -99,14 +99,14 @@ const VehicleTypeReportTable: React.FC<Props> = ({ rows }) => {
         dataIndex: 'totalPCU',
         key: 'totalPCU',
         width: 120,
-        render: (v: number) => numCell(v, Number.isInteger(v) ? 0 : 1),
+        render: (v: number) => numCell(v, 1),
       },
       {
         title: 'PCU Factor',
         dataIndex: 'pcuFactor',
         key: 'pcuFactor',
         width: 120,
-        render: (v: number) => numCell(v, Number.isInteger(v) ? 0 : 2),
+        render: (v: number) => numCell(v, 1),
       },
       {
         title: 'สัดส่วน (%)',
@@ -130,14 +130,14 @@ const VehicleTypeReportTable: React.FC<Props> = ({ rows }) => {
         dataIndex: 'avgPCUPerHour',
         key: 'avgPCUPerHour',
         width: 160,
-        render: (v: number) => numCell(v, Number.isInteger(v) ? 0 : 1),
+        render: (v: number) => numCell(v, 1),
       },
       {
         title: 'PCU สูงสุด / ชั่วโมง',
         dataIndex: 'maxPCUPerHour',
         key: 'maxPCUPerHour',
         width: 160,
-        render: (v: number) => numCell(v, Number.isInteger(v) ? 0 : 1),
+        render: (v: number) => numCell(v, 1),
       },
     ],
     []

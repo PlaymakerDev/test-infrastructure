@@ -6,6 +6,7 @@ import { dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
 import { useTrafficVolumeCountHour } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import { VEHICLE_TYPES } from './data/vehicleTypeKeys'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   date?: string
@@ -128,7 +129,11 @@ const HourlyDataTable: React.FC<Props> = ({ date, cameraId }) => {
         dataIndex: 'pcu',
         key: 'pcu',
         width: 110,
-        render: (val: number, row) => fmtCell(val, row.isSummary),
+        render: (val: number, row) => (
+          <span className={row.isSummary ? 'text-(--yellow) font-semibold tabular-nums' : 'text-white tabular-nums'}>
+            {fmtNumber(Number(val), 1)}
+          </span>
+        ),
       },
     ],
     [typeCols]
