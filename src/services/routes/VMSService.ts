@@ -1,4 +1,4 @@
-import { APIRequestVMSList, APIRequestVMSRandomOnline, APIResponseVMSList, APIResponseVMSOverview, APIResponseVMSRandomOnline, APIResponseVMSTotal } from "@/types/vms/overview-api"
+import { APIRequestVMSList, APIRequestVMSOverview, APIRequestVMSRandomOnline, APIRequestVMSTotal, APIResponseVMSList, APIResponseVMSOverview, APIResponseVMSRandomOnline, APIResponseVMSTotal } from "@/types/vms/overview-api"
 import ApiService from "../ApiService"
 import { centralScope } from "./scopeParam"
 import { APIResponseVMSDetail } from "@/types/vms/detail-api"
@@ -10,35 +10,59 @@ import type {
   APIResponseScreenInfoCentralize,
 } from "@/types/vms/screen-info-api"
 
-export const getVMSOverviewAPI = async (deptId: string | number) => {
-  return ApiService.fetchData<APIResponseVMSOverview>({
+export const getVMSOverviewAPI = async (
+  deptId: string | number,
+  params?: APIRequestVMSOverview
+) => {
+  return ApiService.fetchData<APIResponseVMSOverview, APIRequestVMSOverview>({
     url: `/vms/departments/${deptId}/overview`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 }
 
-export const getVMSOverviewRandomOnlineAPI = async (deptId: string | number, params: APIRequestVMSRandomOnline) => {
-  return ApiService.fetchData<APIResponseVMSRandomOnline[]>({
+export const getVMSOverviewRandomOnlineAPI = async (
+  deptId: string | number,
+  params: APIRequestVMSRandomOnline
+) => {
+  return ApiService.fetchData<APIResponseVMSRandomOnline, APIRequestVMSRandomOnline>({
     url: `/vms/departments/${deptId}/overview/random-online`,
     method: 'GET',
-    params: { ...params, ...centralScope(deptId) }
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    }
   })
 }
 
-export const getVMSOverviewTotalAPI = async (deptId: string | number) => {
-  return ApiService.fetchData<APIResponseVMSTotal>({
+export const getVMSOverviewTotalAPI = async (
+  deptId: string | number,
+  params: APIRequestVMSTotal
+) => {
+  return ApiService.fetchData<APIResponseVMSTotal, APIRequestVMSTotal>({
     url: `/vms/departments/${deptId}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 }
 
-export const getVMSOverviewListAPI = async (deptId: string | number, params: APIRequestVMSList) => {
-  return ApiService.fetchData<APIResponseVMSList>({
+export const getVMSOverviewListAPI = async (
+  deptId: string | number,
+  params: APIRequestVMSList
+) => {
+  return ApiService.fetchData<APIResponseVMSList, APIRequestVMSList>({
     url: `/vms/departments/${deptId}/overview/central/list`,
     method: 'GET',
-    params: { ...params, ...centralScope(deptId) }
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    }
   })
 }
 

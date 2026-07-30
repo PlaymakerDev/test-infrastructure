@@ -10,10 +10,11 @@ import { useOverallContext } from '../../../context'
 
 interface Props {
   deptId?: string | string[] | number
+  roadId?: string | string[] | number
 }
 
 const CCTVSection: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
   // query key re-derives when scope toggles (render-time window reads go
   // stale during App Router transitions).
@@ -22,10 +23,11 @@ const CCTVSection: React.FC<Props> = (props) => {
   const { setOpenVMSScreen } = useOverallContext()
 
   const { data, isLoading } = useQuery({
-    // dept + scope in the key — same dept/scope must not share cache entries
-    // (key previously had neither, so switching departments reused stale data).
-    queryKey: ['random_cctv', String(deptId ?? ''), scope],
-    queryFn: () => getVMSOverviewRandomOnlineAPI(Number(deptId)!, { limit: 3 }),
+    // dept + scope + road in the key — same dept/scope/road must not share
+    // cache entries (key previously had no road_id, so switching roads
+    // reused the other road's stale cameras).
+    queryKey: ['random_cctv', String(deptId ?? ''), scope, String(roadId ?? '')],
+    queryFn: () => getVMSOverviewRandomOnlineAPI(Number(deptId)!, roadId ? { road_id: roadId, limit: 3 } : { limit: 3 }),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
@@ -36,7 +38,7 @@ const CCTVSection: React.FC<Props> = (props) => {
       return Array.from({ length: 3 }).map((_, idx) => (
         <div
           key={idx}
-          className='bg-(--mid-gray) p-3 rounded-2xl flex-1 min-h-0 flex flex-col'
+          className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
         >
           <Skeleton loading={isLoading} active paragraph={{ rows: 3 }} />
         </div>
@@ -46,10 +48,10 @@ const CCTVSection: React.FC<Props> = (props) => {
     return data?.data.map((item, idx) => (
       <div
         key={item.vms.camera?.id ?? idx}
-        className='bg-(--mid-gray) p-3 rounded-2xl flex-1 min-h-0 flex flex-col'
+        className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 flex flex-col'
       >
         <HLSLivePlayer
-          figureClassName='flex-1 min-h-0 mb-1.5 rounded-2xl cursor-pointer'
+          figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg cursor-pointer'
           hlsUrl={item.vms.hls_url ? item.vms.hls_url : item.vms.desktop_screen}
           onClick={() => {
             if (item.vms.camera?.hls_url) {

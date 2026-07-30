@@ -7,21 +7,24 @@ import { Col, Row } from 'antd'
 import React, { useMemo } from 'react'
 import { TbDeviceDesktop, TbShield } from 'react-icons/tb'
 
-interface Props { }
+interface Props {
+  roadId?: string | string[] | number
+}
 
 /** Right rail — 3 stat cards summarising the VMS fleet. Counts come from
  *  `/overview/central/totals`. Per-card "Active" lines (solutions with online
  *  VMS per warranty bucket) are derived from `/overview/central/list` — same
  *  cache the table consumes, no extra request. Pattern mirrors
  *  `InfoCardTrafficSignal.tsx`. */
-const InfoCardSection: React.FC<Props> = () => {
+const InfoCardSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   // Reactive ?scope=all — keys re-derive when scope toggles.
   const scope = useScopeAll() ? 'all' : 'own'
 
   const { data: totals, isLoading } = useQuery({
-    queryKey: ['vms_total', String(deptId ?? ''), scope],
-    queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
+    queryKey: ['vms_total', String(deptId ?? ''), scope, String(roadId ?? '')],
+    queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!, roadId ? { road_id: roadId } : {}),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
@@ -30,8 +33,8 @@ const InfoCardSection: React.FC<Props> = () => {
   // this query hits the same cache entry TanStack already populated for the
   // table below — no extra request.
   const { data: list } = useQuery({
-    queryKey: ['vms_list', String(deptId ?? ''), scope, { page: 1, limit: 10 }],
-    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, { page: 1, limit: 10 }),
+    queryKey: ['vms_list', String(deptId ?? ''), scope, String(roadId ?? ''), { page: 1, limit: 10 }],
+    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, roadId ? { road_id: roadId, page: 1, limit: 10 } : { page: 1, limit: 10 }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })

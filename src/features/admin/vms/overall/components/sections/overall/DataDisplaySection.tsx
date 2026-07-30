@@ -16,6 +16,7 @@ import { hideProjectNameColumns } from '@/constants/featureFlags'
 
 interface Props {
   deptId?: string | string[] | number
+  roadId?: string | string[] | number
 }
 
 const VMS_FILTERS: FilterConfig[] = [
@@ -78,21 +79,21 @@ const VMS_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: VMSExportRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road.code_name || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.project.project_name || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.solution.solution_name || '-' },
-  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'สถานะ', width: 10, widthPct: 8, value: (r) => (r.vms.status.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'Stream', width: 11, widthPct: 7.5, value: (r) => (r.vms.hls_url ? 'Connect' : 'Disconnect') },
-  { header: 'กล้อง', width: 11, widthPct: 7.5, value: (r) => (r.vms.desktop_screen ? 'Connect' : 'ไม่มีกล้อง') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 9, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.road.code_name || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.project.project_name || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 17, align: 'left', value: (r) => r.solution.solution_name || '-' },
+    // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+    { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'สถานะ', width: 10, widthPct: 8, value: (r) => (r.vms.status.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'Stream', width: 11, widthPct: 7.5, value: (r) => (r.vms.hls_url ? 'Connect' : 'Disconnect') },
+    { header: 'กล้อง', width: 11, widthPct: 7.5, value: (r) => (r.vms.desktop_screen ? 'Connect' : 'ไม่มีกล้อง') },
+  ]
 
 const DataDisplaySection: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
   // query keys re-derive when scope toggles.
   const scope = useScopeAll() ? 'all' : 'own'
@@ -108,17 +109,17 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   // request. Redux is no longer the source of truth here (per CLAUDE.md:
   // do NOT add server-fetched data to slices).
   const { data: totals } = useQuery({
-    queryKey: ['vms_total', String(deptId ?? ''), scope],
-    queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!),
+    queryKey: ['vms_total', String(deptId ?? ''), scope, String(roadId ?? '')],
+    queryFn: () => getVMSOverviewTotalAPI(Number(deptId)!, roadId ? { road_id: roadId } : {}),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
 
   const { data, isLoading } = useQuery({
-    // dept + scope in the key — previously only the search text, so switching
-    // departments/entry point reused the other's cached list.
-    queryKey: ['vms_list', String(deptId ?? ''), scope, vms_list.search],
-    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, vms_list.search),
+    // dept + scope + road in the key — previously only the search text, so
+    // switching departments/roads/entry point reused the other's cached list.
+    queryKey: ['vms_list', String(deptId ?? ''), scope, String(roadId ?? ''), vms_list.search],
+    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, roadId ? { road_id: roadId, ...vms_list.search } : vms_list.search),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })

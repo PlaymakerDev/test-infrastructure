@@ -15,6 +15,7 @@ const VMSScreen: React.FC<Props> = (props) => {
   const { } = props
   const searchParams = useSearchParams()
   const deptId = searchParams.get('dept_id')
+  const roadId = searchParams.get('road_id')
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -24,6 +25,7 @@ const VMSScreen: React.FC<Props> = (props) => {
           <section className='mt-8 pb-8'>
             <OverallSection
               deptId={deptId!}
+              roadId={roadId!}
             />
           </section>
         </div>

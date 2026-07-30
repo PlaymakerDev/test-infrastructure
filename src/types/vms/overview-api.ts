@@ -11,6 +11,10 @@ export interface APIRequestVMSList {
   field?: string;
   sort?: 'ASC' | 'DESC';
   limit: number;
+
+  // ADDED
+  scope?: string
+  road_id?: string | string[] | number
 }
 
 export type APIResponseVMSList = VMSList[]
@@ -43,6 +47,11 @@ export interface APIResponseVMSTotal {
   warranty: TotalWarranty
 }
 
+export interface APIRequestVMSTotal {
+  scope?: string
+  road_id?: string | string[] | number
+}
+
 export interface TotalSolution {
   total: number
   online: number
@@ -56,10 +65,14 @@ export interface TotalWarranty {
 
 // RANDOM ONLINE
 export interface APIRequestVMSRandomOnline {
-  limit: number
+  limit?: number
+  scope?: string
+  road_id?: string | string[] | number
 }
 
-export interface APIResponseVMSRandomOnline {
+export type APIResponseVMSRandomOnline = RandomOnline[]
+
+export interface RandomOnline {
   solution: SharedSolution
   road: SharedRoad
   project: SharedProject
@@ -70,6 +83,12 @@ export interface APIResponseVMSRandomOnline {
 export interface APIResponseVMSOverview {
   locations: Location[]
   centroid: number[]
+}
+
+export interface APIRequestVMSOverview {
+  solution_id?: string | string[] | number
+  road_id?: string | string[] | number
+  scope?: string
 }
 
 export interface Location {

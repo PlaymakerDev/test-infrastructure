@@ -159,19 +159,20 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, isReady })
 
 interface Props {
   deptId?: string | string[] | number
+  roadId?: string | string[] | number
 }
 
 const MapSection: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
   // query key re-derives when scope toggles.
   const scope = useScopeAll() ? 'all' : 'own'
 
   const { data, isLoading, isSuccess } = useQuery({
-    // dept + scope in the key — previously neither, so switching departments
-    // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
-    queryKey: ['vms_overview', String(deptId ?? ''), scope],
-    queryFn: () => getVMSOverviewAPI(Number(deptId)!),
+    // dept + scope + road in the key — previously missing road_id, so
+    // switching roads from the sidebar reused the other road's cached markers.
+    queryKey: ['vms_overview', String(deptId ?? ''), scope, String(roadId ?? '')],
+    queryFn: () => getVMSOverviewAPI(Number(deptId)!, roadId ? { road_id: roadId } : {}),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
