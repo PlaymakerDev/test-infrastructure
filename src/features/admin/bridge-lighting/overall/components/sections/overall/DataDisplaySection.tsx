@@ -73,23 +73,24 @@ const BRIDGE_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: BridgeLightingExportRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 12, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 11, value: (r) => r.road.code_name || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 22, align: 'left', value: (r) => r.project.project_name || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 22, align: 'left', value: (r) => r.solution.solution_name || '-' },
-  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 12, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 11, value: (r) => r.road.code_name || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 22, align: 'left', value: (r) => r.project.project_name || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 22, align: 'left', value: (r) => r.solution.solution_name || '-' },
+    // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+    { header: 'เลขที่สัญญา', width: 20, widthPct: 12, value: (r) => r.project.contract_no || (r.project.budget_year ? `ปีงบประมาณ ${r.project.budget_year}` : '-') },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.is_warranty ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
+  ]
 
 interface Props {
   deptId: string | string[] | number
+  roadId: string | string[] | number
 }
 
 const DataDisplaySection: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
   const router = useRouter()
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
   // query keys re-derive when scope toggles.
@@ -102,15 +103,15 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   // Same query key InfoCardSection uses — both hit the same cache entry,
   // no extra request.
   const { data: totals } = useQuery({
-    queryKey: ['bridge_lighting_total', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingTotalAPI(String(deptId)!, { scope }),
+    queryKey: ['bridge_lighting_total', String(deptId ?? ''), String(roadId ?? ''), scope],
+    queryFn: () => getBridgeLightingTotalAPI(String(deptId)!, roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
 
   const { data, isLoading } = useQuery({
-    queryKey: ['bridge_lighting_list', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingListAPI(String(deptId)!, { scope }),
+    queryKey: ['bridge_lighting_list', String(deptId ?? ''), String(roadId ?? ''), scope],
+    queryFn: () => getBridgeLightingListAPI(String(deptId)!, roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })

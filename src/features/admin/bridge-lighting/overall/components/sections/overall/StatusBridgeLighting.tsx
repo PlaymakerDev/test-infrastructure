@@ -17,6 +17,7 @@ dayjs.extend(customParseFormat)
 
 interface Props {
   deptId: string | string[] | number
+  roadId: string | string[] | number
 }
 
 // Parse the backend's Buddhist-era timestamp — the /overview endpoint ships
@@ -79,17 +80,18 @@ const FeedCard: React.FC<FeedCardProps> = ({ location, onClick }) => {
  * DD/MM/YYYY format) and renders the 5 freshest — enough to fill the
  * 360 px rail without scrolling on a typical laptop.
  */
-const StatusBridgeLighting: React.FC<Props> = ({ deptId }) => {
+const StatusBridgeLighting: React.FC<Props> = (props) => {
+  const { deptId, roadId } = props
   const router = useRouter()
   const scope = useScopeAll() ? 'all' : 'own'
 
   const { data } = useQuery({
-    queryKey: ['bridge_lighting_overview', String(deptId ?? ''), scope],
+    queryKey: ['bridge_lighting_overview', String(deptId ?? ''), String(roadId ?? ''), scope],
     // MUST forward `scope` to the backend — /departments/0/overview
     // without ?scope=all returns zero locations (dept 0 = ส่วนกลาง has no
     // solutions directly assigned to it). Same call MapBridgeLighting
     // makes; they share the query key so the payload must match too.
-    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId), { scope }),
+    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId), roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId || deptId === 0 || deptId === '0',
     placeholderData: keepPreviousData,
   })

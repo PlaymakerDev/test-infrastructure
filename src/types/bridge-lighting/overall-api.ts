@@ -1,6 +1,7 @@
 // API BRIDGE LIGHTING LIST
 export interface APIRequestBridgeLightingList {
   scope?: string
+  road_id?: number | string
 }
 
 export type APIResponseBridgeLightingList = BridgeLightingListItem[]
@@ -68,6 +69,8 @@ export interface APIRequestBridgeLightingOverview extends APIRequestBridgeLighti
   solution_id?: number
   road_code?: string
   contract_no?: string
+  scope?: string
+  road_id?: number | string
 }
 
 export interface APIResponseBridgeLightingOverview {

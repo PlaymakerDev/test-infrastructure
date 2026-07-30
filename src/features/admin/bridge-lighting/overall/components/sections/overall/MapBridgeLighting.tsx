@@ -139,10 +139,11 @@ const BridgeLightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations,
 
 interface Props {
   deptId?: string | string[] | number
+  roadId?: string | string[] | number
 }
 
 const MapBridgeLighting: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
   // Reactive ?scope=all — subscribes this memo'd component to the URL so the
   // query key re-derives when scope toggles.
   const scope = useScopeAll() ? 'all' : 'own'
@@ -150,11 +151,11 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
   const { data, isLoading, isSuccess } = useQuery({
     // dept + scope in the key — previously neither, so switching departments
     // or entry point (sidebar ↔ เมนูกลาง) reused the other's cached markers.
-    queryKey: ['bridge_lighting_overview', String(deptId ?? ''), scope],
+    queryKey: ['bridge_lighting_overview', String(deptId ?? ''), String(roadId ?? ''), scope],
     // Backend requires ?scope=all for the ส่วนกลาง view (dept_id=0) —
     // otherwise returns zero locations. Must match StatusBridgeLighting's
     // queryFn payload since the two consumers share this cache slot.
-    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId)!, { scope }),
+    queryFn: () => getBridgeLightingOverviewAPI(Number(deptId)!, roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })

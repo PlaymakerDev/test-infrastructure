@@ -8,16 +8,17 @@ import { TbBuildingBridge, TbShield } from 'react-icons/tb'
 
 interface Props {
   deptId: string | string[] | number
+  roadId: string | string[] | number
 }
 
 const InfoCardSection: React.FC<Props> = (props) => {
-  const { deptId } = props
+  const { deptId, roadId } = props
 
   const scope = useScopeAll() ? 'all' : 'own'
 
   const { data: totals, isLoading } = useQuery({
-    queryKey: ['bridge_lighting_total', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingTotalAPI(String(deptId)!, { scope: scope }),
+    queryKey: ['bridge_lighting_total', String(deptId ?? ''), String(roadId ?? ''), scope],
+    queryFn: () => getBridgeLightingTotalAPI(String(deptId)!, roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
@@ -26,8 +27,8 @@ const InfoCardSection: React.FC<Props> = (props) => {
   // this query hits the same cache entry TanStack already populated for the
   // table below — no extra request.
   const { data: list } = useQuery({
-    queryKey: ['bridge_lighting_list', String(deptId ?? ''), scope],
-    queryFn: () => getBridgeLightingListAPI(String(deptId)!, { scope: scope }),
+    queryKey: ['bridge_lighting_list', String(deptId ?? ''), String(roadId ?? ''), scope],
+    queryFn: () => getBridgeLightingListAPI(String(deptId)!, roadId ? { road_id: Number(roadId), scope } : { scope }),
     enabled: !!deptId,
     placeholderData: keepPreviousData,
   })
