@@ -90,6 +90,10 @@ export interface LineChartProps {
   height?: number
   /** ให้พื้นที่กราฟยืดเต็ม card แทนความสูงคงที่ (card ต้องมี h-full/height กำหนดจากภายนอก) */
   fillHeight?: boolean
+  /** เมื่อใช้ร่วมกับ fillHeight — เอา cap `lg:h-72` (288px) ที่บังคับไว้ default ออก
+   *  แล้วให้กราฟยืดเต็ม 100% ของ parent จริงๆ (เหมาะกับ parent ที่จัดสรรพื้นที่สูงกว่า
+   *  288px มา เช่น flex-1 chart stack — ไม่งั้นจะเหลือช่องว่างใต้กราฟ) */
+  fillHeightUnbounded?: boolean
   /** Extra padding (px) below the auto-contained x-axis labels. Default 28 —
    *  lower it (e.g. 8) to pull the plot down when the card has spare space. */
   gridBottom?: number
@@ -202,6 +206,7 @@ const LineChart: React.FC<LineChartProps> = ({
   periodIcons,
   height = 260,
   fillHeight = false,
+  fillHeightUnbounded = false,
   gridBottom = 28,
   gridTop = 16,
   yAxisTicks,
@@ -578,7 +583,7 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className={`relative ${fillHeight ? ' figure-large lg:h-72! lg:min-h-0! lg:max-h-none!' : ''}`}>
+      <div className={`relative ${fillHeight ? ` figure-large ${fillHeightUnbounded ? 'lg:h-full lg:min-h-0! lg:max-h-none!' : 'lg:h-72! lg:min-h-0! lg:max-h-none!'}` : ''}`}>
         <ReactECharts
           option={option}
           style={{ height: fillHeight ? '100%' : height }}

@@ -212,6 +212,7 @@ const ChartElectricalBridgeLighting: React.FC<Props> = ({
             data={voltageData}
             lines={VOLTAGE_LINES}
             fillHeight
+            fillHeightUnbounded
             yAxisTicks={voltageStats?.ticks}
             yAxisDomain={voltageStats?.domain ?? [0, 260]}
             titleSize={16}
@@ -242,6 +243,7 @@ const ChartElectricalBridgeLighting: React.FC<Props> = ({
             data={currentData}
             lines={CURRENT_LINES}
             fillHeight
+            fillHeightUnbounded
             yAxisTicks={currentStats?.ticks}
             yAxisDomain={currentStats?.domain ?? [0, 5]}
             titleSize={16}
