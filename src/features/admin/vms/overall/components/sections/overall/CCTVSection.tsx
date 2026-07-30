@@ -4,7 +4,7 @@ import { useScopeAll } from '@/hooks/useScopeAll'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Skeleton } from 'antd'
+import { Skeleton, Tooltip } from 'antd'
 import React, { useMemo } from 'react'
 import { useOverallContext } from '../../../context'
 
@@ -63,12 +63,16 @@ const CCTVSection: React.FC<Props> = (props) => {
         />
         {item.vms.hls_url ?
           <>
-            <h4 className='camera-code'>{item.vms.camera?.camera_name || '-'}</h4>
+            <Tooltip title={item.vms.camera?.camera_name || '-'}>
+              <h4 className='camera-code truncate'>{item.vms.camera?.camera_name || '-'}</h4>
+            </Tooltip>
             <p className='camera-location'>IP Address : {item.vms.camera?.ip_address || '-'}</p>
           </>
           :
           <>
-            <h4 className='camera-code'>{item.solution.solution_name || '-'}</h4>
+            <Tooltip title={item.solution.solution_name || '-'}>
+              <h4 className='camera-code truncate'>{item.solution.solution_name || '-'}</h4>
+            </Tooltip>
           </>
         }
       </div>

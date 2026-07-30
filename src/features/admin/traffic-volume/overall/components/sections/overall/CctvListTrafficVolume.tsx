@@ -5,6 +5,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTrafficVolumeRandomCameras } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
+import { Tooltip } from 'antd'
 
 interface Props {
   roadId?: string | null
@@ -67,7 +68,9 @@ const CctvListTrafficVolume: React.FC<Props> = ({ roadId }) => {
                 style={{ pointerEvents: 'none' }}
               />
             </div>
-            <h4 className='camera-code'>{cam.name}</h4>
+            <Tooltip title={cam.name}>
+              <h4 className='camera-code truncate'>{cam.name}</h4>
+            </Tooltip>
             <p className='camera-location'>IP Address : {cam.ip_address}</p>
           </div>
         )

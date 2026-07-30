@@ -5,6 +5,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTrafficRandomCameras } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
+import { Tooltip } from 'antd'
 
 interface Props {
   roadId?: string | null
@@ -73,7 +74,9 @@ const CctvListTrafficSignal: React.FC<Props> = (props) => {
               cameraId={cam.id}
               style={{ pointerEvents: 'none' }}
             />
-            <h4 className='camera-code'>{cam.name}</h4>
+            <Tooltip title={cam.name}>
+              <h4 className='camera-code truncate'>{cam.name}</h4>
+            </Tooltip>
             {/* IP + phase + type on ONE row per design 2026-07-14 — original
               * font sizes; the LEFT rail was widened to 320px instead (see
               * LocationTrafficSignal) so the longest IP + 2 pills still fit.

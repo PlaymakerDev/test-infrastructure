@@ -5,6 +5,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useIncidentRandomOnline } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
+import { Tooltip } from 'antd'
 
 interface Props {
   roadId?: string | null
@@ -49,7 +50,9 @@ const CCTVSection: React.FC<Props> = (props) => {
             figureClassName='flex-1 min-h-0 mb-1.5 rounded-lg'
             style={{ pointerEvents: 'none' }}
           />
-          <h4 className='camera-code'>{item.camera.name}</h4>
+          <Tooltip title={item.camera.name}>
+            <h4 className='camera-code truncate'>{item.camera.name}</h4>
+          </Tooltip>
           <p className='camera-location'>IP Address : {item.camera.ip_address}</p>
         </div>
       ))}

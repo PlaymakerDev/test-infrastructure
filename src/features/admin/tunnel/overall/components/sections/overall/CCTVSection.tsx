@@ -6,6 +6,7 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useTunnelRandomCameras } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
+import { Tooltip } from 'antd'
 
 interface Props {
   roadId: string | null
@@ -69,7 +70,9 @@ const CCTVSection: React.FC<Props> = (props) => {
                 style={{ pointerEvents: 'none' }}
               />
             </div>
-            <h4 className='camera-code'>{cam.name}</h4>
+            <Tooltip title={cam.name}>
+              <h4 className='camera-code truncate'>{cam.name}</h4>
+            </Tooltip>
             <p className='camera-location'>IP Address : {extractIpFromHlsUrl(cam.hls_url)}</p>
           </div>
         )
