@@ -1,8 +1,8 @@
 "use client"
 import React from 'react'
-import { Alert, Table, Input, Segmented } from 'antd'
+import { Alert, Button, ConfigProvider, Table, Input, Segmented } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbSearch, TbChevronRight } from 'react-icons/tb'
+import { TbSearch, TbChevronRight, TbPrinter } from 'react-icons/tb'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 
 export interface ComparisonRecord {
@@ -100,9 +100,12 @@ export interface StatisticsComparisonTableProps {
   /** Keep summary badge placeholders visible on errors. The caller should
    * provide labels such as "— หน่วยงาน" instead of stale/zero values. */
   showSummaryBadgesOnError?: boolean
+  /** Optional export action for comparison reports. Receives exactly the rows
+   * currently shown after the agency-name search filter is applied. */
+  onExport?: (rows: ComparisonRecord[]) => void
 }
 
-const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, defaultExpandTopLevel, activePeriod: activePeriodProp, onPeriodChange, showPeriodSelector = true, loading, error, showSummaryBadgesOnError = false }) => {
+const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ data, summaryBadges, columns, useArrowExpand, defaultExpandTopLevel, activePeriod: activePeriodProp, onPeriodChange, showPeriodSelector = true, loading, error, showSummaryBadgesOnError = false, onExport }) => {
   const [internalPeriod, setInternalPeriod] = React.useState('TODAY')
   const activePeriod = activePeriodProp ?? internalPeriod
   const handlePeriodChange = (value: string) => {
@@ -169,6 +172,22 @@ const StatisticsComparisonTable: React.FC<StatisticsComparisonTableProps> = ({ d
               {b.label}
             </span>
           ))}
+          {onExport && (
+            <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                icon={<TbPrinter />}
+                disabled={loading || error}
+                onClick={() => onExport(filteredData)}
+                className='w-full! sm:w-auto! sm:min-w-45!'
+                style={{ height: 32 }}
+              >
+                <p className='fs-12'>นำออกเอกสาร</p>
+              </Button>
+            </ConfigProvider>
+          )}
         </div>
         {showPeriodSelector && (
           <Segmented

@@ -11,6 +11,7 @@ import type { ComparisonRecord, StatCard, SummaryBadge } from './shared'
 import { useLiveStatusRouteItems, type LiveStatusSummary } from '../../data/useLiveStatusRouteItems'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import type { ColumnsType } from 'antd/es/table'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
@@ -99,6 +100,26 @@ const STATUS_COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   { title: 'ออฟไลน์', dataIndex: 'offline', key: 'offline', align: 'center', width: 120 },
 ]
 
+const STATUS_COMPARISON_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: ComparisonRecord) => string | number
+}[] = [
+  { header: 'หน่วยงาน', width: 38, widthPct: 45, value: (r) => r.agency },
+  { header: 'จุดติดตั้ง', width: 16, widthPct: 20, align: 'center', value: (r) => r.installations },
+  { header: 'ออนไลน์', width: 14, widthPct: 18, align: 'center', value: (r) => r.online },
+  { header: 'ออฟไลน์', width: 14, widthPct: 17, align: 'center', value: (r) => r.offline },
+]
+
+const flattenComparisonRows = (rows: ComparisonRecord[], depth = 0): ComparisonRecord[] => (
+  rows.flatMap((row) => [
+    { ...row, agency: `${'— '.repeat(depth)}${row.agency}` },
+    ...flattenComparisonRows(row.children ?? [], depth + 1),
+  ])
+)
+
 // There's no "incident category" concept in the VMS data model (unlike
 // Alert/Incident's real backend), so these cards use the truthful VMS
 // notification-log terminology backed by `noti_count`. The 4th card mirrors
@@ -142,6 +163,8 @@ const StatusSection: React.FC = () => {
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('TODAY')
   const [searchText, setSearchText] = useState('')
+  const [comparisonExportOpen, setComparisonExportOpen] = useState(false)
+  const [comparisonExportRows, setComparisonExportRows] = useState<ComparisonRecord[]>([])
   const {
     routeItems,
     markerItems,
@@ -273,8 +296,36 @@ const StatusSection: React.FC = () => {
           showPeriodSelector={false}
           loading={routesFetching}
           error={routesError}
+          onExport={(rows) => {
+            setComparisonExportRows(flattenComparisonRows(rows))
+            setComparisonExportOpen(true)
+          }}
         />
       )}
+      <ExportFileModal
+        open={comparisonExportOpen}
+        onClose={() => setComparisonExportOpen(false)}
+        count={comparisonExportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'VMS_Status_Comparison_Report',
+            title: 'รายงานเปรียบเทียบสถานะ VMS ตามหน่วยงาน',
+            columns: STATUS_COMPARISON_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'VMS_Status_Comparison_Report',
+            sheetName: 'VMS Status Comparison',
+            title: 'รายงานเปรียบเทียบสถานะ VMS ตามหน่วยงาน',
+            columns: STATUS_COMPARISON_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+      />
     </div>
   )
 }

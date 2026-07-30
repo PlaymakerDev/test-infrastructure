@@ -44,6 +44,16 @@ export interface LightingOverviewListItem {
   imei?: string
 }
 
+/** Optional narrowing filter for the overview/central/list/central/totals/
+ *  random-online endpoints — forwarded from the sidebar's road solution menu
+ *  (`?road_id=`), same as CCTV/incident-detection/traffic-volume. */
+export interface APIRequestLightingCentralList {
+  road_id?: number
+  /** Include this department's descendant units. Required when resolving a
+   *  device from the nationwide Alert statistic tree. */
+  scope?: 'all'
+}
+
 /** GET /lighting/departments/{id}/overview → map geometry */
 export interface LightingOverviewResponse {
   /** [lng, lat] map center */

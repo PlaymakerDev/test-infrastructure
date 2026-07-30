@@ -60,12 +60,10 @@ const EventTrendSection: React.FC<Props> = ({ solutionId: solutionIdProp, height
   // only those become lines. Skipping zeros avoids 9 flat-zero lines crowding
   // the chart on quiet days.
   const { chartData, lines, yMax } = useMemo(() => {
-    // Fixed weekday axis order ส. อา. จ. อ. พ. พฤ. ศ. (Sat→Fri), not a
-    // chronological rolling window — any 7-day range covers each weekday
-    // exactly once, so this reorders them into a stable, always-the-same
-    // axis layout instead of shifting with "today".
-    const weekOrder = (dateStr: string) => (dayjs(dateStr).day() + 1) % 7
-    const buckets = [...(data ?? [])].sort((a, b) => weekOrder(a.date) - weekOrder(b.date))
+    // Keep the x-axis chronological for the selected rolling window. The
+    // previous fixed Sat→Fri weekday order put Saturday before the preceding
+    // Friday; sorting actual dates makes a Fri→Sat range read naturally.
+    const buckets = [...(data ?? [])].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf())
     // typeId → row dataKey (`t-${id}`) → highest count seen.
     const activeTypes = new Map<number, { label: string; maxCount: number }>()
     for (const bucket of buckets) {
