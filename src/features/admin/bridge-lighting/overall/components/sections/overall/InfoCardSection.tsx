@@ -1,6 +1,7 @@
 import { useScopeAll } from '@/hooks/useScopeAll'
 import { getBridgeLightingListAPI, getBridgeLightingTotalAPI } from '@/services/routes/BridgeLightingService'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeBridgeLightingSolutions } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Col, Row } from 'antd'
 import React, { useMemo } from 'react'
@@ -43,7 +44,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
     // Count solutions with online VMS, split by warranty bucket.
     let inWarrantyActive = 0
     let expiredActive = 0
-    for (const dept of list?.data ?? []) {
+    for (const dept of dedupeBridgeLightingSolutions(list?.data ?? [])) {
       for (const sub of dept.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           if (sol.is_online) {

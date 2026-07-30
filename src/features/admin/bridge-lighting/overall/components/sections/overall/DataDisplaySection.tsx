@@ -12,6 +12,7 @@ import { useScopeAll } from '@/hooks/useScopeAll'
 import { getBridgeLightingListAPI, getBridgeLightingTotalAPI } from '@/services/routes/BridgeLightingService'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { APIResponseBridgeLightingList, BridgeLightingSolution } from '@/types/bridge-lighting/overall-api'
+import { dedupeBridgeLightingSolutions } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
 
 const BRIDGE_FILTERS: FilterConfig[] = [
   {
@@ -170,7 +171,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }
       return true
     }
-    return list
+    return dedupeBridgeLightingSolutions(list)
       .map((dept) => ({
         ...dept,
         sub_department: (dept.sub_department ?? [])

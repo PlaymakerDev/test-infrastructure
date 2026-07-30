@@ -1,6 +1,33 @@
 // Type-only file: the BridgeLighting overall table renders from real API
 // data (bridge_lighting overview). No static rows live here anymore.
 
+import type { APIResponseBridgeLightingList } from '@/types/bridge-lighting/overall-api'
+
+// The backend has been observed returning the same solution nested under two
+// different department nodes in one central/list response (same class of
+// bug documented for incident-detection's central/list). Table rows key off
+// solution.id alone (not department-scoped), so an unguarded duplicate
+// crashes into a React "duplicate key" warning and silently doubles up
+// export rows / inflates list-derived counts. Dedupe once, keeping the
+// first occurrence — shared by DataDisplaySection (table/grid/export) and
+// InfoCardSection (active-by-warranty tally) so both agree.
+export const dedupeBridgeLightingSolutions = (
+  depts: APIResponseBridgeLightingList
+): APIResponseBridgeLightingList => {
+  const seen = new Set<number | string>()
+  return (depts ?? []).map((dept) => ({
+    ...dept,
+    sub_department: (dept.sub_department ?? []).map((sub) => ({
+      ...sub,
+      solutions: (sub.solutions ?? []).filter((sol) => {
+        if (seen.has(sol.solution.id)) return false
+        seen.add(sol.solution.id)
+        return true
+      }),
+    })),
+  }))
+}
+
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'
 
