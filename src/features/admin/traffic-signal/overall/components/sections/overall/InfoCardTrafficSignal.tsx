@@ -4,6 +4,7 @@ import { TbShield, TbTrafficLights } from 'react-icons/tb'
 import { useTrafficCentralList, useTrafficTotals } from '@/hooks/queries/traffic-signal'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeTrafficSignalSolutions } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 interface Props {
   roadId?: string | null
@@ -29,7 +30,7 @@ const InfoCardTrafficSignal: React.FC<Props> = (props) => {
     // Count solutions with online controllers, split by warranty bucket.
     let inWarrantyActive = 0
     let expiredActive = 0
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeTrafficSignalSolutions(central ?? [])) {
       for (const sub of bureau.sub_department) {
         for (const sol of sub.solutions) {
           if (sol.traffic.is_online) {

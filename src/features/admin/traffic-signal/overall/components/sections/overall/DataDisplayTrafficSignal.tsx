@@ -17,6 +17,7 @@ import type {
   SignalPhase,
   OperatingMode,
 } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { dedupeTrafficSignalSolutions } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
@@ -141,7 +142,7 @@ const DataDisplayTrafficSignal: React.FC<Props> = (props) => {
   // sub-dept short name so the table groups by bureau out of the box.
   const projects: TrafficSignalProject[] = useMemo(() => {
     const out: TrafficSignalProject[] = []
-    for (const bureau of data ?? []) {
+    for (const bureau of dedupeTrafficSignalSolutions(data ?? [])) {
       for (const subDept of bureau.sub_department) {
         for (const sol of subDept.solutions) {
           out.push(apiSolutionToProject(sol, subDept.department_short_name))

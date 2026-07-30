@@ -2,6 +2,32 @@
 // Used by the Traffic Signal screen (camera list + map markers + table).
 
 import type { WarrantyStatusString } from '@/types/shared'
+import type { APIResponseTrafficCentralList } from '@/types/traffic-signal/overview-api'
+
+// The backend has been observed returning the same solution nested under two
+// different department nodes in one central/list response (same class of
+// bug documented for incident-detection's central/list). Table rows key off
+// solution.id alone (not department-scoped), so an unguarded duplicate
+// crashes into a React "duplicate key" warning and silently doubles up
+// export rows / inflates list-derived counts. Dedupe once, keeping the
+// first occurrence — shared by DataDisplayTrafficSignal (table/export) and
+// InfoCardTrafficSignal (active-by-warranty tally) so both agree.
+export const dedupeTrafficSignalSolutions = (
+  bureaus: APIResponseTrafficCentralList
+): APIResponseTrafficCentralList => {
+  const seen = new Set<number | string>()
+  return bureaus.map((bureau) => ({
+    ...bureau,
+    sub_department: (bureau.sub_department ?? []).map((sub) => ({
+      ...sub,
+      solutions: (sub.solutions ?? []).filter((sol) => {
+        if (seen.has(sol.solution.id)) return false
+        seen.add(sol.solution.id)
+        return true
+      }),
+    })),
+  }))
+}
 
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'
