@@ -119,31 +119,31 @@ const OverallSection: React.FC<Props> = ({ detail, groups }) => {
             <CctvMarkerInfoPanel cameras={selected.cameras} onClose={() => setSelected(null)} onOpenLive={openCamera} />
           ) : (
             <>
-          {/* Dropdown — antd Select so the popup matches the trigger width and
+              {/* Dropdown — antd Select so the popup matches the trigger width and
             * long labels wrap to 2 lines instead of overflowing the screen. */}
-          <div className='p-3 shrink-0'>
-            <div style={{ border: '1px solid #FCD116', borderRadius: 8, background: '#1a1a1a' }}>
-              <Select
-                value={panelFilter}
-                onChange={(v) => setPanelFilter(v)}
-                variant='borderless'
-                className='cctv-cam-select w-full'
-                classNames={{ popup: { root: 'cctv-cam-dropdown' } }}
-                suffixIcon={<TbChevronDown size={16} style={{ color: '#FCD116' }} />}
-                options={filterOptions}
-                optionRender={(opt) => <span className='cctv-cam-option'>{opt.label}</span>}
-              />
-            </div>
-          </div>
+              <div className='p-3 shrink-0'>
+                <div style={{ border: '1px solid #FCD116', borderRadius: 8, background: '#1a1a1a' }}>
+                  <Select
+                    value={panelFilter}
+                    onChange={(v) => setPanelFilter(v)}
+                    variant='borderless'
+                    className='cctv-cam-select w-full'
+                    classNames={{ popup: { root: 'cctv-cam-dropdown' } }}
+                    suffixIcon={<TbChevronDown size={16} style={{ color: '#FCD116' }} />}
+                    options={filterOptions}
+                    optionRender={(opt) => <span className='cctv-cam-option'>{opt.label}</span>}
+                  />
+                </div>
+              </div>
 
-          {/* Scrollable camera list */}
-          <div className='flex-1 overflow-y-auto no-scrollbar'>
-            <div className='flex flex-col gap-3 p-3'>
-              {displayedCameras.map((cam) => (
-                <CameraCardList key={cam.id} camera={cam} onSelect={() => openCamera(cam.id)} />
-              ))}
-            </div>
-          </div>
+              {/* Scrollable camera list */}
+              <div className='flex-1 overflow-y-auto no-scrollbar'>
+                <div className='flex flex-col gap-3 p-3'>
+                  {displayedCameras.map((cam) => (
+                    <CameraCardList key={cam.id} camera={cam} onSelect={() => openCamera(cam.id)} />
+                  ))}
+                </div>
+              </div>
             </>
           )}
         </aside>

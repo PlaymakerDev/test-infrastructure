@@ -20,7 +20,7 @@ interface Props {
 
 const Pill: React.FC<{ count: number; label: string; color: string }> = ({ count, label, color }) => (
   <span
-    className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     <span className='font-semibold'>{count.toLocaleString()}</span>
@@ -42,7 +42,7 @@ const InfoCard: React.FC<{
   >
     <div className='flex items-center gap-2'>
       <span style={{ color: accentColor === '#2a2a2a' ? '#666' : accentColor }}>{icon}</span>
-      <span className='text-sm font-medium text-white/60'>{label}</span>
+      <span className='fs-12 font-medium text-white/60'>{label}</span>
     </div>
     {children}
   </div>
@@ -219,7 +219,7 @@ const OverallSection: React.FC<Props> = ({ deptId }) => {
               <span className='text-lg font-bold text-white'>
                 {effectiveRoad ? effectiveRoad.label : 'เลือกสายทาง'}
               </span>
-              <span className='text-xs' style={{ color: '#aaa' }}>
+              <span className='fs-12' style={{ color: '#aaa' }}>
                 {effectiveRoad
                   ? `${meta?.project_count ?? 0} โครงการ, กล้อง CCTV ${cameraTotal.toLocaleString()} ตัว`
                   : 'ค้นหาและเลือกสายทางเพื่อแสดงกล้อง'}
