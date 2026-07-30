@@ -8,6 +8,7 @@ import type {
   APIRequestTunnelRandomCameras,
   APIResponseTunnelRandomCameras,
   APIResponseTunnelTotals,
+  APIRequestTunnelTotals,
 } from '@/types/tunnel/overview-api'
 
 // Placeholder endpoints — swap to the real Tunnel API paths once available.
@@ -29,13 +30,13 @@ export const TUNNEL_API_ENDPOINTS = {
 // response to a single solution when set (deep-link style).
 export const getTunnelOverviewAPI = (
   deptId: string | number,
-  params: APIRequestTunnelOverview = {}
+  params: APIRequestTunnelOverview
 ) =>
   ApiService.fetchData<APIResponseTunnelOverview>({
     url: TUNNEL_API_ENDPOINTS.overview(deptId),
     method: 'GET',
     params: {
-      ...(params.solution_id ? { solution_id: params.solution_id } : {}),
+      ...params,
       ...centralScope(deptId),
     },
   })
@@ -44,20 +45,29 @@ export const getTunnelOverviewAPI = (
 // to match the design (3 stacked cards).
 export const getTunnelRandomCamerasAPI = (
   deptId: string | number,
-  params: APIRequestTunnelRandomCameras = {}
+  params: APIRequestTunnelRandomCameras
 ) =>
-  ApiService.fetchData<APIResponseTunnelRandomCameras>({
+  ApiService.fetchData<APIResponseTunnelRandomCameras, APIRequestTunnelRandomCameras>({
     url: TUNNEL_API_ENDPOINTS.randomCameras(deptId),
     method: 'GET',
-    params: { limit: params.limit ?? 3, ...centralScope(deptId) },
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 // Aggregated counters for the right-rail InfoCards — solution + warranty totals.
-export const getTunnelTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseTunnelTotals>({
+export const getTunnelTotalsAPI = (
+  deptId: string | number,
+  params: APIRequestTunnelTotals
+) =>
+  ApiService.fetchData<APIResponseTunnelTotals, APIRequestTunnelTotals>({
     url: TUNNEL_API_ENDPOINTS.totals(deptId),
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 
 // Bureau-aware nested list — `bureau → sub_department → solutions` with
@@ -66,19 +76,13 @@ export const getTunnelTotalsAPI = (deptId: string | number) =>
 // for the common "just paginate" case.
 export const getTunnelCentralListAPI = (
   deptId: string | number,
-  params: APIRequestTunnelCentralList = {}
+  params: APIRequestTunnelCentralList
 ) =>
-  ApiService.fetchData<APIResponseTunnelCentralList>({
+  ApiService.fetchData<APIResponseTunnelCentralList, APIRequestTunnelCentralList>({
     url: TUNNEL_API_ENDPOINTS.centralList(deptId),
     method: 'GET',
     params: {
-      page: params.page ?? 1,
-      limit: params.limit ?? 100,
-      ...(params.road_code ? { road_code: params.road_code } : {}),
-      ...(params.contract_no ? { contract_no: params.contract_no } : {}),
-      ...(params.search ? { search: params.search } : {}),
-      ...(params.field ? { field: params.field } : {}),
-      ...(params.sort ? { sort: params.sort } : {}),
+      ...params,
       ...centralScope(deptId),
     },
   })

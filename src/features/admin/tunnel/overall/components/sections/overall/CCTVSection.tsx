@@ -7,16 +7,19 @@ import { useTunnelRandomCameras } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 /** Left rail — live CCTV camera previews for tunnel stations.
  *  Data: `GET /tunnel/departments/{deptId}/cameras/random-online?limit=3` */
-const CCTVSection: React.FC<Props> = () => {
+const CCTVSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const dispatch = useAppDispatch()
   const openCamera = (id: string) =>
     dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
-  const { data, isLoading } = useTunnelRandomCameras(deptId, 3)
+  const { data, isLoading } = useTunnelRandomCameras(deptId, roadId ? { road_id: roadId, limit: 3 } : { limit: 3 })
   // Prefer online cameras; if none are online, still show the (offline) cards
   // rather than a blank slot (backend random-online backfills offline anyway).
   // Placeholder backend may return `{}` or `null`, or an entry with a missing

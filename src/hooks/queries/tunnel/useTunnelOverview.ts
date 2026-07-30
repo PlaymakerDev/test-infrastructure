@@ -7,11 +7,11 @@ import { tunnelKeys } from './queryKeys'
  *  narrow to a single solution (deep-link). */
 export const useTunnelOverview = (
   deptId: string | number | null | undefined,
-  params: APIRequestTunnelOverview = {}
+  params?: APIRequestTunnelOverview
 ) =>
   useQuery({
     queryKey: tunnelKeys.overview.map(deptId ?? '', params),
     queryFn: () =>
-      getTunnelOverviewAPI(deptId!, params).then((r) => r.data),
+      getTunnelOverviewAPI(deptId!, { ...params }).then((r) => r.data),
     enabled: !!deptId,
   })

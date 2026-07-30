@@ -19,7 +19,9 @@ import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
 import type { TunnelCentralSolution } from '@/types/tunnel/overview-api'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 const TUNNEL_FILTERS: FilterConfig[] = [
   {
@@ -114,23 +116,24 @@ const TUNNEL_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: TunnelProject, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.installPoint || '-' },
-  // Mirrors ContractInfoCell's visible label: contract no → ปีงบประมาณ → '-'.
-  {
-    header: 'เลขที่สัญญา', width: 20, widthPct: 12,
-    value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
-  },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-  { header: 'สถานะ', width: 12, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
-  { header: 'ไฟส่องสว่าง', width: 12, widthPct: 7, value: (r) => r.totalLighting },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 18, align: 'left', value: (r) => r.projectName || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 18, align: 'left', value: (r) => r.installPoint || '-' },
+    // Mirrors ContractInfoCell's visible label: contract no → ปีงบประมาณ → '-'.
+    {
+      header: 'เลขที่สัญญา', width: 20, widthPct: 12,
+      value: (r) => (r.contractNo.trim() ? r.contractNo : r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-'),
+    },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
+    { header: 'สถานะ', width: 12, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'กล้องทั้งหมด', width: 12, widthPct: 7, value: (r) => r.totalCameras },
+    { header: 'ไฟส่องสว่าง', width: 12, widthPct: 7, value: (r) => r.totalLighting },
+  ]
 
-const OverallDataDisplaySection: React.FC<Props> = () => {
+const OverallDataDisplaySection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
@@ -142,7 +145,7 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
     null,
   )
 
-  const { data, isLoading } = useTunnelCentralList(deptId)
+  const { data, isLoading } = useTunnelCentralList(deptId, roadId ? { road_id: roadId, page: 1, limit: 100 } : { page: 1, limit: 100 })
 
   const handleOpenTunnel = useCallback((p: TunnelProject) => {
     if (!p.tunnelUrl) return

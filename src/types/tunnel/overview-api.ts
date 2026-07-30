@@ -26,6 +26,9 @@ export interface TunnelSolution {
 
 export interface APIRequestTunnelOverview {
   solution_id?: string | number
+  road_code?: string
+  contract_no?: string
+  road_id?: string | number
 }
 
 export interface TunnelLocation {
@@ -63,10 +66,18 @@ export interface APIResponseTunnelTotals {
   }
 }
 
+// ADDED
+export interface APIRequestTunnelTotals {
+  scope?: string
+  road_id?: string | number
+}
+
 // ── GET /tunnel/departments/{deptId}/cameras/random-online ───────────────────
 
 export interface APIRequestTunnelRandomCameras {
   limit?: number
+  scope?: string
+  road_id?: string | number
 }
 
 export interface TunnelRandomCamera {
@@ -97,6 +108,10 @@ export interface APIRequestTunnelCentralList {
   search?: string
   field?: string
   sort?: 'ASC' | 'DESC'
+
+  // ADDED
+  scope?: string
+  road_id?: string | number
 }
 
 /** Per-row tunnel device summary. Includes the tunnel's camera + lighting

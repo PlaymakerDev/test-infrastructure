@@ -8,7 +8,9 @@ import { useTunnelOverview } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelLocation } from '@/types/tunnel/overview-api'
 
-interface Props { }
+interface Props {
+  roadId: string | null
+}
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -152,9 +154,10 @@ const TunnelMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 // ─── Map shell ─────────────────────────────────────────────────────────────────
 
-const MapTunnel: React.FC<Props> = () => {
+const MapTunnel: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data, isLoading, isSuccess } = useTunnelOverview(deptId)
+  const { data, isLoading, isSuccess } = useTunnelOverview(deptId, roadId ? { road_id: roadId } : {})
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

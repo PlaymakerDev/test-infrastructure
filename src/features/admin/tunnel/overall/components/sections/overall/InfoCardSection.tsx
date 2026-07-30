@@ -6,15 +6,20 @@ import { useTunnelCentralList, useTunnelTotals } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
+interface Props {
+  roadId: string | null
+}
+
 /** Right rail — 3 stat cards summarising the tunnel fleet. Counts come from
  *  `/overview/central/totals`. Per-card "Active" lines (solutions with online
  *  tunnel device per warranty bucket) are derived from `/overview/central/list`
  *  — same cache the table consumes, no extra request. Pattern mirrors
  *  `InfoCardTrafficSignal.tsx`. */
-const InfoCardSection: React.FC = () => {
+const InfoCardSection: React.FC<Props> = (props) => {
+  const { roadId } = props
   const deptId = useDeptId()
-  const { data, isLoading } = useTunnelTotals(deptId)
-  const { data: central } = useTunnelCentralList(deptId)
+  const { data, isLoading } = useTunnelTotals(deptId, roadId ? { road_id: roadId } : {})
+  const { data: central } = useTunnelCentralList(deptId, roadId ? { road_id: roadId, page: 1, limit: 100 } : { page: 1, limit: 100 })
 
   const cards = useMemo(() => {
     // Deeply optional — the placeholder backend may return `{}` or a partial

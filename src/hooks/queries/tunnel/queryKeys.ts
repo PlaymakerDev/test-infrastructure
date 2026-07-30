@@ -4,6 +4,8 @@ import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestTunnelCentralList,
   APIRequestTunnelOverview,
+  APIRequestTunnelRandomCameras,
+  APIRequestTunnelTotals,
 } from '@/types/tunnel/overview-api'
 
 export const tunnelKeys = {
@@ -27,13 +29,21 @@ export const tunnelKeys = {
         'central-list',
         params,
       ] as const,
-    randomCameras: (deptId: string | number, limit: number) =>
+    randomCameras: (deptId: string | number, params: APIRequestTunnelRandomCameras) =>
       [
         ...tunnelKeys.overview.root(deptId),
         'random-cameras',
-        limit,
+        params,
       ] as const,
-    totals: (deptId: string | number) =>
-      [...tunnelKeys.overview.root(deptId), 'totals'] as const,
+    // randomCameras: (deptId: string | number, limit: number) =>
+    //   [
+    //     ...tunnelKeys.overview.root(deptId),
+    //     'random-cameras',
+    //     limit,
+    //   ] as const,
+    totals: (deptId: string | number, params: APIRequestTunnelTotals = {}) =>
+      [...tunnelKeys.overview.root(deptId), 'totals', params] as const,
+    // totals: (deptId: string | number) =>
+    //   [...tunnelKeys.overview.root(deptId), 'totals'] as const,
   },
 } as const

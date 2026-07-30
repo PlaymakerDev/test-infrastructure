@@ -5,13 +5,19 @@ import {
   OverallSection,
   TitleSection,
 } from '../components'
+import { useSearchParams } from 'next/navigation'
 
 const TunnelScreen = () => {
+  const params = useSearchParams()
+  const roadId = params.get('road_id')
+
   return (
     <div className='main-screen px-10'>
       <TitleSection />
       <section className='mt-8 pb-8'>
-        <OverallSection />
+        <OverallSection
+          roadId={roadId}
+        />
       </section>
       <ProjectInfoModal />
       <CCTVModal />
