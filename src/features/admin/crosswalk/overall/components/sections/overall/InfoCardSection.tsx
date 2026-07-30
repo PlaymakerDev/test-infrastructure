@@ -5,6 +5,7 @@ import { TbShield, TbWalk } from 'react-icons/tb'
 import { useCrosswalkCentralList, useCrosswalkTotals } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeCrosswalkSolutions } from '@/features/admin/crosswalk/overall/data/crosswalk'
 
 interface Props {
   roadId: string | null
@@ -31,7 +32,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
     // Count solutions with online crosswalk devices, split by warranty bucket.
     let inWarrantyActive = 0
     let expiredActive = 0
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeCrosswalkSolutions(central ?? [])) {
       for (const sub of bureau.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           if (sol.crosswalk.is_online) {

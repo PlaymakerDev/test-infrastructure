@@ -13,6 +13,7 @@ import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/Projec
 import { useCrosswalkCentralList } from '@/hooks/queries/crosswalk'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
+import { dedupeCrosswalkSolutions } from '@/features/admin/crosswalk/overall/data/crosswalk'
 import type { CrosswalkCentralSolution } from '@/types/crosswalk/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
@@ -144,7 +145,7 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   // sub-dept short name so the table groups by bureau out of the box.
   const projects: CrosswalkProject[] = useMemo(() => {
     const out: CrosswalkProject[] = []
-    for (const bureau of data ?? []) {
+    for (const bureau of dedupeCrosswalkSolutions(data ?? [])) {
       for (const subDept of bureau.sub_department ?? []) {
         for (const sol of subDept.solutions ?? []) {
           out.push(apiSolutionToProject(sol, subDept.department_short_name))
