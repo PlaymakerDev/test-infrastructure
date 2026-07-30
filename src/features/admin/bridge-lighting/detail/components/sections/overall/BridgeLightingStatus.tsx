@@ -2,7 +2,7 @@
 import { ArrowDownOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
 import { AnimatePresence, motion } from 'motion/react'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { TbBulb, TbBulbOff, TbLoader2, TbSparkles } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -34,8 +34,9 @@ const OFF_COLOR = '#FCD116'
  *    - Colour-codes the current state (yellow=OFF, blue=ON) with an icon.
  *    - Watches the shelly-status poll (5 s) and shows a "กำลังดำเนินการ…"
  *      overlay from the moment the form is submitted until the reported
- *      output flips to the target state. `pendingTarget` is stored in a
- *      ref so the overlay survives a re-render of the poll payload. */
+ *      output flips to the target state. `pending` (target + submit time)
+ *      is set once at submit; whether the overlay is actually showing is a
+ *      derived `isPending` check against the latest polled `isOn`. */
 const BridgeLightingStatus: React.FC<Props> = ({
   widData,
   shellyStatusData,
@@ -43,8 +44,11 @@ const BridgeLightingStatus: React.FC<Props> = ({
 }) => {
   const queryClient = useQueryClient()
   const [editMode, setEditMode] = useState(false)
-  const [pendingTarget, setPendingTarget] = useState<boolean | null>(null)
-  const [pendingSince, setPendingSince] = useState<number | null>(null)
+  // Set atomically at the one place a new pending command actually starts
+  // (the form's onSubmitted below) instead of lazily inside an effect —
+  // avoids the react-hooks/set-state-in-effect violation a "sync pendingSince
+  // once pendingTarget appears" effect would trigger.
+  const [pending, setPending] = useState<{ target: boolean; since: number } | null>(null)
   const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
   // `?.[0]` on the array — the shelly endpoint returns `data: null` for
@@ -59,58 +63,53 @@ const BridgeLightingStatus: React.FC<Props> = ({
     return () => clearInterval(t)
   }, [])
 
-  // Clear the pending overlay once the poll reports the target state.
-  // Also auto-clear after 30 s to avoid leaving a stuck overlay if the
-  // upstream never applied the command.
+  // True while the poll hasn't yet caught up to the submitted target —
+  // derived directly instead of clearing `pending` via an effect that
+  // watches `isOn` (would need a synchronous setState in the effect body).
+  const isPending = pending != null && isOn !== pending.target
+
+  // Auto-clear the pending overlay after 30 s so it never gets stuck if the
+  // upstream never applies the command. Stops as soon as the poll confirms
+  // the target state too, since `isPending` flips false then.
   useEffect(() => {
-    if (pendingTarget == null) return
-    if (isOn === pendingTarget) {
-      setPendingTarget(null)
-      setPendingSince(null)
-    }
-  }, [isOn, pendingTarget])
-  useEffect(() => {
-    if (pendingTarget == null) return
-    setPendingSince((v) => v ?? Date.now())
-    const t = setTimeout(() => {
-      setPendingTarget(null)
-      setPendingSince(null)
-    }, 30_000)
+    if (!isPending) return
+    const t = setTimeout(() => setPending(null), 30_000)
     return () => clearTimeout(t)
-  }, [pendingTarget])
+  }, [isPending])
 
   // Real-time push while the overlay is up — invalidate the shelly-status
   // query every 2 s so React Query refetches faster than the idle 5 s
-  // interval. Layered on top of the hook's default cadence.
+  // interval. Layered on top of the hook's default cadence. Stops the
+  // instant `isPending` flips false (poll confirmed or 30 s elapsed).
   useEffect(() => {
-    if (pendingTarget == null) return
+    if (!isPending) return
     const t = setInterval(() => {
       queryClient.invalidateQueries({
         queryKey: bridgeLightingDetailKeys.shellyStatus(),
       })
     }, 2_000)
     return () => clearInterval(t)
-  }, [pendingTarget, queryClient])
+  }, [isPending, queryClient])
 
   const stateLabel = isOn ? 'เปิดไฟประดับสะพาน' : 'ปิดไฟประดับสะพาน'
   const stateColor = isOn ? ON_COLOR : OFF_COLOR
   const stateIcon = isOn ? <TbBulb size={22} /> : <TbBulbOff size={22} />
 
-  const lastUpdate = useMemo(() => {
-    if (!shellyStatus?.last_seen) return '—'
-    return dayjs(shellyStatus.last_seen).format('DD MMM BBBB HH:mm:ss')
-  }, [shellyStatus?.last_seen])
+  // No useMemo: React Compiler auto-memoizes when `reactCompiler: true`
+  // (next.config.ts) — manual deps on an optional-chained expression here
+  // blocked the compiler ("could not preserve existing memoization").
+  const lastUpdate = !shellyStatus?.last_seen
+    ? '—'
+    : dayjs(shellyStatus.last_seen).format('DD MMM BBBB HH:mm:ss')
 
-  const lastUpdateRelative = useMemo(() => {
-    if (!shellyStatus?.last_seen) return '—'
-    // Recompute against the second-resolution ticker so the label updates
-    // live even without a fresh payload arriving.
-    void nowTick
-    return dayjs(shellyStatus.last_seen).locale('th').fromNow()
-  }, [shellyStatus?.last_seen, nowTick])
+  // Recomputed against the second-resolution ticker (nowTick) below so the
+  // label updates live even without a fresh payload arriving.
+  const lastUpdateRelative = !shellyStatus?.last_seen
+    ? '—'
+    : dayjs(shellyStatus.last_seen).locale('th').fromNow()
+  void nowTick
 
-  const pendingElapsedSec =
-    pendingSince != null ? Math.max(0, Math.floor((nowTick - pendingSince) / 1000)) : 0
+  const pendingElapsedSec = pending != null ? Math.max(0, Math.floor((nowTick - pending.since) / 1000)) : 0
 
   if (!isShellyStatusSuccess) return null
 
@@ -199,7 +198,7 @@ const BridgeLightingStatus: React.FC<Props> = ({
                 shellyStatus={shellyStatus}
                 editMode={editMode}
                 setEditMode={setEditMode}
-                onSubmitted={(nextIsOn) => setPendingTarget(nextIsOn)}
+                onSubmitted={(nextIsOn) => setPending({ target: nextIsOn, since: Date.now() })}
               />
             </motion.div>
           )}
@@ -209,7 +208,7 @@ const BridgeLightingStatus: React.FC<Props> = ({
       {/* Pending overlay — shows from submit until the poll confirms the
        *  new state (or 30 s timeout, whichever comes first). */}
       <AnimatePresence>
-        {pendingTarget != null && (
+        {isPending && pending && (
           <motion.div
             key='pending'
             className='absolute inset-0 z-20 flex items-center justify-center rounded-[20px] bg-black/70 backdrop-blur-sm'
@@ -224,7 +223,7 @@ const BridgeLightingStatus: React.FC<Props> = ({
                 กำลังดำเนินการ…
               </div>
               <div className='fs-12 text-gray-300'>
-                กำลังส่งคำสั่ง{pendingTarget ? 'เปิด' : 'ปิด'}ไฟประดับสะพาน
+                กำลังส่งคำสั่ง{pending.target ? 'เปิด' : 'ปิด'}ไฟประดับสะพาน
                 <br />
                 โปรดรอสักครู่จนกว่าจะเปลี่ยนคำสั่งสำเร็จ
               </div>
