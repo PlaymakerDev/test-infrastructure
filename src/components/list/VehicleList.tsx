@@ -24,7 +24,8 @@ const PILL = 'fs-12 whitespace-nowrap rounded-full px-2.5 py-0.5 border'
 const WEIGHT_STATUS_CLASS: Record<WeightStatus, string> = {
   normal: `${PILL} text-blue-400 border-blue-400`,
   within_limit: `${PILL} text-cyan-400 border-cyan-400`,
-  overweight: `${PILL} text-white bg-red-500 border-red-500`,
+  overweight: `${PILL} text-red-400 border-red-400`,
+  // overweight: `${PILL} text-white bg-red-500 border-red-500`,
 }
 
 const WEIGHT_STATUS_LABEL: Record<WeightStatus, string> = {
