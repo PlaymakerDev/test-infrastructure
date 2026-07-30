@@ -113,6 +113,13 @@ export interface APIResponseCCTVRandomOnline {
   limit: number
 }
 
+// ADDED REQUEST
+export interface APIRequestCCTVRandomOnline {
+  limit?: number
+  scope?: string
+  road_id?: number
+}
+
 // ── GET /cctv/departments/{id}/cameras/uptime-statistics ──────────────────────
 
 export interface APIRequestCCTVUptime {

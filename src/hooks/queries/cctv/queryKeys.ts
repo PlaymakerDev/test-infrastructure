@@ -7,6 +7,9 @@
 import type {
   APIRequestCCTVOverviewList,
   APIRequestCCTVOverviewDropdowns,
+  APIRequestCCTVOverview,
+  APIRequestCCTVOverviewCentralList,
+  APIRequestCCTVOverviewCentralTotals,
 } from '@/types/cctv/overview-api'
 import type {
   APIRequestCCTVCameras,
@@ -14,6 +17,7 @@ import type {
   APIRequestCCTVCameraTotals,
   APIRequestCCTVCameraDropdowns,
   APIRequestCCTVUptime,
+  APIRequestCCTVRandomOnline,
 } from '@/types/cctv/camera-api'
 import { scopeKey } from '@/services/routes/scopeParam'
 
@@ -26,18 +30,18 @@ export const cctvKeys = {
     // — same dept can return very different data since BE shipped scope=all.
     root: (deptId: string | number) =>
       [...cctvKeys.all, 'overview', deptId, scopeKey()] as const,
-    map: (deptId: string | number) =>
-      [...cctvKeys.overview.root(deptId), 'map'] as const,
+    map: (deptId: string | number, params?: APIRequestCCTVOverview) =>
+      [...cctvKeys.overview.root(deptId), 'map', { ...params }] as const,
     list: (deptId: string | number, params: APIRequestCCTVOverviewList) =>
       [...cctvKeys.overview.root(deptId), 'list', params] as const,
     dropdowns: (
       deptId: string | number,
       params: APIRequestCCTVOverviewDropdowns
     ) => [...cctvKeys.overview.root(deptId), 'dropdowns', params] as const,
-    centralList: (deptId: string | number) =>
-      [...cctvKeys.overview.root(deptId), 'central-list'] as const,
-    centralTotals: (deptId: string | number) =>
-      [...cctvKeys.overview.root(deptId), 'central-totals'] as const,
+    centralList: (deptId: string | number, params?: APIRequestCCTVOverviewCentralList) =>
+      [...cctvKeys.overview.root(deptId), 'central-list', { ...params }] as const,
+    centralTotals: (deptId: string | number, params?: APIRequestCCTVOverviewCentralTotals) =>
+      [...cctvKeys.overview.root(deptId), 'central-totals', { ...params }] as const,
   },
 
   // ── Camera-level ───────────────────────────────────────────────────────────
@@ -54,8 +58,10 @@ export const cctvKeys = {
       deptId: string | number,
       params: APIRequestCCTVCameraDropdowns
     ) => [...cctvKeys.cameras.root(deptId), 'dropdowns', params] as const,
-    randomOnline: (deptId: string | number, limit: number) =>
-      [...cctvKeys.cameras.root(deptId), 'random-online', limit] as const,
+    randomOnline: (deptId: string | number, params: APIRequestCCTVRandomOnline) =>
+      [...cctvKeys.cameras.root(deptId), 'random-online', params] as const,
+    // randomOnline: (deptId: string | number, limit: number) =>
+    //   [...cctvKeys.cameras.root(deptId), 'random-online', limit] as const,
     uptime: (deptId: string | number, params: APIRequestCCTVUptime) =>
       [...cctvKeys.cameras.root(deptId), 'uptime', params] as const,
   },

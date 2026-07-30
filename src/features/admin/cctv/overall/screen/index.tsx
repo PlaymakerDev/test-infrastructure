@@ -8,13 +8,17 @@ import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 const CCTVScreen: React.FC = () => {
   const searchParams = useSearchParams()
   const deptId = searchParams.get('dept_id')
+  const roadId = searchParams.get('road_id')
 
   return (
     <CCTVProvider>
       <div className='main-screen px-10'>
         <TitleSection />
         <section className='mt-8 pb-8'>
-          <OverallSection deptId={deptId} />
+          <OverallSection
+            deptId={deptId}
+            roadId={roadId}
+          />
         </section>
       </div>
       {/* Global Project Info modal — opened via Redux from any row's info icon. */}

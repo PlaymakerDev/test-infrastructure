@@ -58,6 +58,14 @@ export interface APIResponseCCTVOverview {
   locations: CctvOverviewLocation[]
 }
 
+// ADDED
+export interface APIRequestCCTVOverview {
+  solution_id?: number
+  road_code?: string
+  contract_no?: string
+  road_id?: number
+}
+
 // ── GET /cctv/departments/{id}/overview/list ──────────────────────────────────
 // Paginated solution-level list (feeds the overall table / card grid).
 
@@ -131,3 +139,11 @@ export type APIResponseCCTVOverviewCentralList = CCTVOverviewCentralItem[]
 // Same shape as overview/totals, aggregated across the bureau's group.
 
 export type APIResponseCCTVOverviewCentralTotals = APIResponseCCTVOverviewTotals
+
+// NEW
+export interface APIRequestCCTVOverviewCentralList {
+  scope?: string
+  road_id?: number
+}
+
+export type APIRequestCCTVOverviewCentralTotals = APIRequestCCTVOverviewCentralList

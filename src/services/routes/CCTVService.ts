@@ -8,6 +8,8 @@ import type {
   APIResponseCCTVOverviewDropdowns,
   APIResponseCCTVOverviewCentralList,
   APIResponseCCTVOverviewCentralTotals,
+  APIRequestCCTVOverviewCentralList,
+  APIRequestCCTVOverview,
 } from '@/types/cctv/overview-api'
 import type {
   APIRequestCCTVCameras,
@@ -22,6 +24,7 @@ import type {
   APIRequestCCTVUptime,
   APIResponseCCTVUptimeStatistics,
   APIResponseCCTVCameraCentralList,
+  APIRequestCCTVRandomOnline,
 } from '@/types/cctv/camera-api'
 
 // URL prefix helper — keeps `/cctv/departments/{deptId}` DRY.
@@ -30,11 +33,14 @@ const cctvDeptBase = (deptId: string | number) => `/cctv/departments/${deptId}`
 // ── Overview (solution/route-level) ─────────────────────────────────────────────
 
 /** Map markers (one per solution) + centroid. */
-export const getCctvOverviewAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseCCTVOverview>({
+export const getCctvOverviewAPI = (deptId: string | number, params: APIRequestCCTVOverview) =>
+  ApiService.fetchData<APIResponseCCTVOverview, APIRequestCCTVOverview>({
     url: `${cctvDeptBase(deptId)}/overview`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 export const getCctvOverviewListAPI = (
@@ -58,18 +64,24 @@ export const getCctvOverviewDropdownsAPI = (
   })
 
 /** Bureau-aware nested list (bureau → sub-departments → solutions). No paging. */
-export const getCctvOverviewCentralListAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseCCTVOverviewCentralList>({
+export const getCctvOverviewCentralListAPI = (deptId: string | number, params: APIRequestCCTVOverviewCentralList) =>
+  ApiService.fetchData<APIResponseCCTVOverviewCentralList, APIRequestCCTVOverviewCentralList>({
     url: `${cctvDeptBase(deptId)}/overview/central/list`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId)
+    },
   })
 
-export const getCctvOverviewCentralTotalsAPI = (deptId: string | number) =>
-  ApiService.fetchData<APIResponseCCTVOverviewCentralTotals>({
+export const getCctvOverviewCentralTotalsAPI = (deptId: string | number, params: APIRequestCCTVOverviewCentralList) =>
+  ApiService.fetchData<APIResponseCCTVOverviewCentralTotals, APIRequestCCTVOverviewCentralList>({
     url: `${cctvDeptBase(deptId)}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: {
+      ...params,
+      ...centralScope(deptId),
+    },
   })
 
 // ── Camera-level ────────────────────────────────────────────────────────────────
@@ -117,12 +129,12 @@ export const getCctvCameraDropdownsAPI = (
 
 export const getCctvRandomOnlineAPI = (
   deptId: string | number,
-  limit: number
+  params: APIRequestCCTVRandomOnline = {}
 ) =>
-  ApiService.fetchData<APIResponseCCTVRandomOnline>({
+  ApiService.fetchData<APIResponseCCTVRandomOnline, APIRequestCCTVRandomOnline>({
     url: `${cctvDeptBase(deptId)}/cameras/random-online`,
     method: 'GET',
-    params: { limit, ...centralScope(deptId) },
+    params: { ...params, ...centralScope(deptId) },
   })
 
 export const getCctvUptimeStatisticsAPI = (
