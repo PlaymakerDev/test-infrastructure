@@ -29,8 +29,12 @@ const OverallSection: React.FC<Props> = (props) => {
   } = props
 
   return (
-    <div className='flex flex-col gap-4 lg:block lg:relative lg:h-full'>
-      {/* Map: full-width background; defines container height on desktop via h-full */}
+    <div className='flex flex-col gap-4 lg:block lg:relative lg:h-225'>
+      {/* Map: full-width background; a generous fixed height (instead of
+        * h-full bound to a squeezed flex ancestor) so the overlaid stat
+        * cards + both charts below have room to render at a readable size
+        * without being squeezed — the page grows taller than one screen and
+        * scrolls instead of clipping. */}
       <div className='relative rounded-lg overflow-hidden h-[50dvh] lg:h-full'>
         <MapDetailBridgeLighting
           locationData={locationData}

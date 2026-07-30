@@ -100,7 +100,7 @@ const DetailScreen: React.FC<Props> = (props) => {
     <DetailProvider>
       <div className='main-screen flex flex-col'>
         {renderTitleSection}
-        <section className='mt-5 flex-1 min-h-0'>
+        <section className='mt-5'>
           {renderOverallSection}
         </section>
       </div>
