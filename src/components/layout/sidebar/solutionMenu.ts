@@ -58,6 +58,14 @@ export const buildPathMap = (): Record<string, RouteEntry> => {
   for (const item of menu["ADMIN"]) {
     map[item.label] = { path: item.path, path_active: item.path_active, path_list: item.path_list ?? [] }
   }
+  // SOLUTION_DISPLAY_LABEL overrides the API's solution_type_name for display
+  // (e.g. API "Tracking" -> shown as "Truck Tracking", which is also the menu
+  // config's own `label` for that route). Alias the raw API string to the
+  // same route entry so `pathMap[solution.solution_type_name]` resolves for
+  // any solution type whose display label differs from its API string.
+  for (const [apiKey, displayLabel] of Object.entries(SOLUTION_DISPLAY_LABEL)) {
+    if (map[displayLabel]) map[apiKey] = map[displayLabel]
+  }
   return map
 }
 
