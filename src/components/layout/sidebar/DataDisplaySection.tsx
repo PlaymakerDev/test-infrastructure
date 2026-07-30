@@ -103,7 +103,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
                     <motion.div
                       key={solution.solution_type_id ?? solution.solution_type_name}
                       variants={solutionItemVariants}
-                      onClick={() => route && router.push(`${route.path}?dept_id=${road.departmentId}`)}
+                      onClick={() => route && router.push(`${route.path}?dept_id=${road.departmentId}&road_id=${road.id}&scope=all`)}
                       className={`pl-10 py-3 pr-3 flex items-center justify-between mb-2 rounded-md transition-colors ${route ? 'cursor-pointer' : 'cursor-default opacity-50'} ${isActive ? 'bg-(--yellow)' : 'bg-(--light-black) hover:bg-(--mid-gray)'}`}
                     >
                       <div className="flex items-center gap-2">
