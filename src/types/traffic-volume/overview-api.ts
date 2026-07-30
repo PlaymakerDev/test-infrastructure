@@ -36,6 +36,7 @@ export interface CountingCamera {
 
 export interface APIRequestTrafficVolumeOverview {
   solution_id?: string | number
+  road_id?: string | number
 }
 
 export interface CountingLocation {
@@ -60,6 +61,7 @@ export interface APIResponseTrafficVolumeOverview {
 export interface APIRequestTrafficVolumeCentralList {
   page?: number
   limit?: number
+  road_id?: string | number
 }
 
 export interface CountingCentralSolution {
@@ -93,6 +95,7 @@ export type APIResponseTrafficVolumeCentralList = CountingCentralItem[]
 
 export interface APIRequestTrafficVolumeRandomCameras {
   limit?: number
+  road_id?: string | number
 }
 
 export interface CountingRandomCamera {
@@ -127,4 +130,9 @@ export interface APIResponseTrafficVolumeTotals {
     active: number
     expired: number
   }
+}
+
+export interface APIRequestTrafficVolumeTotals {
+  road_id?: string | number
+  scope?: string
 }

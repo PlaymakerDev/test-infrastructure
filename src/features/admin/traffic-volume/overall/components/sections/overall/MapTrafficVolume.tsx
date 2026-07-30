@@ -11,7 +11,9 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { useRouter } from 'next/navigation'
 import type { CountingLocation } from '@/types/traffic-volume/overview-api'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
@@ -175,9 +177,9 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
 // ─── Map shell ─────────────────────────────────────────────────────────────────
 
-const MapTrafficVolume: React.FC<Props> = () => {
+const MapTrafficVolume: React.FC<Props> = ({ roadId }) => {
   const deptId = useDeptId()
-  const { data, isLoading, isSuccess } = useTrafficVolumeOverview(deptId)
+  const { data, isLoading, isSuccess } = useTrafficVolumeOverview(deptId, roadId ? { road_id: roadId } : {})
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

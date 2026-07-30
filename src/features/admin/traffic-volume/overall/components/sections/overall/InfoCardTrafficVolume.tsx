@@ -6,17 +6,19 @@ import { useTrafficVolumeCentralList, useTrafficVolumeTotals } from '@/hooks/que
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
 
-interface Props { }
+interface Props {
+  roadId?: string | null
+}
 
 /** Right rail — 3 stat cards summarising the traffic-volume fleet. Camera
  *  counts come from `/overview/totals`; per-card "Active" for the warranty
  *  cards is derived from `/overview/central/list` — projects with at least
  *  one online camera in each warranty bucket. Pattern mirrors
  *  `InfoCardTrafficSignal.tsx`. */
-const InfoCardTrafficVolume: React.FC<Props> = () => {
+const InfoCardTrafficVolume: React.FC<Props> = ({ roadId }) => {
   const deptId = useDeptId()
-  const { data, isLoading } = useTrafficVolumeTotals(deptId)
-  const { data: central } = useTrafficVolumeCentralList(deptId)
+  const { data, isLoading } = useTrafficVolumeTotals(deptId, roadId ? { road_id: roadId } : {})
+  const { data: central } = useTrafficVolumeCentralList(deptId, roadId ? { road_id: roadId } : {})
 
   const stats = useMemo(() => {
     const cameraTotal = data?.camera.total ?? 0

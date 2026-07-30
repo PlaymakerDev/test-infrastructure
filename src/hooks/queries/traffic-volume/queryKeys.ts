@@ -4,6 +4,8 @@ import { scopeKey } from '@/services/routes/scopeParam'
 import type {
   APIRequestTrafficVolumeCentralList,
   APIRequestTrafficVolumeOverview,
+  APIRequestTrafficVolumeRandomCameras,
+  APIRequestTrafficVolumeTotals,
 } from '@/types/traffic-volume/overview-api'
 import type {
   APIRequestTrafficVolumeCountHour,
@@ -40,14 +42,22 @@ export const trafficVolumeKeys = {
         'central-list',
         params,
       ] as const,
-    totals: (deptId: string | number) =>
-      [...trafficVolumeKeys.overview.root(deptId), 'totals'] as const,
-    randomCameras: (deptId: string | number, limit: number) =>
+    totals: (deptId: string | number, params?: APIRequestTrafficVolumeTotals) =>
+      [...trafficVolumeKeys.overview.root(deptId), 'totals', { ...params }] as const,
+    // totals: (deptId: string | number) =>
+    //   [...trafficVolumeKeys.overview.root(deptId), 'totals'] as const,
+    randomCameras: (deptId: string | number, params?: APIRequestTrafficVolumeRandomCameras) =>
       [
         ...trafficVolumeKeys.overview.root(deptId),
         'random-cameras',
-        limit,
+        { ...params },
       ] as const,
+    // randomCameras: (deptId: string | number, limit: number) =>
+    //   [
+    //     ...trafficVolumeKeys.overview.root(deptId),
+    //     'random-cameras',
+    //     limit,
+    //   ] as const,
   },
 
   detail: {
