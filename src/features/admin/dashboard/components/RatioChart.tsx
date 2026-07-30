@@ -40,18 +40,19 @@ interface TileConfig {
 }
 
 const TILES: TileConfig[] = [
-  { id: 'cctv',           label: 'CCTV',      color: '#FF8566', Icon: TbVideo,          apiTypeName: 'CCTV',           unit: 'จุด',   route: '/admin/cctv' },
-  { id: 'traffic',        label: 'Traffic Signal', color: '#FFC766', Icon: TbTrafficLights, apiTypeName: 'Traffic',   unit: 'จุด',   route: '/admin/traffic-signal' },
-  { id: 'vms',            label: 'VMS',       color: '#70FF66', Icon: TbDeviceDesktop,  apiTypeName: 'VMS',            unit: 'จุด',   route: '/admin/vms' },
-  { id: 'lighting',       label: 'Traffic Lighting', color: '#D9FF66', Icon: TbBolt,    apiTypeName: 'Lighting',       unit: 'จุด',   route: '/admin/traffic-lighting' },
-  { id: 'crosswalk',      label: 'Crosswalk', color: '#66F0FF', Icon: TbWalk,           apiTypeName: 'Crosswalk',      unit: 'จุด',   route: '/admin/crosswalk' },
+  { id: 'cctv', label: 'CCTV', color: '#003F87', Icon: TbVideo, apiTypeName: 'CCTV', unit: 'จุด', route: '/admin/cctv' },
+  { id: 'traffic', label: 'Traffic Signal', color: '#518700', Icon: TbTrafficLights, apiTypeName: 'Traffic', unit: 'จุด', route: '/admin/traffic-signal' },
+  { id: 'vms', label: 'VMS', color: '#874600', Icon: TbDeviceDesktop, apiTypeName: 'VMS', unit: 'จุด', route: '/admin/vms' },
+  { id: 'lighting', label: 'Traffic Lighting', color: '#878000', Icon: TbBolt, apiTypeName: 'Lighting', unit: 'จุด', route: '/admin/traffic-lighting' },
+  { id: 'crosswalk', label: 'Crosswalk', color: '#001287', Icon: TbWalk, apiTypeName: 'Crosswalk', unit: 'จุด', route: '/admin/crosswalk' },
   // LPR replaced B.Light in this slot (2026-07-21 request). LPR is NOT a
   // solution type in /position — its count comes from GET /lpr/points
   // (see `lprCount` below); `apiTypeName` here is a placeholder key that
   // never matches the /position payload. Colour = SYSTEM_BRIGHT.LPR so the
   // tile matches the map marker (per request, same day).
-  { id: 'lpr',            label: 'LPR',       color: SYSTEM_BRIGHT.LPR, Icon: IconLPR,  apiTypeName: 'LPR',            unit: 'จุด',   route: '/admin/lpr' },
-  { id: 'wim',            label: 'WIM',       color: '#66FFB5', Icon: IconTracking,     apiTypeName: 'WIM',            unit: 'จุด',   route: '/admin/tracking' },
+  // { id: 'lpr', label: 'LPR', color: SYSTEM_BRIGHT.LPR, Icon: IconLPR, apiTypeName: 'LPR', unit: 'จุด', route: '/admin/lpr' },
+  { id: 'lpr', label: 'LPR', color: '#87004D', Icon: IconLPR, apiTypeName: 'LPR', unit: 'จุด', route: '/admin/lpr' },
+  { id: 'wim', label: 'WIM', color: '#70196D', Icon: IconTracking, apiTypeName: 'WIM', unit: 'จุด', route: '/admin/tracking' },
 ]
 
 interface TileProps {
