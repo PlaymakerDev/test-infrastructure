@@ -1,8 +1,8 @@
 "use client"
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbArrowBigLeftFilled } from 'react-icons/tb'
-import { Alert, Button, Empty, Spin } from 'antd'
+import { TbArrowBigLeftFilled, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { Alert, Button, ConfigProvider, Empty, Spin } from 'antd'
 import { AlertDetailProvider } from '../context'
 import { AlertDetailSidebar, AlertDetailTable } from '../components'
 import { useLiveAlertRouteItems } from '../../../data/useLiveAlertRouteItems'
@@ -11,6 +11,7 @@ import { ProjectInfoModal } from '@/components/modal'
 import { useAppDispatch } from '@/stores/hooks'
 import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
+import { useLightingCentralList, useLightingDeviceDetails } from '@/hooks/queries/lighting'
 
 const AlertDetailContent: React.FC = () => {
   const router = useRouter()
@@ -26,6 +27,13 @@ const AlertDetailContent: React.FC = () => {
     refetch: refetchRoutes,
   } = useLiveAlertRouteItems()
 
+  // The alert IoT-status tree intentionally contains only live health data.
+  // Warranty belongs to the lighting central-list row, while phase belongs to
+  // the per-device detail endpoint.  Fetch both by the selected bureau + IMEI
+  // so the title badges describe this exact device (not an aggregate count).
+  const lightingListQuery = useLightingCentralList(route ? Number(route) : null, undefined, 'all')
+  const lightingDetailsQuery = useLightingDeviceDetails(detail)
+
   // Resolve the device strictly inside the selected route. This prevents a
   // stale or hand-edited `route=A&detail=device-from-B` URL from combining the
   // heading/project metadata of one bureau with another bureau's device.
@@ -39,6 +47,22 @@ const AlertDetailContent: React.FC = () => {
     return null
   })()
   const detailLabel = device?.label ?? detail
+
+  const lightingRecord = React.useMemo(() => (
+    lightingListQuery.data
+      ?.flatMap((bureau) => bureau.sub_department ?? [])
+      .flatMap((department) => department.solutions ?? [])
+      .find((solution) => String(solution.imei) === detail)
+  ), [detail, lightingListQuery.data])
+  // Do not infer a missing value as expired: the badge remains hidden until
+  // the central-list identifies the IMEI and supplies an explicit boolean.
+  const isWarranty = lightingRecord?.is_warranty
+  const phase = lightingDetailsQuery.data?.phase
+  // The IoT-status tree does not include a project. Its IMEI is present in
+  // the lighting central-list, which provides the project id required by the
+  // shared contract-detail modal.
+  const projectId = lightingRecord?.project?.id ?? null
+  const projectRoadId = lightingRecord?.road?.id ?? device?.roadId ?? null
 
   // Real coord for the Google Map button — same source/pattern as the
   // incident detail page (statistics/detail/incident): match the selected
@@ -101,64 +125,69 @@ const AlertDetailContent: React.FC = () => {
               title="ดูข้อมูลโครงการ"
               width={25}
               height={25}
-              // No project_id in this data source (unlike incident-detection's
-              // central-list) — only road_id, so the modal shows department
-              // info but "-" for project-specific fields (contract, dates, etc).
-              onClick={() => device && dispatch(setProjectInfoModalOpen({
+              // The project id is resolved from central-list by matching this
+              // selected device's IMEI.
+              onClick={() => projectId !== null && dispatch(setProjectInfoModalOpen({
                 open: true,
-                project_id: null,
-                road_id: device.roadId ?? null,
+                project_id: projectId,
+                road_id: projectRoadId,
               }))}
-              style={{ cursor: device ? 'pointer' : 'default', opacity: device ? 1 : 0.5 }}
-            />
-            <div style={{
-              height: 22, borderRadius: 88,
-              border: '1px solid #05F2DB',
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>การค้ำ : -</span>
-            </div>
-            <div style={{
-              height: 22, borderRadius: 88,
-              border: `1px solid ${connectionColor}`,
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
-            }}>
-              {device.is_online !== undefined && (
-                <img src={device.is_online ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
-              )}
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
-                {connectionLabel}
-              </span>
-            </div>
-            <div style={{
-              height: 22, borderRadius: 88,
-              border: '1px solid #E9D682',
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#E9D682' }}>Phase : -</span>
-            </div>
-            <button
-              type="button"
-              disabled={!coord}
-              onClick={() => {
-                if (!coord) return
-                window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
-              }}
               style={{
-                height: 22, borderRadius: 88,
-                backgroundColor: '#003F87',
-                padding: '4px 10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: 'none',
-                cursor: coord ? 'pointer' : 'not-allowed',
-                opacity: coord ? 1 : 0.5,
+                cursor: projectId !== null ? 'pointer' : 'not-allowed',
+                opacity: projectId !== null ? 1 : 0.5,
+              }}
+            />
+            {isWarranty !== undefined && (
+              <span
+                className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+                title={isWarranty ? 'อยู่ในระยะค้ำประกัน' : 'หมดระยะค้ำประกัน'}
+                style={{
+                  borderColor: isWarranty ? '#05F2DB' : '#979797',
+                  color: isWarranty ? '#05F2DB' : '#979797',
+                }}
+              >
+                {isWarranty ? 'ในค้ำ' : 'หมดค้ำ'}
+              </span>
+            )}
+            <span
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: connectionColor,
+                color: connectionColor,
               }}
             >
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
-            </button>
+              {device.is_online !== undefined && (
+                device.is_online ? <TbWifi /> : <TbWifiOff />
+              )}
+              {connectionLabel}
+            </span>
+            {(phase === 1 || phase === 3) && (
+              <span
+                className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+                title={phase === 1 ? 'ระบบไฟฟ้า 1 เฟส' : 'ระบบไฟฟ้า 3 เฟส'}
+                style={{
+                  borderColor: '#FCD116',
+                  color: '#FCD116',
+                }}
+              >
+                {phase} Phase
+              </span>
+            )}
+            <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+              <Button
+                type="primary"
+                size="middle"
+                shape="round"
+                className='w-full! sm:w-auto!'
+                disabled={!coord}
+                onClick={() => {
+                  if (!coord) return
+                  window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+                }}
+              >
+                <p className='fs-12'>Google Map</p>
+              </Button>
+            </ConfigProvider>
           </div>
         </div>
       </section>

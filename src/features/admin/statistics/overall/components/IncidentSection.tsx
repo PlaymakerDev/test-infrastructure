@@ -10,6 +10,7 @@ import { useLiveIncidentRouteItems } from '../../data/useLiveIncidentRouteItems'
 import { useIncidentByDepartment, useIncidentSummary } from '@/hooks/queries/incident-detection'
 import type { ColumnsType } from 'antd/es/table'
 import useIsMobile from '@/utils/hooks/useIsMobile'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
@@ -136,6 +137,28 @@ const INCIDENT_COMPARISON_COLUMNS: ColumnsType<IncidentRow> = [
   },
 ]
 
+// Mirrors the visible comparison-table columns so both document formats use
+// the same agency/event breakdown the user sees on-screen.
+const INCIDENT_COMPARISON_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: IncidentRow) => string | number
+}[] = [
+  { header: 'หน่วยงาน', width: 30, widthPct: 15, value: (r) => r.agency },
+  { header: 'อุบัติเหตุ', width: 12, widthPct: 8, align: 'center', value: (r) => r.accident },
+  { header: 'รถจอดเสีย', width: 12, widthPct: 8, align: 'center', value: (r) => r.breakdown },
+  { header: 'จอดไหล่ทาง', width: 13, widthPct: 8, align: 'center', value: (r) => r.shoulder },
+  { header: 'งานก่อสร้าง', width: 13, widthPct: 9, align: 'center', value: (r) => r.construction },
+  { header: 'ปิดกั้นทาง', width: 12, widthPct: 8, align: 'center', value: (r) => r.blocked },
+  { header: 'รถย้อนเลน', width: 12, widthPct: 8, align: 'center', value: (r) => r.wrongWay },
+  { header: 'รถบรรทุกวิ่งเลนขวา', width: 20, widthPct: 11, align: 'center', value: (r) => r.rightLane },
+  { header: 'ความเร็วเกินกำหนด', width: 19, widthPct: 11, align: 'center', value: (r) => r.speeding },
+  { header: 'จราจรติดขัด', width: 14, widthPct: 8, align: 'center', value: (r) => r.congestion },
+  { header: 'รวม', width: 10, widthPct: 6, align: 'center', value: (r) => r.total },
+]
+
 const IncidentSection: React.FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -143,6 +166,8 @@ const IncidentSection: React.FC = () => {
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('TODAY')
   const [searchText, setSearchText] = useState('')
+  const [comparisonExportOpen, setComparisonExportOpen] = useState(false)
+  const [comparisonExportRows, setComparisonExportRows] = useState<IncidentRow[]>([])
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
@@ -282,8 +307,38 @@ const IncidentSection: React.FC = () => {
           loading={comparisonFetching}
           error={comparisonError}
           showSummaryBadgesOnError
+          onExport={(rows) => {
+            setComparisonExportRows(rows as unknown as IncidentRow[])
+            setComparisonExportOpen(true)
+          }}
         />
       )}
+      <ExportFileModal
+        open={comparisonExportOpen}
+        onClose={() => setComparisonExportOpen(false)}
+        count={comparisonExportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Incident_Comparison_Report',
+            title: 'รายงานเปรียบเทียบเหตุการณ์ตามหน่วยงาน',
+            filterNote: `ช่วงเวลา: ${PERIOD_OPTIONS.find((option) => option.value === comparisonPeriod)?.label ?? comparisonPeriod}`,
+            columns: INCIDENT_COMPARISON_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Incident_Comparison_Report',
+            sheetName: 'Incident Comparison',
+            title: 'รายงานเปรียบเทียบเหตุการณ์ตามหน่วยงาน',
+            filterNote: `ช่วงเวลา: ${PERIOD_OPTIONS.find((option) => option.value === comparisonPeriod)?.label ?? comparisonPeriod}`,
+            columns: INCIDENT_COMPARISON_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+      />
     </div>
   )
 }

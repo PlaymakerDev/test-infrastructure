@@ -4,8 +4,15 @@ import ElectricalSystemCard from './ElectricalSystemCard'
 import StatusInfoCard from './StatusInfoCard'
 import { useDetailContext } from '../context'
 
+interface Props {
+  /** Controlled by OverviewSection so it can grow the surrounding layout
+   *  instead of ElectricalSystemCard overlapping the content below it. */
+  electricalExpanded: boolean
+  onToggleElectricalExpanded: () => void
+}
+
 /** Right column — electrical card + connection/circuit status for the OVERVIEW tab. */
-const StatusCardsColumn: React.FC = () => {
+const StatusCardsColumn: React.FC<Props> = ({ electricalExpanded, onToggleElectricalExpanded }) => {
   const { imei, device, deviceLoaded } = useDetailContext()
 
   const connectionStatus = !deviceLoaded ? '-' : (device ? (device.is_online ? 'ออนไลน์' : 'ออฟไลน์') : '-')
@@ -13,7 +20,7 @@ const StatusCardsColumn: React.FC = () => {
 
   return (
     <div className='flex flex-col gap-2.5 w-full md:w-[300px] shrink-0 md:self-start'>
-      <ElectricalSystemCard />
+      <ElectricalSystemCard expanded={electricalExpanded} onToggleExpanded={onToggleElectricalExpanded} />
 
       <StatusInfoCard
         compact

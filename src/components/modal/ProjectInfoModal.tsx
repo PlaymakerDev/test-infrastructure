@@ -132,7 +132,10 @@ const Content = (props: ContentProps) => {
             const days = data?.warranty_date
             let label = 'ระยะเวลาที่เหลือ'
             let value: string = '-'
-            if (status === 'หมดค้ำ') {
+            // Missing data is unknown, not a genuine zero-day warranty.
+            if (!data) {
+              value = '-'
+            } else if (status === 'หมดค้ำ') {
               label = 'หมดค้ำประกัน'
               value = days != null ? `${Math.abs(days)} วัน` : '-'
             } else if (status === 'ก่อนค้ำ') {

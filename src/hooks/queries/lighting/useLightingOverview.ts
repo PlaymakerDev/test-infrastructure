@@ -12,15 +12,15 @@ import { unwrapLightingResponse } from './unwrapLightingResponse'
 
 /** Map locations + centroid for the Traffic Lighting overall page. */
 
-export const useLightingOverview = (deptId: string | number | null | undefined) =>
+export const useLightingOverview = (deptId: string | number | null | undefined, roadId?: number | null) =>
 
   useQuery({
 
-    queryKey: lightingKeys.overview.map(deptId ?? ''),
+    queryKey: lightingKeys.overview.map(deptId ?? '', roadId),
 
     queryFn: () =>
 
-      getLightingOverviewAPI(Number(deptId)).then((r) =>
+      getLightingOverviewAPI(Number(deptId), roadId ? { road_id: roadId } : {}).then((r) =>
 
         unwrapLightingResponse<LightingOverviewResponse>(r.data),
 

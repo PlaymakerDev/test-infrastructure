@@ -16,6 +16,7 @@ import {
 
 interface Props {
   deptId: number
+  roadId?: number | null
 }
 
 const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
@@ -164,8 +165,11 @@ const LightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, deptI
   )
 }
 
-const MapTrafficLighting: React.FC<Props> = ({ deptId }) => {
-  const { data, isLoading, isSuccess, isError, refetch } = useLightingOverview(deptId)
+const MapTrafficLighting: React.FC<Props> = ({ deptId, roadId }) => {
+  // Same query key shape as OverallContext's own useLightingOverview call
+  // (deptId + roadId) — keeping them identical lets TanStack Query dedupe
+  // the two call sites into a single request instead of firing it twice.
+  const { data, isLoading, isSuccess, isError, refetch } = useLightingOverview(deptId, roadId)
 
   const centroidValid =
     !!data?.centroid && (data.centroid[0] !== 0 || data.centroid[1] !== 0)

@@ -13,6 +13,7 @@ import { useLightingDeviceDetails } from '@/hooks/queries/lighting'
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import type { ColumnsType } from 'antd/es/table'
 import useIsMobile from '@/utils/hooks/useIsMobile'
+import ExportFileModal from '@/components/export/ExportFileModal'
 
 // ── Map marker group popup ──────────────────────────────────────────────────
 // Shown (instead of navigating instantly) when a marker point represents one
@@ -176,6 +177,39 @@ const ALERT_COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
   },
 ]
 
+const alertStatusValue = (row: ComparisonRecord, key: 'lineCheck' | 'circuit' | 'voltAmp') => {
+  const value = row[key]
+  if (!row.isDevice) return value ?? '-'
+  // Match the visual table's device-cell convention exactly.
+  return value === 0 ? 'FAIL' : '-'
+}
+
+const ALERT_COMPARISON_EXPORT_COLUMNS: {
+  header: string
+  width: number
+  widthPct: number
+  align?: 'left' | 'center' | 'right'
+  value: (row: ComparisonRecord) => string | number
+}[] = [
+  { header: 'หน่วยงาน / รายการ', width: 34, widthPct: 30, value: (r) => r.agency },
+  { header: 'จุดติดตั้ง', width: 14, widthPct: 13, align: 'center', value: (r) => r.installations },
+  { header: 'ออนไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.online },
+  { header: 'ออฟไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.offline },
+  { header: 'Line Check', width: 14, widthPct: 11, align: 'center', value: (r) => alertStatusValue(r, 'lineCheck') },
+  { header: 'Circuit', width: 12, widthPct: 10, align: 'center', value: (r) => alertStatusValue(r, 'circuit') },
+  { header: 'Volt / Amp', width: 13, widthPct: 12, align: 'center', value: (r) => alertStatusValue(r, 'voltAmp') },
+]
+
+/** Export reports are flat, while the comparison table is a bureau → sub-
+ * department → road → device tree. Keep every matching branch and indent its
+ * display label so the downloaded report retains the table's hierarchy. */
+const flattenComparisonRows = (rows: ComparisonRecord[], depth = 0): ComparisonRecord[] => (
+  rows.flatMap((row) => [
+    { ...row, agency: `${'— '.repeat(depth)}${row.agency}` },
+    ...flattenComparisonRows(row.children ?? [], depth + 1),
+  ])
+)
+
 
 
 // Maps a period Segmented value to { start_date, end_date } bounds for the
@@ -220,6 +254,8 @@ const AlertSection: React.FC = () => {
   const activeSubTab = (searchParams.get('subtab') || 'OVERVIEW').toUpperCase()
   const [activePeriod, setActivePeriod] = useState('TODAY')
   const [searchText, setSearchText] = useState('')
+  const [comparisonExportOpen, setComparisonExportOpen] = useState(false)
+  const [comparisonExportRows, setComparisonExportRows] = useState<ComparisonRecord[]>([])
 
   const handleBack = useCallback(() => router.push('/admin/statistics'), [router])
 
@@ -460,8 +496,38 @@ const AlertSection: React.FC = () => {
           onPeriodChange={setComparisonPeriod}
           loading={comparisonFetching}
           error={comparisonError}
+          onExport={(rows) => {
+            setComparisonExportRows(flattenComparisonRows(rows))
+            setComparisonExportOpen(true)
+          }}
         />
       )}
+      <ExportFileModal
+        open={comparisonExportOpen}
+        onClose={() => setComparisonExportOpen(false)}
+        count={comparisonExportRows.length}
+        onExportPdf={async () => {
+          const { exportTablePdf } = await import('@/utils/export/pdf')
+          await exportTablePdf({
+            filenameBase: 'Lighting_Alert_Comparison_Report',
+            title: 'รายงานเปรียบเทียบการแจ้งเตือนไฟฟ้าตามหน่วยงาน',
+            filterNote: `ช่วงเวลา: ${PERIOD_OPTIONS.find((option) => option.value === comparisonPeriod)?.label ?? comparisonPeriod}`,
+            columns: ALERT_COMPARISON_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+        onExportExcel={async () => {
+          const { exportExcel } = await import('@/utils/export/excel')
+          exportExcel({
+            filenameBase: 'Lighting_Alert_Comparison_Report',
+            sheetName: 'Lighting Alert Comparison',
+            title: 'รายงานเปรียบเทียบการแจ้งเตือนไฟฟ้าตามหน่วยงาน',
+            filterNote: `ช่วงเวลา: ${PERIOD_OPTIONS.find((option) => option.value === comparisonPeriod)?.label ?? comparisonPeriod}`,
+            columns: ALERT_COMPARISON_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            rows: comparisonExportRows,
+          })
+        }}
+      />
     </div>
   )
 }

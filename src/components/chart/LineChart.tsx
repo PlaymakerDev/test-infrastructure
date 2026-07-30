@@ -153,6 +153,10 @@ export interface LineChartProps {
   tooltipDateSuffix?: string
   /** หน่วยต่อท้ายค่าใน tooltip (เช่น "V", "A") — ใช้เป็น default ถ้า LineConfig.unit ว่าง */
   tooltipUnit?: string
+  /** จำนวนหลักทศนิยมของค่าใน tooltip (เช่น 4 → "1.0000") — ถ้าไม่ส่งใช้
+   *  `toLocaleString()` ปกติ (ตัดเลข 0 ท้ายทิ้ง). จำเป็นสำหรับค่าที่เล็กมาก
+   *  (เช่น Amp 0.0002) ที่ default formatting จะปัดจนเหลือ "0" */
+  tooltipValueDecimals?: number
   /** แสดงจุดสี (●) นำหน้า label ของแต่ละเส้นใน tooltip (default `false`) */
   tooltipShowDot?: boolean
   /** Render the tooltip header as a single left-aligned grey line (just
@@ -224,6 +228,7 @@ const LineChart: React.FC<LineChartProps> = ({
   tooltipDateKey,
   tooltipDateSuffix = ' น.',
   tooltipUnit,
+  tooltipValueDecimals,
   tooltipShowDot = false,
   tooltipSimpleHeader = false,
   tooltipExtras,
@@ -394,7 +399,9 @@ const LineChart: React.FC<LineChartProps> = ({
               if (cfg?.hideInTooltip) return ''
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
-              const value = Number(p.value).toLocaleString()
+              const value = tooltipValueDecimals != null
+                ? Number(p.value).toFixed(tooltipValueDecimals)
+                : Number(p.value).toLocaleString()
               // Per-line unit wins; fall back to global tooltipUnit.
               const rowUnit = cfg?.unit ?? tooltipUnit
               const unit = rowUnit ? ` ${rowUnit}` : ''
@@ -471,7 +478,7 @@ const LineChart: React.FC<LineChartProps> = ({
         z: line.dashed ? 3 : 2,
       })),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipValueDecimals, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
 
   return (
     <div
