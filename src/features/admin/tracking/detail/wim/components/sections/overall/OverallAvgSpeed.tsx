@@ -4,6 +4,7 @@ import { TbGauge } from 'react-icons/tb'
 import { useTrafficAvgSpeed } from '@/features/admin/tracking/detail/wim/hooks'
 import { useWIMContext } from '@/features/admin/tracking/detail/wim/context'
 import QueryBoundary from '@/components/common/QueryBoundary'
+import dayjs from 'dayjs'
 
 interface Props {
 
@@ -17,13 +18,19 @@ const OverallAvgSpeed: React.FC<Props> = () => {
     stationType === 'WIM'
   )
 
+  // Highlight the row matching the CURRENT hour (pid is the hour-of-day
+  // index 0-23 — same field ChartTraffic.tsx filters day/night periods by)
+  // instead of always the first row, so the yellow marker tracks the clock
+  // (03:18 now -> 03:00 is yellow; once it's 04:00, 04:00 becomes yellow).
+  const currentHour = dayjs().hour()
+
   const tableRows = useMemo(() => {
-    return (data?.data ?? []).map((item, index) => ({
+    return (data?.data ?? []).map((item) => ({
       time: item.period_name,
       value: Number(item.avg_speed),
-      highlighted: index === 0,
+      highlighted: item.pid === currentHour,
     }))
-  }, [data?.data])
+  }, [data?.data, currentHour])
 
   const avgSpeed = useMemo(() => {
     const speeds = (data?.data ?? []).map(item => Number(item.avg_speed))

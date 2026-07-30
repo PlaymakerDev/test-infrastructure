@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import ReactECharts from 'echarts-for-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -50,6 +50,28 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
   height = 270,
   iconCircle = true,
 }) => {
+  const rowsContainerRef = useRef<HTMLDivElement>(null)
+  const highlightedRowRef = useRef<HTMLDivElement>(null)
+
+  // Scroll the highlighted row (e.g. the current hour) into view within the
+  // scrollable list on mount / whenever the rows change, instead of always
+  // starting scrolled to the top. Leaves one row's height of margin above it
+  // (rather than centering) so the previous row still peeks in at the top —
+  // clamped to 0 when the highlighted row is near the very start of the list.
+  useEffect(() => {
+    const container = rowsContainerRef.current
+    const row = highlightedRowRef.current
+    if (!container || !row) return
+    // row.offsetTop is relative to the nearest POSITIONED ancestor (the
+    // card's outer `relative` wrapper), not this container — the container
+    // itself has no `position` of its own. Subtract container.offsetTop
+    // (same ancestor) to get the row's position relative to the container,
+    // otherwise scrollTop ends up inflated by everything above the rows
+    // list (title/header/divider) and scrolls well past the highlighted row.
+    const offsetWithinContainer = row.offsetTop - container.offsetTop
+    container.scrollTop = Math.max(0, offsetWithinContainer - row.clientHeight)
+  }, [tableRows])
+
   const option = useMemo(() => {
     const pct = Math.min(Math.max((value - min) / (max - min), 0), 1)
 
@@ -205,10 +227,14 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
           />
 
           {/* Rows */}
-          <div className={`flex flex-col ${tableRows.length > 6 ? 'max-h-60 overflow-y-auto pr-1' : ''}`}>
+          <div
+            ref={rowsContainerRef}
+            className={`flex flex-col ${tableRows.length > 6 ? 'max-h-60 overflow-y-auto pr-1' : ''}`}
+          >
             {tableRows.map((row, i) => (
               <div
                 key={i}
+                ref={row.highlighted ? highlightedRowRef : undefined}
                 className='flex items-center justify-between py-1.5 px-1'
               >
                 <div className='flex items-center gap-2'>
