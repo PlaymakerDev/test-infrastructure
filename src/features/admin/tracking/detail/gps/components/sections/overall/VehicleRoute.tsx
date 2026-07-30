@@ -60,7 +60,14 @@ const VehicleRoute: React.FC<Props> = (props) => {
   const renderLogTimeline = useMemo(() => {
     if (isLoadingVehicleRouteHistory) return <Skeleton loading={isLoadingVehicleRouteHistory} active paragraph={{ rows: 6 }} />
     if (isErrorVehicleRouteHistory) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
-    // if (Object.keys(vehicleRouteHistory?.data.data.events_by_date || {}).length === 0) return <Empty description="ไม่พบข้อมูลเส้นทาง" />
+
+    if (Object.keys(vehicleRouteHistory?.data.data.events_by_date || {}).length === 0) {
+      return (
+        <figure className='block m-auto'>
+          <Empty description="ไม่พบข้อมูลเส้นทาง" />
+        </figure>
+      )
+    }
 
     return Object.entries(vehicleRouteHistory?.data.data.events_by_date || {}).map(([date, events]) => {
       if (events.length === 0) {
