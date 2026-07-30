@@ -17,6 +17,7 @@ import { groupByBureau } from '@/features/admin/traffic-volume/shared/utils/grou
 import { useTunnelCentralList } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
+import { dedupeTunnelSolutions } from '@/features/admin/tunnel/overall/data/tunnel'
 import type { TunnelCentralSolution } from '@/types/tunnel/overview-api'
 
 interface Props {
@@ -164,7 +165,7 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const projects: TunnelProject[] = useMemo(() => {
     const out: TunnelProject[] = []
     const rootList = Array.isArray(data) ? data : []
-    for (const bureau of rootList) {
+    for (const bureau of dedupeTunnelSolutions(rootList)) {
       const subDepts = Array.isArray(bureau?.sub_department) ? bureau.sub_department : []
       for (const subDept of subDepts) {
         const sols = Array.isArray(subDept?.solutions) ? subDept.solutions : []

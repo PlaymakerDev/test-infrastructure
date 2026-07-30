@@ -5,6 +5,7 @@ import { TbBuildingBridge2, TbShield } from 'react-icons/tb'
 import { useTunnelCentralList, useTunnelTotals } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeTunnelSolutions } from '@/features/admin/tunnel/overall/data/tunnel'
 
 interface Props {
   roadId: string | null
@@ -33,7 +34,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
     // Count solutions with online tunnel devices, split by warranty bucket.
     let inWarrantyActive = 0
     let expiredActive = 0
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeTunnelSolutions(central ?? [])) {
       for (const sub of bureau.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           if (sol.tunnel.is_online) {
