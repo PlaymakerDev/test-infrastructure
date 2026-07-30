@@ -1,6 +1,34 @@
 // Shared CCTV view types. All list/map/table data now comes from the live
 // `/cctv` API — this file keeps only the shapes the detail page builds from it.
 
+import type { APIResponseCCTVOverviewCentralList } from '@/types/cctv/overview-api'
+
+// The backend has been observed returning the same solution nested under two
+// different department nodes in one central/list response (same class of
+// bug documented for incident-detection's central/list — see
+// incidentData.ts's dedupeIncidentSolutions). Table/grid rows key off
+// solution.id alone (not department-scoped), so an unguarded duplicate
+// crashes into a React "duplicate key" warning and silently doubles up
+// export rows / inflates list-derived counts. Dedupe once, keeping the
+// first occurrence — shared by OverallSection (table/grid/export) and
+// StatsSectionCctv (active-by-warranty tally) so both agree.
+export const dedupeCctvSolutions = (
+  bureaus: APIResponseCCTVOverviewCentralList
+): APIResponseCCTVOverviewCentralList => {
+  const seen = new Set<number | string>()
+  return bureaus.map((bureau) => ({
+    ...bureau,
+    sub_department: (bureau.sub_department ?? []).map((sub) => ({
+      ...sub,
+      solutions: (sub.solutions ?? []).filter((sol) => {
+        if (seen.has(sol.solution.id)) return false
+        seen.add(sol.solution.id)
+        return true
+      }),
+    })),
+  }))
+}
+
 export type WarrantyStatus = 'in-warranty' | 'expired'
 
 // ── Install-point detail (built from the central/list API in the detail screen) ──

@@ -19,6 +19,7 @@ import {
   useCctvRandomOnline,
 } from '@/hooks/queries/cctv'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
+import { dedupeCctvSolutions } from '@/features/admin/cctv/overall/data/cctvData'
 import MapFocusGrid from '@/components/section/MapFocusGrid'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import { useScopeAll } from '@/hooks/useScopeAll'
@@ -127,7 +128,7 @@ const OverallSection: React.FC<Props> = ({ deptId, roadId }) => {
 
   const allItems = useMemo<CCTVOverviewRow[]>(() => {
     const rows: CCTVOverviewRow[] = []
-    for (const bureau of centralData ?? []) {
+    for (const bureau of dedupeCctvSolutions(centralData ?? [])) {
       for (const sub of bureau.sub_department) {
         for (const sol of sub.solutions) {
           rows.push({ ...sol, bureau: sub.department_short_name })
