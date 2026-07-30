@@ -35,8 +35,9 @@ const parseCarLocation = (value?: string): [number, number] | null => {
 
 /** speed === 0 wins regardless of overweight status; otherwise red/green by isoverweight. */
 const getIcon = (car: CarList): string => {
+  if (car.isoverweight === 'Y') return ICON_RED
   if (car.speed === 0) return ICON_ORANGE
-  return car.isoverweight === 'Y' ? ICON_RED : ICON_GREEN
+  return ICON_GREEN
 }
 
 const CarPopup: React.FC<{ car: CarList }> = ({ car }) => {
