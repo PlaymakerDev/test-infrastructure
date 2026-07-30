@@ -14,6 +14,7 @@ import React, { useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
 import { ModalVMSScreenProps, useOverallContext } from '../../../context'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
@@ -191,6 +192,7 @@ const MapSection: React.FC<Props> = (props) => {
         initialCenter={initialCenter}
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
+        <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         <VmsMarkerLayer
           locations={data?.data.locations || []}
           isReady={isSuccess}
