@@ -11,20 +11,20 @@ export const isValidLightingDeptId = (
 export const lightingKeys = {
   all: ['lighting'] as const,
   overview: {
-    root: (deptId: string | number) =>
-      [...lightingKeys.all, 'overview', deptId, scopeKey()] as const,
-    map: (deptId: string | number) => [...lightingKeys.overview.root(deptId), 'map'] as const,
+    root: (deptId: string | number, roadId?: number | null) =>
+      [...lightingKeys.all, 'overview', deptId, scopeKey(), roadId ?? null] as const,
+    map: (deptId: string | number, roadId?: number | null) => [...lightingKeys.overview.root(deptId, roadId), 'map'] as const,
   },
   topPowerRoads: {
     list: (deptId: string | number, startDate: string, endDate: string, limit?: number) =>
       [...lightingKeys.all, 'topPowerRoads', deptId, startDate, endDate, limit ?? null] as const,
   },
-  centralList: (deptId: string | number) =>
-    [...lightingKeys.overview.root(deptId), 'centralList'] as const,
-  centralTotals: (deptId: string | number) =>
-    [...lightingKeys.overview.root(deptId), 'centralTotals'] as const,
-  randomOnline: (deptId: string | number) =>
-    [...lightingKeys.overview.root(deptId), 'randomOnline'] as const,
+  centralList: (deptId: string | number, roadId?: number | null) =>
+    [...lightingKeys.overview.root(deptId, roadId), 'centralList'] as const,
+  centralTotals: (deptId: string | number, roadId?: number | null) =>
+    [...lightingKeys.overview.root(deptId, roadId), 'centralTotals'] as const,
+  randomOnline: (deptId: string | number, roadId?: number | null) =>
+    [...lightingKeys.overview.root(deptId, roadId), 'randomOnline'] as const,
   deviceDetails: (imei: string) => [...lightingKeys.all, 'deviceDetails', imei] as const,
   voltGraph: (imei: string, phase?: number | null) =>
     [...lightingKeys.all, 'voltGraph', imei, phase ?? null] as const,

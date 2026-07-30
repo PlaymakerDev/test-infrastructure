@@ -61,14 +61,24 @@ export function useLiveIncidentRouteItems(dateRange?: { start_date?: string; end
       const solutions = dedupeSolutions(dept.solutions)
       // `id` keeps the detail-page nav URL short (`?detail=<solution_id>`)
       // instead of URL-encoding the whole Thai label.
-      const detail = solutions.map((sol) => ({
-        label: `${sol.road.code_name} - ${sol.solution.solution_name}`,
-        id: sol.solution.id,
-        is_online: (sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))) > 0,
-        is_warranty: sol.is_warranty,
-        projectId: sol.project.id,
-        roadId: sol.road.id,
-      }))
+      const detail = solutions.map((sol) => {
+        const isOnline = (sol.camera.online_count ?? (sol.camera.total - (sol.camera.offline_count ?? 0))) > 0
+        return {
+          label: `${sol.road.code_name} - ${sol.solution.solution_name}`,
+          id: sol.solution.id,
+          // The shared ค้นหาสายทาง list UI (StatisticsMapPanel) only reads
+          // `connected` for the per-device icon, falling back to the parent
+          // แขวง's own aggregate when it's missing — `is_online` alone (as
+          // this was before) left every device in a mixed แขวง showing the
+          // SAME icon regardless of its own real status. Alert/Status's
+          // adapters already set both; mirror that here.
+          connected: isOnline,
+          is_online: isOnline,
+          is_warranty: sol.is_warranty,
+          projectId: sol.project.id,
+          roadId: sol.road.id,
+        }
+      })
       let deptConnected = false
       // Per-แขวง tallies — back the sub-level online/total count + noti badge
       // (same aggregation the bureau does, one level down).

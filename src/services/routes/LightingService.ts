@@ -12,6 +12,7 @@ import type {
   PaginatedElectricityAgg,
   TopPowerRoadItem,
   LightingDiagram,
+  APIRequestLightingCentralList,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -21,41 +22,41 @@ import type {
 // --- Overview APIs (map geometry + list) ---
 
 /** GET /lighting/departments/{id}/overview → { centroid, locations[] } */
-export const getLightingOverviewAPI = async (deptId: number) => {
+export const getLightingOverviewAPI = async (deptId: number, params: APIRequestLightingCentralList = {}) => {
   return ApiService.fetchData<LightingOverviewResponse>({
     url: `/lighting/departments/${deptId}/overview/`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: { ...params, ...centralScope(deptId) },
   })
 }
 
 /** GET /lighting/departments/{id}/overview/central/list
  *  → bureau → sub-department → solutions[] (carries imei per Klanarong) */
-export const getLightingCentralListAPI = async (deptId: number) => {
+export const getLightingCentralListAPI = async (deptId: number, params: APIRequestLightingCentralList = {}) => {
   return ApiService.fetchData<OverviewCentralItem[]>({
     url: `/lighting/departments/${deptId}/overview/central/list`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: { ...params, ...centralScope(deptId) },
   })
 }
 
 /** GET /lighting/departments/{id}/overview/central/totals
  *  → solution { total, online, offline } + warranty { active, expired } */
-export const getLightingCentralTotalsAPI = async (deptId: number) => {
+export const getLightingCentralTotalsAPI = async (deptId: number, params: APIRequestLightingCentralList = {}) => {
   return ApiService.fetchData<LightingOverviewTotals>({
     url: `/lighting/departments/${deptId}/overview/central/totals`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: { ...params, ...centralScope(deptId) },
   })
 }
 
 /** GET /lighting/departments/{id}/overview/random-online
  *  → one random online device detail (imei, phase, electricity, line_checks) */
-export const getLightingRandomOnlineAPI = async (deptId: number) => {
+export const getLightingRandomOnlineAPI = async (deptId: number, params: APIRequestLightingCentralList = {}) => {
   return ApiService.fetchData<DetailsResponse>({
     url: `/lighting/departments/${deptId}/overview/random-online`,
     method: 'GET',
-    params: centralScope(deptId),
+    params: { ...params, ...centralScope(deptId) },
   })
 }
 

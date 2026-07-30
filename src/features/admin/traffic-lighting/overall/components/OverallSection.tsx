@@ -79,6 +79,7 @@ const OverallSection: React.FC = () => {
   const router = useRouter()
   const {
     deptId,
+    roadId,
     searchQuery,
     setSearchQuery,
     centralListLoaded,
@@ -285,7 +286,7 @@ const OverallSection: React.FC = () => {
         </div>
 
         <div className='relative w-full min-w-0 h-[300px] sm:h-[400px] md:w-full md:min-h-[400px] md:h-[760px] rounded-[20px] overflow-hidden'>
-          <MapTrafficLighting deptId={deptId} />
+          <MapTrafficLighting deptId={deptId} roadId={roadId} />
         </div>
 
         <div className='flex flex-col gap-3 md:gap-4 w-full md:absolute md:top-0 md:right-0 md:z-10 md:w-[240px] lg:w-[280px]'>

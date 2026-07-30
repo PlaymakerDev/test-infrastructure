@@ -76,6 +76,7 @@ export interface PhaseMetric {
 
 export interface OverallContextProps {
   deptId: number
+  roadId: number | null
   searchQuery: string
   setSearchQuery: (value: string) => void
   centralListLoaded: boolean
@@ -112,12 +113,18 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
         ? sidebarDeptId
         : 0,
   )
+  // Sidebar's road solution menu narrows the overall page to one road — same
+  // `?road_id=` + `?scope=all` pattern already forwarded on CCTV/incident-detection/
+  // traffic-volume (`scope=all` itself is picked up automatically by
+  // `centralScope()` off the URL; `road_id` has to be threaded through explicitly).
+  const urlRoadId = searchParams.get('road_id')
+  const roadId = urlRoadId ? Number(urlRoadId) : null
 
   // Overview API (with GeometryPoint + imei) — used to resolve device coordinates
-  const overviewQuery = useLightingOverview(deptId)
-  const centralListQuery = useLightingCentralList(deptId)
-  const centralTotalsQuery = useLightingCentralTotals(deptId)
-  const randomOnlineQuery = useLightingRandomOnline(deptId)
+  const overviewQuery = useLightingOverview(deptId, roadId)
+  const centralListQuery = useLightingCentralList(deptId, roadId)
+  const centralTotalsQuery = useLightingCentralTotals(deptId, roadId)
+  const randomOnlineQuery = useLightingRandomOnline(deptId, roadId)
 
   const centralItems = useMemo(() => centralListQuery.data ?? [], [centralListQuery.data])
   const centralListLoaded = centralListQuery.isSuccess
@@ -251,6 +258,7 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const value: OverallContextProps = {
     deptId,
+    roadId,
     searchQuery,
     setSearchQuery,
     centralListLoaded,
