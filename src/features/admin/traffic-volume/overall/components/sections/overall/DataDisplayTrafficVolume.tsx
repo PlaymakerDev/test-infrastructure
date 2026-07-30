@@ -14,6 +14,7 @@ import ExportFileModal from '@/components/export/ExportFileModal'
 import { useTrafficVolumeCentralList } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
+import { dedupeTrafficVolumeSolutions } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 import type { CountingCentralSolution } from '@/types/traffic-volume/overview-api'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
@@ -149,7 +150,7 @@ const DataDisplayTrafficVolume: React.FC<Props> = ({ roadId }) => {
   // sub-dept short name so the table groups by bureau out of the box.
   const projects: TrafficVolumeProject[] = useMemo(() => {
     const out: TrafficVolumeProject[] = []
-    for (const bureau of data ?? []) {
+    for (const bureau of dedupeTrafficVolumeSolutions(data ?? [])) {
       for (const subDept of bureau.sub_department) {
         for (const sol of subDept.solutions) {
           out.push(apiSolutionToProject(sol, subDept.department_short_name))

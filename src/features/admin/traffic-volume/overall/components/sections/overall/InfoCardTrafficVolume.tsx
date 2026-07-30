@@ -5,6 +5,7 @@ import { TbCar, TbShield } from 'react-icons/tb'
 import { useTrafficVolumeCentralList, useTrafficVolumeTotals } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeTrafficVolumeSolutions } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 
 interface Props {
   roadId?: string | null
@@ -32,7 +33,7 @@ const InfoCardTrafficVolume: React.FC<Props> = ({ roadId }) => {
     // from its first-seen solution — assumed consistent across the
     // solutions grouped under the same project_id).
     const projectActive = new Map<number, { isWarranty: boolean; hasOnline: boolean }>()
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeTrafficVolumeSolutions(central ?? [])) {
       for (const sub of bureau.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           const prior = projectActive.get(sol.project.id)
