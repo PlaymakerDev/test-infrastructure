@@ -121,7 +121,7 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
       style={{ background: '#191919CC' }}
     >
       <div
-        className='pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[80px] h-[80px] rounded-full blur-2xl'
+        className='pointer-events-none absolute left-1/2 top-[116px] -translate-x-1/2 -translate-y-1/2 w-[80px] h-[80px] rounded-full blur-2xl'
         style={{
           background: phaseNum === 1 ? '#05F2DB80' : '#66AEFF80',
         }}
@@ -143,7 +143,10 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
         )}
       </div>
 
-      <div className='relative z-10 flex flex-col items-center justify-center text-center flex-1 py-2'>
+      {/* Keep the phase summary at a fixed size/position.  Extra phase rows
+          are appended below when expanded, rather than consuming this block
+          and shifting the blue glow / 3 Phase label. */}
+      <div className='relative z-10 flex h-[132px] shrink-0 flex-col items-center justify-center text-center py-2'>
         <p
           className='m-0 text-white leading-none'
           style={{ fontSize: 32, fontWeight: 700 }}
