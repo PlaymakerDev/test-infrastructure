@@ -9,6 +9,7 @@ import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/Projec
 import { useIncidentCentralList, useIncidentCentralTotals } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { IncidentRow } from '@/features/admin/incident-detection/overall/data/incidentData'
+import { dedupeIncidentSolutions } from '@/features/admin/incident-detection/overall/data/incidentData'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 
@@ -79,7 +80,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   // so derive whichever is missing from `total` (avoids NaN).
   const allRows = useMemo<IncidentRow[]>(() => {
     const rows: IncidentRow[] = []
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeIncidentSolutions(central ?? [])) {
       for (const sub of bureau.sub_department) {
         for (const sol of sub.solutions) {
           const cam = sol.camera

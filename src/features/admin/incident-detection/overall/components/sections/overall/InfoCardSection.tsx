@@ -7,6 +7,7 @@ import {
 } from '@/hooks/queries/incident-detection'
 import { useDeptId } from '@/hooks/useDeptId'
 import { fmtNumber } from '@/utils/formatNumber'
+import { dedupeIncidentSolutions } from '@/features/admin/incident-detection/overall/data/incidentData'
 
 interface Props {
   roadId?: string | null
@@ -30,7 +31,7 @@ const InfoCardSection: React.FC<Props> = (props) => {
   const activeByWarranty = useMemo(() => {
     let inWarrantyActive = 0
     let expiredActive = 0
-    for (const bureau of central ?? []) {
+    for (const bureau of dedupeIncidentSolutions(central ?? [])) {
       for (const sub of bureau.sub_department) {
         for (const sol of sub.solutions) {
           const cam = sol.camera
