@@ -122,6 +122,7 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             data={voltData}
             lines={voltLines}
             tooltipUnit='V'
+            tooltipValueDecimals={4}
             yAxisDomain={['auto', 'auto']}
           />
         ) : (
@@ -146,6 +147,7 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             data={ampData}
             lines={ampLines}
             tooltipUnit='A'
+            tooltipValueDecimals={4}
             yAxisDomain={['auto', 'auto']}
           />
         ) : (

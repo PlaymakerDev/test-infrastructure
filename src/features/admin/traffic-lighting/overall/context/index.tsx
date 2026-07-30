@@ -174,6 +174,13 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
         case 'Amp': return { ...m, value: e ? fmt(e.amplitude) : '-' }
         case 'Watt': return { ...m, value: e ? fmt(e.watt) : '-' }
         case 'Hz': return { ...m, value: e ? fmt(e.frequency) : '-' }
+        case 'kWh': {
+          // Not provided by the API — derived from watt assuming the reading
+          // held for the full hour: kWh = (watt * 3600) / 3,600,000 (reduces
+          // to watt / 1000). Same formula as ElectricalSystemCard/SummaryReportSection.
+          const wattNum = e?.watt
+          return { ...m, value: wattNum != null && isFinite(wattNum) ? ((wattNum * 3600) / 3600000).toFixed(3) : '-' }
+        }
         default: return m
       }
     })

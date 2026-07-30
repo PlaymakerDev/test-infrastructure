@@ -274,8 +274,8 @@ const OverallSection: React.FC = () => {
                   >
                     <img src={card.icon} alt='' width={30} height={30} className='shrink-0 w-7 h-7 sm:w-[30px] sm:h-[30px] ml-1 sm:ml-2' />
                     <div className='flex flex-col min-w-0 flex-1 pl-2 sm:pl-3'>
-                      <p className='text-[11px] sm:text-[13px] xl:text-[14px] font-bold m-0 leading-tight truncate' style={{ color: card.titleColor }}>{card.title}</p>
-                      <p className='text-[16px] sm:text-[18px] xl:text-[22px] font-bold m-0 mt-0.5 text-white leading-none truncate'>{card.status}</p>
+                      <p className='text-[11px] sm:text-[13px] xl:text-[14px] font-bold m-0 truncate' style={{ color: card.titleColor, lineHeight: 1.4 }}>{card.title}</p>
+                      <p className='text-[16px] sm:text-[18px] xl:text-[22px] font-bold m-0 mt-0.5 text-white truncate' style={{ lineHeight: 1.4 }}>{card.status}</p>
                     </div>
                   </div>
                 ))}
