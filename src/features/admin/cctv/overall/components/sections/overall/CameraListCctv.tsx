@@ -5,6 +5,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { CCTVRandomOnlineCamera } from '@/types/cctv/camera-api'
 import { extractIpFromHlsUrl } from '@/utils/extractIpFromHlsUrl'
+import { Tooltip } from 'antd'
 
 interface Props {
   cameras: CCTVRandomOnlineCamera[]
@@ -53,7 +54,9 @@ const CameraListCctv: React.FC<Props> = ({ cameras }) => {
             enableViewportPause
             style={{ pointerEvents: 'none' }}
           />
-          <h4 className='camera-code'>{cam.camera_name}</h4>
+          <Tooltip title={cam.camera_name}>
+            <h4 className='camera-code truncate'>{cam.camera_name}</h4>
+          </Tooltip>
           <p className='camera-location'>IP Address : {extractIpFromHlsUrl(cam.hls_url)}</p>
         </div>
       ))}
