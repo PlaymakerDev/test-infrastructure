@@ -19,6 +19,29 @@ interface Props {
   roadId?: string | string[] | number
 }
 
+// The backend has been observed returning the same solution nested under two
+// different department nodes in one central/list response — most visible
+// when filtering to a single road_id, since a road can straddle two แขวง
+// boundaries. TableVMSData/ProjectCardGrid both key rows by solution.id alone
+// (not department-scoped), so an unfiltered duplicate crashes into a React
+// "duplicate key" warning and silently doubles up export rows. Dedupe once
+// here, keeping the first occurrence, same pattern as incident-detection's
+// dedupeSolutions (useLiveIncidentRouteItems.ts).
+const dedupeVMSSolutions = (depts: APIResponseVMSList): APIResponseVMSList => {
+  const seen = new Set<number | string>()
+  return depts.map((dept) => ({
+    ...dept,
+    sub_department: (dept.sub_department ?? []).map((sub) => ({
+      ...sub,
+      solutions: (sub.solutions ?? []).filter((sol) => {
+        if (seen.has(sol.solution.id)) return false
+        seen.add(sol.solution.id)
+        return true
+      }),
+    })),
+  }))
+}
+
 const VMS_FILTERS: FilterConfig[] = [
   {
     key: 'all',
@@ -124,6 +147,14 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData
   })
 
+  // Deduped once here (see dedupeVMSSolutions above) — shared by the badge
+  // tally below and filteredData, so both agree with what the table/grid/
+  // export actually render.
+  const dedupedData = useMemo<APIResponseVMSList | undefined>(
+    () => (data?.data ? dedupeVMSSolutions(data.data) : data?.data),
+    [data]
+  )
+
   // With no search, badge counts come from the authoritative totals endpoint.
   // Once a search is active, the list query is already server-filtered by the
   // search term, so re-tally its solutions (all statuses) to make the badges
@@ -140,7 +171,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }
     }
     let all = 0, online = 0, offline = 0, inWarranty = 0, expired = 0
-    for (const dept of data?.data ?? []) {
+    for (const dept of dedupedData ?? []) {
       for (const sub of dept.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           all++
@@ -152,7 +183,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }
     }
     return { all, online, offline, inWarranty, expired }
-  }, [totals, data, vms_list.search.search])
+  }, [totals, dedupedData, vms_list.search.search])
 
   // Client-side filter — the API's status_name/warranty_name params don't
   // match the FilterConfig keys ('online'/'offline'/'in-warranty'/'expired'),
@@ -160,8 +191,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   // dept → sub_dept → solutions tree with only the matching solutions kept;
   // sub-depts / depts that end up empty are dropped so no empty headers show.
   const filteredData = useMemo<APIResponseVMSList | undefined>(() => {
-    if (!data?.data) return data?.data
-    if (activeFilter === 'all') return data.data
+    if (!dedupedData) return dedupedData
+    if (activeFilter === 'all') return dedupedData
     const solutionMatches = (sol: ListSolution) => {
       switch (activeFilter) {
         case 'online': return sol.vms.status.is_online === true
@@ -171,7 +202,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
         default: return true
       }
     }
-    return data.data
+    return dedupedData
       .map((dept) => ({
         ...dept,
         sub_department: (dept.sub_department ?? [])
@@ -179,7 +210,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
           .filter((sub) => sub.solutions.length > 0),
       }))
       .filter((dept) => dept.sub_department.length > 0)
-  }, [data, activeFilter])
+  }, [dedupedData, activeFilter])
 
   // Flatten dept → sub-dept → solutions into card items, tagging each with its
   // sub-dept short name so ProjectCardGrid groups by แขวง out of the box
