@@ -15,7 +15,7 @@ const StatusSection: React.FC<Props> = (props) => {
   const closeExport = useCallback(() => setExportOpen(false), [])
 
   return (
-    <div className='px-10'>
+    <div className='px-10 lg:px-0'>
       <div className='mb-5 lg:mb-0 lg:hidden'>
         <SearchStatusSection onExport={openExport} />
       </div>

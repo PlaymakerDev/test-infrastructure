@@ -19,7 +19,7 @@ const DisplaySection: React.FC<Props> = (props) => {
     <div>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={19} xxxl={19}>
-          <div className='px-10 2xl:pl-10 2xl:pr-3'>
+          <div className='px-10 2xl:pl-0 2xl:pr-3'>
             <section>
               <DisplayStatCard />
             </section>
