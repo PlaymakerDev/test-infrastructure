@@ -118,6 +118,24 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const updateTimeSlot = (id: number, range: [Dayjs, Dayjs]) => {
     setTimeSlots((prev) => prev.map((s) => (s.id === id ? { ...s, range } : s)))
   }
+  // `open` is deliberately left uncontrolled — controlling it was tried and
+  // made the panel need two clicks to open (verified live, reproducible: the
+  // first click only focuses the input, the panel itself doesn't render
+  // until a second click). Closing from the custom footer button instead
+  // dispatches a real Escape keydown at the picker's own input — the picker
+  // already wires Escape → close internally (rc-picker's useInputProps), and
+  // unlike ref.focus()/.blur() this doesn't depend on the input's current
+  // focus state, which proved unreliable (e.g. right after a value pick, a
+  // focus()-then-blur() pair sometimes silently didn't close the panel).
+  // (Also verified live: despite needConfirm={false}, this antd version does
+  // not actually auto-advance start→end or auto-close on a completed range in
+  // either mode — an explicit close, via this button or a real outside click,
+  // is required either way.)
+  const rangePickerRefs = useRef(new Map<number, React.ComponentRef<typeof TimePicker.RangePicker>>())
+  // Tracks which side (start/end) of each slot's range was last focused, so
+  // "เลือกเวลาปัจจุบัน" knows which field to fill with the current time —
+  // mirrors the native "Now" button, which only ever fills the active field.
+  const activeRangeRef = useRef(new Map<number, 'start' | 'end'>())
   const overlappingSlotIds = useMemo(() => {
     const bad = new Set<number>()
     for (let i = 0; i < timeSlots.length; i++) {
@@ -207,23 +225,23 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     // 17:00-18:00 for rush-hour signage.
     schedules: isAllDay
       ? [
-          {
-            schedule_name: scheduleName || 'ประกาศ',
-            media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
-            message: isMessageOnly ? message : '',
-            time_since: '00:00:00',
-            time_to: '23:59:59',
-            days_of_week: daysOfWeek,
-          },
-        ]
-      : timeSlots.map((slot, i) => ({
-          schedule_name: timeSlots.length > 1 ? `${scheduleName || 'ประกาศ'} (${i + 1})` : (scheduleName || 'ประกาศ'),
+        {
+          schedule_name: scheduleName || 'ประกาศ',
           media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
           message: isMessageOnly ? message : '',
-          time_since: slot.range[0].format(timeFmt),
-          time_to: slot.range[1].format(timeFmt),
+          time_since: '00:00:00',
+          time_to: '23:59:59',
           days_of_week: daysOfWeek,
-        })),
+        },
+      ]
+      : timeSlots.map((slot, i) => ({
+        schedule_name: timeSlots.length > 1 ? `${scheduleName || 'ประกาศ'} (${i + 1})` : (scheduleName || 'ประกาศ'),
+        media_url: isMessageOnly ? '' : (selectedMedia?.url ?? ''),
+        message: isMessageOnly ? message : '',
+        time_since: slot.range[0].format(timeFmt),
+        time_to: slot.range[1].format(timeFmt),
+        days_of_week: daysOfWeek,
+      })),
   })
 
   const dispatch = async () => {
@@ -259,144 +277,144 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           </div>
 
           {!isMessageOnly && (
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
-              {onGotoLibrary && (
-                <button
-                  className="fs-12 px-2 py-0.5 rounded-full border border-(--yellow) bg-(--yellow) text-(--dark-black) font-semibold inline-flex items-center gap-1 transition-colors hover:bg-(--yellow)/90"
-                  onClick={onGotoLibrary}
-                  type="button"
-                >
-                  <TbFolderOpen size={14} />
-                  <span>ไปคลังสื่อ →</span>
-                </button>
-              )}
-            </div>
-            {/* Category chip filter */}
-            <div className="flex items-center gap-1.5 flex-wrap mb-2">
-              <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => chooseCategory('all')} />
-              {counts.map((c) => (
-                <Chip
-                  key={c.setting_type_id ?? 'null'}
-                  active={categoryFilter === (c.setting_type_id ?? -1)}
-                  label={`${c.setting_type_name} (${c.count})`}
-                  onClick={() => chooseCategory(c.setting_type_id ?? -1)}
-                />
-              ))}
-            </div>
-            {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
-            {!mediaLoading && mediaItems.length === 0 && (
-              <div className="fs-12 text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
-                ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ &quot;คลังสื่อ&quot;
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-(--yellow) block">เลือกรูป / วิดีโอที่จะแสดง</label>
+                {onGotoLibrary && (
+                  <button
+                    className="fs-12 px-2 py-0.5 rounded-full border border-(--yellow) bg-(--yellow) text-(--dark-black) font-semibold inline-flex items-center gap-1 transition-colors hover:bg-(--yellow)/90"
+                    onClick={onGotoLibrary}
+                    type="button"
+                  >
+                    <TbFolderOpen size={14} />
+                    <span>ไปคลังสื่อ →</span>
+                  </button>
+                )}
               </div>
-            )}
-            {mediaItems.length > 0 && (
-              <>
-                <div
-                  className="grid gap-2"
-                  style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
-                >
-                  {mediaItems.map((m) => {
-                    const active = m.id === selectedMediaId
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => setSelectedMediaId(m.id)}
-                        className="relative rounded-md overflow-hidden border cursor-pointer group"
-                        style={{
-                          borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
-                          outline: active ? '2px solid #FCD116' : 'none',
-                          outlineOffset: -2,
-                        }}
-                        title={m.name}
-                      >
-                        <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
-                          {/* Composer grid uses the JPEG q85 thumbnail
+              {/* Category chip filter */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                <Chip active={categoryFilter === 'all'} label="ทั้งหมด" onClick={() => chooseCategory('all')} />
+                {counts.map((c) => (
+                  <Chip
+                    key={c.setting_type_id ?? 'null'}
+                    active={categoryFilter === (c.setting_type_id ?? -1)}
+                    label={`${c.setting_type_name} (${c.count})`}
+                    onClick={() => chooseCategory(c.setting_type_id ?? -1)}
+                  />
+                ))}
+              </div>
+              {mediaLoading && <Skeleton active paragraph={{ rows: 3 }} />}
+              {!mediaLoading && mediaItems.length === 0 && (
+                <div className="fs-12 text-white/50 border border-dashed border-white/15 rounded p-3 text-center">
+                  ยังไม่มีสื่อในหมวดนี้ — เพิ่มได้ที่แท็บ &quot;คลังสื่อ&quot;
+                </div>
+              )}
+              {mediaItems.length > 0 && (
+                <>
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))' }}
+                  >
+                    {mediaItems.map((m) => {
+                      const active = m.id === selectedMediaId
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => setSelectedMediaId(m.id)}
+                          className="relative rounded-md overflow-hidden border cursor-pointer group"
+                          style={{
+                            borderColor: active ? '#FCD116' : 'rgba(255,255,255,0.12)',
+                            outline: active ? '2px solid #FCD116' : 'none',
+                            outlineOffset: -2,
+                          }}
+                          title={m.name}
+                        >
+                          <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative' }}>
+                            {/* Composer grid uses the JPEG q85 thumbnail
                               (~15 KB) instead of the full-res PNG (~2 MB).
                               Backend ffmpeg-extracts the first frame for
                               videos so the same <img> path handles both.
                               onError falls back to original for older
                               uploads that predate the backfill. */}
-                          <img
-                            src={getThumbUrl(m.url)}
-                            alt={m.name}
-                            loading="lazy"
-                            onError={(e) => {
-                              const img = e.currentTarget
-                              if (img.dataset.fallback !== '1') {
-                                img.dataset.fallback = '1'
-                                img.src = isVideoName(m.filename || m.url) ? '' : m.url
-                              }
-                            }}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                          />
-                          {isVideoName(m.filename || m.url) && (
-                            <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
-                            </span>
-                          )}
-                        </div>
-                        {/* Maximize/preview affordance — top-right corner.
+                            <img
+                              src={getThumbUrl(m.url)}
+                              alt={m.name}
+                              loading="lazy"
+                              onError={(e) => {
+                                const img = e.currentTarget
+                                if (img.dataset.fallback !== '1') {
+                                  img.dataset.fallback = '1'
+                                  img.src = isVideoName(m.filename || m.url) ? '' : m.url
+                                }
+                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            />
+                            {isVideoName(m.filename || m.url) && (
+                              <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                              </span>
+                            )}
+                          </div>
+                          {/* Maximize/preview affordance — top-right corner.
                             stopPropagation so the outer <button>'s
                             select-media handler doesn't also fire. */}
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setPreviewing(m)
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
                               e.stopPropagation()
-                              e.preventDefault()
                               setPreviewing(m)
-                            }
-                          }}
-                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/70 hover:bg-black text-white rounded p-1 cursor-pointer"
-                          title="ดูตัวอย่างเต็ม"
-                          aria-label="ดูตัวอย่างเต็ม"
-                        >
-                          <TbMaximize size={14} />
-                        </span>
-                        {m.setting_type_name && (
-                          <div className="px-1.5 py-1 fs-12 text-left truncate bg-black/50 text-(--yellow)">
-                            {m.setting_type_name}
-                          </div>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-                {hasMore && (
-                  <div className="mt-2 text-center">
-                    <Button
-                      size="small"
-                      onClick={() => setPageSize((n) => n + 12)}
-                    >
-                      โหลดเพิ่ม ({mediaItems.length}/{totalCount})
-                    </Button>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                setPreviewing(m)
+                              }
+                            }}
+                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/70 hover:bg-black text-white rounded p-1 cursor-pointer"
+                            title="ดูตัวอย่างเต็ม"
+                            aria-label="ดูตัวอย่างเต็ม"
+                          >
+                            <TbMaximize size={14} />
+                          </span>
+                          {m.setting_type_name && (
+                            <div className="px-1.5 py-1 fs-12 text-left truncate bg-black/50 text-(--yellow)">
+                              {m.setting_type_name}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                  {hasMore && (
+                    <div className="mt-2 text-center">
+                      <Button
+                        size="small"
+                        onClick={() => setPageSize((n) => n + 12)}
+                      >
+                        โหลดเพิ่ม ({mediaItems.length}/{totalCount})
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )}
 
           {isMessageOnly && (
-          <div>
-            <label className="text-(--yellow) block mb-1">
-              ข้อความที่จะขึ้นบนป้าย <span className="text-red-500">*</span>
-            </label>
-            <Input.TextArea
-              rows={3}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="พิมพ์ข้อความที่จะแสดงบนป้าย..."
-              size="large"
-            />
-          </div>
+            <div>
+              <label className="text-(--yellow) block mb-1">
+                ข้อความที่จะขึ้นบนป้าย <span className="text-red-500">*</span>
+              </label>
+              <Input.TextArea
+                rows={3}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="พิมพ์ข้อความที่จะแสดงบนป้าย..."
+                size="large"
+              />
+            </div>
           )}
 
           <div>
@@ -479,19 +497,52 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                   const overlapping = overlappingSlotIds.has(slot.id)
                   return (
                     <div key={slot.id} className="flex items-center gap-2">
-                      {/* needConfirm={false} — no "ตกลง" button. Picking the
-                          start minute auto-advances to the end field, and picking
-                          the end minute commits + closes the panel immediately, so
-                          the operator flows straight into the next slot. */}
+                      {/* needConfirm={false} — no "ตกลง" button; picking a value
+                          doesn't require an explicit confirm click. The panel still
+                          only closes on an outside click, though, so the custom
+                          footer button below (mirrors the built-in "Now" button's
+                          spot/style) gives a one-click way to fill the active field
+                          with the current time and close, without having to click
+                          elsewhere on the page. */}
                       <TimePicker.RangePicker
+                        ref={(el) => {
+                          if (el) rangePickerRefs.current.set(slot.id, el)
+                          else rangePickerRefs.current.delete(slot.id)
+                        }}
                         value={slot.range}
                         onChange={(v) => v && v[0] && v[1] && updateTimeSlot(slot.id, [v[0], v[1]])}
+                        onFocus={(_, info) => {
+                          if (info.range) activeRangeRef.current.set(slot.id, info.range)
+                        }}
                         format="HH:mm"
                         needConfirm={false}
                         allowClear={false}
                         className="w-full"
                         size="large"
                         status={overlapping ? 'error' : undefined}
+                        renderExtraFooter={() => (
+                          <div className="flex justify-start px-3 py-2 border-t border-white/10">
+                            <Button
+                              type="link"
+                              size="small"
+                              className="px-0!"
+                              onClick={() => {
+                                const now = dayjs().startOf('minute')
+                                const activeRange = activeRangeRef.current.get(slot.id) ?? 'start'
+                                updateTimeSlot(
+                                  slot.id,
+                                  activeRange === 'start' ? [now, slot.range[1]] : [slot.range[0], now]
+                                )
+                                const input = rangePickerRefs.current.get(slot.id)?.nativeElement?.querySelector('input')
+                                input?.dispatchEvent(
+                                  new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+                                )
+                              }}
+                            >
+                              เลือกเวลาปัจจุบัน
+                            </Button>
+                          </div>
+                        )}
                       />
                       {timeSlots.length > 1 && (
                         <button
