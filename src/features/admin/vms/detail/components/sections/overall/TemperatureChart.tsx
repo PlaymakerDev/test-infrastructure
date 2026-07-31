@@ -40,7 +40,7 @@ const TemperatureChart: React.FC<Props> = ({ data }) => {
       yAxisDomain={[0, 'auto']}
       secondaryYAxisDomain={[0, 'auto']}
       tooltipShowDot
-      height={220}
+      height={260}
     />
   )
 }

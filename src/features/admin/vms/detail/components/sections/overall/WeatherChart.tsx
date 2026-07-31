@@ -45,7 +45,7 @@ const WeatherChart: React.FC<Props> = (props) => {
       yAxisDomain={[0, 'auto']}
       secondaryYAxisDomain={[0, 'auto']}
       tooltipShowDot
-      height={220}
+      height={260}
     />
   )
 }
