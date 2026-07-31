@@ -6,17 +6,9 @@ import Tabs from './Tabs'
 import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { DashboardBucketType } from '@/types/dashboard/api'
+import { TAB_OPTIONS, TAB_TO_TYPE, useDashboardContext } from '../context'
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false })
-
-// Visible tab labels → backend `type=` value. The fourth bucket (weekly) is
-// available on the API but the design only exposes three tabs.
-const TAB_TO_TYPE: Record<string, DashboardBucketType> = {
-  วันนี้: 'daily',
-  เดือน: 'monthly',
-  ปี: 'yearly',
-}
-const TAB_OPTIONS = Object.keys(TAB_TO_TYPE)
 
 // Abbreviated Thai months — used by both the monthly day-grain and the yearly
 // month-grain x-axis labels.
@@ -160,7 +152,7 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
 interface Props { }
 
 const AccidentChart: React.FC<Props> = () => {
-  const [tab, setTab] = useState('วันนี้')
+  const { tab, setTab } = useDashboardContext()
   const deptId = useDeptId()
   const type = TAB_TO_TYPE[tab]
   const { data, isLoading } = useDashboardAnalytic(deptId, type)

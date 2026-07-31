@@ -15,6 +15,7 @@ import {
   TrafficStat,
   VehicleRatioChart,
 } from '../components'
+import { DashboardProvider } from '../context'
 
 interface Props { }
 
@@ -32,7 +33,7 @@ const useIsDesktop = () => {
   return isDesktop
 }
 
-const DashboardScreen: React.FC<Props> = () => {
+const DashboardContent: React.FC<Props> = () => {
   const dispatch = useAppDispatch()
   const isDesktop = useIsDesktop()
   const searchParams = useSearchParams()
@@ -189,6 +190,16 @@ const DashboardScreen: React.FC<Props> = () => {
         )}
       </div>
     </DeptIdOverrideContext.Provider>
+  )
+}
+
+const DashboardScreen: React.FC<Props> = (props) => {
+  const { } = props
+
+  return (
+    <DashboardProvider>
+      <DashboardContent />
+    </DashboardProvider>
   )
 }
 

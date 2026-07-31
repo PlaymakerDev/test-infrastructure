@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import { TbAlertTriangle } from 'react-icons/tb'
 import { useNotificationSummary } from '@/hooks/queries/manage'
+import { TAB_TO_TYPE, useDashboardContext } from '../context'
+import { useDeptId } from '@/hooks/useDeptId'
+import { DashboardBucketType } from '@/types/dashboard/api'
+import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
 
 interface Props {
   /**
@@ -24,6 +28,11 @@ const fmt = (n: number): string => {
 
 const Notification: React.FC<Props> = ({ compact = false }) => {
   const router = useRouter()
+  // API
+  const { tab } = useDashboardContext()
+  const deptId = useDeptId()
+  const type = TAB_TO_TYPE[tab]
+  const { data: analyticData, isLoading: isAnalyticLoading } = useDashboardAnalytic(deptId, type)
 
   // "Today" window in Bangkok time — same date on both sides so the backend
   // aggregates a single day. Rebuilt every render is fine: dayjs() is cheap
@@ -33,6 +42,11 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
     start_date: today,
     end_date: today,
   })
+
+  const getCount = useMemo(() => {
+    if (isLoading || isAnalyticLoading) return 0
+    return Number(analyticData?.reduce((sum, row) => sum + (row.count ?? 0), 0) ?? 0)
+  }, [analyticData, isLoading, isAnalyticLoading])
 
   // The card is anchored to `analytic` (= Incident Detection events). Label
   // "อุปกรณ์ตรวจจับใหม่" already lived on this card as a placeholder — the
@@ -125,7 +139,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
           </div>
         </div>
         <div className="text-[#f5c842] text-3xl font-bold leading-none tabular-nums shrink-0">
-          {isLoading ? '—' : fmt(count)}
+          {(isLoading || isAnalyticLoading) ? '—' : fmt(getCount)}
         </div>
       </div>
     </div>
