@@ -226,7 +226,13 @@ const AlertDetailContent: React.FC = () => {
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{circuitLabel(device.circuit_fail)}</span>
             </div>
           </div>
-          <VoltageAmpChartsRow imei={detail} />
+          {/* `phase` must be forwarded (same as traffic-lighting's own
+              OverviewSection does): without it the graph endpoints are called
+              with no `phase_type`, so a 3-phase cabinet silently returns and
+              plots phase 1 only. `phaseReady` holds the fetch until the detail
+              endpoint has resolved the phase, avoiding a wasted first request
+              on the wrong key. */}
+          <VoltageAmpChartsRow imei={detail} phase={phase} phaseReady={!lightingDetailsQuery.isLoading} />
           <AlertDetailTable imei={detail} />
         </div>
       </section>

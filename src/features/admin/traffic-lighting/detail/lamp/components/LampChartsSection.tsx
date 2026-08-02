@@ -1,10 +1,11 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import { Col, Empty, Row, Spin } from 'antd'
 import { TbBulb, TbBolt } from 'react-icons/tb'
 import LineChart from '@/components/chart/LineChart'
 import type { LineChartDataPoint } from '@/components/chart/LineChart'
 import { useLightingAmpGraph } from '@/hooks/queries/lighting'
+import { thaiDateBE } from '@/utils/thaiDate'
 
 const CHART_CARD = {
   iconCircle: false,
@@ -31,6 +32,9 @@ const UnavailableCard: React.FC = () => (
 
 const LampChartsSection: React.FC<Props> = ({ imei, phase, phaseReady = true }) => {
   const ampQuery = useLightingAmpGraph(imei, phase, phaseReady)
+  // Same 24h-of-today window as VoltageAmpChartsRow — tooltip header shows the
+  // date + hovered hour. Lazy initializer keeps the clock read out of render.
+  const [todayLabel] = useState(() => thaiDateBE(Date.now()))
   const ampData: LineChartDataPoint[] = (ampQuery.data ?? [])
     .filter((point) => point.amp !== null)
     .map((point) => ({
@@ -58,6 +62,7 @@ const LampChartsSection: React.FC<Props> = ({ imei, phase, phaseReady = true }) 
               icon={<TbBolt size={18} style={{ color: '#FCD116' }} />}
               data={ampData}
               lines={[{ dataKey: 'amp', color: '#FF5C8A', label: 'Avg Current' }]}
+              tooltipDate={todayLabel}
               tooltipUnit='A'
               showGlow={false}
             />

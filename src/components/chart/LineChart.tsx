@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactECharts from 'echarts-for-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -118,7 +118,10 @@ export interface LineChartProps {
    *  - `N` = โชว์ทุก label ที่ N+1
    *  เมื่อกำหนดค่านี้ระบบจะปิด `showMaxLabel` อัตโนมัติเพื่อให้ระยะห่างเท่ากัน */
   xAxisLabelInterval?: number
-  /** แสดงข้อความบนแกน X ทุก N จุด โดยคงทุกจุดข้อมูลไว้บน grid เดียวกัน. */
+  /** แสดงข้อความบนแกน X ทุก N จุด โดยคงทุกจุดข้อมูลไว้บน grid เดียวกัน.
+   *  ค่านี้คือ "ระยะห่างที่ต้องการอย่างน้อย" — เมื่อการ์ดแคบจนป้ายชนกัน ระบบจะ
+   *  ขยายเป็นตัวคูณถัดไปเอง (เช่น 2 → 4 → 6) เพื่อให้ระยะห่างยังเท่ากันทุกช่วง
+   *  ส่วนจุดข้อมูลบนเส้นกราฟยังครบเหมือนเดิม (ซ่อนเฉพาะข้อความ). */
   xAxisLabelEvery?: number
   /** สีของตัวเลข/ข้อความบนแกน X และ Y (default: white). */
   axisLabelColor?: string
@@ -182,6 +185,22 @@ interface TooltipParam {
   dataIndex: number
 }
 
+/** Minimum breathing room between two x-axis labels before the step widens. */
+const X_LABEL_MIN_GAP = 8
+
+/** Axis tick label. `Intl.NumberFormat` defaults to 3 fraction digits, which
+ *  rounds anything below 0.0005 down to "0" — a chart of small readings (e.g.
+ *  an Amp line around 0.0002 A) then renders every tick as "0" and the axis
+ *  says nothing. Widen the precision just enough to keep small magnitudes
+ *  distinguishable; values ≥ 1 keep the original 3-digit formatting. */
+const formatAxisValue = (v: number) => {
+  const abs = Math.abs(v)
+  const digits = abs === 0 || abs >= 1
+    ? 3
+    : Math.min(20, Math.ceil(-Math.log10(abs)) + 1)
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(v)
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -242,6 +261,58 @@ const LineChart: React.FC<LineChartProps> = ({
     onPeriodChange?.(p)
   }
 
+  // `xAxisLabelEvery` thins the x-axis labels by a fixed step, which stops
+  // fitting once the card gets narrow (two 24h charts side by side on a
+  // ~1000px screen left every label overlapping its neighbour). Track the
+  // rendered width so the step can grow to match — only when a consumer
+  // actually asked for stepped labels, so every other chart skips the work.
+  const chartBoxRef = useRef<HTMLDivElement>(null)
+  const [chartBoxWidth, setChartBoxWidth] = useState(0)
+  const adaptiveLabels = xAxisLabelEvery !== undefined
+
+  useEffect(() => {
+    const node = chartBoxRef.current
+    if (!adaptiveLabels || !node || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0
+      // Snap to a 16px grid — a drag-resize otherwise re-renders every frame
+      // for changes far too small to alter how many labels fit.
+      const snapped = Math.round(width / 16) * 16
+      setChartBoxWidth((prev) => (prev === snapped ? prev : snapped))
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [adaptiveLabels])
+
+  /** The step actually used for x-axis labels: `xAxisLabelEvery` when it fits,
+   *  otherwise the next multiple of it that does. Staying on a multiple keeps
+   *  the shown labels a subset of the ones the consumer asked for (an hourly
+   *  axis stepped by 2 thins to 4 then 6 — always even hours, never odd) and
+   *  keeps every gap equal. */
+  const effectiveLabelEvery = useMemo(() => {
+    if (xAxisLabelEvery === undefined) return undefined
+    const base = Math.max(1, xAxisLabelEvery)
+    const lastIndex = data.length - 1
+    if (lastIndex <= 0 || chartBoxWidth <= 0) return base
+    // Widest label, converted to px at the axis font. Traffic-lighting screens
+    // force a 14px floor over ECharts' inline size (see
+    // TrafficLightingMinimumFontSize), so measure against that, not the 11px
+    // the option asks for — otherwise the fit is under-estimated and labels
+    // still collide.
+    const maxChars = data.reduce((m, d) => Math.max(m, String(d.label ?? '').length), 0)
+    const labelWidth = Math.max(1, maxChars * 14 * 0.52)
+    // The plot is narrower than the card: y-axis labels on the left plus the
+    // grid's right padding. Under-estimating only costs a label, so keep it
+    // conservative rather than risk another overlap.
+    const available = Math.max(0, chartBoxWidth - 56)
+    const fits = Math.max(1, Math.floor((available + X_LABEL_MIN_GAP) / (labelWidth + X_LABEL_MIN_GAP)))
+    for (let multiple = 1; ; multiple++) {
+      const step = base * multiple
+      const shown = Math.floor(lastIndex / step) + 1
+      if (shown <= fits || step >= lastIndex) return step
+    }
+  }, [xAxisLabelEvery, chartBoxWidth, data])
+
   const option = useMemo(() => {
     const yMin = yAxisTicks ? yAxisTicks[0] : yAxisDomain[0] === 'auto' ? undefined : yAxisDomain[0]
     const yMax = yAxisTicks ? yAxisTicks[yAxisTicks.length - 1] : yAxisDomain[1] === 'auto' ? undefined : yAxisDomain[1]
@@ -273,7 +344,7 @@ const LineChart: React.FC<LineChartProps> = ({
         color: axisLabelColor,
         fontSize: 11,
         // Full integer with thousands separator — no `K` suffix.
-        formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+        formatter: formatAxisValue,
         // Same fix as the x-axis: when the card (esp. a `fillHeight` one)
         // shrinks on a small/resized screen, the plot area gets short enough
         // that the ~5 auto-computed ticks no longer have room between them
@@ -310,11 +381,17 @@ const LineChart: React.FC<LineChartProps> = ({
           // uniform interval). Otherwise fall back to auto-thinning w/ hideOverlap.
           showMinLabel: true,
           showMaxLabel: forceShowMaxXAxisLabel || xAxisLabelEvery !== undefined || xAxisLabelInterval === undefined,
-          ...(xAxisLabelEvery !== undefined
+          ...(effectiveLabelEvery !== undefined
             ? {
+              // `interval: 0` keeps EVERY category on the axis so no data point
+              // is dropped from the line — only the label text is blanked out
+              // by the formatter below.
               interval: 0,
+              // Thinning is already width-aware via `effectiveLabelEvery`, so
+              // ECharts must not drop labels on its own — its greedy
+              // left-to-right hiding would break the even spacing.
               hideOverlap: false,
-              formatter: (value: string, index: number) => index % xAxisLabelEvery === 0 ? value : '',
+              formatter: (value: string, index: number) => index % effectiveLabelEvery === 0 ? value : '',
             }
             : xAxisLabelInterval === undefined
               ? { hideOverlap: true }
@@ -342,7 +419,7 @@ const LineChart: React.FC<LineChartProps> = ({
             axisLabel: {
               color: axisLabelColor,
               fontSize: 11,
-              formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
+              formatter: formatAxisValue,
               hideOverlap: true,
             },
             // Only the primary axis draws grid split-lines — a second set
@@ -397,11 +474,18 @@ const LineChart: React.FC<LineChartProps> = ({
             .map((p) => {
               const cfg = lines[p.seriesIndex]
               if (cfg?.hideInTooltip) return ''
+              // A gap in the series (a null point kept by `preserveNullValues`,
+              // e.g. an hour that has no reading yet) arrives here as
+              // null/undefined — `Number()` turns it into NaN and the row would
+              // read "NaN". Drop the row so the tooltip only lists points that
+              // actually have a value.
+              const numericValue = Number(p.value)
+              if (!Number.isFinite(numericValue)) return ''
               const color = cfg?.color ?? p.color
               const label = cfg?.label ?? p.seriesName
               const value = tooltipValueDecimals != null
-                ? Number(p.value).toFixed(tooltipValueDecimals)
-                : Number(p.value).toLocaleString()
+                ? numericValue.toFixed(tooltipValueDecimals)
+                : numericValue.toLocaleString()
               // Per-line unit wins; fall back to global tooltipUnit.
               const rowUnit = cfg?.unit ?? tooltipUnit
               const unit = rowUnit ? ` ${rowUnit}` : ''
@@ -436,10 +520,32 @@ const LineChart: React.FC<LineChartProps> = ({
           const footer =
             tooltipFooter && dataIdx !== undefined ? tooltipFooter(dataIdx) : ''
 
+          // Every series is a gap at this point (and nothing else to show) —
+          // return '' so ECharts hides the tooltip entirely instead of
+          // popping an empty box with just a date in it.
+          if (!rows && !extras && !footer) return ''
+
           return header + rows + extras + footer
         },
       },
-      series: lines.map((line) => ({
+      series: lines.map((line) => {
+        const lineData = data.map((d) => {
+          const value = d[line.dataKey]
+          return preserveNullValues && (value === null || value === undefined)
+            ? null
+            : value ?? 0
+        })
+        // A perfectly flat line (every defined point at the same y, e.g. a
+        // steady voltage reading) gives the SVG <path> a zero-height bounding
+        // box. The shadowBlur glow below renders as an SVG filter whose
+        // region is a % of that bbox (objectBoundingBox, default
+        // -10%/-10%/120%/120%) — zero height collapses the region to nothing,
+        // and Chromium's SVG renderer drops the ENTIRE filtered path
+        // (stroke included), making the line invisible even though the data
+        // is valid. Skip the glow on flat lines to avoid this.
+        const definedValues = lineData.filter((v): v is number => v !== null)
+        const isFlat = new Set(definedValues).size <= 1
+        return {
         name: line.label,
         type: 'line',
         yAxisIndex: line.yAxisIndex ?? 0,
@@ -448,17 +554,13 @@ const LineChart: React.FC<LineChartProps> = ({
         // and the shadow bleeds between dashes. Keep smoothing for real
         // data lines only.
         smooth: !line.dashed,
-        data: data.map((d) => {
-          const value = d[line.dataKey]
-          return preserveNullValues && (value === null || value === undefined)
-            ? null
-            : value ?? 0
-        }),
+        data: lineData,
         lineStyle: {
           color: line.color,
           width: 3,
           // Glow shadow hides the gaps in a dashed line — disable it there.
-          shadowBlur: line.dashed ? 0 : 12,
+          // Also disabled for flat lines — see `isFlat` comment above.
+          shadowBlur: line.dashed || isFlat ? 0 : 12,
           shadowColor: line.color + '60',
           // Explicit dash pattern is more visible than echarts' default
           // 'dashed' (which draws very short segments).
@@ -476,9 +578,10 @@ const LineChart: React.FC<LineChartProps> = ({
         // Force dashed reference lines above the real data curve so they
         // stay visible even when the curve crosses them.
         z: line.dashed ? 3 : 2,
-      })),
+        }
+      }),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipValueDecimals, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipValueDecimals, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, effectiveLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
 
   return (
     <div
@@ -578,7 +681,7 @@ const LineChart: React.FC<LineChartProps> = ({
       )}
 
       {/* ECharts */}
-      <div className={`relative ${fillHeight ? ' figure-large lg:h-72! lg:min-h-0! lg:max-h-none!' : ''}`}>
+      <div ref={chartBoxRef} className={`relative ${fillHeight ? ' figure-large lg:h-72! lg:min-h-0! lg:max-h-none!' : ''}`}>
         <ReactECharts
           option={option}
           style={{ height: fillHeight ? '100%' : height }}

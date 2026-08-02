@@ -16,6 +16,7 @@ import type {
   HistoryRegion,
   HistoryCase,
 } from '@/types/maintenance'
+import { offlineDaysSince } from '../../data/offlineDays'
 
 // The detail API sorts every nested level (bureaus, departments, roads,
 // solution_location, ...) as plain strings — e.g. "สทช.10, สทช.11, ..., สทช.9"
@@ -190,7 +191,7 @@ const mapHistoryToRecords = (regions: HistoryRegion[]): RepairRecord[] => {
         problemCategory: c.category?.trim() || '-',
         device: c.device_name ?? '',
         repairDate: c.reported_at ?? '',
-        offlineDays: c.offline_days ?? 0,
+        offlineDays: offlineDaysSince(c.curl_updated_at, c.offline_days ?? 0),
         repairStatus: mapStatusToRepairStatus(c.status),
       })
     })
