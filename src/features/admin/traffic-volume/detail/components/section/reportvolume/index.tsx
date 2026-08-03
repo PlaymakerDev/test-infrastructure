@@ -16,6 +16,7 @@ import YearlyReportTable from './YearlyReportTable'
 import VehicleTypeReportTable from './VehicleTypeReportTable'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { fmtNumber } from '@/utils/formatNumber'
+import type { PdfReportBlock } from '@/utils/export/pdf'
 import { VEHICLE_TYPES } from '../overall/data/vehicleTypes'
 import {
   useTrafficVolumeReportSummaryInfinite,
@@ -467,10 +468,9 @@ const MATRIX_EXPORT_COLUMNS: ExportColumn<MatrixExportRow>[] = [
   ),
 ]
 
-/** Regroup the hour-bucketed wire rows by camera → date the same way
- *  HourlyMatrixTable does, emitting one คัน row and one PCU row per date. */
-const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRow[] => {
-  // camera → date → hh → { count, pcu }
+/** camera → date → "HH" → bucket, the same nesting HourlyMatrixTable builds
+ *  for the screen. Shared by the Excel row flattener and the PDF blocks. */
+const groupMatrixRows = (rows: CountingReportSummaryRow[]) => {
   const cams = new Map<string, Map<string, Map<string, { count: number; pcu: number }>>>()
   for (const r of rows) {
     if (typeof r.date !== 'string' || r.date.length < 13) continue
@@ -489,6 +489,13 @@ const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRo
     }
     hourMap.set(hh, { count: r.total_count, pcu: r.total_pcu })
   }
+  return cams
+}
+
+/** Regroup the hour-bucketed wire rows by camera → date the same way
+ *  HourlyMatrixTable does, emitting one คัน row and one PCU row per date. */
+const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRow[] => {
+  const cams = groupMatrixRows(rows)
   const out: MatrixExportRow[] = []
   for (const [cam, dayMap] of cams) {
     const days = Array.from(dayMap.keys()).sort()
@@ -523,6 +530,124 @@ const buildMatrixExportRows = (rows: CountingReportSummaryRow[]): MatrixExportRo
     }
   }
   return out
+}
+
+/** The PDF matrix keeps the ON-SCREEN layout — camera band row, two-line date
+ *  label, รวมเฉลี่ย lines, total column, same number formatting (thousands
+ *  separators included) — with all 24 hour columns in ONE table on ONE A4
+ *  landscape row (781.9pt of usable width).
+ *
+ *  Those 26 columns are what dictate the font. Per hour cell: box width minus
+ *  padding(2) + border(1) + the trailing-space allowance ≈ 6.7pt of chrome, so
+ *  the widest hourly value has to fit what's left. Measured on the render font:
+ *
+ *    col split  วันที่ 7.1% + 24 × 3.6792% + รวมทั้งวัน 4.6%
+ *    hour cell  28.8pt box → 22.1pt for text
+ *    "2,735.5"  21.1pt @ 6.2pt → fits (1.1pt spare)
+ *               21.4pt @ 6.3pt → does NOT fit
+ *
+ *  6.2pt is therefore the ceiling under two constraints we're holding: hour
+ *  cells keep the screen's thousands separators, and the วันที่ column stays
+ *  wide enough that no label line wraps (its longest is "วันพฤหัสบดี (PCU)").
+ *  Narrowing วันที่ further barely helps — freed width is split 24 ways, so 3%
+ *  of the page buys 1pt per hour cell. A visibly bigger font costs one of:
+ *  A3 paper (→8pt), no separator in the hour cells (→~7pt), or dropping the
+ *  PCU decimal (→8pt). font 8 at A4 is impossible at ANY column split — give
+ *  วันที่/รวมทั้งวัน 0% and an hour cell still offers only 25.5pt against the
+ *  27.2pt "2,735.5" needs. Re-measure with fontkit
+ *  (public/fonts/NotoSansThai-Regular.ttf) before touching any number here. */
+const MATRIX_PDF_FONT = 6.2
+const MATRIX_PDF_CELL_PADDING = 1
+/** วันที่ / รวมทั้งวัน percentages — the rest is split evenly across 24 hours.
+ *  วันที่ is sized to the longest label line, รวมทั้งวัน to a multi-day PCU
+ *  sum ("158,027.1"); every point beyond that belongs to the hour columns. */
+const MATRIX_PDF_LABEL_PCT = 7.1
+const MATRIX_PDF_TOTAL_PCT = 4.6
+
+/** One printed matrix line: same content HourlyMatrixTable renders per row. */
+interface MatrixPdfLine {
+  label: string
+  hourly: Record<string, number>
+  /** Full-day total — the on-screen "รวม" column, identical in both halves. */
+  total: number
+  decimals: 0 | 1
+  /** รวมเฉลี่ย lines print bold on a tint (screen: yellow bold). */
+  emphasis?: boolean
+}
+
+const buildMatrixPdfGroups = (rows: CountingReportSummaryRow[]) => {
+  const cams = groupMatrixRows(rows)
+  const groups: { camera: string; lines: MatrixPdfLine[] }[] = []
+  for (const [cam, dayMap] of cams) {
+    const days = Array.from(dayMap.keys()).sort()
+    const lines: MatrixPdfLine[] = []
+    // คัน block then PCU block, each closed by its own รวมเฉลี่ย — the exact
+    // row order HourlyMatrixTable emits.
+    for (const unit of ['count', 'pcu'] as const) {
+      const unitLabel = unit === 'pcu' ? 'PCU' : 'คัน'
+      const decimals = unit === 'pcu' ? 1 : 0
+      const summed: Record<string, number> = {}
+      for (const hh of EXPORT_HOURS) summed[hh] = 0
+      let summedTotal = 0
+      for (const day of days) {
+        const hourMap = dayMap.get(day)!
+        const hourly: Record<string, number> = {}
+        let total = 0
+        for (const hh of EXPORT_HOURS) {
+          const v = unit === 'pcu' ? (hourMap.get(hh)?.pcu ?? 0) : (hourMap.get(hh)?.count ?? 0)
+          hourly[hh] = v
+          total += v
+          summed[hh] += v
+        }
+        summedTotal += total
+        lines.push({
+          // Explicit newline: wrapPdfText breaks on \n before measuring, so the
+          // label prints as two lines like the screen's stacked date + weekday.
+          label: `${thaiDate(day)}\nวัน${dayjs(day).locale('th').format('dddd')} (${unitLabel})`,
+          hourly,
+          total,
+          decimals,
+        })
+      }
+      if (days.length > 0) {
+        lines.push({ label: `รวมเฉลี่ย (${unitLabel})`, hourly: summed, total: summedTotal, decimals, emphasis: true })
+      }
+    }
+    groups.push({ camera: cam, lines })
+  }
+  return groups
+}
+
+const buildMatrixPdfBlocks = (rows: CountingReportSummaryRow[]): PdfReportBlock[] => {
+  const groups = buildMatrixPdfGroups(rows)
+  if (groups.length === 0) return []
+  return [
+    {
+      type: 'table',
+      title: 'ตารางรายงานสรุปรายชั่วโมง (Matrix)',
+      fontSize: MATRIX_PDF_FONT,
+      cellPadding: MATRIX_PDF_CELL_PADDING,
+      columns: [
+        { header: 'วันที่', widthPct: MATRIX_PDF_LABEL_PCT, align: 'left' },
+        ...EXPORT_HOURS.map((hh) => ({
+          header: `${hh}:00`,
+          widthPct: (100 - MATRIX_PDF_LABEL_PCT - MATRIX_PDF_TOTAL_PCT) / 24,
+        })),
+        { header: 'รวมทั้งวัน', widthPct: MATRIX_PDF_TOTAL_PCT },
+      ],
+      rows: groups.flatMap((g) => [
+        { group: g.camera },
+        ...g.lines.map((l) => ({
+          cells: [
+            l.label,
+            ...EXPORT_HOURS.map((hh) => fmtNumber(l.hourly[hh] ?? 0, l.decimals)),
+            fmtNumber(l.total, l.decimals),
+          ],
+          emphasis: l.emphasis,
+        })),
+      ]),
+    },
+  ]
 }
 
 /** Tab content for "รายงานการนับปริมาณจราจร".
@@ -1108,6 +1233,21 @@ const ReportVolume: React.FC<Props> = () => {
             : undefined
         }
         onExportPdf={async (scope) => {
+          // MATRIX is the one layout the generic table report can't hold: 26
+          // columns on one A4 landscape row squeeze every cell below a legible
+          // width. It exports as a block report instead — two 12-hour tables
+          // that keep the on-screen grouping (see buildMatrixPdfBlocks).
+          if (reportType === 'hour' && hourView === 'MATRIX') {
+            const { exportReportPdf } = await import('@/utils/export/pdf')
+            await exportReportPdf({
+              filenameBase: exportSpec.filenameBase,
+              title: exportSpec.title,
+              subtitleNote: exportFilterNote ? `เงื่อนไข: ${exportFilterNote}` : undefined,
+              orientation: 'landscape',
+              blocks: buildMatrixPdfBlocks(filteredHourRows),
+            })
+            return
+          }
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: exportSpec.filenameBase,
