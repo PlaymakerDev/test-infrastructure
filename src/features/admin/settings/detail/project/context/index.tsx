@@ -10,7 +10,7 @@ import {
   useAttachWimCameras,
   useCreateRoadSolution,
   useCreateSolution,
-  useCreateVMSSolution,
+  useCreateVMSSolutionExistingCamera,
   useDeleteProjectRoad,
   useDeleteSolution,
   useDeleteSolutionLocation,
@@ -23,7 +23,6 @@ import {
 } from '@/hooks/queries/manage'
 import type {
   APIRequestCreateSolution,
-  APIRequestCreateVMSSolution,
   APIResponseCamera,
   APIResponseRoadSolution,
   APIResponseSolution,
@@ -157,7 +156,13 @@ export interface ContextProps {
     solutionId: number,
     cameras: { camera_id: string; phase: number; camera_type: string }[],
   ) => Promise<void>
-  createVMSSolution: (payload: APIRequestCreateVMSSolution) => Promise<void>
+  /** Provision the VMS: desktop-screen URL + the cameras it should carry.
+   *  Upsert — `cameraIds` REPLACES the current links, so pass the full set. */
+  createVMSSolution: (
+    solutionId: number,
+    desktopScreenUrl: string,
+    cameraIds: string[],
+  ) => Promise<void>
   appendVmsCameras: (vmsId: number, cameraIds: string[]) => Promise<void>
 
   isSubmitting: boolean
@@ -281,7 +286,7 @@ export const ProjectDetailProvider = ({ children, projectId }: PageProviderProps
   const attachCrosswalk = useAttachCrosswalkCameras()
   const attachWim = useAttachWimCameras()
   const attachTraffic = useAttachTrafficCameras()
-  const createVMS = useCreateVMSSolution()
+  const createVMS = useCreateVMSSolutionExistingCamera()
   const appendVms = useAppendVmsCameras()
 
   const wrapMutation = useCallback(
@@ -431,11 +436,16 @@ export const ProjectDetailProvider = ({ children, projectId }: PageProviderProps
   )
 
   const createVMSSolution = useCallback(
-    async (payload: APIRequestCreateVMSSolution) => {
+    async (solutionId: number, desktopScreenUrl: string, cameraIds: string[]) => {
       await wrapMutation(
-        () => createVMS.mutateAsync(payload),
-        'สร้างอุปกรณ์ VMS สำเร็จ',
-        'สร้างอุปกรณ์ VMS ไม่สำเร็จ',
+        () =>
+          createVMS.mutateAsync({
+            solution_id: solutionId,
+            desktop_screen_url: desktopScreenUrl,
+            camera_id: cameraIds,
+          }),
+        'บันทึกอุปกรณ์ VMS สำเร็จ',
+        'บันทึกอุปกรณ์ VMS ไม่สำเร็จ',
       )
     },
     [createVMS, wrapMutation],

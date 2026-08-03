@@ -94,6 +94,9 @@ export const manageKeys = {
     /** GET /solution/camera/vms/{solution_id} */
     vmsCameras: (solutionId: number | string) =>
       [...manageKeys.solutions.all, 'vms-cameras', solutionId] as const,
+    /** GET /solution/vms/solution/{solution_id} — provisioning state for the form. */
+    vmsSolution: (solutionId: number | string) =>
+      [...manageKeys.solutions.all, 'vms-solution', solutionId] as const,
     /** GET /solution/camera/crossing_codes/{solution_id} */
     crossingCodes: (solutionId: number | string) =>
       [...manageKeys.solutions.all, 'crossing-codes', solutionId] as const,

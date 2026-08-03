@@ -124,8 +124,9 @@ const DetailContent: React.FC = () => {
   const openEquipmentModal = (task: TaskType) => {
     // Route the camera-picker per solution type. CCTV opens the read-only
     // list (add via /cctv/cameras). Traffic Signal needs phase + camera_type
-    // per row → dedicated picker. VMS provisions its whole tree in one shot
-    // via /solution/vms/solution → dedicated modal. Everything else routes
+    // per row → dedicated picker. VMS needs a desktop-screen URL alongside the
+    // camera picks → dedicated modal on
+    // /solution/vms/solution/existing_camera. Everything else routes
     // to the generic replace-on-write picker.
     if (task.kindId === SOLUTION_TYPE.CCTV) setEquipmentListModal(task)
     else if (task.kindId === SOLUTION_TYPE.Traffic) setTrafficPickerTask(task)
@@ -253,7 +254,9 @@ const DetailContent: React.FC = () => {
       <VMSSolutionModal
         open={!!vmsProvisionTask}
         task={vmsProvisionTask}
+        projectName={project.name}
         onClose={() => setVmsProvisionTask(null)}
+        onOpenLiveStream={setLiveStreamEquipment}
       />
       <EditSolutionModal
         open={!!editTask}

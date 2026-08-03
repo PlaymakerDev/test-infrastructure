@@ -8,6 +8,7 @@ import type {
   APIRequestCreateRoadSolution,
   APIRequestCreateSolution,
   APIRequestCreateVMSSolution,
+  APIRequestCreateVMSSolutionExistingCamera,
   APIRequestSolutionAddCamera,
   APIRequestSolutionAddCameraTraffic,
   APIRequestSolutionVmsAddCamera,
@@ -22,6 +23,7 @@ import type {
   APIResponseSolutionType,
   APIResponseSolutionTypeAtLocation,
   APIResponseSolutionVmsCameraList,
+  APIResponseVMSSolutionDetail,
   EquipmentListParams,
 } from '@/types/manage/solution-api'
 
@@ -168,9 +170,22 @@ export const attachTrafficCamerasAPI = (
     data: body,
   })
 
-/** Create a full VMS solution with its cameras + desktop screen URL in a
- *  single call. Prefer this over `attachVmsCamerasAPI` for the initial
- *  provisioning. */
+/** Create/update a VMS solution with its desktop-screen URL, linking cameras
+ *  that already exist. Upsert on solution_id — camera links are REPLACED by
+ *  the ids sent, so send the full list. This is the provisioning call the UI
+ *  uses. */
+export const createVMSSolutionExistingCameraAPI = (
+  body: APIRequestCreateVMSSolutionExistingCamera,
+) =>
+  ApiService.fetchData<void, APIRequestCreateVMSSolutionExistingCamera>({
+    url: '/manage/solution/vms/solution/existing_camera',
+    method: 'POST',
+    data: body,
+  })
+
+/** @deprecated Legacy provisioning call that mints new camera rows from inline
+ *  definitions. Use {@link createVMSSolutionExistingCameraAPI}. No UI
+ *  consumers as of the existing-camera swap. */
 export const createVMSSolutionAPI = (body: APIRequestCreateVMSSolution) =>
   ApiService.fetchData<void, APIRequestCreateVMSSolution>({
     url: '/manage/solution/vms/solution',
@@ -202,6 +217,14 @@ export const linkWimStationAPI = (body: APIRequestSolutionWimStation) =>
 export const getSolutionCameraListAPI = (solutionLocationId: number) =>
   ApiService.fetchData<APIResponseSolutionCameraList>({
     url: `/manage/solution/camera/list/${solutionLocationId}`,
+    method: 'GET',
+  })
+
+/** GET /solution/vms/solution/{solution_id} — current desktop-screen URL +
+ *  linked camera ids, for prefilling the VMS provisioning form. */
+export const getVMSSolutionDetailAPI = (solutionId: number) =>
+  ApiService.fetchData<APIResponseVMSSolutionDetail>({
+    url: `/manage/solution/vms/solution/${solutionId}`,
     method: 'GET',
   })
 

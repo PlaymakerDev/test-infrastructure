@@ -194,7 +194,36 @@ export interface APIRequestSolutionAddCameraTraffic {
   }[]
 }
 
-/** VMS creates the whole VMS solution + its cameras in one call. */
+/** GET /solution/vms/solution/{solution_id} — current provisioning state,
+ *  used to prefill the VMS form. `vms_id` is null when the solution has no
+ *  VMS yet (still a 200, not a 404). */
+export interface APIResponseVMSSolutionDetail {
+  solution_id: number
+  vms_id: number | null
+  desktop_screen_url: string
+  camera_id: string[]
+}
+
+/** VMS provisioning, current contract:
+ *  `POST /solution/vms/solution/existing_camera`. Creates (or updates) the VMS
+ *  + its desktop-screen URL and links cameras that ALREADY exist in
+ *  cctv.tbl_camera — it does not mint new camera rows.
+ *
+ *  Upsert-by-`solution_id`: re-posting the same solution overwrites
+ *  `desktop_screen_url` and REPLACES the camera links with `camera_id`
+ *  wholesale, so always send the full list you want going forward. */
+export interface APIRequestCreateVMSSolutionExistingCamera {
+  solution_id: number
+  desktop_screen_url: string
+  /** Cameras this VMS should carry from now on. An empty array is valid and
+   *  unlinks all of them — that's the step before deleting the VMS. */
+  camera_id: string[]
+}
+
+/** @deprecated Legacy `POST /solution/vms/solution` — creates brand-new camera
+ *  rows from inline definitions. Superseded by
+ *  {@link APIRequestCreateVMSSolutionExistingCamera}; the endpoint still
+ *  exists backend-side but the UI no longer calls it. */
 export interface APIRequestCreateVMSSolution {
   solution_id: number
   desktop_screen_url: string

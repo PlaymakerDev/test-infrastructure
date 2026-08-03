@@ -1,115 +1,198 @@
 "use client"
-import { Button, ConfigProvider, Form, Input, Modal } from 'antd'
-import React, { useEffect } from 'react'
-import { TbDeviceDesktop, TbPlus, TbTrash } from 'react-icons/tb'
+import { Button, ConfigProvider, Input, Modal, Spin, Table } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import React, { useCallback, useMemo, useState } from 'react'
+import { TbPlayerPlay, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { useVMSSolutionDetail } from '@/hooks/queries/manage'
 import { useProjectDetailContext } from '../../context'
-import type { TaskType } from '../../types'
+import type { Equipment, TaskType } from '../../types'
 
 interface Props {
   open: boolean
-  /** The VMS Solution row (tbl_solution.id) whose cameras we're
-   *  provisioning together with the desktop-screen URL. */
+  /** The VMS Solution row (tbl_solution.id) being provisioned. */
   task: TaskType | null
+  projectName: string
   onClose: () => void
+  onOpenLiveStream: (equipment: Equipment) => void
 }
 
-interface CameraRow {
-  camera_name: string
-  sta: string
-  ip_address?: string
-  hls_url: string
-  latitude: string
-  longitude: string
-  remark?: string
+interface Row extends Equipment {
+  selected: boolean
 }
 
-interface FormShape {
-  desktop_screen_url: string
-  cameras: CameraRow[]
-}
-
-const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
-    {children}
-    <span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
+const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
+  <span
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12'
+    style={{
+      border: `1px solid ${online ? '#66AEFF' : '#FF6666'}`,
+      color: online ? '#66AEFF' : '#FF6666',
+    }}
+  >
+    {online ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+    {online ? 'ออนไลน์' : 'ออฟไลน์'}
   </span>
 )
 
-const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
-)
+/** VMS provisioning modal. Backend contract
+ *  (`POST /solution/vms/solution/existing_camera`): upsert on solution_id —
+ *  the desktop-screen URL is overwritten and the camera links are DELETED then
+ *  re-INSERTed from `camera_id`, so the picker is seeded with what the VMS
+ *  currently carries and submits the full list going forward. Same
+ *  replace-on-write picker shape as EquipmentSelectModal /
+ *  TrafficSignalCameraModal. */
+const VMSSolutionModal: React.FC<Props> = ({
+  open,
+  task,
+  projectName,
+  onClose,
+  onOpenLiveStream,
+}) => {
+  const { activePointCameras, camerasLoading, createVMSSolution, isSubmitting } =
+    useProjectDetailContext()
+  // Both fields are `null` while untouched → show whatever the VMS currently
+  // has. Only once the operator edits does a field hold its own value. Seeding
+  // via an effect instead would fight a late refetch and cascade a render.
+  const [typedUrl, setTypedUrl] = useState<string | null>(null)
+  const [urlError, setUrlError] = useState<string | null>(null)
+  const [picked, setPicked] = useState<string[] | null>(null)
 
-/** VMS provisioning modal — creates the full VMS solution + all its
- *  cameras + desktop-screen URL in a single backend call via
- *  `POST /solution/vms/solution`. Reuses the useFieldArray-style
- *  repeater pattern from control-vms's FormAddDetail.tsx. */
-const VMSSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
-  const { createVMSSolution, isSubmitting } = useProjectDetailContext()
-  const [form] = Form.useForm<FormShape>()
+  // The VMS's current desktop-screen URL + linked cameras. Prefilling matters:
+  // the backend upserts, so a blank URL or an unticked camera is a deletion.
+  const provisioned = useVMSSolutionDetail(open && task ? task.id : null)
 
-  useEffect(() => {
-    if (!open) return
-    form.setFieldsValue({
-      desktop_screen_url: '',
-      cameras: [
-        {
-          camera_name: '',
-          sta: '',
-          ip_address: '',
-          hls_url: '',
-          latitude: '',
-          longitude: '',
-          remark: '',
-        },
-      ],
-    })
-  }, [open, form])
+  const linkedIds = useMemo(
+    () => provisioned.data?.camera_id ?? [],
+    [provisioned.data],
+  )
+  const selectedIds = picked ?? linkedIds
+  const desktopUrl = typedUrl ?? provisioned.data?.desktop_screen_url ?? ''
 
-  const handleFinish = async (v: FormShape) => {
-    if (!task) return
-    try {
-      await createVMSSolution({
-        solution_id: task.id,
-        desktop_screen_url: v.desktop_screen_url.trim(),
-        cameras: v.cameras.map((c) => ({
-          camera_name: c.camera_name.trim(),
-          sta: c.sta.trim(),
-          ip_address: c.ip_address?.trim() || undefined,
-          hls_url: c.hls_url.trim(),
-          geometry_point: {
-            type: 'Point' as const,
-            coordinates: [Number(c.longitude), Number(c.latitude)] as [number, number],
-          },
-          remark: c.remark?.trim() || undefined,
-        })),
+  const toggle = useCallback(
+    (id: string) => {
+      setPicked((prev) => {
+        const base = prev ?? linkedIds
+        return base.includes(id) ? base.filter((x) => x !== id) : [...base, id]
       })
-      onClose()
+    },
+    [linkedIds],
+  )
+
+  // State lives across open/close (the modal component itself never unmounts),
+  // so clear it on the way out rather than on the way in.
+  const handleClose = () => {
+    setPicked(null)
+    setTypedUrl(null)
+    setUrlError(null)
+    onClose()
+  }
+
+  const rows: Row[] = useMemo(
+    () => activePointCameras.map((e) => ({ ...e, selected: selectedIds.includes(e.id) })),
+    [activePointCameras, selectedIds],
+  )
+
+  const columns: ColumnsType<Row> = useMemo(
+    () => [
+      {
+        title: 'เลือก',
+        key: 'select',
+        width: 70,
+        render: (_: unknown, row) => (
+          <input
+            type='checkbox'
+            checked={row.selected}
+            onChange={() => toggle(row.id)}
+            style={{ width: 18, height: 18, accentColor: '#FCD116', cursor: 'pointer' }}
+          />
+        ),
+      },
+      { title: 'ชื่ออุปกรณ์', dataIndex: 'name', key: 'name', ellipsis: true },
+      {
+        title: 'กม.ที่ / STA',
+        dataIndex: 'sta',
+        key: 'sta',
+        width: 140,
+        render: (v: string | null | undefined) => v || '-',
+      },
+      {
+        title: 'IP Address',
+        dataIndex: 'ipAddress',
+        key: 'ipAddress',
+        width: 160,
+        render: (v: string | null | undefined) => v || '-',
+      },
+      {
+        title: 'สถานะการเชื่อมต่อ',
+        dataIndex: 'isOnline',
+        key: 'isOnline',
+        width: 160,
+        render: (v: boolean) => <StatusPill online={v} />,
+      },
+      {
+        title: 'Live Stream',
+        key: 'live',
+        width: 130,
+        align: 'center',
+        render: (_: unknown, row) => (
+          <button
+            type='button'
+            onClick={() => onOpenLiveStream(row)}
+            className='inline-flex items-center gap-1 text-(--yellow) hover:opacity-80 cursor-pointer'
+            title='Live'
+          >
+            <TbPlayerPlay size={20} />
+            <TbPlayerPlay size={20} style={{ marginLeft: -6 }} />
+          </button>
+        ),
+      },
+    ],
+    [onOpenLiveStream, toggle],
+  )
+
+  const handleConfirm = async () => {
+    if (!task) return
+    const url = desktopUrl.trim()
+    if (!url) {
+      setUrlError('กรุณาระบุ Desktop Screen URL')
+      return
+    }
+    try {
+      new URL(url)
+    } catch {
+      setUrlError('URL ไม่ถูกต้อง')
+      return
+    }
+    setUrlError(null)
+    try {
+      await createVMSSolution(task.id, url, selectedIds)
+      handleClose()
     } catch {
       // toast handled inside the context wrapper
     }
   }
+
+  const loading = camerasLoading || provisioned.isLoading
 
   return (
     <ConfigProvider
       theme={{
         components: {
           Modal: {
-            contentBg: '#FFFFFF',
-            headerBg: '#FFFFFF',
-            footerBg: '#FFFFFF',
-            colorIcon: '#000',
-            titleColor: '#1F1F1F',
+            contentBg: '#1A1A1A',
+            headerBg: '#1A1A1A',
+            footerBg: '#1A1A1A',
+            colorIcon: '#FFF',
+            titleColor: '#66AEFF',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
-          Input: {
-            colorBorder: '#E5E5E5',
-            activeBorderColor: '#FCD116',
-            hoverBorderColor: '#FCD116',
-            colorTextPlaceholder: '#B8B8B8',
-            borderRadius: 8,
-            controlHeight: 44,
-            paddingInline: 14,
+          Table: {
+            headerBg: '#66AEFF',
+            headerColor: '#1A1A1A',
+            headerSplitColor: 'transparent',
+            colorBgContainer: 'transparent',
+            colorText: '#FFFFFF',
+            borderColor: 'rgba(252,209,22,0.25)',
+            rowHoverBg: 'rgba(255,255,255,0.04)',
           },
         },
       }}
@@ -117,217 +200,120 @@ const VMSSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
       <Modal
         wrapClassName='light-modal'
         open={open}
-        onCancel={onClose}
+        onCancel={handleClose}
         footer={null}
         destroyOnHidden
-        width={860}
+        width={1200}
         closable={{ 'aria-label': 'Custom Close Button' }}
         styles={{
-          container: { padding: '32px 40px', borderRadius: 16 },
+          container: { padding: '28px 32px', borderRadius: 16, background: '#1A1A1A' },
           mask: { background: 'rgba(0,0,0,0.55)' },
         }}
-        title={
-          <div className='flex items-center gap-3' style={{ color: '#111' }}>
-            <TbDeviceDesktop size={22} style={{ color: 'var(--yellow)' }} />
-            <span style={{ fontSize: 20, fontWeight: 600, color: '#111' }}>
-              เพิ่มอุปกรณ์ VMS
-            </span>
-          </div>
-        }
+        title={null}
       >
-        <Form<FormShape>
-          form={form}
-          layout='vertical'
-          onFinish={handleFinish}
-          requiredMark={false}
-          disabled={isSubmitting}
-        >
-          <Form.Item
-            label={<RequiredLabel>Desktop Screen URL</RequiredLabel>}
-            name='desktop_screen_url'
-            rules={[
-              { required: true, message: 'กรุณาระบุ Desktop Screen URL' },
-              { type: 'url', message: 'URL ไม่ถูกต้อง' },
-            ]}
-          >
-            <Input placeholder='https://...' />
-          </Form.Item>
+        <div className='mb-4'>
+          <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>
+            {task?.kind ?? 'VMS'}
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: "var(--fs-12)", wordBreak: 'break-word', margin: 0 }}>
+            {projectName}
+          </p>
+        </div>
 
-          <div
+        <div className='mb-4'>
+          <label
+            className='block mb-2'
+            style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 500 }}
+          >
+            Desktop Screen URL
+            <span style={{ color: '#FF6666', marginLeft: 2 }}>*</span>
+          </label>
+          <Input
+            value={desktopUrl}
+            onChange={(e) => {
+              setTypedUrl(e.target.value)
+              if (urlError) setUrlError(null)
+            }}
+            placeholder='https://...'
+            // Locked until the prefill lands, so an empty box is never mistaken
+            // for "this VMS has no URL".
+            disabled={isSubmitting || loading}
+            status={urlError ? 'error' : undefined}
             style={{
-              background: '#F5F5F5',
+              background: 'transparent',
+              borderColor: urlError ? '#FF6666' : 'rgba(252,209,22,0.25)',
+              color: '#FFFFFF',
+              height: 44,
               borderRadius: 8,
-              padding: '10px 14px',
-              marginBottom: 12,
-              fontSize: "var(--fs-12)",
+            }}
+          />
+          {urlError && (
+            <p style={{ color: '#FF6666', fontSize: "var(--fs-12)", margin: '6px 0 0' }}>{urlError}</p>
+          )}
+        </div>
+
+        <p
+          style={{
+            color: selectedIds.length === 0 ? '#FF6666' : 'rgba(255,255,255,0.75)',
+            fontSize: "var(--fs-12)",
+            margin: '0 0 8px',
+          }}
+        >
+          {selectedIds.length === 0
+            ? 'ไม่ได้เลือกกล้องใดเลย — บันทึกแล้วกล้องทั้งหมดจะถูกถอดออกจากอุปกรณ์ VMS นี้'
+            : 'เลือกกล้องที่ต้องการผูกกับอุปกรณ์ VMS นี้ (รายการที่เลือกจะแทนที่รายการเดิมทั้งหมด)'}
+        </p>
+
+        {loading ? (
+          <div className='flex items-center justify-center py-10'>
+            <Spin />
+          </div>
+        ) : (
+          <Table<Row>
+            rowKey='id'
+            columns={columns}
+            dataSource={rows}
+            pagination={false}
+            size='middle'
+            locale={{ emptyText: 'ยังไม่มีกล้อง CCTV ที่จุดติดตั้งนี้ให้เลือก' }}
+          />
+        )}
+
+        <div className='flex justify-end gap-3 mt-6'>
+          <Button
+            shape='round'
+            onClick={handleClose}
+            disabled={isSubmitting}
+            style={{
+              background: '#E5E5E5',
               color: '#4A4A4A',
+              borderColor: '#E5E5E5',
+              padding: '8px 28px',
+              height: 'auto',
+              fontWeight: 500,
             }}
           >
-            รายการกล้องที่เพิ่มเข้ากับอุปกรณ์ VMS นี้
-          </div>
-
-          <Form.List
-            name='cameras'
-            rules={[
-              {
-                validator: async (_, value) =>
-                  Array.isArray(value) && value.length > 0
-                    ? Promise.resolve()
-                    : Promise.reject(new Error('ต้องมีกล้องอย่างน้อย 1 ตัว')),
-              },
-            ]}
+            ยกเลิก
+          </Button>
+          <Button
+            shape='round'
+            onClick={handleConfirm}
+            loading={isSubmitting}
+            // Saving with nothing ticked is allowed on purpose — it unlinks
+            // every camera, which is the step before deleting the VMS.
+            disabled={loading}
+            style={{
+              background: '#FCD116',
+              color: '#1A1A1A',
+              borderColor: '#FCD116',
+              padding: '8px 32px',
+              height: 'auto',
+              fontWeight: 600,
+            }}
           >
-            {(fields, { add, remove }, { errors }) => (
-              <div className='flex flex-col gap-4'>
-                {fields.map((field, idx) => (
-                  <div
-                    key={field.key}
-                    style={{ border: '1px solid #E5E5E5', borderRadius: 12, padding: 16 }}
-                  >
-                    <div className='flex items-center justify-between mb-2'>
-                      <span style={{ color: '#1F1F1F', fontWeight: 600 }}>กล้องที่ {idx + 1}</span>
-                      {fields.length > 1 && (
-                        <button
-                          type='button'
-                          onClick={() => remove(field.name)}
-                          className='text-(--red) cursor-pointer hover:opacity-80'
-                          title='ลบกล้องแถวนี้'
-                        >
-                          <TbTrash size={18} />
-                        </button>
-                      )}
-                    </div>
-                    <Form.Item
-                      label={<RequiredLabel>ชื่อกล้อง</RequiredLabel>}
-                      name={[field.name, 'camera_name']}
-                      rules={[{ required: true, message: 'กรุณาระบุชื่อกล้อง' }]}
-                    >
-                      <Input placeholder='กรุณาระบุชื่อกล้อง...' />
-                    </Form.Item>
-                    <div className='grid grid-cols-2 gap-4'>
-                      <Form.Item
-                        label={<RequiredLabel>กม.ที่ / STA</RequiredLabel>}
-                        name={[field.name, 'sta']}
-                        rules={[{ required: true, message: 'กรุณาระบุ STA' }]}
-                      >
-                        <Input placeholder='เช่น 10+500' />
-                      </Form.Item>
-                      <Form.Item
-                        label={<PlainLabel>IP Address</PlainLabel>}
-                        name={[field.name, 'ip_address']}
-                      >
-                        <Input placeholder='กรุณาระบุ IP Address...' />
-                      </Form.Item>
-                    </div>
-                    <Form.Item
-                      label={<RequiredLabel>URL HLS (.m3u8)</RequiredLabel>}
-                      name={[field.name, 'hls_url']}
-                      rules={[{ required: true, message: 'กรุณาระบุ URL HLS' }]}
-                    >
-                      <Input placeholder='กรุณาระบุ URL HLS...' />
-                    </Form.Item>
-                    <div className='grid grid-cols-2 gap-4'>
-                      <Form.Item
-                        label={<RequiredLabel>Latitude</RequiredLabel>}
-                        name={[field.name, 'latitude']}
-                        rules={[
-                          { required: true, message: 'กรุณาระบุ Latitude' },
-                          {
-                            validator: async (_, v) =>
-                              v && Number.isFinite(Number(v))
-                                ? Promise.resolve()
-                                : Promise.reject(new Error('Latitude ต้องเป็นตัวเลข')),
-                          },
-                        ]}
-                      >
-                        <Input placeholder='กรุณาระบุ Latitude...' />
-                      </Form.Item>
-                      <Form.Item
-                        label={<RequiredLabel>Longitude</RequiredLabel>}
-                        name={[field.name, 'longitude']}
-                        rules={[
-                          { required: true, message: 'กรุณาระบุ Longitude' },
-                          {
-                            validator: async (_, v) =>
-                              v && Number.isFinite(Number(v))
-                                ? Promise.resolve()
-                                : Promise.reject(new Error('Longitude ต้องเป็นตัวเลข')),
-                          },
-                        ]}
-                      >
-                        <Input placeholder='กรุณาระบุ Longitude...' />
-                      </Form.Item>
-                    </div>
-                    <Form.Item label={<PlainLabel>หมายเหตุ</PlainLabel>} name={[field.name, 'remark']}>
-                      <Input placeholder='กรุณาระบุหมายเหตุ...' />
-                    </Form.Item>
-                  </div>
-                ))}
-                <Form.ErrorList errors={errors} />
-                <Button
-                  block
-                  onClick={() =>
-                    add({
-                      camera_name: '',
-                      sta: '',
-                      ip_address: '',
-                      hls_url: '',
-                      latitude: '',
-                      longitude: '',
-                      remark: '',
-                    })
-                  }
-                  icon={<TbPlus />}
-                  disabled={isSubmitting}
-                  style={{
-                    background: '#FCD116',
-                    color: '#1A1A1A',
-                    borderColor: '#FCD116',
-                    fontWeight: 500,
-                    borderRadius: 8,
-                    height: 40,
-                  }}
-                >
-                  เพิ่มกล้อง
-                </Button>
-              </div>
-            )}
-          </Form.List>
-
-          <div className='flex justify-end gap-3 mt-6'>
-            <Button
-              shape='round'
-              onClick={onClose}
-              disabled={isSubmitting}
-              style={{
-                background: '#E5E5E5',
-                color: '#4A4A4A',
-                borderColor: '#E5E5E5',
-                padding: '10px 28px',
-                height: 'auto',
-                fontWeight: 500,
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              shape='round'
-              htmlType='submit'
-              loading={isSubmitting}
-              disabled={false}
-              style={{
-                background: '#FCD116',
-                color: '#1A1A1A',
-                borderColor: '#FCD116',
-                padding: '10px 32px',
-                height: 'auto',
-                fontWeight: 600,
-              }}
-            >
-              ยืนยัน
-            </Button>
-          </div>
-        </Form>
+            ยืนยัน
+          </Button>
+        </div>
       </Modal>
     </ConfigProvider>
   )

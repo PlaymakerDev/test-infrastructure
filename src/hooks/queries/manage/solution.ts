@@ -16,6 +16,7 @@ import {
   createRoadSolutionAPI,
   createSolutionAPI,
   createVMSSolutionAPI,
+  createVMSSolutionExistingCameraAPI,
   deleteProjectRoadAPI,
   deleteSolutionAPI,
   deleteSolutionLocationAPI,
@@ -27,6 +28,7 @@ import {
   getSolutionTypesAPI,
   getSolutionTypesAtLocationAPI,
   getSolutionVmsCameraListAPI,
+  getVMSSolutionDetailAPI,
   getSolutionsAPI,
   linkWimStationAPI,
   updateSolutionAPI,
@@ -36,6 +38,7 @@ import type {
   APIRequestCreateRoadSolution,
   APIRequestCreateSolution,
   APIRequestCreateVMSSolution,
+  APIRequestCreateVMSSolutionExistingCamera,
   APIRequestSolutionAddCamera,
   APIRequestSolutionAddCameraTraffic,
   APIRequestSolutionVmsAddCamera,
@@ -113,6 +116,16 @@ export const useSolutionVmsCameras = (solutionId: number | null | undefined) =>
     queryKey: manageKeys.solutions.vmsCameras(solutionId ?? ''),
     queryFn: () =>
       getSolutionVmsCameraListAPI(solutionId as number).then((r) => r.data),
+    enabled: solutionId != null,
+  })
+
+/** Current VMS provisioning state (desktop-screen URL + linked camera ids)
+ *  for prefilling the provisioning form. */
+export const useVMSSolutionDetail = (solutionId: number | null | undefined) =>
+  useQuery({
+    queryKey: manageKeys.solutions.vmsSolution(solutionId ?? ''),
+    queryFn: () =>
+      getVMSSolutionDetailAPI(solutionId as number).then((r) => r.data),
     enabled: solutionId != null,
   })
 
@@ -301,7 +314,27 @@ export const useAttachTrafficCameras = () => {
   })
 }
 
-/** Provision a VMS solution with its cameras + desktop URL in one call. */
+/** Provision a VMS solution: desktop-screen URL + links to existing cameras.
+ *  Upsert on solution_id; camera links are replaced by what's sent. */
+export const useCreateVMSSolutionExistingCamera = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: APIRequestCreateVMSSolutionExistingCamera) =>
+      createVMSSolutionExistingCameraAPI(body).then((r) => r.data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: manageKeys.solutions.all })
+      qc.invalidateQueries({
+        queryKey: manageKeys.solutions.vmsCameras(variables.solution_id),
+      })
+      qc.invalidateQueries({
+        queryKey: manageKeys.solutions.vmsSolution(variables.solution_id),
+      })
+    },
+  })
+}
+
+/** @deprecated Legacy provisioning that creates new camera rows. Use
+ *  {@link useCreateVMSSolutionExistingCamera}. No consumers. */
 export const useCreateVMSSolution = () => {
   const qc = useQueryClient()
   return useMutation({

@@ -46,12 +46,13 @@ const TaskTypeTable: React.FC<Props> = ({
         align: 'center',
         render: (_: unknown, row) => {
           // CrossingCode endpoint is only implemented for Counting / Analytic
-          // / Traffic / Crosswalk (backend returns 404 for others).
+          // / Traffic / Crosswalk / VMS (backend errors for other types).
           const supportsCrossing =
             row.kindId === SOLUTION_TYPE.Counting ||
             row.kindId === SOLUTION_TYPE.Analytic ||
             row.kindId === SOLUTION_TYPE.Traffic ||
-            row.kindId === SOLUTION_TYPE.Crosswalk
+            row.kindId === SOLUTION_TYPE.Crosswalk ||
+            row.kindId === SOLUTION_TYPE.VMS
           if (!supportsCrossing) return null
           return (
             <button
