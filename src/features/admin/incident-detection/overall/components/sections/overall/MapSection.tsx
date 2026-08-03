@@ -70,13 +70,13 @@ const MapSection: React.FC<Props> = (props) => {
         popupOptions={{ offset: 10, closeButton: false }}
         popup={(f) => (
           <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: '1px solid #3DD68C', minWidth: 170 }}>
-            <div style={{ fontSize: 10, color: '#3DD68C', fontWeight: 700 }}>Incident Detection</div>
-            <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 4, color: f.properties?.isOnline ? '#34d399' : '#f87171' }}>
+            <div className='fs-12' style={{ color: '#3DD68C', fontWeight: 700 }}>Incident Detection</div>
+            <div className='fs-12' style={{ color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
+            <div className='fs-12' style={{ color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
+            <div className='fs-12' style={{ fontWeight: 700, marginTop: 4, color: f.properties?.isOnline ? '#34d399' : '#f87171' }}>
               ● {f.properties?.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: 11, fontWeight: 600 }}>
+            <div className='fs-12' style={{ display: 'flex', gap: 10, marginTop: 4, fontWeight: 600 }}>
               <span style={{ color: '#66AEFF' }}>กล้อง {Number(f.properties?.totalCameras ?? 0).toLocaleString()}</span>
               <span style={{ color: '#FF5E00' }}>เหตุการณ์ {Number(f.properties?.eventsCount ?? 0).toLocaleString()}</span>
             </div>
