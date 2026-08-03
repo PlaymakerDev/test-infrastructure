@@ -96,7 +96,7 @@ export const TextMarker: Story = {
           color: '#050d1a',
           borderRadius: 6,
           fontWeight: 700,
-          fontSize: 14,
+          fontSize: "var(--fs-12)",
           boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
         }}
       >
@@ -182,7 +182,7 @@ export const WithPopup: Story = {
           <TbAlertTriangle style={{ display: 'inline', marginRight: 6 }} />
           สถานีตัวอย่าง
         </div>
-        <div style={{ fontSize: 12, marginTop: 6, color: '#94a3b8' }}>
+        <div style={{ fontSize: "var(--fs-12)", marginTop: 6, color: '#94a3b8' }}>
           คลิกที่อื่นบนแผนที่เพื่อปิด
         </div>
       </div>

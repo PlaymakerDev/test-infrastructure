@@ -168,7 +168,7 @@ const BarChart: React.FC<BarChartProps> = ({
         axisTick: { show: false },
         axisLabel: {
           color: '#ffffff',
-          fontSize: 11,
+          fontSize: "var(--fs-12)",
           lineHeight: 16,
           // Force every label only when rotated (rotation is how we fit many
           // labels); otherwise let ECharts auto-thin so dense time labels don't
@@ -187,7 +187,7 @@ const BarChart: React.FC<BarChartProps> = ({
         ...(yInterval ? { interval: yInterval } : {}),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#ffffff', fontSize: 12 },
+        axisLabel: { color: '#ffffff', fontSize: "var(--fs-12)" },
         splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
       },
       tooltip: {
@@ -196,7 +196,7 @@ const BarChart: React.FC<BarChartProps> = ({
         borderColor: '#2e3a4e',
         borderWidth: 1,
         padding: [10, 16],
-        textStyle: { color: '#ffffff', fontSize: 12 },
+        textStyle: { color: '#ffffff', fontSize: "var(--fs-12)" },
         formatter: (
           params: { seriesIndex: number; value: number; seriesName: string; axisValue?: string; dataIndex?: number }[]
         ) => {
@@ -313,7 +313,7 @@ const BarChart: React.FC<BarChartProps> = ({
         {/* Period tabs */}
         {periods && periods.length > 0 && (
           <div
-            className='flex gap-1 rounded-full p-1 text-sm'
+            className='flex gap-1 rounded-full p-1 fs-12'
             style={{ background: '#A2A2A233' }}
           >
             {periods.map((p) => (
@@ -347,7 +347,7 @@ const BarChart: React.FC<BarChartProps> = ({
                 <p className='text-2xl font-bold text-white leading-tight'>
                   {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                 </p>
-                <p className='text-xs mt-0.5' style={{ color: stat.color }}>{stat.label}</p>
+                <p className='fs-12 mt-0.5' style={{ color: stat.color }}>{stat.label}</p>
               </div>
             </div>
           ))}

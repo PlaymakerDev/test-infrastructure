@@ -56,7 +56,7 @@ const LampTitleSection: React.FC = () => {
           </h1>
           <div className='flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mt-2'>
             <div className='flex items-center gap-2 w-full sm:w-auto'>
-              <p className='text-white mb-0 text-[13px] sm:text-[14px]'>
+              <p className='text-white mb-0 fs-12 sm:fs-12'>
                 {project.installPoint}
               </p>
               <TbInfoCircleFilled

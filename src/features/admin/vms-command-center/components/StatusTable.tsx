@@ -102,7 +102,7 @@ const OTHER_LABEL = 'อื่น ๆ'
 // white-on-#66AEFF was near-invisible; same dark-on-blue pairing as
 // DetailTitleSection's Anydesk button. Unchecked (red track) keeps white.
 const SWITCH_LABEL_CLS =
-  '[&_.ant-switch-inner-checked]:text-xs! [&_.ant-switch-inner-unchecked]:text-xs! ' +
+  '[&_.ant-switch-inner-checked]:fs-12! [&_.ant-switch-inner-unchecked]:fs-12! ' +
   '[&_.ant-switch-inner-checked]:text-[#0A0A0A]! [&_.ant-switch-inner-checked]:font-medium! ' +
   '[&_.ant-switch-inner-unchecked]:text-white! [&_.ant-switch-inner-unchecked]:font-medium!'
 
@@ -382,7 +382,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <Tooltip title={r.solution_name || ''} placement="topLeft">
-                <div className="truncate text-sm font-semibold text-white/90">
+                <div className="truncate fs-12 font-semibold text-white/90">
                   {r.solution_name || '—'}
                 </div>
               </Tooltip>
@@ -420,7 +420,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         width: 150,
         render: (_: unknown, r) => (
           <div className="min-w-0">
-            <div className="truncate text-sm text-(--yellow)">{r.road_code || '—'}</div>
+            <div className="truncate fs-12 text-(--yellow)">{r.road_code || '—'}</div>
             {r.sta && (
               <div className="fs-12 text-white/50 truncate">กม.{r.sta}</div>
             )}
@@ -432,7 +432,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         key: 'org',
         render: (_: unknown, r) => (
           <div className="min-w-0">
-            <div className="truncate text-sm text-white/85">
+            <div className="truncate fs-12 text-white/85">
               {r.department_short_name || '—'}
             </div>
             {r.bureau_short_name && (

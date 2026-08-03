@@ -103,7 +103,7 @@ const TableContact: React.FC<Props> = ({
         align: 'center',
         render: (v: number) => (
           <span
-            className='inline-flex items-center justify-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+            className='inline-flex items-center justify-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
             style={{
               border: `1px solid ${v > 0 ? '#66AEFF' : 'var(--light-gray-2)'}`,
               color: v > 0 ? '#66AEFF' : '#B0B0B0',

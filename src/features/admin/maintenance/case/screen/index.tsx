@@ -432,7 +432,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
       {returnToAllRepairs && !solutionId && !cameraDetailQuery.isLoading && (
         <div
           role='alert'
-          className='mx-4 sm:mx-10 mt-4 rounded-xl px-4 py-3 text-[13px]'
+          className='mx-4 sm:mx-10 mt-4 rounded-xl px-4 py-3 fs-12'
           style={{ border: '1px solid #FCD116', background: '#FCD1161A', color: '#FCD116' }}
         >
           ไม่พบ Solution ที่ผูกกับ Case นี้อย่างแน่ชัด จึงไม่แสดงข้อมูลโครงการแทนด้วย Solution อื่น
@@ -450,7 +450,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
             border: `2px solid ${statusConfig.color}`,
           }}
         >
-          <p style={{ color: statusConfig.color, fontWeight: 400, fontSize: 14, margin: 0 }}>
+          <p style={{ color: statusConfig.color, fontWeight: 400, fontSize: "var(--fs-12)", margin: 0 }}>
             สถานะซ่อมแซม
           </p>
           <p style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 16, margin: 0 }}>
@@ -466,7 +466,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
             border: '2px solid #FFFFFF',
           }}
         >
-          <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: 0, opacity: 0.6 }}>
+          <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, opacity: 0.6 }}>
             หมวดปัญหา
           </p>
           <p style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 16, margin: 0 }}>
@@ -493,7 +493,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 <img src={`${BASE_PATH}/images/Maintenance/iccf.png`} alt='' width={30} height={30} />
                 <div>
                   <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: 0 }}>บันทึกแจ้งซ่อม</p>
-                  <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: 0, marginTop: -4 }}>เพิ่มรายละเอียดปัญหาหรือสาเหตุที่พบ แนบรูปภาพหรือวิดีโอ</p>
+                  <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, marginTop: -4 }}>เพิ่มรายละเอียดปัญหาหรือสาเหตุที่พบ แนบรูปภาพหรือวิดีโอ</p>
                 </div>
               </div>
               <p className='pl-0 md:pl-9.5 mt-4' style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: 0, marginTop: 16 }}>ข้อมูลการแจ้งซ่อม</p>
@@ -581,7 +581,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
             >
               <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 16, margin: 0 }}>รูปภาพหรือวิดิโอ</p>
               <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '12px 0 4px 0' }}>ก่อนซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
-              <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: '0 0 8px 0' }}>ลากและวางที่นี่เพื่อดำเนินการต่อ</p>
+              <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: '0 0 8px 0' }}>ลากและวางที่นี่เพื่อดำเนินการต่อ</p>
               <Upload.Dragger
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
@@ -640,7 +640,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                 </div>
               )}
               <p style={{ color: '#FCD116', fontWeight: 400, fontSize: 16, margin: '12px 0 4px 0' }}>หลังซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
-              <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: '0 0 8px 0' }}>ลากและวางที่นี่เพื่อดำเนินการต่อ</p>
+              <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: '0 0 8px 0' }}>ลากและวางที่นี่เพื่อดำเนินการต่อ</p>
               <Upload.Dragger
                 style={{ background: 'transparent', border: '1px dashed #FCD116', borderRadius: 10, height: 120, textAlign: 'center' }}
                 className='maintenance-upload-dragger'
@@ -733,7 +733,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                     }}
                   />
                 </div>
-                <span className='whitespace-nowrap text-[13px] font-medium' style={{ color: closeCaseAfterSave ? '#05F2DB' : '#999' }}>
+                <span className='whitespace-nowrap fs-12 font-medium' style={{ color: closeCaseAfterSave ? '#05F2DB' : '#999' }}>
                   ปิด Case หลังบันทึก
                 </span>
               </div>
@@ -777,37 +777,37 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <img src={`${BASE_PATH}/images/Maintenance/icf1.png`} alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลโครงการ</p>
             </div>
-            <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{project.projectName}</p>
+            <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: "var(--fs-12)", margin: '12px 0 0 0' }}>{project.projectName}</p>
             <div className='mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4'>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc1.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>ผู้รับจ้าง</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractor}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>ผู้รับจ้าง</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractor}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc2.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>หน่วยงานรับผิดชอบ</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.agency}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>หน่วยงานรับผิดชอบ</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{project.agency}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc3.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>เลขที่สัญญา</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractNo}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>เลขที่สัญญา</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{project.contractNo}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc1.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>เริ่มต้นการรับประกัน</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyStart}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>เริ่มต้นการรับประกัน</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyStart}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc2.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>สิ้นสุดการรับประกัน</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyEnd}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>สิ้นสุดการรับประกัน</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{project.warrantyEnd}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc3.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>สถานะค้ำประกัน</p>
-                <p style={{ color: project.warrantyStatus === 'expired' ? '#E94C4C' : '#66AEFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>สถานะค้ำประกัน</p>
+                <p style={{ color: project.warrantyStatus === 'expired' ? '#E94C4C' : '#66AEFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>
                   {project.warrantyStatus === 'expired' ? 'หมดค้ำ' : 'ในค้ำ'}
                 </p>
               </div>
@@ -823,32 +823,32 @@ const CaseContent: React.FC<Props> = ({ id }) => {
               <img src={`${BASE_PATH}/images/Maintenance/icf1.png`} alt='' width={30} height={30} />
               <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: 0 }}>ข้อมูลอุปกรณ์</p>
             </div>
-            <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '12px 0 0 0' }}>{device.deviceName}</p>
+            <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: "var(--fs-12)", margin: '12px 0 0 0' }}>{device.deviceName}</p>
             <div className='mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4'>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc2.1.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>ประเภทอุปกรณ์</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.deviceType}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>ประเภทอุปกรณ์</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{device.deviceType}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc2.2.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จุดติดตั้ง / สายทาง</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.installPoint}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>จุดติดตั้ง / สายทาง</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{device.installPoint}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc3.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>IP Address</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.ipAddress}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>IP Address</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{device.ipAddress}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc4-5.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>วันที่เริ่มออฟไลน์</p>
-                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDate || '-'}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>วันที่เริ่มออฟไลน์</p>
+                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDate || '-'}</p>
               </div>
               <div className='flex flex-col items-center'>
                 <img src={`${BASE_PATH}/images/Maintenance/icsc6.png`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
-                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
+                <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>จำนวนวันออฟไลน์</p>
+                <p style={{ color: '#E94C4C', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-'}</p>
               </div>
               {device.hasLive && (
                 <div className='flex flex-col items-center'>
@@ -858,7 +858,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
                     onClick={() => caseData?.camera_id && dispatch(setCCTVModalOpen({ open: true, camera_id: caseData.camera_id }))}
                   >
                     <img src={`${BASE_PATH}/images/Maintenance/iclive.png`} alt='' width={30} height={30} />
-                    <p style={{ color: '#000000', fontWeight: 400, fontSize: 14, margin: 0 }}>Live</p>
+                    <p style={{ color: '#000000', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0 }}>Live</p>
                   </div>
                 </div>
               )}

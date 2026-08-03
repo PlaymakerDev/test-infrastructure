@@ -64,7 +64,7 @@ const FormSearchRoute: React.FC<Props> = ({
   return (
     <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>จังหวัด</label>
+        <label className='block fs-12 text-white/70 mb-1'>จังหวัด</label>
         <Select
           size='large'
           allowClear
@@ -80,7 +80,7 @@ const FormSearchRoute: React.FC<Props> = ({
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>ผู้รับผิดชอบ</label>
+        <label className='block fs-12 text-white/70 mb-1'>ผู้รับผิดชอบ</label>
         <Select
           size='large'
           allowClear
@@ -96,7 +96,7 @@ const FormSearchRoute: React.FC<Props> = ({
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>&nbsp;</label>
+        <label className='block fs-12 text-white/70 mb-1'>&nbsp;</label>
         <Input
           size='large'
           className='rounded-lg'

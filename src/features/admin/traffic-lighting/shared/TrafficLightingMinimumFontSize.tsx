@@ -5,16 +5,16 @@ import React from 'react'
 const TrafficLightingMinimumFontSize: React.FC = () => (
   <style>{`
     .traffic-lighting-font-min-14 .fs-10,
-    .traffic-lighting-font-min-14 .fs-11,
+    .traffic-lighting-font-min-14 .fs-12,
     .traffic-lighting-font-min-14 .fs-12,
     .traffic-lighting-font-min-14 .fs-13,
-    .traffic-lighting-font-min-14 .text-xs,
+    .traffic-lighting-font-min-14 .fs-12,
     .traffic-lighting-font-min-14 [class*="text-[8px]"],
     .traffic-lighting-font-min-14 [class*="text-[9px]"],
     .traffic-lighting-font-min-14 [class*="text-[10px]"],
-    .traffic-lighting-font-min-14 [class*="text-[11px]"],
-    .traffic-lighting-font-min-14 [class*="text-[12px]"],
-    .traffic-lighting-font-min-14 [class*="text-[13px]"] {
+    .traffic-lighting-font-min-14 [class*="fs-12"],
+    .traffic-lighting-font-min-14 [class*="fs-12"],
+    .traffic-lighting-font-min-14 [class*="fs-12"] {
       font-size: 14px !important;
     }
 

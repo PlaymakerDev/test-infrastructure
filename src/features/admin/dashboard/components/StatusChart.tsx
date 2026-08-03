@@ -13,7 +13,7 @@ interface CardProps {
   label: string
 }
 
-interface Props {}
+interface Props { }
 
 /** 3 headline counters for the dashboard left rail.
  *  Data:
@@ -59,7 +59,7 @@ const StatusChart: React.FC<Props> = () => {
         <div className='text-3xl font-bold whitespace-nowrap tabular-nums' style={{ color: '#FCD116' }}>
           {value.toLocaleString()}
         </div>
-        <div className='text-sm' style={{ color: '#FCD116' }}>
+        <div className='fs-12' style={{ color: '#FCD116' }}>
           {label}
         </div>
       </div>

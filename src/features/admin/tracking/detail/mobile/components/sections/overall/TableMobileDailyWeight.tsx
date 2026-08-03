@@ -96,7 +96,7 @@ const mockData: DailyWeightRecord[] = [
 ]
 
 const StatusBadge = ({ label, cls }: { label: string; cls: string }) => (
-  <span className={`inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border ${cls}`}>
+  <span className={`inline-block py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border ${cls}`}>
     {label}
   </span>
 )

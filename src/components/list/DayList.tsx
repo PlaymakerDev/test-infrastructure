@@ -39,7 +39,7 @@ const DayList: React.FC<DayListProps> = ({
   return (
     <div className={className}>
       {label && (
-        <p className="text-(--yellow) mb-2 text-sm">{label}</p>
+        <p className="text-(--yellow) mb-2 fs-12">{label}</p>
       )}
       <div className="flex flex-wrap gap-2">
         {DAYS.map((d) => {
@@ -52,7 +52,7 @@ const DayList: React.FC<DayListProps> = ({
               onClick={() => toggle(d.value)}
               disabled={isDayDisabled}
               className={[
-                'min-w-10 rounded px-3 py-1.5 text-sm font-medium transition-colors',
+                'min-w-10 rounded px-3 py-1.5 fs-12 font-medium transition-colors',
                 isDayDisabled
                   ? 'cursor-not-allowed opacity-50'
                   : 'cursor-pointer',

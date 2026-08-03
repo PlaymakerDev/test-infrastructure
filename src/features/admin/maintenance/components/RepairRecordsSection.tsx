@@ -248,7 +248,7 @@ const RepairRecordsSection: React.FC = () => {
           border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`,
           borderRadius: 9999,
           padding: '2px 12px',
-          fontSize: 14,
+          fontSize: "var(--fs-12)",
           fontWeight: 400,
         }}>
           {warranty}
@@ -273,7 +273,7 @@ const RepairRecordsSection: React.FC = () => {
             border: `1px solid ${s.color}`,
             borderRadius: 9999,
             padding: '2px 12px',
-            fontSize: 14,
+            fontSize: "var(--fs-12)",
             fontWeight: 400,
           }}>
             {s.label}
@@ -285,7 +285,7 @@ const RepairRecordsSection: React.FC = () => {
 
   const renderBadge = (count: number, color: string) => (
     <span
-      className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 fs-12 font-normal whitespace-nowrap"
       style={{ padding: '2px 12px', borderRadius: 9999, border: `1px solid ${color}`, color, minWidth: 70, textAlign: 'center' }}
     >
       <img src={`${BASE_PATH}/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
@@ -313,7 +313,7 @@ const RepairRecordsSection: React.FC = () => {
             ].join(' ')}>
               <div className="w-md h-full overflow-y-auto p-5">
                 <p className="text-[16px] font-normal" style={{ color: '#66AEFF' }}>Solution Types</p>
-                <p className="text-[12px] font-normal mt-1" style={{ color: '#979797' }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
+                <p className="fs-12 font-normal mt-1" style={{ color: '#979797' }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
                 <div className="mt-4 flex flex-col gap-2">
                   {SOLUTION_TYPES.map((item) => (
                     <div
@@ -325,8 +325,8 @@ const RepairRecordsSection: React.FC = () => {
                       }}
                       onClick={() => setSelectedSolution(item)}
                     >
-                      <span className="text-[12px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.name}</span>
-                      <span className="text-[12px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
+                      <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.name}</span>
+                      <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
                         {item.installPoints} จุดติดตั้ง {item.devices.toLocaleString()} อุปกรณ์
                       </span>
                     </div>
@@ -350,14 +350,14 @@ const RepairRecordsSection: React.FC = () => {
             <div className="flex items-center gap-4">
               <span className="text-[24px] font-bold" style={{ color: '#FCD116' }}>{selectedSolution.name}</span>
               <span
-                className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 fs-12 font-normal whitespace-nowrap"
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 70, textAlign: 'center' }}
               >
                 <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#66AEFF' }} />
                 <span style={{ marginTop: 2 }}>{selectedSolution.installPoints.toLocaleString()}</span>
               </span>
               <span
-                className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 fs-12 font-normal whitespace-nowrap"
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 70, textAlign: 'center' }}
               >
                 <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#E94C4C' }} />
@@ -365,10 +365,10 @@ const RepairRecordsSection: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-6 mt-3">
-              <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>25 หน่วยงาน</span>
-              <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>123 โครงการ</span>
-              <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{selectedSolution.installPoints.toLocaleString()} จุดติดตั้ง</span>
-              <span className="text-[12px] font-normal" style={{ color: '#E9D682' }}>{selectedSolution.devices.toLocaleString()} อุปกรณ์</span>
+              <span className="fs-12 font-normal" style={{ color: '#E9D682' }}>25 หน่วยงาน</span>
+              <span className="fs-12 font-normal" style={{ color: '#E9D682' }}>123 โครงการ</span>
+              <span className="fs-12 font-normal" style={{ color: '#E9D682' }}>{selectedSolution.installPoints.toLocaleString()} จุดติดตั้ง</span>
+              <span className="fs-12 font-normal" style={{ color: '#E9D682' }}>{selectedSolution.devices.toLocaleString()} อุปกรณ์</span>
             </div>
 
             {/* Tree Structure */}
@@ -385,9 +385,9 @@ const RepairRecordsSection: React.FC = () => {
                     style={{ color: '#FCD116', transform: expandedAgency === agency.id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                   />
                   <span className="text-[16px] font-normal" style={{ color: '#FCD116' }}>{agency.name}</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{agency.projects} โครงการ</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{agency.installPoints} จุดติดตั้ง</span>
-                  <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{agency.devices} อุปกรณ์</span>
+                  <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{agency.projects} โครงการ</span>
+                  <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{agency.installPoints} จุดติดตั้ง</span>
+                  <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{agency.devices} อุปกรณ์</span>
                   <div className="flex items-center gap-2" style={{ marginLeft: 'auto', width: 140, justifyContent: 'flex-start' }}>
                     {agency.blueCount > 0 && renderBadge(agency.blueCount, '#66AEFF')}
                     {agency.redCount > 0 && renderBadge(agency.redCount, '#E94C4C')}
@@ -412,10 +412,10 @@ const RepairRecordsSection: React.FC = () => {
                         className="text-[16px] shrink-0 transition-transform duration-200"
                         style={{ color: '#FCD116', transform: expandedSub === sub.id ? 'rotate(180deg)' : 'rotate(0deg)' }}
                       />
-                      <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{sub.name}</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{sub.projects} โครงการ</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{sub.installPoints} จุดติดตั้ง</span>
-                      <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{sub.devices} อุปกรณ์</span>
+                      <span className="fs-12 font-normal" style={{ color: '#FCD116' }}>{sub.name}</span>
+                      <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{sub.projects} โครงการ</span>
+                      <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{sub.installPoints} จุดติดตั้ง</span>
+                      <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{sub.devices} อุปกรณ์</span>
                       <div className="flex items-center gap-2" style={{ marginLeft: 'auto', width: 140, justifyContent: 'flex-start' }}>
                         {sub.blueCount > 0 && renderBadge(sub.blueCount, '#66AEFF')}
                         {sub.redCount > 0 && renderBadge(sub.redCount, '#E94C4C')}
@@ -430,8 +430,8 @@ const RepairRecordsSection: React.FC = () => {
                         style={{ background: '#151515', height: 40, paddingLeft: 60, paddingRight: 12 }}
                         onClick={() => router.push(`/admin/maintenance/detail/${point.id}?title=${sub.name}&subtitle=${point.subtitle}`)}
                       >
-                        <span className="text-[14px] font-normal" style={{ color: '#FCD116' }}>{point.name}</span>
-                        <span className="text-[12px] font-normal" style={{ color: '#B4B4B4' }}>{point.subtitle}</span>
+                        <span className="fs-12 font-normal" style={{ color: '#FCD116' }}>{point.name}</span>
+                        <span className="fs-12 font-normal" style={{ color: '#B4B4B4' }}>{point.subtitle}</span>
                         <div className="flex items-center gap-2" style={{ marginLeft: 'auto', width: 140, justifyContent: 'flex-start' }}>
                           <span style={{ minWidth: 70 }} />
                           {point.blueCount > 0 && renderBadge(point.blueCount, '#66AEFF')}
@@ -460,11 +460,11 @@ const RepairRecordsSection: React.FC = () => {
                 }}
                 onClick={() => setActiveStatusTab(tab.value)}
               >
-                <span style={{ fontSize: 14, fontWeight: activeStatusTab === tab.value ? 600 : 400, color: activeStatusTab === tab.value ? '#FCD116' : '#979797' }}>
+                <span style={{ fontSize: "var(--fs-12)", fontWeight: activeStatusTab === tab.value ? 600 : 400, color: activeStatusTab === tab.value ? '#FCD116' : '#979797' }}>
                   {tab.label}
                 </span>
                 <span style={{
-                  fontSize: 12,
+                  fontSize: "var(--fs-12)",
                   fontWeight: 600,
                   color: activeStatusTab === tab.value ? '#FCD116' : '#979797',
                   border: `1px solid ${activeStatusTab === tab.value ? '#FCD116' : '#979797'}`,

@@ -54,7 +54,7 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
       >
         <div className='flex items-center gap-3 min-w-0'>
           {iconNode ?? (icon ? <img src={icon} alt='' width={30} height={30} className='shrink-0 w-8 h-8' /> : null)}
-          <p className='text-[13px] font-bold m-0 leading-normal truncate' style={{ color: titleColor }}>
+          <p className='fs-12 font-bold m-0 leading-normal truncate' style={{ color: titleColor }}>
             {title}
           </p>
         </div>
@@ -68,7 +68,7 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
               style={
                 valueUnitLarge
                   ? { color: titleColor, fontSize: valueFontSize }
-                  : { color: '#979797', fontSize: 12 }
+                  : { color: '#979797', fontSize: "var(--fs-12)" }
               }
             >
               {valueUnit}
@@ -76,12 +76,12 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
           )}
         </div>
         {subtitle && (
-          <p className='font-normal m-0 mt-1 truncate' style={{ color: '#979797', fontSize: 11 }}>
+          <p className='font-normal m-0 mt-1 truncate' style={{ color: '#979797', fontSize: "var(--fs-12)" }}>
             {subtitle}
           </p>
         )}
         {active && (
-          <p className='font-normal m-0 mt-1' style={{ color: '#979797', fontSize: 11 }}>
+          <p className='font-normal m-0 mt-1' style={{ color: '#979797', fontSize: "var(--fs-12)" }}>
             Active : {active}
           </p>
         )}
@@ -116,7 +116,7 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
               style={
                 valueUnitLarge
                   ? { color: titleColor, fontSize: valueFontSize }
-                  : { color: '#979797', fontSize: 12 }
+                  : { color: '#979797', fontSize: "var(--fs-12)" }
               }
             >
               {valueUnit}
@@ -124,12 +124,12 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
           )}
         </div>
         {subtitle && (
-          <p className={`font-normal m-0 mt-1 ${statusIndent}`} style={{ color: '#979797', fontSize: 12 }}>
+          <p className={`font-normal m-0 mt-1 ${statusIndent}`} style={{ color: '#979797', fontSize: "var(--fs-12)" }}>
             {subtitle}
           </p>
         )}
         {active && (
-          <p className={`font-normal m-0 mt-1 ${statusIndent}`} style={{ color: '#979797', fontSize: 12 }}>
+          <p className={`font-normal m-0 mt-1 ${statusIndent}`} style={{ color: '#979797', fontSize: "var(--fs-12)" }}>
             Active : {active}
           </p>
         )}

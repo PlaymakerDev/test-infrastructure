@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { TbPower } from 'react-icons/tb'
 
-interface Props {}
+interface Props { }
 
 /** Remote ON/OFF control card — yellow heading, warning text, toggle button.
  *  Replicates the Figma left-bottom card "คำสั่งเปิด-ปิดระยะไกล". */
@@ -19,14 +19,14 @@ const RemoteControlCard: React.FC<Props> = () => {
       </h3>
       <p
         className='text-white/60 leading-snug'
-        style={{ fontSize: 12 }}
+        style={{ fontSize: "var(--fs-12)" }}
       >
         การสั่งงานนี้อาจส่งผลต่ออุปกรณ์ไฟฟ้าและผู้ใช้งานในพื้นที่ กรุณาตรวจสอบความปลอดภัยก่อนดำเนินการทุกครั้ง
       </p>
       <button
         type='button'
         onClick={() => setIsOn((v) => !v)}
-        className='inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold w-fit mt-1'
+        className='inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full fs-12 font-semibold w-fit mt-1'
         style={{
           background: isOn ? '#FCD116' : 'rgba(252,209,22,0.15)',
           border: '1.5px solid #FCD116',

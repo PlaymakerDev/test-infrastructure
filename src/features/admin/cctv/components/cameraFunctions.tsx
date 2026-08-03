@@ -27,7 +27,7 @@ export const CameraFunctionTag: React.FC<{ tag: string }> = ({ tag }) => {
   const label = entry?.label ?? tag
   return (
     <span
-      className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap'
+      className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 font-medium whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {label}

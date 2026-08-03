@@ -28,14 +28,14 @@ const TOKENS = {
 } as const
 
 const requiredLabel = (text: string) => (
-  <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: TOKENS.label, fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {text}
     <span style={{ color: TOKENS.asterisk, marginLeft: 2 }}>*</span>
   </span>
 )
 
 const plainLabel = (text: string) => (
-  <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>{text}</span>
+  <span style={{ color: TOKENS.label, fontSize: "var(--fs-12)", fontWeight: 500 }}>{text}</span>
 )
 
 /** Fields mirror the real /manage/contractor request bodies:
@@ -137,7 +137,7 @@ const ContactModal: React.FC<Props> = ({ open, editing, submitting, onClose, onS
       >
         {isEdit && editing?.username ? (
           <div
-            className='mb-4 rounded-lg px-3 py-2 text-xs'
+            className='mb-4 rounded-lg px-3 py-2 fs-12'
             style={{ background: '#F3F4F6', color: '#374151' }}
           >
             บัญชีผู้ใช้ (username):{' '}
@@ -202,10 +202,10 @@ const ContactModal: React.FC<Props> = ({ open, editing, submitting, onClose, onS
 
           <Form.Item
             label={
-              <span style={{ color: TOKENS.label, fontSize: 14, fontWeight: 500 }}>
+              <span style={{ color: TOKENS.label, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                 รหัสผ่าน
                 {isEdit ? (
-                  <span style={{ color: '#8A8A8A', fontSize: 12, marginLeft: 6 }}>
+                  <span style={{ color: '#8A8A8A', fontSize: "var(--fs-12)", marginLeft: 6 }}>
                     (เว้นว่างหากไม่ต้องการเปลี่ยน)
                   </span>
                 ) : (

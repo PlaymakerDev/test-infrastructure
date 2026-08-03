@@ -351,7 +351,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                             />
                             {isVideoName(m.filename || m.url) && (
                               <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white text-sm">▶</span>
+                                <span className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white fs-12">▶</span>
                               </span>
                             )}
                           </div>
@@ -617,7 +617,7 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           title="ยืนยันการส่งคำสั่งควบคุม"
           confirmLoading={post.isPending}
         >
-          <div className="text-sm space-y-3">
+          <div className="fs-12 space-y-3">
             {currentSettingLoading && <Skeleton active paragraph={{ rows: 2 }} />}
             {/* Dark confirm modal text scheme (2026-07-27): bold/headings →
                 yellow, body text → white; STATUS values keep their own

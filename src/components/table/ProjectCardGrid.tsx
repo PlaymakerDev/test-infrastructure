@@ -37,7 +37,7 @@ export interface ProjectCardItem {
 
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
   <span
-    className='inline-flex items-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
+    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1.5px solid ${color}`, color }}
   >
     {text}
@@ -86,20 +86,20 @@ const ProjectCard: React.FC<{
           onClick={
             hasContract
               ? () =>
-                  dispatch(
-                    setProjectInfoModalOpen({
-                      open: true,
-                      project_id: item.projectId ?? null,
-                      road_id: item.roadId ?? null,
-                    })
-                  )
+                dispatch(
+                  setProjectInfoModalOpen({
+                    open: true,
+                    project_id: item.projectId ?? null,
+                    road_id: item.roadId ?? null,
+                  })
+                )
               : undefined
           }
         />
       </div>
 
       {/* Info rows */}
-      <div className='flex flex-col gap-1.5 text-sm'>
+      <div className='flex flex-col gap-1.5 fs-12'>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>จุดติดตั้ง :</span>
           <span
@@ -125,7 +125,7 @@ const ProjectCard: React.FC<{
       <div className='flex items-center justify-around pt-2'>
         <div className='flex flex-col items-center gap-2'>
           <span className='fs-24 font-bold tabular-nums leading-none text-white'>{item.total}</span>
-          <div className='flex items-center gap-1 text-sm text-white/50'>
+          <div className='flex items-center gap-1 fs-12 text-white/50'>
             <TbGridDots size={16} />
             <span>{totalLabel}</span>
           </div>
@@ -137,7 +137,7 @@ const ProjectCard: React.FC<{
           >
             {item.online}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#66AEFF99' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#66AEFF99' }}>
             <TbWifi size={16} />
             <span>ออนไลน์</span>
           </div>
@@ -149,7 +149,7 @@ const ProjectCard: React.FC<{
           >
             {item.offline}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#E94C4C99' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#E94C4C99' }}>
             <TbWifiOff size={16} />
             <span>ออฟไลน์</span>
           </div>
@@ -202,7 +202,7 @@ const ProjectCardGrid: React.FC<Props> = ({ items, totalLabel = 'ทั้งห
   }, [roadIds, deptQueries])
 
   if (items.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
+    return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบข้อมูล</div>
   }
 
   return (
@@ -215,7 +215,7 @@ const ProjectCardGrid: React.FC<Props> = ({ items, totalLabel = 'ทั้งห
           >
             <span className='text-white font-bold'>{bureau}</span>
             <span
-              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
               style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
             >
               {rows.length} โครงการ

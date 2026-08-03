@@ -105,7 +105,7 @@ export const WithExtraOverlay: Story = {
     hlsUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
     cameraId: 'cam-overlay-01',
     extra: (
-      <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">
+      <div className="absolute bottom-2 left-2 bg-black/60 text-white fs-12 px-2 py-0.5 rounded">
         CAM-01 | Main Entrance
       </div>
     ),

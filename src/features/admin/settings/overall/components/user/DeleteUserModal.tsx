@@ -26,7 +26,7 @@ const CONFIRM_BG = '#FCD116'
 const CONFIRM_TEXT = '#1A1A1A'
 
 const InfoRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className='flex items-start gap-2 text-sm'>
+  <div className='flex items-start gap-2 fs-12'>
     <span style={{ color: LABEL_MUTED }} className='shrink-0'>{label}&nbsp;:</span>
     <span style={{ color: VALUE_TEXT }} className='break-words'>{children}</span>
   </div>
@@ -78,7 +78,7 @@ const DeleteUserModal: React.FC<Props> = ({ open, user, submitting, onClose, onC
             <h3 style={{ color: VALUE_TEXT, fontSize: 18, fontWeight: 600 }} className='m-0'>
               ยืนยันลบผู้ใช้งานหรือไม่?
             </h3>
-            <p style={{ color: '#8A8A8A', fontSize: 13 }} className='mt-1 mb-0'>
+            <p style={{ color: '#8A8A8A', fontSize: "var(--fs-12)" }} className='mt-1 mb-0'>
               ระบบจะลบผู้ใช้งานโดยไม่สามารถกู้คืนหรือย้อนกลับได้
             </p>
           </div>
@@ -95,12 +95,12 @@ const DeleteUserModal: React.FC<Props> = ({ open, user, submitting, onClose, onC
             >
               <InfoRow label='Username'>{user.username}</InfoRow>
               <InfoRow label='ชื่อ-นามสกุล'>{user.fullName || '-'}</InfoRow>
-              <div className='flex items-center gap-2 text-sm'>
+              <div className='flex items-center gap-2 fs-12'>
                 <span style={{ color: LABEL_MUTED }}>บทบาท&nbsp;:</span>
                 <RoleBadge role={user.role} />
               </div>
               <InfoRow label='หน่วยงาน'>{user.department}</InfoRow>
-              <div className='flex items-center gap-2 text-sm'>
+              <div className='flex items-center gap-2 fs-12'>
                 <span style={{ color: LABEL_MUTED }}>สถานะ&nbsp;:</span>
                 <StatusPill status={user.status} />
               </div>

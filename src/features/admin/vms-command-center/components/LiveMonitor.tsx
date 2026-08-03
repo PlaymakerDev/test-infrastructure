@@ -164,7 +164,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
       <div className="px-4 py-3 border-b border-white/10 space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
+            <div className="fs-12 font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
             <div className="fs-12 opacity-60 mt-0.5">
               อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
               {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
@@ -303,7 +303,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                  <div className="fs-12 font-medium truncate flex items-center gap-1.5">
                     {it.road_code && <span className="text-(--yellow) font-semibold">{it.road_code}</span>}
                     {it.sta && <span className="text-(--default-blue) fs-12">กม.{it.sta}</span>}
                     <span className="truncate opacity-80">{it.solution_name || `VMS ${it.vms_id}`}</span>
@@ -506,7 +506,7 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                <div className="fs-12 font-medium truncate flex items-center gap-1.5">
                   {s.road_code && <span className="text-(--yellow) font-semibold">{s.road_code}</span>}
                   {s.sta && <span className="text-(--default-blue) fs-12">กม.{s.sta}</span>}
                   <span className="truncate opacity-80">{s.solution_name || `VMS ${s.vms_id}`}</span>

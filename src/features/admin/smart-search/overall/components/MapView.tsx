@@ -350,7 +350,7 @@ const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
         borderColor: "#2e3a4e",
         borderWidth: 1,
         padding: [10, 16],
-        textStyle: { color: "#ffffff", fontSize: 12 },
+        textStyle: { color: "#ffffff", fontSize: "var(--fs-12)" },
         formatter: (p: {
           name: string
           value: number
@@ -371,7 +371,7 @@ const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
         itemWidth: 12,
         itemHeight: 90,
         inRange: { color: ["#7a6717", "#b89a20", "#FCD116"] },
-        textStyle: { color: "#8a9ab5", fontSize: 11 },
+        textStyle: { color: "#8a9ab5", fontSize: "var(--fs-12)" },
       },
       series: [
         {
@@ -434,11 +434,10 @@ const MapView: React.FC<Props> = ({ layers, onSelectArea }) => {
                 key={l.key}
                 type="button"
                 onClick={() => setActiveKey(l.key)}
-                className={`fs-12 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                  active?.key === l.key
-                    ? "bg-(--yellow) text-(--dark-black) font-medium"
-                    : "text-white/55 hover:text-white"
-                }`}
+                className={`fs-12 px-2.5 py-1 rounded-md transition-colors cursor-pointer ${active?.key === l.key
+                  ? "bg-(--yellow) text-(--dark-black) font-medium"
+                  : "text-white/55 hover:text-white"
+                  }`}
               >
                 {l.label}
               </button>

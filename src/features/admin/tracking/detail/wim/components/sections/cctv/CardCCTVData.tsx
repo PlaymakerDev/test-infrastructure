@@ -28,7 +28,7 @@ const CardCCTVData: React.FC<Props> = (props) => {
 
   const renderList = useMemo(() => {
     return list.map((item, index) => (
-      <span key={index} className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${CURRENT_TYPE[item].color}`}>
+      <span key={index} className={`inline-block py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${CURRENT_TYPE[item].color}`}>
         {CURRENT_TYPE[item].text}
       </span>
     ))

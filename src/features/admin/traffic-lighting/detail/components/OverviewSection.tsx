@@ -93,7 +93,7 @@ const OverviewSection: React.FC = () => {
               <MapEdgeFade left={10} right={10} top={10} bottom={10} />
             </div>
           ) : (
-            <p className='text-white/50 text-sm m-0 self-center'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
+            <p className='text-white/50 fs-12 m-0 self-center'>ไม่มี IMEI — ไม่สามารถแสดงวงจรไฟฟ้าได้</p>
           )}
         </div>
 

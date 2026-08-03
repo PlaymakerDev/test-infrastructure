@@ -52,59 +52,59 @@ const DEVICES = [
 const MaintenanceOverviewSection: React.FC = () => {
   return (
     <div className="mt-6 grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
-        <div className="rounded-[20px] bg-[#191919] p-5 self-start">
-          <div className="flex items-center gap-2">
-            <img src={`${BASE_PATH}/images/Maintenance/icsolu.png`} alt="solution" width={30} height={30} />
-            <h2 className="text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
-          </div>
-          <p className="text-xs font-normal text-[#979797] mt-1">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
-          <div className="mt-5 flex flex-wrap justify-between gap-4">
-            {DEVICES.map(device => (
-              <div key={device.label} className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                <div className="relative w-24 h-24">
-                  <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
-                    <circle cx="48" cy="48" r="40" fill="none" stroke="#333333" strokeWidth="10" />
-                    <circle
-                      cx="48" cy="48" r="40" fill="none"
-                      stroke={device.color}
-                      strokeWidth="10"
-                      strokeDasharray={`${(device.percent / 100) * 251.33} 251.33`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-lg font-bold leading-none" style={{ color: device.color }}>{device.percent}%</span>
-                    <span className="text-xs leading-none mt-0.5" style={{ color: device.color }}>Online</span>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold" style={{ color: device.color }}>{device.label}</span>
-              </div>
-            ))}
-          </div>
+      <div className="rounded-[20px] bg-[#191919] p-5 self-start">
+        <div className="flex items-center gap-2">
+          <img src={`${BASE_PATH}/images/Maintenance/icsolu.png`} alt="solution" width={30} height={30} />
+          <h2 className="text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
         </div>
-        <div className="rounded-[20px] bg-[#191919] p-5 lg:row-span-3">
-          <div className="flex items-center gap-2">
-            <img src={`${BASE_PATH}/images/Maintenance/ics1.png`} alt="line-down" width={30} height={30} />
-            <h2 className="text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
-          </div>
-          <div className="mt-5 flex items-center gap-2">
-            <Input
-              placeholder="ค้นหาหน่วยงาน..."
-              className="rounded-lg flex-1"
-              prefix={<TbSearch style={{ color: '#FCD116' }} />}
-              size="large"
-              allowClear
-              styles={{
-                input: { fontSize: 14, fontWeight: 400, color: '#FFFFFF' },
-              }}
-            />
-            <span
-              className="shrink-0 flex items-center"
-              style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', fontSize: 13, whiteSpace: 'nowrap' }}
-            >
-              35 สายทาง
-            </span>
-            <style>{`
+        <p className="fs-12 font-normal text-[#979797] mt-1">ภาพรวมสถานะการทำงานของอุปกรณ์</p>
+        <div className="mt-5 flex flex-wrap justify-between gap-4">
+          {DEVICES.map(device => (
+            <div key={device.label} className="flex flex-col items-center gap-2 flex-1 min-w-0">
+              <div className="relative w-24 h-24">
+                <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="40" fill="none" stroke="#333333" strokeWidth="10" />
+                  <circle
+                    cx="48" cy="48" r="40" fill="none"
+                    stroke={device.color}
+                    strokeWidth="10"
+                    strokeDasharray={`${(device.percent / 100) * 251.33} 251.33`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-bold leading-none" style={{ color: device.color }}>{device.percent}%</span>
+                  <span className="fs-12 leading-none mt-0.5" style={{ color: device.color }}>Online</span>
+                </div>
+              </div>
+              <span className="text-2xl font-bold" style={{ color: device.color }}>{device.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-[20px] bg-[#191919] p-5 lg:row-span-3">
+        <div className="flex items-center gap-2">
+          <img src={`${BASE_PATH}/images/Maintenance/ics1.png`} alt="line-down" width={30} height={30} />
+          <h2 className="text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
+        </div>
+        <div className="mt-5 flex items-center gap-2">
+          <Input
+            placeholder="ค้นหาหน่วยงาน..."
+            className="rounded-lg flex-1"
+            prefix={<TbSearch style={{ color: '#FCD116' }} />}
+            size="large"
+            allowClear
+            styles={{
+              input: { fontSize: "var(--fs-12)", fontWeight: 400, color: '#FFFFFF' },
+            }}
+          />
+          <span
+            className="shrink-0 flex items-center"
+            style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', fontSize: "var(--fs-12)", whiteSpace: 'nowrap' }}
+          >
+            35 สายทาง
+          </span>
+          <style>{`
               .ant-input-wrapper .ant-input::placeholder,
               .ant-input::placeholder {
                 color: #FCD116 !important;
@@ -131,24 +131,24 @@ const MaintenanceOverviewSection: React.FC = () => {
                 border-bottom: none !important;
               }
             `}</style>
-          </div>
-          <div className="mt-4">
-            <Table
-              columns={LINE_COLUMNS}
-              dataSource={LINE_DATA}
-              pagination={false}
-              size="small"
-              rowKey="key"
-              className="line-table"
-            />
-          </div>
         </div>
+        <div className="mt-4">
+          <Table
+            columns={LINE_COLUMNS}
+            dataSource={LINE_DATA}
+            pagination={false}
+            size="small"
+            rowKey="key"
+            className="line-table"
+          />
+        </div>
+      </div>
       <div className="rounded-[20px] bg-[#191919] p-5 self-start">
         <div className="flex items-center gap-2">
           <img src={`${BASE_PATH}/images/Maintenance/ics2.png`} alt="support" width={30} height={30} />
           <h2 className="text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
         </div>
-        <p className="text-xs font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
+        <p className="fs-12 font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
         <div className="mt-2 flex">
           {[
             { value: '173', label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
@@ -168,7 +168,7 @@ const MaintenanceOverviewSection: React.FC = () => {
               <div className="text-[24px] font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
               <div className="flex items-center justify-center gap-1 mt-0.5">
                 <img src={item.icon} alt="" width={14} height={14} />
-                <span className="text-sm font-normal text-[#979797]">{item.label}</span>
+                <span className="fs-12 font-normal text-[#979797]">{item.label}</span>
               </div>
             </div>
           ))}
@@ -179,7 +179,7 @@ const MaintenanceOverviewSection: React.FC = () => {
           <img src={`${BASE_PATH}/images/Maintenance/ics2.png`} alt="support" width={30} height={30} />
           <h2 className="text-[32px] font-bold text-[#05F2DB]">งานหมดค้ำ</h2>
         </div>
-        <p className="text-xs font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
+        <p className="fs-12 font-normal text-[#9E9CA8] mt-0.5">16 มีนาคม 2569 14:13:26</p>
         <div className="mt-2 flex">
           {[
             { value: '173', label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
@@ -199,7 +199,7 @@ const MaintenanceOverviewSection: React.FC = () => {
               <div className="text-[24px] font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
               <div className="flex items-center justify-center gap-1 mt-0.5">
                 <img src={item.icon} alt="" width={14} height={14} />
-                <span className="text-sm font-normal text-[#979797]">{item.label}</span>
+                <span className="fs-12 font-normal text-[#979797]">{item.label}</span>
               </div>
             </div>
           ))}

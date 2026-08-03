@@ -135,7 +135,7 @@ const FindOnPageOverlay: React.FC<Props> = ({ open, onClose }) => {
               // `min-w-0` is REQUIRED alongside `flex-1` — without it a flex
               // child's implicit `min-width: auto` refuses to shrink below its
               // intrinsic input width, pushing the buttons off-screen on mobile.
-              className='bg-transparent outline-none border-0 text-white text-sm flex-1 min-w-0 sm:flex-none sm:w-52 placeholder:text-white/40'
+              className='bg-transparent outline-none border-0 text-white fs-12 flex-1 min-w-0 sm:flex-none sm:w-52 placeholder:text-white/40'
               aria-label='คำค้น'
             />
 

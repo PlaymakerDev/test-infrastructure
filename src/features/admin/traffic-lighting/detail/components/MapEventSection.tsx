@@ -31,7 +31,7 @@ const LevelBadge = ({ status }: { status: string }) => {
   const color = level === 'Warning' ? '#FF9D00' : '#E94C4C'
   return (
     <span
-      className='inline-block px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-block px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {level}
@@ -43,7 +43,7 @@ const LineStatusBadge = ({ status }: { status: string }) => {
   const color = status === 'UP' ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-block px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-block px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {status}
@@ -182,13 +182,13 @@ const MapEventSection: React.FC = () => {
                 }}
               >
                 <span
-                  className='text-[12px] font-normal m-0 leading-none shrink-0'
+                  className='fs-12 font-normal m-0 leading-none shrink-0'
                   style={{ color: isActive ? '#212121' : stat.color }}
                 >
                   {stat.label}
                 </span>
                 <span
-                  className='flex items-center justify-center text-[14px] font-normal m-0 leading-none shrink-0 rounded-[5px]'
+                  className='flex items-center justify-center fs-12 font-normal m-0 leading-none shrink-0 rounded-[5px]'
                   style={{
                     width: 50,
                     height: 30,

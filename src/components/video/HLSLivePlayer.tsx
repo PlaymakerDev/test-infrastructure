@@ -65,7 +65,7 @@ const LoadingIndicator: React.FC = () => {
         }
       `}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }}>
-        <span style={{ color: '#ccc', fontSize: 12, letterSpacing: '0.05em' }}>Loading</span>
+        <span style={{ color: '#ccc', fontSize: "var(--fs-12)", letterSpacing: '0.05em' }}>Loading</span>
         <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', minWidth: 52, height: 18, overflow: 'hidden' }}>
           <span
             style={{
@@ -98,7 +98,7 @@ const LoadingIndicator: React.FC = () => {
               ))
               : (
                 <span style={{
-                  fontSize: 12,
+                  fontSize: "var(--fs-12)",
                   fontWeight: 600,
                   letterSpacing: '0.04em',
                   color: '#E94C4C',
@@ -1000,7 +1000,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
         className={`relative overflow-hidden bg-black/40 w-full h-full flex items-center justify-center ${figureClassName}`}
         {...propsHLSLivePlayer}
       >
-        <span className='text-white/50 text-xs'>ไม่มีสตรีม</span>
+        <span className='text-white/50 fs-12'>ไม่มีสตรีม</span>
       </figure>
     )
   }
@@ -1009,11 +1009,11 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
     return (
       <div className={`w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center ${className}`} style={style}>
         <div className="text-center text-slate-400 p-4">
-          <div className="text-sm text-red-400 font-bold mb-1">Connection Failed</div>
-          <div className="text-xs text-slate-500 mb-3">{errorMessage}</div>
+          <div className="fs-12 text-red-400 font-bold mb-1">Connection Failed</div>
+          <div className="fs-12 text-slate-500 mb-3">{errorMessage}</div>
           <button
             onClick={manualRetry}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white fs-12 rounded transition-colors"
           >
             Retry
           </button>
@@ -1070,7 +1070,7 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
       {/* Reconnecting indicator */}
       {isReconnecting && wasConnectedBefore && isInViewport && (
         <div className="absolute top-2 right-2 z-30 bg-amber-500/90 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-lg">
-          <div className="flex items-center space-x-2 text-white text-xs">
+          <div className="flex items-center space-x-2 text-white fs-12">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
             <span className="font-medium">Reconnecting...</span>
             {retryCount > 0 && (
@@ -1084,14 +1084,14 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
       {isPausedByViewport && !isInViewport && (
         <div className="absolute inset-0 bg-slate-900/95 flex items-center justify-center z-20">
           <div className="text-center text-slate-400">
-            <div className="text-xs">Paused (not visible)</div>
+            <div className="fs-12">Paused (not visible)</div>
           </div>
         </div>
       )}
 
       {/* Error indicator */}
       {connectionStatus === 'error' && hasError && !isReconnecting && isInViewport && (
-        <div className="absolute top-2 right-2 bg-red-500/90 backdrop-blur-sm px-3 py-1.5 rounded-md text-xs z-30">
+        <div className="absolute top-2 right-2 bg-red-500/90 backdrop-blur-sm px-3 py-1.5 rounded-md fs-12 z-30">
           <div className="flex items-center space-x-1 text-white">
             <div className="w-2 h-2 rounded-full bg-white"></div>
             <span className="font-bold uppercase">ERROR</span>

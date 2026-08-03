@@ -68,8 +68,8 @@ const MetricsGrid: React.FC<{ metrics: ReturnType<typeof buildMetrics>; accentCo
         className='flex flex-col items-center justify-center rounded-[10px] min-h-[64px] px-1 py-1.5'
         style={{ background: '#191919', border: `1px solid ${accentColor}` }}
       >
-        <span className='text-[14px] font-bold m-0 leading-tight' style={{ color: accentColor }}>{metric.label}</span>
-        <span className='text-[14px] font-normal m-0 mt-1 text-white tabular-nums leading-tight text-center w-full'>
+        <span className='fs-12 font-bold m-0 leading-tight' style={{ color: accentColor }}>{metric.label}</span>
+        <span className='fs-12 font-normal m-0 mt-1 text-white tabular-nums leading-tight text-center w-full'>
           {metric.value}
         </span>
       </div>
@@ -131,7 +131,7 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
 
       <div className='relative z-10 flex flex-row items-center gap-2 -mt-1'>
         <img src={`${BASE_PATH}/images/Lighting/icelt1.png`} alt='' width={32} height={32} className='shrink-0' />
-        <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
+        <p className='fs-12 font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
         {electricityCount > 1 && (
           <img
             src={`${BASE_PATH}/images/Lighting/arrowdown.png`}
@@ -157,7 +157,7 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
         </p>
         <p
           className='m-0 mt-1'
-          style={{ color: phaseAccentColor, fontSize: 14, fontWeight: 400 }}
+          style={{ color: phaseAccentColor, fontSize: "var(--fs-12)", fontWeight: 400 }}
         >
           {phaseSubLabel}
         </p>
@@ -166,7 +166,7 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
       <div className='relative z-10 flex flex-col gap-3 w-full'>
         {expanded && electricityCount > 1 ? (
           <div className='flex flex-col gap-1.5'>
-            <span className='text-[14px] font-normal text-left m-0' style={{ color: '#979797' }}>Phase 1</span>
+            <span className='fs-12 font-normal text-left m-0' style={{ color: '#979797' }}>Phase 1</span>
             <MetricsGrid metrics={primaryMetrics} accentColor={PHASE_COLORS[0]} />
           </div>
         ) : (
@@ -174,13 +174,13 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
         )}
         {expanded && extraPhases.map(({ phase, metrics }, index) => (
           <div key={phase} className='flex flex-col gap-1.5'>
-            <span className='text-[14px] font-normal text-left m-0' style={{ color: '#979797' }}>Phase {phase}</span>
+            <span className='fs-12 font-normal text-left m-0' style={{ color: '#979797' }}>Phase {phase}</span>
             <MetricsGrid metrics={metrics} accentColor={PHASE_COLORS[index + 1] ?? phaseAccentColor} />
           </div>
         ))}
         {expanded && electricityCount > 1 && (
           <div className='flex flex-col gap-1.5'>
-            <span className='text-[14px] font-normal text-left m-0' style={{ color: '#979797' }}>Average</span>
+            <span className='fs-12 font-normal text-left m-0' style={{ color: '#979797' }}>Average</span>
             <MetricsGrid metrics={averageMetrics} accentColor='#66AEFF' />
           </div>
         )}

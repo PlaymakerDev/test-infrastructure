@@ -38,7 +38,7 @@ const tintTag = (cssVar: string): React.CSSProperties => ({
   // Inline — antd v6's Tag font-size rule has the same (single-class)
   // specificity as a Tailwind text-* utility and loads after it, so a className
   // loses the tie. An inline style beats antd's stylesheet.
-  fontSize: 14,
+  fontSize: "var(--fs-12)",
   background: `color-mix(in srgb, var(${cssVar}) 12%, transparent)`,
   border: `1px solid var(${cssVar})`,
   color: `var(${cssVar})`,

@@ -439,7 +439,7 @@ export default function Navbar() {
             {OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}
           </span>
           <span
-            className={`hidden lg:block overflow-hidden text-[13px] font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${active
+            className={`hidden lg:block overflow-hidden fs-12 font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${active
               ? "max-w-36 opacity-100 text-(--yellow)"
               : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
               }`}
@@ -561,7 +561,7 @@ export default function Navbar() {
                 {locked ? <TbLock size={24} /> : <TbLockOpen size={24} />}
               </motion.span>
               <span
-                className={`hidden lg:block overflow-hidden text-[13px] font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${locked
+                className={`hidden lg:block overflow-hidden fs-12 font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${locked
                   ? "max-w-36 opacity-100 text-(--yellow)"
                   : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
                   }`}
@@ -627,7 +627,7 @@ export default function Navbar() {
                         title={item.title}
                       >
                         <span>{OverrideIcon ? <OverrideIcon size={22} /> : Icon(item.icon, { size: 22 })}</span>
-                        <span className={`text-[11px] leading-tight text-center ${active ? 'font-semibold' : ''}`}>
+                        <span className={`fs-12 leading-tight text-center ${active ? 'font-semibold' : ''}`}>
                           {item.label}
                         </span>
                       </button>
@@ -682,7 +682,7 @@ export default function Navbar() {
                       title={item.title}
                     >
                       <span>{item.icon}</span>
-                      <span className={`text-[11px] leading-tight text-center ${item.active ? 'font-semibold' : ''}`}>
+                      <span className={`fs-12 leading-tight text-center ${item.active ? 'font-semibold' : ''}`}>
                         {item.label}
                       </span>
                     </button>

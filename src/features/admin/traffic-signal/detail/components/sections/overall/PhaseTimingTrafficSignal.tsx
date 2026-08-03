@@ -183,7 +183,7 @@ const PhaseTimingTrafficSignal: React.FC = () => {
           {activePhase.isMainRoad !== undefined && (
             <span
               className='flex items-center gap-1'
-              style={{ color: activeColor, fontSize: 14 }}
+              style={{ color: activeColor, fontSize: "var(--fs-12)" }}
               title={activePhase.isMainRoad ? 'ปล่อยรถถนนหลัก' : 'ปล่อยรถถนนรอง'}
             >
               <PhaseDirectionArrow isMainRoad={activePhase.isMainRoad} size={28} color={activeColor} />

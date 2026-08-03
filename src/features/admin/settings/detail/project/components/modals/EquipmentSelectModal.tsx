@@ -17,7 +17,7 @@ interface Props {
 
 const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
   <span
-    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12'
     style={{
       border: `1px solid ${online ? '#66AEFF' : '#FF6666'}`,
       color: online ? '#66AEFF' : '#FF6666',
@@ -199,7 +199,7 @@ const EquipmentSelectModal: React.FC<Props> = ({
           <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>
             {task?.kind ?? '-'}
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, wordBreak: 'break-word', margin: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: "var(--fs-12)", wordBreak: 'break-word', margin: 0 }}>
             {projectName}
           </p>
         </div>

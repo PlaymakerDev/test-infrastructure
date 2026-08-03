@@ -24,7 +24,7 @@ const Pill: React.FC<{
   icon?: React.ReactNode
 }> = ({ text, color, icon }) => (
   <span
-    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {icon}
@@ -35,11 +35,11 @@ const Pill: React.FC<{
 type Row =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | {
-      kind: 'project'
-      id: string
-      project: TrafficLightingProject
-      roadCodeSpan: number
-    }
+    kind: 'project'
+    id: string
+    project: TrafficLightingProject
+    roadCodeSpan: number
+  }
 
 // Bureau header row spans every visible column — one less while ชื่อโครงการ
 // is hidden.
@@ -123,7 +123,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
               <div className='flex items-center gap-3'>
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
-                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
                   // White pill — same as every other overall table's bureau
                   // divider (see CamerasTableCctv/TableTrafficSignal).
                   style={{ border: '1px solid #fff', color: '#fff' }}
@@ -200,8 +200,8 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         render: (_: unknown, row: Row) =>
           row.kind === 'project'
             ? (row.project.equipment.type === 'lamp'
-                ? null
-                : <span className='text-white'>{row.project.equipment.count ?? '-'}</span>)
+              ? null
+              : <span className='text-white'>{row.project.equipment.count ?? '-'}</span>)
             : null,
       },
       {

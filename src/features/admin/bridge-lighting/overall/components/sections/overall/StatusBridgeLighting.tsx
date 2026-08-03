@@ -58,15 +58,15 @@ const FeedCard: React.FC<FeedCardProps> = ({ location, onClick }) => {
     >
       <div className='flex items-center gap-2 mb-1'>
         <TbCircleFilled size={9} color={dotColor} />
-        <span className='fs-11 font-medium' style={{ color: dotColor }}>
+        <span className='fs-12 font-medium' style={{ color: dotColor }}>
           {online ? 'ออนไลน์' : 'ออฟไลน์'}
         </span>
-        <span className='fs-11 text-white/40 ml-auto'>{relative}</span>
+        <span className='fs-12 text-white/40 ml-auto'>{relative}</span>
       </div>
       <p className='fs-13 font-semibold text-white mb-0.5 leading-snug'>
         {location.solution.solution_name}
       </p>
-      <p className='fs-11 text-white/50 mb-0'>{location.road.code_name}</p>
+      <p className='fs-12 text-white/50 mb-0'>{location.road.code_name}</p>
     </button>
   )
 }
@@ -124,7 +124,7 @@ const StatusBridgeLighting: React.FC<Props> = (props) => {
           <p className='fs-13 font-bold text-white mb-0'>ไฟประดับสะพานแสดงผลล่าสุด</p>
         </div>
         {total > 0 && (
-          <p className='fs-11 text-white/60 mb-0 pl-7'>
+          <p className='fs-12 text-white/60 mb-0 pl-7'>
             <span className='text-white/90 font-semibold'>{total}</span> จุด ·{' '}
             <span style={{ color: '#05F2DB' }}>{onlineCount} ออนไลน์</span>
             {total - onlineCount > 0 && (

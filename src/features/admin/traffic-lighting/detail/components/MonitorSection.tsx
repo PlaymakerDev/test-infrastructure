@@ -49,7 +49,7 @@ const PERIOD_OPTIONS: { label: string; value: PeriodFilter }[] = [
 ]
 
 const STATUS_BADGE_CLASS =
-  'inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs whitespace-nowrap border box-border'
+  'inline-flex items-center justify-center px-2 py-0.5 rounded-full fs-12 whitespace-nowrap border box-border'
 
 const isCircuitStatus = (s: Logs4gCentralItem['status']): s is Logs4gCircuitStatus =>
   typeof s === 'object' && s !== null && !Array.isArray(s)
@@ -151,11 +151,11 @@ const MONITOR_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (r: Logs4gCentralItem) => string | number
 }[] = [
-  { header: 'วันที่และเวลา', width: 22, widthPct: 22, value: (r) => dayjs(r.created_at, 'YYYY-MM-DD HH:mm:ss').format('DD MMM BBBB HH:mm:ss') },
-  { header: 'ประเภท', width: 14, widthPct: 18, value: (r) => DATA_TYPE_LABELS[r.data_type]?.label ?? r.data_type },
-  { header: 'Phase', width: 8, widthPct: 10, value: (r) => r.phase ?? '-' },
-  { header: 'สถานะ', width: 40, widthPct: 50, align: 'left', value: (r) => formatStatusForExport(r) },
-]
+    { header: 'วันที่และเวลา', width: 22, widthPct: 22, value: (r) => dayjs(r.created_at, 'YYYY-MM-DD HH:mm:ss').format('DD MMM BBBB HH:mm:ss') },
+    { header: 'ประเภท', width: 14, widthPct: 18, value: (r) => DATA_TYPE_LABELS[r.data_type]?.label ?? r.data_type },
+    { header: 'Phase', width: 8, widthPct: 10, value: (r) => r.phase ?? '-' },
+    { header: 'สถานะ', width: 40, widthPct: 50, align: 'left', value: (r) => formatStatusForExport(r) },
+  ]
 
 type PeriodBounds = [Dayjs, Dayjs] | null
 
@@ -185,7 +185,7 @@ const MonitorSection: React.FC = () => {
     const [pickerStart, pickerEnd] = dateRange ?? [null, null]
     if (pickerStart || pickerEnd) {
       return [pickerStart?.startOf('day') ?? periodToBounds(period)?.[0] ?? dayjs().startOf('day'),
-        pickerEnd?.endOf('day') ?? periodToBounds(period)?.[1] ?? dayjs().endOf('day')]
+      pickerEnd?.endOf('day') ?? periodToBounds(period)?.[1] ?? dayjs().endOf('day')]
     }
     return periodToBounds(period)
   }, [dateRange, period])

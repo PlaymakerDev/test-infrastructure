@@ -63,7 +63,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
         return (
           <Tooltip title={d.format('YYYY-MM-DD HH:mm:ss.SSS')}>
             <div>
-              <div className="text-sm">{d.format('DD MMM HH:mm:ss')}</div>
+              <div className="fs-12">{d.format('DD MMM HH:mm:ss')}</div>
               <div className="fs-12 text-white/50">{d.locale('th').fromNow()}</div>
             </div>
           </Tooltip>
@@ -75,7 +75,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
       key: 'sign',
       render: (_, r) => (
         <div className="min-w-0">
-          <div className="text-sm truncate flex items-center gap-1.5">
+          <div className="fs-12 truncate flex items-center gap-1.5">
             {r.road_code && <span className="text-(--yellow) font-semibold">{r.road_code}</span>}
             {r.sta && <span className="text-(--default-blue) fs-12">กม.{r.sta}</span>}
             <span className="truncate opacity-80">{r.solution_name || `WID ${r.wid ?? '?'}`}</span>
@@ -144,7 +144,7 @@ const GlobalHistoryTable: React.FC<Props> = React.memo(function GlobalHistoryTab
       <div className="flex flex-col h-full bg-(--dark-black) rounded-xl overflow-hidden text-white/90">
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-wrap">
-          <div className="text-sm font-semibold text-(--yellow)">ประวัติสั่งงานทั้งหมด</div>
+          <div className="fs-12 font-semibold text-(--yellow)">ประวัติสั่งงานทั้งหมด</div>
           {/* Same date-filter look + wording as crosswalk detail tab 2
               (FormSearchViolation): yellow-bordered Segmented pills + Thai
               Buddhist-era RangePicker, always visible and reflecting the

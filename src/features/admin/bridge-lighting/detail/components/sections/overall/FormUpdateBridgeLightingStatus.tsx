@@ -64,18 +64,18 @@ const FormUpdateBridgeLightingStatus: React.FC<Props> = (props) => {
     // (don't inherit body). Force the app font token via inline style (beats
     // antd's CSS) on the text spans, the confirm body, and each button so the
     // whole popup matches the rest of the app. Body 3 / 14px Regular per the
-    // design's Typography — use exact `text-[14px]` (NOT `fs-14`, which clamps
+    // design's Typography — use exact `fs-12` (NOT `fs-14`, which clamps
     // up to 16px on desktop) + `font-normal` (antd's confirm title is 600-bold).
     const FONT = 'var(--font-ibm-plex-sans-thai)'
     Modal.confirm({
       title: (
-        <span className='text-[14px]! font-normal! block' style={{ fontFamily: FONT }}>
+        <span className='fs-12! font-normal! block' style={{ fontFamily: FONT }}>
           {isOn ? 'ยืนยันเปิดไฟประดับสะพาน?' : 'ยืนยันปิดไฟประดับสะพาน?'}
         </span>
       ),
       icon: <ExclamationCircleFilled style={{ color: isOn ? '#66AEFF' : '#FCD116' }} />,
       content: (
-        <span className='text-[14px]! block' style={{ fontFamily: FONT }}>
+        <span className='fs-12! block' style={{ fontFamily: FONT }}>
           การสั่งงานนี้จะส่งคำสั่งไปยังอุปกรณ์จริงในพื้นที่ กรุณายืนยันก่อนดำเนินการ
         </span>
       ),

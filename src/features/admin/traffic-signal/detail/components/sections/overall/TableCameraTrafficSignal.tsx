@@ -39,7 +39,7 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       key: 'code',
       width: 340,
       ellipsis: true,
-      render: (code: string) => <span className='text-white text-sm'>{code}</span>,
+      render: (code: string) => <span className='text-white fs-12'>{code}</span>,
     },
     {
       title: 'Phase',
@@ -47,7 +47,7 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       key: 'phase',
       width: 90,
       render: (phase: number) => (
-        <span className='font-semibold text-sm' style={{ color: getPhaseColor(phase) }}>
+        <span className='font-semibold fs-12' style={{ color: getPhaseColor(phase) }}>
           P{phase}
         </span>
       ),
@@ -70,7 +70,7 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       key: 'ipAddress',
       width: 140,
       render: (ip: string) => (
-        <span className='text-white/80 text-sm'>{ip}</span>
+        <span className='text-white/80 fs-12'>{ip}</span>
       ),
     },
     {
@@ -80,9 +80,9 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       width: 120,
       render: (gt: number, row) =>
         row.detectionMode === 'Counting' ? (
-          <span className='text-emerald-400 text-sm font-semibold'>{gt}s</span>
+          <span className='text-emerald-400 fs-12 font-semibold'>{gt}s</span>
         ) : (
-          <span className='text-white/40 text-sm'>-</span>
+          <span className='text-white/40 fs-12'>-</span>
         ),
     },
     {
@@ -92,11 +92,11 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       width: 120,
       render: (v: number, row) =>
         row.detectionMode === 'Counting' ? (
-          <span className='text-(--yellow) text-sm font-semibold'>
+          <span className='text-(--yellow) fs-12 font-semibold'>
             {v.toLocaleString()}
           </span>
         ) : (
-          <span className='text-white/40 text-sm'>-</span>
+          <span className='text-white/40 fs-12'>-</span>
         ),
     },
     {

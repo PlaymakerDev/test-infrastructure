@@ -46,12 +46,12 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
           </h1>
           <div className='flex items-center gap-2 mt-2 flex-wrap'>
             {subtitle && (
-              <p className='text-[13px] sm:text-[14px] font-normal' style={{ color: '#FFFFFF' }}>
+              <p className='fs-12 sm:fs-12 font-normal' style={{ color: '#FFFFFF' }}>
                 {subtitle}
               </p>
             )}
             <span
-              className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+              className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap'
               style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
             >
               {warranty}
@@ -71,21 +71,21 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
             />
             <span
-              className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
             >
               <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{onlineCount}</span>
             </span>
             <span
-              className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
             >
               <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{offlineCount}</span>
             </span>
             <button
-              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap text-white cursor-pointer hover:opacity-80 transition-opacity'
+              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap text-white cursor-pointer hover:opacity-80 transition-opacity'
               style={{ background: '#003F87' }}
               type='button'
               onClick={() => {
@@ -100,7 +100,7 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               Google Map
             </button>
             <button
-              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
               style={{ background: '#FCD116', color: '#212121' }}
               type='button'
               onClick={() => {
@@ -112,7 +112,7 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
             </button>
             {onExport && (
               <button
-                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
                 style={{ background: '#66AEFF', color: '#0A0A0A' }}
                 type='button'
                 onClick={onExport}

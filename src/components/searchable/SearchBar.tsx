@@ -164,7 +164,7 @@ const SearchBar: React.FC<Props> = ({
                     <span>{f.label}</span>
                     {count !== undefined && (
                       <span className={[
-                        'text-xs rounded min-w-6 h-6 px-1.5',
+                        'fs-12 rounded min-w-6 h-6 px-1.5',
                         'flex items-center justify-center leading-none',
                         isActive ? f.badgeActiveClass : f.badgeIdleClass,
                       ].join(' ')}>

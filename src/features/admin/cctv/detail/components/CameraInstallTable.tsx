@@ -30,7 +30,7 @@ const StatusPill: React.FC<{ status: ConnectStatus }> = ({ status }) => {
   const connected = status === 'connect'
   return (
     <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{
         border: `1px solid ${connected ? '#66AEFF' : '#E94C4C'}`,
         color: connected ? '#66AEFF' : '#E94C4C',
@@ -47,7 +47,7 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
     : { text: 'หมดค้ำ', color: '#979797' }
   return (
     <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
     >
       {cfg.text}
@@ -58,9 +58,9 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
 // ── Filter config ─────────────────────────────────────────────────────────────
 
 const CAMERA_FILTERS: FilterConfig[] = [
-  { key: 'all',     label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
-  { key: 'online',  label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white', badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
-  { key: 'offline', label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white',   badgeIdleClass: 'bg-red-500/20 text-red-400'    },
+  { key: 'all', label: 'ทั้งหมด', colorPrimary: '#FCD116', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#8a7000] text-white', badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]' },
+  { key: 'online', label: 'ออนไลน์', colorPrimary: '#66AEFF', colorTextLightSolid: '#212121', badgeActiveClass: 'bg-[#1B3F8B] text-white', badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]' },
+  { key: 'offline', label: 'ออฟไลน์', colorPrimary: '#E94C4C', colorTextLightSolid: '#ffffff', badgeActiveClass: 'bg-red-800 text-white', badgeIdleClass: 'bg-red-500/20 text-red-400' },
 ]
 
 const TOTAL_COLS = 7
@@ -81,16 +81,16 @@ const CAMERA_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: CameraExportRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับที่', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'จุดติดตั้ง', width: 40, widthPct: 21, align: 'left', value: (r) => r.group?.label || '-' },
-  { header: 'การค้ำประกัน', width: 12, widthPct: 8, value: (r) => (r.group ? (r.group.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') : '-') },
-  { header: 'ชื่อกล้อง', width: 34, widthPct: 21, align: 'left', value: (r) => r.camera.name || '-' },
-  { header: 'กม.ที่', width: 10, widthPct: 7, value: (r) => r.camera.km || '-' },
-  { header: 'การทำงาน', width: 24, widthPct: 12, value: (r) => r.camera.functions.map((fn) => DEVICE_BADGE[fn as DeviceBadgeKey]?.label ?? fn).join(', ') || '-' },
-  { header: 'IP Address', width: 16, widthPct: 10, value: (r) => r.camera.ip || '-' },
-  { header: 'Stream Status', width: 13, widthPct: 8, value: (r) => (r.camera.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
-  { header: 'Device Status', width: 13, widthPct: 8, value: (r) => (r.camera.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
-]
+    { header: 'ลำดับที่', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'จุดติดตั้ง', width: 40, widthPct: 21, align: 'left', value: (r) => r.group?.label || '-' },
+    { header: 'การค้ำประกัน', width: 12, widthPct: 8, value: (r) => (r.group ? (r.group.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') : '-') },
+    { header: 'ชื่อกล้อง', width: 34, widthPct: 21, align: 'left', value: (r) => r.camera.name || '-' },
+    { header: 'กม.ที่', width: 10, widthPct: 7, value: (r) => r.camera.km || '-' },
+    { header: 'การทำงาน', width: 24, widthPct: 12, value: (r) => r.camera.functions.map((fn) => DEVICE_BADGE[fn as DeviceBadgeKey]?.label ?? fn).join(', ') || '-' },
+    { header: 'IP Address', width: 16, widthPct: 10, value: (r) => r.camera.ip || '-' },
+    { header: 'Stream Status', width: 13, widthPct: 8, value: (r) => (r.camera.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
+    { header: 'Device Status', width: 13, widthPct: 8, value: (r) => (r.camera.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+  ]
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -102,14 +102,14 @@ interface Props {
 const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
   const dispatch = useAppDispatch()
   const [activeFilter, setActiveFilter] = useState('all')
-  const [viewMode, setViewMode]         = useState<ViewMode>('GRID')
-  const [exportOpen, setExportOpen]     = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('GRID')
+  const [exportOpen, setExportOpen] = useState(false)
 
   const allCameras = useMemo(() => groups.flatMap((g) => g.cameras), [groups])
 
   const stats: FilterStats = useMemo(() => ({
-    all:     allCameras.length,
-    online:  allCameras.filter((c) => c.streamStatus === 'connect').length,
+    all: allCameras.length,
+    online: allCameras.filter((c) => c.streamStatus === 'connect').length,
     offline: allCameras.filter((c) => c.streamStatus === 'disconnect').length,
   }), [allCameras])
 
@@ -117,12 +117,12 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
     groups
       .map((group) => {
         let cams = group.cameras
-        if (activeFilter === 'online')  cams = cams.filter((c) => c.streamStatus === 'connect')
+        if (activeFilter === 'online') cams = cams.filter((c) => c.streamStatus === 'connect')
         if (activeFilter === 'offline') cams = cams.filter((c) => c.streamStatus === 'disconnect')
         return { ...group, cameras: cams }
       })
       .filter((g) => g.cameras.length > 0),
-  [groups, activeFilter])
+    [groups, activeFilter])
 
   const data = useMemo<Row[]>(() => {
     const out: Row[] = []
@@ -170,7 +170,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
         if (row.kind === 'group') {
           return (
             <div className='flex items-center gap-3'>
-              <span className='text-white font-semibold text-sm'>{row.group.label}</span>
+              <span className='text-white font-semibold fs-12'>{row.group.label}</span>
               <TbInfoSquareRoundedFilled
                 size={18}
                 className='cursor-pointer hover:text-(--yellow)'
@@ -200,7 +200,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
       ellipsis: true,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white text-sm'>{row.camera.name}</span> : null,
+        row.kind === 'camera' ? <span className='text-white fs-12'>{row.camera.name}</span> : null,
     },
     {
       title: 'กม.ที่',
@@ -208,7 +208,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
       width: 100,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/80 text-sm'>{row.camera.km}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/80 fs-12'>{row.camera.km}</span> : null,
     },
     {
       title: 'การทำงาน',
@@ -226,7 +226,7 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
       width: 140,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 text-sm'>{row.camera.ip}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
     },
     {
       title: 'Stream Status',

@@ -7,7 +7,7 @@ const TitleSection: React.FC<Props> = () => {
   return (
     <section>
       <h1 className='text-[20px] sm:text-[24px] font-bold text-(--yellow)'>Traffic Lighting</h1>
-      <p className='text-[13px] sm:text-[14px] text-(--yellow)'>ระบบตรวจสอบการจราจรบนสายทางและแจ้งเตือนไฟฟ้าส่องสว่าง</p>
+      <p className='fs-12 sm:fs-12 text-(--yellow)'>ระบบตรวจสอบการจราจรบนสายทางและแจ้งเตือนไฟฟ้าส่องสว่าง</p>
     </section>
   )
 }

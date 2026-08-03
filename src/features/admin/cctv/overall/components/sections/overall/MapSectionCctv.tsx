@@ -72,12 +72,12 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, roadId, edgeFade }) => {
         popup={(f) => (
           <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: '1px solid #4DA3FF', minWidth: 170 }}>
             <div style={{ fontSize: 10, color: '#4DA3FF', fontWeight: 700 }}>CCTV</div>
-            <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+            <div style={{ fontSize: "var(--fs-12)", color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName}</div>
+            <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
+            <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8', marginTop: 4 }}>
               ทั้งหมด {Number(f.properties?.totalCameras).toLocaleString()} กล้อง
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 3, fontSize: 11, fontWeight: 600 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 3, fontSize: "var(--fs-12)", fontWeight: 600 }}>
               <span style={{ color: '#66AEFF' }}>● ออนไลน์ {Number(f.properties?.onlineCount ?? 0).toLocaleString()}</span>
               <span style={{ color: '#E94C4C' }}>● ออฟไลน์ {Number(f.properties?.offlineCount ?? 0).toLocaleString()}</span>
             </div>

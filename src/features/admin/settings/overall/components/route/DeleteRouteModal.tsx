@@ -28,7 +28,7 @@ const FIGMA = {
 } as const
 
 const InfoRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className='flex items-start gap-2 text-sm'>
+  <div className='flex items-start gap-2 fs-12'>
     <span style={{ color: FIGMA.labelText }} className='shrink-0'>
       {label}&nbsp;:
     </span>
@@ -111,7 +111,7 @@ const DeleteRouteModal: React.FC<Props> = ({
             </h3>
             <p
               className='mb-0'
-              style={{ color: FIGMA.subtitleText, fontSize: 13, marginTop: 6 }}
+              style={{ color: FIGMA.subtitleText, fontSize: "var(--fs-12)", marginTop: 6 }}
             >
               ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้
             </p>

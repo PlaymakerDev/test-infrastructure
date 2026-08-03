@@ -13,8 +13,8 @@ import {
 // ('/atlas' in prod, '' in dev) is carried explicitly — env-safe for both.
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 const ICON_URL_BY_TYPE: Record<TrackingStationType, string> = {
-  wim:     `${BASE_PATH}/images/icon-marker/Wim.svg`,
-  mobile:  `${BASE_PATH}/images/icon-marker/Moving.svg`,
+  wim: `${BASE_PATH}/images/icon-marker/Wim.svg`,
+  mobile: `${BASE_PATH}/images/icon-marker/Moving.svg`,
   station: `${BASE_PATH}/images/icon-marker/Station.svg`,
 }
 const ICON_WIDTH = 43
@@ -80,22 +80,22 @@ export function DefaultStationPopup({
       }}
     >
       {/* Title */}
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{title}</div>
+      <div style={{ fontSize: "var(--fs-12)", fontWeight: 700, color: '#fff' }}>{title}</div>
 
       {/* เปิดด่านล่าสุด */}
-      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+      <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8' }}>
         เปิดด่านล่าสุด :{' '}
         <span style={{ color: '#fff' }}>{station.lastOpenDate}</span>
       </div>
 
       {/* ผู้ตั้งด่าน (mobile) | สถานะ (others) */}
       {isMobile && station.officerName ? (
-        <div style={{ fontSize: 12 }}>
+        <div style={{ fontSize: "var(--fs-12)" }}>
           <span style={{ color: '#05F2DB' }}>ผู้ตั้งด่าน : </span>
           <span style={{ color: '#fff' }}>{station.officerName}</span>
         </div>
       ) : (
-        <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontSize: "var(--fs-12)", display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ color: '#06b6d4' }}>สถานะ :</span>
           <span style={{ color: '#fff' }}>{statusOn ? 'เปิดปกติ' : 'ปิด'}</span>
           <span
@@ -111,7 +111,7 @@ export function DefaultStationPopup({
       )}
 
       {/* รถเข้าชั่งทั้งหมด */}
-      <div style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ fontSize: "var(--fs-12)", display: 'flex', justifyContent: 'space-between', gap: 12 }}>
         <span style={{ color: '#FCD116' }}>รถเข้าชั่งทั้งหมด</span>
         <span style={{ color: '#fff', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {station.totalVehicles.toLocaleString()}
@@ -119,7 +119,7 @@ export function DefaultStationPopup({
       </div>
 
       {/* รถเข้าน้ำหนักเกิน */}
-      <div style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ fontSize: "var(--fs-12)", display: 'flex', justifyContent: 'space-between', gap: 12 }}>
         <span style={{ color: '#FF6B6B' }}>รถเข้าน้ำหนักเกิน</span>
         <span style={{ color: '#fff', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {station.overweightVehicles.toLocaleString()}
@@ -137,7 +137,7 @@ export function DefaultStationPopup({
           border: 'none',
           borderRadius: 999,
           fontWeight: 700,
-          fontSize: 13,
+          fontSize: "var(--fs-12)",
           fontFamily: 'inherit',
           cursor: 'pointer',
           width: '100%',

@@ -57,17 +57,17 @@ const EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (r: ExportRow) => string | number
 }[] = [
-  { header: 'Case No.', width: 18, widthPct: 13, value: (r) => r.caseNo },
-  { header: 'จำนวนครั้งซ่อมแซม', width: 14, widthPct: 9, align: 'center', value: (r) => r.repairCount },
-  { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
-  { header: 'Hostname', width: 16, widthPct: 10, value: (r) => r.hostname },
-  { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ip },
-  { header: 'หมวดหมู่ของปัญหาที่พบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.problem },
-  { header: 'หน่วยงานรับผิดชอบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.responsible },
-  { header: 'วันที่แจ้งซ่อม', width: 14, widthPct: 9, value: (r) => r.reportedAt },
-  { header: 'วันที่ตรวจสอบ', width: 14, widthPct: 9, value: (r) => r.inspectionDate },
-  { header: 'วันที่ปิด Case', width: 14, widthPct: 7, value: (r) => r.closedAt },
-]
+    { header: 'Case No.', width: 18, widthPct: 13, value: (r) => r.caseNo },
+    { header: 'จำนวนครั้งซ่อมแซม', width: 14, widthPct: 9, align: 'center', value: (r) => r.repairCount },
+    { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
+    { header: 'Hostname', width: 16, widthPct: 10, value: (r) => r.hostname },
+    { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ip },
+    { header: 'หมวดหมู่ของปัญหาที่พบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.problem },
+    { header: 'หน่วยงานรับผิดชอบ', width: 20, widthPct: 13, align: 'left', value: (r) => r.responsible },
+    { header: 'วันที่แจ้งซ่อม', width: 14, widthPct: 9, value: (r) => r.reportedAt },
+    { header: 'วันที่ตรวจสอบ', width: 14, widthPct: 9, value: (r) => r.inspectionDate },
+    { header: 'วันที่ปิด Case', width: 14, widthPct: 7, value: (r) => r.closedAt },
+  ]
 
 const isWithinPeriod = (value: string | null | undefined, period: string): boolean => {
   if (!value) return false
@@ -300,25 +300,25 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
             </h1>
             <div className='flex items-center gap-2 mt-2 flex-wrap'>
               {(routeSubtitle || solutionData?.solution_name) && (
-                <p className='text-[13px] sm:text-[14px] font-normal' style={{ color: '#FFFFFF' }}>
+                <p className='fs-12 sm:fs-12 font-normal' style={{ color: '#FFFFFF' }}>
                   {routeSubtitle || solutionData?.solution_name}
                 </p>
               )}
               <span
-                className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap'
                 style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
               >
                 {warranty}
               </span>
               <span
-                className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
               >
                 <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{onlineCount}</span>
               </span>
               <span
-                className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
               >
                 <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
@@ -339,7 +339,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
               />
               <button
-                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[12px] sm:text-[14px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
                 style={{ background: '#66AEFF', color: '#0A0A0A' }}
                 type='button'
                 onClick={() => setExportOpen(true)}
@@ -424,7 +424,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors'
+            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] fs-12 disabled:opacity-50 hover:bg-[#333] transition-colors'
           >
             <TbChevronLeft size={14} />
           </button>
@@ -439,9 +439,9 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${currentPage === pageNum
-                    ? 'bg-[#FCD116] text-[#191919]'
-                    : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
+                className={`flex items-center justify-center w-6 h-6 rounded fs-12 font-medium transition-colors ${currentPage === pageNum
+                  ? 'bg-[#FCD116] text-[#191919]'
+                  : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
                   }`}
               >
                 {pageNum}
@@ -450,13 +450,13 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
           })}
 
           {totalPages > 5 && currentPage < totalPages - 2 && (
-            <span className='text-white/50 text-xs px-1'>...</span>
+            <span className='text-white/50 fs-12 px-1'>...</span>
           )}
 
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || filteredCases.length === 0}
-            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors'
+            className='flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] fs-12 disabled:opacity-50 hover:bg-[#333] transition-colors'
           >
             <TbChevronRight size={14} />
           </button>
@@ -515,7 +515,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 {/* Card: ข้อมูลโครงการ */}
                 <div className='flex-1 lg:flex-[55] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
                   <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: '0 0 4px 0' }}>ข้อมูลโครงการ</p>
-                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>
+                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: "var(--fs-12)", margin: '0 0 16px 0' }}>
                     {routeSubtitle || solutionData?.solution_name || '-'}
                   </p>
                   <div className='grid grid-cols-3 lg:grid-cols-6 gap-4'>
@@ -529,8 +529,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
                         <img src={`${BASE_PATH}/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                        <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
-                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
+                        <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>{label}</p>
+                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>
                     ))}
                   </div>
@@ -539,7 +539,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 {/* Card: ข้อมูลอุปกรณ์ */}
                 <div className='flex-1 lg:flex-[45] rounded-xl p-5' style={{ backgroundColor: '#191919' }}>
                   <p style={{ color: '#66AEFF', fontWeight: 400, fontSize: 16, margin: '0 0 4px 0' }}>ข้อมูลอุปกรณ์</p>
-                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: 12, margin: '0 0 16px 0' }}>
+                  <p style={{ color: '#B2D6F0', fontWeight: 400, fontSize: "var(--fs-12)", margin: '0 0 16px 0' }}>
                     {selectedRecord.camera_name || '-'}
                   </p>
                   <div className='flex flex-wrap justify-between gap-4'>
@@ -552,8 +552,8 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center' style={{ flex: '1 1 0', minWidth: 90 }}>
                         <img src={`${BASE_PATH}/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
-                        <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
-                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
+                        <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0, textAlign: 'center' }}>{label}</p>
+                        <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>
                     ))}
                   </div>

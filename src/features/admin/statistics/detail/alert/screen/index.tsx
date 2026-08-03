@@ -118,7 +118,7 @@ const AlertDetailContent: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-            <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
+            <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
               {detailLabel || '-'}
             </p>
             <img
@@ -200,7 +200,7 @@ const AlertDetailContent: React.FC = () => {
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #66AEFF' }}>
               <p style={{ fontSize: 16, fontWeight: 700, color: '#66AEFF' }}>สถานะการเชื่อมต่อ</p>
               <span style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{device.is_online === true ? 'เชื่อมต่อแล้ว' : device.is_online === false ? 'ออฟไลน์' : '-'}</span>
-              <p style={{ fontSize: 11, fontWeight: 400, color: '#979797', marginTop: 6 }}>IMEI : {detail || '-'}</p>
+              <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#979797', marginTop: 6 }}>IMEI : {detail || '-'}</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E98B4C' }}>
               <img src={`${BASE_PATH}/images/statistics/ct2.png`} alt="" width={30} height={30} />

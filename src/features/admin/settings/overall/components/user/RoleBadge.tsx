@@ -21,7 +21,7 @@ const RoleBadge: React.FC<Props> = ({ role }) => {
   const color = known?.color ?? FALLBACK_COLOR
   return (
     <span
-      className='inline-flex items-center justify-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center justify-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {label}

@@ -26,7 +26,7 @@ const EventTypePill: React.FC<{ id: number; label: string }> = ({ id, label }) =
   const color = getEventTypeColor(id)
   return (
     <span
-      className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border'
+      className='inline-block py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border'
       style={{ borderColor: color, color }}
     >
       {label}

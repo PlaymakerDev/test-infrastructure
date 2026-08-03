@@ -124,7 +124,7 @@ const StatsStrip: React.FC<StatsStripProps> = ({ stats, unit, decimals, accent }
     maximumFractionDigits: decimals,
   })
   return (
-    <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] tabular-nums'>
+    <div className='flex flex-wrap items-center gap-x-4 gap-y-1 fs-12 tabular-nums'>
       <div>
         <span className='text-white/50'>ต่ำสุด </span>
         <span className='text-white font-semibold'>{fmt(stats.min)}</span>

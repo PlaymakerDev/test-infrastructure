@@ -276,7 +276,7 @@ const LineChart: React.FC<LineChartProps> = ({
       axisTick: { show: false },
       axisLabel: {
         color: axisLabelColor,
-        fontSize: 11,
+        fontSize: "var(--fs-12)",
         // Full integer with thousands separator — no `K` suffix.
         formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
         // Same fix as the x-axis: when the card (esp. a `fillHeight` one)
@@ -299,7 +299,7 @@ const LineChart: React.FC<LineChartProps> = ({
         axisTick: { show: false },
         axisLabel: {
           color: axisLabelColor,
-          fontSize: 11,
+          fontSize: "var(--fs-12)",
           // Keep the line flush to both edges (boundaryGap:false) while stopping
           // the first/last category labels from overflowing past the card edge:
           // align the first label to the left and the last to the right.
@@ -346,7 +346,7 @@ const LineChart: React.FC<LineChartProps> = ({
             axisTick: { show: false },
             axisLabel: {
               color: axisLabelColor,
-              fontSize: 11,
+              fontSize: "var(--fs-12)",
               formatter: (v: number) => new Intl.NumberFormat('en-US').format(v),
               hideOverlap: true,
             },
@@ -369,7 +369,7 @@ const LineChart: React.FC<LineChartProps> = ({
         borderColor: '#2e3a4e',
         borderWidth: 1,
         padding: [10, 16],
-        textStyle: { color: '#ffffff', fontSize: 12 },
+        textStyle: { color: '#ffffff', fontSize: "var(--fs-12)" },
         axisPointer: {
           type: 'line',
           lineStyle: { color: 'rgba(255,255,255,0.15)', width: 1, type: 'solid' },
@@ -540,7 +540,7 @@ const LineChart: React.FC<LineChartProps> = ({
         {/* Period tabs */}
         {periods && periods.length > 0 && (
           <div
-            className='flex gap-1 rounded-full p-1 text-sm'
+            className='flex gap-1 rounded-full p-1 fs-12'
             style={{ background: '#A2A2A233' }}
           >
             {periods.map((p) => (
@@ -575,7 +575,7 @@ const LineChart: React.FC<LineChartProps> = ({
                 <p className='text-2xl font-bold text-white leading-tight'>
                   {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                 </p>
-                <p className='text-xs mt-0.5' style={{ color: stat.color }}>{stat.label}</p>
+                <p className='fs-12 mt-0.5' style={{ color: stat.color }}>{stat.label}</p>
               </div>
             </div>
           ))}

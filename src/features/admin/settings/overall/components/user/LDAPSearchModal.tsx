@@ -117,7 +117,7 @@ const LDAPSearchModal: React.FC<Props> = ({ open, onCancel, onSelect }) => {
                 ค้นหาผู้ใช้ใน LDAP AD
               </span>
             </div>
-            <div style={{ color: MUTED, fontSize: 12, marginTop: 6, fontWeight: 400 }}>
+            <div style={{ color: MUTED, fontSize: "var(--fs-12)", marginTop: 6, fontWeight: 400 }}>
               พิมพ์ชื่อ / นามสกุล / username แล้วเลือกรายการที่ต้องการเพิ่ม
             </div>
           </div>
@@ -149,7 +149,7 @@ const LDAPSearchModal: React.FC<Props> = ({ open, onCancel, onSelect }) => {
                 style={{
                   padding: 24,
                   color: MUTED,
-                  fontSize: 13,
+                  fontSize: "var(--fs-12)",
                   textAlign: 'center',
                 }}
               >
@@ -169,7 +169,7 @@ const LDAPSearchModal: React.FC<Props> = ({ open, onCancel, onSelect }) => {
                 style={{
                   padding: 24,
                   color: MUTED,
-                  fontSize: 13,
+                  fontSize: "var(--fs-12)",
                   textAlign: 'center',
                 }}
               >
@@ -214,14 +214,14 @@ const LDAPSearchModal: React.FC<Props> = ({ open, onCancel, onSelect }) => {
                     }}
                   >
                     <div className='flex items-center' style={{ gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 500 }}>{primary}</span>
+                      <span style={{ fontSize: "var(--fs-12)", fontWeight: 500 }}>{primary}</span>
                       {r.Username && (
                         <span
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             padding: '1px 8px',
-                            fontSize: 11,
+                            fontSize: "var(--fs-12)",
                             fontWeight: 600,
                             borderRadius: 999,
                             background: '#F5F5F5',
@@ -234,7 +234,7 @@ const LDAPSearchModal: React.FC<Props> = ({ open, onCancel, onSelect }) => {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{secondary}</div>
+                    <div style={{ fontSize: "var(--fs-12)", color: MUTED, marginTop: 2 }}>{secondary}</div>
                   </div>
                 )
               })}
