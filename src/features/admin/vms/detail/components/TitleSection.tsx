@@ -55,7 +55,7 @@ const TitleSection: React.FC<Props> = (props) => {
               <TbInfoSquareRoundedFilled
                 size={24}
                 className='text-white cursor-pointer hover:text-(--yellow)'
-                onClick={() => dispatch(setProjectInfoModalOpen({ open: true, project_id: data?.solution.solution_location.project_id, road_id: data?.solution.solution_location.project_roads.road_id }))}
+                onClick={() => dispatch(setProjectInfoModalOpen({ open: true, project_id: data?.solution.solution_location.project_roads.project_id, road_id: data?.solution.solution_location.project_roads.road_id }))}
               />
               {renderIsWarranty}
             </div>
