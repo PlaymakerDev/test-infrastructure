@@ -73,6 +73,16 @@ export interface BarChartProps {
   yAxisDomain?: [number | 'auto', number | 'auto']
   /** หมุน label แกน X (องศา) — default 0 (ไม่หมุน). ใช้กับ label ยาว/หนาแน่น */
   xAxisLabelRotate?: number
+  /** ขนาดตัวอักษรของ label แกน X (px) — default 11 */
+  xAxisLabelFontSize?: number
+  /** ระยะห่างบรรทัดของ label แกน X (px) */
+  xAxisLabelLineHeight?: number
+  /** สีข้อความของ label แกน X */
+  xAxisLabelColor?: string
+  /** ฟอนต์ของ label แกน X */
+  xAxisLabelFontFamily?: string
+  /** ความกว้างพื้นที่ label แกน X (px) */
+  xAxisLabelWidth?: number
   /** จำกัดความกว้าง label แกน X (px) แล้วตัดด้วย … (ข้อความเต็มโชว์ใน tooltip) — default ไม่จำกัด */
   xAxisLabelMaxWidth?: number
 
@@ -123,6 +133,11 @@ const BarChart: React.FC<BarChartProps> = ({
   yAxisTicks,
   yAxisDomain = [0, 'auto'],
   xAxisLabelRotate = 0,
+  xAxisLabelFontSize = 11,
+  xAxisLabelLineHeight = 16,
+  xAxisLabelColor = '#ffffff',
+  xAxisLabelFontFamily,
+  xAxisLabelWidth,
   xAxisLabelMaxWidth,
   accentColor = '#FCD116',
   cardBackground = '#00000080',
@@ -167,9 +182,12 @@ const BarChart: React.FC<BarChartProps> = ({
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          color: '#ffffff',
-          fontSize: 11,
-          lineHeight: 16,
+          color: xAxisLabelColor,
+          fontSize: xAxisLabelFontSize,
+          lineHeight: xAxisLabelLineHeight,
+          ...(xAxisLabelFontFamily ? { fontFamily: xAxisLabelFontFamily } : {}),
+          ...(typeof xAxisLabelWidth === 'number' ? { width: xAxisLabelWidth } : {}),
+          align: 'center',
           // Force every label only when rotated (rotation is how we fit many
           // labels); otherwise let ECharts auto-thin so dense time labels don't
           // overlap into an unreadable blur. `hideOverlap` is the safety net.
@@ -261,11 +279,11 @@ const BarChart: React.FC<BarChartProps> = ({
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelMaxWidth])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelFontSize, xAxisLabelLineHeight, xAxisLabelColor, xAxisLabelFontFamily, xAxisLabelWidth, xAxisLabelMaxWidth])
 
   return (
     <div
-      className={`relative rounded-2xl pt-5 px-5 pb-1 w-full overflow-hidden ${cardClassName}`.trim()}
+      className={`relative rounded-2xl pt-5 px-5 pb-4 w-full overflow-hidden ${cardClassName}`.trim()}
       style={{ background: cardBackground, border: `1px solid ${cardBorderColor}` }}
     >
       {showGlow && (

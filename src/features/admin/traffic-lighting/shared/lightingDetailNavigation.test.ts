@@ -25,4 +25,30 @@ describe('traffic-lighting detail navigation', () => {
     expect(url.searchParams.get('imei')).toBe('860946061754746')
     expect(url.searchParams.get('type')).toBe('lamp')
   })
+
+  it('drops the imei param when the route id already carries it', () => {
+    const path = buildLightingDetailUrl({
+      routeId: '860946061754746',
+      imei: '860946061754746',
+      type: 'phase',
+      deptId: 0,
+    })
+    const url = new URL(path, 'https://example.test')
+
+    expect(url.pathname).toBe('/admin/traffic-lighting/detail/860946061754746')
+    expect(url.searchParams.has('imei')).toBe(false)
+    // Still resolvable from the path alone — the reason dropping it is safe.
+    expect(resolveLightingImei('860946061754746')).toBe('860946061754746')
+  })
+
+  it('omits an empty imei rather than emitting a blank param', () => {
+    const url = new URL(
+      buildLightingDetailUrl({ routeId: '1910-1', imei: '', type: 'phase', deptId: 3 }),
+      'https://example.test',
+    )
+
+    expect(url.searchParams.has('imei')).toBe(false)
+    expect(url.searchParams.get('dept_id')).toBe('3')
+    expect(resolveLightingImei('1910-1')).toBe('')
+  })
 })
