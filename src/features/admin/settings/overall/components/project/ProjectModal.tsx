@@ -1,7 +1,7 @@
 "use client"
 import { Button, ConfigProvider, Form, Input, Modal, Select, Spin } from 'antd'
 import dayjs from 'dayjs'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TbClipboardList, TbPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import {
@@ -9,8 +9,8 @@ import {
   useDepartments,
   useProjectContractors,
   useProjectDetail,
-  useRoadsList,
 } from '@/hooks/queries/manage'
+import { useRoadsInfinite } from '@/hooks/queries/shared/useRoadsInfinite'
 import type { APIResponseProject } from '@/types/manage/project-api'
 import { useOverallContext } from '../../context'
 import type { Project, ProjectFormValues } from '../../types/project'
@@ -102,10 +102,35 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
   const { data: budgetYears } = useBudgetYears()
   const { data: departments } = useDepartments()
   const { data: contractors } = useProjectContractors()
-  const { data: roads, isLoading: roadsLoading } = useRoadsList()
   const { data: detail, isLoading: detailLoading } = useProjectDetail(
     open && isEdit ? editingId : null,
   )
+
+  // ── สายทาง (roads) — server-paginated + server-searched, infinite scroll ──
+  // GET /manage/roads is paginated; the dropdown fetches page 1 on open, more
+  // pages on scroll-near-bottom, and re-queries server-side on a debounced
+  // search (mirrors control-vms's FormUpdateSchedule จุดติดตั้ง picker).
+  const [roadSearch, setRoadSearch] = useState('')
+  const roadSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const {
+    data: roadPages,
+    isLoading: roadsLoading,
+    isFetchingNextPage: isRoadsFetchingNextPage,
+    hasNextPage: hasNextRoadsPage,
+    fetchNextPage: fetchNextRoadsPage,
+  } = useRoadsInfinite(roadSearch)
+
+  const handleRoadSearch = useCallback((value: string) => {
+    if (roadSearchTimerRef.current) clearTimeout(roadSearchTimerRef.current)
+    roadSearchTimerRef.current = setTimeout(() => setRoadSearch(value), 400)
+  }, [])
+
+  const handleRoadPopupScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+    if (scrollHeight - scrollTop <= clientHeight + 100 && hasNextRoadsPage && !isRoadsFetchingNextPage) {
+      fetchNextRoadsPage()
+    }
+  }, [hasNextRoadsPage, isRoadsFetchingNextPage, fetchNextRoadsPage])
 
   // Build initialValues from the fetched detail (edit) or a stub (create).
   // Form is only rendered once `detail` has resolved (see JSX below), so this
@@ -233,13 +258,15 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
   }, [contractors, detailRuntime])
 
   const roadOptions = useMemo(() => {
-    const opts = (roads?.res_data ?? []).map((r) => ({
+    const rows = roadPages?.pages.flatMap((p) => p.data.res_data ?? []) ?? []
+    const opts = rows.map((r) => ({
       label: `${r.road_code}${r.road_name ? ' - ' + r.road_name : ''}`,
       value: r.id as number,
     }))
     // Real API ships `project_roads` (plural) with a nested `road` object.
     // Use the nested road_code for a proper label; fall back to `#<id>` if the
-    // nested road isn't present.
+    // nested road isn't present. Needed because the currently-selected road
+    // may not be on a loaded page (it's paginated + server-searched now).
     getProjectRoads(detailRuntime).forEach((r) => {
       if (!opts.some((o) => o.value === r.road_id)) {
         const nested = r.road
@@ -251,7 +278,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
       }
     })
     return opts
-  }, [roads, detailRuntime])
+  }, [roadPages, detailRuntime])
 
   return (
     <ConfigProvider
@@ -371,7 +398,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
               <Form.Item
                 label={<PlainLabel>รหัสโครงการ</PlainLabel>}
                 name='code'
-                rules={[{ required: true, message: 'กรุณาระบุรหัสโครงการ' }]}
+                // rules={[{ required: true, message: 'กรุณาระบุรหัสโครงการ' }]}
                 style={{ marginBottom: 16 }}
               >
                 <Input placeholder='กรุณาระบุรหัสโครงการ...' />
@@ -459,8 +486,8 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
                           placeholder='กรุณาเลือกสายทาง...'
                           options={roadOptions}
                           loading={roadsLoading}
-                          showSearch
-                          optionFilterProp='label'
+                          showSearch={{ filterOption: false, onSearch: handleRoadSearch }}
+                          onPopupScroll={handleRoadPopupScroll}
                           classNames={{ popup: { root: 'light-modal-popup' } }} />
                       </Form.Item>
                       {fields.length > 1 && (
