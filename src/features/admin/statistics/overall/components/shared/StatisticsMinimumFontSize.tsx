@@ -6,16 +6,16 @@ import React from 'react'
 const StatisticsMinimumFontSize: React.FC = () => (
   <style>{`
     .statistics-font-min-14 .fs-10,
-    .statistics-font-min-14 .fs-11,
+    .statistics-font-min-14 .fs-12,
     .statistics-font-min-14 .fs-12,
     .statistics-font-min-14 .fs-13,
-    .statistics-font-min-14 .text-xs,
+    .statistics-font-min-14 .fs-12,
     .statistics-font-min-14 [class*="text-[8px]"],
     .statistics-font-min-14 [class*="text-[9px]"],
     .statistics-font-min-14 [class*="text-[10px]"],
-    .statistics-font-min-14 [class*="text-[11px]"],
-    .statistics-font-min-14 [class*="text-[12px]"],
-    .statistics-font-min-14 [class*="text-[13px]"] {
+    .statistics-font-min-14 [class*="fs-12"],
+    .statistics-font-min-14 [class*="fs-12"],
+    .statistics-font-min-14 [class*="fs-12"] {
       font-size: 14px !important;
     }
 

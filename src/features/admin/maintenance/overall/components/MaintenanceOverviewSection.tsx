@@ -178,7 +178,7 @@ const MaintenanceOverviewSection: React.FC<{
             <img src={`${BASE_PATH}/images/Maintenance/icsolu.png`} alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
-          <p className="font-normal text-[#979797] mt-1 hidden sm:block" style={{ fontSize: 14 }}>ภาพรวมสถานะการทำงานของอุปกรณ์</p>
+          <p className="font-normal text-[#979797] mt-1 hidden sm:block" style={{ fontSize: "var(--fs-12)" }}>ภาพรวมสถานะการทำงานของอุปกรณ์</p>
           <div className="mt-3 sm:mt-5 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
             {summaryData.filter((item) => !HIDDEN_SOLUTION_TYPES.has(item.type)).map((item, idx) => {
               const color = getSolutionColor(item.type)
@@ -200,15 +200,15 @@ const MaintenanceOverviewSection: React.FC<{
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-sm sm:text-base lg:text-lg font-bold leading-none" style={{ color: hasUptime ? color : '#979797' }}>
+                      <span className="fs-12 sm:text-base lg:text-lg font-bold leading-none" style={{ color: hasUptime ? color : '#979797' }}>
                         {hasUptime ? `${boundedPercent}%` : '—'}
                       </span>
-                      <span className="text-[10px] sm:text-xs leading-none mt-0.5" style={{ color: hasUptime ? color : '#979797' }}>
+                      <span className="text-[10px] sm:fs-12 leading-none mt-0.5" style={{ color: hasUptime ? color : '#979797' }}>
                         {hasUptime ? 'Online' : 'ไม่มีข้อมูล'}
                       </span>
                     </div>
                   </div>
-                  <span className="text-sm sm:text-xl lg:text-2xl font-bold text-center" style={{ color }}>{item.type}</span>
+                  <span className="fs-12 sm:text-xl lg:text-2xl font-bold text-center" style={{ color }}>{item.type}</span>
                 </div>
               )
             })}
@@ -221,7 +221,7 @@ const MaintenanceOverviewSection: React.FC<{
             <img src={`${BASE_PATH}/images/Maintenance/ics2.png`} alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
           </div>
-          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
+          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: "var(--fs-12)" }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(inWarranty ? [
               { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
@@ -237,7 +237,7 @@ const MaintenanceOverviewSection: React.FC<{
                 key={item.label}
                 className={`text-center py-1 px-0.5 ${i < 7 ? 'border-r border-r-white/10' : ''}`}
               >
-                <div className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
+                <div className="fs-12 sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
                 <div className="flex flex-row items-center justify-center gap-1 mt-0.5">
                   <img src={item.icon} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
                   <span className="text-[9px] sm:text-[10px] font-normal text-[#979797] whitespace-nowrap">{item.label}</span>
@@ -267,7 +267,7 @@ const MaintenanceOverviewSection: React.FC<{
             />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#979797]">งานหมดค้ำ</h2>
           </div>
-          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
+          <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: "var(--fs-12)" }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(outWarranty ? [
               { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
@@ -283,10 +283,10 @@ const MaintenanceOverviewSection: React.FC<{
                 key={item.label}
                 className={`text-center py-1 px-0.5 ${i < 7 ? 'border-r border-r-white/10' : ''}`}
               >
-                <div className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
+                <div className="fs-12 sm:text-base lg:text-lg font-bold" style={{ color: item.color || '#FFFFFF' }}>{item.value}</div>
                 <div className="flex flex-row items-center justify-center gap-1 mt-0.5">
                   <img src={item.icon} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
-                  <span className="text-[10px] sm:text-sm font-normal text-[#979797] whitespace-nowrap">{item.label}</span>
+                  <span className="text-[10px] sm:fs-12 font-normal text-[#979797] whitespace-nowrap">{item.label}</span>
                 </div>
               </div>
             ))}
@@ -300,7 +300,7 @@ const MaintenanceOverviewSection: React.FC<{
           <img src={`${BASE_PATH}/images/Maintenance/ics1.png`} alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
           <h2 className="text-lg sm:text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
         </div>
-        <p className="font-normal text-[#9E9CA8] mt-1" style={{ fontSize: 14 }}>รวมสายทางที่มีอุปกรณ์ดับทุกจุดติดตั้งล่าสุด</p>
+        <p className="font-normal text-[#9E9CA8] mt-1" style={{ fontSize: "var(--fs-12)" }}>รวมสายทางที่มีอุปกรณ์ดับทุกจุดติดตั้งล่าสุด</p>
         <div className="mt-3 sm:mt-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Input
             placeholder="ค้นหาสายทาง..."
@@ -311,12 +311,12 @@ const MaintenanceOverviewSection: React.FC<{
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
             styles={{
-              input: { fontSize: 14, fontWeight: 400, color: '#FFFFFF' },
+              input: { fontSize: "var(--fs-12)", fontWeight: 400, color: '#FFFFFF' },
             }}
           />
           <span
             className="shrink-0 flex items-center justify-center"
-            style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', fontSize: 13, whiteSpace: 'nowrap' }}
+            style={{ height: 32, padding: '0 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', fontSize: "var(--fs-12)", whiteSpace: 'nowrap' }}
           >
             {filteredOfflineRoads.length} สายทาง
           </span>
@@ -372,7 +372,7 @@ const MaintenanceOverviewSection: React.FC<{
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors"
+              className="flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] fs-12 disabled:opacity-50 hover:bg-[#333] transition-colors"
             >
               <TbChevronLeft size={14} />
             </button>
@@ -387,9 +387,9 @@ const MaintenanceOverviewSection: React.FC<{
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`flex items-center justify-center w-6 h-6 rounded text-xs font-medium transition-colors ${currentPage === pageNum
-                      ? 'bg-[#FCD116] text-[#191919]'
-                      : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
+                  className={`flex items-center justify-center w-6 h-6 rounded fs-12 font-medium transition-colors ${currentPage === pageNum
+                    ? 'bg-[#FCD116] text-[#191919]'
+                    : 'bg-[#2A2A2A] text-white hover:bg-[#333]'
                     }`}
                 >
                   {pageNum}
@@ -398,13 +398,13 @@ const MaintenanceOverviewSection: React.FC<{
             })}
 
             {totalPages > 5 && currentPage < totalPages - 2 && (
-              <span className="text-white/50 text-xs px-1">...</span>
+              <span className="text-white/50 fs-12 px-1">...</span>
             )}
 
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || filteredOfflineRoads.length === 0}
-              className="flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] text-xs disabled:opacity-50 hover:bg-[#333] transition-colors"
+              className="flex items-center justify-center w-6 h-6 rounded bg-[#2A2A2A] text-[#FCD116] fs-12 disabled:opacity-50 hover:bg-[#333] transition-colors"
             >
               <TbChevronRight size={14} />
             </button>

@@ -41,7 +41,7 @@ export const InfoCell: React.FC<{
 }> = ({ icon, label, children }) => (
   <div className='flex flex-col items-center gap-2 text-center min-w-0'>
     <div style={{ color: '#fff', fontSize: 22 }}>{icon}</div>
-    <span className='text-xs' style={{ color: '#666' }}>{label}</span>
+    <span className='fs-12' style={{ color: '#666' }}>{label}</span>
     <div className='flex flex-wrap justify-center gap-1'>{children}</div>
   </div>
 )
@@ -54,7 +54,7 @@ export const OutlinePill: React.FC<{
   filled?: boolean
 }> = ({ text, color, filled = false }) => (
   <span
-    className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap'
+    className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 font-medium whitespace-nowrap'
     style={{
       background: filled ? color : 'transparent',
       border: `1px solid ${color}`,
@@ -113,7 +113,7 @@ const LiveStreamModal: React.FC<LiveStreamModalProps> = ({
               <TbChevronsRight size={20} color='#fff' />
               <span className='text-base font-semibold text-white'>Live Stream</span>
             </div>
-            <span className='text-sm' style={{ color: '#66AEFF' }}>{cameraName}</span>
+            <span className='fs-12' style={{ color: '#66AEFF' }}>{cameraName}</span>
           </div>
           <button
             onClick={onClose}

@@ -20,14 +20,14 @@ const RemoteControlCard: React.FC = () => (
           'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(26,26,26,0.95) 90%)',
       }}
     >
-      <div className='flex items-center gap-2 text-white text-xs font-semibold'>
+      <div className='flex items-center gap-2 text-white fs-12 font-semibold'>
         <img src={`${BASE_PATH}/images/Lighting/ictl1.png`} alt='' width={30} height={30} className='shrink-0' />
         สถานะการทำงาน
       </div>
       <h2 className='text-white font-bold text-[22px] leading-tight m-0'>
         ยังไม่มีข้อมูลสถานะคำสั่ง
       </h2>
-      <p className='text-white/70 text-[12px] leading-tight m-0'>อัปเดตล่าสุด : -</p>
+      <p className='text-white/70 fs-12 leading-tight m-0'>อัปเดตล่าสุด : -</p>
     </div>
 
     {SHOW_REMOTE_CONTROL && (
@@ -35,7 +35,7 @@ const RemoteControlCard: React.FC = () => (
         <h3 className='text-[#FCD116] font-bold text-[20px] leading-tight m-0'>
           คำสั่งเปิด-ปิดระยะไกล
         </h3>
-        <p className='text-gray-400 text-[12px] leading-snug mt-1.5 m-0'>
+        <p className='text-gray-400 fs-12 leading-snug mt-1.5 m-0'>
           การสั่งงานนี้อาจส่งผลต่ออุปกรณ์ไฟฟ้าและผู้ใช้งานในพื้นที่<br />
           กรุณาตรวจสอบความปลอดภัยก่อนดำเนินการทุกครั้ง
         </p>

@@ -3,7 +3,7 @@ import React from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
-interface Props {}
+interface Props { }
 
 type ConnectionStatus = 'Connect' | 'Disconnect'
 
@@ -102,7 +102,7 @@ const TableCameraData: React.FC<Props> = () => {
       align: 'center',
       width: 140,
       render: (s: ConnectionStatus) => (
-        <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${STATUS_CLASS[s]}`}>
+        <span className={`inline-block py-0.5 px-3.5 rounded-full fs-12 border ${STATUS_CLASS[s]}`}>
           {s}
         </span>
       ),
@@ -115,7 +115,7 @@ const TableCameraData: React.FC<Props> = () => {
       width: 140,
       fixed: 'right',
       render: (s: ConnectionStatus) => (
-        <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs border ${STATUS_CLASS[s]}`}>
+        <span className={`inline-block py-0.5 px-3.5 rounded-full fs-12 border ${STATUS_CLASS[s]}`}>
           {s}
         </span>
       ),

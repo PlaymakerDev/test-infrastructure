@@ -109,11 +109,11 @@ const STATUS_COMPARISON_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: ComparisonRecord) => string | number
 }[] = [
-  { header: 'หน่วยงาน', width: 38, widthPct: 45, value: (r) => r.agency },
-  { header: 'จุดติดตั้ง', width: 16, widthPct: 20, align: 'center', value: (r) => r.installations },
-  { header: 'ออนไลน์', width: 14, widthPct: 18, align: 'center', value: (r) => r.online },
-  { header: 'ออฟไลน์', width: 14, widthPct: 17, align: 'center', value: (r) => r.offline },
-]
+    { header: 'หน่วยงาน', width: 38, widthPct: 45, value: (r) => r.agency },
+    { header: 'จุดติดตั้ง', width: 16, widthPct: 20, align: 'center', value: (r) => r.installations },
+    { header: 'ออนไลน์', width: 14, widthPct: 18, align: 'center', value: (r) => r.online },
+    { header: 'ออฟไลน์', width: 14, widthPct: 17, align: 'center', value: (r) => r.offline },
+  ]
 
 const flattenComparisonRows = (rows: ComparisonRecord[], depth = 0): ComparisonRecord[] => (
   rows.flatMap((row) => [
@@ -254,7 +254,7 @@ const StatusSection: React.FC = () => {
                     key={opt.value}
                     type='button'
                     onClick={() => setActivePeriod(opt.value)}
-                    className='px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-sm font-medium cursor-pointer transition-colors whitespace-nowrap'
+                    className='px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg fs-12 sm:fs-12 font-medium cursor-pointer transition-colors whitespace-nowrap'
                     style={isActive
                       ? { background: 'var(--yellow)', color: '#212121' }
                       : { background: 'transparent', color: 'var(--yellow)' }}

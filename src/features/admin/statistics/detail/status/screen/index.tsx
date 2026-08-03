@@ -172,9 +172,9 @@ const StatusDetailContent: React.FC = () => {
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
-            {routesFetching && <span className="text-xs text-gray-400">กำลังอัปเดตรายการอุปกรณ์...</span>}
+            {routesFetching && <span className="fs-12 text-gray-400">กำลังอัปเดตรายการอุปกรณ์...</span>}
             <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-              <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
+              <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
                 {detailLabel || '-'}
               </p>
               <img
@@ -303,7 +303,7 @@ const StatusDetailContent: React.FC = () => {
                   <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 16, display: 'block' }}>
                     {status.stream.is_online ? 'Connect' : 'Disconnect'}
                   </span>
-                  <p style={{ fontSize: 12, fontWeight: 400, color: '#979797' }}>ZeroTier IP : {status.zt_ip_address || '-'}</p>
+                  <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#979797' }}>ZeroTier IP : {status.zt_ip_address || '-'}</p>
                   <p style={{ fontSize: 10, fontWeight: 400, color: '#999999' }}>
                     อัพเดรตล่าสุด : {status.stream.last_connected ? formatBackendBuddhistDateTime(status.stream.last_connected) : '-'}
                   </p>
@@ -369,10 +369,10 @@ const StatusDetailContent: React.FC = () => {
                           figureClassName="rounded-xl overflow-hidden"
                         />
                         <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 600, borderRadius: 8, backgroundColor: '#000000CC', padding: '8px 12px' }}>
-                          <p style={{ fontSize: 12, fontWeight: 400, color: '#FFFFFF' }}>
+                          <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FFFFFF' }}>
                             {item.camera.camera_name || '-'}
                           </p>
-                          <p style={{ fontSize: 12, fontWeight: 400, color: '#979797', marginTop: 2 }}>
+                          <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#979797', marginTop: 2 }}>
                             IP Address : {item.camera.ip_address || '-'}
                           </p>
                         </div>

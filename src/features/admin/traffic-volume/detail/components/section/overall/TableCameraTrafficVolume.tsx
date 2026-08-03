@@ -44,7 +44,7 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         key: 'code',
         ellipsis: true,
         render: (code: string) => (
-          <span className='text-white text-sm'>{code}</span>
+          <span className='text-white fs-12'>{code}</span>
         ),
       },
       {
@@ -52,7 +52,7 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         key: 'ip',
         width: 200,
         render: (_: unknown, row: CameraRow) => (
-          <span className='text-white/80 text-sm'>{row.ipAddress || '-'}</span>
+          <span className='text-white/80 fs-12'>{row.ipAddress || '-'}</span>
         ),
       },
       {

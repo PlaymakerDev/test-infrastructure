@@ -26,13 +26,13 @@ interface FormShape {
 }
 
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {children}
     <span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
   </span>
 )
 const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>{children}</span>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
 )
 
 const toGeometry = (lat: string, lng: string) => ({
@@ -111,8 +111,8 @@ const EditSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
       }
       message.error(
         anyErr?.response?.data?.res_data?.message ??
-          anyErr?.message ??
-          'แก้ไขประเภทงานไม่สำเร็จ',
+        anyErr?.message ??
+        'แก้ไขประเภทงานไม่สำเร็จ',
       )
     }
   }
@@ -129,7 +129,7 @@ const EditSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
           Input: {
             colorBorder: '#E5E5E5',
             activeBorderColor: '#FCD116',
@@ -178,7 +178,7 @@ const EditSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
               background: 'transparent',
               borderRadius: 999,
               padding: '4px 14px',
-              fontSize: 13,
+              fontSize: "var(--fs-12)",
             }}
           >
             {activeRoute?.code}

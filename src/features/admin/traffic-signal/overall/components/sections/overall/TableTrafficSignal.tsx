@@ -23,7 +23,7 @@ const Pill: React.FC<{
   icon?: React.ReactNode
 }> = ({ text, color, icon }) => (
   <span
-    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {icon}
@@ -35,11 +35,11 @@ const Pill: React.FC<{
 type Row =
   | { kind: 'bureau'; id: string; bureau: string; count: number }
   | {
-      kind: 'project'
-      id: string
-      project: TrafficSignalProject
-      roadCodeSpan: number
-    }
+    kind: 'project'
+    id: string
+    project: TrafficSignalProject
+    roadCodeSpan: number
+  }
 
 // One color per controller mode so the table is easy to scan at a glance.
 // `Auto` and `Flashing24Hr` share the "default" white pill — they're neutral
@@ -135,7 +135,7 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
               <div className='flex items-center gap-3'>
                 <span className='text-white font-bold'>{row.bureau}</span>
                 <span
-                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
                   style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ

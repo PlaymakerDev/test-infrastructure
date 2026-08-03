@@ -18,7 +18,7 @@ const StatusBridgeLighting: React.FC = () => {
         backdropFilter: 'blur(5px)',
       }}
     >
-      <div className='flex items-center gap-2 text-white text-xs font-semibold'>
+      <div className='flex items-center gap-2 text-white fs-12 font-semibold'>
         <TbSparkles size={24} className='text-white' />
         สถานะการทำงาน
       </div>
@@ -30,7 +30,7 @@ const StatusBridgeLighting: React.FC = () => {
       </h2>
       <p
         className='text-white/70 leading-tight'
-        style={{ fontSize: 12 }}
+        style={{ fontSize: "var(--fs-12)" }}
       >
         อัพเดตล่าสุด : {bridge.lastUpdate}
       </p>

@@ -5,7 +5,7 @@ import { TbClock } from 'react-icons/tb'
 import { useDashboardCounting } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 
-interface Props {}
+interface Props { }
 
 /** "ช่วงเวลาปริมาณการจราจรสูงสุดวันนี้" — pulls the hourly bucket with the
  *  highest `total_count` from /counting/{deptId}/dashboard.daily_count_hour. */
@@ -36,7 +36,7 @@ const TrafficStat: React.FC<Props> = () => {
     >
       <div className='flex items-center gap-2 mb-3'>
         <TbClock size={30} color='#FCD116' />
-        <span className='text-sm font-medium' style={{ color: '#FCD116' }}>
+        <span className='fs-12 font-medium' style={{ color: '#FCD116' }}>
           ช่วงเวลาปริมาณการจราจรสูงสุดวันนี้
         </span>
       </div>
@@ -49,14 +49,14 @@ const TrafficStat: React.FC<Props> = () => {
         }}
       />
       <div className='grid grid-cols-3 gap-1'>
-        <span className='text-[14px]' style={{ color: '#6b7f9a' }}>ช่วงเวลา</span>
-        <span className='text-[14px] text-center' style={{ color: '#6b7f9a' }}>คัน</span>
-        <span className='text-[14px] text-right' style={{ color: '#6b7f9a' }}>PCU</span>
-        <span className='text-[14px] font-medium mt-1 tabular-nums text-white'>{hourLabel}</span>
-        <span className='text-[14px] font-medium mt-1 text-center tabular-nums text-white'>
+        <span className='fs-12' style={{ color: '#6b7f9a' }}>ช่วงเวลา</span>
+        <span className='fs-12 text-center' style={{ color: '#6b7f9a' }}>คัน</span>
+        <span className='fs-12 text-right' style={{ color: '#6b7f9a' }}>PCU</span>
+        <span className='fs-12 font-medium mt-1 tabular-nums text-white'>{hourLabel}</span>
+        <span className='fs-12 font-medium mt-1 text-center tabular-nums text-white'>
           {vehicles.toLocaleString()}
         </span>
-        <span className='text-[14px] font-medium mt-1 text-right tabular-nums text-white'>
+        <span className='fs-12 font-medium mt-1 text-right tabular-nums text-white'>
           {pcu.toLocaleString()}
         </span>
       </div>

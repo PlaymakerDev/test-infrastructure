@@ -23,7 +23,7 @@ const WarrantyPill: React.FC<{ warranty: IncidentRow['warranty'] }> = ({ warrant
     : { text: 'หมดค้ำ', color: '#979797' }
   return (
     <span
-      className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
     >
       {cfg.text}
@@ -35,7 +35,7 @@ const StatusPill: React.FC<{ online: boolean }> = ({ online }) => {
   const color = online ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {online ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
@@ -48,7 +48,7 @@ const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
   const color = online ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {online ? 'Connect' : 'Disconnect'}
@@ -125,139 +125,139 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
 
   const columns: ColumnsType<TableRow> = useMemo(() => {
     const cols: ColumnsType<TableRow> = [
-    {
-      title: 'รหัสสายทาง',
-      key: 'roadCode',
-      className: 'col-road-code',
-      width: 150,
-      onCell: (row) =>
-        row.kind === 'bureau'
-          ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
-          : { rowSpan: row.roadCodeSpan },
-      render: (_, row) => {
-        if (row.kind === 'bureau') {
+      {
+        title: 'รหัสสายทาง',
+        key: 'roadCode',
+        className: 'col-road-code',
+        width: 150,
+        onCell: (row) =>
+          row.kind === 'bureau'
+            ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
+            : { rowSpan: row.roadCodeSpan },
+        render: (_, row) => {
+          if (row.kind === 'bureau') {
+            return (
+              <div className='flex items-center gap-3'>
+                <span className='text-white font-bold'>{row.bureau}</span>
+                <span
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
+                  style={{ border: '1px solid #fff', color: '#fff' }}
+                >
+                  {row.count} โครงการ
+                </span>
+              </div>
+            )
+          }
           return (
-            <div className='flex items-center gap-3'>
-              <span className='text-white font-bold'>{row.bureau}</span>
-              <span
-                className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid #fff', color: '#fff' }}
-              >
-                {row.count} โครงการ
-              </span>
-            </div>
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.roadCode}
+            </DetailLinkText>
           )
-        }
-        return (
-          <DetailLinkText onClick={() => goToDetail(row.item)}>
-            {row.item.roadCode}
-          </DetailLinkText>
-        )
+        },
       },
-    },
-    {
-      title: 'ชื่อโครงการ',
-      key: 'projectName',
-      className: 'col-project-name',
-      ellipsis: true,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <DetailLinkText onClick={() => goToDetail(row.item)}>
-            {row.item.projectName}
-          </DetailLinkText>
-        ) : null,
-    },
-    {
-      title: 'จุดติดตั้ง',
-      key: 'installPoint',
-      width: 240,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <DetailLinkText onClick={() => goToDetail(row.item)}>
-            {row.item.installPoint}
-          </DetailLinkText>
-        ) : null,
-    },
-    {
-      title: 'เลขที่สัญญา',
-      key: 'contractNo',
-      width: 190,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <ContractInfoCell
-            contractNo={row.item.contractNo}
-            budgetYear={row.item.budgetYear}
-            projectId={row.item.projectId}
-            roadId={row.item.roadId}
-          />
-        ) : null,
-    },
-    {
-      title: 'การค้ำประกัน',
-      key: 'warranty',
-      width: 120,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
-    },
-    {
-      title: 'กล้องวิเคราะห์',
-      key: 'analysisCameras',
-      width: 120,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) =>
-        row.kind === 'project' ? <span className='text-white font-semibold'>{row.item.totalCameras}</span> : null,
-    },
-    {
-      title: 'เหตุการณ์',
-      key: 'events',
-      width: 100,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => {
-        if (row.kind !== 'project') return null
-        return (
-          <span
-            className='font-semibold'
-            style={{ color: row.item.events > 0 ? '#FCD116' : '#ffffff40' }}
-          >
-            {row.item.events}
-          </span>
-        )
+      {
+        title: 'ชื่อโครงการ',
+        key: 'projectName',
+        className: 'col-project-name',
+        ellipsis: true,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.projectName}
+            </DetailLinkText>
+          ) : null,
       },
-    },
-    {
-      title: 'License',
-      key: 'license',
-      width: 100,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) =>
-        row.kind === 'project' ? (
-          <button
-            type='button'
-            onClick={() => openLicense(row.item)}
-            className='cursor-pointer hover:opacity-80'
-            title='ดูข้อมูล License'
-          >
-            <LicenseIcon />
-          </button>
-        ) : null,
-    },
-    {
-      title: 'สถานะ',
-      key: 'status',
-      width: 140,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => (row.kind === 'project' ? <StatusPill online={row.item.onlineCameras > 0} /> : null),
-    },
-    {
-      title: 'Stream',
-      key: 'stream',
-      width: 120,
-      onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-      render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
-    },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 240,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.installPoint}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
+        title: 'เลขที่สัญญา',
+        key: 'contractNo',
+        width: 190,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <ContractInfoCell
+              contractNo={row.item.contractNo}
+              budgetYear={row.item.budgetYear}
+              projectId={row.item.projectId}
+              roadId={row.item.roadId}
+            />
+          ) : null,
+      },
+      {
+        title: 'การค้ำประกัน',
+        key: 'warranty',
+        width: 120,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => (row.kind === 'project' ? <WarrantyPill warranty={row.item.warranty} /> : null),
+      },
+      {
+        title: 'กล้องวิเคราะห์',
+        key: 'analysisCameras',
+        width: 120,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? <span className='text-white font-semibold'>{row.item.totalCameras}</span> : null,
+      },
+      {
+        title: 'เหตุการณ์',
+        key: 'events',
+        width: 100,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => {
+          if (row.kind !== 'project') return null
+          return (
+            <span
+              className='font-semibold'
+              style={{ color: row.item.events > 0 ? '#FCD116' : '#ffffff40' }}
+            >
+              {row.item.events}
+            </span>
+          )
+        },
+      },
+      {
+        title: 'License',
+        key: 'license',
+        width: 100,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) =>
+          row.kind === 'project' ? (
+            <button
+              type='button'
+              onClick={() => openLicense(row.item)}
+              className='cursor-pointer hover:opacity-80'
+              title='ดูข้อมูล License'
+            >
+              <LicenseIcon />
+            </button>
+          ) : null,
+      },
+      {
+        title: 'สถานะ',
+        key: 'status',
+        width: 140,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => (row.kind === 'project' ? <StatusPill online={row.item.onlineCameras > 0} /> : null),
+      },
+      {
+        title: 'Stream',
+        key: 'stream',
+        width: 120,
+        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        render: (_, row) => (row.kind === 'project' ? <StreamPill online={row.item.onlineCameras > 0} /> : null),
+      },
     ]
     // ชื่อโครงการ hidden behind the app-wide flag — flip SHOW_PROJECT_NAME to restore.
     return SHOW_PROJECT_NAME ? cols : cols.filter((c) => c.title !== 'ชื่อโครงการ')

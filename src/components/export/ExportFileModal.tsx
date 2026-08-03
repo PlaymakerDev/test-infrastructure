@@ -54,74 +54,74 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
     <ConfigProvider
       theme={{ components: { Modal: { contentBg: '#ffffff', headerBg: '#ffffff', titleColor: '#212121' } } }}
     >
-    <Modal
-      title={<span style={{ color: '#212121', fontWeight: 700 }}>Export File</span>}
-      open={open}
-      onCancel={busy ? undefined : onClose}
-      footer={null}
-      centered
-      width={400}
-      className='light-modal'
-    >
-      <div style={{ padding: '8px 0 4px' }}>
-        <p style={{ color: '#212121', fontWeight: 500, marginBottom: 6 }}>
-          เลือกรูปแบบไฟล์ที่ต้องการ Export:
-        </p>
-        {scope && (
-          <div style={{ marginBottom: 10 }}>
-            <Segmented<ExportScope>
-              size='small'
-              value={scopeValue}
-              onChange={(v) => setScopeValue(v)}
-              disabled={busy !== null}
-              options={[
-                { label: `ทั้งหมด (${scope.totalCount.toLocaleString()})`, value: 'all' },
-                { label: `หน้าปัจจุบัน (${scope.pageCount.toLocaleString()})`, value: 'page' },
-              ]}
-            />
-          </div>
-        )}
-        {effectiveCount != null && (
-          <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>
-            จำนวนข้อมูล: {effectiveCount.toLocaleString()} รายการ
+      <Modal
+        title={<span style={{ color: '#212121', fontWeight: 700 }}>Export File</span>}
+        open={open}
+        onCancel={busy ? undefined : onClose}
+        footer={null}
+        centered
+        width={400}
+        className='light-modal'
+      >
+        <div style={{ padding: '8px 0 4px' }}>
+          <p style={{ color: '#212121', fontWeight: 500, marginBottom: 6 }}>
+            เลือกรูปแบบไฟล์ที่ต้องการ Export:
           </p>
-        )}
+          {scope && (
+            <div style={{ marginBottom: 10 }}>
+              <Segmented<ExportScope>
+                size='small'
+                value={scopeValue}
+                onChange={(v) => setScopeValue(v)}
+                disabled={busy !== null}
+                options={[
+                  { label: `ทั้งหมด (${scope.totalCount.toLocaleString()})`, value: 'all' },
+                  { label: `หน้าปัจจุบัน (${scope.pageCount.toLocaleString()})`, value: 'page' },
+                ]}
+              />
+            </div>
+          )}
+          {effectiveCount != null && (
+            <p style={{ color: '#666', fontSize: "var(--fs-12)", marginBottom: 20 }}>
+              จำนวนข้อมูล: {effectiveCount.toLocaleString()} รายการ
+            </p>
+          )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {onExportPdf && (
-            <Button
-              type='primary'
-              size='large'
-              icon={<FaFilePdf />}
-              onClick={run('pdf', onExportPdf)}
-              loading={busy === 'pdf'}
-              disabled={busy !== null && busy !== 'pdf'}
-              block
-              style={{ height: 50, fontSize: 16, fontWeight: 600, backgroundColor: '#DC2626', borderColor: '#DC2626' }}
-            >
-              Export as PDF
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {onExportPdf && (
+              <Button
+                type='primary'
+                size='large'
+                icon={<FaFilePdf />}
+                onClick={run('pdf', onExportPdf)}
+                loading={busy === 'pdf'}
+                disabled={busy !== null && busy !== 'pdf'}
+                block
+                style={{ height: 50, fontSize: 16, fontWeight: 600, backgroundColor: '#DC2626', borderColor: '#DC2626' }}
+              >
+                Export as PDF
+              </Button>
+            )}
+            {onExportExcel && (
+              <Button
+                type='primary'
+                size='large'
+                icon={<FaFileExcel />}
+                onClick={run('excel', onExportExcel)}
+                loading={busy === 'excel'}
+                disabled={busy !== null && busy !== 'excel'}
+                block
+                style={{ height: 50, fontSize: 16, fontWeight: 600, backgroundColor: '#16A34A', borderColor: '#16A34A' }}
+              >
+                Export as Excel
+              </Button>
+            )}
+            <Button size='large' onClick={onClose} disabled={busy !== null} block style={{ height: 50, fontSize: 16 }}>
+              ยกเลิก
             </Button>
-          )}
-          {onExportExcel && (
-            <Button
-              type='primary'
-              size='large'
-              icon={<FaFileExcel />}
-              onClick={run('excel', onExportExcel)}
-              loading={busy === 'excel'}
-              disabled={busy !== null && busy !== 'excel'}
-              block
-              style={{ height: 50, fontSize: 16, fontWeight: 600, backgroundColor: '#16A34A', borderColor: '#16A34A' }}
-            >
-              Export as Excel
-            </Button>
-          )}
-          <Button size='large' onClick={onClose} disabled={busy !== null} block style={{ height: 50, fontSize: 16 }}>
-            ยกเลิก
-          </Button>
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
     </ConfigProvider>
   )
 }

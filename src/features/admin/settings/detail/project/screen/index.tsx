@@ -279,7 +279,7 @@ const DetailContent: React.FC = () => {
         onCancel={() => setConfirmDelete(null)}
         onConfirm={executeDelete}
         bodyNode={
-          <div className='text-sm text-black text-center py-2'>
+          <div className='fs-12 text-black text-center py-2'>
             <p className='font-bold mb-1'>จุดติดตั้ง : {activePoint?.name}</p>
             <p className='mb-0'>ไม่มีประเภทงานหรืออุปกรณ์ที่ใช้งานอยู่ในจุดติดตั้งนี้</p>
             <p className='mb-0'>สามารถลบจุดติดตั้งออกจากระบบได้อย่างปลอดภัย</p>
@@ -293,7 +293,7 @@ const DetailContent: React.FC = () => {
         onCancel={() => setConfirmDelete(null)}
         onConfirm={executeDelete}
         bodyNode={
-          <div className='text-sm text-black text-center py-2'>
+          <div className='fs-12 text-black text-center py-2'>
             <p className='mb-0'>ยืนยันการลบประเภทงาน</p>
             {confirmDelete?.kind === 'taskType' && (
               <p className='font-bold mb-0'>{confirmDelete.taskKind}</p>
@@ -315,7 +315,7 @@ const DetailContent: React.FC = () => {
         }
         onClose={() => setCannotDelete(null)}
         bodyNode={
-          <div className='text-sm text-black text-center'>
+          <div className='fs-12 text-black text-center'>
             <p className='mb-2'>
               จุดติดตั้งนี้ไม่สามารถลบได้ เนื่องจากยังมีข้อมูลประเภทงาน
               <br />
@@ -326,7 +326,7 @@ const DetailContent: React.FC = () => {
                 cannotDelete.taskKinds.map((k, i) => (
                   <span
                     key={i}
-                    className='inline-flex px-3 py-1 rounded-full text-xs'
+                    className='inline-flex px-3 py-1 rounded-full fs-12'
                     style={{ background: '#F59E0B', color: '#000' }}
                   >
                     {k}
@@ -349,7 +349,7 @@ const DetailContent: React.FC = () => {
         }
         onClose={() => setCannotDelete(null)}
         bodyNode={
-          <div className='text-sm text-black'>
+          <div className='fs-12 text-black'>
             {cannotDelete?.kind === 'taskType' && (
               <>
                 <p className='mb-1'>

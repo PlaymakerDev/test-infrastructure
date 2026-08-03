@@ -40,7 +40,7 @@ const CCTVSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
     <div className='h-full flex flex-col gap-3'>
       <div className='flex items-center justify-between px-1'>
         <h4 className='text-white'>จุดตรวจจับสูงสุดวันนี้</h4>
-        <span className='fs-11 text-gray-500'>Top 5</span>
+        <span className='fs-12 text-gray-500'>Top 5</span>
       </div>
 
       {isLoading && (
@@ -72,11 +72,11 @@ const CCTVSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
             className='cursor-pointer bg-(--mid-gray) hover:bg-(--light-black) transition-colors rounded-xl p-3 flex flex-col gap-1'
           >
             <div className='flex items-center gap-2'>
-              <span className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 text-(--yellow) flex items-center justify-center fs-11 font-bold'>
+              <span className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 text-(--yellow) flex items-center justify-center fs-12 font-bold'>
                 {i + 1}
               </span>
               <div className='min-w-0 flex-1'>
-                <div className='fs-11 text-(--default-blue) font-semibold tabular-nums truncate'>
+                <div className='fs-12 text-(--default-blue) font-semibold tabular-nums truncate'>
                   {p.road_code || '-'}
                 </div>
                 <div className='fs-13 text-white truncate'>
@@ -87,7 +87,7 @@ const CCTVSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
             <div className='flex items-center justify-between pl-8'>
               <div className='flex items-center gap-1 text-white/70'>
                 <TbCamera size={12} />
-                <span className='fs-11'>{p.camera_count} กล้อง</span>
+                <span className='fs-12'>{p.camera_count} กล้อง</span>
               </div>
               <div className='flex items-center gap-1 text-(--yellow)'>
                 <TbBolt size={12} />
@@ -96,7 +96,7 @@ const CCTVSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
                 </span>
               </div>
             </div>
-            <p className='pl-8 fs-11 text-gray-500'>
+            <p className='pl-8 fs-12 text-gray-500'>
               ล่าสุด {p.latest_captured_at ? dayjs(p.latest_captured_at).locale('th').fromNow() : '-'}
             </p>
           </div>

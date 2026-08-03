@@ -20,7 +20,7 @@ const CameraListSection: React.FC = () => {
           <TbCamera size={18} />
           <h4 className='mb-0'>กล้อง LPR ในจุดนี้</h4>
         </div>
-        <span className='fs-11 text-gray-500'>{cams.length} ตัว</span>
+        <span className='fs-12 text-gray-500'>{cams.length} ตัว</span>
       </div>
       {cams.length === 0 ? (
         <div className='py-6 text-center text-gray-500 fs-12'>ไม่พบกล้อง</div>

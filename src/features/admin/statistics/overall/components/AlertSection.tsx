@@ -45,7 +45,7 @@ const DevicePhaseBadge: React.FC<{ imei: string }> = ({ imei }) => {
       display: 'inline-flex', alignItems: 'center', flexShrink: 0,
       height: 26, borderRadius: 88, padding: '0 12px',
       border: '1px solid #FCD116',
-      fontSize: 12, fontWeight: 500, color: '#FCD116', whiteSpace: 'nowrap',
+      fontSize: "var(--fs-12)", fontWeight: 500, color: '#FCD116', whiteSpace: 'nowrap',
     }}>
       {phase} Phase
     </span>
@@ -68,20 +68,20 @@ const AlertMapPopup: React.FC<{
       <TbBolt size={22} color="#FCD116" />
       <span style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap' }}>สายทาง : {roadCode}</span>
     </div>
-    <p style={{ fontSize: 13, fontWeight: 500, color: '#FCD116', marginTop: 6, marginLeft: 32, whiteSpace: 'nowrap' }}>
+    <p style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FCD116', marginTop: 6, marginLeft: 32, whiteSpace: 'nowrap' }}>
       หน่วยงานรับผิดชอบ : {departmentName}
     </p>
     <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {devices.map((d) => (
         <div key={d.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#FFFFFF', flex: 1, whiteSpace: 'nowrap' }}>{d.label}</span>
+          <span style={{ fontSize: "var(--fs-12)", color: '#FFFFFF', flex: 1, whiteSpace: 'nowrap' }}>{d.label}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <DevicePhaseBadge imei={d.imei} />
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
               height: 26, borderRadius: 88, padding: '0 12px',
               border: `1px solid ${d.isOnline ? '#66AEFF' : '#E94C4C'}`,
-              fontSize: 12, fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap',
+              fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap',
             }}>
               <img
                 src={d.isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`}
@@ -101,7 +101,7 @@ const AlertMapPopup: React.FC<{
       style={{
         marginTop: 18, width: '100%', height: 40, borderRadius: 88,
         background: '#FCD116', color: '#212121', border: 'none',
-        fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        fontSize: "var(--fs-12)", fontWeight: 600, cursor: 'pointer',
       }}
     >
       ดูรายละเอียดเหตุการณ์
@@ -193,14 +193,14 @@ const ALERT_COMPARISON_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: ComparisonRecord) => string | number
 }[] = [
-  { header: 'หน่วยงาน / รายการ', width: 34, widthPct: 30, value: (r) => r.agency },
-  { header: 'จุดติดตั้ง', width: 14, widthPct: 13, align: 'center', value: (r) => r.installations },
-  { header: 'ออนไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.online },
-  { header: 'ออฟไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.offline },
-  { header: 'Line Check', width: 14, widthPct: 11, align: 'center', value: (r) => alertStatusValue(r, 'lineCheck') },
-  { header: 'Circuit', width: 12, widthPct: 10, align: 'center', value: (r) => alertStatusValue(r, 'circuit') },
-  { header: 'Volt / Amp', width: 13, widthPct: 12, align: 'center', value: (r) => alertStatusValue(r, 'voltAmp') },
-]
+    { header: 'หน่วยงาน / รายการ', width: 34, widthPct: 30, value: (r) => r.agency },
+    { header: 'จุดติดตั้ง', width: 14, widthPct: 13, align: 'center', value: (r) => r.installations },
+    { header: 'ออนไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.online },
+    { header: 'ออฟไลน์', width: 12, widthPct: 12, align: 'center', value: (r) => r.isDevice ? '-' : r.offline },
+    { header: 'Line Check', width: 14, widthPct: 11, align: 'center', value: (r) => alertStatusValue(r, 'lineCheck') },
+    { header: 'Circuit', width: 12, widthPct: 10, align: 'center', value: (r) => alertStatusValue(r, 'circuit') },
+    { header: 'Volt / Amp', width: 13, widthPct: 12, align: 'center', value: (r) => alertStatusValue(r, 'voltAmp') },
+  ]
 
 /** Export reports are flat, while the comparison table is a bureau → sub-
  * department → road → device tree. Keep every matching branch and indent its

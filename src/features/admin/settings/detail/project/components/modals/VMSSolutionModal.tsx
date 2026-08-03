@@ -29,14 +29,14 @@ interface FormShape {
 }
 
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {children}
     <span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
   </span>
 )
 
 const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>{children}</span>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
 )
 
 /** VMS provisioning modal — creates the full VMS solution + all its
@@ -101,7 +101,7 @@ const VMSSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
           Input: {
             colorBorder: '#E5E5E5',
             activeBorderColor: '#FCD116',
@@ -159,7 +159,7 @@ const VMSSolutionModal: React.FC<Props> = ({ open, task, onClose }) => {
               borderRadius: 8,
               padding: '10px 14px',
               marginBottom: 12,
-              fontSize: 13,
+              fontSize: "var(--fs-12)",
               color: '#4A4A4A',
             }}
           >

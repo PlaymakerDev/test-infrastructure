@@ -57,25 +57,25 @@ const LIGHTING_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: TrafficLightingProject, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
-  { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
-  { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 15, align: 'left', value: (r) => r.installPoint || '-' },
-  // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
-  { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
-  { header: 'การค้ำประกัน', width: 13, widthPct: 9, value: (r) => EXPORT_WARRANTY_TEXT[r.warranty] },
-  // Mirrors the on-screen Phase cell (equipment count, not the phase field).
-  { header: 'Phase', width: 8, widthPct: 6, value: (r) => r.equipment.count ?? '-' },
-  { header: 'สถานะการเชื่อมต่อ', width: 16, widthPct: 10, value: (r) => EXPORT_CONNECTION_TEXT[r.connection] },
-  {
-    header: 'สถานะสาย',
-    width: 10,
-    widthPct: 8,
-    value: (r) =>
-      r.hasBrokenWire == null ? '-' : r.hasBrokenWire ? 'สายขาด' : 'เชื่อมต่อ',
-  },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'หน่วยงาน', width: 16, widthPct: 10, value: (r) => r.bureau || '-' },
+    { header: 'รหัสสายทาง', width: 13, widthPct: 9, value: (r) => r.roadCode || '-' },
+    { header: 'ชื่อโครงการ', width: 34, widthPct: 17, align: 'left', value: (r) => r.projectName || '-' },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 15, align: 'left', value: (r) => r.installPoint || '-' },
+    // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
+    { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
+    { header: 'การค้ำประกัน', width: 13, widthPct: 9, value: (r) => EXPORT_WARRANTY_TEXT[r.warranty] },
+    // Mirrors the on-screen Phase cell (equipment count, not the phase field).
+    { header: 'Phase', width: 8, widthPct: 6, value: (r) => r.equipment.count ?? '-' },
+    { header: 'สถานะการเชื่อมต่อ', width: 16, widthPct: 10, value: (r) => EXPORT_CONNECTION_TEXT[r.connection] },
+    {
+      header: 'สถานะสาย',
+      width: 10,
+      widthPct: 8,
+      value: (r) =>
+        r.hasBrokenWire == null ? '-' : r.hasBrokenWire ? 'สายขาด' : 'เชื่อมต่อ',
+    },
+  ]
 
 const OverallSection: React.FC = () => {
   const router = useRouter()
@@ -205,14 +205,14 @@ const OverallSection: React.FC = () => {
             {leftPanelItems.map((item) => (
               <div key={item.id} className='flex flex-col gap-1 min-w-0 flex-1'>
                 <div className='flex flex-row items-center gap-0.5'>
-                  <p className='text-[12px] font-normal m-0 shrink-0' style={{ color: '#66AEFF' }}>{item.cabinet}</p>
+                  <p className='fs-12 font-normal m-0 shrink-0' style={{ color: '#66AEFF' }}>{item.cabinet}</p>
                 </div>
                 <div className='flex flex-row items-center gap-2 justify-between'>
-                  <p className='text-[12px] font-normal m-0 shrink-0' style={{ color: '#979797' }}>IMEI : {item.imei}</p>
+                  <p className='fs-12 font-normal m-0 shrink-0' style={{ color: '#979797' }}>IMEI : {item.imei}</p>
                   <button
                     type='button'
                     disabled={!item.imei || item.imei === '-'}
-                    className='shrink-0 flex items-center justify-center border-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 p-0 text-[12px] font-normal text-white leading-none'
+                    className='shrink-0 flex items-center justify-center border-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 p-0 fs-12 font-normal text-white leading-none'
                     style={{ width: 80, height: 27, borderRadius: 88, background: '#212121' }}
                     onClick={() => {
                       const equipType = item.equipmentType || ''
@@ -247,11 +247,11 @@ const OverallSection: React.FC = () => {
               >
                 <div className='flex flex-row items-start gap-2 shrink-0'>
                   <img src={`${BASE_PATH}/images/Lighting/icelt1.png`} alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
-                  <p className='text-[14px] sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
+                  <p className='fs-12 sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
                 </div>
                 <div className='flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-3 min-h-[56px]'>
                   <p className='text-[22px] sm:text-[28px] lg:text-[30px] xl:text-[32px] font-bold m-0 text-white leading-none'>{phaseLabel}</p>
-                  <p className='text-[11px] sm:text-[13px] xl:text-[14px] font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
+                  <p className='fs-12 sm:fs-12 xl:fs-12 font-normal m-0 mt-1' style={{ color: '#66AEFF' }}>{phaseSubLabel}</p>
                 </div>
                 <div className='grid grid-cols-5 gap-1.5 sm:gap-2 w-full min-w-0 shrink-0 mt-auto'>
                   {phaseMetrics.map((metric) => (
@@ -260,8 +260,8 @@ const OverallSection: React.FC = () => {
                       className='flex flex-col items-center justify-center rounded-[10px] w-full min-w-0 min-h-[56px] sm:min-h-[60px] xl:min-h-[64px] px-1 py-1.5'
                       style={{ background: '#191919', border: '1px solid #66AEFF' }}
                     >
-                      <span className='text-[10px] sm:text-[11px] font-normal m-0 leading-none' style={{ color: '#66AEFF' }}>{metric.label}</span>
-                      <span className='text-[10px] sm:text-[12px] xl:text-[11px] font-bold m-0 mt-1 text-white tabular-nums leading-tight text-center w-full'>
+                      <span className='text-[10px] sm:fs-12 font-normal m-0 leading-none' style={{ color: '#66AEFF' }}>{metric.label}</span>
+                      <span className='text-[10px] sm:fs-12 xl:fs-12 font-bold m-0 mt-1 text-white tabular-nums leading-tight text-center w-full'>
                         {metric.value}
                       </span>
                     </div>
@@ -277,7 +277,7 @@ const OverallSection: React.FC = () => {
                   >
                     <img src={card.icon} alt='' width={30} height={30} className='shrink-0 w-7 h-7 sm:w-[30px] sm:h-[30px] ml-1 sm:ml-2' />
                     <div className='flex flex-col min-w-0 flex-1 pl-2 sm:pl-3'>
-                      <p className='text-[11px] sm:text-[13px] xl:text-[14px] font-bold m-0 truncate' style={{ color: card.titleColor, lineHeight: 1.4 }}>{card.title}</p>
+                      <p className='fs-12 sm:fs-12 xl:fs-12 font-bold m-0 truncate' style={{ color: card.titleColor, lineHeight: 1.4 }}>{card.title}</p>
                       <p className='text-[16px] sm:text-[18px] xl:text-[22px] font-bold m-0 mt-0.5 text-white truncate' style={{ lineHeight: 1.4 }}>{card.status}</p>
                     </div>
                   </div>
@@ -316,9 +316,9 @@ const OverallSection: React.FC = () => {
               </div>
               <div className='flex items-baseline gap-2'>
                 <p style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 32, margin: 0, lineHeight: 1 }}>{s.value}</p>
-                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: 0 }}>จุดติดตั้ง</p>
+                <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0 }}>จุดติดตั้ง</p>
               </div>
-              <p style={{ color: '#979797', fontWeight: 400, fontSize: 12, margin: 0 }}>Active : {s.active}</p>
+              <p style={{ color: '#979797', fontWeight: 400, fontSize: "var(--fs-12)", margin: 0 }}>Active : {s.active}</p>
             </div>
           ))}
         </div>

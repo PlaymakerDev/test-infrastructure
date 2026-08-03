@@ -97,7 +97,7 @@ const ProjectInfoModal: React.FC<ProjectInfoModalProps> = ({
             </h2>
             {badge && (
               <span
-                className='inline-flex items-center justify-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
+                className='inline-flex items-center justify-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
                 style={{ border: `1px solid ${badge.color}`, color: badge.color }}
               >
                 {badge.text}
@@ -139,12 +139,12 @@ const ProjectInfoModal: React.FC<ProjectInfoModalProps> = ({
                   <div className='text-white flex items-center justify-center h-7.5'>
                     {field.icon}
                   </div>
-                  <span style={{ color: '#979797', fontSize: 12, lineHeight: '15px' }}>
+                  <span style={{ color: '#979797', fontSize: "var(--fs-12)", lineHeight: '15px' }}>
                     {field.label}
                   </span>
                   <span
                     className='text-center'
-                    style={{ color: '#fff', fontSize: 14, lineHeight: '17px' }}
+                    style={{ color: '#fff', fontSize: "var(--fs-12)", lineHeight: '17px' }}
                   >
                     {field.value}
                   </span>

@@ -241,7 +241,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
             {endpoints.map((e) => {
               const s = statusText(e.query)
               return (
-                <li key={e.label} className='flex flex-col gap-0.5 text-xs'>
+                <li key={e.label} className='flex flex-col gap-0.5 fs-12'>
                   <div className='flex items-center gap-2'>
                     <span className={`font-bold ${s.color}`}>{s.text}</span>
                     {e.critical && (
@@ -256,7 +256,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
               )
             })}
           </ul>
-          <p className='text-white/50 text-xs mt-3'>
+          <p className='text-white/50 fs-12 mt-3'>
             {`ต้องมี endpoint "critical" ทำงานถึง render ได้`}
           </p>
         </div>

@@ -18,10 +18,10 @@ const renderCount = (count?: string) => {
   const [left, right] = count.split('/')
   const online = Number.parseInt(left, 10)
   const total = Number.parseInt(right, 10)
-  if (online === total) return <span style={{ fontSize: 14, fontWeight: 500, color: '#FFFFFF', width: 28, textAlign: 'right' }}>{count}</span>
-  if (online === 0) return <span style={{ fontSize: 14, fontWeight: 500, color: '#E94C4C', width: 28, textAlign: 'right' }}>{count}</span>
+  if (online === total) return <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF', width: 28, textAlign: 'right' }}>{count}</span>
+  if (online === 0) return <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#E94C4C', width: 28, textAlign: 'right' }}>{count}</span>
   return (
-    <span style={{ fontSize: 14, fontWeight: 500, width: 28, textAlign: 'right' }}>
+    <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, width: 28, textAlign: 'right' }}>
       <span style={{ color: '#05F2DB' }}>{left}</span>
       <span style={{ color: '#FCD116' }}>/{right}</span>
     </span>
@@ -31,7 +31,7 @@ const renderCount = (count?: string) => {
 const renderBadge = (value: number, color: string, maxChars: number) => (
   <span
     style={{
-      fontSize: 14,
+      fontSize: "var(--fs-12)",
       fontWeight: 500,
       fontVariantNumeric: 'tabular-nums',
       color,
@@ -92,7 +92,7 @@ const StatisticsRouteSearchList: React.FC<StatisticsRouteSearchListProps> = ({
           key,
           label: (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <span style={{ fontSize: 14, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+              <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 {renderBadge(noti, badgeColor, maxBureauBadgeChars)}
                 {renderCount(item.count)}
@@ -123,7 +123,7 @@ const StatisticsRouteSearchList: React.FC<StatisticsRouteSearchListProps> = ({
                   key: `${key}-${sub.label}`,
                   label: (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontSize: 14, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
+                      <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
                         {renderBadge(subNoti, subBadgeColor, maxDepartmentBadgeChars)}
                         {renderCount(sub.count)}
@@ -150,7 +150,7 @@ const StatisticsRouteSearchList: React.FC<StatisticsRouteSearchListProps> = ({
                               borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer',
                             }}
                           >
-                            <span style={{ fontSize: 14, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(detail)}</span>
+                            <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(detail)}</span>
                             <img
                               src={`${BASE_PATH}/images/statistics/${isOnline ? 'iconconnect.png' : 'iconnoconnect.png'}`}
                               alt={isOnline ? 'connected' : 'disconnected'}

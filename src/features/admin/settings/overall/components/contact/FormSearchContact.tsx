@@ -36,7 +36,7 @@ const FormSearchContact: React.FC<Props> = ({ filters, onFiltersChange }) => {
 
   return (
     <div>
-      <label className='block text-xs text-white/70 mb-1'>ค้นหา</label>
+      <label className='block fs-12 text-white/70 mb-1'>ค้นหา</label>
       <Input
         size='large'
         className='rounded-lg'

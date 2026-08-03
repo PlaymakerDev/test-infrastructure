@@ -36,7 +36,7 @@ const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
           <button
             type='button'
             onClick={onShowAll}
-            className='fs-11 text-(--default-blue) hover:text-(--yellow) transition-colors flex items-center gap-1'
+            className='fs-12 text-(--default-blue) hover:text-(--yellow) transition-colors flex items-center gap-1'
           >
             ดูทั้งหมด <TbArrowRight size={12} />
           </button>
@@ -82,16 +82,16 @@ const RecentPlatesSection: React.FC<Props> = ({ onShowAll }) => {
                 <span className='fs-14 font-bold text-white tabular-nums'>
                   {it.plate_number || '-'}
                 </span>
-                <span className='fs-11 text-gray-400 truncate'>
+                <span className='fs-12 text-gray-400 truncate'>
                   {it.plate_province || ''}
                 </span>
               </div>
-              <div className='fs-11 text-gray-400 truncate'>
+              <div className='fs-12 text-gray-400 truncate'>
                 {it.vehicle_type_name || '-'}
                 {it.vehicle_brand ? ` · ${it.vehicle_brand}` : ''}
                 {it.vehicle_color && it.vehicle_color !== '-' ? ` · ${it.vehicle_color}` : ''}
               </div>
-              <div className='fs-11 text-gray-500'>
+              <div className='fs-12 text-gray-500'>
                 {dayjs(it.captured_at).locale('th').fromNow()}
               </div>
             </div>

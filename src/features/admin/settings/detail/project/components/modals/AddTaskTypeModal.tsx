@@ -39,13 +39,13 @@ interface FormShape {
 }
 
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {children}
     <span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
   </span>
 )
 const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>{children}</span>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
 )
 
 /** Compose the backend `geometry_point` value. Server unmarshals a
@@ -103,14 +103,14 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
       const lighting =
         v.solution_type_id === SOLUTION_TYPE.Lighting && v.lighting_type
           ? {
-              lighting_type: v.lighting_type,
-              imei: v.lighting_imei?.trim() || undefined,
-              phase_type: v.lighting_phase_type?.trim() || undefined,
-              sem_type: v.lighting_sem_type?.trim() || undefined,
-              diagram_type: v.lighting_diagram_type?.trim() || undefined,
-              connection_type: v.lighting_connection_type?.trim() || undefined,
-              send_frequency: v.lighting_send_frequency?.trim() || undefined,
-            }
+            lighting_type: v.lighting_type,
+            imei: v.lighting_imei?.trim() || undefined,
+            phase_type: v.lighting_phase_type?.trim() || undefined,
+            sem_type: v.lighting_sem_type?.trim() || undefined,
+            diagram_type: v.lighting_diagram_type?.trim() || undefined,
+            connection_type: v.lighting_connection_type?.trim() || undefined,
+            send_frequency: v.lighting_send_frequency?.trim() || undefined,
+          }
           : undefined
       const bridge_lighting =
         v.solution_type_id === SOLUTION_TYPE.BridgeLighting && v.bridge_wid != null
@@ -148,7 +148,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
           Input: {
             colorBorder: '#E5E5E5',
             activeBorderColor: '#FCD116',
@@ -201,7 +201,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
               background: 'transparent',
               borderRadius: 999,
               padding: '4px 14px',
-              fontSize: 13,
+              fontSize: "var(--fs-12)",
             }}
           >
             {activeRoute?.code}
@@ -308,7 +308,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
               label={<RequiredLabel>WID (Shelly device id)</RequiredLabel>}
               name='bridge_wid'
               extra={
-                <span style={{ color: '#666', fontSize: 12 }}>
+                <span style={{ color: '#666', fontSize: "var(--fs-12)" }}>
                   ต้องตรงกับ id อุปกรณ์ shelly ใน dashvue เช่น 1899 = สะพานกรุงธน,
                   1900 = สะพานพุทธ, 2442/2452 = สะพานกรุงเทพ. ถ้าไม่ได้ mapping ใน
                   ระบบจะแสดง template แบบ generic

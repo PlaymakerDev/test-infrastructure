@@ -48,7 +48,7 @@ const FormSearchUser: React.FC<Props> = ({ filters, onChange }) => {
   return (
     <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>บทบาท</label>
+        <label className='block fs-12 text-white/70 mb-1'>บทบาท</label>
         <Select
           size='large'
           allowClear
@@ -60,7 +60,7 @@ const FormSearchUser: React.FC<Props> = ({ filters, onChange }) => {
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>สถานะ</label>
+        <label className='block fs-12 text-white/70 mb-1'>สถานะ</label>
         <Select
           size='large'
           allowClear
@@ -72,7 +72,7 @@ const FormSearchUser: React.FC<Props> = ({ filters, onChange }) => {
         />
       </div>
       <div>
-        <label className='block text-xs text-white/70 mb-1'>&nbsp;</label>
+        <label className='block fs-12 text-white/70 mb-1'>&nbsp;</label>
         <Input
           size='large'
           className='rounded-lg'

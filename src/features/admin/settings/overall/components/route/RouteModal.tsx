@@ -44,7 +44,7 @@ const FIGMA = {
 /** Renders a form label with the Figma-spec red asterisk. Non-required
  *  fields skip the asterisk entirely. */
 const FieldLabel: React.FC<{ text: string; required?: boolean }> = ({ text, required }) => (
-  <span style={{ color: FIGMA.label, fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: FIGMA.label, fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {text}
     {required && <span style={{ color: FIGMA.requiredAsterisk, marginLeft: 2 }}>*</span>}
   </span>
@@ -69,16 +69,16 @@ const RouteModal: React.FC<Props> = ({
     () =>
       editing
         ? {
-            code: editing.code,
-            name: editing.name,
-            province: editing.province,
-            district: editing.district,
-            subdistrict: editing.subdistrict,
-            startSta: editing.startSta,
-            endSta: editing.endSta,
-            lengthKm: editing.lengthKm,
-            departmentId: editing.departmentId ?? (undefined as unknown as number),
-          }
+          code: editing.code,
+          name: editing.name,
+          province: editing.province,
+          district: editing.district,
+          subdistrict: editing.subdistrict,
+          startSta: editing.startSta,
+          endSta: editing.endSta,
+          lengthKm: editing.lengthKm,
+          departmentId: editing.departmentId ?? (undefined as unknown as number),
+        }
         : {},
     [editing],
   )

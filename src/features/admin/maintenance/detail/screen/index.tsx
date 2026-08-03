@@ -68,19 +68,19 @@ const DEVICE_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (r: TableRow) => string | number
 }[] = [
-  { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.status === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-  { header: 'Case No.', width: 16, widthPct: 9, value: (r) => r.caseNo || '-' },
-  { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
-  { header: 'ยี่ห้อ', width: 12, widthPct: 8, value: (r) => r.brand },
-  { header: 'รุ่น', width: 12, widthPct: 8, value: (r) => r.model },
-  { header: 'ชื่ออุปกรณ์', width: 20, widthPct: 12, align: 'left', value: (r) => r.cameraName },
-  { header: 'Hostname', width: 14, widthPct: 9, value: (r) => r.hostname },
-  { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
-  { header: 'Anydesk', width: 13, widthPct: 8, value: (r) => r.anydesk },
-  { header: 'ZeroTier', width: 13, widthPct: 8, value: (r) => r.zerotier },
-  { header: 'Username', width: 12, widthPct: 7, value: (r) => r.username },
-  { header: 'Password', width: 12, widthPct: 6, value: (r) => r.password },
-]
+    { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.status === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'Case No.', width: 16, widthPct: 9, value: (r) => r.caseNo || '-' },
+    { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
+    { header: 'ยี่ห้อ', width: 12, widthPct: 8, value: (r) => r.brand },
+    { header: 'รุ่น', width: 12, widthPct: 8, value: (r) => r.model },
+    { header: 'ชื่ออุปกรณ์', width: 20, widthPct: 12, align: 'left', value: (r) => r.cameraName },
+    { header: 'Hostname', width: 14, widthPct: 9, value: (r) => r.hostname },
+    { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
+    { header: 'Anydesk', width: 13, widthPct: 8, value: (r) => r.anydesk },
+    { header: 'ZeroTier', width: 13, widthPct: 8, value: (r) => r.zerotier },
+    { header: 'Username', width: 12, widthPct: 7, value: (r) => r.username },
+    { header: 'Password', width: 12, widthPct: 6, value: (r) => r.password },
+  ]
 
 interface TitleSectionWithDataProps {
   id: string
@@ -232,7 +232,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
         const isOnline = status === 'online'
         return (
           <span
-            className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full fs-12 font-normal whitespace-nowrap'
             style={{ border: `1px solid ${isOnline ? '#66AEFF' : '#E94C4C'}`, color: isOnline ? '#66AEFF' : '#E94C4C' }}
           >
             {isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
@@ -268,7 +268,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
           return (
             <button
               type='button'
-              className='px-3 py-1 rounded-full text-[12px] font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
+              className='px-3 py-1 rounded-full fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
               style={{ background: '#FCD116', color: '#212121' }}
               onClick={() => {
                 setSelectedRow(record)
@@ -453,14 +453,14 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             <h3 style={{ fontSize: 24, fontWeight: 700, color: '#525252', margin: '0 0 8px 0', textAlign: 'center' }}>
               ยืนยันเปิด Case อุปกรณ์นี้หรือไม่?
             </h3>
-            <p style={{ fontSize: 14, fontWeight: 400, color: '#525252', margin: '0 0 24px 0', textAlign: 'center' }}>
+            <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#525252', margin: '0 0 24px 0', textAlign: 'center' }}>
               ระบบจะออก Case No. ให้อัตโนมัติ
             </p>
 
             {/* เนื้อหา */}
             <div
               style={{
-                fontSize: 14,
+                fontSize: "var(--fs-12)",
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 6,
@@ -474,7 +474,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
               <div><span style={{ color: '#979797' }}>ผู้รับจ้าง : </span><span style={{ color: '#212121' }}>{contractorName || '-'}</span></div>
               <div><span style={{ color: '#979797' }}>หน่วยงานรับผิดชอบ : </span><span style={{ color: '#212121' }}>{projectDetail?.department?.department_short_name || '-'}</span></div>
               <div><span style={{ color: '#979797' }}>เลขที่สัญญา : </span><span style={{ color: '#212121' }}>{projectDetail?.contract_no || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C', fontWeight: 700, fontSize: 14 }}>{warranty}</span></div>
+              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C', fontWeight: 700, fontSize: "var(--fs-12)" }}>{warranty}</span></div>
               <div><span style={{ color: '#979797' }}>วันที่เริ่มต้น - สิ้นสุดการค้ำประกัน : </span><span style={{ color: '#212121' }}>{warrantyRangeText}</span></div>
             </div>
 
@@ -494,7 +494,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 style={{
                   padding: '8px 20px',
                   borderRadius: 88,
-                  fontSize: 14,
+                  fontSize: "var(--fs-12)",
                   fontWeight: 500,
                   border: '1px solid #C4C4C4',
                   backgroundColor: '#FFFFFF',
@@ -535,7 +535,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
                 style={{
                   padding: '8px 20px',
                   borderRadius: 88,
-                  fontSize: 14,
+                  fontSize: "var(--fs-12)",
                   fontWeight: 500,
                   border: 'none',
                   backgroundColor: createCase.isPending ? '#C4C4C4' : '#FCD116',

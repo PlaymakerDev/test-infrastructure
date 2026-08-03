@@ -139,7 +139,7 @@ const PieChart: React.FC<PieChartProps> = ({
   centerValueSize = 30,
   centerLabelColor = '#8a9ab5',
   centerUnitColor = '#8a9ab5',
-  centerLabelSize = 12,
+  centerLabelSize = "var(--fs-12)",
   centerUnitSize = 14,
 
   // layout
@@ -190,15 +190,15 @@ const PieChart: React.FC<PieChartProps> = ({
       // Render tooltip in <body> so it escapes the card's `overflow: hidden`
       // (otherwise hover near the card edge gets clipped).
       appendToBody: true,
-        // Body-mounted tooltips escape the .mapboxgl/app containers — the
-        // 'echarts-tooltip' class lets custom.css force IBM Plex Sans Thai
-        // over ECharts' inline sans-serif default.
-        className: 'echarts-tooltip',
+      // Body-mounted tooltips escape the .mapboxgl/app containers — the
+      // 'echarts-tooltip' class lets custom.css force IBM Plex Sans Thai
+      // over ECharts' inline sans-serif default.
+      className: 'echarts-tooltip',
       backgroundColor: '#1e2533',
       borderColor: '#2e3a4e',
       borderWidth: 1,
       padding: [10, 16],
-      textStyle: { color: '#ffffff', fontSize: 12 },
+      textStyle: { color: '#ffffff', fontSize: "var(--fs-12)" },
       formatter: (params: { name: string; value: number; data: { itemStyle: { color: string } } }) =>
         `<div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.data.itemStyle.color}"></span>
@@ -277,7 +277,7 @@ const PieChart: React.FC<PieChartProps> = ({
         {/* Period tabs */}
         {periods && periods.length > 0 && (
           <div
-            className='flex gap-1 rounded-full p-1 text-sm'
+            className='flex gap-1 rounded-full p-1 fs-12'
             style={{ background: '#3a2e00' }}
           >
             {periods.map((p) => (
@@ -404,11 +404,11 @@ const PieChart: React.FC<PieChartProps> = ({
                     className='w-3 h-3 rounded-full shrink-0'
                     style={{ background: entry.color }}
                   />
-                  <span className='flex-1 text-sm text-white truncate'>{entry.name}</span>
-                  <span className='text-sm tabular-nums' style={{ color: '#8a9ab5' }}>
+                  <span className='flex-1 fs-12 text-white truncate'>{entry.name}</span>
+                  <span className='fs-12 tabular-nums' style={{ color: '#8a9ab5' }}>
                     {entry.value.toLocaleString()}
                   </span>
-                  <span className='text-sm font-semibold tabular-nums w-12 text-right text-white'>
+                  <span className='fs-12 font-semibold tabular-nums w-12 text-right text-white'>
                     {pct}%
                   </span>
                 </div>

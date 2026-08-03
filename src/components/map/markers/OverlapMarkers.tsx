@@ -192,7 +192,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
               borderRadius: '50%',
               background: '#FCD116',
               color: '#050d1a',
-              fontSize: 14,
+              fontSize: "var(--fs-12)",
               fontWeight: 700,
               border: '2px solid #fff',
               boxShadow: '0 0 8px rgba(252,209,22,0.7), 0 2px 6px rgba(0,0,0,0.45)',
