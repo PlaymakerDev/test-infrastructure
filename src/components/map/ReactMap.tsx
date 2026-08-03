@@ -306,7 +306,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // a single synthetic "ทช.ส่วนกลาง" bucket keyed as `0`. Result: the
     // country view shows exactly 18 (+1 central) markers instead of the
     // scattered 21-bucket set the BE returns raw.
-    const stchAcc: Record<number, { count: number; sumLng: number; sumLat: number }> = {}
+    // `t*` fields accumulate TRUSTED coords only (same rule as deptAcc below)
+    // — placeholder coords like the [1,1] Counting7 batch under สทช.6 (found
+    // 2026-08-03) otherwise drag the bureau bubble clean out of its region.
+    const stchAcc: Record<number, {
+      count: number; sumLng: number; sumLat: number
+      tCount: number; tSumLng: number; tSumLat: number
+    }> = {}
     // Per-ขทช. accumulator — keyed on road.department_id (dev.unitId).
     // Drives the middle DeptSummaryMarker tier (สทช. → ขทช. → สายทาง →
     // device markers). `t*` fields accumulate TRUSTED coords only (device
@@ -388,12 +394,19 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         bucketStch = hit ? hit.stch : 0
       }
 
-      const a = stchAcc[bucketStch] ?? (stchAcc[bucketStch] = { count: 0, sumLng: 0, sumLat: 0 })
+      const ok = isTrustedCoord(dev)
+
+      const a = stchAcc[bucketStch] ?? (stchAcc[bucketStch] = {
+        count: 0, sumLng: 0, sumLat: 0, tCount: 0, tSumLng: 0, tSumLat: 0,
+      })
       a.count++
       a.sumLng += dev.coord[0]
       a.sumLat += dev.coord[1]
-
-      const ok = isTrustedCoord(dev)
+      if (ok) {
+        a.tCount++
+        a.tSumLng += dev.coord[0]
+        a.tSumLat += dev.coord[1]
+      }
 
       const d = deptAcc[dev.unitId] ?? (deptAcc[dev.unitId] = {
         count: 0, sumLng: 0, sumLat: 0, tCount: 0, tSumLng: 0, tSumLat: 0,
@@ -442,7 +455,11 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     for (const [stch, a] of Object.entries(stchAcc)) {
       summaries[Number(stch)] = {
         count: a.count,
-        centroid: [a.sumLng / a.count, a.sumLat / a.count],
+        // Trusted mean keeps the bubble inside its own region; plain-mean
+        // fallback only when the whole bucket is untrusted.
+        centroid: a.tCount > 0
+          ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
+          : [a.sumLng / a.count, a.sumLat / a.count],
       }
     }
     // Trusted coords steer the bubbles; fall back to the plain mean only when
