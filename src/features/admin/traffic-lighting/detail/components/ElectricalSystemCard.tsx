@@ -3,6 +3,8 @@ import React, { useMemo } from 'react'
 import { useDetailContext } from '../context'
 import type { DetailsElectricityItem } from '@/types/lighting'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // Phase 1/2/3 box color when the card is expanded — matches the palette
 // already established for per-phase rows elsewhere (SummaryReportSection's
 // table). Index 0 = Phase 1, 1 = Phase 2, 2 = Phase 3.
@@ -128,11 +130,11 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
       />
 
       <div className='relative z-10 flex flex-row items-center gap-2 -mt-1'>
-        <img src='/atlas/images/Lighting/icelt1.png' alt='' width={32} height={32} className='shrink-0' />
+        <img src={`${BASE_PATH}/images/Lighting/icelt1.png`} alt='' width={32} height={32} className='shrink-0' />
         <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
         {electricityCount > 1 && (
           <img
-            src='/atlas/images/Lighting/arrowdown.png'
+            src={`${BASE_PATH}/images/Lighting/arrowdown.png`}
             alt='แสดงข้อมูลทุกเฟส'
             width={30}
             height={30}

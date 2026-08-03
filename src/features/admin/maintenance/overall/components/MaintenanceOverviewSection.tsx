@@ -10,6 +10,8 @@ import {
   useUptimeStatisticsAll,
 } from '@/hooks/queries/maintenance'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // Hidden from Solution Overview until a real uptime-statistics endpoint
 // exists for them — showing a mock percentage next to 7 real ones is
 // misleading.
@@ -173,7 +175,7 @@ const MaintenanceOverviewSection: React.FC<{
         {/* Solution Overview */}
         <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/atlas/images/Maintenance/icsolu.png" alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+            <img src={`${BASE_PATH}/images/Maintenance/icsolu.png`} alt="solution" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-xl sm:text-[32px] font-bold text-[#FCD116]">Solution Overview</h2>
           </div>
           <p className="font-normal text-[#979797] mt-1 hidden sm:block" style={{ fontSize: 14 }}>ภาพรวมสถานะการทำงานของอุปกรณ์</p>
@@ -216,20 +218,20 @@ const MaintenanceOverviewSection: React.FC<{
         {/* งานในค้ำ */}
         <div className="rounded-2xl bg-[#191919] p-3 sm:p-5">
           <div className="flex items-center gap-2 flex-wrap">
-            <img src="/atlas/images/Maintenance/ics2.png" alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+            <img src={`${BASE_PATH}/images/Maintenance/ics2.png`} alt="support" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
             <h2 className="text-lg sm:text-[32px] font-bold text-[#05F2DB]">งานในค้ำ</h2>
           </div>
           <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(inWarranty ? [
-              { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
-              { value: inWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
-              { value: inWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
-              { value: inWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
-              { value: inWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-              { value: inWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
-              { value: inWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
-              { value: inWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
+              { value: inWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
+              { value: inWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: `${BASE_PATH}/images/Maintenance/icc2.png` },
+              { value: inWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: `${BASE_PATH}/images/Maintenance/icc3.png` },
+              { value: inWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: `${BASE_PATH}/images/statistics/iconconnect.png`, color: '#66AEFF' },
+              { value: inWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: `${BASE_PATH}/images/statistics/iconnoconnect.png`, color: '#E94C4C' },
+              { value: inWarranty.open_case_count.toString(), label: 'เปิด Case', icon: `${BASE_PATH}/images/Maintenance/icc6.png`, color: '#FF9D00' },
+              { value: inWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: `${BASE_PATH}/images/Maintenance/icc7.png`, color: '#B2FF00' },
+              { value: inWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: `${BASE_PATH}/images/Maintenance/icc8.png`, color: '#05F2DB' },
             ] : []).map((item, i) => (
               <div
                 key={item.label}
@@ -253,8 +255,8 @@ const MaintenanceOverviewSection: React.FC<{
               className="inline-block w-6 h-6 sm:w-7.5 sm:h-7.5 shrink-0"
               style={{
                 backgroundColor: '#979797',
-                WebkitMaskImage: 'url(/atlas/images/Maintenance/ics2.png)',
-                maskImage: 'url(/atlas/images/Maintenance/ics2.png)',
+                WebkitMaskImage: `url(${BASE_PATH}/images/Maintenance/ics2.png)`,
+                maskImage: `url(${BASE_PATH}/images/Maintenance/ics2.png)`,
                 WebkitMaskSize: 'contain',
                 maskSize: 'contain',
                 WebkitMaskRepeat: 'no-repeat',
@@ -268,14 +270,14 @@ const MaintenanceOverviewSection: React.FC<{
           <p className="font-normal text-[#9E9CA8] mt-0.5 hidden sm:block" style={{ fontSize: 14 }}>{displayTimestamp}</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {(outWarranty ? [
-              { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: '/atlas/images/Maintenance/icc1.png' },
-              { value: outWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: '/atlas/images/Maintenance/icc2.png' },
-              { value: outWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: '/atlas/images/Maintenance/icc3.png' },
-              { value: outWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: '/atlas/images/statistics/iconconnect.png', color: '#66AEFF' },
-              { value: outWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: '/atlas/images/statistics/iconnoconnect.png', color: '#E94C4C' },
-              { value: outWarranty.open_case_count.toString(), label: 'เปิด Case', icon: '/atlas/images/Maintenance/icc6.png', color: '#FF9D00' },
-              { value: outWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: '/atlas/images/Maintenance/icc7.png', color: '#B2FF00' },
-              { value: outWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: '/atlas/images/Maintenance/icc8.png', color: '#05F2DB' },
+              { value: outWarranty.project_count.toLocaleString(), label: 'โครงการ', icon: `${BASE_PATH}/images/Maintenance/icc1.png` },
+              { value: outWarranty.location_count.toLocaleString(), label: 'จุดติดตั้ง', icon: `${BASE_PATH}/images/Maintenance/icc2.png` },
+              { value: outWarranty.device_count.toLocaleString(), label: 'อุปกรณ์', icon: `${BASE_PATH}/images/Maintenance/icc3.png` },
+              { value: outWarranty.online_count.toLocaleString(), label: 'ออนไลน์', icon: `${BASE_PATH}/images/statistics/iconconnect.png`, color: '#66AEFF' },
+              { value: outWarranty.offline_count.toLocaleString(), label: 'ออฟไลน์', icon: `${BASE_PATH}/images/statistics/iconnoconnect.png`, color: '#E94C4C' },
+              { value: outWarranty.open_case_count.toString(), label: 'เปิด Case', icon: `${BASE_PATH}/images/Maintenance/icc6.png`, color: '#FF9D00' },
+              { value: outWarranty.in_progress_count.toString(), label: 'กำลังดำเนินการ', icon: `${BASE_PATH}/images/Maintenance/icc7.png`, color: '#B2FF00' },
+              { value: outWarranty.closed_case_count.toString(), label: 'ปิด Case', icon: `${BASE_PATH}/images/Maintenance/icc8.png`, color: '#05F2DB' },
             ] : []).map((item, i) => (
               <div
                 key={item.label}
@@ -295,7 +297,7 @@ const MaintenanceOverviewSection: React.FC<{
       {/* Right Column: สายทางดับทุกจุดติดตั้ง */}
       <div className="rounded-2xl bg-[#191919] p-3 sm:p-5 xl:sticky xl:top-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <img src="/atlas/images/Maintenance/ics1.png" alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
+          <img src={`${BASE_PATH}/images/Maintenance/ics1.png`} alt="line-down" width={30} height={30} className="w-6 h-6 sm:w-7.5 sm:h-7.5" />
           <h2 className="text-lg sm:text-[32px] font-bold text-[#E94C4C]">สายทางดับทุกจุดติดตั้ง</h2>
         </div>
         <p className="font-normal text-[#9E9CA8] mt-1" style={{ fontSize: 14 }}>รวมสายทางที่มีอุปกรณ์ดับทุกจุดติดตั้งล่าสุด</p>

@@ -4,11 +4,13 @@ import { InfoCircleOutlined } from '@ant-design/icons'
 import Image from 'next/image'
 import React, { useMemo } from 'react'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   data?: NormalizedDailyLog
 }
 
-const TRUCK_OVERWEIGHT_IMG = '/atlas/images/vehicles/placeholder/truck-overweight-icon.svg'
+const TRUCK_OVERWEIGHT_IMG = `${BASE_PATH}/images/vehicles/placeholder/truck-overweight-icon.svg`
 
 const CardDailyOverweight: React.FC<Props> = (props) => {
   const { data } = props

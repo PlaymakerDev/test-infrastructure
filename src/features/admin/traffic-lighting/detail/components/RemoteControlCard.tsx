@@ -1,6 +1,8 @@
 "use client"
 import React from 'react'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // The command endpoint is not ready yet. Keep the UI implementation in place
 // so it can be enabled without rebuilding this card when the API is available.
 const SHOW_REMOTE_CONTROL = false
@@ -19,7 +21,7 @@ const RemoteControlCard: React.FC = () => (
       }}
     >
       <div className='flex items-center gap-2 text-white text-xs font-semibold'>
-        <img src='/atlas/images/Lighting/ictl1.png' alt='' width={30} height={30} className='shrink-0' />
+        <img src={`${BASE_PATH}/images/Lighting/ictl1.png`} alt='' width={30} height={30} className='shrink-0' />
         สถานะการทำงาน
       </div>
       <h2 className='text-white font-bold text-[22px] leading-tight m-0'>
@@ -45,7 +47,7 @@ const RemoteControlCard: React.FC = () => (
             disabled
             className='border-0 p-0 bg-transparent cursor-not-allowed opacity-40'
           >
-            <img src='/atlas/images/Lighting/arrowdown.png' alt='' width={40} height={40} className='shrink-0' />
+            <img src={`${BASE_PATH}/images/Lighting/arrowdown.png`} alt='' width={40} height={40} className='shrink-0' />
           </button>
         </div>
       </div>

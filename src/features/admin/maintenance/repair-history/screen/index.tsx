@@ -18,6 +18,8 @@ import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
 
@@ -312,18 +314,18 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
               >
-                <img src='/atlas/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
+                <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{onlineCount}</span>
               </span>
               <span
                 className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
                 style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
               >
-                <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
+                <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
                 <span style={{ marginTop: 2 }}>{offlineCount}</span>
               </span>
               <img
-                src='/atlas/images/statistics/icbt.png'
+                src={`${BASE_PATH}/images/statistics/icbt.png`}
                 alt='ดูข้อมูลโครงการ'
                 title='ดูข้อมูลโครงการ'
                 width={26}
@@ -526,7 +528,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'สถานะค้ำประกัน', value: solutionData?.warranty_status ? 'ในค้ำ' : 'หมดค้ำ', icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center'>
-                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`${BASE_PATH}/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>
@@ -549,7 +551,7 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                       { label: 'จำนวนวันออฟไลน์', value: offlineDaysText, icon: 'icsc6.png' },
                     ] as { label: string; value: string; icon: string }[]).map(({ label, value, icon }) => (
                       <div key={label} className='flex flex-col items-center' style={{ flex: '1 1 0', minWidth: 90 }}>
-                        <img src={`/atlas/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
+                        <img src={`${BASE_PATH}/images/Maintenance/${icon}`} alt='' width={30} height={30} style={{ marginBottom: 8 }} />
                         <p style={{ color: '#979797', fontWeight: 400, fontSize: 14, margin: 0, textAlign: 'center' }}>{label}</p>
                         <p style={{ color: '#FFFFFF', fontWeight: 400, fontSize: 14, margin: '4px 0 0 0', textAlign: 'center' }}>{value}</p>
                       </div>

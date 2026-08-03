@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { TbX } from 'react-icons/tb'
 import styles from '../screen/maintenance-case.module.css'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   open: boolean
   onClose: () => void
@@ -64,7 +66,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
         {/* Image */}
         <div className='flex justify-center mb-4'>
           <img
-            src={isClosingCase ? '/atlas/images/Maintenance/icmd4.png' : '/atlas/images/Maintenance/icmd3.png'}
+            src={isClosingCase ? `${BASE_PATH}/images/Maintenance/icmd4.png` : `${BASE_PATH}/images/Maintenance/icmd3.png`}
             alt='maintenance'
             style={{ width: 100, height: 100, objectFit: 'contain' }}
           />

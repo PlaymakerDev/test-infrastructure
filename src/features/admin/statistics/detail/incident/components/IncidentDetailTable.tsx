@@ -13,6 +13,8 @@ import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 dayjs.extend(buddhistEra)
 
 export type IncidentStatusType = 'รถเกิดอุบัติเหตุ' | 'รถจอดเสีย' | 'รถจอดไหล่ทาง' | 'งานก่อสร้าง' | 'ปิดกั้นทาง' | 'รถย้อนเลน' | 'รถบรรทุกวิ่งเลนขวา' | 'รถความเร็วเกินกำหนด' | 'จราจรติดขัด'
@@ -205,7 +207,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
         >
           {url
             ? <img src={url} alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <img src="/atlas/images/statistics/c1ex.png" alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <img src={`${BASE_PATH}/images/statistics/c1ex.png`} alt="incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           }
         </div>
       ),

@@ -12,6 +12,8 @@ import type { ColumnsType } from 'antd/es/table'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import ExportFileModal from '@/components/export/ExportFileModal'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const SUB_TAB_OPTIONS = [
   { label: 'ภาพรวมเหตุการณ์', value: 'OVERVIEW' },
   { label: 'ตารางเปรียบเทียบเหตุการณ์', value: 'COMPARISON' },
@@ -201,10 +203,10 @@ const IncidentSection: React.FC = () => {
     const unavailable = summaryError ? '—' : '-'
     const fmt = (v: number | undefined) => !summaryError && s != null ? (v ?? 0) : unavailable
     return [
-      { borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: !summaryError && s?.installation_points.top_region ? `${s.installation_points.top_region.name_th} (${s.installation_points.top_region.percentage.toFixed(1)}%)` : unavailable },
-      { borderColor: '#05F2DB', icon: '/atlas/images/statistics/cs2.png', label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: String(fmt(s?.incidents?.total)), unit: 'เหตุการณ์', sub: !summaryError && s?.incidents.top_department ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.percentage.toFixed(1)}%)` : unavailable },
-      { borderColor: '#B2FF00', icon: '/atlas/images/statistics/cs3.png', label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: String(fmt(s?.incidents?.departments_with_incidents)), unit: 'หน่วยงาน', sub: !summaryError && s?.incidents.top_department ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.count} เหตุการณ์)` : unavailable },
-      { borderColor: '#FCD116', icon: '/atlas/images/statistics/cs4.png', label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: !summaryError ? (s?.top_incident_type?.name_th ?? '-') : '—', sub: !summaryError && s?.top_incident_type ? `${s.top_incident_type.count} เหตุการณ์ (${s.top_incident_type.percentage.toFixed(1)}%)` : unavailable },
+      { borderColor: '#66AEFF', icon: `${BASE_PATH}/images/statistics/c1.png`, label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: !summaryError && s?.installation_points.top_region ? `${s.installation_points.top_region.name_th} (${s.installation_points.top_region.percentage.toFixed(1)}%)` : unavailable },
+      { borderColor: '#05F2DB', icon: `${BASE_PATH}/images/statistics/cs2.png`, label: 'เหตุการณ์ทั้งหมด', labelColor: '#05F2DB', value: String(fmt(s?.incidents?.total)), unit: 'เหตุการณ์', sub: !summaryError && s?.incidents.top_department ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.percentage.toFixed(1)}%)` : unavailable },
+      { borderColor: '#B2FF00', icon: `${BASE_PATH}/images/statistics/cs3.png`, label: 'หน่วยงานที่มีเหตุการณ์', labelColor: '#B2FF00', value: String(fmt(s?.incidents?.departments_with_incidents)), unit: 'หน่วยงาน', sub: !summaryError && s?.incidents.top_department ? `${s.incidents.top_department.department_short_name} (${s.incidents.top_department.count} เหตุการณ์)` : unavailable },
+      { borderColor: '#FCD116', icon: `${BASE_PATH}/images/statistics/cs4.png`, label: 'ประเภทเหตุการณ์ที่พบบ่อย', labelColor: '#FCD116', value: !summaryError ? (s?.top_incident_type?.name_th ?? '-') : '—', sub: !summaryError && s?.top_incident_type ? `${s.top_incident_type.count} เหตุการณ์ (${s.top_incident_type.percentage.toFixed(1)}%)` : unavailable },
     ]
   }, [summaryData, summaryError])
 

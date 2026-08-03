@@ -14,6 +14,8 @@ import type { RouteDetailEntry } from '../../../data/routeItems'
 import EventTrendSection from '@/features/admin/incident-detection/detail/components/sections/overall/EventTrendSection'
 import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const { RangePicker } = DatePicker
 
 const IncidentDetailContent: React.FC = () => {
@@ -117,7 +119,7 @@ const IncidentDetailContent: React.FC = () => {
               {detailLabel || '-'}
             </p>
             <img
-              src="/atlas/images/statistics/icbt.png"
+              src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt="ดูข้อมูลโครงการ"
               title="ดูข้อมูลโครงการ"
               width={25}
@@ -158,7 +160,7 @@ const IncidentDetailContent: React.FC = () => {
               padding: '4px 10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-              <img src={isOnline ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'} alt="" width={12} height={12} />
+              <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={12} height={12} />
               <span style={{ fontSize: 14, fontWeight: 500, color: '#FFFFFF' }}>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</span>
             </div>
             <button

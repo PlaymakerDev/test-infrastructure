@@ -4,6 +4,8 @@ import ElectricalSystemCard from './ElectricalSystemCard'
 import StatusInfoCard from './StatusInfoCard'
 import { useDetailContext } from '../context'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   /** Controlled by OverviewSection so it can grow the surrounding layout
    *  instead of ElectricalSystemCard overlapping the content below it. */
@@ -28,7 +30,7 @@ const StatusCardsColumn: React.FC<Props> = ({ electricalExpanded, onToggleElectr
         titleColor='#6666FF'
         title='สถานะการเชื่อมต่อ'
         status={connectionStatus}
-        icon='/atlas/images/Lighting/icel1.png'
+        icon={`${BASE_PATH}/images/Lighting/icel1.png`}
         subtitle={`IMEI : ${imei || '-'}`}
         valueFontSize={20}
       />
@@ -39,7 +41,7 @@ const StatusCardsColumn: React.FC<Props> = ({ electricalExpanded, onToggleElectr
         titleColor='#B066FF'
         title='สถานะวงจร'
         status={circuitStatus}
-        icon='/atlas/images/Lighting/icel2.png'
+        icon={`${BASE_PATH}/images/Lighting/icel2.png`}
         valueFontSize={20}
       />
     </div>

@@ -5,7 +5,9 @@ import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { TbMapPin } from 'react-icons/tb'
 import { Button, ConfigProvider, Image } from 'antd'
 
-const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
+const DEFAULT_ICON = `${BASE_PATH}/images/icon-marker/Default.svg`
 
 const formatCoords = (lat: number, lng: number): string =>
   `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`

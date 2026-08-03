@@ -5,6 +5,8 @@ import { APIResponsePositionByID, PositionByIDData } from '@/types/tracking/deta
 import { Badge, Image } from 'antd'
 import { fmtNumber } from '@/utils/formatNumber'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   positionByID?: APIResponsePositionByID
 }
@@ -13,7 +15,7 @@ interface PositionPopupProps {
   data?: PositionByIDData
 }
 
-const DEFAULT_ICON = '/atlas/images/icon-marker/Default.svg'
+const DEFAULT_ICON = `${BASE_PATH}/images/icon-marker/Default.svg`
 
 const PositionPopup: React.FC<PositionPopupProps> = (props) => {
   const { data } = props
