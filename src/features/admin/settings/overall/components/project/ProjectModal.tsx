@@ -398,7 +398,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
               <Form.Item
                 label={<PlainLabel>รหัสโครงการ</PlainLabel>}
                 name='code'
-                rules={[{ required: true, message: 'กรุณาระบุรหัสโครงการ' }]}
+                // rules={[{ required: true, message: 'กรุณาระบุรหัสโครงการ' }]}
                 style={{ marginBottom: 16 }}
               >
                 <Input placeholder='กรุณาระบุรหัสโครงการ...' />
