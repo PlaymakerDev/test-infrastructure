@@ -22,7 +22,7 @@ const MapOverallSection: React.FC<Props> = (props) => {
   if (isError) return <Empty description='เกิดข้อผิดพลาดในการโหลดข้อมูล' />
 
   return (
-    <div className='relative w-full h-223 rounded-lg overflow-hidden'>
+    <div className='relative w-full h-220 rounded-lg overflow-hidden'>
       <BaseMap
         initialCenter={[101.0, 14.5]}
         initialZoom={5.4}
