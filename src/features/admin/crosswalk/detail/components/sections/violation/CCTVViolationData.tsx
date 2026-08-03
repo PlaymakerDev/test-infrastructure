@@ -70,7 +70,8 @@ const CCTVViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
           const color = isVehicleViolation(r.crosswalk.name_th)
             ? '#FF7B00'
             : VIOLATION_COLOR
-          const ip = ipByCameraId.get(r.camera.id) || r.camera.sta || '-'
+          // No sta fallback — a km value labelled "IP Address" reads as a bug.
+          const ip = ipByCameraId.get(r.camera.id) || '-'
           return (
             <div
               key={`${pageStart + i}-${r.camera.id}-${r.crosswalk.timestamp}`}

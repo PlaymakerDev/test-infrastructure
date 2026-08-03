@@ -30,9 +30,9 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
   const { pageRows, total, page, setPage, isLoading, pageStart } =
     useViolationRows(filter, pageSize)
 
-  // `/details/list` returns `camera.sta` that's often empty. Look up the real
-  // ip_address from the cached `/cameras` list — a single request shared with
-  // the OVERALL tab, replacing the previous per-row `getCCTVDetailAPI` N+1.
+  // Look up the real ip_address from the cached `/cameras` list — a single
+  // request shared with the OVERALL tab, replacing the previous per-row
+  // `getCCTVDetailAPI` N+1. Cameras missing from the list show '-'.
   const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
   const ipByCameraId = useMemo(() => {
     const m = new Map<string, string | undefined>()
@@ -94,8 +94,9 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
       key: 'ipAddress',
       width: 140,
       render: (_, row) => {
-        const ip = ipByCameraId.get(row.camera.id)
-        return ip || row.camera.sta || '-'
+        // No sta fallback: a km value under an "IP Address" header reads as
+        // a bug (the manual's screenshots caught "1+447" here, 2026-08-03).
+        return ipByCameraId.get(row.camera.id) || '-'
       },
     },
     {

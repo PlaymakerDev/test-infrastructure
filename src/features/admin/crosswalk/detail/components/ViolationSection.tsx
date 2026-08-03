@@ -25,7 +25,8 @@ dayjs.extend(buddhistEra)
 interface Props { }
 
 /** Violation row + its resolved IP — the export mirrors the on-screen IP
- *  fallback chain (cameras-list ip_address → camera.sta → '-'). */
+ *  lookup (cameras-list ip_address → '-'; no sta fallback, a km value under
+ *  an "IP Address" header reads as a bug). */
 type ExportViolationRow = CrosswalkViolationRow & { ip: string }
 
 // Excel export columns — SAME columns, SAME order as the on-screen
@@ -98,8 +99,8 @@ const ViolationSection: React.FC<Props> = () => {
   // and the export toggle labels. Shares the children's page-query cache.
   const { serverTotal } = useViolationRows(filter, 10)
 
-  // Same IP fallback the table/grid render: cameras-list ip_address (single
-  // cached request shared with the OVERALL tab) → camera.sta → '-'.
+  // Same IP lookup the table/grid render: cameras-list ip_address (single
+  // cached request shared with the OVERALL tab) → '-' when missing.
   const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
 
   /** Server-side violation-type value for the active status filter
@@ -131,7 +132,7 @@ const ViolationSection: React.FC<Props> = () => {
     for (const c of camerasData?.cameras ?? []) ipByCameraId.set(c.id, c.ip_address)
     return (r.data.res_data ?? []).map((row) => ({
       ...row,
-      ip: ipByCameraId.get(row.camera.id) || row.camera.sta || '-',
+      ip: ipByCameraId.get(row.camera.id) || '-',
     }))
   }
 
@@ -166,7 +167,7 @@ const ViolationSection: React.FC<Props> = () => {
     const ipByCameraId = new Map<string, string | undefined>()
     for (const c of camerasData?.cameras ?? []) ipByCameraId.set(c.id, c.ip_address)
     return {
-      rows: raw.map((r) => ({ ...r, ip: ipByCameraId.get(r.camera.id) || r.camera.sta || '-' })),
+      rows: raw.map((r) => ({ ...r, ip: ipByCameraId.get(r.camera.id) || '-' })),
       fetchedAll,
     }
   }
