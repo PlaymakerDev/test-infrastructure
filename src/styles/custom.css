@@ -92,7 +92,7 @@
  *      <body>, tagged with `className: 'echarts-tooltip'` in the wrappers.
  * !important is required to beat the inline style. Canvas-drawn text (axis
  * digits) is unaffected by CSS and keeps ECharts' default. */
-div[_echarts_instance_] > div,
+div[_echarts_instance_]>div,
 .echarts-tooltip {
   font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
 }
