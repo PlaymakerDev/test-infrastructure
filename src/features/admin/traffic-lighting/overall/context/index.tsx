@@ -12,6 +12,8 @@ import type { LightingOverviewTotals } from '@/types/lighting'
 import { mapCentralListToProjects } from '../data/trafficLightingProjects'
 import { useAppSelector } from '@/stores/hooks'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const SUMMARY_STAT_DEFS = [
   { label: 'ทั้งหมด', color: '#FCD116', variant: 'filled' as const, get: (t: LightingOverviewTotals) => t.solution.total },
   { label: 'ออนไลน์', color: '#66AEFF', variant: 'outlined' as const, get: (t: LightingOverviewTotals) => t.solution.online },
@@ -25,8 +27,8 @@ const EMPTY_LEFT_PANEL_ITEM = {
 } as const
 
 const LEFT_BOTTOM_CARDS = [
-  { border: '#6666FF', icon: '/atlas/images/Lighting/icel1.png', titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: '-' },
-  { border: '#B066FF', icon: '/atlas/images/Lighting/icel2.png', titleColor: '#B066FF', title: 'สถานะวงจร', status: '-' },
+  { border: '#6666FF', icon: `${BASE_PATH}/images/Lighting/icel1.png`, titleColor: '#6666FF', title: 'สถานะการเชื่อมต่อ', status: '-' },
+  { border: '#B066FF', icon: `${BASE_PATH}/images/Lighting/icel2.png`, titleColor: '#B066FF', title: 'สถานะวงจร', status: '-' },
 ] as const
 
 const PHASE_METRICS = [
@@ -211,10 +213,10 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const statCards = useMemo(() => {
     const base = [
-      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc1.png', titleColor: '#FCD116' },
-      { title: 'โคมไฟในระบบทั้งหมด', icon: '/atlas/images/Lighting/icc2.png', titleColor: '#FCD116' },
-      { title: 'ในค้ำ', icon: '/atlas/images/Lighting/icc3.png', titleColor: '#05F2DB' },
-      { title: 'หมดค้ำ', icon: '/atlas/images/Lighting/icc4.png', titleColor: '#979797' },
+      { title: 'ตู้โจรกรรมในระบบทั้งหมด', icon: `${BASE_PATH}/images/Lighting/icc1.png`, titleColor: '#FCD116' },
+      { title: 'โคมไฟในระบบทั้งหมด', icon: `${BASE_PATH}/images/Lighting/icc2.png`, titleColor: '#FCD116' },
+      { title: 'ในค้ำ', icon: `${BASE_PATH}/images/Lighting/icc3.png`, titleColor: '#05F2DB' },
+      { title: 'หมดค้ำ', icon: `${BASE_PATH}/images/Lighting/icc4.png`, titleColor: '#979797' },
     ]
     if (!centralListLoaded) {
       return base.map((s) => ({ ...s, value: '-', active: '-' }))

@@ -5,6 +5,8 @@ import BaseMap from '../BaseMap'
 import ThailandMaskLayer from '../markers/ThailandMaskLayer'
 import HTMLMarker from './HTMLMarker'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 /**
  * `<HTMLMarker>` — Primitive ระดับล่าง
  *
@@ -141,7 +143,7 @@ export const ImageMarker: Story = {
     title: 'WIM Station',
     children: (
       <img
-        src="/atlas/images/icon-marker/Wim.svg"
+        src={`${BASE_PATH}/images/icon-marker/Wim.svg`}
         alt=""
         width={43}
         height={46}
@@ -163,7 +165,7 @@ export const WithPopup: Story = {
     offset: [0, 19],
     title: 'Click me',
     children: (
-      <img src="/atlas/images/icon-marker/Station.svg" alt="" width={43} height={46} />
+      <img src={`${BASE_PATH}/images/icon-marker/Station.svg`} alt="" width={43} height={46} />
     ),
     popup: () => (
       <div

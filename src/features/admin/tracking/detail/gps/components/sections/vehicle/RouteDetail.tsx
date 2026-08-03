@@ -9,6 +9,8 @@ import { motion } from 'motion/react'
 import { GeoRoadData, VehicleLocationData } from '@/types/tracking/detail-gps-api'
 import { fmtNumber } from '@/utils/formatNumber'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   road?: GeoRoadData
   vehicle?: VehicleLocationData
@@ -27,7 +29,7 @@ interface VehicleStatus {
 
 const VEHICLE_STATUSES: VehicleStatus[] = [
   {
-    img: '/atlas/images/vehicles/status/green_vehicle.png',
+    img: `${BASE_PATH}/images/vehicles/status/green_vehicle.png`,
     label: 'รถเคลื่อนที่',
     color: 'lime',
     labelClass: 'text-lime-500',
@@ -36,7 +38,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     tabKey: '2',
   },
   {
-    img: '/atlas/images/vehicles/status/orange_vehicle.png',
+    img: `${BASE_PATH}/images/vehicles/status/orange_vehicle.png`,
     label: 'รถจอด',
     color: 'orange',
     labelClass: 'text-orange-500',
@@ -45,7 +47,7 @@ const VEHICLE_STATUSES: VehicleStatus[] = [
     tabKey: '3',
   },
   {
-    img: '/atlas/images/vehicles/status/red_vehicle.png',
+    img: `${BASE_PATH}/images/vehicles/status/red_vehicle.png`,
     label: 'รถน้ำหนักเกิน',
     color: 'red',
     labelClass: 'text-red-500',

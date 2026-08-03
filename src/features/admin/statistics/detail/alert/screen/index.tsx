@@ -13,6 +13,8 @@ import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useLightingCentralList, useLightingDeviceDetails } from '@/hooks/queries/lighting'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const AlertDetailContent: React.FC = () => {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -120,7 +122,7 @@ const AlertDetailContent: React.FC = () => {
               {detailLabel || '-'}
             </p>
             <img
-              src="/atlas/images/statistics/icbt.png"
+              src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt="ดูข้อมูลโครงการ"
               title="ดูข้อมูลโครงการ"
               width={25}
@@ -201,27 +203,27 @@ const AlertDetailContent: React.FC = () => {
               <p style={{ fontSize: 11, fontWeight: 400, color: '#979797', marginTop: 6 }}>IMEI : {detail || '-'}</p>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E98B4C' }}>
-              <img src="/atlas/images/statistics/ct2.png" alt="" width={30} height={30} />
+              <img src={`${BASE_PATH}/images/statistics/ct2.png`} alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E98B4C', marginTop: 8 }}>Line Check</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{healthLabel(device.line_check_fail)}</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #E9D44C' }}>
-              <img src="/atlas/images/statistics/ct3.png" alt="" width={30} height={30} />
+              <img src={`${BASE_PATH}/images/statistics/ct3.png`} alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#E9D44C', marginTop: 8 }}>Circuit</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{healthLabel(device.circuit_fail)}</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #AFE94C' }}>
-              <img src="/atlas/images/statistics/ct4.png" alt="" width={30} height={30} />
+              <img src={`${BASE_PATH}/images/statistics/ct4.png`} alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#AFE94C', marginTop: 8 }}>Volt / Amp</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{healthLabel(device.volt_amp_fail)}</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #4CE99A' }}>
-              <img src="/atlas/images/statistics/ct5.png" alt="" width={30} height={30} />
+              <img src={`${BASE_PATH}/images/statistics/ct5.png`} alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#4CE99A', marginTop: 8 }}>สถานะสาย</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{circuitLabel(device.line_check_fail)}</span>
             </div>
             <div style={{ backgroundColor: '#66AEFF1A', borderRadius: 12, padding: 16, border: '2px solid #4CD1E9' }}>
-              <img src="/atlas/images/statistics/ct6.png" alt="" width={30} height={30} />
+              <img src={`${BASE_PATH}/images/statistics/ct6.png`} alt="" width={30} height={30} />
               <p style={{ fontSize: 16, fontWeight: 700, color: '#4CD1E9', marginTop: 8 }}>สถานะวงจร</p>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginTop: 8, display: 'block' }}>{circuitLabel(device.circuit_fail)}</span>
             </div>

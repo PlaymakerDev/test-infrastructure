@@ -5,6 +5,8 @@ import { TbArrowBigLeftFilled, TbPrinter } from 'react-icons/tb'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   id: string
   title: string
@@ -55,7 +57,7 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               {warranty}
             </span>
             <img
-              src='/atlas/images/statistics/icbt.png'
+              src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt='ดูข้อมูลโครงการ'
               title='ดูข้อมูลโครงการ'
               width={26}
@@ -72,14 +74,14 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
             >
-              <img src='/atlas/images/Maintenance/icrpblue.png' alt='' width={13} height={13} />
+              <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{onlineCount}</span>
             </span>
             <span
               className='inline-flex items-center gap-1.5 text-[12px] sm:text-[14px] font-normal whitespace-nowrap'
               style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
             >
-              <img src='/atlas/images/Maintenance/icrpred.png' alt='' width={13} height={13} />
+              <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
               <span style={{ marginTop: 2 }}>{offlineCount}</span>
             </span>
             <button

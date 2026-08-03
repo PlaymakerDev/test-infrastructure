@@ -11,14 +11,16 @@ import { theme } from '@/configs/antd/themeConfig'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { fmtNumber } from '@/utils/formatNumber'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // WIM tab: show only WIM-type stations (yellow pins) — same look & popup
 // as the overview tab, just filtered.
 // const VISIBLE_TYPES = new Set(['wim'] as const)
 // PIN IMG
-const STATION_ICON = '/atlas/images/icon-marker/Station.svg'
-const WIM_ICON = '/atlas/images/icon-marker/Wim.svg'
-const MOBILE_ICON = '/atlas/images/icon-marker/Moving.svg'
-const OFFLINE_ICON = '/atlas/images/icon-marker/Offline.svg'
+const STATION_ICON = `${BASE_PATH}/images/icon-marker/Station.svg`
+const WIM_ICON = `${BASE_PATH}/images/icon-marker/Wim.svg`
+const MOBILE_ICON = `${BASE_PATH}/images/icon-marker/Moving.svg`
+const OFFLINE_ICON = `${BASE_PATH}/images/icon-marker/Offline.svg`
 
 // Zoom level used when flying to a single WIM station matched by the search
 // box — close enough to clearly identify the pin without feeling too tight.

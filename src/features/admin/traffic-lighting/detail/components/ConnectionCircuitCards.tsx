@@ -3,6 +3,8 @@ import React from 'react'
 import StatusInfoCard from './StatusInfoCard'
 import { useDetailContext } from '../context'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 interface Props {
   /** `column` — stacked in the right rail (default, collapsed layout).
    *  `row` — side by side, used when they relocate to the bottom-left corner
@@ -37,7 +39,7 @@ const ConnectionCircuitCards: React.FC<Props> = ({ direction = 'column' }) => {
           titleColor='#6666FF'
           title='สถานะการเชื่อมต่อ'
           status={connectionStatus}
-          icon='/atlas/images/Lighting/icel1.png'
+          icon={`${BASE_PATH}/images/Lighting/icel1.png`}
           subtitle={`IMEI : ${imei || '-'}`}
           valueFontSize={20}
         />
@@ -50,7 +52,7 @@ const ConnectionCircuitCards: React.FC<Props> = ({ direction = 'column' }) => {
           titleColor='#B066FF'
           title='สถานะวงจร'
           status={circuitStatus}
-          icon='/atlas/images/Lighting/icel2.png'
+          icon={`${BASE_PATH}/images/Lighting/icel2.png`}
           valueFontSize={20}
         />
       </div>

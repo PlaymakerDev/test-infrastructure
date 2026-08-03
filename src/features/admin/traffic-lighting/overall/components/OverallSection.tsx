@@ -16,6 +16,8 @@ import {
   resolveLightingImei,
 } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // Same 5 filters/colors as the old static summaryStats badges — now wired to
 // actually filter the list (they never did before), matching the shared
 // SearchBar pattern every other overall page (crosswalk, cctv, etc.) already uses.
@@ -244,7 +246,7 @@ const OverallSection: React.FC = () => {
                 style={{ background: '#191919CC' }}
               >
                 <div className='flex flex-row items-start gap-2 shrink-0'>
-                  <img src='/atlas/images/Lighting/icelt1.png' alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
+                  <img src={`${BASE_PATH}/images/Lighting/icelt1.png`} alt='' width={40} height={40} className='shrink-0 w-8 h-8 sm:w-10 sm:h-10' />
                   <p className='text-[14px] sm:text-[16px] font-bold m-0 text-white'>ระบบไฟฟ้า</p>
                 </div>
                 <div className='flex-1 flex flex-col items-center justify-center text-center py-2 sm:py-3 min-h-[56px]'>

@@ -9,6 +9,8 @@ import { useNotificationsSummary } from '@/hooks/queries/manage'
 import { useVMSSettingLatest } from '@/features/admin/control-vms/overall/hooks/useVMSSettingLatest'
 import type { NotificationSourceType, NotificationSummaryItem } from '@/types/manage/notification-api'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 dayjs.extend(buddhistEra)
 dayjs.extend(customParseFormat)
 
@@ -70,22 +72,22 @@ const formatBackendBuddhistDateTime = (value: string): string => {
 
 const BASE_CARDS = [
   {
-    id: 1, src: '/atlas/images/statistics/Frame1.png', imageBg: true, value: '-',
+    id: 1, src: `${BASE_PATH}/images/statistics/Frame1.png`, imageBg: true, value: '-',
     label: 'Incident Detection', glowColor: '#66AEFF',
-    detail1: { img: '/atlas/images/statistics/Frame1.1.png', title: 'ประเภทเหตุการณ์ที่พบบ่อย', subtitle: '-', summary: '-' },
-    detail2: { img: '/atlas/images/statistics/Frame1.2.png', title: 'หน่วยงานที่มีเหตุการณ์มากที่สุด', subtitle: '-', summary: '-' },
+    detail1: { img: `${BASE_PATH}/images/statistics/Frame1.1.png`, title: 'ประเภทเหตุการณ์ที่พบบ่อย', subtitle: '-', summary: '-' },
+    detail2: { img: `${BASE_PATH}/images/statistics/Frame1.2.png`, title: 'หน่วยงานที่มีเหตุการณ์มากที่สุด', subtitle: '-', summary: '-' },
   },
   {
-    id: 2, src: '/atlas/images/statistics/Frame2.png', imageBg: true, value: '-',
+    id: 2, src: `${BASE_PATH}/images/statistics/Frame2.png`, imageBg: true, value: '-',
     label: 'Traffic Lighting', glowColor: '#66FFCA',
-    detail1: { img: '/atlas/images/statistics/Frame2.1.png', title: 'สายทางที่ใช้ไฟมากที่สุด', subtitle: '-', summary: '-' },
-    detail2: { img: '/atlas/images/statistics/Frame2.2.png', title: 'ประเภทการแจ้งเตือนมากที่สุด', subtitle: '-', summary: '-' },
+    detail1: { img: `${BASE_PATH}/images/statistics/Frame2.1.png`, title: 'สายทางที่ใช้ไฟมากที่สุด', subtitle: '-', summary: '-' },
+    detail2: { img: `${BASE_PATH}/images/statistics/Frame2.2.png`, title: 'ประเภทการแจ้งเตือนมากที่สุด', subtitle: '-', summary: '-' },
   },
   {
-    id: 3, src: '/atlas/images/statistics/Frame3.png', imageBg: true, value: '-',
+    id: 3, src: `${BASE_PATH}/images/statistics/Frame3.png`, imageBg: true, value: '-',
     label: 'VMS', glowColor: '#BDFF66',
-    detail1: { img: '/atlas/images/statistics/Frame3.1.png', title: 'หมวดหมู่ยอดนิยม', subtitle: '-', summary: '-' },
-    detail2: { img: '/atlas/images/statistics/Frame3.2.png', title: 'ป้าย VMS ที่เชื่อมต่อล่าสุด', subtitle: '-', summary: '-' },
+    detail1: { img: `${BASE_PATH}/images/statistics/Frame3.1.png`, title: 'หมวดหมู่ยอดนิยม', subtitle: '-', summary: '-' },
+    detail2: { img: `${BASE_PATH}/images/statistics/Frame3.2.png`, title: 'ป้าย VMS ที่เชื่อมต่อล่าสุด', subtitle: '-', summary: '-' },
   },
 ]
 

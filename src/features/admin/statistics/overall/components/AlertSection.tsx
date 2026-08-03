@@ -15,6 +15,8 @@ import type { ColumnsType } from 'antd/es/table'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import ExportFileModal from '@/components/export/ExportFileModal'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // ── Map marker group popup ──────────────────────────────────────────────────
 // Shown (instead of navigating instantly) when a marker point represents one
 // or more devices at the exact same physical location — e.g. several
@@ -82,7 +84,7 @@ const AlertMapPopup: React.FC<{
               fontSize: 12, fontWeight: 500, color: '#FFFFFF', whiteSpace: 'nowrap',
             }}>
               <img
-                src={d.isOnline ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'}
+                src={d.isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`}
                 alt=""
                 width={14}
                 height={14}
@@ -131,7 +133,7 @@ const ALERT_COMPARISON_COLUMNS: ColumnsType<ComparisonRecord> = [
         {v}
         {r.isDevice && (
           <img
-            src={r.online === 1 ? '/atlas/images/statistics/iconconnect.png' : '/atlas/images/statistics/iconnoconnect.png'}
+            src={r.online === 1 ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`}
             alt={r.online === 1 ? 'online' : 'offline'}
             width={14}
             height={14}
@@ -418,7 +420,7 @@ const AlertSection: React.FC = () => {
     const sum = (sel: (b: typeof bureaus[number]) => number) => bureaus.reduce((acc, b) => acc + sel(b), 0)
     return [
       { label: `${sum(b => b.install_points)} จุดติดตั้ง`, color: '#66AEFF' },
-      { label: `${sum(b => b.offline)} ออฟไลน์`, color: '#E94C4C', icon: '/atlas/images/statistics/iconnoconnect.png' },
+      { label: `${sum(b => b.offline)} ออฟไลน์`, color: '#E94C4C', icon: `${BASE_PATH}/images/statistics/iconnoconnect.png` },
       { label: `${sum(b => b.line_check_fail)} Line Check`, color: '#F29F05' },
       { label: `${sum(b => b.circuit_fail)} Circuit`, color: '#FCD116' },
       { label: `${sum(b => b.volt_amp_fail)} Volt / Amp`, color: '#83F205' },
@@ -428,10 +430,10 @@ const AlertSection: React.FC = () => {
     const s = summaryData
     const fmt = (v: number | undefined) => s != null ? (v ?? 0) : '-'
     return [
-      { borderColor: '#66AEFF', icon: '/atlas/images/statistics/c1.png', label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: s ? `1 Phase ${s.installation_points.phase_1} / 3 Phase ${s.installation_points.phase_3}` : '-' },
-      { borderColor: '#E94C4C', icon: '/atlas/images/statistics/ce2.png', label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: String(fmt(s?.line_broken?.total)), unit: 'เหตุการณ์', sub: s?.line_broken.top_department ? `${s.line_broken.top_department.department_short_name} (${s.line_broken.top_department.percentage.toFixed(1)}%)` : '-' },
-      { borderColor: '#E99A4C', icon: '/atlas/images/statistics/ce3.png', label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: String(fmt(s?.circuit_abnormal?.total)), unit: 'เหตุการณ์', sub: s?.circuit_abnormal.top_department ? `${s.circuit_abnormal.top_department.department_short_name} (${s.circuit_abnormal.top_department.percentage.toFixed(1)}%)` : '-' },
-      { borderColor: '#FCD116', icon: '/atlas/images/statistics/ce4.png', label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: s ? `${s.normal.percentage.toFixed(1)}%` : '-', sub: s ? `แจ้งเตือน ${s.notifications.total} เหตุการณ์` : '-' },
+      { borderColor: '#66AEFF', icon: `${BASE_PATH}/images/statistics/c1.png`, label: 'จุดติดตั้งทั้งหมด', labelColor: '#66AEFF', value: String(fmt(s?.installation_points?.total)), unit: 'จุดติดตั้ง', sub: s ? `1 Phase ${s.installation_points.phase_1} / 3 Phase ${s.installation_points.phase_3}` : '-' },
+      { borderColor: '#E94C4C', icon: `${BASE_PATH}/images/statistics/ce2.png`, label: 'สถานะสายผิดปกติ', labelColor: '#E94C4C', value: String(fmt(s?.line_broken?.total)), unit: 'เหตุการณ์', sub: s?.line_broken.top_department ? `${s.line_broken.top_department.department_short_name} (${s.line_broken.top_department.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#E99A4C', icon: `${BASE_PATH}/images/statistics/ce3.png`, label: 'สถานะวงจรผิดปกติ', labelColor: '#E99A4C', value: String(fmt(s?.circuit_abnormal?.total)), unit: 'เหตุการณ์', sub: s?.circuit_abnormal.top_department ? `${s.circuit_abnormal.top_department.department_short_name} (${s.circuit_abnormal.top_department.percentage.toFixed(1)}%)` : '-' },
+      { borderColor: '#FCD116', icon: `${BASE_PATH}/images/statistics/ce4.png`, label: 'การทำงานปกติรวม', labelColor: '#FCD116', value: s ? `${s.normal.percentage.toFixed(1)}%` : '-', sub: s ? `แจ้งเตือน ${s.notifications.total} เหตุการณ์` : '-' },
     ]
   }, [summaryData])
 

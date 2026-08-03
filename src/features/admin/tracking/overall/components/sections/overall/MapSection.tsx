@@ -10,10 +10,12 @@ import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { theme } from '@/configs/antd/themeConfig'
 import { fmtNumber } from '@/utils/formatNumber'
 
-const STATION_ICON = '/atlas/images/icon-marker/Station.svg'
-const WIM_ICON = '/atlas/images/icon-marker/Wim.svg'
-const MOBILE_ICON = '/atlas/images/icon-marker/Moving.svg'
-const OFFLINE_ICON = '/atlas/images/icon-marker/Offline.svg'
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
+const STATION_ICON = `${BASE_PATH}/images/icon-marker/Station.svg`
+const WIM_ICON = `${BASE_PATH}/images/icon-marker/Wim.svg`
+const MOBILE_ICON = `${BASE_PATH}/images/icon-marker/Moving.svg`
+const OFFLINE_ICON = `${BASE_PATH}/images/icon-marker/Offline.svg`
 
 interface Props {
 

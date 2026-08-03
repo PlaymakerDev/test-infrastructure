@@ -6,6 +6,8 @@ import { TbSearch, TbPrinter, TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftEx
 import SwapButton from '@/components/swap-button/SwapButton'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 const SUB_TAB_OPTIONS = [
   { label: 'สรุป Solution', value: 'SOLUTION' },
   { label: 'งานซ่อมทั้งหมด', value: 'ALL_REPAIRS' },
@@ -286,7 +288,7 @@ const RepairRecordsSection: React.FC = () => {
       className="inline-flex items-center gap-1.5 text-[12px] font-normal whitespace-nowrap"
       style={{ padding: '2px 12px', borderRadius: 9999, border: `1px solid ${color}`, color, minWidth: 70, textAlign: 'center' }}
     >
-      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
+      <img src={`${BASE_PATH}/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={15} height={15} />
       <span style={{ marginTop: 2 }}>{count}</span>
     </span>
   )

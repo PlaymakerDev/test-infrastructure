@@ -20,6 +20,8 @@ import ExportFileModal from '@/components/export/ExportFileModal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
 
@@ -441,7 +443,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             {/* รูป */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <img
-                src={warranty === 'ในค้ำ' ? '/atlas/images/Maintenance/icmd2.png' : '/atlas/images/Maintenance/icmd1.png'}
+                src={warranty === 'ในค้ำ' ? `${BASE_PATH}/images/Maintenance/icmd2.png` : `${BASE_PATH}/images/Maintenance/icmd1.png`}
                 alt='maintenance'
                 style={{ width: 100, height: 100, objectFit: 'contain' }}
               />

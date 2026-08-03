@@ -18,6 +18,8 @@ import type {
 } from '@/types/maintenance'
 import { offlineDaysSince } from '../../data/offlineDays'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // The detail API sorts every nested level (bureaus, departments, roads,
 // solution_location, ...) as plain strings — e.g. "สทช.10, สทช.11, ..., สทช.9"
 // and "จุดติดตั้งที่ 1, 10, 11, 2, 3, ...". `numeric: true` makes embedded
@@ -487,14 +489,14 @@ const RepairRecordsSection: React.FC = () => {
       className="inline-flex items-center justify-center gap-1 text-[14px] font-normal whitespace-nowrap shrink-0 mt-0.5"
       style={{ padding: '1px 8px', borderRadius: 9999, border: `1px solid ${color}`, color, width: 72 }}
     >
-      <img src={`/atlas/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
+      <img src={`${BASE_PATH}/images/Maintenance/${color === '#66AEFF' ? 'icblue' : 'icred'}.png`} alt="" width={12} height={12} />
       <span style={{ marginTop: 1 }}>{count}</span>
     </span>
   )
 
   const selectedSummary = summaryData.find(s => s.type === selectedType)
   const selectedTypeIconIdx = summaryData.findIndex(s => s.type === selectedType)
-  const selectedTypeIcon = `/atlas/images/Maintenance/st${selectedTypeIconIdx >= 0 ? selectedTypeIconIdx + 1 : 1}.png`
+  const selectedTypeIcon = `${BASE_PATH}/images/Maintenance/st${selectedTypeIconIdx >= 0 ? selectedTypeIconIdx + 1 : 1}.png`
 
   return (
     <div className="flex flex-col h-full">
@@ -530,7 +532,7 @@ const RepairRecordsSection: React.FC = () => {
                       onClick={() => setSelectedType(item.type)}
                     >
                       <span className="flex items-center gap-2 min-w-0">
-                        <img src={`/atlas/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
+                        <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
                         <span className="text-[14px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
                       </span>
                       <span className="text-[14px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
@@ -595,7 +597,7 @@ const RepairRecordsSection: React.FC = () => {
                       }}
                     >
                       <span className="flex items-center gap-2 min-w-0">
-                        <img src={`/atlas/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
+                        <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
                         <span className="text-[14px] font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
                       </span>
                       <span className="text-[14px] font-normal whitespace-nowrap" style={{ color: '#979797' }}>
