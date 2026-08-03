@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Badge, Button, Skeleton, message } from 'antd'
+import { Button, Skeleton, message } from 'antd'
 import { AnimatePresence, motion } from 'motion/react'
 import { TbBellRinging2, TbX } from 'react-icons/tb'
 import {
@@ -245,7 +245,7 @@ const NotificationBell: React.FC<Props> = ({
         type="button"
         onClick={() => setOpen(!open)}
         title="แจ้งเตือนกล้องดับ"
-        className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors ${open ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+        className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors outline-none focus:outline-none focus-visible:outline-none ${open ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
         whileHover={{ scale: 1.15 }}
         whileTap={{ scale: 0.9 }}
         aria-label={open ? 'ปิดแจ้งเตือน' : 'เปิดแจ้งเตือน'}
@@ -266,16 +266,36 @@ const NotificationBell: React.FC<Props> = ({
           }
           transition={open ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
         >
-          {/* count can be 4 digits after first deploy (§6) — overflowCount
-              renders 99+ so the badge never explodes the toolbar */}
-          <Badge count={unreadCount} overflowCount={99} size="small" offset={[2, -2]}>
-            {/* Color classes live on the SVG itself — the antd Badge wrapper
-                sets its own colorText, which blocks inheriting the button's
-                yellow, so the open/hover colors are applied directly here. */}
+          {/* Hand-rolled badge — antd Badge's fixed-height pill kept fighting
+              the Thai UI font (digits clipped at the top no matter what
+              line-height/odometer workaround we threw at it). A plain flex
+              pill centers the text deterministically. Cap at 99+ (count can
+              be 4 digits after first deploy, §6). */}
+          <span className="relative inline-flex">
             <TbBellRinging2
               className={`${iconClassName ?? 'fs-24 cursor-pointer'} ${open ? 'text-(--yellow)' : 'group-hover:text-white'}`}
             />
-          </Badge>
+            {unreadCount > 0 && (
+              <span
+                className="absolute -top-2 left-full -translate-x-2.5 flex items-center justify-center rounded-full font-bold fs-12 pointer-events-none"
+                // App font (IBM Plex Sans Thai) per request. Its vertical
+                // metrics float Latin digits above the line-box center
+                // (space reserved for Thai below-baseline marks) — the 2px
+                // top padding puts them on optical center (eyeballed against
+                // the live navbar; don't "simplify" it away).
+                style={{
+                  background: '#ff4d4f',
+                  color: '#fff',
+                  lineHeight: 1,
+                  height: 18,
+                  minWidth: 18,
+                  padding: '2px 5px 0',
+                }}
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </span>
         </motion.span>
         <span
           className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap"

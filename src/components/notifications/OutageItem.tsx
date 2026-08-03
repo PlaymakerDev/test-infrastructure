@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import type { CameraOutageItem } from '@/types/manage/notification-api'
 
 dayjs.extend(relativeTime)
@@ -37,9 +38,8 @@ const OutageItem: React.FC<Props> = ({ item, onClick }) => (
     onClick={() => onClick(item)}
     // Backgrounds are classes (not inline style) so the hover variant can
     // actually win — an inline background would override hover: forever.
-    className={`w-full text-left px-4 py-3 cursor-pointer border-0 border-b border-solid border-white/10 transition-colors hover:bg-(--mid-gray) ${
-      item.is_read ? 'bg-transparent' : 'bg-[rgba(102,174,255,0.08)]'
-    }`}
+    className={`w-full text-left px-4 py-3 cursor-pointer border-0 border-b border-solid border-white/10 transition-colors hover:bg-(--mid-gray) ${item.is_read ? 'bg-transparent' : 'bg-[rgba(102,174,255,0.08)]'
+      }`}
   >
     <div className="flex items-center gap-2">
       {!item.is_read && (
@@ -67,15 +67,18 @@ const OutageItem: React.FC<Props> = ({ item, onClick }) => (
       {dotJoin(item.department?.short_name, item.camera.ip_address)}
     </p>
     <div className="flex items-center gap-2 mt-1.5">
+      {/* Same pill anatomy as the maintenance device table's status pill —
+          wifi glyph + label. is_open = stream still down = ออฟไลน์. */}
       <span
-        className="inline-flex items-center py-0.5 px-2.5 rounded-full fs-12 whitespace-nowrap border border-solid"
+        className="inline-flex items-center gap-1.5 py-0.5 px-2.5 rounded-full fs-12 whitespace-nowrap border border-solid"
         style={
           item.is_open
             ? { borderColor: 'var(--red)', color: 'var(--red)' }
             : { borderColor: '#22c55e', color: '#22c55e' }
         }
       >
-        {item.is_open ? 'กำลังดับ' : 'กลับมาแล้ว'}
+        {item.is_open ? <TbWifiOff size={14} /> : <TbWifi size={14} />}
+        {item.is_open ? 'ออฟไลน์' : 'ออนไลน์'}
       </span>
       {/* Grows while is_open — value is fresh per poll, rendered as-is */}
       <span className="fs-12 text-white/60">{formatDuration(item.duration_minutes)}</span>
