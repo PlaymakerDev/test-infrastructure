@@ -57,6 +57,7 @@ import { AnimatePresence, motion } from "motion/react";
 import axios, { AxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import FindOnPageOverlay from "./FindOnPageOverlay";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 // Feature systems — link to their overall page scoped to the logged-in user's
 // own department (?dept_id=สำนัก/แขวง). The remaining management menus
@@ -154,6 +155,9 @@ export default function Navbar() {
   // buttons live in this nav — the overlay itself renders as a portal-like
   // fixed element that visually attaches under the navbar.
   const [findOpen, setFindOpen] = useState(false)
+  // Notification bell panel — owned here (controlled) so it and the find
+  // overlay are mutually exclusive: opening either closes the other.
+  const [bellOpen, setBellOpen] = useState(false)
   // Mobile (< lg) replacement for the hover trapezoid: a single trapezoid tab
   // at top-center that pops a grid of the same nav entries. Closes on backdrop
   // tap, tapping the tab again — and on ANY navigation (path or query) without
@@ -221,6 +225,7 @@ export default function Navbar() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
         e.preventDefault()
+        setBellOpen(false)
         setFindOpen(true)
       }
     }
@@ -301,6 +306,7 @@ export default function Navbar() {
       active: findOpen,
       onClick: () => {
         setMobileMoreOpenAt(null)
+        setBellOpen(false)
         setFindOpen(true)
       },
     },
@@ -759,7 +765,10 @@ export default function Navbar() {
               hover so it doesn't fight the tighter icons for space. */}
           <motion.button
             type="button"
-            onClick={() => setFindOpen((v) => !v)}
+            onClick={() => {
+              setBellOpen(false)
+              setFindOpen((v) => !v)
+            }}
             title="ค้นหาในหน้า (Ctrl+F)"
             className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors ${findOpen ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
             whileHover={{ scale: 1.15 }}
@@ -803,8 +812,13 @@ export default function Navbar() {
             className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--yellow)" : ""}`}
             onClick={() => router.push("/admin/smart-search")}
           />
-          <TbBellRinging2
-            className={iconClassName}
+          <NotificationBell
+            iconClassName={iconClassName}
+            open={bellOpen}
+            onOpenChange={(v) => {
+              setBellOpen(v)
+              if (v) setFindOpen(false)
+            }}
           />
           <Dropdown
             menu={{ items: extraItems }}

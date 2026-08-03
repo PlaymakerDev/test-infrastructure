@@ -1,5 +1,5 @@
 "use client"
-import React, { Suspense, useMemo, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -201,6 +201,32 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
 
   const createCase = useCreateMaintenanceCase()
 
+  // Deep link from the notification bell: ?camera_id=<uuid> scrolls the
+  // device table to that camera's row once the data lands. antd/rc-table
+  // stamps each row with data-row-key (= our camera_id row key), so no
+  // per-row refs are needed. One-shot per mount — later refetches must not
+  // yank the scroll position again while the user is reading.
+  const targetCameraId = searchParams.get('camera_id')
+  const scrolledToCameraRef = useRef(false)
+  useEffect(() => {
+    if (scrolledToCameraRef.current || !targetCameraId || loading) return
+    const exists = (solutionData?.lists ?? []).some(
+      (i: CameraItem) => i.camera_id === targetCameraId,
+    )
+    if (!exists) return
+    // Next tick so the Table has committed its rows to the DOM.
+    const t = window.setTimeout(() => {
+      const row = document.querySelector(
+        `tr[data-row-key="${CSS.escape(targetCameraId)}"]`,
+      )
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        scrolledToCameraRef.current = true
+      }
+    }, 150)
+    return () => window.clearTimeout(t)
+  }, [targetCameraId, loading, solutionData])
+
   // Map API data to table rows — show every device (both online and offline).
   const tableData: TableRow[] = (solutionData?.lists ?? []).map((item: CameraItem) => ({
     key: item.camera_id,
@@ -364,12 +390,24 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             },
           }}
         >
+          {/* Soft yellow wash on the row the notification deep-link targets —
+              !important because antd paints td backgrounds from its theme. */}
+          {targetCameraId && (
+            <style>{`
+              .maintenance-target-row > td {
+                background: rgba(252, 209, 22, 0.14) !important;
+              }
+            `}</style>
+          )}
           <Table
             columns={columns}
             dataSource={tableData}
             pagination={false}
             scroll={{ x: 'max-content' }}
             size='middle'
+            rowClassName={(record) =>
+              record.cameraId === targetCameraId ? 'maintenance-target-row' : ''
+            }
           />
         </ConfigProvider>
       </section>
