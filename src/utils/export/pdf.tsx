@@ -286,6 +286,27 @@ export interface PdfSimpleColumn {
   align?: 'left' | 'center' | 'right'
 }
 
+/** One row of a report `table` block:
+ *  • plain array            — a normal data row
+ *  • `{ group }`            — full-width band row, i.e. the on-screen grouped
+ *                             table's divider (a camera name, a bureau…)
+ *  • `{ cells, emphasis? }` — data row; `emphasis` renders it bold on a tinted
+ *                             fill, for "รวม/รวมเฉลี่ย" summary lines
+ *  Grouped `exportTablePdf` reports flatten their dividers into lead columns
+ *  instead (see the export conventions in CLAUDE.md) — that stays the rule for
+ *  ordinary tables. Band rows exist for wide matrix tables, where a group
+ *  column would eat width the hour cells need. */
+export type PdfTableRow =
+  | (string | number)[]
+  | { group: string }
+  | { cells: (string | number)[]; emphasis?: boolean }
+
+const isGroupRow = (row: PdfTableRow): row is { group: string } =>
+  !Array.isArray(row) && 'group' in row
+
+const tableRowCells = (row: PdfTableRow): (string | number)[] =>
+  Array.isArray(row) ? row : 'cells' in row ? row.cells : []
+
 /** One photo-card entry (timeline events etc.): thumbnail on the left,
  *  heading/badge + field grid on the right — mirrors the on-screen cards. */
 export interface PdfEntryItem {
@@ -302,7 +323,19 @@ export interface PdfEntryItem {
 export type PdfReportBlock =
   | { type: 'kv'; title?: string; items: PdfKvItem[]; columns?: 1 | 2 }
   | { type: 'image'; title?: string; dataUrl: string; width: number; height: number }
-  | { type: 'table'; title?: string; columns: PdfSimpleColumn[]; rows: (string | number)[][] }
+  | {
+      type: 'table'
+      title?: string
+      columns: PdfSimpleColumn[]
+      rows: PdfTableRow[]
+      /** Cell font size, default `CELL_FONT_SIZE` (9). Lower it for very wide
+       *  tables so many columns still fit one row — it feeds BOTH the render
+       *  and the pre-wrap measurement, so pass it here, never as a style. */
+      fontSize?: number
+      /** Cell padding in points, default 4. Trim it alongside `fontSize` to
+       *  buy back width on column-heavy tables. */
+      cellPadding?: number
+    }
   | { type: 'entries'; title?: string; items: PdfEntryItem[] }
 
 export interface ExportReportPdfArgs {
@@ -342,6 +375,10 @@ const reportStyles = StyleSheet.create({
   imageBlock: { marginBottom: 10 },
   chartImage: { alignSelf: 'center' },
   tableBlock: { marginBottom: 10 },
+  // Grouped-table band row + "รวมเฉลี่ย" summary row (print-safe greys — the
+  // screen's yellow-on-dark doesn't translate to a white report page).
+  groupCell: { backgroundColor: '#e5e7eb', fontWeight: 700, borderLeftWidth: 1 },
+  emphasisCell: { backgroundColor: '#f7f7f7', fontWeight: 700 },
   entryCard: {
     flexDirection: 'row',
     borderWidth: 1,
@@ -402,20 +439,36 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
   // uses, and react-pdf's `allFixed` guard then stops a lone repeated header
   // from spilling onto a trailing page of its own.
   const renderTableRows = (block: Extract<PdfReportBlock, { type: 'table' }>, bi: number) => {
-    const renderCells = (row: (string | number)[]) =>
-      block.columns.map((c, ci) => (
+    // Font/padding overrides must match what prewrapReportArgs measured with.
+    const sizing = { fontSize: block.fontSize ?? CELL_FONT_SIZE, padding: block.cellPadding ?? 4 }
+    const renderCells = (row: PdfTableRow) => {
+      // Group band — one cell spanning the table, mirroring the on-screen
+      // grouped matrix (camera name on its own full-width row).
+      if (isGroupRow(row)) {
+        return (
+          <Text style={{ ...styles.cell, ...sizing, ...reportStyles.groupCell, width: '100%', textAlign: 'left' }}>
+            {`${row.group} `}
+          </Text>
+        )
+      }
+      const cells = tableRowCells(row)
+      const emphasis = !Array.isArray(row) && 'emphasis' in row && row.emphasis
+      return block.columns.map((c, ci) => (
         <Text
           key={c.header}
           style={{
             ...styles.cell,
+            ...sizing,
             width: `${c.widthPct}%`,
             textAlign: c.align ?? 'center',
             ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
+            ...(emphasis ? reportStyles.emphasisCell : {}),
           }}
         >
-          {`${row[ci] ?? ''} `}
+          {`${cells[ci] ?? ''} `}
         </Text>
       ))
+    }
     return (
       <React.Fragment key={bi}>
         {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
@@ -423,14 +476,18 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
           {block.columns.map((c, i) => (
             <Text
               key={c.header}
-              style={{ ...styles.headCell, width: `${c.widthPct}%`, ...(i === 0 ? { borderLeftWidth: 1 } : {}) }}
+              style={{ ...styles.headCell, ...sizing, width: `${c.widthPct}%`, ...(i === 0 ? { borderLeftWidth: 1 } : {}) }}
             >
               {`${c.header} `}
             </Text>
           ))}
         </View>
         {block.rows.map((row, ri) => (
-          <View style={styles.row} key={ri} wrap={false}>
+          // A group band needs rows under it to mean anything, so it demands
+          // ~2 rows of space ahead and moves to the next page otherwise. Safe
+          // here in a way it wouldn't be for the header: the header is `fixed`,
+          // so it reprints on the next page regardless of what moves.
+          <View style={styles.row} key={ri} wrap={false} minPresenceAhead={isGroupRow(row) ? 44 : undefined}>
             {renderCells(row)}
           </View>
         ))}
@@ -566,8 +623,6 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
   const fk = await loadReportFont()
   if (!fk) return args
   const pageW = PAGE_INNER_W[args.orientation ?? 'portrait']
-  const spaceW = fk.layout(' ').advanceWidth * (CELL_FONT_SIZE / fk.unitsPerEm)
-  const colMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - CELL_CHROME_PT - spaceW)
 
   const blocks = args.blocks.map((block): PdfReportBlock => {
     if (block.type === 'kv') {
@@ -607,13 +662,26 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
         })),
       }
     }
+    // Column-heavy tables shrink the font / trim the padding (see the block's
+    // `fontSize`/`cellPadding`); measure with the SAME numbers the cells render
+    // at, or the pre-wrap breaks lines the renderer had room for (or worse,
+    // doesn't break ones it needed to).
+    const cellFont = block.fontSize ?? CELL_FONT_SIZE
+    const chrome = block.cellPadding != null ? block.cellPadding * 2 + 3 : CELL_CHROME_PT
+    const cellSpaceW = fk.layout(' ').advanceWidth * (cellFont / fk.unitsPerEm)
+    const cellMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - chrome - cellSpaceW)
     return {
       ...block,
       title: block.title ? wrapPdfText(fk, block.title, pageW - 10, 10.5) : block.title,
-      columns: block.columns.map((c) => ({ ...c, header: wrapPdfText(fk, c.header, colMax(c.widthPct), CELL_FONT_SIZE) })),
-      rows: block.rows.map((row) =>
-        row.map((cell, ci) => wrapPdfText(fk, String(cell), colMax(block.columns[ci]?.widthPct ?? 10), CELL_FONT_SIZE))
-      ),
+      columns: block.columns.map((c) => ({ ...c, header: wrapPdfText(fk, c.header, cellMax(c.widthPct), cellFont) })),
+      rows: block.rows.map((row): PdfTableRow => {
+        // Band rows measure against the whole table width, not a column.
+        if (isGroupRow(row)) return { group: wrapPdfText(fk, row.group, cellMax(100), cellFont) }
+        const cells = tableRowCells(row).map((cell, ci) =>
+          wrapPdfText(fk, String(cell), cellMax(block.columns[ci]?.widthPct ?? 10), cellFont)
+        )
+        return Array.isArray(row) ? cells : { ...row, cells }
+      }),
     }
   })
 

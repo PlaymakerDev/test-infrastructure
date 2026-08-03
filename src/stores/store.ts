@@ -17,16 +17,10 @@ export type RootState = ReturnType<AppStore['getState']>
 export type AppDispatch = AppStore['dispatch']
 
 // ---- Global store accessor ----
-// `makeStore()` is instantiated per-mount inside `StoreProvider` (no module-level
-// singleton store, so React Strict Mode / multiple mounts stay isolated). Some
-// non-React modules (BaseService's axios interceptors) need to dispatch auth
-// actions whenever the token changes server-side — `StoreProvider` registers the
-// live instance here right after creating it. Mirrors the existing
-// `getGlobalModal()/setGlobalModal()` pattern in `useTimeoutModal.ts`.
-let _store: AppStore | null = null
-
-export const setGlobalStore = (store: AppStore) => {
-  _store = store
-}
-
-export const getGlobalStore = (): AppStore | null => _store
+// Moved to `./globalStore` (holder-only module, no runtime imports) — keeping
+// it here let BaseService's import close a circular chain through the
+// reducers and crash module init (see globalStore.ts). Re-exported so React
+// callers (StoreProvider) can keep importing from '@/stores/store'; non-React
+// modules that the reducers reach (BaseService!) must import
+// '@/stores/globalStore' directly instead.
+export { getGlobalStore, setGlobalStore } from './globalStore'
