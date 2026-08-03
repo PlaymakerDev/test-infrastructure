@@ -48,7 +48,7 @@ const CardCCTVData: React.FC<Props> = (props) => {
       <section>
         <h4 className={`fs-12 font-normal! ${item?.camera_status === "Online" ? 'text-(--default-blue)' : 'text-red-500'} leading-snug break-all mb-0.5`}>{item?.camera_description || '-'}</h4>
         <div className='flex justify-between items-center flex-wrap gap-3'>
-          <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item?.station_description || '-'}</p>
+          <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item?.camera_ip || '-'}</p>
           <div className='flex gap-2 items-center flex-wrap'>
             {renderList}
           </div>

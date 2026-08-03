@@ -45,7 +45,7 @@ export const getDailyWeightLogExportColumns = (
       header: 'วันที่และเวลา',
       width: 24,
       widthPct: 14,
-      value: (r) => (r.time_stamp ? `${dayjs(r.time_stamp).format('DD MMM BBBB HH:mm:ss')} น.` : '-'),
+      value: (r) => (r.time_stamp ? `${dayjs(r.time_stamp, "DD/MM/YYYY  HH:mm:ss").format('DD MMM YYYY HH:mm:ss')} น.` : '-'),
     },
     {
       key: 'plate',

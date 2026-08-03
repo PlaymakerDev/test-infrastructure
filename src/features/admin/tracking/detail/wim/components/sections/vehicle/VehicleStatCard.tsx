@@ -48,7 +48,7 @@ const VehicleStatCard: React.FC<Props> = () => {
       <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={5}>
         <div className='h-full bg-[#66AEFF1A] border-2 border-white p-3 rounded-2xl'>
           <TbFlag className='fs-22 mb-1' />
-          <h4 className='mb-1'>สถานะ WIM</h4>
+          <h4 className='mb-1'>{stationType === 'WIM' ? 'สถานะ WIM' : 'สถานะสถานี'}</h4>
           <div className='flex flex-wrap gap-2'>
             <div className='bg-[#66AEFF1A] border border-(--default-blue) px-3 py-1 rounded-3xl'>
               <p className='fs-12 text-(--default-blue) mb-0'>{fmtNumber(dailyCount.data?.normal) || 0} เปิดปกติ</p>
