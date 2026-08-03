@@ -38,6 +38,18 @@ interface FormShape {
   bridge_wid?: number
 }
 
+// ---------------------------------------------------------------------------
+// Figma tokens — kept inline for the Project modal so a designer tweak
+// touches one file. Values are read from drr-atlas-doc frames 2/3.
+// ---------------------------------------------------------------------------
+const LABEL_COLOR = '#1F1F1F'
+const ASTERISK_COLOR = '#FF3B3B'
+const PLACEHOLDER_COLOR = '#B8B8B8'
+const BORDER_DEFAULT = '#E5E5E5'
+const YELLOW = '#FCD116'
+const CANCEL_BG = '#E5E5E5'
+const CANCEL_FG = '#4A4A4A'
+
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {children}
@@ -138,34 +150,77 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
 
   return (
     <ConfigProvider
+      // theme={{
+      //   components: {
+      //     Modal: {
+      //       contentBg: '#FFFFFF',
+      //       headerBg: '#FFFFFF',
+      //       footerBg: '#FFFFFF',
+      //       colorIcon: '#000',
+      //       titleColor: '#1F1F1F',
+      //       borderRadiusLG: 16,
+      //     },
+      //     Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
+      //     Input: {
+      //       colorBorder: '#E5E5E5',
+      //       activeBorderColor: '#FCD116',
+      //       hoverBorderColor: '#FCD116',
+      //       colorTextPlaceholder: '#B8B8B8',
+      //       borderRadius: 8,
+      //       controlHeight: 44,
+      //       paddingInline: 14,
+      //     },
+      //     Select: {
+      //       colorBorder: '#E5E5E5',
+      //       activeBorderColor: '#FCD116',
+      //       hoverBorderColor: '#FCD116',
+      //       colorTextPlaceholder: '#B8B8B8',
+      //       borderRadius: 8,
+      //       controlHeight: 44,
+      //       optionSelectedBg: '#FFF8CC',
+      //     },
+      //   },
+      // }}
       theme={{
+        token: {
+          colorPrimary: YELLOW,
+          colorTextPlaceholder: PLACEHOLDER_COLOR,
+        },
         components: {
           Modal: {
             contentBg: '#FFFFFF',
             headerBg: '#FFFFFF',
             footerBg: '#FFFFFF',
-            colorIcon: '#000',
-            titleColor: '#1F1F1F',
+            titleColor: '#111111',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
+          Form: { labelColor: LABEL_COLOR },
           Input: {
-            colorBorder: '#E5E5E5',
-            activeBorderColor: '#FCD116',
-            hoverBorderColor: '#FCD116',
-            colorTextPlaceholder: '#B8B8B8',
+            colorText: '#1F1F1F',
+            colorBorder: BORDER_DEFAULT,
+            colorTextPlaceholder: PLACEHOLDER_COLOR,
             borderRadius: 8,
             controlHeight: 44,
             paddingInline: 14,
+            activeBorderColor: YELLOW,
+            hoverBorderColor: YELLOW,
           },
           Select: {
-            colorBorder: '#E5E5E5',
-            activeBorderColor: '#FCD116',
-            hoverBorderColor: '#FCD116',
-            colorTextPlaceholder: '#B8B8B8',
+            colorText: '#1F1F1F',
+            colorBorder: BORDER_DEFAULT,
+            colorTextPlaceholder: PLACEHOLDER_COLOR,
             borderRadius: 8,
             controlHeight: 44,
             optionSelectedBg: '#FFF8CC',
+          },
+          DatePicker: {
+            colorText: '#1F1F1F',
+            colorBorder: BORDER_DEFAULT,
+            colorTextPlaceholder: PLACEHOLDER_COLOR,
+            borderRadius: 8,
+            controlHeight: 44,
+            activeBorderColor: YELLOW,
+            hoverBorderColor: YELLOW,
           },
         },
       }}
