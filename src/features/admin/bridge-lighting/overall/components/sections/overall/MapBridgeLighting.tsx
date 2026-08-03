@@ -13,6 +13,7 @@ import React, { useMemo } from 'react'
 import { Button, ConfigProvider } from 'antd'
 import { theme } from '@/configs/antd/themeConfig'
 import { getBridgeLightingOverviewAPI } from '@/services/routes/BridgeLightingService'
+import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 
 const FALLBACK_CENTER: [number, number] = [98.97, 18.8]
 
@@ -182,6 +183,7 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
         initialZoom={5.4}
         edgeFade={{ all: 10 }}
       >
+        <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         <FitBoundsEffect coords={coords} padding={60} maxZoom={12} />
         <BridgeLightingMarkerLayer
           locations={data?.data.locations || []}
