@@ -132,7 +132,7 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
         <p className='text-[14px] font-bold m-0 text-white leading-tight'>ระบบไฟฟ้า</p>
         {electricityCount > 1 && (
           <img
-            src='/images/Lighting/arrowdown.png'
+            src='/atlas/images/Lighting/arrowdown.png'
             alt='แสดงข้อมูลทุกเฟส'
             width={30}
             height={30}
