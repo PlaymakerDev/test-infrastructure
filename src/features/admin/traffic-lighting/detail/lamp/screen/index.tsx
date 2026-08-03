@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { Alert, Button, Empty, Spin } from 'antd'
+import { Alert, Button, Spin } from 'antd'
 import { TbBulb, TbBolt } from 'react-icons/tb'
 import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLightingDetail'
 import StatusInfoCard from '@/features/admin/traffic-lighting/detail/components/StatusInfoCard'
@@ -12,6 +12,8 @@ import { resolveLightingImei } from '@/features/admin/traffic-lighting/shared/li
 import { useLightingProject } from '@/features/admin/traffic-lighting/shared/useLightingProject'
 import { useLightingAmpGraph, useLightingDeviceDetails } from '@/hooks/queries/lighting'
 import TrafficLightingMinimumFontSize from '../../../shared/TrafficLightingMinimumFontSize'
+import LampStatusCard from '../components/LampStatusCard'
+import { MOCK_LAMP_DATA, buildMockLampRows, buildMockLampSummary } from '../data/mockLampData'
 
 interface Props {
   id: string
@@ -36,6 +38,16 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
   const totalLamps = project.equipment.count
   const amps = (ampQuery.data ?? []).map((point) => point.amp).filter((amp): amp is number => amp !== null)
   const avgAmp = amps.length ? amps.reduce((sum, amp) => sum + amp, 0) / amps.length : 0
+  // Read the clock once at mount — render stays pure and the derived times
+  // don't drift between renders.
+  const [now] = React.useState(() => Date.now())
+  const lampRows = React.useMemo(
+    () => (MOCK_LAMP_DATA && imei && totalLamps
+      ? buildMockLampRows(imei, totalLamps, deviceQuery.data?.line_checks, now)
+      : []),
+    [imei, totalLamps, deviceQuery.data?.line_checks, now],
+  )
+  const lampSummary = lampRows.length > 0 ? buildMockLampSummary(lampRows) : null
   const resolvedProject = deviceQuery.data
     ? {
         ...project,
@@ -107,35 +119,29 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
                 titleColor='#FFFFFF'
                 title='กระแสไฟฟ้าเฉลี่ย'
                 iconNode={<TbBolt size={28} style={{ color: '#FFFFFF' }} className='shrink-0' />}
-                status={ampQuery.isLoading || ampQuery.isError || amps.length === 0 ? '-' : avgAmp.toFixed(2)}
+                // 4dp, not 2 — an idle cabinet averages ~0.0002 A, which
+                // toFixed(2) rounded to a flat "0.00" while the chart right
+                // below it plotted the same reading at 0.0002. Matches the
+                // precision ElectricalSystemCard already uses for Amp.
+                status={ampQuery.isLoading || ampQuery.isError || amps.length === 0 ? '-' : avgAmp.toFixed(4)}
                 valueUnit={amps.length > 0 ? 'A' : undefined}
                 valueUnitLarge
                 subtitle='ค่าเฉลี่ยจากข้อมูล 24 ชั่วโมงล่าสุด'
                 valueFontSize={24}
               />
             </div>
-            <div
-              style={{ width: 440, height: 330, background: '#191919CC' }}
-              className='shrink-0 rounded-[20px] px-5 pt-4 pb-5 flex flex-col'
-            >
-              <div className='flex items-center gap-2 shrink-0 mb-1'>
-                <TbBulb size={20} style={{ color: '#05F2DB' }} />
-                <p className='text-[16px] font-bold m-0 leading-none' style={{ color: '#05F2DB' }}>
-                  สถานะโคมไฟวันนี้
-                </p>
-              </div>
-              <div className='flex-1 flex items-center justify-center min-h-0 w-full'>
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description='ยังไม่มีข้อมูลสถานะรายโคมจาก API'
-                />
-              </div>
-            </div>
+            <LampStatusCard summary={lampSummary} />
           </div>
         </section>
 
-        <LampChartsSection imei={imei} phase={resolvedPhase} phaseReady={phaseReady} />
-        <LampEquipmentTable />
+        <LampChartsSection
+          imei={imei}
+          phase={resolvedPhase}
+          phaseReady={phaseReady}
+          lampCount={totalLamps}
+          lineChecks={deviceQuery.data?.line_checks}
+        />
+        <LampEquipmentTable rows={lampRows} />
       </div>
     </LampProvider>
   )

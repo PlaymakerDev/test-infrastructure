@@ -71,7 +71,7 @@ const LampTitleSection: React.FC = () => {
               color={WARRANTY_COLORS[project.warranty]}
             />
             <ConfigProvider
-              theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#212121' } }}
+              theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}
             >
               <Button
                 type='primary'

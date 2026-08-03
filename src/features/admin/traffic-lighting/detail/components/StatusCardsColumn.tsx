@@ -1,8 +1,7 @@
 "use client"
 import React from 'react'
 import ElectricalSystemCard from './ElectricalSystemCard'
-import StatusInfoCard from './StatusInfoCard'
-import { useDetailContext } from '../context'
+import ConnectionCircuitCards from './ConnectionCircuitCards'
 
 interface Props {
   /** Controlled by OverviewSection so it can grow the surrounding layout
@@ -12,38 +11,17 @@ interface Props {
 }
 
 /** Right column — electrical card + connection/circuit status for the OVERVIEW tab. */
-const StatusCardsColumn: React.FC<Props> = ({ electricalExpanded, onToggleElectricalExpanded }) => {
-  const { imei, device, deviceLoaded } = useDetailContext()
+const StatusCardsColumn: React.FC<Props> = ({ electricalExpanded, onToggleElectricalExpanded }) => (
+  <div className='flex flex-col gap-2.5 w-full md:w-[300px] shrink-0 md:self-start'>
+    <ElectricalSystemCard expanded={electricalExpanded} onToggleExpanded={onToggleElectricalExpanded} />
 
-  const connectionStatus = !deviceLoaded ? '-' : (device ? (device.is_online ? 'ออนไลน์' : 'ออฟไลน์') : '-')
-  const circuitStatus = !deviceLoaded ? '-' : (device ? (device.has_broken_wire ? 'สายขาด' : 'เชื่อมต่อปกติ') : '-')
-
-  return (
-    <div className='flex flex-col gap-2.5 w-full md:w-[300px] shrink-0 md:self-start'>
-      <ElectricalSystemCard expanded={electricalExpanded} onToggleExpanded={onToggleElectricalExpanded} />
-
-      <StatusInfoCard
-        compact
-        borderColor='#6666FF'
-        titleColor='#6666FF'
-        title='สถานะการเชื่อมต่อ'
-        status={connectionStatus}
-        icon='/atlas/images/Lighting/icel1.png'
-        subtitle={`IMEI : ${imei || '-'}`}
-        valueFontSize={20}
-      />
-
-      <StatusInfoCard
-        compact
-        borderColor='#B066FF'
-        titleColor='#B066FF'
-        title='สถานะวงจร'
-        status={circuitStatus}
-        icon='/atlas/images/Lighting/icel2.png'
-        valueFontSize={20}
-      />
-    </div>
-  )
-}
+    {/* Expanding the electrical card adds ~530px of per-phase readings, which
+        used to push these two down to ~y1200 — off-screen — and stretched the
+        whole row to 1140px against a diagram capped at 550px. While expanded
+        OverviewSection renders them in the empty bottom-left corner instead;
+        they only belong to this rail in the collapsed state. */}
+    {!electricalExpanded && <ConnectionCircuitCards />}
+  </div>
+)
 
 export default React.memo(StatusCardsColumn)

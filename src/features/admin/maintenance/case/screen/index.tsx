@@ -28,16 +28,13 @@ import type { APIResponseCCTVDetail, APIResponseCCTVRoad } from '@/types/cctv/sh
 import type { APIResponseProjectDetail } from '@/types/shared'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 import { parseImageUrls } from '../../data/parseImageUrls'
+import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import type { PdfReportBlock } from '@/utils/export/pdf'
 
 const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/avi', 'video/x-msvideo', 'video/quicktime', 'application/pdf']
 const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
 
-/** Go's zero-value time ("0001-01-01T00:00:00Z", any offset) — the backend's
- *  way of saying "never actually recorded", not a real timestamp. */
-const isRealTimestamp = (value: string | null | undefined): boolean =>
-  !!value && !value.startsWith('0001-01-01')
 
 const normalizeSolutionType = (value: string | null): string =>
   (value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '')
@@ -295,7 +292,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     installPoint: cameraRoad?.road_code || '-',
     ipAddress: cameraDetail?.ip_address || '-',
     offlineDate: offlineSince ? offlineSince.format('DD MMM BBBB') : '-',
-    offlineDays: offlineSince ? Math.max(0, dayjs().diff(offlineSince, 'day')) : 0,
+    offlineDays: offlineSince ? offlineDaysSince(cameraDetail?.curl_updated_at) : 0,
     hasLive: !!cameraDetail?.is_online && !!cameraDetail?.hls_url,
   }
 

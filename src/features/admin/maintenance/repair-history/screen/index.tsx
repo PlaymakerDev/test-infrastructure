@@ -8,6 +8,7 @@ import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory, use
 import { useProjectByCaseNo } from '@/hooks/queries/manage'
 import type { CameraItem, CaseHistoryItem, HistoryCase } from '@/types/maintenance'
 import { parseImageUrls } from '../../data/parseImageUrls'
+import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -186,8 +187,16 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   const agencyText = historyCase?.department_name || selectedRecord?.responsible || '-'
   const deviceTypeText = historyCase?.solution_type || '-'
   const installPointText = historyCase ? [historyCase.location_name, historyCase.road_name].filter(Boolean).join(' - ') || '-' : '-'
-  const offlineSinceText = selectedRecord?.reported_at ? dayjs(selectedRecord.reported_at).format('DD MMM BBBB') : '-'
-  const offlineDaysText = historyCase?.offline_days ? `${historyCase.offline_days} วัน` : '-'
+  // Both fields read off `curl_updated_at` (last successful health check) so
+  // they agree: `offline_days` always arrives as 0 from the endpoint, and
+  // dating "went offline" from `reported_at` (when someone filed the case)
+  // would contradict the day count — e.g. "ออฟไลน์ 2 ส.ค." next to "158 วัน".
+  const offlineSince = isRealTimestamp(historyCase?.curl_updated_at)
+    ? dayjs(historyCase?.curl_updated_at)
+    : null
+  const offlineSinceText = offlineSince?.isValid() ? offlineSince.format('DD MMM BBBB') : '-'
+  const offlineDays = offlineDaysSince(historyCase?.curl_updated_at, historyCase?.offline_days ?? 0)
+  const offlineDaysText = offlineSince ? `${offlineDays} วัน` : '-'
   // ข้อมูลโครงการ card — from GET /manage/project/case/{case_no}
   const projectByCase = projectByCaseQuery.data
   const contractorText = projectByCase?.contractor?.username || '-'

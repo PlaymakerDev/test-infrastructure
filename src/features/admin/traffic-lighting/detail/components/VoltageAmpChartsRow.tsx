@@ -1,10 +1,11 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Empty, Spin } from 'antd'
 import { TbBolt } from 'react-icons/tb'
 import LineChart from '@/components/chart/LineChart'
 import type { LineChartDataPoint } from '@/components/chart/LineChart'
 import { useLightingVoltGraph, useLightingAmpGraph } from '@/hooks/queries/lighting'
+import { thaiDateBE } from '@/utils/thaiDate'
 import { COLOR_VOLTAGE_CYAN, COLOR_PHASE_GREEN, COLOR_PHASE_YELLOW, COLOR_AMP_ORANGE } from '../data/voltageAmpReport'
 import type { LineConfig } from '@/components/chart/LineChart'
 
@@ -59,6 +60,13 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
   const isThreePhase = phase === 3
   const voltQuery = useLightingVoltGraph(imei, phase, phaseReady)
   const ampQuery = useLightingAmpGraph(imei, phase, phaseReady)
+  // Both graphs cover today 00:00 → now (hours with no reading yet come back
+  // null), so the tooltip header carries today's date plus the hovered hour —
+  // "2 ส.ค. 2569" / "14.00 น.". Matters more since the x-axis labels thin out
+  // on narrow cards: the hour is no longer always printed under the cursor.
+  // Read the clock once, in a lazy state initializer — keeps it out of the
+  // render body (which must stay pure) without an effect round-trip.
+  const [todayLabel] = useState(() => thaiDateBE(Date.now()))
   // Map the API points to the LineChart data shape (label = hour, value key).
   // Three-phase: keep an hour if ANY phase has data, falling back individual
   // null phases to 0 (rather than dropping the whole hour, which would also
@@ -121,6 +129,7 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             accentColor={COLOR_TITLE}
             data={voltData}
             lines={voltLines}
+            tooltipDate={todayLabel}
             tooltipUnit='V'
             tooltipValueDecimals={4}
             yAxisDomain={['auto', 'auto']}
@@ -146,6 +155,7 @@ const VoltageAmpChartsRow: React.FC<{ imei: string; phase?: number | null; phase
             accentColor={COLOR_TITLE}
             data={ampData}
             lines={ampLines}
+            tooltipDate={todayLabel}
             tooltipUnit='A'
             tooltipValueDecimals={4}
             yAxisDomain={['auto', 'auto']}

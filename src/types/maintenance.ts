@@ -212,6 +212,9 @@ export interface HistoryCase {
   road_name: string
   status: 'open' | 'in_progress' | 'closed'
   reported_at: string
+  /** Last successful health check. The endpoint ships this but leaves
+   *  `offline_days` at 0, so the UI derives the day count from here. */
+  curl_updated_at?: string | null
   offline_days: number
   solution_type: string
   warranty_status: boolean
