@@ -986,11 +986,18 @@ const HLSLivePlayer = React.forwardRef<any, Props>((props, ref) => {
   // (untouched) HLS init see a falsy value and triggering downstream
   // network errors in dev tools. Callers can now pass `hlsUrl` directly
   // without wrapping in a conditional.
+  // `w-full h-full` matters: in the streaming branch the <video> carries
+  // `w-full h-full aspect-video` and gives the figure its box, but this branch
+  // has no video — without it the figure collapses to one text line pinned to
+  // the top of a fixed-height wrapper (the CCTV detail rail / marker panel,
+  // which set the height on the wrapper div instead of `figureClassName`).
+  // Parents with auto height resolve h-full → auto, so `aspect-video` callers
+  // (the grid cards) are unaffected.
   if (!hlsUrl) {
     return (
       <figure
         ref={containerRef as any}
-        className={`relative overflow-hidden bg-black/40 flex items-center justify-center ${figureClassName}`}
+        className={`relative overflow-hidden bg-black/40 w-full h-full flex items-center justify-center ${figureClassName}`}
         {...propsHLSLivePlayer}
       >
         <span className='text-white/50 text-xs'>ไม่มีสตรีม</span>
