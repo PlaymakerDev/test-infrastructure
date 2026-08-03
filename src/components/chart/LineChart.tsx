@@ -201,6 +201,22 @@ const formatAxisValue = (v: number) => {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(v)
 }
 
+/** Extra left padding to reserve for the y-axis labels, in px.
+ *
+ *  `containLabel` sizes the gutter from ECharts' own text measurement, which
+ *  uses the 11px it was handed in the option. Traffic-lighting / statistics
+ *  screens then force every small inline font-size up to 14px !important
+ *  (TrafficLightingMinimumFontSize), so the labels render ~27% wider than the
+ *  space reserved for them and spill past the card's left edge, where
+ *  `overflow-hidden` clips them — a long tick like "0.0004" lost its leading
+ *  digits. Reserve the shortfall so the number is always fully visible;
+ *  ~1.8px per character, which is a few px of harmless slack on screens that
+ *  don't apply the override. */
+const yAxisLabelPad = (labels: string[]) => {
+  const maxChars = labels.reduce((m, l) => Math.max(m, l.length), 0)
+  return maxChars > 0 ? Math.ceil(maxChars * 3 * 0.6) + 2 : 0
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -284,6 +300,24 @@ const LineChart: React.FC<LineChartProps> = ({
     return () => observer.disconnect()
   }, [adaptiveLabels])
 
+  /** Left gutter padding for the y-axis, derived from the tick labels that will
+   *  actually be drawn. Explicit `yAxisTicks` are known outright; otherwise the
+   *  formatter is sampled across the data's own range, which is what ECharts
+   *  bases its auto ticks on — the widest label always comes from the smallest
+   *  magnitude, since that is where {@link formatAxisValue} emits the most
+   *  decimals. */
+  const yAxisGutter = useMemo(() => {
+    if (yAxisTicks?.length) return yAxisLabelPad(yAxisTicks.map(formatAxisValue))
+    const values = data.flatMap((point) =>
+      lines.map((line) => point[line.dataKey]).filter((v): v is number => typeof v === 'number'),
+    )
+    if (values.length === 0) return 0
+    const maxAbs = Math.max(...values.map(Math.abs))
+    if (maxAbs === 0) return 0
+    // ECharts lands on ~4–5 ticks, so the smallest is around a fifth of the top.
+    return yAxisLabelPad([maxAbs, maxAbs / 5].map(formatAxisValue))
+  }, [yAxisTicks, data, lines])
+
   /** The step actually used for x-axis labels: `xAxisLabelEvery` when it fits,
    *  otherwise the next multiple of it that does. Staying on a multiple keeps
    *  the shown labels a subset of the ones the consumer asked for (an hourly
@@ -357,7 +391,7 @@ const LineChart: React.FC<LineChartProps> = ({
 
     return {
       backgroundColor: 'transparent',
-      grid: { top: gridTop, right: 16, bottom: gridBottom, left: 8, containLabel: true },
+      grid: { top: gridTop, right: 16, bottom: gridBottom, left: 8 + yAxisGutter, containLabel: true },
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -581,7 +615,7 @@ const LineChart: React.FC<LineChartProps> = ({
         }
       }),
     }
-  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipValueDecimals, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, effectiveLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop])
+  }, [data, lines, yAxisTicks, yAxisDomain, yAxisScale, secondaryYAxisTicks, secondaryYAxisDomain, tooltipDate, tooltipDateKey, tooltipDateSuffix, tooltipUnit, tooltipValueDecimals, tooltipShowDot, tooltipSimpleHeader, tooltipExtras, tooltipFooter, xAxisLabelRotate, xAxisLabelMaxWidth, xAxisLabelInterval, xAxisLabelEvery, effectiveLabelEvery, axisLabelColor, preserveNullValues, forceShowMaxXAxisLabel, xAxisBoundaryGap, gridBottom, gridTop, yAxisGutter])
 
   return (
     <div

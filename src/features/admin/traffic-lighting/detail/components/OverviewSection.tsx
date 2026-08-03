@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import MapEventSection from './MapEventSection'
 import RemoteControlCard from './RemoteControlCard'
 import StatusCardsColumn from './StatusCardsColumn'
+import ConnectionCircuitCards from './ConnectionCircuitCards'
 import VoltageAmpChartsRow from './VoltageAmpChartsRow'
 import DiagramIframe from '@/features/admin/traffic-lighting/shared/DiagramIframe'
 import { MapEdgeFade } from '@/components/map/BaseMap'
@@ -103,6 +104,21 @@ const OverviewSection: React.FC = () => {
             onToggleElectricalExpanded={() => setElectricalExpanded((v) => !v)}
           />
         </div>
+
+        {/* Connection/circuit pair, relocated out of the right rail while the
+            electrical card is expanded (StatusCardsColumn drops them then).
+            Anchored bottom-left because that whole area is dead space: the
+            left column is only ~170px tall against a row the expanded rail
+            stretches to ~880px. Bottom-anchored + absolute means they consume
+            no height of their own, so the row stays sized by the rail (880px)
+            instead of the old rail + cards stack (1140px). Below `md` the
+            absolute positioning is off and they simply flow last, which is
+            where they already ended up when expanded. */}
+        {electricalExpanded && (
+          <div className='w-full md:w-auto md:absolute md:bottom-0 md:left-0 md:z-10'>
+            <ConnectionCircuitCards direction='row' />
+          </div>
+        )}
       </div>
       <VoltageAmpChartsRow imei={imei} phase={project.phase} phaseReady={deviceLoaded} />
       <MapEventSection />
