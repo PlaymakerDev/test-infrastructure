@@ -56,7 +56,7 @@ const AddPointModal: React.FC<Props> = ({ open, onClose, editingPointId }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
           Input: {
             colorBorder: '#E5E5E5',
             activeBorderColor: '#FCD116',
@@ -96,7 +96,7 @@ const AddPointModal: React.FC<Props> = ({ open, onClose, editingPointId }) => {
         >
           <Form.Item
             label={
-              <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+              <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
                 ชื่อจุดติดตั้ง<span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
               </span>
             }

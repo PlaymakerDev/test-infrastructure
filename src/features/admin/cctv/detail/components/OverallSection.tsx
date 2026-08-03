@@ -42,12 +42,12 @@ const CameraCardList: React.FC<{ camera: PanelCamera; onSelect: () => void }> = 
       <div className='px-3 py-2 flex flex-col gap-0.5'>
         <p
           className='leading-snug line-clamp-2 cursor-pointer'
-          style={{ fontSize: 11, color: camera.online ? '#66AEFF' : '#E94C4C' }}
+          style={{ fontSize: "var(--fs-12)", color: camera.online ? '#66AEFF' : '#E94C4C' }}
           onClick={onSelect}
         >
           {camera.name}
         </p>
-        <p style={{ fontSize: 10, color: '#6b7280' }}>IP : {camera.ip}</p>
+        <p style={{ fontSize: "var(--fs-12)", color: '#6b7280' }}>IP : {camera.ip}</p>
       </div>
     </div>
   </div>

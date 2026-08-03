@@ -27,7 +27,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, sub, color, acc
     <p className='mb-0 leading-none'>
       <span className='fs-24 font-bold tabular-nums text-white'>{value}</span>
     </p>
-    <p className='fs-11 mb-0' style={{ color: accent ?? '#94a3b8' }}>
+    <p className='fs-12 mb-0' style={{ color: accent ?? '#94a3b8' }}>
       {sub || ''}
     </p>
   </div>

@@ -43,7 +43,13 @@ import type {
   APIResponseDepartmentList,
   APIResponseRegionList,
 } from '@/types/manage/department-api'
-import { APIResponseNotificationSummary } from '@/types/manage/notification-api'
+import {
+  APIRequestMarkCameraOutageRead,
+  APIResponseCameraOutageList,
+  APIResponseMarkCameraOutageRead,
+  APIResponseNotificationSummary,
+  CameraOutageListParams,
+} from '@/types/manage/notification-api'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
 // keys whose value is undefined / null / empty-string. Mirrors the
@@ -296,4 +302,28 @@ export const getNotificationsSummaryAPI = (start_date: string, end_date: string)
     url: '/manage/notifications/summary',
     method: 'GET',
     params: { start_date, end_date },
+  })
+
+/** GET /manage/notifications/camera-outage — per-camera stream-outage feed
+ *  (docs/notifications/FRONTEND_NOTIFICATIONS.md). Fixed sort started_at
+ *  DESC; success = HTTP 200 (GET success carries no res_code). JWT scopes
+ *  rows server-side — no role/scope params. Badge use: pass
+ *  { unread_only: true, status: 'open', since_hours: 24, limit: 1 } and read
+ *  meta_data.count. */
+export const getCameraOutageNotificationsAPI = (params: CameraOutageListParams) =>
+  ApiService.fetchData<APIResponseCameraOutageList>({
+    url: '/manage/notifications/camera-outage',
+    method: 'GET',
+    params,
+  })
+
+/** POST /manage/notifications/camera-outage/read — mark `{ids:[...]}` (≤500
+ *  per call) or `{all:true}` (everything visible to the user, ignores
+ *  since_hours). Idempotent: repeats give marked:0, never an error. Read
+ *  state is per-user. */
+export const markCameraOutageReadAPI = (body: APIRequestMarkCameraOutageRead) =>
+  ApiService.fetchData<APIResponseMarkCameraOutageRead>({
+    url: '/manage/notifications/camera-outage/read',
+    method: 'POST',
+    data: body,
   })

@@ -115,7 +115,7 @@ const IncidentDetailContent: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-            <p style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 400 }}>
+            <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
               {detailLabel || '-'}
             </p>
             <img
@@ -138,7 +138,7 @@ const IncidentDetailContent: React.FC = () => {
                 padding: '4px 10px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{ fontSize: 14, fontWeight: 500, color: warrantyColor }}>{warrantyLabel}</span>
+                <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: warrantyColor }}>{warrantyLabel}</span>
               </div>
             )}
             {routeItem && (
@@ -149,7 +149,7 @@ const IncidentDetailContent: React.FC = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: (routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00', flexShrink: 0 }} />
-                <span style={{ fontSize: 14, fontWeight: 500, color: (routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00' }}>
+                <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: (routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00' }}>
                   {routeItem.sub3.length > 263 ? '263+' : routeItem.sub3.length}
                 </span>
               </div>
@@ -161,7 +161,7 @@ const IncidentDetailContent: React.FC = () => {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
               <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={12} height={12} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#FFFFFF' }}>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</span>
+              <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF' }}>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</span>
             </div>
             <button
               type="button"
@@ -180,10 +180,10 @@ const IncidentDetailContent: React.FC = () => {
                 opacity: coord ? 1 : 0.5,
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
+              <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
             </button>
             <fieldset style={{ flexShrink: 0, marginLeft: 'auto' }}>
-              <label className='block text-[14px] text-(--yellow)'>วันที่แสดงข้อมูล</label>
+              <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
               <RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null)}

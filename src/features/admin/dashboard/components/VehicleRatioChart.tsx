@@ -15,13 +15,13 @@ interface VehicleConfig {
 }
 
 const VEHICLES: VehicleConfig[] = [
-  { key: 'car',     name: 'รถยนต์',         color: '#f87171' },
-  { key: 'bike',    name: 'รถจักรยานยนต์',  color: '#34d399' },
-  { key: 'pickup',  name: 'รถกระบะ',        color: '#60a5fa' },
-  { key: 'truck',   name: 'รถบรรทุก',       color: '#7dd3fc' },
-  { key: 'trailer', name: 'รถพ่วง',         color: '#fbbf24' },
-  { key: 'taxi',    name: 'รถแท็กซี่',      color: '#a3e635' },
-  { key: 'bus',     name: 'รถบัส',          color: '#c084fc' },
+  { key: 'car', name: 'รถยนต์', color: '#f87171' },
+  { key: 'bike', name: 'รถจักรยานยนต์', color: '#34d399' },
+  { key: 'pickup', name: 'รถกระบะ', color: '#60a5fa' },
+  { key: 'truck', name: 'รถบรรทุก', color: '#7dd3fc' },
+  { key: 'trailer', name: 'รถพ่วง', color: '#fbbf24' },
+  { key: 'taxi', name: 'รถแท็กซี่', color: '#a3e635' },
+  { key: 'bus', name: 'รถบัส', color: '#c084fc' },
 ]
 
 interface VehicleRow {
@@ -71,7 +71,7 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
       {/* Title only — period tabs (วันนี้ / เดือน / ปี) intentionally hidden until
         * the API exposes range-scoped vehicle counts (current endpoint = today). */}
       <div className='flex items-center justify-between mb-1'>
-        <div className='flex items-center gap-1.5 text-white text-sm font-medium'>
+        <div className='flex items-center gap-1.5 text-white fs-12 font-medium'>
           <TbCar size={30} color='#FCD116' />
           สัดส่วนยานพาหนะ
         </div>
@@ -106,7 +106,7 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
         {rows.map((d) => (
           <div
             key={d.name}
-            className='flex items-center text-sm'
+            className='flex items-center fs-12'
             style={{ paddingTop: 5, paddingBottom: 5 }}
           >
             <div
@@ -122,7 +122,7 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
           </div>
         ))}
         <div
-          className='flex items-center text-sm border-t'
+          className='flex items-center fs-12 border-t'
           style={{
             paddingTop: 5,
             paddingBottom: 5,

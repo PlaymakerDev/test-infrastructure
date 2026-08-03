@@ -83,7 +83,7 @@ const DetectionSection: React.FC = () => {
             <div className='fs-13 text-white tabular-nums'>
               {dayjs(r.captured_at).format('DD MMM · HH:mm:ss')}
             </div>
-            <div className='fs-11 text-gray-500'>
+            <div className='fs-12 text-gray-500'>
               {dayjs(r.captured_at).locale('th').fromNow()}
             </div>
           </div>
@@ -110,7 +110,7 @@ const DetectionSection: React.FC = () => {
               <div className='fs-14 font-bold text-white tabular-nums'>
                 {r.plate_number || '-'}
               </div>
-              <div className='fs-11 text-gray-400'>{r.plate_province || ''}</div>
+              <div className='fs-12 text-gray-400'>{r.plate_province || ''}</div>
             </div>
           </div>
         ),
@@ -121,7 +121,7 @@ const DetectionSection: React.FC = () => {
         render: (_, r) => (
           <div>
             <div className='fs-13 text-white'>{r.vehicle_type_name || '-'}</div>
-            <div className='fs-11 text-gray-400'>
+            <div className='fs-12 text-gray-400'>
               {[r.vehicle_brand, r.vehicle_color !== '-' ? r.vehicle_color : null]
                 .filter(Boolean)
                 .join(' · ') || '-'}
@@ -131,22 +131,22 @@ const DetectionSection: React.FC = () => {
       },
       ...(hasSpeed
         ? [
-            {
-              title: 'ความเร็ว',
-              key: 'speed',
-              width: 100,
-              align: 'right' as const,
-              render: (_: unknown, r: LPRPointPlate) =>
-                r.speed != null && r.speed > 0 ? (
-                  <span className='tabular-nums text-white'>
-                    {r.speed.toLocaleString('th-TH')}{' '}
-                    <span className='fs-11 text-gray-500'>กม./ชม.</span>
-                  </span>
-                ) : (
-                  <span className='text-gray-500'>-</span>
-                ),
-            },
-          ]
+          {
+            title: 'ความเร็ว',
+            key: 'speed',
+            width: 100,
+            align: 'right' as const,
+            render: (_: unknown, r: LPRPointPlate) =>
+              r.speed != null && r.speed > 0 ? (
+                <span className='tabular-nums text-white'>
+                  {r.speed.toLocaleString('th-TH')}{' '}
+                  <span className='fs-12 text-gray-500'>กม./ชม.</span>
+                </span>
+              ) : (
+                <span className='text-gray-500'>-</span>
+              ),
+          },
+        ]
         : []),
       {
         title: 'กล้อง',
@@ -169,7 +169,7 @@ const DetectionSection: React.FC = () => {
         align: 'center',
         render: (v: LPRSource) => (
           <span
-            className='fs-11 font-semibold px-2 py-0.5 rounded-full'
+            className='fs-12 font-semibold px-2 py-0.5 rounded-full'
             style={{
               background: `${SOURCE_COLOR[v]}22`,
               color: SOURCE_COLOR[v],
@@ -212,7 +212,7 @@ const DetectionSection: React.FC = () => {
                 key={p.label}
                 type='button'
                 onClick={() => applyPreset(p.d)}
-                className='fs-11 px-2 py-1 rounded-md bg-(--light-black) text-gray-300 hover:text-white hover:bg-black/40 transition-colors'
+                className='fs-12 px-2 py-1 rounded-md bg-(--light-black) text-gray-300 hover:text-white hover:bg-black/40 transition-colors'
               >
                 {p.label}
               </button>
@@ -220,7 +220,7 @@ const DetectionSection: React.FC = () => {
             <button
               type='button'
               onClick={clearAll}
-              className='fs-11 px-2 py-1 rounded-md text-gray-500 hover:text-(--yellow) transition-colors'
+              className='fs-12 px-2 py-1 rounded-md text-gray-500 hover:text-(--yellow) transition-colors'
             >
               ล้างตัวกรอง
             </button>
@@ -255,11 +255,10 @@ const DetectionSection: React.FC = () => {
                 key={s}
                 type='button'
                 onClick={() => setSourceFilter(s)}
-                className={`px-3 py-1.5 rounded-md fs-12 transition-colors ${
-                  sourceFilter === s
+                className={`px-3 py-1.5 rounded-md fs-12 transition-colors ${sourceFilter === s
                     ? 'bg-(--yellow) text-black font-semibold'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
               >
                 {s === 'all' ? 'ทั้งหมด' : SOURCE_LABEL[s]}
               </button>
@@ -274,7 +273,7 @@ const DetectionSection: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className='md:ms-auto fs-11 text-gray-400'>
+          <div className='md:ms-auto fs-12 text-gray-400'>
             แสดง {rows.length.toLocaleString('th-TH')} รายการ
             {isFetching && ' · กำลังโหลด…'}
           </div>

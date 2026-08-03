@@ -23,13 +23,13 @@ export const usePostOpenBridgeLighting = () => {
       const FONT = 'var(--font-ibm-plex-sans-thai)'
       Modal.success({
         title: (
-          <span className='text-[14px]! font-normal! block' style={{ fontFamily: FONT }}>
+          <span className='fs-12! font-normal! block' style={{ fontFamily: FONT }}>
             {isOn ? 'เปิดไฟประดับสะพานสำเร็จ' : 'ปิดไฟประดับสะพานสำเร็จ'}
           </span>
         ),
         icon: <CheckCircleFilled style={{ color: '#66AEFF' }} />,
         content: (
-          <span className='text-[14px]! block' style={{ fontFamily: FONT }}>
+          <span className='fs-12! block' style={{ fontFamily: FONT }}>
             ระบบส่งคำสั่งไปยังอุปกรณ์เรียบร้อยแล้ว สถานะจะอัพเดตอัตโนมัติภายในไม่กี่วินาที
           </span>
         ),

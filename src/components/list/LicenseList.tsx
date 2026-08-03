@@ -60,7 +60,7 @@ export interface LicenseListProps {
 }
 
 const TEXT_PRESETS = {
-  default: { plate: '', meta: 'text-sm', badge: 'text-sm', timestamp: 'text-xs' },
+  default: { plate: '', meta: 'fs-12', badge: 'fs-12', timestamp: 'fs-12' },
   // fs-22 → 24px desktop; fs-12 → 14px desktop.
   lpr: { plate: 'fs-22', meta: 'fs-12', badge: 'fs-12', timestamp: 'fs-12' },
 } as const

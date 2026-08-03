@@ -8,6 +8,7 @@ import { TAB_TO_TYPE, useDashboardContext } from '../context'
 import { useDeptId } from '@/hooks/useDeptId'
 import { DashboardBucketType } from '@/types/dashboard/api'
 import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
+import { Tooltip } from 'antd'
 
 interface Props {
   /**
@@ -96,7 +97,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         title={`แจ้งเตือนอุบัติการณ์ · ${count.toLocaleString('th-TH')} รายการวันนี้ (ทุกจุด)`}
       >
         <TbAlertTriangle size={16} color="#f5c842" />
-        <span className="text-[#f5c842] text-sm font-bold leading-none tabular-nums">
+        <span className="text-[#f5c842] fs-12 font-bold leading-none tabular-nums">
           {isLoading ? '…' : fmt(count)}
         </span>
       </div>
@@ -115,33 +116,43 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
       }}
       title="คลิกเพื่อดูอุบัติการณ์ทุกจุดติดตั้งวันนี้"
     >
-      <div
-        className="flex items-center gap-3 px-4 py-2"
-        style={{
-          background: "rgba(10,14,26,0.95)",
-          borderRadius: 19,
-          backdropFilter: "blur(5px)",
-        }}
+      <Tooltip
+        title={isLoading
+          ? 'กำลังโหลด…'
+          : count === 0
+            ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
+            : topLabel
+              ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
+              : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
       >
-        <div className="rounded-lg p-1.5" style={{ background: "rgba(245,200,66,0.12)" }}>
-          <TbAlertTriangle size={24} color="#f5c842" />
-        </div>
-        <div className="flex-1 leading-tight min-w-0">
-          <div className="text-white text-sm font-medium">แจ้งเตือนอุบัติการณ์</div>
-          <div className="text-[#6b7f9a] text-[11px] truncate">
-            {isLoading
-              ? 'กำลังโหลด…'
-              : count === 0
-                ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
-                : topLabel
-                  ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
-                  : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
+        <div
+          className="flex items-center gap-3 px-4 py-2"
+          style={{
+            background: "rgba(10,14,26,0.95)",
+            borderRadius: 19,
+            backdropFilter: "blur(5px)",
+          }}
+        >
+          <div className="rounded-lg p-1.5" style={{ background: "rgba(245,200,66,0.12)" }}>
+            <TbAlertTriangle size={24} color="#f5c842" />
+          </div>
+          <div className="flex-1 leading-tight min-w-0">
+            <div className="text-white fs-12 font-medium">แจ้งเตือนอุบัติการณ์</div>
+            <div className="text-[#6b7f9a] fs-12 truncate">
+              {isLoading
+                ? 'กำลังโหลด…'
+                : count === 0
+                  ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
+                  : topLabel
+                    ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
+                    : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
+            </div>
+          </div>
+          <div className="text-[#f5c842] text-3xl font-bold leading-none tabular-nums shrink-0">
+            {(isLoading || isAnalyticLoading) ? '—' : fmt(getCount)}
           </div>
         </div>
-        <div className="text-[#f5c842] text-3xl font-bold leading-none tabular-nums shrink-0">
-          {(isLoading || isAnalyticLoading) ? '—' : fmt(getCount)}
-        </div>
-      </div>
+      </Tooltip>
     </div>
   )
 }

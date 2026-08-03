@@ -19,14 +19,14 @@ const InfoStat: React.FC<{ icon: React.ReactNode; label: string; children: React
 }) => (
   <div className='flex flex-col items-center gap-1'>
     <span style={{ color: '#66AEFF' }}>{icon}</span>
-    <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>{label}</span>
-    <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>{children}</div>
+    <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: "var(--fs-12)" }}>{label}</span>
+    <div style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</div>
   </div>
 )
 
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
   <span
-    className='inline-flex items-center px-3 py-0.5 rounded-full text-xs'
+    className='inline-flex items-center px-3 py-0.5 rounded-full fs-12'
     style={{ border: `1px solid ${color}`, color }}
   >
     {text}
@@ -56,7 +56,7 @@ const LiveStreamModal: React.FC<Props> = ({ open, equipment, pointLabel, onClose
           <TbPlayerPlay size={22} style={{ color: '#66AEFF' }} />
           <h3 style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 700, margin: 0 }}>Live Stream</h3>
         </div>
-        <p style={{ color: '#66AEFF', fontSize: 13, wordBreak: 'break-word', margin: 0, marginBottom: 16 }}>
+        <p style={{ color: '#66AEFF', fontSize: "var(--fs-12)", wordBreak: 'break-word', margin: 0, marginBottom: 16 }}>
           {equipment?.name}
         </p>
 

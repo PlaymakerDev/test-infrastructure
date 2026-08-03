@@ -79,9 +79,9 @@ const MapSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
         popup={(f) => (
           <div style={{ padding: '8px 10px', background: 'rgba(5,13,26,0.96)', borderRadius: 8, border: `1px solid ${SYSTEM_BRIGHT.LPR}`, minWidth: 170 }}>
             <div style={{ fontSize: 10, color: SYSTEM_BRIGHT.LPR, fontWeight: 700 }}>LPR</div>
-            <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName || '-'}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: 11, fontWeight: 600 }}>
+            <div style={{ fontSize: "var(--fs-12)", color: '#fff', fontWeight: 600, marginTop: 2 }}>{f.properties?.codeName || '-'}</div>
+            <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8', marginTop: 2 }}>{f.properties?.solutionName}</div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4, fontSize: "var(--fs-12)", fontWeight: 600 }}>
               <span style={{ color: '#66AEFF' }}>กล้อง {Number(f.properties?.cameraCount ?? 0).toLocaleString()}</span>
               <span style={{ color: '#FCD116' }}>วันนี้ {Number(f.properties?.eventsToday ?? 0).toLocaleString()}</span>
             </div>

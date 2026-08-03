@@ -39,7 +39,7 @@ const StatCard: React.FC<StatCardProps> = ({
     </div>
 
     {/* Label — colored accent */}
-    <p className='font-semibold text-xs sm:text-sm leading-tight' style={{ color }}>
+    <p className='font-semibold fs-12 sm:fs-12 leading-tight' style={{ color }}>
       {label}
     </p>
 
@@ -48,11 +48,11 @@ const StatCard: React.FC<StatCardProps> = ({
       <span className='font-bold text-3xl sm:text-4xl tabular-nums leading-none text-white'>
         {value.toLocaleString()}
       </span>
-      <span className='text-white/70 text-[11px] sm:text-xs'>{unit}</span>
+      <span className='text-white/70 fs-12 sm:fs-12'>{unit}</span>
     </div>
 
     {/* Active line */}
-    <p className='text-white/50 text-[11px] sm:text-xs mt-auto'>
+    <p className='text-white/50 fs-12 sm:fs-12 mt-auto'>
       Active : {active} ({activePercent.toFixed(1)}%)
     </p>
   </div>
@@ -110,7 +110,7 @@ const StatsSectionBridgeLighting: React.FC<Props> = ({
         active={expiredActive}
         activePercent={pct(expiredActive, expired)}
         color='#979797'
-        // no tint — plain dark card per Figma
+      // no tint — plain dark card per Figma
       />
     </div>
   )

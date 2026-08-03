@@ -23,13 +23,13 @@ interface FormShape {
 }
 
 const labelReq = (t: string) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {t}
     <span style={{ color: '#FF3B3B', marginLeft: 2 }}>*</span>
   </span>
 )
 const labelOpt = (t: string) => (
-  <span style={{ color: '#1F1F1F', fontSize: 14, fontWeight: 500 }}>{t}</span>
+  <span style={{ color: '#1F1F1F', fontSize: "var(--fs-12)", fontWeight: 500 }}>{t}</span>
 )
 
 const toGeometry = (lat: string, lng: string) => ({
@@ -69,8 +69,8 @@ const AddCCTVEquipmentModal: React.FC<Props> = ({ open, taskId, onClose }) => {
       }
       message.error(
         anyErr?.response?.data?.res_data?.message ??
-          anyErr?.message ??
-          'เพิ่มอุปกรณ์ไม่สำเร็จ',
+        anyErr?.message ??
+        'เพิ่มอุปกรณ์ไม่สำเร็จ',
       )
     }
   }
@@ -87,7 +87,7 @@ const AddCCTVEquipmentModal: React.FC<Props> = ({ open, taskId, onClose }) => {
             titleColor: '#1F1F1F',
             borderRadiusLG: 16,
           },
-          Form: { labelColor: '#1F1F1F', labelFontSize: 14 },
+          Form: { labelColor: '#1F1F1F', labelfontSize: "var(--fs-12)" },
           Input: {
             colorBorder: '#E5E5E5',
             activeBorderColor: '#FCD116',
@@ -134,7 +134,7 @@ const AddCCTVEquipmentModal: React.FC<Props> = ({ open, taskId, onClose }) => {
               background: 'transparent',
               borderRadius: 999,
               padding: '4px 14px',
-              fontSize: 13,
+              fontSize: "var(--fs-12)",
             }}
           >
             {activeRoute?.code}

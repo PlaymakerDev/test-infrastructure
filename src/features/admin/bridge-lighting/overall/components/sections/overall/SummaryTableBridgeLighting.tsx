@@ -40,7 +40,7 @@ const TOTAL_COLS = SHOW_PROJECT_NAME ? 6 : 5
  *  crosswalk / traffic-signal / vms overall-list tables. */
 const Pill: React.FC<{ text: string; color: string; icon?: React.ReactNode }> = ({ text, color, icon }) => (
   <span
-    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {icon}
@@ -148,7 +148,7 @@ const SummaryTableBridgeLighting: React.FC<Props> = ({ data, loading }) => {
               <div className='flex items-center gap-3'>
                 <span className='text-white font-bold'>{row.label}</span>
                 <span
-                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
                   style={{ border: '1px solid #fff', color: '#fff' }}
                 >
                   {row.count} โครงการ

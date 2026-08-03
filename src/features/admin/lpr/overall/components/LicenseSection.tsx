@@ -93,13 +93,13 @@ const MapSection: React.FC = () => {
         <div className='absolute bottom-3 left-3 right-3 z-10 rounded-lg bg-black/70 backdrop-blur-sm px-4 py-3 flex flex-col gap-1'>
           <div className='flex items-center gap-2'>
             <div className='shrink-0 w-6 h-6 rounded-full bg-(--yellow)/20 flex items-center justify-center'>
-              <TbMapPin className='text-(--yellow) text-xs' />
+              <TbMapPin className='text-(--yellow) fs-12' />
             </div>
             <p className='fs-12 text-(--yellow) font-medium'>
               {activeIndex === 0 ? 'จุดที่ตรวจจับล่าสุด' : 'จุดที่ตรวจจับ'}
             </p>
           </div>
-          <p className='text-white leading-snug text-sm'>{active.detection_point}</p>
+          <p className='text-white leading-snug fs-12'>{active.detection_point}</p>
           {activeCoordsText && <p className='fs-12 text-white/60'>{activeCoordsText}</p>}
         </div>
       )}

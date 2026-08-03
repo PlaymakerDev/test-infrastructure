@@ -53,7 +53,7 @@ const ContractorSummaryScreen: React.FC = () => {
       render: (_: unknown, r) => (
         <div className='min-w-0'>
           <div className='text-white font-medium truncate'>{r.company_name || r.short_name}</div>
-          <div className='text-white/50 text-[11px] uppercase tracking-wide'>{r.short_name}</div>
+          <div className='text-white/50 fs-12 uppercase tracking-wide'>{r.short_name}</div>
         </div>
       ),
     },
@@ -62,7 +62,7 @@ const ContractorSummaryScreen: React.FC = () => {
       key: 'contact',
       width: 260,
       render: (_: unknown, r) => (
-        <div className='min-w-0 space-y-0.5 text-[12px]'>
+        <div className='min-w-0 space-y-0.5 fs-12'>
           <div className='flex items-center gap-1.5 text-white/80'>
             <TbMail size={14} className='shrink-0' />
             <span className='truncate'>{r.email || <span className='text-white/40'>—</span>}</span>
@@ -95,12 +95,12 @@ const ContractorSummaryScreen: React.FC = () => {
     // Per-type: show "<offline> / <total>" so operators can read both scale + trouble at a glance.
     ...(
       [
-        ['CCTV',     'cctv_offline',            'cctv_total'],
-        ['Traffic',  'traffic_offline',         'traffic_total'],
-        ['VMS',      'vms_offline',             'vms_total'],
-        ['Lighting', 'lighting_offline',        'lighting_total'],
-        ['B.Light',  'bridge_lighting_offline', 'bridge_lighting_total'],
-        ['WIM',      'wim_offline',             'wim_total'],
+        ['CCTV', 'cctv_offline', 'cctv_total'],
+        ['Traffic', 'traffic_offline', 'traffic_total'],
+        ['VMS', 'vms_offline', 'vms_total'],
+        ['Lighting', 'lighting_offline', 'lighting_total'],
+        ['B.Light', 'bridge_lighting_offline', 'bridge_lighting_total'],
+        ['WIM', 'wim_offline', 'wim_total'],
       ] as const
     ).map(([label, offlineKey, totalKey]) => ({
       title: label,
@@ -153,7 +153,7 @@ const ContractorSummaryScreen: React.FC = () => {
       <MaintenanceMinimumFontSize />
       <div className='mb-6'>
         <h1 className='text-white text-2xl font-semibold mb-1'>สรุปผู้รับจ้าง</h1>
-        <p className='text-white/50 text-sm'>
+        <p className='text-white/50 fs-12'>
           ภาพรวมความรับผิดชอบของแต่ละผู้รับจ้าง — จำนวนอุปกรณ์ทั้งหมด, จำนวนที่ออฟไลน์อยู่ปัจจุบัน,
           และเคสที่ยังไม่ปิด ค่าออฟไลน์ยึดจาก is_online เดียวกับที่แผนที่หน้า Dashboard ใช้.
         </p>
@@ -198,7 +198,7 @@ const StatTile: React.FC<{ label: string; value: number; accent?: string }> = ({
     className='px-4 py-3 rounded-lg'
     style={{ background: 'rgba(0,0,0,0.5)', border: `1px solid ${accent}33` }}
   >
-    <div className='text-white/60 text-xs mb-1'>{label}</div>
+    <div className='text-white/60 fs-12 mb-1'>{label}</div>
     <div className='text-2xl font-bold tabular-nums' style={{ color: accent }}>
       {value.toLocaleString('th-TH')}
     </div>

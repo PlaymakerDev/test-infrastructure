@@ -115,10 +115,10 @@ const renderCount = (count: string) => {
   const [left, right] = count.split('/')
   const l = parseInt(left, 10)
   const r = parseInt(right, 10)
-  if (l === r) return <span style={{ fontSize: 12, fontWeight: 500, color: '#FFFFFF', width: 28, textAlign: 'right' }}>{count}</span>
-  if (l === 0) return <span style={{ fontSize: 12, fontWeight: 500, color: '#E94C4C', width: 28, textAlign: 'right' }}>{count}</span>
+  if (l === r) return <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF', width: 28, textAlign: 'right' }}>{count}</span>
+  if (l === 0) return <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#E94C4C', width: 28, textAlign: 'right' }}>{count}</span>
   return (
-    <span style={{ fontSize: 12, fontWeight: 500, width: 28, textAlign: 'right' }}>
+    <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, width: 28, textAlign: 'right' }}>
       <span style={{ color: '#05F2DB' }}>{left}</span>
       <span style={{ color: '#FCD116' }}>/{right}</span>
     </span>
@@ -132,7 +132,7 @@ const renderCount = (count: string) => {
 const renderBadge = (value: number | string, color: string, maxChars: number) => (
   <span
     style={{
-      fontSize: 12,
+      fontSize: "var(--fs-12)",
       fontWeight: 500,
       fontVariantNumeric: 'tabular-nums',
       color,
@@ -353,7 +353,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
         key: item.name,
         label: (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
+            <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{item.name}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {!hideIndexBadge && (() => {
                 const badgeColor = badgeColorFn
@@ -382,7 +382,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
               key: `${item.name}-${sub.label}`,
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
+                  <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0 }}>{sub.label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
                     {!hideIndexBadge && (() => {
                       const subBadgeColor = subBadgeColorFn
@@ -403,16 +403,16 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   {sub.detail.map((d) => {
                     const isOnline = typeof d === 'string' ? sub.connected : (d.connected ?? sub.connected)
                     return (
-                    <div
-                      key={detailKey(d)}
-                      onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
-                    >
-                      <span style={{ fontSize: 12, fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
+                      <div
+                        key={detailKey(d)}
+                        onClick={() => router.push(`${detailUrl}?route=${encodeURIComponent(routeKey(item))}&detail=${encodeURIComponent(detailKey(d))}`)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#000000', borderRadius: 8, paddingBlock: 12, paddingInline: 16, marginBottom: 4, cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#FCD116', flex: 1, minWidth: 0, paddingLeft: 36 }}>{detailLabel(d)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt={isOnline ? 'connected' : 'disconnected'} width={20} height={20} />
+                        </div>
                       </div>
-                    </div>
                     )
                   })}
                 </div>
@@ -542,7 +542,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                         width: 50, height: 50, borderRadius: '50%',
                         backgroundColor: bgColor,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 13, fontWeight: 700, color: '#000000',
+                        fontSize: "var(--fs-12)", fontWeight: 700, color: '#000000',
                         boxShadow: `0 0 12px ${shadow}`,
                         cursor: 'pointer',
                       }}
@@ -586,7 +586,7 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                   <img src={card.icon} alt="" className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 shrink-0" />
                   <p
                     lang="th"
-                    className="text-[10px] sm:text-[11px] lg:text-sm font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
+                    className="text-[10px] sm:fs-12 lg:fs-12 font-bold m-0 pt-0.5 leading-[1.65] overflow-visible"
                     style={{ color: card.labelColor }}
                   >
                     {card.label}
@@ -594,9 +594,9 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
                 </div>
                 <div className="flex items-baseline gap-0.5 sm:gap-1">
                   <span className="text-base sm:text-lg lg:text-[28px] font-bold text-white leading-none">{card.value}</span>
-                  {card.unit && <span className="text-[8px] sm:text-[9px] lg:text-xs text-white">{card.unit}</span>}
+                  {card.unit && <span className="text-[8px] sm:text-[9px] lg:fs-12 text-white">{card.unit}</span>}
                 </div>
-                <p className="text-[8px] sm:text-[9px] lg:text-xs text-[#979797] m-0 line-clamp-2">{card.sub}</p>
+                <p className="text-[8px] sm:text-[9px] lg:fs-12 text-[#979797] m-0 line-clamp-2">{card.sub}</p>
               </div>
             ))}
           </MapOverlayPanel>

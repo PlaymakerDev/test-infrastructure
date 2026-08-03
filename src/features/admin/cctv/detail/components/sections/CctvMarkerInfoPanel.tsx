@@ -20,7 +20,7 @@ interface Props {
 
 const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
   <span
-    className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${online ? '#66AEFF' : '#E94C4C'}`, color: online ? '#66AEFF' : '#E94C4C' }}
   >
     {online ? 'ออนไลน์' : 'ออฟไลน์'}
@@ -29,7 +29,7 @@ const StatusPill: React.FC<{ online: boolean }> = ({ online }) => (
 
 const ConnectPill: React.FC<{ online: boolean }> = ({ online }) => (
   <span
-    className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${online ? '#66AEFF' : '#E94C4C'}`, color: online ? '#66AEFF' : '#E94C4C' }}
   >
     {online ? 'Connect' : 'Disconnect'}
@@ -144,7 +144,7 @@ const CctvMarkerInfoPanel: React.FC<Props> = ({ cameras, onClose, onOpenLive }) 
             * (name 11px, IP 10px) — the fs-12/fs-12 utilities clamp up to 12px
             * on wide screens, so inline px is used to match the list exactly. */}
           <div className='px-3 pt-2.5 pb-5'>
-            <p className='leading-snug wrap-break-word line-clamp-2 mb-1' style={{ fontSize: 11, color: online ? '#66AEFF' : '#E94C4C' }}>
+            <p className='leading-snug wrap-break-word line-clamp-2 mb-1' style={{ fontSize: "var(--fs-12)", color: online ? '#66AEFF' : '#E94C4C' }}>
               {cam?.camera_name ?? cameras.find((c) => c.id === selectedId)?.name ?? '-'}
             </p>
             <p className='mb-0' style={{ fontSize: 10, color: '#6b7280' }}>IP Address : {cam?.ip_address || '-'}</p>

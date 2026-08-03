@@ -177,7 +177,7 @@ export const WithPopup: Story = {
           }}
         >
           <div style={{ fontWeight: 700, color: '#66FF9E' }}>{p.label}</div>
-          <div style={{ fontSize: 11, color: '#94a3b8' }}>id: {p.id}</div>
+          <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8' }}>id: {p.id}</div>
         </div>
       )
     },

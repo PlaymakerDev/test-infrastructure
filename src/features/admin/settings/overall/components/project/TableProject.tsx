@@ -150,7 +150,7 @@ const TableProject: React.FC<Props> = ({ onEdit, onDelete, scrollY }) => {
     <>
       {isError && (
         <div
-          className='mb-3 rounded-lg px-3 py-2 text-sm'
+          className='mb-3 rounded-lg px-3 py-2 fs-12'
           style={{ background: 'rgba(255,102,102,0.1)', color: '#FF6666', border: '1px solid #FF6666' }}
         >
           {errorMessage ?? 'ไม่สามารถโหลดข้อมูลโครงการได้'}

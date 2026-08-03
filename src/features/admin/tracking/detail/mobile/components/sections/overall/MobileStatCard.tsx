@@ -54,7 +54,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
             <p className="mb-0">{fmtNumber(Number(data?.max_grossweight_over), 1) || 0} ตัน</p>
           </section>
           <div className="flex items-center justify-end gap-1 mt-1">
-            <InfoCircleOutlined className="text-xs! text-red-500!" />
+            <InfoCircleOutlined className="fs-12! text-red-500!" />
             <p className="text-red-500 fs-12 mb-0">เกินพิกัด {fmtNumber(Number(data?.max_grossweight_over_percent)) || 0}%</p>
           </div>
         </div>
@@ -76,7 +76,7 @@ const MobileStatCard: React.FC<Props> = (props) => {
             <p className="mb-0">{fmtNumber(Number(data?.axis_over_gross_weight), 1) || 0} ตัน</p>
           </section>
           {/* <div className="flex items-center justify-end gap-1 mt-1">
-            <InfoCircleOutlined className="text-xs! text-orange-500!" />
+            <InfoCircleOutlined className="fs-12! text-orange-500!" />
             <p className="text-orange-500 fs-12 mb-0">เกินพิกัด 25%</p>
           </div> */}
         </div>

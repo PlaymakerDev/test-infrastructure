@@ -100,7 +100,7 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
           <button
             key={type}
             onClick={() => toggle(type)}
-            className="group flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap shrink-0"
+            className="group flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full fs-12 font-medium transition-all whitespace-nowrap shrink-0"
             style={{
               background: active ? color : 'transparent',
               color: active ? '#fff' : 'rgba(255,255,255,0.5)',
@@ -120,7 +120,7 @@ const SystemFilterPills: React.FC<SystemFilterPillsProps> = ({
       })}
       <button
         onClick={reset}
-        className="ml-1 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[14px] text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
+        className="ml-1 px-2 sm:px-2.5 py-1 sm:py-1.5 fs-12 text-[#6b7f9a] hover:text-white transition-colors whitespace-nowrap shrink-0"
         title={allOn ? 'ซ่อนทั้งหมด' : 'แสดงทั้งหมด'}
       >
         {noneOn ? '↻ แสดงทั้งหมด' : allOn ? '✕ ซ่อนทั้งหมด' : '↻ รีเซ็ต'}

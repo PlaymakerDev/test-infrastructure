@@ -104,7 +104,7 @@ const TableLatestStation: React.FC<Props> = (props) => {
       render: (value, record) => {
         const status = record._isMissing ? 'ระบบขัดข้อง' : getStatus(value, record.total)
         return (
-          <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
+          <span className={`inline-block py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
             {status}
           </span>
         )

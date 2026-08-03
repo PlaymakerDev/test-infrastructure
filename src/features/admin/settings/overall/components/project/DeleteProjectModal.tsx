@@ -26,7 +26,7 @@ const CANCEL_BG = '#E5E5E5'
 const CANCEL_FG = '#4A4A4A'
 
 const InfoRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className='flex items-start' style={{ gap: 8, fontSize: 14 }}>
+  <div className='flex items-start' style={{ gap: 8, fontSize: "var(--fs-12)" }}>
     <span style={{ color: LABEL_MUTED, flexShrink: 0 }}>{label}&nbsp;:</span>
     <span style={{ color: VALUE_FG, wordBreak: 'break-word' }}>{children}</span>
   </div>
@@ -114,7 +114,7 @@ const DeleteProjectModal: React.FC<Props> = ({ open, project, onClose }) => {
             <p
               style={{
                 color: '#8A8A8A',
-                fontSize: 13,
+                fontSize: "var(--fs-12)",
                 marginTop: 6,
                 marginBottom: 0,
               }}
@@ -143,7 +143,7 @@ const DeleteProjectModal: React.FC<Props> = ({ open, project, onClose }) => {
               <InfoRow label='ผู้รับจ้าง'>{project.contractor}</InfoRow>
               <InfoRow label='วันที่เริ่มต้นค้ำประกัน'>{formatBuddhistDate(project.warrantyStart)}</InfoRow>
               <InfoRow label='วันที่สิ้นสุดค้ำประกัน'>{formatBuddhistDate(project.warrantyEnd)}</InfoRow>
-              <div className='flex items-center' style={{ gap: 8, fontSize: 14 }}>
+              <div className='flex items-center' style={{ gap: 8, fontSize: "var(--fs-12)" }}>
                 <span style={{ color: LABEL_MUTED }}>สถานะค้ำประกัน&nbsp;:</span>
                 <StatusBadge status={project.warrantyStatus} />
               </div>

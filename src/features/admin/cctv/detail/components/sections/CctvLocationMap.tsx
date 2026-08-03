@@ -153,7 +153,7 @@ const PopupCameraList: React.FC<{
       overflowY: 'auto',
     }}
   >
-    <div style={{ fontSize: 11, color: '#FCD116', fontWeight: 700, padding: '2px 4px 6px' }}>
+    <div style={{ fontSize: "var(--fs-12)", color: '#FCD116', fontWeight: 700, padding: '2px 4px 6px' }}>
       กล้อง {cameras.length} ตัว
     </div>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -170,7 +170,7 @@ const PopupCameraList: React.FC<{
           }}
         >
           <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: c.online ? '#22d3ee' : '#ef4444' }} />
-          <span style={{ fontSize: 11, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: "var(--fs-12)", color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {c.name}
           </span>
         </button>

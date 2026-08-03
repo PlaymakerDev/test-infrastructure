@@ -38,7 +38,7 @@ const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
  *  table. Used for การค้ำประกัน + สถานะ (with an optional leading icon). */
 const Pill: React.FC<{ text: string; color: string; icon?: React.ReactNode }> = ({ text, color, icon }) => (
   <span
-    className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {icon}
@@ -51,7 +51,7 @@ const StreamButton: React.FC<{ url: string }> = ({ url }) => {
   const color = isConnect ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap cursor-pointer hover:opacity-80'
+      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap cursor-pointer hover:opacity-80'
       style={{ border: `1px solid ${color}`, color }}
     >
       {isConnect ? 'Connect' : 'Disconnect'}
@@ -63,7 +63,7 @@ const CameraButton: React.FC<{ url: string }> = ({ url }) => {
   if (!url) {
     return (
       <span
-        className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+        className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
         style={{ border: '1px solid #979797', color: '#979797' }}
       >
         ไม่มีกล้อง
@@ -72,7 +72,7 @@ const CameraButton: React.FC<{ url: string }> = ({ url }) => {
   }
   return (
     <span
-      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap cursor-pointer hover:opacity-80'
+      className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap cursor-pointer hover:opacity-80'
       style={{ border: '1px solid #66AEFF', color: '#66AEFF' }}
     >
       Connect
@@ -138,151 +138,151 @@ const TableVMSData: React.FC<Props> = ({ data, loading }) => {
 
   const columns: ColumnsType<Row> = useMemo(() => {
     const all: ColumnsType<Row> = [
-    {
-      title: 'รหัสสายทาง',
-      key: 'roadCode',
-      className: 'col-road-code',
-      width: 150,
-      // NOTE: no antd `rowSpan` here. Merging the road-code column via rowSpan
-      // while the dept header row spans all columns (colSpan) made antd drop the
-      // road-code <td> on continuation rows, shifting every column one to the
-      // LEFT — worst when a filter clusters many rows onto one road (big span).
-      // Instead we keep a <td> on every row and only PRINT the code on the
-      // first row of each road group (blank below), so it still reads grouped
-      // and the columns never misalign.
-      onCell: (row) => {
-        if (row.type === 'header') {
-          return {
-            colSpan: TOTAL_COLS,
-            style: { background: '#2a2a2a', padding: '10px 16px' },
+      {
+        title: 'รหัสสายทาง',
+        key: 'roadCode',
+        className: 'col-road-code',
+        width: 150,
+        // NOTE: no antd `rowSpan` here. Merging the road-code column via rowSpan
+        // while the dept header row spans all columns (colSpan) made antd drop the
+        // road-code <td> on continuation rows, shifting every column one to the
+        // LEFT — worst when a filter clusters many rows onto one road (big span).
+        // Instead we keep a <td> on every row and only PRINT the code on the
+        // first row of each road group (blank below), so it still reads grouped
+        // and the columns never misalign.
+        onCell: (row) => {
+          if (row.type === 'header') {
+            return {
+              colSpan: TOTAL_COLS,
+              style: { background: '#2a2a2a', padding: '10px 16px' },
+            }
           }
-        }
-        return {}
-      },
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') {
+          return {}
+        },
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') {
+            return (
+              <div className='flex items-center gap-3'>
+                <span className='text-white font-bold'>{row.label}</span>
+                <span
+                  className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
+                  style={{ border: '1px solid #fff', color: '#fff' }}
+                >
+                  {row.count} โครงการ
+                </span>
+              </div>
+            )
+          }
+          // Continuation row of the same road group → blank cell (still occupies
+          // the column so the row keeps all 8 cells).
+          if (row.roadCodeRowSpan === 0) return null
           return (
-            <div className='flex items-center gap-3'>
-              <span className='text-white font-bold'>{row.label}</span>
-              <span
-                className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
-                style={{ border: '1px solid #fff', color: '#fff' }}
-              >
-                {row.count} โครงการ
-              </span>
-            </div>
+            <DetailLinkText onClick={() => goToDetail(row.data)}>
+              <span className='font-medium'>{row.data.road.code_name}</span>
+            </DetailLinkText>
           )
-        }
-        // Continuation row of the same road group → blank cell (still occupies
-        // the column so the row keeps all 8 cells).
-        if (row.roadCodeRowSpan === 0) return null
-        return (
-          <DetailLinkText onClick={() => goToDetail(row.data)}>
-            <span className='font-medium'>{row.data.road.code_name}</span>
-          </DetailLinkText>
-        )
+        },
       },
-    },
-    {
-      title: 'ชื่อโครงการ',
-      key: 'projectName',
-      className: 'col-project-name',
-      ellipsis: true,
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return (
-          <DetailLinkText onClick={() => goToDetail(row.data)}>
-            <span className='text-sm'>{row.data.project.project_name || '-'}</span>
-          </DetailLinkText>
-        )
+      {
+        title: 'ชื่อโครงการ',
+        key: 'projectName',
+        className: 'col-project-name',
+        ellipsis: true,
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.data)}>
+              <span className='fs-12'>{row.data.project.project_name || '-'}</span>
+            </DetailLinkText>
+          )
+        },
       },
-    },
-    {
-      title: 'จุดติดตั้ง',
-      key: 'installPoint',
-      width: 280,
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return (
-          <DetailLinkText onClick={() => goToDetail(row.data)}>
-            <span>{row.data.solution.solution_name}</span>
-          </DetailLinkText>
-        )
+      {
+        title: 'จุดติดตั้ง',
+        key: 'installPoint',
+        width: 280,
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.data)}>
+              <span>{row.data.solution.solution_name}</span>
+            </DetailLinkText>
+          )
+        },
       },
-    },
-    {
-      title: 'เลขที่สัญญา',
-      key: 'contractNo',
-      width: 200,
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return (
-          <ContractInfoCell
-            contractNo={row.data.project.contract_no}
-            budgetYear={row.data.project.budget_year}
-            projectId={row.data.project.id}
-            roadId={row.data.road.id}
-          />
-        )
+      {
+        title: 'เลขที่สัญญา',
+        key: 'contractNo',
+        width: 200,
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return (
+            <ContractInfoCell
+              contractNo={row.data.project.contract_no}
+              budgetYear={row.data.project.budget_year}
+              projectId={row.data.project.id}
+              roadId={row.data.road.id}
+            />
+          )
+        },
       },
-    },
-    {
-      title: 'การค้ำประกัน',
-      key: 'warranty',
-      width: 130,
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return row.data.warranty.is_warranty ? (
-          <Pill text='ในค้ำ' color='#05F2DB' />
-        ) : (
-          <Pill text='หมดค้ำ' color='#979797' />
-        )
+      {
+        title: 'การค้ำประกัน',
+        key: 'warranty',
+        width: 130,
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return row.data.warranty.is_warranty ? (
+            <Pill text='ในค้ำ' color='#05F2DB' />
+          ) : (
+            <Pill text='หมดค้ำ' color='#979797' />
+          )
+        },
       },
-    },
-    {
-      title: 'สถานะ',
-      key: 'status',
-      width: 140,
-      align: 'center',
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        const isOnline = row.data.vms.status.is_online
-        return (
-          <Pill
-            text={isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
-            color={isOnline ? '#66AEFF' : '#E94C4C'}
-            icon={isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
-          />
-        )
+      {
+        title: 'สถานะ',
+        key: 'status',
+        width: 140,
+        align: 'center',
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          const isOnline = row.data.vms.status.is_online
+          return (
+            <Pill
+              text={isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+              color={isOnline ? '#66AEFF' : '#E94C4C'}
+              icon={isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
+            />
+          )
+        },
       },
-    },
-    {
-      title: 'Stream',
-      key: 'stream',
-      width: 130,
-      align: 'center',
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return <StreamButton url={row.data.vms.hls_url} />
+      {
+        title: 'Stream',
+        key: 'stream',
+        width: 130,
+        align: 'center',
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return <StreamButton url={row.data.vms.hls_url} />
+        },
       },
-    },
-    {
-      title: 'กล้อง',
-      key: 'camera',
-      width: 140,
-      align: 'center',
-      onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) => {
-        if (row.type === 'header') return null
-        return <CameraButton url={row.data.vms.desktop_screen} />
+      {
+        title: 'กล้อง',
+        key: 'camera',
+        width: 140,
+        align: 'center',
+        onCell: (row) => (row.type === 'header' ? { colSpan: 0 } : {}),
+        render: (_: unknown, row: Row) => {
+          if (row.type === 'header') return null
+          return <CameraButton url={row.data.vms.desktop_screen} />
+        },
       },
-    },
     ]
     // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
     return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'projectName')

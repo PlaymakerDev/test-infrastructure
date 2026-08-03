@@ -81,7 +81,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
         <div
           className='flex flex-col gap-1.5 p-4 rounded-xl'
           style={{
-            fontSize: 14,
+            fontSize: "var(--fs-12)",
             backgroundColor: isClosingCase ? '#05F2DB33' : '#FCD11633',
             border: `2px solid ${isClosingCase ? '#05F2DB' : '#FCD116'}`,
           }}
@@ -89,7 +89,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
           <div><span style={{ color: '#979797' }}>Case No. </span><span style={{ color: '#212121' }}>{data.caseNo}</span></div>
           <div><span style={{ color: '#979797' }}>ชื่ออุปกรณ์ : </span><span style={{ color: '#212121' }}>{data.deviceName}</span></div>
           <div><span style={{ color: '#979797' }}>หน่วยงานที่รับผิดชอบหรือมอบหมาย : </span><span style={{ color: '#212121' }}>{data.agency}</span></div>
-          <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: isExpired ? '#E94C4C' : '#66AEFF', fontWeight: 700, fontSize: 14 }}>{data.warrantyStatus}</span></div>
+          <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: isExpired ? '#E94C4C' : '#66AEFF', fontWeight: 700, fontSize: "var(--fs-12)" }}>{data.warrantyStatus}</span></div>
           <div><span style={{ color: '#979797' }}>วันที่แจ้งซ่อม : </span><span style={{ color: '#212121' }}>{data.repairDate}</span></div>
         </div>
 
@@ -100,7 +100,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
             className='border-none rounded-[88px] cursor-pointer'
             style={{
               padding: '8px 20px',
-              fontSize: 14,
+              fontSize: "var(--fs-12)",
               fontWeight: 500,
               backgroundColor: '#C4C4C4',
               color: '#000000',
@@ -113,7 +113,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
             className='border-none rounded-[88px] cursor-pointer'
             style={{
               padding: '8px 20px',
-              fontSize: 14,
+              fontSize: "var(--fs-12)",
               fontWeight: 500,
               backgroundColor: '#FCD116',
               color: '#212121',

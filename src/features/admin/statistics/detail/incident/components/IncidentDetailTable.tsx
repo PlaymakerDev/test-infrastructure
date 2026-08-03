@@ -49,7 +49,7 @@ const StatusBadge = ({ label }: { label: IncidentStatusType }) => {
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
-      fontSize: 14, whiteSpace: 'nowrap',
+      fontSize: "var(--fs-12)", whiteSpace: 'nowrap',
       border: `1px solid ${color}`, color,
     }}>
       {label}
@@ -68,13 +68,13 @@ const IncidentCard: React.FC<{ record: IncidentRecord; onSelect: (item: Incident
         <span className='w-2.5 h-2.5 rounded-full shrink-0' style={{ background: color }} />
         <h4 className='mb-0 font-semibold' style={{ color }}>{record.eventType}</h4>
       </div>
-      <p className='text-[14px] text-gray-400 mb-0'>{record.datetime}</p>
+      <p className='fs-12 text-gray-400 mb-0'>{record.datetime}</p>
       <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
-      <p className='text-[14px] leading-snug mb-0.5 line-clamp-2'>
+      <p className='fs-12 leading-snug mb-0.5 line-clamp-2'>
         <span className='text-gray-400'>ชื่อกล้อง : </span>
         <span className='text-blue-400'>{record.cameraName}</span>
       </p>
-      <p className='text-[14px] text-gray-400 mb-1'>IP Address : {record.ipAddress}</p>
+      <p className='fs-12 text-gray-400 mb-1'>IP Address : {record.ipAddress}</p>
       {record.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -95,7 +95,7 @@ const IncidentCard: React.FC<{ record: IncidentRecord; onSelect: (item: Incident
 
 const IncidentGridView: React.FC<{ records: IncidentRecord[]; onSelect: (item: IncidentTransactionItem) => void }> = ({ records, onSelect }) => {
   if (records.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบเหตุการณ์</div>
+    return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบเหตุการณ์</div>
   }
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
@@ -123,11 +123,11 @@ const INCIDENT_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: IncidentRecord, index: number) => string | number
 }[] = [
-  { header: 'วันที่และเวลา', width: 18, widthPct: 16, value: (r) => r.datetime },
-  { header: 'ประเภทเหตุการณ์', width: 22, widthPct: 20, value: (r) => r.eventType },
-  { header: 'ชื่อกล้อง', width: 40, widthPct: 44, align: 'left', value: (r) => r.cameraName || '-' },
-  { header: 'IP Address', width: 18, widthPct: 20, value: (r) => r.ipAddress || '-' },
-]
+    { header: 'วันที่และเวลา', width: 18, widthPct: 16, value: (r) => r.datetime },
+    { header: 'ประเภทเหตุการณ์', width: 22, widthPct: 20, value: (r) => r.eventType },
+    { header: 'ชื่อกล้อง', width: 40, widthPct: 44, align: 'left', value: (r) => r.cameraName || '-' },
+    { header: 'IP Address', width: 18, widthPct: 20, value: (r) => r.ipAddress || '-' },
+  ]
 
 interface IncidentDetailTableProps {
   /** Already validated against the selected route by the parent screen. */
@@ -187,7 +187,7 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
     },
     {
       title: 'ชื่อกล้อง', dataIndex: 'cameraName', key: 'cameraName', align: 'left', width: 360,
-      render: (v: string) => <span style={{ color: '#FFFFFF', fontSize: 14 }}>{v}</span>,
+      render: (v: string) => <span style={{ color: '#FFFFFF', fontSize: "var(--fs-12)" }}>{v}</span>,
     },
     {
       title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', align: 'center', width: 140,

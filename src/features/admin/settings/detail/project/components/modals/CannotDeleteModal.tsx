@@ -39,7 +39,7 @@ const CannotDeleteModal: React.FC<Props> = ({ open, title, subtitleNode, bodyNod
           </div>
           <div className='text-center'>
             <h3 style={{ color: '#1F1F1F', fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h3>
-            <div style={{ color: '#8A8A8A', fontSize: 13, marginTop: 6 }}>{subtitleNode}</div>
+            <div style={{ color: '#8A8A8A', fontSize: "var(--fs-12)", marginTop: 6 }}>{subtitleNode}</div>
           </div>
           <div
             className='w-full rounded-xl'

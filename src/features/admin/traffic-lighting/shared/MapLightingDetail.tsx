@@ -40,13 +40,13 @@ const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => 
       className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
       style={{ borderColor: statusColor }}
     >
-      <p className='fs-11 font-bold tracking-wide' style={{ color: statusColor }}>
+      <p className='fs-12 font-bold tracking-wide' style={{ color: statusColor }}>
         Traffic Lighting · {String(p.code_name ?? '-')}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.install_point ?? p.project_name ?? '-')}
       </p>
-      <p className='fs-11 font-semibold mt-1.5' style={{ color: statusColor }}>
+      <p className='fs-12 font-semibold mt-1.5' style={{ color: statusColor }}>
         ● {statusLabel}
       </p>
     </div>
@@ -88,15 +88,15 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
   const markerFeature = useMemo<GeoJSON.Feature<GeoJSON.Point> | null>(() => (
     resolvedCoord
       ? {
-          type: 'Feature',
-          properties: {
-            is_online: isOnline,
-            code_name: roadCode,
-            install_point: installPoint,
-            project_name: projectName,
-          },
-          geometry: { type: 'Point', coordinates: resolvedCoord },
-        }
+        type: 'Feature',
+        properties: {
+          is_online: isOnline,
+          code_name: roadCode,
+          install_point: installPoint,
+          project_name: projectName,
+        },
+        geometry: { type: 'Point', coordinates: resolvedCoord },
+      }
       : null
   ), [installPoint, isOnline, projectName, resolvedCoord, roadCode])
 

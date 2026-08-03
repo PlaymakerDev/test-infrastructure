@@ -21,7 +21,7 @@ import type { LPRInstallPoint } from '@/types/lpr/lpr-api'
 
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
   <span
-    className='inline-flex items-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
+    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1.5px solid ${color}`, color }}
   >
     {text}
@@ -73,20 +73,20 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
           onClick={
             hasContract
               ? () =>
-                  dispatch(
-                    setProjectInfoModalOpen({
-                      open: true,
-                      project_id: p.project_id ?? null,
-                      road_id: p.road_id ?? null,
-                    }),
-                  )
+                dispatch(
+                  setProjectInfoModalOpen({
+                    open: true,
+                    project_id: p.project_id ?? null,
+                    road_id: p.road_id ?? null,
+                  }),
+                )
               : undefined
           }
         />
       </div>
 
       {/* Info rows */}
-      <div className='flex flex-col gap-1.5 text-sm'>
+      <div className='flex flex-col gap-1.5 fs-12'>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>จุดติดตั้ง :</span>
           <span
@@ -118,7 +118,7 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
           <span className='fs-24 font-bold tabular-nums leading-none text-white'>
             {p.camera_count.toLocaleString('th-TH')}
           </span>
-          <div className='flex items-center gap-1 text-sm text-white/50'>
+          <div className='flex items-center gap-1 fs-12 text-white/50'>
             <TbCamera size={16} />
             <span>กล้อง</span>
           </div>
@@ -130,7 +130,7 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
           >
             {p.events_today.toLocaleString('th-TH')}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#FCD11699' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#FCD11699' }}>
             <TbLicense size={16} />
             <span>วันนี้</span>
           </div>
@@ -142,7 +142,7 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
           >
             {p.events_hour.toLocaleString('th-TH')}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#66AEFF99' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#66AEFF99' }}>
             <TbBolt size={16} />
             <span>ชม.ล่าสุด</span>
           </div>
@@ -170,7 +170,7 @@ const LPRList: React.FC<Props> = ({ points }) => {
   )
 
   if (list.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
+    return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบข้อมูล</div>
   }
 
   return (

@@ -33,7 +33,7 @@ const RouteTabs: React.FC = () => {
             title='ลบสายทางที่กำลังเลือกออกจากโครงการ'
           >
             <TbTrash size={16} />
-            <span style={{ fontSize: 13 }}>ลบสายทางนี้</span>
+            <span style={{ fontSize: "var(--fs-12)" }}>ลบสายทางนี้</span>
           </button>
         )}
       </div>
@@ -83,7 +83,7 @@ const RouteTabs: React.FC = () => {
           <h3 style={{ color: '#1F1F1F', fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
             ยืนยันลบสายทางออกจากโครงการ?
           </h3>
-          <p style={{ color: '#666', fontSize: 13, marginBottom: 12 }}>
+          <p style={{ color: '#666', fontSize: "var(--fs-12)", marginBottom: 12 }}>
             การลบไม่สามารถย้อนกลับได้ — หากยังมีจุดติดตั้งอยู่ ระบบจะแจ้ง error
           </p>
           <div

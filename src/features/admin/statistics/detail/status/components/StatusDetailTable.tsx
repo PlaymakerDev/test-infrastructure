@@ -31,7 +31,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
-      fontSize: 12, whiteSpace: 'nowrap',
+      fontSize: "var(--fs-12)", whiteSpace: 'nowrap',
       border: `1px solid ${style.color}`, color: style.color,
     }}>
       {style.label}
@@ -70,16 +70,16 @@ const StatusCard: React.FC<{ record: StatusRow }> = ({ record }) => {
         </div>
         <StatusBadge status={record.status} />
       </div>
-      <p className='fs-11 text-gray-400 mb-0'>{record.datetime}</p>
+      <p className='fs-12 text-gray-400 mb-0'>{record.datetime}</p>
       <div className='my-1 border-t border-dashed' style={{ borderColor: 'rgba(252,209,22,0.5)' }} />
-      <p className='fs-11 leading-snug mb-0' style={{ color: '#66AEFF' }}>{record.category || '-'}</p>
+      <p className='fs-12 leading-snug mb-0' style={{ color: '#66AEFF' }}>{record.category || '-'}</p>
     </div>
   )
 }
 
 const StatusGridView: React.FC<{ records: StatusRow[] }> = ({ records }) => {
   if (records.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก</div>
+    return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบประวัติการแจ้งเตือนในช่วงวันที่เลือก</div>
   }
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
@@ -109,11 +109,11 @@ const STATUS_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: StatusRow, index: number) => string | number
 }[] = [
-  { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => r.datetime },
-  { header: 'ประเภทเหตุการณ์', width: 34, widthPct: 35, value: (r) => r.eventType || '-' },
-  { header: 'หมวดหมู่', width: 20, widthPct: 22, value: (r) => r.category || '-' },
-  { header: 'สถานะ', width: 12, widthPct: 18, value: (r) => STATUS_STYLE[r.status]?.label ?? (r.status || '-') },
-]
+    { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => r.datetime },
+    { header: 'ประเภทเหตุการณ์', width: 34, widthPct: 35, value: (r) => r.eventType || '-' },
+    { header: 'หมวดหมู่', width: 20, widthPct: 22, value: (r) => r.category || '-' },
+    { header: 'สถานะ', width: 12, widthPct: 18, value: (r) => STATUS_STYLE[r.status]?.label ?? (r.status || '-') },
+  ]
 
 // ── Component ──────────────────────────────────────────────────────────────────
 

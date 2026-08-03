@@ -29,7 +29,7 @@ const CameraPopup: React.FC<{ cam: IncidentCameraMapItem }> = ({ cam }) => (
       enableViewportPause
       figureClassName='h-36 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden'
     />
-    <p style={{ fontSize: 12, color: '#66AEFF', fontWeight: 600, lineHeight: 1.35, margin: '0 0 6px' }}>
+    <p style={{ fontSize: "var(--fs-12)", color: '#66AEFF', fontWeight: 600, lineHeight: 1.35, margin: '0 0 6px' }}>
       {cam.camera_name}
     </p>
   </div>

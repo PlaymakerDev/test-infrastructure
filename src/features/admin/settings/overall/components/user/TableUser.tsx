@@ -36,7 +36,7 @@ const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.'
 // so the "ประเภท" column reads visually consistent with its neighbours.
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
   <span
-    className='inline-flex items-center justify-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+    className='inline-flex items-center justify-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1px solid ${color}`, color }}
   >
     {text}

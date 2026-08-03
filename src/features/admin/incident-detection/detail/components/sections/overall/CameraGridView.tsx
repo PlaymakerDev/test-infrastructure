@@ -88,7 +88,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </div>
 
     {showKm && (
-      <span className='text-xs font-semibold' style={{ color: '#FCD116' }}>
+      <span className='fs-12 font-semibold' style={{ color: '#FCD116' }}>
         กม. {camera.km}
       </span>
     )}

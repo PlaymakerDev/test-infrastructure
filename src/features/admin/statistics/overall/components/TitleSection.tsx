@@ -105,7 +105,7 @@ const TitleSection: React.FC = () => {
                   key={opt.value}
                   type='button'
                   onClick={() => handlePeriodChange(opt.value)}
-                  className='px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-sm font-medium cursor-pointer transition-colors whitespace-nowrap'
+                  className='px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg fs-12 sm:fs-12 font-medium cursor-pointer transition-colors whitespace-nowrap'
                   style={isActive
                     ? { background: 'var(--yellow)', color: '#212121' }
                     : { background: 'transparent', color: 'var(--yellow)' }}

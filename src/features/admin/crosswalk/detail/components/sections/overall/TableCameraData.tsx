@@ -33,7 +33,7 @@ const OnlinePill: React.FC<{ online: boolean }> = ({ online }) => {
   const color = online ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {online ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
@@ -46,7 +46,7 @@ const StreamPill: React.FC<{ online: boolean }> = ({ online }) => {
   const color = online ? '#66AEFF' : '#E94C4C'
   return (
     <span
-      className='inline-flex items-center px-3 py-1 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${color}`, color }}
     >
       {online ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ'}

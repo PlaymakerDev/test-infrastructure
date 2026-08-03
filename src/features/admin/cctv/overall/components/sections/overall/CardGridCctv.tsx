@@ -20,7 +20,7 @@ import { Tooltip } from 'antd'
 
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
   <span
-    className='inline-flex items-center px-3 py-1 rounded-full text-sm whitespace-nowrap'
+    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1.5px solid ${color}`, color }}
   >
     {text}
@@ -102,7 +102,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
       </div>
 
       {/* Info rows */}
-      <div className='flex flex-col gap-1.5 text-sm'>
+      <div className='flex flex-col gap-1.5 fs-12'>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>จุดติดตั้ง :</span>
           <span
@@ -132,7 +132,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
           <span className='fs-24 font-bold tabular-nums leading-none text-white'>
             {item.camera.total}
           </span>
-          <div className='flex items-center gap-1 text-sm text-white/50'>
+          <div className='flex items-center gap-1 fs-12 text-white/50'>
             <TbGridDots size={16} />
             <span>ทั้งหมด</span>
           </div>
@@ -146,7 +146,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
           >
             {item.camera.online}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#66AEFF99' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#66AEFF99' }}>
             <TbWifi size={16} />
             <span>ออนไลน์</span>
           </div>
@@ -160,7 +160,7 @@ const CctvCard: React.FC<{ item: CCTVOverviewListItem; departmentName?: string }
           >
             {item.camera.offline}
           </span>
-          <div className='flex items-center gap-1 text-sm' style={{ color: '#E94C4C99' }}>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#E94C4C99' }}>
             <TbWifiOff size={16} />
             <span>ออฟไลน์</span>
           </div>
@@ -216,7 +216,7 @@ const CardGridCctv: React.FC<Props> = ({ items }) => {
 
   if (items.length === 0) {
     return (
-      <div className='py-12 text-center text-white/30 text-sm'>ไม่พบข้อมูล</div>
+      <div className='py-12 text-center text-white/30 fs-12'>ไม่พบข้อมูล</div>
     )
   }
 
@@ -231,7 +231,7 @@ const CardGridCctv: React.FC<Props> = ({ items }) => {
           >
             <span className='text-white font-bold'>{bureau}</span>
             <span
-              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs'
+              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
               style={{ border: '1px solid #fff', color: '#fff' }}
             >
               {rows.length} โครงการ

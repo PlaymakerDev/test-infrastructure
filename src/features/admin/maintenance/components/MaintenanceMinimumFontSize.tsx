@@ -5,16 +5,16 @@ import React from 'react'
 const MaintenanceMinimumFontSize: React.FC = () => (
   <style>{`
     .maintenance-font-min-14 .fs-10,
-    .maintenance-font-min-14 .fs-11,
+    .maintenance-font-min-14 .fs-12,
     .maintenance-font-min-14 .fs-12,
     .maintenance-font-min-14 .fs-13,
-    .maintenance-font-min-14 .text-xs,
+    .maintenance-font-min-14 .fs-12,
     .maintenance-font-min-14 [class*="text-[8px]"],
     .maintenance-font-min-14 [class*="text-[9px]"],
     .maintenance-font-min-14 [class*="text-[10px]"],
-    .maintenance-font-min-14 [class*="text-[11px]"],
-    .maintenance-font-min-14 [class*="text-[12px]"],
-    .maintenance-font-min-14 [class*="text-[13px]"] {
+    .maintenance-font-min-14 [class*="fs-12"],
+    .maintenance-font-min-14 [class*="fs-12"],
+    .maintenance-font-min-14 [class*="fs-12"] {
       font-size: 14px !important;
     }
 
