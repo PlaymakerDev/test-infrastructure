@@ -290,6 +290,21 @@ const BaseMap: React.FC<BaseMapProps> = ({
           if (instance!.getSource('mapbox-procedural-buildings-v1')) {
             try { instance!.removeSource('mapbox-procedural-buildings-v1') } catch {}
           }
+
+          // Hide the basemap's own first-level admin (province) boundary
+          // lines. The app draws provinces from /data/th-provinces.geojson
+          // (current OSM, boundary-exact); Mapbox's copy is an older,
+          // generalized snapshot, so keeping both renders an offset double
+          // line along every province border. Country borders (admin-0)
+          // stay. removeLayer + line-opacity fallback mirrors the
+          // two-pronged treatment the place labels get below.
+          const adminProvinceIds = (style?.layers ?? [])
+            .map((l) => (l as { id: string }).id)
+            .filter((id) => id.startsWith('admin-1'))
+          for (const id of adminProvinceIds) {
+            try { instance!.removeLayer(id) } catch {}
+            try { instance!.setPaintProperty(id, 'line-opacity', 0) } catch {}
+          }
         } catch {
           // Style not yet queryable or non-standard — skip.
         }
