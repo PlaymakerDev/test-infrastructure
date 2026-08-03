@@ -43,12 +43,14 @@ export const getDailyWeightLogColumns = (
       align: 'left',
       width: 140,
       className: 'col-road-code',
-      render: (_, record) => (
-        <div>
-          <p className='fs-12 mb-0'>{dayjs(record.time_stamp, "DD/MM/BBBB  HH:mm:ss").format('DD MMM BBBB')}</p>
-          <p className='fs-12 mb-0 text-white/60'>{dayjs(record.time_stamp, "DD/MM/BBBB  HH:mm:ss").format('HH:mm:ss')} น.</p>
-        </div>
-      ),
+      render: (_, record) => {
+        return (
+          <div>
+            <p className='fs-12 mb-0'>{dayjs(record.time_stamp, "DD/MM/YYYY  HH:mm:ss").format('DD MMM YYYY')}</p>
+            <p className='fs-12 mb-0 text-white/60'>{dayjs(record.time_stamp, "DD/MM/YYYY  HH:mm:ss").format('HH:mm:ss')} น.</p>
+          </div>
+        )
+      },
     },
     {
       title: 'ทะเบียนรถ',

@@ -82,9 +82,8 @@ const LightingPopup: React.FC<{
     : '-'
   return (
     <div
-      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${
-        isOnline ? 'border-cyan-400' : 'border-red-500'
-      }`}
+      className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${isOnline ? 'border-cyan-400' : 'border-red-500'
+        }`}
     >
       <p className={`fs-11 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
         Traffic Lighting · {String(p.code_name)}
@@ -180,7 +179,8 @@ const MapTrafficLighting: React.FC<Props> = ({ deptId, roadId }) => {
   return (
     <div className='relative w-full h-full bg-[#050d1a]'>
       <BaseMap initialCenter={initialCenter} initialZoom={5.2}>
-        <ThailandMaskLayer maskColor='#0E0D0D' maskOpacity={0.8} />
+        {/* <ThailandMaskLayer maskColor='#0E0D0D' maskOpacity={0.8} /> */}
+        <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         <LightingMarkerLayer
           locations={data?.locations ?? []}
           deptId={deptId}

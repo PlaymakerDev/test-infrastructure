@@ -26,7 +26,8 @@ const MapSection: React.FC<Props> = (props) => {
           initialZoom={5.4}
           edgeFade={{ all: 10 }}
         >
-          <ThailandMaskLayer />
+          {/* <ThailandMaskLayer /> */}
+          <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
           <RouteLineLayer positions={road?.position} />
           <VehicleMarkerLayer cars={vehicle?.car_list} />
         </BaseMap>

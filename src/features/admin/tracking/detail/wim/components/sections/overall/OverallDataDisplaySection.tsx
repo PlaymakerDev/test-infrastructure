@@ -83,8 +83,8 @@ const OverallDataDisplaySection: React.FC<Props> = () => {
   const columnsForScope = (scope?: 'all' | 'page') =>
     scope === 'page'
       ? exportColumns.map((c) =>
-          c.key === 'no' ? { ...c, value: (_r: DailyWeightLogRow, i: number) => pageOffset + i + 1 } : c,
-        )
+        c.key === 'no' ? { ...c, value: (_r: DailyWeightLogRow, i: number) => pageOffset + i + 1 } : c,
+      )
       : exportColumns
 
   // The table server-paginates internally, so the export fetches the full

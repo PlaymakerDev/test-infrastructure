@@ -271,7 +271,8 @@ const WIMMap: React.FC<Props> = (props) => {
         initialZoom={INITIAL_ZOOM}
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
-        <ThailandMaskLayer />
+        {/* <ThailandMaskLayer /> */}
+        <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         {renderMarkerLayer}
       </BaseMap>
     </div>

@@ -270,7 +270,8 @@ const MapSection: React.FC<Props> = (props) => {
         initialZoom={5.4}
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
-        <ThailandMaskLayer />
+        {/* <ThailandMaskLayer /> */}
+        <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         {renderMarkerLayer}
       </BaseMap>
     </div>
