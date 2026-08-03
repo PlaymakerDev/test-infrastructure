@@ -85,7 +85,7 @@ interface Props {
 /** Grid view — one card per event (Tab2 "grid" mode). */
 const EventGridView: React.FC<Props> = ({ events, onSelect }) => {
   if (events.length === 0) {
-    return <div className='py-12 text-center text-white/30 text-sm'>ไม่พบเหตุการณ์</div>
+    return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบเหตุการณ์</div>
   }
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>

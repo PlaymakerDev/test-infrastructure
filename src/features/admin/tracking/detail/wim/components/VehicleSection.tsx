@@ -50,25 +50,25 @@ const buildVehicleExportColumns = (stationType: string | null | undefined): {
   align?: 'left' | 'center' | 'right'
   value: (row: StationDailyData, index: number) => string | number
 }[] => [
-  { header: 'ลำดับ', width: 7, widthPct: 6, value: (_r, i) => i + 1 },
-  {
-    header: 'วันที่',
-    width: 16,
-    widthPct: 15,
-    value: (r) => (r.date_time ? dayjs(r.date_time, 'DD/MM/BBBB').format('DD MMM BBBB') : '-'),
-  },
-  {
-    header: stationType === 'WIM' ? 'Weight in Motion (WIM)' : 'สถานี',
-    width: 30,
-    widthPct: 25,
-    align: 'left',
-    value: (r) => r.station_name || '-',
-  },
-  { header: 'จำนวนรถเข้าชั่ง', width: 14, widthPct: 14, value: (r) => r.total },
-  { header: 'จำนวนรถน้ำหนักเกิน', width: 18, widthPct: 14, value: (r) => r.total_over },
-  { header: 'จำนวนรถน้ำหนักเกิน 10%', width: 21, widthPct: 14, value: (r) => r.isover_10percent },
-  { header: 'สถานะ', width: 12, widthPct: 12, value: (r) => getDailyStatus(r.remark, r.total) },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 6, value: (_r, i) => i + 1 },
+    {
+      header: 'วันที่',
+      width: 16,
+      widthPct: 15,
+      value: (r) => (r.date_time ? dayjs(r.date_time, 'DD/MM/BBBB').format('DD MMM BBBB') : '-'),
+    },
+    {
+      header: stationType === 'WIM' ? 'Weight in Motion (WIM)' : 'สถานี',
+      width: 30,
+      widthPct: 25,
+      align: 'left',
+      value: (r) => r.station_name || '-',
+    },
+    { header: 'จำนวนรถเข้าชั่ง', width: 14, widthPct: 14, value: (r) => r.total },
+    { header: 'จำนวนรถน้ำหนักเกิน', width: 18, widthPct: 14, value: (r) => r.total_over },
+    { header: 'จำนวนรถน้ำหนักเกิน 10%', width: 21, widthPct: 14, value: (r) => r.isover_10percent },
+    { header: 'สถานะ', width: 12, widthPct: 12, value: (r) => getDailyStatus(r.remark, r.total) },
+  ]
 
 const VehicleSection: React.FC<Props> = () => {
   const { id, stationType, stationTypeId, vehicleSearchParams, setVehicleSearchParams } = useWIMContext()
@@ -95,10 +95,10 @@ const VehicleSection: React.FC<Props> = () => {
   const columnsForScope = (scope?: 'all' | 'page') =>
     scope === 'page'
       ? exportColumns.map((c) =>
-          c.header === 'ลำดับ'
-            ? { ...c, value: (_r: StationDailyData, i: number) => pageData.offset + i + 1 }
-            : c,
-        )
+        c.header === 'ลำดับ'
+          ? { ...c, value: (_r: StationDailyData, i: number) => pageData.offset + i + 1 }
+          : c,
+      )
       : exportColumns
 
   // Human-readable note of the active search — printed in the PDF header so a

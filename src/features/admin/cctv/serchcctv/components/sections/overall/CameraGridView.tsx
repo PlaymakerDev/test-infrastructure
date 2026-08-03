@@ -46,7 +46,7 @@ const WarrantyPill: React.FC<{ warranty: WarrantyStatus }> = ({ warranty }) => {
     : { text: 'หมดค้ำ', color: '#979797' }
   return (
     <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
     >
       {cfg.text}
@@ -82,7 +82,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </div>
 
     {showKm && (
-      <span className='text-xs font-semibold' style={{ color: '#FCD116' }}>
+      <span className='fs-12 font-semibold' style={{ color: '#FCD116' }}>
         กม. {camera.km}
       </span>
     )}
@@ -101,7 +101,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     </p>
 
     <div className='flex items-center justify-between gap-2 min-w-0'>
-      <span className='text-xs min-w-0 truncate' style={{ color: '#888' }}>
+      <span className='fs-12 min-w-0 truncate' style={{ color: '#888' }}>
         IP : {camera.ip}
       </span>
       <div className='flex items-center gap-1 flex-wrap justify-end shrink-0'>
@@ -164,7 +164,7 @@ const CameraGridView: React.FC<Props> = ({ groups, mode = 'project' }) => {
                 className='flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 rounded-xl'
                 style={{ background: '#2a2a2a' }}
               >
-                <span className='text-white font-semibold text-sm flex-1 min-w-0 wrap-break-word'>{group.label}</span>
+                <span className='text-white font-semibold fs-12 flex-1 min-w-0 wrap-break-word'>{group.label}</span>
                 <div className='flex items-center gap-2 shrink-0'>
                   <TbInfoSquareRoundedFilled
                     size={18}

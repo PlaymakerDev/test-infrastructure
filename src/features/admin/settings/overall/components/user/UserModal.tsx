@@ -219,7 +219,7 @@ const UserModal: React.FC<Props> = ({
                 alignItems: 'center',
                 padding: '2px 10px',
                 borderRadius: 999,
-                fontSize: 12,
+                fontSize: "var(--fs-12)",
                 fontWeight: 600,
                 lineHeight: 1.6,
                 background: isLdapMode ? LDAP_BADGE_BG : LOCAL_BADGE_BG,
@@ -242,7 +242,7 @@ const UserModal: React.FC<Props> = ({
           <div className='grid grid-cols-2' style={{ gap: 20 }}>
             <Form.Item
               label={
-                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                   Username<Asterisk />
                 </span>
               }
@@ -257,7 +257,7 @@ const UserModal: React.FC<Props> = ({
               style={{ marginBottom: isLdapMode ? 4 : 16 }}
               extra={
                 isLdapMode ? (
-                  <span style={{ color: '#8A8A8A', fontSize: 12 }}>
+                  <span style={{ color: '#8A8A8A', fontSize: "var(--fs-12)" }}>
                     ระบบจะเชื่อมกับ AD โดยอัตโนมัติ
                   </span>
                 ) : undefined
@@ -276,7 +276,7 @@ const UserModal: React.FC<Props> = ({
             {!isEdit && !isLdapMode && (
               <Form.Item
                 label={
-                  <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                  <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                     รหัสผ่าน<Asterisk />
                   </span>
                 }
@@ -295,7 +295,7 @@ const UserModal: React.FC<Props> = ({
           <div className='grid grid-cols-2' style={{ gap: 20 }}>
             <Form.Item
               label={
-                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                   ชื่อ<Asterisk />
                 </span>
               }
@@ -307,7 +307,7 @@ const UserModal: React.FC<Props> = ({
             </Form.Item>
             <Form.Item
               label={
-                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                   นามสกุล<Asterisk />
                 </span>
               }
@@ -321,7 +321,7 @@ const UserModal: React.FC<Props> = ({
 
           <Form.Item
             label={
-              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+              <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                 หน่วยงาน<Asterisk />
               </span>
             }
@@ -335,12 +335,12 @@ const UserModal: React.FC<Props> = ({
               loading={departmentsLoading}
               showSearch
               optionFilterProp='label'
-            classNames={{ popup: { root: 'light-modal-popup' } }} />
+              classNames={{ popup: { root: 'light-modal-popup' } }} />
           </Form.Item>
 
           <Form.Item
             label={
-              <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+              <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                 บทบาท<Asterisk />
               </span>
             }
@@ -360,9 +360,9 @@ const UserModal: React.FC<Props> = ({
               className='mb-4 flex items-center justify-between rounded-lg px-3 py-2'
               style={{ background: '#F7F7F7', border: `1px solid ${BORDER_DEFAULT}` }}
             >
-              <div className='text-sm'>
+              <div className='fs-12'>
                 <div style={{ color: LABEL_COLOR, fontWeight: 500 }}>รหัสผ่าน</div>
-                <div style={{ color: '#8A8A8A', fontSize: 12 }}>
+                <div style={{ color: '#8A8A8A', fontSize: "var(--fs-12)" }}>
                   {editingIsLdap
                     ? 'รหัสผ่านจัดการที่ AD'
                     : 'แก้ไขได้ผ่านช่องเปลี่ยนรหัสผ่านโดยเฉพาะ'}

@@ -26,14 +26,13 @@ const PointTabs: React.FC<Props> = ({ onAddPoint }) => {
             key={p.id}
             type='button'
             onClick={() => setActivePointId(p.id)}
-            className={`inline-flex items-center gap-2 py-1 cursor-pointer transition-colors ${
-              isActive ? 'text-(--yellow) border-b-2 border-(--yellow)' : 'text-white/70 hover:text-white'
-            }`}
+            className={`inline-flex items-center gap-2 py-1 cursor-pointer transition-colors ${isActive ? 'text-(--yellow) border-b-2 border-(--yellow)' : 'text-white/70 hover:text-white'
+              }`}
             style={{ marginBottom: -9 }}
           >
             <span>{p.name}</span>
             <span
-              className='inline-flex items-center justify-center w-6 h-6 rounded-full text-xs'
+              className='inline-flex items-center justify-center w-6 h-6 rounded-full fs-12'
               style={{
                 border: `1px solid ${isActive ? 'var(--yellow)' : 'rgba(255,255,255,0.4)'}`,
               }}

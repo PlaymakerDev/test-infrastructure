@@ -115,5 +115,14 @@ export const manageKeys = {
     all: ['manage', 'notifications'] as const,
     summary: (params: { start_date: string; end_date: string }) =>
       [...manageKeys.notifications.all, 'summary', params] as const,
+    /** Prefix for every camera-outage read — invalidate this after mark-read. */
+    cameraOutage: () =>
+      [...manageKeys.notifications.all, 'camera-outage'] as const,
+    /** Bell badge — unread_only&limit=1 poll; value lives in meta_data.count. */
+    cameraOutageBadge: () =>
+      [...manageKeys.notifications.cameraOutage(), 'badge'] as const,
+    /** Panel list (infinite, page-keyed inside the query itself). */
+    cameraOutageList: (params: Record<string, unknown>) =>
+      [...manageKeys.notifications.cameraOutage(), 'list', params] as const,
   },
 } as const

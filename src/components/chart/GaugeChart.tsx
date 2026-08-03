@@ -152,7 +152,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
                 lineHeight: 46,
               },
               u: {
-                fontSize: 14,
+                fontSize: "var(--fs-12)",
                 color: '#FCD116',
                 lineHeight: 22,
               },
@@ -206,14 +206,14 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
         {/* Hourly table */}
         <div className='flex-1 pt-1 min-w-0'>
           {tableTitle && (
-            <p className='text-sm mb-3' style={{ color: '#FCD116' }}>
+            <p className='fs-12 mb-3' style={{ color: '#FCD116' }}>
               {tableTitle}
             </p>
           )}
 
           {/* Column headers */}
           <div
-            className='flex justify-between text-xs mb-1.5 px-1'
+            className='flex justify-between fs-12 mb-1.5 px-1'
             style={{ color: '#6b7280' }}
           >
             <span>{tableTimeLabel}</span>
@@ -247,14 +247,14 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
                     }}
                   />
                   <span
-                    className='text-sm'
+                    className='fs-12'
                     style={{ color: row.highlighted ? '#FCD116' : '#d1d5db' }}
                   >
                     {row.time}
                   </span>
                 </div>
                 <span
-                  className='text-sm tabular-nums'
+                  className='fs-12 tabular-nums'
                   style={{ color: row.highlighted ? '#FCD116' : '#8a9ab5' }}
                 >
                   {row.value.toFixed(2)} {row.unit ?? unit}

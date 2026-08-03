@@ -86,17 +86,17 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
 
   return (
     <ConfigProvider theme={{ components: { Modal: { colorIcon: '#FFFFFF' } } }}>
-    <Modal
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      width="min(1400px, 96vw)"
-      centered
-      destroyOnHidden
-      closable={{ 'aria-label': 'Close' }}
-      classNames={{ container: 'border-2! border-(--default-blue)!' }}
-      styles={{ body: { padding: 0 } }}
-    >
+      <Modal
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        width="min(1400px, 96vw)"
+        centered
+        destroyOnHidden
+        closable={{ 'aria-label': 'Close' }}
+        classNames={{ container: 'border-2! border-(--default-blue)!' }}
+        styles={{ body: { padding: 0 } }}
+      >
         {isLoading && (
           <div className="p-8">
             <Skeleton active paragraph={{ rows: 8 }} />
@@ -111,7 +111,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   <div className="fs-12 text-white/50">WID {detail.wid} · vms_id {detail.vms_id}</div>
                   <div className="text-lg font-semibold truncate flex items-center gap-2 flex-wrap">
                     {detail.road_code && <span className="text-(--yellow)">{detail.road_code}</span>}
-                    {detail.sta && <span className="text-(--default-blue) text-sm">กม.{detail.sta}</span>}
+                    {detail.sta && <span className="text-(--default-blue) fs-12">กม.{detail.sta}</span>}
                     <span className="truncate">{detail.solution_name || `VMS ${detail.vms_id}`}</span>
                   </div>
                   {detail.road_name && (
@@ -238,7 +238,7 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       showLiveBadge
                     />
                   ) : (
-                    <div className="h-40 flex items-center justify-center text-white/60 text-sm">ไม่มี stream ของป้ายในระบบ</div>
+                    <div className="h-40 flex items-center justify-center text-white/60 fs-12">ไม่มี stream ของป้ายในระบบ</div>
                   )}
                 </div>
 
@@ -255,14 +255,14 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                         const heading = activeMeta.isActive
                           ? 'คำสั่งที่กำลังแสดง'
                           : activeMeta.id === 4
-                          ? 'คำสั่งล่าสุด (เสร็จสิ้นแล้ว)'
-                          : activeMeta.id === 5
-                          ? 'คำสั่งล่าสุด (ป้ายขาดการเชื่อมต่อ)'
-                          : activeMeta.id === 6
-                          ? 'คำสั่งล่าสุด (ถูกยกเลิก)'
-                          : activeMeta.id === 7
-                          ? 'คำสั่งล่าสุด (ถูกสั่งทับด้วยคำสั่งอื่น)'
-                          : 'คำสั่งล่าสุด'
+                            ? 'คำสั่งล่าสุด (เสร็จสิ้นแล้ว)'
+                            : activeMeta.id === 5
+                              ? 'คำสั่งล่าสุด (ป้ายขาดการเชื่อมต่อ)'
+                              : activeMeta.id === 6
+                                ? 'คำสั่งล่าสุด (ถูกยกเลิก)'
+                                : activeMeta.id === 7
+                                  ? 'คำสั่งล่าสุด (ถูกสั่งทับด้วยคำสั่งอื่น)'
+                                  : 'คำสั่งล่าสุด'
                         return `${heading} (${label})`
                       })()}
                     </div>
@@ -287,12 +287,12 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                           />
                           {isVideoUrl(detail.media_url) && (
                             <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white text-sm">▶</span>
+                              <span className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white fs-12">▶</span>
                             </span>
                           )}
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 text-sm space-y-0.5">
+                      <div className="min-w-0 flex-1 fs-12 space-y-0.5">
                         <div><b>{detail.setting_type_name || '-'}</b></div>
                         <div className="text-white/60 fs-12">
                           <span className="opacity-70">วันที่:</span>{' '}
@@ -323,11 +323,11 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                 {/* Attached cameras grid */}
                 <div className="rounded-lg border border-white/10 bg-(--dark-black) overflow-hidden">
                   <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
-                    <div className="text-sm font-semibold">กล้อง CCTV รอบป้าย</div>
+                    <div className="fs-12 font-semibold">กล้อง CCTV รอบป้าย</div>
                     <Badge count={cameras.length} showZero color="#f59e0b" overflowCount={99} />
                   </div>
                   {cameras.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-white/50">
+                    <div className="p-6 text-center fs-12 text-white/50">
                       ยังไม่มีกล้อง CCTV ผูกกับป้ายนี้
                     </div>
                   ) : (
@@ -377,124 +377,124 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                   flow with its own cap. */}
               <div className="relative rounded-lg border border-white/10 bg-(--dark-black) overflow-hidden">
                 <div className="lg:absolute lg:inset-0 flex flex-col">
-                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between shrink-0">
-                  <div className="text-sm font-semibold">ประวัติสถานะ (300 รายการล่าสุด)</div>
-                  <TbRefresh className="text-white/40" />
-                </div>
-                <div className="max-h-[560px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto p-3">
-                  {history.length === 0 ? (
-                    <Empty description="ยังไม่มีประวัติ" />
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Group history by setting_id — separator between commands
+                  <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between shrink-0">
+                    <div className="fs-12 font-semibold">ประวัติสถานะ (300 รายการล่าสุด)</div>
+                    <TbRefresh className="text-white/40" />
+                  </div>
+                  <div className="max-h-[560px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto p-3">
+                    {history.length === 0 ? (
+                      <Empty description="ยังไม่มีประวัติ" />
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Group history by setting_id — separator between commands
                           so a wall of same-command rows becomes scannable. */}
-                      {(() => {
-                        const groups: typeof history[] = []
-                        let last: number | null = null
-                        for (const r of history) {
-                          if (r.setting_id !== last) {
-                            groups.push([r])
-                            last = r.setting_id
-                          } else {
-                            groups[groups.length - 1].push(r)
+                        {(() => {
+                          const groups: typeof history[] = []
+                          let last: number | null = null
+                          for (const r of history) {
+                            if (r.setting_id !== last) {
+                              groups.push([r])
+                              last = r.setting_id
+                            } else {
+                              groups[groups.length - 1].push(r)
+                            }
                           }
-                        }
-                        return groups.map((group, gi) => {
-                          const head = group[0]
-                          const label = head.command_no != null
-                            ? `คำสั่งที่ ${head.command_no}`
-                            : `setting #${head.setting_id}`
-                          return (
-                            <div key={`${head.setting_id}-${gi}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                              <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className="fs-12 text-(--yellow) font-semibold">
-                                  ▸ {label}
-                                </span>
-                                <span className="fs-12 text-white/50">
-                                  {head.setting_type_name || 'อื่นๆ'} · {group.length} เหตุการณ์
-                                </span>
-                              </div>
-                              <Timeline
-                                items={(() => {
-                                  // Belt-and-suspenders: collapse consecutive
-                                  // rows sharing (status, source). New logs
-                                  // don't produce dupes, but legacy rows still
-                                  // exist — group into one line with "×N" +
-                                  // time range so timelines stay scannable.
-                                  const runs: { first: typeof group[number]; last: typeof group[number]; count: number }[] = []
-                                  for (const r of group) {
-                                    const cur = runs[runs.length - 1]
-                                    if (cur && cur.last.status === r.status && cur.last.source === r.source && cur.last.prev_status === r.prev_status) {
-                                      cur.last = r
-                                      cur.count++
-                                    } else {
-                                      runs.push({ first: r, last: r, count: 1 })
+                          return groups.map((group, gi) => {
+                            const head = group[0]
+                            const label = head.command_no != null
+                              ? `คำสั่งที่ ${head.command_no}`
+                              : `setting #${head.setting_id}`
+                            return (
+                              <div key={`${head.setting_id}-${gi}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className="fs-12 text-(--yellow) font-semibold">
+                                    ▸ {label}
+                                  </span>
+                                  <span className="fs-12 text-white/50">
+                                    {head.setting_type_name || 'อื่นๆ'} · {group.length} เหตุการณ์
+                                  </span>
+                                </div>
+                                <Timeline
+                                  items={(() => {
+                                    // Belt-and-suspenders: collapse consecutive
+                                    // rows sharing (status, source). New logs
+                                    // don't produce dupes, but legacy rows still
+                                    // exist — group into one line with "×N" +
+                                    // time range so timelines stay scannable.
+                                    const runs: { first: typeof group[number]; last: typeof group[number]; count: number }[] = []
+                                    for (const r of group) {
+                                      const cur = runs[runs.length - 1]
+                                      if (cur && cur.last.status === r.status && cur.last.source === r.source && cur.last.prev_status === r.prev_status) {
+                                        cur.last = r
+                                        cur.count++
+                                      } else {
+                                        runs.push({ first: r, last: r, count: 1 })
+                                      }
                                     }
-                                  }
-                                  return runs
-                                })().map((run) => {
-                                  const r = run.first
-                                  const meta = statusMeta(r.status)
-                                  const at = dayjs(r.reported_at)
-                                  const lastAt = dayjs(run.last.reported_at)
-                                  return {
-                                    color: meta.color,
-                                    icon: (
-                                      <span
-                                        style={{
-                                          width: 10,
-                                          height: 10,
-                                          borderRadius: '50%',
-                                          background: meta.color,
-                                          boxShadow: `0 0 0 3px ${meta.ring}44`,
-                                          display: 'inline-block',
-                                        }}
-                                      />
-                                    ),
-                                    content: (
-                                      <div>
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                          <StatusPill status={r.status} size="sm" />
-                                          {r.prev_status != null && r.prev_status !== r.status && (
-                                            <span className="fs-12 text-white/50">
-                                              จาก {statusMeta(r.prev_status).label} →
-                                            </span>
-                                          )}
-                                          <span className="fs-12 text-white/70">{sourceLabel(r.source)}</span>
-                                          {run.count > 1 && (
-                                            <span className="fs-12 px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
-                                              ×{run.count}
-                                            </span>
-                                          )}
+                                    return runs
+                                  })().map((run) => {
+                                    const r = run.first
+                                    const meta = statusMeta(r.status)
+                                    const at = dayjs(r.reported_at)
+                                    const lastAt = dayjs(run.last.reported_at)
+                                    return {
+                                      color: meta.color,
+                                      icon: (
+                                        <span
+                                          style={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: '50%',
+                                            background: meta.color,
+                                            boxShadow: `0 0 0 3px ${meta.ring}44`,
+                                            display: 'inline-block',
+                                          }}
+                                        />
+                                      ),
+                                      content: (
+                                        <div>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <StatusPill status={r.status} size="sm" />
+                                            {r.prev_status != null && r.prev_status !== r.status && (
+                                              <span className="fs-12 text-white/50">
+                                                จาก {statusMeta(r.prev_status).label} →
+                                              </span>
+                                            )}
+                                            <span className="fs-12 text-white/70">{sourceLabel(r.source)}</span>
+                                            {run.count > 1 && (
+                                              <span className="fs-12 px-1.5 py-0.5 rounded bg-white/5 text-(--yellow)">
+                                                ×{run.count}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="fs-12 text-white/50 mt-1">
+                                            <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
+                                              <span>
+                                                {at.format('DD MMM YYYY HH:mm:ss')}
+                                                {run.count > 1 && ` – ${lastAt.format('HH:mm:ss')}`}
+                                                {' · '}
+                                                {at.locale('th').fromNow()}
+                                              </span>
+                                            </Tooltip>
+                                          </div>
                                         </div>
-                                        <div className="fs-12 text-white/50 mt-1">
-                                          <Tooltip title={at.format('YYYY-MM-DD HH:mm:ss')}>
-                                            <span>
-                                              {at.format('DD MMM YYYY HH:mm:ss')}
-                                              {run.count > 1 && ` – ${lastAt.format('HH:mm:ss')}`}
-                                              {' · '}
-                                              {at.locale('th').fromNow()}
-                                            </span>
-                                          </Tooltip>
-                                        </div>
-                                      </div>
-                                    ),
-                                  }
-                                })}
-                              />
-                            </div>
-                          )
-                        })
-                      })()}
-                    </div>
-                  )}
-                </div>
+                                      ),
+                                    }
+                                  })}
+                                />
+                              </div>
+                            )
+                          })
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
-    </Modal>
+      </Modal>
     </ConfigProvider>
   )
 }

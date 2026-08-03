@@ -228,7 +228,7 @@ const OverviewSection: React.FC = () => {
               />
               <p className="mt-3 sm:mt-4 text-center font-bold text-white" style={{ fontSize: 40 }}>{card.value}</p>
               <p className="mt-1 sm:mt-2 text-center font-bold" style={{ color: card.glowColor, fontSize: 32 }}>{card.label}</p>
-              <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm lg:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
+              <p className="mt-1 sm:mt-2 text-center fs-12 sm:fs-12 lg:text-base text-[#979797]">จำนวนการแจ้งเตือน</p>
               <div className="flex flex-col gap-2 sm:gap-[10px] mt-6 sm:mt-8 lg:mt-10 w-full">
                 <div
                   className="flex items-center mx-auto rounded-2xl border-2 border-solid px-3 sm:px-5 w-full sm:w-[400px] md:w-[460px] lg:w-[500px] h-[95px] sm:h-[115px] md:h-[135px]"
@@ -237,9 +237,9 @@ const OverviewSection: React.FC = () => {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={card.detail1.img} alt="detail-1" className="w-[36px] h-[36px] sm:w-[48px] sm:h-[48px] md:w-[60px] md:h-[60px] shrink-0" />
                   <div className="ml-2 sm:ml-3 md:ml-4 self-start mt-2 sm:mt-[14px] md:mt-[18px] min-w-0">
-                    <p className="text-xs sm:text-sm md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail1.title}</p>
-                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail1.subtitle}</p>
-                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm text-[#979797] truncate">{card.detail1.summary}</p>
+                    <p className="fs-12 sm:fs-12 md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail1.title}</p>
+                    <p className="mt-0.5 sm:mt-1 fs-12 sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail1.subtitle}</p>
+                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:fs-12 md:fs-12 text-[#979797] truncate">{card.detail1.summary}</p>
                   </div>
                 </div>
                 <div
@@ -249,9 +249,9 @@ const OverviewSection: React.FC = () => {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={card.detail2.img} alt="detail-2" className="w-[36px] h-[36px] sm:w-[48px] sm:h-[48px] md:w-[60px] md:h-[60px] shrink-0" />
                   <div className="ml-2 sm:ml-3 md:ml-4 self-start mt-2 sm:mt-[14px] md:mt-[18px] min-w-0">
-                    <p className="text-xs sm:text-sm md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail2.title}</p>
-                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail2.subtitle}</p>
-                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm text-[#979797] truncate">{card.detail2.summary}</p>
+                    <p className="fs-12 sm:fs-12 md:text-base font-bold truncate" style={{ color: card.glowColor }}>{card.detail2.title}</p>
+                    <p className="mt-0.5 sm:mt-1 fs-12 sm:text-lg md:text-2xl font-bold text-white truncate">{card.detail2.subtitle}</p>
+                    <p className="mt-0.5 sm:mt-1 text-[10px] sm:fs-12 md:fs-12 text-[#979797] truncate">{card.detail2.summary}</p>
                   </div>
                 </div>
               </div>

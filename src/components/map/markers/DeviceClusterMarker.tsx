@@ -168,13 +168,13 @@ export function DefaultDevicePopup({
     >
       {/* เมนู (device type) + สถานะ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ fontSize: 14, color: brightColor, fontWeight: 700, letterSpacing: 0.5, flex: 1 }}>
+        <div style={{ fontSize: "var(--fs-12)", color: brightColor, fontWeight: 700, letterSpacing: 0.5, flex: 1 }}>
           {SYSTEMS[device.type].label}
         </div>
         {statusMeta && (
           <span
             style={{
-              fontSize: 14,
+              fontSize: "var(--fs-12)",
               fontWeight: 700,
               color: statusMeta.color,
               border: `1px solid ${statusMeta.color}`,
@@ -188,12 +188,12 @@ export function DefaultDevicePopup({
         )}
       </div>
       {/* จุดติดตั้ง */}
-      <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 7, lineHeight: 1.4 }}>
+      <div style={{ fontSize: "var(--fs-12)", color: '#cbd5e1', marginTop: 7, lineHeight: 1.4 }}>
         <span style={{ color: '#64748b' }}>จุดติดตั้ง: </span>
         <span style={{ color: '#fff' }}>{device.solutionName || '-'}</span>
       </div>
       {/* สายทาง */}
-      <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 3, lineHeight: 1.4 }}>
+      <div style={{ fontSize: "var(--fs-12)", color: '#cbd5e1', marginTop: 3, lineHeight: 1.4 }}>
         <span style={{ color: '#64748b' }}>สายทาง: </span>
         <span style={{ color: '#fff' }}>{device.road || '-'}</span>
       </div>
@@ -295,12 +295,12 @@ const DeviceClusterMarker: React.FC<DeviceClusterMarkerProps> = ({
             : popup
               ? (f: GeoJSON.Feature) => popup(f.properties as Device, color)
               : (f: GeoJSON.Feature) => (
-                  <DefaultDevicePopup
-                    device={f.properties as Device}
-                    color={color}
-                    onNavigate={(url) => router.push(url)}
-                  />
-                )
+                <DefaultDevicePopup
+                  device={f.properties as Device}
+                  color={color}
+                  onNavigate={(url) => router.push(url)}
+                />
+              )
 
         return (
           <MarkerLayer

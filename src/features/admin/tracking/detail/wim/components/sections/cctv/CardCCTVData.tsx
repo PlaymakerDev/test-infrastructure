@@ -28,7 +28,7 @@ const CardCCTVData: React.FC<Props> = (props) => {
 
   const renderList = useMemo(() => {
     return list.map((item, index) => (
-      <span key={index} className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${CURRENT_TYPE[item].color}`}>
+      <span key={index} className={`inline-block py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border ${CURRENT_TYPE[item].color}`}>
         {CURRENT_TYPE[item].text}
       </span>
     ))
@@ -48,7 +48,7 @@ const CardCCTVData: React.FC<Props> = (props) => {
       <section>
         <h4 className={`fs-12 font-normal! ${item?.camera_status === "Online" ? 'text-(--default-blue)' : 'text-red-500'} leading-snug break-all mb-0.5`}>{item?.camera_description || '-'}</h4>
         <div className='flex justify-between items-center flex-wrap gap-3'>
-          <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item?.station_description || '-'}</p>
+          <p className='fs-12 text-white/50 leading-snug m-0'>IP Address : {item?.camera_ip || '-'}</p>
           <div className='flex gap-2 items-center flex-wrap'>
             {renderList}
           </div>

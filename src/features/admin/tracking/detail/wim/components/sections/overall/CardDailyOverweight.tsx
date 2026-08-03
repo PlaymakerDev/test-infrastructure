@@ -45,7 +45,7 @@ const CardDailyOverweight: React.FC<Props> = (props) => {
           <p className="mb-0">{fmtNumber(findGrossWeightOver, 1) || 0} ตัน</p>
         </section>
         <div className="flex items-center justify-end gap-1">
-          <InfoCircleOutlined className="text-xs! text-red-500!" />
+          <InfoCircleOutlined className="fs-12! text-red-500!" />
           <p className="text-red-500 fs-12 mb-0">เกินพิกัด {findGrossWeightPercentage}%</p>
         </div>
       </div>

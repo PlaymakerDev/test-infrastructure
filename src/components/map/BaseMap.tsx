@@ -285,10 +285,10 @@ const BaseMap: React.FC<BaseMapProps> = ({
             )
           })
           doomedLayers.forEach((l) => {
-            try { instance!.removeLayer((l as { id: string }).id) } catch {}
+            try { instance!.removeLayer((l as { id: string }).id) } catch { }
           })
           if (instance!.getSource('mapbox-procedural-buildings-v1')) {
-            try { instance!.removeSource('mapbox-procedural-buildings-v1') } catch {}
+            try { instance!.removeSource('mapbox-procedural-buildings-v1') } catch { }
           }
 
           // Hide the basemap's own first-level admin (province) boundary
@@ -365,9 +365,9 @@ const BaseMap: React.FC<BaseMapProps> = ({
                 const existing = instance!.getFilter(lid)
                 const combined = (existing ? ['all', existing, withinTH] : withinTH) as never
                 instance!.setFilter(lid, combined)
-              } catch {}
-              try { instance!.setPaintProperty(lid, 'text-opacity', opacityExpr) } catch {}
-              try { instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr) } catch {}
+              } catch { }
+              try { instance!.setPaintProperty(lid, 'text-opacity', opacityExpr) } catch { }
+              try { instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr) } catch { }
             }
           }
         } catch {
@@ -562,7 +562,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
             background: 'rgba(0,0,0,0.7)',
             border: '1px solid rgba(255,255,255,0.15)',
             color: 'rgba(255,255,255,0.9)',
-            fontSize: 12,
+            fontSize: "var(--fs-12)",
             backdropFilter: 'blur(6px)',
             WebkitBackdropFilter: 'blur(6px)',
             transition: 'opacity 0.2s',

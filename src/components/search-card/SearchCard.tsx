@@ -66,7 +66,7 @@ const SearchCard: React.FC<Props> = ({
         }}
         styles={{
           input: {
-            fontSize: 14,
+            fontSize: "var(--fs-12)",
             fontWeight: 400,
             color: '#FFFFFF',
           },

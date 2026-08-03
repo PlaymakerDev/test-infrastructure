@@ -54,7 +54,7 @@ const ConfirmDeleteModal: React.FC<Props> = ({
           <div className='text-center'>
             <h3 style={{ color: '#1F1F1F', fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h3>
             {subtitle && (
-              <p style={{ color: '#8A8A8A', fontSize: 13, marginTop: 6, marginBottom: 0 }}>{subtitle}</p>
+              <p style={{ color: '#8A8A8A', fontSize: "var(--fs-12)", marginTop: 6, marginBottom: 0 }}>{subtitle}</p>
             )}
           </div>
           <div

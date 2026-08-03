@@ -247,7 +247,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                 <h2 className='font-bold text-white mt-3' style={{ fontSize: 26 }}>
                   กรมทางหลวงชนบท
                 </h2>
-                <p className='text-white' style={{ fontSize: 14 }}>Department of Rural Roads</p>
+                <p className='text-white' style={{ fontSize: "var(--fs-12)" }}>Department of Rural Roads</p>
               </div>
 
               {/* divider (paint10: yellow centre → blue ends) — a crisp line
@@ -276,7 +276,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                 <p className='font-bold' style={{ color: BLUE, fontSize: 22 }}>
                   เข้าสู่ระบบ
                 </p>
-                <p className='mt-1' style={{ fontSize: 13, color: GREY }}>
+                <p className='mt-1' style={{ fontSize: "var(--fs-12)", color: GREY }}>
                   กรุณาเข้าระบบเพื่อใช้งานศูนย์ควบคุม
                 </p>
               </div>
@@ -288,7 +288,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                     background: 'rgba(252,209,22,0.10)',
                     border: `1px solid ${YELLOW}`,
                     color: YELLOW,
-                    fontSize: 13,
+                    fontSize: "var(--fs-12)",
                   }}
                 >
                   เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง
@@ -311,7 +311,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                         status={errors.username ? 'error' : undefined}
                       />
                       {!!errors.username && (
-                        <span className='text-red-400 text-xs mt-1 block'>
+                        <span className='text-red-400 fs-12 mt-1 block'>
                           {errors.username.message}
                         </span>
                       )}
@@ -340,7 +340,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                         }
                       />
                       {!!errors.password && (
-                        <span className='text-red-400 text-xs mt-1 block'>
+                        <span className='text-red-400 fs-12 mt-1 block'>
                           {errors.password.message}
                         </span>
                       )}
@@ -353,13 +353,13 @@ const AuthScreen: React.FC<Props> = (props) => {
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
                   >
-                    <span style={{ color: GREY, fontSize: 13 }}>จดจำการเข้าสู่ระบบ</span>
+                    <span style={{ color: GREY, fontSize: "var(--fs-12)" }}>จดจำการเข้าสู่ระบบ</span>
                   </Checkbox>
                   <button
                     type='button'
                     onClick={onForgotPassword}
                     className='font-semibold hover:underline'
-                    style={{ color: YELLOW, fontSize: 13 }}
+                    style={{ color: YELLOW, fontSize: "var(--fs-12)" }}
                   >
                     ลืมรหัสผ่าน?
                   </button>
@@ -384,7 +384,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                 </Button>
               </form>
 
-              <p className='text-center mt-6' style={{ fontSize: 12, color: GREY }}>
+              <p className='text-center mt-6' style={{ fontSize: "var(--fs-12)", color: GREY }}>
                 Version 1.0.0 &nbsp;|&nbsp; © Department of Rural Roads
               </p>
             </div>

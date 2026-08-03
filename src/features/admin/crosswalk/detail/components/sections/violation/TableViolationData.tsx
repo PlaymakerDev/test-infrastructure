@@ -75,7 +75,7 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
         const color = isVehicleViolation(row.crosswalk.name_th) ? '#FF7B00' : '#E94C4C'
         return (
           <span
-            className='inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border'
+            className='inline-block py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border'
             style={{ borderColor: color, color }}
           >
             {row.crosswalk.name_th}

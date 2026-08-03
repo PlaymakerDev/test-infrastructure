@@ -93,11 +93,11 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
           <h2 style={{ color: '#66AEFF', fontSize: 24, fontWeight: 700, margin: 0, marginBottom: 6 }}>
             CrossingCode
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, margin: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: "var(--fs-12)", margin: 0 }}>
             {task && activePoint ? `จุดติดตั้ง : ${activePoint.name} • ${task.kind}` : ''}
           </p>
           {codesQuery.data?.master_index_code && (
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: '8px 0 0', fontFamily: 'monospace' }}>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: "var(--fs-12)", margin: '8px 0 0', fontFamily: 'monospace' }}>
               Master : {codesQuery.data.master_index_code}
             </p>
           )}

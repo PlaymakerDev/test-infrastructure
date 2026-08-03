@@ -83,7 +83,7 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
         label: (
           <div className='min-w-0'>
             <div className='truncate text-white'>{r.road_code}</div>
-            <div className='truncate text-white/50 text-[11px]'>{r.road_name}</div>
+            <div className='truncate text-white/50 fs-12'>{r.road_name}</div>
           </div>
         ),
       }))
@@ -156,7 +156,7 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
                   />
                 )
               ) : (
-                <div className='text-white/50 py-2 text-center text-[12px]'>
+                <div className='text-white/50 py-2 text-center fs-12'>
                   พิมพ์อย่างน้อย 2 ตัวอักษร เช่น ชม.3035
                 </div>
               )

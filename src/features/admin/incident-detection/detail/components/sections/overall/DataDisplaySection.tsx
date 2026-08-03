@@ -27,7 +27,7 @@ const StatusPill: React.FC<{ status: ConnectStatus }> = ({ status }) => {
   const connected = status === 'connect'
   return (
     <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${connected ? '#66AEFF' : '#E94C4C'}`, color: connected ? '#66AEFF' : '#E94C4C' }}
     >
       {connected ? 'Connect' : 'Disconnect'}
@@ -41,7 +41,7 @@ const WarrantyPill: React.FC<{ warranty: InstallGroup['warranty'] }> = ({ warran
     : { text: 'หมดค้ำ', color: '#979797' }
   return (
     <span
-      className='inline-flex items-center px-3 py-0.5 rounded-full text-xs whitespace-nowrap'
+      className='inline-flex items-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
       style={{ border: `1px solid ${cfg.color}`, color: cfg.color }}
     >
       {cfg.text}
@@ -73,15 +73,15 @@ const CAMERA_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: ExportCameraRow, index: number) => string | number
 }[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'จุดติดตั้ง', width: 34, widthPct: 20, align: 'left', value: (r) => r.point || '-' },
-  { header: 'ชื่อกล้อง', width: 40, widthPct: 25, align: 'left', value: (r) => r.name || '-' },
-  { header: 'กม.ที่', width: 10, widthPct: 8, value: (r) => r.km || '-' },
-  { header: 'เหตุการณ์', width: 10, widthPct: 8, value: (r) => r.events },
-  { header: 'IP Address', width: 18, widthPct: 12, value: (r) => r.ip || '-' },
-  { header: 'Stream Status', width: 14, widthPct: 11, value: (r) => (r.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
-  { header: 'Device Status', width: 14, widthPct: 11, value: (r) => (r.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
-]
+    { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
+    { header: 'จุดติดตั้ง', width: 34, widthPct: 20, align: 'left', value: (r) => r.point || '-' },
+    { header: 'ชื่อกล้อง', width: 40, widthPct: 25, align: 'left', value: (r) => r.name || '-' },
+    { header: 'กม.ที่', width: 10, widthPct: 8, value: (r) => r.km || '-' },
+    { header: 'เหตุการณ์', width: 10, widthPct: 8, value: (r) => r.events },
+    { header: 'IP Address', width: 18, widthPct: 12, value: (r) => r.ip || '-' },
+    { header: 'Stream Status', width: 14, widthPct: 11, value: (r) => (r.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
+    { header: 'Device Status', width: 14, widthPct: 11, value: (r) => (r.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+  ]
 
 /** Adapter — /cameras/list row → CameraRow. The analytic endpoint doesn't
  *  carry per-camera function flags, so we derive them: every camera here is
@@ -232,7 +232,7 @@ const DataDisplaySection: React.FC = () => {
         if (row.kind === 'group') {
           return (
             <div className='flex items-center gap-3'>
-              <span className='text-white font-semibold text-sm'>{row.group.label}</span>
+              <span className='text-white font-semibold fs-12'>{row.group.label}</span>
               <TbInfoSquareRoundedFilled
                 size={18}
                 className='cursor-pointer hover:text-(--yellow)'
@@ -262,7 +262,7 @@ const DataDisplaySection: React.FC = () => {
       ellipsis: true,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white text-sm'>{row.camera.name}</span> : null,
+        row.kind === 'camera' ? <span className='text-white fs-12'>{row.camera.name}</span> : null,
     },
     {
       title: 'กม.ที่',
@@ -270,7 +270,7 @@ const DataDisplaySection: React.FC = () => {
       width: 100,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/80 text-sm'>{row.camera.km}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/80 fs-12'>{row.camera.km}</span> : null,
     },
     {
       title: 'เหตุการณ์',
@@ -286,7 +286,7 @@ const DataDisplaySection: React.FC = () => {
       width: 140,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 text-sm'>{row.camera.ip}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
     },
     {
       title: 'Stream Status',

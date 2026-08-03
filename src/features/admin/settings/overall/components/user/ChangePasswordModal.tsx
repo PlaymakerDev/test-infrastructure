@@ -111,7 +111,7 @@ const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose,
         }
       >
         {user && (
-          <div className='mb-4 text-sm'>
+          <div className='mb-4 fs-12'>
             <div style={{ color: '#6B6B6B' }}>
               Username : <span style={{ color: LABEL_COLOR, fontWeight: 500 }}>{user.username}</span>
             </div>
@@ -136,7 +136,7 @@ const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose,
               }}
             >
               <TbInfoCircle size={20} color={LDAP_WARN_ICON} style={{ flexShrink: 0, marginTop: 2 }} />
-              <span style={{ color: LDAP_WARN_TEXT, fontSize: 14, lineHeight: 1.55 }}>
+              <span style={{ color: LDAP_WARN_TEXT, fontSize: "var(--fs-12)", lineHeight: 1.55 }}>
                 {LDAP_WARN_COPY}
               </span>
             </div>
@@ -166,7 +166,7 @@ const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose,
           >
             <Form.Item
               label={
-                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                   รหัสผ่านใหม่<Asterisk />
                 </span>
               }
@@ -181,7 +181,7 @@ const ChangePasswordModal: React.FC<Props> = ({ open, user, submitting, onClose,
             </Form.Item>
             <Form.Item
               label={
-                <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
                   ยืนยันรหัสผ่านใหม่<Asterisk />
                 </span>
               }

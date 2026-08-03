@@ -3,7 +3,7 @@ import React from 'react'
 import { Image, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
-interface Props {}
+interface Props { }
 
 type ActionType = 'เปลี่ยนข้อความ' | 'ข้อผิดพลาด'
 
@@ -103,7 +103,7 @@ const TableControlData: React.FC<Props> = () => {
       align: 'center',
       width: 220,
       render: (t: ActionType) => (
-        <span className={`inline-block py-0.5 px-3 rounded-full text-xs whitespace-nowrap border ${ACTION_CLASS[t]}`}>
+        <span className={`inline-block py-0.5 px-3 rounded-full fs-12 whitespace-nowrap border ${ACTION_CLASS[t]}`}>
           {t}
         </span>
       ),

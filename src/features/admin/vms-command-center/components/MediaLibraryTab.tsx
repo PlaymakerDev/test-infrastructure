@@ -248,7 +248,7 @@ const MediaLibraryTab: React.FC = () => {
     <div className="h-full flex flex-col bg-(--dark-black) rounded-xl overflow-hidden text-white/90">
       {/* Toolbar */}
       <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 flex-wrap">
-        <div className="text-sm font-semibold text-(--yellow)">คลังสื่อ ({totalCount})</div>
+        <div className="fs-12 font-semibold text-(--yellow)">คลังสื่อ ({totalCount})</div>
         <Input
           allowClear
           placeholder="ค้นหาชื่อรูป/วิดีโอ..."
@@ -406,7 +406,7 @@ const MediaLibraryTab: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         style={{ pointerEvents: 'none' }}
                       />
                     </button>
@@ -492,154 +492,154 @@ const MediaLibraryTab: React.FC = () => {
           },
         }}
       >
-      <Modal
-        open={uploadOpen}
-        onCancel={closeUploadModal}
-        title={<span style={{ color: '#1F1F1F' }}>อัปโหลดสื่อใหม่</span>}
-        okText={uploading ? 'กำลังอัปโหลด…' : 'อัปโหลด'}
-        cancelText="ปิด"
-        onOk={runUpload}
-        confirmLoading={uploading}
-        okButtonProps={{ disabled: staged.length === 0 || uploading || staged[0]?.status === 'done' }}
-        maskClosable={!uploading}
-        closable={!uploading}
-        destroyOnHidden
-        width={640}
-        wrapClassName="light-modal"
-        styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
-      >
-        <div className="space-y-3">
-          <div>
-            <div className="fs-12 text-slate-500 mb-1">หมวดหมู่ (ไม่บังคับ)</div>
-            <Select
-              placeholder="ปล่อยว่างไว้ = 'อื่นๆ'"
-              allowClear
-              value={uploadCategory ?? undefined}
-              onChange={(v) => setUploadCategory(v ?? null)}
-              disabled={uploading}
-              options={types.map((t) => ({ label: t.name, value: t.id }))}
-              classNames={{ popup: { root: 'light-modal-popup' } }}
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT}
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              if (e.target.files?.length) addStagedFiles(e.target.files)
-              e.target.value = ''
-            }}
-          />
-
-          {staged.length === 0 ? (
-            // Empty dropzone
-            <div
-              className="rounded-lg border-2 border-dashed transition-colors cursor-pointer text-center px-4 py-10"
-              style={{
-                borderColor: isDragOver ? '#FCD116' : '#D9D9D9',
-                background: isDragOver ? 'rgba(252,209,22,0.06)' : '#FAFAFA',
-              }}
-              onDragOver={(e) => {
-                e.preventDefault()
-                setIsDragOver(true)
-              }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault()
-                setIsDragOver(false)
-                if (uploading) return
-                if (e.dataTransfer.files?.length) addStagedFiles(e.dataTransfer.files)
-              }}
-              onClick={() => {
-                if (uploading) return
-                fileInputRef.current?.click()
-              }}
-            >
-              <div className="flex items-center justify-center text-slate-500">
-                <TbCloudUpload size={48} />
-              </div>
-              <div className="mt-2 text-sm text-slate-700">ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือก</div>
-              <div className="fs-12 text-slate-500 mt-1">
-                รองรับรูปภาพและวิดีโอ · 1 ไฟล์ต่อครั้ง · ขนาดไม่เกิน {MAX_MB}MB
-              </div>
+        <Modal
+          open={uploadOpen}
+          onCancel={closeUploadModal}
+          title={<span style={{ color: '#1F1F1F' }}>อัปโหลดสื่อใหม่</span>}
+          okText={uploading ? 'กำลังอัปโหลด…' : 'อัปโหลด'}
+          cancelText="ปิด"
+          onOk={runUpload}
+          confirmLoading={uploading}
+          okButtonProps={{ disabled: staged.length === 0 || uploading || staged[0]?.status === 'done' }}
+          maskClosable={!uploading}
+          closable={!uploading}
+          destroyOnHidden
+          width={640}
+          wrapClassName="light-modal"
+          styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
+        >
+          <div className="space-y-3">
+            <div>
+              <div className="fs-12 text-slate-500 mb-1">หมวดหมู่ (ไม่บังคับ)</div>
+              <Select
+                placeholder="ปล่อยว่างไว้ = 'อื่นๆ'"
+                allowClear
+                value={uploadCategory ?? undefined}
+                onChange={(v) => setUploadCategory(v ?? null)}
+                disabled={uploading}
+                options={types.map((t) => ({ label: t.name, value: t.id }))}
+                classNames={{ popup: { root: 'light-modal-popup' } }}
+                style={{ width: '100%' }}
+              />
             </div>
-          ) : (
-            // Big preview of the selected file
-            (() => {
-              const s = staged[0]
-              const border =
-                s.status === 'done' ? '#22c55e' : s.status === 'error' ? '#ef4444' : '#E5E5E5'
-              return (
-                <div className="space-y-2">
-                  <div
-                    className="relative rounded-lg overflow-hidden border bg-black"
-                    style={{ borderColor: border, aspectRatio: '16/9' }}
-                  >
-                    {s.isVideo ? (
-                      <video
-                        src={s.previewUrl}
-                        controls
-                        muted
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                      />
-                    ) : (
-                      <img
-                        src={s.previewUrl}
-                        alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPT}
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files?.length) addStagedFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+
+            {staged.length === 0 ? (
+              // Empty dropzone
+              <div
+                className="rounded-lg border-2 border-dashed transition-colors cursor-pointer text-center px-4 py-10"
+                style={{
+                  borderColor: isDragOver ? '#FCD116' : '#D9D9D9',
+                  background: isDragOver ? 'rgba(252,209,22,0.06)' : '#FAFAFA',
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragOver(true)
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragOver(false)
+                  if (uploading) return
+                  if (e.dataTransfer.files?.length) addStagedFiles(e.dataTransfer.files)
+                }}
+                onClick={() => {
+                  if (uploading) return
+                  fileInputRef.current?.click()
+                }}
+              >
+                <div className="flex items-center justify-center text-slate-500">
+                  <TbCloudUpload size={48} />
+                </div>
+                <div className="mt-2 fs-12 text-slate-700">ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือก</div>
+                <div className="fs-12 text-slate-500 mt-1">
+                  รองรับรูปภาพและวิดีโอ · 1 ไฟล์ต่อครั้ง · ขนาดไม่เกิน {MAX_MB}MB
+                </div>
+              </div>
+            ) : (
+              // Big preview of the selected file
+              (() => {
+                const s = staged[0]
+                const border =
+                  s.status === 'done' ? '#22c55e' : s.status === 'error' ? '#ef4444' : '#E5E5E5'
+                return (
+                  <div className="space-y-2">
+                    <div
+                      className="relative rounded-lg overflow-hidden border bg-black"
+                      style={{ borderColor: border, aspectRatio: '16/9' }}
+                    >
+                      {s.isVideo ? (
+                        <video
+                          src={s.previewUrl}
+                          controls
+                          muted
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <img
+                          src={s.previewUrl}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        />
+                      )}
+                      {s.status === 'done' && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white fs-12 px-2 py-1 rounded">
+                          <TbCircleCheckFilled size={14} /> อัปโหลดสำเร็จ
+                        </div>
+                      )}
+                      {s.status === 'idle' && (
+                        <button
+                          className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded"
+                          title="ลบออก"
+                          onClick={() => removeStaged(s.key)}
+                        >
+                          <TbX size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between fs-12 text-slate-500">
+                      <span>
+                        {(s.file.size / 1024 / 1024).toFixed(2)} MB · {isVideoMime(s.file.type) ? 'วิดีโอ' : 'รูปภาพ'}
+                      </span>
+                      {s.status === 'idle' && (
+                        <button
+                          className="text-slate-700 hover:text-(--yellow) underline"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          เปลี่ยนไฟล์
+                        </button>
+                      )}
+                    </div>
+
+                    {s.status !== 'idle' && (
+                      <Progress
+                        percent={s.progress}
+                        status={s.status === 'error' ? 'exception' : s.status === 'done' ? 'success' : 'active'}
+                        strokeColor="#FCD116"
                       />
                     )}
-                    {s.status === 'done' && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white fs-12 px-2 py-1 rounded">
-                        <TbCircleCheckFilled size={14} /> อัปโหลดสำเร็จ
+                    {s.status === 'error' && (
+                      <div className="fs-12 text-red-500 mt-0.5 flex items-center gap-1">
+                        <TbAlertTriangle size={12} /> {s.errorMsg}
                       </div>
                     )}
-                    {s.status === 'idle' && (
-                      <button
-                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded"
-                        title="ลบออก"
-                        onClick={() => removeStaged(s.key)}
-                      >
-                        <TbX size={16} />
-                      </button>
-                    )}
                   </div>
-
-                  <div className="flex items-center justify-between fs-12 text-slate-500">
-                    <span>
-                      {(s.file.size / 1024 / 1024).toFixed(2)} MB · {isVideoMime(s.file.type) ? 'วิดีโอ' : 'รูปภาพ'}
-                    </span>
-                    {s.status === 'idle' && (
-                      <button
-                        className="text-slate-700 hover:text-(--yellow) underline"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        เปลี่ยนไฟล์
-                      </button>
-                    )}
-                  </div>
-
-                  {s.status !== 'idle' && (
-                    <Progress
-                      percent={s.progress}
-                      status={s.status === 'error' ? 'exception' : s.status === 'done' ? 'success' : 'active'}
-                      strokeColor="#FCD116"
-                    />
-                  )}
-                  {s.status === 'error' && (
-                    <div className="fs-12 text-red-500 mt-0.5 flex items-center gap-1">
-                      <TbAlertTriangle size={12} /> {s.errorMsg}
-                    </div>
-                  )}
-                </div>
-              )
-            })()
-          )}
-        </div>
-      </Modal>
+                )
+              })()
+            )}
+          </div>
+        </Modal>
       </ConfigProvider>
 
       {/* ─── Edit modal (light-modal, follows settings pattern) ─── */}
@@ -664,43 +664,43 @@ const MediaLibraryTab: React.FC = () => {
           },
         }}
       >
-      <Modal
-        open={!!editing}
-        onCancel={() => setEditing(null)}
-        title={<span style={{ color: '#1F1F1F' }}>แก้ไขสื่อ</span>}
-        onOk={saveEdit}
-        confirmLoading={updateMedia.isPending}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-        destroyOnHidden
-        width={520}
-        wrapClassName="light-modal"
-        styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
-      >
-        {editing && (
-          <div className="space-y-3">
-            <div className="rounded overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
-              {isVideoName(editing.filename || editing.url) ? (
-                <video src={editing.url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : (
-                <Image src={editing.url} alt="" preview={false} width="100%" height="100%" style={{ objectFit: 'contain' }} />
-              )}
+        <Modal
+          open={!!editing}
+          onCancel={() => setEditing(null)}
+          title={<span style={{ color: '#1F1F1F' }}>แก้ไขสื่อ</span>}
+          onOk={saveEdit}
+          confirmLoading={updateMedia.isPending}
+          okText="บันทึก"
+          cancelText="ยกเลิก"
+          destroyOnHidden
+          width={520}
+          wrapClassName="light-modal"
+          styles={{ mask: { background: 'rgba(0,0,0,0.55)' } }}
+        >
+          {editing && (
+            <div className="space-y-3">
+              <div className="rounded overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+                {isVideoName(editing.filename || editing.url) ? (
+                  <video src={editing.url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <Image src={editing.url} alt="" preview={false} width="100%" height="100%" style={{ objectFit: 'contain' }} />
+                )}
+              </div>
+              <div>
+                <div className="fs-12 text-slate-500 mb-1">หมวดหมู่</div>
+                <Select
+                  placeholder="อื่นๆ"
+                  allowClear
+                  value={editCategory ?? undefined}
+                  onChange={(v) => setEditCategory(v ?? null)}
+                  options={types.map((t) => ({ label: t.name, value: t.id }))}
+                  classNames={{ popup: { root: 'light-modal-popup' } }}
+                  style={{ width: '100%' }}
+                />
+              </div>
             </div>
-            <div>
-              <div className="fs-12 text-slate-500 mb-1">หมวดหมู่</div>
-              <Select
-                placeholder="อื่นๆ"
-                allowClear
-                value={editCategory ?? undefined}
-                onChange={(v) => setEditCategory(v ?? null)}
-                options={types.map((t) => ({ label: t.name, value: t.id }))}
-                classNames={{ popup: { root: 'light-modal-popup' } }}
-                style={{ width: '100%' }}
-              />
-            </div>
-          </div>
-        )}
-      </Modal>
+          )}
+        </Modal>
       </ConfigProvider>
 
       {/* ─── Preview modal — DARK, CCTVModal pattern ─── */}

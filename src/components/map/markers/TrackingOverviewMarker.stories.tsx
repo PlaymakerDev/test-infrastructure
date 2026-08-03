@@ -137,7 +137,7 @@ export const CustomPopup: Story = {
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
           🚛 {s.name}
         </div>
-        <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
+        <div style={{ fontSize: "var(--fs-12)", color: '#94a3b8', marginBottom: 12 }}>
           รหัส: {s.code}
         </div>
         <button

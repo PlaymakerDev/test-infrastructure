@@ -34,7 +34,7 @@ const TOKENS = {
 } as const
 
 const InfoRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className='flex items-start gap-2' style={{ fontSize: 14 }}>
+  <div className='flex items-start gap-2' style={{ fontSize: "var(--fs-12)" }}>
     <span style={{ color: TOKENS.labelText, flexShrink: 0 }}>{label}&nbsp;:</span>
     <span style={{ color: TOKENS.valueText, wordBreak: 'break-word' }}>{children}</span>
   </div>
@@ -106,7 +106,7 @@ const DeleteContactModal: React.FC<Props> = ({
               </h3>
               <p
                 className='mt-1 mb-0'
-                style={{ color: TOKENS.subtitleText, fontSize: 13 }}
+                style={{ color: TOKENS.subtitleText, fontSize: "var(--fs-12)" }}
               >
                 ผู้รับจ้างรายนี้กำลังถูกใช้งานอยู่ใน{' '}
                 <span style={{ color: TOKENS.titleText, fontWeight: 600 }}>
@@ -191,7 +191,7 @@ const DeleteContactModal: React.FC<Props> = ({
             </h3>
             <p
               className='mt-1 mb-0'
-              style={{ color: TOKENS.subtitleText, fontSize: 13 }}
+              style={{ color: TOKENS.subtitleText, fontSize: "var(--fs-12)" }}
             >
               ระบบจะลบข้อมูลโดยไม่สามารถกู้คืนหรือย้อนกลับได้
             </p>

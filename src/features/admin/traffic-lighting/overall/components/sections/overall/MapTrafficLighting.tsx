@@ -85,16 +85,16 @@ const LightingPopup: React.FC<{
       className={`min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)] ${isOnline ? 'border-cyan-400' : 'border-red-500'
         }`}
     >
-      <p className={`fs-11 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
+      <p className={`fs-12 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
         Traffic Lighting · {String(p.code_name)}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
       </p>
-      <p className={`fs-11 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
+      <p className={`fs-12 font-semibold mt-1.5 ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
-      <p className='fs-11 text-slate-500 mt-0.5'>
+      <p className='fs-12 text-slate-500 mt-0.5'>
         {equipLabel}: {equipmentCount} จุด
         {p.imei ? ` · IMEI ${String(p.imei)}` : ''}
       </p>
@@ -117,7 +117,7 @@ const LightingPopup: React.FC<{
               }))
             }}
           >
-            <p className='fs-11 m-0'>ดูเพิ่มเติม</p>
+            <p className='fs-12 m-0'>ดูเพิ่มเติม</p>
           </Button>
         </ConfigProvider>
       </section>
@@ -192,14 +192,14 @@ const MapTrafficLighting: React.FC<Props> = ({ deptId, roadId }) => {
         <div className='absolute inset-0 flex items-center justify-center bg-black/40 z-10 rounded-lg'>
           <div className='flex flex-col items-center gap-2'>
             <div className='w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin' />
-            <span className='text-yellow-400 text-xs'>กำลังโหลด...</span>
+            <span className='text-yellow-400 fs-12'>กำลังโหลด...</span>
           </div>
         </div>
       )}
       {isError && (
         <div className='absolute inset-0 flex items-center justify-center bg-black/60 z-10 rounded-lg'>
           <div className='flex flex-col items-center gap-3 text-center'>
-            <span className='text-red-300 text-sm'>ไม่สามารถโหลดข้อมูลแผนที่ได้</span>
+            <span className='text-red-300 fs-12'>ไม่สามารถโหลดข้อมูลแผนที่ได้</span>
             <Button size='small' onClick={() => void refetch()}>ลองใหม่</Button>
           </div>
         </div>

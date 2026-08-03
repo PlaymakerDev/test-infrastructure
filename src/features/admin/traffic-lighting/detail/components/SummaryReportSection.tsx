@@ -111,7 +111,7 @@ const AvgFooter: React.FC<{ value: string; label: string; color: string }> = ({
     <p className='text-2xl font-bold mb-0' style={{ color }}>
       {value}
     </p>
-    <p className='mb-0' style={{ fontSize: 14, color: '#FFFFFF80' }}>{label}</p>
+    <p className='mb-0' style={{ fontSize: "var(--fs-12)", color: '#FFFFFF80' }}>{label}</p>
   </div>
 )
 
@@ -134,15 +134,15 @@ const SUMMARY_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (r: VoltageAmpTableRow) => string | number
 }[] = [
-  { header: 'วันที่', width: 16, widthPct: 16, value: (r) => r.date },
-  { header: 'Phase', width: 8, widthPct: 8, value: (r) => r.phaseLabel },
-  { header: 'แรงดันไฟฟ้า (V)', width: 16, widthPct: 15, value: (r) => r.voltage.toFixed(2) },
-  { header: 'กระแสไฟฟ้า (A)', width: 16, widthPct: 15, value: (r) => r.amp.toFixed(2) },
-  { header: 'กำลังไฟฟ้า (W)', width: 16, widthPct: 15, value: (r) => r.watt.toFixed(2) },
-  { header: 'Power Factor', width: 14, widthPct: 13, value: (r) => r.powerFactor.toFixed(2) },
-  { header: 'พลังงานไฟฟ้าที่ใช้ไป (kWh)', width: 22, widthPct: 9, value: (r) => r.kwh.toFixed(2) },
-  { header: 'ความถี่ (Hz)', width: 14, widthPct: 9, value: (r) => r.frequency.toFixed(2) },
-]
+    { header: 'วันที่', width: 16, widthPct: 16, value: (r) => r.date },
+    { header: 'Phase', width: 8, widthPct: 8, value: (r) => r.phaseLabel },
+    { header: 'แรงดันไฟฟ้า (V)', width: 16, widthPct: 15, value: (r) => r.voltage.toFixed(2) },
+    { header: 'กระแสไฟฟ้า (A)', width: 16, widthPct: 15, value: (r) => r.amp.toFixed(2) },
+    { header: 'กำลังไฟฟ้า (W)', width: 16, widthPct: 15, value: (r) => r.watt.toFixed(2) },
+    { header: 'Power Factor', width: 14, widthPct: 13, value: (r) => r.powerFactor.toFixed(2) },
+    { header: 'พลังงานไฟฟ้าที่ใช้ไป (kWh)', width: 22, widthPct: 9, value: (r) => r.kwh.toFixed(2) },
+    { header: 'ความถี่ (Hz)', width: 14, widthPct: 9, value: (r) => r.frequency.toFixed(2) },
+  ]
 
 const SummaryReportSection: React.FC = () => {
   const { imei } = useDetailContext()

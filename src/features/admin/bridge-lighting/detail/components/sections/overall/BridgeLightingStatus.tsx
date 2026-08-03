@@ -227,7 +227,7 @@ const BridgeLightingStatus: React.FC<Props> = ({
                 <br />
                 โปรดรอสักครู่จนกว่าจะเปลี่ยนคำสั่งสำเร็จ
               </div>
-              <div className='fs-11 text-(--yellow) tabular-nums mt-1'>
+              <div className='fs-12 text-(--yellow) tabular-nums mt-1'>
                 รอมา {pendingElapsedSec} วินาที · ตรวจสอบทุก 2 วินาที
               </div>
             </div>

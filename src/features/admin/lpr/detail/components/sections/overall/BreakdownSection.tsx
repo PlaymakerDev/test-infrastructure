@@ -30,7 +30,7 @@ const tooltipStyle: React.CSSProperties = {
   border: '1px solid #3b82f6',
   borderRadius: 10,
   color: '#f8fafc',
-  fontSize: 14, // = .fs-12 (0.875rem)
+  fontSize: "var(--fs-12)", // = .fs-12 (0.875rem)
   padding: '6px 12px',
 }
 
@@ -71,7 +71,7 @@ const BreakdownSection: React.FC = () => {
         <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
           <TbMapPin size={20} />
           <h4 className='mb-0'>จังหวัดตรวจจับสูงสุด</h4>
-          <span className='ms-auto fs-11 text-gray-500 font-normal'>Top 10 · วันนี้</span>
+          <span className='ms-auto fs-12 text-gray-500 font-normal'>Top 10 · วันนี้</span>
         </div>
         {provinceData.length === 0 ? (
           <div className='py-8 text-center text-gray-500 fs-12'>ยังไม่มีข้อมูลวันนี้</div>
@@ -127,7 +127,7 @@ const BreakdownSection: React.FC = () => {
         <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
           <TbTruck size={20} />
           <h4 className='mb-0'>ประเภทยานพาหนะ</h4>
-          <span className='ms-auto fs-11 text-gray-500 font-normal'>Top 10 · วันนี้</span>
+          <span className='ms-auto fs-12 text-gray-500 font-normal'>Top 10 · วันนี้</span>
         </div>
         {vehicleData.length === 0 ? (
           <div className='py-8 text-center text-gray-500 fs-12'>ยังไม่มีข้อมูลวันนี้</div>
@@ -160,11 +160,11 @@ const BreakdownSection: React.FC = () => {
                 </RcPieChart>
               </ResponsiveContainer>
               <div className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'>
-                <div className='fs-11 text-gray-400'>รวม</div>
+                <div className='fs-12 text-gray-400'>รวม</div>
                 <div className='fs-16 font-bold text-white tabular-nums'>
                   {vehicleTotal.toLocaleString('th-TH')}
                 </div>
-                <div className='fs-11 text-gray-400'>ครั้ง</div>
+                <div className='fs-12 text-gray-400'>ครั้ง</div>
               </div>
             </div>
             {/* No scroll cap — the API returns Top 10 at most, so the legend

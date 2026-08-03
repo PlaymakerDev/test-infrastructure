@@ -41,7 +41,7 @@ const TimelineCard: React.FC<Props> = ({ item, isFirst }) => {
               <p className='text-white/50'>{item.timestamp}</p>
             </div>
             {item.status && (
-              <span className={`shrink-0 text-xs border rounded-full px-3 py-0.5 whitespace-nowrap ${STATUS_STYLE[item.status]}`}>
+              <span className={`shrink-0 fs-12 border rounded-full px-3 py-0.5 whitespace-nowrap ${STATUS_STYLE[item.status]}`}>
                 {item.status}
               </span>
             )}

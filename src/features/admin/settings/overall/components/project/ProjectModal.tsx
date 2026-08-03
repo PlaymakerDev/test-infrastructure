@@ -82,14 +82,14 @@ const CANCEL_BG = '#E5E5E5'
 const CANCEL_FG = '#4A4A4A'
 
 const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>
+  <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>
     {children}
     <span style={{ color: ASTERISK_COLOR, marginLeft: 2 }}>*</span>
   </span>
 )
 
 const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{ color: LABEL_COLOR, fontSize: 14, fontWeight: 500 }}>{children}</span>
+  <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
 )
 
 const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
@@ -356,7 +356,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
               <Select
                 placeholder='กรุณาระบุปีงบประมาณ...'
                 options={yearOptions}
-              classNames={{ popup: { root: 'light-modal-popup' } }} />
+                classNames={{ popup: { root: 'light-modal-popup' } }} />
             </Form.Item>
 
             <div className='grid grid-cols-2' style={{ columnGap: 20 }}>
@@ -390,7 +390,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
                   showSearch
                   optionFilterProp='label'
                   options={ownerOptions}
-                classNames={{ popup: { root: 'light-modal-popup' } }} />
+                  classNames={{ popup: { root: 'light-modal-popup' } }} />
               </Form.Item>
               <Form.Item
                 label={<PlainLabel>ผู้รับจ้าง</PlainLabel>}
@@ -403,7 +403,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
                   showSearch
                   optionFilterProp='label'
                   options={contractorOptions}
-                classNames={{ popup: { root: 'light-modal-popup' } }} />
+                  classNames={{ popup: { root: 'light-modal-popup' } }} />
               </Form.Item>
             </div>
 
@@ -461,7 +461,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
                           loading={roadsLoading}
                           showSearch
                           optionFilterProp='label'
-                        classNames={{ popup: { root: 'light-modal-popup' } }} />
+                          classNames={{ popup: { root: 'light-modal-popup' } }} />
                       </Form.Item>
                       {fields.length > 1 && (
                         <Button

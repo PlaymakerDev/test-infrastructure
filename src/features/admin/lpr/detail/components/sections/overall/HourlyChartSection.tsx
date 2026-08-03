@@ -41,12 +41,12 @@ const CustomTooltip: React.FC<{
         border: '1px solid #3b82f6',
         borderRadius: 10,
         color: '#f8fafc',
-        fontSize: 13,
+        fontSize: "var(--fs-12)",
         padding: '8px 14px',
         boxShadow: '0 4px 24px rgba(59,130,246,0.15)',
       }}
     >
-      <p className='text-slate-300 text-xs mb-1'>เวลา {label}</p>
+      <p className='text-slate-300 fs-12 mb-1'>เวลา {label}</p>
       {payload.map((e, i) => (
         <p
           key={i}
@@ -84,7 +84,7 @@ const HourlyChartSection: React.FC = () => {
       <div className='flex items-center gap-2 mb-3 text-(--yellow)'>
         <TbChartAreaLine size={20} />
         <h4 className='mb-0'>ปริมาณทะเบียนรายชั่วโมง</h4>
-        <span className='ms-auto fs-11 text-gray-500 font-normal'>
+        <span className='ms-auto fs-12 text-gray-500 font-normal'>
           วันนี้ vs เมื่อวาน
         </span>
       </div>

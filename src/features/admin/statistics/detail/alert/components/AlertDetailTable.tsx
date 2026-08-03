@@ -24,7 +24,7 @@ const LevelBadge = ({ status }: { status: string }) => {
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
-      fontSize: 12, whiteSpace: 'nowrap',
+      fontSize: "var(--fs-12)", whiteSpace: 'nowrap',
       border: `1px solid ${color}`, color,
     }}>
       {level}
@@ -37,7 +37,7 @@ const LineStatusBadge = ({ status }: { status: string }) => {
   return (
     <span style={{
       display: 'inline-block', padding: '2px 12px', borderRadius: 9999,
-      fontSize: 12, whiteSpace: 'nowrap',
+      fontSize: "var(--fs-12)", whiteSpace: 'nowrap',
       border: `1px solid ${color}`, color,
     }}>
       {status}
@@ -66,11 +66,11 @@ const ALERT_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: AlertItem, index: number) => string | number
 }[] = [
-  { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => (r.timestamp ? dayjs(r.timestamp).format('D MMM BBBB HH:mm:ss') : '-') },
-  { header: 'อุปกรณ์', width: 14, widthPct: 25, value: (r) => levelOf(r.equipment_id) },
-  { header: 'เหตุการณ์', width: 34, widthPct: 32, value: (r) => r.incident || '-' },
-  { header: 'สถานะ', width: 10, widthPct: 18, value: (r) => r.status || '-' },
-]
+    { header: 'วันที่และเวลา', width: 26, widthPct: 25, value: (r) => (r.timestamp ? dayjs(r.timestamp).format('D MMM BBBB HH:mm:ss') : '-') },
+    { header: 'อุปกรณ์', width: 14, widthPct: 25, value: (r) => levelOf(r.equipment_id) },
+    { header: 'เหตุการณ์', width: 34, widthPct: 32, value: (r) => r.incident || '-' },
+    { header: 'สถานะ', width: 10, widthPct: 18, value: (r) => r.status || '-' },
+  ]
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
