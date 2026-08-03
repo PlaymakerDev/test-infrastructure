@@ -381,143 +381,182 @@ const reportStyles = StyleSheet.create({
 })
 
 function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportReportPdfArgs) {
-  return (
-    <Document>
-      <Page size='A4' orientation={orientation ?? 'portrait'} style={styles.page}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>
-          ข้อมูล ณ วันที่ {dayjs().locale('th').format('D MMMM BBBB เวลา HH:mm น.')}
-        </Text>
-        {subtitleNote ? <Text style={styles.filterNote}>{subtitleNote}</Text> : null}
+  // A `table` block gets its OWN <Page> so its header row can be `fixed`:
+  // react-pdf reprints fixed nodes on every wrapped page of their own Page
+  // element only, so a shared page holding charts + two tables would leak each
+  // header onto the other blocks' pages. Own-page also means a table always
+  // starts at the top, which rules out the orphaned title/header this export
+  // used to show (traffic-signal สรุปข้อมูลแยกจราจร, 2026-08-03: the 7-day
+  // table's head sat alone at the bottom of page 2, rows on page 3).
+  // Consecutive non-table blocks keep sharing one page as before.
+  const indexed = blocks.map((block, bi) => ({ block, bi }))
+  const segments: { table: boolean; items: typeof indexed }[] = []
+  for (const entry of indexed) {
+    const last = segments[segments.length - 1]
+    if (entry.block.type === 'table' || !last || last.table) segments.push({ table: entry.block.type === 'table', items: [entry] })
+    else last.items.push(entry)
+  }
 
-        {blocks.map((block, bi) => {
-          if (block.type === 'kv') {
-            const cols = block.columns ?? 2
-            const itemWidth = cols === 1 ? '100%' : '50%'
-            const gutter = cols === 1 ? {} : { paddingRight: 10 }
-            return (
-              <View key={bi} style={reportStyles.kvBlock} wrap={false}>
-                {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
-                <View style={reportStyles.kvGrid}>
-                  {block.items.map((item, ii) => (
-                    <View key={ii} style={{ width: itemWidth, ...gutter }}>
-                      <View style={reportStyles.kvItem}>
-                        <Text style={{ ...reportStyles.kvLabel, maxWidth: '55%' }}>{`${item.label} `}</Text>
-                        <Text style={{ ...reportStyles.kvValue, maxWidth: '45%' }}>{`${item.value} `}</Text>
-                      </View>
-                    </View>
-                  ))}
+  // Header row + data rows of a table block, as DIRECT children of its Page —
+  // `fixed` on a direct Page child is the same proven shape TableReportDocument
+  // uses, and react-pdf's `allFixed` guard then stops a lone repeated header
+  // from spilling onto a trailing page of its own.
+  const renderTableRows = (block: Extract<PdfReportBlock, { type: 'table' }>, bi: number) => {
+    const renderCells = (row: (string | number)[]) =>
+      block.columns.map((c, ci) => (
+        <Text
+          key={c.header}
+          style={{
+            ...styles.cell,
+            width: `${c.widthPct}%`,
+            textAlign: c.align ?? 'center',
+            ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
+          }}
+        >
+          {`${row[ci] ?? ''} `}
+        </Text>
+      ))
+    return (
+      <React.Fragment key={bi}>
+        {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
+        <View style={styles.row} fixed>
+          {block.columns.map((c, i) => (
+            <Text
+              key={c.header}
+              style={{ ...styles.headCell, width: `${c.widthPct}%`, ...(i === 0 ? { borderLeftWidth: 1 } : {}) }}
+            >
+              {`${c.header} `}
+            </Text>
+          ))}
+        </View>
+        {block.rows.map((row, ri) => (
+          <View style={styles.row} key={ri} wrap={false}>
+            {renderCells(row)}
+          </View>
+        ))}
+      </React.Fragment>
+    )
+  }
+
+  const renderBlock = (block: PdfReportBlock, bi: number) => {
+    if (block.type === 'kv') {
+      const cols = block.columns ?? 2
+      const itemWidth = cols === 1 ? '100%' : '50%'
+      const gutter = cols === 1 ? {} : { paddingRight: 10 }
+      return (
+        <View key={bi} style={reportStyles.kvBlock} wrap={false}>
+          {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
+          <View style={reportStyles.kvGrid}>
+            {block.items.map((item, ii) => (
+              <View key={ii} style={{ width: itemWidth, ...gutter }}>
+                <View style={reportStyles.kvItem}>
+                  <Text style={{ ...reportStyles.kvLabel, maxWidth: '55%' }}>{`${item.label} `}</Text>
+                  <Text style={{ ...reportStyles.kvValue, maxWidth: '45%' }}>{`${item.value} `}</Text>
                 </View>
               </View>
-            )
-          }
+            ))}
+          </View>
+        </View>
+      )
+    }
 
-          if (block.type === 'image') {
-            // Fit to content width, cap the height so two charts + stats can
-            // share a page; aspect ratio preserved from the live chart.
-            const pageW = PAGE_INNER_W[orientation ?? 'portrait']
-            const maxH = 300
-            let w = pageW
-            let h = (block.height / block.width) * w
-            if (h > maxH) {
-              h = maxH
-              w = (block.width / block.height) * h
-            }
-            return (
-              <View key={bi} style={reportStyles.imageBlock} wrap={false}>
-                {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
-                {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img> */}
-                <Image src={block.dataUrl} style={{ ...reportStyles.chartImage, width: w, height: h }} />
-              </View>
-            )
-          }
+    if (block.type === 'image') {
+      // Fit to content width, cap the height so two charts + stats can
+      // share a page; aspect ratio preserved from the live chart.
+      const pageW = PAGE_INNER_W[orientation ?? 'portrait']
+      const maxH = 300
+      let w = pageW
+      let h = (block.height / block.width) * w
+      if (h > maxH) {
+        h = maxH
+        w = (block.width / block.height) * h
+      }
+      return (
+        <View key={bi} style={reportStyles.imageBlock} wrap={false}>
+          {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img> */}
+          <Image src={block.dataUrl} style={{ ...reportStyles.chartImage, width: w, height: h }} />
+        </View>
+      )
+    }
 
-          if (block.type === 'entries') {
-            return (
-              <View key={bi} style={reportStyles.tableBlock}>
-                {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
-                {block.items.map((item, ii) => (
-                  <View key={ii} style={reportStyles.entryCard} wrap={false}>
-                    {item.image ? (
-                      // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img>
-                      <Image src={item.image.dataUrl} style={reportStyles.entryThumb} />
-                    ) : null}
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                        <Text style={reportStyles.entryHeading}>{`${item.heading} `}</Text>
-                        {item.badge ? (
-                          <Text
-                            style={{
-                              ...reportStyles.entryBadge,
-                              color: item.badgeColor ?? '#374151',
-                              borderColor: item.badgeColor ?? '#9ca3af',
-                            }}
-                          >
-                            {`${item.badge} `}
-                          </Text>
-                        ) : null}
-                      </View>
-                      {item.subheading ? (
-                        <Text style={reportStyles.entrySubheading}>{`${item.subheading} `}</Text>
-                      ) : null}
-                      <View style={{ ...reportStyles.kvGrid, marginTop: 3 }}>
-                        {item.fields.map((f, fi) => (
-                          <View key={fi} style={{ width: '50%', paddingRight: 8 }}>
-                            <View style={reportStyles.entryFieldRow}>
-                              <Text style={{ ...reportStyles.kvLabel, fontSize: 8.5, maxWidth: '55%' }}>{`${f.label} `}</Text>
-                              <Text style={{ ...reportStyles.kvValue, fontSize: 8.5, maxWidth: '45%' }}>{`${f.value} `}</Text>
-                            </View>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )
-          }
-
-          // table
-          return (
-            <View key={bi} style={reportStyles.tableBlock}>
-              {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
-              <View style={styles.row} wrap={false}>
-                {block.columns.map((c, i) => (
-                  <Text
-                    key={c.header}
-                    style={{ ...styles.headCell, width: `${c.widthPct}%`, ...(i === 0 ? { borderLeftWidth: 1 } : {}) }}
-                  >
-                    {`${c.header} `}
-                  </Text>
-                ))}
-              </View>
-              {block.rows.map((row, ri) => (
-                <View style={styles.row} key={ri} wrap={false}>
-                  {block.columns.map((c, ci) => (
+    if (block.type === 'entries') {
+      return (
+        <View key={bi} style={reportStyles.tableBlock}>
+          {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
+          {block.items.map((item, ii) => (
+            <View key={ii} style={reportStyles.entryCard} wrap={false}>
+              {item.image ? (
+                // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img>
+                <Image src={item.image.dataUrl} style={reportStyles.entryThumb} />
+              ) : null}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <Text style={reportStyles.entryHeading}>{`${item.heading} `}</Text>
+                  {item.badge ? (
                     <Text
-                      key={c.header}
                       style={{
-                        ...styles.cell,
-                        width: `${c.widthPct}%`,
-                        textAlign: c.align ?? 'center',
-                        ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
+                        ...reportStyles.entryBadge,
+                        color: item.badgeColor ?? '#374151',
+                        borderColor: item.badgeColor ?? '#9ca3af',
                       }}
                     >
-                      {`${row[ci] ?? ''} `}
+                      {`${item.badge} `}
                     </Text>
+                  ) : null}
+                </View>
+                {item.subheading ? (
+                  <Text style={reportStyles.entrySubheading}>{`${item.subheading} `}</Text>
+                ) : null}
+                <View style={{ ...reportStyles.kvGrid, marginTop: 3 }}>
+                  {item.fields.map((f, fi) => (
+                    <View key={fi} style={{ width: '50%', paddingRight: 8 }}>
+                      <View style={reportStyles.entryFieldRow}>
+                        <Text style={{ ...reportStyles.kvLabel, fontSize: 8.5, maxWidth: '55%' }}>{`${f.label} `}</Text>
+                        <Text style={{ ...reportStyles.kvValue, fontSize: 8.5, maxWidth: '45%' }}>{`${f.value} `}</Text>
+                      </View>
+                    </View>
                   ))}
                 </View>
-              ))}
+              </View>
             </View>
-          )
-        })}
+          ))}
+        </View>
+      )
+    }
 
-        <Text
-          style={styles.footer}
-          render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages}`}
-          fixed
-        />
-      </Page>
+    // `table` never reaches here — it renders through renderTableRows on
+    // its own page (see the segments split above).
+    return null
+  }
+
+  return (
+    <Document>
+      {segments.map((seg, si) => (
+        <Page key={si} size='A4' orientation={orientation ?? 'portrait'} style={styles.page}>
+          {/* Document heading on the first page only — same as before, when a
+              wrapped single Page printed it once at the top. */}
+          {si === 0 ? <Text style={styles.title}>{title}</Text> : null}
+          {si === 0 ? (
+            <Text style={styles.subtitle}>
+              ข้อมูล ณ วันที่ {dayjs().locale('th').format('D MMMM BBBB เวลา HH:mm น.')}
+            </Text>
+          ) : null}
+          {si === 0 && subtitleNote ? <Text style={styles.filterNote}>{subtitleNote}</Text> : null}
+
+          {seg.table
+            ? renderTableRows(seg.items[0].block as Extract<PdfReportBlock, { type: 'table' }>, seg.items[0].bi)
+            : seg.items.map(({ block, bi }) => renderBlock(block, bi))}
+
+          {/* `pageNumber`/`totalPages` are document-wide, so the footer stays
+              continuous across the segment pages. */}
+          <Text
+            style={styles.footer}
+            render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages}`}
+            fixed
+          />
+        </Page>
+      ))}
     </Document>
   )
 }
