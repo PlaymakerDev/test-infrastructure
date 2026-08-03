@@ -75,7 +75,7 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
         axisTick: { show: false },
         axisLabel: {
           color: '#ffffff',
-          fontSize: 11,
+          fontSize: "var(--fs-12)",
           interval: (index: number) => visibleIdx.has(index),
         },
         splitLine: {
@@ -111,7 +111,7 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
                   borderRadius: 6,
                   padding: [6, 10, 2, 10],
                   color: '#050d1a',
-                  fontSize: 13,
+                  fontSize: "var(--fs-12)",
                   fontWeight: 'bold',
                   lineHeight: 20,
                 },
@@ -120,7 +120,7 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
                   borderRadius: 6,
                   padding: [2, 10, 6, 10],
                   color: '#050d1a',
-                  fontSize: 11,
+                  fontSize: "var(--fs-12)",
                   lineHeight: 18,
                 },
               },
@@ -132,7 +132,7 @@ const IncidentEChart = memo(function IncidentEChart({ buckets }: ChartProps) {
         trigger: 'axis',
         backgroundColor: 'rgba(5,13,26,0.92)',
         borderColor: 'rgba(252,209,22,0.3)',
-        textStyle: { color: '#FCD116', fontSize: 11 },
+        textStyle: { color: '#FCD116', fontSize: "var(--fs-12)" },
         formatter: (p: Array<{ name: string; value: number }>) =>
           `${p[0].name}: <b>${p[0].value.toLocaleString()}</b> เหตุการณ์`,
       },
@@ -219,7 +219,7 @@ const AccidentChart: React.FC<Props> = () => {
     >
       {decoLayers}
       <div className='relative z-10 flex items-center justify-between mb-2'>
-        <div className='flex items-center gap-2 text-white text-sm font-medium'>
+        <div className='flex items-center gap-2 text-white fs-12 font-medium'>
           <TbCarCrash size={30} color='#FCD116' />
           ปริมาณการเกิดอุบัติการณ์
         </div>
@@ -227,20 +227,20 @@ const AccidentChart: React.FC<Props> = () => {
       </div>
       <div className='relative z-10' style={{ minHeight: 196 }}>
         {isLoading && buckets.length === 0 ? (
-          <div className='flex items-center justify-center h-full text-xs' style={{ height: 196, color: '#6b7f9a' }}>
+          <div className='flex items-center justify-center h-full fs-12' style={{ height: 196, color: '#6b7f9a' }}>
             กำลังโหลด...
           </div>
         ) : buckets.length === 0 ? (
           // BE returned no buckets at all → the period has no records to even
           // graph (e.g. solution missing / dept not onboarded yet).
-          <div className='flex items-center justify-center text-xs' style={{ height: 196, color: '#6b7f9a' }}>
+          <div className='flex items-center justify-center fs-12' style={{ height: 196, color: '#6b7f9a' }}>
             ไม่มีข้อมูล
           </div>
         ) : allZero ? (
           // Buckets exist but every count is 0 — accidents simply didn't
           // happen in this range. Use the yellow accent so users see this as
           // a "good news" empty state, not missing data.
-          <div className='flex items-center justify-center text-xs font-medium' style={{ height: 196, color: '#FCD116' }}>
+          <div className='flex items-center justify-center fs-12 font-medium' style={{ height: 196, color: '#FCD116' }}>
             ไม่มีเหตุการณ์
           </div>
         ) : (
