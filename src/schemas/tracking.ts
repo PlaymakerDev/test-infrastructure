@@ -572,16 +572,18 @@ const mobileCarListSchema = z.object({
   accept_weight_by: z.any(),
   arrest_id: z.any(),
   create_date: z.string(),
-  drive_shaft_over: z.string().optional(),
+  // Required since 773a23a (Playmaker, 2026-07-25) flipped the field on
+  // MobileCarList — schema follows the type (compile-checked fixture).
+  drive_shaft_over: z.string(),
   driver_name: z.any(),
   driver_shaft: z.string(),
   ds_1: z.string(),
   ds_2: z.string(),
-  ds_3: z.string().optional(),
-  ds_4: z.string().optional(),
-  ds_5: z.string().optional(),
-  ds_6: z.string().optional(),
-  ds_7: z.string().optional(),
+  ds_3: z.string(),
+  ds_4: z.string(),
+  ds_5: z.string(),
+  ds_6: z.string(),
+  ds_7: z.any(),
   gross_weight: z.string(),
   gross_weight_over: z.any(),
   image_path0: z.string(),
@@ -602,9 +604,9 @@ const mobileCarListSchema = z.object({
   lp_head_province_name: z.string(),
   lp_tail: z.string(),
   lp_tail_no: z.string(),
-  lp_tail_province_id: z.number().optional(),
-  lp_tail_province_id_ppa: z.number().optional(),
-  lp_tail_province_name: z.string().optional(),
+  lp_tail_province_id: z.number(),
+  lp_tail_province_id_ppa: z.number(),
+  lp_tail_province_name: z.string(),
   masterial_name: z.string(),
   t_id: z.string(),
   td_id: z.string(),
@@ -620,9 +622,16 @@ const mobileCarListSchema = z.object({
   vehicle_class_name: z.string(),
 }) satisfies z.ZodType<MobileCarList>
 
+// MobileCarMetaData = WIMMetaData + axis/total over counters (773a23a).
+const mobileCarMetaDataSchema = wimMetaDataSchema.extend({
+  axis_over: z.number(),
+  total: z.number(),
+  total_over: z.number(),
+})
+
 const mobileCarDataSchema = z.object({
   data: z.array(mobileCarListSchema),
-  meta: wimMetaDataSchema,
+  meta: mobileCarMetaDataSchema,
 }) satisfies z.ZodType<MobileCarData>
 
 export const apiResponseMobileCarSchema = z.object({
@@ -647,16 +656,20 @@ const mobileMasterDataSchema = z.object({
   Title: z.string(),
   FirstName: z.string(),
   LastName: z.string(),
-  image_name1: z.string().optional(),
-  image_path1: z.string().optional(),
-  image_name2: z.string().optional(),
-  image_path2: z.string().optional(),
+  image_name1: z.string(),
+  image_path1: z.string(),
+  image_name2: z.string(),
+  image_path2: z.string(),
   CreateDate: z.string(),
   TimeFrom: z.string(),
-  TimeTo: z.string(),
+  // `any` on the type (BE may send null) — mirror it.
+  TimeTo: z.any(),
   IsOpen: z.number(),
   Total: z.string(),
   TotalOver: z.string(),
+  // Added by 773a23a (Playmaker, 2026-07-25) — axis/total overweight rollups.
+  AxisOver: z.string(),
+  TotalOverWeight: z.string(),
   KMFrom: z.string(),
   KMTo: z.string(),
 }) satisfies z.ZodType<MobileMasterData>

@@ -77,8 +77,12 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
     <p
       className='fs-12 font-normal leading-snug line-clamp-2 cursor-pointer hover:underline'
       // Offline camera → red name, same rule as the rail in OverallSection
-      // (per Figma, 2026-07-27); online keeps blue.
-      style={{ color: camera.deviceStatus === 'disconnect' ? '#E94C4C' : '#66AEFF' }}
+      // (per Figma, 2026-07-27); online keeps blue. Follows streamStatus —
+      // the same online/offline the rail names, tab counts, and ERROR badge
+      // show — NOT deviceStatus (ICMP ping): ping is firewalled on some
+      // camera subnets, so every name went red while the video played
+      // (reported 2026-08-03, detail/411).
+      style={{ color: camera.streamStatus === 'disconnect' ? '#E94C4C' : '#66AEFF' }}
       title={camera.name}
       onClick={onSelect}
     >

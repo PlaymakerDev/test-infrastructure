@@ -1,5 +1,8 @@
 import axios, { type AxiosError } from "axios"
-import { getGlobalStore } from "@/stores/store"
+// Holder-only module — do NOT switch back to '@/stores/store': that import
+// closes a circular chain (store → reducers → layoutSlice → LayoutService →
+// ApiService → BaseService) and crashes every page at module init.
+import { getGlobalStore } from "@/stores/globalStore"
 import { setAuthTokenState, resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/authSlice"
 
 declare module "axios" {
