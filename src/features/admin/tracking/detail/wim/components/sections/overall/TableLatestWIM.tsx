@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { APIResponseWIMDaily, WIMDailyData } from '@/types/tracking/detail-api'
 import dayjs from 'dayjs'
 import { fmtNumber } from '@/utils/formatNumber'
+import { fillMissingDailyRows } from '@/features/admin/tracking/detail/wim/data/dailyRows'
 
 interface Props {
   data?: APIResponseWIMDaily
@@ -18,13 +19,29 @@ const STATUS_CLASS: Record<StatusType, string> = {
   'ไม่ส่งข้อมูล': 'border-red-500 text-red-500',
 }
 
+type WIMRow = WIMDailyData & { _isMissing?: boolean }
+
 const TableLatestWIM: React.FC<Props> = (props) => {
   const { data } = props
 
-  const sortedData = useMemo(() => {
-    return [...(data?.data ?? [])].sort((a, b) =>
-      dayjs(b.date_time, 'DD/MM/BBBB').valueOf() - dayjs(a.date_time, 'DD/MM/BBBB').valueOf()
-    )
+  const mergedData = useMemo(() => {
+    const source = data?.data ?? []
+    const fallbackStationId = source[0]?.station_id ?? 0
+    const fallbackStationName = source[0]?.station_name ?? ''
+
+    return fillMissingDailyRows<WIMRow>(source, 7, (dateTime) => ({
+      isover_10percent: 0,
+      avg_esal: '0',
+      max_esal: '0',
+      remark: '',
+      station_id: fallbackStationId,
+      station_name: fallbackStationName,
+      total: 0,
+      total_over: 0,
+      date_time: dateTime,
+      date_time_ct: '',
+      _isMissing: true,
+    }))
   }, [data?.data])
 
   const getStatus = useCallback((remark: string, total: number) => {
@@ -34,7 +51,7 @@ const TableLatestWIM: React.FC<Props> = (props) => {
     return 'ไม่ทราบสถานะ'
   }, [])
 
-  const columns: ColumnsType<WIMDailyData> = [
+  const columns: ColumnsType<WIMRow> = [
     {
       title: 'วันที่',
       dataIndex: 'date_time',
@@ -88,7 +105,7 @@ const TableLatestWIM: React.FC<Props> = (props) => {
       width: 160,
       fixed: 'right',
       render: (value, record) => {
-        const status = getStatus(value, record.total)
+        const status = record._isMissing ? 'ระบบขัดข้อง' : getStatus(value, record.total)
         return (
           <span className={`inline-block py-0.5 px-3.5 rounded-full text-xs whitespace-nowrap border ${STATUS_CLASS[status as StatusType]}`}>
             {status}
@@ -99,9 +116,9 @@ const TableLatestWIM: React.FC<Props> = (props) => {
   ]
 
   return (
-    <Table<WIMDailyData>
+    <Table<WIMRow>
       columns={columns}
-      dataSource={sortedData}
+      dataSource={mergedData}
       pagination={false}
       size="middle"
       rowKey={(record) => `${record.station_id}-${record.date_time}`}
