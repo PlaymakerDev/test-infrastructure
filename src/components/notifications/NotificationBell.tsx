@@ -65,24 +65,17 @@ const NotificationBell: React.FC<Props> = ({
 
   const markRead = useMarkCameraOutageRead()
 
-  // Facebook-style paging: the first "โหลดเพิ่ม" is an explicit click (and
-  // smooth-scrolls down to the fresh rows); from then on `autoLoad` arms an
-  // infinite scroll — reaching the bottom of the list fetches the next page
-  // by itself, with a small loading row instead of the button.
+  // Facebook-style paging: the first "โหลดเพิ่ม" is an explicit click; from
+  // then on `autoLoad` arms an infinite scroll — reaching the bottom of the
+  // list fetches the next page by itself, with a small loading row instead
+  // of the button. No auto-scrolling on the click — the new rows simply
+  // appear below and the user scrolls at their own pace.
   const [autoLoad, setAutoLoad] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
-  const pendingScrollRef = useRef<number | null>(null)
   const handleLoadMore = () => {
-    pendingScrollRef.current = listScrollRef.current?.scrollHeight ?? null
     setAutoLoad(true)
     list.fetchNextPage()
   }
-  useEffect(() => {
-    if (pendingScrollRef.current === null) return
-    const prevHeight = pendingScrollRef.current
-    pendingScrollRef.current = null
-    listScrollRef.current?.scrollTo({ top: Math.max(0, prevHeight - 60), behavior: 'smooth' })
-  }, [items.length])
   const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!autoLoad || !list.hasNextPage || list.isFetchingNextPage) return
     const el = e.currentTarget
@@ -207,19 +200,19 @@ const NotificationBell: React.FC<Props> = ({
           ref={listScrollRef}
           onScroll={handleListScroll}
           className="overflow-y-auto min-h-0"
-          style={{ maxHeight: rowHeight ? rowHeight * 5 : 565 }}
+          // 5 measured rows; once auto-load removes the 40px footer the list
+          // absorbs that space so the panel's total height never changes.
+          style={{ maxHeight: (rowHeight ? rowHeight * 5 : 565) + (autoLoad ? 40 : 0) }}
         >
           {items.map((item) => (
             <OutageItem key={item.id} item={item} onClick={handleItemClick} />
           ))}
-          {/* After the first click, paging is scroll-driven — the loading row
-              lives inside the scroll area where the next page will appear. */}
           {autoLoad && list.isFetchingNextPage && (
-            <div className="py-3 text-center fs-12 text-white/50">กำลังโหลด…</div>
+            <div className="py-2 text-center fs-12 text-white/50">กำลังโหลด…</div>
           )}
         </div>
         {list.hasNextPage && !autoLoad && (
-          <div className="p-2 text-center border-0 border-t border-solid border-white/10">
+          <div className="h-10 flex items-center justify-center border-0 border-t border-solid border-white/10">
             <Button
               type="text"
               size="small"
