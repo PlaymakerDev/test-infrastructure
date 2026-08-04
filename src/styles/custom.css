@@ -96,3 +96,43 @@ div[_echarts_instance_]>div,
 .echarts-tooltip {
   font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
 }
+/* ─── Navbar right-cluster dropdown menus (map-focus picker, "..." menu) ──
+ * Same chrome as the notification bell / find-on-page popouts: glass-dark
+ * background, yellow hairline border + soft glow, rounded corners — so every
+ * popout hanging off the navbar reads as one family. Tagged via
+ * `classNames={{ root: 'nav-glow-menu' }}` on the antd Dropdowns. */
+.nav-glow-menu .ant-dropdown-menu {
+  background: rgba(20, 20, 20, 0.92) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(252, 209, 22, 0.35);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(252, 209, 22, 0.08),
+    0 0 22px rgba(252, 209, 22, 0.18) !important;
+  padding: 6px;
+}
+.nav-glow-menu .ant-dropdown-menu-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 10px;
+}
+.nav-glow-menu .ant-dropdown-menu-item:hover {
+  background: rgba(252, 209, 22, 0.12) !important;
+  color: #fff !important;
+}
+/* Pin both navbar dropdowns to the shared 60px popout line (same as the
+ * find/notification panels' `calc(var(--nav-h) - 12px)`). Trigger-relative
+ * offsets couldn't line up because each trigger button has a different
+ * height; forcing `top` sidesteps that. Safe viewport-wise: admin pages
+ * scroll inside <main>, the body never scrolls, so absolute top == viewport
+ * top for the portaled popup. */
+.nav-glow-menu.ant-dropdown {
+  top: calc(var(--nav-h, 72px) - 12px) !important;
+}
+/* The "..." trigger is the right-most icon, so its centered menu used to
+ * kiss the viewport edge — pin it to the same 16px right inset the bell /
+ * find panels use (their `right-4`). */
+.nav-glow-menu-right.ant-dropdown {
+  left: auto !important;
+  right: 16px !important;
+}

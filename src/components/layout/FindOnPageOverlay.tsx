@@ -115,7 +115,7 @@ const FindOnPageOverlay: React.FC<Props> = ({ open, onClose }) => {
             style={{
               // Track the CSS variable — the navbar can grow on some layouts
               // and hardcoding 80px would leave a visible gap or overlap.
-              top: 'calc(var(--nav-h, 72px) + 8px)',
+              top: 'calc(var(--nav-h, 72px) - 12px)', // 60px — shared popout line
               background: 'rgba(20, 20, 20, 0.92)',
               border: '1px solid rgba(252, 209, 22, 0.35)',
               boxShadow:
