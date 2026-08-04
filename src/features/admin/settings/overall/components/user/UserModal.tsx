@@ -100,12 +100,11 @@ const UserModal: React.FC<Props> = ({
         username: editing.username,
         firstName: editing.firstName,
         lastName: editing.lastName,
-        role: editing.role || 'operator',
+        role: editing.role || 'user',
         departmentId: editing.departmentId,
       }
     }
     // LDAP create seeded from the AD row picked in LDAPSearchModal.
-    // Role defaults to 'user' per the API enum used for AD accounts;
     // departmentId stays undefined so the admin has to pick one.
     if (isLdapMode && prefill) {
       return {
@@ -116,7 +115,7 @@ const UserModal: React.FC<Props> = ({
         departmentId: undefined,
       }
     }
-    return { role: 'operator' }
+    return { role: 'user' }
   }, [editing, isLdapMode, prefill])
 
   useEffect(() => {
@@ -348,10 +347,12 @@ const UserModal: React.FC<Props> = ({
             rules={[{ required: true, message: 'กรุณาเลือกบทบาท' }]}
             style={{ marginBottom: 16 }}
           >
+            {/* Only two roles exist: `user` (ผู้ใช้งาน) and `admin`
+             *  (ผู้ดูแลระบบ). Legacy rows carrying operator/viewer still
+             *  render a label via RoleBadge, but can't be re-selected here. */}
             <Radio.Group>
+              <Radio value='user' style={{ color: LABEL_COLOR }}>ผู้ใช้งาน</Radio>
               <Radio value='admin' style={{ color: LABEL_COLOR }}>ผู้ดูแลระบบ</Radio>
-              <Radio value='operator' style={{ color: LABEL_COLOR }}>ผู้ปฏิบัติงาน</Radio>
-              <Radio value='viewer' style={{ color: LABEL_COLOR }}>ผู้ดูข้อมูล</Radio>
             </Radio.Group>
           </Form.Item>
 

@@ -41,6 +41,9 @@ const initialFilters: UserFilters = {
 // exactly like the on-screen pills (unknown role slugs fall through raw).
 const ROLE_LABELS: Record<string, string> = {
   admin: 'ผู้ดูแลระบบ',
+  user: 'ผู้ใช้งาน',
+  // Legacy slugs — no longer selectable, but still labelled so old rows
+  // don't export as raw text. Mirrors RoleBadge's KNOWN_ROLES.
   operator: 'ผู้ปฏิบัติงาน',
   viewer: 'ผู้ดูข้อมูล',
 }
@@ -289,6 +292,9 @@ const UserSection: React.FC = () => {
             department_id: values.departmentId,
             role: values.role,
             password: values.password,
+            // Must be forwarded — the LDAP/Local sub-tab split is driven by
+            // this flag, and LDAP accounts carry no local password.
+            is_ldap: values.isLdap,
           })
           message.success('เพิ่มผู้ใช้งานแล้ว')
         }

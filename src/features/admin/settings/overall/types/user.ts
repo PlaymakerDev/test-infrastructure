@@ -9,10 +9,11 @@
 //   • Department is stored as `department_id` (number) with a human label
 //     joined in from /manage/departments.
 
-/** Known role slugs the UI renders as pills — free-form strings from the
- *  server are still allowed (cast when reading) but only these get a colored
- *  badge; anything else falls through to a neutral gray pill. */
-export type UserRole = 'admin' | 'operator' | 'viewer'
+/** The two role slugs the system issues: `admin` (ผู้ดูแลระบบ) and `user`
+ *  (ผู้ใช้งาน). Free-form strings from the server are still allowed (cast
+ *  when reading) — legacy rows may carry `operator`/`viewer`, which RoleBadge
+ *  still labels but which are no longer offered in the create/filter UI. */
+export type UserRole = 'admin' | 'user'
 
 export type UserStatus = 'active' | 'inactive'
 

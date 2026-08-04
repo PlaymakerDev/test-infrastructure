@@ -18,8 +18,7 @@ interface Props {
 
 const ROLE_OPTIONS: { label: string; value: UserRole }[] = [
   { label: 'ผู้ดูแลระบบ', value: 'admin' },
-  { label: 'ผู้ปฏิบัติงาน', value: 'operator' },
-  { label: 'ผู้ดูข้อมูล', value: 'viewer' },
+  { label: 'ผู้ใช้งาน', value: 'user' },
 ]
 
 const STATUS_OPTIONS: { label: string; value: UserStatus }[] = [

@@ -1,15 +1,19 @@
 import React from 'react'
 
 interface Props {
-  /** Free-form role slug from the server. Known slugs (admin/operator/viewer)
-   *  get a themed color + Thai label; unknown values fall through to a neutral
-   *  gray pill and show the raw slug so we don't hide unexpected data. */
+  /** Free-form role slug from the server. Known slugs get a themed color +
+   *  Thai label; unknown values fall through to a neutral gray pill and show
+   *  the raw slug so we don't hide unexpected data. */
   role: string
 }
 
+// The system issues only `admin` and `user`. `operator`/`viewer` are LEGACY
+// slugs kept here for display so pre-existing rows don't render as raw text —
+// they are deliberately absent from the create form and the filter dropdown.
 const KNOWN_ROLES: Record<string, { label: string; color: string }> = {
   admin: { label: 'ผู้ดูแลระบบ', color: '#FF6666' },
-  operator: { label: 'ผู้ปฏิบัติงาน', color: '#66AEFF' },
+  user: { label: 'ผู้ใช้งาน', color: '#66AEFF' },
+  operator: { label: 'ผู้ปฏิบัติงาน', color: '#9CA3AF' },
   viewer: { label: 'ผู้ดูข้อมูล', color: '#9CA3AF' },
 }
 
