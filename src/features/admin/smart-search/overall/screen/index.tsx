@@ -5,7 +5,7 @@ import { SmartSearchBody, TitleSection } from "../components"
 const SmartSearchScreen: React.FC = () => {
   return (
     <SmartSearchProvider>
-      <div className="w-full flex flex-col -mt-7 h-[calc(100vh-var(--nav-h))]">
+      <div className="w-full flex flex-col h-[calc(100vh-var(--nav-h))]">
         <TitleSection />
         <SmartSearchBody />
       </div>

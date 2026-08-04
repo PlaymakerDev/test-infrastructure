@@ -127,6 +127,30 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
 // trapezoid menu and every LPR marker use the same glyph 1:1 (same contract
 // as IconTracking for the tracking menu).
 
+/** Breathing yellow glow used by every right-cluster toolbar icon while its
+ *  feature is active — extracted from the find-on-page button so all five
+ *  buttons (map-focus / find / smart-search / bell / more-menu) light up the
+ *  same way. */
+const IconGlow: React.FC<{ active: boolean; children: React.ReactNode }> = ({ active, children }) => (
+  <motion.span
+    className="flex"
+    animate={
+      active
+        ? {
+          filter: [
+            'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+            'drop-shadow(0 0 8px rgba(252,209,22,1))',
+            'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+          ],
+        }
+        : { filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))' }
+    }
+    transition={active ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+  >
+    {children}
+  </motion.span>
+)
+
 export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname()
@@ -155,9 +179,18 @@ export default function Navbar() {
   // buttons live in this nav — the overlay itself renders as a portal-like
   // fixed element that visually attaches under the navbar.
   const [findOpen, setFindOpen] = useState(false)
-  // Notification bell panel — owned here (controlled) so it and the find
-  // overlay are mutually exclusive: opening either closes the other.
+  // Right-cluster popouts are mutually exclusive — the find overlay, the
+  // bell panel, the focus-mode menu and the "..." menu can never be open at
+  // the same time. Each opener calls closeOtherPopouts with its own key.
+  const [extraOpen, setExtraOpen] = useState(false)
+  const [focusMenuOpen, setFocusMenuOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
+  const closeOtherPopouts = useCallback((keep: 'find' | 'bell' | 'focus' | 'extra') => {
+    if (keep !== 'find') setFindOpen(false)
+    if (keep !== 'bell') setBellOpen(false)
+    if (keep !== 'focus') setFocusMenuOpen(false)
+    if (keep !== 'extra') setExtraOpen(false)
+  }, [])
   // Mobile (< lg) replacement for the hover trapezoid: a single trapezoid tab
   // at top-center that pops a grid of the same nav entries. Closes on backdrop
   // tap, tapping the tab again — and on ANY navigation (path or query) without
@@ -225,13 +258,13 @@ export default function Navbar() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
         e.preventDefault()
-        setBellOpen(false)
+        closeOtherPopouts('find')
         setFindOpen(true)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [closeOtherPopouts])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -306,7 +339,7 @@ export default function Navbar() {
       active: findOpen,
       onClick: () => {
         setMobileMoreOpenAt(null)
-        setBellOpen(false)
+        closeOtherPopouts('find')
         setFindOpen(true)
       },
     },
@@ -721,15 +754,25 @@ export default function Navbar() {
                   ]),
                 { key: 'both', label: 'ซ่อนทั้งสองฝั่ง', icon: <TbZoomInArea size={16} /> },
               ],
-              onClick: ({ key }) =>
-                setMapFocusMode(key as 'off' | 'left' | 'right' | 'both'),
+              onClick: ({ key }) => {
+                setMapFocusMode(key as 'off' | 'left' | 'right' | 'both')
+                setFocusMenuOpen(false)
+              },
             }}
-            placement="bottomRight"
+            placement="bottomLeft"
+            classNames={{ root: 'nav-glow-menu' }}
+            open={focusMenuOpen}
+            onOpenChange={(v) => {
+              setFocusMenuOpen(v)
+              if (v) closeOtherPopouts('focus')
+            }}
           >
-            <button
+            <motion.button
               type="button"
               disabled={!focusAvailable}
               onClick={directFocusToggle ? () => toggleMapFocus() : undefined}
+              whileHover={focusAvailable ? { scale: 1.15 } : undefined}
+              whileTap={focusAvailable ? { scale: 0.9 } : undefined}
               className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
                 ? 'text-white/25 cursor-not-allowed'
                 : isMapFocus
@@ -750,14 +793,16 @@ export default function Navbar() {
                         ? 'ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน'
                         : 'เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)'}
             >
-              {mapFocusMode === 'left'
-                ? <TbLayoutSidebarLeftCollapse className="fs-24" />
-                : mapFocusMode === 'right'
-                  ? <TbLayoutSidebarRightCollapse className="fs-24" />
-                  : mapFocusMode === 'both'
-                    ? <TbZoomReset className="fs-24" />
-                    : <TbZoomInArea className="fs-24" />}
-            </button>
+              <IconGlow active={focusAvailable && isMapFocus}>
+                {mapFocusMode === 'left'
+                  ? <TbLayoutSidebarLeftCollapse className="fs-24" />
+                  : mapFocusMode === 'right'
+                    ? <TbLayoutSidebarRightCollapse className="fs-24" />
+                    : mapFocusMode === 'both'
+                      ? <TbZoomReset className="fs-24" />
+                      : <TbZoomInArea className="fs-24" />}
+              </IconGlow>
+            </motion.button>
           </Dropdown>
           {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
               icon *is* the shortcut. Open state paints the icon yellow with
@@ -766,7 +811,7 @@ export default function Navbar() {
           <motion.button
             type="button"
             onClick={() => {
-              setBellOpen(false)
+              closeOtherPopouts('find')
               setFindOpen((v) => !v)
             }}
             title="ค้นหาในหน้า (Ctrl+F)"
@@ -808,26 +853,51 @@ export default function Navbar() {
           </motion.button>
           {/* Smart Search — AI-chat glyph (Hugeicons ai-chat-01 via IconAIChat);
             * active = yellow, same as every other menu icon. */}
-          <IconAIChat
-            className={`${iconClassName} ${pathname?.startsWith("/admin/smart-search") ? "text-(--yellow)" : ""}`}
+          <motion.button
+            type="button"
             onClick={() => router.push("/admin/smart-search")}
-          />
+            title="Smart Search"
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            className={`inline-flex items-center justify-center cursor-pointer transition-colors ${pathname?.startsWith("/admin/smart-search") ? "text-(--yellow)" : "text-inherit hover:text-white"}`}
+            aria-label="Smart Search"
+            aria-pressed={!!pathname?.startsWith("/admin/smart-search")}
+          >
+            <IconGlow active={!!pathname?.startsWith("/admin/smart-search")}>
+              <IconAIChat className={iconClassName} />
+            </IconGlow>
+          </motion.button>
           <NotificationBell
             iconClassName={iconClassName}
             open={bellOpen}
             onOpenChange={(v) => {
               setBellOpen(v)
-              if (v) setFindOpen(false)
+              if (v) closeOtherPopouts('bell')
             }}
           />
           <Dropdown
             menu={{ items: extraItems }}
             trigger={["click"]}
             placement="bottom"
+            open={extraOpen}
+            onOpenChange={(v) => {
+              setExtraOpen(v)
+              if (v) closeOtherPopouts('extra')
+            }}
+            classNames={{ root: 'nav-glow-menu nav-glow-menu-right' }}
           >
-            <TbGripHorizontal
-              className={iconClassName}
-            />
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              className={`inline-flex items-center justify-center cursor-pointer transition-colors ${extraOpen ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+              aria-label="เมนูเพิ่มเติม"
+              aria-expanded={extraOpen}
+            >
+              <IconGlow active={extraOpen}>
+                <TbGripHorizontal className={iconClassName} />
+              </IconGlow>
+            </motion.button>
           </Dropdown>
         </div>
         <div className="mobile-side-menu">
