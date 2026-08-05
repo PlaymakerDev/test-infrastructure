@@ -12,6 +12,7 @@ import {
   MapSection,
   RouteDetail,
   SearchLicenseSection,
+  ModalVehicleDetail,
 } from '../components'
 import { useGPSContext } from '../context'
 import { useQuery } from '@tanstack/react-query'
@@ -165,7 +166,7 @@ const VehicleSection: React.FC = () => {
           </div>
         </div>
       </div>
-
+      <ModalVehicleDetail />
     </div>
   )
 }
