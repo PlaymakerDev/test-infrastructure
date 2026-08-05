@@ -30,6 +30,7 @@ export { default as SearchLicenseSection } from './sections/vehicle/SearchLicens
 export { default as SearchRouteSection } from './sections/vehicle/SearchRouteSection'
 export { default as RouteDetail } from './sections/vehicle/RouteDetail'
 export { default as LicenseTabContent } from './sections/vehicle/LicenseTabContent'
+export { default as ModalVehicleDetail } from './sections/vehicle/ModalVehicleDetail'
 
 // SUMMARY
 export { default as SummarySection } from './SummarySection'
