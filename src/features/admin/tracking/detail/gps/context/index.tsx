@@ -14,10 +14,25 @@ export interface ContextProps {
   // API DATA
   selectRoute: VehicleList;
   setSelectRoute: React.Dispatch<React.SetStateAction<VehicleList>>;
+  // VECHICLE DETAIL DATA
+  vehicleDetail: VehicleDetail;
+  setVehicleDetail: React.Dispatch<React.SetStateAction<VehicleDetail>>;
+
 }
+
 
 export interface PageProviderProps {
   children: React.ReactNode
+}
+
+export interface VehicleDetail {
+  open: boolean
+  unit_id: string | null
+}
+
+export const INIT_VEHICLE_DETAIL: VehicleDetail = {
+  open: false,
+  unit_id: null
 }
 
 export const GPSContext = createContext<ContextProps | null>(null)
@@ -33,6 +48,7 @@ export const GPSProvider = (props: PageProviderProps) => {
   })
   const [licenseOpen, setLicenseOpen] = useState(false)
   const [licenseTab, setLicenseTab] = useState('1')
+  const [vehicleDetail, setVehicleDetail] = useState<VehicleDetail>(INIT_VEHICLE_DETAIL)
 
   // API DATA
   const [selectRoute, setSelectRoute] = useState<VehicleList>({
@@ -58,7 +74,9 @@ export const GPSProvider = (props: PageProviderProps) => {
         licenseTab,
         setLicenseTab,
         selectRoute,
-        setSelectRoute
+        setSelectRoute,
+        vehicleDetail,
+        setVehicleDetail
       }}
     >
       {children}
