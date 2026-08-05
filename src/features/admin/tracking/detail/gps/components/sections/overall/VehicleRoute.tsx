@@ -9,13 +9,14 @@ import { getTrackingGPSVehicleRouteHistoryAPI } from '@/services/routes/Tracking
 interface Props {
   data?: VehicleHistoryData
   unitId?: string
+  isModal?: boolean
 }
 
 type FilterOption = 'วันนี้' | '3 วัน' | '7 วัน'
 const FILTER_OPTIONS: FilterOption[] = ['วันนี้', '3 วัน', '7 วัน']
 
 const VehicleRoute: React.FC<Props> = (props) => {
-  const { data, unitId: latestUnitId } = props
+  const { data, unitId: latestUnitId, isModal } = props
   const [activeFilter, setActiveFilter] = useState<FilterOption>('วันนี้')
 
   const days = activeFilter === '3 วัน' ? 3 : activeFilter === '7 วัน' ? 7 : undefined
@@ -79,7 +80,7 @@ const VehicleRoute: React.FC<Props> = (props) => {
       }
       return events.map((item, index) => {
         return (
-          <div key={`${date}-${item.event_time}-${item.road_id}-${index}`} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
+          <div key={`${date}-${item.event_time}-${item.road_id}-${index}`} className={`rounded-lg px-5 py-3 ${isModal ? 'bg-(--light-gray-2)' : 'bg-(--dark-black)'}`}>
             <h4>{item.road_name || '-'}</h4>
             <p className='fs-12 text-gray-400'>{item.event_time ? dayjs(item.event_time).format('DD MMM BBBB HH:mm:ss') : '-'}</p>
             <p className='fs-12 text-(--yellow)'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>
@@ -87,7 +88,7 @@ const VehicleRoute: React.FC<Props> = (props) => {
         )
       })
     })
-  }, [isLoadingVehicleRouteHistory, isErrorVehicleRouteHistory, vehicleRouteHistory])
+  }, [isLoadingVehicleRouteHistory, isErrorVehicleRouteHistory, vehicleRouteHistory, isModal])
 
   const renderCurrentTimeline = useMemo(() => {
     if (!data?.route_events?.length) {
@@ -99,14 +100,14 @@ const VehicleRoute: React.FC<Props> = (props) => {
     }
     return data?.route_events.map((item) => {
       return (
-        <div key={item.id} className='rounded-lg px-5 py-3 bg-(--dark-black)'>
+        <div key={item.id} className={`rounded-lg px-5 py-3 ${isModal ? 'bg-(--light-gray-2)' : 'bg-(--dark-black)'}`}>
           <h4>{item.road_name || '-'}</h4>
           <p className='fs-12 text-gray-400'>{item.event_time ? dayjs(item.event_time).format('DD MMM BBBB HH:mm:ss') : '-'}</p>
           <p className='fs-12 text-(--yellow)'>ความเร็ว : {fmtNumber(Number(item.speed)) || 0} กม./ชม.</p>
         </div>
       )
     })
-  }, [data?.route_events])
+  }, [data?.route_events, isModal])
 
   const renderTimelineMode = useMemo(() => {
     switch (activeFilter) {
@@ -122,7 +123,7 @@ const VehicleRoute: React.FC<Props> = (props) => {
   }, [activeFilter, renderCurrentTimeline, renderLogTimeline])
 
   return (
-    <div className='rounded-2xl p-5 bg-(--gray)'>
+    <div className={isModal ? '' : 'rounded-2xl p-5 bg-(--gray)'}>
       <section>
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <h4 className='font-normal! text-(--yellow) leading-tight'>เส้นทางการเคลื่อนที่</h4>
