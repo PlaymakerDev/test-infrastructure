@@ -33,6 +33,7 @@ export function useDailyTable(
     page: options?.page,
     page_size: options?.pageSize,
     station_status: options?.stationStatus,
+    ordering: 'desc' as const,
   }
 
   const station = useStationDaily(params, stationType === 'STATION')
