@@ -1,7 +1,7 @@
 "use client"
 import { CarList } from '@/types/tracking/detail-gps-api'
 import { fmtNumber } from '@/utils/formatNumber'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 
 export type WeightStatus = 'normal' | 'overweight' | 'within_limit'
 export type MoveStatus = 'moving' | 'parked'
@@ -17,6 +17,7 @@ export interface VehicleItem {
 
 export interface VehicleListProps {
   items: CarList[]
+  onSelect?: (item: CarList) => void
 }
 
 const PILL = 'fs-12 whitespace-nowrap rounded-full px-2.5 py-0.5 border'
@@ -44,11 +45,21 @@ const MOVE_STATUS_LABEL: Record<MoveStatus, string> = {
   parked: 'รถจอด',
 }
 
-const VehicleCard: React.FC<{ item: CarList }> = ({ item }) => {
+const VehicleCard: React.FC<{
+  item: CarList
+  selected: boolean
+  onClick: (item: CarList) => void
+}> = ({ item, selected, onClick }) => {
   const vehicleIdleStatus = item.speed === 0 ? 'parked' : 'moving'
   const vehicleWeightStatus = item.isoverweight === "Y" ? 'overweight' : 'normal'
   return (
-    <div className='bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+    <div
+      onClick={() => onClick(item)}
+      className={[
+        'bg-(--mid-gray) rounded-2xl p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between cursor-pointer transition-colors duration-200 border',
+        selected ? 'border-(--yellow)' : 'border-transparent',
+      ].join(' ')}
+    >
       <div>
         <h3 className='font-bold text-white leading-tight'>{item.plate_no || 'ไม่ระบุทะเบียน'}</h3>
         <p className='fs-12 text-gray-400 mt-0.5'>{item.plate_province || '-'}</p>
@@ -68,15 +79,29 @@ const VehicleCard: React.FC<{ item: CarList }> = ({ item }) => {
 
 const MemoVehicleCard = React.memo(VehicleCard)
 
-const VehicleList: React.FC<VehicleListProps> = ({ items }) => (
-  <div className='flex flex-col gap-3'>
-    {items.length === 0 && (
-      <p className='text-center text-gray-500 fs-12 py-8'>ไม่พบข้อมูล</p>
-    )}
-    {items.map((item, index) => (
-      <MemoVehicleCard key={`${item.plate_no ?? 'unknown'}-${item.plate_province}-${index}`} item={item} />
-    ))}
-  </div>
-)
+const VehicleList: React.FC<VehicleListProps> = ({ items, onSelect }) => {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const handleClick = useCallback((item: CarList) => {
+    setSelectedId(item.unit_id)
+    onSelect?.(item)
+  }, [onSelect])
+
+  return (
+    <div className='flex flex-col gap-3'>
+      {items.length === 0 && (
+        <p className='text-center text-gray-500 fs-12 py-8'>ไม่พบข้อมูล</p>
+      )}
+      {items.map((item, index) => (
+        <MemoVehicleCard
+          key={`${item.plate_no ?? 'unknown'}-${item.plate_province}-${index}`}
+          item={item}
+          selected={selectedId === item.unit_id}
+          onClick={handleClick}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default React.memo(VehicleList)
