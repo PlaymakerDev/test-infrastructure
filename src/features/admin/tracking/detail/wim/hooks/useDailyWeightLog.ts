@@ -31,8 +31,8 @@ export function useDailyWeightLog(
   stationType: string | null | undefined
 ) {
   const today = dayjs().format('YYYY-MM-DD')
-  const wimParams = { start_date: today, end_date: today, station: id as number }
-  const stationParams = { start_date: today, end_date: today, station: id as number }
+  const wimParams = { start_date: today, end_date: today, station: id as number, ordering: 'desc' as const }
+  const stationParams = { start_date: today, end_date: today, station: id as number, ordering: 'desc' as const }
 
   const wim = useWeightWimLog(wimParams, stationType === 'WIM')
   const station = useWeightStationLog(stationParams, stationType === 'STATION')
