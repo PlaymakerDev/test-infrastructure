@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import BaseMap, { type MapEdgeFadeProps } from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useCctvOverview } from '@/hooks/queries/cctv'
@@ -61,11 +62,15 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, roadId, edgeFade }) => {
     <BaseMap initialZoom={5.4} edgeFade={edgeFade}>
       <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={12} />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+      {/* สทช./ขทช. aggregate bubbles (dashboard-style ladder, menu colors) —
+          the pin layer below only shows past the ขทช. tier. */}
+      <RegionSummaryLayer type='CCTV' />
       <DeviceMarkerLayer
         type='CCTV'
         id='cctv-locations'
         data={data}
         cluster
+        minZoom={REGION_DEVICE_MIN_ZOOM}
         size={18}
         strokeColor='#ffffff'
         popupOptions={{ offset: 10, closeButton: false }}

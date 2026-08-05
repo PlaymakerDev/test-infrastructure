@@ -19,8 +19,9 @@ import type { SystemType } from '@/features/admin/dashboard/data/systems'
 import { useMap } from './useMap'
 
 /** Per-device-type icon — same glyphs as the top-menu trapezoid (Navbar.tsx),
- *  so on-map markers match the menu 1:1. */
-const SYSTEM_ICONS: Record<SystemType, IconType> = {
+ *  so on-map markers match the menu 1:1. Exported so HTML aggregate bubbles
+ *  (RegionSummaryLayer) can render the exact same glyph as the pin layer. */
+export const SYSTEM_ICONS: Record<SystemType, IconType> = {
   CCTV: TbVideo,
   VMS: TbDeviceDesktop,
   WIM: IconTracking,

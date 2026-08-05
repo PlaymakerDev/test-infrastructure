@@ -5,6 +5,7 @@ import { Button, ConfigProvider } from 'antd'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { theme } from '@/configs/antd/themeConfig'
 import { useLightingOverview } from '@/hooks/queries/lighting'
@@ -145,6 +146,7 @@ const LightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, deptI
     <>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
       <DeviceMarkerLayer
+        minZoom={REGION_DEVICE_MIN_ZOOM}
         type='Lighting'
         id='traffic-lighting'
         data={allData}
@@ -181,6 +183,7 @@ const MapTrafficLighting: React.FC<Props> = ({ deptId, roadId }) => {
       <BaseMap initialCenter={initialCenter} initialZoom={5.2}>
         {/* <ThailandMaskLayer maskColor='#0E0D0D' maskOpacity={0.8} /> */}
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+        <RegionSummaryLayer type='Lighting' />
         <LightingMarkerLayer
           locations={data?.locations ?? []}
           deptId={deptId}
