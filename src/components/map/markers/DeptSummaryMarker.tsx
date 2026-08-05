@@ -6,9 +6,14 @@ import HTMLMarker from '../primitives/HTMLMarker'
 export interface DeptSummary {
   /** Total devices in this ขทช./แขวง. */
   count: number
-  /** Mean [lng, lat] of every device in the department — the bubble sits on
-   *  the real device cluster and doubles as the flyTo target. */
+  /** [lng, lat] where the bubble RENDERS — since 2026-08-05 this is the
+   *  province center (from PROVINCES), falling back to the device mean for
+   *  depts with no mapped province (e.g. ids missing from /departments). */
   centroid: [number, number]
+  /** [lng, lat] the click flies to — the trusted device mean, so clicking
+   *  still lands on the actual devices instead of a possibly-empty province
+   *  center. Falls back to `centroid`. */
+  flyTo?: [number, number]
 }
 
 export interface DeptSummaryMarkerProps {
@@ -71,7 +76,7 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
             title={`${label} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               map?.flyTo({
-                center: info.centroid,
+                center: info.flyTo ?? info.centroid,
                 zoom: zoomOnClick,
                 pitch: 35,
                 duration: 1400,

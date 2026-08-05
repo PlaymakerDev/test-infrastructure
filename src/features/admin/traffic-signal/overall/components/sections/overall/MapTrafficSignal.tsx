@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTrafficOverview } from '@/hooks/queries/traffic-signal'
@@ -124,6 +125,7 @@ const TrafficSignalMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
     <>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
       <DeviceMarkerLayer
+        minZoom={REGION_DEVICE_MIN_ZOOM}
         type='Traffic'
         id='traffic-signal'
         data={allData}
@@ -164,6 +166,7 @@ const MapTrafficSignal: React.FC<Props> = (props) => {
     <div className='relative w-full h-full'>
       <BaseMap initialCenter={initialCenter} initialZoom={5.2} edgeFade={{ all: 20 }}>
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+        <RegionSummaryLayer type='Traffic' />
         <TrafficSignalMarkerLayer
           locations={data?.locations ?? []}
           isReady={isSuccess}

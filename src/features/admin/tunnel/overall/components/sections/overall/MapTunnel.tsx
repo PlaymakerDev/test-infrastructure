@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import { useMap } from '@/components/map/hooks/useMap'
 import { useTunnelOverview } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -141,6 +142,7 @@ const TunnelMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
 
   return (
     <DeviceMarkerLayer
+      minZoom={REGION_DEVICE_MIN_ZOOM}
       type='Tunnel'
       id='tunnel'
       data={allData}
@@ -169,6 +171,7 @@ const MapTunnel: React.FC<Props> = (props) => {
     <div className='relative w-full h-full'>
       <BaseMap initialCenter={initialCenter} initialZoom={5.2} edgeFade={{ all: 20 }}>
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+        <RegionSummaryLayer type='Tunnel' />
         <TunnelMarkerLayer
           locations={Array.isArray(data?.locations) ? data.locations : []}
           centroid={data?.centroid ?? null}

@@ -51,8 +51,11 @@
   --light-gray-3: #A2A2A2;
   /* LAYOUT */
   --nav-h: 72px;
-  --nav-offset: 100px;
-  /* add this — accounts for trapezoid overhang */
+  /* Content offset under the navbar. Equal to --nav-h since 2026-08-03 —
+     the 28px trapezoid-overhang allowance was removed (the hover menu is an
+     overlay; it may cover the first content row while open). Pages that
+     size with calc(100vh - var(--nav-offset)) scale automatically. */
+  --nav-offset: 72px;
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --radius: 12px;
   --radius-sm: 8px;

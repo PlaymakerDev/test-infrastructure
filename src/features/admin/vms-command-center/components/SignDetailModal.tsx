@@ -53,6 +53,15 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
   const history = histData?.data ?? []
   const cancel = useCancelVMSSetting()
 
+  // Google Map — the sign-detail endpoint carries latitude/longitude directly
+  // (added 2026-08-05). Null for un-geotagged signs → button disabled below.
+  const gmCoord = useMemo<[number, number] | null>(() => {
+    const lat = detail?.latitude
+    const lng = detail?.longitude
+    if (typeof lat !== 'number' || typeof lng !== 'number' || (lat === 0 && lng === 0)) return null
+    return [lng, lat]
+  }, [detail?.latitude, detail?.longitude])
+
   const activeSettingID = detail?.setting_id
   const activeMeta = useMemo(() => statusMeta(detail?.status ?? undefined), [detail?.status])
   const canCancel = activeSettingID != null && activeMeta.isCancellable
@@ -158,6 +167,32 @@ const SignDetailModal: React.FC<Props> = ({ open, onClose, vmsId }) => {
                       {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'} · เห็นล่าสุด {fmt(detail.last_seen_at)}
                     </span>
                   )}
+                  {/* Google Map — same solid dark-blue pill as the detail
+                      pages' DetailTitleSection button, placed before Anydesk
+                      (2026-08-05 request). No coordinate → gray tokens (same
+                      muted look as the Anydesk button's no-id state); `disabled`
+                      avoided so the why-tooltip keeps firing. */}
+                  <ConfigProvider
+                    theme={{
+                      token: gmCoord
+                        ? { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' }
+                        : { colorPrimary: '#3F3F3F', colorTextLightSolid: '#9CA3AF' },
+                    }}
+                  >
+                    <Button
+                      type='primary'
+                      size='middle'
+                      shape='round'
+                      style={{ cursor: gmCoord ? 'pointer' : 'not-allowed' }}
+                      title={gmCoord ? 'เปิดตำแหน่งใน Google Maps' : 'ไม่มีพิกัดจุดติดตั้ง'}
+                      onClick={() => {
+                        if (!gmCoord) return
+                        window.open(`https://maps.google.com/?q=${gmCoord[1]},${gmCoord[0]}`, '_blank')
+                      }}
+                    >
+                      <p className='fs-12'>Google Map</p>
+                    </Button>
+                  </ConfigProvider>
                   {/* Anydesk deep-link — same button as the shared
                       DetailTitleSection on every detail page (solid blue
                       round, gray tokens when no id; real `disabled` avoided

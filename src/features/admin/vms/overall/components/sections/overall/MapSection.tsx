@@ -1,6 +1,7 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { getVMSOverviewAPI } from '@/services/routes/VMSService'
@@ -135,6 +136,7 @@ const VmsMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations, isReady })
     <>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={13} />
       <DeviceMarkerLayer
+        minZoom={REGION_DEVICE_MIN_ZOOM}
         type='VMS'
         id="vms"
         data={allData}
@@ -193,6 +195,7 @@ const MapSection: React.FC<Props> = (props) => {
         edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}
       >
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+        <RegionSummaryLayer type='VMS' />
         <VmsMarkerLayer
           locations={data?.data.locations || []}
           isReady={isSuccess}

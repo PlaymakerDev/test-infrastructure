@@ -8,10 +8,14 @@ import HTMLMarker from '../primitives/HTMLMarker'
 export interface StchSummary {
   /** Total devices in this สทช. */
   count: number
-  /** Mean [lng, lat] of every device in this สทช. — places the marker on the
-   *  actual device cluster, NOT the สทช. HQ in mock data. Also used as the
-   *  flyTo target so clicking always lands on real markers. */
+  /** [lng, lat] where the bubble RENDERS — since 2026-08-05 this is the
+   *  bureau polygon's mid-point (region center, never in the sea), falling
+   *  back to the device mean when no polygon exists (ทช.ส่วนกลาง). */
   centroid: [number, number]
+  /** [lng, lat] the click flies to — the trusted device mean, so clicking
+   *  still lands the user on the actual devices (often near a region's edge)
+   *  instead of the possibly-empty region center. Falls back to `centroid`. */
+  flyTo?: [number, number]
 }
 
 export interface StchSummaryMarkerProps {
@@ -83,7 +87,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
             onClick={() => {
               onMarkerClick?.()
               map?.flyTo({
-                center: info.centroid,
+                center: info.flyTo ?? info.centroid,
                 zoom: zoomOnClick,
                 pitch: 35,
                 duration: 1500,

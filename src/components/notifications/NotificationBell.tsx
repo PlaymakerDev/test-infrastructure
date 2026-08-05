@@ -290,16 +290,6 @@ const NotificationBell: React.FC<Props> = ({
             )}
           </span>
         </motion.span>
-        <span
-          className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap"
-          style={{
-            background: 'rgba(0,0,0,0.75)',
-            color: 'rgba(255,255,255,0.85)',
-            border: '1px solid rgba(252,209,22,0.35)',
-          }}
-        >
-          แจ้งเตือน
-        </span>
       </motion.button>
 
       {/* Panel — FindOnPageOverlay's exact chrome, pinned below the navbar. */}
@@ -313,10 +303,10 @@ const NotificationBell: React.FC<Props> = ({
             transition={{ type: 'spring', stiffness: 420, damping: 32 }}
             className="fixed left-2 right-2 sm:left-auto sm:right-4 sm:w-[380px] z-50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden flex flex-col"
             style={{
-              top: 'calc(var(--nav-h, 72px) + 8px)',
+              top: 'calc(var(--nav-h, 72px) - 12px)', // 60px — shared popout line
               // Viewport clamp only — the "exactly 5 rows" cap lives on the
               // list container below (measured from a real row).
-              maxHeight: 'calc(100vh - var(--nav-h, 72px) - 16px)',
+              maxHeight: 'calc(100vh - var(--nav-h, 72px) + 4px)',
               background: 'rgba(20, 20, 20, 0.92)',
               border: '1px solid rgba(252, 209, 22, 0.35)',
               boxShadow:

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
@@ -68,7 +69,9 @@ const MapSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
     <BaseMap initialZoom={5.4} edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}>
       <FitBoundsEffect coords={coords} padding={56} maxZoom={12} />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+      <RegionSummaryLayer type='LPR' />
       <DeviceMarkerLayer
+        minZoom={REGION_DEVICE_MIN_ZOOM}
         type='LPR'
         id='lpr-locations'
         data={data}

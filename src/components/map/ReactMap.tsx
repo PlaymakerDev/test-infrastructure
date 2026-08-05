@@ -198,6 +198,18 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   const province = useNearestProvince(PROVINCE_ZOOM_THRESHOLD)
   // province.code → dept_id (RBAC-scoped: only provinces the user has access to).
   const provinceDeptMap = useProvinceDeptMap()
+  // Reverse of the above: dept_id → the province's CENTER coord. Anchors each
+  // ขทช. summary bubble at the middle of its province (2026-08-05 request —
+  // device means often sit at a province's edge or, with bad coords, in the
+  // sea). ขทช. ↔ จังหวัด is 1:1, so first-wins is safe; กทม. maps dept 0.
+  const deptProvinceCoord = useMemo(() => {
+    const m = new Map<number, [number, number]>()
+    for (const p of PROVINCES) {
+      const id = provinceDeptMap.get(p.code)
+      if (id != null && !m.has(id)) m.set(id, p.coord)
+    }
+    return m
+  }, [provinceDeptMap])
 
   // MAP MARKERS use the login-time scope (`originalDeptId`), NOT the live
   // focused `deptId`. Zooming into a province must KEEP every road's pin on the
@@ -451,27 +463,39 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       if (g.length === 1) singles.push(g[0])
       else groups.push(g)
     }
+    // Display anchor vs click target are SPLIT (2026-08-05): the bubble
+    // renders at the region/province CENTER (stable, on land, never dragged
+    // by device coords), while clicking still flies to the trusted device
+    // mean so the user lands on the actual markers. Device mean keeps its
+    // trusted-first rule (plain mean only when the whole bucket is
+    // untrusted).
+    const meanOf = (a: { count: number; sumLng: number; sumLat: number; tCount: number; tSumLng: number; tSumLat: number }): [number, number] =>
+      a.tCount > 0
+        ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
+        : [a.sumLng / a.count, a.sumLat / a.count]
+
     const summaries: Record<number, StchSummary> = {}
     for (const [stch, a] of Object.entries(stchAcc)) {
+      const mean = meanOf(a)
+      // Bureau polygon mid-point; ทช.ส่วนกลาง (bucket 0) has no polygon →
+      // fall back to the device mean.
+      const regionCenter = bureauFeatures?.find((b) => b.stch === Number(stch))?.centroid
       summaries[Number(stch)] = {
         count: a.count,
-        // Trusted mean keeps the bubble inside its own region; plain-mean
-        // fallback only when the whole bucket is untrusted.
-        centroid: a.tCount > 0
-          ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
-          : [a.sumLng / a.count, a.sumLat / a.count],
+        centroid: regionCenter ?? mean,
+        flyTo: mean,
       }
     }
-    // Trusted coords steer the bubbles; fall back to the plain mean only when
-    // a bucket has NO in-polygon device at all (then the data is wrong
-    // wholesale and there is no better anchor).
     const deptSums: Record<number, DeptSummary> = {}
     for (const [id, a] of Object.entries(deptAcc)) {
+      const mean = meanOf(a)
+      // Province center for this ขทช.; depts with no mapped province (ids
+      // missing from /departments, e.g. 100/101) fall back to the mean.
+      const provCenter = deptProvinceCoord.get(Number(id))
       deptSums[Number(id)] = {
         count: a.count,
-        centroid: a.tCount > 0
-          ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount]
-          : [a.sumLng / a.count, a.sumLat / a.count],
+        centroid: provCenter ?? mean,
+        flyTo: mean,
       }
     }
     const roadSums: Record<number, RoadSummary> = {}
@@ -488,7 +512,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       }
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
-  }, [position, lprPoints, originalDeptId, bureauFeatures])
+  }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord])
 
   // Refs keep the click handler's closure fresh without re-registering the
   // Mapbox listener on every render.
@@ -574,8 +598,12 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
 
     const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
-      // Zoomed past the picker range — no more province/bureau highlight.
-      if (map.getZoom() >= HOVER_MAX_ZOOM) { clearHover(); return }
+      // Province hover owns the 6.5–10 band ONLY. Below 6.5 the BUREAU hover
+      // owns the map — both layers are hit-testable there, so without this
+      // floor a single point popped BOTH tooltips stacked on top of each
+      // other (reported 2026-08-05). Above 10 the picker chrome is gone.
+      const z = map.getZoom()
+      if (z >= HOVER_MAX_ZOOM || z < PROVINCE_ZOOM_THRESHOLD) { clearHover(); return }
       // Cursor is over an HTML overlay (marker/badge/popup) — not the map.
       if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
       // Cursor is over a canvas-drawn device pin — the pin's own จุดติดตั้ง
@@ -619,11 +647,14 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
     container.addEventListener('mousemove', onDomMove)
 
-    // Panning-with-zoom or fly-to may cross the HOVER_MAX_ZOOM boundary while
-    // the cursor is still hovering the layer — mousemove won't fire until the
-    // user actually moves, so a stale yellow highlight would linger. Listen
-    // to zoom directly and clear as we cross the threshold.
-    const onZoom = () => { if (map.getZoom() >= HOVER_MAX_ZOOM) clearHover() }
+    // Panning-with-zoom or fly-to may cross either band boundary while the
+    // cursor is still hovering the layer — mousemove won't fire until the
+    // user actually moves, so a stale tooltip/highlight would linger. Listen
+    // to zoom directly and clear as we leave the 6.5–10 band.
+    const onZoom = () => {
+      const z = map.getZoom()
+      if (z >= HOVER_MAX_ZOOM || z < PROVINCE_ZOOM_THRESHOLD) clearHover()
+    }
     map.on('click', PROVINCE_CLICK_LAYER_ID, onClick)
     map.on('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
     map.on('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
@@ -663,6 +694,11 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
 
     const onMove = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      // Bureau hover owns the country band only (< 6.5); past that the
+      // จังหวัด hover takes over. The hitbox layer already carries
+      // maxzoom 6.5, but delegated mousemove can still slip through right at
+      // the boundary — belt-and-braces with the zoom guard below.
+      if (map.getZoom() >= PROVINCE_ZOOM_THRESHOLD) { clearHover(); return }
       if (e.originalEvent && e.originalEvent.target !== map.getCanvas()) { clearHover(); return }
       const stchRaw = e.features?.[0]?.properties?.stch
       const stch = typeof stchRaw === 'number' ? stchRaw : Number(stchRaw)
@@ -706,6 +742,18 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       map.fitBounds(b.bbox, { padding: 60, duration: 1400, maxZoom: 9.5, pitch: 30 })
     }
 
+    // Zooming with the cursor parked (click-to-zoom, scroll, fly-to) crosses
+    // the 6.5 boundary without a mousemove — the tooltip + yellow highlight
+    // then stuck on screen OVER the ขทช. bubbles (reported 2026-08-05).
+    // Mirror the province handler: clear on zoom + on any mouse travel over
+    // HTML overlays (markers swallow mousemove, so the layer's mouseleave
+    // never fires when sliding onto one).
+    const onZoom = () => { if (map.getZoom() >= PROVINCE_ZOOM_THRESHOLD) clearHover() }
+    const onDomMove = (ev: Event) => {
+      if ((ev as globalThis.MouseEvent).target !== map.getCanvas()) clearHover()
+    }
+    container.addEventListener('mousemove', onDomMove)
+    map.on('zoom', onZoom)
     map.on('mousemove', BUREAU_CLICK_LAYER_ID, onMove)
     map.on('mouseleave', BUREAU_CLICK_LAYER_ID, clearHover)
     map.on('click', BUREAU_CLICK_LAYER_ID, onClick)
@@ -713,6 +761,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       map.off('mousemove', BUREAU_CLICK_LAYER_ID, onMove)
       map.off('mouseleave', BUREAU_CLICK_LAYER_ID, clearHover)
       map.off('click', BUREAU_CLICK_LAYER_ID, onClick)
+      map.off('zoom', onZoom)
+      container.removeEventListener('mousemove', onDomMove)
       tooltip.remove()
     }
   }, [map, isLoaded, bureauFeatures, stchSummaries])

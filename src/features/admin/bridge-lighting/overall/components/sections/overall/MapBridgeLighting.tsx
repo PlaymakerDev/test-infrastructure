@@ -1,6 +1,7 @@
 "use client"
 import BaseMap from '@/components/map/BaseMap'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
+import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useScopeAll } from '@/hooks/useScopeAll'
@@ -115,6 +116,7 @@ const BridgeLightingMarkerLayer: React.FC<MarkerLayerGroupProps> = ({ locations,
 
   return (
     <DeviceMarkerLayer
+      minZoom={REGION_DEVICE_MIN_ZOOM}
       type='BridgeLighting'
       id="bridge_lighting"
       data={allData}
@@ -184,6 +186,7 @@ const MapBridgeLighting: React.FC<Props> = (props) => {
         edgeFade={{ all: 10 }}
       >
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
+        <RegionSummaryLayer type='BridgeLighting' />
         <FitBoundsEffect coords={coords} padding={60} maxZoom={12} />
         <BridgeLightingMarkerLayer
           locations={data?.data.locations || []}
