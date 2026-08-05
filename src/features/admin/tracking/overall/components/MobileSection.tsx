@@ -22,7 +22,7 @@ const MobileSection = () => {
     end_date: dayjs().format('YYYY-MM-DD'),
     page,
     page_size: pageSize,
-    ordering: 'asc',
+    ordering: 'desc',
     search: searchMobileMaster?.search || '',
   })
 
