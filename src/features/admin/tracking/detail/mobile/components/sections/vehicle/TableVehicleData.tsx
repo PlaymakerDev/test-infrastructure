@@ -49,6 +49,7 @@ const TableVehicleData: React.FC<Props> = ({ onPageRowsChange }) => {
     is_open: searchParams.is_open,
     page,
     page_size: pageSize,
+    ordering: 'desc',
   })
 
   const payload = data?.data
