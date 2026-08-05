@@ -21,28 +21,28 @@ const MOCK_VEHICLES: VehicleItem[] = [
 
 const LicenseTabContent: React.FC<Props> = (props) => {
   const { data } = props
-  const { licenseTab, setLicenseTab } = useGPSContext()
+  const { licenseTab, setLicenseTab, setVehicleDetail } = useGPSContext()
 
   const items: TabsProps['items'] = [
     {
       key: '1',
       label: 'ทั้งหมด',
-      children: <VehicleList items={data?.car_list || []} />,
+      children: <VehicleList items={data?.car_list || []} onSelect={(item) => setVehicleDetail({ open: true, unit_id: item.unit_id })} />,
     },
     {
       key: '2',
       label: 'รถเคลื่อนที่',
-      children: <VehicleList items={(data?.car_list || []).filter((v) => v.speed > 0)} />,
+      children: <VehicleList items={(data?.car_list || []).filter((v) => v.speed > 0)} onSelect={(item) => setVehicleDetail({ open: true, unit_id: item.unit_id })} />,
     },
     {
       key: '3',
       label: 'รถจอด',
-      children: <VehicleList items={(data?.car_list || []).filter((v) => v.speed === 0)} />,
+      children: <VehicleList items={(data?.car_list || []).filter((v) => v.speed === 0)} onSelect={(item) => setVehicleDetail({ open: true, unit_id: item.unit_id })} />,
     },
     {
       key: '4',
       label: 'รถน้ำหนักเกิน',
-      children: <VehicleList items={(data?.car_list || []).filter((v) => v.isoverweight === "Y")} />,
+      children: <VehicleList items={(data?.car_list || []).filter((v) => v.isoverweight === "Y")} onSelect={(item) => setVehicleDetail({ open: true, unit_id: item.unit_id })} />,
     },
   ]
 
