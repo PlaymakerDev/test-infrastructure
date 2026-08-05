@@ -235,13 +235,14 @@ export interface VehicleLocationData {
 }
 
 export interface CarList {
+  car_location: string
+  com_name?: string
+  distance_from_road: number
+  isoverweight: string
   plate_no?: string
   plate_province: string
   speed: number
-  car_location: string
-  isoverweight: string
-  distance_from_road: number
-  com_name?: string
+  unit_id: string
 }
 
 export interface VehicleCount {
