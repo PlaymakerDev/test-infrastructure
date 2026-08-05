@@ -10,10 +10,13 @@ interface Props {
   exportOpen: boolean
   onExportOpen: () => void
   onExportClose: () => void
+  /** ยกเลิกคำสั่งทั้งหมด wiring — same StatusSection-owned, forwarded shape. */
+  onCancelAll: () => void
+  cancelAllDisabled?: boolean
 }
 
 const ContentTab: React.FC<Props> = (props) => {
-  const { exportOpen, onExportOpen, onExportClose } = props
+  const { exportOpen, onExportOpen, onExportClose, onCancelAll, cancelAllDisabled } = props
 
   const { data, isLoading, isError } = useVMSSettingStatusCount()
 
@@ -55,7 +58,7 @@ const ContentTab: React.FC<Props> = (props) => {
       tabBarExtraContent={{
         right: (
           <div className='hidden lg:block'>
-            <SearchStatusSection onExport={onExportOpen} />
+            <SearchStatusSection onExport={onExportOpen} onCancelAll={onCancelAll} cancelAllDisabled={cancelAllDisabled} />
           </div>
         )
       }}

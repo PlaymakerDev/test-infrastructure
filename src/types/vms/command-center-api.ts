@@ -92,6 +92,10 @@ export interface VMSSignSchedule {
 export interface VMSSignDetail extends VMSMonitorItem {
   desktop_screen_url?: string
   video_timestamp?: string
+  /** Install-point coordinate — powers the header's Google Map button.
+   *  Added to this endpoint 2026-08-05; may be null for un-geotagged signs. */
+  latitude?: number | null
+  longitude?: number | null
   schedules: VMSSignSchedule[]
   cameras: VMSSignCamera[]
 }
