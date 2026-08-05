@@ -54,6 +54,7 @@ export function useDailyWeightLogList(
     page,
     page_size: pageSize,
     is_over_weight: isOverWeight,
+    ordering: 'desc' as const,
   }
 
   const station = useWeightStationLog(params, isStation)
