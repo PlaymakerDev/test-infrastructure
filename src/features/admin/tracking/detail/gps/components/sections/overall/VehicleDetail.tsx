@@ -5,6 +5,7 @@ import React from 'react'
 
 interface Props {
   data?: VehicleHistoryData
+  isModal?: boolean
 }
 
 // Movement-status pill — same buckets + colors as the 3 KPI cards
@@ -23,11 +24,11 @@ const deriveStatus = (speed: number): keyof typeof STATUS_PILL =>
   speed > 0 ? 'moving' : 'stopped'
 
 const VehicleDetail: React.FC<Props> = (props) => {
-  const { data } = props
+  const { data, isModal } = props
   const pill = data ? STATUS_PILL[deriveStatus(data.vehicle.speed)] : null
 
   return (
-    <div className='rounded-2xl p-5 bg-(--mid-gray) lg:-mr-3'>
+    <div className={isModal ? '' : 'rounded-2xl p-5 bg-(--mid-gray) lg:-mr-3'}>
       <section>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
