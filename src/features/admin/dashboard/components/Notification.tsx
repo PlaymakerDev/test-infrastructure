@@ -127,8 +127,11 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
               ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
               : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
       >
+        {/* py-4.5 = 18px (was py-2 = 8px) — card is 20px taller per design
+          * 2026-08-10; VehicleRatioChart's donut shrank by the same 20px so the
+          * right rail still fits the viewport without scrolling. */}
         <div
-          className="flex items-center gap-3 px-4 py-2"
+          className="flex items-center gap-3 px-4 py-4.5"
           style={{
             background: "rgba(10,14,26,0.95)",
             borderRadius: 19,

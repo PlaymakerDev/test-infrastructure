@@ -111,6 +111,11 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5, onSelectR
             optionSelectedBg: 'rgba(252,209,22,0.12)',
             optionActiveBg: 'rgba(255,255,255,0.06)',
           },
+          // Brighter placeholder — the default token is too dim to read over
+          // the satellite map (2026-08-10 legibility pass).
+          Input: {
+            colorTextPlaceholder: 'rgba(255,255,255,0.65)',
+          },
         },
       }}
     >
@@ -118,7 +123,9 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5, onSelectR
         className='pointer-events-auto'
         style={{
           position: 'absolute',
-          top: 60,
+          // 84 = --nav-h (72) + 12px breathing. Was 60, i.e. 12px UNDER the
+          // navbar's bottom edge — the box read as glued to it (2026-08-10).
+          top: 70,
           left: 16,
           zIndex: 20,
           // Mobile: 44px button ↔ expanded input. Expanded width stops short
@@ -134,16 +141,19 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5, onSelectR
             aria-label='ค้นหาสายทาง'
             onClick={() => setExpanded(true)}
             className='flex items-center justify-center cursor-pointer'
+            // Same chrome as the expanded input below — opaque panel + yellow
+            // outline + shadow so it reads over the map (2026-08-10).
             style={{
               width: 44,
               height: 40,
               borderRadius: 10,
-              background: 'rgba(5,13,26,0.85)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(10,14,26,0.95)',
+              border: '1px solid rgba(252,209,22,0.45)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
               backdropFilter: 'blur(8px)',
             }}
           >
-            <TbSearch size={18} className='text-white/70' />
+            <TbSearch size={18} className='text-(--yellow)' />
           </button>
         ) : (
           <AutoComplete
@@ -185,17 +195,23 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5, onSelectR
               allowClear
               size='large'
               autoFocus={isMobile}
-              prefix={<TbSearch size={16} className='text-white/60' />}
+              prefix={<TbSearch size={16} className='text-(--yellow)' />}
               placeholder='ค้นหาสายทาง (เช่น ชม.3035)'
               // Collapse back to the button when leaving an EMPTY field — a
               // typed term keeps the box open so the searched code stays visible.
               onBlur={() => {
                 if (isMobile && term.trim() === '') setExpanded(false)
               }}
+              // Legibility pass 2026-08-10 — SIZE UNCHANGED, contrast only:
+              // opaque panel bg + yellow outline + drop shadow, matching the
+              // map's other overlays (BreadcrumbBanner / SystemFilterPills).
+              // The old 0.85-alpha bg with a 12%-white border vanished into
+              // the satellite imagery.
               style={{
-                background: 'rgba(5,13,26,0.85)',
-                borderColor: 'rgba(255,255,255,0.12)',
+                background: 'rgba(10,14,26,0.95)',
+                borderColor: 'rgba(252,209,22,0.45)',
                 color: '#fff',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
                 backdropFilter: 'blur(8px)',
               }}
             />

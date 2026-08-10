@@ -40,20 +40,23 @@ interface TileConfig {
   route: string
 }
 
+// Colours come from `SYSTEM_BRIGHT` — the same hue as each system's legend
+// colour (`SYSTEMS[*].color`) but lightened for readability on the dark
+// surface (2026-08-10: the raw dark values read as muddy on this strip).
+// Using the shared map also keeps every tile matching its map marker, and
+// drops the 7 hardcoded hexes that duplicated `data/systems.ts`.
 const TILES: TileConfig[] = [
-  { id: 'cctv', label: 'CCTV', color: '#003F87', Icon: TbVideo, apiTypeName: 'CCTV', unit: 'จุด', route: '/admin/cctv' },
-  { id: 'traffic', label: 'Traffic Signal', color: '#518700', Icon: TbTrafficLights, apiTypeName: 'Traffic', unit: 'จุด', route: '/admin/traffic-signal' },
-  { id: 'vms', label: 'VMS', color: '#874600', Icon: TbDeviceDesktop, apiTypeName: 'VMS', unit: 'จุด', route: '/admin/vms' },
-  { id: 'lighting', label: 'Traffic Lighting', color: '#878000', Icon: TbBolt, apiTypeName: 'Lighting', unit: 'จุด', route: '/admin/traffic-lighting' },
-  { id: 'crosswalk', label: 'Crosswalk', color: '#001287', Icon: TbWalk, apiTypeName: 'Crosswalk', unit: 'จุด', route: '/admin/crosswalk' },
+  { id: 'cctv', label: 'CCTV', color: SYSTEM_BRIGHT.CCTV, Icon: TbVideo, apiTypeName: 'CCTV', unit: 'จุด', route: '/admin/cctv' },
+  { id: 'traffic', label: 'Traffic Signal', color: SYSTEM_BRIGHT.Traffic, Icon: TbTrafficLights, apiTypeName: 'Traffic', unit: 'จุด', route: '/admin/traffic-signal' },
+  { id: 'vms', label: 'VMS', color: SYSTEM_BRIGHT.VMS, Icon: TbDeviceDesktop, apiTypeName: 'VMS', unit: 'จุด', route: '/admin/vms' },
+  { id: 'lighting', label: 'Traffic Lighting', color: SYSTEM_BRIGHT.Lighting, Icon: TbBolt, apiTypeName: 'Lighting', unit: 'จุด', route: '/admin/traffic-lighting' },
+  { id: 'crosswalk', label: 'Crosswalk', color: SYSTEM_BRIGHT.CrossWalk, Icon: TbWalk, apiTypeName: 'Crosswalk', unit: 'จุด', route: '/admin/crosswalk' },
   // LPR replaced B.Light in this slot (2026-07-21 request). LPR is NOT a
   // solution type in /position — its count comes from GET /lpr/points
   // (see `lprCount` below); `apiTypeName` here is a placeholder key that
-  // never matches the /position payload. Colour = SYSTEM_BRIGHT.LPR so the
-  // tile matches the map marker (per request, same day).
-  // { id: 'lpr', label: 'LPR', color: SYSTEM_BRIGHT.LPR, Icon: IconLPR, apiTypeName: 'LPR', unit: 'จุด', route: '/admin/lpr' },
-  { id: 'lpr', label: 'LPR', color: '#87004D', Icon: IconLPR, apiTypeName: 'LPR', unit: 'จุด', route: '/admin/lpr' },
-  { id: 'wim', label: 'WIM', color: '#70196D', Icon: IconTracking, apiTypeName: 'WIM', unit: 'จุด', route: '/admin/tracking' },
+  // never matches the /position payload.
+  { id: 'lpr', label: 'LPR', color: SYSTEM_BRIGHT.LPR, Icon: IconLPR, apiTypeName: 'LPR', unit: 'จุด', route: '/admin/lpr' },
+  { id: 'wim', label: 'WIM', color: SYSTEM_BRIGHT.WIM, Icon: IconTracking, apiTypeName: 'WIM', unit: 'จุด', route: '/admin/tracking' },
 ]
 
 interface TileProps {

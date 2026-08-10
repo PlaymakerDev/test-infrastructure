@@ -163,13 +163,15 @@ const DashboardContent: React.FC<Props> = () => {
                 <RatioChart size={110} />
               </MapOverlayPanel>
 
-              {/* DESKTOP: right absolute panel — top:48 sits right under the 48px navbar.
+              {/* DESKTOP: right absolute panel — top:70 clears the 72px navbar,
+              * matching the map's search box. Was 64, which tucked the
+              * Notification card under the navbar with no gap (2026-08-10).
               * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
               * Notification + TrafficStat don't use → no empty gap at the bottom. */}
               <MapOverlayPanel
                 position="right"
                 className="absolute right-4 z-10 flex flex-col gap-2"
-                style={{ top: 64, bottom: 16, width: 340 }}
+                style={{ top: 70, bottom: 16, width: 340 }}
               >
                 <Notification />
                 <VehicleRatioChart className="flex-1 min-h-0" />

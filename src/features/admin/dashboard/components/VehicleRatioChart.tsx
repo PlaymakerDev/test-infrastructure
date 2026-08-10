@@ -5,10 +5,14 @@ import PieChart from '@/components/chart/PieChart'
 import { useDashboardCounting } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useRoadId } from '@/hooks/useRoadId'
+import { VEHICLE_TYPE_COLOR } from '@/constants/vehicle'
 import type { DashboardCountingVehicleCount } from '@/types/dashboard/api'
 
-// Vehicle types — order + color matches the Figma chart. The backend key
-// (snake-cased) is mapped to the display label + the color swatch.
+// Vehicle types — the backend key (snake-cased) mapped to the display label.
+// Colours come from the shared `VEHICLE_TYPE_COLOR` map (blue → orange, light
+// → heavy) so a vehicle type is the SAME colour here as on the Traffic Volume
+// detail page's สัดส่วนยานพาหนะ card (2026-08-10 request; the old palette was
+// raw Tailwind defaults unrelated to any other chart).
 interface VehicleConfig {
   key: keyof Omit<DashboardCountingVehicleCount, 'total'>
   name: string
@@ -16,13 +20,13 @@ interface VehicleConfig {
 }
 
 const VEHICLES: VehicleConfig[] = [
-  { key: 'car', name: 'รถยนต์', color: '#f87171' },
-  { key: 'bike', name: 'รถจักรยานยนต์', color: '#34d399' },
-  { key: 'pickup', name: 'รถกระบะ', color: '#60a5fa' },
-  { key: 'truck', name: 'รถบรรทุก', color: '#7dd3fc' },
-  { key: 'trailer', name: 'รถพ่วง', color: '#fbbf24' },
-  { key: 'taxi', name: 'รถแท็กซี่', color: '#a3e635' },
-  { key: 'bus', name: 'รถบัส', color: '#c084fc' },
+  { key: 'car', name: 'รถยนต์', color: VEHICLE_TYPE_COLOR['รถยนต์'] },
+  { key: 'bike', name: 'รถจักรยานยนต์', color: VEHICLE_TYPE_COLOR['รถจักรยานยนต์'] },
+  { key: 'pickup', name: 'รถกระบะ', color: VEHICLE_TYPE_COLOR['รถกระบะ'] },
+  { key: 'truck', name: 'รถบรรทุก', color: VEHICLE_TYPE_COLOR['รถบรรทุก'] },
+  { key: 'trailer', name: 'รถพ่วง', color: VEHICLE_TYPE_COLOR['รถพ่วง'] },
+  { key: 'taxi', name: 'รถแท็กซี่', color: VEHICLE_TYPE_COLOR['รถแท็กซี่'] },
+  { key: 'bus', name: 'รถบัส', color: VEHICLE_TYPE_COLOR['รถบัส'] },
 ]
 
 interface VehicleRow {
@@ -95,8 +99,12 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
           centerValue={total.toLocaleString()}
           centerValueSize={28}
           centerUnit='คัน'
-          donutSize={280}
-          height={280}
+          // 240 (was 280) — gives back the 40px the right rail lost on
+          // 2026-08-10: the Notification card grew 20px taller and the rail
+          // itself moved 20px down (top 64 → 84) for navbar breathing room.
+          // Keeps the whole rail inside the viewport without scrolling.
+          donutSize={240}
+          height={240}
           showLegend={false}
           tooltipUnit='คัน'
         />
