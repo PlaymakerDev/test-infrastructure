@@ -58,10 +58,20 @@ const DashboardContent: React.FC<Props> = () => {
   const [originalScopeAll] = useState<boolean>(
     () => searchParams.get('scope') === 'all'
   )
+  // `?road_id=` — the สายทาง tab in the sidebar attaches it to every solution
+  // link (Dashboard included). No dashboard endpoint takes a road, so the
+  // scope is expressed on the MAP: ReactMap fits that road's devices on entry.
+  // Snapshotted like the two above so a later map interaction can't re-trigger
+  // the fly-in.
+  const [focusRoadId] = useState<string | null>(
+    () => searchParams.get('road_id')
+  )
   // The map-only landing intro applies ONLY to the country overview. A
   // dept-scoped URL (?dept_id=50) auto-zooms into its own markers (handled in
-  // ReactMap) and shows every card immediately — no intro.
-  const isCountryLanding = originalDeptId === '0' && originalScopeAll
+  // ReactMap) and shows every card immediately — no intro. A road-scoped URL
+  // is likewise a drill-in, even when its dept resolves to 0 (ทช.ส่วนกลาง),
+  // so it skips the intro too.
+  const isCountryLanding = originalDeptId === '0' && originalScopeAll && !focusRoadId
   // Landing behaviour: the dashboard opens map-only — every overlay card is
   // hidden (Map Focus Mode 'both') so the user sees just the map first. The
   // moment they click a device marker the hidden cards slide back in.
@@ -108,6 +118,7 @@ const DashboardContent: React.FC<Props> = () => {
           onDeptIdChange={setCurrentDeptId}
           onProvinceActivate={handleProvinceActivate}
           onMarkerClick={handleMarkerClick}
+          focusRoadId={focusRoadId}
         />
 
         {isDesktop === true && (

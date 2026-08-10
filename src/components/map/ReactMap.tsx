@@ -1,6 +1,6 @@
 "use client"
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MapMouseEvent } from 'mapbox-gl'
+import type { LngLatBoundsLike, MapMouseEvent } from 'mapbox-gl'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { useMap } from './hooks/useMap'
 import {
@@ -161,6 +161,11 @@ interface DashboardMapContentProps {
   onProvinceActivate?: () => void
   /** Fired when any device marker (singleton or overlap stack) is clicked. */
   onMarkerClick?: () => void
+  /** `?road_id=` from the landing URL — the sidebar's สายทาง tab attaches it to
+   *  every solution link, Dashboard included. The dashboard has no road-scoped
+   *  endpoint, so scoping to a road means the MAP zooms into that road's
+   *  devices on entry (see the road-landing effect). One-shot. */
+  focusRoadId?: string | null
 }
 
 const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
@@ -169,6 +174,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   onDeptIdChange,
   onProvinceActivate,
   onMarkerClick,
+  focusRoadId,
 }) => {
   const { map, isLoaded } = useMap()
   // Current CARD scope (comes back through DeptIdOverrideContext — the
@@ -250,51 +256,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   const markFlown = useCallback((id: string) => {
     flownForDeptRef.current = id
   }, [])
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    if (originalDeptId === '0' && originalScopeAll) return
-    if (flownForDeptRef.current === originalDeptId) return
-
-    // Resolve WHERE this dept's data is, then fly straight in — mirroring what
-    // clicking a สทช. summary marker does (flyTo province zoom), so a non-0
-    // login lands drilled INTO its markers instead of the country overview.
-    const pts = (position?.locations ?? [])
-      .map((l) => l.geometry_point)
-      .filter((p): p is [number, number] =>
-        Array.isArray(p) && p.length === 2 && (p[0] !== 0 || p[1] !== 0)
-      )
-    const c = position?.centroid
-    const validCentroid =
-      Array.isArray(c) && c.length === 2 && (c[0] !== 0 || c[1] !== 0)
-        ? (c as [number, number])
-        : null
-
-    // Centre priority: mean of the actual device coords (exactly where the
-    // pins are) → BE-provided centroid → สำนัก polygon centroid (fallback for
-    // scope=all on a สทช. the BE returns empty for; the สทช. row carries its
-    // group=stch in /manage/departments, matched to the static bureau geojson).
-    let center: [number, number] | null = null
-    if (pts.length > 0) {
-      let sx = 0, sy = 0
-      for (const [x, y] of pts) { sx += x; sy += y }
-      center = [sx / pts.length, sy / pts.length]
-    } else if (validCentroid) {
-      center = validCentroid
-    } else if (positionFetched) {
-      // Only fall back once the position query has settled (empty), so a slow
-      // response can still win with the real device centroid above.
-      const groupRaw = departments?.find((d) => d.id === Number(originalDeptId))?.department_group
-      const stch = groupRaw != null ? Number(groupRaw) : NaN
-      const bureau = Number.isFinite(stch) ? bureauFeatures?.find((b) => b.stch === stch) : undefined
-      center = bureau?.centroid ?? null
-    }
-
-    if (!center) return
-    markFlown(originalDeptId)
-    // zoom 9.5 sits above PROVINCE_ZOOM_THRESHOLD (6.5) so the device markers
-    // render (and the country summary bubbles hide) — same as a summary click.
-    map.flyTo({ center, zoom: 9.5, pitch: 35, duration: 1500 })
-  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown])
+  // (the fly-to effect itself lives below the roadSummaries memo — it reads
+  // that map to know whether a ?road_id= landing will take over the fly)
 
   // Adapt API locations → Device + aggregate per-สทช. counts for the country-
   // level summary marker layer.
@@ -513,6 +476,91 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
   }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord])
+
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    if (originalDeptId === '0' && originalScopeAll) return
+    if (flownForDeptRef.current === originalDeptId) return
+    // A ?road_id= landing zooms into that ONE road instead (effect below).
+    // Fall through to the dept centroid only once the payload has settled
+    // without any device on that road — otherwise the two flies fight.
+    if (focusRoadId && (!positionFetched || roadSummaries[Number(focusRoadId)])) return
+
+    // Resolve WHERE this dept's data is, then fly straight in — mirroring what
+    // clicking a สทช. summary marker does (flyTo province zoom), so a non-0
+    // login lands drilled INTO its markers instead of the country overview.
+    const pts = (position?.locations ?? [])
+      .map((l) => l.geometry_point)
+      .filter((p): p is [number, number] =>
+        Array.isArray(p) && p.length === 2 && (p[0] !== 0 || p[1] !== 0)
+      )
+    const c = position?.centroid
+    const validCentroid =
+      Array.isArray(c) && c.length === 2 && (c[0] !== 0 || c[1] !== 0)
+        ? (c as [number, number])
+        : null
+
+    // Centre priority: mean of the actual device coords (exactly where the
+    // pins are) → BE-provided centroid → สำนัก polygon centroid (fallback for
+    // scope=all on a สทช. the BE returns empty for; the สทช. row carries its
+    // group=stch in /manage/departments, matched to the static bureau geojson).
+    let center: [number, number] | null = null
+    if (pts.length > 0) {
+      let sx = 0, sy = 0
+      for (const [x, y] of pts) { sx += x; sy += y }
+      center = [sx / pts.length, sy / pts.length]
+    } else if (validCentroid) {
+      center = validCentroid
+    } else if (positionFetched) {
+      // Only fall back once the position query has settled (empty), so a slow
+      // response can still win with the real device centroid above.
+      const groupRaw = departments?.find((d) => d.id === Number(originalDeptId))?.department_group
+      const stch = groupRaw != null ? Number(groupRaw) : NaN
+      const bureau = Number.isFinite(stch) ? bureauFeatures?.find((b) => b.stch === stch) : undefined
+      center = bureau?.centroid ?? null
+    }
+
+    if (!center) return
+    markFlown(originalDeptId)
+    // zoom 9.5 sits above PROVINCE_ZOOM_THRESHOLD (6.5) so the device markers
+    // render (and the country summary bubbles hide) — same as a summary click.
+    map.flyTo({ center, zoom: 9.5, pitch: 35, duration: 1500 })
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown, focusRoadId, roadSummaries])
+
+  // ── สายทาง landing (`?road_id=`) — the sidebar's สายทาง tab links EVERY
+  // solution with `?dept_id=…&road_id=…&scope=all`; other features filter their
+  // table by that road, but the dashboard's endpoints are dept-scoped only, so
+  // road scope means "zoom the map into that road". Fits the road's device
+  // bbox exactly like clicking its สายทาง bubble (RoadSummaryMarker), then
+  // enters road focus so the raw device markers — not the bubble — render at
+  // the fitted zoom. One-shot per road id; the user can pan away freely after.
+  const flownRoadRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!map || !isLoaded) return
+    if (!focusRoadId || flownRoadRef.current === focusRoadId) return
+    // Waits for the position payload — roadSummaries is empty until it lands.
+    const summary = roadSummaries[Number(focusRoadId)]
+    if (!summary) return
+    flownRoadRef.current = focusRoadId
+    // Claim the dept fly-to so it can't re-trigger on a later position refetch.
+    markFlown(originalDeptId)
+    const bounds: LngLatBoundsLike = [
+      [summary.bounds[0], summary.bounds[1]],
+      [summary.bounds[2], summary.bounds[3]],
+    ]
+    const cam = map.cameraForBounds(bounds, { padding: 110, maxZoom: 14.5 })
+    map.flyTo({
+      center: (cam?.center as [number, number] | undefined) ?? summary.centroid,
+      zoom: Math.max(typeof cam?.zoom === 'number' ? cam.zoom : 12.5, ROAD_ZOOM_THRESHOLD + 0.2),
+      pitch: 40,
+      duration: 1500,
+    })
+    // Set road focus only when the flight ENDS: the camera starts at country
+    // zoom (5.2) and the zoom watcher above clears roadFocus on anything
+    // below ROAD_ZOOM_THRESHOLD, so setting it up-front would be wiped
+    // mid-flight.
+    map.once('moveend', () => setRoadFocus(true))
+  }, [map, isLoaded, focusRoadId, roadSummaries, originalDeptId, markFlown])
 
   // Refs keep the click handler's closure fresh without re-registering the
   // Mapbox listener on every render.
@@ -910,6 +958,9 @@ interface ReactMapProps {
   onProvinceActivate?: () => void
   /** Fired when any device marker (singleton or overlap stack) is clicked. */
   onMarkerClick?: () => void
+  /** `?road_id=` from the landing URL — zooms the map into that road's devices
+   *  on entry (สายทาง-scoped landing from the sidebar). */
+  focusRoadId?: string | null
 }
 
 const ReactMap: React.FC<ReactMapProps> = ({
@@ -918,6 +969,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
   onDeptIdChange,
   onProvinceActivate,
   onMarkerClick,
+  focusRoadId,
 }) => {
   return (
     <BaseMap
@@ -930,6 +982,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
         onDeptIdChange={onDeptIdChange}
         onProvinceActivate={onProvinceActivate}
         onMarkerClick={onMarkerClick}
+        focusRoadId={focusRoadId}
       />
     </BaseMap>
   )
