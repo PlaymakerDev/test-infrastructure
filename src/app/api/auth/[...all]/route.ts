@@ -1,4 +1,6 @@
 import { SessionData, sessionOptions } from "@/lib/defaultSession";
+import { resolveHomeDeptId } from "@/lib/homeDept";
+import type { APIResponseDepartment } from "@/types/manage/department-api";
 import axios from "axios";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
@@ -13,6 +15,29 @@ const loginSchema = z.object({
 // Refresh this long before the access token's own `exp`. Deriving refresh_at
 // from the JWT auto-tracks the backend TTL (no manual sync with JWT_EXPIRATION).
 const REFRESH_LEAD_MS = 3 * 60 * 1000;
+
+/** Resolve the user's landing department from the token-scoped department list,
+ *  reusing the SAME `resolveHomeDeptId` rule the login screen and navbar use.
+ *  Non-fatal: on any failure we return `undefined` and the session simply
+ *  carries no `home_dept_id` — `proxy.ts` then falls back to a bare path, i.e.
+ *  the pre-2026-08-10 behaviour, instead of blocking the login. */
+async function fetchHomeDeptId(accessToken: string): Promise<number | undefined> {
+  try {
+    const { data } = await axios.get<APIResponseDepartment[]>(
+      `${process.env.NEXT_PUBLIC_HOST_BACKEND}/manage/departments`,
+      {
+        headers: {
+          ['x-api-key']: process.env.NEXT_PUBLIC_API_KEY || '',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        timeout: 8000,
+      },
+    )
+    return resolveHomeDeptId(data)
+  } catch {
+    return undefined
+  }
+}
 
 // Read `exp` (unix seconds) from the JWT payload — no signature check needed, the
 // token is issued by our backend. Returns exp − lead, clamped so it's never in
@@ -80,6 +105,10 @@ export const POST = async (
         session.refresh_token = response.data.refresh_token
         session.role = 'ADMIN'
         session.refresh_at = computeRefreshAt(response.data.access_token, now)
+        // Landing department — resolved server-side with the fresh token so
+        // EVERY entry path lands on the same scope (login form, and
+        // proxy.ts's already-logged-in redirect). See SessionData.home_dept_id.
+        session.home_dept_id = await fetchHomeDeptId(response.data.access_token)
         await session.save()
         return NextResponse.json({ message: 'success' }, { status: 200 })
       }

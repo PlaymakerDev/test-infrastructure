@@ -31,6 +31,16 @@ export interface HTMLMarkerProps {
   popup?: () => React.ReactNode
   /** Mapbox popup options (offset, closeButton, className, ...) */
   popupOptions?: PopupOptions
+  /**
+   * When this marker has no `popup` of its own, a click normally dismisses any
+   * lingering popup on the map (see handleClick). Set `false` for markers whose
+   * CHILDREN open popups via their own React onClick (OverlapMarkers' fanned
+   * tips): the browser runs a microtask checkpoint BETWEEN the child's React
+   * listener and this marker's native listener, so the child's popup is already
+   * open by the time handleClick runs — the auto-dismiss was closing it ~1ms
+   * after it appeared (grouped-pin popups never showed, found 2026-08-10).
+   */
+  autoClosePopup?: boolean
 }
 
 /**
@@ -47,6 +57,7 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
   title,
   popup,
   popupOptions,
+  autoClosePopup = true,
 }) => {
   const { map, isLoaded } = useMap()
   const elRef = useRef<HTMLDivElement | null>(null)
@@ -59,10 +70,12 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
   const popupRef = useRef(popup)
   const popupOptionsRef = useRef(popupOptions)
   const lngLatRef = useRef(lngLat)
+  const autoClosePopupRef = useRef(autoClosePopup)
   useEffect(() => { onClickRef.current = onClick }, [onClick])
   useEffect(() => { popupRef.current = popup }, [popup])
   useEffect(() => { popupOptionsRef.current = popupOptions }, [popupOptions])
   useEffect(() => { lngLatRef.current = lngLat }, [lngLat])
+  useEffect(() => { autoClosePopupRef.current = autoClosePopup }, [autoClosePopup])
 
   // Defer DOM creation until after hydration (server returns null → matches initial client render)
   useEffect(() => {
@@ -93,7 +106,9 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
       // earlier marker. stopPropagation above means the map's closeOnClick
       // never sees marker clicks, so without this a popup stayed open while
       // the user clicked summary bubbles / stack badges (reported 2026-07-24).
-      if (!popupRef.current && map) closeReactPopup(map)
+      // Skipped when `autoClosePopup` is false — see the prop's doc comment
+      // (it was killing popups opened by React children inside this marker).
+      if (!popupRef.current && autoClosePopupRef.current && map) closeReactPopup(map)
       if (onClickRef.current && markerRef.current) {
         onClickRef.current(markerRef.current)
       }

@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getIronSession } from 'iron-session'
 import { SessionData, sessionOptions } from '@/lib/defaultSession'
+import { deptQuery } from '@/lib/homeDept'
 import menu from './configs/menu'
 
 // `new URL('/foo', request.url)` strips basePath; manually prepend so deploys
@@ -21,10 +22,20 @@ export async function proxy(request: NextRequest) {
 
   const path = menu[session.role as keyof typeof menu]
 
+  // Landing query for the role's first menu entry — MUST match what the login
+  // form builds (`deptQuery(resolveHomeDeptId(...))`), otherwise the two entry
+  // paths disagree: a bare `/admin/dashboard` falls back to dept 0 WITHOUT
+  // `scope=all`, i.e. ทช.ส่วนกลาง only (1 road / 22 cameras) instead of the
+  // user's own scope — and a สทช./ขทช. user lands on the wrong department
+  // entirely (bug found 2026-08-10). `home_dept_id` is stamped into the session
+  // at login; sessions predating it get the old bare path.
+  const landingPath = (p: string) =>
+    session.home_dept_id != null ? `${p}?${deptQuery(session.home_dept_id)}` : p
+
   // Authenticated user on /auth/login → send to their dashboard
   if (isAuthenticated && pathname.startsWith('/auth/login')) {
     if (path && path.length > 0) {
-      return NextResponse.redirect(withBase(path[0].path, request.url))
+      return NextResponse.redirect(withBase(landingPath(path[0].path), request.url))
     }
     return NextResponse.redirect(withBase('/', request.url))
   }
@@ -37,9 +48,9 @@ export async function proxy(request: NextRequest) {
   // Authenticated but wrong role trying to access /admin/* → send to their own landing
   if (isAuthenticated && pathname.startsWith('/admin') && session.role !== 'ADMIN') {
     if (path && path.length > 0) {
-      return NextResponse.redirect(new URL(path[0].path, request.url))
+      return NextResponse.redirect(withBase(landingPath(path[0].path), request.url))
     }
-    return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.redirect(withBase('/', request.url))
   }
 
   return response

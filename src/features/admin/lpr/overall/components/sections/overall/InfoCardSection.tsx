@@ -47,7 +47,7 @@ const InfoCardSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
           <span className='fs-24 font-bold'>{fmt(stats.totalPoints)}</span> จุด
         </p>
         <p className='fs-12 text-gray-400'>
-          รวมกล้อง {fmt(stats.totalCameras)} ตัว · Active ในชั่วโมงล่าสุด{' '}
+          รวมกล้อง {fmt(stats.totalCameras)} ตัว · ออนไลน์{' '}
           {fmt(stats.activeHour)} จุด
         </p>
       </div>
@@ -68,7 +68,7 @@ const InfoCardSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
           <span className='fs-24 font-bold'>{fmt(stats.eventsHour)}</span> ครั้ง
         </p>
         <p className='fs-12 text-gray-400'>
-          จาก {fmt(stats.activeHour)} จุดที่ Active
+          จาก {fmt(stats.activeHour)} จุดที่ออนไลน์
         </p>
       </div>
     </div>

@@ -5,6 +5,17 @@ export interface SessionData {
   refresh_token: string;
   role: "EXAMPLE" | "ADMIN" | "";
   refresh_at: number;  // unix ms — next proactive-refresh due time (now + REFRESH_AFTER_MS)
+  /** Department the user should land on — `resolveHomeDeptId()` over the
+   *  token-scoped `GET /manage/departments`, computed once at login.
+   *  0 = ส่วนกลาง (nationwide). `undefined` on sessions created before this
+   *  field existed, so every reader must handle its absence.
+   *
+   *  WHY it lives in the session: `proxy.ts` redirects an already-logged-in
+   *  visitor from /auth/login to their landing page and must build the SAME
+   *  `?dept_id=…&scope=all` query the login form builds. Middleware runs at the
+   *  edge and can't resolve the dept without an extra authenticated fetch on
+   *  every login-page hit — so login stores it here instead (2026-08-10). */
+  home_dept_id?: number;
 }
 
 export const defaultSession: SessionData = {

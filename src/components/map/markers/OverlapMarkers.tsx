@@ -4,7 +4,7 @@ import { TbMapPin } from 'react-icons/tb'
 import type { PopupOptions } from 'mapbox-gl'
 import HTMLMarker from '../primitives/HTMLMarker'
 import { useMap } from '../hooks/useMap'
-import { showReactPopup } from '../primitives/popupHelper'
+import { closeReactPopup, showReactPopup } from '../primitives/popupHelper'
 
 /** One clickable map point. When several share the same coordinate they fan
  *  out (spider) so each stays individually clickable. */
@@ -164,8 +164,19 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
   // Collapsed group goes red ONLY when every device at this coordinate is
   // offline; any online device keeps it white (per design).
   const allOffline = items.every((i) => i.offline === true)
+  // Badge/tip clicks close any lingering popup THEMSELVES (toggleFan below +
+  // showReactPopup's single-popup registry) — HTMLMarker's own auto-dismiss
+  // must stay OFF here or it closes the popup a fanned tip just opened (the
+  // browser runs the tip's React handler, then a microtask checkpoint opens
+  // the popup, then the marker's native handler — which used to auto-close
+  // it 1ms later; grouped-pin popups never appeared, fixed 2026-08-10).
+  const toggleFan = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (map) closeReactPopup(map)
+    setExpanded((v) => !v)
+  }
   return (
-    <HTMLMarker lngLat={center} anchor='center'>
+    <HTMLMarker lngLat={center} anchor='center' autoClosePopup={false}>
       <div style={{ position: 'relative', width: MARKER_SIZE, height: MARKER_SIZE, overflow: 'visible' }}>
         {expanded && <FanLegs count={n} length={LEG_PX} />}
 
@@ -175,7 +186,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
         {variant === 'white' ? (
           <button
             type='button'
-            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+            onClick={toggleFan}
             title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
             style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', zIndex: 2 }}
           >
@@ -184,7 +195,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
         ) : (
           <button
             type='button'
-            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+            onClick={toggleFan}
             title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
             style={{
               width: MARKER_SIZE,

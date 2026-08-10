@@ -21,10 +21,14 @@ interface Props {
   deptId?: string | string[] | number
 }
 
-// Same chip palette as the sibling menus (cctv / incident-detection):
-// ทั้งหมด yellow, Active blue (parallel to ออนไลน์), Idle gray (parallel to
-// หมดค้ำ). LPR points carry no online/warranty fields — Active/Idle keys off
-// events_hour, the same signal the grid pills + KPI cards already use.
+// Chips mirror the sibling overall menus EXACTLY (cctv / incident-detection /
+// traffic-signal): ทั้งหมด yellow · ออนไลน์ blue · ออฟไลน์ red — same keys,
+// labels and palette, so the filter row reads identically app-wide
+// (was Active/Idle with a gray third chip until 2026-08-10).
+//
+// `/lpr/points` carries no `is_online` field, so the split keys off
+// `events_hour > 0` — a point that detected a plate within the last hour is
+// treated as online. Same signal the grid pills + KPI cards use.
 const LPR_FILTERS: FilterConfig[] = [
   {
     key: 'all',
@@ -35,20 +39,20 @@ const LPR_FILTERS: FilterConfig[] = [
     badgeIdleClass: 'bg-[#FCD116]/20 text-[#FCD116]',
   },
   {
-    key: 'active',
-    label: 'Active',
+    key: 'online',
+    label: 'ออนไลน์',
     colorPrimary: '#66AEFF',
     colorTextLightSolid: '#212121',
     badgeActiveClass: 'bg-[#1B3F8B] text-white',
     badgeIdleClass: 'bg-[#66AEFF]/20 text-[#66AEFF]',
   },
   {
-    key: 'idle',
-    label: 'Idle',
-    colorPrimary: '#979797',
-    colorTextLightSolid: '#212121',
-    badgeActiveClass: 'bg-[#4a4a4a] text-white',
-    badgeIdleClass: 'bg-[#979797]/20 text-[#979797]',
+    key: 'offline',
+    label: 'ออฟไลน์',
+    colorPrimary: '#E94C4C',
+    colorTextLightSolid: '#ffffff',
+    badgeActiveClass: 'bg-red-800 text-white',
+    badgeIdleClass: 'bg-red-500/20 text-red-400',
   },
 ]
 
@@ -127,7 +131,7 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   }, [points, deptId, deptNameById])
 
   // Rows matching the search box ONLY (independent of the status filter) — the
-  // base set for both the badge counts and the table, so ทั้งหมด/Active/Idle
+  // base set for both the badge counts and the table, so ทั้งหมด/ออนไลน์/ออฟไลน์
   // track the search (requested 2026-07-24).
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -141,8 +145,8 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   const stats: FilterStats = useMemo(
     () => ({
       all: searchFiltered.length,
-      active: searchFiltered.filter((r) => r.events_hour > 0).length,
-      idle: searchFiltered.filter((r) => r.events_hour === 0).length,
+      online: searchFiltered.filter((r) => r.events_hour > 0).length,
+      offline: searchFiltered.filter((r) => r.events_hour === 0).length,
     }),
     [searchFiltered],
   )
@@ -150,8 +154,8 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   const filtered = useMemo(() => {
     return searchFiltered.filter((r) => {
       switch (activeFilter) {
-        case 'active': return r.events_hour > 0
-        case 'idle': return r.events_hour === 0
+        case 'online': return r.events_hour > 0
+        case 'offline': return r.events_hour === 0
         default: return true
       }
     })

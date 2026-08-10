@@ -60,10 +60,13 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
       {/* Badges row */}
       <div className='flex flex-wrap items-center gap-2'>
         <Pill text={p.road_code || '-'} color='#66AEFF' />
+        {/* Status pill — same wording + colours as the filter chips and every
+          * other overall menu (blue ออนไลน์ / red ออฟไลน์), keyed off
+          * events_hour since /lpr/points has no is_online (2026-08-10). */}
         {p.events_hour > 0 ? (
-          <Pill text='Active' color='#FCD116' />
+          <Pill text='ออนไลน์' color='#66AEFF' />
         ) : (
-          <Pill text='Idle' color='#979797' />
+          <Pill text='ออฟไลน์' color='#E94C4C' />
         )}
         <TbInfoSquareRoundedFilled
           size={32}
