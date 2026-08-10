@@ -1,11 +1,21 @@
 "use client"
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Button, ConfigProvider } from 'antd'
 import { TbArrowBigLeftFilled, TbPrinter } from 'react-icons/tb'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
+/** Header badge/button sizing — copied verbatim from the shared
+ *  `DetailTitleSection` (components/section/DetailTitleSection.tsx) so this
+ *  hand-rolled header matches every other detail page: 14px text, 2px/14px
+ *  padding, 28px tall. Colours are applied per-element via inline style;
+ *  filled buttons pass `borderColor: 'transparent'` so their box maths match
+ *  the outlined pills exactly. */
+const BADGE_CLASS =
+  'inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
 
 interface Props {
   id: string
@@ -33,10 +43,13 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
   }
 
   return (
-    <div className='px-3 sm:px-10 pt-3'>
+    // Outer padding / arrow size / row spacing all mirror DetailTitleSection
+    // (`px-8`, `fs-24` arrow at `mt-2`, no extra top padding) so this header
+    // lines up with every other detail page. Mobile keeps its tighter `px-3`.
+    <div className='px-3 sm:px-8'>
       <section className='flex items-start gap-3'>
         <TbArrowBigLeftFilled
-          className='text-[24px] cursor-pointer mt-1.5 shrink-0'
+          className='fs-24 cursor-pointer mt-2 shrink-0'
           style={{ color: '#FCD116' }}
           onClick={handleBack}
         />
@@ -44,15 +57,18 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
           <h1 className='text-[18px] sm:text-[24px] font-bold wrap-break-word' style={{ color: '#FCD116' }}>
             {title}
           </h1>
-          <div className='flex items-center gap-2 mt-2 flex-wrap'>
+          <div className='flex flex-wrap items-center gap-2'>
+            {/* No font-size class — matches DetailTitleSection's plain
+                `<p>{installPoint}</p>` (16px). The old `fs-12` pinned it to
+                14px, 2px under every other detail header. */}
             {subtitle && (
-              <p className='fs-12 sm:fs-12 font-normal' style={{ color: '#FFFFFF' }}>
+              <p className='font-normal' style={{ color: '#FFFFFF' }}>
                 {subtitle}
               </p>
             )}
             <span
-              className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap'
-              style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
+              className={BADGE_CLASS}
+              style={{ borderColor: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797', color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
             >
               {warranty}
             </span>
@@ -60,9 +76,9 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt='ดูข้อมูลโครงการ'
               title='ดูข้อมูลโครงการ'
-              width={26}
-              height={26}
-              className='shrink-0 sm:w-7.5 sm:h-7.5'
+              width={24}
+              height={24}
+              className='shrink-0'
               onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
                 open: true,
                 project_id: projectId,
@@ -71,55 +87,66 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
               style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
             />
             <span
-              className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
-              style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
+              className={BADGE_CLASS}
+              style={{ borderColor: '#66AEFF', color: '#66AEFF', minWidth: 60 }}
             >
-              <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
-              <span style={{ marginTop: 2 }}>{onlineCount}</span>
+              <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={14} height={14} />
+              {onlineCount}
             </span>
             <span
-              className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
-              style={{ padding: '2px 10px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
+              className={BADGE_CLASS}
+              style={{ borderColor: '#E94C4C', color: '#E94C4C', minWidth: 60 }}
             >
-              <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
-              <span style={{ marginTop: 2 }}>{offlineCount}</span>
+              <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={14} height={14} />
+              {offlineCount}
             </span>
-            <button
-              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap text-white cursor-pointer hover:opacity-80 transition-opacity'
-              style={{ background: '#003F87' }}
-              type='button'
-              onClick={() => {
-                if (coord) {
-                  window.open(`https://www.google.com/maps?q=${coord[1]},${coord[0]}`, '_blank')
-                  return
-                }
-                const query = [title, subtitle].filter(Boolean).join(' ')
-                window.open(`https://www.google.com/maps?q=${encodeURIComponent(query)}`, '_blank')
-              }}
-            >
-              Google Map
-            </button>
-            <button
-              className='inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-              style={{ background: '#FCD116', color: '#212121' }}
-              type='button'
-              onClick={() => {
-                const query = searchParams.toString()
-                router.push(`/admin/maintenance/detail/${id}/repair-history${query ? `?${query}` : ''}`)
-              }}
-            >
-              ประวัติการซ่อม
-            </button>
-            {onExport && (
-              <button
-                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-                style={{ background: '#66AEFF', color: '#0A0A0A' }}
-                type='button'
-                onClick={onExport}
+            {/* Action buttons are AntD `<Button type='primary' size='middle'
+                shape='round'>` — NOT the 28px pill above. That's deliberate in
+                DetailTitleSection: pills are 28px, buttons are AntD's 32px
+                middle size (padding 0 15px). Matching them to the pills made
+                this row 4px shorter than every other detail page. */}
+            <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                onClick={() => {
+                  if (coord) {
+                    window.open(`https://www.google.com/maps?q=${coord[1]},${coord[0]}`, '_blank')
+                    return
+                  }
+                  const query = [title, subtitle].filter(Boolean).join(' ')
+                  window.open(`https://www.google.com/maps?q=${encodeURIComponent(query)}`, '_blank')
+                }}
               >
-                <TbPrinter size={14} />
-                นำออกเอกสาร
-              </button>
+                <p className='fs-12'>Google Map</p>
+              </Button>
+            </ConfigProvider>
+            <ConfigProvider theme={{ token: { colorPrimary: '#FCD116', colorTextLightSolid: '#212121' } }}>
+              <Button
+                type='primary'
+                size='middle'
+                shape='round'
+                onClick={() => {
+                  const query = searchParams.toString()
+                  router.push(`/admin/maintenance/detail/${id}/repair-history${query ? `?${query}` : ''}`)
+                }}
+              >
+                <p className='fs-12'>ประวัติการซ่อม</p>
+              </Button>
+            </ConfigProvider>
+            {onExport && (
+              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  icon={<TbPrinter />}
+                  onClick={onExport}
+                >
+                  <p className='fs-12'>นำออกเอกสาร</p>
+                </Button>
+              </ConfigProvider>
             )}
           </div>
         </div>

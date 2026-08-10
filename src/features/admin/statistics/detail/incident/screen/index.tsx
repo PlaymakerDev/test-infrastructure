@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TbArrowBigLeftFilled } from 'react-icons/tb'
-import { Button, DatePicker, Empty, Spin } from 'antd'
+import { Button, ConfigProvider, DatePicker, Empty, Spin } from 'antd'
 import dayjs from 'dayjs'
 import { IncidentDetailProvider, useIncidentDetailContext } from '../context'
 import { IncidentDetailSidebar, IncidentDetailTable, IncidentDonutSection } from '../components'
@@ -17,6 +17,13 @@ import { StatisticsMinimumFontSize } from '../../../overall/components/shared'
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
 const { RangePicker } = DatePicker
+
+/** Header badge/button sizing — copied verbatim from the shared
+ *  `DetailTitleSection` (components/section/DetailTitleSection.tsx) so this
+ *  hand-rolled header matches every other detail page: 14px text, 2px/14px
+ *  padding, 28px tall. Colours are applied per-element via inline style. */
+const BADGE_CLASS =
+  'inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
 
 const IncidentDetailContent: React.FC = () => {
   const router = useRouter()
@@ -65,6 +72,16 @@ const IncidentDetailContent: React.FC = () => {
     : null
   const warrantyColor = warranty === false ? '#979797' : '#05F2DB'
   const warrantyLabel = warranty === false ? 'หมดค้ำ' : 'ในค้ำ'
+  // Sub-department count pill: red past the cap, gray when empty, else green.
+  // Extracted because the same three-way expression was repeated for the
+  // border, the dot and the text colour.
+  const routeCountColor = !routeItem
+    ? '#979797'
+    : routeItem.sub3.length > 263
+      ? '#E94C4C'
+      : routeItem.sub3.length === 0
+        ? '#979797'
+        : '#B2FF00'
 
   // Real coord for the Google Map button — same source as the sidebar/overview
   // map (the central-list call already cached by useLiveIncidentRouteItems),
@@ -115,15 +132,19 @@ const IncidentDetailContent: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-            <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
+            {/* Plain <p>, no font-size override — matches DetailTitleSection's
+                `<p>{installPoint}</p>` (16px). The old `var(--fs-12)` is never
+                declared anywhere in the app, so it fell back to the inherited
+                14px, 2px under every other detail header. */}
+            <p style={{ color: '#FFFFFF' }}>
               {detailLabel || '-'}
             </p>
             <img
               src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt="ดูข้อมูลโครงการ"
               title="ดูข้อมูลโครงการ"
-              width={25}
-              height={25}
+              width={24}
+              height={24}
               onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
                 open: true,
                 project_id: projectId,
@@ -131,57 +152,49 @@ const IncidentDetailContent: React.FC = () => {
               }))}
               style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
             />
+            {/* Badge sizing is the shared DetailTitleSection contract
+                (`py-0.5 px-3.5 fs-12 rounded-full border` → 14px text,
+                2px/14px padding, 28px tall). This header is hand-rolled rather
+                than using that component, so the classes are copied verbatim.
+                The old inline `height: 28` + `padding: '4px 10px'` hit the
+                right height but ran 4px narrow on each side; the button also
+                needs a transparent border so its box maths match the pills. */}
             {warranty !== null && (
-              <div style={{
-                height: 28, borderRadius: 88,
-                border: `1px solid ${warrantyColor}`,
-                padding: '4px 10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: warrantyColor }}>{warrantyLabel}</span>
-              </div>
+              <span className={BADGE_CLASS} style={{ borderColor: warrantyColor, color: warrantyColor }}>
+                {warrantyLabel}
+              </span>
             )}
             {routeItem && (
-              <div style={{
-                height: 28, borderRadius: 88,
-                border: `1px solid ${(routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00'}`,
-                padding: '4px 10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: (routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00', flexShrink: 0 }} />
-                <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: (routeItem.sub3.length > 263) ? '#E94C4C' : routeItem.sub3.length === 0 ? '#979797' : '#B2FF00' }}>
-                  {routeItem.sub3.length > 263 ? '263+' : routeItem.sub3.length}
-                </span>
-              </div>
+              <span
+                className={BADGE_CLASS}
+                style={{ borderColor: routeCountColor, color: routeCountColor }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: routeCountColor, flexShrink: 0 }} />
+                {routeItem.sub3.length > 263 ? '263+' : routeItem.sub3.length}
+              </span>
             )}
-            <div style={{
-              height: 28, borderRadius: 88,
-              border: `1px solid ${statusColor}`,
-              padding: '4px 10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
-            }}>
-              <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={12} height={12} />
-              <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF' }}>{isOnline ? 'ออนไลน์' : 'ออฟไลน์'}</span>
-            </div>
-            <button
-              type="button"
-              disabled={!coord}
-              onClick={() => {
-                if (!coord) return
-                window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
-              }}
-              style={{
-                height: 28, borderRadius: 88,
-                backgroundColor: '#003F87',
-                padding: '4px 10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: 'none',
-                cursor: coord ? 'pointer' : 'not-allowed',
-                opacity: coord ? 1 : 0.5,
-              }}
-            >
-              <span style={{ fontSize: "var(--fs-12)", fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
-            </button>
+            <span className={BADGE_CLASS} style={{ borderColor: statusColor, color: '#FFFFFF' }}>
+              <img src={isOnline ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={14} height={14} />
+              {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+            </span>
+            {/* AntD `<Button size='middle' shape='round'>` (32px, padding
+                0 15px) — NOT the 28px pill above. That split is deliberate in
+                DetailTitleSection; styling it as a pill made this row 4px
+                shorter than every other detail page. */}
+            <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+              <Button
+                type="primary"
+                size="middle"
+                shape="round"
+                disabled={!coord}
+                onClick={() => {
+                  if (!coord) return
+                  window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+                }}
+              >
+                <p className="fs-12">Google Map</p>
+              </Button>
+            </ConfigProvider>
             <fieldset style={{ flexShrink: 0, marginLeft: 'auto' }}>
               <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
               <RangePicker

@@ -6,8 +6,16 @@ import { TbArrowBigLeftFilled, TbInfoCircleFilled, TbWifi, TbWifiOff } from 'rea
 import ModalInfoTrafficLighting from '@/features/admin/traffic-lighting/overall/components/ModalInfoTrafficLighting'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
 import { useLampContext } from '../context'
-import Pill from '@/features/admin/traffic-lighting/detail/components/Pill'
 import { useState } from 'react'
+
+/** Header badge sizing — copied verbatim from the shared `DetailTitleSection`
+ *  (components/section/DetailTitleSection.tsx) so this header matches the phase
+ *  detail page: 14px text, 2px/14px padding, 28px tall. The local `Pill`
+ *  component (`px-3 py-1` → 32px) is still right for table cells, but was 4px
+ *  too tall for this row. Action buttons stay AntD 32px — that split is
+ *  intentional. */
+const BADGE_CLASS =
+  'inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
 
 const WARRANTY_COLORS = {
   'in-warranty': '#05F2DB',
@@ -54,22 +62,27 @@ const LampTitleSection: React.FC = () => {
           <h1 className='text-[20px] sm:text-[24px] font-bold text-[#FCD116] m-0'>
             Traffic Lighting : สายทาง {project.roadCode}
           </h1>
-          <div className='flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mt-2'>
+          {/* Row spacing, subtitle size, icon size and pill sizing all mirror
+              DetailTitleSection (the phase detail header) so this page reads
+              identically: no `mt-2`, plain 16px `<p>`, 24px ⓘ, 28px pills. */}
+          <div className='flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2'>
             <div className='flex items-center gap-2 w-full sm:w-auto'>
-              <p className='text-white mb-0 fs-12 sm:fs-12'>
+              <p className='text-white mb-0'>
                 {project.installPoint}
               </p>
               <TbInfoCircleFilled
-                size={22}
+                size={24}
                 className='text-white cursor-pointer hover:text-[#FCD116] shrink-0'
                 title='ดูข้อมูลโครงการ'
                 onClick={() => setInfoProject(project)}
               />
             </div>
-            <Pill
-              text={warrantyLabel}
-              color={WARRANTY_COLORS[project.warranty]}
-            />
+            <span
+              className={BADGE_CLASS}
+              style={{ borderColor: WARRANTY_COLORS[project.warranty], color: WARRANTY_COLORS[project.warranty] }}
+            >
+              {warrantyLabel}
+            </span>
             <ConfigProvider
               theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}
             >
@@ -91,13 +104,15 @@ const LampTitleSection: React.FC = () => {
                 Google Map
               </Button>
             </ConfigProvider>
-            <Pill
-              text={connectionLabel}
-              color={CONNECTION_COLORS[project.connection]}
-              icon={project.connection === 'unknown'
-                ? undefined
-                : isOnline ? <TbWifi size={14} /> : <TbWifiOff size={14} />}
-            />
+            <span
+              className={BADGE_CLASS}
+              style={{ borderColor: CONNECTION_COLORS[project.connection], color: CONNECTION_COLORS[project.connection] }}
+            >
+              {project.connection === 'unknown'
+                ? null
+                : isOnline ? <TbWifi /> : <TbWifiOff />}
+              {connectionLabel}
+            </span>
           </div>
         </div>
       </section>

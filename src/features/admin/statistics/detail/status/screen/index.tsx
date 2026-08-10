@@ -1,8 +1,8 @@
 "use client"
 import React, { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { TbArrowBigLeftFilled } from 'react-icons/tb'
-import { Alert, Button, DatePicker, Empty, Spin } from 'antd'
+import { TbAppWindow, TbArrowBigLeftFilled } from 'react-icons/tb'
+import { Alert, Button, ConfigProvider, DatePicker, Empty, Spin } from 'antd'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
@@ -37,6 +37,13 @@ const WARRANTY_COLOR: Record<string, string> = {
   หมดค้ำ: '#979797',
   ก่อนค้ำ: '#FCD116',
 }
+
+/** Header badge/button sizing — copied verbatim from the shared
+ *  `DetailTitleSection` (components/section/DetailTitleSection.tsx) so this
+ *  hand-rolled header matches every other detail page: 14px text, 2px/14px
+ *  padding, 28px tall. Colours are applied per-element via inline style. */
+const BADGE_CLASS =
+  'inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
 
 const formatBackendBuddhistDateTime = (value: string): string => {
   const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{2}:\d{2}:\d{2})$/.exec(value.trim())
@@ -174,15 +181,21 @@ const StatusDetailContent: React.FC = () => {
             <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
             {routesFetching && <span className="fs-12 text-gray-400">กำลังอัปเดตรายการอุปกรณ์...</span>}
             <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-              <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
+              {/* Plain <p>, no font-size override — matches DetailTitleSection's
+                  `<p>{installPoint}</p>` (16px from the base style). The old
+                  `fontSize: var(--fs-12)` rendered 14px here: that custom
+                  property is never defined anywhere in the app, so the
+                  declaration was dropped and the size fell back to whatever it
+                  inherited, 2px under every other detail header. */}
+              <p style={{ color: '#FFFFFF' }}>
                 {detailLabel || '-'}
               </p>
               <img
                 src={`${BASE_PATH}/images/statistics/icbt.png`}
                 alt="ดูข้อมูลโครงการ"
                 title="ดูข้อมูลโครงการ"
-                width={25}
-                height={25}
+                width={24}
+                height={24}
                 onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
                   open: true,
                   project_id: projectId,
@@ -190,76 +203,70 @@ const StatusDetailContent: React.FC = () => {
                 }))}
                 style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
               />
+              {/* Badge row sizing is the shared DetailTitleSection contract
+                  (`py-0.5 px-3.5 fs-12 rounded-full border` → 14px text,
+                  2px/14px padding, 28px tall). This header is hand-rolled
+                  rather than using that component, so the classes are copied
+                  verbatim — the buttons carry a transparent 1px border so
+                  their box maths match the outlined pills exactly. Do not
+                  reintroduce fixed `height` / `fontSize` here; the old
+                  `height: 22` made this the only 22px badge row in the app
+                  and the old `fontSize: 10` was dead (overridden by the
+                  app-wide 14px minimum). */}
               {warrantyStatus && (
-                <div style={{
-                  height: 22, borderRadius: 88,
-                  border: `1px solid ${warrantyColor}`,
-                  padding: '4px 10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: 10, fontWeight: 500, color: warrantyColor }}>
-                    {warrantyStatus}
-                  </span>
-                </div>
+                <span
+                  className={BADGE_CLASS}
+                  style={{ borderColor: warrantyColor, color: warrantyColor }}
+                >
+                  {warrantyStatus}
+                </span>
               )}
-              <div style={{
-                height: 22, borderRadius: 88,
-                border: `1px solid ${statusColor}`,
-                padding: '4px 10px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
-              }}>
+              <span
+                className={BADGE_CLASS}
+                style={{ borderColor: statusColor, color: '#FFFFFF' }}
+              >
                 {connectionState !== undefined && (
-                  <img src={connectionState ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={12} height={12} />
+                  <img src={connectionState ? `${BASE_PATH}/images/statistics/iconconnect.png` : `${BASE_PATH}/images/statistics/iconnoconnect.png`} alt="" width={14} height={14} />
                 )}
-                <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>
-                  {connectionState === true ? 'ออนไลน์' : connectionState === false ? 'ออฟไลน์' : '-'}
-                </span>
-              </div>
-              <button
-                type="button"
-                disabled={!coord}
-                onClick={() => {
-                  if (!coord) return
-                  window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
-                }}
-                style={{
-                  height: 22, borderRadius: 88,
-                  backgroundColor: '#003F87',
-                  padding: '4px 10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: 'none',
-                  cursor: coord ? 'pointer' : 'not-allowed',
-                  opacity: coord ? 1 : 0.5,
-                }}
-              >
-                <span style={{ fontSize: 10, fontWeight: 500, color: '#FFFFFF' }}>Google Map</span>
-              </button>
-              <button
-                type="button"
-                disabled={!anydesk}
-                title={anydesk ? `เปิด AnyDesk : ${anydesk}` : 'ไม่มีรหัส AnyDesk'}
-                onClick={() => {
-                  if (!anydesk) return
-                  // `anydesk:` is the desktop-app protocol handler — matches
-                  // incident-detection's TitleSection. Don't `window.open` it;
-                  // that races a blank tab with the protocol handler in Chrome.
-                  window.location.href = `anydesk:${anydesk}`
-                }}
-                style={{
-                  height: 22, borderRadius: 88,
-                  backgroundColor: '#66AEFF',
-                  padding: '4px 10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
-                  border: 'none',
-                  cursor: anydesk ? 'pointer' : 'not-allowed',
-                  opacity: anydesk ? 1 : 0.5,
-                }}
-              >
-                <img src={`${BASE_PATH}/images/statistics/icand.png`} alt="" width={12} height={12} />
-                <span style={{ fontSize: 10, fontWeight: 500, color: '#000000' }}>
-                  Anydesk : {anydesk || '-'}
-                </span>
-              </button>
+                {connectionState === true ? 'ออนไลน์' : connectionState === false ? 'ออฟไลน์' : '-'}
+              </span>
+              {/* Action buttons are AntD `<Button size='middle' shape='round'>`
+                  (32px, padding 0 15px) — NOT the 28px pill above. That split is
+                  deliberate in DetailTitleSection; styling them as pills made
+                  this row 4px shorter than every other detail page. */}
+              <ConfigProvider theme={{ token: { colorPrimary: '#003F87', colorTextLightSolid: '#FFFFFF' } }}>
+                <Button
+                  type="primary"
+                  size="middle"
+                  shape="round"
+                  disabled={!coord}
+                  onClick={() => {
+                    if (!coord) return
+                    window.open(`https://maps.google.com/?q=${coord[1]},${coord[0]}`, '_blank')
+                  }}
+                >
+                  <p className="fs-12">Google Map</p>
+                </Button>
+              </ConfigProvider>
+              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#000000' } }}>
+                <Button
+                  type="primary"
+                  size="middle"
+                  shape="round"
+                  icon={<TbAppWindow />}
+                  disabled={!anydesk}
+                  title={anydesk ? `เปิด AnyDesk : ${anydesk}` : 'ไม่มีรหัส AnyDesk'}
+                  onClick={() => {
+                    if (!anydesk) return
+                    // `anydesk:` is the desktop-app protocol handler — matches
+                    // incident-detection's TitleSection. Don't `window.open` it;
+                    // that races a blank tab with the protocol handler in Chrome.
+                    window.location.href = `anydesk:${anydesk}`
+                  }}
+                >
+                  <p className="fs-12">Anydesk : {anydesk || '-'}</p>
+                </Button>
+              </ConfigProvider>
               <fieldset className="w-full sm:w-auto" style={{ flexShrink: 0, marginLeft: 'auto' }}>
                 <label className='block fs-12 text-(--yellow)'>วันที่แสดงข้อมูล</label>
                 <RangePicker

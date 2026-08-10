@@ -118,15 +118,19 @@ const AlertDetailContent: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="text-(--yellow)">สายทาง {routeName || detail || '-'}</h1>
           <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-            <p style={{ color: '#FFFFFF', fontSize: "var(--fs-12)", fontWeight: 400 }}>
+            {/* Plain <p>, no font-size override — matches DetailTitleSection's
+                `<p>{installPoint}</p>` (16px). The old `var(--fs-12)` is never
+                declared anywhere in the app, so it fell back to the inherited
+                14px, 2px under every other detail header. */}
+            <p style={{ color: '#FFFFFF' }}>
               {detailLabel || '-'}
             </p>
             <img
               src={`${BASE_PATH}/images/statistics/icbt.png`}
               alt="ดูข้อมูลโครงการ"
               title="ดูข้อมูลโครงการ"
-              width={25}
-              height={25}
+              width={24}
+              height={24}
               // The project id is resolved from central-list by matching this
               // selected device's IMEI.
               onClick={() => projectId !== null && dispatch(setProjectInfoModalOpen({

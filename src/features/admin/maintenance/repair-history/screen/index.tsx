@@ -1,7 +1,7 @@
 "use client"
 import React, { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button, Image, Input, Result, Segmented, Spin, Table } from 'antd'
+import { Button, ConfigProvider, Image, Input, Result, Segmented, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { TbArrowBigLeftFilled, TbChevronLeft, TbChevronRight, TbFileText, TbPrinter, TbSearch, TbX } from 'react-icons/tb'
 import { useMaintenanceSolution, useMaintenanceCases, useMaintenanceHistory, useMaintenanceCase, useProjectBySolution } from '@/hooks/queries/maintenance'
@@ -20,6 +20,13 @@ import { ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
+/** Header badge sizing — copied verbatim from the shared `DetailTitleSection`
+ *  (components/section/DetailTitleSection.tsx) so this hand-rolled header
+ *  matches every other detail page: 14px text, 2px/14px padding, 28px tall.
+ *  Action buttons stay AntD `size='middle'` (32px) — that split is intentional. */
+const BADGE_CLASS =
+  'inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -296,10 +303,13 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
   return (
     <div className='main-screen maintenance-font-min-14'>
       <MaintenanceMinimumFontSize />
-      <div className='px-4 sm:px-10 pt-3'>
+      {/* Outer padding / arrow size / row spacing mirror DetailTitleSection
+          (`px-8`, `fs-24` arrow at `mt-2`, no extra top padding) so this header
+          lines up with every other detail page. Mobile keeps its tighter px-4. */}
+      <div className='px-4 sm:px-8'>
         <section className='flex items-start gap-3'>
           <TbArrowBigLeftFilled
-            className='text-[24px] cursor-pointer mt-1.5 shrink-0'
+            className='fs-24 cursor-pointer mt-2 shrink-0'
             style={{ color: '#FCD116' }}
             onClick={handleBack}
           />
@@ -307,38 +317,40 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
             <h1 className='text-[20px] sm:text-[24px] font-bold' style={{ color: '#FCD116' }}>
               ประวัติการซ่อม
             </h1>
-            <div className='flex items-center gap-2 mt-2 flex-wrap'>
+            <div className='flex flex-wrap items-center gap-2'>
+              {/* No font-size class — matches DetailTitleSection's plain
+                  `<p>{installPoint}</p>` (16px); `fs-12` pinned it to 14px. */}
               {(routeSubtitle || solutionData?.solution_name) && (
-                <p className='fs-12 sm:fs-12 font-normal' style={{ color: '#FFFFFF' }}>
+                <p className='font-normal' style={{ color: '#FFFFFF' }}>
                   {routeSubtitle || solutionData?.solution_name}
                 </p>
               )}
               <span
-                className='inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap'
-                style={{ border: `1px solid ${warranty === 'ในค้ำ' ? '#05F2DB' : '#979797'}`, color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
+                className={BADGE_CLASS}
+                style={{ borderColor: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797', color: warranty === 'ในค้ำ' ? '#05F2DB' : '#979797' }}
               >
                 {warranty}
               </span>
               <span
-                className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
-                style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #66AEFF', color: '#66AEFF', minWidth: 60, textAlign: 'center' }}
+                className={BADGE_CLASS}
+                style={{ borderColor: '#66AEFF', color: '#66AEFF', minWidth: 60 }}
               >
-                <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={13} height={13} />
-                <span style={{ marginTop: 2 }}>{onlineCount}</span>
+                <img src={`${BASE_PATH}/images/Maintenance/icrpblue.png`} alt='' width={14} height={14} />
+                {onlineCount}
               </span>
               <span
-                className='inline-flex items-center gap-1.5 fs-12 sm:fs-12 font-normal whitespace-nowrap'
-                style={{ padding: '2px 12px', borderRadius: 9999, border: '1px solid #E94C4C', color: '#E94C4C', minWidth: 60, textAlign: 'center' }}
+                className={BADGE_CLASS}
+                style={{ borderColor: '#E94C4C', color: '#E94C4C', minWidth: 60 }}
               >
-                <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={13} height={13} />
-                <span style={{ marginTop: 2 }}>{offlineCount}</span>
+                <img src={`${BASE_PATH}/images/Maintenance/icrpred.png`} alt='' width={14} height={14} />
+                {offlineCount}
               </span>
               <img
                 src={`${BASE_PATH}/images/statistics/icbt.png`}
                 alt='ดูข้อมูลโครงการ'
                 title='ดูข้อมูลโครงการ'
-                width={26}
-                height={26}
+                width={24}
+                height={24}
                 className='shrink-0'
                 onClick={() => projectId !== undefined && dispatch(setProjectInfoModalOpen({
                   open: true,
@@ -347,15 +359,19 @@ const RepairHistoryContent: React.FC<{ id: string }> = ({ id }) => {
                 }))}
                 style={{ cursor: projectId !== undefined ? 'pointer' : 'default', opacity: projectId !== undefined ? 1 : 0.5 }}
               />
-              <button
-                className='inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full fs-12 sm:fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
-                style={{ background: '#66AEFF', color: '#0A0A0A' }}
-                type='button'
-                onClick={() => setExportOpen(true)}
-              >
-                <TbPrinter size={14} />
-                นำออกเอกสาร
-              </button>
+              {/* AntD Button (32px) — the action buttons are deliberately taller
+                  than the 28px pills, same as DetailTitleSection. */}
+              <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  icon={<TbPrinter />}
+                  onClick={() => setExportOpen(true)}
+                >
+                  <p className='fs-12'>นำออกเอกสาร</p>
+                </Button>
+              </ConfigProvider>
             </div>
           </div>
         </section>

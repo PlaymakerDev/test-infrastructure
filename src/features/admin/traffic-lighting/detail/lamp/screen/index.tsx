@@ -68,7 +68,10 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
 
   return (
     <LampProvider project={resolvedProject}>
-      <div className='main-screen px-3 sm:px-6 xl:px-10 pt-3 pb-6 traffic-lighting-font-min-14'>
+      {/* No `pt-3`: the phase detail page (DetailTitleSection) starts its
+          header flush at the top, and the extra 12px here pushed this whole
+          page 12px lower than every other detail page. */}
+      <div className='main-screen px-3 sm:px-6 xl:px-10 pb-6 traffic-lighting-font-min-14'>
         <TrafficLightingMinimumFontSize />
         {projectQuery.isError && (
           <Alert
