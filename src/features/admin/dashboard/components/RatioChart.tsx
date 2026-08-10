@@ -15,6 +15,7 @@ import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
@@ -134,6 +135,7 @@ interface Props {
 const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   const router = useRouter()
   const deptId = useDeptId()
+  const roadId = useRoadId()
 
   // Every tile links to its feature's overall page, dept-scoped. Same URL
   // shape the sidebar uses — INCLUDING `scope=all` when the dashboard itself
@@ -141,8 +143,11 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // scope to the target page, which BE answers with empty/null payloads —
   // vms overall crashed on its null centroid; bug reported 2026-07-21).
   const openFeature = (route: string) => {
+    // Carry the สายทาง scope into the feature page too — same `&road_id=` the
+    // sidebar's สายทาง tab sends, which those overall screens already read.
+    const road = roadId ? `&road_id=${encodeURIComponent(roadId)}` : ''
     const q = deptId
-      ? `?dept_id=${encodeURIComponent(String(deptId))}${scopeQuerySuffix()}`
+      ? `?dept_id=${encodeURIComponent(String(deptId))}${road}${scopeQuerySuffix()}`
       : ''
     router.push(`${route}${q}`)
   }
@@ -152,7 +157,9 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // the map. (Prior version used cctv-uptime's camera.total, which is
   // devices-per-solution rather than install-points — didn't match the
   // pins and confused users.)
-  const { data: position } = useDashboardPosition(deptId)
+  // `roadId` (สายทาง scope from the map) is forwarded as `&road_id=` — BE
+  // filters the payload, so every tile counts only that road's install points.
+  const { data: position } = useDashboardPosition(deptId, roadId)
 
   // LPR is the one tile NOT fed by /position (BE has no LPR solution type
   // there) — it counts GET /lpr/points instead, FE-scoped by department_id
@@ -160,11 +167,16 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   const { data: lprPoints } = useLPRPoints()
   const lprCount = useMemo(() => {
     if (!lprPoints) return null
-    const scoped = !deptId || String(deptId) === '0'
+    const byDept = !deptId || String(deptId) === '0'
       ? lprPoints
       : lprPoints.filter((p) => p.department_id === Number(deptId))
+    // Road scope is applied FE-side here too — `/lpr/points` takes neither a
+    // dept nor a road param, but each point carries `road_id`.
+    const scoped = roadId
+      ? byDept.filter((p) => p.road_id === Number(roadId))
+      : byDept
     return scoped.length
-  }, [lprPoints, deptId])
+  }, [lprPoints, deptId, roadId])
 
   const countsByType = useMemo(() => {
     const acc: Record<string, number> = {}

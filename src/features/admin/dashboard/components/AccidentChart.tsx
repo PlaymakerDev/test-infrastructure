@@ -5,6 +5,7 @@ import { TbCarCrash } from 'react-icons/tb'
 import Tabs from './Tabs'
 import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 import type { DashboardBucketType } from '@/types/dashboard/api'
 import { TAB_OPTIONS, TAB_TO_TYPE, useDashboardContext } from '../context'
 
@@ -154,8 +155,9 @@ interface Props { }
 const AccidentChart: React.FC<Props> = () => {
   const { tab, setTab } = useDashboardContext()
   const deptId = useDeptId()
+  const roadId = useRoadId()
   const type = TAB_TO_TYPE[tab]
-  const { data, isLoading } = useDashboardAnalytic(deptId, type)
+  const { data, isLoading } = useDashboardAnalytic(deptId, type, roadId)
 
   const buckets = useMemo(
     () =>

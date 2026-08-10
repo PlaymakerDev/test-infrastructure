@@ -6,6 +6,7 @@ import { TbAlertTriangle } from 'react-icons/tb'
 import { useNotificationSummary } from '@/hooks/queries/manage'
 import { TAB_TO_TYPE, useDashboardContext } from '../context'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 import { DashboardBucketType } from '@/types/dashboard/api'
 import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
 import { Tooltip } from 'antd'
@@ -32,8 +33,9 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
   // API
   const { tab } = useDashboardContext()
   const deptId = useDeptId()
+  const roadId = useRoadId()
   const type = TAB_TO_TYPE[tab]
-  const { data: analyticData, isLoading: isAnalyticLoading } = useDashboardAnalytic(deptId, type)
+  const { data: analyticData, isLoading: isAnalyticLoading } = useDashboardAnalytic(deptId, type, roadId)
 
   // "Today" window in Bangkok time — same date on both sides so the backend
   // aggregates a single day. Rebuilt every render is fine: dayjs() is cheap

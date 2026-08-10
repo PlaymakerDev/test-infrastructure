@@ -4,6 +4,7 @@ import { TbCar } from 'react-icons/tb'
 import PieChart from '@/components/chart/PieChart'
 import { useDashboardCounting } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 import type { DashboardCountingVehicleCount } from '@/types/dashboard/api'
 
 // Vehicle types — order + color matches the Figma chart. The backend key
@@ -38,7 +39,8 @@ interface Props {
 
 const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
   const deptId = useDeptId()
-  const { data } = useDashboardCounting(deptId)
+  const roadId = useRoadId()
+  const { data } = useDashboardCounting(deptId, roadId)
 
   // Map backend's keyed object → list in Figma order. Vehicles with 0 count
   // still render in the legend (greyed % = 0) so the layout stays stable.

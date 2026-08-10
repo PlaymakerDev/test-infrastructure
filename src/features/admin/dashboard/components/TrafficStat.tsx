@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { TbClock } from 'react-icons/tb'
 import { useDashboardCounting } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 
 interface Props { }
 
@@ -11,7 +12,8 @@ interface Props { }
  *  highest `total_count` from /counting/{deptId}/dashboard.daily_count_hour. */
 const TrafficStat: React.FC<Props> = () => {
   const deptId = useDeptId()
-  const { data } = useDashboardCounting(deptId)
+  const roadId = useRoadId()
+  const { data } = useDashboardCounting(deptId, roadId)
 
   const peak = useMemo(() => {
     const hours = data?.daily_count_hour ?? []

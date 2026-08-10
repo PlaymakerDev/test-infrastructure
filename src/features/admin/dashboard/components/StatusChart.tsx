@@ -6,6 +6,7 @@ import {
   useDashboardPosition,
 } from '@/hooks/queries/dashboard'
 import { useDeptId } from '@/hooks/useDeptId'
+import { useRoadId } from '@/hooks/useRoadId'
 
 interface CardProps {
   icon: React.ReactNode
@@ -18,18 +19,28 @@ interface Props { }
 /** 3 headline counters for the dashboard left rail.
  *  Data:
  *   - "กล้องทั้งหมด" = CCTV uptime totals (cctv-cameras-only — matches the
- *     overall page's hero numbers).
+ *     overall page's hero numbers). Under a สายทาง scope it switches to CCTV
+ *     install points from /position, since that endpoint ignores road_id.
  *   - "จุดติดตั้ง" = distinct solution rows in /manage/solution/{deptId}/position
  *     (every system, every install point).
  *   - "สายทาง"   = distinct road ids in the same position response. */
 const StatusChart: React.FC<Props> = () => {
   const deptId = useDeptId()
-  const { data: cctv } = useDashboardCctvUptime(deptId)
-  const { data: position } = useDashboardPosition(deptId)
+  const roadId = useRoadId()
+  const { data: cctv } = useDashboardCctvUptime(deptId, roadId)
+  // `roadId` → `&road_id=`, so จุดติดตั้ง / สายทาง count that road alone.
+  const { data: position } = useDashboardPosition(deptId, roadId)
 
   const stats = useMemo<CardProps[]>(() => {
-    const cameraTotal = cctv?.camera.total ?? 0
     const locations = position?.locations ?? []
+    // `/cctv/…/uptime-statistics` does NOT honour road_id (probed 2026-08-10 —
+    // it keeps returning the dept's 941 cameras), so under a road scope the
+    // camera figure is derived from the road-scoped position payload instead.
+    // That counts CCTV *install points*, not cameras-per-solution — the same
+    // basis RatioChart's tiles use, and it matches the pins on the map.
+    const cameraTotal = roadId
+      ? locations.filter((l) => l.solution?.solution_type_name === 'CCTV').length
+      : cctv?.camera.total ?? 0
     const installPoints = locations.length
     const roads = new Set(locations.map((l) => l.road.id)).size
     return [
@@ -37,7 +48,7 @@ const StatusChart: React.FC<Props> = () => {
       { icon: <TbMapPin size={36} />, value: installPoints, label: 'จุดติดตั้ง' },
       { icon: <TbRoad size={36} />, value: roads, label: 'สายทาง' },
     ]
-  }, [cctv, position])
+  }, [cctv, position, roadId])
 
   const renderStatCard = useCallback((card: CardProps) => {
     const { icon, value, label } = card

@@ -15,7 +15,7 @@ import {
 import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useProvinceDeptMap } from '@/features/admin/dashboard/data/useProvinceDeptMap'
 import { useDepartments } from '@/hooks/queries/manage'
-import { useDashboardPosition } from '@/hooks/queries/dashboard'
+import { useDashboardPosition, useDashboardRoadPosition } from '@/hooks/queries/dashboard'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { DashboardPositionLocation } from '@/types/dashboard/api'
@@ -36,6 +36,7 @@ import BureauMaskLayer, {
   BUREAU_HOVER_LINE_ID,
 } from './markers/BureauMaskLayer'
 import { useBureauFeatures } from './hooks/useBureauFeatures'
+import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
 import BreadcrumbBanner from './overlays/BreadcrumbBanner'
@@ -96,6 +97,23 @@ const apiLocationToDevice = (loc: DashboardPositionLocation): Device | null => {
   }
 }
 
+/** The จังหวัด whose polygon CONTAINS the point, or null when it's outside
+ *  every one (sea / neighbouring country) or the geojson hasn't loaded. */
+function provinceAt(
+  lng: number,
+  lat: number,
+  features: ProvinceFeature[] | null,
+): Province | null {
+  if (!features) return null
+  for (const f of features) {
+    const [minX, minY, maxX, maxY] = f.bbox
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue
+    if (!booleanPointInPolygon([lng, lat], f.feature)) continue
+    return (PROVINCE_BY_CODE[f.code] as Province | undefined) ?? null
+  }
+  return null
+}
+
 function nearestProvince(lng: number, lat: number): Province {
   let best = PROVINCES[0]
   let bestDist = Infinity
@@ -112,10 +130,21 @@ function nearestProvince(lng: number, lat: number): Province {
 }
 
 /**
- * Tracks the province nearest to viewport center — updates on `moveend`.
+ * Tracks the province the viewport centre sits IN — updates on `moveend`.
  * Returns null when zoomed out below the province threshold.
+ *
+ * Containment (point-in-polygon) first, nearest-CENTRE distance only as a
+ * fallback for centres outside every polygon (sea, Laos/Myanmar) or before the
+ * geojson loads. Distance alone mis-attributed any view near a จังหวัด border:
+ * drilling into ชม.3035 (หางดง/สันป่าตอง, เชียงใหม่) resolved to ขทช.ลำพูน,
+ * because ลำพูน's centre coord is closer to that stretch than เชียงใหม่'s own —
+ * so the breadcrumb read "สทช.10 › ขทช.ลำพูน" and every card refetched against
+ * dept 51 (reported 2026-08-10).
  */
-function useNearestProvince(threshold: number): Province | null {
+function useNearestProvince(
+  threshold: number,
+  features: ProvinceFeature[] | null,
+): Province | null {
   const { map, isLoaded } = useMap()
   const [province, setProvince] = useState<Province | null>(null)
 
@@ -126,7 +155,7 @@ function useNearestProvince(threshold: number): Province | null {
         setProvince(null)
       } else {
         const c = map.getCenter()
-        setProvince(nearestProvince(c.lng, c.lat))
+        setProvince(provinceAt(c.lng, c.lat, features) ?? nearestProvince(c.lng, c.lat))
       }
     }
     update()
@@ -134,7 +163,7 @@ function useNearestProvince(threshold: number): Province | null {
     return () => {
       map.off('moveend', update)
     }
-  }, [map, isLoaded, threshold])
+  }, [map, isLoaded, threshold, features])
 
   return province
 }
@@ -162,10 +191,15 @@ interface DashboardMapContentProps {
   /** Fired when any device marker (singleton or overlap stack) is clicked. */
   onMarkerClick?: () => void
   /** `?road_id=` from the landing URL — the sidebar's สายทาง tab attaches it to
-   *  every solution link, Dashboard included. The dashboard has no road-scoped
-   *  endpoint, so scoping to a road means the MAP zooms into that road's
-   *  devices on entry (see the road-landing effect). One-shot. */
+   *  every solution link, Dashboard included. Seeds the road filter: the map
+   *  zooms into that road and plots only its pins (see the road-landing
+   *  effect). */
   focusRoadId?: string | null
+  /** Fires whenever the ACTIVE road scope changes (landing seed, MapSearchBox
+   *  pick, breadcrumb ✕, "← ทั่วประเทศ"). The dashboard screen feeds this into
+   *  `RoadIdOverrideContext` so the cards whose endpoint honours `road_id`
+   *  refetch — same URL-free rescoping as `onDeptIdChange`. */
+  onRoadFilterChange?: (roadId: string | null) => void
 }
 
 const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
@@ -175,6 +209,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   onProvinceActivate,
   onMarkerClick,
   focusRoadId,
+  onRoadFilterChange,
 }) => {
   const { map, isLoaded } = useMap()
   // Current CARD scope (comes back through DeptIdOverrideContext — the
@@ -201,7 +236,32 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   const [visibleTypes, setVisibleTypes] = useState<Set<SystemType>>(
     () => new Set(SYSTEM_TYPES)
   )
-  const province = useNearestProvince(PROVINCE_ZOOM_THRESHOLD)
+  // ── สายทาง filter — when set, the map plots ONLY this road's install points;
+  // every other road's pin (and every aggregate bubble built from them)
+  // disappears at every zoom tier. Seeded from the landing URL's `?road_id=`,
+  // moved by a MapSearchBox pick, cleared by the breadcrumb's ✕ or
+  // "← ทั่วประเทศ".
+  //
+  // NOTE this reverses the older rule kept in the marker-fetch comment below
+  // ("ต้องยังคงเห็นหมุดของสายทางอื่นอยู่") — that rule is about ZOOMING into a
+  // province, which still keeps every pin. An explicit road scope is different:
+  // requested 2026-08-10.
+  const [roadFilterId, setRoadFilterId] = useState<string | null>(focusRoadId ?? null)
+  // The URL is snapshotted by the parent, so this only re-syncs if a caller
+  // ever starts passing a live value.
+  useEffect(() => { setRoadFilterId(focusRoadId ?? null) }, [focusRoadId])
+  const roadFilterNum =
+    roadFilterId != null && roadFilterId !== '' && Number.isFinite(Number(roadFilterId))
+      ? Number(roadFilterId)
+      : null
+  // Broadcast the scope to the cards (ref'd so a fresh callback identity can't
+  // re-fire the effect on every render).
+  const onRoadFilterChangeRef = useRef(onRoadFilterChange)
+  useEffect(() => { onRoadFilterChangeRef.current = onRoadFilterChange }, [onRoadFilterChange])
+  useEffect(() => { onRoadFilterChangeRef.current?.(roadFilterId ?? null) }, [roadFilterId])
+  // 77 จังหวัด polygons — containment source for the province watcher below.
+  const provinceFeatures = useProvinceFeatures()
+  const province = useNearestProvince(PROVINCE_ZOOM_THRESHOLD, provinceFeatures)
   // province.code → dept_id (RBAC-scoped: only provinces the user has access to).
   const provinceDeptMap = useProvinceDeptMap()
   // Reverse of the above: dept_id → the province's CENTER coord. Anchors each
@@ -219,12 +279,20 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
 
   // MAP MARKERS use the login-time scope (`originalDeptId`), NOT the live
   // focused `deptId`. Zooming into a province must KEEP every road's pin on the
-  // map — the whole device pool stays plotted regardless of which boundary is
+  // map — the whole device pool stays plotted regardless of which BOUNDARY is
   // in focus (product requirement: "ต้องยังคงเห็นหมุดของสายทางอื่นอยู่"). Only
   // the CARDS rescope to the focused dept via `deptId`. Fetching markers by
   // `deptId` instead would make the backend return only the focused province's
   // devices, so every other road's pin would vanish on zoom-in — do NOT do that.
+  // (An explicit สายทาง scope IS allowed to hide other roads — that's
+  // `roadFilterId` above, applied client-side to this same payload so clearing
+  // it needs no refetch.)
   const { data: position, isFetched: positionFetched } = useDashboardPosition(originalDeptId)
+  // …and, on a `?road_id=` landing ONLY, the same endpoint filtered to that one
+  // สายทาง (`&road_id=`). Drives the fly-to target: BE-scoped, so the bbox is
+  // right even if the dept-wide pool above doesn't carry the road.
+  const { data: roadPosition, isFetched: roadPositionFetched } =
+    useDashboardRoadPosition(originalDeptId, focusRoadId)
   // LPR install points — /position has no LPR solution type, so the pins come
   // from the feature's own GET /lpr/points (same source as the LPR tile in
   // RatioChart and the lpr/overall page; solid, one fetch, 60s refetch).
@@ -345,7 +413,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     const positionDevices = (position?.locations ?? [])
       .map(apiLocationToDevice)
       .filter((d): d is Device => d !== null)
-    for (const dev of [...positionDevices, ...lprDevices]) {
+    // Road scope applies BEFORE any bucketing, so the สทช./ขทช./สายทาง
+    // bubbles count this road only instead of advertising devices with no
+    // visible pin behind them.
+    const pool = [...positionDevices, ...lprDevices].filter(
+      (d) => roadFilterNum == null || d.roadId === roadFilterNum
+    )
+    for (const dev of pool) {
       const key = `${dev.coord[0].toFixed(6)},${dev.coord[1].toFixed(6)}`
       const arr = byCoord.get(key)
       if (arr) arr.push(dev)
@@ -475,16 +549,48 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       }
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
-  }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord])
+  }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord, roadFilterNum])
+
+  // Fly-to target for a `?road_id=` landing. Priority: the road-scoped payload
+  // (BE-filtered — authoritative) → the road's own aggregate inside the
+  // dept-wide pool (same numbers in practice: probed 2026-08-10, road 1809's 93
+  // rows and bbox are identical in both, so this is a safety net for the case
+  // where BE returns the road empty). Null = nothing to fit; the dept
+  // centroid fly below takes over.
+  const roadFocusTarget = useMemo(() => {
+    if (!focusRoadId) return null
+    const pts = (roadPosition?.locations ?? [])
+      .map((l) => l.geometry_point)
+      .filter((p): p is [number, number] =>
+        Array.isArray(p) && p.length === 2 && (p[0] !== 0 || p[1] !== 0)
+      )
+    if (pts.length > 0) {
+      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity
+      let sx = 0, sy = 0
+      for (const [lng, lat] of pts) {
+        minLng = Math.min(minLng, lng); minLat = Math.min(minLat, lat)
+        maxLng = Math.max(maxLng, lng); maxLat = Math.max(maxLat, lat)
+        sx += lng; sy += lat
+      }
+      const c = roadPosition?.centroid
+      const centroid: [number, number] =
+        Array.isArray(c) && c.length === 2 && (c[0] !== 0 || c[1] !== 0)
+          ? [c[0], c[1]]
+          : [sx / pts.length, sy / pts.length]
+      return { bounds: [minLng, minLat, maxLng, maxLat] as [number, number, number, number], centroid }
+    }
+    const s = roadSummaries[Number(focusRoadId)]
+    return s ? { bounds: s.bounds, centroid: s.centroid } : null
+  }, [focusRoadId, roadPosition, roadSummaries])
 
   useEffect(() => {
     if (!map || !isLoaded) return
     if (originalDeptId === '0' && originalScopeAll) return
     if (flownForDeptRef.current === originalDeptId) return
     // A ?road_id= landing zooms into that ONE road instead (effect below).
-    // Fall through to the dept centroid only once the payload has settled
-    // without any device on that road — otherwise the two flies fight.
-    if (focusRoadId && (!positionFetched || roadSummaries[Number(focusRoadId)])) return
+    // Hold off until BOTH payloads have settled, then fall through to the dept
+    // centroid only if neither knows the road — otherwise the two flies fight.
+    if (focusRoadId && (!roadPositionFetched || !positionFetched || roadFocusTarget)) return
 
     // Resolve WHERE this dept's data is, then fly straight in — mirroring what
     // clicking a สทช. summary marker does (flyTo province zoom), so a non-0
@@ -525,32 +631,30 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // zoom 9.5 sits above PROVINCE_ZOOM_THRESHOLD (6.5) so the device markers
     // render (and the country summary bubbles hide) — same as a summary click.
     map.flyTo({ center, zoom: 9.5, pitch: 35, duration: 1500 })
-  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown, focusRoadId, roadSummaries])
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown, focusRoadId, roadFocusTarget, roadPositionFetched])
 
   // ── สายทาง landing (`?road_id=`) — the sidebar's สายทาง tab links EVERY
   // solution with `?dept_id=…&road_id=…&scope=all`; other features filter their
-  // table by that road, but the dashboard's endpoints are dept-scoped only, so
-  // road scope means "zoom the map into that road". Fits the road's device
-  // bbox exactly like clicking its สายทาง bubble (RoadSummaryMarker), then
-  // enters road focus so the raw device markers — not the bubble — render at
-  // the fitted zoom. One-shot per road id; the user can pan away freely after.
+  // table by that road, but no dashboard CARD endpoint takes a road, so road
+  // scope is expressed on the map: fit that road's install points exactly like
+  // clicking its สายทาง bubble (RoadSummaryMarker), then enter road focus so
+  // the raw device markers — not the bubble — render at the fitted zoom.
+  // One-shot per road id; the user can pan away freely after.
   const flownRoadRef = useRef<string | null>(null)
   useEffect(() => {
     if (!map || !isLoaded) return
     if (!focusRoadId || flownRoadRef.current === focusRoadId) return
-    // Waits for the position payload — roadSummaries is empty until it lands.
-    const summary = roadSummaries[Number(focusRoadId)]
-    if (!summary) return
+    if (!roadFocusTarget) return  // still fetching, or the road has no devices
     flownRoadRef.current = focusRoadId
     // Claim the dept fly-to so it can't re-trigger on a later position refetch.
     markFlown(originalDeptId)
     const bounds: LngLatBoundsLike = [
-      [summary.bounds[0], summary.bounds[1]],
-      [summary.bounds[2], summary.bounds[3]],
+      [roadFocusTarget.bounds[0], roadFocusTarget.bounds[1]],
+      [roadFocusTarget.bounds[2], roadFocusTarget.bounds[3]],
     ]
     const cam = map.cameraForBounds(bounds, { padding: 110, maxZoom: 14.5 })
     map.flyTo({
-      center: (cam?.center as [number, number] | undefined) ?? summary.centroid,
+      center: (cam?.center as [number, number] | undefined) ?? roadFocusTarget.centroid,
       zoom: Math.max(typeof cam?.zoom === 'number' ? cam.zoom : 12.5, ROAD_ZOOM_THRESHOLD + 0.2),
       pitch: 40,
       duration: 1500,
@@ -560,7 +664,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // below ROAD_ZOOM_THRESHOLD, so setting it up-front would be wiped
     // mid-flight.
     map.once('moveend', () => setRoadFocus(true))
-  }, [map, isLoaded, focusRoadId, roadSummaries, originalDeptId, markFlown])
+  }, [map, isLoaded, focusRoadId, roadFocusTarget, originalDeptId, markFlown])
 
   // Refs keep the click handler's closure fresh without re-registering the
   // Mapbox listener on every render.
@@ -815,8 +919,31 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
   }, [map, isLoaded, bureauFeatures, stchSummaries])
 
+  // The road's OWN department, straight from the payload. While a road filter is
+  // active this pins the card scope — a road hugging a จังหวัด border would
+  // otherwise let the province watcher below rescope every card to the
+  // neighbour (ชม.3035 → dept 51 ลำพูน instead of its real dept 50 เชียงใหม่,
+  // reported 2026-08-10). The road-scoped payload wins over the dept-wide pool
+  // since it's the one BE filtered.
+  const roadFilterDeptId = useMemo(() => {
+    if (roadFilterNum == null) return null
+    const hit = [...(roadPosition?.locations ?? []), ...(position?.locations ?? [])]
+      .find((l) => l.road.id === roadFilterNum && l.road.department_id != null)
+    return hit?.road.department_id != null ? String(hit.road.department_id) : null
+  }, [roadFilterNum, roadPosition?.locations, position?.locations])
+
+  // Road-code crumb for the breadcrumb. The pool is already filtered, so the
+  // summary carries this road's label; falls back to the id when the road has
+  // no plottable device (nothing on the map, crumb + ✕ still shown).
+  const roadFilterLabel = roadFilterNum != null
+    ? (roadSummaries[roadFilterNum]?.label ?? `สายทาง #${roadFilterNum}`)
+    : null
+
   const resetView = () => {
     if (!map) return
+    // "← ทั่วประเทศ" means ทั่วประเทศ — drop the road scope too, otherwise the
+    // country view would come back holding a single road's bubble.
+    setRoadFilterId(null)
     // Revert dept scope to whatever the user landed with, so cards rescope
     // in sync with the "← ทั่วประเทศ" action. Suppress the auto-fly effect
     // (we're already flying to COUNTRY_VIEW here).
@@ -839,6 +966,14 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // current dept in local state and feed it back via `DeptIdOverrideContext`.
   useEffect(() => {
     if (!map || !isLoaded) return
+    // A road scope OWNS the dept while it's active — the cards belong to the
+    // road's own department no matter which จังหวัด the camera drifts over.
+    if (roadFilterDeptId) {
+      if (deptId === roadFilterDeptId) return
+      markFlown(roadFilterDeptId)
+      onDeptIdChange(roadFilterDeptId)
+      return
+    }
     if (!province) {
       if (deptId === originalDeptId) return
       markFlown(originalDeptId)
@@ -852,7 +987,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     markFlown(nextStr)
     onDeptIdChange(nextStr)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [province, provinceDeptMap, map, isLoaded, originalDeptId, deptId])
+  }, [province, provinceDeptMap, map, isLoaded, originalDeptId, deptId, roadFilterDeptId])
 
   // Announce "province context is active" to the parent (see the prop doc).
   // Separate from the dept watcher above on purpose: this must fire even when
@@ -942,11 +1077,22 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         visible={!!province}
         top={112}
       />
-      <BreadcrumbBanner province={province} onReset={resetView} top={164} />
+      <BreadcrumbBanner
+        province={province}
+        onReset={resetView}
+        top={164}
+        roadLabel={roadFilterLabel}
+        onClearRoad={() => setRoadFilterId(null)}
+      />
       {/* Road-code search — nationwide autocomplete against /manage/roads.
         * Uses the already-fetched position payload to fly to the road's first
-        * known device without a second network hop. */}
-      <MapSearchBox positions={position?.locations ?? []} />
+        * known device without a second network hop. Fed the UNFILTERED payload
+        * on purpose: while a road filter is active every other road must still
+        * be findable here, and picking one MOVES the filter onto it. */}
+      <MapSearchBox
+        positions={position?.locations ?? []}
+        onSelectRoad={(roadId) => setRoadFilterId(String(roadId))}
+      />
     </>
   )
 }
@@ -959,8 +1105,10 @@ interface ReactMapProps {
   /** Fired when any device marker (singleton or overlap stack) is clicked. */
   onMarkerClick?: () => void
   /** `?road_id=` from the landing URL — zooms the map into that road's devices
-   *  on entry (สายทาง-scoped landing from the sidebar). */
+   *  on entry and plots only its pins (สายทาง-scoped landing from the sidebar). */
   focusRoadId?: string | null
+  /** Active road scope changed — feed into `RoadIdOverrideContext`. */
+  onRoadFilterChange?: (roadId: string | null) => void
 }
 
 const ReactMap: React.FC<ReactMapProps> = ({
@@ -970,6 +1118,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
   onProvinceActivate,
   onMarkerClick,
   focusRoadId,
+  onRoadFilterChange,
 }) => {
   return (
     <BaseMap
@@ -983,6 +1132,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
         onProvinceActivate={onProvinceActivate}
         onMarkerClick={onMarkerClick}
         focusRoadId={focusRoadId}
+        onRoadFilterChange={onRoadFilterChange}
       />
     </BaseMap>
   )

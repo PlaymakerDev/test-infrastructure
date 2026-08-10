@@ -25,13 +25,18 @@ interface Props {
   positions: DashboardPositionLocation[]
   /** How far to zoom in when a road is picked. */
   targetZoom?: number
+  /** Fired with the picked road's id, AFTER the flyTo. The dashboard uses it to
+   *  move its road filter onto the newly searched road — `positions` stays the
+   *  UNFILTERED pool so every road remains findable here even while the map
+   *  shows only one. */
+  onSelectRoad?: (roadId: number) => void
 }
 
 /** Top-left search overlay on the dashboard map. Users type a road code
  *  (e.g. "ชม.3035"), a matching road is picked from the autocomplete, and the
  *  map flies to its first known device location. Server search is debounced to
  *  keep `/manage/roads?search=` request-cheap. */
-const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
+const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5, onSelectRoad }) => {
   const { map } = useMap()
   const [term, setTerm] = useState('')
   const debouncedTerm = useDebouncedValue(term, 220)
@@ -165,6 +170,7 @@ const MapSearchBox: React.FC<Props> = ({ positions, targetZoom = 13.5 }) => {
               const id = Number(val)
               if (!Number.isFinite(id)) return
               flyToRoad(id)
+              onSelectRoad?.(id)
               const road = roads.data?.res_data.find((r) => r.id === id)
               if (road) setTerm(road.road_code)
             }}

@@ -8,16 +8,28 @@ export interface BreadcrumbBannerProps {
   onReset?: () => void
   /** Vertical position from top (default 116) */
   top?: number
+  /** Road code of the ACTIVE สายทาง filter (map shows only this road's pins).
+   *  Renders as a trailing crumb with a ✕ — the only affordance telling the
+   *  user why every other road's pin is gone, so the banner also stays
+   *  mounted for it when no province is in focus. */
+  roadLabel?: string | null
+  /** Clears the road filter (the ✕ on the road crumb). */
+  onClearRoad?: () => void
 }
 
 const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
   province,
   onReset,
   top = 116,
+  roadLabel,
+  onClearRoad,
 }) => {
-  if (!province) return null
-  const stchInfo = STCH_UNITS.find((u) => u.stch === province.stch)
-  if (!stchInfo) return null
+  if (!province && !roadLabel) return null
+  const stchInfo = province ? STCH_UNITS.find((u) => u.stch === province.stch) : undefined
+  // A province with no STCH_UNITS row has nothing to label — but a road filter
+  // alone is still worth showing (e.g. the user zoomed back out past the
+  // province threshold, which is exactly when they need the ✕).
+  if (province && !stchInfo && !roadLabel) return null
 
   return (
     <div
@@ -40,7 +52,7 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
       <span className="fs-12 text-[#6b7f9a] whitespace-nowrap shrink-0">
         กำลังดู
       </span>
-      {province.central ? (
+      {province && province.central && (
         <>
           <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             ทช. ส่วนกลาง
@@ -50,7 +62,8 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
             {province.name}
           </span>
         </>
-      ) : (
+      )}
+      {province && !province.central && stchInfo && (
         <>
           <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             สทช.{stchInfo.stch} ({stchInfo.hqProvinceName})
@@ -59,6 +72,24 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
           <span className="fs-12 font-semibold text-white whitespace-nowrap shrink-0">
             ขทช.{province.name}
           </span>
+        </>
+      )}
+      {roadLabel && (
+        <>
+          {province && <span className="text-[#6b7f9a] shrink-0">›</span>}
+          <span className="fs-12 font-semibold text-(--default-blue) whitespace-nowrap shrink-0">
+            {roadLabel}
+          </span>
+          {onClearRoad && (
+            <button
+              onClick={onClearRoad}
+              className="fs-12 leading-none text-[#6b7f9a] hover:text-(--yellow) transition-colors shrink-0"
+              title="แสดงสายทางอื่นด้วย"
+              aria-label="ยกเลิกการกรองสายทาง"
+            >
+              ✕
+            </button>
+          )}
         </>
       )}
       {onReset && (

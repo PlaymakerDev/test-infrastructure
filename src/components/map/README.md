@@ -90,7 +90,8 @@ import { TRACKING_STATIONS } from '@/features/admin/tracking/overall/data/tracki
 | Component | ใช้ทำอะไร |
 |---|---|
 | [`SystemFilterPills`](./overlays/SystemFilterPills.tsx) | ปุ่ม filter ระบบ — ใช้คู่กับ DeviceClusterMarker |
-| [`BreadcrumbBanner`](./overlays/BreadcrumbBanner.tsx) | "สทช.X › ขทช.จังหวัด" |
+| [`BreadcrumbBanner`](./overlays/BreadcrumbBanner.tsx) | "สทช.X › ขทช.จังหวัด › สายทาง" + ✕ ยกเลิกกรองสายทาง |
+| [`MapSearchBox`](./overlays/MapSearchBox.tsx) | ค้นหาสายทาง → flyTo + ย้าย road filter ของ dashboard |
 
 ### Primitives (สำหรับสร้าง marker preset ใหม่)
 

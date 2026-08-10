@@ -29,86 +29,138 @@ export { dashboardKeys } from './queryKeys'
 // scope's cache entry (dashboard map showed 3 markers while cards showed the
 // 2,520-location scope).
 
-export const useDashboardCctvUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardCctvUptime = (
+  deptId: string | number | null | undefined,
+  /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
+   *  endpoint, so the response stays dept-wide (see roadParam). */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('cctv', deptId ?? '', scope),
-    queryFn: () => getDashboardCctvUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('cctv', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardCctvUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardVmsUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardVmsUptime = (
+  deptId: string | number | null | undefined,
+  /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('vms', deptId ?? '', scope),
-    queryFn: () => getDashboardVmsUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('vms', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardVmsUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardLightingUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardLightingUptime = (
+  deptId: string | number | null | undefined,
+  /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('lighting', deptId ?? '', scope),
-    queryFn: () => getDashboardLightingUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('lighting', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardLightingUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardTrafficUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardTrafficUptime = (
+  deptId: string | number | null | undefined,
+  /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('traffic', deptId ?? '', scope),
-    queryFn: () => getDashboardTrafficUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('traffic', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardTrafficUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardWimUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardWimUptime = (
+  deptId: string | number | null | undefined,
+  /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
+   *  endpoint, so the response stays dept-wide (see roadParam). */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('wim', deptId ?? '', scope),
-    queryFn: () => getDashboardWimUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('wim', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardWimUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardCrosswalkUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardCrosswalkUptime = (
+  deptId: string | number | null | undefined,
+  /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('crosswalk', deptId ?? '', scope),
-    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('crosswalk', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardTunnelUptime = (deptId: string | number | null | undefined) => {
+export const useDashboardTunnelUptime = (
+  deptId: string | number | null | undefined,
+  /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.uptime('tunnel', deptId ?? '', scope),
-    queryFn: () => getDashboardTunnelUptimeAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.uptime('tunnel', deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardTunnelUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
 
-export const useDashboardPosition = (deptId: string | number | null | undefined) => {
+/** Install points for the map + every count-style card. `roadId` narrows to one
+ *  สายทาง (BE-supported here — see `roadParam` in DashboardService), which is
+ *  what makes the KPI tiles / จุดติดตั้ง / สายทาง counters road-scoped. */
+export const useDashboardPosition = (
+  deptId: string | number | null | undefined,
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scoped = roadId != null && roadId !== ''
   return useQuery({
-    queryKey: dashboardKeys.position(deptId ?? '', scope),
-    queryFn: () => getDashboardPositionAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: scoped
+      ? dashboardKeys.positionByRoad(deptId ?? '', scope, roadId)
+      : dashboardKeys.position(deptId ?? '', scope),
+    queryFn: () => getDashboardPositionAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
+
+/** One สายทาง's install points, idle until a road id exists. Backs the
+ *  `?road_id=` landing's fly-to: the map fits THIS payload's bbox (BE-filtered,
+ *  so it's right even when the dept-wide pool doesn't carry the road). The map's
+ *  marker POOL still fetches dept-wide and filters client-side, so clearing the
+ *  road scope needs no refetch. */
+export const useDashboardRoadPosition = (
+  deptId: string | number | null | undefined,
+  roadId: string | number | null | undefined,
+) => useDashboardPosition(roadId ? deptId : null, roadId)
 
 export const useDashboardAnalytic = (
   deptId: string | number | null | undefined,
   type: DashboardBucketType,
+  /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
+   *  endpoint, so the response stays dept-wide (see roadParam). */
+  roadId?: string | number | null,
 ) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.analytic(deptId ?? '', type, scope),
-    queryFn: () => getDashboardAnalyticAPI(deptId!, type, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.analytic(deptId ?? '', type, scope, roadId),
+    queryFn: () => getDashboardAnalyticAPI(deptId!, type, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -117,18 +169,26 @@ export const useDashboardTraffic = (
   deptId: string | number | null | undefined,
   type: DashboardBucketType,
   limit = 5,
+  /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
+   *  endpoint, so the response stays dept-wide (see roadParam). */
+  roadId?: string | number | null,
 ) =>
   useQuery({
-    queryKey: dashboardKeys.traffic(deptId ?? '', type, limit),
-    queryFn: () => getDashboardTrafficAPI(deptId!, type, limit).then((r) => r.data),
+    queryKey: dashboardKeys.traffic(deptId ?? '', type, limit, roadId),
+    queryFn: () => getDashboardTrafficAPI(deptId!, type, limit, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 
-export const useDashboardCounting = (deptId: string | number | null | undefined) => {
+export const useDashboardCounting = (
+  deptId: string | number | null | undefined,
+  /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
+   *  endpoint, so the response stays dept-wide (see roadParam). */
+  roadId?: string | number | null,
+) => {
   const scope = useScopeAll() ? 'all' as const : 'own' as const
   return useQuery({
-    queryKey: dashboardKeys.counting(deptId ?? '', scope),
-    queryFn: () => getDashboardCountingAPI(deptId!, scope === 'all').then((r) => r.data),
+    queryKey: dashboardKeys.counting(deptId ?? '', scope, roadId),
+    queryFn: () => getDashboardCountingAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
