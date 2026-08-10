@@ -24,6 +24,11 @@ export interface StatusInfoCardProps {
   valueFontSize?: number
   /** Compact horizontal layout for narrow side columns. */
   compact?: boolean
+  /** Tightens the `compact` layout one more step (smaller radius, padding,
+   *  icon and min-height). Used by the bottom-left pair on the OVERVIEW tab,
+   *  which sits over the diagram and shouldn't cover more of it than needed.
+   *  No effect unless `compact` is also set. */
+  dense?: boolean
 }
 
 /** Single bordered status card — connection, circuit, or wire status. */
@@ -42,18 +47,23 @@ const StatusInfoCard: React.FC<StatusInfoCardProps> = ({
   active,
   valueFontSize = 18,
   compact = false,
+  dense = false,
 }) => {
   if (compact) {
     return (
       <div
-        className='w-full shrink-0 rounded-[20px] pl-[27px] pr-3 py-3 flex flex-col justify-center min-h-[120px]'
+        className={`w-full shrink-0 flex flex-col justify-center ${
+          dense
+            ? 'rounded-2xl pl-4 pr-2.5 py-2.5 min-h-24'
+            : 'rounded-[20px] pl-[27px] pr-3 py-3 min-h-[120px]'
+        }`}
         style={{
           background: background ?? '#66AEFF1A',
           border: noBorder ? 'none' : `2px solid ${borderColor}`,
         }}
       >
-        <div className='flex items-center gap-3 min-w-0'>
-          {iconNode ?? (icon ? <img src={icon} alt='' width={30} height={30} className='shrink-0 w-8 h-8' /> : null)}
+        <div className={`flex items-center min-w-0 ${dense ? 'gap-2' : 'gap-3'}`}>
+          {iconNode ?? (icon ? <img src={icon} alt='' width={30} height={30} className={`shrink-0 ${dense ? 'w-7 h-7' : 'w-8 h-8'}`} /> : null)}
           <p className='fs-12 font-bold m-0 leading-normal truncate' style={{ color: titleColor }}>
             {title}
           </p>

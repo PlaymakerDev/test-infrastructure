@@ -19,41 +19,46 @@ interface Props {
 const ConnectionCircuitCards: React.FC<Props> = ({ direction = 'column' }) => {
   const { imei, device, deviceLoaded } = useDetailContext()
 
+  // The bottom-left placement floats over the diagram, so that variant is sized
+  // down a step (narrower, denser padding, smaller value text). The rail
+  // placement keeps its original size.
+  const isFloating = direction === 'row'
+
   const connectionStatus = !deviceLoaded ? '-' : (device ? (device.is_online ? 'ออนไลน์' : 'ออฟไลน์') : '-')
   const circuitStatus = !deviceLoaded ? '-' : (device ? (device.has_broken_wire ? 'สายขาด' : 'เชื่อมต่อปกติ') : '-')
 
   return (
     <div
       className={
-        direction === 'row'
-          // Each card keeps the rail's 300px width so the pair reads as the
-          // same component that was just moved, not a resized variant.
-          ? 'flex flex-col md:flex-row gap-2.5 w-full md:w-auto'
+        isFloating
+          ? 'flex flex-col md:flex-row gap-2 w-full md:w-auto'
           : 'flex flex-col gap-2.5 w-full'
       }
     >
-      <div className={direction === 'row' ? 'w-full md:w-[300px] shrink-0' : 'w-full'}>
+      <div className={isFloating ? 'w-full md:w-62 shrink-0' : 'w-full'}>
         <StatusInfoCard
           compact
+          dense={isFloating}
           borderColor='#6666FF'
           titleColor='#6666FF'
           title='สถานะการเชื่อมต่อ'
           status={connectionStatus}
           icon={`${BASE_PATH}/images/Lighting/icel1.png`}
           subtitle={`IMEI : ${imei || '-'}`}
-          valueFontSize={20}
+          valueFontSize={isFloating ? 17 : 20}
         />
       </div>
 
-      <div className={direction === 'row' ? 'w-full md:w-[300px] shrink-0' : 'w-full'}>
+      <div className={isFloating ? 'w-full md:w-62 shrink-0' : 'w-full'}>
         <StatusInfoCard
           compact
+          dense={isFloating}
           borderColor='#B066FF'
           titleColor='#B066FF'
           title='สถานะวงจร'
           status={circuitStatus}
           icon={`${BASE_PATH}/images/Lighting/icel2.png`}
-          valueFontSize={20}
+          valueFontSize={isFloating ? 17 : 20}
         />
       </div>
     </div>

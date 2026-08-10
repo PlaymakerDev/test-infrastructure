@@ -6,7 +6,16 @@ import LineChart from '@/components/chart/LineChart'
 import type { LineChartDataPoint } from '@/components/chart/LineChart'
 import { useLightingVoltGraph, useLightingAmpGraph } from '@/hooks/queries/lighting'
 import { thaiDateBE } from '@/utils/thaiDate'
-import { COLOR_VOLTAGE_CYAN, COLOR_PHASE_GREEN, COLOR_PHASE_YELLOW, COLOR_AMP_ORANGE } from '../data/voltageAmpReport'
+import {
+  COLOR_VOLTAGE_CYAN,
+  COLOR_AMP_ORANGE,
+  COLOR_VOLT_PHASE_1,
+  COLOR_VOLT_PHASE_2,
+  COLOR_VOLT_PHASE_3,
+  COLOR_AMP_PHASE_1,
+  COLOR_AMP_PHASE_2,
+  COLOR_AMP_PHASE_3,
+} from '../data/voltageAmpReport'
 import type { LineConfig } from '@/components/chart/LineChart'
 
 // Title color is always the project yellow; the chart line itself keeps its
@@ -32,20 +41,22 @@ const SHARED_CHART_PROPS = {
 
 // The logs4g graph endpoints always return all 3 phase columns regardless of
 // `phase_type` (volt/amp = phase 1, volt2/amp2 = phase 2, volt3/amp3 = phase
-// 3) — 3-phase devices plot all three lines, matching SummaryReportSection's
-// VOLTAGE_BARS/AMP_BARS color convention; single-phase devices only ever
+// 3) — 3-phase devices plot all three lines; single-phase devices only ever
 // populate phase 1, so keep the single-line view for them.
+// Per-phase colors mirror bridge-lighting's VOLTAGE_LINES / CURRENT_LINES —
+// both features render identically-titled 24h Volt/Amp charts, so they must
+// read the same. Single-phase devices keep their own one-line accent.
 const VOLT_LINES_SINGLE: LineConfig[] = [{ dataKey: 'volt', color: COLOR_VOLTAGE_CYAN, label: 'Voltage', unit: 'V' }]
 const VOLT_LINES_THREE_PHASE: LineConfig[] = [
-  { dataKey: 'volt', color: COLOR_VOLTAGE_CYAN, label: 'Phase 1', unit: 'V' },
-  { dataKey: 'volt2', color: COLOR_PHASE_GREEN, label: 'Phase 2', unit: 'V' },
-  { dataKey: 'volt3', color: COLOR_PHASE_YELLOW, label: 'Phase 3', unit: 'V' },
+  { dataKey: 'volt', color: COLOR_VOLT_PHASE_1, label: 'Phase 1', unit: 'V' },
+  { dataKey: 'volt2', color: COLOR_VOLT_PHASE_2, label: 'Phase 2', unit: 'V' },
+  { dataKey: 'volt3', color: COLOR_VOLT_PHASE_3, label: 'Phase 3', unit: 'V' },
 ]
 const AMP_LINES_SINGLE: LineConfig[] = [{ dataKey: 'amp', color: COLOR_AMP_ORANGE, label: 'Current', unit: 'A' }]
 const AMP_LINES_THREE_PHASE: LineConfig[] = [
-  { dataKey: 'amp', color: COLOR_VOLTAGE_CYAN, label: 'Phase 1', unit: 'A' },
-  { dataKey: 'amp2', color: COLOR_PHASE_GREEN, label: 'Phase 2', unit: 'A' },
-  { dataKey: 'amp3', color: COLOR_AMP_ORANGE, label: 'Phase 3', unit: 'A' },
+  { dataKey: 'amp', color: COLOR_AMP_PHASE_1, label: 'Phase 1', unit: 'A' },
+  { dataKey: 'amp2', color: COLOR_AMP_PHASE_2, label: 'Phase 2', unit: 'A' },
+  { dataKey: 'amp3', color: COLOR_AMP_PHASE_3, label: 'Phase 3', unit: 'A' },
 ]
 
 const hourFromPeriod = (period: string) => {

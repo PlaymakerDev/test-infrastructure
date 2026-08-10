@@ -1,7 +1,18 @@
+/** Single-line accents for single-phase devices, and the per-metric accent for
+ *  SummaryReportSection's chart icon/title + AvgFooter value. */
 export const COLOR_VOLTAGE_CYAN = '#66AEFF'
-export const COLOR_PHASE_GREEN = '#7BFF66'
-export const COLOR_PHASE_YELLOW = '#FCD116'
 export const COLOR_AMP_ORANGE = '#FF9F43'
+
+/** Per-phase line colors for the 24h Volt / Amp charts. Mirror bridge-lighting's
+ *  VOLTAGE_LINES / CURRENT_LINES (ChartElectricalBridgeLighting.tsx) so the two
+ *  features' identically-titled "…ภายในตู้ควบคุม 24 ชั่วโมง" charts read the
+ *  same. Keep in sync with that file — do not re-pick these per component. */
+export const COLOR_VOLT_PHASE_1 = '#00AEFF'
+export const COLOR_VOLT_PHASE_2 = '#05F2DB'
+export const COLOR_VOLT_PHASE_3 = '#7BFF66'
+export const COLOR_AMP_PHASE_1 = '#FFE100'
+export const COLOR_AMP_PHASE_2 = '#FF6200'
+export const COLOR_AMP_PHASE_3 = '#FF66CC'
 
 /** One row per (date, phase) — multi-phase devices get one colored row per
  *  phase with the date cell row-spanned across them; single-phase devices

@@ -190,6 +190,16 @@ const MonitorSection: React.FC = () => {
     return periodToBounds(period)
   }, [dateRange, period])
 
+  // What the RangePicker DISPLAYS. Without this it stayed on its placeholder
+  // whenever the user hadn't touched it, which read as "no date filter" even
+  // though the query was already scoped to the ช่วงเวลา preset (TODAY by
+  // default). Mirroring the preset keeps the two controls telling the same
+  // story; an explicit pick still wins, and clearing falls back to the preset.
+  const pickerValue = useMemo(
+    () => dateRange ?? periodToBounds(period),
+    [dateRange, period],
+  )
+
   const dataTypeParam: 'circuit' | 'line_check' | 'volt_amp' | 'etc' | undefined =
     eventType === 'ALL' ? undefined : eventType
 
@@ -320,7 +330,7 @@ const MonitorSection: React.FC = () => {
           <div className={`${FILTER_BOX_CLASS} monitor-filter-date w-[268px] shrink-0`}>
             <ConfigProvider locale={thTH}>
               <DatePicker.RangePicker
-                value={dateRange}
+                value={pickerValue}
                 onChange={(dates) => {
                   setDateRange(dates)
                   setPage(1)
