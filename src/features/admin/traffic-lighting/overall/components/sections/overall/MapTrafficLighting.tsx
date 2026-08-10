@@ -180,7 +180,9 @@ const MapTrafficLighting: React.FC<Props> = ({ deptId, roadId }) => {
 
   return (
     <div className='relative w-full h-full bg-[#050d1a]'>
-      <BaseMap initialCenter={initialCenter} initialZoom={5.2}>
+      {/* edgeFade matches MapTrafficVolume — the vignette keeps markers near the
+        * frame from colliding with the two overlay rails. */}
+      <BaseMap initialCenter={initialCenter} initialZoom={5.2} edgeFade={{ all: 20 }}>
         {/* <ThailandMaskLayer maskColor='#0E0D0D' maskOpacity={0.8} /> */}
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
         <RegionSummaryLayer type='Lighting' />

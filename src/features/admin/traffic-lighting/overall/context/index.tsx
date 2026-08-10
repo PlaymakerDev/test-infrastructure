@@ -74,6 +74,9 @@ export interface LeftBottomCard {
 export interface PhaseMetric {
   label: string
   value: string
+  /** Unrounded reading — shown as the chip's hover title, since `value` is
+   *  deliberately rounded to fit the chip (see `fmt` in phaseMetrics). */
+  full?: string
 }
 
 export interface OverallContextProps {
@@ -175,20 +178,33 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
     const e = device?.electricity?.[0]
     // API values can come back as long floats (e.g. 1209.2671710000002) that
-    // overflow the fixed-width metric card — round to 2dp like the static defaults.
-    const fmt = (n: number) => n.toFixed(2)
+    // overflow the fixed-width metric chip. Precision scales DOWN with
+    // magnitude so every value stays ≤5 glyphs and fits one chip: this screen
+    // forces all fs-12 text up to 14px (TrafficLightingMinimumFontSize), and at
+    // 14px a 5-chip row on the 320px rail only has room for ~5 characters —
+    // `2467.94` was being clipped mid-digit (reported 2026-08-10).
+    // The chip's `title` still carries the unrounded value on hover.
+    const fmt = (n: number) => {
+      const abs = Math.abs(n)
+      if (abs >= 1000) return Math.round(n).toLocaleString('th-TH')
+      if (abs >= 100) return n.toFixed(1)
+      return n.toFixed(2)
+    }
+    // Formatted chip text + the unrounded number for the hover title.
+    const cell = (n: number | undefined | null) =>
+      n != null && isFinite(n) ? { value: fmt(n), full: String(n) } : { value: '-', full: undefined }
     return PHASE_METRICS.map((m) => {
       switch (m.label) {
-        case 'Volt': return { ...m, value: e ? fmt(e.voltage) : '-' }
-        case 'Amp': return { ...m, value: e ? fmt(e.amplitude) : '-' }
-        case 'Watt': return { ...m, value: e ? fmt(e.watt) : '-' }
-        case 'Hz': return { ...m, value: e ? fmt(e.frequency) : '-' }
+        case 'Volt': return { ...m, ...cell(e?.voltage) }
+        case 'Amp': return { ...m, ...cell(e?.amplitude) }
+        case 'Watt': return { ...m, ...cell(e?.watt) }
+        case 'Hz': return { ...m, ...cell(e?.frequency) }
         case 'kWh': {
           // Not provided by the API — derived from watt assuming the reading
           // held for the full hour: kWh = (watt * 3600) / 3,600,000 (reduces
           // to watt / 1000). Same formula as ElectricalSystemCard/SummaryReportSection.
           const wattNum = e?.watt
-          return { ...m, value: wattNum != null && isFinite(wattNum) ? ((wattNum * 3600) / 3600000).toFixed(3) : '-' }
+          return { ...m, ...cell(wattNum != null && isFinite(wattNum) ? (wattNum * 3600) / 3600000 : undefined) }
         }
         default: return m
       }

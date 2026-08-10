@@ -90,6 +90,11 @@ const DIRECT_FOCUS_TOGGLE_ROUTES = new Set([
   "/admin/tunnel",
   "/admin/lpr",
   "/admin/tracking",
+  // Traffic Lighting joined 2026-08-10 — its two rails are one visual unit
+  // (device summary + diagram on the left, stat cards on the right), so the
+  // per-side options were never useful there; one click = ซ่อนทั้งสองฝั่ง,
+  // same as traffic-volume overall.
+  "/admin/traffic-lighting",
 ]);
 
 /* VARIABLE */
