@@ -42,6 +42,28 @@ const dedupeVMSSolutions = (depts: APIResponseVMSList): APIResponseVMSList => {
   }))
 }
 
+// Rebuild the dept → sub_dept → solutions tree keeping only the solutions the
+// predicate accepts; sub-depts / depts that end up empty are dropped so the
+// table renders no dangling สำนัก/แขวง header rows. `bureau` is the combined
+// dept + sub-dept label, so a search can match either grouping header.
+const pruneVMSTree = (
+  depts: APIResponseVMSList,
+  keep: (sol: ListSolution, bureau: string) => boolean,
+): APIResponseVMSList =>
+  depts
+    .map((dept) => ({
+      ...dept,
+      sub_department: (dept.sub_department ?? [])
+        .map((sub) => ({
+          ...sub,
+          solutions: (sub.solutions ?? []).filter((sol) =>
+            keep(sol, `${dept.department_short_name} ${sub.department_short_name}`)
+          ),
+        }))
+        .filter((sub) => sub.solutions.length > 0),
+    }))
+    .filter((dept) => dept.sub_department.length > 0)
+
 const VMS_FILTERS: FilterConfig[] = [
   {
     key: 'all',
@@ -138,11 +160,22 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     placeholderData: keepPreviousData,
   })
 
+  // The search term is NOT a request param — `/vms/departments/{id}/overview/
+  // central/list` ignores `search` (same as bridge-lighting's twin endpoint),
+  // so sending it only refetched the identical full list on every keystroke.
+  // Filtering happens client-side below, like every other overall page.
+  // Base params stay `{ page:1, limit:10 }` so this shares InfoCardSection's
+  // cache entry (see the comment there) regardless of what's typed.
+  const listParams = useMemo(
+    () => ({ page: vms_list.search.page, limit: vms_list.search.limit }),
+    [vms_list.search.page, vms_list.search.limit]
+  )
+
   const { data, isLoading } = useQuery({
     // dept + scope + road in the key — previously only the search text, so
     // switching departments/roads/entry point reused the other's cached list.
-    queryKey: ['vms_list', String(deptId ?? ''), scope, String(roadId ?? ''), vms_list.search],
-    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, roadId ? { road_id: roadId, ...vms_list.search } : vms_list.search),
+    queryKey: ['vms_list', String(deptId ?? ''), scope, String(roadId ?? ''), listParams],
+    queryFn: () => getVMSOverviewListAPI(Number(deptId)!, roadId ? { road_id: roadId, ...listParams } : listParams),
     enabled: !!deptId,
     placeholderData: keepPreviousData
   })
@@ -155,10 +188,24 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     [data]
   )
 
+  // Solutions matching the search box ONLY (independent of the status filter) —
+  // the base set for both the badge counts and the table, mirroring CCTV's
+  // `searchFiltered`. Matches the same fields the table shows: สำนัก/แขวง,
+  // รหัสสายทาง, ชื่อโครงการ, จุดติดตั้ง, เลขที่สัญญา.
+  const searchFilteredData = useMemo<APIResponseVMSList | undefined>(() => {
+    if (!dedupedData) return dedupedData
+    const term = vms_list.search.search?.trim().toLowerCase()
+    if (!term) return dedupedData
+    return pruneVMSTree(dedupedData, (sol, bureau) =>
+      `${bureau} ${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no}`
+        .toLowerCase()
+        .includes(term)
+    )
+  }, [dedupedData, vms_list.search.search])
+
   // With no search, badge counts come from the authoritative totals endpoint.
-  // Once a search is active, the list query is already server-filtered by the
-  // search term, so re-tally its solutions (all statuses) to make the badges
-  // track the search (requested 2026-07-24).
+  // Once a search is active, re-tally the search-matching solutions (all
+  // statuses) so the badges track the search (requested 2026-07-24).
   const vmsStats = useMemo<FilterStats>(() => {
     const term = vms_list.search.search?.trim()
     if (!term) {
@@ -171,7 +218,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }
     }
     let all = 0, online = 0, offline = 0, inWarranty = 0, expired = 0
-    for (const dept of dedupedData ?? []) {
+    for (const dept of searchFilteredData ?? []) {
       for (const sub of dept.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
           all++
@@ -183,17 +230,16 @@ const DataDisplaySection: React.FC<Props> = (props) => {
       }
     }
     return { all, online, offline, inWarranty, expired }
-  }, [totals, dedupedData, vms_list.search.search])
+  }, [totals, searchFilteredData, vms_list.search.search])
 
-  // Client-side filter — the API's status_name/warranty_name params don't
-  // match the FilterConfig keys ('online'/'offline'/'in-warranty'/'expired'),
-  // so filtering happens on the loaded response instead. Rebuilds the same
-  // dept → sub_dept → solutions tree with only the matching solutions kept;
-  // sub-depts / depts that end up empty are dropped so no empty headers show.
+  // Status filter, applied on top of the search-filtered set — the API's
+  // status_name/warranty_name params don't match the FilterConfig keys
+  // ('online'/'offline'/'in-warranty'/'expired'), so this also happens on the
+  // loaded response.
   const filteredData = useMemo<APIResponseVMSList | undefined>(() => {
-    if (!dedupedData) return dedupedData
-    if (activeFilter === 'all') return dedupedData
-    const solutionMatches = (sol: ListSolution) => {
+    if (!searchFilteredData) return searchFilteredData
+    if (activeFilter === 'all') return searchFilteredData
+    return pruneVMSTree(searchFilteredData, (sol) => {
       switch (activeFilter) {
         case 'online': return sol.vms.status.is_online === true
         case 'offline': return sol.vms.status.is_online === false
@@ -201,16 +247,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
         case 'expired': return sol.warranty.is_warranty === false
         default: return true
       }
-    }
-    return dedupedData
-      .map((dept) => ({
-        ...dept,
-        sub_department: (dept.sub_department ?? [])
-          .map((sub) => ({ ...sub, solutions: (sub.solutions ?? []).filter(solutionMatches) }))
-          .filter((sub) => sub.solutions.length > 0),
-      }))
-      .filter((dept) => dept.sub_department.length > 0)
-  }, [dedupedData, activeFilter])
+    })
+  }, [searchFilteredData, activeFilter])
 
   // Flatten dept → sub-dept → solutions into card items, tagging each with its
   // sub-dept short name so ProjectCardGrid groups by แขวง out of the box
