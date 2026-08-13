@@ -34,6 +34,7 @@ export { useUpdateUserPassword } from './useUpdateUserPassword'
 
 // Shared dropdowns
 export { useDepartments } from './useDepartments'
+export { useProvinces } from './useProvinces'
 export { useRegions } from './useRegions'
 
 // Logged-in user's home department (menu links / post-login landing)

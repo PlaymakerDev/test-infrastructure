@@ -33,7 +33,14 @@ async function loadOnce(): Promise<BureauFeature[]> {
   if (cache) return cache
   if (inflight) return inflight
   inflight = (async () => {
-    const r = await fetch(BUREAUS_URL, { cache: 'force-cache' })
+    // 'no-cache' = always revalidate with the server (cheap 304 when the file
+    // hasn't changed). Was 'force-cache', which pinned the browser to whatever
+    // version it saw first — after the 2026-08-03 regeneration of
+    // th-bureaus.geojson (304KB low-res → 945KB, rebuilt from the new
+    // th-provinces) stale caches kept drawing the OLD bureau outline against
+    // the NEW province lines, so the cyan/yellow boundaries no longer matched.
+    // The module-level `cache` above already dedupes within a session.
+    const r = await fetch(BUREAUS_URL, { cache: 'no-cache' })
     if (!r.ok) throw new Error(`bureaus fetch ${r.status}`)
     const gj = (await r.json()) as GeoJSON.FeatureCollection<
       GeoJSON.Polygon | GeoJSON.MultiPolygon,

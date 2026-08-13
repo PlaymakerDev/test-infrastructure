@@ -10,7 +10,8 @@
 //   • The single-item GET /project/{id} returns the bare object.
 
 import ApiService from '../ApiService'
-import type { ListParams } from '@/types/manage/params'
+import type { ListParams, RoadListParams } from '@/types/manage/params'
+import type { APIResponseProvinceList } from '@/types/manage/place-api'
 import type {
   APIResponseSSOUser,
   APIRequestSSOSearch,
@@ -164,11 +165,17 @@ export const deleteContractorAPI = (id: string) =>
 
 // ── Roads ────────────────────────────────────────────────────────────────────
 
-export const getRoadsAPI = (params: ListParams = {}) =>
+// province = contains-match on the Thai name; department_id = exact match.
+// Both verified server-side 2026-08-13 (see RoadListParams).
+export const getRoadsAPI = (params: RoadListParams = {}) =>
   ApiService.fetchData<APIResponseRoadListEnvelope>({
     url: '/manage/roads',
     method: 'GET',
-    params: toListQuery(params),
+    params: {
+      ...(toListQuery(params) ?? {}),
+      ...(params.province ? { province: params.province } : {}),
+      ...(params.department_id != null ? { department_id: params.department_id } : {}),
+    },
   })
 
 export const createRoadAPI = (body: APIRequestRoad) =>
@@ -244,6 +251,14 @@ export const updateGeneralUserPasswordAPI = (
 export const getDepartmentsAPI = () =>
   ApiService.fetchData<APIResponseDepartmentList>({
     url: '/manage/departments',
+    method: 'GET',
+  })
+
+/** Full 77-province master list (bare array) — backs the Route tab's
+ *  จังหวัด dropdown. */
+export const getProvincesAPI = () =>
+  ApiService.fetchData<APIResponseProvinceList>({
+    url: '/manage/th_places/provinces',
     method: 'GET',
   })
 

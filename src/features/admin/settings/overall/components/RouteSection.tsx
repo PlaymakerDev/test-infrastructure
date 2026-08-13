@@ -6,6 +6,7 @@ import {
   useCreateRoad,
   useDeleteRoad,
   useDepartments,
+  useProvinces,
   useRoadsList,
   useUpdateRoad,
 } from '@/hooks/queries/manage'
@@ -55,11 +56,24 @@ const RouteSection: React.FC = () => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE)
 
-  // Server-paginated + server-searched. The hook returns the raw envelope
-  // `{ res_data, meta_data }` — rows come from `res_data`, total from
-  // `meta_data.count`.
-  const roadsQuery = useRoadsList({ page, limit: pageSize, search: filters.search })
+  // Server-paginated + server-searched + server-filtered. province and
+  // department_id go to the backend too (verified 2026-08-13) — previously
+  // they narrowed the CURRENT PAGE only, so picking e.g. ขทช.เชียงใหม่ showed
+  // "No data" whenever page 1 happened to contain none of its roads. The hook
+  // returns the raw envelope `{ res_data, meta_data }` — rows from `res_data`,
+  // total from `meta_data.count` (now the FILTERED total, so the pager agrees
+  // with what's on screen).
+  const roadsQuery = useRoadsList({
+    page,
+    limit: pageSize,
+    search: filters.search,
+    province: filters.province ?? undefined,
+    department_id: filters.departmentId ?? undefined,
+  })
   const departmentsQuery = useDepartments()
+  // Full 77-province master list for the จังหวัด dropdown — the old options
+  // were derived from the rows on screen, so most provinces were missing.
+  const provincesQuery = useProvinces()
   const createRoad = useCreateRoad()
   const updateRoad = useUpdateRoad()
   const deleteRoad = useDeleteRoad()
@@ -92,16 +106,14 @@ const RouteSection: React.FC = () => {
     [rows, deptById],
   )
 
-  // Province options are derived from the CURRENT page only — the server
-  // doesn't expose a distinct-province endpoint, so the dropdown widens as
-  // the user paginates. Acceptable trade-off given the 3k-row dataset.
-  const provinceOptions = useMemo(() => {
-    const set = new Set<string>()
-    routes.forEach((r) => {
-      if (r.province) set.add(r.province)
-    })
-    return Array.from(set).sort()
-  }, [routes])
+  // จังหวัด options from /manage/th_places/provinces (all 77, Thai-sorted).
+  const provinceOptions = useMemo(
+    () =>
+      (provincesQuery.data ?? [])
+        .map((p) => p.name_th)
+        .sort((a, b) => a.localeCompare(b, 'th')),
+    [provincesQuery.data],
+  )
 
   const setFilters = useCallback((patch: Partial<RouteFilters>) => {
     setFiltersState((prev) => ({ ...prev, ...patch }))
@@ -111,16 +123,8 @@ const RouteSection: React.FC = () => {
     setPage(1)
   }, [])
 
-  // Search is handled server-side (verified for /manage/roads). Province +
-  // departmentId are NOT supported by the API, so they filter client-side
-  // over the current page only.
-  const filtered = useMemo(() => {
-    return routes.filter((r) => {
-      if (filters.province && r.province !== filters.province) return false
-      if (filters.departmentId != null && r.departmentId !== filters.departmentId) return false
-      return true
-    })
-  }, [routes, filters.province, filters.departmentId])
+  // All three narrowing inputs (search / province / departmentId) are applied
+  // by the SERVER now — no client-side re-filtering, the page IS the result.
 
   const openCreate = useCallback(() => setRouteModal({ open: true, editing: null }), [])
   const openEdit = useCallback((route: Route) => setRouteModal({ open: true, editing: route }), [])
@@ -240,7 +244,7 @@ const RouteSection: React.FC = () => {
           </div>
         ) : (
           <TableRoute
-            data={filtered}
+            data={routes}
             page={page}
             pageSize={pageSize}
             total={total}

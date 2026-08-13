@@ -1,15 +1,15 @@
 "use client"
 // Filter bar for the Settings → Route tab.
 //
-// Search flows to the backend: the debounced value (500 ms) is pushed into
-// `filters.search`, RouteSection resets to page 1 and re-runs the /manage/roads
-// query with `?search=`. Roads is the ONE list endpoint where server search is
-// verified working.
-//
-// Province + responsibleOffice DO NOT have a server-side counterpart on
-// /manage/roads, so those two `Select`s narrow the CURRENT PAGE only —
-// browsing pages may reveal / hide matches. Kept client-side deliberately;
-// widening this to full-dataset filtering would require server support.
+// ALL THREE inputs flow to the backend (verified 2026-08-13):
+//   • search  — debounced 500 ms → `?search=`
+//   • จังหวัด  — `?province=` (options = full 77-province list from
+//     /manage/th_places/provinces, no longer derived from the current page)
+//   • ผู้รับผิดชอบ — `?department_id=` (exact; this exact param name only)
+// RouteSection resets to page 1 on any change and re-runs /manage/roads, so
+// the table + pager always reflect the filtered dataset — the old client-side
+// narrowing showed "No data" whenever the current page happened to contain no
+// matching rows.
 import { Input, Select } from 'antd'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { TbSearch } from 'react-icons/tb'

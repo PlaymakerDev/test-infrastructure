@@ -13,7 +13,7 @@ interface Props { }
 const TrafficStat: React.FC<Props> = () => {
   const deptId = useDeptId()
   const roadId = useRoadId()
-  const { data } = useDashboardCounting(deptId, roadId)
+  const { data, isLoading, isError } = useDashboardCounting(deptId, roadId)
 
   const peak = useMemo(() => {
     const hours = data?.daily_count_hour ?? []
@@ -23,9 +23,13 @@ const TrafficStat: React.FC<Props> = () => {
     return top
   }, [data])
 
-  const hourLabel = peak ? dayjs(peak.hour_timestamp).format('HH:mm') : '—'
-  const vehicles = peak?.total_count ?? 0
-  const pcu = peak ? Math.round(peak.total_pcu) : 0
+  // Loading / error render '—' for every cell — the old version showed
+  // "— / 0 / 0" for loading, errors AND genuine zero-traffic alike, so a
+  // fetch failure read as real data (fixed 2026-08-13).
+  const notReady = isLoading || isError
+  const hourLabel = notReady ? '—' : peak ? dayjs(peak.hour_timestamp).format('HH:mm') : '—'
+  const vehicles = notReady ? '—' : (peak?.total_count ?? 0).toLocaleString()
+  const pcu = notReady ? '—' : (peak ? Math.round(peak.total_pcu) : 0).toLocaleString()
 
   return (
     <div
@@ -56,12 +60,15 @@ const TrafficStat: React.FC<Props> = () => {
         <span className='fs-12 text-right' style={{ color: '#6b7f9a' }}>PCU</span>
         <span className='fs-12 font-medium mt-1 tabular-nums text-white'>{hourLabel}</span>
         <span className='fs-12 font-medium mt-1 text-center tabular-nums text-white'>
-          {vehicles.toLocaleString()}
+          {vehicles}
         </span>
         <span className='fs-12 font-medium mt-1 text-right tabular-nums text-white'>
-          {pcu.toLocaleString()}
+          {pcu}
         </span>
       </div>
+      {isError && (
+        <div className='fs-12 mt-2 text-white/50'>โหลดข้อมูลไม่สำเร็จ</div>
+      )}
     </div>
   )
 }

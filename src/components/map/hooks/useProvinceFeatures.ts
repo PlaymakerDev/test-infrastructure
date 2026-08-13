@@ -24,7 +24,11 @@ async function loadOnce(): Promise<ProvinceFeature[]> {
   if (cache) return cache
   if (inflight) return inflight
   inflight = (async () => {
-    const r = await fetch(PROVINCES_URL, { cache: 'force-cache' })
+    // 'no-cache' = revalidate with the server every session (304 when
+    // unchanged) — 'force-cache' pinned browsers to the first version they
+    // ever saw, which is how stale boundary geometry survived the 2026-08-03
+    // geojson regeneration (see useBureauFeatures.ts for the full story).
+    const r = await fetch(PROVINCES_URL, { cache: 'no-cache' })
     if (!r.ok) throw new Error(`provinces fetch ${r.status}`)
     const gj = (await r.json()) as GeoJSON.FeatureCollection<
       GeoJSON.Polygon | GeoJSON.MultiPolygon,

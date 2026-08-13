@@ -15,6 +15,7 @@ import DeleteProjectModal from './project/DeleteProjectModal'
 import FormSearchProject from './project/FormSearchProject'
 import ProjectModal from './project/ProjectModal'
 import TableProject from './project/TableProject'
+import { fetchAllPages } from '../utils/fetchAllPages'
 
 dayjs.extend(buddhistEra)
 
@@ -80,20 +81,17 @@ const ProjectSection: React.FC = () => {
     return parts.length ? parts.join(' · ') : undefined
   }, [filters])
 
-  // Export scope 'ทั้งหมด' — fetch EVERY page of the current server-side
-  // search at export time (two-step like incident-detection's EventSection:
-  // page 1 @100, then refetch at the reported total when it exceeds 100),
-  // then apply the same client-side dropdown narrowing the context's
-  // `filtered` memo applies to the on-screen page.
+  // Export scope 'ทั้งหมด' — walk EVERY page of the current server-side
+  // search at export time (pages of 100 via fetchAllPages; the backend caps
+  // `?limit=` at 100 as of 2026-08-13 — the old refetch-at-count fast path
+  // 400s at today's ~348 projects), then apply the same client-side dropdown
+  // narrowing the context's `filtered` memo applies to the on-screen page.
   const fetchAllProjects = async (): Promise<Project[]> => {
     const { getProjectsAPI } = await import('@/services/routes/ManageService')
     const search = filters.search.trim() || undefined
-    const first = await getProjectsAPI({ page: 1, limit: 100, search })
-    const count = first.data?.meta_data?.count ?? 0
-    const rows =
-      count <= 100
-        ? first.data?.res_data ?? []
-        : (await getProjectsAPI({ page: 1, limit: count, search })).data?.res_data ?? []
+    const rows = await fetchAllPages((p, limit) =>
+      getProjectsAPI({ page: p, limit, search }).then((r) => r.data),
+    )
     // Mirrors the dropdown-filter predicate in context's `filtered` memo.
     return rows
       .map((r) => mapProject(r, departments))

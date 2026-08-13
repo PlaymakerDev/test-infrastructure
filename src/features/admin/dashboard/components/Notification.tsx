@@ -7,8 +7,8 @@ import { useNotificationSummary } from '@/hooks/queries/manage'
 import { TAB_TO_TYPE, useDashboardContext } from '../context'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useRoadId } from '@/hooks/useRoadId'
-import { DashboardBucketType } from '@/types/dashboard/api'
 import { useDashboardAnalytic } from '@/hooks/queries/dashboard'
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { Tooltip } from 'antd'
 
 interface Props {
@@ -28,6 +28,23 @@ const fmt = (n: number): string => {
   return `${Math.round(n / 1000)}k`
 }
 
+/** ช่วงเวลาตามแท็บ — ใช้ประกอบข้อความให้ตรงกับตัวเลขที่โชว์เสมอ. */
+const SCOPE_WORD: Record<string, string> = {
+  'วันนี้': 'วันนี้',
+  'เดือน': 'เดือนนี้',
+  'ปี': 'ปีนี้',
+}
+
+/**
+ * ONE source of truth (2026-08-13 rework): every number/label on BOTH variants
+ * comes from the same dept+tab+road-scoped `analytic` query. The old version
+ * mixed it with the nationwide/today notifications summary — the big number
+ * said "dept X, whole year" while the caption beside it said "today, ทุกจุด",
+ * the mobile pill showed a different number than the desktop card, and the
+ * click always landed on dept 0. The summary now ONLY supplies the
+ * "เหตุการณ์เด่นวันนี้" flavour line, and ONLY when its scope truly matches
+ * what's displayed (nationwide + วันนี้ + no road filter).
+ */
 const Notification: React.FC<Props> = ({ compact = false }) => {
   const router = useRouter()
   // API
@@ -35,40 +52,53 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
   const deptId = useDeptId()
   const roadId = useRoadId()
   const type = TAB_TO_TYPE[tab]
-  const { data: analyticData, isLoading: isAnalyticLoading } = useDashboardAnalytic(deptId, type, roadId)
+  const {
+    data: analyticData,
+    isLoading: isAnalyticLoading,
+    isError: isAnalyticError,
+  } = useDashboardAnalytic(deptId, type, roadId)
 
   // "Today" window in Bangkok time — same date on both sides so the backend
   // aggregates a single day. Rebuilt every render is fine: dayjs() is cheap
   // and TanStack Query dedupes by the resulting query key.
   const today = dayjs().format('YYYY-MM-DD')
-  const { data, isLoading } = useNotificationSummary({
+  const { data: summaryData } = useNotificationSummary({
     start_date: today,
     end_date: today,
   })
 
-  const getCount = useMemo(() => {
-    if (isLoading || isAnalyticLoading) return 0
-    return Number(analyticData?.reduce((sum, row) => sum + (row.count ?? 0), 0) ?? 0)
-  }, [analyticData, isLoading, isAnalyticLoading])
-
-  // The card is anchored to `analytic` (= Incident Detection events). Label
-  // "อุปกรณ์ตรวจจับใหม่" already lived on this card as a placeholder — the
-  // number now matches. Lighting/VMS source_types are ignored here because
-  // Lighting is a noisy heartbeat feed (10k+/day) that would drown the pill.
-  const analytic = useMemo(
-    () => data?.find((row) => row.source_type === 'analytic'),
-    [data]
+  // Displayed count — dept + tab + road scoped, same value for pill and card.
+  const count = useMemo(
+    () => Number(analyticData?.reduce((sum, row) => sum + (row.count ?? 0), 0) ?? 0),
+    [analyticData],
   )
-  const count = analytic?.count ?? 0
-  const topLabel = analytic?.most_type?.name
+
+  // "เหตุการณ์เด่นวันนี้" comes from the nationwide/today summary (analytic
+  // source_type only — Lighting is a 10k+/day heartbeat feed that would drown
+  // the line). Shown ONLY when the displayed number covers the same scope.
+  const topLabel = useMemo(
+    () => summaryData?.find((row) => row.source_type === 'analytic')?.most_type?.name,
+    [summaryData],
+  )
+  const scopeWord = SCOPE_WORD[tab] ?? 'วันนี้'
+  const summaryMatchesScope = deptId === '0' && tab === 'วันนี้' && !roadId
+
+  const caption = isAnalyticLoading
+    ? 'กำลังโหลด…'
+    : isAnalyticError
+      ? 'โหลดข้อมูลไม่สำเร็จ'
+      : count === 0
+        ? `ยังไม่มีอุบัติการณ์${scopeWord}`
+        : summaryMatchesScope && topLabel
+          ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
+          : `อุบัติการณ์${scopeWord}`
+  const countText = isAnalyticLoading || isAnalyticError ? '—' : fmt(count)
 
   const onOpen = () => {
-    // The pill counts nationwide (backend scopes by JWT — admin sees the
-    // whole system), so the target page should too. Hard-code dept_id=0 +
-    // scope=all so opening the alert from any dashboard view lands on the
-    // full-country incident list for today, not just the bureau the user
-    // was already looking at.
-    router.push('/admin/incident-detection?dept_id=0&scope=all')
+    // Land on the SAME scope the number describes — the live dept from the
+    // map (override context) + the page's scope=all when present. The old
+    // hardcoded dept_id=0 sent a dept-scoped count to the nationwide list.
+    router.push(`/admin/incident-detection?dept_id=${deptId}${scopeQuerySuffix()}`)
   }
 
   // Common accessibility affordances — role + keyboard for both variants.
@@ -82,7 +112,7 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         onOpen()
       }
     },
-    'aria-label': `แจ้งเตือนอุบัติการณ์ ${count} รายการวันนี้ — คลิกเพื่อดูทุกจุดติดตั้ง`,
+    'aria-label': `แจ้งเตือนอุบัติการณ์ ${count.toLocaleString('th-TH')} รายการ${scopeWord} — คลิกเพื่อดูรายการ`,
   }
 
   if (compact) {
@@ -92,15 +122,15 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full cursor-pointer hover:brightness-110 transition"
         style={{
           background: "rgba(10,14,26,0.95)",
-          border: "1px solid rgba(245,200,66,0.5)",
+          border: "1px solid rgba(252,209,22,0.5)",
           backdropFilter: "blur(5px)",
           boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
         }}
-        title={`แจ้งเตือนอุบัติการณ์ · ${count.toLocaleString('th-TH')} รายการวันนี้ (ทุกจุด)`}
+        title={`แจ้งเตือนอุบัติการณ์ · ${count.toLocaleString('th-TH')} รายการ${scopeWord}`}
       >
-        <TbAlertTriangle size={16} color="#f5c842" />
-        <span className="text-[#f5c842] fs-12 font-bold leading-none tabular-nums">
-          {isLoading ? '…' : fmt(count)}
+        <TbAlertTriangle size={16} color="#FCD116" />
+        <span className="text-(--yellow) fs-12 font-bold leading-none tabular-nums">
+          {countText === '—' && isAnalyticLoading ? '…' : countText}
         </span>
       </div>
     )
@@ -114,19 +144,11 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
         padding: 1.5,
         borderRadius: 20,
         background:
-          "linear-gradient(135deg, rgba(245,200,66,0.8) 0%, rgba(245,200,66,0.1) 50%, rgba(245,200,66,0.4) 100%)",
+          "linear-gradient(135deg, rgba(252,209,22,0.8) 0%, rgba(252,209,22,0.1) 50%, rgba(252,209,22,0.4) 100%)",
       }}
-      title="คลิกเพื่อดูอุบัติการณ์ทุกจุดติดตั้งวันนี้"
+      title={`คลิกเพื่อดูรายการอุบัติการณ์${scopeWord}`}
     >
-      <Tooltip
-        title={isLoading
-          ? 'กำลังโหลด…'
-          : count === 0
-            ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
-            : topLabel
-              ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
-              : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
-      >
+      <Tooltip title={caption}>
         {/* py-4.5 = 18px (was py-2 = 8px) — card is 20px taller per design
           * 2026-08-10; VehicleRatioChart's donut shrank by the same 20px so the
           * right rail still fits the viewport without scrolling. */}
@@ -138,23 +160,15 @@ const Notification: React.FC<Props> = ({ compact = false }) => {
             backdropFilter: "blur(5px)",
           }}
         >
-          <div className="rounded-lg p-1.5" style={{ background: "rgba(245,200,66,0.12)" }}>
-            <TbAlertTriangle size={24} color="#f5c842" />
+          <div className="rounded-lg p-1.5" style={{ background: "rgba(252,209,22,0.12)" }}>
+            <TbAlertTriangle size={24} color="#FCD116" />
           </div>
           <div className="flex-1 leading-tight min-w-0">
             <div className="text-white fs-12 font-medium">แจ้งเตือนอุบัติการณ์</div>
-            <div className="text-[#6b7f9a] fs-12 truncate">
-              {isLoading
-                ? 'กำลังโหลด…'
-                : count === 0
-                  ? 'ยังไม่มีอุบัติการณ์วันนี้ (ทุกจุด)'
-                  : topLabel
-                    ? `เหตุการณ์เด่นวันนี้: ${topLabel}`
-                    : 'อุบัติการณ์วันนี้ทุกจุดติดตั้ง'}
-            </div>
+            <div className="text-[#6b7f9a] fs-12 truncate">{caption}</div>
           </div>
-          <div className="text-[#f5c842] text-3xl font-bold leading-none tabular-nums shrink-0">
-            {(isLoading || isAnalyticLoading) ? '—' : fmt(getCount)}
+          <div className="text-(--yellow) text-3xl font-bold leading-none tabular-nums shrink-0">
+            {countText}
           </div>
         </div>
       </Tooltip>

@@ -10,7 +10,6 @@ import {
   useContractorsList,
   useCreateContractor,
   useDeleteContractor,
-  useProjectsList,
   useUpdateContractor,
 } from '@/hooks/queries/manage'
 import type {
@@ -25,6 +24,7 @@ import type {
 } from '../types/contractor'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
 import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
+import { fetchAllPages } from '../utils/fetchAllPages'
 import ContactModal from './contact/ContactModal'
 import DeleteContactModal from './contact/DeleteContactModal'
 import FormSearchContact from './contact/FormSearchContact'
@@ -33,10 +33,6 @@ import TableContact from './contact/TableContact'
 dayjs.extend(buddhistEra)
 
 const DEFAULT_FILTERS: ContractorFilters = { search: '' }
-// The /manage/project endpoint offers no `?contractor_id=` filter, so to
-// compute a per-contractor project count we pull a wide slice on page 1 and
-// tally on the client. Real total is ~348; 1000 leaves ample headroom.
-const PROJECTS_FOR_COUNT_LIMIT = 1000
 
 /** "06/07/2569" — same dd/MM/พ.ศ. format TableContact renders. */
 const fmtThaiDate = (iso: string): string => {
@@ -87,11 +83,10 @@ const readErrorMessage = (error: unknown, fallback: string): string => {
 
 /** Maps the raw /contractor row → UI Contractor shape — shared by the table's
  *  `contractors` memo and the export-'ทั้งหมด' full-fetch path so both render
- *  the identical projection (incl. the client-tallied projectCount). */
-const toContractor = (
-  c: APIResponseContractor,
-  projectCountByContractorId: Map<string, number>,
-): Contractor => ({
+ *  the identical projection. `projectCount` comes straight from the server's
+ *  `project_count` (added 2026-08-13 — replaces the old client tally that
+ *  pulled every project with `?limit=1000`, which the new limit cap 400s). */
+const toContractor = (c: APIResponseContractor): Contractor => ({
   id: c.user_id,
   companyName: c.company_name,
   shortName: c.short_name,
@@ -103,7 +98,7 @@ const toContractor = (
   registeredAt: c.created_at,
   username: c.user?.username ?? '',
   isActive: c.user?.is_active ?? true,
-  projectCount: projectCountByContractorId.get(c.user_id) ?? 0,
+  projectCount: c.project_count ?? 0,
 })
 
 const ContactSection: React.FC = () => {
@@ -139,23 +134,9 @@ const ContactSection: React.FC = () => {
     limit: pageSize,
     search: filters.search.trim(),
   })
-  // Only used to derive `projectCount` per contractor — the API has no such
-  // field, so we count matching projects on the client. Pull a wide, unpaged
-  // slice so the tallies are complete (the section itself never displays
-  // this list — the value is only fed into the badge column).
-  const projectsQuery = useProjectsList({ page: 1, limit: PROJECTS_FOR_COUNT_LIMIT })
   const createMutation = useCreateContractor()
   const updateMutation = useUpdateContractor()
   const deleteMutation = useDeleteContractor()
-
-  // ── Derive project counts per contractor uuid ────────────────────────────
-  const projectCountByContractorId = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const p of projectsQuery.data?.res_data ?? []) {
-      map.set(p.contractor_id, (map.get(p.contractor_id) ?? 0) + 1)
-    }
-    return map
-  }, [projectsQuery.data])
 
   // ── Map API rows → UI Contractor shape ───────────────────────────────────
   // No client-side text filtering — the server already applied `?search=`.
@@ -164,8 +145,8 @@ const ContactSection: React.FC = () => {
   //  the client.)
   const contractors = useMemo<Contractor[]>(() => {
     const rows = contractorsQuery.data?.res_data ?? []
-    return rows.map((c) => toContractor(c, projectCountByContractorId))
-  }, [contractorsQuery.data, projectCountByContractorId])
+    return rows.map(toContractor)
+  }, [contractorsQuery.data])
 
   // Server-reported total row count for the pagination footer. Falls back
   // to the current page's length so the "1-N จาก N" label is still sensible
@@ -180,21 +161,18 @@ const ContactSection: React.FC = () => {
     return q ? `ค้นหา "${q}"` : undefined
   }, [filters.search])
 
-  // Export scope 'ทั้งหมด' — fetch EVERY page of the current server-side
-  // search at export time (two-step like incident-detection's EventSection:
-  // page 1 @100, then refetch at the reported total when it exceeds 100).
+  // Export scope 'ทั้งหมด' — walk EVERY page of the current server-side
+  // search at export time (pages of 100 via fetchAllPages; the backend caps
+  // `?limit=` at 100, so the old refetch-at-count fast path 400s).
   // The /contractor endpoint has no other filter fields, so no client-side
   // narrowing applies here — the server total IS the exported row count.
   const fetchAllContractors = async (): Promise<Contractor[]> => {
     const { getContractorsAPI } = await import('@/services/routes/ManageService')
     const search = filters.search.trim()
-    const first = await getContractorsAPI({ page: 1, limit: 100, search })
-    const count = first.data?.meta_data?.count ?? 0
-    const rows =
-      count <= 100
-        ? first.data?.res_data ?? []
-        : (await getContractorsAPI({ page: 1, limit: count, search })).data?.res_data ?? []
-    return rows.map((c) => toContractor(c, projectCountByContractorId))
+    const rows = await fetchAllPages((p, limit) =>
+      getContractorsAPI({ page: p, limit, search }).then((r) => r.data),
+    )
+    return rows.map(toContractor)
   }
 
   // ── Modal open/close ─────────────────────────────────────────────────────
@@ -334,7 +312,7 @@ const ContactSection: React.FC = () => {
       <div className='flex-1 min-h-0 mt-5'>
         <TableContact
           data={contractors}
-          loading={contractorsQuery.isLoading || projectsQuery.isLoading}
+          loading={contractorsQuery.isLoading}
           page={page}
           pageSize={pageSize}
           total={total}

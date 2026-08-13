@@ -4,7 +4,7 @@
 // fan out to every list/detail query below it — including every
 // (page, limit, search) cache slot appended after 'list'.
 
-import type { ListParams } from '@/types/manage/params'
+import type { ListParams, RoadListParams } from '@/types/manage/params'
 
 // Normalize `ListParams` into a stable object used as the trailing key node
 // so React Query cache-slots per unique (page, limit, search). Undefined /
@@ -38,8 +38,20 @@ export const manageKeys = {
 
   roads: {
     all: ['manage', 'roads'] as const,
-    list: (params: ListParams = {}) =>
-      [...manageKeys.roads.all, 'list', listKey(params)] as const,
+    // Roads carry two extra server-side filters (province / department_id) —
+    // both are part of the key so each filter combination gets its own cache
+    // slot (a key that ignored them would serve page-1-unfiltered rows to a
+    // filtered view).
+    list: (params: RoadListParams = {}) =>
+      [
+        ...manageKeys.roads.all,
+        'list',
+        {
+          ...listKey(params),
+          province: params.province ?? '',
+          department_id: params.department_id ?? 0,
+        },
+      ] as const,
   },
 
   users: {
@@ -56,6 +68,7 @@ export const manageKeys = {
     budgetYears: () => [...manageKeys.dropdowns.all, 'budget-years'] as const,
     contractors: () => [...manageKeys.dropdowns.all, 'contractors'] as const,
     departments: () => [...manageKeys.dropdowns.all, 'departments'] as const,
+    provinces: () => [...manageKeys.dropdowns.all, 'provinces'] as const,
     regions: () => [...manageKeys.dropdowns.all, 'regions'] as const,
   },
 

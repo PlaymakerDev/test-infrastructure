@@ -1,5 +1,6 @@
 "use client"
 import React, { useMemo } from 'react'
+import { Skeleton } from 'antd'
 import { TbCar } from 'react-icons/tb'
 import PieChart from '@/components/chart/PieChart'
 import { useDashboardCounting } from '@/hooks/queries/dashboard'
@@ -44,7 +45,7 @@ interface Props {
 const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
   const deptId = useDeptId()
   const roadId = useRoadId()
-  const { data } = useDashboardCounting(deptId, roadId)
+  const { data, isLoading, isError } = useDashboardCounting(deptId, roadId)
 
   // Map backend's keyed object → list in Figma order. Vehicles with 0 count
   // still render in the legend (greyed % = 0) so the layout stays stable.
@@ -74,8 +75,10 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
         backdropFilter: 'blur(5px)',
       }}
     >
-      {/* Title only — period tabs (วันนี้ / เดือน / ปี) intentionally hidden until
-        * the API exposes range-scoped vehicle counts (current endpoint = today). */}
+      {/* Title only — this card is DAILY BY DESIGN (product decision
+        * 2026-08-13): it always shows today's vehicle mix and deliberately
+        * ignores the วันนี้/เดือน/ปี tab. Not waiting on any BE range param —
+        * do not re-flag as pending. */}
       <div className='flex items-center justify-between mb-1'>
         <div className='flex items-center gap-1.5 text-white fs-12 font-medium'>
           <TbCar size={30} color='#FCD116' />
@@ -83,6 +86,19 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
         </div>
       </div>
 
+      {/* Loading / error — the old version rendered a real-looking all-zero
+        * donut with "0 คัน" in the center for the whole fetch window,
+        * indistinguishable from a genuine zero-traffic day (fixed 2026-08-13). */}
+      {isLoading ? (
+        <div className='grow min-h-0 flex items-center justify-center py-10'>
+          <Skeleton active paragraph={{ rows: 5 }} />
+        </div>
+      ) : isError ? (
+        <div className='grow min-h-0 flex items-center justify-center py-10'>
+          <span className='fs-12 text-white/50'>โหลดข้อมูลไม่สำเร็จ</span>
+        </div>
+      ) : (
+      <>
       {/* Donut — reuses the shared PieChart (same as the traffic-volume detail
         * page) with its card chrome disabled so it nests cleanly inside this
         * card. `-mt-2` trims the empty header gap; the legend below is kept. */}
@@ -148,6 +164,8 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
           <span className='w-14' />
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }

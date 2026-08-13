@@ -37,6 +37,11 @@ export interface APIResponseContractor {
   created_at: string
   created_by: string | null
   user?: ContractorUser | null
+  /** Server-computed number of projects owned by this contractor (added by
+   *  BE 2026-08-13 — replaces the old client-side tally that pulled every
+   *  project with `?limit=1000`, which the new limit cap now 400s). Optional
+   *  for safety against older API builds. */
+  project_count?: number
 }
 
 export interface APIResponseContractorListEnvelope {

@@ -16,6 +16,16 @@ export interface ListParams {
   search?: string
 }
 
+/** /manage/roads accepts two extra server-side filters on top of ListParams
+ *  (probed live 2026-08-13): `province` (contains-match on the Thai name —
+ *  also matches the trailing-space variants that exist in the data) and
+ *  `department_id` (exact). Param name must be `department_id`; `dept_id` /
+ *  `departmentId` are silently ignored. */
+export interface RoadListParams extends ListParams {
+  province?: string
+  department_id?: number
+}
+
 /** Envelope meta_data — identical shape across all four list endpoints. */
 export interface APIResponseMetaData {
   count: number

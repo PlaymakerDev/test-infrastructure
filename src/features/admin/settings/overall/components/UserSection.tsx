@@ -22,6 +22,7 @@ import type { APIResponseSSOUser } from '@/types/manage/sso-search-api'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
 import type { User, UserFilters, UserFormValues } from '../types/user'
 import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
+import { fetchAllPages } from '../utils/fetchAllPages'
 import ChangePasswordModal from './user/ChangePasswordModal'
 import DeleteUserModal from './user/DeleteUserModal'
 import FormSearchUser from './user/FormSearchUser'
@@ -227,19 +228,16 @@ const UserSection: React.FC = () => {
     return parts.join(' · ')
   }, [subTab, filters])
 
-  // Export scope 'ทั้งหมด' — fetch EVERY user at export time (pagination is
-  // server-side; `?search` is broken server-side so it is NOT forwarded — see
-  // workaround block above) then run the exact client filter the table uses.
-  // Same two-step full-fetch pattern as incident-detection's EventSection:
-  // page 1 @100, then refetch at the reported total when it exceeds 100.
+  // Export scope 'ทั้งหมด' — walk EVERY user page at export time (pagination
+  // is server-side; `?search` is broken server-side so it is NOT forwarded —
+  // see workaround block above) then run the exact client filter the table
+  // uses. Pages of 100 via fetchAllPages — the backend caps `?limit=` at 100,
+  // so the old refetch-at-count fast path 400s past one page.
   const fetchAllUsers = async (): Promise<User[]> => {
     const { getGeneralUsersAPI } = await import('@/services/routes/ManageService')
-    const first = await getGeneralUsersAPI({ page: 1, limit: 100 })
-    const count = first.data?.meta_data?.count ?? 0
-    const rows =
-      count <= 100
-        ? first.data?.res_data ?? []
-        : (await getGeneralUsersAPI({ page: 1, limit: count })).data?.res_data ?? []
+    const rows = await fetchAllPages((p, limit) =>
+      getGeneralUsersAPI({ page: p, limit }).then((r) => r.data),
+    )
     return applyUserFilters(rows.map((r) => toUser(r, departmentsById)), filters, subTab)
   }
 

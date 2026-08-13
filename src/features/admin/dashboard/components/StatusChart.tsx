@@ -10,7 +10,8 @@ import { useRoadId } from '@/hooks/useRoadId'
 
 interface CardProps {
   icon: React.ReactNode
-  value: number
+  /** `null` = still loading / fetch failed → renders '—' (never a fake 0). */
+  value: number | null
   label: string
 }
 
@@ -27,11 +28,17 @@ interface Props { }
 const StatusChart: React.FC<Props> = () => {
   const deptId = useDeptId()
   const roadId = useRoadId()
-  const { data: cctv } = useDashboardCctvUptime(deptId, roadId)
+  const cctvQuery = useDashboardCctvUptime(deptId, roadId)
   // `roadId` → `&road_id=`, so จุดติดตั้ง / สายทาง count that road alone.
-  const { data: position } = useDashboardPosition(deptId, roadId)
+  const positionQuery = useDashboardPosition(deptId, roadId)
+  const cctv = cctvQuery.data
+  const position = positionQuery.data
 
   const stats = useMemo<CardProps[]>(() => {
+    // Loading / error → `null` so the card shows '—' instead of a fake "0"
+    // (the old version rendered 0/0/0 for the whole fetch window, 2026-08-13).
+    const positionReady = !positionQuery.isLoading && !positionQuery.isError
+    const cctvReady = !cctvQuery.isLoading && !cctvQuery.isError
     const locations = position?.locations ?? []
     // `/cctv/…/uptime-statistics` does NOT honour road_id (probed 2026-08-10 —
     // it keeps returning the dept's 941 cameras), so under a road scope the
@@ -39,16 +46,20 @@ const StatusChart: React.FC<Props> = () => {
     // That counts CCTV *install points*, not cameras-per-solution — the same
     // basis RatioChart's tiles use, and it matches the pins on the map.
     const cameraTotal = roadId
-      ? locations.filter((l) => l.solution?.solution_type_name === 'CCTV').length
-      : cctv?.camera.total ?? 0
-    const installPoints = locations.length
-    const roads = new Set(locations.map((l) => l.road.id)).size
+      ? positionReady
+        ? locations.filter((l) => l.solution?.solution_type_name === 'CCTV').length
+        : null
+      : cctvReady
+        ? cctv?.camera.total ?? 0
+        : null
+    const installPoints = positionReady ? locations.length : null
+    const roads = positionReady ? new Set(locations.map((l) => l.road.id)).size : null
     return [
       { icon: <TbCamera size={36} />, value: cameraTotal, label: 'กล้องทั้งหมด' },
       { icon: <TbMapPin size={36} />, value: installPoints, label: 'จุดติดตั้ง' },
       { icon: <TbRoad size={36} />, value: roads, label: 'สายทาง' },
     ]
-  }, [cctv, position, roadId])
+  }, [cctv, position, roadId, cctvQuery.isLoading, cctvQuery.isError, positionQuery.isLoading, positionQuery.isError])
 
   const renderStatCard = useCallback((card: CardProps) => {
     const { icon, value, label } = card
@@ -68,7 +79,7 @@ const StatusChart: React.FC<Props> = () => {
           {icon}
         </div>
         <div className='text-3xl font-bold whitespace-nowrap tabular-nums' style={{ color: '#FCD116' }}>
-          {value.toLocaleString()}
+          {value == null ? '—' : value.toLocaleString()}
         </div>
         <div className='fs-12' style={{ color: '#FCD116' }}>
           {label}
