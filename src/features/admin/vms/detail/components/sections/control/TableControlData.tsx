@@ -121,19 +121,11 @@ const TableControlData: React.FC<Props> = () => {
       width: 240,
     },
     {
-      title: 'IP Address',
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
-      align: 'center',
-      width: 140,
-    },
-    {
       title: 'ภาพ',
       dataIndex: 'image',
       key: 'image',
       align: 'center',
       width: 140,
-      fixed: 'right',
       render: (src: string) => (
         <Image
           src={src}
@@ -143,6 +135,17 @@ const TableControlData: React.FC<Props> = () => {
           alt='vms'
         />
       ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide); it inherits the fixed-right pin from the
+    // previous last column.
+    {
+      title: 'IP Address',
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+      align: 'center',
+      width: 140,
+      fixed: 'right',
     },
   ]
 

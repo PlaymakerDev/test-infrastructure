@@ -96,6 +96,16 @@ div[_echarts_instance_]>div,
 .echarts-tooltip {
   font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
 }
+/* Axis / legend / any in-chart text — every chart wrapper renders with
+ * `renderer: 'svg'`, so (unlike canvas) the labels are real <text> nodes and
+ * CSS CAN reach them. ECharts stamps `font: 12px sans-serif` inline on each,
+ * which made Thai axis labels (เช่น วันที่ "10 ส.ค. 2569") render in the
+ * system fallback font instead of the app font — most visible on the
+ * traffic-lighting summary-report bar charts (reported 2026-08-17), but this
+ * applied to every chart on every menu. !important beats the inline style. */
+div[_echarts_instance_] svg text {
+  font-family: var(--font-ibm-plex-sans-thai), Arial, Helvetica, sans-serif !important;
+}
 /* ─── Navbar right-cluster dropdown menus (map-focus picker, "..." menu) ──
  * Same chrome as the notification bell / find-on-page popouts: glass-dark
  * background, yellow hairline border + soft glow, rounded corners — so every

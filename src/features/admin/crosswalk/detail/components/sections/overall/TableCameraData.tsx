@@ -141,12 +141,6 @@ const TableCameraData: React.FC<Props> = ({ activeFilter = 'all' }) => {
       ),
     },
     {
-      title: 'IP Address',
-      dataIndex: 'ip',
-      key: 'ip',
-      width: 140,
-    },
-    {
       title: 'Stream Status',
       dataIndex: 'status',
       key: 'streamStatus',
@@ -158,8 +152,17 @@ const TableCameraData: React.FC<Props> = ({ activeFilter = 'all' }) => {
       dataIndex: 'status',
       key: 'deviceStatus',
       width: 140,
-      fixed: 'right',
       render: (status: ConnectionStatus) => <OnlinePill online={status === 'Connect'} />,
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide); it inherits the fixed-right pin from the
+    // previous last column.
+    {
+      title: 'IP Address',
+      dataIndex: 'ip',
+      key: 'ip',
+      width: 140,
+      fixed: 'right',
     },
   ], [])
 

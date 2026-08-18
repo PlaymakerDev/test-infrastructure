@@ -75,11 +75,12 @@ const DEVICE_EXPORT_COLUMNS: {
     { header: 'รุ่น', width: 12, widthPct: 8, value: (r) => r.model },
     { header: 'ชื่ออุปกรณ์', width: 20, widthPct: 12, align: 'left', value: (r) => r.cameraName },
     { header: 'Hostname', width: 14, widthPct: 9, value: (r) => r.hostname },
-    { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
     { header: 'Anydesk', width: 13, widthPct: 8, value: (r) => r.anydesk },
     { header: 'ZeroTier', width: 13, widthPct: 8, value: (r) => r.zerotier },
     { header: 'Username', width: 12, widthPct: 7, value: (r) => r.username },
     { header: 'Password', width: 12, widthPct: 6, value: (r) => r.password },
+    // IP last — mirrors the on-screen column order (2026-08-17, app-wide rule).
+    { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
   ]
 
 interface TitleSectionWithDataProps {
@@ -314,11 +315,13 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     { title: 'รุ่น', dataIndex: 'model', key: 'model', width: 120, align: 'center' },
     { title: 'ชื่ออุปกรณ์', dataIndex: 'cameraName', key: 'cameraName', width: 200 },
     { title: 'Hostname', dataIndex: 'hostname', key: 'hostname', width: 140, align: 'center' },
-    { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140, align: 'center' },
     { title: 'Anydesk', dataIndex: 'anydesk', key: 'anydesk', width: 130, align: 'center' },
     { title: 'ZeroTier', dataIndex: 'zerotier', key: 'zerotier', width: 130, align: 'center' },
     { title: 'Username', dataIndex: 'username', key: 'username', width: 120, align: 'center' },
     { title: 'Password', dataIndex: 'password', key: 'password', width: 120, align: 'center' },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide).
+    { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140, align: 'center' },
   ]
 
   if (loading) {

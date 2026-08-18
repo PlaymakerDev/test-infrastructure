@@ -1,9 +1,6 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { Empty, Image } from 'antd'
-import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
-import { useDeptId } from '@/hooks/useDeptId'
-import { useDetailContext } from '../../../context'
 import { type ViolationFilter } from './filter'
 import AppPagination from '@/components/pagination/AppPagination'
 import { isVehicleViolation, parseViolationTimestamp, useViolationRows } from './useViolationRows'
@@ -25,18 +22,9 @@ const GRID_CLASSES =
   'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
 
 const CCTVViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
-  const deptId = useDeptId()
-  const { id } = useDetailContext()
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
   const { pageRows, total, page, setPage, isLoading, pageStart } =
     useViolationRows(filter, pageSize)
-
-  const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
-  const ipByCameraId = useMemo(() => {
-    const m = new Map<string, string | undefined>()
-    for (const c of camerasData?.cameras ?? []) m.set(c.id, c.ip_address)
-    return m
-  }, [camerasData])
 
   const showPagination = total > 0
 
@@ -70,8 +58,9 @@ const CCTVViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
           const color = isVehicleViolation(r.crosswalk.name_th)
             ? '#FF7B00'
             : VIOLATION_COLOR
-          // No sta fallback — a km value labelled "IP Address" reads as a bug.
-          const ip = ipByCameraId.get(r.camera.id) || '-'
+          // `camera_ip` rides on the row (BE added 2026-08). No sta fallback —
+          // a km value labelled "IP Address" reads as a bug.
+          const ip = r.camera.camera_ip || '-'
           return (
             <div
               key={`${pageStart + i}-${r.camera.id}-${r.crosswalk.timestamp}`}

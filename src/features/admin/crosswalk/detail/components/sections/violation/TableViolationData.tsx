@@ -2,9 +2,6 @@
 import React, { useMemo, useState } from 'react'
 import { Image, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useCrosswalkCameras } from '@/hooks/queries/crosswalk'
-import { useDeptId } from '@/hooks/useDeptId'
-import { useDetailContext } from '../../../context'
 import type { CrosswalkViolationRow } from '@/types/crosswalk/detail-api'
 import { type ViolationFilter } from './filter'
 import AppPagination from '@/components/pagination/AppPagination'
@@ -24,21 +21,9 @@ interface Row extends CrosswalkViolationRow {
 const PAGE_SIZE = 10
 
 const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
-  const deptId = useDeptId()
-  const { id } = useDetailContext()
   const [pageSize, setPageSize] = useState(PAGE_SIZE)
   const { pageRows, total, page, setPage, isLoading, pageStart } =
     useViolationRows(filter, pageSize)
-
-  // Look up the real ip_address from the cached `/cameras` list — a single
-  // request shared with the OVERALL tab, replacing the previous per-row
-  // `getCCTVDetailAPI` N+1. Cameras missing from the list show '-'.
-  const { data: camerasData } = useCrosswalkCameras(deptId, { solution_id: id })
-  const ipByCameraId = useMemo(() => {
-    const m = new Map<string, string | undefined>()
-    for (const c of camerasData?.cameras ?? []) m.set(c.id, c.ip_address)
-    return m
-  }, [camerasData])
 
   const rows = useMemo<Row[]>(
     () => pageRows.map((r, i) => ({ ...r, seq: pageStart + i + 1 })),
@@ -51,6 +36,10 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
       dataIndex: 'seq',
       key: 'seq',
       width: 80,
+      // Indent first column 28px — same as tab 1's camera table (TableCameraData),
+      // so the two tabs' tables line up (2026-08-17 request).
+      onHeaderCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
+      onCell: () => ({ style: { paddingInlineStart: 28, paddingLeft: 28 } }),
     },
     {
       title: 'วันที่และเวลา',
@@ -90,21 +79,10 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
       render: (_, row) => row.camera.name,
     },
     {
-      title: 'IP Address',
-      key: 'ipAddress',
-      width: 140,
-      render: (_, row) => {
-        // No sta fallback: a km value under an "IP Address" header reads as
-        // a bug (the manual's screenshots caught "1+447" here, 2026-08-03).
-        return ipByCameraId.get(row.camera.id) || '-'
-      },
-    },
-    {
       title: 'ภาพเหตุการณ์',
       dataIndex: 'image_path',
       key: 'image',
       width: 140,
-      fixed: 'right',
       render: (src: string) =>
         src ? (
           <Image
@@ -117,6 +95,22 @@ const TableViolationData: React.FC<Props> = ({ filter, onPageChange }) => {
         ) : (
           <span className='text-white/40'>-</span>
         ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide). It inherits the previous last column's
+    // fixed-right pin so horizontal scroll behaviour is unchanged.
+    {
+      title: 'IP Address',
+      key: 'ipAddress',
+      width: 140,
+      fixed: 'right',
+      render: (_, row) => {
+        // `camera_ip` rides on the violation row itself (BE added 2026-08 —
+        // replaced the old cameras-list lookup, whose ids never matched the
+        // violation rows' camera uuids). No sta fallback: a km value under an
+        // "IP Address" header reads as a bug (manual screenshots, 2026-08-03).
+        return row.camera.camera_ip || '-'
+      },
     },
   ]
 

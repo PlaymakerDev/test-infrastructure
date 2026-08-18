@@ -65,15 +65,6 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       ),
     },
     {
-      title: 'IP Address',
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
-      width: 140,
-      render: (ip: string) => (
-        <span className='text-white/80 fs-12'>{ip}</span>
-      ),
-    },
-    {
       title: 'Green Time',
       dataIndex: 'greenTime',
       key: 'greenTime',
@@ -106,6 +97,17 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       width: 140,
       render: (conn: 'online' | 'offline') => (
         <StatusPill status={conn === 'online' ? 'connect' : 'disconnect'} />
+      ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide).
+    {
+      title: 'IP Address',
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+      width: 140,
+      render: (ip: string) => (
+        <span className='text-white/80 fs-12'>{ip}</span>
       ),
     },
   ]

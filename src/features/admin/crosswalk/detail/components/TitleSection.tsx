@@ -78,7 +78,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
         color: isInWarranty ? '#05F2DB' : '#979797',
       }}
       googleMap={{ coord }}
-      anydesk={anydeskId !== undefined ? { id: anydeskId } : undefined}
+      anydesk={{ id: anydeskId }}
       online={{ isOnline }}
       tabs={{
         options: OPTIONS,

@@ -27,8 +27,9 @@ const CCTV_EXPORT_COLUMNS: {
 }[] = [
     { header: 'ลำดับ', width: 7, widthPct: 8, value: (_r, i) => i + 1 },
     { header: 'ชื่อกล้อง', width: 44, widthPct: 44, align: 'left', value: (r) => r.camera_description || '-' },
-    { header: 'IP Address', width: 26, widthPct: 28, value: (r) => r.camera_ip || '-' },
     { header: 'สถานะ', width: 12, widthPct: 20, value: (r) => (r.camera_status === 'Online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    // IP last — mirrors the detail-table column order (2026-08-17, app-wide rule).
+    { header: 'IP Address', width: 26, widthPct: 28, value: (r) => r.camera_ip || '-' },
   ]
 
 const CCTVSection: React.FC<Props> = (props) => {

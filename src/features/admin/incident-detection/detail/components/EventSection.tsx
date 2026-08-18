@@ -49,8 +49,9 @@ const EVENT_EXPORT_COLUMNS: {
     value: (r) => getEventTypeLabel(r.analytic_type_info.id, r.analytic_type_info.analytic_type_name_th),
   },
   { header: 'ชื่อกล้อง', width: 42, value: (r) => r.camera.camera_name || '-' },
-  { header: 'IP Address', width: 16, value: (r) => r.camera.ip_address || '-' },
   { header: 'ภาพขณะเกิดเหตุ', width: 50, value: (r) => r.image_path || '-' },
+  // IP last — mirrors the on-screen column order (2026-08-17, app-wide rule).
+  { header: 'IP Address', width: 16, value: (r) => r.camera.ip_address || '-' },
 ]
 
 // FE enum name (eventType) → backend analytic_type id. 'ALL' → undefined (no filter).

@@ -171,6 +171,23 @@ const SummaryReportSection: React.FC = () => {
     () => AMP_BARS.filter((bar) => availablePhaseKeys.has(bar.dataKey)),
     [availablePhaseKeys],
   )
+  // Chart x-axis labels: HOURLY spans hundreds of columns (8 days × 24h), so
+  // the full "17 ส.ค. 2569 21:00" per column overflowed into "…เหมือนขาดหาย"
+  // (auto-thinned + clipped, 2026-08-17). Compact it to a 2-line
+  // "17 ส.ค. 69⏎21:00" for the axis and keep the FULL text in `tooltipLabel`
+  // (BarChart's tooltip header override). Other periods keep the table's
+  // format unchanged.
+  const chartLabelFields = useMemo(
+    () => (r: { label: string }): { label: string; tooltipLabel?: string } => {
+      if (reportPeriod !== 'HOURLY') return { label: formatReportLabel(r.label, reportPeriod) }
+      const d = dayjs(r.label, 'YYYY-MM-DD HH:mm')
+      return {
+        label: `${d.format('DD MMM BB')}\n${d.format('HH:mm')}`,
+        tooltipLabel: d.format('DD MMM BBBB HH:mm'),
+      }
+    },
+    [reportPeriod],
+  )
   // Derive chart + table data from the API rows. Each row has a `phases[]`
   // array (phase 1/2/3); we flatten to per-row {p1, p2, p3} for the charts
   // and average the phases for the table row.
@@ -180,13 +197,13 @@ const SummaryReportSection: React.FC = () => {
       const p2 = r.phases.find((p) => p.phase === '2')
       const p3 = r.phases.find((p) => p.phase === '3')
       return {
-        label: formatReportLabel(r.label, reportPeriod),
+        ...chartLabelFields(r),
         p1: p1?.voltage ?? 0,
         p2: p2?.voltage ?? 0,
         p3: p3?.voltage ?? 0,
       }
     }),
-    [rows, reportPeriod],
+    [rows, chartLabelFields],
   )
   const ampChartData: BarChartDataPoint[] = useMemo(
     () => rows.filter((r) => r.phases.length > 0).map((r) => {
@@ -194,14 +211,18 @@ const SummaryReportSection: React.FC = () => {
       const p2 = r.phases.find((p) => p.phase === '2')
       const p3 = r.phases.find((p) => p.phase === '3')
       return {
-        label: formatReportLabel(r.label, reportPeriod),
+        ...chartLabelFields(r),
         p1: p1?.amplitude ?? 0,
         p2: p2?.amplitude ?? 0,
         p3: p3?.amplitude ?? 0,
       }
     }),
-    [rows, reportPeriod],
+    [rows, chartLabelFields],
   )
+  // Hourly data is dense enough to need pan/zoom; the other periods rarely
+  // exceed a screenful. Threshold on actual column count so a 1-day hourly
+  // report (24 columns) still renders plain.
+  const chartZoom = voltageChartData.length > 40 ? { initialWindow: 48 } : false
 
   // One row per (date, phase) — a 3-phase date expands to 3 colored rows with
   // the วันที่ cell row-spanned across them (see the date column's onCell
@@ -372,6 +393,8 @@ const SummaryReportSection: React.FC = () => {
             accentColor={COLOR_VOLTAGE_CYAN}
             data={voltageChartData}
             bars={voltageBars}
+            dataZoom={chartZoom}
+            xAxisContainLabel
             footer={
               <AvgFooter
                 value={hasData ? `${averages.voltage.toFixed(2)} V` : '-'}
@@ -389,6 +412,8 @@ const SummaryReportSection: React.FC = () => {
             accentColor={COLOR_AMP_ORANGE}
             data={ampChartData}
             bars={ampBars}
+            dataZoom={chartZoom}
+            xAxisContainLabel
             footer={
               <AvgFooter
                 value={hasData ? `${averages.amp.toFixed(2)} A` : '-'}

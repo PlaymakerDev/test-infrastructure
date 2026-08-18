@@ -76,6 +76,11 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
   className = 'px-8',
 }) => {
   const showGoogleMap = !!googleMap && (!!googleMap.coord || !!googleMap.keepWhenEmpty)
+  // A real AnyDesk id always contains digits. The backend sometimes ships
+  // placeholder strings instead (e.g. "SERVICE_NOT_RUNNING" on traffic-volume
+  // solution 695, 2026-08-18) — those must render as "ไม่พบหมายเลข" (muted,
+  // unclickable), not as a clickable id.
+  const anydeskId = anydesk?.id && /\d/.test(anydesk.id) ? anydesk.id : undefined
 
   return (
     <div className={className}>
@@ -146,7 +151,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
                   // No AnyDesk id → gray "disabled" tokens (per design
                   // 2026-07-13, same across the 6 menus); real `disabled`
                   // prop is avoided so the tooltip keeps firing.
-                  token: anydesk.id
+                  token: anydeskId
                     ? { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' }
                     : { colorPrimary: '#3F3F3F', colorTextLightSolid: '#9CA3AF' },
                 }}
@@ -157,16 +162,16 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
                   shape='round'
                   icon={<TbAppWindow />}
                   className='w-full! sm:w-auto!'
-                  style={{ cursor: anydesk.id ? 'pointer' : 'not-allowed' }}
-                  title={anydesk.id ? `เปิด AnyDesk : ${anydesk.id}` : 'ไม่มีรหัส AnyDesk'}
+                  style={{ cursor: anydeskId ? 'pointer' : 'not-allowed' }}
+                  title={anydeskId ? `เปิด AnyDesk : ${anydeskId}` : 'ไม่มีรหัส AnyDesk'}
                   onClick={() => {
-                    if (!anydesk.id) return
+                    if (!anydeskId) return
                     // `anydesk:` protocol opens the installed desktop client.
                     // Use location.href to avoid a Chrome blank-tab race.
-                    window.location.href = `anydesk:${anydesk.id}`
+                    window.location.href = `anydesk:${anydeskId}`
                   }}
                 >
-                  <p className='fs-12'>Anydesk : {anydesk.id || '-'}</p>
+                  <p className='fs-12'>Anydesk : {anydeskId || 'ไม่พบหมายเลข'}</p>
                 </Button>
               </ConfigProvider>
             )}

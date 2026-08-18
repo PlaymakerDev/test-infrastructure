@@ -1,5 +1,6 @@
 import LineChart from '@/components/chart/LineChart'
 import { useSumPlanChart } from '@/features/admin/tracking/overall/hooks'
+import { isFuturePlanMonth } from '@/features/admin/tracking/overall/data/planChart'
 import { Empty, Skeleton } from 'antd'
 import dayjs from 'dayjs'
 import React, { useMemo } from 'react'
@@ -17,7 +18,9 @@ const ChartPredictAccident: React.FC<Props> = () => {
       label: item.month,
       monthYearLabel: `${item.month} ${item.year}`,
       plan: item.plan,
-      result: item.result,
+      // Backend carries the latest cumulative result into future months —
+      // null it so the result line stops at the current month (planChart.ts).
+      result: isFuturePlanMonth(item) ? null : item.result,
     }))
   }, [data])
 
@@ -47,6 +50,8 @@ const ChartPredictAccident: React.FC<Props> = () => {
         ]}
         onPeriodChange={() => { }}
         height={260}
+        // Future months carry result: null — render a gap, not a 0-plunge.
+        preserveNullValues
         tooltipShowDot
         tooltipDateKey='monthYearLabel'
         tooltipSimpleHeader

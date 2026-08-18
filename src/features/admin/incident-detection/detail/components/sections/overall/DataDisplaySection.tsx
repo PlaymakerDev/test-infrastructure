@@ -64,8 +64,8 @@ type ExportCameraRow = CameraRow & { point: string }
 
 // Shared column config for both PDF and Excel exports — SAME columns, SAME
 // order as the on-screen table (ลำดับที่ → ชื่อกล้อง → กม.ที่ → เหตุการณ์ →
-// IP Address → Stream/Device Status). `width` = Excel chars, `widthPct` =
-// PDF table percent (sums to 100).
+// Stream/Device Status → IP Address; IP last per the 2026-08-17 app-wide
+// rule). `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
 const CAMERA_EXPORT_COLUMNS: {
   header: string
   width: number
@@ -78,9 +78,9 @@ const CAMERA_EXPORT_COLUMNS: {
     { header: 'ชื่อกล้อง', width: 40, widthPct: 25, align: 'left', value: (r) => r.name || '-' },
     { header: 'กม.ที่', width: 10, widthPct: 8, value: (r) => r.km || '-' },
     { header: 'เหตุการณ์', width: 10, widthPct: 8, value: (r) => r.events },
-    { header: 'IP Address', width: 18, widthPct: 12, value: (r) => r.ip || '-' },
     { header: 'Stream Status', width: 14, widthPct: 11, value: (r) => (r.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
     { header: 'Device Status', width: 14, widthPct: 11, value: (r) => (r.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+    { header: 'IP Address', width: 18, widthPct: 12, value: (r) => r.ip || '-' },
   ]
 
 /** Adapter — /cameras/list row → CameraRow. The analytic endpoint doesn't
@@ -281,14 +281,6 @@ const DataDisplaySection: React.FC = () => {
         row.kind === 'camera' ? <EventCountTag count={row.camera.events} /> : null,
     },
     {
-      title: 'IP Address',
-      key: 'ip',
-      width: 140,
-      onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
-    },
-    {
       title: 'Stream Status',
       key: 'streamStatus',
       width: 140,
@@ -303,6 +295,16 @@ const DataDisplaySection: React.FC = () => {
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide).
+    {
+      title: 'IP Address',
+      key: 'ip',
+      width: 140,
+      onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) =>
+        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
     },
   ], [dispatch])
 

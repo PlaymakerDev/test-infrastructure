@@ -51,9 +51,10 @@ const CROSSWALK_FILTERS: FilterConfig[] = [
 
 // Shared column config for both PDF and Excel exports — SAME columns, SAME
 // order as the on-screen TableCameraData (ลำดับที่ → ชื่อกล้อง → กม.ที่ →
-// การทำงาน → IP Address → Stream/Device Status), reusing its extractKm /
-// deriveFunctions expressions so the printed cells match the screen. `width`
-// = Excel chars, `widthPct` = PDF table percent (sums to 100).
+// การทำงาน → Stream/Device Status → IP Address; IP last per the 2026-08-17
+// app-wide rule), reusing its extractKm / deriveFunctions expressions so the
+// printed cells match the screen. `width` = Excel chars, `widthPct` = PDF
+// table percent (sums to 100).
 const CAMERA_EXPORT_COLUMNS: {
   header: string
   width: number
@@ -68,9 +69,9 @@ const CAMERA_EXPORT_COLUMNS: {
     header: 'การทำงาน', width: 30, widthPct: 17, align: 'left',
     value: (r) => deriveFunctions(r).map((k) => DEVICE_BADGE[k].label).join(', '),
   },
-  { header: 'IP Address', width: 18, widthPct: 14, value: (r) => (r.ip_address ?? extractIpFromHlsUrl(r.hls_url)) || '-' },
   { header: 'Stream Status', width: 14, widthPct: 13, value: (r) => (r.is_online ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
   { header: 'Device Status', width: 14, widthPct: 13, value: (r) => (r.is_online ? 'ออนไลน์' : 'ออฟไลน์') },
+  { header: 'IP Address', width: 18, widthPct: 14, value: (r) => (r.ip_address ?? extractIpFromHlsUrl(r.hls_url)) || '-' },
 ]
 
 const OverallDataDisplaySection: React.FC<Props> = (props) => {

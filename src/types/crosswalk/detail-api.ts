@@ -142,6 +142,10 @@ export interface CrosswalkViolationRow {
     name: string
     /** Camera station / IP-ish field. Empty string when not set. */
     sta: string
+    /** Real camera IP — BE added 2026-08 (verified live 2026-08-17,
+     *  e.g. "10.2.1.4"). Optional so older payloads still parse; render
+     *  with a '-' fallback. Replaces the old cameras-list ip lookup. */
+    camera_ip?: string
   }
   /** Full URL to the captured event image. */
   image_path: string

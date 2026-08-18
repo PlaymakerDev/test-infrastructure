@@ -89,13 +89,6 @@ const TableCameraData: React.FC<Props> = () => {
       width: 100,
     },
     {
-      title: 'IP Address',
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
-      align: 'center',
-      width: 140,
-    },
-    {
       title: 'Stream Status',
       dataIndex: 'streamStatus',
       key: 'streamStatus',
@@ -113,12 +106,22 @@ const TableCameraData: React.FC<Props> = () => {
       key: 'deviceStatus',
       align: 'center',
       width: 140,
-      fixed: 'right',
       render: (s: ConnectionStatus) => (
         <span className={`inline-block py-0.5 px-3.5 rounded-full fs-12 border ${STATUS_CLASS[s]}`}>
           {s}
         </span>
       ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide); it inherits the fixed-right pin from the
+    // previous last column.
+    {
+      title: 'IP Address',
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+      align: 'center',
+      width: 140,
+      fixed: 'right',
     },
   ]
 

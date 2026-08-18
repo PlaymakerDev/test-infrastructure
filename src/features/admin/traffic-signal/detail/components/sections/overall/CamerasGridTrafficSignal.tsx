@@ -90,10 +90,11 @@ const CAMERA_EXPORT_COLUMNS: {
   { header: 'ชื่อกล้อง', width: 40, widthPct: 30, align: 'left', value: (r) => r.code || '-' },
   { header: 'Phase', width: 8, widthPct: 7, value: (r) => `P${r.phase}` },
   { header: 'การทำงาน', width: 12, widthPct: 12, value: (r) => r.detectionMode },
-  { header: 'IP Address', width: 16, widthPct: 15, value: (r) => r.ipAddress || '-' },
   { header: 'Green Time', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? `${r.greenTime}s` : '-') },
   { header: 'Volume', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? r.volume.toLocaleString() : '-') },
   { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => (r.connection === 'online' ? 'Connect' : 'Disconnect') },
+  // IP last — mirrors the on-screen table column order (2026-08-17, app-wide rule).
+  { header: 'IP Address', width: 16, widthPct: 15, value: (r) => r.ipAddress || '-' },
 ]
 
 /** Single camera tile — HLS player + code + IP + per-mode footer pills.

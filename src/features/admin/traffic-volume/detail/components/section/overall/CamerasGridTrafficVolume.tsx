@@ -70,9 +70,10 @@ const CAMERA_EXPORT_COLUMNS: {
 }[] = [
   { header: 'ลำดับที่', width: 8, widthPct: 10, value: (_r, i) => i + 1 },
   { header: 'ชื่อกล้อง', width: 40, widthPct: 45, align: 'left', value: (r) => r.code || '-' },
-  { header: 'IP Address', width: 18, widthPct: 25, value: (r) => r.ipAddress || '-' },
   // Same wording as the table's StatusPill (Connect / Disconnect).
   { header: 'สถานะ', width: 12, widthPct: 20, value: (r) => (r.connection === 'online' ? 'Connect' : 'Disconnect') },
+  // IP last — mirrors the on-screen table column order (2026-08-17, app-wide rule).
+  { header: 'IP Address', width: 18, widthPct: 25, value: (r) => r.ipAddress || '-' },
 ]
 
 const CameraTile: React.FC<{

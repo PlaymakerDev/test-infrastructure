@@ -190,10 +190,6 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
       render: (v: string) => <span style={{ color: '#FFFFFF', fontSize: "var(--fs-12)" }}>{v}</span>,
     },
     {
-      title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', align: 'center', width: 140,
-      render: (v: string) => <span style={{ color: '#FFFFFF' }}>{v}</span>,
-    },
-    {
       title: 'ภาพขณะเกิดเหตุ', dataIndex: 'imageUrl', key: 'imageUrl', align: 'center', width: 140,
       render: (url: string | undefined, record: IncidentRecord) => (
         <div
@@ -211,6 +207,13 @@ const IncidentDetailTable: React.FC<IncidentDetailTableProps> = ({ solutionId, r
           }
         </div>
       ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide). The export columns above already end on IP
+    // (their ภาพ column is skipped), so they need no reorder.
+    {
+      title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', align: 'center', width: 140,
+      render: (v: string) => <span style={{ color: '#FFFFFF' }}>{v}</span>,
     },
   ], [])
 

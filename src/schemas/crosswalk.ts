@@ -189,6 +189,7 @@ export const crosswalkViolationRowSchema = z.object({
     id: z.string(),
     name: z.string(),
     sta: z.string(),
+    camera_ip: z.string().optional(),
   }),
   image_path: z.string(),
 }) satisfies z.ZodType<CrosswalkViolationRow>

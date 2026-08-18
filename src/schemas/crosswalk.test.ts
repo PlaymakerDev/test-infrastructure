@@ -173,7 +173,8 @@ describe('apiResponseCrosswalkViolationListSchema', () => {
             name_th: 'คนข้ามฝ่าฝืน',
             timestamp: '22/06/2569 16:24',
           },
-          camera: { id: 'CAM-1', name: 'Camera 1', sta: '' },
+          // camera_ip: BE added 2026-08 (live rows carry e.g. "10.2.1.4")
+          camera: { id: 'CAM-1', name: 'Camera 1', sta: '', camera_ip: '10.2.1.4' },
           image_path: 'https://example.com/event.jpg',
         },
       ],

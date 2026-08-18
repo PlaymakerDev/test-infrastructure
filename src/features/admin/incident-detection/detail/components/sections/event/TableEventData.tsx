@@ -67,16 +67,9 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
       render: (_, r) => <span className='fs-12 text-white'>{r.camera.camera_name}</span>,
     },
     {
-      title: 'IP Address',
-      key: 'ip',
-      width: 160,
-      render: (_, r) => <span className='fs-12 text-white/70'>{r.camera.ip_address}</span>,
-    },
-    {
       title: 'ภาพขณะเกิดเหตุ',
       key: 'image',
       width: 140,
-      fixed: 'right',
       render: (_, r) => (
         <EventSnapshot
           url={r.image_path}
@@ -84,6 +77,16 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
           onClick={onSelect ? () => onSelect(r) : undefined}
         />
       ),
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide); it inherits the fixed-right pin from the
+    // previous last column.
+    {
+      title: 'IP Address',
+      key: 'ip',
+      width: 160,
+      fixed: 'right',
+      render: (_, r) => <span className='fs-12 text-white/70'>{r.camera.ip_address}</span>,
     },
   ], [onSelect])
 

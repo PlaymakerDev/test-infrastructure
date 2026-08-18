@@ -110,6 +110,12 @@ export interface PdfColumn<Row> {
   widthPct: number
   align?: 'left' | 'center' | 'right'
   value: (row: Row, index: number) => string | number
+  /** Image cell (added 2026-08-17 for crosswalk's ภาพเหตุการณ์): return a
+   *  data URL (pre-fetched via utils/export/image.ts — react-pdf can't fetch
+   *  cross-origin/WebP itself) to render the photo in the cell; return null
+   *  to fall back to the `value` text (typically '-'). Image columns are
+   *  skipped by prewrapTableArgs' Thai-wrapping pass. */
+  image?: (row: Row, index: number) => string | null
 }
 
 export interface ExportTablePdfArgs<Row> {
@@ -150,6 +156,15 @@ const styles = StyleSheet.create({
     padding: 4,
     fontSize: 9,
   },
+  /* Image cell photo — app convention: black letterbox + contain (same as
+   * every on-screen preview) so portrait/4:3 evidence shots never crop. */
+  cellImage: {
+    width: '100%',
+    height: 74,
+    backgroundColor: '#000000',
+    objectFit: 'contain',
+    borderRadius: 2,
+  },
   footer: {
     position: 'absolute',
     bottom: 18,
@@ -189,19 +204,38 @@ export function TableReportDocument<Row>({ title, filterNote, columns, rows, ori
         </View>
         {rows.map((row, ri) => (
           <View style={styles.row} key={ri} wrap={false}>
-            {columns.map((c, ci) => (
-              <Text
-                key={c.header}
-                style={{
-                  ...styles.cell,
-                  width: `${c.widthPct}%`,
-                  textAlign: c.align ?? 'center',
-                  ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
-                }}
-              >
-                {`${c.value(row, ri)} `}
-              </Text>
-            ))}
+            {columns.map((c, ci) => {
+              const borderFix = ci === 0 ? { borderLeftWidth: 1 } : {}
+              if (c.image) {
+                const src = c.image(row, ri)
+                return (
+                  <View
+                    key={c.header}
+                    style={{ ...styles.cell, width: `${c.widthPct}%`, justifyContent: 'center', ...borderFix }}
+                  >
+                    {src ? (
+                      // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img>
+                      <Image src={src} style={styles.cellImage} />
+                    ) : (
+                      <Text style={{ textAlign: c.align ?? 'center' }}>{`${c.value(row, ri)} `}</Text>
+                    )}
+                  </View>
+                )
+              }
+              return (
+                <Text
+                  key={c.header}
+                  style={{
+                    ...styles.cell,
+                    width: `${c.widthPct}%`,
+                    textAlign: c.align ?? 'center',
+                    ...borderFix,
+                  }}
+                >
+                  {`${c.value(row, ri)} `}
+                </Text>
+              )
+            })}
           </View>
         ))}
 
@@ -234,6 +268,9 @@ export async function prewrapTableArgs<Row>(args: ExportTablePdfArgs<Row>): Prom
 
   const columns = args.columns.map((c) => {
     const max = colMax(c.widthPct)
+    // Image cells hold a data URL, not prose — wrap only the header. The
+    // text fallback ('-') is a single glyph and never needs breaking.
+    if (c.image) return { ...c, header: wrapPdfText(fk, c.header, max, CELL_FONT_SIZE) }
     const wrappedRows = args.rows.map((row, ri) => wrapPdfText(fk, String(c.value(row, ri)), max, CELL_FONT_SIZE))
     return {
       ...c,

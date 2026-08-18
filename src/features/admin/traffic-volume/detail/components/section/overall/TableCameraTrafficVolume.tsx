@@ -48,20 +48,22 @@ const TableCameraTrafficVolume: React.FC<Props> = ({
         ),
       },
       {
-        title: 'IP Address',
-        key: 'ip',
-        width: 200,
-        render: (_: unknown, row: CameraRow) => (
-          <span className='text-white/80 fs-12'>{row.ipAddress || '-'}</span>
-        ),
-      },
-      {
         title: 'สถานะ',
         dataIndex: 'connection',
         key: 'connection',
         width: 140,
         render: (conn: 'online' | 'offline') => (
           <StatusPill status={conn === 'online' ? 'connect' : 'disconnect'} />
+        ),
+      },
+      // IP Address is the LAST column on every detail-page table (2026-08-17
+      // request, applied app-wide).
+      {
+        title: 'IP Address',
+        key: 'ip',
+        width: 200,
+        render: (_: unknown, row: CameraRow) => (
+          <span className='text-white/80 fs-12'>{row.ipAddress || '-'}</span>
         ),
       },
     ],

@@ -58,8 +58,10 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
 
   // AnyDesk lives on the shared `/manage/solution/details/{id}` endpoint.
   const { data: solDetail } = useTrafficVolumeSolutionDetail(id)
-  // Preserve the empty-string case — title shows a muted "no number set"
-  // button so users know AnyDesk is a configurable field for this solution.
+  // Always pass the pill (even when null) — DetailTitleSection renders the
+  // muted "ไม่พบหมายเลข" state for missing/garbage ids (same as
+  // bridge-lighting / incident-detection) instead of the button silently
+  // disappearing (2026-08-18).
   const anydeskId: string | undefined =
     solDetail?.anydesk == null ? undefined : String(solDetail.anydesk)
 
@@ -90,7 +92,7 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
         color: isInWarranty ? '#05F2DB' : '#979797',
       }}
       googleMap={{ coord }}
-      anydesk={anydeskId !== undefined ? { id: anydeskId } : undefined}
+      anydesk={{ id: anydeskId }}
       online={{ isOnline }}
       tabs={{
         options: OPTIONS,

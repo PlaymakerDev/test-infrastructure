@@ -111,6 +111,16 @@ export interface BarChartProps {
   tooltipShowPercent?: boolean
   /** Optional unit suffix shown after each value in the tooltip (e.g. "คัน"). */
   tooltipUnit?: string
+  /** X-axis zoom/pan (mouse wheel + bottom slider) for dense category data —
+   *  e.g. an hourly report spanning many days (traffic-lighting summary,
+   *  2026-08-17). The initial view shows the LAST `initialWindow` columns
+   *  (default 48) with the slider available to pan back. Off by default so
+   *  existing charts are untouched. */
+  dataZoom?: boolean | { initialWindow?: number }
+  /** ECharts `grid.containLabel` — reserves space so long first/last axis
+   *  labels aren't clipped at the card edge ("10 ส.ค." losing its "1").
+   *  Opt-in to avoid shifting existing charts' plot area. */
+  xAxisContainLabel?: boolean
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -149,6 +159,8 @@ const BarChart: React.FC<BarChartProps> = ({
   stacked = false,
   tooltipShowPercent = false,
   tooltipUnit,
+  dataZoom = false,
+  xAxisContainLabel = false,
 }) => {
   const [internalActivePeriod, setInternalActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
   const activePeriod = controlledActivePeriod ?? internalActivePeriod
@@ -165,17 +177,51 @@ const BarChart: React.FC<BarChartProps> = ({
 
     const truncate = typeof xAxisLabelMaxWidth === 'number'
 
+    const zoomEnabled = dataZoom === true || typeof dataZoom === 'object'
+    const zoomWindow = (typeof dataZoom === 'object' ? dataZoom.initialWindow : undefined) ?? 48
+    // Initial view = the LAST `zoomWindow` columns (most recent data first);
+    // 0 when everything already fits.
+    const zoomStart = data.length > zoomWindow ? (1 - zoomWindow / data.length) * 100 : 0
+
+    // Rotated labels need more vertical room than the default 44 — near
+    // vertical (≥60°) needs the full truncated label length. When
+    // `containLabel` is on, ECharts reserves the label space ITSELF — adding
+    // the manual lane on top double-reserved it and left a dead band between
+    // the labels and the zoom slider (bars lost ~40px of height,
+    // reported 2026-08-17). The zoom slider still needs its own lane in both
+    // modes (it renders outside the grid, pinned to the card bottom).
+    const labelLane = xAxisLabelRotate >= 60 ? 100 : xAxisLabelRotate ? 80 : 44
+
     return {
       backgroundColor: 'transparent',
       grid: {
         top: 16,
         right: 8,
-        // Rotated labels need more vertical room than the default 44 — near
-        // vertical (≥60°) needs the full truncated label length.
-        bottom: xAxisLabelRotate >= 60 ? 100 : xAxisLabelRotate ? 80 : 44,
+        bottom: (xAxisContainLabel ? 6 : labelLane) + (zoomEnabled ? 30 : 0),
         left: 40,
-        containLabel: false,
+        containLabel: xAxisContainLabel,
       },
+      ...(zoomEnabled
+        ? {
+            dataZoom: [
+              { type: 'inside', start: zoomStart, end: 100 },
+              {
+                type: 'slider',
+                start: zoomStart,
+                end: 100,
+                bottom: 6,
+                height: 18,
+                borderColor: '#2e3a4e',
+                backgroundColor: '#00000040',
+                fillerColor: 'rgba(252,209,22,0.15)',
+                handleStyle: { color: '#FCD116' },
+                moveHandleStyle: { color: '#FCD116' },
+                textStyle: { color: '#FFFFFF80', fontSize: 10 },
+                brushSelect: false,
+              },
+            ],
+          }
+        : {}),
       xAxis: {
         type: 'category',
         data: data.map((d) => d.label),
@@ -279,7 +325,7 @@ const BarChart: React.FC<BarChartProps> = ({
         barGap: '20%',
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelFontSize, xAxisLabelLineHeight, xAxisLabelColor, xAxisLabelFontFamily, xAxisLabelWidth, xAxisLabelMaxWidth])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelFontSize, xAxisLabelLineHeight, xAxisLabelColor, xAxisLabelFontFamily, xAxisLabelWidth, xAxisLabelMaxWidth, dataZoom, xAxisContainLabel])
 
   return (
     <div

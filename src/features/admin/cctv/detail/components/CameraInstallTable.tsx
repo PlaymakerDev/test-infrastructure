@@ -72,8 +72,9 @@ type CameraExportRow = { camera: CameraRow; group?: InstallGroup }
 
 // Shared column config for both PDF and Excel exports — SAME columns, SAME
 // order as the on-screen table (ลำดับที่ → ชื่อกล้อง → กม.ที่ → การทำงาน →
-// IP → Stream/Device Status), plus จุดติดตั้ง/การค้ำประกัน from the divider
-// rows. `width` = Excel chars, `widthPct` = PDF table percent (sums to 100).
+// Stream/Device Status → IP; IP last per the 2026-08-17 app-wide rule), plus
+// จุดติดตั้ง/การค้ำประกัน from the divider rows. `width` = Excel chars,
+// `widthPct` = PDF table percent (sums to 100).
 const CAMERA_EXPORT_COLUMNS: {
   header: string
   width: number
@@ -87,9 +88,9 @@ const CAMERA_EXPORT_COLUMNS: {
     { header: 'ชื่อกล้อง', width: 34, widthPct: 21, align: 'left', value: (r) => r.camera.name || '-' },
     { header: 'กม.ที่', width: 10, widthPct: 7, value: (r) => r.camera.km || '-' },
     { header: 'การทำงาน', width: 24, widthPct: 12, value: (r) => r.camera.functions.map((fn) => DEVICE_BADGE[fn as DeviceBadgeKey]?.label ?? fn).join(', ') || '-' },
-    { header: 'IP Address', width: 16, widthPct: 10, value: (r) => r.camera.ip || '-' },
     { header: 'Stream Status', width: 13, widthPct: 8, value: (r) => (r.camera.streamStatus === 'connect' ? 'Connect' : 'Disconnect') },
     { header: 'Device Status', width: 13, widthPct: 8, value: (r) => (r.camera.deviceStatus === 'connect' ? 'Connect' : 'Disconnect') },
+    { header: 'IP Address', width: 16, widthPct: 10, value: (r) => r.camera.ip || '-' },
   ]
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -221,14 +222,6 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
           : null,
     },
     {
-      title: 'IP Address',
-      key: 'ip',
-      width: 140,
-      onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
-      render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
-    },
-    {
       title: 'Stream Status',
       key: 'streamStatus',
       width: 140,
@@ -243,6 +236,16 @@ const CameraInstallTable: React.FC<Props> = ({ groups, loading }) => {
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
         row.kind === 'camera' ? <StatusPill status={row.camera.deviceStatus} /> : null,
+    },
+    // IP Address is the LAST column on every detail-page table (2026-08-17
+    // request, applied app-wide).
+    {
+      title: 'IP Address',
+      key: 'ip',
+      width: 140,
+      onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
+      render: (_: unknown, row: Row) =>
+        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
     },
   ], [dispatch])
 

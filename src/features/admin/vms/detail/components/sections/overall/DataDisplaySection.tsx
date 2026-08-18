@@ -37,8 +37,9 @@ const STATS: FilterStats = { all: 4, online: 4, offline: 0 }
 
 // Shared column config for both PDF and Excel exports — SAME columns, SAME
 // order as the on-screen table (ลำดับที่ → ชื่อกล้อง/ป้าย → กม.ที่ →
-// IP Address → Stream Status → Device Status). `width` = Excel chars,
-// `widthPct` = PDF table percent (sums to 100).
+// Stream Status → Device Status → IP Address; IP last per the 2026-08-17
+// app-wide rule). `width` = Excel chars, `widthPct` = PDF table percent
+// (sums to 100).
 const CAMERA_EXPORT_COLUMNS: {
   header: string
   width: number
@@ -49,9 +50,9 @@ const CAMERA_EXPORT_COLUMNS: {
   { header: 'ลำดับที่', width: 8, widthPct: 7, value: (r) => r.no },
   { header: 'ชื่อกล้อง/ป้าย', width: 44, widthPct: 41, align: 'left', value: (r) => r.name || '-' },
   { header: 'กม.ที่', width: 10, widthPct: 10, value: (r) => r.km || '-' },
-  { header: 'IP Address', width: 16, widthPct: 16, value: (r) => r.ipAddress || '-' },
   { header: 'Stream Status', width: 14, widthPct: 13, value: (r) => r.streamStatus },
   { header: 'Device Status', width: 14, widthPct: 13, value: (r) => r.deviceStatus },
+  { header: 'IP Address', width: 16, widthPct: 16, value: (r) => r.ipAddress || '-' },
 ]
 
 const DataDisplaySection: React.FC<Props> = () => {
