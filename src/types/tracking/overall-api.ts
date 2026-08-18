@@ -36,6 +36,7 @@ export interface CCTVList {
 // DAILY SUM
 export interface APIRequestTrackingDailySum {
   date?: string
+  department_id?: string | number
 }
 
 export interface APIResponseTrackingDailySum {
@@ -88,6 +89,7 @@ export interface TotalStation {
 
 // WEIGHT INSPECTION
 export interface APIRequestTrackingWeightInspection {
+  department_id?: string | number
   date?: string
   number_day?: number
   station_type_id?: number
@@ -111,6 +113,7 @@ export interface WeightInspectionData {
 // SUM WEIGHT YEAR V2
 export interface APIRequestTrackingSumWeightYearV2 {
   previous_year?: number
+  department_id?: string | number
 }
 
 export interface APIResponseTrackingSumWeightYearV2 {
@@ -154,7 +157,7 @@ export interface SumWeightSummary {
 // VIEW SUM PLAN CHART
 export interface APIRequestTrackingViewSumPlanChart {
   year?: number
-  department_id?: string
+  department_id?: string | number
 }
 
 export interface APIResponseTrackingViewSumPlanChart {
@@ -179,6 +182,7 @@ export interface ViewSumPlanChartItem {
 export interface APIRequestTrackingPosition {
   ProvinceID?: string
   StationType?: '1' | '2' | '3'
+  department_id?: string | number
 }
 
 export interface APIResponseTrackingPosition {
@@ -262,6 +266,7 @@ export interface SumStation {
 export interface APIRequestTrackingSumWim {
   date?: string
   owner?: string
+  department_id?: string | number
 }
 
 export interface APIResponseTrackingSumWim {
@@ -315,7 +320,7 @@ export interface APIRequestTrackingCollaboration {
   order?: 'ASC' | 'DESC'
   start_date?: string
   end_date?: string
-  department_id?: number
+  department_id?: string | number
   way_id?: number
   collaboration?: string
 }
@@ -345,6 +350,7 @@ export interface CollaborationData {
 
 // MOBILE MASTER
 export interface APIRequestTrackingMobileMaster {
+  department_id?: string | number
   start_date?: string
   end_date?: string
   branch?: string

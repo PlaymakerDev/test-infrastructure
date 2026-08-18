@@ -818,6 +818,7 @@ export interface APIRequestStationDailyCount {
   start_date?: string
   end_date?: string
   station_id?: string | number
+  department_id?: string | number
 }
 
 export interface APIResponseStationDailyCount {

@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
-import { setAuthInfoState } from '@/stores/reducers/auth/authSlice'
+import { setAuthInfoFailed, setAuthInfoState } from '@/stores/reducers/auth/authSlice'
 import { getAuthInfoAPI } from '@/services/routes/AdminService'
 import { syncAuthTokenToStore } from '@/services/BaseService'
 
@@ -30,7 +30,10 @@ const AuthHydrator = () => {
         const info = await getAuthInfoAPI()
         dispatch(setAuthInfoState(info.data))
       } catch {
-        // profile info fetch failed — non-fatal, authSlice.info stays at initialState
+        // profile info fetch failed — non-fatal, authSlice.info stays at
+        // initialState. Still mark resolution done so role-gated UI (useUserRole)
+        // renders its fallback instead of spinning forever.
+        dispatch(setAuthInfoFailed())
       }
     })()
   }, [dispatch, hasToken])

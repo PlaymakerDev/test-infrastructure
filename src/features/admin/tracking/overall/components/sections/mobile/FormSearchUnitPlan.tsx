@@ -60,7 +60,10 @@ const FormSearchUnitPlan: React.FC<Props> = (props) => {
   const onSubmit = useCallback((data: FormValues) => {
     setSearchSumPlan({
       year: Number(data.year?.format('BBBB')),
-      department_id: String(data.department_id)
+      // Leave it unset when the picker is cleared: `String(null)` used to send
+      // the literal string "null" upstream, and a set key also suppresses the
+      // page's `?dept_id=` scope (see useTrackingDeptScope).
+      department_id: data.department_id ?? undefined
     })
   }, [setSearchSumPlan])
 

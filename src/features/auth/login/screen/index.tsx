@@ -17,7 +17,7 @@ import { resolveHomeDeptId, deptQuery } from '@/hooks/queries/manage'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setLoading } from '@/stores/reducers/layout/layoutSlice'
-import { setAuthInfoState } from '@/stores/reducers/auth/authSlice'
+import { setAuthInfoFailed, setAuthInfoState } from '@/stores/reducers/auth/authSlice'
 import { syncAuthTokenToStore } from '@/services/BaseService'
 
 interface Props {
@@ -102,7 +102,9 @@ const AuthScreen: React.FC<Props> = (props) => {
             const info = await getAuthInfoAPI()
             dispatch(setAuthInfoState(info.data))
           } catch {
-            // profile info fetch failed — keep going, info stays at initialState
+            // profile info fetch failed — keep going, info stays at initialState.
+            // Mark resolution done so role-gated UI falls back instead of waiting.
+            dispatch(setAuthInfoFailed())
           }
           if (remember && value.username) {
             localStorage.setItem(REMEMBER_KEY, value.username)

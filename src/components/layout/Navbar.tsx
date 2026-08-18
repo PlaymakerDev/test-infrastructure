@@ -49,6 +49,7 @@ import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import { resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/authSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
+import { useUserRole } from "@/hooks/useUserRole";
 import IconTracking from "@/components/icon/IconTracking";
 import IconLPR from "@/components/icon/IconLPR";
 import IconAIChat from "@/components/icon/IconAIChat";
@@ -215,6 +216,14 @@ export default function Navbar() {
   // On the listed overall pages the picker becomes a plain click-to-toggle
   // (off ↔ both) — no dropdown, per 2026-07-24 request.
   const directFocusToggle = focusAvailable && DIRECT_FOCUS_TOGGLE_ROUTES.has(pathname)
+  // ระบบและการตั้งค่า is dropped for a general `user`: every tab on that page
+  // is admin-only (`/manage/roads` write, `/manage/contractor`,
+  // `/manage/general_user`) and `/manage/project` doesn't admit role `user`
+  // either — see `features/admin/settings/overall/data/tabs.ts`. Their menu is
+  // just ออกจากระบบ. `isUser` only turns true once the role has resolved, so an
+  // admin's entry never blinks out from under them.
+  const { isUser } = useUserRole()
+  const canOpenSettings = !isUser
   // MODAL
   const [modal, contextHolder] = Modal.useModal()
   // QUERY CLIENT
@@ -366,7 +375,7 @@ export default function Navbar() {
       // No behavior yet — mirrors the desktop bell placeholder.
       onClick: () => setMobileMoreOpenAt(null),
     },
-    {
+    ...(canOpenSettings ? [{
       key: 'settings',
       label: 'ระบบและการตั้งค่า',
       icon: <TbSettings size={22} />,
@@ -375,7 +384,7 @@ export default function Navbar() {
         setMobileMoreOpenAt(null)
         router.push('/admin/settings')
       },
-    },
+    }] : []),
     {
       key: 'logout',
       label: 'ออกจากระบบ',
@@ -389,12 +398,12 @@ export default function Navbar() {
   ]
 
   const extraItems: MenuProps['items'] = [
-    {
+    ...(canOpenSettings ? [{
       key: '1',
       label: 'ระบบและการตั้งค่า',
       icon: <TbSettings size={24} />,
       onClick: () => router.push("/admin/settings"),
-    },
+    }] : []),
     {
       key: '2',
       label: 'ออกจากระบบ',

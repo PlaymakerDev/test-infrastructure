@@ -123,7 +123,11 @@ export interface APIRequestCreateSolution {
   ip_address?: string
   anydesk_id?: string
   remarks?: string
-  /** REQUIRED when solution_type_id === WIM (9). */
+  /** @deprecated Do NOT send for WIM (9) anymore. The backend registers the
+   *  station on WTS (`POST {WIM_HOST}/api/v1/masters/wim/create`) during the
+   *  create and persists the `stationid` + `crossingIndexCode` it returns, so a
+   *  client-supplied value is ignored. It is only read as a fallback on
+   *  deployments where WIM_HOST is unset. */
   station_id?: number
   /** REQUIRED (with `lighting_type`) when solution_type_id === Lighting (6). */
   lighting?: APIRequestLightingConfig
@@ -243,8 +247,9 @@ export interface APIRequestSolutionVmsAddCamera {
   camera_id: string[]
 }
 
-/** Link an already-created WIM Solution to a WIM station. Prefer sending
- *  station_id in the initial /solution create instead. */
+/** Link an already-created WIM Solution to an EXISTING WIM station. Legacy /
+ *  manual path only — `POST /solution` (type 9) now creates the station on WTS
+ *  itself, so the UI does not call this. */
 export interface APIRequestSolutionWimStation {
   solution_id: number
   station_id: number

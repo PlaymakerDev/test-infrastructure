@@ -1,6 +1,12 @@
 export interface AuthState {
   auth_token: AuthToken;
   info: AuthInfo;
+  /** True once the `GET /manage/info` fetch has SETTLED — success or failure.
+   *  `info` alone can't tell the two apart (a failed fetch leaves it at
+   *  initialState, which is indistinguishable from "still loading"), and
+   *  role-gated UI must not render its default while the role is unknown.
+   *  See `useUserRole` + AuthHydrator. */
+  info_loaded: boolean;
 }
 
 export interface AuthToken {

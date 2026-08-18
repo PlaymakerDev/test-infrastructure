@@ -20,8 +20,9 @@ interface FormShape {
   zt_ip_address?: string
   anydesk_id?: string
   remarks?: string
-  /** Required when solution_type_id === 9 (WIM). */
-  station_id?: number
+  // WIM (solution_type_id === 9) collects nothing extra: the backend registers
+  // the station on WTS at create time and stores the station_id +
+  // crossing_master_index it returns.
   // Lighting (solution_type_id === 6) — fans out into the tbl_lighting_iot
   // (IoT4G-67) or lora status row on the backend side.
   lighting_type?: 1 | 2
@@ -101,7 +102,7 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
   }, [open, form])
 
   const selectedTypeId = Form.useWatch('solution_type_id', form)
-  const isWIM = selectedTypeId === SOLUTION_TYPE.WIM
+  // WIM (type 9) has no extra field: the backend registers the station on WTS.
   const isLighting = selectedTypeId === SOLUTION_TYPE.Lighting
   const isLightingIoT = isLighting && Form.useWatch('lighting_type', form) === 2
   const isBridgeLighting = selectedTypeId === SOLUTION_TYPE.BridgeLighting
@@ -138,7 +139,6 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
         zt_ip_address: v.zt_ip_address?.trim() ?? '',
         anydesk_id: v.anydesk_id?.trim() ?? '',
         remarks: v.remarks?.trim() ?? '',
-        station_id: v.solution_type_id === SOLUTION_TYPE.WIM ? Number(v.station_id) : undefined,
         lighting,
         bridge_lighting,
       })
@@ -341,23 +341,6 @@ const AddTaskTypeModal: React.FC<Props> = ({ open, onClose }) => {
               <Input placeholder='กรุณาระบุ ZT IP Address...' />
             </Form.Item>
           </div>
-          {isWIM && (
-            <Form.Item
-              label={<RequiredLabel>Station ID (WIM)</RequiredLabel>}
-              name='station_id'
-              rules={[
-                { required: true, message: 'กรุณาระบุ Station ID' },
-                {
-                  validator: async (_, v) =>
-                    Number.isInteger(Number(v)) && Number(v) > 0
-                      ? Promise.resolve()
-                      : Promise.reject(new Error('Station ID ต้องเป็นเลขจำนวนเต็ม')),
-                },
-              ]}
-            >
-              <Input placeholder='กรุณาระบุ Station ID...' inputMode='numeric' />
-            </Form.Item>
-          )}
           {isBridgeLighting && (
             <Form.Item
               label={<RequiredLabel>WID (Shelly device id)</RequiredLabel>}

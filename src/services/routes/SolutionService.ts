@@ -202,8 +202,9 @@ export const appendVmsCamerasAPI = (body: APIRequestSolutionVmsAddCamera) =>
     data: body,
   })
 
-/** Link a WIM Solution to a WIM station. Prefer sending station_id in the
- *  initial `POST /solution` (with type=9) instead of a separate call. */
+/** Link a WIM Solution to an EXISTING WIM station. Legacy / manual path:
+ *  `POST /solution` (type=9) now registers the station on WTS and stores the
+ *  station_id + crossing index it returns, so no UI flow needs this. */
 export const linkWimStationAPI = (body: APIRequestSolutionWimStation) =>
   ApiService.fetchData<void, APIRequestSolutionWimStation>({
     url: '/manage/solution/wim/station',
