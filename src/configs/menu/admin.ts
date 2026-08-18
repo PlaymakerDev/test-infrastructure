@@ -79,10 +79,12 @@ const admin: AdminMenuItem[] = [
   },
   {
     key: '7',
-    title: 'Traffic Lighting',
-    label: 'Traffic Lighting',
+    title: 'Road Lighting',
+    label: 'Road Lighting',
+    // label_key / path stay `traffic_lighting` — the rename is display-only
+    // (RBAC allow-lists, routes and bookmarks all key off these).
     label_key: "traffic_lighting",
-    icon: "TbBolt",
+    icon: "FaRegLightbulb",
     default_color_icon: '',
     path: "/admin/traffic-lighting",
     path_active: "/admin/traffic-lighting",

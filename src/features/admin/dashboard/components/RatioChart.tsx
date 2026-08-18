@@ -5,9 +5,9 @@ import {
   TbVideo,
   TbTrafficLights,
   TbDeviceDesktop,
-  TbBolt,
   TbWalk,
 } from 'react-icons/tb'
+import { FaRegLightbulb } from 'react-icons/fa6'
 import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
 import IconLPR from '@/components/icon/IconLPR'
@@ -49,7 +49,7 @@ const TILES: TileConfig[] = [
   { id: 'cctv', label: 'CCTV', color: SYSTEM_BRIGHT.CCTV, Icon: TbVideo, apiTypeName: 'CCTV', unit: 'จุด', route: '/admin/cctv' },
   { id: 'traffic', label: 'Traffic Signal', color: SYSTEM_BRIGHT.Traffic, Icon: TbTrafficLights, apiTypeName: 'Traffic', unit: 'จุด', route: '/admin/traffic-signal' },
   { id: 'vms', label: 'VMS', color: SYSTEM_BRIGHT.VMS, Icon: TbDeviceDesktop, apiTypeName: 'VMS', unit: 'จุด', route: '/admin/vms' },
-  { id: 'lighting', label: 'Traffic Lighting', color: SYSTEM_BRIGHT.Lighting, Icon: TbBolt, apiTypeName: 'Lighting', unit: 'จุด', route: '/admin/traffic-lighting' },
+  { id: 'lighting', label: 'Road Lighting', color: SYSTEM_BRIGHT.Lighting, Icon: FaRegLightbulb, apiTypeName: 'Lighting', unit: 'จุด', route: '/admin/traffic-lighting' },
   { id: 'crosswalk', label: 'Crosswalk', color: SYSTEM_BRIGHT.CrossWalk, Icon: TbWalk, apiTypeName: 'Crosswalk', unit: 'จุด', route: '/admin/crosswalk' },
   // LPR replaced B.Light in this slot (2026-07-21 request). LPR is NOT a
   // solution type in /position — its count comes from GET /lpr/points

@@ -12,6 +12,7 @@ import type { IncidentRow } from '@/features/admin/incident-detection/overall/da
 import { dedupeIncidentSolutions } from '@/features/admin/incident-detection/overall/data/incidentData'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   roadId?: string | null
@@ -114,10 +115,10 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return allRows
-    return allRows.filter((r) => {
-      const hay = `${r.roadCode} ${r.projectName} ${r.installPoint} ${r.contractNo} ${r.bureau}`.toLowerCase()
-      return hay.includes(term)
-    })
+    return allRows.filter((r) => matchesSearchTerm(term, {
+      codes: [r.roadCode, r.installPoint],
+      text: [r.bureau, r.projectName, r.contractNo],
+    }))
   }, [allRows, search])
 
   // Chip counts are SOLUTION-level so they match what each filter shows (a chip

@@ -11,7 +11,7 @@ interface Props { }
 const TitleSection: React.FC<Props> = () => {
   return (
     <section>
-      <h1 className='text-(--yellow)'>Traffic Lighting</h1>
+      <h1 className='text-(--yellow)'>Road Lighting</h1>
       <p className='text-(--yellow)'>ระบบตรวจสอบการจราจรบนสายทางและแจ้งเตือนไฟฟ้าส่องสว่าง</p>
     </section>
   )

@@ -25,6 +25,7 @@ import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import { useScopeAll } from '@/hooks/useScopeAll'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   deptId?: string | null
@@ -143,10 +144,10 @@ const OverallSection: React.FC<Props> = ({ deptId, roadId }) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return allItems
-    return allItems.filter((item) => {
-      const haystack = `${item.bureau} ${item.road.code_name} ${item.solution.solution_name} ${item.project.contract_no}`.toLowerCase()
-      return haystack.includes(term)
-    })
+    return allItems.filter((item) => matchesSearchTerm(term, {
+      codes: [item.road.code_name, item.solution.solution_name],
+      text: [item.bureau, item.project.project_name, item.project.contract_no],
+    }))
   }, [allItems, search])
 
   // Filter badge counts mirror the right-rail stat cards (API camera counts),

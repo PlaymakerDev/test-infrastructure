@@ -11,6 +11,7 @@ import {
 import type { LightingOverviewTotals } from '@/types/lighting'
 import { mapCentralListToProjects } from '../data/trafficLightingProjects'
 import { useAppSelector } from '@/stores/hooks'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -268,10 +269,10 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
   const filteredProjects = useMemo(() => {
     const term = searchQuery.trim().toLowerCase()
     if (!term) return projects
-    return projects.filter((p) => {
-      const haystack = `${p.roadCode} ${p.projectName} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-      return haystack.includes(term)
-    })
+    return projects.filter((p) => matchesSearchTerm(term, {
+      codes: [p.roadCode, p.installPoint],
+      text: [p.bureau, p.projectName, p.contractNo],
+    }))
   }, [projects, searchQuery])
 
   const value: OverallContextProps = {

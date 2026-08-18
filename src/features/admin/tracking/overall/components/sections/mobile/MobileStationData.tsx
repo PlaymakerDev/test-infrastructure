@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import { EMPTY_FALLBACK } from '@/constants'
+import { TRACKING_STATION_COLORS } from '@/features/admin/tracking/overall/data/trackingStations'
 
 interface Props {
 
@@ -97,7 +98,10 @@ const MobileStationData: React.FC<Props> = (props) => {
               </Swiper>
             </figure>
             <section className='shrink-0 pt-2'>
-              <p className='fs-12 text-pink-500'>หน่วยงาน : {item.department_name || '-'}</p>
+              {/* Same ม่วงพิ้งค์ as this tab's map pin — TRACKING_STATION_COLORS.mobile
+                  is the single source of truth and matches Moving.svg's own fill
+                  (the old `text-pink-500` #EC4899 read as a different hue). */}
+              <p className='fs-12' style={{ color: TRACKING_STATION_COLORS.mobile }}>หน่วยงาน : {item.department_name || '-'}</p>
               <p className='fs-12 text-gray-400'>ร่วมบูรณาการ : {item.collaboration || '-'}</p>
               <p className='fs-12 text-(--yellow)'>วันที่จัดตั้ง : {dayjs(item.create_date, 'DD/MM/BBBB').format('DD MMM BBBB')}</p>
             </section>

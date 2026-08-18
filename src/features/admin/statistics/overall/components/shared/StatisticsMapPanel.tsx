@@ -15,6 +15,7 @@ import { SearchCard } from '@/components/search-card'
 import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import DrawerMapSearchCard from './DrawerMapSearchCard'
 import { type RouteItem, type RouteSubDepartment, type MapMarkerItem, routeKey, detailLabel, detailKey } from '../../../data/routeItems'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 // basePath ('/atlas' in prod, '' in dev) — raw <img src> is NOT prefixed
 // automatically like next/link, so prepend it manually (same as the sidebar
@@ -188,11 +189,14 @@ const StatisticsMapPanel: React.FC<StatisticsMapPanelProps> = ({
 
   const filteredRoutes = React.useMemo(() => {
     if (!searchText) return routeItems
-    const keyword = searchText.toLowerCase()
-    return routeItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(keyword) ||
-        item.sub3.some((sub) => sub.label.toLowerCase().includes(keyword) || sub.detail.some((d) => detailLabel(d).toLowerCase().includes(keyword)))
+    // Solution labels (which start with the road code) are the `codes` tier so a
+    // road-code term like "ลพ" can't match the ขทช.ลพบุรี bureau name — see
+    // @/utils/searchMatch.
+    return routeItems.filter((item) =>
+      matchesSearchTerm(searchText, {
+        codes: item.sub3.flatMap((sub) => sub.detail.map(detailLabel)),
+        text: [item.name, ...item.sub3.map((sub) => sub.label)],
+      })
     )
   }, [searchText, routeItems])
 

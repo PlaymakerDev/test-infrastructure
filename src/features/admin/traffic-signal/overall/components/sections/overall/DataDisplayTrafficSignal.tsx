@@ -21,6 +21,7 @@ import { dedupeTrafficSignalSolutions } from '@/features/admin/traffic-signal/ov
 import type { TrafficOverviewCentralSolution } from '@/types/traffic-signal/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   roadId?: string | null
@@ -157,10 +158,10 @@ const DataDisplayTrafficSignal: React.FC<Props> = (props) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return projects
-    return projects.filter((p) => {
-      const haystack = `${p.roadCode} ${p.projectName} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-      return haystack.includes(term)
-    })
+    return projects.filter((p) => matchesSearchTerm(term, {
+      codes: [p.roadCode, p.installPoint],
+      text: [p.bureau, p.projectName, p.contractNo],
+    }))
   }, [projects, search])
 
   // With no search, stats prefer backend totals (whole-dept count, immune to

@@ -87,7 +87,7 @@ const LightingPopup: React.FC<{
         }`}
     >
       <p className={`fs-12 font-bold tracking-wide ${isOnline ? 'text-cyan-400' : 'text-red-400'}`}>
-        Traffic Lighting · {String(p.code_name)}
+        Road Lighting · {String(p.code_name)}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}

@@ -12,6 +12,7 @@ import { useScopeAll } from '@/hooks/useScopeAll'
 import type { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 
 interface Props {
@@ -197,9 +198,10 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     const term = vms_list.search.search?.trim().toLowerCase()
     if (!term) return dedupedData
     return pruneVMSTree(dedupedData, (sol, bureau) =>
-      `${bureau} ${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no}`
-        .toLowerCase()
-        .includes(term)
+      matchesSearchTerm(term, {
+        codes: [sol.road.code_name, sol.solution.solution_name],
+        text: [bureau, sol.project.project_name, sol.project.contract_no],
+      })
     )
   }, [dedupedData, vms_list.search.search])
 

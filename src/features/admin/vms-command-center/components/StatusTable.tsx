@@ -19,6 +19,7 @@ import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import StatusPill from './StatusPill'
 import { useAllowSettingsVMSScreenInfo, useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   onOpenSignDetail?: (vmsId: number) => void
@@ -283,21 +284,16 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         if (statusFilter === 'never' && it.is_reported) return false
       }
 
-      if (q) {
-        const hay = [
+      if (q && !matchesSearchTerm(q, {
+        codes: [it.road_code, it.solution_name],
+        text: [
           String(it.wid),
-          it.solution_name,
-          it.road_code,
           it.bureau_short_name,
           it.department_short_name,
           it.machine_name,
           it.anydesk_id,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        if (!hay.includes(q)) return false
-      }
+        ],
+      })) return false
 
       return true
     })

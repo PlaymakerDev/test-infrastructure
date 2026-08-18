@@ -14,6 +14,7 @@ import type { LPRRow } from '../../../data/lprRows'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 dayjs.extend(buddhistEra)
 
@@ -136,10 +137,10 @@ const DataDisplaySection: React.FC<Props> = ({ deptId: deptIdProp }) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return allRows
-    return allRows.filter((r) => {
-      const hay = `${r.bureau} ${r.road_code ?? ''} ${r.project_name ?? ''} ${r.solution_name} ${r.contract_no ?? ''}`.toLowerCase()
-      return hay.includes(term)
-    })
+    return allRows.filter((r) => matchesSearchTerm(term, {
+      codes: [r.road_code, r.solution_name],
+      text: [r.bureau, r.project_name, r.contract_no],
+    }))
   }, [allRows, search])
 
   const stats: FilterStats = useMemo(

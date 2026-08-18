@@ -17,6 +17,7 @@ import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overa
 import { dedupeTrafficVolumeSolutions } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 import type { CountingCentralSolution } from '@/types/traffic-volume/overview-api'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   roadId?: string | null
@@ -166,10 +167,10 @@ const DataDisplayTrafficVolume: React.FC<Props> = ({ roadId }) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return projects
-    return projects.filter((p) => {
-      const haystack = `${p.roadCode} ${p.projectName ?? ''} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-      return haystack.includes(term)
-    })
+    return projects.filter((p) => matchesSearchTerm(term, {
+      codes: [p.roadCode, p.installPoint],
+      text: [p.bureau, p.projectName, p.contractNo],
+    }))
   }, [projects, search])
 
   const stats: FilterStats = useMemo(

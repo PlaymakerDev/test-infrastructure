@@ -5,7 +5,6 @@ import {
   TbCar,
   TbTrafficLights,
   TbWalk,
-  TbBolt,
   TbDeviceDesktop,
   TbBuildingBridge,
   TbBuildingBridge2,
@@ -14,6 +13,7 @@ import {
   TbShieldHalf,
   TbCarCrash,
 } from 'react-icons/tb'
+import { FaRegLightbulb } from 'react-icons/fa6'
 import IconLPR from '@/components/icon/IconLPR'
 import IconTracking from '@/components/icon/IconTracking'
 import IconAIChat from '@/components/icon/IconAIChat'
@@ -30,7 +30,7 @@ export const SOLUTION_ICON_MAP: Record<string, ComponentType<{ className?: strin
   "Incident Detection": TbCarCrash,
   "Traffic Signal": TbTrafficLights,
   "Crosswalk": TbWalk,
-  "Traffic Lighting": TbBolt,
+  "Traffic Lighting": FaRegLightbulb,
   "VMS": TbDeviceDesktop,
   "Bridge Lighting": TbBuildingBridge,
   "Tunnel": TbBuildingBridge2,
@@ -49,6 +49,9 @@ export const SOLUTION_ICON_MAP: Record<string, ComponentType<{ className?: strin
 // key off the API string above.
 export const SOLUTION_DISPLAY_LABEL: Record<string, string> = {
   "Tracking": "Truck Tracking",
+  // Menu renamed 2026-08-17 — the backend still calls this solution type
+  // "Traffic Lighting" (solution_type_id 6), so only the label changes.
+  "Traffic Lighting": "Road Lighting",
 }
 
 export type RouteEntry = { path: string; path_active: string; path_list: string[] }

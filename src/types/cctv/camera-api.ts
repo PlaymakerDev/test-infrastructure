@@ -102,6 +102,9 @@ export interface CCTVRandomOnlineCamera {
   camera_name: string
   road_code: string
   hls_url: string
+  /** Real camera IP — confirmed present in the live response 2026-08-17.
+   *  Use this for the card's "IP Address" line instead of parsing hls_url. */
+  ip_address: string
   is_online: boolean
 }
 

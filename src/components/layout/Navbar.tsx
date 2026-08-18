@@ -23,7 +23,6 @@ import {
   TbTruckDelivery,
   TbTrafficLights,
   TbWalk,
-  TbBolt,
   TbLamp,
   TbDeviceDesktop,
   TbBuildingBridge,
@@ -40,6 +39,7 @@ import {
   TbLockOpen,
   TbLogout,
 } from "react-icons/tb";
+import { FaRegLightbulb } from "react-icons/fa6";
 /* SEY DEFAULT YEAR FORMAT */
 import dayjs from 'dayjs';
 import buddhistEra from 'dayjs/plugin/buddhistEra';
@@ -113,7 +113,7 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbTruckDelivery,
   TbTrafficLights,
   TbWalk,
-  TbBolt,
+  FaRegLightbulb,
   TbLamp,
   TbDeviceDesktop,
   TbBuildingBridge,

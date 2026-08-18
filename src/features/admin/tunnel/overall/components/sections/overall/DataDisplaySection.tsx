@@ -19,6 +19,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
 import { dedupeTunnelSolutions } from '@/features/admin/tunnel/overall/data/tunnel'
 import type { TunnelCentralSolution } from '@/types/tunnel/overview-api'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 interface Props {
   roadId: string | null
@@ -184,10 +185,10 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   const searchFiltered = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return projects
-    return projects.filter((p) => {
-      const haystack = `${p.roadCode} ${p.projectName ?? ''} ${p.installPoint} ${p.contractNo} ${p.bureau}`.toLowerCase()
-      return haystack.includes(term)
-    })
+    return projects.filter((p) => matchesSearchTerm(term, {
+      codes: [p.roadCode, p.installPoint],
+      text: [p.bureau, p.projectName, p.contractNo],
+    }))
   }, [projects, search])
 
   const stats: FilterStats = useMemo(

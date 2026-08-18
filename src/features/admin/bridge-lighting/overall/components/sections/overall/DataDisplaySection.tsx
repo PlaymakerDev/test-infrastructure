@@ -13,6 +13,7 @@ import { getBridgeLightingListAPI, getBridgeLightingTotalAPI } from '@/services/
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { APIResponseBridgeLightingList, BridgeLightingSolution } from '@/types/bridge-lighting/overall-api'
 import { dedupeBridgeLightingSolutions } from '@/features/admin/bridge-lighting/overall/data/bridgeProjects'
+import { matchesSearchTerm } from '@/utils/searchMatch'
 
 const BRIDGE_FILTERS: FilterConfig[] = [
   {
@@ -136,8 +137,11 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     for (const dept of data?.data ?? []) {
       for (const sub of dept.sub_department ?? []) {
         for (const sol of sub.solutions ?? []) {
-          const hay = `${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no} ${sub.department_short_name}`.toLowerCase()
-          if (!hay.includes(term)) continue
+          const isMatch = matchesSearchTerm(term, {
+            codes: [sol.road.code_name, sol.solution.solution_name],
+            text: [sub.department_short_name, sol.project.project_name, sol.project.contract_no],
+          })
+          if (!isMatch) continue
           all++
           if (sol.is_online) online++
           else offline++
@@ -165,10 +169,10 @@ const DataDisplaySection: React.FC<Props> = (props) => {
         case 'in-warranty': if (!sol.is_warranty) return false; break
         case 'expired': if (sol.is_warranty) return false; break
       }
-      if (term) {
-        const haystack = `${sol.road.code_name} ${sol.project.project_name} ${sol.solution.solution_name} ${sol.project.contract_no} ${bureau}`.toLowerCase()
-        if (!haystack.includes(term)) return false
-      }
+      if (term && !matchesSearchTerm(term, {
+        codes: [sol.road.code_name, sol.solution.solution_name],
+        text: [bureau, sol.project.project_name, sol.project.contract_no],
+      })) return false
       return true
     }
     return dedupeBridgeLightingSolutions(list)

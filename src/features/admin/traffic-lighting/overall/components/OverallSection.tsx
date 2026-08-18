@@ -233,7 +233,7 @@ const OverallSection: React.FC = () => {
           const { exportTablePdf } = await import('@/utils/export/pdf')
           await exportTablePdf({
             filenameBase: 'Traffic_Lighting_Overview_Report',
-            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Traffic Lighting Overview)',
+            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Road Lighting Overview)',
             filterNote: exportFilterNote,
             columns: hideProjectNameColumns(LIGHTING_EXPORT_COLUMNS).map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows: exportRows,
@@ -243,8 +243,8 @@ const OverallSection: React.FC = () => {
           const { exportExcel } = await import('@/utils/export/excel')
           exportExcel({
             filenameBase: 'Traffic_Lighting_Overview_Report',
-            sheetName: 'Traffic Lighting Overview',
-            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Traffic Lighting Overview)',
+            sheetName: 'Road Lighting Overview',
+            title: 'รายงานสรุปภาพรวมไฟฟ้าแสงสว่าง (Road Lighting Overview)',
             filterNote: exportFilterNote,
             columns: hideProjectNameColumns(LIGHTING_EXPORT_COLUMNS).map(({ header, width, value }) => ({ header, width, value })),
             rows: exportRows,
@@ -257,7 +257,7 @@ const OverallSection: React.FC = () => {
           <Alert
             type='error'
             showIcon
-            message='ไม่สามารถโหลดข้อมูล Traffic Lighting ได้'
+            message='ไม่สามารถโหลดข้อมูล Road Lighting ได้'
             action={<Button size='small' onClick={retryCentralList}>ลองใหม่</Button>}
           />
         ) : !centralListLoaded ? (

@@ -2,7 +2,6 @@
 import {
   TbVideo,
   TbDeviceDesktop,
-  TbBolt,
   TbBuildingBridge,
   TbBuildingBridge2,
   TbCar,
@@ -10,6 +9,7 @@ import {
   TbWalk,
   TbTrafficLights,
 } from 'react-icons/tb'
+import { FaRegLightbulb } from 'react-icons/fa6'
 import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
 import IconLPR from '@/components/icon/IconLPR'
@@ -29,7 +29,7 @@ const SYSTEM_ICONS: Record<SystemType, IconType> = {
   Analytic: TbCarCrash,
   Traffic: TbTrafficLights,
   CrossWalk: TbWalk,
-  Lighting: TbBolt,
+  Lighting: FaRegLightbulb,
   VMS: TbDeviceDesktop,
   BridgeLighting: TbBuildingBridge,
   Tunnel: TbBuildingBridge2,

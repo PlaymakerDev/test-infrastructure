@@ -17,9 +17,9 @@ interface Props {
  *  rather than a blank slot (backend `random-online` backfills with offline
  *  cameras when there aren't enough online ones). Card visual matches Traffic
  *  Signal / Incident Detection — the sub-line shows "IP Address : …" like every
- *  other feature. The CCTV `random-online` payload omits `ip_address`, so we
- *  pull the IP out of the HLS stream URL (`extractIpFromHlsUrl`), same as
- *  crosswalk / traffic-volume. */
+ *  other feature, read from the payload's own `ip_address` field (confirmed
+ *  present 2026-08-17; `extractIpFromHlsUrl` stays only as a blank-value
+ *  fallback). */
 const CameraListCctv: React.FC<Props> = ({ cameras }) => {
   const dispatch = useAppDispatch()
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
@@ -57,7 +57,9 @@ const CameraListCctv: React.FC<Props> = ({ cameras }) => {
           <Tooltip title={cam.camera_name}>
             <h4 className='camera-code truncate'>{cam.camera_name}</h4>
           </Tooltip>
-          <p className='camera-location'>IP Address : {extractIpFromHlsUrl(cam.hls_url)}</p>
+          {/* `ip_address` is the camera's real IP; the hls_url host is only a
+              fallback for rows where the backend leaves it blank. */}
+          <p className='camera-location'>IP Address : {cam.ip_address || extractIpFromHlsUrl(cam.hls_url)}</p>
         </div>
       ))}
     </div>
