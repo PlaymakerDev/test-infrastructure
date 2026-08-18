@@ -61,7 +61,8 @@ const initialState: AuthState = {
       "created_at": "",
       "created_by": ""
     }
-  }
+  },
+  info_loaded: false
 }
 
 export const SLICE_NAME = 'authSlice';
@@ -76,9 +77,17 @@ const authSlice = createSlice({
     },
     setAuthInfoState: (state, action) => {
       state.info = action.payload
+      state.info_loaded = true
+    },
+    /** The `/manage/info` fetch failed. `info` stays at initialState (callers
+     *  already treat it as non-fatal) but resolution is marked done so
+     *  role-gated UI falls back instead of waiting forever. */
+    setAuthInfoFailed: (state) => {
+      state.info_loaded = true
     },
     resetAuthInfoState: (state) => {
       state.info = initialState.info
+      state.info_loaded = false
     },
     resetAuthTokenState: (state) => {
       state.auth_token = initialState.auth_token
@@ -89,6 +98,7 @@ const authSlice = createSlice({
 export const {
   setAuthTokenState,
   setAuthInfoState,
+  setAuthInfoFailed,
   resetAuthInfoState,
   resetAuthTokenState
 } = authSlice.actions

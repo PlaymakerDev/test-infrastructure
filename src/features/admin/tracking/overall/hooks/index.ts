@@ -1,5 +1,7 @@
 export { trackingOverallKeys } from '../data/queryKeys'
 
+export { useTrackingDeptScope } from './useTrackingDeptScope'
+
 export { useCctvList } from './useCctvList'
 export { useDailySum } from './useDailySum'
 export { useTotalStation } from './useTotalStation'
