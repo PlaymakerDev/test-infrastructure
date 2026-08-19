@@ -278,6 +278,10 @@ export interface SumWim {
   station_id: number
   name: string
   station_type: number
+  /** tbl_project.id on the ITS side (WTS `tbl_wim.its_project_id`). Null on
+   *  stations that were never linked to an ITS project — the ⓘ in the WIM
+   *  table is disabled for those. */
+  its_project_id?: number | null
   delivery_year?: string
   update_year?: string
   kilometer_position?: string

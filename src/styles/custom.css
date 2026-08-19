@@ -133,10 +133,20 @@ div[_echarts_instance_] svg text {
 /* Pin both navbar dropdowns to the shared 60px popout line (same as the
  * find/notification panels' `calc(var(--nav-h) - 12px)`). Trigger-relative
  * offsets couldn't line up because each trigger button has a different
- * height; forcing `top` sidesteps that. Safe viewport-wise: admin pages
- * scroll inside <main>, the body never scrolls, so absolute top == viewport
- * top for the portaled popup. */
+ * height; forcing `top` sidesteps that.
+ *
+ * `position: fixed` is load-bearing, not decoration: the forced `top` is a
+ * VIEWPORT offset (it mirrors `.navbar`, which is itself `position: fixed`),
+ * while antd portals the popup into <body> as `position: absolute`. Admin pages
+ * do scroll the body — <main> is `h-screen` with no overflow container, so
+ * anything taller spills onto the document scroller — and once scrolled, an
+ * absolute 60px sits 60px from the DOCUMENT top, i.e. above the viewport. That
+ * put the menu off-screen at the top instead of under its trigger. Fixed keeps
+ * it on the navbar line at every scroll position; rc-trigger's inline `left`
+ * stays correct because the body can't scroll horizontally (`overflow-x:
+ * hidden`), so document-x == viewport-x. */
 .nav-glow-menu.ant-dropdown {
+  position: fixed !important;
   top: calc(var(--nav-h, 72px) - 12px) !important;
 }
 /* The "..." trigger is the right-most icon, so its centered menu used to

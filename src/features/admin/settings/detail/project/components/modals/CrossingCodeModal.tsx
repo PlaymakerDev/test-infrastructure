@@ -19,9 +19,14 @@ interface Row {
 }
 
 /** Read-only view of the crossing index codes generated for the given
- *  Counting / Analytic / Traffic / Crosswalk solution. Backend endpoint
- *  is available only for those 4 types; the parent table hides the icon
- *  for other kinds. */
+ *  Counting / Analytic / Traffic / Crosswalk / VMS / WIM solution. Backend
+ *  endpoint is available only for those types; the parent table hides the
+ *  icon for other kinds.
+ *
+ *  Shapes differ per type: Counting/Analytic list per-camera codes with no
+ *  master; Traffic/Crosswalk have both; VMS and WIM (Tracking) have ONLY a
+ *  master index — their camera links carry no per-camera code, so those two
+ *  render the master card with no table. */
 const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
   const { activePoint } = useProjectDetailContext()
   const codesQuery = useCrossingCodes(open ? task?.id ?? null : null)
@@ -30,6 +35,7 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
     () => codesQuery.data?.camera_crossing_index_code ?? [],
     [codesQuery.data],
   )
+  const master = codesQuery.data?.master_index_code ?? ''
 
   const columns: ColumnsType<Row> = useMemo(
     () => [
@@ -96,11 +102,6 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: "var(--fs-12)", margin: 0 }}>
             {task && activePoint ? `จุดติดตั้ง : ${activePoint.name} • ${task.kind}` : ''}
           </p>
-          {codesQuery.data?.master_index_code && (
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: "var(--fs-12)", margin: '8px 0 0', fontFamily: 'monospace' }}>
-              Master : {codesQuery.data.master_index_code}
-            </p>
-          )}
         </div>
 
         {codesQuery.isLoading ? (
@@ -112,14 +113,50 @@ const CrossingCodeModal: React.FC<Props> = ({ open, task, onClose }) => {
             ไม่สามารถโหลด CrossingCode ได้ (บาง Solution type ไม่รองรับ)
           </div>
         ) : (
-          <Table<Row>
-            rowKey='camera_id'
-            columns={columns}
-            dataSource={rows}
-            pagination={false}
-            size='middle'
-            locale={{ emptyText: 'ยังไม่มี CrossingCode' }}
-          />
+          <>
+            {master && (
+              <div
+                style={{
+                  border: '1px solid rgba(102,174,255,0.25)',
+                  background: 'rgba(102,174,255,0.06)',
+                  borderRadius: 12,
+                  padding: '14px 18px',
+                  marginBottom: rows.length > 0 ? 16 : 0,
+                }}
+              >
+                <p style={{ color: '#66AEFF', fontSize: 'var(--fs-12)', margin: 0, marginBottom: 4 }}>
+                  Master CrossingCode
+                </p>
+                <span
+                  style={{
+                    color: '#FFFFFF',
+                    fontFamily: 'monospace',
+                    fontSize: 'var(--fs-14)',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {master}
+                </span>
+              </div>
+            )}
+
+            {rows.length > 0 ? (
+              <Table<Row>
+                rowKey='camera_id'
+                columns={columns}
+                dataSource={rows}
+                pagination={false}
+                size='middle'
+                locale={{ emptyText: 'ยังไม่มี CrossingCode' }}
+              />
+            ) : (
+              !master && (
+                <div style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '40px 0' }}>
+                  ยังไม่มี CrossingCode สำหรับรายการนี้
+                </div>
+              )
+            )}
+          </>
         )}
 
         <div className='flex justify-end gap-3 mt-6'>

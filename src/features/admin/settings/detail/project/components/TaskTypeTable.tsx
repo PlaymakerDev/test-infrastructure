@@ -46,13 +46,15 @@ const TaskTypeTable: React.FC<Props> = ({
         align: 'center',
         render: (_: unknown, row) => {
           // CrossingCode endpoint is only implemented for Counting / Analytic
-          // / Traffic / Crosswalk / VMS (backend errors for other types).
+          // / Traffic / Crosswalk / VMS / WIM (backend errors for other types).
+          // WIM returns a master index only — no per-camera codes exist.
           const supportsCrossing =
             row.kindId === SOLUTION_TYPE.Counting ||
             row.kindId === SOLUTION_TYPE.Analytic ||
             row.kindId === SOLUTION_TYPE.Traffic ||
             row.kindId === SOLUTION_TYPE.Crosswalk ||
-            row.kindId === SOLUTION_TYPE.VMS
+            row.kindId === SOLUTION_TYPE.VMS ||
+            row.kindId === SOLUTION_TYPE.WIM
           if (!supportsCrossing) return null
           return (
             <button
@@ -117,7 +119,10 @@ const TaskTypeTable: React.FC<Props> = ({
             className='underline text-(--default-blue) hover:opacity-80'
             title='เปิดหน้าเว็บฟีเจอร์'
           >
-            {activeRoute?.code} {point.name}
+            {/* tbl_solution.solution_name — the name the device carries app-wide.
+                Falls back to route code + point when a solution was created
+                without one. */}
+            {row.solutionName?.trim() || `${activeRoute?.code ?? ''} ${point.name}`.trim()}
           </a>
         ),
       },

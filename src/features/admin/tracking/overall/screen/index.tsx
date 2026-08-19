@@ -9,6 +9,7 @@ import {
   ModalCCTVData,
 } from '../components'
 import { OverallProvider, useOverallContext } from '../context'
+import { ProjectInfoModal } from '@/components/modal'
 import { useUserRole } from '@/hooks/useUserRole'
 import { Spin } from 'antd'
 
@@ -55,6 +56,8 @@ const TrackingScreen = () => {
     <OverallProvider>
       <TrackingScreenContent />
       <ModalCCTVData />
+      {/* Global Project Info modal — opened via Redux from the WIM table's ⓘ. */}
+      <ProjectInfoModal />
     </OverallProvider>
   )
 }

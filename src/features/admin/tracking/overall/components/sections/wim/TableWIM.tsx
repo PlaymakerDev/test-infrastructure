@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Table, Empty, ConfigProvider, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
+import { ProjectInfoIcon } from '@/components/modal'
 import { SumWim } from '@/types/tracking/overall-api'
 import { fmtNumber } from '@/utils/formatNumber'
 import { getRowNumber } from '@/utils/pagination'
@@ -50,10 +51,17 @@ const TableWIM: React.FC<Props> = (props) => {
       align: 'left',
       width: 300,
       sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
-      render: (item) => {
-        if (item) return item
-        return '-'
-      }
+      // Station name + the same ⓘ the เลขที่สัญญา column uses elsewhere. The
+      // WTS sum response carries `its_project_id`, so the row can open the
+      // central Project Info modal; it's greyed out when that id is null
+      // (station not linked to an ITS project). No road id in this response —
+      // the modal's หน่วยงานรับผิดชอบ field falls back to '-'.
+      render: (item, record) => (
+        <span className='inline-flex items-center gap-1.5'>
+          <span>{item || '-'}</span>
+          <ProjectInfoIcon projectId={record.its_project_id} />
+        </span>
+      ),
     },
     {
       title: 'จำนวนรถเข้าชั่ง',
@@ -94,8 +102,10 @@ const TableWIM: React.FC<Props> = (props) => {
     },
     {
       title: 'จำนวนรถน้ำหนักเกิน 10%',
-      dataIndex: 'over_10',
-      key: 'over_10',
+      // Field is `over_10percent` on the sum endpoint — `over_10` doesn't exist
+      // in the response, so this column rendered '-' for every row.
+      dataIndex: 'over_10percent',
+      key: 'over_10percent',
       align: 'center',
       width: 150,
       render: (item) => {

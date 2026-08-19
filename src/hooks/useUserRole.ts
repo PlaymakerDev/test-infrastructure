@@ -1,6 +1,7 @@
 "use client"
 import { useMemo } from 'react'
 import { useAppSelector } from '@/stores/hooks'
+import { useHydrated } from './useHydrated'
 
 /** The three roles the backend issues. Lower-case on purpose — that's the exact
  *  casing `/manage/info` returns and the casing the Go side compares against. */
@@ -36,7 +37,17 @@ export interface UserRoleState {
  */
 export const useUserRole = (): UserRoleState => {
   const info = useAppSelector((state) => state.auth.info)
-  const isResolved = useAppSelector((state) => state.auth.info_loaded)
+  const infoLoaded = useAppSelector((state) => state.auth.info_loaded)
+
+  // The store is always at initialState during SSR, so a role-gated branch that
+  // reads a RESOLVED role on the client's first (hydration) render emits markup
+  // the server never sent → "Hydration failed" (seen on /admin/tracking, where
+  // TitleSection's SwapButton is behind `isResolved &&`). That happens whenever
+  // the client store is already warm while the HTML is freshly server-rendered —
+  // e.g. a dev Fast-Refresh re-render of the segment. Holding resolution until
+  // after mount makes the hydration render match SSR by construction; the tabs
+  // then appear on the next commit (the callers already reserve the row height).
+  const isResolved = useHydrated() && infoLoaded
 
   return useMemo(() => {
     const raw =
