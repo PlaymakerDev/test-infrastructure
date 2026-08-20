@@ -101,3 +101,32 @@ export interface VMSSignDetail extends VMSMonitorItem {
 }
 
 export type APIResponseVMSSignDetail = VMSSignDetail
+
+/**
+ * Multi-ชุดคำสั่ง dispatch body (2026-08-20) — one call carries N settings for
+ * the same target signs. Each setting keeps its own date range, all-day flag,
+ * category and schedule windows; the Composer builds one entry per
+ * "ชุดคำสั่งที่ N" card. Field order below mirrors the agreed sample body.
+ */
+export interface VMSDispatchSchedule {
+  days_of_week: number[]
+  media_url: string
+  message: string
+  schedule_name: string
+  time_since: string
+  time_to: string
+}
+
+export interface VMSDispatchSetting {
+  date_since: string
+  date_to: string
+  is_all_day: boolean
+  schedules: VMSDispatchSchedule[]
+  setting_type_id: number
+  type_name: string
+}
+
+export interface APIRequestVMSDispatch {
+  settings: VMSDispatchSetting[]
+  vms_ids: number[]
+}
