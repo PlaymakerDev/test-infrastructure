@@ -1,19 +1,20 @@
 "use client"
 import React, { useCallback, useState } from 'react'
-import { App, Button, ConfigProvider, Empty, Modal, Popover, Skeleton } from 'antd'
+import { Button, ConfigProvider, Empty, Modal, Popover, Skeleton } from 'antd'
 import thTH from 'antd/locale/th_TH'
 import { TbAlertTriangle, TbPlus, TbRocket } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import { useVMSSettingByVMSID } from '@/features/admin/control-vms/overall/hooks/useVMSSettingByVMSID'
+import { useDispatchCommand } from '../hooks/useDispatchCommand'
 import CommandSetCard from './CommandSetCard'
-import { createCommandSet, isCommandSetValid, type CommandSetValue } from '../utils/commandSet'
+import { conflictingSetIds, createCommandSet, isCommandSetValid, type CommandSetValue } from '../utils/commandSet'
 import type { ScheduleByVMSID } from '@/types/control-vms/display-api'
 import type { APIRequestVMSDispatch } from '@/types/vms/command-center-api'
 
 interface Props {
   vmsIds: number[]
   targetSignSummary: string
-  /** Unused while the dispatch POST is disabled (log-only review step). */
+  /** Fired after the dispatch call succeeds — lets the tab refocus the monitor. */
   onDispatched?: () => void
   onGotoLibrary?: () => void
 }
@@ -21,8 +22,8 @@ interface Props {
 const dateFmt = 'YYYY-MM-DD'
 const timeFmt = 'HH:mm:ss'
 
-const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetSignSummary, onGotoLibrary }) {
-  const { message } = App.useApp()
+const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetSignSummary, onDispatched, onGotoLibrary }) {
+  const dispatchCommand = useDispatchCommand()
   // Each ชุดคำสั่ง carries its own name, working condition, date range,
   // display windows and content, and becomes one `settings[]` entry in the
   // dispatch body — so a sign can be given several commands in one go.
@@ -30,7 +31,10 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
   const patchSet = useCallback((id: number, patch: Partial<CommandSetValue>) => {
     setSets((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)))
   }, [])
-  const addSet = () => setSets((prev) => [...prev, createCommandSet()])
+  // A new set starts the day after the last one ends — sets can't share a
+  // display date, so defaulting to today would land on a blocked day.
+  const addSet = () =>
+    setSets((prev) => [...prev, createCommandSet(prev[prev.length - 1].dateRange[1].add(1, 'day'))])
   const removeSet = (id: number) => setSets((prev) => (prev.length > 1 ? prev.filter((s) => s.id !== id) : prev))
 
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -59,7 +63,8 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     ))
   }
 
-  const canDispatch = vmsIds.length > 0 && sets.every(isCommandSetValid)
+  const dateConflictIds = conflictingSetIds(sets)
+  const canDispatch = vmsIds.length > 0 && sets.every(isCommandSetValid) && dateConflictIds.size === 0
 
   /** The set's own ชื่อกำหนดการ, suffixed `(i)` when it has several windows. */
   const scheduleNameFor = (set: CommandSetValue, slotIndex: number, slotCount: number) => {
@@ -92,17 +97,15 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
     vms_ids: vmsIds,
   })
 
-  const bodyPreview = confirmOpen ? JSON.stringify(buildRequestBody(), null, 2) : ''
-
-  // NOTHING IS SENT YET (2026-08-20) — the new multi-settings endpoint isn't
-  // wired up, so confirming only prints the body for review. Restore the POST
-  // (via a hook around the new endpoint) once the contract is agreed.
   const dispatch = () => {
-    const body = buildRequestBody()
-    console.log('[VMS Command Center] dispatch body (ยังไม่ยิง API)', body)
-    console.log(JSON.stringify(body, null, 2))
-    setConfirmOpen(false)
-    message.info('พิมพ์ body ลง console แล้ว — ยังไม่ได้ยิง API')
+    // mutate + callback (not mutateAsync) — the modal closes only on success,
+    // so a failed call leaves the composed sets on screen for a retry.
+    dispatchCommand.mutate(buildRequestBody(), {
+      onSuccess: () => {
+        setConfirmOpen(false)
+        onDispatched?.()
+      },
+    })
   }
 
   return (
@@ -122,6 +125,8 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                 onChange={(patch) => patchSet(set.id, patch)}
                 onRemove={index > 0 ? () => removeSet(set.id) : undefined}
                 onGotoLibrary={onGotoLibrary}
+                blockedDateRanges={sets.slice(0, index).map((s) => s.dateRange)}
+                hasDateConflict={dateConflictIds.has(set.id)}
               />
             </React.Fragment>
           ))}
@@ -163,7 +168,8 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
               block
               size="large"
               icon={<TbRocket style={{ verticalAlign: -2 }} />}
-              disabled={!canDispatch}
+              disabled={!canDispatch || dispatchCommand.isPending}
+              loading={dispatchCommand.isPending}
               onClick={() => setConfirmOpen(true)}
             >
               ส่งคำสั่งควบคุมไปยัง {vmsIds.length} ป้าย
@@ -174,10 +180,10 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
           open={confirmOpen}
           onOk={dispatch}
           onCancel={() => setConfirmOpen(false)}
-          okText="พิมพ์ body ลง console"
+          okText="ยืนยันการส่ง"
           cancelText="ยกเลิก"
-          title="ตรวจสอบคำสั่งควบคุม (ยังไม่ยิง API)"
-          width={720}
+          title="ยืนยันการส่งคำสั่งควบคุม"
+          confirmLoading={dispatchCommand.isPending}
         >
           <div className="fs-12 space-y-3">
             {currentSettingLoading && <Skeleton active paragraph={{ rows: 2 }} />}
@@ -237,25 +243,6 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                   </ul>
                 </div>
               ))}
-            </div>
-            {/* Raw request body — review step while the new multi-settings
-                endpoint isn't wired up. Same JSON that goes to console. */}
-            <div className="border border-white/15 rounded-lg overflow-hidden">
-              <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-white/[.04]">
-                <span className="fs-12 text-(--yellow)">Request body ที่จะส่ง</span>
-                <Button
-                  size="small"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(bodyPreview)
-                    message.success('คัดลอก JSON แล้ว')
-                  }}
-                >
-                  คัดลอก JSON
-                </Button>
-              </div>
-              <pre className="fs-12 m-0 px-3 py-2 max-h-72 overflow-auto whitespace-pre text-white/80 bg-black/40">
-                {bodyPreview}
-              </pre>
             </div>
           </div>
         </Modal>

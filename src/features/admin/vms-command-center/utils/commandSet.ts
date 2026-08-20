@@ -68,6 +68,29 @@ export const availableDaysFor = ([start, end]: [Dayjs, Dayjs]) => {
   return Array.from(days).sort((a, b) => a - b)
 }
 
+/** Inclusive day-level overlap between two display date ranges. */
+export const dateRangesOverlap = (a: [Dayjs, Dayjs], b: [Dayjs, Dayjs]) =>
+  !a[0].isAfter(b[1], 'day') && !b[0].isAfter(a[1], 'day')
+
+/**
+ * Ids of sets whose date range collides with an EARLIER set's — set 1 is the
+ * anchor, every later set has to pick days the ones above it don't use. Also
+ * catches the case where set 1's range is widened after set 2 was added (the
+ * pickers can only grey out days that were taken at the time of picking).
+ */
+export const conflictingSetIds = (sets: CommandSetValue[]) => {
+  const bad = new Set<number>()
+  for (let i = 1; i < sets.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (dateRangesOverlap(sets[i].dateRange, sets[j].dateRange)) {
+        bad.add(sets[i].id)
+        break
+      }
+    }
+  }
+  return bad
+}
+
 export const isCommandSetValid = (set: CommandSetValue) =>
   (set.isMessageOnly ? set.message.trim().length > 0 : !!set.selectedMedia?.url) &&
   invalidSlotIdsOf(set.timeSlots).size === 0 &&
@@ -78,17 +101,19 @@ let idSeq = 1
 export const nextId = () => idSeq++
 
 /**
- * A fresh set: today, "now → now + 1 hr" (rounded to the minute so the picker
- * shows 13:07 rather than 13:07:42), media mode, nothing selected yet.
+ * A fresh set: `startDate` (today when omitted), "now → now + 1 hr" (rounded
+ * to the minute so the picker shows 13:07 rather than 13:07:42), media mode,
+ * nothing selected yet. Added sets pass the day after the previous set's end
+ * so two sets never start out on the same date.
  */
-export const createCommandSet = (): CommandSetValue => {
-  const today = dayjs()
-  const now = today.startOf('minute')
+export const createCommandSet = (startDate?: Dayjs): CommandSetValue => {
+  const day = startDate ?? dayjs()
+  const now = dayjs().startOf('minute')
   return {
     id: nextId(),
     scheduleName: 'ประกาศ',
     isAllDay: false,
-    dateRange: [today, today],
+    dateRange: [day, day],
     timeSlots: [{ id: nextId(), range: [now, now.add(1, 'hour')] }],
     isMessageOnly: false,
     message: '',

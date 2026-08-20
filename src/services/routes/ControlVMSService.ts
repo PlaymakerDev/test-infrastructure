@@ -1,4 +1,4 @@
-import { APIRequestPostVMSBatchDelete, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSBatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
+import { APIRequestPostVMSBatchDelete, APIRequestVMSCancelAll, APIResponseVMSCancelAll, APIRequestVMSSettingByRoad, APIRequestVMSSettingByStatus, APIRequestVMSSettingByVMSID, APIRequestVMSSettingList, APIRequestVMSSettingSchedule, APIResponsePostVMSBatchDelete, APIResponseVMSMediaById, APIResponseVMSScheduleByDate, APIResponseVMSSettingByRoad, APIResponseVMSSettingByStatus, APIResponseVMSSettingByVMSID, APIResponseVMSSettingList, APIResponseVMSSettingStatus, APIResponseVMSSettingStatusCount, APIResponseVMSUpcomingSummary } from "@/types/control-vms/display-api"
 import ApiService from "../ApiService"
 import {
   APIResponseVMSDepartment,
@@ -22,7 +22,7 @@ import {
   APIResponseVMSNotifications
 } from "@/types/control-vms/vms-api"
 import { APIRequestVMSStatusHistory, APIResponseVMSStatusHistory } from "@/types/vms/history-api"
-import { APIRequestVMSGlobalHistory, APIResponseVMSGlobalHistory, APIResponseVMSMonitor, APIResponseVMSSignDetail } from "@/types/vms/command-center-api"
+import { APIRequestVMSDispatch, APIRequestVMSGlobalHistory, APIResponseVMSGlobalHistory, APIResponseVMSMonitor, APIResponseVMSSignDetail } from "@/types/vms/command-center-api"
 
 // VMS
 export const getVMSDepartmentAPI = async (params?: { since?: string }) => {
@@ -108,6 +108,21 @@ export const postVMSMediaAPI = async (data: APIRequestPostVMSMedia) => {
   })
 }
 
+/**
+ * Multi-ชุดคำสั่ง dispatch (2026-08-20) — same endpoint as postVMSMediaAPI but
+ * the body carries N settings at once (`settings[]` + one shared `vms_ids`),
+ * so the Command Center composer can send several commands for the same signs
+ * in a single call instead of one POST per set.
+ */
+export const postVMSDispatchAPI = async (data: APIRequestVMSDispatch) => {
+  return ApiService.fetchData<APIResponsePostVMSMedia, APIRequestVMSDispatch>({
+    url: '/vms/settings/media',
+    method: 'POST',
+    data: { ...data },
+  })
+}
+
+
 // DISPLAY
 export const getVMSSettingUpcomingSummaryAPI = async () => {
   return ApiService.fetchData<APIResponseVMSUpcomingSummary>({
@@ -187,6 +202,14 @@ export const getVMSSettingByStatusAPI = async (params: APIRequestVMSSettingBySta
 }
 
 // BATCH DELETE
+export const postVMSSettingCancelAllAPI = async (data: APIRequestVMSCancelAll) => {
+  return ApiService.fetchData<APIResponseVMSCancelAll, APIRequestVMSCancelAll>({
+    url: '/vms/settings/cancel-all',
+    method: 'POST',
+    data: { ...data },
+  })
+}
+
 export const postVMSMediaBatchDeleteAPI = async (data: APIRequestPostVMSBatchDelete) => {
   return ApiService.fetchData<APIResponsePostVMSBatchDelete, APIRequestPostVMSBatchDelete>({
     url: '/vms/settings/schedules/batch-delete',

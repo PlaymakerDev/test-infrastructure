@@ -1,27 +1,30 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { postVMSMediaBatchDeleteAPI } from '@/services/routes/ControlVMSService'
+import { postVMSSettingCancelAllAPI } from '@/services/routes/ControlVMSService'
 import { App } from 'antd'
 import { AxiosError } from 'axios'
-import { controlVmsKeys } from '../data/queryKeys'
 import { invalidateVmsMediaWrites } from './invalidateVmsMediaWrites'
 
-/** Bulk "ยกเลิกคำสั่งทั้งหมด" (STATUS tab toolbar) — one batch-delete call
- *  whose schedule_ids span MANY settings (the endpoint deletes by schedule id;
- *  it is not scoped to a single setting). Mirrors usePostVMSBatchDelete's
- *  toast/error/invalidation shape, but invalidates every touched setting's
- *  mediaDetail instead of a single one. */
+/**
+ * Bulk "ยกเลิกคำสั่งทั้งหมด" (STATUS tab toolbar) — one POST
+ * /vms/settings/cancel-all carrying the signs to stop. The endpoint cancels
+ * each sign's active commands AND its whole queue in a single transaction
+ * (status → 6), so no next-in-queue command slides in; the sign stays blank
+ * until a new command is dispatched. Replaced the old per-schedule
+ * batch-delete call 2026-08-20 — schedule-level ticking can't express "stop
+ * the queue too", which is what this button means.
+ *
+ * Also invalidates the Command Center's own keys: this STATUS tab is mounted
+ * inside /admin/control-vms?tab=status, next to the live monitor.
+ */
 export function usePostVMSCancelAll() {
   const { message } = App.useApp()
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ schedule_ids }: { schedule_ids: number[]; setting_ids: (string | number)[] }) =>
-      postVMSMediaBatchDeleteAPI({ schedule_ids }),
-    onSuccess: async (_, variables) => {
+    mutationFn: ({ vms_ids }: { vms_ids: number[] }) => postVMSSettingCancelAllAPI({ vms_ids }),
+    onSuccess: async () => {
       message.success('ยกเลิกคำสั่งสำเร็จ')
-      for (const id of variables.setting_ids) {
-        qc.invalidateQueries({ queryKey: controlVmsKeys.mediaDetail(id) })
-      }
       await invalidateVmsMediaWrites(qc)
+      await qc.invalidateQueries({ queryKey: ['vms-command-center'] })
     },
     onError: (error) => {
       if (error instanceof AxiosError) {

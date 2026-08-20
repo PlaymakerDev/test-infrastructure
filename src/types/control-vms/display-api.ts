@@ -176,6 +176,19 @@ export interface APIRequestPostVMSBatchDelete {
 
 export type APIResponsePostVMSBatchDelete = APIResponsePost
 
+/**
+ * POST /vms/settings/cancel-all — stops every command on the given signs in
+ * one shot: each sign's active settings (status 0-3) AND everything queued
+ * behind them (status 8) go to status 6 (ยกเลิกคำสั่ง) in a single
+ * transaction. Unlike /vms/settings/media/{id}/cancel it does NOT promote the
+ * next queued command — the sign stays blank until a new command arrives.
+ */
+export interface APIRequestVMSCancelAll {
+  vms_ids: number[]
+}
+
+export type APIResponseVMSCancelAll = APIResponsePost
+
 // STATUS COUNT
 export type APIResponseVMSSettingStatusCount = VMSSettingStatusCount[]
 

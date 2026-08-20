@@ -27,6 +27,10 @@ interface Props {
   /** Omitted for the first set — set 1 can't be removed. */
   onRemove?: () => void
   onGotoLibrary?: () => void
+  /** Date ranges already taken by the sets above this one — greyed out in both pickers. */
+  blockedDateRanges?: [Dayjs, Dayjs][]
+  /** This set's range still collides with an earlier set (e.g. set 1 was widened afterwards). */
+  hasDateConflict?: boolean
 }
 
 /**
@@ -36,8 +40,18 @@ interface Props {
  * `onChange`; the card keeps only its own view state (category filter, page
  * size, preview modal).
  */
-const CommandSetCard: React.FC<Props> = ({ index, value, onChange, onRemove, onGotoLibrary }) => {
+const CommandSetCard: React.FC<Props> = ({
+  index,
+  value,
+  onChange,
+  onRemove,
+  onGotoLibrary,
+  blockedDateRanges = [],
+  hasDateConflict = false,
+}) => {
   const isAllDay = value.isAllDay
+  const isDateBlocked = (d: Dayjs) =>
+    blockedDateRanges.some(([start, end]) => !d.isBefore(start, 'day') && !d.isAfter(end, 'day'))
   const { data: countsData } = useMediaCategoryCounts()
   const counts = countsData?.data ?? []
 
@@ -186,44 +200,56 @@ const CommandSetCard: React.FC<Props> = ({ index, value, onChange, onRemove, onG
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-(--yellow) block mb-1">
-            เริ่มต้นการแสดงผล <span className="text-red-500">*</span>
-          </label>
-          <BuddhistDatePicker
-            value={value.dateRange[0]}
-            onChange={(date) => {
-              if (!date) return
-              const next = date as Dayjs
-              const end = next.isAfter(value.dateRange[1], 'day') ? next : value.dateRange[1]
-              onChange({ dateRange: [next, end] })
-            }}
-            allowClear={false}
-            className="w-full"
-            format="DD MMMM BBBB"
-            size="large"
-            placeholder="กรุณาเลือกวันที่เริ่มต้น..."
-          />
+      <div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-(--yellow) block mb-1">
+              เริ่มต้นการแสดงผล <span className="text-red-500">*</span>
+            </label>
+            {/* Days already used by an earlier ชุดคำสั่ง are greyed out — two
+                sets must not display on the same date. */}
+            <BuddhistDatePicker
+              value={value.dateRange[0]}
+              onChange={(date) => {
+                if (!date) return
+                const next = date as Dayjs
+                const end = next.isAfter(value.dateRange[1], 'day') ? next : value.dateRange[1]
+                onChange({ dateRange: [next, end] })
+              }}
+              disabledDate={isDateBlocked}
+              status={hasDateConflict ? 'error' : undefined}
+              allowClear={false}
+              className="w-full"
+              format="DD MMMM BBBB"
+              size="large"
+              placeholder="กรุณาเลือกวันที่เริ่มต้น..."
+            />
+          </div>
+          <div>
+            <label className="text-(--yellow) block mb-1">
+              สิ้นสุดการแสดงผล <span className="text-red-500">*</span>
+            </label>
+            <BuddhistDatePicker
+              value={value.dateRange[1]}
+              onChange={(date) => {
+                if (!date) return
+                onChange({ dateRange: [value.dateRange[0], date as Dayjs] })
+              }}
+              disabledDate={(current) => current.isBefore(value.dateRange[0], 'day') || isDateBlocked(current)}
+              status={hasDateConflict ? 'error' : undefined}
+              allowClear={false}
+              className="w-full"
+              format="DD MMMM BBBB"
+              size="large"
+              placeholder="กรุณาเลือกวันที่สิ้นสุด..."
+            />
+          </div>
         </div>
-        <div>
-          <label className="text-(--yellow) block mb-1">
-            สิ้นสุดการแสดงผล <span className="text-red-500">*</span>
-          </label>
-          <BuddhistDatePicker
-            value={value.dateRange[1]}
-            onChange={(date) => {
-              if (!date) return
-              onChange({ dateRange: [value.dateRange[0], date as Dayjs] })
-            }}
-            disabledDate={(current) => current.isBefore(value.dateRange[0], 'day')}
-            allowClear={false}
-            className="w-full"
-            format="DD MMMM BBBB"
-            size="large"
-            placeholder="กรุณาเลือกวันที่สิ้นสุด..."
-          />
-        </div>
+        {hasDateConflict && (
+          <p className="fs-12 text-red-400 mt-1 mb-0">
+            วันที่ซ้อนกับชุดคำสั่งก่อนหน้า — เลือกวันที่ไม่ซ้ำก่อนส่งคำสั่ง
+          </p>
+        )}
       </div>
 
       {/* ช่วงเวลาแสดงผล — one labelled column per side, mirroring the date row
