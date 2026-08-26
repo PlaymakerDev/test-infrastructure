@@ -12,10 +12,12 @@ interface Props {
   data?: APIResponseBridgeLightingOverview
   isWarranty?: string | null
   projectId?: string | string[] | null
+  /** Opens the นำออกเอกสาร dialog — rendered far-right on the AnyDesk row. */
+  onExport?: () => void
 }
 
 const TitleSection: React.FC<Props> = (props) => {
-  const { data, isWarranty, projectId } = props
+  const { data, isWarranty, projectId, onExport } = props
   const router = useRouter()
   // Optional chain the array access too — `data?.locations[0]` still throws
   // if `locations` itself is null (only the `data` layer is guarded by `?.`),
@@ -42,6 +44,12 @@ const TitleSection: React.FC<Props> = (props) => {
 
   return (
     <DetailTitleSection
+      /* Default is px-8 (32px), but this page's right-hand stat/chart panel
+       * sits at `lg:right-4` (16px) — see detail/components/OverallSection.
+       * Trimming the header's inline-end padding to match on lg+ puts the
+       * นำออกเอกสาร button's right edge on the same vertical line as that
+       * panel instead of 16px inside it. */
+      className='px-8 lg:pe-4'
       feature='BridgeLighting'
       roadCode={location?.road.code_name || '-'}
       installPoint={location?.solution.solution_name || '-'}
@@ -64,6 +72,7 @@ const TitleSection: React.FC<Props> = (props) => {
       online={{
         isOnline: isOnline
       }}
+      onExport={onExport}
     />
   )
 }

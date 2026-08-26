@@ -8,6 +8,7 @@ import { APIResponseVMSList, ListSolution } from '@/types/vms/overview-api'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 interface Props {
   data?: APIResponseVMSList
@@ -90,7 +91,7 @@ const buildRows = (apiData: APIResponseVMSList): Row[] => {
       type: 'header',
       id: `dept-${dept.department_id}`,
       label: dept.department_short_name,
-      count: allSolutions.length,
+      count: countDistinctProjects(allSolutions, (sol) => projectKey(sol.project.id, sol.project.contract_no)),
     })
 
     let i = 0

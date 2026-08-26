@@ -10,6 +10,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import {
   groupByBureau,
+  projectKey,
   type BureauGroupedRow,
 } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
@@ -69,7 +70,10 @@ const SummaryTableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
     const params = new URLSearchParams({ dept_id: deptId })
     router.push(`/admin/traffic-volume/detail/${project.id}?${params}${scopeQuerySuffix()}`)
   }, [router, deptId])
-  const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
+  const data = useMemo<Row[]>(
+    () => groupByBureau(projects, (p) => projectKey(p.projectId, p.contractNo)),
+    [projects],
+  )
 
   const columns: ColumnsType<Row> = useMemo(() => {
     const cols: ColumnsType<Row> = [

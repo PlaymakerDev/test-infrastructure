@@ -10,6 +10,7 @@ import { usePlateDetail, useTimelineInfinite } from '@/hooks/queries/lpr'
 import type { LicenseTimelineItem } from '@/components/list/LicenseList'
 import type { LPRTimelineEvent } from '@/types/lpr/lpr-api'
 import type { PdfReportBlock } from '@/utils/export/pdf'
+import { formatVehicleType } from '../../../data/vehicleType'
 
 const toTimelineItem = (e: LPRTimelineEvent): LicenseTimelineItem => ({
   id: e.id,
@@ -62,11 +63,22 @@ const TimelineSection: React.FC = () => {
     // no cards at all — every slot now always renders.
     const clean = (v: string | number | null | undefined) =>
       v != null && String(v).trim() !== '' ? String(v) : '-'
-    return isWimOnly
-      ? [{ label: 'ประเภทยานพาหนะ', value: clean(m?.vehicle_type_name) }]
+    // ประเภทยานพาหนะ goes through the shared formatter (vehicle_type_source,
+    // 2026-08-24). WIM-sourced plates collapse to the SINGLE ประเภทยานพาหนะ
+    // card showing only the full description (same-day follow-up #2: the
+    // other 3 fields are always empty for WIM data, and the "ประเภท N" line
+    // is the list badge's job) — same layout WIM-only plates always had.
+    const vt = formatVehicleType(m)
+    const isWimType = m?.vehicle_type_source === 'wim'
+    const vehicleTypeCard = {
+      label: 'ประเภทยานพาหนะ',
+      value: isWimType ? vt.wimName ?? vt.label : vt.label,
+    }
+    return isWimOnly || isWimType
+      ? [vehicleTypeCard]
       : [
           { label: 'ประเภทป้ายทะเบียน', value: clean(m?.plate_type) },
-          { label: 'ประเภทยานพาหนะ', value: clean(m?.vehicle_type_name) },
+          vehicleTypeCard,
           { label: 'ยี่ห้อ', value: clean(m?.vehicle_brand) },
           { label: 'สียานพาหนะ', value: clean(m?.vehicle_color) },
         ]
@@ -186,7 +198,9 @@ const TimelineSection: React.FC = () => {
           {metaCards.map(({ label, value }) => (
             <div key={label} className='bg-(--yellow)/10 border-2 border-(--yellow) rounded-[20px] p-5'>
               <p className='text-(--yellow)'>{label}</p>
-              {/* fs-12 = clamp(12px → 14px on desktop) per design. */}
+              {/* fs-12 = clamp(12px → 14px on desktop) per design. `display`
+                  is the truncated long-WIM-name fallback; hover `title` shows
+                  the full text (export keeps the untruncated `value`). */}
               <p className='font-bold fs-12'>{value}</p>
             </div>
           ))}

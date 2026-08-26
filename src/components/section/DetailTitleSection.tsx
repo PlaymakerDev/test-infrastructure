@@ -5,6 +5,7 @@ import {
   TbAppWindow,
   TbArrowBigLeftFilled,
   TbInfoSquareRoundedFilled,
+  TbPrinter,
   TbWifi,
   TbWifiOff,
 } from 'react-icons/tb'
@@ -56,6 +57,10 @@ export interface DetailTitleSectionProps {
   anydesk?: { id: string | undefined }
   /** Online/offline pill. Omit to hide. */
   online?: { isOnline: boolean }
+  /** "นำออกเอกสาร" button — pinned to the far right of the action row (same
+   *  line as Google Map / AnyDesk). Omit to hide; wire it to an
+   *  `ExportFileModal` per the export conventions in CLAUDE.md. */
+  onExport?: () => void
   /** SwapButton tab row. Omit to hide. */
   tabs?: DetailTitleTab
   /** Outer horizontal padding — defaults to the CCTV reference's `px-8`. */
@@ -72,6 +77,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
   googleMap,
   anydesk,
   online,
+  onExport,
   tabs,
   className = 'px-8',
 }) => {
@@ -188,6 +194,31 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
                 {online.isOnline ? <TbWifi /> : <TbWifiOff />}
                 {online.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
               </span>
+            )}
+
+            {/* นำออกเอกสาร — same #66AEFF / TbPrinter treatment SearchBar uses
+                for every other export point, pushed to the far right of the
+                row on desktop (`sm:ms-auto`) and full-width on mobile.
+                Deliberately a DIRECT child of the row, exactly like the
+                Google Map / Anydesk buttons: wrapping it in a plain <div>
+                puts the inline-flex Button in a text line box, which adds
+                ~5px of descender leading (30px tall vs Anydesk's 25px) and
+                visibly drops it below the install-point line. */}
+            {onExport && (
+              <ConfigProvider
+                theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}
+              >
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  icon={<TbPrinter />}
+                  onClick={onExport}
+                  className='w-full! sm:w-auto! sm:ms-auto'
+                >
+                  <p className='fs-12'>นำออกเอกสาร</p>
+                </Button>
+              </ConfigProvider>
             )}
           </div>
         </div>

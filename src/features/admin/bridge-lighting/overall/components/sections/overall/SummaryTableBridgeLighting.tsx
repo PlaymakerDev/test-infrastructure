@@ -10,6 +10,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { APIResponseBridgeLightingList, BridgeLightingSolution } from '@/types/bridge-lighting/overall-api'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 interface Props {
   data?: APIResponseBridgeLightingList
@@ -62,7 +63,7 @@ const buildRows = (apiData: APIResponseBridgeLightingList): Row[] => {
       type: 'header',
       id: `dept-${dept.department_id}`,
       label: dept.department_short_name,
-      count: allSolutions.length,
+      count: countDistinctProjects(allSolutions, (sol) => projectKey(sol.project.id, sol.project.contract_no)),
     })
 
     let i = 0

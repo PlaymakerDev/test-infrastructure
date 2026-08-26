@@ -103,13 +103,23 @@ export interface APIRequestLPRPlates {
   limit?: number
 }
 
+/** Which classification system the plate's vehicle-type fields came from
+ *  (BE added 2026-08-24, both /plates and /plates/:province/:number):
+ *  'anpr' → show `vehicle_type_name` as-is; 'wim' → show
+ *  `ประเภท {vehicle_type_number}`; null/absent → no type data at all.
+ *  Render through `formatVehicleType()` (lpr/overall/data/vehicleType.ts) —
+ *  do not branch on this ad-hoc. */
+export type LPRVehicleTypeSource = 'anpr' | 'wim'
+
 export interface LPRPlateListItem {
   plate_number: string
   plate_province: string
   vehicle_type_name: string | null
-  // Preformatted type label for WIM records (e.g. "ประเภท 1") — already includes
-  // the "ประเภท" prefix. Optional/absent for ANPR. May arrive as string or number.
+  // Preformatted type label for WIM records — the live API still prefixes it
+  // ("ประเภท 11/1", verified 2026-08-24) though the contract doc says bare
+  // "11/1"; formatVehicleType() normalizes either shape. May be number.
   vehicle_type_number?: number | string | null
+  vehicle_type_source?: LPRVehicleTypeSource | null
   // Latest record's source (backward compat).
   source: LPRSource
   // All sources this plate has ever been seen with, unique (v2 — e.g. a plate
@@ -144,6 +154,7 @@ export interface LPRMetadata {
   plate_type: string | null
   vehicle_type_number: number | string | null
   vehicle_type_name: string | null
+  vehicle_type_source?: LPRVehicleTypeSource | null
   vehicle_brand: string | null
   vehicle_color: string | null
 }

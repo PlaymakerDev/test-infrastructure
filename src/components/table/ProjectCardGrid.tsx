@@ -10,6 +10,7 @@ import {
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 /** One project/solution card in the overall GRID view. Shared by
  *  traffic-signal / incident-detection / traffic-volume so the card layout is
@@ -214,11 +215,15 @@ const ProjectCardGrid: React.FC<Props> = ({ items, totalLabel = 'ทั้งห
             style={{ background: '#2a2a2a' }}
           >
             <span className='text-white font-bold'>{bureau}</span>
+            {/* White pill, not yellow — matches the table view's bureau
+                divider and CardGridCctv so both view modes read identically.
+                Count = DISTINCT projects (multiple install points can share
+                one contract), same rule as the tables' bureau rows. */}
             <span
               className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
-              style={{ border: '1px solid var(--yellow)', color: 'var(--yellow)' }}
+              style={{ border: '1px solid #fff', color: '#fff' }}
             >
-              {rows.length} โครงการ
+              {countDistinctProjects(rows, (r) => projectKey(r.projectId, r.contractNo))} โครงการ
             </span>
           </div>
 

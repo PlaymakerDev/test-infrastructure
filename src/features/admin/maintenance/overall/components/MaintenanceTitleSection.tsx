@@ -9,6 +9,7 @@ import useIsMobile from '@/utils/hooks/useIsMobile'
 const TAB_OPTIONS = [
   { label: 'ภาพรวม', value: 'OVERVIEW' },
   { label: 'บันทึกแจ้งซ่อม', value: 'REPAIR' },
+  { label: 'จุดติดตั้งอุปกรณ์', value: 'INSTALL' },
 ]
 
 const PERIOD_OPTIONS = [
@@ -25,7 +26,8 @@ const MaintenanceTitleSection: React.FC = () => {
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
   const hasRepair = searchParams.has('repair')
-  const currentTab = hasRepair ? 'REPAIR' : 'OVERVIEW'
+  const hasInstall = searchParams.has('install')
+  const currentTab = hasRepair ? 'REPAIR' : hasInstall ? 'INSTALL' : 'OVERVIEW'
   const activePeriod = searchParams.get('period') || 'TODAY'
 
   const handleBack = useCallback(() => router.push('/admin/maintenance'), [router])
@@ -33,6 +35,7 @@ const MaintenanceTitleSection: React.FC = () => {
   const handleTabChange = (value: string) => {
     const queryParts: string[] = []
     if (value === 'REPAIR') queryParts.push('repair')
+    if (value === 'INSTALL') queryParts.push('install')
     const query = queryParts.join('&')
     router.push(`/admin/maintenance${query ? `?${query}` : ''}`)
   }
@@ -47,11 +50,11 @@ const MaintenanceTitleSection: React.FC = () => {
 
   return (
     <div>
-      {currentTab === 'REPAIR' ? (
+      {currentTab !== 'OVERVIEW' ? (
         <section className="flex items-start gap-3">
           <TbArrowBigLeftFilled className="fs-24 text-(--yellow) cursor-pointer" onClick={handleBack} style={{ marginTop: 10 }} />
           <div>
-            <h1 className="text-(--yellow)">บันทึกแจ้งซ่อม</h1>
+            <h1 className="text-(--yellow)">{currentTab === 'REPAIR' ? 'บันทึกแจ้งซ่อม' : 'จุดติดตั้งอุปกรณ์'}</h1>
             <p className="text-(--yellow)">ระบบติดตามและเฝ้าระวังการทำงานของอุปกรณ์</p>
           </div>
         </section>
@@ -61,7 +64,7 @@ const MaintenanceTitleSection: React.FC = () => {
           <p className='text-(--yellow)'>ระบบบำรุงรักษา</p>
         </section>
       )}
-      {currentTab !== 'REPAIR' && (
+      {currentTab === 'OVERVIEW' && (
         <section className='mt-5 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4'>
           <div className='flex-1 min-w-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
             <SwapButton

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { TitleSection, OverallSection } from '../components'
 import { DetailProvider } from '../context'
 import { useSearchParams } from 'next/navigation'
@@ -10,6 +10,7 @@ import {
 } from '../hooks'
 import { useScopeAll } from '@/hooks/useScopeAll'
 import { ProjectInfoModal } from '@/components/modal'
+import ExportBridgeLightingModal from '../components/sections/overall/ExportBridgeLightingModal'
 import { Empty, Skeleton } from 'antd'
 
 interface Props {
@@ -23,6 +24,7 @@ const DetailScreen: React.FC<Props> = (props) => {
   const projectId = searchParams.get('project_id')
   const isWarranty = searchParams.get('is_warranty')
   const scope = useScopeAll() ? 'all' : 'own'
+  const [exportOpen, setExportOpen] = useState(false)
 
   const {
     data: locationData,
@@ -60,6 +62,7 @@ const DetailScreen: React.FC<Props> = (props) => {
         data={locationData?.data}
         projectId={projectId}
         isWarranty={isWarranty}
+        onExport={() => setExportOpen(true)}
       />
     )
   }, [isLocationLoading, isLocationError, locationData, projectId, isWarranty])
@@ -105,6 +108,15 @@ const DetailScreen: React.FC<Props> = (props) => {
         </section>
       </div>
       <ProjectInfoModal />
+      {/* นำออกเอกสาร — mounted at the screen (the data owner) so the report
+        * always exports the same payloads the sections below are rendering. */}
+      <ExportBridgeLightingModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        locationData={locationData?.data}
+        widData={widData?.data}
+        pmChartData={pmChartData?.data}
+      />
     </DetailProvider>
   )
 }

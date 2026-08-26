@@ -13,12 +13,47 @@ export interface BureauGroupable {
   id: string
 }
 
+/** First non-empty identity out of a candidate chain — callers pass their
+ *  row's identity fields in preference order (projectId, then contractNo, …).
+ *  Returns undefined when every candidate is null/undefined/blank. */
+export const projectKey = (
+  ...candidates: Array<string | number | null | undefined>
+): string | undefined => {
+  for (const c of candidates) {
+    if (c === null || c === undefined) continue
+    const s = String(c).trim()
+    if (s) return s
+  }
+  return undefined
+}
+
+/** Count DISTINCT projects in a bucket. Several install points (จุดติดตั้ง)
+ *  can belong to one project/contract — e.g. traffic-volume ปท.3010 จุดที่ 1
+ *  and จุดที่ 2 share คค 0709/29/2567 — so the "N โครงการ" badge must not
+ *  count rows. Rows whose keyOf resolves to undefined (no identity at all)
+ *  each count as their own project, so the badge never silently collapses
+ *  unrelated identity-less rows into one. */
+export const countDistinctProjects = <T>(
+  items: T[],
+  keyOf: (item: T) => string | undefined,
+): number => {
+  const keys = new Set<string>()
+  let unidentified = 0
+  for (const item of items) {
+    const key = keyOf(item)
+    if (key === undefined) unidentified++
+    else keys.add(key)
+  }
+  return keys.size + unidentified
+}
+
 export type BureauGroupedRow<T extends BureauGroupable> =
   | {
       kind: 'bureau'
       id: string
       bureau: string
-      /** Number of projects under this bureau — drives the count badge. */
+      /** Number of DISTINCT projects under this bureau — drives the
+       *  "N โครงการ" count badge (not the number of install-point rows). */
       count: number
     }
   | {
@@ -39,7 +74,11 @@ export type BureauGroupedRow<T extends BureauGroupable> =
  *  rowspan scan = O(N) total. The inner `while` only advances the outer
  *  index, never re-scans previous rows. */
 export const groupByBureau = <T extends BureauGroupable>(
-  projects: T[]
+  projects: T[],
+  /** Resolves a row's project identity (use `projectKey(...)`) so the bureau
+   *  header counts DISTINCT projects. Required on purpose: an accessor-less
+   *  call is how the old rows-not-projects badge bug happened. */
+  projectKeyOf: (item: T) => string | undefined,
 ): BureauGroupedRow<T>[] => {
   const groups = new Map<string, T[]>()
   for (const p of projects) {
@@ -53,7 +92,7 @@ export const groupByBureau = <T extends BureauGroupable>(
       kind: 'bureau',
       id: `bureau-${bureau}`,
       bureau,
-      count: items.length,
+      count: countDistinctProjects(items, projectKeyOf),
     })
 
     let i = 0

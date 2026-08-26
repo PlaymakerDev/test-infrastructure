@@ -9,6 +9,7 @@ import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 interface Props {
   /** Filtered + searched signal projects */
@@ -82,7 +83,7 @@ const SummaryTableTrafficSignal: React.FC<Props> = ({ projects }) => {
     }
     const out: Row[] = []
     for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(items, (r) => projectKey(r.projectId, r.contractNo)) })
 
       // Within each bureau, merge consecutive rows that share the same
       // roadCode by assigning rowSpan to the first row and 0 to the rest.

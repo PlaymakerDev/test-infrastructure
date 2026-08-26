@@ -14,6 +14,7 @@ import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { LPRRow } from '../../../data/lprRows'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 /** Table row — a bureau (ขทช.) divider header or a real install-point row.
  *  Same interleaved shape as cctv / incident-detection / traffic-signal. */
@@ -51,7 +52,7 @@ const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
     }
     const out: TableRow[] = []
     for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(items, (r) => projectKey(r.project_id, r.contract_no)) })
       let i = 0
       while (i < items.length) {
         const code = items[i].road_code

@@ -132,8 +132,26 @@ export interface ShellyStatusData {
   mqtt_prefix: string
   name: string
   online: boolean
-  output: boolean
+  /** Relay state. OPTIONAL on purpose — some PLC-LOGO devices omit the field
+   *  entirely (verified wid 1899 สะพานกรุงธน, 2026-08-24), so `undefined`
+   *  means "unknown", not "off". */
+  output?: boolean
   wid: number
+  /** Bridge group id — one physical bridge whose two sides are SEPARATE
+   *  solutions but a single shelly group (สะพานกรุงเทพ = "1278", solutions
+   *  3080 ฝั่งพระนคร + 3083 ฝั่งธน). `POST /shelly/status` returns every
+   *  device in the group regardless of which wid was asked for. Absent for
+   *  single-device bridges. */
+  bridge_group_id?: string
+  /** Side label inside the group ("ธนบุรี" / "พระนคร"); "main" for singles. */
+  side?: string
+  /** Live power telemetry — Shelly Pro 1PM only, absent on PLC LOGO devices. */
+  apower?: number
+  voltage?: number
+  current?: number
+  /** Cumulative energy counter (kWh). */
+  aenergy_total?: number
+  temperature_c?: number
 }
 
 // API OPEN BRIDGE LIGHTING

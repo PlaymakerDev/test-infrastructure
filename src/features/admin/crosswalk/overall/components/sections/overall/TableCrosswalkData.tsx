@@ -10,6 +10,7 @@ import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import {
   groupByBureau,
+  projectKey,
   type BureauGroupedRow,
 } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { CrosswalkProject } from '@/features/admin/crosswalk/overall/data/crosswalk'
@@ -66,7 +67,10 @@ const TableCrosswalkData: React.FC<Props> = ({ projects, loading }) => {
     [router, deptId],
   )
 
-  const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
+  const data = useMemo<Row[]>(
+    () => groupByBureau(projects, (p) => projectKey(p.projectId, p.contractNo)),
+    [projects],
+  )
 
   // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
   // rowKey but its span changes across a filter toggle — merged cells then

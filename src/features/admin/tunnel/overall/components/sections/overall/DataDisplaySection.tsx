@@ -13,7 +13,7 @@ import ModalTunnelViewer, {
 import ProjectCardGrid, { type ProjectCardItem } from '@/components/table/ProjectCardGrid'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
-import { groupByBureau } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
+import { groupByBureau, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import { useTunnelCentralList } from '@/hooks/queries/tunnel'
 import { useDeptId } from '@/hooks/useDeptId'
 import type { TunnelProject } from '@/features/admin/tunnel/overall/data/tunnel'
@@ -218,7 +218,7 @@ const OverallDataDisplaySection: React.FC<Props> = (props) => {
   // through the same groupByBureau helper TableTunnelData renders from, then
   // keep only the project rows — exports exactly the filtered rows on screen.
   const exportRows = useMemo<TunnelProject[]>(
-    () => groupByBureau(filtered).flatMap((r) => (r.kind === 'project' ? [r.project] : [])),
+    () => groupByBureau(filtered, (p) => projectKey(p.projectId, p.contractNo)).flatMap((r) => (r.kind === 'project' ? [r.project] : [])),
     [filtered],
   )
 

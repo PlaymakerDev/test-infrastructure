@@ -7,41 +7,41 @@ import QueryBoundary from '@/components/common/QueryBoundary'
 import { usePlatesInfinite } from '@/hooks/queries/lpr'
 import type { LPRPlateListItem } from '@/types/lpr/lpr-api'
 import { VEHICLE_TYPE_COLOR } from '@/constants/vehicle'
+import { formatVehicleType } from '../../../data/vehicleType'
 import { useOverallContext, type SelectedPlate } from '../../../context'
 
 interface Props {
   openFromDrawer?: boolean
 }
 
-// A plate is "WIM-only" when every source it's been seen with is wim. Anything
-// with anpr (anpr-only OR wim+anpr) is treated as ANPR for display.
 const sourcesOf = (item: LPRPlateListItem): LPRPlateListItem['sources'] =>
   item.sources && item.sources.length > 0 ? item.sources : [item.source]
-const isWimOnly = (item: LPRPlateListItem): boolean =>
-  (sourcesOf(item) ?? []).every((s) => s === 'wim')
 
-// Left-card badge: WIM-only shows the "ประเภท N" label (already preformatted —
-// do NOT prefix "ประเภท" again); any plate with anpr shows the type name.
-// Returns '' when there's no value → LicenseList hides the badge entirely.
-const badgeLabel = (item: LPRPlateListItem): string => {
-  const typeNo = item.vehicle_type_number
-  if (isWimOnly(item) && typeNo != null && `${typeNo}`.trim() !== '') {
-    return `${typeNo}`
+// Badge cap for the long-WIM-name fallback (source='wim' with no type number)
+// — the full text goes into the badge's `title` tooltip.
+const BADGE_MAX_CHARS = 24
+
+const toLicenseItem = (p: LPRPlateListItem): LicenseItem => {
+  // vehicle_type_source picks the classification system (2026-08-24) — the
+  // old sources-based guess showed WIM's long description on wim+anpr plates
+  // whose ANPR side had no type, overflowing the badge.
+  const vt = formatVehicleType(p)
+  const truncated = vt.isLongWimName && vt.label.length > BADGE_MAX_CHARS
+  return {
+    id: `${p.plate_province}|${p.plate_number}`,
+    license_no: p.plate_number,
+    license_province: p.plate_province,
+    // '' hides the badge entirely (existing LicenseList behavior) — a plate
+    // with no type data shows no badge rather than a "-" pill.
+    license_type: vt.label === '-' ? '' : truncated ? `${vt.label.slice(0, BADGE_MAX_CHARS)}…` : vt.label,
+    license_type_title: truncated ? vt.label : undefined,
+    // Color by the ANPR type name; WIM "ประเภท N" labels have no name match → default yellow.
+    license_type_color: vt.anprName ? VEHICLE_TYPE_COLOR[vt.anprName] : undefined,
+    road_description: p.detection_point ?? 'ไม่ระบุจุดตรวจจับ',
+    sta: '',
+    timestamp: p.captured_at_display,
   }
-  return item.vehicle_type_name ?? ''
 }
-
-const toLicenseItem = (p: LPRPlateListItem): LicenseItem => ({
-  id: `${p.plate_province}|${p.plate_number}`,
-  license_no: p.plate_number,
-  license_province: p.plate_province,
-  license_type: badgeLabel(p),
-  // Color by the actual type name; WIM-only ("ประเภท N") has no name match → default.
-  license_type_color: p.vehicle_type_name ? VEHICLE_TYPE_COLOR[p.vehicle_type_name] : undefined,
-  road_description: p.detection_point ?? 'ไม่ระบุจุดตรวจจับ',
-  sta: '',
-  timestamp: p.captured_at_display,
-})
 
 const toSelected = (p: LPRPlateListItem): SelectedPlate => ({
   plate_number: p.plate_number,

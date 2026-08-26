@@ -26,6 +26,9 @@ export interface LicenseItem {
   license_type: string
   // Optional badge color (border + text). Omit for the default yellow badge.
   license_type_color?: string
+  /** Full text shown as a native tooltip when `license_type` was truncated
+   *  (LPR's long-WIM-description fallback). Omit when the label is complete. */
+  license_type_title?: string
   road_description: string
   sta: string
   timestamp: string
@@ -105,6 +108,7 @@ const LicenseCard: React.FC<{
         <div
           className={`shrink-0 rounded-3xl py-1 px-4 border text-center ${text.badge} ${item.license_type_color ? '' : 'border-(--yellow)'}`}
           style={item.license_type_color ? { borderColor: item.license_type_color, color: item.license_type_color } : undefined}
+          title={item.license_type_title}
         >
           {item.license_type}
         </div>

@@ -13,6 +13,7 @@ import {
 } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useOverallContext } from '../context'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 interface Props {
   projects: TrafficLightingProject[]
@@ -70,7 +71,7 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
 
     const out: Row[] = []
     for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(items, (r) => projectKey(r.projectId, r.contractNo)) })
 
       let i = 0
       while (i < items.length) {

@@ -6,18 +6,21 @@ import {
   MaintenanceOverviewSection,
 } from '../components'
 import { RepairRecordsSection } from '../../repair-history/components'
+import { InstallPointsSection } from '../../install/components'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 
 const MaintenanceContent: React.FC = () => {
   const searchParams = useSearchParams()
   const hasRepair = searchParams.has('repair')
+  const hasInstall = searchParams.has('install')
 
   const period = searchParams.get('period') || 'TODAY'
 
   const currentTab = useMemo(() => {
     if (hasRepair) return 'REPAIR'
+    if (hasInstall) return 'INSTALL'
     return 'OVERVIEW'
-  }, [hasRepair])
+  }, [hasRepair, hasInstall])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {
@@ -25,6 +28,8 @@ const MaintenanceContent: React.FC = () => {
         return <MaintenanceOverviewSection period={period} />
       case 'REPAIR':
         return <RepairRecordsSection />
+      case 'INSTALL':
+        return <InstallPointsSection />
       default:
         return <MaintenanceOverviewSection period={period} />
     }
@@ -36,7 +41,7 @@ const MaintenanceContent: React.FC = () => {
       <div className="px-3 sm:px-10">
         <MaintenanceTitleSection />
       </div>
-      <section className={hasRepair ? '' : 'mt-8 px-3 sm:px-10'}>
+      <section className={hasRepair || hasInstall ? 'mt-4' : 'mt-8 px-3 sm:px-10'}>
         {renderContent}
       </section>
     </div>

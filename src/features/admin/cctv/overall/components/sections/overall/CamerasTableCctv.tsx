@@ -8,6 +8,7 @@ import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { CCTVOverviewRow } from '@/types/cctv/overview-api'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 /** Count cell — the filled box appears only for single-state rows (all online
  *  OR all offline). A mixed row shows plain coloured numbers. */
@@ -81,7 +82,7 @@ const CamerasTableCctv: React.FC<Props> = ({ items, loading }) => {
     }
     const out: Row[] = []
     for (const [bureau, rows] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: rows.length })
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(rows, (r) => projectKey(r.project.id, r.project.contract_no)) })
       let i = 0
       while (i < rows.length) {
         const code = rows[i].road.code_name

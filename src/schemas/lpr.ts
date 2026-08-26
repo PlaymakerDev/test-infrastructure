@@ -19,6 +19,10 @@ const sourceSchema = z.enum(['wim', 'anpr'])
 // WIM records send a preformatted label ("ประเภท 1"); accept string or number.
 const vehicleTypeNumberSchema = z.union([z.number(), z.string()]).nullable()
 
+// BE added 2026-08-24 — which classification system the vehicle-type fields
+// belong to ('anpr' name vs 'wim' type number). Optional for old payloads.
+const vehicleTypeSourceSchema = z.enum(['anpr', 'wim']).nullable().optional()
+
 // detection_location = [lat, lng]; missing coords = [null, null]; absent = null.
 const coordsSchema = z
   .tuple([z.number().nullable(), z.number().nullable()])
@@ -30,6 +34,7 @@ export const lprPlateListItemSchema = z.object({
   plate_province: z.string(),
   vehicle_type_name: z.string().nullable(),
   vehicle_type_number: vehicleTypeNumberSchema.optional(),
+  vehicle_type_source: vehicleTypeSourceSchema,
   source: sourceSchema,
   sources: z.array(sourceSchema).optional(),
   detection_point: z.string().nullable(),
@@ -57,6 +62,7 @@ export const lprMetadataSchema = z.object({
   plate_type: z.string().nullable(),
   vehicle_type_number: vehicleTypeNumberSchema,
   vehicle_type_name: z.string().nullable(),
+  vehicle_type_source: vehicleTypeSourceSchema,
   vehicle_brand: z.string().nullable(),
   vehicle_color: z.string().nullable(),
 }) satisfies z.ZodType<LPRMetadata>

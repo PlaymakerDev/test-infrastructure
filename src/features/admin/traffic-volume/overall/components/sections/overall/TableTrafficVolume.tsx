@@ -16,6 +16,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import {
   groupByBureau,
+  projectKey,
   type BureauGroupedRow,
 } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 import type { TrafficVolumeProject } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
@@ -61,7 +62,10 @@ const TableTrafficVolume: React.FC<Props> = ({ projects, loading }) => {
     setLicenseSolution({ id: project.id, name: project.installPoint, roadId: project.roadId ?? '' })
   }, [])
 
-  const data = useMemo<Row[]>(() => groupByBureau(projects), [projects])
+  const data = useMemo<Row[]>(
+    () => groupByBureau(projects, (p) => projectKey(p.projectId, p.contractNo)),
+    [projects],
+  )
 
   // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
   // rowKey but its span changes across a filter toggle — merged cells then

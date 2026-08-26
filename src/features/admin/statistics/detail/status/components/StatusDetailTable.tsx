@@ -248,9 +248,6 @@ const StatusDetailTable: React.FC<StatusDetailTableProps> = ({ vmsId }) => {
           defaultViewMode={viewMode}
           onViewModeChange={setViewMode}
           onExport={() => setExportOpen(true)}
-          // Deliberately hidden pre-export (original design) — wiring stays so
-          // flipping this flag is all it takes to enable the button.
-          showExportButton={false}
         />
       </section>
 

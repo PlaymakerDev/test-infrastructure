@@ -15,6 +15,7 @@ import { getDepartmentByRoadAPI } from '@/services/routes/SharedService'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { CCTVOverviewListItem, CCTVOverviewRow } from '@/types/cctv/overview-api'
 import { Tooltip } from 'antd'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 // ── Pill badge ───────────────────────────────────────────────────────────────
 
@@ -234,7 +235,7 @@ const CardGridCctv: React.FC<Props> = ({ items }) => {
               className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
               style={{ border: '1px solid #fff', color: '#fff' }}
             >
-              {rows.length} โครงการ
+              {countDistinctProjects(rows, (r) => projectKey(r.project.id, r.project.contract_no))} โครงการ
             </span>
           </div>
 

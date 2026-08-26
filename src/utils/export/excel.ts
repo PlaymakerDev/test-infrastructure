@@ -16,9 +16,9 @@ export interface ExportColumn<Row> {
   value: (row: Row, index: number) => string | number
 }
 
-export interface ExportExcelArgs<Row> {
-  /** File name base — saved as `<filenameBase>_YYYYMMDD_HHmmss.xlsx`. */
-  filenameBase: string
+/** One sheet's worth of config — shared by the single-sheet `exportExcel`
+ *  and the multi-sheet `exportExcelSheets`. */
+export interface ExportSheetArgs<Row> {
   sheetName: string
   columns: ExportColumn<Row>[]
   rows: Row[]
@@ -32,6 +32,41 @@ export interface ExportExcelArgs<Row> {
   filterNote?: string
 }
 
+export interface ExportExcelArgs<Row> extends ExportSheetArgs<Row> {
+  /** File name base — saved as `<filenameBase>_YYYYMMDD_HHmmss.xlsx`. */
+  filenameBase: string
+}
+
+/** A sheet whose `Row` generic has been resolved away (headers + a flat cell
+ *  matrix) so sheets built from DIFFERENT row types can travel together in one
+ *  workbook without an `any`. Always build one via `excelSheet()`. */
+export interface ErasedExportSheet {
+  sheetName: string
+  title?: string
+  filterNote?: string
+  headers: { header: string; width?: number }[]
+  cells: (string | number)[][]
+}
+
+export interface ExportExcelSheetsArgs {
+  /** File name base — saved as `<filenameBase>_YYYYMMDD_HHmmss.xlsx`. */
+  filenameBase: string
+  sheets: ErasedExportSheet[]
+}
+
+/** Resolve one typed sheet config into an `ErasedExportSheet`, so a workbook
+ *  can carry several sheets with unrelated row types (e.g. a status table, a
+ *  latest-readings table and a time-series table on one device report). */
+export function excelSheet<Row>({ sheetName, columns, rows, title, filterNote }: ExportSheetArgs<Row>): ErasedExportSheet {
+  return {
+    sheetName,
+    title,
+    filterNote,
+    headers: columns.map((c) => ({ header: c.header, width: c.width })),
+    cells: rows.map((row, i) => columns.map((c) => c.value(row, i))),
+  }
+}
+
 type StyledCell = { v: string | number; t?: 's' | 'n'; s?: object }
 
 const THIN_BORDER = {
@@ -41,11 +76,10 @@ const THIN_BORDER = {
   right: { style: 'thin', color: { rgb: 'FF999999' } },
 }
 
-/** Build + download an .xlsx from column config (same shape the PDF export
- *  uses, so a page defines its columns once and passes them to both).
- *  Mirrors the drr-cm-fe pattern: json sheet + explicit column widths. */
-export function exportExcel<Row>({ filenameBase, sheetName, columns, rows, title, filterNote }: ExportExcelArgs<Row>): void {
-  const colCount = columns.length
+/** Build one styled worksheet: optional PDF-style header block, a filled
+ *  header row, then bordered data cells. */
+function buildWorksheet({ title, filterNote, headers, cells }: ErasedExportSheet): XLSX.WorkSheet {
+  const colCount = headers.length
   const aoa: (StyledCell | string | number)[][] = []
   const merges: XLSX.Range[] = []
 
@@ -74,7 +108,7 @@ export function exportExcel<Row>({ filenameBase, sheetName, columns, rows, title
   }
 
   aoa.push(
-    columns.map<StyledCell>((c) => ({
+    headers.map<StyledCell>((c) => ({
       v: c.header,
       s: {
         font: { bold: true },
@@ -84,23 +118,41 @@ export function exportExcel<Row>({ filenameBase, sheetName, columns, rows, title
       },
     })),
   )
-  for (const [i, row] of rows.entries()) {
+  for (const row of cells) {
     aoa.push(
-      columns.map<StyledCell>((c) => {
-        const v = c.value(row, i)
-        return { v, t: typeof v === 'number' ? 'n' : 's', s: { border: THIN_BORDER, alignment: { vertical: 'top' } } }
-      }),
+      row.map<StyledCell>((v) => ({
+        v,
+        t: typeof v === 'number' ? 'n' : 's',
+        s: { border: THIN_BORDER, alignment: { vertical: 'top' } },
+      })),
     )
   }
 
   const ws = XLSX.utils.aoa_to_sheet(aoa)
-  ws['!cols'] = columns.map((c) => ({ wch: c.width ?? 16 }))
+  ws['!cols'] = headers.map((c) => ({ wch: c.width ?? 16 }))
   if (merges.length) ws['!merges'] = merges
   // Taller title row so the 14pt title breathes like the PDF header.
   if (title) ws['!rows'] = [{ hpt: 24 }]
+  return ws
+}
 
+/** Build + download a multi-sheet .xlsx — one tab per `ErasedExportSheet`
+ *  (see `excelSheet()`). Use when one report covers several differently-shaped
+ *  tables (device status / latest readings / time series) that would otherwise
+ *  need one file each. */
+export function exportExcelSheets({ filenameBase, sheets }: ExportExcelSheetsArgs): void {
   const wb = XLSX.utils.book_new()
-  // Excel sheet names cap at 31 chars and reject \ / ? * [ ] :
-  XLSX.utils.book_append_sheet(wb, ws, sheetName.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31))
+  for (const sheet of sheets) {
+    // Excel sheet names cap at 31 chars and reject \ / ? * [ ] :
+    const name = sheet.sheetName.replace(/[\/?*[\]:]/g, ' ').slice(0, 31)
+    XLSX.utils.book_append_sheet(wb, buildWorksheet(sheet), name)
+  }
   XLSX.writeFile(wb, `${filenameBase}_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`)
+}
+
+/** Build + download a single-sheet .xlsx from column config (same shape the
+ *  PDF export uses, so a page defines its columns once and passes them to
+ *  both). Mirrors the drr-cm-fe pattern: json sheet + explicit column widths. */
+export function exportExcel<Row>({ filenameBase, ...sheet }: ExportExcelArgs<Row>): void {
+  exportExcelSheets({ filenameBase, sheets: [excelSheet(sheet)] })
 }

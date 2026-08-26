@@ -10,6 +10,7 @@ import DetailLinkText from '@/components/table/DetailLinkText'
 import { useDeptId } from '@/hooks/useDeptId'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import type { TrafficSignalProject } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
 
 interface Props {
   /** Filtered + searched signal projects */
@@ -75,7 +76,7 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
     }
     const out: Row[] = []
     for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: items.length })
+      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(items, (r) => projectKey(r.projectId, r.contractNo)) })
 
       let i = 0
       while (i < items.length) {
