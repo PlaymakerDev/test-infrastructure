@@ -30,7 +30,6 @@ import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontS
 import { parseImageUrls } from '../../data/parseImageUrls'
 import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import ExportFileModal from '@/components/export/ExportFileModal'
-import type { PdfReportBlock } from '@/utils/export/pdf'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -298,79 +297,17 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     hasLive: !!cameraDetail?.is_online && !!cameraDetail?.hls_url,
   }
 
-  // นำออกเอกสาร — single-case report (PDF only, no Excel — a photo report
-  // has no meaningful spreadsheet form). ก่อนซ่อม/หลังซ่อม photos are
-  // pre-fetched as data URLs; a failed fetch just renders that card photo-less
-  // (same fallback as the LPR timeline export).
+  // นำออกเอกสาร — the ministry's outgoing letter (หนังสือขอให้ซ่อมแซมอุปกรณ์
+  // ชำรุดบกพร่องระหว่างค้ำประกันสัญญา) on ครุฑ letterhead in TH Sarabun New.
+  // The single letter page IS the whole document: PDF only (a letter has no
+  // meaningful spreadsheet form) and no enclosure sheet, so the ก่อนซ่อม/
+  // หลังซ่อม photos are deliberately not exported.
   const handleExportPdf = async () => {
-    const [{ exportReportPdf }, { fetchImageAsDataUrl }] = await Promise.all([
-      import('@/utils/export/pdf'),
-      import('@/utils/export/image'),
+    const [{ exportLetterPdf }, { buildRepairLetter }] = await Promise.all([
+      import('@/utils/export/letterPdf'),
+      import('../data/repairLetter'),
     ])
-    const beforeUrls = beforeFiles.map(f => f.url).filter((url): url is string => !!url)
-    const afterUrls = afterFiles.map(f => f.url).filter((url): url is string => !!url)
-    const [beforeImages, afterImages] = await Promise.all([
-      Promise.all(beforeUrls.map(fetchImageAsDataUrl)),
-      Promise.all(afterUrls.map(fetchImageAsDataUrl)),
-    ])
-
-    const blocks: PdfReportBlock[] = [
-      {
-        type: 'kv',
-        title: 'ข้อมูลการแจ้งซ่อม',
-        items: [
-          { label: 'สถานะซ่อมแซม', value: statusConfig.label },
-          { label: 'หมวดหมู่ของปัญหาที่พบ', value: formData.category || '-' },
-          { label: 'หน่วยงานรับผิดชอบหรือมอบหมาย', value: formData.agency || '-' },
-          { label: 'ปัญหาที่พบ', value: formData.problem || '-' },
-          { label: 'การดำเนินการหรือวิธีการแก้ไข', value: formData.solution || '-' },
-          { label: 'วันที่แจ้งซ่อม', value: formData.reportDate || '-' },
-          { label: 'วันที่ตรวจสอบ', value: formData.inspectDate || '-' },
-        ],
-      },
-      {
-        type: 'kv',
-        title: 'ข้อมูลโครงการ',
-        items: [
-          { label: 'ชื่อโครงการ', value: project.projectName },
-          { label: 'ผู้รับจ้าง', value: project.contractor },
-          { label: 'หน่วยงานรับผิดชอบ', value: project.agency },
-          { label: 'เลขที่สัญญา', value: project.contractNo },
-          { label: 'เริ่มต้นการรับประกัน', value: project.warrantyStart },
-          { label: 'สิ้นสุดการรับประกัน', value: project.warrantyEnd },
-          { label: 'สถานะค้ำประกัน', value: project.warrantyStatus === 'expired' ? 'หมดค้ำ' : 'ในค้ำ' },
-        ],
-      },
-      {
-        type: 'kv',
-        title: 'ข้อมูลอุปกรณ์',
-        items: [
-          { label: 'ชื่ออุปกรณ์', value: device.deviceName },
-          { label: 'ประเภทอุปกรณ์', value: device.deviceType },
-          { label: 'จุดติดตั้ง / สายทาง', value: device.installPoint },
-          { label: 'IP Address', value: device.ipAddress },
-          { label: 'วันที่เริ่มออฟไลน์', value: device.offlineDate || '-' },
-          { label: 'จำนวนวันออฟไลน์', value: device.offlineDays >= 1 ? `${device.offlineDays} วัน` : '-' },
-        ],
-      },
-      {
-        type: 'entries',
-        title: 'ก่อนซ่อม',
-        items: beforeUrls.map((_, i) => ({ image: beforeImages[i], heading: `รูปที่ ${i + 1}`, fields: [] })),
-      },
-      {
-        type: 'entries',
-        title: 'หลังซ่อม',
-        items: afterUrls.map((_, i) => ({ image: afterImages[i], heading: `รูปที่ ${i + 1}`, fields: [] })),
-      },
-    ]
-
-    await exportReportPdf({
-      filenameBase: `Maintenance_Case_${id}`,
-      title: `รายงานบันทึกแจ้งซ่อม - Case No. ${id}`,
-      subtitleNote: device.deviceName,
-      blocks,
-    })
+    await exportLetterPdf(buildRepairLetter({ caseNo: id, project }))
   }
 
   if (loading) {

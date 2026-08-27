@@ -40,14 +40,16 @@ const graphemes =
     : null
 
 /** Minimal slice of the fontkit face @react-pdf keeps in its Font store. */
-interface FontLike {
+export interface FontLike {
   unitsPerEm: number
   layout(text: string): { advanceWidth: number }
 }
 
-async function loadReportFont(): Promise<FontLike | null> {
+/** Load the fontkit face of a `*__measure` family for wrapPdfText. Always pass
+ *  a family registered ONLY for measurement — see the register note above. */
+export async function loadMeasureFont(family: string): Promise<FontLike | null> {
   try {
-    const source = Font.getFont({ fontFamily: 'NotoSansThai__measure', fontStyle: 'normal', fontWeight: 400 })
+    const source = Font.getFont({ fontFamily: family, fontStyle: 'normal', fontWeight: 400 })
     await source.load()
     return (source.data as unknown as FontLike) ?? null
   } catch {
@@ -55,24 +57,69 @@ async function loadReportFont(): Promise<FontLike | null> {
   }
 }
 
+const loadReportFont = () => loadMeasureFont('NotoSansThai__measure')
+
+/** A dotted fill-in leader ("อ..........", "(..........)") — the segmenters
+ *  hand these back as several tokens, so a line break can land in the middle of
+ *  a run of dots. Glue each run to whatever it belongs to: a leader (and a
+ *  closing bracket) joins the token before it, an opening bracket joins the
+ *  token after it. The result is one unbreakable token per blank. */
+const LEADER = /^[.…]+$/
+function glueLeaders(tokens: string[]): string[] {
+  const out: string[] = []
+  let pendingOpen = ''
+  for (const tok of tokens) {
+    if (tok === '(' || tok === '[') {
+      pendingOpen += tok
+      continue
+    }
+    const glued = pendingOpen + tok
+    pendingOpen = ''
+    const joinsPrevious = LEADER.test(tok) || tok === ')' || tok === ']'
+    if (joinsPrevious && out.length > 0 && out[out.length - 1].trim() !== '') {
+      out[out.length - 1] += glued
+      continue
+    }
+    out.push(glued)
+  }
+  if (pendingOpen) out.push(pendingOpen)
+  return out
+}
+
 /** Greedy line-wrap `text` to `maxPt` points at `fontSize`, breaking at Thai
  *  word boundaries (grapheme hard-split only when a single word is wider than
  *  the column). Lines are joined with ' \n' — the trailing space per line is
- *  the same final-glyph clip workaround used on whole cells. */
-function wrapPdfText(fk: FontLike, text: string, maxPt: number, fontSize: number): string {
+ *  the same final-glyph clip workaround used on whole cells.
+ *
+ *  `firstLineMaxPt` narrows the FIRST line of each paragraph only — pair it
+ *  with react-pdf's `textIndent` so an indented first line still wraps at the
+ *  right column edge (used by the official-letter export's body paragraphs). */
+export function wrapPdfText(
+  fk: FontLike,
+  text: string,
+  maxPt: number,
+  fontSize: number,
+  firstLineMaxPt?: number,
+): string {
   const scale = fontSize / fk.unitsPerEm
   const w = (s: string) => fk.layout(s).advanceWidth * scale
   const wrapParagraph = (para: string): string[] => {
-    if (!para || w(para) <= maxPt) return [para]
-    const tokens = thaiWords
-      ? Array.from(thaiWords.segment(para), (s) => s.segment)
-      : para.split(/(\s+)/).filter(Boolean)
+    const firstMax = firstLineMaxPt ?? maxPt
+    if (!para || w(para) <= firstMax) return [para]
+    const tokens = glueLeaders(
+      thaiWords
+        ? Array.from(thaiWords.segment(para), (s) => s.segment)
+        : para.split(/(\s+)/).filter(Boolean)
+    )
     const lines: string[] = []
     let cur = ''
+    // Limit for the line currently being filled — the first one may be
+    // narrower to leave room for the paragraph indent.
+    const limit = () => (lines.length === 0 ? firstMax : maxPt)
     for (const tok of tokens) {
       if (cur === '' && tok.trim() === '') continue // no leading spaces on a fresh line
       const candidate = cur + tok
-      if (w(candidate) <= maxPt) {
+      if (w(candidate) <= limit()) {
         cur = candidate
         continue
       }
@@ -81,14 +128,14 @@ function wrapPdfText(fk: FontLike, text: string, maxPt: number, fontSize: number
         cur = ''
       }
       if (tok.trim() === '') continue
-      if (w(tok) <= maxPt) {
+      if (w(tok) <= limit()) {
         cur = tok
         continue
       }
       // Single word wider than the column — hard-split at grapheme clusters.
       const clusters = graphemes ? Array.from(graphemes.segment(tok), (s) => s.segment) : Array.from(tok)
       for (const cl of clusters) {
-        if (cur !== '' && w(cur + cl) > maxPt) {
+        if (cur !== '' && w(cur + cl) > limit()) {
           lines.push(cur)
           cur = ''
         }
@@ -286,7 +333,7 @@ export async function prewrapTableArgs<Row>(args: ExportTablePdfArgs<Row>): Prom
   }
 }
 
-function download(blob: Blob, filename: string) {
+export function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
