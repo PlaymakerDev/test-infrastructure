@@ -260,3 +260,57 @@ export interface ContractorSummaryRow {
   total_offline: number
   open_cases: number
 }
+
+// ── GET /manage/maintenance/central/{solution_type_id} ───────────────────────
+// สทช. → ขทช. tree with device- AND location-level online/offline counts.
+// Added by BE 2026-08-26 for the จุดติดตั้งอุปกรณ์ tab's sidebar (per-type:
+// 1=CCTV, 6=Lighting, 7=VMS). `bureau_id` is a DB id, NOT the สทช. running
+// number (e.g. สทช.2 has bureau_id 7) — treat as opaque; the response is
+// already ordered for display and `bureau_name` carries the full label.
+
+export interface MaintenanceCentralDepartment {
+  department_id: number
+  department_name: string
+  online_count: number
+  offline_count: number
+  device_count: number
+  location_count: number
+  location_online_count: number
+  location_offline_count: number
+}
+
+export interface MaintenanceCentralBureau {
+  bureau_id: number
+  bureau_name: string
+  online_count: number
+  offline_count: number
+  device_count: number
+  location_count: number
+  location_online_count: number
+  location_offline_count: number
+  departments: MaintenanceCentralDepartment[]
+}
+
+// ── GET /manage/maintenance/device-road/{department_id}?solution_type_id= ────
+// Every device of one solution type on the department's roads, grouped by
+// road (BE 2026-08-27) — the จุดติดตั้งอุปกรณ์ tab's table source. Only
+// 1=CCTV, 6=Lighting, 7=VMS are supported.
+
+export interface MaintenanceRoadDevice {
+  name: string
+  /** Km marker, e.g. "21+871" (bare — no "กม." prefix). */
+  sta: string
+  latitude: number
+  longitude: number
+}
+
+export interface MaintenanceDeviceRoad {
+  road_id: number
+  road_code: string
+  road_name: string
+  /** จุดติดตั้ง count on this road. */
+  solution_count: number
+  /** Device (camera/sign/cabinet) count on this road. */
+  device_count: number
+  device: MaintenanceRoadDevice[]
+}

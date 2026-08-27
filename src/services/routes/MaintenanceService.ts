@@ -1,3 +1,5 @@
+import type { MaintenanceDeviceRoad } from '@/types/maintenance'
+import type { MaintenanceCentralBureau } from '@/types/maintenance'
 import ApiService from "../ApiService"
 import type {
   SummaryItem,
@@ -179,3 +181,21 @@ export const getContractorSummaryAPI = async () => {
     method: 'GET',
   })
 }
+
+/** สทช.→ขทช. tree + online/offline counts for ONE solution type — backs the
+ *  จุดติดตั้งอุปกรณ์ tab's sidebar (BE 2026-08-26). */
+export const getMaintenanceCentralAPI = (solutionTypeId: number) =>
+  ApiService.fetchData<MaintenanceCentralBureau[]>({
+    url: `/manage/maintenance/central/${solutionTypeId}`,
+    method: 'GET',
+  })
+
+/** Devices of one solution type grouped by road, for ONE department — backs
+ *  the จุดติดตั้งอุปกรณ์ tab's tables (BE 2026-08-27). solution_type_id:
+ *  1=CCTV, 6=Lighting, 7=VMS. */
+export const getMaintenanceDeviceRoadAPI = (departmentId: number, solutionTypeId: number) =>
+  ApiService.fetchData<MaintenanceDeviceRoad[]>({
+    url: `/manage/maintenance/device-road/${departmentId}`,
+    method: 'GET',
+    params: { solution_type_id: solutionTypeId },
+  })

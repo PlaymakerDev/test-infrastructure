@@ -3,23 +3,16 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Alert, Button, ConfigProvider, Drawer, Empty, Input, Segmented, Select, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useQueries, useQuery } from '@tanstack/react-query'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbPrinter, TbSearch } from 'react-icons/tb'
 import InstallSidebar from './InstallSidebar'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
-import { dashboardKeys } from '@/hooks/queries/dashboard'
-import { getDashboardPositionAPI } from '@/services/routes/DashboardService'
-import { useDepartments } from '@/hooks/queries/manage'
-import { cctvKeys } from '@/hooks/queries/cctv/queryKeys'
-import { getCctvCameraCentralListAPI } from '@/services/routes/CCTVService'
+import { useMaintenanceCentral, useMaintenanceDeviceRoad } from '@/hooks/queries/maintenance'
 import {
   INSTALL_TYPE_OPTIONS,
   type InstallType,
-  extractKm,
-  formatLat,
-  formatLng,
-  groupInstallPositions,
-  installApiName,
+  centralToBureaus,
+  formatCoord,
+  installTypeMeta,
   kmFromSta,
 } from '../data/installPoints'
 
@@ -38,8 +31,6 @@ interface RoadGroup {
   pointCount: number
   deviceCount: number
   rows: DeviceRow[]
-  isLoading: boolean
-  isError: boolean
 }
 
 const ALL_ROADS = 'ALL'
@@ -57,30 +48,11 @@ const InstallPointsSection: React.FC = () => {
     router.push(`/admin/maintenance?install${value === 'CCTV' ? '' : `&type=${value}`}`)
   }
 
-  // ── Data: nationwide install-point pool (all types, one request) ──────────
-  // Same query the dashboard map uses (dept 0 + scope=all) so the cache is
-  // shared; this page has no ?scope= in its URL, hence the explicit `true`
-  // instead of useDashboardPosition (which reads scope from the URL).
-  const positionQuery = useQuery({
-    queryKey: dashboardKeys.position('0', 'all'),
-    queryFn: () => getDashboardPositionAPI('0', true).then((r) => r.data),
-  })
-  const { data: departments } = useDepartments()
-  const deptNames = useMemo(() => {
-    const m = new Map<number, string>()
-    for (const d of departments ?? []) m.set(d.id, d.department_short_name)
-    return m
-  }, [departments])
+  const typeMeta = installTypeMeta(type)
 
-  const apiName = installApiName(type)
-  const bureaus = useMemo(
-    () =>
-      groupInstallPositions(
-        (positionQuery.data?.locations ?? []).filter((l) => l.solution.solution_type_name === apiName),
-        deptNames,
-      ),
-    [positionQuery.data, apiName, deptNames],
-  )
+  // ── Sidebar tree + counts: BE's dedicated endpoint (2026-08-26) ───────────
+  const centralQuery = useMaintenanceCentral(typeMeta.solutionTypeId)
+  const bureaus = useMemo(() => centralToBureaus(centralQuery.data ?? []), [centralQuery.data])
 
   // ── Selection: default to the first ขทช. that has data; re-validate when
   // the type switches (a dept may have CCTV but no VMS). ────────────────────
@@ -90,11 +62,11 @@ const InstallPointsSection: React.FC = () => {
     if (!exists) setSelectedDeptId(bureaus[0]?.departments[0]?.id ?? null)
   }, [bureaus, selectedDeptId])
 
-  const selectedDept = useMemo(
-    () => bureaus.flatMap((b) => b.departments).find((d) => d.id === selectedDeptId),
-    [bureaus, selectedDeptId],
-  )
-  const roads = useMemo(() => selectedDept?.roads ?? [], [selectedDept])
+  // ── Right-pane tables: BE's device-road endpoint (2026-08-27) — devices of
+  // the selected ขทช. grouped by road, with per-road จุดติดตั้ง/device counts
+  // and real sta + lat/lng fields. Replaces the interim position + per-road
+  // CCTV central-list stitching entirely.
+  const deviceRoadQuery = useMaintenanceDeviceRoad(selectedDeptId, typeMeta.solutionTypeId)
 
   // ── Filters (สายทาง dropdown + ค้นหาจุดติดตั้ง) — reset on dept/type move ─
   const [roadFilter, setRoadFilter] = useState<string>(ALL_ROADS)
@@ -109,63 +81,30 @@ const InstallPointsSection: React.FC = () => {
   // pattern, 2026-08-25) — separate state so desktop collapse is unaffected.
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  // ── CCTV: per-camera rows via /cctv/cameras/central/list?road_id= (one
-  // query per road of the selected ขทช., cache-shared with the CCTV search
-  // page's own hook). Lighting/VMS never enable these. ──────────────────────
   const isCctv = type === 'CCTV'
-  const cameraQueries = useQueries({
-    queries: roads.map((road) => ({
-      queryKey: cctvKeys.cameraCentralByRoad(road.id),
-      queryFn: () => getCctvCameraCentralListAPI(road.id).then((r) => r.data),
-      enabled: isCctv,
-      staleTime: 60_000,
-    })),
-  })
 
-  const roadGroups = useMemo<RoadGroup[]>(() => {
-    return roads.map((road, i) => {
-      if (!isCctv) {
-        // Lighting / VMS: 1 จุดติดตั้ง (solution) = 1 row, straight from the
-        // position payload — no extra request needed.
-        const rows = road.solutions.map((s) => ({
-          key: `s-${s.solution.solution_id}`,
-          name: s.solution.solution_name,
-          km: extractKm(s.solution.solution_name),
-          lat: formatLat(s.geometry_point),
-          lng: formatLng(s.geometry_point),
-        }))
-        return {
-          roadId: road.id,
-          code: road.code,
-          pointCount: road.solutions.length,
-          deviceCount: rows.length,
-          rows,
-          isLoading: false,
-          isError: false,
-        }
-      }
-      const q = cameraQueries[i]
-      const lists = q?.data?.lists ?? []
-      const rows = lists.flatMap((item) =>
-        (item.cameras ?? []).map((cam) => ({
-          key: `c-${cam.id}`,
-          name: cam.camera_name,
-          km: kmFromSta(cam.sta, cam.camera_name),
-          lat: formatLat(cam.geometry_point),
-          lng: formatLng(cam.geometry_point),
+  const roadGroups = useMemo<RoadGroup[]>(
+    () =>
+      (deviceRoadQuery.data ?? []).map((road) => ({
+        roadId: road.road_id,
+        code: road.road_code,
+        pointCount: road.solution_count,
+        deviceCount: road.device_count,
+        rows: (road.device ?? []).map((d, i) => ({
+          key: `${road.road_id}-${i}`,
+          name: d.name,
+          km: kmFromSta(d.sta, d.name),
+          lat: formatCoord(d.latitude),
+          lng: formatCoord(d.longitude),
         })),
-      )
-      return {
-        roadId: road.id,
-        code: road.code,
-        pointCount: lists.length,
-        deviceCount: rows.length,
-        rows,
-        isLoading: q?.isLoading ?? false,
-        isError: q?.isError ?? false,
-      }
-    })
-  }, [roads, isCctv, cameraQueries])
+      })),
+    [deviceRoadQuery.data],
+  )
+
+  const roads = useMemo(
+    () => roadGroups.map((g) => ({ id: g.roadId, code: g.code })),
+    [roadGroups],
+  )
 
   // Apply the two filters. A road with zero matching rows drops out entirely
   // (matches the mock, which only lists roads that have devices).
@@ -174,7 +113,7 @@ const InstallPointsSection: React.FC = () => {
     return roadGroups
       .filter((g) => roadFilter === ALL_ROADS || String(g.roadId) === roadFilter)
       .map((g) => (q ? { ...g, rows: g.rows.filter((r) => `${r.name} ${r.km} ${r.lat} ${r.lng}`.toLowerCase().includes(q)) } : g))
-      .filter((g) => g.isLoading || g.isError || g.rows.length > 0)
+      .filter((g) => g.rows.length > 0)
   }, [roadGroups, roadFilter, search])
 
   const deviceWord = isCctv ? 'กล้อง' : 'อุปกรณ์'
@@ -256,16 +195,16 @@ const InstallPointsSection: React.FC = () => {
         />
       </section>
 
-      {positionQuery.isLoading ? (
+      {centralQuery.isLoading ? (
         <div className='min-h-[40vh] flex items-center justify-center'>
           <Spin size='large' />
         </div>
-      ) : positionQuery.isError ? (
+      ) : centralQuery.isError ? (
         <Alert
           type='error'
           showIcon
           message='ไม่สามารถโหลดข้อมูลจุดติดตั้งได้'
-          action={<Button size='small' onClick={() => void positionQuery.refetch()}>ลองใหม่</Button>}
+          action={<Button size='small' onClick={() => void centralQuery.refetch()}>ลองใหม่</Button>}
         />
       ) : (
         <div className='flex items-start gap-3'>
@@ -367,7 +306,17 @@ const InstallPointsSection: React.FC = () => {
               </ConfigProvider>
             </div>
 
-            {visibleGroups.length === 0 ? (
+            {deviceRoadQuery.isLoading ? (
+              <div className='min-h-40 flex items-center justify-center'><Spin /></div>
+            ) : deviceRoadQuery.isError ? (
+              <Alert
+                className='mt-4'
+                type='error'
+                showIcon
+                message='ไม่สามารถโหลดรายการอุปกรณ์ได้'
+                action={<Button size='small' onClick={() => void deviceRoadQuery.refetch()}>ลองใหม่</Button>}
+              />
+            ) : visibleGroups.length === 0 ? (
               <div className='py-16'>
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -386,21 +335,15 @@ const InstallPointsSection: React.FC = () => {
                       {g.deviceCount.toLocaleString()} {deviceWord}
                     </span>
                   </div>
-                  {g.isLoading ? (
-                    <div className='min-h-24 flex items-center justify-center'><Spin /></div>
-                  ) : g.isError ? (
-                    <Alert type='error' showIcon message={`ไม่สามารถโหลดรายการกล้องของ ${g.code} ได้`} />
-                  ) : (
-                    <Table<DeviceRow>
-                      columns={columns}
-                      dataSource={g.rows}
-                      rowKey='key'
-                      pagination={false}
-                      size='middle'
-                      className='bridge-projects-table'
-                      scroll={{ x: 'max-content' }}
-                    />
-                  )}
+                  <Table<DeviceRow>
+                    columns={columns}
+                    dataSource={g.rows}
+                    rowKey='key'
+                    pagination={false}
+                    size='middle'
+                    className='bridge-projects-table'
+                    scroll={{ x: 'max-content' }}
+                  />
                 </section>
               ))
             )}

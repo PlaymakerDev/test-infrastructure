@@ -33,4 +33,8 @@ export const maintenanceKeys = {
   cases: (solutionId?: number) =>
     [...maintenanceKeys.all, 'cases', solutionId ?? 0] as const,
   case: (caseNo?: string) => [...maintenanceKeys.all, 'case', caseNo ?? ''] as const,
+  central: (solutionTypeId: number) =>
+    [...maintenanceKeys.all, 'central', solutionTypeId] as const,
+  deviceRoad: (departmentId: number, solutionTypeId: number) =>
+    [...maintenanceKeys.all, 'device-road', departmentId, solutionTypeId] as const,
 } as const

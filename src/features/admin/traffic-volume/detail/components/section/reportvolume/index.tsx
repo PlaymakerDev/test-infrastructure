@@ -1,7 +1,6 @@
 "use client"
 import React, { useEffect, useMemo, useState } from 'react'
 import { dayjs, type Dayjs } from '@/features/admin/traffic-volume/shared/utils/dayjsThai'
-import AppPagination from '@/components/pagination/AppPagination'
 import FilterBarReport, {
   type DateRange,
   type HourView,
@@ -742,17 +741,9 @@ const ReportVolume: React.FC<Props> = () => {
   // `react-hooks/set-state-in-effect` flags setState-in-useEffect as a
   // cascading render.
   // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  const [monthlyPage, setMonthlyPage] = useState(1)
-  const [monthlyPageSize, setMonthlyPageSize] = useState(10)
-  const [yearlyPage, setYearlyPage] = useState(1)
-  const [yearlyPageSize, setYearlyPageSize] = useState(10)
-  const resetKey = `${reportType}|${startDate ?? ''}|${endDate ?? ''}|${cameraId}`
-  const [prevResetKey, setPrevResetKey] = useState(resetKey)
-  if (prevResetKey !== resetKey) {
-    setMonthlyPage(1)
-    setYearlyPage(1)
-    setPrevResetKey(resetKey)
-  }
+  // Monthly/yearly render ALL rows — their pager was removed 2026-08-27 per
+  // design (a month range is ≤ a few dozen rows; the other report types never
+  // had one).
 
   // ── Daily + Hour (API-backed) ────────────────────────────────────────
   // Both modes use the same infinite-query — it walks the backend's
@@ -901,7 +892,7 @@ const ReportVolume: React.FC<Props> = () => {
     return map
   }, [dailyHelperRows])
 
-  // Monthly — same shape as daily; client-paginated (page size selectable).
+  // Monthly — same shape as daily; renders unpaginated (all rows).
   const monthlyRowsAll = useMemo<MonthlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -911,14 +902,8 @@ const ReportVolume: React.FC<Props> = () => {
       }),
     [allApiRows, daysCollectedByMonth]
   )
-  const monthlyRows = useMemo<MonthlyReportRow[]>(() => {
-    const start = (monthlyPage - 1) * monthlyPageSize
-    return monthlyRowsAll.slice(start, start + monthlyPageSize)
-  }, [monthlyRowsAll, monthlyPage, monthlyPageSize])
-  const showMonthlyPagination =
-    reportType === 'month' && monthlyRowsAll.length > 0
 
-  // Yearly — same shape as daily/monthly; client-paginated (page size selectable).
+  // Yearly — same shape as daily/monthly; renders unpaginated (all rows).
   const yearlyRowsAll = useMemo<YearlyReportRow[]>(
     () =>
       allApiRows.map((r) => {
@@ -928,12 +913,6 @@ const ReportVolume: React.FC<Props> = () => {
       }),
     [allApiRows, daysCollectedByYear]
   )
-  const yearlyRows = useMemo<YearlyReportRow[]>(() => {
-    const start = (yearlyPage - 1) * yearlyPageSize
-    return yearlyRowsAll.slice(start, start + yearlyPageSize)
-  }, [yearlyRowsAll, yearlyPage, yearlyPageSize])
-  const showYearlyPagination =
-    reportType === 'year' && yearlyRowsAll.length > 0
 
   // Hourly — group every fetched row by camera (now we have ALL rows so
   // each group contains the camera's full hour list). Narrow by the
@@ -1053,10 +1032,6 @@ const ReportVolume: React.FC<Props> = () => {
           columns: MONTHLY_EXPORT_COLUMNS,
           rows: withSummaryRow(monthlyRowsAll, { year: 0, month: 0 }),
           dataCount: monthlyRowsAll.length,
-          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
-          // re-summed from just that slice.
-          pageRows: withSummaryRow(monthlyRows, { year: 0, month: 0 }),
-          pageDataCount: monthlyRows.length,
         })
       case 'year':
         return makeExportSpec({
@@ -1066,10 +1041,6 @@ const ReportVolume: React.FC<Props> = () => {
           columns: YEARLY_EXPORT_COLUMNS,
           rows: withSummaryRow(yearlyRowsAll, { year: 0 }),
           dataCount: yearlyRowsAll.length,
-          // หน้าปัจจุบัน scope — the visible pagination slice, its "รวมเฉลี่ย"
-          // re-summed from just that slice.
-          pageRows: withSummaryRow(yearlyRows, { year: 0 }),
-          pageDataCount: yearlyRows.length,
         })
       case 'vehicle_type':
         return makeExportSpec({
@@ -1097,9 +1068,7 @@ const ReportVolume: React.FC<Props> = () => {
     matrixExportRows,
     hourlyExportRows,
     monthlyRowsAll,
-    monthlyRows,
     yearlyRowsAll,
-    yearlyRows,
     vehicleTypeRows,
     dailyRowsAll,
   ])
@@ -1138,37 +1107,11 @@ const ReportVolume: React.FC<Props> = () => {
         )
       case 'month':
         return (
-          <div className='flex flex-col gap-3'>
-            <MonthlyReportTable rows={monthlyRows} />
-            {showMonthlyPagination && (
-              <AppPagination
-                current={monthlyPage}
-                pageSize={monthlyPageSize}
-                total={monthlyRowsAll.length}
-                onChange={(p, s) => {
-                  setMonthlyPage(p)
-                  setMonthlyPageSize(s)
-                }}
-              />
-            )}
-          </div>
+<MonthlyReportTable rows={monthlyRowsAll} />
         )
       case 'year':
         return (
-          <div className='flex flex-col gap-3'>
-            <YearlyReportTable rows={yearlyRows} />
-            {showYearlyPagination && (
-              <AppPagination
-                current={yearlyPage}
-                pageSize={yearlyPageSize}
-                total={yearlyRowsAll.length}
-                onChange={(p, s) => {
-                  setYearlyPage(p)
-                  setYearlyPageSize(s)
-                }}
-              />
-            )}
-          </div>
+<YearlyReportTable rows={yearlyRowsAll} />
         )
       case 'vehicle_type':
         return <VehicleTypeReportTable rows={vehicleTypeRows} />
