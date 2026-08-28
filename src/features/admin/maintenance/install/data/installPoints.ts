@@ -32,22 +32,23 @@ export interface InstallBureau {
 
 /**
  * Sidebar tree from `/manage/maintenance/central/{solution_type_id}` (BE
- * 2026-08-26). Counts shown are LOCATION-level (จุดติดตั้ง online/total) —
- * this tab is about install points; device totals also exist on the payload
- * if the design ever wants them. BE order + names are used as-is
- * (`bureau_id` is a DB id, not the สทช. running number).
+ * 2026-08-26). Counts shown are DEVICE-level (อุปกรณ์/กล้อง online/total —
+ * switched from location-level per the 2026-08-28 request; verified
+ * `online_count + offline_count === device_count` on every row). Location
+ * counts also exist on the payload if the design ever flips back. BE order +
+ * names are used as-is (`bureau_id` is a DB id, not the สทช. running number).
  */
 export const centralToBureaus = (rows: MaintenanceCentralBureau[]): InstallBureau[] =>
   rows.map((b) => ({
     stch: b.bureau_id,
     name: b.bureau_name,
-    online: b.location_online_count,
-    total: b.location_count,
+    online: b.online_count,
+    total: b.device_count,
     departments: (b.departments ?? []).map((d) => ({
       id: d.department_id,
       name: d.department_name,
-      online: d.location_online_count,
-      total: d.location_count,
+      online: d.online_count,
+      total: d.device_count,
     })),
   }))
 
