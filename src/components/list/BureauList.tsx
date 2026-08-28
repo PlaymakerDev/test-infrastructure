@@ -42,12 +42,13 @@ export interface BureauListProps {
   /** Command Center mode — checkboxes always visible; "ยกเลิกทั้งหมด" clears
    *  ticks but doesn't hide the checkboxes. */
   alwaysSelectMode?: boolean
-  /** When alwaysSelectMode, whether "เลือกทั้งหมด" requires has_valid_agent
-   *  (real, correctly-versioned agent — online or offline, just not "never
-   *  provisioned"). Default true. Online/offline eligibility itself is NOT
-   *  filtered here — that distinction is surfaced once, visibly, by
-   *  LiveMonitor's bucket chips after selection; pre-filtering it here too
-   *  was confusing double-filtering ("why didn't select-all select all?"). */
+  /** Whether "เลือกทั้งหมด" skips signs without has_valid_agent (never
+   *  provisioned / agent below the version threshold). **Default false** —
+   *  "เลือกทั้งหมด" means every sign, no exceptions. Filtering here (on
+   *  agent validity or on online/offline) reads as a bug from the operator's
+   *  side: some rows stay unticked with no visible explanation. Both
+   *  distinctions are surfaced once, visibly, downstream — LiveMonitor's
+   *  bucket chips after selection and the STATUS tab's agent column. */
   requireValidAgentOnSelectAll?: boolean
 
   /** Hide the sign-level leaves under each route — the tree stops at
@@ -93,16 +94,14 @@ const toggleSet = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id
   })
 }
 
-// requireValidAgent = true skips signs with no real/correctly-versioned agent
-// (has_valid_agent false — never provisioned, or version below threshold) at
-// the leaf, and prunes empty parent aggregate keys (bureau/state/route) so
-// their tri-state checkbox isn't stuck "checked" while no leaf is picked.
-// false collects every sign, including ones with no agent at all. Deliberately
-// NOT filtering on is_online/is_controllable here — a sign with a valid agent
-// that's merely offline right now is still worth selecting (queue-ahead);
-// LiveMonitor's bucket chips show that distinction after selection, once,
-// instead of the tree silently pre-filtering it.
-const getAllKeys = (data: BureauItem[], requireValidAgent = true): Set<string> => {
+// Default (requireValidAgent = false) collects EVERY sign in the tree —
+// offline ones and ones with no agent provisioned at all — plus every parent
+// aggregate key, so "เลือกทั้งหมด" leaves nothing unticked. Opt-in
+// requireValidAgent = true skips signs with has_valid_agent false (never
+// provisioned, or version below threshold) at the leaf and prunes now-empty
+// parent aggregate keys (bureau/state/route) so their checkbox isn't stuck
+// "checked" while no leaf under it is picked.
+const getAllKeys = (data: BureauItem[], requireValidAgent = false): Set<string> => {
   const keys = new Set<string>()
   for (const bureau of data) {
     let bureauHasAny = false
@@ -206,13 +205,11 @@ const BureauList: React.FC<BureauListProps> = (props) => {
     defaultCheckedKeys,
     defaultSelectMode = false,
     alwaysSelectMode = false,
-    // Default true — require a real, correctly-versioned agent to be
-    // included in "เลือกทั้งหมด" (excludes never-provisioned signs, which
-    // can never receive a dispatch no matter how long you wait). Online vs
-    // offline is NOT filtered here — LiveMonitor's bucket chips split that
-    // downstream, once, visibly, instead of the tree silently
-    // double-filtering it.
-    requireValidAgentOnSelectAll = true,
+    // Default false — "เลือกทั้งหมด" ticks every sign, including offline
+    // ones and ones with no agent provisioned. Filtering silently left rows
+    // unticked with no on-screen reason; the agent/online split is shown
+    // downstream instead (LiveMonitor bucket chips, STATUS tab).
+    requireValidAgentOnSelectAll = false,
     hideSignLeaves = false,
     defaultExpandAll = false,
     onBureauClick,
@@ -653,7 +650,7 @@ const BureauList: React.FC<BureauListProps> = (props) => {
                   title={
                     requireValidAgentOnSelectAll
                       ? 'เลือกทุกป้ายที่มี agent ติดตั้งแล้ว (รวมป้ายออฟไลน์ — ป้ายที่ไม่เคย provision ต้องติ๊กเอง)'
-                      : 'เลือกทุกป้ายจริงๆ ไม่กรองอะไรเลย'
+                      : 'เลือกทุกป้ายในรายการ (รวมป้ายออฟไลน์และป้ายที่ยังไม่ได้ติดตั้ง agent)'
                   }
                 >
                   <TbChecks className='fs-14' />
