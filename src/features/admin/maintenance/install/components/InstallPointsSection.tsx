@@ -11,6 +11,7 @@ import {
   INSTALL_TYPE_OPTIONS,
   type InstallType,
   centralToBureaus,
+  deviceTypeBadge,
   formatCoord,
   installTypeMeta,
   kmFromSta,
@@ -20,6 +21,8 @@ import {
 interface DeviceRow {
   key: string
   name: string
+  /** Raw Thai `device_type` from BE — '' for CCTV/VMS. */
+  deviceType: string
   km: string
   lat: string
   lng: string
@@ -53,6 +56,14 @@ const InstallPointsSection: React.FC = () => {
   // ── Sidebar tree + counts: BE's dedicated endpoint (2026-08-26) ───────────
   const centralQuery = useMaintenanceCentral(typeMeta.solutionTypeId)
   const bureaus = useMemo(() => centralToBureaus(centralQuery.data ?? []), [centralQuery.data])
+  // Nationwide device totals of the selected system — the summary line under
+  // the sidebar's search box (sum of the same central payload, 2026-08-28).
+  const deviceSummary = useMemo(() => {
+    const rows = centralQuery.data ?? []
+    const total = rows.reduce((sum, b) => sum + b.device_count, 0)
+    const online = rows.reduce((sum, b) => sum + b.online_count, 0)
+    return { word: type === 'CCTV' ? 'กล้อง' : 'อุปกรณ์', type, total, online, offline: total - online }
+  }, [centralQuery.data, type])
 
   // ── Selection: default to the first ขทช. that has data; re-validate when
   // the type switches (a dept may have CCTV but no VMS). ────────────────────
@@ -93,6 +104,7 @@ const InstallPointsSection: React.FC = () => {
         rows: (road.device ?? []).map((d, i) => ({
           key: `${road.road_id}-${i}`,
           name: d.name,
+          deviceType: (d.device_type ?? '').trim(),
           km: kmFromSta(d.sta, d.name),
           lat: formatCoord(d.latitude),
           lng: formatCoord(d.longitude),
@@ -112,7 +124,7 @@ const InstallPointsSection: React.FC = () => {
     const q = search.trim().toLowerCase()
     return roadGroups
       .filter((g) => roadFilter === ALL_ROADS || String(g.roadId) === roadFilter)
-      .map((g) => (q ? { ...g, rows: g.rows.filter((r) => `${r.name} ${r.km} ${r.lat} ${r.lng}`.toLowerCase().includes(q)) } : g))
+      .map((g) => (q ? { ...g, rows: g.rows.filter((r) => `${r.name} ${r.deviceType} ${r.km} ${r.lat} ${r.lng}`.toLowerCase().includes(q)) } : g))
       .filter((g) => g.rows.length > 0)
   }, [roadGroups, roadFilter, search])
 
@@ -129,6 +141,10 @@ const InstallPointsSection: React.FC = () => {
         { header: 'สายทาง', value: (r: (typeof flat)[number]) => r.road },
         { header: 'ลำดับ', value: (r) => r.seq },
         { header: isCctv ? 'ชื่อกล้อง' : 'ชื่ออุปกรณ์', value: (r) => r.name },
+        // Mirrors the on-screen column set: ประเภทอุปกรณ์ only for Lighting.
+        ...(type === 'LIGHTING'
+          ? [{ header: 'ประเภทอุปกรณ์', value: (r: (typeof flat)[number]) => r.deviceType || '-' }]
+          : []),
         { header: 'จุดติดตั้ง', value: (r) => r.km },
         { header: 'Latitude', value: (r) => r.lat },
         { header: 'Longitude', value: (r) => r.lng },
@@ -154,6 +170,28 @@ const InstallPointsSection: React.FC = () => {
         key: 'name',
         render: (v: string) => <span className='text-white fs-12'>{v}</span>,
       },
+      // ประเภทอุปกรณ์ — Lighting only (CCTV/VMS always send an empty
+      // device_type, so the column would be a wall of '-').
+      ...(type === 'LIGHTING'
+        ? [{
+            title: 'ประเภทอุปกรณ์',
+            dataIndex: 'deviceType',
+            key: 'deviceType',
+            width: 170,
+            render: (v: string) => {
+              const badge = deviceTypeBadge(v)
+              if (!badge) return <span className='text-white/40 fs-12'>-</span>
+              return (
+                <span
+                  className='inline-flex items-center justify-center py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+                  style={{ borderColor: badge.color, color: badge.color }}
+                >
+                  {badge.label}
+                </span>
+              )
+            },
+          } satisfies ColumnsType<DeviceRow>[number]]
+        : []),
       {
         title: 'จุดติดตั้ง',
         dataIndex: 'km',
@@ -176,7 +214,7 @@ const InstallPointsSection: React.FC = () => {
         render: (v: string) => <span className='text-white/80 fs-12 tabular-nums'>{v}</span>,
       },
     ],
-    [isCctv],
+    [isCctv, type],
   )
 
   return (
@@ -223,6 +261,7 @@ const InstallPointsSection: React.FC = () => {
                   bureaus={bureaus}
                   selectedDeptId={selectedDeptId}
                   onSelectDept={setSelectedDeptId}
+                  summary={deviceSummary}
                 />
               </aside>
             </div>
@@ -268,6 +307,7 @@ const InstallPointsSection: React.FC = () => {
                 setSelectedDeptId(id)
                 setDrawerOpen(false)
               }}
+              summary={deviceSummary}
             />
           </Drawer>
 

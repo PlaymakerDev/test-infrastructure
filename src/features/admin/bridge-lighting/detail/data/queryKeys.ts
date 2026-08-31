@@ -12,6 +12,12 @@ export const bridgeLightingDetailKeys = {
   widDetail: (id: string, scope: string) => [...bridgeLightingDetailKeys.wid(), id, scope] as const,
   pmChart: () => [...bridgeLightingDetailKeys.all, 'pmchart'] as const,
   pmChartDetail: (id: string, scope: string) => [...bridgeLightingDetailKeys.pmChart(), id, scope] as const,
+  pmChartHour: () => [...bridgeLightingDetailKeys.all, 'pmchart-hour'] as const,
+  // Keyed by wid (the meter's true identity — resolved 1:1 from the solution
+  // id via /wid) + the picked CE date range, so each range the export modal
+  // fetches is its own cache entry and re-picking dates is instant.
+  pmChartHourDetail: (wid: string, startDate: string, endDate: string) =>
+    [...bridgeLightingDetailKeys.pmChartHour(), wid, startDate, endDate] as const,
   shellyStatus: () => [...bridgeLightingDetailKeys.all, 'shelly-status'] as const,
   shellyStatusDetail: (id: string, scope: string) => [...bridgeLightingDetailKeys.shellyStatus(), id, scope] as const,
 }

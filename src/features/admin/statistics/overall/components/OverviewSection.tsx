@@ -79,7 +79,7 @@ const BASE_CARDS = [
   },
   {
     id: 2, src: `${BASE_PATH}/images/statistics/Frame2.png`, imageBg: true, value: '-',
-    label: 'Road Lighting', glowColor: '#66FFCA',
+    label: 'Street Light', glowColor: '#66FFCA',
     detail1: { img: `${BASE_PATH}/images/statistics/Frame2.1.png`, title: 'สายทางที่ใช้ไฟมากที่สุด', subtitle: '-', summary: '-' },
     detail2: { img: `${BASE_PATH}/images/statistics/Frame2.2.png`, title: 'ประเภทการแจ้งเตือนมากที่สุด', subtitle: '-', summary: '-' },
   },

@@ -26,7 +26,7 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
   Analytic:       { color: "#00873B", label: "Incident Detection", icon: "chart" },
   Traffic:        { color: "#518700", label: "Traffic Signal",     icon: "light" },
   CrossWalk:      { color: "#001287", label: "Crosswalk",          icon: "walk" },
-  Lighting:       { color: "#878000", label: "Road Lighting",      icon: "bulb" },
+  Lighting:       { color: "#878000", label: "Street Light",      icon: "bulb" },
   VMS:            { color: "#874600", label: "VMS",                icon: "monitor" },
   BridgeLighting: { color: "#871000", label: "Bridge Lighting",    icon: "bridge" },
   Tunnel:         { color: "#4D0087", label: "Tunnel",             icon: "tunnel" },

@@ -98,7 +98,7 @@ const ContractorSummaryScreen: React.FC = () => {
         ['CCTV', 'cctv_offline', 'cctv_total'],
         ['Traffic', 'traffic_offline', 'traffic_total'],
         ['VMS', 'vms_offline', 'vms_total'],
-        ['Lighting', 'lighting_offline', 'lighting_total'],
+        ['Street Light', 'lighting_offline', 'lighting_total'],
         ['B.Light', 'bridge_lighting_offline', 'bridge_lighting_total'],
         ['WIM', 'wim_offline', 'wim_total'],
       ] as const

@@ -41,7 +41,7 @@ const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => 
       style={{ borderColor: statusColor }}
     >
       <p className='fs-12 font-bold tracking-wide' style={{ color: statusColor }}>
-        Road Lighting · {String(p.code_name ?? '-')}
+        Street Light · {String(p.code_name ?? '-')}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.install_point ?? p.project_name ?? '-')}

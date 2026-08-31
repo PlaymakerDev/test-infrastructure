@@ -89,6 +89,11 @@ const getPeriodRange = (period: string): { date_from?: string; date_to?: string 
   return {} // 'ALL' → no date filter
 }
 
+// Display-name overrides (customer rename 2026-08-31) — selection state and
+// API lookups still key off the raw BE solution_type_name.
+const SOLUTION_DISPLAY: Record<string, string> = { Lighting: 'Street Light' }
+const displayType = (t: string) => SOLUTION_DISPLAY[t] ?? t
+
 // Map solution type name → ID for detail API
 const SOLUTION_TYPE_ID_MAP: Record<string, number> = {
   CCTV: 1,
@@ -533,7 +538,7 @@ const RepairRecordsSection: React.FC = () => {
                     >
                       <span className="flex items-center gap-2 min-w-0">
                         <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
-                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
+                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{displayType(item.type)}</span>
                       </span>
                       <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
                         {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
@@ -598,7 +603,7 @@ const RepairRecordsSection: React.FC = () => {
                     >
                       <span className="flex items-center gap-2 min-w-0">
                         <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
-                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{item.type}</span>
+                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{displayType(item.type)}</span>
                       </span>
                       <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
                         {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
@@ -648,7 +653,7 @@ const RepairRecordsSection: React.FC = () => {
                       maskPosition: 'center',
                     }}
                   />
-                  <span className="text-[18px] sm:text-[24px] font-bold" style={{ color: '#FCD116' }}>{selectedType}</span>
+                  <span className="text-[18px] sm:text-[24px] font-bold" style={{ color: '#FCD116' }}>{displayType(selectedType)}</span>
                   {renderBadge(detailStats.online, '#66AEFF')}
                   {renderBadge(detailStats.offline, '#E94C4C')}
                 </div>

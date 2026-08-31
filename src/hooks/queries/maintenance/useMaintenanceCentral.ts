@@ -9,4 +9,9 @@ export const useMaintenanceCentral = (solutionTypeId: number) =>
   useQuery({
     queryKey: maintenanceKeys.central(solutionTypeId),
     queryFn: () => getMaintenanceCentralAPI(solutionTypeId).then((r) => r.data),
+    // Auto-refresh — device online/offline states move on their own; 60s
+    // matches the maintenance contractor-summary cadence (the app disables
+    // refetch-on-focus globally, so without this the page never updates).
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })

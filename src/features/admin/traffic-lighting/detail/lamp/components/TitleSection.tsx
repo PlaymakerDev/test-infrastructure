@@ -60,7 +60,7 @@ const LampTitleSection: React.FC = () => {
         />
         <div className='flex-1 min-w-0'>
           <h1 className='text-[20px] sm:text-[24px] font-bold text-[#FCD116] m-0'>
-            Road Lighting : สายทาง {project.roadCode}
+            Street Light : สายทาง {project.roadCode}
           </h1>
           {/* Row spacing, subtitle size, icon size and pill sizing all mirror
               DetailTitleSection (the phase detail header) so this page reads

@@ -6,7 +6,9 @@ import type { MaintenanceCentralBureau } from '@/types/maintenance'
  *  `solutionTypeId` is the id `/manage/maintenance/central/{id}` takes. */
 export const INSTALL_TYPE_OPTIONS = [
   { label: 'CCTV', value: 'CCTV', apiName: 'CCTV', solutionTypeId: 1 },
-  { label: 'Lighting', value: 'LIGHTING', apiName: 'Lighting', solutionTypeId: 6 },
+  // Display renamed Lighting → Street Light 2026-08-31 (customer request);
+  // `value` (URL param) and `apiName` stay on the backend's wording.
+  { label: 'Street Light', value: 'LIGHTING', apiName: 'Lighting', solutionTypeId: 6 },
   { label: 'VMS', value: 'VMS', apiName: 'VMS', solutionTypeId: 7 },
 ] as const
 
@@ -71,3 +73,24 @@ export const kmFromSta = (sta: string | null | undefined, fallbackName?: string 
  *  14.979900); null/undefined/0 from the API's empty placeholder → '-'. */
 export const formatCoord = (v: number | null | undefined): string =>
   v != null && Number.isFinite(v) && v !== 0 ? v.toFixed(6) : '-'
+
+/** Badge colour per Lighting device category (BE `device_type`, Thai labels —
+ *  2026-08-31 design: โคมไฟ = brand yellow, ตู้โจรกรรม = accent blue). Unknown
+ *  or blank (CCTV/VMS always send '') → null, so the cell renders '-'. */
+const DEVICE_TYPE_COLOR: Record<string, string> = {
+  'โคมไฟ': '#FCD116',
+  'ตู้โจรกรรม': '#66AEFF',
+}
+
+export interface DeviceTypeBadge {
+  label: string
+  color: string
+}
+
+export const deviceTypeBadge = (value: string | null | undefined): DeviceTypeBadge | null => {
+  const label = (value ?? '').trim()
+  if (label === '') return null
+  // Unrecognised labels still render as a badge — neutral grey rather than
+  // dropping data BE decided to send.
+  return { label, color: DEVICE_TYPE_COLOR[label] ?? '#979797' }
+}

@@ -298,10 +298,14 @@ export interface MaintenanceCentralBureau {
 
 export interface MaintenanceRoadDevice {
   name: string
-  /** Km marker, e.g. "21+871" (bare — no "กม." prefix). */
-  sta: string
+  /** Km marker, e.g. "21+871" (bare — no "กม." prefix). May be null. */
+  sta: string | null
   latitude: number
   longitude: number
+  /** Thai device-category label (BE added 2026-08-31). Lighting sends
+   *  'โคมไฟ' | 'ตู้โจรกรรม'; CCTV/VMS send an empty string (verified live
+   *  across 25 departments — 7,798 CCTV + 151 VMS devices all ''). */
+  device_type?: string | null
 }
 
 export interface MaintenanceDeviceRoad {

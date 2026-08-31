@@ -79,8 +79,8 @@ const admin: AdminMenuItem[] = [
   },
   {
     key: '7',
-    title: 'Road Lighting',
-    label: 'Road Lighting',
+    title: 'Street Light',
+    label: 'Street Light',
     // label_key / path stay `traffic_lighting` — the rename is display-only
     // (RBAC allow-lists, routes and bookmarks all key off these).
     label_key: "traffic_lighting",

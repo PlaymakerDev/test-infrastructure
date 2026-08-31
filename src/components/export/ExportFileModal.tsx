@@ -15,19 +15,25 @@ interface Props {
   count?: number
   /** Optional scope picker for paginated tables: renders a
    *  "ทั้งหมด / หน้าปัจจุบัน" toggle (default ทั้งหมด) and passes the chosen
-   *  scope to both handlers. Omit for the normal single-scope behavior. */
-  scope?: { totalCount: number; pageCount: number }
+   *  scope to both handlers. Omit for the normal single-scope behavior.
+   *  `totalCount` may be omitted for cursor-paginated feeds where the backend
+   *  reports no total — the ทั้งหมด option then renders without a count. */
+  scope?: { totalCount?: number; pageCount: number }
   /** Export handlers — a button renders only when its handler is passed
    *  (chart-style pages can offer PDF only). Async handlers get a per-button
    *  loading state; the modal closes itself after a successful export. */
   onExportPdf?: (scope?: ExportScope) => void | Promise<void>
   onExportExcel?: (scope?: ExportScope) => void | Promise<void>
+  /** Optional caller-supplied controls (e.g. a date-range picker) rendered
+   *  between the heading and the count line. The caller owns the state; keep
+   *  contents light-themed to match the white dialog. */
+  extra?: React.ReactNode
 }
 
 /** Shared "นำออกเอกสาร" dialog — same layout as the drr-cm-fe original
  *  (white card, red PDF / green Excel buttons). Uses the app's `light-modal`
  *  override so AntD widgets inside stay dark-on-light. */
-const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExportPdf, onExportExcel }) => {
+const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExportPdf, onExportExcel, extra }) => {
   const [busy, setBusy] = useState<'pdf' | 'excel' | null>(null)
   // Scope toggle state — default ทั้งหมด (the common report need). Only
   // rendered when the page passes `scope`.
@@ -67,6 +73,7 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
           <p style={{ color: '#212121', fontWeight: 500, marginBottom: 6 }}>
             เลือกรูปแบบไฟล์ที่ต้องการ Export:
           </p>
+          {extra && <div style={{ marginBottom: 12 }}>{extra}</div>}
           {scope && (
             <div style={{ marginBottom: 10 }}>
               <Segmented<ExportScope>
@@ -75,7 +82,10 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
                 onChange={(v) => setScopeValue(v)}
                 disabled={busy !== null}
                 options={[
-                  { label: `ทั้งหมด (${scope.totalCount.toLocaleString()})`, value: 'all' },
+                  {
+                    label: scope.totalCount != null ? `ทั้งหมด (${scope.totalCount.toLocaleString()})` : 'ทั้งหมด',
+                    value: 'all',
+                  },
                   { label: `หน้าปัจจุบัน (${scope.pageCount.toLocaleString()})`, value: 'page' },
                 ]}
               />

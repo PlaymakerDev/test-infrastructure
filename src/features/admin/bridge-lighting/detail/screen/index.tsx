@@ -115,7 +115,6 @@ const DetailScreen: React.FC<Props> = (props) => {
         onClose={() => setExportOpen(false)}
         locationData={locationData?.data}
         widData={widData?.data}
-        pmChartData={pmChartData?.data}
       />
     </DetailProvider>
   )

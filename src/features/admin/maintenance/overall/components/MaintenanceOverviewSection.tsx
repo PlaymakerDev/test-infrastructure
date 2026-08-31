@@ -59,6 +59,10 @@ const getSolutionColor = (type: string): string => {
   return SOLUTION_COLORS[type] || '#70FF66'
 }
 
+// Display-name overrides (customer rename 2026-08-31) — colour/uptime lookups
+// still key off the raw BE solution_type_name.
+const SOLUTION_DISPLAY: Record<string, string> = { Lighting: 'Street Light' }
+
 /** Map period value (from URL) to YYYY-MM-DD string for API param `offline_since` */
 const periodToOfflineSince = (period?: string): string | undefined => {
   const now = new Date()
@@ -208,7 +212,7 @@ const MaintenanceOverviewSection: React.FC<{
                       </span>
                     </div>
                   </div>
-                  <span className="fs-12 sm:text-xl lg:text-2xl font-bold text-center" style={{ color }}>{item.type}</span>
+                  <span className="fs-12 sm:text-xl lg:text-2xl font-bold text-center" style={{ color }}>{SOLUTION_DISPLAY[item.type] ?? item.type}</span>
                 </div>
               )
             })}

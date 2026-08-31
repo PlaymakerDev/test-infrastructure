@@ -49,9 +49,10 @@ export const SOLUTION_ICON_MAP: Record<string, ComponentType<{ className?: strin
 // key off the API string above.
 export const SOLUTION_DISPLAY_LABEL: Record<string, string> = {
   "Tracking": "Truck Tracking",
-  // Menu renamed 2026-08-17 — the backend still calls this solution type
+  // Menu renamed 2026-08-17 (→ Road Lighting) then 2026-08-31 (→ Street
+  // Light, customer request) — the backend still calls this solution type
   // "Traffic Lighting" (solution_type_id 6), so only the label changes.
-  "Traffic Lighting": "Road Lighting",
+  "Traffic Lighting": "Street Light",
 }
 
 export type RouteEntry = { path: string; path_active: string; path_list: string[] }

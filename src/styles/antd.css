@@ -154,6 +154,36 @@ body .light-modal .ant-input-number {
 .light-modal-popup .ant-picker-cell-disabled .ant-picker-cell-inner {
   color: #D0D0D0 !important;
 }
+
+/* RangePicker range/hover cells inside the LIGHT popup — the app-wide
+ * dark-theme repaint below ("RangePicker — dark-theme range/hover cells")
+ * forces WHITE digits on a faint yellow bar, which is invisible on this white
+ * calendar (reported 2026-08-31, bridge-lighting export modal). Re-scope with
+ * higher specificity: dark digits + a stronger yellow tint. */
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+  background: rgba(252, 209, 22, 0.30) !important;
+}
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover::before,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover-start::before,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover-end::before {
+  background: rgba(252, 209, 22, 0.45) !important;
+}
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover .ant-picker-cell-inner,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover-start .ant-picker-cell-inner,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-hover-end .ant-picker-cell-inner {
+  color: #1F1F1F !important;
+}
+/* Selected endpoints — solid yellow pill, dark bold digit (same treatment as
+ * `.ant-picker-cell-selected` above). */
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+.light-modal-popup .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background: #FCD116 !important;
+  color: #1A1A1A !important;
+  font-weight: 700;
+}
 .light-modal-popup .ant-picker-footer,
 .light-modal-popup .ant-picker-ranges,
 .light-modal-popup .ant-picker-today-btn {

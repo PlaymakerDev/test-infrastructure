@@ -1,7 +1,7 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { Collapse, Empty, Input } from 'antd'
-import { TbChevronDown, TbSearch } from 'react-icons/tb'
+import { TbBulb, TbChevronDown, TbDeviceDesktop, TbSearch, TbVideo, TbWifi, TbWifiOff } from 'react-icons/tb'
 import type { InstallBureau } from '../data/installPoints'
 
 /**
@@ -17,6 +17,11 @@ interface Props {
   bureaus: InstallBureau[]
   selectedDeptId: number | null
   onSelectDept: (deptId: number) => void
+  /** Nationwide device totals for the selected system — the icon summary
+   *  row under the search box (2026-08-28; text labels wrapped in 340px, so
+   *  icons + numbers only, meanings on hover). `word` = กล้อง/อุปกรณ์ for
+   *  the tooltip; `type` picks the device icon. */
+  summary: { word: string; type: string; total: number; online: number; offline: number }
 }
 
 // Same colour rules as StatisticsRouteSearchList.renderCount: all-online →
@@ -35,7 +40,7 @@ const renderCount = (online: number, total: number) => {
   )
 }
 
-const InstallSidebar: React.FC<Props> = ({ bureaus, selectedDeptId, onSelectDept }) => {
+const InstallSidebar: React.FC<Props> = ({ bureaus, selectedDeptId, onSelectDept, summary }) => {
   const [search, setSearch] = useState('')
 
   // Filter by สทช./ขทช. name — a hit on the bureau keeps all its departments;
@@ -89,6 +94,26 @@ const InstallSidebar: React.FC<Props> = ({ bureaus, selectedDeptId, onSelectDept
         size='large'
         allowClear
       />
+      {/* สรุปทั้งประเทศของระบบที่เลือก — icon + ตัวเลขล้วนให้จบบรรทัดเดียว
+          (ข้อความเต็มโดน 340px ตัดขึ้นบรรทัดสอง): icon อุปกรณ์ตามระบบ = ทั้งหมด,
+          TbWifi เขียว = ออนไลน์, TbWifiOff แดง = ออฟไลน์ (ภาษา icon เดิมของแอป);
+          ความหมายเต็มอยู่ใน tooltip. */}
+      <div className='mt-3 px-1 flex items-center gap-5' style={{ fontSize: 'var(--fs-12)' }}>
+        <span className='inline-flex items-center gap-1.5 text-white cursor-default' title={`${summary.word}ทั้งหมด ${summary.total.toLocaleString()}`}>
+          {summary.type === 'CCTV' ? <TbVideo size={16} className='text-(--yellow)' />
+            : summary.type === 'LIGHTING' ? <TbBulb size={16} className='text-(--yellow)' />
+            : <TbDeviceDesktop size={16} className='text-(--yellow)' />}
+          <span className='font-semibold'>{summary.total.toLocaleString()}</span>
+        </span>
+        <span className='inline-flex items-center gap-1.5 cursor-default' style={{ color: '#05F2DB' }} title={`ออนไลน์ ${summary.online.toLocaleString()}`}>
+          <TbWifi size={16} />
+          {summary.online.toLocaleString()}
+        </span>
+        <span className='inline-flex items-center gap-1.5 cursor-default' style={{ color: '#E94C4C' }} title={`ออฟไลน์ ${summary.offline.toLocaleString()}`}>
+          <TbWifiOff size={16} />
+          {summary.offline.toLocaleString()}
+        </span>
+      </div>
       {filtered.length === 0 ? (
         <div className='py-10'>
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่พบหน่วยงาน' />
@@ -102,7 +127,7 @@ const InstallSidebar: React.FC<Props> = ({ bureaus, selectedDeptId, onSelectDept
               style={{ color: '#FCD116', transform: isActive ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
             />
           )}
-          style={{ marginTop: 16 }}
+          style={{ marginTop: 12 }}
           activeKey={openKeys}
           onChange={(keys) => setOpenKeys(Array.isArray(keys) ? keys : [keys])}
           items={filtered.map((bureau) => ({

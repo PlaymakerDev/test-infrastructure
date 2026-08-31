@@ -99,6 +99,18 @@ export interface APIRequestPostPmChart {
 
 export type APIResponsePostPmChart = PmChartData[]
 
+// API PM CHART HOUR — hourly buckets for the export modal (BE 2026-08-31).
+// Same row shape/string values as pm-chart, one row per hour 00:00–23:00 per
+// day in the range. Probed live: `wid` MUST be a string (a number 400s);
+// dates are CE `YYYY-MM-DD` inclusive; omitting both falls back to the last
+// ~24 h; a malformed date returns HTTP 200 with `{message, status}` (an
+// OBJECT, not an array) — consumers must `Array.isArray`-guard the payload.
+export interface APIRequestPostPmChartHour {
+  wid: string
+  start_date?: string
+  end_date?: string
+}
+
 export interface PmChartData {
   bucket: string
   freq_avg: string

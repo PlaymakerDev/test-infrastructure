@@ -1,4 +1,4 @@
-import { APIRequestBridgeLightingList, APIRequestBridgeLightingOverview, APIRequestBridgeLightingTotal, APIRequestPostOpenBridgeLighting, APIRequestPostPmChart, APIRequestPostShellyStatus, APIResponseBridgeLightingList, APIResponseBridgeLightingOverview, APIResponseBridgeLightingTotal, APIResponseBridgeLightingWID, APIResponsePostOpenBridgeLighting, APIResponsePostPmChart, APIResponsePostShellyStatus } from "@/types/bridge-lighting/overall-api"
+import { APIRequestBridgeLightingList, APIRequestBridgeLightingOverview, APIRequestBridgeLightingTotal, APIRequestPostOpenBridgeLighting, APIRequestPostPmChart, APIRequestPostPmChartHour, APIRequestPostShellyStatus, APIResponseBridgeLightingList, APIResponseBridgeLightingOverview, APIResponseBridgeLightingTotal, APIResponseBridgeLightingWID, APIResponsePostOpenBridgeLighting, APIResponsePostPmChart, APIResponsePostShellyStatus } from "@/types/bridge-lighting/overall-api"
 import ApiService from "../ApiService"
 
 export const getBridgeLightingListAPI = async (id: string | number, params: APIRequestBridgeLightingList) => {
@@ -35,6 +35,14 @@ export const getBridgeLightingWIDAPI = async (solutionId: string | number) => {
 export const postBridgeLightingPmChartAPI = async (data: APIRequestPostPmChart) => {
   return ApiService.fetchData<APIResponsePostPmChart, APIRequestPostPmChart>({
     url: '/bridge_lighting/pm-chart',
+    method: 'POST',
+    data: { ...data },
+  })
+}
+
+export const postBridgeLightingPmChartHourAPI = async (data: APIRequestPostPmChartHour) => {
+  return ApiService.fetchData<APIResponsePostPmChart, APIRequestPostPmChartHour>({
+    url: '/bridge_lighting/pm-chart-hour',
     method: 'POST',
     data: { ...data },
   })

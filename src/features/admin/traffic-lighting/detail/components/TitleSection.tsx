@@ -38,7 +38,7 @@ const TitleSection: React.FC = () => {
   return (
     <>
       <DetailTitleSection
-        feature='Road Lighting'
+        feature='Street Light'
         roadCode={project.roadCode}
         installPoint={project.installPoint}
         onBack={handleBack}

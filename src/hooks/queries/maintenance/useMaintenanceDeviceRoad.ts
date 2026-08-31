@@ -13,4 +13,9 @@ export const useMaintenanceDeviceRoad = (
     queryKey: maintenanceKeys.deviceRoad(departmentId ?? -1, solutionTypeId),
     queryFn: () => getMaintenanceDeviceRoadAPI(departmentId!, solutionTypeId).then((r) => r.data),
     enabled: departmentId != null,
+    // Auto-refresh — device online/offline states move on their own; 60s
+    // matches the maintenance contractor-summary cadence (the app disables
+    // refetch-on-focus globally, so without this the page never updates).
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
