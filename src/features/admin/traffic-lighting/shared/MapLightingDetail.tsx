@@ -1,13 +1,15 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import OverlapMarkers from '@/components/map/markers/OverlapMarkers'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useLightingOverview } from '@/hooks/queries/lighting'
 import { useDeptId } from '@/hooks/useDeptId'
+import { message, Tooltip } from 'antd'
+import { TbClipboardCheck, TbClipboardCopy } from 'react-icons/tb'
 
-const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
+export const FALLBACK_CENTER: [number, number] = [100.5, 14.0]
 
 const isValidCoord = (g: unknown): g is [number, number] =>
   Array.isArray(g) && g.length === 2 &&
@@ -25,8 +27,11 @@ export interface MapLightingDetailProps {
   projectName?: string
 }
 
+const COPIED_RESET_MS = 2000
+
 const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => {
   const p = feature.properties as Record<string, unknown>
+  const [copied, setCopied] = useState(false)
   const connection = p.is_online === true
     ? 'online'
     : p.is_online === false
@@ -35,6 +40,16 @@ const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => 
   const isOnline = connection === 'online'
   const statusColor = connection === 'unknown' ? '#979797' : isOnline ? '#66AEFF' : '#E94C4C'
   const statusLabel = connection === 'unknown' ? 'ไม่ทราบสถานะ' : isOnline ? 'ออนไลน์' : 'ออฟไลน์'
+
+  const getLatLng = (coord: unknown) => isValidCoord(coord) ? [coord[1], coord[0]] : ['-', '-']
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(getLatLng(p.coord).join(', '))
+    message.success('คัดลอกพิกัดแล้ว')
+    setCopied(true)
+    setTimeout(() => setCopied(false), COPIED_RESET_MS)
+  }
+
   return (
     <div
       className='min-w-50 rounded-lg border px-3 py-2.5 bg-[rgba(5,13,26,0.96)]'
@@ -43,6 +58,16 @@ const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => 
       <p className='fs-12 font-bold tracking-wide' style={{ color: statusColor }}>
         Street Light · {String(p.code_name ?? '-')}
       </p>
+      <Tooltip title="กดเพื่อคัดลอกพิกัด">
+        <div className='flex items-center gap-2 cursor-pointer' onClick={handleCopy}>
+          <p className='fs-12 text-white/50 leading-snug mt-0.5'>
+            {getLatLng(p.coord).join(', ')}
+          </p>
+          {copied
+            ? <TbClipboardCheck className='text-green-500 fs-12' />
+            : <TbClipboardCopy className='text-white/50 fs-12' />}
+        </div>
+      </Tooltip>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.install_point ?? p.project_name ?? '-')}
       </p>
@@ -53,7 +78,7 @@ const DetailMapPopup: React.FC<{ feature: GeoJSON.Feature }> = ({ feature }) => 
   )
 }
 
-function useResolvedCoord(coord: [number, number], imei?: string): [number, number] | null {
+export function useResolvedCoord(coord: [number, number], imei?: string): [number, number] | null {
   const deptId = useDeptId()
   const { data } = useLightingOverview(deptId)
 
@@ -94,6 +119,7 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
           code_name: roadCode,
           install_point: installPoint,
           project_name: projectName,
+          coord: resolvedCoord,
         },
         geometry: { type: 'Point', coordinates: resolvedCoord },
       }
