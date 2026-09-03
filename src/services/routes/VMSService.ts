@@ -2,6 +2,7 @@ import { APIRequestVMSList, APIRequestVMSOverview, APIRequestVMSRandomOnline, AP
 import ApiService from "../ApiService"
 import { centralScope } from "./scopeParam"
 import { APIResponseVMSDetail } from "@/types/vms/detail-api"
+import { APIRequestPostVMSPmChart, APIRequestPostVMSPmChartHour, APIResponsePostVMSPmChart } from "@/types/vms/pm-api"
 import type {
   APIRequestScreenInfoAllowSettings,
   APIRequestScreenInfoCentralize,
@@ -108,6 +109,26 @@ export const putVMSScreenInfoAllowSettingsAPI = async (
   return ApiService.fetchData<APIResponseScreenInfoAllowSettings, APIRequestScreenInfoAllowSettings>({
     url: `/vms/screen-info/${wid}/allow-settings`,
     method: 'PUT',
+    data,
+  })
+}
+// Power-meter chart for the detail page — same meter pipeline as
+// bridge-lighting's `/bridge_lighting/pm-chart`, but keyed by solution_id
+// (BE resolves the wid/meter group itself). Last ~24 h of 5-minute buckets.
+export const postVMSPmChartAPI = async (data: APIRequestPostVMSPmChart) => {
+  return ApiService.fetchData<APIResponsePostVMSPmChart, APIRequestPostVMSPmChart>({
+    url: `/vms/pm-chart`,
+    method: 'POST',
+    data,
+  })
+}
+
+// Hourly buckets over an explicit CE date range — feeds the นำออกเอกสาร
+// modal, mirroring bridge-lighting's `/pm-chart-hour` contract.
+export const postVMSPmChartHourAPI = async (data: APIRequestPostVMSPmChartHour) => {
+  return ApiService.fetchData<APIResponsePostVMSPmChart, APIRequestPostVMSPmChartHour>({
+    url: `/vms/pm-chart-hour`,
+    method: 'POST',
     data,
   })
 }
