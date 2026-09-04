@@ -15,6 +15,7 @@ interface Props {
   pageSizeOptions?: number[]
   /** Toggle the page-size selector (default true). */
   showSizeChanger?: boolean
+  align?: 'start' | 'center' | 'end'
 }
 
 /** App-standard list pagination — the Incident Detection style: right-aligned,
@@ -28,9 +29,10 @@ const AppPagination: React.FC<Props> = ({
   onChange,
   pageSizeOptions = [10, 20, 50, 100],
   showSizeChanger = true,
+  align = 'end',
 }) => (
   <Pagination
-    align='end'
+    align={align}
     current={current}
     pageSize={pageSize}
     total={total}
@@ -38,6 +40,9 @@ const AppPagination: React.FC<Props> = ({
     pageSizeOptions={pageSizeOptions}
     showTotal={(t, range) => `${range[1] - range[0] + 1} จาก ${t}`}
     onChange={onChange}
+    locale={{
+      items_per_page: '/ หน้า'
+    }}
   />
 )
 

@@ -7,6 +7,7 @@ import {
   ProjectSection,
   RouteSection,
   ContactSection,
+  NewContactSection,
   UserSection,
 } from '../components'
 import { OverallProvider } from '../context'
@@ -32,7 +33,7 @@ const SettingScreen = () => {
       case 'ROUTE':
         return <RouteSection />
       case 'CONTACT':
-        return <ContactSection />
+        return <NewContactSection />
       case 'USER':
         return <UserSection />
       default:

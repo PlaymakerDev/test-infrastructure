@@ -76,3 +76,44 @@ export interface APIRequestUpdateContractor {
   email?: string
   role?: string
 }
+
+// NEW CONTRACTOR API types can be added below as needed.
+export interface APIRequestContractorList {
+  page?: number
+  limit?: number
+  sort?: 'ASC' | 'DESC'
+  field?: string
+  search?: string
+}
+
+export interface APIResponseContractorList {
+  res_data: ContractorData[]
+  meta_data: APIResponseMetaData
+}
+
+export interface ContractorData {
+  contractor_id: string
+  user_id: string
+  company_name: string
+  short_name: string
+  address: string
+  name: string
+  phone: string
+  email: string
+  created_at: string
+  created_by: string
+  user: ContractorUserSubData
+  project_count: number
+  solution_count: number
+  solution_type_count: number
+}
+
+export interface ContractorUserSubData {
+  id: string
+  username: string
+  user_type_id: number
+  is_active: boolean
+  created_at: string
+  created_by: string
+  deleted_by: any
+}

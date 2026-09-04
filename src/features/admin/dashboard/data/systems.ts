@@ -21,17 +21,17 @@ export type SystemType =
 // filter-pill row + cluster badge order — kept in the same order as the
 // navbar menu per design 2026-07-13.
 export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: string }> = {
-  CCTV:           { color: "#003F87", label: "CCTV",               icon: "camera" },
-  Counting:       { color: "#007787", label: "Traffic Volume",     icon: "car" },
-  Analytic:       { color: "#00873B", label: "Incident Detection", icon: "chart" },
-  Traffic:        { color: "#518700", label: "Traffic Signal",     icon: "light" },
-  CrossWalk:      { color: "#001287", label: "Crosswalk",          icon: "walk" },
-  Lighting:       { color: "#878000", label: "Street Light",      icon: "bulb" },
-  VMS:            { color: "#874600", label: "VMS",                icon: "monitor" },
-  BridgeLighting: { color: "#871000", label: "Bridge Lighting",    icon: "bridge" },
-  Tunnel:         { color: "#4D0087", label: "Tunnel",             icon: "tunnel" },
-  WIM:            { color: "#70196D", label: "Truck Tracking",     icon: "scale" },
-  LPR:            { color: "#87004D", label: "LPR",                icon: "scan" },
+  CCTV: { color: "#003F87", label: "CCTV", icon: "camera" },
+  Counting: { color: "#007787", label: "Traffic Volume", icon: "car" },
+  Analytic: { color: "#00873B", label: "Incident Detection", icon: "chart" },
+  Traffic: { color: "#518700", label: "Traffic Signal", icon: "light" },
+  CrossWalk: { color: "#001287", label: "Crosswalk", icon: "walk" },
+  Lighting: { color: "#878000", label: "Street Light", icon: "bulb" },
+  VMS: { color: "#874600", label: "VMS", icon: "monitor" },
+  BridgeLighting: { color: "#871000", label: "Bridge Lighting", icon: "bridge" },
+  Tunnel: { color: "#4D0087", label: "Tunnel", icon: "tunnel" },
+  WIM: { color: "#70196D", label: "Truck Tracking", icon: "scale" },
+  LPR: { color: "#87004D", label: "LPR", icon: "scan" },
 }
 
 export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
@@ -44,15 +44,15 @@ export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
  * (src/constants/cctv.ts) and extends it to Lighting / Bridge / Tunnel.
  */
 export const SYSTEM_BRIGHT: Record<SystemType, string> = {
-  CCTV:           "#4DA3FF", // ← #003F87
-  Counting:       "#2DD4BF", // ← #007787
-  Analytic:       "#3DD68C", // ← #00873B
-  Traffic:        "#A3E635", // ← #518700
-  CrossWalk:      "#7C8CFF", // ← #001287
-  Lighting:       "#E8DF3D", // ← #878000
-  VMS:            "#FF9F45", // ← #874600
+  CCTV: "#4DA3FF", // ← #003F87
+  Counting: "#2DD4BF", // ← #007787
+  Analytic: "#3DD68C", // ← #00873B
+  Traffic: "#A3E635", // ← #518700
+  CrossWalk: "#7C8CFF", // ← #001287
+  Lighting: "#E8DF3D", // ← #878000
+  VMS: "#FF9F45", // ← #874600
   BridgeLighting: "#FF6B57", // ← #871000
-  Tunnel:         "#B57BFF", // ← #4D0087
-  WIM:            "#E879DE", // ← #70196D
-  LPR:            "#FF6FB5", // ← #87004D
+  Tunnel: "#B57BFF", // ← #4D0087
+  WIM: "#E879DE", // ← #70196D
+  LPR: "#FF6FB5", // ← #87004D
 }

@@ -123,3 +123,110 @@ export interface APIRequestProject {
 /** PUT /manage/project — same body as create, but the numeric project id
  *  is carried in the payload (NOT the path). */
 export type APIRequestProjectUpdate = APIRequestProject & { id: number }
+
+// NEW
+export interface APIRequestProjectList {
+  budget_year?: number
+  department_id?: number
+  contractor_id?: string
+  is_warranty?: boolean
+  page?: number
+  limit?: number
+  field?: string
+  sort?: 'ASC' | 'DESC'
+  search?: string
+}
+
+export interface APIResponseProjectList {
+  res_data: ProjectListData[]
+  meta_data: APIResponseMetaData
+}
+
+export interface ProjectListData {
+  id: number
+  project_name: string
+  contract_no: string
+  project_no: string
+  contractor_id: string
+  department_id: number
+  warranty_start_date: string
+  warranty_end_date: string
+  created_at: string
+  created_by: string
+  budget_year: number
+  legacy_pj_id?: number
+  updated_by: any
+  updated_at: string
+  is_warranty: boolean
+  contractor: ProjSubContractor
+  department: ProjSubDepartment
+  solution_group?: ProjSubSolutionGroup[]
+  project_roads?: ProjSubProjectRoad[]
+}
+
+export interface ProjSubContractor {
+  id: string
+  username: string
+  user_type_id: number
+  is_active: boolean
+  created_at: string
+  created_by: string
+  deleted_by: string | null
+  contractor: ProjContractor
+}
+
+export interface ProjContractor {
+  contractor_id: string
+  user_id: string
+  company_name: string
+  short_name: string
+  address: string
+  name: string
+  phone: string
+  email: string
+  created_at: string
+  created_by: string
+}
+
+export interface ProjSubDepartment {
+  id: number
+  department_group: number
+  province: string
+  department_office_no: number
+  department_name: string
+  department_short_name: string
+  is_external: number
+  province_id: number
+  line_token: string
+  line_group_token: string
+  is_urban: number
+  department_type: number
+  region_id: number
+}
+
+export interface ProjSubSolutionGroup {
+  id: number
+  name: string
+}
+
+export interface ProjSubProjectRoad {
+  project_road_id: number
+  project_id: number
+  road_id: number
+  road: ProjectRoad
+}
+
+export interface ProjectRoad {
+  id: number
+  road_name: string
+  road_code: string
+  subdistrict: string
+  district: string
+  province: string
+  department_id: number
+  start_sta: string
+  end_sta: string
+  distance: number
+  created_at: string
+  created_by: string
+}

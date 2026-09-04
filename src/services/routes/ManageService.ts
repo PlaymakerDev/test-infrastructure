@@ -23,12 +23,16 @@ import type {
   APIResponseBudgetYearList,
   APIRequestProject,
   APIRequestProjectUpdate,
+  APIRequestProjectList,
+  APIResponseProjectList,
 } from '@/types/manage/project-api'
 import type {
   APIResponseContractor,
   APIResponseContractorListEnvelope,
   APIRequestRegisterContractor,
   APIRequestUpdateContractor,
+  APIRequestContractorList,
+  APIResponseContractorList,
 } from '@/types/manage/contractor-api'
 import type {
   APIResponseGeneralUserListEnvelope,
@@ -72,6 +76,14 @@ export const getProjectsAPI = (params: ListParams = {}) =>
     url: '/manage/project',
     method: 'GET',
     params: toListQuery(params),
+  })
+
+// NEW PROJECT
+export const getProjectListAPI = (params: APIRequestProjectList) =>
+  ApiService.fetchData<APIResponseProjectList, APIRequestProjectList>({
+    url: '/manage/project',
+    method: 'GET',
+    params,
   })
 
 export const getProjectByIdAPI = (id: number) =>
@@ -137,6 +149,14 @@ export const getContractorsAPI = (params: ListParams = {}) =>
     url: '/manage/contractor',
     method: 'GET',
     params: toListQuery(params),
+  })
+
+// NEW
+export const getContractorListAPI = (params: APIRequestContractorList) =>
+  ApiService.fetchData<APIResponseContractorList, APIRequestContractorList>({
+    url: '/manage/contractor',
+    method: 'GET',
+    params,
   })
 
 export const createContractorAPI = (body: APIRequestRegisterContractor) =>
