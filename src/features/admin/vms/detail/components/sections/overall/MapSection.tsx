@@ -24,7 +24,15 @@ const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
   const { data, isWarranty, isOnline, setOpenVMSScreen } = props
 
   return (
-    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-green-400`}>
+    // `[contain:paint]` + translateZ(0) on the video figure: a LIVE <video>
+    // inside a mapbox popup (positioned via CSS transform that updates every
+    // map frame) can leave a stale composited layer behind on some GPUs — a
+    // gray video-sized rectangle flickering next to the popup (reported
+    // 2026-09-02, machine-specific; not reproducible under software
+    // rendering). Paint containment clips all descendant painting to this
+    // card, and the explicit layer keeps the video's compositing in sync
+    // with the popup's transform.
+    <div className={`min-w-50 rounded-lg border px-3 py-2.5 bg-(--dark-black) border-green-400 [contain:paint]`}>
       <section>
         <p className='fs-12'>ชื่อจุดติดตั้ง: <strong>{data?.solution?.solution_name || '-'}</strong></p>
         <p className='fs-12'>รหัสสายทาง: <strong>{data?.solution?.solution_location?.project_roads?.road?.road_code || '-'}</strong></p>
@@ -34,7 +42,7 @@ const SolutionPopup: React.FC<SolutionPopupProps> = (props) => {
           cameraId={String(data?.desktop_screen.id)}
           hlsUrl={data?.desktop_screen.desktop_screen}
           enableViewportPause
-          figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer"
+          figureClassName="h-40 min-h-0 max-h-none w-full mb-2 rounded-lg overflow-hidden cursor-pointer [transform:translateZ(0)] [backface-visibility:hidden]"
           onClick={() => setOpenVMSScreen?.({ open: true, data })}
         />
       </section>
