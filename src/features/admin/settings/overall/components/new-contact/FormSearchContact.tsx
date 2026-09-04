@@ -9,6 +9,8 @@ interface Props {
   setType: (type: 'TABLE' | 'GRID') => void
   search: string
   setSearch: (search: string) => void
+  onAdd: () => void
+  onExport: () => void
 }
 
 interface FormSearchContactForm {
@@ -16,7 +18,7 @@ interface FormSearchContactForm {
 }
 
 const FormSearchContact: React.FC<Props> = (props) => {
-  const { setType, type, search, setSearch } = props
+  const { setType, type, search, setSearch, onAdd, onExport } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -74,6 +76,7 @@ const FormSearchContact: React.FC<Props> = (props) => {
           icon={<PlusOutlined />}
           shape='round'
           className='flex-1 min-w-35 md:flex-none md:w-auto!'
+          onClick={onAdd}
         >
           <p className='fs-12 whitespace-nowrap'>เพิ่มผู้รับจ้าง</p>
         </Button>
@@ -94,6 +97,7 @@ const FormSearchContact: React.FC<Props> = (props) => {
             shape="round"
             icon={<TbPrinter />}
             className='flex-1 min-w-35 md:flex-none md:w-auto!'
+            onClick={onExport}
           >
             <p className='fs-12 whitespace-nowrap'>นำออกเอกสาร</p>
           </Button>

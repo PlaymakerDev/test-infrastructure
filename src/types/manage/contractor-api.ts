@@ -100,6 +100,10 @@ export interface ContractorData {
   name: string
   phone: string
   email: string
+  /** Same endpoint as APIResponseContractor's `/manage/contractor` — assumed
+   *  present here too (not yet independently verified against this list
+   *  flavor's response). Optional so a missing field doesn't crash the UI. */
+  role?: string | null
   created_at: string
   created_by: string
   user: ContractorUserSubData

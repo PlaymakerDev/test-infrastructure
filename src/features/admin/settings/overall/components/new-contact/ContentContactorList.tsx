@@ -7,10 +7,12 @@ import { getProjectListAPI } from '@/services/routes/ManageService'
 interface Props {
   item: ContractorData
   type: 'TABLE' | 'GRID'
+  onEdit: (item: ContractorData) => void
+  onDelete: (item: ContractorData) => void
 }
 
 const ContentContactorList: React.FC<Props> = (props) => {
-  const { item, type } = props
+  const { item, type, onEdit, onDelete } = props
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
 
@@ -70,6 +72,8 @@ const ContentContactorList: React.FC<Props> = (props) => {
       <section>
         <ContactTitle
           item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       </section>
       <section className='mt-5'>

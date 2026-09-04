@@ -5,10 +5,12 @@ import { TbInfoSquareRoundedFilled, TbPencilMinus, TbTrash } from 'react-icons/t
 
 interface Props {
   item: ContractorData
+  onEdit: (item: ContractorData) => void
+  onDelete: (item: ContractorData) => void
 }
 
 const ContactTitle: React.FC<Props> = (props) => {
-  const { item } = props
+  const { item, onEdit, onDelete } = props
 
   return (
     <div className='flex flex-wrap items-center gap-3'>
@@ -36,9 +38,13 @@ const ContactTitle: React.FC<Props> = (props) => {
       <div className='flex items-center gap-2 shrink-0'>
         <TbPencilMinus
           className='fs-22 text-orange-300 cursor-pointer'
+          title='แก้ไขข้อมูลผู้รับจ้าง'
+          onClick={() => onEdit(item)}
         />
         <TbTrash
           className='fs-22 text-red-500 cursor-pointer'
+          title='ลบผู้รับจ้าง'
+          onClick={() => onDelete(item)}
         />
       </div>
     </div>

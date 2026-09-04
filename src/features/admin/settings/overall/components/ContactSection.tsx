@@ -25,6 +25,7 @@ import type {
 import { calcTableScrollY } from '../hooks/useTableScrollY'
 import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
 import { fetchAllPages } from '../utils/fetchAllPages'
+import { CONTACT_EXPORT_COLUMNS } from '../data/contactExportColumns'
 import ContactModal from './contact/ContactModal'
 import DeleteContactModal from './contact/DeleteContactModal'
 import FormSearchContact from './contact/FormSearchContact'
@@ -33,35 +34,6 @@ import TableContact from './contact/TableContact'
 dayjs.extend(buddhistEra)
 
 const DEFAULT_FILTERS: ContractorFilters = { search: '' }
-
-/** "06/07/2569" — same dd/MM/พ.ศ. format TableContact renders. */
-const fmtThaiDate = (iso: string): string => {
-  if (!iso) return '-'
-  const d = dayjs(iso)
-  return d.isValid() ? d.format('DD/MM/BBBB') : iso
-}
-
-// Shared column config for both PDF and Excel exports — SAME columns, SAME
-// order as TableContact (minus the จัดการ action column), plus ลำดับ (mirrors
-// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
-// (sums to 100). Email/address/username are NOT on the on-screen table so
-// they're not exported; no password field exists on the UI Contractor row.
-const CONTACT_EXPORT_COLUMNS: {
-  header: string
-  width: number
-  widthPct: number
-  align?: 'left' | 'center' | 'right'
-  value: (row: Contractor, index: number) => string | number
-}[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 5, value: (_r, i) => i + 1 },
-  { header: 'ชื่อบริษัท', width: 36, widthPct: 24, align: 'left', value: (r) => r.companyName || '-' },
-  { header: 'ชื่อย่อ', width: 12, widthPct: 10, value: (r) => r.shortName || '-' },
-  { header: 'ผู้ติดต่อ', width: 20, widthPct: 14, value: (r) => r.contactPerson || '-' },
-  { header: 'เบอร์โทรศัพท์', width: 16, widthPct: 12, value: (r) => r.phone || '-' },
-  { header: 'ตำแหน่ง / บทบาท', width: 18, widthPct: 12, value: (r) => r.role || '-' },
-  { header: 'วันที่ลงทะเบียน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.registeredAt) },
-  { header: 'จำนวนโครงการ', width: 14, widthPct: 10, value: (r) => r.projectCount },
-]
 
 /** Best-effort extractor for the backend's Thai error message, which sits at
  *  `error.response.data.message` when the request is enveloped by the shared
