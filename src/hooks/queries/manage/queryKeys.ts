@@ -34,6 +34,15 @@ export const manageKeys = {
     all: ['manage', 'contractors'] as const,
     list: (params: ListParams = {}) =>
       [...manageKeys.contractors.all, 'list', listKey(params)] as const,
+    /** Infinite-scroll variant — deliberately excludes `page` from the key
+     *  (unlike `list` above) since useInfiniteQuery manages every fetched
+     *  page under one cache slot; only (limit, search) select a slot. */
+    listInfinite: (params: Omit<ListParams, 'page'> = {}) =>
+      [
+        ...manageKeys.contractors.all,
+        'list-infinite',
+        { limit: params.limit ?? 10, search: params.search ?? '' },
+      ] as const,
   },
 
   roads: {

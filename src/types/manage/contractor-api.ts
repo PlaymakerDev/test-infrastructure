@@ -123,3 +123,8 @@ export interface ContractorUserSubData {
   created_by: string
   deleted_by: any
 }
+
+export interface APIRequestExportContractor {
+  format?: 'xlsx' | 'html'
+  contractor_id?: string
+}

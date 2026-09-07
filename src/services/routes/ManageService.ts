@@ -33,6 +33,7 @@ import type {
   APIRequestUpdateContractor,
   APIRequestContractorList,
   APIResponseContractorList,
+  APIRequestExportContractor,
 } from '@/types/manage/contractor-api'
 import type {
   APIResponseGeneralUserListEnvelope,
@@ -361,4 +362,19 @@ export const markCameraOutageReadAPI = (body: APIRequestMarkCameraOutageRead) =>
     url: '/manage/notifications/camera-outage/read',
     method: 'POST',
     data: body,
+  })
+
+// DOWNLOAD
+// Both current callers pass responseType 'blob' — axios resolves response.data
+// as an actual Blob at runtime regardless of the request's `format`, so the
+// response generic is typed as Blob (not the placeholder APIResponseExportContractor).
+export const getExportContractorAPI = (
+  params: APIRequestExportContractor,
+  responseType: 'json' | 'text' | 'arraybuffer' | 'blob' | 'stream' | 'document' | 'formdata'
+) =>
+  ApiService.fetchData<Blob, APIRequestExportContractor>({
+    url: '/manage/contractor/export',
+    method: 'GET',
+    params,
+    responseType,
   })

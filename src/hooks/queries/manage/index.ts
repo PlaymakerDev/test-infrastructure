@@ -15,6 +15,7 @@ export { useProjectContractors } from './useProjectContractors'
 
 // Contractors
 export { useContractorsList } from './useContractorsList'
+export { useContractorListInfinite } from './useContractorListInfinite'
 export { useCreateContractor } from './useCreateContractor'
 export { useUpdateContractor } from './useUpdateContractor'
 export { useDeleteContractor } from './useDeleteContractor'

@@ -1,17 +1,15 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ContentContactList,
   FormSearchContact,
   ModalContactInfo
 } from '../components'
 import { App, Empty, Skeleton } from 'antd'
-import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { getContractorListAPI } from '@/services/routes/ManageService'
-import AppPagination from '@/components/pagination/AppPagination'
+import { getExportContractorAPI } from '@/services/routes/ManageService'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import {
-  manageKeys,
+  useContractorListInfinite,
   useCreateContractor,
   useDeleteContractor,
   useUpdateContractor,
@@ -19,13 +17,14 @@ import {
 import type {
   APIRequestRegisterContractor,
   APIRequestUpdateContractor,
+  APIResponseContractorList,
   ContractorData,
 } from '@/types/manage/contractor-api'
 import type { Contractor, ContractorFormValues } from '../types/contractor'
-import { CONTACT_EXPORT_COLUMNS } from '../data/contactExportColumns'
-import { fetchAllPages } from '../utils/fetchAllPages'
 import ContactModal from './contact/ContactModal'
 import DeleteContactModal from './contact/DeleteContactModal'
+import { AxiosError } from 'axios'
+import dayjs from 'dayjs'
 
 interface Props {
 
@@ -72,8 +71,6 @@ const NewContactSection: React.FC<Props> = (props) => {
   const { message } = App.useApp()
   const [type, setType] = useState<'TABLE' | 'GRID'>('TABLE')
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(3)
 
   const [modalState, setModalState] = useState<{ open: boolean; editing: ContractorData | null }>({
     open: false,
@@ -86,52 +83,59 @@ const NewContactSection: React.FC<Props> = (props) => {
   const updateMutation = useUpdateContractor()
   const deleteMutation = useDeleteContractor()
 
-  // Factory key (not an ad-hoc ['contacts', ...] tuple) so the shared
-  // create/update/delete mutation hooks — which invalidate
-  // `manageKeys.contractors.all` — actually refresh this list too.
-  const { data, isLoading, isError } = useQuery({
-    queryKey: manageKeys.contractors.list({ page, limit, search }),
-    queryFn: () => getContractorListAPI({
-      page: page,
-      limit: limit,
-      search: search,
-    }),
-    placeholderData: keepPreviousData,
-  })
+  // onScroll pagination — a search-term change swaps the query key (search
+  // is part of manageKeys.contractors.listInfinite) so TanStack starts a
+  // fresh page-1 fetch under the hood; no page/limit state to reset by hand.
+  const {
+    data: infiniteData,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useContractorListInfinite({ limit: 10, search })
 
-  // A new search term invalidates whatever page the user was on — start over
-  // at page 1 instead of possibly landing on a page past the new result set.
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value)
-    setPage(1)
   }, [])
 
-  const total = data?.data.meta_data.count ?? 0
+  // Flatten every fetched page into one list — the render tree below still
+  // only ever sees a single APIResponseContractorList, same shape useQuery
+  // used to hand it.
+  const pages = useMemo(() => infiniteData?.pages ?? [], [infiniteData])
+  const allRows = useMemo(() => pages.flatMap((p) => p.res_data), [pages])
+  const metaData = pages[0]?.meta_data
+  const total = metaData?.count ?? 0
+  const data: APIResponseContractorList | undefined = useMemo(
+    () =>
+      infiniteData
+        ? { res_data: allRows, meta_data: metaData ?? { count: 0, page: 1, limit: 10, total_pages: 0 } }
+        : undefined,
+    [infiniteData, allRows, metaData],
+  )
+
+  // Sentinel at the bottom of the list — scrolling it into view loads the
+  // next page, replacing the old page-number AppPagination control.
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = loadMoreRef.current
+    if (!el || !hasNextPage) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // ── Export ──────────────────────────────────────────────────────────────
-  // Current-page rows mapped to the shared UI shape — feeds the 'page' export
-  // scope and the ExportFileModal's pageCount.
-  const contractors = useMemo<Contractor[]>(() => {
-    const rows = data?.data?.res_data ?? []
-    return rows.map(toContractor)
-  }, [data])
-
-  // Human-readable note of the active search — printed in the PDF header so
-  // a reader knows what subset they're looking at.
-  const exportFilterNote = useMemo(() => {
-    const q = search.trim()
-    return q ? `ค้นหา "${q}"` : undefined
-  }, [search])
-
-  // Export scope 'ทั้งหมด' — walk EVERY page of the current server-side
-  // search at export time (mirrors ContactSection's own fetchAllContractors;
-  // the backend caps `?limit=` at 100).
-  const fetchAllContractors = async (): Promise<Contractor[]> => {
-    const rows = await fetchAllPages((p, pageLimit) =>
-      getContractorListAPI({ page: p, limit: pageLimit, search }).then((r) => r.data),
-    )
-    return rows.map(toContractor)
-  }
+  // Every row loaded so far (i.e. scrolled into view) mapped to the shared UI
+  // shape — feeds the 'page' export scope and the ExportFileModal's pageCount.
+  const contractors = useMemo<Contractor[]>(() => allRows.map(toContractor), [allRows])
 
   // ── Modal open/close ────────────────────────────────────────────────────
   const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
@@ -214,6 +218,73 @@ const NewContactSection: React.FC<Props> = (props) => {
     [deleteMutation, message],
   )
 
+  const onExportXlsx = useCallback(async () => {
+    try {
+      const response = await getExportContractorAPI({ format: 'xlsx' }, 'blob')
+      // 1. Create a local URL for the binary platform object (Blob)
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // 2. Create a temporary hidden anchor element
+      const link = document.createElement('a');
+      link.href = url;
+
+      // 3. Define the filename the user will see
+      link.setAttribute('download', `Settings_Contractors_Report_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
+
+      // 4. Append to the DOM, trigger the click, and clean up
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      // 5. Clean up the memory allocated to the Object URL
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
+      } else {
+        console.log(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
+      }
+    }
+  }, [message])
+
+  // The backend only renders a report as HTML — there is no native PDF
+  // output — so "export PDF" opens that HTML in a new tab and lets the user
+  // print it themselves (Ctrl/Cmd+P → Save as PDF) instead of auto-opening
+  // the print preview. This keeps the report as real, selectable, Thai-safe
+  // text (the browser's own print engine renders it) instead of trying to
+  // smuggle raw HTML bytes into a mislabeled .pdf download, which would not
+  // open in any PDF viewer.
+  const onExportPDF = useCallback(async () => {
+    try {
+      const response = await getExportContractorAPI({ format: 'html' }, 'blob')
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: 'text/html;charset=utf-8' }),
+      )
+
+      const reportWindow = window.open(url, '_blank')
+      if (!reportWindow) {
+        message.error('เบราว์เซอร์บล็อกการเปิดแท็บใหม่ กรุณาอนุญาต pop-up สำหรับเว็บไซต์นี้')
+        window.URL.revokeObjectURL(url)
+        return
+      }
+
+      // Wait for the report to actually finish loading before alerting —
+      // alerting immediately blocks the new tab's own rendering, so the user
+      // would see the alert pop up over a still-blank page. The alert also
+      // runs on reportWindow itself so it appears attached to that tab, not
+      // the settings page underneath.
+      reportWindow.onload = () => {
+        reportWindow.alert('กด Print (Ctrl/Cmd+P) แล้วเลือก "Save as PDF" เพื่อบันทึกเป็น PDF')
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
+      } else {
+        console.log(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
+      }
+    }
+  }, [message])
+
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={true} active />
     if (isError) {
@@ -223,7 +294,7 @@ const NewContactSection: React.FC<Props> = (props) => {
         </div>
       )
     }
-    if (!data?.data?.res_data || data.data.res_data.length === 0) return (
+    if (!data?.res_data || data.res_data.length === 0) return (
       <div className="block m-auto py-18">
         <Empty description="ไม่มีข้อมูลผู้ติดต่อ" />
       </div>
@@ -231,7 +302,7 @@ const NewContactSection: React.FC<Props> = (props) => {
     return (
       <ContentContactList
         type={type}
-        data={data?.data}
+        data={data}
         isLoading={isLoading}
         isError={isError}
         onEdit={openEdit}
@@ -244,7 +315,7 @@ const NewContactSection: React.FC<Props> = (props) => {
     <div>
       <section>
         <FormSearchContact
-          data={data?.data}
+          data={data}
           type={type}
           setType={setType}
           search={search}
@@ -256,24 +327,13 @@ const NewContactSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         {renderContent}
       </section>
-      {total > 0 && (
-        <section className='mt-5'>
-          <AppPagination
-            align='center'
-            current={page}
-            pageSize={limit}
-            total={total}
-            showSizeChanger={false}
-            // TODO: enable page-size changing once ready — uncomment below
-            // and remove the `showSizeChanger={false}` line above.
-            // showSizeChanger={true}
-            // pageSizeOptions={[3, 10, 20, 50]}
-            onChange={(newPage, newLimit) => {
-              setPage(newPage)
-              setLimit(newLimit)
-            }}
-          />
-        </section>
+      {/* onScroll pagination — this sentinel is the last thing in the list;
+          IntersectionObserver above fires fetchNextPage() once it scrolls
+          into view. Replaces the old page-number AppPagination control. */}
+      {hasNextPage && (
+        <div ref={loadMoreRef} className='flex justify-center items-center py-5'>
+          <Skeleton.Button active={isFetchingNextPage} size='small' style={{ width: 120 }} />
+        </div>
       )}
 
       <ModalContactInfo />
@@ -299,30 +359,9 @@ const NewContactSection: React.FC<Props> = (props) => {
       <ExportFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        scope={{ totalCount: total, pageCount: contractors.length }}
-        onExportPdf={async (scope) => {
-          const rows = scope === 'page' ? contractors : await fetchAllContractors()
-          const { exportTablePdf } = await import('@/utils/export/pdf')
-          await exportTablePdf({
-            filenameBase: 'Settings_Contractors_Report',
-            title: 'รายงานรายชื่อผู้รับจ้าง (Contractor Management)',
-            filterNote: exportFilterNote,
-            columns: CONTACT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
-            rows,
-          })
-        }}
-        onExportExcel={async (scope) => {
-          const rows = scope === 'page' ? contractors : await fetchAllContractors()
-          const { exportExcel } = await import('@/utils/export/excel')
-          exportExcel({
-            filenameBase: 'Settings_Contractors_Report',
-            sheetName: 'Contractors',
-            title: 'รายงานรายชื่อผู้รับจ้าง (Contractor Management)',
-            filterNote: exportFilterNote,
-            columns: CONTACT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
-            rows,
-          })
-        }}
+        // scope={{ totalCount: total, pageCount: contractors.length }}
+        onExportPdf={() => onExportPDF()}
+        onExportExcel={() => onExportXlsx()}
       />
     </div>
   )
