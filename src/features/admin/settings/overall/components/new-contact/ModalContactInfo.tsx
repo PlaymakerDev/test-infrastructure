@@ -1,4 +1,4 @@
-import { Empty, Modal } from 'antd'
+import { ConfigProvider, Empty, Modal } from 'antd'
 import React, { useMemo } from 'react'
 import { INIT_CONTACT_INFO, useOverallContext } from '../../context'
 import { ContractorData } from '@/types/manage/contractor-api'
@@ -88,19 +88,33 @@ const ModalContactInfo: React.FC<Props> = (props) => {
   }, [contactInfo.data])
 
   return (
-    <Modal
-      title={false}
-      // title="Basic Modal"
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={contactInfo.open}
-      footer={false}
-      // onOk={() => setContactInfo(INIT_CONTACT_INFO)}
-      onCancel={() => setContactInfo(INIT_CONTACT_INFO)}
-      width={1000}
-      destroyOnHidden
+    <ConfigProvider
+      theme={{
+        components: {
+          Modal: {
+            colorIcon: '#FFFFFF',
+            borderRadiusLG: 20,
+          }
+        }
+      }}
     >
-      {renderContent}
-    </Modal>
+      <Modal
+        title={false}
+        // title="Basic Modal"
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={contactInfo.open}
+        footer={false}
+        // onOk={() => setContactInfo(INIT_CONTACT_INFO)}
+        onCancel={() => setContactInfo(INIT_CONTACT_INFO)}
+        width={1000}
+        classNames={{
+          container: 'border-2! border-(--default-blue)!'
+        }}
+        destroyOnHidden
+      >
+        {renderContent}
+      </Modal>
+    </ConfigProvider>
   )
 }
 

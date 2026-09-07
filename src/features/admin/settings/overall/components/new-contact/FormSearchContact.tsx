@@ -1,3 +1,5 @@
+import { APIResponseContractorList } from '@/types/manage/contractor-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, ConfigProvider, Input, Segmented } from 'antd'
 import React, { useCallback, useRef } from 'react'
@@ -11,6 +13,7 @@ interface Props {
   setSearch: (search: string) => void
   onAdd: () => void
   onExport: () => void
+  data?: APIResponseContractorList
 }
 
 interface FormSearchContactForm {
@@ -18,7 +21,7 @@ interface FormSearchContactForm {
 }
 
 const FormSearchContact: React.FC<Props> = (props) => {
-  const { setType, type, search, setSearch, onAdd, onExport } = props
+  const { setType, type, search, setSearch, onAdd, onExport, data } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -39,7 +42,7 @@ const FormSearchContact: React.FC<Props> = (props) => {
       onSubmit={handleSubmit(onSubmit)}
       className='flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center'
     >
-      <div className='w-full md:flex-1 md:min-w-56'>
+      <div className='w-full lg:w-100'>
         <Controller
           name="name"
           control={control}
@@ -67,7 +70,7 @@ const FormSearchContact: React.FC<Props> = (props) => {
 
       <div className='flex flex-wrap items-center gap-3 md:flex-nowrap md:w-auto'>
         <div className='shrink-0 rounded-3xl border border-[#B2FF00] text-[#B2FF00] px-5 py-1'>
-          <p className='fs-12 whitespace-nowrap'>86 ผู้รับจ้าง</p>
+          <p className='fs-12 whitespace-nowrap'>{fmtNumber(Number(data?.meta_data.count)) || 0} ผู้รับจ้าง</p>
         </div>
         <Button
           htmlType="button"

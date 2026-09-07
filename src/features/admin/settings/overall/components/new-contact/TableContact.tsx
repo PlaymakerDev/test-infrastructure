@@ -1,11 +1,12 @@
 import { ContractorData } from '@/types/manage/contractor-api';
 import { APIResponseProjectList, ProjectListData } from '@/types/manage/project-api';
 import { getRowNumber } from '@/utils/pagination';
-import { Empty, Table, TableProps } from 'antd';
+import { Empty, Table, TableProps, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import React from 'react'
 import StatusBadge from '../project/StatusBadge';
 import SolutionTagList from './SolutionTagList';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   data?: APIResponseProjectList
@@ -19,6 +20,7 @@ interface Props {
 
 const TableContact: React.FC<Props> = (props) => {
   const { data, page, limit, isLoading, isError, handlePageChange } = props
+  const router = useRouter();
 
   const columns: TableProps<ProjectListData>['columns'] = [
     {
@@ -43,6 +45,16 @@ const TableContact: React.FC<Props> = (props) => {
       dataIndex: 'project_name',
       key: 'project_name',
       width: 500,
+      onCell: (row) => {
+        return {
+          onClick: () => router.push(`/admin/settings/detail/project?id=${row.id}`),
+          className: 'cursor-pointer hover:text-(--yellow) transition-colors duration-200'
+        }
+      },
+      render: (text) => {
+        if (text) return <Tooltip title="กดเพื่อดูรายละเอียด">{text}</Tooltip>
+        return '-'
+      }
     },
     {
       title: 'การทำงาน',

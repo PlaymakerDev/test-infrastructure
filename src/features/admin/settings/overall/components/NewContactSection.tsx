@@ -244,6 +244,7 @@ const NewContactSection: React.FC<Props> = (props) => {
     <div>
       <section>
         <FormSearchContact
+          data={data?.data}
           type={type}
           setType={setType}
           search={search}

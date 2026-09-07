@@ -3,6 +3,7 @@ import { APIResponseProjectList } from '@/types/manage/project-api';
 import { Empty, Pagination, Skeleton, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation';
 import StatusBadge from '../project/StatusBadge';
 import SolutionTagList from './SolutionTagList';
 
@@ -18,6 +19,7 @@ interface Props {
 
 const CardContact: React.FC<Props> = (props) => {
   const { data, page, limit, isLoading, isError, handlePageChange } = props
+  const router = useRouter();
 
   const renderWarrantyDate = useCallback((startDate?: string, endDate?: string) => {
     if (!startDate && !endDate) return '-'
@@ -39,8 +41,13 @@ const CardContact: React.FC<Props> = (props) => {
             </span>
           </section>
           <section className='mt-5'>
-            <Tooltip title={item.project_name || '-'}>
-              <h3 className='line-clamp-2'>ชื่อโครงการ: {item.project_name || '-'} </h3>
+            <Tooltip title='กดเพื่อดูรายละเอียด'>
+              <h3
+                className='cursor-pointer hover:text-(--yellow) transition-colors duration-200'
+                onClick={() => router.push(`/admin/settings/detail/project?id=${item.id}`)}
+              >
+                ชื่อโครงการ: {item.project_name || '-'}
+              </h3>
             </Tooltip>
             <div className="mt-1.5">
               <p><strong>ผู้ว่าจ้าง:</strong> {item.department.department_short_name || '-'}</p>
@@ -63,7 +70,7 @@ const CardContact: React.FC<Props> = (props) => {
         </div>
       )
     })
-  }, [data, isLoading, renderWarrantyDate])
+  }, [data, isLoading, renderWarrantyDate, router])
 
   // FALLBACK UI for error or empty data
   if (isError) {
