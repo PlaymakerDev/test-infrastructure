@@ -45,6 +45,7 @@ const EquipmentSelectModal: React.FC<Props> = ({
 }) => {
   const {
     activePointCameras,
+    activePointTaskTypes,
     camerasLoading,
     attachCountingCameras,
     attachAnalyticCameras,
@@ -53,16 +54,55 @@ const EquipmentSelectModal: React.FC<Props> = ({
     isSubmitting,
   } = useProjectDetailContext()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  // User has toggled something this open - stop auto-reseeding over their edits.
+  const [dirty, setDirty] = useState(false)
 
-  // Seed selection from the task's currently-attached cameras on each open.
-  // The context doesn't preload per-solution attach state; if we later add
-  // it we can read from `task?.equipmentRefs`. Adjust-during-render (the
-  // React-endorsed pattern) instead of a setState-in-useEffect, which the
-  // react-compiler lint rejects for cascading renders.
-  const [prevOpen, setPrevOpen] = useState(false)
-  if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (open) setSelectedIds(task?.equipmentRefs ?? [])
+  /** Cameras already attached to THIS solution, per the link objects the
+   *  camera-list endpoint nests on each row (2026-09-07 - fixes "ticks don't
+   *  persist across reopens"). counting/analytic links carry solution_id, so
+   *  a camera attached to a DIFFERENT solution of the same type does NOT
+   *  pre-tick. counting/analytic carry solution_id directly; crosswalk via
+   *  its embedded parent row (BE added 2026-09-07 on request). When a link
+   *  exposes no solution id (old crosswalk payloads, wim - shape unverified),
+   *  presence pre-ticks only when this task is the point's sole solution of
+   *  that type; otherwise we can't attribute the link and leave it unticked
+   *  rather than guess wrong. */
+  const seed = useMemo(() => {
+    if (!task) return [] as string[]
+    const soleOfKind =
+      activePointTaskTypes.filter((t) => t.kindId === task.kindId).length <= 1
+    return activePointCameras
+      .filter((c) => {
+        if (task.kindId === SOLUTION_TYPE.Counting) return c.links.countingSolutionId === task.id
+        if (task.kindId === SOLUTION_TYPE.Analytic) return c.links.analyticSolutionId === task.id
+        if (task.kindId === SOLUTION_TYPE.Crosswalk) {
+          return c.links.crosswalkSolutionId != null
+            ? c.links.crosswalkSolutionId === task.id
+            : c.links.crosswalkLinked && soleOfKind
+        }
+        if (task.kindId === SOLUTION_TYPE.WIM) {
+          return c.links.wimSolutionId != null
+            ? c.links.wimSolutionId === task.id
+            : c.links.wimLinked && soleOfKind
+        }
+        return false
+      })
+      .map((c) => c.id)
+  }, [task, activePointCameras, activePointTaskTypes])
+
+  // Adjust-during-render (the React-endorsed pattern; setState-in-useEffect
+  // trips the react-compiler lint): seed on open, re-apply when the camera
+  // list settles AFTER the modal opened (the list query is often still in
+  // flight on first open) - but never over edits the user already made.
+  const seedKey = open ? `${task?.id ?? ''}:${seed.join(',')}` : ''
+  const [prevSeedKey, setPrevSeedKey] = useState('')
+  if (seedKey !== prevSeedKey) {
+    setPrevSeedKey(seedKey)
+    if (open) {
+      if (!dirty) setSelectedIds(seed)
+    } else if (dirty) {
+      setDirty(false)
+    }
   }
 
   const rows: Row[] = useMemo(
@@ -76,6 +116,7 @@ const EquipmentSelectModal: React.FC<Props> = ({
   const offlineSelected = useMemo(() => rows.filter((r) => r.selected && !r.isOnline), [rows])
 
   const toggle = (id: string) => {
+    setDirty(true)
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 

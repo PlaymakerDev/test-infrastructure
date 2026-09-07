@@ -269,6 +269,57 @@ export interface APIResponseCrossingCodes {
 
 // ── /equipments (Camera list, paginated) ─────────────────────────────────────
 
+/** Per-type attach-link objects nested on each camera row by
+ *  GET /manage/solution/camera/list/{loc} (BE added ~2026-09-07). One object
+ *  per type per camera (latest link). `counting`/`analytic` carry the target
+ *  solution_id; `crosswalk` resolves its owning solution via the EMBEDDED
+ *  parent row (`crosswalk.crosswalk.solution_id` — BE added 2026-09-07 on
+ *  request; older payloads may lack it). `wim` shape is unverified (no WIM point had
+ *  a link when probed) — typed loosely with an optional solution_id. */
+export interface CameraCountingLink {
+  id: number
+  camera_id: string
+  crossing_index?: string | null
+  solution_id: number
+  lane?: number | null
+  total?: number | null
+  main_vehicle_type_id?: number | null
+}
+
+export interface CameraAnalyticLink {
+  id: number
+  camera_id: string
+  crossing_index?: string | null
+  solution_id: number
+}
+
+export interface CameraCrosswalkLink {
+  id: number
+  camera_id: string
+  crosswalk_id: number
+  crossing_index?: string | null
+  /** Parent tbl_crosswalk row — BE embeds it (2026-09-07, on request) so the
+   *  FE can resolve the owning solution: `crosswalk.solution_id`. */
+  crosswalk?: {
+    id: number
+    solution_id: number
+    crossing_master_index?: string | null
+  } | null
+}
+
+export interface CameraWimLink {
+  id?: number
+  camera_id: string
+  /** BE confirmed 2026-09-07 the wim link also resolves its owning solution
+   *  ("same shape" as the others) — accept both the direct field and a
+   *  crosswalk-style embedded parent row, whichever it ships. */
+  solution_id?: number | null
+  wim?: {
+    id: number
+    solution_id: number
+  } | null
+}
+
 export interface APIResponseCamera {
   id: string
   ip_address?: string | null
@@ -278,6 +329,10 @@ export interface APIResponseCamera {
   camera_name: string
   sta?: string | null
   hls_url?: string | null
+  counting?: CameraCountingLink | null
+  analytic?: CameraAnalyticLink | null
+  crosswalk?: CameraCrosswalkLink | null
+  wim?: CameraWimLink | null
   point_geometry?: GeometryRead | null
   remark?: string | null
   serial_number?: string | null
