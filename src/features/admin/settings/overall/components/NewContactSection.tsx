@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import {
   ContentContactList,
   FormSearchContact,
+  ModalContactInfo
 } from '../components'
 import { App, Empty, Skeleton } from 'antd'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
@@ -273,6 +274,8 @@ const NewContactSection: React.FC<Props> = (props) => {
           />
         </section>
       )}
+
+      <ModalContactInfo />
 
       <ContactModal
         open={modalState.open}

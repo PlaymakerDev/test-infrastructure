@@ -2,6 +2,7 @@ import { ContractorData } from '@/types/manage/contractor-api'
 import { fmtNumber } from '@/utils/formatNumber'
 import React from 'react'
 import { TbInfoSquareRoundedFilled, TbPencilMinus, TbTrash } from 'react-icons/tb'
+import { useOverallContext } from '../../context'
 
 interface Props {
   item: ContractorData
@@ -11,6 +12,7 @@ interface Props {
 
 const ContactTitle: React.FC<Props> = (props) => {
   const { item, onEdit, onDelete } = props
+  const { setContactInfo } = useOverallContext()
 
   return (
     <div className='flex flex-wrap items-center gap-3'>
@@ -20,6 +22,7 @@ const ContactTitle: React.FC<Props> = (props) => {
           size={24}
           title='ดูข้อมูลโครงการ'
           className='text-white cursor-pointer hover:text-(--yellow) shrink-0'
+          onClick={() => setContactInfo({ open: true, data: item })}
         />
       </div>
 

@@ -9,6 +9,7 @@
 
 export type { ListParams, APIResponseMetaData } from './params'
 import type { APIResponseMetaData } from './params'
+import { ProjSubSolutionGroup } from './project-api'
 
 /** Auth-side user attached to a contractor row. Present on list responses so
  *  the UI can render account status without a follow-up fetch. */
@@ -110,6 +111,7 @@ export interface ContractorData {
   project_count: number
   solution_count: number
   solution_type_count: number
+  solution_group: ProjSubSolutionGroup[]
 }
 
 export interface ContractorUserSubData {

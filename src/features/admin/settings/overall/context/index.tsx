@@ -12,6 +12,12 @@ import type { APIResponseProject } from '@/types/manage/project-api'
 import type { APIResponseDepartment } from '@/types/manage/department-api'
 import type { Project, ProjectFilters, ProjectFormValues, ViewMode } from '../types/project'
 import { DEFAULT_PAGE_SIZE } from '../utils/paginationConfig'
+import { ContractorData } from '@/types/manage/contractor-api'
+
+export interface ModalContactInfo {
+  open: boolean
+  data: ContractorData
+}
 
 const DEFAULT_FILTERS: ProjectFilters = {
   budgetYear: null,
@@ -19,6 +25,34 @@ const DEFAULT_FILTERS: ProjectFilters = {
   contractor: null,
   search: '',
 }
+
+export const DEFAULT_CONTACT_DATA = {
+  "contractor_id": "",
+  "user_id": "",
+  "company_name": "",
+  "short_name": "",
+  "address": "",
+  "name": "",
+  "phone": "",
+  "email": "",
+  "created_at": "",
+  "created_by": "",
+  "user": {
+    "id": "",
+    "username": "",
+    "user_type_id": 0,
+    "is_active": false,
+    "created_at": "",
+    "created_by": "",
+    "deleted_by": ""
+  },
+  "project_count": 0,
+  "solution_count": 0,
+  "solution_type_count": 0,
+  "solution_group": []
+}
+
+export const INIT_CONTACT_INFO: ModalContactInfo = { open: false, data: DEFAULT_CONTACT_DATA }
 
 export interface ContextProps {
   projects: Project[]
@@ -46,6 +80,8 @@ export interface ContextProps {
   updateProject: (id: string, values: ProjectFormValues) => Promise<void>
   deleteProject: (id: string) => Promise<void>
   isSubmitting: boolean
+  contactInfo: ModalContactInfo
+  setContactInfo: (info: ModalContactInfo) => void
 }
 
 export interface PageProviderProps {
@@ -108,6 +144,8 @@ export const OverallProvider = (props: PageProviderProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSizeState] = useState(DEFAULT_PAGE_SIZE)
+
+  const [contactInfo, setContactInfo] = useState<ModalContactInfo>(INIT_CONTACT_INFO)
 
   // Changing page size should reset to page 1 — otherwise the user could
   // sit on e.g. page 4 with a size of 20 (rows 61-80) then swap to 100 and
@@ -267,6 +305,8 @@ export const OverallProvider = (props: PageProviderProps) => {
       updateProject,
       deleteProject,
       isSubmitting,
+      contactInfo,
+      setContactInfo,
     }),
     [
       projects,
@@ -274,6 +314,8 @@ export const OverallProvider = (props: PageProviderProps) => {
       filters,
       setFilters,
       viewMode,
+      contactInfo,
+      setContactInfo,
       page,
       pageSize,
       setPageSize,
