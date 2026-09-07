@@ -3,6 +3,15 @@ import React, { useMemo } from 'react'
 import { INIT_CONTACT_INFO, useOverallContext } from '../../context'
 import { ContractorData } from '@/types/manage/contractor-api'
 import SolutionTagList from './SolutionTagList'
+import {
+  TbLetterCase,
+  TbUser,
+  TbHourglassHigh,
+  TbCalendarWeekFilled,
+  TbPhoneCalling,
+  TbMail
+} from 'react-icons/tb'
+import dayjs from 'dayjs'
 
 interface Props {
 
@@ -26,7 +35,37 @@ const Content: React.FC<ContentProps> = (props) => {
         />
       </section>
       <section className='mt-5'>
-        <div>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-16'>
+          <div className='flex flex-col items-center'>
+            <TbLetterCase className='fs-24' />
+            <p className='fs-12 text-white/50'>ชื่อย่อ</p>
+            <p>{data.short_name || '-'}</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            <TbUser className='fs-24' />
+            <p className='fs-12 text-white/50'>ผู้ติดต่อ</p>
+            <p>{data.name || '-'}</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            <TbCalendarWeekFilled className='fs-24' />
+            <p className='fs-12 text-white/50'>วันที่ลงทะเบียน</p>
+            <p>{dayjs(data.created_at).format('DD MMM BBBB') || '-'}</p>
+          </div>
+          <div className='flex flex-col items-center'>
+            <TbHourglassHigh className='fs-24' />
+            <p className='fs-12 text-white/50'>จำนวนโครงการ</p>
+            <p>{data.project_count || '-'}</p>
+          </div>
+          <div className='xl:col-span-2 flex flex-col items-center'>
+            <TbPhoneCalling className='fs-24' />
+            <p className='fs-12 text-white/50'>เบอร์ติดต่อ</p>
+            <p>{data.phone || '-'}</p>
+          </div>
+          <div className='xl:col-span-2 flex flex-col items-center'>
+            <TbMail className='fs-24' />
+            <p className='fs-12 text-white/50'>อีเมล</p>
+            <p>{data.email || '-'}</p>
+          </div>
         </div>
       </section>
     </div>
