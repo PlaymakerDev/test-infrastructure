@@ -1,7 +1,7 @@
 "use client"
-import { Button, Checkbox, ConfigProvider, message, Modal, Radio, Spin, Table } from 'antd'
+import { Button, Checkbox, ConfigProvider, message, Modal, Popconfirm, Radio, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { TbPlayerPlay, TbWifi, TbWifiOff } from 'react-icons/tb'
 import { useProjectDetailContext } from '../../context'
 import type { Equipment, TaskType } from '../../types'
@@ -54,18 +54,26 @@ const EquipmentSelectModal: React.FC<Props> = ({
   } = useProjectDetailContext()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  // Seed selection from the task's currently-attached cameras. The context
-  // doesn't preload per-solution attach state; if we later add it we can
-  // read from `task?.equipmentRefs`. For now the picker starts empty and
-  // replaces on save.
-  useEffect(() => {
+  // Seed selection from the task's currently-attached cameras on each open.
+  // The context doesn't preload per-solution attach state; if we later add
+  // it we can read from `task?.equipmentRefs`. Adjust-during-render (the
+  // React-endorsed pattern) instead of a setState-in-useEffect, which the
+  // react-compiler lint rejects for cascading renders.
+  const [prevOpen, setPrevOpen] = useState(false)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) setSelectedIds(task?.equipmentRefs ?? [])
-  }, [open, task])
+  }
 
   const rows: Row[] = useMemo(
     () => activePointCameras.map((e) => ({ ...e, selected: selectedIds.includes(e.id) })),
     [activePointCameras, selectedIds],
   )
+
+  // Offline cameras in the current selection — drives the single commit-time
+  // warning on the ยืนยัน button (Popconfirm portals to body and inherits the
+  // app root's dark Popover theme, no wrapper needed).
+  const offlineSelected = useMemo(() => rows.filter((r) => r.selected && !r.isOnline), [rows])
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -77,12 +85,13 @@ const EquipmentSelectModal: React.FC<Props> = ({
         title: 'เลือก',
         key: 'select',
         width: 70,
+        // Offline cameras are SELECTABLE since 2026-09-07: the original hard
+        // `disabled={!row.isOnline}` (Keng, e82627c7) locked out ~208/660
+        // install points whose cameras are ALL offline. Ticking is free —
+        // the offline warning fires ONCE on the ยืนยัน button instead of per
+        // tick (2026-09-07 UX decision: single interruption at commit time).
         render: (_: unknown, row) => (
-          <Checkbox
-            checked={row.selected}
-            disabled={!row.isOnline}
-            onChange={() => toggle(row.id)}
-          />
+          <Checkbox checked={row.selected} onChange={() => toggle(row.id)} />
         ),
       },
       { title: 'ชื่ออุปกรณ์', dataIndex: 'name', key: 'name', ellipsis: true },
@@ -91,12 +100,8 @@ const EquipmentSelectModal: React.FC<Props> = ({
         key: 'usage',
         width: 200,
         render: (_: unknown, row) => (
-          <Radio
-            checked={row.selected}
-            disabled={!row.isOnline}
-            onClick={() => row.isOnline && toggle(row.id)}
-          >
-            <span style={{ color: row.selected ? '#05F2DB' : row.isOnline ? '#FFF' : '#666' }}>
+          <Radio checked={row.selected} onClick={() => toggle(row.id)}>
+            <span style={{ color: row.selected ? '#05F2DB' : '#FFF' }}>
               เลือกใช้งาน
             </span>
           </Radio>
@@ -235,21 +240,38 @@ const EquipmentSelectModal: React.FC<Props> = ({
           >
             ยกเลิก
           </Button>
-          <Button
-            shape='round'
-            onClick={handleConfirm}
-            loading={isSubmitting}
-            style={{
-              background: '#FCD116',
-              color: '#1A1A1A',
-              borderColor: '#FCD116',
-              padding: '8px 32px',
-              height: 'auto',
-              fontWeight: 600,
-            }}
-          >
-            ยืนยัน
-          </Button>
+          {(() => {
+            const confirmBtn = (
+              <Button
+                shape='round'
+                onClick={offlineSelected.length === 0 ? handleConfirm : undefined}
+                loading={isSubmitting}
+                style={{
+                  background: '#FCD116',
+                  color: '#1A1A1A',
+                  borderColor: '#FCD116',
+                  padding: '8px 32px',
+                  height: 'auto',
+                  fontWeight: 600,
+                }}
+              >
+                ยืนยัน
+              </Button>
+            )
+            if (offlineSelected.length === 0) return confirmBtn
+            return (
+              <Popconfirm
+                title={`มีอุปกรณ์ออฟไลน์ ${offlineSelected.length} ตัวในรายการที่เลือก`}
+                description='อุปกรณ์ที่ออฟไลน์จะยังไม่ทำงานจนกว่าจะกลับมาเชื่อมต่อ ยืนยันบันทึกหรือไม่?'
+                okText='ยืนยันบันทึก'
+                cancelText='กลับไปแก้ไข'
+                onConfirm={handleConfirm}
+                placement='topRight'
+              >
+                {confirmBtn}
+              </Popconfirm>
+            )
+          })()}
         </div>
       </Modal>
     </ConfigProvider>
