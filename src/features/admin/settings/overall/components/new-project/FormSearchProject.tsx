@@ -102,7 +102,12 @@ const FormSearchProject: React.FC<Props> = (props) => {
                     size="large"
                     className='w-full'
                     allowClear
-                    showSearch
+                    // Flat (non-grouped) options: rc-select's default auto-filter
+                    // matches the typed text against fieldNames.value ('id') when
+                    // no optionFilterProp/filterOption is given — never matches,
+                    // since the user types the label text. Point it at the label
+                    // field explicitly.
+                    showSearch={{ optionFilterProp: 'department_short_name' }}
                     loading={deptLoading}
                     options={departments}
                     fieldNames={{ label: 'department_short_name', value: 'id' }}
@@ -134,7 +139,9 @@ const FormSearchProject: React.FC<Props> = (props) => {
                     size="large"
                     className='w-full'
                     allowClear
-                    showSearch
+                    // Same fix as department_id above — filter by the label
+                    // field (company_name), not fieldNames.value (contractor_id).
+                    showSearch={{ optionFilterProp: 'company_name' }}
                     loading={cLoading}
                     options={contractors}
                     fieldNames={{ label: 'company_name', value: 'contractor_id' }}
