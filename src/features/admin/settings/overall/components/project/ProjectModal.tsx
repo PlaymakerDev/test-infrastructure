@@ -12,13 +12,14 @@ import {
 } from '@/hooks/queries/manage'
 import { useRoadsInfinite } from '@/hooks/queries/shared/useRoadsInfinite'
 import type { APIResponseProject } from '@/types/manage/project-api'
-import { useOverallContext } from '../../context'
 import type { Project, ProjectFormValues } from '../../types/project'
 
 interface Props {
   open: boolean
   editing: Project | null
+  submitting?: boolean
   onClose: () => void
+  onSubmit: (values: ProjectFormValues, editingId: string | null) => void
 }
 
 interface FormShape {
@@ -92,9 +93,9 @@ const PlainLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span style={{ color: LABEL_COLOR, fontSize: "var(--fs-12)", fontWeight: 500 }}>{children}</span>
 )
 
-const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
+const ProjectModal: React.FC<Props> = ({ open, editing, submitting, onClose, onSubmit }) => {
   const [form] = Form.useForm<FormShape>()
-  const { createProject, updateProject, isSubmitting } = useOverallContext()
+  const isSubmitting = !!submitting
 
   const isEdit = !!editing
   const editingId = editing ? Number(editing.id) : null
@@ -169,7 +170,7 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
     form.setFieldsValue(initialValues)
   }, [open, isEdit, detail, form, initialValues])
 
-  const handleFinish = async (values: FormShape) => {
+  const handleFinish = (values: FormShape) => {
     const payload: ProjectFormValues = {
       name: values.name,
       budgetYear: values.budgetYear ?? null,
@@ -186,13 +187,9 @@ const ProjectModal: React.FC<Props> = ({ open, editing, onClose }) => {
       warrantyStart: values.warrantyStart?.format('YYYY-MM-DD') ?? '',
       warrantyEnd: values.warrantyEnd?.format('YYYY-MM-DD') ?? '',
     }
-    try {
-      if (editing) await updateProject(editing.id, payload)
-      else await createProject(payload)
-      onClose()
-    } catch {
-      // errors surfaced via message.error inside the context — keep modal open.
-    }
+    // Fire-and-forget — the parent owns the mutation, the success/error toast,
+    // and closing the modal (only on success), same contract as ContactModal.
+    onSubmit(payload, editing ? editing.id : null)
   }
 
   const handleCancel = () => {

@@ -12,6 +12,7 @@ export { useUpdateProject } from './useUpdateProject'
 export { useDeleteProject } from './useDeleteProject'
 export { useBudgetYears } from './useBudgetYears'
 export { useProjectContractors } from './useProjectContractors'
+export { useProjectDepartmentListInfinite } from './useProjectDepartmentListInfinite'
 
 // Contractors
 export { useContractorsList } from './useContractorsList'

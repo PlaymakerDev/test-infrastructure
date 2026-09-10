@@ -25,6 +25,8 @@ import type {
   APIRequestProjectUpdate,
   APIRequestProjectList,
   APIResponseProjectList,
+  APIRequestProjectDepartment,
+  APIResponseProjectDepartment,
 } from '@/types/manage/project-api'
 import type {
   APIResponseContractor,
@@ -377,4 +379,11 @@ export const getExportContractorAPI = (
     method: 'GET',
     params,
     responseType,
+  })
+
+export const getProjectDepartmentAPI = (params: APIRequestProjectDepartment) =>
+  ApiService.fetchData<APIResponseProjectDepartment, APIRequestProjectDepartment>({
+    url: '/manage/project/department',
+    method: 'GET',
+    params,
   })

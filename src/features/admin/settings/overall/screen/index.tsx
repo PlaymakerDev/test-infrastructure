@@ -9,6 +9,7 @@ import {
   ContactSection,
   NewContactSection,
   UserSection,
+  NewProjectSection,
 } from '../components'
 import { OverallProvider } from '../context'
 import { allowedSettingsTabs, type SettingsTab } from '../data/tabs'
@@ -29,7 +30,7 @@ const SettingScreen = () => {
   const renderContent = useMemo(() => {
     switch (currentTab) {
       case 'PROJECT':
-        return <ProjectSection />
+        return <NewProjectSection />
       case 'ROUTE':
         return <RouteSection />
       case 'CONTACT':

@@ -25,7 +25,9 @@ export interface ProjectContractorUser {
     address: string | null
     name: string | null
     phone: string | null
-    role: string | null
+    /** Not present on the list-flavor row (ProjSubContractor/ProjContractor
+     *  in this same file) — optional so both shapes satisfy this type. */
+    role?: string | null
   }
 }
 
@@ -229,4 +231,23 @@ export interface ProjectRoad {
   distance: number
   created_at: string
   created_by: string
+}
+
+// PROJECT DEPARTMENT
+export interface APIRequestProjectDepartment {
+  search?: string
+  page?: number
+  limit?: number
+}
+
+export interface APIResponseProjectDepartment {
+  res_data: ProjectDepartmentData[]
+  meta_data: APIResponseMetaData
+}
+
+export interface ProjectDepartmentData {
+  department_id: number
+  department_name: string
+  department_short_name: string
+  project_count: number
 }

@@ -5,6 +5,7 @@
 // (page, limit, search) cache slot appended after 'list'.
 
 import type { ListParams, RoadListParams } from '@/types/manage/params'
+import type { APIRequestProjectDepartment, APIRequestProjectList } from '@/types/manage/project-api'
 
 // Normalize `ListParams` into a stable object used as the trailing key node
 // so React Query cache-slots per unique (page, limit, search). Undefined /
@@ -23,11 +24,55 @@ export const manageKeys = {
     all: ['manage', 'projects'] as const,
     list: (params: ListParams = {}) =>
       [...manageKeys.projects.all, 'list', listKey(params)] as const,
+    /** NewProjectSection's variant — same /manage/project list endpoint, but
+     *  the new search form also filters by budget_year/department_id/
+     *  contractor_id/sort, none of which `listKey` captures. A separate key
+     *  (not a widened `list` above) so `useProjectsList`'s existing callers
+     *  are untouched. */
+    listFiltered: (params: APIRequestProjectList = {}) =>
+      [
+        ...manageKeys.projects.all,
+        'list-filtered',
+        {
+          ...listKey(params),
+          budget_year: params.budget_year ?? 0,
+          department_id: params.department_id ?? 0,
+          contractor_id: params.contractor_id ?? '',
+          field: params.field ?? '',
+          sort: params.sort ?? '',
+        },
+      ] as const,
     detail: (id: string | number) =>
       [...manageKeys.projects.all, 'detail', id] as const,
     /** GET /manage/project/case/{case_no} — project resolved by repair case_no. */
     byCaseNo: (caseNo: string) =>
       [...manageKeys.projects.all, 'by-case-no', caseNo] as const,
+    /** GET /manage/project/department — the grid view's department-grouped
+     *  list. Infinite-scroll variant, mirrors contractors.listInfinite's
+     *  (limit, search)-only key shape (page is managed internally by
+     *  useInfiniteQuery, not part of the cache slot). */
+    departmentsInfinite: (params: Omit<APIRequestProjectDepartment, 'page'> = {}) =>
+      [
+        ...manageKeys.projects.all,
+        'departments-infinite',
+        { limit: params.limit ?? 10, search: params.search ?? '' },
+      ] as const,
+    /** GRID view's CollapseDeptCard — one project list per department card,
+     *  paginated/filtered the same way listFiltered is but scoped to a
+     *  single department_id. Nested under the same `projects.all` prefix
+     *  (unlike a raw ad-hoc key) so create/update/delete invalidation
+     *  reaches every open department card, not just the LIST view. */
+    byDepartment: (departmentId: number, params: Omit<APIRequestProjectList, 'department_id'> = {}) =>
+      [
+        ...manageKeys.projects.all,
+        'by-department',
+        departmentId,
+        {
+          ...listKey(params),
+          budget_year: params.budget_year ?? 0,
+          contractor_id: params.contractor_id ?? '',
+        },
+      ] as const,
   },
 
   contractors: {

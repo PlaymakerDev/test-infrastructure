@@ -1,8 +1,5 @@
 "use client"
 import { Button } from 'antd'
-import dayjs from 'dayjs'
-import buddhistEra from 'dayjs/plugin/buddhistEra'
-import 'dayjs/locale/th'
 import React, { useMemo, useState } from 'react'
 import { TbLayoutGrid, TbList, TbPlus, TbPrinter } from 'react-icons/tb'
 import ExportFileModal from '@/components/export/ExportFileModal'
@@ -10,54 +7,26 @@ import { useContainerHeight } from '@/hooks/useContainerHeight'
 import { useDepartments } from '@/hooks/queries/manage'
 import { mapProject, useOverallContext } from '../context'
 import { calcTableScrollY } from '../hooks/useTableScrollY'
-import type { Project, WarrantyStatus } from '../types/project'
+import type { Project } from '../types/project'
+import { PROJECT_EXPORT_COLUMNS } from '../data/projectExportColumns'
 import DeleteProjectModal from './project/DeleteProjectModal'
 import FormSearchProject from './project/FormSearchProject'
 import ProjectModal from './project/ProjectModal'
 import TableProject from './project/TableProject'
 import { fetchAllPages } from '../utils/fetchAllPages'
 
-dayjs.extend(buddhistEra)
-
-// Text labels mirrored from project/StatusBadge so the export reads exactly
-// like the on-screen pills.
-const WARRANTY_LABELS: Record<WarrantyStatus, string> = {
-  'in-warranty': 'ในค้ำ',
-  expired: 'หมดค้ำ',
-  delivering: 'ระหว่างส่งมอบ',
-}
-
-/** "5 ก.ค. 2569" — same Thai short-month + Buddhist-year format TableProject renders. */
-const fmtThaiDate = (iso: string): string => {
-  if (!iso) return '-'
-  const d = dayjs(iso)
-  return d.isValid() ? d.locale('th').format('D MMM BBBB') : iso
-}
-
-// Shared column config for both PDF and Excel exports — SAME columns, SAME
-// order as TableProject (minus the จัดการ action column), plus ลำดับ (mirrors
-// CCTV_EXPORT_COLUMNS). `width` = Excel chars, `widthPct` = PDF table percent
-// (sums to 100).
-const PROJECT_EXPORT_COLUMNS: {
-  header: string
-  width: number
-  widthPct: number
-  align?: 'left' | 'center' | 'right'
-  value: (row: Project, index: number) => string | number
-}[] = [
-  { header: 'ลำดับ', width: 7, widthPct: 4, value: (_r, i) => i + 1 },
-  { header: 'ผู้รับจ้าง', width: 28, widthPct: 13, align: 'left', value: (r) => r.contractor || '-' },
-  { header: 'รหัสโครงการ', width: 14, widthPct: 8, value: (r) => r.code || '-' },
-  { header: 'ชื่อโครงการ', width: 40, widthPct: 20, align: 'left', value: (r) => r.name || '-' },
-  { header: 'ผู้ว่าจ้าง', width: 12, widthPct: 8, value: (r) => r.owner || '-' },
-  { header: 'เลขที่สัญญา', width: 18, widthPct: 10, value: (r) => r.contractNo || '-' },
-  { header: 'วันที่เริ่มต้นค้ำประกัน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.warrantyStart) },
-  { header: 'วันที่สิ้นสุดค้ำประกัน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.warrantyEnd) },
-  { header: 'สถานะการค้ำประกัน', width: 15, widthPct: 11, value: (r) => WARRANTY_LABELS[r.warrantyStatus] },
-]
-
 const ProjectSection: React.FC = () => {
-  const { viewMode, setViewMode, filtered, filters, total } = useOverallContext()
+  const {
+    viewMode,
+    setViewMode,
+    filtered,
+    filters,
+    total,
+    createProject,
+    updateProject,
+    deleteProject,
+    isSubmitting,
+  } = useOverallContext()
   // Same cached /departments list the context uses — needed to resolve the
   // owner (ผู้ว่าจ้าง) label when mapping the export-'ทั้งหมด' full fetch.
   const { data: departments } = useDepartments()
@@ -211,11 +180,28 @@ const ProjectSection: React.FC = () => {
         }}
       />
 
-      <ProjectModal open={projectModal.open} editing={projectModal.editing} onClose={closeProject} />
+      <ProjectModal
+        open={projectModal.open}
+        editing={projectModal.editing}
+        submitting={isSubmitting}
+        onClose={closeProject}
+        onSubmit={(values, editingId) => {
+          const promise = editingId ? updateProject(editingId, values) : createProject(values)
+          // context's createProject/updateProject already surface the
+          // success/error toast — only close the modal on success.
+          promise.then(closeProject).catch(() => { })
+        }}
+      />
       <DeleteProjectModal
         open={!!deleteTarget}
         project={deleteTarget}
+        deleting={isSubmitting}
         onClose={() => setDeleteTarget(null)}
+        onConfirm={(id) => {
+          deleteProject(id)
+            .then(() => setDeleteTarget(null))
+            .catch(() => { })
+        }}
       />
     </div>
   )

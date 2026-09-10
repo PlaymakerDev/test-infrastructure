@@ -3,14 +3,15 @@ import { Button, ConfigProvider, Modal } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { TbAlertCircle } from 'react-icons/tb'
-import { useOverallContext } from '../../context'
 import type { Project } from '../../types/project'
 import StatusBadge from './StatusBadge'
 
 interface Props {
   open: boolean
   project: Project | null
+  deleting?: boolean
   onClose: () => void
+  onConfirm: (id: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -41,18 +42,11 @@ const formatBuddhistDate = (iso: string) => {
   return `${d.date()} ${monthMap[d.month()]} ${buddhistYear.toString().slice(-4)}`
 }
 
-const DeleteProjectModal: React.FC<Props> = ({ open, project, onClose }) => {
-  const { deleteProject, isSubmitting } = useOverallContext()
+const DeleteProjectModal: React.FC<Props> = ({ open, project, deleting, onClose, onConfirm }) => {
+  const isSubmitting = !!deleting
 
-  const handleConfirm = async () => {
-    if (!project) return
-    try {
-      await deleteProject(project.id)
-      onClose()
-    } catch {
-      // context already surfaced the error via message.error — keep the modal
-      // open so the user can retry without re-selecting the row.
-    }
+  const handleConfirm = () => {
+    if (project) onConfirm(project.id)
   }
 
   const handleCancel = () => {
