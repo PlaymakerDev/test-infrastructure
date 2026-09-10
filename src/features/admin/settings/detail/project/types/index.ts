@@ -23,6 +23,20 @@ export interface Equipment {
   isOnline: boolean
   streamConnected: boolean
   lastUpdated?: string | null
+  /** Which non-CCTV solutions this camera is currently attached to — drives
+   *  the pre-ticked state in EquipmentSelectModal. counting/analytic carry
+   *  the exact solution id; crosswalk/wim links don't expose one on the list
+   *  endpoint, so only presence is known (see CameraCrosswalkLink note). */
+  links: {
+    countingSolutionId: number | null
+    analyticSolutionId: number | null
+    /** From the embedded parent crosswalk row; null on payloads that predate
+     *  the 2026-09-07 BE change — `crosswalkLinked` is the fallback then. */
+    crosswalkSolutionId: number | null
+    crosswalkLinked: boolean
+    wimSolutionId: number | null
+    wimLinked: boolean
+  }
 }
 
 /** One task type (Solution row) at an installation point. */

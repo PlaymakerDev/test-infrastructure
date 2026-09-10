@@ -78,6 +78,14 @@ const mapCamera = (c: APIResponseCamera): Equipment => ({
   // shape, unlike /cctv/... which normalizes.
   lastUpdated:
     c.curl_updated ?? c.curl_updated_at ?? c.ping_updated ?? c.updated_at ?? c.created_at ?? null,
+  links: {
+    countingSolutionId: c.counting?.solution_id ?? null,
+    analyticSolutionId: c.analytic?.solution_id ?? null,
+    crosswalkSolutionId: c.crosswalk?.crosswalk?.solution_id ?? null,
+    crosswalkLinked: c.crosswalk != null,
+    wimSolutionId: c.wim?.solution_id ?? c.wim?.wim?.solution_id ?? null,
+    wimLinked: c.wim != null,
+  },
 })
 
 const mapSolution = (
