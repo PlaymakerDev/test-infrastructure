@@ -10,6 +10,7 @@ import {
   NewContactSection,
   UserSection,
   NewProjectSection,
+  NewUserSection,
 } from '../components'
 import { OverallProvider } from '../context'
 import { allowedSettingsTabs, type SettingsTab } from '../data/tabs'
@@ -36,7 +37,7 @@ const SettingScreen = () => {
       case 'CONTACT':
         return <NewContactSection />
       case 'USER':
-        return <UserSection />
+        return <NewUserSection />
       default:
         return null
     }

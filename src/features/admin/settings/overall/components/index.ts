@@ -34,3 +34,8 @@ export { default as ProjectCardList } from './new-project/ProjectCardList'
 export { default as ProjectCollapseList } from './new-project/ProjectCollapseList'
 export { default as ProjectGridView } from './new-project/ProjectGridView'
 export { default as ProjectListView } from './new-project/ProjectListView'
+
+// NEW USER
+export { default as NewUserSection } from './NewUserSection'
+export { default as TableUserData } from './new-user/TableUserData'
+export { default as FormSearchUser } from './new-user/FormSearchUser'
