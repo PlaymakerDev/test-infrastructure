@@ -9,6 +9,9 @@ export const theme: ConfigProviderProps = {
       colorTextLightSolid: 'var(--dark-black)',
       colorTextDescription: "var(--white)",
       colorTextQuaternary: "#FCD116",
+      colorBgContainerDisabled: "#363636",
+      colorBorderDisabled: "#363636",
+      colorTextDisabled: "#FFFFFF50"
     },
     components: {
       Progress: {

@@ -1,3 +1,5 @@
+import { useAppDispatch } from '@/stores/hooks'
+import { setUserModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { PlusOutlined } from '@ant-design/icons'
 import { Button, Col, ConfigProvider, Input, Row } from 'antd'
 import React, { useCallback, useRef } from 'react'
@@ -10,10 +12,12 @@ export interface UserSearchFormValues {
 
 interface Props {
   onSearch: (values: UserSearchFormValues) => void
+  onExport?: () => void
 }
 
 const FormSearchUser: React.FC<Props> = (props) => {
-  const { onSearch } = props
+  const { onSearch, onExport } = props
+  const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -28,6 +32,10 @@ const FormSearchUser: React.FC<Props> = (props) => {
   const onSubmit = useCallback((data: UserSearchFormValues) => {
     onSearch(data)
   }, [onSearch])
+
+  const onOpenCreateUserModal = useCallback(() => {
+    dispatch(setUserModalOpen({ open: true, type: 'CREATE' }))
+  }, [dispatch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -68,7 +76,7 @@ const FormSearchUser: React.FC<Props> = (props) => {
             size="large"
             icon={<PlusOutlined />}
             shape='round'
-          // onClick={onAdd}
+            onClick={onOpenCreateUserModal}
           >
             <p className='fs-12 whitespace-nowrap'>เพิ่มผู้ใช้งาน</p>
           </Button>
@@ -81,7 +89,7 @@ const FormSearchUser: React.FC<Props> = (props) => {
               size="large"
               shape="round"
               icon={<TbPrinter />}
-            // onClick={onExport}
+              onClick={onExport}
             >
               <p className='fs-12 whitespace-nowrap'>นำออกเอกสาร</p>
             </Button>

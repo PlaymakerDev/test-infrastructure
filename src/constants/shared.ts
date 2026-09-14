@@ -16,11 +16,11 @@ export const WARRANTY_STATUS = {
 export const ROLE = {
   "user": {
     "color": "#05F2DB",
-    "text": "User"
+    "text": "User (ผู้ใช้งานทั่วไป)"
   },
   "admin": {
     "color": "#C8FF00",
-    "text": "Admin"
+    "text": "Admin (ผู้ดูแลระบบ)"
   }
 }
 

@@ -11,7 +11,7 @@
 
 import ApiService from '../ApiService'
 import type { ListParams, RoadListParams } from '@/types/manage/params'
-import type { APIResponseProvinceList } from '@/types/manage/place-api'
+import type { APIRequestProvinceList, APIResponseProvinceList } from '@/types/manage/place-api'
 import type {
   APIResponseSSOUser,
   APIRequestSSOSearch,
@@ -279,10 +279,11 @@ export const getDepartmentsAPI = () =>
 
 /** Full 77-province master list (bare array) — backs the Route tab's
  *  จังหวัด dropdown. */
-export const getProvincesAPI = () =>
-  ApiService.fetchData<APIResponseProvinceList>({
+export const getProvincesAPI = (params?: APIRequestProvinceList) =>
+  ApiService.fetchData<APIResponseProvinceList, APIRequestProvinceList>({
     url: '/manage/th_places/provinces',
     method: 'GET',
+    params
   })
 
 export const getRegionsAPI = () =>

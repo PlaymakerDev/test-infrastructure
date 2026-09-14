@@ -28,7 +28,7 @@ export { useUpdateRoad } from './useUpdateRoad'
 export { useDeleteRoad } from './useDeleteRoad'
 
 // General users
-export { useUsersList } from './useUsersList'
+export { useUsersList, matchesUserSearch } from './useUsersList'
 export { useCreateUser } from './useCreateUser'
 export { useUpdateUser } from './useUpdateUser'
 export { useDeleteUser } from './useDeleteUser'

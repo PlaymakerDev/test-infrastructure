@@ -1,9 +1,11 @@
 import { ROLE } from '@/constants';
+import { useAppDispatch } from '@/stores/hooks';
+import { setUserModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { APIResponseDepartment } from '@/types/manage/department-api';
 import { APIResponseGeneralUser, APIResponseGeneralUserListEnvelope } from '@/types/manage/general-user-api';
 import { Empty, Table, TableProps } from 'antd';
 import React, { useCallback } from 'react'
-import { TbPencilMinus, TbTrash } from 'react-icons/tb';
+import { TbLock, TbPencilMinus, TbTrash } from 'react-icons/tb';
 
 interface Props {
   // GENERAL USERS
@@ -19,6 +21,7 @@ interface Props {
 
 const TableUserData: React.FC<Props> = (props) => {
   const { data, isLoading, isError, departmentsData, isDepartmentsLoading, isDepartmentsError, onPageChange } = props
+  const dispatch = useAppDispatch()
 
   const renderIsLDAP = useCallback((isLDAP: boolean) => {
     const label = isLDAP ? 'LDAP' : 'DRR ITS';
@@ -55,6 +58,10 @@ const TableUserData: React.FC<Props> = (props) => {
     if (department?.department_name) return department.department_name
     return '-'
   }, [departmentsData, isDepartmentsLoading, isDepartmentsError])
+
+  const onOpenCreateUserModal = useCallback((data: APIResponseGeneralUser, type: 'CREATE' | 'UPDATE' | 'DELETE' | 'UPDATE_PASSWORD') => {
+    dispatch(setUserModalOpen({ open: true, type: type, data }))
+  }, [dispatch])
 
   const columns: TableProps<APIResponseGeneralUser>['columns'] = [
     {
@@ -120,12 +127,19 @@ const TableUserData: React.FC<Props> = (props) => {
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
               title='แก้ไขข้อมูลโครงการ'
-            // onClick={() => onEdit?.(record)}
+              onClick={() => onOpenCreateUserModal(record, 'UPDATE')}
             />
+            {!record.is_ldap && (
+              <TbLock
+                className='fs-22 text-blue-500 cursor-pointer'
+                title='เปลี่ยนรหัสผ่าน'
+                onClick={() => onOpenCreateUserModal(record, 'UPDATE_PASSWORD')}
+              />
+            )}
             <TbTrash
               className='fs-22 text-red-500 cursor-pointer'
               title='ลบโครงการ'
-            // onClick={() => onDelete?.(record)}
+              onClick={() => onOpenCreateUserModal(record, 'DELETE')}
             />
           </div>
         )
@@ -137,7 +151,7 @@ const TableUserData: React.FC<Props> = (props) => {
 
   return (
     <Table<APIResponseGeneralUser>
-      rowKey={'id'}
+      rowKey={'user_id'}
       columns={columns}
       dataSource={data?.res_data || []}
       loading={isLoading}
