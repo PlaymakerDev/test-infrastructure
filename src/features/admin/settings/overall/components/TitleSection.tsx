@@ -30,7 +30,7 @@ const TitleSection: React.FC<Props> = (props) => {
       </section>
       {/* Reserve the row height while the role resolves so the table below
         * doesn't jump when the tabs appear. */}
-      <section className='mt-5 min-h-[52px]'>
+      <section className='mt-5'>
         {isResolved && options.length > 0 && (
           <SwapButton
             options={options}

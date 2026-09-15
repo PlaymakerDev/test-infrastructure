@@ -64,7 +64,7 @@ const SettingScreen = () => {
 
   return (
     <div
-      className='main-screen px-10 flex flex-col'
+      className='main-screen px-8 flex flex-col'
       style={{ height: 'calc(100vh - var(--nav-h))' }}
     >
       <div className='shrink-0'>
