@@ -46,6 +46,8 @@ import type {
 import type {
   APIResponseRoadListEnvelope,
   APIRequestRoad,
+  APIRequestPaginateRoadList,
+  APIResponsePaginateRoadList,
 } from '@/types/manage/road-api'
 import type {
   APIResponseDepartmentList,
@@ -58,6 +60,7 @@ import {
   APIResponseNotificationSummary,
   CameraOutageListParams,
 } from '@/types/manage/notification-api'
+import { APIResponseRoadList } from '@/types/shared'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
 // keys whose value is undefined / null / empty-string. Mirrors the
@@ -199,6 +202,13 @@ export const getRoadsAPI = (params: RoadListParams = {}) =>
       ...(params.province ? { province: params.province } : {}),
       ...(params.department_id != null ? { department_id: params.department_id } : {}),
     },
+  })
+
+export const getPaginateRoadListAPI = (params: APIRequestPaginateRoadList) =>
+  ApiService.fetchData<APIResponsePaginateRoadList, APIRequestPaginateRoadList>({
+    url: '/manage/roads',
+    method: 'GET',
+    params,
   })
 
 export const createRoadAPI = (body: APIRequestRoad) =>

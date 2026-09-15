@@ -44,3 +44,11 @@ export { default as FormCreateITSUser } from './new-user/FormCreateITSUser'
 export { default as ModalCreateUser } from './new-user/ModalCreateUser'
 export { default as ModalConfirmDelete } from './new-user/ModalConfirmDelete'
 export { default as FormUpdatePassword } from './new-user/FormUpdatePassword'
+
+// NEW ROAD
+export { default as NewRoadSection } from './NewRoadSection'
+export { default as TableRoadData } from './new-road/TableRoadData'
+export { default as FormSearchRoad } from './new-road/FormSearchRoad'
+export { default as FormCreateRoad } from './new-road/FormCreateRoad'
+export { default as ModalCreateRoad } from './new-road/ModalCreateRoad'
+export { default as ModalConfirmDeleteRoad } from './new-road/ModalConfirmDelete'

@@ -15,6 +15,7 @@ export interface APIResponseProvince {
 
 /** Endpoint returns a bare array. */
 export type APIResponseProvinceList = APIResponseProvince[]
+export type APIResponseRegionList = APIResponseProvince[]
 
 export interface APIRequestProvinceList {
   province_id?: number
