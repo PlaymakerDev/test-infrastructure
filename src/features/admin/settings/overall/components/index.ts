@@ -23,6 +23,9 @@ export { default as ListViewContact } from './new-contact/ListViewContact'
 export { default as ContentContactorList } from './new-contact/ContentContactorList'
 export { default as CardContact } from './new-contact/CardContact'
 export { default as ModalContactInfo } from './new-contact/ModalContactInfo'
+export { default as FormCreateContact } from './new-contact/FormCreateContact'
+export { default as ModalCreateContact } from './new-contact/ModalCreateContact'
+export { default as ModalConfirmDeleteContact } from './new-contact/ModalConfirmDelete'
 
 // NEW PROJECT
 export { default as NewProjectSection } from './NewProjectSection'
@@ -34,6 +37,9 @@ export { default as ProjectCardList } from './new-project/ProjectCardList'
 export { default as ProjectCollapseList } from './new-project/ProjectCollapseList'
 export { default as ProjectGridView } from './new-project/ProjectGridView'
 export { default as ProjectListView } from './new-project/ProjectListView'
+export { default as FormCreateProject } from './new-project/FormCreateProject'
+export { default as ModalCreateProject } from './new-project/ModalCreateProject'
+export { default as ModalConfirmDeleteProject } from './new-project/ModalConfirmDelete'
 
 // NEW USER
 export { default as NewUserSection } from './NewUserSection'

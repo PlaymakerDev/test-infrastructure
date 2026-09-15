@@ -9,8 +9,6 @@ interface Props {
   isLoading?: boolean
   isError?: boolean
   onTableChange?: NonNullable<TableProps<ProjectListData>['onChange']>
-  onEdit?: (row: ProjectListData) => void
-  onDelete?: (row: ProjectListData) => void
   /** ค้นหาชื่อโครงการ from FormSearchProject — forwarded into every open
    *  department card's own project-card fetch (ProjectCollapseList → …
    *  → ProjectCardList). Does NOT filter this view's own department list. */
@@ -25,7 +23,7 @@ interface Props {
 }
 
 const ProjectGridView: React.FC<Props> = (props) => {
-  const { search, departmentSearchText, budgetYear, contractorId, onEdit, onDelete } = props
+  const { search, departmentSearchText, budgetYear, contractorId } = props
 
   // onScroll pagination — mirrors NewContactSection's contractor list: each
   // scroll-triggered fetch appends the next page of departments instead of
@@ -99,8 +97,6 @@ const ProjectGridView: React.FC<Props> = (props) => {
         search={search}
         budgetYear={budgetYear}
         contractorId={contractorId}
-        onEdit={onEdit}
-        onDelete={onDelete}
       />
       {/* onScroll pagination — this sentinel is the last thing in the list;
           IntersectionObserver above fires fetchNextPage() once it scrolls

@@ -1,6 +1,8 @@
+import { useAppDispatch } from '@/stores/hooks'
+import { setRoadModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { APIResponsePaginateRoadList, RoadData } from '@/types/manage/road-api'
 import { Empty, Table, TableProps } from 'antd'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { TbPencilMinus, TbTrash } from 'react-icons/tb'
 
 interface Props {
@@ -55,8 +57,13 @@ const buildRows = (list: RoadData[]): RowData[] =>
 
 const TableRoadData: React.FC<Props> = (props) => {
   const { data, isLoading, isError, onPageChange } = props
+  const dispatch = useAppDispatch()
 
   const rows = useMemo(() => buildRows(data?.res_data ?? []), [data?.res_data])
+
+  const onOpenRoadModal = useCallback((data: RoadData, type: 'UPDATE' | 'DELETE') => {
+    dispatch(setRoadModalOpen({ open: true, type, data }))
+  }, [dispatch])
 
   // AntD can leave a stale rowSpan DOM attribute behind when a rowKey stays
   // put but its span changes — remount whenever the merged-row structure
@@ -159,13 +166,13 @@ const TableRoadData: React.FC<Props> = (props) => {
           <div className='flex items-center gap-2 shrink-0'>
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
-              title='แก้ไขข้อมูลโครงการ'
-            // onClick={() => onEdit?.(record)}
+              title='แก้ไขข้อมูลสายทาง'
+              onClick={() => onOpenRoadModal(record, 'UPDATE')}
             />
             <TbTrash
               className='fs-22 text-red-500 cursor-pointer'
-              title='ลบโครงการ'
-            // onClick={() => onDelete?.(record)}
+              title='ลบสายทาง'
+              onClick={() => onOpenRoadModal(record, 'DELETE')}
             />
           </div>
         )

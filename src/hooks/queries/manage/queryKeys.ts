@@ -6,6 +6,7 @@
 
 import type { ListParams, RoadListParams } from '@/types/manage/params'
 import type { APIRequestProjectDepartment, APIRequestProjectList } from '@/types/manage/project-api'
+import type { APIRequestPaginateRoadList } from '@/types/manage/road-api'
 
 // Normalize `ListParams` into a stable object used as the trailing key node
 // so React Query cache-slots per unique (page, limit, search). Undefined /
@@ -103,6 +104,21 @@ export const manageKeys = {
         {
           ...listKey(params),
           province: params.province ?? '',
+          department_id: params.department_id ?? 0,
+        },
+      ] as const,
+    /** NewRoadSection's variant — same /manage/roads endpoint, but grouped
+     *  server-side by region/department (RoadData) and filtered by
+     *  region_id instead of province/department_id. Nested under the same
+     *  `roads.all` prefix so create/update/delete invalidation reaches this
+     *  view too, not just the LIST view's `list` key above. */
+    listFiltered: (params: APIRequestPaginateRoadList = {}) =>
+      [
+        ...manageKeys.roads.all,
+        'list-filtered',
+        {
+          ...listKey(params),
+          region_id: params.region_id ?? 0,
           department_id: params.department_id ?? 0,
         },
       ] as const,

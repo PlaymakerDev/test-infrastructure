@@ -1,27 +1,25 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { FormSearchProject, ProjectGridView, ProjectListView } from '../components'
+import { FormSearchProject, ModalCreateProject, ModalConfirmDeleteProject, ProjectGridView, ProjectListView } from '../components'
 import type { ProjectSearchFormValues } from './new-project/FormSearchProject'
 import { App } from 'antd'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { getProjectListAPI } from '@/services/routes/ManageService'
 import {
   manageKeys,
-  useCreateProject,
   useDeleteProject,
   useDepartments,
   useProjectContractors,
-  useUpdateProject,
 } from '@/hooks/queries/manage'
+import { useAppDispatch } from '@/stores/hooks'
+import { resetProjectModalData } from '@/stores/reducers/modal/customModalSlice'
 import type { APIRequestProjectList, ProjectListData } from '@/types/manage/project-api'
 import type { TableProps } from 'antd'
 import { mapProject } from '../context'
-import type { Project, ProjectFormValues } from '../types/project'
+import type { Project } from '../types/project'
 import { PROJECT_EXPORT_COLUMNS } from '../data/projectExportColumns'
 import { fetchAllPages } from '../utils/fetchAllPages'
 import ExportFileModal from '@/components/export/ExportFileModal'
-import ProjectModal from './project/ProjectModal'
-import DeleteProjectModal from './project/DeleteProjectModal'
 
 interface Props {
 
@@ -57,22 +55,16 @@ const NewProjectSection: React.FC<Props> = (props) => {
   const [departmentId, setDepartmentId] = useState<number | undefined>(undefined)
   const [contractorId, setContractorId] = useState<string | undefined>(undefined)
   const [displayType, setDisplayType] = useState<'LIST' | 'GRID'>('LIST')
-
-  const [modalState, setModalState] = useState<{ open: boolean; editing: ProjectListData | null }>({
-    open: false,
-    editing: null,
-  })
-  const [deleteTarget, setDeleteTarget] = useState<ProjectListData | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
+
+  const dispatch = useAppDispatch()
 
   const { data: departments } = useDepartments()
   // Same cached /manage/project/contractor list FormSearchProject's dropdown
   // uses — needed here only to resolve a human-readable name for the export
   // filterNote (the form submits contractor_id, not a label).
   const { data: contractorOptions } = useProjectContractors()
-  const createMutation = useCreateProject()
-  const updateMutation = useUpdateProject()
-  const deleteMutation = useDeleteProject()
+  const { mutate: deleteProject, isPending: isDeletePending } = useDeleteProject()
 
   const params: APIRequestProjectList = {
     page,
@@ -172,91 +164,18 @@ const NewProjectSection: React.FC<Props> = (props) => {
     return rows.map((r) => mapProject(r, departments))
   }
 
-  // ── Modal open/close ────────────────────────────────────────────────────
-  const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
-  const openEdit = useCallback(
-    (row: ProjectListData) => setModalState({ open: true, editing: row }),
-    [],
-  )
-  const closeModal = useCallback(() => setModalState({ open: false, editing: null }), [])
-
-  // ProjectModal/DeleteProjectModal speak the mapped `Project` shape (they're
-  // shared with the old ProjectSection) — map lazily at render time, same as
-  // NewContactSection's toContractor.
-  const editingProject: Project | null = modalState.editing
-    ? mapProject(modalState.editing, departments)
-    : null
-  const deleteTargetProject: Project | null = deleteTarget
-    ? mapProject(deleteTarget, departments)
-    : null
-
-  // ── Create / update ─────────────────────────────────────────────────────
-  const handleSubmit = useCallback(
-    async (values: ProjectFormValues, editingId: string | null) => {
-      try {
-        if (editingId) {
-          await updateMutation.mutateAsync({
-            id: Number(editingId),
-            budget_year: values.budgetYear as number,
-            contract_no: values.contractNo,
-            project_no: values.code || '',
-            project_name: values.name,
-            department_id: Number(values.owner),
-            contractor_id: values.contractor,
-            warranty_start_date: values.warrantyStart,
-            warranty_end_date: values.warrantyEnd,
-            // Echo project_road_id for existing rows so the backend updates
-            // in place instead of inserting duplicates.
-            project_road: values.roads.map((r) => ({
-              road_id: Number(r.roadId),
-              ...(r.projectRoadId ? { project_road_id: r.projectRoadId } : {}),
-            })),
-          })
-          message.success('แก้ไขโครงการสำเร็จ')
-        } else {
-          await createMutation.mutateAsync({
-            budget_year: values.budgetYear as number,
-            contract_no: values.contractNo,
-            project_no: values.code || '',
-            project_name: values.name,
-            department_id: Number(values.owner),
-            contractor_id: values.contractor,
-            warranty_start_date: values.warrantyStart,
-            warranty_end_date: values.warrantyEnd,
-            project_road: values.roads.map((r) => ({ road_id: Number(r.roadId) })),
-          })
-          message.success('เพิ่มโครงการสำเร็จ')
-        }
-        closeModal()
-      } catch (error) {
-        message.error(
-          readErrorMessage(
-            error,
-            editingId ? 'แก้ไขโครงการไม่สำเร็จ' : 'เพิ่มโครงการไม่สำเร็จ',
-          ),
-        )
-      }
-    },
-    [createMutation, updateMutation, closeModal, message],
-  )
-
   // ── Delete ──────────────────────────────────────────────────────────────
-  const handleDeleteRequest = useCallback((row: ProjectListData) => {
-    setDeleteTarget(row)
-  }, [])
-
-  const handleDeleteConfirm = useCallback(
-    async (id: string) => {
-      try {
-        await deleteMutation.mutateAsync(Number(id))
+  const onDeleteProjectData = useCallback((id: number) => {
+    deleteProject(id, {
+      onSuccess: () => {
         message.success('ลบโครงการสำเร็จ')
-        setDeleteTarget(null)
-      } catch (error) {
+        dispatch(resetProjectModalData())
+      },
+      onError: (error) => {
         message.error(readErrorMessage(error, 'ลบโครงการไม่สำเร็จ'))
-      }
-    },
-    [deleteMutation, message],
-  )
+      },
+    })
+  }, [deleteProject, dispatch, message])
 
   const renderContent = useMemo(() => {
     switch (displayType) {
@@ -267,8 +186,6 @@ const NewProjectSection: React.FC<Props> = (props) => {
             isLoading={isLoading}
             isError={isError}
             onTableChange={handleTableChange}
-            onEdit={openEdit}
-            onDelete={handleDeleteRequest}
           />
         )
       case 'GRID':
@@ -278,8 +195,6 @@ const NewProjectSection: React.FC<Props> = (props) => {
             isLoading={isLoading}
             isError={isError}
             onTableChange={handleTableChange}
-            onEdit={openEdit}
-            onDelete={handleDeleteRequest}
             search={search}
             departmentSearchText={departmentSearchText}
             budgetYear={budgetYear}
@@ -289,14 +204,13 @@ const NewProjectSection: React.FC<Props> = (props) => {
       default:
         return null
     }
-  }, [displayType, tableData, isLoading, isError, handleTableChange, openEdit, handleDeleteRequest, search, departmentSearchText, budgetYear, contractorId])
+  }, [displayType, tableData, isLoading, isError, handleTableChange, search, departmentSearchText, budgetYear, contractorId])
 
   return (
     <div>
       <section>
         <FormSearchProject
           onSearch={handleSearch}
-          onAdd={openCreate}
           onExport={() => setExportOpen(true)}
           displayType={displayType}
           setDisplayType={setDisplayType}
@@ -306,20 +220,8 @@ const NewProjectSection: React.FC<Props> = (props) => {
         {renderContent}
       </section>
 
-      <ProjectModal
-        open={modalState.open}
-        editing={editingProject}
-        submitting={createMutation.isPending || updateMutation.isPending}
-        onClose={closeModal}
-        onSubmit={handleSubmit}
-      />
-      <DeleteProjectModal
-        open={!!deleteTarget}
-        project={deleteTargetProject}
-        deleting={deleteMutation.isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+      <ModalCreateProject />
+      <ModalConfirmDeleteProject onDelete={onDeleteProjectData} isPending={isDeletePending} />
 
       {/* นำออกเอกสาร — same scope toggle + column set as ProjectSection:
           ทั้งหมด = every project matching the current search/filters (fetched

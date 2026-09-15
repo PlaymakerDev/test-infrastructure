@@ -3,30 +3,28 @@ import {
   ListViewContact,
   GridViewContact
 } from '../../components'
-import { APIResponseContractorList, ContractorData } from '@/types/manage/contractor-api'
+import { APIResponseContractorList } from '@/types/manage/contractor-api'
 
 interface Props {
   type: 'TABLE' | 'GRID'
   data?: APIResponseContractorList
   isLoading: boolean
   isError: boolean
-  onEdit: (item: ContractorData) => void
-  onDelete: (item: ContractorData) => void
 }
 
 const ContentContactList: React.FC<Props> = (props) => {
-  const { type, data, isLoading, isError, onEdit, onDelete } = props
+  const { type, data, isLoading, isError } = props
 
   const renderContent = useMemo(() => {
     switch (type) {
       case 'TABLE':
-        return <ListViewContact type={type} data={data} isLoading={isLoading} isError={isError} onEdit={onEdit} onDelete={onDelete} />
+        return <ListViewContact type={type} data={data} isLoading={isLoading} isError={isError} />
       case 'GRID':
-        return <GridViewContact type={type} data={data} isLoading={isLoading} isError={isError} onEdit={onEdit} onDelete={onDelete} />
+        return <GridViewContact type={type} data={data} isLoading={isLoading} isError={isError} />
       default:
         return null
     }
-  }, [type, data, isLoading, isError, onEdit, onDelete])
+  }, [type, data, isLoading, isError])
 
   return renderContent
 }

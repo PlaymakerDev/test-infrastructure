@@ -1,4 +1,6 @@
 import { getRegionsAPI } from '@/services/routes/ManageService'
+import { useAppDispatch } from '@/stores/hooks'
+import { setRoadModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { PlusOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Col, ConfigProvider, Input, Row, Select } from 'antd'
@@ -13,12 +15,12 @@ export interface RoadSearchFormValues {
 
 interface Props {
   onSearch: (values: RoadSearchFormValues) => void
-  onAdd?: () => void
   onExport?: () => void
 }
 
 const FormSearchRoad: React.FC<Props> = (props) => {
-  const { onSearch, onAdd, onExport } = props
+  const { onSearch, onExport } = props
+  const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -39,6 +41,10 @@ const FormSearchRoad: React.FC<Props> = (props) => {
   const onSubmit = useCallback((data: RoadSearchFormValues) => {
     onSearch(data)
   }, [onSearch])
+
+  const onOpenCreateRoadModal = useCallback(() => {
+    dispatch(setRoadModalOpen({ open: true, type: 'CREATE' }))
+  }, [dispatch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -113,7 +119,7 @@ const FormSearchRoad: React.FC<Props> = (props) => {
             size="large"
             icon={<PlusOutlined />}
             shape='round'
-            onClick={onAdd}
+            onClick={onOpenCreateRoadModal}
           >
             <p className='fs-12 whitespace-nowrap'>เพิ่มสายทาง</p>
           </Button>

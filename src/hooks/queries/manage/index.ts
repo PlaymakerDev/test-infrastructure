@@ -23,6 +23,7 @@ export { useDeleteContractor } from './useDeleteContractor'
 
 // Roads
 export { useRoadsList } from './useRoadsList'
+export { usePaginateRoadList } from './usePaginateRoadList'
 export { useCreateRoad } from './useCreateRoad'
 export { useUpdateRoad } from './useUpdateRoad'
 export { useDeleteRoad } from './useDeleteRoad'

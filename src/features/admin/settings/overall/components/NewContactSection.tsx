@@ -3,26 +3,24 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ContentContactList,
   FormSearchContact,
-  ModalContactInfo
+  ModalContactInfo,
+  ModalCreateContact,
+  ModalConfirmDeleteContact,
 } from '../components'
 import { App, Empty, Skeleton } from 'antd'
 import { getExportContractorAPI } from '@/services/routes/ManageService'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import {
   useContractorListInfinite,
-  useCreateContractor,
   useDeleteContractor,
-  useUpdateContractor,
 } from '@/hooks/queries/manage'
+import { useAppDispatch } from '@/stores/hooks'
+import { resetContactModalData } from '@/stores/reducers/modal/customModalSlice'
 import type {
-  APIRequestRegisterContractor,
-  APIRequestUpdateContractor,
   APIResponseContractorList,
   ContractorData,
 } from '@/types/manage/contractor-api'
-import type { Contractor, ContractorFormValues } from '../types/contractor'
-import ContactModal from './contact/ContactModal'
-import DeleteContactModal from './contact/DeleteContactModal'
+import type { Contractor } from '../types/contractor'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 
@@ -72,16 +70,10 @@ const NewContactSection: React.FC<Props> = (props) => {
   const [type, setType] = useState<'TABLE' | 'GRID'>('TABLE')
   const [search, setSearch] = useState('')
 
-  const [modalState, setModalState] = useState<{ open: boolean; editing: ContractorData | null }>({
-    open: false,
-    editing: null,
-  })
-  const [deleteTarget, setDeleteTarget] = useState<ContractorData | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
 
-  const createMutation = useCreateContractor()
-  const updateMutation = useUpdateContractor()
-  const deleteMutation = useDeleteContractor()
+  const dispatch = useAppDispatch()
+  const { mutate: deleteContractor, isPending: isDeletePending } = useDeleteContractor()
 
   // onScroll pagination — a search-term change swaps the query key (search
   // is part of manageKeys.contractors.listInfinite) so TanStack starts a
@@ -137,86 +129,18 @@ const NewContactSection: React.FC<Props> = (props) => {
   // shape — feeds the 'page' export scope and the ExportFileModal's pageCount.
   const contractors = useMemo<Contractor[]>(() => allRows.map(toContractor), [allRows])
 
-  // ── Modal open/close ────────────────────────────────────────────────────
-  const openCreate = useCallback(() => setModalState({ open: true, editing: null }), [])
-  const openEdit = useCallback(
-    (row: ContractorData) => setModalState({ open: true, editing: row }),
-    [],
-  )
-  const closeModal = useCallback(() => setModalState({ open: false, editing: null }), [])
-
-  // ── Create / update ─────────────────────────────────────────────────────
-  const handleSubmit = useCallback(
-    async (values: ContractorFormValues, editingId: string | null) => {
-      const optional = <T extends string | undefined>(v: T): string | undefined => {
-        if (typeof v !== 'string') return undefined
-        const t = v.trim()
-        return t.length ? t : undefined
-      }
-
-      const companyName = values.companyName.trim()
-      const shortName = values.shortName.trim()
-
-      try {
-        if (editingId) {
-          const body: APIRequestUpdateContractor = {
-            company_name: companyName,
-            short_name: shortName,
-            name: optional(values.contactPerson),
-            phone: optional(values.phone),
-            email: optional(values.email),
-            address: optional(values.address),
-            role: optional(values.role),
-            password: optional(values.password),
-          }
-          await updateMutation.mutateAsync({ id: editingId, data: body })
-          message.success('แก้ไขข้อมูลผู้รับจ้างสำเร็จ')
-        } else {
-          const body: APIRequestRegisterContractor = {
-            company_name: companyName,
-            short_name: shortName,
-            password: (values.password ?? '').trim(),
-            name: optional(values.contactPerson),
-            phone: optional(values.phone),
-            email: optional(values.email),
-            address: optional(values.address),
-            role: optional(values.role),
-          }
-          await createMutation.mutateAsync(body)
-          message.success('เพิ่มผู้รับจ้างสำเร็จ')
-        }
-        closeModal()
-      } catch (error) {
-        message.error(
-          readErrorMessage(
-            error,
-            editingId
-              ? 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลผู้รับจ้าง'
-              : 'เกิดข้อผิดพลาดในการเพิ่มผู้รับจ้าง',
-          ),
-        )
-      }
-    },
-    [createMutation, updateMutation, closeModal, message],
-  )
-
   // ── Delete ──────────────────────────────────────────────────────────────
-  const handleDeleteRequest = useCallback((row: ContractorData) => {
-    setDeleteTarget(row)
-  }, [])
-
-  const handleDeleteConfirm = useCallback(
-    async (id: string) => {
-      try {
-        await deleteMutation.mutateAsync(id)
+  const onDeleteContactData = useCallback((id: string) => {
+    deleteContractor(id, {
+      onSuccess: () => {
         message.success('ลบผู้รับจ้างสำเร็จ')
-        setDeleteTarget(null)
-      } catch (error) {
+        dispatch(resetContactModalData())
+      },
+      onError: (error) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการลบผู้รับจ้าง'))
-      }
-    },
-    [deleteMutation, message],
-  )
+      },
+    })
+  }, [deleteContractor, dispatch, message])
 
   const onExportXlsx = useCallback(async () => {
     try {
@@ -305,11 +229,9 @@ const NewContactSection: React.FC<Props> = (props) => {
         data={data}
         isLoading={isLoading}
         isError={isError}
-        onEdit={openEdit}
-        onDelete={handleDeleteRequest}
       />
     )
-  }, [isLoading, isError, data, type, openEdit, handleDeleteRequest])
+  }, [isLoading, isError, data, type])
 
   return (
     <div>
@@ -320,7 +242,6 @@ const NewContactSection: React.FC<Props> = (props) => {
           setType={setType}
           search={search}
           setSearch={handleSearchChange}
-          onAdd={openCreate}
           onExport={() => setExportOpen(true)}
         />
       </section>
@@ -338,20 +259,8 @@ const NewContactSection: React.FC<Props> = (props) => {
 
       <ModalContactInfo />
 
-      <ContactModal
-        open={modalState.open}
-        editing={modalState.editing ? toContractor(modalState.editing) : null}
-        submitting={createMutation.isPending || updateMutation.isPending}
-        onClose={closeModal}
-        onSubmit={handleSubmit}
-      />
-      <DeleteContactModal
-        open={!!deleteTarget}
-        contractor={deleteTarget ? toContractor(deleteTarget) : null}
-        deleting={deleteMutation.isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+      <ModalCreateContact />
+      <ModalConfirmDeleteContact onDelete={onDeleteContactData} isPending={isDeletePending} />
 
       {/* นำออกเอกสาร — same scope toggle + column set as ContactSection:
           ทั้งหมด = every contractor matching the current search (fetched in
