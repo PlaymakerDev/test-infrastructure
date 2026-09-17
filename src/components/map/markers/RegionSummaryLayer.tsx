@@ -1,6 +1,5 @@
 "use client"
 import React, { createElement, useEffect, useMemo, useState } from 'react'
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { SYSTEMS, type SystemType } from '@/features/admin/dashboard/data/systems'
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { SYSTEM_ICONS } from '../hooks/useDeviceIcon'
@@ -8,7 +7,7 @@ import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
-import { useBureauFeatures } from '../hooks/useBureauFeatures'
+import { useBureauFeatures, isPointInBureau, findBureauAt } from '../hooks/useBureauFeatures'
 import { useMap } from '../hooks/useMap'
 import HTMLMarker from '../primitives/HTMLMarker'
 
@@ -117,14 +116,12 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
             deptId: l.road.department_id ?? 0,
           }))
 
-    const inBureau = (lng: number, lat: number, stch: number): boolean | null => {
-      if (!bureauFeatures) return null
-      const bf = bureauFeatures.find((b) => b.stch === stch)
-      if (!bf) return null
-      const [minX, minY, maxX, maxY] = bf.bbox
-      if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-      return booleanPointInPolygon([lng, lat], bf.feature)
-    }
+    // Same test as before, now via the shared memo in useBureauFeatures — the
+    // dashboard's ReactMap asks this for the same nationwide device set, so
+    // whichever surface runs first warms the cache for the other. Return
+    // values (null / false / polygon result) are unchanged.
+    const inBureau = (lng: number, lat: number, stch: number): boolean | null =>
+      isPointInBureau(bureauFeatures, stch, lng, lat)
 
     const stchAcc: Record<number, Acc> = {}
     const deptAcc: Record<number, Acc> = {}
@@ -137,11 +134,8 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
       const inOwn = inBureau(p.lng, p.lat, p.stch)
       if (inOwn === false) trusted = false
       if (!BUREAU_BY_STCH[bucket] && bureauFeatures) {
-        const hit = bureauFeatures.find((b) => {
-          const [minX, minY, maxX, maxY] = b.bbox
-          if (p.lng < minX || p.lng > maxX || p.lat < minY || p.lat > maxY) return false
-          return booleanPointInPolygon([p.lng, p.lat], b.feature)
-        })
+        // Same scan, memoised per coordinate and shared with ReactMap.
+        const hit = findBureauAt(bureauFeatures, p.lng, p.lat)
         bucket = hit ? hit.stch : 0
         // Bucket chosen FROM the coordinate — by construction trustworthy.
         trusted = hit ? true : trusted

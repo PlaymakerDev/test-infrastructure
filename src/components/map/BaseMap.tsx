@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react'
 import type { Map as MapboxMap } from 'mapbox-gl'
 import { MapContext } from './MapContext'
 import RoadLayer from './markers/RoadLayer'
+import { loadGeoJsonOnce } from './hooks/geojsonCache'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,8 +330,12 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // inside TH or would false-negative on the water polygon (Gulf of
         // Thailand, Andaman Sea labels sit outside the coast polygon).
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`)
-          const thGeo = await res.json() as GeoJSON.FeatureCollection
+          // Shared cache — ThailandMaskLayer renders this same file on most of
+          // the maps that mount BaseMap, so a bare fetch here downloaded and
+          // parsed it a second time on every mount. URL string is unchanged.
+          const thGeo = await loadGeoJsonOnce<GeoJSON.FeatureCollection>(
+            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
+          )
           const thFeature = thGeo.features?.[0]
           if (thFeature) {
             const style = instance!.getStyle()

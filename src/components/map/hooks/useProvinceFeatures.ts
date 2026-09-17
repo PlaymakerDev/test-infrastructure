@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import bboxOf from '@turf/bbox'
+import { loadGeoJsonOnce } from './geojsonCache'
 
 /** One จังหวัด polygon + precomputed bbox — parsed from the same
  *  `public/data/th-provinces.geojson` that ThailandMaskLayer renders. */
@@ -23,27 +24,30 @@ let inflight: Promise<ProvinceFeature[]> | null = null
 async function loadOnce(): Promise<ProvinceFeature[]> {
   if (cache) return cache
   if (inflight) return inflight
-  inflight = (async () => {
-    // 'no-cache' = revalidate with the server every session (304 when
-    // unchanged) — 'force-cache' pinned browsers to the first version they
-    // ever saw, which is how stale boundary geometry survived the 2026-08-03
-    // geojson regeneration (see useBureauFeatures.ts for the full story).
-    const r = await fetch(PROVINCES_URL, { cache: 'no-cache' })
-    if (!r.ok) throw new Error(`provinces fetch ${r.status}`)
-    const gj = (await r.json()) as GeoJSON.FeatureCollection<
-      GeoJSON.Polygon | GeoJSON.MultiPolygon,
-      { code: string }
-    >
-    const parsed: ProvinceFeature[] = gj.features.map((f) => ({
-      code: f.properties.code,
-      bbox: bboxOf(f) as [number, number, number, number],
-      feature: f,
-    }))
-    cache = parsed
-    inflight = null
-    return parsed
+  // Raw fetch + JSON.parse moved into the shared `loadGeoJsonOnce` cache so
+  // this hook and ThailandMaskLayer (which hands the same file to Mapbox as a
+  // source) share one parsed copy instead of loading it twice per mount. The
+  // revalidation policy moved with it — see geojsonCache.ts. This layer still
+  // memoises the derived bbox shape below.
+  const request = (async () => {
+    try {
+      const gj = await loadGeoJsonOnce<
+        GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon, { code: string }>
+      >(PROVINCES_URL)
+      const parsed: ProvinceFeature[] = gj.features.map((f) => ({
+        code: f.properties.code,
+        bbox: bboxOf(f) as [number, number, number, number],
+        feature: f,
+      }))
+      cache = parsed
+      return parsed
+    } finally {
+      // Cleared on failure too — see the same note in useBureauFeatures.
+      inflight = null
+    }
   })()
-  return inflight
+  inflight = request
+  return request
 }
 
 /** Shared client-side loader for the 77-จังหวัด geojson — mirrors

@@ -35,7 +35,7 @@ import BureauMaskLayer, {
   BUREAU_HOVER_FILL_ID,
   BUREAU_HOVER_LINE_ID,
 } from './markers/BureauMaskLayer'
-import { useBureauFeatures } from './hooks/useBureauFeatures'
+import { useBureauFeatures, isPointInBureau, findBureauAt } from './hooks/useBureauFeatures'
 import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
@@ -379,15 +379,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // Coord sanity check — inside the bureau polygon the device CLAIMS via
     // road.stch. No polygon to check against (บทช./unknown stch, geojson not
     // loaded yet) → trust as-is.
-    const isTrustedCoord = (dev: Device): boolean => {
-      if (!bureauFeatures) return true
-      const bf = bureauFeatures.find((b) => b.stch === dev.stch)
-      if (!bf) return true
-      const [minX, minY, maxX, maxY] = bf.bbox
-      const [lng, lat] = dev.coord
-      if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-      return booleanPointInPolygon(dev.coord, bf.feature)
-    }
+    // Same bbox-reject + polygon test as before, now via the shared memo in
+    // useBureauFeatures so the result is computed once per (stch, coord) and
+    // reused by RegionSummaryLayer too. `null` (no features loaded / stch has
+    // no polygon) keeps meaning "trust as-is", exactly as the inline version
+    // returned `true` for both of those cases.
+    const isTrustedCoord = (dev: Device): boolean =>
+      isPointInBureau(bureauFeatures, dev.stch, dev.coord[0], dev.coord[1]) ?? true
     // LPR pins ride alongside the /position devices. Scoping mirrors the
     // RatioChart LPR tile (FE filter by department_id — /lpr/points is not
     // dept-scoped by BE). `lpr-` id prefix: an LPR point can be the SAME
@@ -430,14 +428,9 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       // yet — falling back to the raw stch keeps prior behaviour.
       let bucketStch = dev.stch
       if (!BUREAU_STCH_SET.has(bucketStch) && bureauFeatures) {
-        const hit = bureauFeatures.find((b) => {
-          // Cheap bbox reject before the polygon test — 18 bboxes × N devices
-          // dominates the loop, so this is where we save the most work.
-          const [minX, minY, maxX, maxY] = b.bbox
-          const [lng, lat] = dev.coord
-          if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-          return booleanPointInPolygon(dev.coord, b.feature)
-        })
+        // Same scan (bbox reject then polygon test, first hit wins) — now
+        // memoised per coordinate and shared with RegionSummaryLayer.
+        const hit = findBureauAt(bureauFeatures, dev.coord[0], dev.coord[1])
         // Central bucket keyed as 0 — 18 buckets 1..18 + this one → exactly
         // 19 aggregate markers on the country view (down from ~21 before).
         bucketStch = hit ? hit.stch : 0

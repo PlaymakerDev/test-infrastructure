@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useRef } from 'react'
 import { useMap } from '../hooks/useMap'
+import { loadGeoJsonOnce } from '../hooks/geojsonCache'
 
 export interface ThailandMaskLayerProps {
   /** URL of the country outline (single feature, Polygon or MultiPolygon) */
@@ -66,20 +67,25 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
 
     const run = async () => {
       try {
+        // Shared cache: BaseMap needs the same thailand.geojson for its label
+        // `within` filter and useProvinceFeatures needs the same
+        // th-provinces.geojson for point-in-polygon, so a bare fetch here
+        // parsed ~1.9 MB of JSON that was already in memory. Same files, same
+        // parsed objects — only the number of downloads/parses changes.
         const [thailandData, provincesData] = await Promise.all([
-          fetch(thailandUrl).then((r) => r.json()),
-          fetch(provincesUrl).then((r) => r.json()),
+          loadGeoJsonOnce<GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>>(thailandUrl),
+          loadGeoJsonOnce<GeoJSON.FeatureCollection>(provincesUrl),
         ])
         if (cancelled || !map) return
 
         const tGeom = thailandData.features[0].geometry
-        const worldRing: [number, number][] = [
+        const worldRing: GeoJSON.Position[] = [
           [-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85],
         ]
-        const tHoles: [number, number][][] =
+        const tHoles: GeoJSON.Position[][] =
           tGeom.type === 'Polygon'
             ? [tGeom.coordinates[0]]
-            : tGeom.coordinates.map((p: [number, number][][]) => p[0])
+            : tGeom.coordinates.map((p) => p[0])
 
         const maskFeature = {
           type: 'Feature' as const,
