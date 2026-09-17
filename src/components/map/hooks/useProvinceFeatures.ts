@@ -24,11 +24,9 @@ let inflight: Promise<ProvinceFeature[]> | null = null
 async function loadOnce(): Promise<ProvinceFeature[]> {
   if (cache) return cache
   if (inflight) return inflight
-  // Raw fetch + JSON.parse moved into the shared `loadGeoJsonOnce` cache so
-  // this hook and ThailandMaskLayer (which hands the same file to Mapbox as a
-  // source) share one parsed copy instead of loading it twice per mount. The
-  // revalidation policy moved with it — see geojsonCache.ts. This layer still
-  // memoises the derived bbox shape below.
+  // Raw fetch + parse moved to the shared geojsonCache, so this hook and
+  // ThailandMaskLayer share one parsed copy. This layer still memoises the
+  // derived bbox shape below.
   const request = (async () => {
     try {
       const gj = await loadGeoJsonOnce<

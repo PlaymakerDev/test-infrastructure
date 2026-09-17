@@ -1,28 +1,16 @@
 "use client"
 
-/** Shared fetch + parse cache for the static GeoJSON under `public/data/`.
- *
- *  Before this existed every consumer ran its own bare `fetch()`, so opening a
- *  single overall page (BaseMap + ThailandMaskLayer, on top of whatever
- *  `useProvinceFeatures` / `useBureauFeatures` had already loaded) downloaded
- *  and `JSON.parse`d the same ~2.8 MB of boundary GeoJSON two to three times —
- *  and did it all again on every remount. The parsed objects are ~9 MB of JS
- *  heap per copy, so the duplicates were the single biggest avoidable cost on
- *  the map surfaces.
- *
- *  Keyed by the RESOLVED URL string on purpose: callers keep computing their
- *  own URL exactly as they did before (BaseMap/ThailandMaskLayer read
- *  `NEXT_PUBLIC_BASE_PATH`, the feature hooks read `__NEXT_ROUTER_BASEPATH`).
- *  In every real deployment those resolve to the same prefix and therefore
- *  share one entry; if some environment ever made them differ, each simply
- *  gets its own entry — i.e. exactly today's behaviour, never a broken fetch.
- */
+/** Shared fetch + parse cache for the static GeoJSON in `public/data/`.
+ *  Every consumer used to fetch its own copy, so one overall page parsed the
+ *  same ~2.8MB of boundary data 2-3 times (~9MB heap each) and again on every
+ *  remount. Keyed by the resolved URL — callers build their URL exactly as
+ *  before, matching strings share one entry. */
 
 const cache = new Map<string, unknown>()
 const inflight = new Map<string, Promise<unknown>>()
 
 /** Fetch + parse `url` once per session. Concurrent callers share one request;
- *  a rejected fetch is NOT memoised, so a later mount retries cleanly. */
+ *  a failed fetch isn't memoised, so a later mount retries. */
 export async function loadGeoJsonOnce<T>(url: string): Promise<T> {
   const hit = cache.get(url)
   if (hit !== undefined) return hit as T
@@ -31,12 +19,9 @@ export async function loadGeoJsonOnce<T>(url: string): Promise<T> {
   if (pending) return pending as Promise<T>
 
   const request = (async () => {
-    // 'no-cache' = revalidate with the server every session (cheap 304 when
-    // the file is unchanged). The default/'force-cache' pinned browsers to the
-    // first version they ever saw, which is how stale boundary geometry
-    // survived the 2026-08-03 geojson regeneration — see useBureauFeatures.ts
-    // for the full story. The map above already dedupes within a session, so
-    // revalidating costs one conditional request, not a re-download.
+    // 'no-cache' = revalidate each session (304 when unchanged). The default
+    // pinned browsers to the first version they saw, which is how stale
+    // geometry survived the 2026-08-03 regeneration.
     const r = await fetch(url, { cache: 'no-cache' })
     if (!r.ok) throw new Error(`geojson fetch ${r.status}: ${url}`)
     const gj = (await r.json()) as unknown
@@ -48,10 +33,8 @@ export async function loadGeoJsonOnce<T>(url: string): Promise<T> {
   try {
     return (await request) as T
   } finally {
-    // Cleared on BOTH the success and the failure path. The per-hook loaders
-    // this replaces only cleared after a success, so a single failed fetch
-    // left a rejected promise memoised for the rest of the session and every
-    // later mount re-threw it instead of trying again.
+    // Cleared on failure too — the loaders this replaces only cleared on
+    // success, so one failed fetch stuck a rejected promise here for good.
     inflight.delete(url)
   }
 }

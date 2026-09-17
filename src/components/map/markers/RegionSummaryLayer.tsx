@@ -116,10 +116,8 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
             deptId: l.road.department_id ?? 0,
           }))
 
-    // Same test as before, now via the shared memo in useBureauFeatures — the
-    // dashboard's ReactMap asks this for the same nationwide device set, so
-    // whichever surface runs first warms the cache for the other. Return
-    // values (null / false / polygon result) are unchanged.
+    // Same test as before, now via the shared memo — ReactMap asks this for
+    // the same device set, so whichever runs first warms the other's cache.
     const inBureau = (lng: number, lat: number, stch: number): boolean | null =>
       isPointInBureau(bureauFeatures, stch, lng, lat)
 
@@ -134,7 +132,6 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
       const inOwn = inBureau(p.lng, p.lat, p.stch)
       if (inOwn === false) trusted = false
       if (!BUREAU_BY_STCH[bucket] && bureauFeatures) {
-        // Same scan, memoised per coordinate and shared with ReactMap.
         const hit = findBureauAt(bureauFeatures, p.lng, p.lat)
         bucket = hit ? hit.stch : 0
         // Bucket chosen FROM the coordinate — by construction trustworthy.

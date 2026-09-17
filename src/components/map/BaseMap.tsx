@@ -330,9 +330,8 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // inside TH or would false-negative on the water polygon (Gulf of
         // Thailand, Andaman Sea labels sit outside the coast polygon).
         try {
-          // Shared cache — ThailandMaskLayer renders this same file on most of
-          // the maps that mount BaseMap, so a bare fetch here downloaded and
-          // parsed it a second time on every mount. URL string is unchanged.
+          // Shared cache — ThailandMaskLayer loads this same file, so a bare
+          // fetch here parsed it twice per mount. URL unchanged.
           const thGeo = await loadGeoJsonOnce<GeoJSON.FeatureCollection>(
             `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
           )

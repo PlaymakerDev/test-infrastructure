@@ -34,12 +34,9 @@ let inflight: Promise<BureauFeature[]> | null = null
 async function loadOnce(): Promise<BureauFeature[]> {
   if (cache) return cache
   if (inflight) return inflight
-  // The raw fetch + JSON.parse now lives in the shared `loadGeoJsonOnce`
-  // cache, so ThailandMaskLayer / BaseMap / this hook read one parsed copy
-  // instead of three. The revalidation policy that keeps stale boundary
-  // geometry from surviving a regeneration moved there with it (see the note
-  // in geojsonCache.ts). This layer still memoises the DERIVED shape below —
-  // the bbox precompute is what callers actually hold on to.
+  // Raw fetch + parse moved to the shared geojsonCache (one copy for
+  // ThailandMaskLayer / BaseMap / this hook). This layer still memoises the
+  // derived bbox shape below.
   const request = (async () => {
     try {
       const gj = await loadGeoJsonOnce<
@@ -60,9 +57,8 @@ async function loadOnce(): Promise<BureauFeature[]> {
       cache = parsed
       return parsed
     } finally {
-      // Cleared on failure too — the previous version only cleared after a
-      // success, so one failed load stuck a rejected promise here for the
-      // rest of the session.
+      // Cleared on failure too — the old version only cleared on success, so
+      // one failed load stuck a rejected promise here for the session.
       inflight = null
     }
   })()
@@ -71,35 +67,23 @@ async function loadOnce(): Promise<BureauFeature[]> {
 }
 
 // ── Shared point-in-bureau memo ─────────────────────────────────────────────
-// `ReactMap` (dashboard) and `RegionSummaryLayer` (10 overall pages) both ask
-// the SAME question for the SAME nationwide device set: "does this coordinate
-// sit inside the bureau it claims?" — each with its own local copy of the
-// bbox-reject + booleanPointInPolygon ladder. At ~13.4k devices that is ~44 ms
-// of blocking work per pass on a fast machine (2-5× that on office hardware),
-// recomputed on every mount and repeated per component.
-//
-// The answer depends only on (bureau polygons, stch, lng, lat) and the
-// polygons are loaded once per session, so it is safe to memoise across
-// components and mounts. Same inputs → same booleanPointInPolygon call → same
-// result; this changes only HOW OFTEN the test runs, never its outcome.
+// ReactMap (dashboard) and RegionSummaryLayer (10 overall pages) ran identical
+// copies of this test over the same ~13.4k devices — ~44ms of blocking work
+// each, on every mount. The answer depends only on (polygons, stch, lng, lat)
+// and the polygons load once per session, so memoising across components and
+// mounts changes how OFTEN the test runs, never its result.
 
-/** Index + result cache, rebuilt whenever the loaded feature set changes
- *  identity (in practice: once, when the geojson first resolves). */
+// Rebuilt when the feature set changes identity (in practice: once).
 let indexedFor: BureauFeature[] | null = null
 let byStch = new Map<number, BureauFeature>()
 const containsCache = new Map<string, boolean | null>()
-// Bound the memo so a pathological session can't grow it without limit. The
-// real device set is ~13.4k coordinates, so this ceiling is never reached in
-// practice — it exists purely as a safety valve (clearing only costs a
-// recompute, it cannot change an answer).
+// Safety valve only — the real device set is ~13.4k coords, so this is never
+// hit. Clearing costs a recompute, it can't change an answer.
 const CONTAINS_CACHE_MAX = 50_000
 
-/** Is [lng, lat] inside the polygon of bureau `stch`?
- *
- *  `null` = nothing to test against (features not loaded yet, or that stch has
- *  no polygon) — callers decide what that means for them, exactly as they did
- *  when each owned a private copy of this check.
- *  `false` = outside (bbox reject or polygon miss). `true` = inside. */
+/** Is [lng, lat] inside bureau `stch`?
+ *  `null` = nothing to test against (not loaded, or no polygon for that stch);
+ *  callers map it to their own default. `false` = outside. */
 export function isPointInBureau(
   features: BureauFeature[] | null,
   stch: number,
@@ -109,9 +93,7 @@ export function isPointInBureau(
   if (!features) return null
 
   if (indexedFor !== features) {
-    // `find()` returns the FIRST match, so build the index the same way —
-    // first entry for a given stch wins — and drop memoised answers that were
-    // computed against the previous polygons.
+    // First entry per stch wins, matching the `find()` this replaced.
     const next = new Map<number, BureauFeature>()
     for (const f of features) if (!next.has(f.stch)) next.set(f.stch, f)
     byStch = next
@@ -141,12 +123,9 @@ export function isPointInBureau(
 }
 
 /** Which bureau polygon contains [lng, lat]? `null` = none (or not loaded).
- *
- *  The orphan-stch reclassification in ReactMap and RegionSummaryLayer both
- *  ran this same `find()` — up to 18 bbox rejects plus a polygon test each —
- *  for every device whose stch isn't one of the 18 real bureaus (บทช., กรม-
- *  ทางหลวง, ด่านชั่ง). Memoised on the same terms as `isPointInBureau`:
- *  identical scan order, so the FIRST containing polygon still wins. */
+ *  Backs the orphan-stch reclassification in ReactMap and RegionSummaryLayer.
+ *  Same scan order as the `find()` it replaces — first containing polygon
+ *  wins — memoised on the same terms as `isPointInBureau`. */
 export function findBureauAt(
   features: BureauFeature[] | null,
   lng: number,

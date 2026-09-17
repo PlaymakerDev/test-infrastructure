@@ -379,11 +379,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // Coord sanity check — inside the bureau polygon the device CLAIMS via
     // road.stch. No polygon to check against (บทช./unknown stch, geojson not
     // loaded yet) → trust as-is.
-    // Same bbox-reject + polygon test as before, now via the shared memo in
-    // useBureauFeatures so the result is computed once per (stch, coord) and
-    // reused by RegionSummaryLayer too. `null` (no features loaded / stch has
-    // no polygon) keeps meaning "trust as-is", exactly as the inline version
-    // returned `true` for both of those cases.
+    // Shared memo in useBureauFeatures — same test, computed once per
+    // (stch, coord) and reused by RegionSummaryLayer. `null` = trust as-is.
     const isTrustedCoord = (dev: Device): boolean =>
       isPointInBureau(bureauFeatures, dev.stch, dev.coord[0], dev.coord[1]) ?? true
     // LPR pins ride alongside the /position devices. Scoping mirrors the
@@ -428,8 +425,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       // yet — falling back to the raw stch keeps prior behaviour.
       let bucketStch = dev.stch
       if (!BUREAU_STCH_SET.has(bucketStch) && bureauFeatures) {
-        // Same scan (bbox reject then polygon test, first hit wins) — now
-        // memoised per coordinate and shared with RegionSummaryLayer.
+        // Same scan (first hit wins), memoised and shared with the
+        // overall pages' RegionSummaryLayer.
         const hit = findBureauAt(bureauFeatures, dev.coord[0], dev.coord[1])
         // Central bucket keyed as 0 — 18 buckets 1..18 + this one → exactly
         // 19 aggregate markers on the country view (down from ~21 before).

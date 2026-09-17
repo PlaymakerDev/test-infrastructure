@@ -60,6 +60,13 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
   const { map, isLoaded } = useMap()
   const setupRef = useRef(false)
 
+  // Skip the 1.5MB province geojson for maps that can't show it — without
+  // either prop the province layers stay invisible and unclickable forever.
+  // `!== undefined`, not truthy: ReactMap passes `null` while nothing is
+  // highlighted and still needs the layers ready. Setup runs once per map, so
+  // this must be declared at mount (pass `null`, never `undefined`).
+  const needProvinces = enableProvinceClick || highlightedProvinceCode !== undefined
+
   useEffect(() => {
     if (!map || !isLoaded || setupRef.current) return
     setupRef.current = true
@@ -67,14 +74,13 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
 
     const run = async () => {
       try {
-        // Shared cache: BaseMap needs the same thailand.geojson for its label
-        // `within` filter and useProvinceFeatures needs the same
-        // th-provinces.geojson for point-in-polygon, so a bare fetch here
-        // parsed ~1.9 MB of JSON that was already in memory. Same files, same
-        // parsed objects — only the number of downloads/parses changes.
+        // Shared cache — BaseMap and useProvinceFeatures read the same two
+        // files, so a bare fetch here re-parsed ~1.9MB already in memory.
         const [thailandData, provincesData] = await Promise.all([
           loadGeoJsonOnce<GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>>(thailandUrl),
-          loadGeoJsonOnce<GeoJSON.FeatureCollection>(provincesUrl),
+          needProvinces
+            ? loadGeoJsonOnce<GeoJSON.FeatureCollection>(provincesUrl)
+            : Promise.resolve(null),
         ])
         if (cancelled || !map) return
 
@@ -121,7 +127,8 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
           )
         }
 
-        if (!map.getSource('th-provinces')) {
+        // Order unchanged for consumers that do use provinces.
+        if (provincesData && !map.getSource('th-provinces')) {
           map.addSource('th-provinces', { type: 'geojson', data: provincesData })
           map.addLayer(
             {

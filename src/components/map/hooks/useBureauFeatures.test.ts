@@ -6,15 +6,11 @@ import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { findBureauAt, isPointInBureau, type BureauFeature } from './useBureauFeatures'
 
 // Equivalence guard for the shared point-in-bureau memo.
-//
-// `isPointInBureau` replaced two byte-identical inline ladders (ReactMap's
-// `isTrustedCoord`, RegionSummaryLayer's `inBureau`). It memoises the answer,
-// so the thing that must be proven is that memoisation changed only HOW OFTEN
-// the polygon test runs, never WHAT it returns — including the bbox-reject
-// short-circuit and the two distinct "nothing to test against" cases.
-//
-// `reference()` below is the original inline implementation, copied verbatim.
-// Both are exercised against the real th-bureaus.geojson the app ships.
+// `isPointInBureau` replaced two identical inline ladders (ReactMap's
+// `isTrustedCoord`, RegionSummaryLayer's `inBureau`) and memoises the answer,
+// so what must be proven is that memoising changed only HOW OFTEN the polygon
+// test runs, never WHAT it returns. `reference()` below is the original inline
+// code verbatim; both run against the real th-bureaus.geojson the app ships.
 
 const bureaus = JSON.parse(
   readFileSync(resolve(process.cwd(), 'public/data/th-bureaus.geojson'), 'utf8'),
@@ -33,8 +29,7 @@ const features: BureauFeature[] = bureaus.features.map((f) => ({
   feature: f,
 }))
 
-/** The pre-refactor inline check, verbatim (ReactMap/RegionSummaryLayer both
- *  had this; they differed only in what they returned for the null cases). */
+/** The pre-refactor inline check, verbatim. */
 function reference(
   feats: BureauFeature[] | null,
   stch: number,
@@ -92,8 +87,8 @@ describe('isPointInBureau', () => {
   })
 
   it('matches on real polygon vertices (points exactly ON the boundary)', () => {
-    // Boundary semantics are where a reimplementation would most plausibly
-    // drift, so feed the polygons their own vertices back.
+    // Boundary semantics drift most easily — feed the polygons their own
+    // vertices back.
     for (const f of features) {
       const geom = f.feature.geometry
       const rings = geom.type === 'Polygon' ? geom.coordinates : geom.coordinates.map((p) => p[0])
@@ -108,8 +103,7 @@ describe('isPointInBureau', () => {
   })
 
   it('matches for a stch that has no polygon, and when nothing is loaded', () => {
-    // Both were `return null` in the reference; the callers map null to their
-    // own default (ReactMap → "trust as-is", RegionSummaryLayer → null).
+    // Both were `return null` before; callers map null to their own default.
     expect(isPointInBureau(features, 999, 100.5, 13.75)).toBe(reference(features, 999, 100.5, 13.75))
     expect(isPointInBureau(features, 999, 100.5, 13.75)).toBeNull()
     expect(isPointInBureau(null, 1, 100.5, 13.75)).toBeNull()
@@ -171,8 +165,8 @@ function referenceFindAt(
 
 describe('findBureauAt', () => {
   it('matches the original scan — same bureau, or null — across the country bbox', () => {
-    // Sweep the whole Thailand envelope so the sample covers hits, sea/border
-    // misses, and the overlapping-bbox cases where scan ORDER decides.
+    // Whole-country sweep: hits, sea/border misses, and overlapping bboxes
+    // where scan ORDER decides.
     const rnd = makeRng(781)
     let hits = 0
     for (let i = 0; i < 4000; i++) {
