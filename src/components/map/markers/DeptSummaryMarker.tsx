@@ -62,6 +62,9 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
     }
   }, [map, isLoaded, minZoom, hideAtZoom])
 
+  // Unmount rather than display:none — see the note in StchSummaryMarker.
+  if (!visible) return null
+
   return (
     <>
       {Object.entries(summaries).map(([idStr, info]) => {
@@ -72,7 +75,6 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
           <HTMLMarker
             key={deptId}
             lngLat={info.centroid}
-            visible={visible}
             title={`${label} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               map?.flyTo({

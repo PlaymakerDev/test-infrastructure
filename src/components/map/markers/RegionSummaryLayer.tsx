@@ -213,21 +213,24 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
 
   return (
     <>
-      {Object.entries(stchSummaries).map(([k, info]) => {
+      {/* Only the active tier is mounted. A hidden marker is still attached to
+          the map, and mapbox re-projects + rewrites the transform of EVERY
+          attached marker on every move frame no matter its CSS — so the
+          off-tier bubbles were pure per-frame cost. */}
+      {tier === 'stch' && Object.entries(stchSummaries).map(([k, info]) => {
         const stch = Number(k)
         if (!info || info.count === 0) return null
         return (
           <HTMLMarker
             key={`stch-${stch}`}
             lngLat={info.centroid}
-            visible={tier === 'stch'}
             onClick={() => map?.flyTo({ center: info.centroid, zoom: 7.5, duration: 1200 })}
           >
             {bubble(info.count, stchShortLabel(stch), 48)}
           </HTMLMarker>
         )
       })}
-      {Object.entries(deptSummaries).map(([k, info]) => {
+      {tier === 'dept' && Object.entries(deptSummaries).map(([k, info]) => {
         const id = Number(k)
         if (!info || info.count === 0) return null
         const label = deptLabels.get(id) ?? (id === 0 ? 'ส่วนกลาง' : `ขทช. #${id}`)
@@ -235,7 +238,6 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
           <HTMLMarker
             key={`dept-${id}`}
             lngLat={info.centroid}
-            visible={tier === 'dept'}
             onClick={() => map?.flyTo({ center: info.centroid, zoom: 10, duration: 1200 })}
           >
             {bubble(info.count, label, 40)}

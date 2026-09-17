@@ -58,6 +58,10 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
     }
   }, [map, isLoaded, minZoom, hideAtZoom])
 
+  // Unmount rather than display:none — see the note in StchSummaryMarker. This
+  // is the tier that matters most: one marker per road with devices.
+  if (!visible || suppressed) return null
+
   return (
     <>
       {Object.entries(summaries).map(([idStr, info]) => {
@@ -67,7 +71,6 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
           <HTMLMarker
             key={roadId}
             lngLat={info.centroid}
-            visible={visible && !suppressed}
             title={`${info.label} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               if (map) {
