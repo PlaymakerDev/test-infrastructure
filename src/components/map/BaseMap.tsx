@@ -4,6 +4,7 @@ import type { Map as MapboxMap } from 'mapbox-gl'
 import { MapContext } from './MapContext'
 import RoadLayer from './markers/RoadLayer'
 import { loadGeoJsonOnce } from './hooks/geojsonCache'
+import { addThaiOnlyPlaceLabels } from './hooks/thaiPlaceLabels'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -220,6 +221,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
 
     let cancelled = false
     let instance: MapboxMap | null = null
+    let cleanupLabels: (() => void) | null = null
 
     import('mapbox-gl').then(({ default: mb }) => {
       if (cancelled || !containerRef.current) return
@@ -267,126 +269,47 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // Unknown error → let it surface (mapbox still console.errors it).
       })
 
-      instance.on('load', async () => {
+      instance.on('load', () => {
         if (cancelled) return
-        // Cull the 3D buildings layers + source so the map stops asking
-        // for tiles that will never resolve on TH pans. Mapbox Standard's
-        // building layer ids all start with `building` in the reference
-        // style; we drop any that reference the procedural-buildings
-        // source, then remove the source itself. Wrapped in try/catch
-        // because the style could be a custom one without those layers.
-        try {
-          const style = instance!.getStyle()
-          const doomedLayers = (style?.layers ?? []).filter((l) => {
-            const layer = l as { source?: string; type?: string }
-            return (
-              layer.source === 'mapbox-procedural-buildings-v1' ||
-              (layer.type === 'model' && typeof layer.source === 'string' &&
-                layer.source.includes('procedural-buildings'))
-            )
-          })
-          doomedLayers.forEach((l) => {
-            try { instance!.removeLayer((l as { id: string }).id) } catch { }
-          })
-          if (instance!.getSource('mapbox-procedural-buildings-v1')) {
-            try { instance!.removeSource('mapbox-procedural-buildings-v1') } catch { }
+        // The app's style is "Yellow road-copy": one root layer (`sky`) plus an
+        // IMPORT of Mapbox Standard. Imported layers live in another scope —
+        // `getStyle().layers` never lists them and `setFilter`/`setPaintProperty`
+        // reject them ("layer does not exist"), so the only supported lever is
+        // the import's own config. Verified against the live style, headless.
+        const setCfg = (key: string, value: unknown) => {
+          try {
+            (instance as unknown as {
+              setConfigProperty?: (importId: string, name: string, value: unknown) => void
+            }).setConfigProperty?.('basemap', key, value)
+          } catch {
+            // Style has no such config key — ignore.
           }
-
-          // Hide the basemap's own first-level admin (province) boundary
-          // lines. The app draws provinces from /data/th-provinces.geojson
-          // (current OSM, boundary-exact); Mapbox's copy is an older,
-          // generalized snapshot, so keeping both renders an offset double
-          // line along every province border. Country borders (admin-0)
-          // stay. removeLayer + line-opacity fallback mirrors the
-          // two-pronged treatment the place labels get below.
-          const adminProvinceIds = (style?.layers ?? [])
-            .map((l) => (l as { id: string }).id)
-            .filter((id) => id.startsWith('admin-1'))
-          for (const id of adminProvinceIds) {
-            try { instance!.removeLayer(id) } catch {}
-            try { instance!.setPaintProperty(id, 'line-opacity', 0) } catch {}
-          }
-        } catch {
-          // Style not yet queryable or non-standard — skip.
         }
 
-        // Re-anchor the sun to `map` so the "viewport anchor" warning
-        // stops firing and the 3D lighting no longer swings around when
-        // the camera pans. `setLight` is the classic-style API; if the
-        // style uses the newer `setLights` (Standard style light block),
-        // fall back to that. Silent try/catch: some styles have neither.
-        // Hide every country / state / settlement / continent label whose
-        // geometry sits outside Thailand — the base style is Mapbox Standard
-        // v11 which drops labels around Thailand's borders ("MYANMAR", "LAOS",
-        // "Yangon", "Phnom Penh") that just clutter the domestic view.
-        //
-        // Approach: AND-filter each place-name symbol layer with
-        // `["within", thailand.geojson]`. Mapbox Standard's features don't
-        // carry an iso_3166_1 property (checked against the imported style
-        // — filter expressions branch on `class` / `worldview` only), so a
-        // spatial filter is the only reliable way to distinguish TH labels
-        // from foreign ones. Only place-name layers get the treatment;
-        // road / transit / POI / natural / water labels are either already
-        // inside TH or would false-negative on the water polygon (Gulf of
-        // Thailand, Andaman Sea labels sit outside the coast polygon).
-        try {
-          // Shared cache — ThailandMaskLayer loads this same file, so a bare
-          // fetch here parsed it twice per mount. URL unchanged.
-          const thGeo = await loadGeoJsonOnce<GeoJSON.FeatureCollection>(
-            `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
-          )
-          const thFeature = thGeo.features?.[0]
-          if (thFeature) {
-            const style = instance!.getStyle()
-            // Target the concrete Mapbox Standard place-label ids — pattern
-            // confirmed against the imported style JSON. Includes country,
-            // state, settlement-major/minor/subdivision, continent labels.
-            const PLACE_LABEL_IDS = [
-              'country-label', 'state-label', 'continent-label',
-              'settlement-major-label', 'settlement-minor-label',
-              'settlement-subdivision-label',
-            ]
-            // `within` needs a single Feature (or a Geometry) with Polygon /
-            // MultiPolygon coordinates — NOT a FeatureCollection. Passing a
-            // FC silently drops the whole filter clause (which is why the
-            // previous attempt didn't hide anything).
-            const availableIds = new Set(
-              (style?.layers ?? []).map((l) => (l as { id: string }).id),
-            )
-            // Two-pronged approach because Mapbox Standard's composed style
-            // sometimes ignores `setFilter` on imported layers silently:
-            //   (1) AND-filter each place-label layer with `within` — the
-            //       feature drops out cleanly when it works.
-            //   (2) Also drive text-opacity + icon-opacity via a `case`
-            //       expression on the same `within` predicate — paint
-            //       properties are respected on imported Standard layers
-            //       even when filters aren't, so this covers the gap.
-            const withinTH = ['within', thFeature]
-            const opacityExpr = ['case', withinTH, 1, 0] as never
-            for (const lid of PLACE_LABEL_IDS) {
-              if (!availableIds.has(lid)) continue
-              try {
-                const existing = instance!.getFilter(lid)
-                const combined = (existing ? ['all', existing, withinTH] : withinTH) as never
-                instance!.setFilter(lid, combined)
-              } catch { }
-              try { instance!.setPaintProperty(lid, 'text-opacity', opacityExpr) } catch { }
-              // icon-opacity only where the layer actually draws an icon. Of
-              // the six, only settlement-major/minor have an `icon-image`
-              // (checked against the Standard style); on the rest this just
-              // bought another `within` test per label for nothing — and
-              // `within` re-projects the whole 15.6k-point outline on EVERY
-              // evaluation, mapbox caches nothing.
-              try {
-                if (instance!.getLayoutProperty(lid, 'icon-image')) {
-                  instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr)
-                }
-              } catch { }
-            }
-          }
-        } catch {
-          // No thailand.geojson (dev host?) — nothing to spatially filter, move on.
-        }
+        // 3D buildings: the procedural tileset is only populated for a handful
+        // of US/EU cities, so over Thailand it renders nothing and 404s on
+        // every pan.
+        setCfg('show3dObjects', false)
+
+        // Mapbox's own province lines are an older, generalized snapshot; the
+        // app draws จังหวัด from /data/th-provinces.geojson, and keeping both
+        // gives every border an offset double line.
+        setCfg('showAdminBoundaries', false)
+
+        // Place labels: keep Thailand's, drop the foreign names that crowd the
+        // view. Needs the country outline, so it runs async — see the helper
+        // for why the basemap's own layers can't just be filtered in place.
+        loadGeoJsonOnce<GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>>(
+          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
+        )
+          .then((gj) => {
+            const th = gj.features?.[0]
+            if (cancelled || !th) return
+            cleanupLabels = addThaiOnlyPlaceLabels(instance!, th)
+          })
+          .catch(() => {
+            // No outline available — leave the basemap's own labels alone.
+          })
 
         try {
           const maybeSetLights = (instance as unknown as {
@@ -415,6 +338,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
 
     return () => {
       cancelled = true
+      cleanupLabels?.()
       instance?.remove()
       setMap(null)
       setIsLoaded(false)
