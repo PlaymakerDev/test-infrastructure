@@ -216,6 +216,12 @@ const BaseMap: React.FC<BaseMapProps> = ({
   // drift outside the map doesn't immediately cancel zoom mode.
   const leaveTimerRef = useRef<number | null>(null)
 
+  // Start the country outline before the map does anything else — the mask and
+  // the Thai-only labels both wait on it, and both are what crop the view.
+  useEffect(() => {
+    loadGeoJsonOnce(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`).catch(() => {})
+  }, [])
+
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -295,6 +301,13 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // app draws จังหวัด from /data/th-provinces.geojson, and keeping both
         // gives every border an offset double line.
         setCfg('showAdminBoundaries', false)
+
+        // Off from the first frame, not when the replacements are ready: while
+        // the outline is still loading the map is covered, and foreign names
+        // would otherwise float over that cover (they render above any layer
+        // we can add). `addThaiOnlyPlaceLabels` puts them back if it can't
+        // install ours.
+        setCfg('showPlaceLabels', false)
 
         // Place labels: keep Thailand's, drop the foreign names that crowd the
         // view. Needs the country outline, so it runs async — see the helper

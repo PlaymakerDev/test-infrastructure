@@ -51,7 +51,10 @@ export function addThaiOnlyPlaceLabels(
 ): () => void {
   const cfg = map as ConfigMap
   const std = (map.getStyle()?.imports?.[0] as { data?: StdStyle } | undefined)?.data
-  if (!std?.layers) return () => {}
+  if (!std?.layers) {
+    cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
+    return () => {}
+  }
 
   // `["config", k]` only resolves inside the import, so bake the current value
   // into our copy.
@@ -75,9 +78,12 @@ export function addThaiOnlyPlaceLabels(
   const within = ['within', thailand]
   const added: string[] = []
 
+  const restoreStdLabels = () => cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
+
   try {
     map.addSource(SOURCE_ID, { type: 'vector', url: PLACE_TILESET })
   } catch {
+    restoreStdLabels()
     return () => {}
   }
 
@@ -99,14 +105,15 @@ export function addThaiOnlyPlaceLabels(
     }
   }
 
-  // Only hide the originals once replacements are up, so labels never blink out.
-  if (added.length > 0) cfg.setConfigProperty?.('basemap', 'showPlaceLabels', false)
+  // BaseMap already switched the originals off; if none of our copies made it,
+  // give them back rather than leaving the map with no place names at all.
+  if (added.length === 0) restoreStdLabels()
 
   return () => {
     try {
       for (const id of added) if (map.getLayer(id)) map.removeLayer(id)
       if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID)
-      cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
+      restoreStdLabels()
     } catch {
       // Map already torn down.
     }
