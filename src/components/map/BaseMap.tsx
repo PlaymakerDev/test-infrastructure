@@ -371,7 +371,17 @@ const BaseMap: React.FC<BaseMapProps> = ({
                 instance!.setFilter(lid, combined)
               } catch { }
               try { instance!.setPaintProperty(lid, 'text-opacity', opacityExpr) } catch { }
-              try { instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr) } catch { }
+              // icon-opacity only where the layer actually draws an icon. Of
+              // the six, only settlement-major/minor have an `icon-image`
+              // (checked against the Standard style); on the rest this just
+              // bought another `within` test per label for nothing — and
+              // `within` re-projects the whole 15.6k-point outline on EVERY
+              // evaluation, mapbox caches nothing.
+              try {
+                if (instance!.getLayoutProperty(lid, 'icon-image')) {
+                  instance!.setPaintProperty(lid, 'icon-opacity', opacityExpr)
+                }
+              } catch { }
             }
           }
         } catch {

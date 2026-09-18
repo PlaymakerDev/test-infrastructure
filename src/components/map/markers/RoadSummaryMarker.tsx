@@ -1,7 +1,8 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { LngLatBoundsLike } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
+import { useViewportBounds, inBounds } from '../hooks/useViewportBounds'
 import HTMLMarker from '../primitives/HTMLMarker'
 
 export interface RoadSummary {
@@ -58,15 +59,32 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
     }
   }, [map, isLoaded, minZoom, hideAtZoom])
 
+  // There is one bubble per road nationwide, but this tier only shows between
+  // z9 and z11.5 where the screen holds a province or two — so all but a few
+  // are off-screen. Cull them: mapbox re-projects every attached marker on
+  // every move frame, on-screen or not.
+  const viewport = useViewportBounds()
+  const nearby = useMemo(
+    () =>
+      visible
+        ? Object.entries(summaries).filter(
+            ([, info]) =>
+              info &&
+              info.count > 0 &&
+              (!viewport || inBounds(viewport, info.centroid[0], info.centroid[1])),
+          )
+        : [],
+    [summaries, viewport, visible],
+  )
+
   // Unmount rather than display:none — see the note in StchSummaryMarker. This
   // is the tier that matters most: one marker per road with devices.
   if (!visible || suppressed) return null
 
   return (
     <>
-      {Object.entries(summaries).map(([idStr, info]) => {
+      {nearby.map(([idStr, info]) => {
         const roadId = Number(idStr)
-        if (!info || info.count === 0) return null
         return (
           <HTMLMarker
             key={roadId}
