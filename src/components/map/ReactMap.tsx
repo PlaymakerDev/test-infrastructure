@@ -36,6 +36,7 @@ import BureauMaskLayer, {
   BUREAU_HOVER_LINE_ID,
 } from './markers/BureauMaskLayer'
 import { useBureauFeatures, isPointInBureau, findBureauAt } from './hooks/useBureauFeatures'
+import { useViewportBounds, inBounds } from './hooks/useViewportBounds'
 import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
@@ -541,6 +542,19 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
   }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord, roadFilterNum])
 
+  // Overlap stacks are DOM markers and, unlike the tiers above, they stay
+  // mounted from z9 all the way in — at street zoom almost every one sits far
+  // off-screen while mapbox still re-projects it each move frame. Cull to the
+  // padded viewport, same rule as RoadSummaryMarker.
+  const viewport = useViewportBounds()
+  const nearbyOverlapGroups = useMemo(
+    () =>
+      viewport
+        ? overlapGroups.filter((g) => inBounds(viewport, g[0].coord[0], g[0].coord[1]))
+        : overlapGroups,
+    [overlapGroups, viewport],
+  )
+
   // Fly-to target for a `?road_id=` landing. Priority: the road-scoped payload
   // (BE-filtered — authoritative) → the road's own aggregate inside the
   // dept-wide pool (same numbers in practice: probed 2026-08-10, road 1809's 93
@@ -1012,7 +1026,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
-      {overlapGroups.map((group) => (
+      {nearbyOverlapGroups.map((group) => (
         <OverlapStackMarker
           key={`${group[0].coord[0]},${group[0].coord[1]}`}
           group={group}
