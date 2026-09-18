@@ -113,7 +113,7 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
               onSelect?.(roadId)
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div className='map-marker-in' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               {/* Count bubble — smallest step of the สทช. → ขทช. → สายทาง ladder. */}
               <div
                 style={{

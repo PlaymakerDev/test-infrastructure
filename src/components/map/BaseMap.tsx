@@ -4,7 +4,7 @@ import type { Map as MapboxMap } from 'mapbox-gl'
 import { MapContext } from './MapContext'
 import RoadLayer from './markers/RoadLayer'
 import { loadGeoJsonOnce } from './hooks/geojsonCache'
-import { addThaiOnlyPlaceLabels } from './hooks/thaiPlaceLabels'
+import { addThaiOnlyPlaceLabels, preloadThaiPlaceLabels } from './hooks/thaiPlaceLabels'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -275,43 +275,27 @@ const BaseMap: React.FC<BaseMapProps> = ({
         // Unknown error → let it surface (mapbox still console.errors it).
       })
 
+      // As early as the style allows — before the first basemap tile paints, so
+      // the foreign place names never get a frame on screen, and their
+      // replacements' tiles start downloading alongside everything else.
+      const preload = () => { if (!cancelled && instance) preloadThaiPlaceLabels(instance) }
+      if (instance.isStyleLoaded()) preload()
+      else instance.once('style.load', preload)
+
       instance.on('load', () => {
         if (cancelled) return
-        // The app's style is "Yellow road-copy": one root layer (`sky`) plus an
-        // IMPORT of Mapbox Standard. Imported layers live in another scope —
-        // `getStyle().layers` never lists them and `setFilter`/`setPaintProperty`
-        // reject them ("layer does not exist"), so the only supported lever is
-        // the import's own config. Verified against the live style, headless.
-        const setCfg = (key: string, value: unknown) => {
-          try {
-            (instance as unknown as {
-              setConfigProperty?: (importId: string, name: string, value: unknown) => void
-            }).setConfigProperty?.('basemap', key, value)
-          } catch {
-            // Style has no such config key — ignore.
-          }
-        }
+        preload()
+        // This style is one root layer (`sky`) plus an IMPORT of Mapbox
+        // Standard, and imported layers sit in another scope: `getStyle()`
+        // never lists them and `setFilter`/`setPaintProperty` reject them, so
+        // the only lever is the import's own config (see thaiPlaceLabels).
+        // `show3dObjects` and `showAdminBoundaries` are deliberately left
+        // alone — the old code meant to switch them off but never could, so
+        // every build that shipped has drawn them, and the basemap's จังหวัด
+        // lines are what the dashed 18-สำนัก outline reads against.
 
-        // 3D buildings: the procedural tileset is only populated for a handful
-        // of US/EU cities, so over Thailand it renders nothing and 404s on
-        // every pan.
-        setCfg('show3dObjects', false)
-
-        // Mapbox's own province lines are an older, generalized snapshot; the
-        // app draws จังหวัด from /data/th-provinces.geojson, and keeping both
-        // gives every border an offset double line.
-        setCfg('showAdminBoundaries', false)
-
-        // Off from the first frame, not when the replacements are ready: while
-        // the outline is still loading the map is covered, and foreign names
-        // would otherwise float over that cover (they render above any layer
-        // we can add). `addThaiOnlyPlaceLabels` puts them back if it can't
-        // install ours.
-        setCfg('showPlaceLabels', false)
-
-        // Place labels: keep Thailand's, drop the foreign names that crowd the
-        // view. Needs the country outline, so it runs async — see the helper
-        // for why the basemap's own layers can't just be filtered in place.
+        // The Thailand-only replacements need the country outline, so they can
+        // only go in once it resolves.
         loadGeoJsonOnce<GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>>(
           `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`,
         )
@@ -497,6 +481,11 @@ const BaseMap: React.FC<BaseMapProps> = ({
             width: '100%',
             height: '100%',
             pointerEvents: 'auto',
+            // Fade in on `load` rather than letting the canvas snap from empty
+            // to fully drawn. `load` fires once the first tiles are in, so the
+            // fade covers the jump instead of hiding a blank map.
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 400ms ease-out',
             ...style,
           }}
         />

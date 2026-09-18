@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMap } from '../hooks/useMap'
 import { loadGeoJsonOnce } from '../hooks/geojsonCache'
 
@@ -59,10 +59,6 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
 }) => {
   const { map, isLoaded } = useMap()
   const setupRef = useRef(false)
-  // Covers the canvas until the mask is up, so the un-cropped world is never
-  // on screen. Also set on failure — a missing geojson must not leave the map
-  // permanently hidden.
-  const [masked, setMasked] = useState(false)
 
   // Skip the 1.5MB province geojson for maps that can't show it — without
   // either prop the province layers stay invisible and unclickable forever.
@@ -151,8 +147,6 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
         src?.setData?.(maskOf(tHoles))
         map.setPaintProperty('thailand-mask-fill', 'fill-opacity', maskOpacity)
 
-        // The crop exists — safe to show the map.
-        setMasked(true)
 
         const provincesData = await provincesPromise
         if (cancelled || !map) return
@@ -250,8 +244,6 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
         } catch {
           // map already torn down
         }
-      } finally {
-        if (!cancelled) setMasked(true)
       }
     }
 
@@ -281,7 +273,6 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
         // map already torn down
       }
       setupRef.current = false
-      setMasked(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map])
@@ -302,20 +293,11 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
     }
   }, [map, isLoaded, highlightedProvinceCode])
 
-  return (
-    <div
-      aria-hidden
-      data-th-mask-cover=''
-      className='absolute inset-0'
-      style={{
-        background: maskColor,
-        opacity: masked ? 0 : 1,
-        transition: 'opacity 250ms ease-out',
-        pointerEvents: 'none',
-        zIndex: 5,
-      }}
-    />
-  )
+  // Nothing to render: the crop is a mapbox layer that goes up before the
+  // first tile paints, so there is no un-cropped moment for a DOM cover to
+  // hide — and hiding the map while the rest loads only traded a short
+  // sequence of arrivals for a long blank screen.
+  return null
 }
 
 export default ThailandMaskLayer

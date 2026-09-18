@@ -86,7 +86,7 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
               onSelect?.(deptId)
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div className='map-marker-in' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               {/* Count bubble — same palette as the สทช. tier, a step smaller. */}
               <div
                 style={{

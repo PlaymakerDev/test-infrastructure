@@ -27,6 +27,28 @@ type ConfigMap = MapboxMap & {
 }
 
 /**
+ * Start the label tileset downloading, and switch the basemap's own place
+ * names off, before anything has been drawn.
+ *
+ * Both halves matter for how the load LOOKS: the foreign names render as soon
+ * as the basemap's first tiles arrive, so switching them off any later means
+ * they flash on screen and then vanish; and our replacements can only draw
+ * once this tileset is in, so starting it here rather than after the country
+ * outline resolves is what stops the Thai names trailing in seconds behind.
+ */
+export function preloadThaiPlaceLabels(map: MapboxMap): void {
+  const cfg = map as ConfigMap
+  try {
+    if (!map.getSource(SOURCE_ID)) {
+      map.addSource(SOURCE_ID, { type: 'vector', url: PLACE_TILESET })
+    }
+    cfg.setConfigProperty?.('basemap', 'showPlaceLabels', false)
+  } catch {
+    // Style not ready or no such config — addThaiOnlyPlaceLabels retries.
+  }
+}
+
+/**
  * Show the basemap's place names for Thailand only.
  *
  * The style imports Mapbox Standard, and imported layers live in another
@@ -51,10 +73,7 @@ export function addThaiOnlyPlaceLabels(
 ): () => void {
   const cfg = map as ConfigMap
   const std = (map.getStyle()?.imports?.[0] as { data?: StdStyle } | undefined)?.data
-  if (!std?.layers) {
-    cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
-    return () => {}
-  }
+  if (!std?.layers) return () => {}
 
   // `["config", k]` only resolves inside the import, so bake the current value
   // into our copy.
@@ -78,12 +97,11 @@ export function addThaiOnlyPlaceLabels(
   const within = ['within', thailand]
   const added: string[] = []
 
-  const restoreStdLabels = () => cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
-
   try {
-    map.addSource(SOURCE_ID, { type: 'vector', url: PLACE_TILESET })
+    if (!map.getSource(SOURCE_ID)) {
+      map.addSource(SOURCE_ID, { type: 'vector', url: PLACE_TILESET })
+    }
   } catch {
-    restoreStdLabels()
     return () => {}
   }
 
@@ -94,6 +112,11 @@ export function addThaiOnlyPlaceLabels(
     copy.id = `${LAYER_PREFIX}${id}`
     copy.source = SOURCE_ID
     copy.filter = copy.filter ? ['all', copy.filter, within] : within
+    // Standard gates these layers on its own switch:
+    //   visibility: ["case", ["config","showPlaceLabels"], "visible", "none"]
+    // which is already off by the time we copy, so the copy would inherit
+    // "none" and hide itself. Ours are root layers with no such switch.
+    copy.layout = { ...(copy.layout as Record<string, Json> | undefined), visibility: 'visible' }
     // `slot` would place it back inside the import's stack, where the layer
     // no longer belongs.
     delete copy.slot
@@ -105,15 +128,15 @@ export function addThaiOnlyPlaceLabels(
     }
   }
 
-  // BaseMap already switched the originals off; if none of our copies made it,
-  // give them back rather than leaving the map with no place names at all.
-  if (added.length === 0) restoreStdLabels()
+  // The originals are already off (preloadThaiPlaceLabels). If not one copy
+  // made it, give them back rather than leaving the map nameless.
+  if (added.length === 0) cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
 
   return () => {
     try {
       for (const id of added) if (map.getLayer(id)) map.removeLayer(id)
       if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID)
-      restoreStdLabels()
+      cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
     } catch {
       // Map already torn down.
     }

@@ -167,7 +167,7 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
   const Icon = SYSTEM_ICONS[type]
 
   const bubble = (count: number, label: string, size: number) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+    <div className='map-marker-in' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       {/* Same visual language as the menu's cluster circles (menu color fill,
           white ring, glyph over count) — just aggregated per org tier. */}
       <div
