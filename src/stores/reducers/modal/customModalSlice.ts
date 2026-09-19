@@ -3,12 +3,15 @@ import { APIResponseGeneralUser } from '@/types/manage/general-user-api';
 import { RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
+import { APIResponseCameraCrossingCode, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
   road_modal: RoadModalState
   project_modal: ProjectModalState
   contact_modal: ContactModalState
+  crossing_code_modal: CrossingCodeModalState
+  create_device_modal: CreateDeviceModalState
 }
 
 export interface UserModalState {
@@ -35,6 +38,20 @@ export interface ContactModalState {
   type?: 'CREATE' | 'UPDATE' | 'DELETE'
 }
 
+export interface CrossingCodeModalState {
+  open: boolean
+  data?: APIResponseCameraCrossingCode | null
+  item?: SolutionLocation | null
+  record?: SolutionList | null
+  type?: 'VIEW'
+}
+
+export interface CreateDeviceModalState {
+  open: boolean
+  item?: SolutionLocation | null
+  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
+}
+
 const initialState: CustomModalState = {
   user_modal: {
     open: false,
@@ -48,6 +65,12 @@ const initialState: CustomModalState = {
   contact_modal: {
     open: false,
   },
+  crossing_code_modal: {
+    open: false,
+  },
+  create_device_modal: {
+    open: false,
+  }
 }
 
 export const SLICE_NAME = 'customModalSlice';
@@ -80,6 +103,18 @@ const customModalSlice = createSlice({
     resetContactModalData: (state) => {
       state.contact_modal = initialState.contact_modal;
     },
+    setCrossingCodeModalOpen: (state, action) => {
+      state.crossing_code_modal = action.payload;
+    },
+    resetCrossingCodeModalData: (state) => {
+      state.crossing_code_modal = initialState.crossing_code_modal;
+    },
+    setCreateDeviceModalOpen: (state, action) => {
+      state.create_device_modal = action.payload;
+    },
+    resetCreateDeviceModalData: (state) => {
+      state.create_device_modal = initialState.create_device_modal;
+    },
   },
 })
 
@@ -92,6 +127,10 @@ export const {
   resetProjectModalData,
   setContactModalOpen,
   resetContactModalData,
+  setCrossingCodeModalOpen,
+  resetCrossingCodeModalData,
+  setCreateDeviceModalOpen,
+  resetCreateDeviceModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

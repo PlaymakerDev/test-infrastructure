@@ -92,7 +92,7 @@ const ProjectCard: React.FC<Props> = (props) => {
           <Tooltip title="กดเพื่อดูรายละเอียด">
             <p
               className='line-clamp-2 cursor-pointer hover:text-(--yellow) transition-colors duration-200'
-              onClick={() => router.push(`/admin/settings/detail/project?id=${item?.id}`)}
+              onClick={() => router.push(`/admin/settings/detail/project/${item?.id}`)}
             >
               <strong>ชื่อโครงการ:</strong> {item?.project_name || '-'}
             </p>

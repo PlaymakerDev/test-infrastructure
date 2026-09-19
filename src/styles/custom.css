@@ -24,6 +24,18 @@
 }
 
 /* FONT */
+.fs-36 {
+  font-size: clamp(2.25rem, 9.6vw, 2.625rem);
+}
+
+.fs-32 {
+  font-size: clamp(2rem, 8.53vw, 2.375rem);
+}
+
+.fs-28 {
+  font-size: clamp(1.75rem, 7.47vw, 2.125rem);
+}
+
 .fs-24 {
   font-size: clamp(1.5rem, 6.4vw, 1.875rem);
 }
