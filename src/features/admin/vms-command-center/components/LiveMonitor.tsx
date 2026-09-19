@@ -8,6 +8,7 @@ import 'dayjs/locale/th'
 import { useCommandCenterMonitor } from '../hooks/useCommandCenterMonitor'
 import { useCancelVMSSetting } from '@/features/admin/control-vms/overall/hooks/useCancelVMSSetting'
 import { statusMeta } from '../constants/vmsStatus'
+import { liveDisplayState } from '../utils/displayWindow'
 import StatusPill from './StatusPill'
 import { getThumbUrl, isVideoUrl } from '../utils/thumbnail'
 import { VMSMonitorItem } from '@/types/vms/command-center-api'
@@ -39,46 +40,14 @@ const formatDaysOfWeek = (mask?: number): string => {
   return days.map((d) => DAY_LABELS[d - 1]).join(', ')
 }
 
-// Combine date (YYYY-MM-DD) + time (HH:mm:ss) into a Dayjs.
-// Returns null if either is missing/invalid.
-const combine = (date?: string, time?: string): dayjs.Dayjs | null => {
-  if (!date) return null
-  const t = time && time.length >= 5 ? time : '00:00:00'
-  const d = dayjs(`${date}T${t}`)
-  return d.isValid() ? d : null
-}
-
-// Compute a schedule's window for TODAY (a schedule can span multiple days;
-// the countdown/progress needs today's actual start/end datetimes).
-const getSlotWindow = (it: VMSMonitorItem, nowMs: number): { start: dayjs.Dayjs; end: dayjs.Dayjs } | null => {
-  if (!it.date_since || !it.date_to) return null
-  const isAllDay = it.is_all_day === true
-  const timeSince = isAllDay ? '00:00:00' : (it.time_since || '00:00:00')
-  const timeTo = isAllDay ? '23:59:59' : (it.time_to || '23:59:59')
-  const rangeStart = combine(it.date_since, timeSince)
-  const rangeEnd = combine(it.date_to, timeTo)
-  if (!rangeStart || !rangeEnd) return null
-
-  const today = dayjs(nowMs).startOf('day')
-  // Multi-day: today's window is [today+timeSince .. today+timeTo] as long
-  // as today is within [date_since..date_to] and days_of_week allows it.
-  const isoDow = today.day() === 0 ? 7 : today.day() // Mon=1..Sun=7
-  const mask = it.days_of_week ?? 127
-  const dayAllowed = (mask & (1 << (isoDow - 1))) !== 0
-  const withinDates = !today.isBefore(rangeStart.startOf('day')) && !today.isAfter(rangeEnd.startOf('day'))
-
-  if (isAllDay || (!withinDates && !dayAllowed)) {
-    // All-day mode: single continuous window [rangeStart, rangeEnd]
-    return { start: rangeStart, end: rangeEnd }
-  }
-  if (!withinDates || !dayAllowed) {
-    return null
-  }
-  return {
-    start: today.hour(rangeStart.hour()).minute(rangeStart.minute()).second(rangeStart.second()),
-    end: today.hour(rangeEnd.hour()).minute(rangeEnd.minute()).second(rangeEnd.second()),
-  }
-}
+// หน้าต่างการแสดงผลย้ายไปอยู่ที่ ../utils/displayWindow (มีเทส 30 เคส) —
+// ของเดิมที่เคยอยู่ตรงนี้อ่านโหมด all-day เป็น 00:00–23:59 ของ "วันนี้" ซึ่งผิด
+// (มันคือช่วงเดียวยาวข้ามคืน) และมีสาขา `isAllDay || (!withinDates && !dayAllowed)`
+// ที่คืนช่วงเต็มให้คำสั่งรายวันซึ่งอยู่นอกช่วงวันที่ = นับเป็นกำลังเล่นทั้งที่ยังไม่ถึง
+//
+// ⚠ ผลของฟังก์ชันพวกนี้คือ "ตามตารางควรขึ้นจอไหม" เท่านั้น
+// ห้ามเอาไปแทนค่า status ที่ป้ายรายงาน — ใช้เป็นป้ายกำกับเสริมเท่านั้น
+// (ที่ปรึกษา 2 หัวชี้ตรงกัน 20 ก.ย. 2569 · ask 20260920-063736-59a9)
 
 const formatDuration = (ms: number): string => {
   const abs = Math.abs(ms)
@@ -254,32 +223,44 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
           const isTerminal = meta.isTerminal
           const settingExists = it.setting_id != null
           const hasActive = settingExists && !isTerminal
-          const win = hasActive ? getSlotWindow(it, nowMs) : null
-          const now = dayjs(nowMs)
+          const live = hasActive ? liveDisplayState(it, nowMs) : null
 
-          // Countdown state derived from window
+          // Countdown state derived from the schedule (not from `status`)
           let countdown: React.ReactNode = null
           let progressPct: number | null = null
-          if (win && !isTerminal) {
-            if (now.isBefore(win.start)) {
+          if (live) {
+            if (live.kind === 'waiting') {
               countdown = (
-                <span className="text-(--default-blue)">จะเริ่มในอีก {formatDuration(win.start.valueOf() - nowMs)}</span>
+                <span className="text-(--default-blue)">
+                  จะเริ่มในอีก {formatDuration(live.next.valueOf() - nowMs)} (
+                  {live.next.format('D/M HH:mm')})
+                </span>
               )
-            } else if (now.isBefore(win.end)) {
-              const total = win.end.valueOf() - win.start.valueOf()
-              const done = nowMs - win.start.valueOf()
+            } else if (live.kind === 'playing') {
+              const total = live.window.end.valueOf() - live.window.start.valueOf()
+              const done = nowMs - live.window.start.valueOf()
               progressPct = Math.max(0, Math.min(100, (done / total) * 100))
               countdown = (
                 <span className="text-green-400">
-                  กำลังเล่น · อีก {formatDuration(win.end.valueOf() - nowMs)} จะจบ
+                  กำลังเล่น · อีก {formatDuration(live.window.end.valueOf() - nowMs)} จะจบ
                 </span>
               )
-            } else {
+            } else if (live.kind === 'ended') {
               countdown = (
-                <span className="text-white/50">หมดเวลาไปแล้ว {formatDuration(nowMs - win.end.valueOf())}</span>
+                <span className="text-white/50">
+                  หมดเวลาไปแล้ว {formatDuration(nowMs - live.end.valueOf())}
+                </span>
               )
             }
           }
+
+          // ป้ายกำกับเสริม (ไม่แทนค่า status): ฐานข้อมูลบอก "กำลังแสดงผล"
+          // แต่ตามตารางแล้วตอนนี้ไม่ควรมีอะไรบนจอ · เกิดจาก worker ฝั่ง /api-v2
+          // เขียน status=3 ทับโดยดูแค่ "วัน" ไม่ดูเวลา (เจอของจริง 19 ก.ย. 2569
+          // 23:51 ป้ายรายงานว่าดับ · 23:55 worker เขียนกลับเป็นกำลังแสดงผล)
+          const scheduleSaysOff = live != null && live.kind !== 'playing' && live.kind !== 'unknown'
+          const statusSaysPlaying = it.status === 3
+          const showsMismatch = hasActive && statusSaysPlaying && scheduleSaysOff
 
           // Visual hint: cards WITHOUT an active setting are in "preview"
           // state — operator is inspecting who they're about to dispatch to,
@@ -354,10 +335,35 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                     )
                   })()}
                   {hasActive ? (
-                    <StatusPill
-                      status={it.status ?? 0}
-                      tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
-                    />
+                    <>
+                      <StatusPill
+                        status={it.status ?? 0}
+                        tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
+                      />
+                      {showsMismatch && (
+                        <Tooltip
+                          title={
+                            <div className="fs-12">
+                              <div>ฐานข้อมูลบอก &quot;กำลังแสดงผล&quot; แต่ตามกำหนดการแล้วตอนนี้อยู่นอกช่วงเวลา</div>
+                              <div className="opacity-80 mt-1">
+                                ให้เชื่อกำหนดการ — ตัวป้ายเป็นคนขึ้น/ดับจอตามเวลาที่ตั้งไว้เอง
+                              </div>
+                            </div>
+                          }
+                        >
+                          <span
+                            className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
+                            style={{
+                              background: '#eab30822',
+                              color: '#eab308',
+                              border: '1px solid #eab30855',
+                            }}
+                          >
+                            นอกช่วงเวลาตามกำหนดการ
+                          </span>
+                        </Tooltip>
+                      )}
+                    </>
                   ) : (
                     // Card pill for a sign with no relevant command — reads
                     // as "ready to receive a dispatch" (รอคำสั่ง). Terminal
@@ -439,15 +445,26 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                       <span className="opacity-70">วันที่:</span>{' '}
                       {it.date_since === it.date_to ? it.date_since : `${it.date_since} → ${it.date_to}`}
                     </div>
+                    {/* โหมด all-day ไม่ใช่ "ตลอดวัน" — มันคือช่วงเดียวยาวข้ามคืน
+                        ที่ขึ้นจอ (วันเริ่ม+เวลาเริ่ม) และดับจอ (วันจบ+เวลาจบ)
+                        คำเดิมทำให้ operator เข้าใจว่าไม่มีวันดับ · และ days_of_week
+                        ไม่มีผลในโหมดนี้ จึงไม่ต้องโชว์ให้เข้าใจผิดซ้ำ */}
                     <div className="opacity-70">
                       <span className="opacity-70">เวลา:</span>{' '}
-                      {it.is_all_day
-                        ? <span className="text-(--yellow)">ตลอดวัน</span>
-                        : it.time_since && it.time_to
-                          ? `${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`
-                          : '—'}
-                      <span className="opacity-70 ml-2">· วัน:</span>{' '}
-                      {formatDaysOfWeek(it.days_of_week)}
+                      {it.is_all_day ? (
+                        <span className="text-(--yellow)">
+                          ต่อเนื่อง {it.time_since ? it.time_since.slice(0, 5) : '—'} (วันเริ่ม) →{' '}
+                          {it.time_to ? it.time_to.slice(0, 5) : '—'} (วันจบ)
+                        </span>
+                      ) : it.time_since && it.time_to ? (
+                        <>
+                          {`${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`}
+                          <span className="opacity-70 ml-2">· วัน:</span>{' '}
+                          {formatDaysOfWeek(it.days_of_week)}
+                        </>
+                      ) : (
+                        '—'
+                      )}
                     </div>
                     {countdown && <div>{countdown}</div>}
                     {it.message && <div className="opacity-70 truncate">{it.message}</div>}
