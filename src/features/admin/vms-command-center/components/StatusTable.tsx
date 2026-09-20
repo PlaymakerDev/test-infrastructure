@@ -18,6 +18,7 @@ import { TbAppWindow, TbPhoto, TbRefresh, TbSearch } from 'react-icons/tb'
 import type { ScreenInfoItem } from '@/types/vms/screen-info-api'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import StatusPill from './StatusPill'
+import { liveDisplayState } from '../utils/displayWindow'
 import { useAllowSettingsVMSScreenInfo, useCentralizeVMSScreenInfo, useScreenInfo } from '../hooks/useScreenInfo'
 import { matchesSearchTerm } from '@/utils/searchMatch'
 
@@ -102,6 +103,21 @@ const OTHER_LABEL = 'อื่น ๆ'
 // is tinier and hard to read) and dark text on the blue checked track —
 // white-on-#66AEFF was near-invisible; same dark-on-blue pairing as
 // DetailTitleSection's Anydesk button. Unchecked (red track) keeps white.
+/** ช่วงเวลาแบบย่อข้างป้ายสถานะ — สองโหมดเขียนคนละแบบโดยตั้งใจ (ดู docs/vms-display-window.md) */
+const scheduleShort = (r: ScreenInfoItem): string => {
+  const h = (v?: string | null) => (v ? v.slice(0, 5) : '—')
+  if (r.is_all_day) return `ต่อเนื่อง ${h(r.time_since)}→${h(r.time_to)}`
+  return `${h(r.time_since)}–${h(r.time_to)}`
+}
+
+const scheduleTooltip = (r: ScreenInfoItem): string => {
+  const h = (v?: string | null) => (v ? v.slice(0, 5) : '—')
+  if (r.is_all_day) {
+    return `แสดงผลตลอดเวลา — ขึ้นจอ ${r.date_since ?? '—'} ${h(r.time_since)} → ดับจอ ${r.date_to ?? '—'} ${h(r.time_to)} (ต่อเนื่อง ไม่ดับกลางคืน)`
+  }
+  return `เลือกช่วงเวลา — ขึ้น–ดับวันละรอบ ${h(r.time_since)}–${h(r.time_to)} ระหว่าง ${r.date_since ?? '—'} ถึง ${r.date_to ?? '—'}`
+}
+
 const SWITCH_LABEL_CLS =
   '[&_.ant-switch-inner-checked]:fs-12! [&_.ant-switch-inner-unchecked]:fs-12! ' +
   '[&_.ant-switch-inner-checked]:text-[#0A0A0A]! [&_.ant-switch-inner-checked]:font-medium! ' +
@@ -352,6 +368,14 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
     [handleAllowSettings]
   )
 
+  // นาฬิกาเดินช้า ๆ พอให้ป้าย "นอกเวลา" พลิกเองเมื่อคำสั่งหมดรอบ — ตารางนี้เป็น
+  // หน้าสำรวจ ไม่ใช่จอเฝ้า จึงไม่ต้องเดินทุกวินาทีเหมือน LiveMonitor
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+
   const columns: ColumnsType<ScreenInfoItem> = useMemo(
     () => [
       {
@@ -443,6 +467,16 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
         key: 'display_status',
         render: (_: unknown, r) => {
           const hasCommand = r.setting_status != null
+          // ตามกำหนดการแล้วตอนนี้จอควรสว่างไหม — คิดจาก date/time/is_all_day/
+          // days_of_week ที่ API ส่งมาด้วยแล้ว (สูตรเดียวกับ LiveMonitor ·
+          // utils/displayWindow มีเทส 30 เคส)
+          //
+          // ⚠ ใช้เป็น "ป้ายกำกับเสริม" เท่านั้น ห้ามแทนค่า setting_status —
+          // ปฏิทินยืนยันภาพบนป้ายไม่ได้ และถ้าแทนค่าจะกลายเป็นหน้าเว็บกับ API
+          // มือถือพูดไม่ตรงกัน (ที่ปรึกษา 2 หัวตรงกัน 20 ก.ย. 2569)
+          const live = hasCommand ? liveDisplayState(r, nowMs) : null
+          const scheduleSaysOff = live != null && live.kind !== 'playing' && live.kind !== 'unknown'
+          const showsMismatch = r.setting_status === 3 && scheduleSaysOff
           return (
             <div className="flex items-center gap-1.5 flex-wrap">
               {hasCommand ? (
@@ -466,6 +500,37 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
                 >
                   ยังไม่มีคำสั่ง
                 </span>
+              )}
+              {showsMismatch && (
+                <Tooltip
+                  title={
+                    <div className="fs-12">
+                      <div>ฐานข้อมูลบอก &quot;กำลังแสดงผล&quot; แต่ตามกำหนดการแล้วตอนนี้อยู่นอกช่วงเวลา</div>
+                      <div className="opacity-80 mt-1">
+                        ให้เชื่อกำหนดการ — ตัวป้ายเป็นคนขึ้น/ดับจอตามเวลาที่ตั้งไว้เอง
+                      </div>
+                    </div>
+                  }
+                >
+                  <span
+                    className="inline-flex items-center whitespace-nowrap fs-12"
+                    style={{
+                      padding: '2px 6px',
+                      borderRadius: 999,
+                      background: '#eab30822',
+                      color: '#eab308',
+                      border: '1px solid #eab30855',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    นอกเวลา
+                  </span>
+                </Tooltip>
+              )}
+              {hasCommand && (
+                <Tooltip title={scheduleTooltip(r)}>
+                  <span className="fs-12 text-white/45 whitespace-nowrap">{scheduleShort(r)}</span>
+                </Tooltip>
               )}
               {r.setting_type_name && (
                 <Tag
@@ -588,6 +653,7 @@ const StatusTable: React.FC<Props> = ({ onOpenSignDetail }) => {
       allowSettings.variables,
       handleToggleAllowSettings,
       onOpenSignDetail,
+      nowMs,
     ]
   )
 

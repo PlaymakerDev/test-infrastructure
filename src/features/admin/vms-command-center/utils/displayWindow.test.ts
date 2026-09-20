@@ -242,3 +242,44 @@ describe('describeWindow — ประโยคบนหน้ายืนยั
     expect(describeWindow(realRecurring)).toContain('วันละรอบ 22:51–23:51')
   })
 })
+
+// แท็บ "ข้อมูลป้าย VMS" ส่ง row รูปเดียวกับ ScreenInfoItem เข้ามา ซึ่งฟิลด์เป็น
+// `string | null` (ไม่ใช่ undefined) — ล็อกไว้ว่ารับได้และไม่เดาว่ากำลังแสดง
+describe('liveDisplayState — แถวจาก screen-info (ฟิลด์เป็น null ได้)', () => {
+  it('ป้ายที่ไม่มีคำสั่ง (null ทุกช่อง) = unknown', () => {
+    const row: CommandTiming = {
+      date_since: null,
+      date_to: null,
+      is_all_day: null,
+      time_since: null,
+      time_to: null,
+      days_of_week: null,
+    }
+    expect(liveDisplayState(row, at('2026-09-20T13:50:00')).kind).toBe('unknown')
+  })
+
+  it('แถวจริงของ wid 26903 ตอนบ่ายโมง = playing (ขาดการเชื่อมต่อเป็นคนละแกน)', () => {
+    const row: CommandTiming = {
+      date_since: '2026-09-20',
+      date_to: '2026-09-22',
+      is_all_day: true,
+      time_since: '01:35:00',
+      time_to: '02:30:00',
+      days_of_week: 65,
+    }
+    expect(liveDisplayState(row, at('2026-09-20T13:50:00')).kind).toBe('playing')
+  })
+
+  it('is_all_day = null ให้อ่านเป็นโหมดรายวัน ไม่ใช่โหมดต่อเนื่อง', () => {
+    const row: CommandTiming = {
+      date_since: '2026-09-20',
+      date_to: '2026-09-20',
+      is_all_day: null,
+      time_since: '06:00:00',
+      time_to: '07:00:00',
+      days_of_week: null,
+    }
+    expect(liveDisplayState(row, at('2026-09-20T06:30:00')).kind).toBe('playing')
+    expect(liveDisplayState(row, at('2026-09-20T08:00:00')).kind).toBe('ended')
+  })
+})
