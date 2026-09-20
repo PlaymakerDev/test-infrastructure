@@ -1,7 +1,8 @@
 import { SOLUTION_TYPE } from '@/constants';
+import { getSolutionByIDAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
 import { useAppDispatch } from '@/stores/hooks';
-import { setCrossingCodeModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setCreateDeviceModalOpen, setCrossingCodeModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, ConfigProvider, Empty, message, Table, TableProps } from 'antd';
@@ -21,13 +22,35 @@ const TableSolution: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
 
   const openCrossingCodeModal = useCallback(async (record: SolutionList) => {
-    const response = await getCrossingCodesAPI(record.id as number)
     try {
+      const response = await getCrossingCodesAPI(record.id as number)
       dispatch(setCrossingCodeModalOpen({
         open: true,
         data: response.data,
         item: item,
         record: record
+      }))
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.message)
+      } else {
+        console.error(error)
+      }
+    }
+  }, [dispatch, item])
+
+  /** Fetches the row's full detail first — the list row carries a trimmed
+   *  shape, while FormCreateDevice seeds its defaults from
+   *  APIResponseSolutionByID (and needs `id` for PUT /manage/solution/{id}). */
+  const openUpdateDeviceModal = useCallback(async (record: SolutionList) => {
+    try {
+      const response = await getSolutionByIDAPI(record.id as number)
+      dispatch(setCreateDeviceModalOpen({
+        open: true,
+        data: response.data,
+        item: item,
+        record: record,
+        type: 'UPDATE'
       }))
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -95,12 +118,13 @@ const TableSolution: React.FC<Props> = (props) => {
       dataIndex: 'action',
       key: 'action',
       width: 100,
-      render: () => {
+      render: (_, record) => {
         return (
           <div className='flex items-center gap-2 shrink-0'>
             <TbPencilMinus
               className='fs-22 text-(--default-orange) cursor-pointer'
               title='แก้ไขข้อมูลโครงการ'
+              onClick={() => openUpdateDeviceModal(record)}
             />
             <TbTrash
               className='fs-22 text-(--default-red) cursor-pointer'
@@ -129,7 +153,7 @@ const TableSolution: React.FC<Props> = (props) => {
       }}
     >
       <Table<SolutionList>
-        rowKey="key"
+        rowKey="id"
         columns={columns}
         dataSource={data}
         size='medium'

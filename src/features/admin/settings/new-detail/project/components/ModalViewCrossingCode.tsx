@@ -51,7 +51,7 @@ const Content: React.FC<ContentProps> = (props) => {
     if (!!data?.camera_crossing_index_code && !!data?.master_index_code) {
       return <p>{item?.location_name || '-'} : {record?.solution_type.solution_name || '-'} : {data?.master_index_code || '-'}</p>
     }
-    return <p>{item?.location_name || '-'} : {record?.solution_type.solution_name || '-'}</p>
+    return <p>{item?.location_name || '-'} : {record?.solution_type.solution_name_atlas || '-'}</p>
   }, [data, record, item])
 
   return (

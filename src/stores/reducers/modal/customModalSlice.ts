@@ -3,7 +3,7 @@ import { APIResponseGeneralUser } from '@/types/manage/general-user-api';
 import { RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
-import { APIResponseCameraCrossingCode, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
+import { APIResponseCameraCrossingCode, APIResponseSolutionByID, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
@@ -12,6 +12,7 @@ export interface CustomModalState {
   contact_modal: ContactModalState
   crossing_code_modal: CrossingCodeModalState
   create_device_modal: CreateDeviceModalState
+  confirm_delete_solution_modal: ConfirmDeleteSolutionModalState
 }
 
 export interface UserModalState {
@@ -48,8 +49,17 @@ export interface CrossingCodeModalState {
 
 export interface CreateDeviceModalState {
   open: boolean
+  data?: APIResponseSolutionByID | null
+  record?: SolutionList | null
   item?: SolutionLocation | null
   type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
+}
+
+export interface ConfirmDeleteSolutionModalState {
+  open: boolean
+  type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
+  data?: SolutionList[] | null
+  item?: SolutionLocation | null
 }
 
 const initialState: CustomModalState = {
@@ -70,6 +80,9 @@ const initialState: CustomModalState = {
   },
   create_device_modal: {
     open: false,
+  },
+  confirm_delete_solution_modal: {
+    open: false
   }
 }
 
@@ -115,6 +128,12 @@ const customModalSlice = createSlice({
     resetCreateDeviceModalData: (state) => {
       state.create_device_modal = initialState.create_device_modal;
     },
+    setConfirmDeleteSolutionModalOpen: (state, action) => {
+      state.confirm_delete_solution_modal = action.payload;
+    },
+    resetConfirmDeleteSolutionModalData: (state) => {
+      state.confirm_delete_solution_modal = initialState.confirm_delete_solution_modal;
+    },
   },
 })
 
@@ -131,6 +150,8 @@ export const {
   resetCrossingCodeModalData,
   setCreateDeviceModalOpen,
   resetCreateDeviceModalData,
+  setConfirmDeleteSolutionModalOpen,
+  resetConfirmDeleteSolutionModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

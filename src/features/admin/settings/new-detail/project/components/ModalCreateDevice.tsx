@@ -3,6 +3,7 @@ import { resetCreateDeviceModalData } from '@/stores/reducers/modal/customModalS
 import { SolutionLocation } from '@/types/manage/project-detail-api'
 import { ConfigProvider, Modal } from 'antd'
 import React, { RefObject, useCallback, useMemo, useRef } from 'react'
+import { APIResponseSolutionByID } from '@/types/manage/project-detail-api'
 import { FormUpdateSolutionLocation, FormCreateDevice } from '../components'
 import { TbTools } from 'react-icons/tb'
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 interface ContentProps {
+  data?: APIResponseSolutionByID | null
   item?: SolutionLocation | null
   type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
   submitRef: RefObject<HTMLButtonElement | null>
@@ -18,25 +20,27 @@ interface ContentProps {
 }
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { item, type, submitRef, onSuccess } = props
+  const { item, data, type, submitRef, onSuccess } = props
 
   const renderContentType = useMemo(() => {
     switch (type) {
       case 'CREATE':
-        return <FormCreateDevice item={item} type={type} submitRef={submitRef} onSuccess={onSuccess} />
+        return <FormCreateDevice item={item} submitRef={submitRef} onSuccess={onSuccess} />
+      case 'UPDATE':
+        return <FormCreateDevice data={data} item={item} submitRef={submitRef} onSuccess={onSuccess} />
       case 'EDIT_SOLUTION_NAME':
         return <FormUpdateSolutionLocation item={item} type={type} submitRef={submitRef} onSuccess={onSuccess} />
       default:
         return null
     }
-  }, [type, item, submitRef, onSuccess])
+  }, [type, item, submitRef, onSuccess, data])
 
   return renderContentType
 }
 
 const ModalCreateDevice: React.FC<Props> = (props) => {
   const { } = props
-  const { open, item, type } = useAppSelector(state => state.custom_modal.create_device_modal)
+  const { open, data, item, type } = useAppSelector(state => state.custom_modal.create_device_modal)
   const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement | null>(null)
 
@@ -104,6 +108,7 @@ const ModalCreateDevice: React.FC<Props> = (props) => {
           type={type}
           submitRef={submitRef}
           onSuccess={handleClose}
+          data={data}
         />
       </Modal>
     </ConfigProvider>

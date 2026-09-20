@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { RefObject } from 'react'
-import { APIRequestCreateSolution, SolutionLocation } from '@/types/manage/project-detail-api'
+import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, GeometryPoint, SolutionLocation } from '@/types/manage/project-detail-api'
 import { Col, Input, message, Row, Select } from 'antd'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { getSolutionTypesAPI } from '@/services/routes/SolutionService'
+import { useCreateProjectSolution, useUpdateProjectSolution } from '@/hooks/queries/manage'
 import { useProjectContext } from '../context'
-import { postSolutionAPI } from '@/services/routes/ProjectDetailService'
 
 /** Best-effort extractor for the backend's Thai error message — mirrors
  *  FormCreateITSUser's own helper. */
@@ -26,8 +26,8 @@ const readErrorMessage = (error: unknown, fallback: string): string => {
 }
 
 interface Props {
+  data?: APIResponseSolutionByID | null
   item?: SolutionLocation | null
-  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
   submitRef: RefObject<HTMLButtonElement | null>
   onSuccess?: () => void
 }
@@ -54,23 +54,33 @@ const sanitizeIP = (value: string) => value.replace(/[^0-9.]/g, '')
 /** Strict IPv4: four 0–255 octets separated by dots. */
 const IP_PATTERN = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
 
+/** Backend reads longitude FIRST and rejects WKT strings — GeoJSON only.
+ *  Shared by both the create and update bodies. */
+const toGeometryPoint = (longitude: string, latitude: string): GeometryPoint => ({
+  coordinates: [Number(longitude), Number(latitude)],
+  type: 'Point',
+})
+
 interface FormCreateDeviceValues {
   anydesk_id: string
   latitude: string
   longitude: string
   ip_address: string
   remarks: string
-  solution_location_id: string
+  solution_location_id: number | string | null
   solution_name: string
-  solution_type_id: string | null
+  solution_type_id: number | string | null
   sta: string
   zt_ip_address: string
 }
 
 const FormCreateDevice: React.FC<Props> = (props) => {
-  const { item, submitRef, onSuccess } = props
+  const { data, item, submitRef, onSuccess } = props
   const { roadSolution } = useProjectContext()
-  const queryClient = useQueryClient()
+  const isUpdate = !!data?.id
+
+  const { mutate: createSolution, isPending: isCreatePending } = useCreateProjectSolution()
+  const { mutate: updateSolution, isPending: isUpdatePending } = useUpdateProjectSolution()
 
   const {
     data: solutionType,
@@ -82,16 +92,19 @@ const FormCreateDevice: React.FC<Props> = (props) => {
 
   const form = useForm<FormCreateDeviceValues>({
     defaultValues: {
-      anydesk_id: '',
-      latitude: '',
-      longitude: '',
-      ip_address: '',
-      remarks: '',
-      solution_location_id: '',
-      solution_name: '',
-      solution_type_id: null,
-      sta: '',
-      zt_ip_address: ''
+      anydesk_id: data?.anydesk ?? '',
+      // geometry_point ships as a bare [lng, lat] array on this endpoint —
+      // longitude is FIRST. Guard the index so a solution saved without a
+      // point doesn't seed the literal string "undefined".
+      latitude: data?.geometry_point?.[1] != null ? String(data.geometry_point[1]) : '',
+      longitude: data?.geometry_point?.[0] != null ? String(data.geometry_point[0]) : '',
+      ip_address: data?.ip_address ?? '',
+      remarks: data?.remarks ?? '',
+      solution_location_id: data?.solution_location_id ?? null,
+      solution_type_id: data?.solution_type_id ?? null,
+      solution_name: data?.solution_name ?? '',
+      sta: data?.sta ?? '',
+      zt_ip_address: data?.zt_ip_address ?? ''
     }
   })
 
@@ -101,42 +114,74 @@ const FormCreateDevice: React.FC<Props> = (props) => {
     formState: { errors }
   } = form
 
-  const { mutate: createSolution, isPending } = useMutation({
-    mutationFn: (body: APIRequestCreateSolution) => postSolutionAPI(body).then((r) => r.data),
-  })
-
-  const onSubmit = useCallback((data: FormCreateDeviceValues) => {
+  const onCreate = useCallback((values: FormCreateDeviceValues) => {
     if (!item?.solution_location_id) return
 
     const body: APIRequestCreateSolution = {
-      anydesk_id: data.anydesk_id,
-      geometry_point: {
-        coordinates: [Number(data.longitude), Number(data.latitude)],
-        type: 'Point',
-      },
-      ip_address: data.ip_address,
-      remarks: data.remarks,
+      anydesk_id: values.anydesk_id,
+      geometry_point: toGeometryPoint(values.longitude, values.latitude),
+      ip_address: values.ip_address,
+      remarks: values.remarks,
       solution_location_id: item.solution_location_id,
-      solution_name: data.solution_name,
-      solution_type_id: Number(data.solution_type_id),
-      sta: data.sta,
-      zt_ip_address: data.zt_ip_address,
+      solution_name: values.solution_name,
+      solution_type_id: Number(values.solution_type_id),
+      sta: values.sta,
+      zt_ip_address: values.zt_ip_address,
     }
 
     createSolution(body, {
-      onSuccess: async () => {
+      onSuccess: () => {
         message.success('สร้างอุปกรณ์สำเร็จ')
-        // Refetches SolutionContent's own query for this point, switching
-        // it from EmptySolutionContent to TableSolution — roadSolution
-        // itself (the tabs list) is untouched by adding a solution.
-        await queryClient.invalidateQueries({ queryKey: ['solution', item.solution_location_id] })
         onSuccess?.()
       },
       onError: (error) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการสร้างอุปกรณ์'))
       },
     })
-  }, [item, createSolution, queryClient, onSuccess])
+  }, [item, createSolution, onSuccess])
+
+  const onUpdate = useCallback((values: FormCreateDeviceValues) => {
+    if (!data?.id) return
+
+    // EX BODY — no solution_type_id / solution_location_id: both are fixed
+    // once the solution exists (hence the ประเภทงาน field is hidden on edit).
+    // {
+    //   "anydesk_id": "string",
+    //   "geometry_point": { "type": "Point", "coordinates": [lng, lat] },
+    //   "ip_address": "string",
+    //   "remarks": "string",
+    //   "solution_name": "string",
+    //   "sta": "string",
+    //   "zt_ip_address": "string"
+    // }
+    const body: APIRequestUpdateSolution = {
+      anydesk_id: values.anydesk_id,
+      geometry_point: toGeometryPoint(values.longitude, values.latitude),
+      ip_address: values.ip_address,
+      remarks: values.remarks,
+      solution_name: values.solution_name,
+      sta: values.sta,
+      zt_ip_address: values.zt_ip_address,
+    }
+
+    updateSolution({ id: data.id, data: body }, {
+      onSuccess: () => {
+        message.success('แก้ไขอุปกรณ์สำเร็จ')
+        onSuccess?.()
+      },
+      onError: (error) => {
+        message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขอุปกรณ์'))
+      },
+    })
+  }, [updateSolution, onSuccess, data])
+
+  const onSubmit = useCallback((values: FormCreateDeviceValues) => {
+    if (data?.id) {
+      onUpdate(values)
+    } else {
+      onCreate(values)
+    }
+  }, [data, onCreate, onUpdate])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -173,35 +218,37 @@ const FormCreateDevice: React.FC<Props> = (props) => {
               }}
             />
           </Col>
-          <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
-            <Controller
-              control={control}
-              name='solution_type_id'
-              rules={{ required: 'กรุณาเลือกประเภทงาน' }}
-              render={({ field }) => {
-                return (
-                  <fieldset>
-                    <label className='text-(--yellow)'>ประเภทงาน <span className='text-red-500'>*</span></label>
-                    <Select
-                      {...field}
-                      placeholder="กรุณาเลือกประเภทงาน..."
-                      size='large'
-                      allowClear
-                      showSearch={{ optionFilterProp: 'solution_name_atlas' }}
-                      fieldNames={{
-                        label: 'solution_name_atlas',
-                        value: 'id'
-                      }}
-                      loading={isSolutionTypeLoading}
-                      options={solutionType?.data}
-                      className="w-full!"
-                    />
-                    {errors.solution_type_id && <p className='fs-12 text-red-500'>{errors.solution_type_id.message}</p>}
-                  </fieldset>
-                )
-              }}
-            />
-          </Col>
+          {!isUpdate && (
+            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+              <Controller
+                control={control}
+                name='solution_type_id'
+                rules={{ required: 'กรุณาเลือกประเภทงาน' }}
+                render={({ field }) => {
+                  return (
+                    <fieldset>
+                      <label className='text-(--yellow)'>ประเภทงาน <span className='text-red-500'>*</span></label>
+                      <Select
+                        {...field}
+                        placeholder="กรุณาเลือกประเภทงาน..."
+                        size='large'
+                        allowClear
+                        showSearch={{ optionFilterProp: 'solution_name_atlas' }}
+                        fieldNames={{
+                          label: 'solution_name_atlas',
+                          value: 'id'
+                        }}
+                        loading={isSolutionTypeLoading}
+                        options={solutionType?.data}
+                        className="w-full!"
+                      />
+                      {errors.solution_type_id && <p className='fs-12 text-red-500'>{errors.solution_type_id.message}</p>}
+                    </fieldset>
+                  )
+                }}
+              />
+            </Col>
+          )}
           <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
             <Controller
               control={control}
@@ -379,7 +426,7 @@ const FormCreateDevice: React.FC<Props> = (props) => {
         ref={submitRef}
         type='submit'
         hidden
-        disabled={isPending}
+        disabled={isCreatePending || isUpdatePending}
       />
     </form>
   )

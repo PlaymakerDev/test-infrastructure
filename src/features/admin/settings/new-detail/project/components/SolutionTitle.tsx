@@ -1,32 +1,33 @@
-import { SolutionLocation } from '@/types/manage/project-detail-api'
+import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api'
 import { PlusOutlined } from '@ant-design/icons'
-import { Button, Modal } from 'antd'
+import { Button } from 'antd'
 import React, { useCallback } from 'react'
 import { TbMapSearch, TbPencilMinus, TbTrash } from 'react-icons/tb'
 import { useProjectContext } from '../context'
 import { useAppDispatch } from '@/stores/hooks'
-import { setCreateDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice'
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice'
 
 interface Props {
   item: SolutionLocation
   hasSolution: boolean
+  data?: SolutionList[]
 }
 
 const SolutionTitle: React.FC<Props> = (props) => {
-  const { item, hasSolution } = props
-  const { onDelete, isDeleting } = useProjectContext()
+  const { item, hasSolution, data } = props
+  const { isDeleting } = useProjectContext()
   const dispatch = useAppDispatch()
 
-  const onConfirmDelete = useCallback((id: number | string) => {
-    Modal.confirm({
-      title: 'ยืนยันการลบข้อมูล',
-      content: 'การดำเนินการนี้จะลบทั้ง Solution และ Equipment ที่เกี่ยวข้องและไม่สามารถกู้คืนได้',
-      okText: 'ยืนยัน',
-      cancelText: 'ยกเลิก',
-      onOk: () => onDelete(id),
-      onCancel: () => Modal.destroyAll(),
-    })
-  }, [onDelete])
+  // The modal owns the actual delete (it reads `item` from the store and
+  // calls the context's `onDelete`) — no callback travels through Redux.
+  const onConfirmDelete = useCallback(() => {
+    dispatch(setConfirmDeleteSolutionModalOpen({
+      open: true,
+      type: 'DELETE_SOLUTION',
+      data: data,
+      item: item,
+    }))
+  }, [dispatch, data, item])
 
   return (
     <div className='flex justify-between items-center gap-5 flex-wrap'>
@@ -44,7 +45,7 @@ const SolutionTitle: React.FC<Props> = (props) => {
           <TbTrash
             className={`fs-24 text-(--default-red) cursor-pointer ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
             title='ลบโครงการ'
-            onClick={() => !isDeleting && onConfirmDelete(item.solution_location_id)}
+            onClick={() => !isDeleting && onConfirmDelete()}
           />
         </div>
       </div>

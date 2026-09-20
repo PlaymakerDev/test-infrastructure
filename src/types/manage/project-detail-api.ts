@@ -173,3 +173,35 @@ export interface GeometryPoint {
   coordinates: number[]
   type: string
 }
+
+// GET SOLUTION DETAIL
+export interface APIResponseSolutionByID {
+  anydesk: string
+  created_at: string
+  // geometry_point: GeometryPoint
+  geometry_point: number[]
+  id: number
+  ip_address: string
+  remarks: string
+  solution_location_id: number
+  solution_name: string
+  solution_type_id: number
+  sta: string
+  zt_ip_address: string
+}
+
+// UPDATE SOLUTION
+export interface APIRequestUpdateSolution {
+  anydesk_id: string
+  geometry_point: GeometryPoint
+  ip_address: string
+  remarks: string
+  solution_name: string
+  sta: string
+  zt_ip_address: string
+}
+
+export type APIResponseUpdateSolution = APIResponsePost
+
+// DELETE SOLUTION
+export type APIResponseDeleteSolution = APIResponsePost

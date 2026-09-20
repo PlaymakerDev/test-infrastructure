@@ -11,7 +11,11 @@ export interface ContextProps {
   setRoadSolution: (roadSolution: RoadSolutionList) => void
   onCreate: () => void
   isCreating: boolean
-  onDelete: (id: number | string) => void
+  /** `options.onSuccess` runs once the delete AND the follow-up
+   *  `refreshRoadSolution` (tabs list + active-tab fallback) have finished —
+   *  it is a `mutate`-level callback, which TanStack fires after the
+   *  hook-level async `onSuccess`. Not called on error. */
+  onDelete: (id: number | string, options?: { onSuccess?: () => void }) => void
   isDeleting: boolean
   /** Re-fetches the road's solution list and syncs `roadSolution` +
    *  TitleSection's query cache — reused by `onCreate`/`onDelete` and by
@@ -153,12 +157,12 @@ export const ProjectProvider = (props: PageProviderProps) => {
     })
   }, [roadSolution, createRoadSolution])
 
-  const onDelete = useCallback((solutionLocationId: number | string) => {
+  const onDelete = useCallback((solutionLocationId: number | string, options?: { onSuccess?: () => void }) => {
     if (deleteSolutionLocation.isPending) return
     const list = roadSolution.solution_locations
     const idx = list.findIndex((loc) => String(loc.solution_location_id) === String(solutionLocationId))
     const fallbackId = idx > 0 ? list[idx - 1].solution_location_id : undefined
-    deleteSolutionLocation.mutate({ id: solutionLocationId, fallbackId })
+    deleteSolutionLocation.mutate({ id: solutionLocationId, fallbackId }, options)
   }, [roadSolution, deleteSolutionLocation])
 
   return (

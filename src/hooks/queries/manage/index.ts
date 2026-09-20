@@ -59,6 +59,10 @@ export {
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
 
+// Project detail (new-detail page) — solution create/update over ProjectDetailService
+export { useCreateProjectSolution } from './useCreateProjectSolution'
+export { useUpdateProjectSolution } from './useUpdateProjectSolution'
+
 // Project detail — road_solution / solution / cameras / equipments
 export {
   useSolutionTypes,

@@ -3,6 +3,7 @@ import { EmptySolutionContent, SolutionTitle, TableSolution } from '../component
 import { SolutionLocation } from '@/types/manage/project-detail-api'
 import { useQuery } from '@tanstack/react-query'
 import { getSolutionAPI } from '@/services/routes/ProjectDetailService'
+import { manageKeys } from '@/hooks/queries/manage'
 
 interface Props {
   item: SolutionLocation
@@ -16,7 +17,7 @@ const SolutionContent: React.FC<Props> = (props) => {
     isLoading: isSolutionLoading,
     isError: isSolutionError
   } = useQuery({
-    queryKey: ['solution', item.solution_location_id],
+    queryKey: manageKeys.solutions.byLocation(item.solution_location_id),
     queryFn: () => getSolutionAPI({ solution_location_id: item.solution_location_id }),
     enabled: !!item.solution_location_id,
   })
@@ -40,6 +41,7 @@ const SolutionContent: React.FC<Props> = (props) => {
         <SolutionTitle
           item={item}
           hasSolution={!!solutionData?.data?.length}
+          data={solutionData?.data}
         />
       </section>
       <section className='mt-5'>

@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { ProjectProvider } from '@/features/admin/settings/new-detail/project/context'
-import { MainContent, ModalCreateDevice, ModalViewCCTV, ModalViewCrossingCode, TitleSection } from '../components'
+import { MainContent, ModalCreateDevice, ModalViewCCTV, ModalViewCrossingCode, ModalConfirmDelete, TitleSection } from '../components'
 
 interface Props {
   id?: string | string[]
@@ -31,6 +31,7 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <ModalCreateDevice />
       <ModalViewCCTV />
       <ModalViewCrossingCode />
+      <ModalConfirmDelete />
     </ProjectProvider>
   )
 }

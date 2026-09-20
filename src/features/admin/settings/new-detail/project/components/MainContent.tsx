@@ -1,6 +1,6 @@
 import { Card, ConfigProvider, TabsProps } from 'antd'
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Tabs } from 'antd'
 import { EmptyRoadSolution, SolutionContent } from '../components'
 import { useProjectContext } from '../context'
@@ -34,24 +34,20 @@ const MainContent: React.FC<Props> = (props) => {
     ]
   }, [roadSolution, isCreating])
 
-  // Reset to the road's first point whenever the point list changes for a
-  // reason `onCreate`/`onDelete` didn't already pick a specific tab for
-  // (e.g. switching roads via the SwapButton in TitleSection), so the tab
-  // never points at a `solution_location_id` that belonged to the previous
-  // road. `activeLocationId` lives in context (not local state) because
-  // `onCreate`/`onDelete` — which run there — are the ones that know which
-  // tab should become active once their mutation lands; adjusting it here
-  // directly during render (React's documented pattern for "reset state
-  // when a prop changes") is still safe since it's this component's own
-  // top-level read of that context value.
-  const [syncedItems, setSyncedItems] = useState(items)
-  if (items !== syncedItems) {
-    setSyncedItems(items)
-    if (!activeLocationId || !items.some((item) => item.key === activeLocationId)) {
-      const firstPointKey = items.find((item) => item.key !== ADD_POINT_KEY)?.key
-      setActiveLocationId(firstPointKey !== undefined ? String(firstPointKey) : undefined)
-    }
-  }
+  // The tab to show: the context's `activeLocationId` while it still names a
+  // point of the current road, else the road's first point. Derived on
+  // render rather than synced into the context — `setActiveLocationId`
+  // belongs to ProjectProvider, and calling it while MainContent renders
+  // is React's "cannot update a component while rendering a different
+  // component" error (only a component's OWN state may be set mid-render).
+  // This also covers switching roads via TitleSection's SwapButton: the
+  // previous road's id is no longer in `items`, so it falls back to the new
+  // road's first point. `onCreate`/`onDelete` still set the context id
+  // explicitly once their mutation lands.
+  const firstPointKey = items.find((item) => item.key !== ADD_POINT_KEY)?.key
+  const activeKey = items.some((item) => item.key === activeLocationId)
+    ? activeLocationId
+    : firstPointKey
 
   const handleChange = useCallback((key: string) => {
     // The "เพิ่มจุดติดตั้ง" entry is an action, not a real tab — it has no
@@ -89,7 +85,7 @@ const MainContent: React.FC<Props> = (props) => {
         }}
       >
         <Tabs
-          activeKey={activeLocationId}
+          activeKey={activeKey}
           items={items}
           onChange={handleChange}
           indicator={{ align: 'center' }}
