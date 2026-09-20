@@ -49,6 +49,21 @@ const formatDaysOfWeek = (mask?: number): string => {
 // ห้ามเอาไปแทนค่า status ที่ป้ายรายงาน — ใช้เป็นป้ายกำกับเสริมเท่านั้น
 // (ที่ปรึกษา 2 หัวชี้ตรงกัน 20 ก.ย. 2569 · ask 20260920-063736-59a9)
 
+/**
+ * ช่วงเวลาของคำสั่งย่อเป็นบรรทัดเดียว — สองโหมดเขียนคนละแบบโดยตั้งใจ
+ * (โหมดต่อเนื่องเวลาสองตัวผูกกับวันแรก/วันสุดท้ายคนละวันกัน · โหมดรายวันเวลาซ้ำทุกวัน)
+ * ห้ามรวบเป็นรูปแบบเดียว จะอ่านผิดทันที — ดู docs/vms-display-window.md
+ */
+const scheduleText = (it: VMSMonitorItem): string => {
+  const d = (v?: string) => (v ? dayjs(v).format('D/M') : '—')
+  const h = (v?: string) => (v ? v.slice(0, 5) : '—')
+  if (it.is_all_day) {
+    return `ต่อเนื่อง ${d(it.date_since)} ${h(it.time_since)} → ${d(it.date_to)} ${h(it.time_to)}`
+  }
+  const range = it.date_since === it.date_to ? d(it.date_since) : `${d(it.date_since)}–${d(it.date_to)}`
+  return `${h(it.time_since)}–${h(it.time_to)} · ${formatDaysOfWeek(it.days_of_week)} · ${range}`
+}
+
 const formatDuration = (ms: number): string => {
   const abs = Math.abs(ms)
   const totalMin = Math.floor(abs / 60000)
@@ -101,6 +116,9 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
   }
 
   const lastUpdatedRel = dataUpdatedAt ? dayjs(dataUpdatedAt).locale('th').fromNow() : '—'
+  // ตรงกับเงื่อนไข `enabled` ของ useCommandCenterMonitor — จริง ๆ แล้วตอนนี้
+  // มี polling วิ่งอยู่ไหม (ไม่ใช่ "หน้าจอนี้เปิดอยู่ไหม")
+  const isMonitoring = vmsIds.length > 0
 
   // Bucket each row by eligibility so filter chips (ready / offline / excluded)
   // can toggle the visible list. Every row from /command-center/monitor now
@@ -134,9 +152,20 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
         <div className="flex items-center justify-between">
           <div>
             <div className="fs-12 font-semibold text-(--yellow)">ติดตามสถานะแบบเรียลไทม์</div>
+            {/* useCommandCenterMonitor ตั้ง `enabled = vmsIds.length > 0` ไว้ —
+                ยังไม่เลือกป้าย = ไม่ยิง API เลยสักครั้ง ดังนั้นห้ามเขียนว่า
+                "อัพเดตทุก 5 วินาที · ล่าสุด —" ตอนนั้น มันไม่จริง และ "—"
+                ยังอ่านกำกวมว่า "ยังไม่เคยดึง" หรือ "ดึงแล้วแต่ไม่รู้เวลา"
+                (แยก "ยังไม่ได้วัด" ออกจาก "วัดแล้วไม่พบ" ให้ชัด) */}
             <div className="fs-12 opacity-60 mt-0.5">
-              อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
-              {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
+              {isMonitoring ? (
+                <>
+                  อัพเดตอัตโนมัติทุก 5 วินาที · ล่าสุด {lastUpdatedRel}{' '}
+                  {isFetching && <span className="opacity-70">(กำลังโหลด...)</span>}
+                </>
+              ) : (
+                <>ยังไม่ได้เลือกป้าย · ยังไม่เริ่มติดตาม</>
+              )}
             </div>
           </div>
           <Badge count={readyCount + offlineCount + excludedCount} showZero color="#f59e0b" overflowCount={999} />
@@ -197,7 +226,20 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
         )}
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {(vmsIds.length + excludedCount) === 0 && <Empty description="เลือกป้ายจากคอลัมน์ซ้ายเพื่อเริ่มติดตาม" />}
+        {(vmsIds.length + excludedCount) === 0 && (
+          <Empty
+            description={
+              <div className="fs-12">
+                <div>เลือกป้ายจากคอลัมน์ซ้ายเพื่อเริ่มติดตาม</div>
+                {/* บอกขอบเขตให้ชัด จะได้ไม่เข้าใจว่าจอนี้พังหรือฟลีตว่าง —
+                    จอนี้ดูเฉพาะป้ายที่กำลังจะสั่ง ส่วนทั้งฟลีตอยู่อีกแท็บ */}
+                <div className="opacity-60 mt-1">
+                  จอนี้ดูเฉพาะป้ายที่เลือก — ดูทั้งฟลีตที่แท็บ &quot;สถานะการแสดงผล&quot;
+                </div>
+              </div>
+            }
+          />
+        )}
         {vmsIds.length > 0 && isLoading && <Skeleton active paragraph={{ rows: 4 }} />}
         {vmsIds.length > 0 && !isLoading && rows.length === 0 && excludedCount === 0 && (
           <Empty description="ไม่มีข้อมูลป้ายที่เลือก" />
@@ -273,149 +315,117 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
           // sign as "ready to receive a new command" not "still hung up on
           // the last cancellation from three days ago".
           const preview = !hasActive
+          // แถวเดียวจบ 2 บรรทัด — สั่งงานทีละ 100 ป้ายได้จริงโดยไม่ต้องเลื่อนทั้งวัน
+          // (การ์ดเดิมสูง ~200px/ใบ = 100 ป้ายยาว 2 หมื่นพิกเซล) · รายละเอียดเต็ม
+          // ยังกดดูได้ที่ปุ่มรูปตา ซึ่งเปิด SignDetailModal ตัวเดิม
           return (
             <div
               key={it.vms_id}
-              className={`rounded-lg border p-3 transition-opacity ${preview
+              className={`rounded-md border px-2.5 py-1.5 transition-opacity ${preview
                 ? 'border-dashed border-white/15 bg-white/[.02]'
                 : 'border-white/10 bg-white/[.04]'
                 }`}
               style={{ opacity: preview ? 0.85 : 1 }}
             >
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="min-w-0 flex-1">
-                  <div className="fs-12 font-medium truncate flex items-center gap-1.5">
-                    {it.road_code && <span className="text-(--yellow) font-semibold">{it.road_code}</span>}
-                    {it.sta && <span className="text-(--default-blue) fs-12">กม.{it.sta}</span>}
-                    <span className="truncate opacity-80">{it.solution_name || `VMS ${it.vms_id}`}</span>
-                  </div>
-                  <div className="fs-12 opacity-60">
-                    WID {it.wid} · vms_id {it.vms_id}
-                    {it.road_name && <span className="ml-2 opacity-70">· {it.road_name}</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* it.is_controllable (backend-computed, tbl_vms_screen_info
-                      join) drives the pill — NOT it.is_online, which is the
-                      legacy tv.last_connected heartbeat from a different agent
-                      stack. Same field the bucket chips and sidebar dot use,
-                      so a sign never shows ออนไลน์ here while reading Offline
-                      elsewhere. */}
-                  {(() => {
-                    const canDispatchNow = it.is_controllable
-                    return (
-                      <Tooltip
-                        title={
-                          <div className="fs-12">
-                            <div>เชื่อมต่อ: {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}</div>
-                            <div>last_seen: {it.last_seen_at ?? '—'}</div>
-                            {!canDispatchNow && <div className="opacity-70">คำสั่งจะ queue จนกว่า agent จะกลับมา online</div>}
-                          </div>
-                        }
-                      >
-                        <span
-                          className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                          style={{
-                            background: canDispatchNow ? '#22c55e22' : '#ef444422',
-                            color: canDispatchNow ? '#22c55e' : '#ef4444',
-                            border: `1px solid ${canDispatchNow ? '#22c55e55' : '#ef444455'}`,
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              background: canDispatchNow ? '#22c55e' : '#ef4444',
-                            }}
-                          />
-                          {canDispatchNow ? 'ออนไลน์' : 'ออฟไลน์'}
-                        </span>
-                      </Tooltip>
-                    )
-                  })()}
-                  {hasActive ? (
-                    <>
-                      <StatusPill
-                        status={it.status ?? 0}
-                        tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
-                      />
-                      {showsMismatch && (
-                        <Tooltip
-                          title={
-                            <div className="fs-12">
-                              <div>ฐานข้อมูลบอก &quot;กำลังแสดงผล&quot; แต่ตามกำหนดการแล้วตอนนี้อยู่นอกช่วงเวลา</div>
-                              <div className="opacity-80 mt-1">
-                                ให้เชื่อกำหนดการ — ตัวป้ายเป็นคนขึ้น/ดับจอตามเวลาที่ตั้งไว้เอง
-                              </div>
-                            </div>
-                          }
-                        >
-                          <span
-                            className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                            style={{
-                              background: '#eab30822',
-                              color: '#eab308',
-                              border: '1px solid #eab30855',
-                            }}
-                          >
-                            นอกช่วงเวลาตามกำหนดการ
-                          </span>
-                        </Tooltip>
-                      )}
-                    </>
-                  ) : (
-                    // Card pill for a sign with no relevant command — reads
-                    // as "ready to receive a dispatch" (รอคำสั่ง). Terminal
-                    // states (cancelled/done/overwrite/lost) fall through
-                    // here too because `hasActive` now excludes them.
-                    <Tooltip title="ป้ายพร้อมรับคำสั่งใหม่ — ยังไม่มี command ที่กำลังเล่นหรือกำลังจะเล่น">
-                      <span
-                        className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                        style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          color: 'rgba(255,255,255,0.6)',
-                          border: '1px dashed rgba(255,255,255,0.2)',
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.3)',
-                          }}
-                        />
-                        รอคำสั่ง
-                      </span>
-                    </Tooltip>
-                  )}
-                  <Tooltip title="ดูรายละเอียด">
-                    <Button
-                      size="small"
-                      type="primary"
-                      ghost
-                      icon={<TbEye style={{ verticalAlign: -2 }} />}
-                      onClick={() => onOpenSignDetail?.(it.vms_id)}
-                    />
+              {/* บรรทัดที่ 1 — ตัวตนป้าย + สถานะ + ปุ่ม */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* จุดเขียว/แดง = it.is_controllable (ตัวเดียวกับ chip ด้านบนและ
+                    dot ในแถบซ้าย) ไม่ใช่ it.is_online ซึ่งเป็น heartbeat คนละชุด */}
+                <Tooltip
+                  title={
+                    <div className="fs-12">
+                      <div>เชื่อมต่อ: {it.is_controllable ? 'ออนไลน์' : 'ออฟไลน์'}</div>
+                      <div>last_seen: {it.last_seen_at ?? '—'}</div>
+                      {!it.is_controllable && <div className="opacity-70">คำสั่งจะ queue จนกว่า agent จะกลับมา online</div>}
+                    </div>
+                  }
+                >
+                  <span
+                    className="shrink-0"
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: it.is_controllable ? '#22c55e' : '#ef4444',
+                    }}
+                  />
+                </Tooltip>
+                <span className="fs-12 truncate flex-1 min-w-0">
+                  {it.road_code && <span className="text-(--yellow) font-semibold">{it.road_code}</span>}
+                  {it.sta && <span className="text-(--default-blue) ml-1">กม.{it.sta}</span>}
+                  <span className="opacity-80 ml-1">{it.solution_name || `VMS ${it.vms_id}`}</span>
+                  <span className="opacity-40 ml-1">#{it.wid}</span>
+                </span>
+                {hasActive ? (
+                  <StatusPill
+                    status={it.status ?? 0}
+                    size="sm"
+                    tooltip={`อัพเดตล่าสุด ${relativeSince(it.status_updated_at)}`}
+                  />
+                ) : (
+                  <Tooltip title="ป้ายพร้อมรับคำสั่งใหม่ — ยังไม่มี command ที่กำลังเล่นหรือกำลังจะเล่น">
+                    <span className="fs-12 px-2 py-0.5 rounded shrink-0 opacity-60 border border-dashed border-white/20">
+                      รอคำสั่ง
+                    </span>
                   </Tooltip>
-                </div>
+                )}
+                {showsMismatch && (
+                  <Tooltip
+                    title={
+                      <div className="fs-12">
+                        <div>ฐานข้อมูลบอก &quot;กำลังแสดงผล&quot; แต่ตามกำหนดการแล้วตอนนี้อยู่นอกช่วงเวลา</div>
+                        <div className="opacity-80 mt-1">ให้เชื่อกำหนดการ — ตัวป้ายเป็นคนขึ้น/ดับจอตามเวลาที่ตั้งไว้เอง</div>
+                      </div>
+                    }
+                  >
+                    <span
+                      className="fs-12 px-1.5 py-0.5 rounded shrink-0"
+                      style={{ background: '#eab30822', color: '#eab308', border: '1px solid #eab30855' }}
+                    >
+                      นอกเวลา
+                    </span>
+                  </Tooltip>
+                )}
+                <Tooltip title="ดูรายละเอียด">
+                  <Button
+                    size="small"
+                    type="text"
+                    className="shrink-0"
+                    icon={<TbEye style={{ verticalAlign: -2 }} />}
+                    onClick={() => onOpenSignDetail?.(it.vms_id)}
+                  />
+                </Tooltip>
+                {hasActive && meta.isCancellable && (
+                  <Popconfirm
+                    title="หยุดการแสดงผลป้ายนี้?"
+                    description="คำสั่งจะถูกทำเครื่องหมาย 'ยกเลิก' และป้ายจะเคลียร์จอในรอบ poll ถัดไป"
+                    onConfirm={() => handleCancel(it.setting_id)}
+                    okText="ยืนยันหยุด"
+                    cancelText="ไม่"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <Tooltip title="หยุดการแสดงผล">
+                      <Button
+                        size="small"
+                        type="text"
+                        danger
+                        className="shrink-0"
+                        icon={<TbPlayerStop style={{ verticalAlign: -2 }} />}
+                        loading={cancel.isPending}
+                      />
+                    </Tooltip>
+                  </Popconfirm>
+                )}
               </div>
 
-              {/* Only render the media/schedule detail block for actively-running
-                  or queued-to-run commands (hasActive already excludes terminal
-                  states). History belongs in ประวัติสั่งงานทั้งหมด. */}
+              {/* บรรทัดที่ 2 — คำสั่งที่อยู่บนป้ายตอนนี้ (เฉพาะป้ายที่มีคำสั่ง) */}
               {hasActive && (
-                <div className="mt-2 flex items-center gap-3">
+                <div className="flex items-center gap-2 fs-12 mt-1 min-w-0">
                   {it.media_url ? (
                     <div
-                      className="rounded overflow-hidden bg-black flex-shrink-0 relative"
-                      style={{ width: 96, aspectRatio: '16/9' }}
+                      className="rounded overflow-hidden bg-black shrink-0 relative"
+                      style={{ width: 40, aspectRatio: '16/9' }}
                     >
-                      {/* Thumbnail sibling (~15 KB) — a 5-second poll
-                          across dozens of active cards used to re-fetch
-                          full-res PNGs / MP4 posters. onError falls
-                          back to original for pre-backfill uploads. */}
                       <img
                         src={getThumbUrl(it.media_url)}
                         alt=""
@@ -429,85 +439,27 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
                         }}
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       />
-                      {isVideoUrl(it.media_url) && (
-                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white fs-12">▶</span>
-                        </span>
-                      )}
                     </div>
                   ) : null}
-                  <div className="min-w-0 flex-1 fs-12 opacity-90 space-y-0.5">
-                    <div>
-                      <b>{it.setting_type_name || '-'}</b>
-                      {it.command_no != null && <span className="ml-2 opacity-70">คำสั่งที่ {it.command_no}</span>}
-                    </div>
-                    <div className="opacity-70">
-                      <span className="opacity-70">วันที่:</span>{' '}
-                      {it.date_since === it.date_to ? it.date_since : `${it.date_since} → ${it.date_to}`}
-                    </div>
-                    {/* โหมด all-day ไม่ใช่ "ตลอดวัน" — มันคือช่วงเดียวยาวข้ามคืน
-                        ที่ขึ้นจอ (วันเริ่ม+เวลาเริ่ม) และดับจอ (วันจบ+เวลาจบ)
-                        คำเดิมทำให้ operator เข้าใจว่าไม่มีวันดับ · และ days_of_week
-                        ไม่มีผลในโหมดนี้ จึงไม่ต้องโชว์ให้เข้าใจผิดซ้ำ */}
-                    <div className="opacity-70">
-                      <span className="opacity-70">เวลา:</span>{' '}
-                      {it.is_all_day ? (
-                        <span className="text-(--yellow)">
-                          ต่อเนื่อง {it.time_since ? it.time_since.slice(0, 5) : '—'} (วันเริ่ม) →{' '}
-                          {it.time_to ? it.time_to.slice(0, 5) : '—'} (วันจบ)
-                        </span>
-                      ) : it.time_since && it.time_to ? (
-                        <>
-                          {`${it.time_since.slice(0, 5)} – ${it.time_to.slice(0, 5)}`}
-                          <span className="opacity-70 ml-2">· วัน:</span>{' '}
-                          {formatDaysOfWeek(it.days_of_week)}
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </div>
-                    {countdown && <div>{countdown}</div>}
-                    {it.message && <div className="opacity-70 truncate">{it.message}</div>}
-                  </div>
+                  <span className="truncate flex-1 min-w-0 opacity-75">
+                    <b className="opacity-100">{it.setting_type_name || '-'}</b>
+                    <span className="mx-1 opacity-40">·</span>
+                    {scheduleText(it)}
+                    {it.message && <><span className="mx-1 opacity-40">·</span>{it.message}</>}
+                  </span>
+                  {countdown && <span className="shrink-0">{countdown}</span>}
                 </div>
               )}
 
               {progressPct != null && (
-                <div className="mt-2">
-                  <Progress
-                    percent={progressPct}
-                    size="small"
-                    showInfo={false}
-                    strokeColor="#22c55e"
-                    railColor="rgba(255,255,255,0.08)"
-                  />
-                </div>
-              )}
-
-              {hasActive && meta.isCancellable && (
-                <div className="mt-2 flex items-center gap-2 justify-end">
-                  <Popconfirm
-                    title="หยุดการแสดงผลป้ายนี้?"
-                    description="คำสั่งจะถูกทำเครื่องหมาย 'ยกเลิก' และป้ายจะเคลียร์จอในรอบ poll ถัดไป"
-                    onConfirm={() => handleCancel(it.setting_id)}
-                    okText="ยืนยันหยุด"
-                    cancelText="ไม่"
-                    okButtonProps={{ danger: true }}
-                  >
-                    {/* Solid red round — same button as ยกเลิกคำสั่ง in the
-                        สถานะการแสดงผล tab (StatusList), wording kept. */}
-                    <Button
-                      size="small"
-                      type="primary"
-                      shape="round"
-                      danger
-                      icon={<TbPlayerStop style={{ verticalAlign: -2 }} />}
-                      loading={cancel.isPending}
-                    >
-                      <span className="fs-12 text-white">หยุด</span>
-                    </Button>
-                  </Popconfirm>
-                </div>
+                <Progress
+                  percent={progressPct}
+                  size={{ height: 2 }}
+                  showInfo={false}
+                  strokeColor="#22c55e"
+                  railColor="rgba(255,255,255,0.08)"
+                  className="mt-1 mb-0!"
+                />
               )}
             </div>
           )
@@ -519,40 +471,36 @@ const LiveMonitor: React.FC<Props> = React.memo(function LiveMonitor({
         {showExcludedPlaceholders && excludedSigns.map((s) => (
           <div
             key={`excluded-${s.vms_id}`}
-            className="rounded-lg border border-dashed border-(--yellow)/40 bg-(--yellow)/[.03] p-3 opacity-80"
+            className="rounded-md border border-dashed border-(--yellow)/40 bg-(--yellow)/[.03] px-2.5 py-1.5 opacity-80"
           >
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0 flex-1">
-                <div className="fs-12 font-medium truncate flex items-center gap-1.5">
-                  {s.road_code && <span className="text-(--yellow) font-semibold">{s.road_code}</span>}
-                  {s.sta && <span className="text-(--default-blue) fs-12">กม.{s.sta}</span>}
-                  <span className="truncate opacity-80">{s.solution_name || `VMS ${s.vms_id}`}</span>
-                </div>
-                <div className="fs-12 opacity-60">vms_id {s.vms_id}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tooltip title="agent ยังไม่เคย provision เลย หรือถูกถอดจาก centralized — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
-                  <span
-                    className="inline-flex items-center gap-1 fs-12 px-2 py-0.5 rounded"
-                    style={{
-                      background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
-                      color: 'var(--yellow)',
-                      border: '1px solid var(--yellow)',
-                    }}
-                  >
-                    ⚠ ไม่รองรับ
-                  </span>
-                </Tooltip>
-                <Tooltip title="ดูรายละเอียด">
-                  <Button
-                    size="small"
-                    type="primary"
-                    ghost
-                    icon={<TbEye style={{ verticalAlign: -2 }} />}
-                    onClick={() => onOpenSignDetail?.(s.vms_id)}
-                  />
-                </Tooltip>
-              </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="shrink-0 text-(--yellow)">⚠</span>
+              <span className="fs-12 truncate flex-1 min-w-0">
+                {s.road_code && <span className="text-(--yellow) font-semibold">{s.road_code}</span>}
+                {s.sta && <span className="text-(--default-blue) ml-1">กม.{s.sta}</span>}
+                <span className="opacity-80 ml-1">{s.solution_name || `VMS ${s.vms_id}`}</span>
+              </span>
+              <Tooltip title="agent ยังไม่เคย provision เลย หรือถูกถอดจาก centralized — ต้องมีคนไปตั้งค่า/ติดตั้งก่อน เปิดใช้งานที่แท็บ 'ข้อมูลป้าย VMS'">
+                <span
+                  className="fs-12 px-1.5 py-0.5 rounded shrink-0"
+                  style={{
+                    background: 'color-mix(in srgb, var(--yellow) 10%, transparent)',
+                    color: 'var(--yellow)',
+                    border: '1px solid var(--yellow)',
+                  }}
+                >
+                  ไม่รองรับ
+                </span>
+              </Tooltip>
+              <Tooltip title="ดูรายละเอียด">
+                <Button
+                  size="small"
+                  type="text"
+                  className="shrink-0"
+                  icon={<TbEye style={{ verticalAlign: -2 }} />}
+                  onClick={() => onOpenSignDetail?.(s.vms_id)}
+                />
+              </Tooltip>
             </div>
           </div>
         ))}
