@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { RefObject } from 'react'
 import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, GeometryPoint, SolutionLocation } from '@/types/manage/project-detail-api'
-import { Col, Input, message, Row, Select } from 'antd'
+import { App, Col, Input, Row, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { getSolutionTypesAPI } from '@/services/routes/SolutionService'
 import { useCreateProjectSolution, useUpdateProjectSolution } from '@/hooks/queries/manage'
@@ -77,6 +77,7 @@ interface FormCreateDeviceValues {
 const FormCreateDevice: React.FC<Props> = (props) => {
   const { data, item, submitRef, onSuccess } = props
   const { roadSolution } = useProjectContext()
+  const { message } = App.useApp()
   const isUpdate = !!data?.id
 
   const { mutate: createSolution, isPending: isCreatePending } = useCreateProjectSolution()
@@ -138,7 +139,7 @@ const FormCreateDevice: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการสร้างอุปกรณ์'))
       },
     })
-  }, [item, createSolution, onSuccess])
+  }, [item, createSolution, onSuccess, message])
 
   const onUpdate = useCallback((values: FormCreateDeviceValues) => {
     if (!data?.id) return
@@ -173,7 +174,7 @@ const FormCreateDevice: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขอุปกรณ์'))
       },
     })
-  }, [updateSolution, onSuccess, data])
+  }, [updateSolution, onSuccess, data, message])
 
   const onSubmit = useCallback((values: FormCreateDeviceValues) => {
     if (data?.id) {

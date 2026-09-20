@@ -62,6 +62,7 @@ export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
 // Project detail (new-detail page) — solution create/update over ProjectDetailService
 export { useCreateProjectSolution } from './useCreateProjectSolution'
 export { useUpdateProjectSolution } from './useUpdateProjectSolution'
+export { useDeleteProjectSolution } from './useDeleteProjectSolution'
 
 // Project detail — road_solution / solution / cameras / equipments
 export {

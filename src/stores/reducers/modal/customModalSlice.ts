@@ -60,6 +60,7 @@ export interface ConfirmDeleteSolutionModalState {
   type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
   data?: SolutionList[] | null
   item?: SolutionLocation | null
+  record?: SolutionList | null
 }
 
 const initialState: CustomModalState = {

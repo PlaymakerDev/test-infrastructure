@@ -2,10 +2,10 @@ import { SOLUTION_TYPE } from '@/constants';
 import { getSolutionByIDAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
 import { useAppDispatch } from '@/stores/hooks';
-import { setCreateDeviceModalOpen, setCrossingCodeModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, ConfigProvider, Empty, message, Table, TableProps } from 'antd';
+import { App, Button, ConfigProvider, Empty, Table, TableProps } from 'antd';
 import { AxiosError } from 'axios';
 import React, { useCallback } from 'react'
 import { TbPencilMinus, TbShieldLock, TbTrash, TbVideo } from 'react-icons/tb';
@@ -20,6 +20,7 @@ interface Props {
 const TableSolution: React.FC<Props> = (props) => {
   const { item, data, isLoading, isError } = props
   const dispatch = useAppDispatch()
+  const { message } = App.useApp()
 
   const openCrossingCodeModal = useCallback(async (record: SolutionList) => {
     try {
@@ -37,7 +38,7 @@ const TableSolution: React.FC<Props> = (props) => {
         console.error(error)
       }
     }
-  }, [dispatch, item])
+  }, [dispatch, item, message])
 
   /** Fetches the row's full detail first — the list row carries a trimmed
    *  shape, while FormCreateDevice seeds its defaults from
@@ -59,6 +60,15 @@ const TableSolution: React.FC<Props> = (props) => {
         console.error(error)
       }
     }
+  }, [dispatch, item, message])
+
+  const openConfirmDeleteModal = useCallback((record: SolutionList) => {
+    dispatch(setConfirmDeleteSolutionModalOpen({
+      open: true,
+      type: 'DELETE_SOLUTION_TYPE',
+      item: item,
+      record: record,
+    }))
   }, [dispatch, item])
 
   const columns: TableProps<SolutionList>['columns'] = [
@@ -129,6 +139,7 @@ const TableSolution: React.FC<Props> = (props) => {
             <TbTrash
               className='fs-22 text-(--default-red) cursor-pointer'
               title='ลบโครงการ'
+              onClick={() => openConfirmDeleteModal(record)}
             />
           </div>
         )

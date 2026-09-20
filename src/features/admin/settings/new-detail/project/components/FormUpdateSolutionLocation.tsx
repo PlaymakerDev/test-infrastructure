@@ -1,7 +1,7 @@
 import React, { RefObject, useCallback } from 'react'
 import { SolutionLocation } from '@/types/manage/project-detail-api'
 import { Controller, useForm } from 'react-hook-form'
-import { Input, message } from 'antd'
+import { App, Input } from 'antd'
 import { useMutation } from '@tanstack/react-query'
 import { putSolutionLocationAPI } from '@/services/routes/ProjectDetailService'
 import { useProjectContext } from '../context'
@@ -37,6 +37,7 @@ export interface FormUpdateSolutionLocationValues {
 const FormUpdateSolutionLocation: React.FC<Props> = (props) => {
   const { item, submitRef, onSuccess } = props
   const { roadSolution, refreshRoadSolution } = useProjectContext()
+  const { message } = App.useApp()
 
   const form = useForm<FormUpdateSolutionLocationValues>({
     defaultValues: {
@@ -68,7 +69,7 @@ const FormUpdateSolutionLocation: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขชื่อจุดติดตั้ง'))
       },
     })
-  }, [item, updateSolutionLocation, refreshRoadSolution, roadSolution.project_road_id, onSuccess])
+  }, [item, updateSolutionLocation, refreshRoadSolution, roadSolution.project_road_id, onSuccess, message])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

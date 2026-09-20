@@ -3,9 +3,10 @@ import { resetConfirmDeleteSolutionModalData } from '@/stores/reducers/modal/cus
 import { SolutionLocation } from '@/types/manage/project-detail-api'
 import { SolutionList } from '@/types/manage/project-detail-api'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { ConfigProvider, Modal } from 'antd'
+import { App, ConfigProvider, Modal } from 'antd'
 import React, { useCallback, useMemo } from 'react'
-import { useProjectContext } from '../context'
+import { useDeleteProjectSolution } from '@/hooks/queries/manage'
+import { errText, useProjectContext } from '../context'
 
 interface Props {
 }
@@ -14,10 +15,11 @@ interface ContentProps {
   type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
   data?: SolutionList[] | null
   item?: SolutionLocation | null
+  record?: SolutionList | null
 }
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { type, data, item } = props
+  const { type, data, item, record } = props
 
   const renderSolutionTag = useMemo(() => {
     if (!data?.length) return
@@ -87,16 +89,41 @@ const Content: React.FC<ContentProps> = (props) => {
     if (!data?.length) return renderWarningContent
   }, [data, renderNonDeleteContent, renderWarningContent])
 
+  const renderDeleteSolutionTypeContent = useMemo(() => {
+    return (
+      <div className='mt-5'>
+        <section>
+          <div className='flex flex-col items-center justify-center gap-5'>
+            <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-orange)' }} />
+            <div className='text-center'>
+              <h2>ยืนยันลบประเภทงานหรือไม่?</h2>
+              <p>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+            </div>
+          </div>
+        </section>
+        <section className='mt-5'>
+          <div className='rounded-lg border border-(--default-orange) bg-(--default-orange)/20 p-5'>
+            <div className='text-center'>
+              <h4>ประเภทงาน : {record?.solution_name || '-'}</h4>
+              <p>ไม่มีอุปกรณ์ที่ใช้งานอยู่ในประเภทงานนี้</p>
+              <p>สามารถลบประเภทงานออกจากระบบได้อย่างปลอดภัย</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }, [record?.solution_name])
+
   const renderContent = useMemo(() => {
     switch (type) {
       case 'DELETE_SOLUTION':
         return renderDeleteSolutionContent
       case 'DELETE_SOLUTION_TYPE':
-        return null
+        return renderDeleteSolutionTypeContent
       default:
         return null
     }
-  }, [type, renderDeleteSolutionContent])
+  }, [type, renderDeleteSolutionContent, renderDeleteSolutionTypeContent])
 
 
   return renderContent
@@ -104,23 +131,48 @@ const Content: React.FC<ContentProps> = (props) => {
 
 const ModalConfirmDelete: React.FC<Props> = (props) => {
   const { } = props
-  const { open, data, item, type } = useAppSelector((state) => state.custom_modal.confirm_delete_solution_modal)
+  const { open, data, item, type, record } = useAppSelector((state) => state.custom_modal.confirm_delete_solution_modal)
   const { onDelete, isDeleting } = useProjectContext()
+  const { message } = App.useApp()
+  const { mutate: deleteSolution, isPending: isDeletingSolution } = useDeleteProjectSolution()
   const dispatch = useAppDispatch()
-  const canDelete = !data?.length
+  const isBusy = isDeleting || isDeletingSolution
+  // DELETE_SOLUTION is blocked while the point still holds solutions (`data`);
+  // DELETE_SOLUTION_TYPE deletes one row and has no such precondition.
+  const canDelete = type === 'DELETE_SOLUTION_TYPE' || !data?.length
 
   const handleClose = useCallback(() => {
     dispatch(resetConfirmDeleteSolutionModalData())
   }, [dispatch])
 
-  // Closes only after the delete succeeded AND the context has refreshed the
-  // tabs list / picked the fallback tab (see ContextProps.onDelete). On error
-  // the modal stays open — the context already toasts the reason — so the
-  // user can retry or cancel against the same point.
+  // Both branches close the modal only once the delete succeeded AND the
+  // dependent data has refreshed; on error the modal stays open (the reason
+  // is toasted) so the user can retry or cancel against the same target.
   const handleConfirm = useCallback(() => {
-    if (type !== 'DELETE_SOLUTION' || !item?.solution_location_id) return
-    onDelete(item.solution_location_id, { onSuccess: handleClose })
-  }, [type, item, onDelete, handleClose])
+    switch (type) {
+      case 'DELETE_SOLUTION':
+        // The point: the context refetches the tabs list and picks the
+        // fallback tab, and toasts both outcomes itself.
+        if (!item?.solution_location_id) return
+        onDelete(item.solution_location_id, { onSuccess: handleClose })
+        return
+      case 'DELETE_SOLUTION_TYPE':
+        // One solution row: the hook refetches the point's solution list.
+        if (!record?.id) return
+        deleteSolution(record.id, {
+          onSuccess: () => {
+            message.success('ลบประเภทงานสำเร็จ')
+            handleClose()
+          },
+          onError: (error) => {
+            message.error(errText(error, 'ลบประเภทงานไม่สำเร็จ'))
+          },
+        })
+        return
+      default:
+        return
+    }
+  }, [type, item, record, onDelete, deleteSolution, handleClose, message])
 
   return (
     <ConfigProvider
@@ -141,12 +193,12 @@ const ModalConfirmDelete: React.FC<Props> = (props) => {
         cancelText={'ยกเลิก'}
         okButtonProps={{
           shape: 'round',
-          loading: isDeleting,
+          loading: isBusy,
         }}
         cancelButtonProps={{
           shape: 'round',
-          disabled: isDeleting,
-          className: !canDelete ? '' : 'hidden!'
+          disabled: isBusy,
+          className: canDelete ? '' : 'hidden!'
         }}
         onOk={() => canDelete ? handleConfirm() : handleClose()}
         onCancel={handleClose}
@@ -157,6 +209,7 @@ const ModalConfirmDelete: React.FC<Props> = (props) => {
           type={type}
           data={data}
           item={item}
+          record={record}
         />
       </Modal>
     </ConfigProvider>

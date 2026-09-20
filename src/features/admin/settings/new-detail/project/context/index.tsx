@@ -1,5 +1,5 @@
 "use client"
-import { message } from 'antd'
+import { App } from 'antd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { deleteSolutionLocationAPI, getRoadSolutionAPI, postRoadSolutionAPI } from '@/services/routes/ProjectDetailService'
 import { Road, RoadSolutionList } from '@/types/manage/project-detail-api'
@@ -32,7 +32,7 @@ export interface ContextProps {
 }
 
 // Mirrors overall/context's error helper — no shared export exists yet.
-const errText = (err: unknown, fallback: string): string => {
+export const errText = (err: unknown, fallback: string): string => {
   if (!err) return fallback
   const anyErr = err as {
     response?: { data?: { details?: unknown; res_data?: { details?: unknown; message?: string } } }
@@ -84,6 +84,8 @@ export const ProjectProvider = (props: PageProviderProps) => {
   const [roadSolution, setRoadSolution] = useState<RoadSolutionList>({ ...INIT_ROAD_SOLUTION })
   const [activeLocationId, setActiveLocationId] = useState<string | undefined>(undefined)
   const queryClient = useQueryClient()
+  // Static `message` can't read the ConfigProvider theme — use App's instance.
+  const { message } = App.useApp()
 
   // Shared by both mutations below. Fetch directly rather than through
   // `queryClient.fetchQuery` on TitleSection's ['roadSolution', id] key:
