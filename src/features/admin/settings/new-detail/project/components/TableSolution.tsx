@@ -1,8 +1,8 @@
 import { SOLUTION_TYPE } from '@/constants';
-import { getSolutionByIDAPI } from '@/services/routes/ProjectDetailService';
+import { getSolutionByIDAPI, getSolutionCameraListAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
 import { useAppDispatch } from '@/stores/hooks';
-import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import { PlusOutlined } from '@ant-design/icons';
 import { App, Button, ConfigProvider, Empty, Table, TableProps } from 'antd';
@@ -71,6 +71,25 @@ const TableSolution: React.FC<Props> = (props) => {
     }))
   }, [dispatch, item])
 
+  const openSolutionCameraListModal = useCallback(async (record: SolutionList) => {
+    try {
+      const response = await getSolutionCameraListAPI(item.solution_location_id)
+      if (response.status === 200) {
+        dispatch(setViewDeviceModalOpen({
+          open: true,
+          data: response.data,
+          type: 'DEVICE'
+        }))
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.message)
+      } else {
+        console.error(error)
+      }
+    }
+  }, [item.solution_location_id, message, dispatch])
+
   const columns: TableProps<SolutionList>['columns'] = [
     {
       title: 'ประเภทงาน',
@@ -110,8 +129,10 @@ const TableSolution: React.FC<Props> = (props) => {
             <Button
               ghost
               type='primary'
+              htmlType='button'
               icon={<PlusOutlined />}
               shape='circle'
+              onClick={() => openSolutionCameraListModal(record)}
             />
           </ConfigProvider>
         )

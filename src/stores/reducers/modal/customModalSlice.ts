@@ -3,7 +3,7 @@ import { APIResponseGeneralUser } from '@/types/manage/general-user-api';
 import { RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
-import { APIResponseCameraCrossingCode, APIResponseSolutionByID, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
+import { APIResponseCameraCrossingCode, APIResponseSolutionByID, APIResponseSolutionCameraList, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
@@ -13,6 +13,7 @@ export interface CustomModalState {
   crossing_code_modal: CrossingCodeModalState
   create_device_modal: CreateDeviceModalState
   confirm_delete_solution_modal: ConfirmDeleteSolutionModalState
+  view_device_modal: ViewDeviceModalState
 }
 
 export interface UserModalState {
@@ -55,6 +56,12 @@ export interface CreateDeviceModalState {
   type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
 }
 
+export interface ViewDeviceModalState {
+  open: boolean
+  data?: APIResponseSolutionCameraList | null
+  type?: 'CCTV' | 'DEVICE'
+}
+
 export interface ConfirmDeleteSolutionModalState {
   open: boolean
   type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
@@ -84,6 +91,9 @@ const initialState: CustomModalState = {
   },
   confirm_delete_solution_modal: {
     open: false
+  },
+  view_device_modal: {
+    open: false,
   }
 }
 
@@ -135,6 +145,12 @@ const customModalSlice = createSlice({
     resetConfirmDeleteSolutionModalData: (state) => {
       state.confirm_delete_solution_modal = initialState.confirm_delete_solution_modal;
     },
+    setViewDeviceModalOpen: (state, action) => {
+      state.view_device_modal = action.payload;
+    },
+    resetViewDeviceModalData: (state) => {
+      state.view_device_modal = initialState.view_device_modal;
+    },
   },
 })
 
@@ -153,6 +169,8 @@ export const {
   resetCreateDeviceModalData,
   setConfirmDeleteSolutionModalOpen,
   resetConfirmDeleteSolutionModalData,
+  setViewDeviceModalOpen,
+  resetViewDeviceModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

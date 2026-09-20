@@ -1,4 +1,4 @@
-import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation } from "@/types/manage/project-detail-api";
+import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation } from "@/types/manage/project-detail-api";
 import ApiService from "../ApiService";
 
 export const getProjectByIDAPI = (id: string | number) =>
@@ -71,4 +71,12 @@ export const deleteSolutionAPI = (id: string | number) =>
   ApiService.fetchData<APIResponseDeleteSolution>({
     url: `/manage/solution/${id}`,
     method: 'DELETE',
+  })
+
+
+
+export const getSolutionCameraListAPI = (id: string | number) =>
+  ApiService.fetchData<APIResponseSolutionCameraList>({
+    url: `/manage/solution/camera/list/${id}`,
+    method: 'GET',
   })

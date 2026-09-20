@@ -205,3 +205,30 @@ export type APIResponseUpdateSolution = APIResponsePost
 
 // DELETE SOLUTION
 export type APIResponseDeleteSolution = APIResponsePost
+
+// GET SOLUTION CAMERA LIST
+export type APIResponseSolutionCameraList = SolutionCameraList[]
+
+export interface SolutionCameraList {
+  id: string
+  ip_address: string
+  department_id: number
+  road_id: number
+  solution_id: number
+  camera_name: string
+  sta: string
+  hls_url: string
+  point_geometry: number[]
+  remark: any
+  serial_number: any
+  model: any
+  brand: any
+  created_by: string
+  created_at: string
+  ping_updated: string
+  ping_status: boolean
+  curl_updated: any
+  curl_status: boolean
+  contractor_id: string
+  updated_at: string
+}

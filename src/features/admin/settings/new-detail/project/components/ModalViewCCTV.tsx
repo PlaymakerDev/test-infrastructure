@@ -1,22 +1,33 @@
 import { ConfigProvider, Modal } from 'antd'
-import React from 'react'
-import { FormCreateDevice } from '../components'
+import React, { useCallback } from 'react'
+import { TableCameraList } from '../components'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { resetViewDeviceModalData } from '@/stores/reducers/modal/customModalSlice'
+import { APIResponseSolutionCameraList } from '@/types/manage/project-detail-api'
 
 interface Props {
 
 }
 
-interface ContentProps { }
+interface ContentProps {
+  data?: APIResponseSolutionCameraList | null
+}
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { } = props
+  const { data } = props
   return (
-    <FormCreateDevice />
+    <TableCameraList data={data} />
   )
 }
 
 const ModalViewCCTV: React.FC<Props> = (props) => {
   const { } = props
+  const { open, data, type } = useAppSelector(state => state.custom_modal.view_device_modal)
+  const dispatch = useAppDispatch()
+
+  const handleClose = useCallback(() => {
+    dispatch(resetViewDeviceModalData())
+  }, [dispatch])
 
   return (
     <ConfigProvider
@@ -32,9 +43,9 @@ const ModalViewCCTV: React.FC<Props> = (props) => {
       <Modal
         title="Basic Modal"
         closable={{ 'aria-label': 'Custom Close Button' }}
-        open={false}
-        onOk={() => console.log("OK")}
-        onCancel={() => console.log("Cancel")}
+        open={open}
+        onOk={handleClose}
+        onCancel={handleClose}
         okText="ยืนยัน"
         cancelText="ยกเลิก"
         okButtonProps={{
@@ -44,8 +55,11 @@ const ModalViewCCTV: React.FC<Props> = (props) => {
           shape: 'round'
         }}
         destroyOnHidden
+        width={1400}
       >
-        <Content />
+        <Content
+          data={data}
+        />
       </Modal>
     </ConfigProvider>
   )
