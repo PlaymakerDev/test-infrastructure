@@ -142,6 +142,7 @@ const TableSolution: React.FC<Props> = (props) => {
       width: 200,
       render: (_, record) => {
         if (record.solution_type.solution_name === 'CCTV') return <TbVideo className='fs-28 text-(--yellow) cursor-pointer' title='ดู/จัดการอุปกรณ์' onClick={() => openEquipmentModal(record)} />
+        if (record.solution_type.solution_name_atlas === 'Traffic Lighting') return
         return (
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
             <Button
