@@ -183,12 +183,23 @@ const CommandSetCard: React.FC<Props> = ({
         {/* เงื่อนไขการทำงาน — a Select (same two options as legacy
             FormAddDetail's display_type field) rather than a Switch, so it
             reads the same as the rest of the VMS forms. Per set: the dispatch
-            body carries is_all_day per setting. */}
+            body carries is_all_day per setting.
+
+            คำว่า "แสดงผลตลอดเวลา" ทำให้เข้าใจผิดมาแล้วของจริง (19-20 ก.ย. 2569):
+            มันไม่ได้แปลว่า 24 ชม.ไม่มีวันจบ แต่แปลว่า "ช่วงเดียวยาวต่อเนื่อง
+            ข้ามคืน" ซึ่งยังถูกปิดด้วยวันจบ+เวลาจบที่กรอกด้านล่างอยู่ดี
+            จึงต้องมีบรรทัดอธิบายติดไว้ ห้ามถอดออก */}
         <div>
           <label className="text-(--yellow) block mb-1">เงื่อนไขการทำงาน</label>
           <Select
             value={isAllDay ? 'ALL_DAY' : 'SCHEDULE'}
-            onChange={(v) => onChange({ isAllDay: v === 'ALL_DAY' })}
+            onChange={(v) => {
+              const next = v === 'ALL_DAY'
+              // ล้างวันที่ติ๊กไว้เมื่อสลับไปโหมดต่อเนื่อง — ไม่งั้นค่าที่จอไม่โชว์แล้ว
+              // ยังถูกส่งขึ้นไปเก็บใน DB (เจอของจริง: days_of_week=65/97 ค้างอยู่
+              // ในคำสั่ง all-day ซึ่งไม่มีใครใช้ แต่คนอ่านทีหลังจะหลงทาง)
+              onChange(next ? { isAllDay: true, daysOfWeek: [] } : { isAllDay: false })
+            }}
             options={[
               { label: 'แสดงผลตลอดเวลา', value: 'ALL_DAY' },
               { label: 'เลือกช่วงเวลาที่ต้องการแสดงผล', value: 'SCHEDULE' },
@@ -197,6 +208,11 @@ const CommandSetCard: React.FC<Props> = ({
             className="w-full"
             size="large"
           />
+          <p className="fs-12 text-white/50 mt-1 mb-0">
+            {isAllDay
+              ? 'ช่วงเดียวยาวต่อเนื่อง ไม่ดับกลางคืน — ขึ้นจอ (วันเริ่ม + เวลาขึ้นจอ) ดับจอ (วันจบ + เวลาดับจอ)'
+              : 'ขึ้น–ดับเป็นรอบทุกวันที่เลือก ตามช่วงเวลาด้านล่าง'}
+          </p>
         </div>
       </div>
 
@@ -282,7 +298,16 @@ const CommandSetCard: React.FC<Props> = ({
                   <div key={side}>
                     {slotIndex === 0 && (
                       <label className="text-(--yellow) block mb-1">
-                        {side === 'start' ? 'ช่วงเวลาเริ่มต้นการแสดงผล' : 'ช่วงเวลาสิ้นสุดการแสดงผล'}
+                        {/* โหมดต่อเนื่องไม่ได้เป็น "ช่วงเวลาต่อวัน" — เวลาสองตัวนี้
+                            ผูกกับวันแรก/วันสุดท้ายคนละวันกัน ชื่อเดิมอ่านแล้วนึกว่า
+                            เป็นรอบรายวัน ซึ่งเป็นต้นเหตุที่ตั้งค่าผิดมาแล้ว */}
+                        {isAllDay
+                          ? side === 'start'
+                            ? 'เวลาขึ้นจอ (ของวันเริ่ม)'
+                            : 'เวลาดับจอ (ของวันจบ)'
+                          : side === 'start'
+                            ? 'ช่วงเวลาเริ่มต้นการแสดงผล'
+                            : 'ช่วงเวลาสิ้นสุดการแสดงผล'}
                         <span className="text-red-500">*</span>
                       </label>
                     )}
@@ -343,7 +368,11 @@ const CommandSetCard: React.FC<Props> = ({
         )}
       </div>
 
-      {availableDays.length > 1 && (
+      {/* ซ่อนในโหมด "แสดงผลตลอดเวลา" — ค่าที่ติ๊กตรงนี้ไม่มีผลกับป้ายเลย
+          ทั้งฝั่ง API (validateAllDaySchedule ไม่แตะ days_of_week) และฝั่งป้าย
+          (ScreenCaptureVMS สาขา is_all_day ไม่อ่านฟิลด์นี้) การโชว์ไว้เฉย ๆ
+          ทำให้คนกดเชื่อว่าคุมได้ — เจอของจริงมาแล้ว 20 ก.ย. 2569 */}
+      {availableDays.length > 1 && !isAllDay && (
         <div>
           <label className="text-(--yellow) block mb-1">วันในสัปดาห์</label>
           <DayList

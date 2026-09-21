@@ -13,6 +13,13 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useControlVMSContext } from '../../../context'
 import StatusPill from '@/features/admin/vms-command-center/components/StatusPill'
+import { combineDateTime } from '@/features/admin/vms-command-center/utils/displayWindow'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
+
+// `BBBB` + ชื่อเดือนไทย เคยทำงานได้เพราะไฟล์แม่ (StatusTabContent) บังเอิญ
+// extend ไว้ให้ — ผูกไว้ตรงนี้เองจะได้ไม่พังถ้าลำดับ import เปลี่ยน
+dayjs.extend(buddhistEra)
 
 interface Props {
   item: VMSSettingByStatus
@@ -43,6 +50,38 @@ const StatusList: React.FC<Props> = (props) => {
     )
   }, [item.schedules])
 
+  /**
+   * ป้ายกำกับเดิมเขียนว่า "วันที่และเวลาเริ่มต้น/สิ้นสุด" แต่แสดงแค่วันที่ —
+   * ทั้งที่ **เวลาคือตัวที่ตัดสินว่าจอขึ้นและดับตอนไหน** และข้อมูลก็ส่งมาครบ
+   * อยู่ใน item.schedules แล้ว (วัดจริง 20 ก.ย. 2569: setting 1208 คือ
+   * 20/09 01:35 -> 22/09 02:30 แต่การ์ดโชว์แค่ "20 ก.ย. 2569 / 22 ก.ย. 2569")
+   *
+   * โหมดต่อเนื่อง (is_all_day) เวลาสองตัวผูกกับ "วันแรก" กับ "วันสุดท้าย"
+   * คนละวันกัน · โหมดรายวันเวลาเดิมซ้ำทุกวัน จึงไม่ใช่ "เวลาเริ่ม/สิ้นสุด"
+   * ของช่วง — ป้ายกำกับสองโหมดนี้ต้องคนละแบบ ห้ามรวบเป็นอันเดียว
+   */
+  const firstSchedule = item.schedules?.[0]
+  const allDayStart = item.is_all_day ? combineDateTime(item.start_date, firstSchedule?.time_since) : null
+  const allDayEnd = item.is_all_day ? combineDateTime(item.end_date, firstSchedule?.time_to) : null
+
+  const fmtDate = useCallback((v?: string | null) => {
+    const d = dayjs(v)
+    // `format()` ของ dayjs คืนสตริง "Invalid Date" ซึ่งเป็น truthy —
+    // ของเดิมเขียน `format(...) || '-'` จึงไม่เคยทำงาน
+    return d.isValid() ? d.locale('th').format('DD MMM BBBB') : '-'
+  }, [])
+
+  const fmtDateTime = useCallback((d: ReturnType<typeof combineDateTime>) =>
+    d ? d.locale('th').format('DD MMM BBBB HH:mm') : '-', [])
+
+  /** ช่วงเวลาต่อวันของโหมดรายวัน — ย่อเป็นบรรทัดเดียว (รายละเอียดรายวันอยู่ใน tooltip ของ DayList) */
+  const perDayWindows = useMemo(() => {
+    const uniq = Array.from(
+      new Set((item.schedules ?? []).map((s) => `${(s.time_since ?? '').slice(0, 5)}–${(s.time_to ?? '').slice(0, 5)}`))
+    ).filter((s) => s !== '–')
+    return uniq.join(' · ')
+  }, [item.schedules])
+
   const renderCondition = useMemo(() => {
     if (item.is_all_day) {
       return (
@@ -54,7 +93,9 @@ const StatusList: React.FC<Props> = (props) => {
             }
           }}
         >
-          <Button type='primary'>แสดงผลตลอดเวลา</Button>
+          <Tooltip title='ช่วงเดียวยาวต่อเนื่อง ไม่ดับกลางคืน — ดับจริงตาม "วันที่และเวลาดับจอ" ด้านบน ไม่ใช่แสดงไปเรื่อย ๆ ไม่มีวันจบ'>
+            <Button type='primary'>แสดงผลตลอดเวลา</Button>
+          </Tooltip>
         </ConfigProvider>
       )
     }
@@ -113,8 +154,20 @@ const StatusList: React.FC<Props> = (props) => {
               เชื่อมต่อฮาร์ดแวร์ · {item.is_online ? 'ปกติ' : 'ผิดปกติ'}
             </span>
           </div>
-          <p className='fs-12 text-white/50'>วันที่และเวลาเริ่มต้น : <span className='text-white'>{dayjs(item.start_date).format('DD MMM BBBB') || '-'}</span></p>
-          <p className='fs-12 text-white/50'>วันที่และเวลาสิ้นสุด : <span className='text-white'>{dayjs(item.end_date).format('DD MMM BBBB') || '-'}</span></p>
+          {item.is_all_day ? (
+            <>
+              <p className='fs-12 text-white/50'>วันที่และเวลาขึ้นจอ : <span className='text-white'>{fmtDateTime(allDayStart)}</span></p>
+              <p className='fs-12 text-white/50'>วันที่และเวลาดับจอ : <span className='text-white'>{fmtDateTime(allDayEnd)}</span></p>
+            </>
+          ) : (
+            <>
+              <p className='fs-12 text-white/50'>วันที่เริ่มต้น : <span className='text-white'>{fmtDate(item.start_date)}</span></p>
+              <p className='fs-12 text-white/50'>วันที่สิ้นสุด : <span className='text-white'>{fmtDate(item.end_date)}</span></p>
+              {perDayWindows && (
+                <p className='fs-12 text-white/50'>ช่วงเวลาต่อวัน : <span className='text-white'>{perDayWindows}</span></p>
+              )}
+            </>
+          )}
           <div>
             <p className='fs-12 text-white/50'>เงื่อนไขการทำงาน :</p>
             {renderCondition}

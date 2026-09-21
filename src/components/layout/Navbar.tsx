@@ -50,6 +50,7 @@ import { resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
 import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useHydrated } from "@/hooks/useHydrated";
 import IconTracking from "@/components/icon/IconTracking";
 import IconLPR from "@/components/icon/IconLPR";
 import IconAIChat from "@/components/icon/IconAIChat";
@@ -212,7 +213,22 @@ export default function Navbar() {
   // grays out whenever NOTHING currently on screen would respond — including
   // detail TABS without a map (e.g. incident-detection's รายงานเหตุการณ์),
   // which a route list could never express.
-  const { mode: mapFocusMode, isMapFocus, focusAvailable, setMapFocus, setMode: setMapFocusMode, toggle: toggleMapFocus } = useMapFocusMode()
+  const {
+    mode: liveFocusMode,
+    isMapFocus: liveIsMapFocus,
+    focusAvailable: liveFocusAvailable,
+    setMapFocus,
+    setMode: setMapFocusMode,
+    toggle: toggleMapFocus,
+  } = useMapFocusMode()
+  // This Navbar hydrates inside a Suspense boundary, so a page's own mount
+  // effects (dashboard turns focus ON, MapFocusGrid registers consumers) can
+  // land BEFORE it. Render the server's values for the hydration pass, then
+  // the live ones — otherwise React sees markup the SSR HTML never had.
+  const hydrated = useHydrated()
+  const mapFocusMode = hydrated ? liveFocusMode : 'off'
+  const isMapFocus = hydrated && liveIsMapFocus
+  const focusAvailable = hydrated && liveFocusAvailable
   // On the listed overall pages the picker becomes a plain click-to-toggle
   // (off ↔ both) — no dropdown, per 2026-07-24 request.
   const directFocusToggle = focusAvailable && DIRECT_FOCUS_TOGGLE_ROUTES.has(pathname)

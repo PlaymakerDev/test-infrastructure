@@ -35,7 +35,8 @@ import BureauMaskLayer, {
   BUREAU_HOVER_FILL_ID,
   BUREAU_HOVER_LINE_ID,
 } from './markers/BureauMaskLayer'
-import { useBureauFeatures } from './hooks/useBureauFeatures'
+import { useBureauFeatures, isPointInBureau, findBureauAt } from './hooks/useBureauFeatures'
+import { useViewportBounds, inBounds } from './hooks/useViewportBounds'
 import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
@@ -379,15 +380,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // Coord sanity check — inside the bureau polygon the device CLAIMS via
     // road.stch. No polygon to check against (บทช./unknown stch, geojson not
     // loaded yet) → trust as-is.
-    const isTrustedCoord = (dev: Device): boolean => {
-      if (!bureauFeatures) return true
-      const bf = bureauFeatures.find((b) => b.stch === dev.stch)
-      if (!bf) return true
-      const [minX, minY, maxX, maxY] = bf.bbox
-      const [lng, lat] = dev.coord
-      if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-      return booleanPointInPolygon(dev.coord, bf.feature)
-    }
+    // Shared memo in useBureauFeatures — same test, computed once per
+    // (stch, coord) and reused by RegionSummaryLayer. `null` = trust as-is.
+    const isTrustedCoord = (dev: Device): boolean =>
+      isPointInBureau(bureauFeatures, dev.stch, dev.coord[0], dev.coord[1]) ?? true
     // LPR pins ride alongside the /position devices. Scoping mirrors the
     // RatioChart LPR tile (FE filter by department_id — /lpr/points is not
     // dept-scoped by BE). `lpr-` id prefix: an LPR point can be the SAME
@@ -430,14 +426,9 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       // yet — falling back to the raw stch keeps prior behaviour.
       let bucketStch = dev.stch
       if (!BUREAU_STCH_SET.has(bucketStch) && bureauFeatures) {
-        const hit = bureauFeatures.find((b) => {
-          // Cheap bbox reject before the polygon test — 18 bboxes × N devices
-          // dominates the loop, so this is where we save the most work.
-          const [minX, minY, maxX, maxY] = b.bbox
-          const [lng, lat] = dev.coord
-          if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-          return booleanPointInPolygon(dev.coord, b.feature)
-        })
+        // Same scan (first hit wins), memoised and shared with the
+        // overall pages' RegionSummaryLayer.
+        const hit = findBureauAt(bureauFeatures, dev.coord[0], dev.coord[1])
         // Central bucket keyed as 0 — 18 buckets 1..18 + this one → exactly
         // 19 aggregate markers on the country view (down from ~21 before).
         bucketStch = hit ? hit.stch : 0
@@ -550,6 +541,19 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     }
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
   }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord, roadFilterNum])
+
+  // Overlap stacks are DOM markers and, unlike the tiers above, they stay
+  // mounted from z9 all the way in — at street zoom almost every one sits far
+  // off-screen while mapbox still re-projects it each move frame. Cull to the
+  // padded viewport, same rule as RoadSummaryMarker.
+  const viewport = useViewportBounds()
+  const nearbyOverlapGroups = useMemo(
+    () =>
+      viewport
+        ? overlapGroups.filter((g) => inBounds(viewport, g[0].coord[0], g[0].coord[1]))
+        : overlapGroups,
+    [overlapGroups, viewport],
+  )
 
   // Fly-to target for a `?road_id=` landing. Priority: the road-scoped payload
   // (BE-filtered — authoritative) → the road's own aggregate inside the
@@ -1022,7 +1026,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
-      {overlapGroups.map((group) => (
+      {nearbyOverlapGroups.map((group) => (
         <OverlapStackMarker
           key={`${group[0].coord[0]},${group[0].coord[1]}`}
           group={group}
