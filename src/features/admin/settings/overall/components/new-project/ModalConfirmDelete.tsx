@@ -4,7 +4,7 @@ import { ProjectListData } from '@/types/manage/project-api'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { ConfigProvider, Modal } from 'antd'
 import dayjs from 'dayjs'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 interface Props {
   onDelete?: (id: number) => void
@@ -17,6 +17,30 @@ interface ContentProps {
 
 const Content: React.FC<ContentProps> = (props) => {
   const { data } = props
+
+  const renderWarrantyDuration = useMemo(() => {
+    if (dayjs().isBefore(dayjs(data?.warranty_start_date))) {
+      return {
+        remaining_days: '0 วัน',
+        remaining_status: 'ระยะเวลาที่เหลือ',
+        warranty_status: 'ระหว่างส่งมอบ'
+      }
+    } else {
+      if (data?.is_warranty) {
+        return {
+          remaining_days: dayjs(data?.warranty_end_date).diff(dayjs(data?.warranty_start_date), 'day') + ' วัน',
+          remaining_status: 'ระยะเวลาที่เหลือ',
+          warranty_status: 'ในค้ำ'
+        }
+      } else {
+        return {
+          remaining_days: '0 วัน',
+          remaining_status: 'หมดค้ำประกัน',
+          warranty_status: 'หมดค้ำ'
+        }
+      }
+    }
+  }, [data?.warranty_start_date, data?.warranty_end_date, data?.is_warranty])
 
   return (
     <div className='mt-5'>
@@ -37,16 +61,13 @@ const Content: React.FC<ContentProps> = (props) => {
       <section className='mt-5'>
         <div className='rounded-lg border border-[#E94C4C] bg-[#E94C4C]/20 p-5'>
           <p>ชื่อโครงการ: {data?.project_name || '-'}</p>
-          <p>รหัสโครงการ: {data?.project_no || '-'}</p>
+          <p>ปีงบประมาณ: {data?.budget_year || '-'}</p>
           <p>เลขที่สัญญา: {data?.contract_no || '-'}</p>
           <p>ผู้ว่าจ้าง: {data?.department?.department_short_name || '-'}</p>
           <p>ผู้รับจ้าง: {data?.contractor?.contractor?.company_name || '-'}</p>
-          <p>
-            ระยะเวลาค้ำประกัน:{' '}
-            {data?.warranty_start_date ? dayjs(data.warranty_start_date).format('DD MMM BBBB') : '-'}
-            {' - '}
-            {data?.warranty_end_date ? dayjs(data.warranty_end_date).format('DD MMM BBBB') : '-'}
-          </p>
+          <p>วันที่เริ่มต้นค้ำประกัน: {data?.warranty_start_date ? dayjs(data.warranty_start_date).format('DD MMM BBBB') : '-'}</p>
+          <p>วันที่สิ้นสุดค้ำประกัน: {data?.warranty_end_date ? dayjs(data.warranty_end_date).format('DD MMM BBBB') : '-'}</p>
+          <p>สถานะค้ำประกัน: {renderWarrantyDuration?.warranty_status || '-'}</p>
         </div>
       </section>
     </div>

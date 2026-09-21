@@ -1,10 +1,11 @@
-import { Button, Input, Select, Spin, message } from 'antd'
+import { Button, ConfigProvider, Input, Select, Spin, message } from 'antd'
 import dayjs from 'dayjs'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { TbPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
+import { thBuddhistLocale } from '@/components/date-picker/thBuddhistLocale'
 import {
   useBudgetYears,
   useCreateProject,
@@ -467,46 +468,48 @@ const FormCreateProject: React.FC<Props> = (props) => {
           </Button>
         </section>
 
-        <div className='grid grid-cols-2 gap-4'>
-          <Controller
-            control={control}
-            name='warrantyStart'
-            rules={{ required: 'กรุณาระบุวันที่เริ่มต้นค้ำประกัน' }}
-            render={({ field }) => (
-              <fieldset>
-                <label className='text-(--yellow)'>วันที่เริ่มต้นค้ำประกัน <span className='text-red-500'>*</span></label>
-                <BuddhistDatePicker
-                  className='w-full'
-                  size='large'
-                  format='DD/MM/BBBB'
-                  placeholder='กรุณาระบุวันที่เริ่มต้นค้ำประกัน...'
-                  value={field.value}
-                  onChange={(date) => field.onChange(date)}
-                />
-                {errors.warrantyStart && <p className='fs-12 text-red-500'>{errors.warrantyStart.message}</p>}
-              </fieldset>
-            )}
-          />
-          <Controller
-            control={control}
-            name='warrantyEnd'
-            rules={{ required: 'กรุณาระบุวันที่สิ้นสุดค้ำประกัน' }}
-            render={({ field }) => (
-              <fieldset>
-                <label className='text-(--yellow)'>วันที่สิ้นสุดค้ำประกัน <span className='text-red-500'>*</span></label>
-                <BuddhistDatePicker
-                  className='w-full'
-                  size='large'
-                  format='DD/MM/BBBB'
-                  placeholder='กรุณาระบุวันที่สิ้นสุดค้ำประกัน...'
-                  value={field.value}
-                  onChange={(date) => field.onChange(date)}
-                />
-                {errors.warrantyEnd && <p className='fs-12 text-red-500'>{errors.warrantyEnd.message}</p>}
-              </fieldset>
-            )}
-          />
-        </div>
+        <ConfigProvider locale={thBuddhistLocale}>
+          <div className='grid grid-cols-2 gap-4'>
+            <Controller
+              control={control}
+              name='warrantyStart'
+              rules={{ required: 'กรุณาระบุวันที่เริ่มต้นค้ำประกัน' }}
+              render={({ field }) => (
+                <fieldset>
+                  <label className='text-(--yellow)'>วันที่เริ่มต้นค้ำประกัน <span className='text-red-500'>*</span></label>
+                  <BuddhistDatePicker
+                    className='w-full'
+                    size='large'
+                    format='DD MMM BBBB'
+                    placeholder='กรุณาระบุวันที่เริ่มต้นค้ำประกัน...'
+                    value={field.value}
+                    onChange={(date) => field.onChange(date)}
+                  />
+                  {errors.warrantyStart && <p className='fs-12 text-red-500'>{errors.warrantyStart.message}</p>}
+                </fieldset>
+              )}
+            />
+            <Controller
+              control={control}
+              name='warrantyEnd'
+              rules={{ required: 'กรุณาระบุวันที่สิ้นสุดค้ำประกัน' }}
+              render={({ field }) => (
+                <fieldset>
+                  <label className='text-(--yellow)'>วันที่สิ้นสุดค้ำประกัน <span className='text-red-500'>*</span></label>
+                  <BuddhistDatePicker
+                    className='w-full'
+                    size='large'
+                    format='DD MMM BBBB'
+                    placeholder='กรุณาระบุวันที่สิ้นสุดค้ำประกัน...'
+                    value={field.value}
+                    onChange={(date) => field.onChange(date)}
+                  />
+                  {errors.warrantyEnd && <p className='fs-12 text-red-500'>{errors.warrantyEnd.message}</p>}
+                </fieldset>
+              )}
+            />
+          </div>
+        </ConfigProvider>
 
         <button ref={submitRef} type='submit' hidden disabled={isSubmitting} />
       </form>

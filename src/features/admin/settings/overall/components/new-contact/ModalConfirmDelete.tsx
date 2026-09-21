@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetContactModalData } from '@/stores/reducers/modal/customModalSlice'
 import { ContractorData } from '@/types/manage/contractor-api'
+import { fmtNumber } from '@/utils/formatNumber'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { ConfigProvider, Modal } from 'antd'
 import React, { useCallback } from 'react'
@@ -23,13 +24,11 @@ const Content: React.FC<ContentProps> = (props) => {
       <div className='mt-5'>
         <section>
           <div className='flex flex-col items-center justify-center gap-5'>
-            <ExclamationCircleOutlined style={{ fontSize: '7rem', color: '#F59E0B' }} />
+            <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-orange)' }} />
             <div className='text-center'>
               <h2>ไม่สามารถลบผู้รับจ้างได้</h2>
               <p>
-                ผู้รับจ้างรายนี้กำลังถูกใช้งานอยู่ใน{' '}
-                <strong>{(data?.project_count ?? 0).toLocaleString()}</strong> โครงการ
-                กรุณาลบหรือย้ายโครงการที่เกี่ยวข้องก่อน
+                เนื่องจากระบบตรวจพบผู้รับจ้างเกี่ยวข้อง <span className='text-(--default-orange) font-semibold'>{fmtNumber(Number(data?.project_count) || 0)} โครงการ</span>
               </p>
             </div>
           </div>
@@ -37,9 +36,10 @@ const Content: React.FC<ContentProps> = (props) => {
         <section className='mt-5'>
           <div className='rounded-lg border border-[#F59E0B] bg-[#F59E0B]/20 p-5'>
             <p>ชื่อบริษัท: {data?.company_name || '-'}</p>
-            <p>ชื่อย่อ: {data?.short_name || '-'}</p>
-            <p>ผู้ติดต่อ: {data?.name || '-'}</p>
-            <p>จำนวนโครงการที่ใช้งาน: {(data?.project_count ?? 0).toLocaleString()}</p>
+            <p>ชื่อย่อภาษาอังกฤษ: {data?.short_name || '-'}</p>
+            <p>ที่อยู่: {data?.address || '-'}</p>
+            <p>ชื่อผู้ติดต่อ: {data?.name || '-'}</p>
+            <p>เบอร์ติดต่อ: {data?.phone || '-'}</p>
           </div>
         </section>
       </div>
@@ -53,16 +53,17 @@ const Content: React.FC<ContentProps> = (props) => {
           <ExclamationCircleOutlined style={{ fontSize: '7rem', color: '#E94C4C' }} />
           <div className='text-center'>
             <h2>ยืนยันลบผู้รับจ้างหรือไม่?</h2>
-            <p>ระบบจะลบข้อมูลโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+            <p>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
           </div>
         </div>
       </section>
       <section className='mt-5'>
         <div className='rounded-lg border border-[#E94C4C] bg-[#E94C4C]/20 p-5'>
           <p>ชื่อบริษัท: {data?.company_name || '-'}</p>
-          <p>ชื่อย่อ: {data?.short_name || '-'}</p>
-          <p>ผู้ติดต่อ: {data?.name || '-'}</p>
-          <p>เบอร์โทรศัพท์: {data?.phone || '-'}</p>
+          <p>ชื่อย่อภาษาอังกฤษ: {data?.short_name || '-'}</p>
+          <p>ที่อยู่: {data?.address || '-'}</p>
+          <p>ชื่อผู้ติดต่อ: {data?.name || '-'}</p>
+          <p>เบอร์ติดต่อ: {data?.phone || '-'}</p>
         </div>
       </section>
     </div>

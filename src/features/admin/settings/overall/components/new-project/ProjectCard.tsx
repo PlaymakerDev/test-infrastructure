@@ -85,7 +85,7 @@ const ProjectCard: React.FC<Props> = (props) => {
         </div>
       </section>
       <section className='mt-3'>
-        <h4 className='text-(--yellow)'>
+        <h4 className='text-(--yellow) font-normal!'>
           {item?.contractor.contractor.company_name || '-'}
         </h4>
         <div className="mt-1.5">
@@ -94,12 +94,12 @@ const ProjectCard: React.FC<Props> = (props) => {
               className='line-clamp-2 cursor-pointer hover:text-(--yellow) transition-colors duration-200'
               onClick={() => router.push(`/admin/settings/detail/project/${item?.id}`)}
             >
-              <strong>ชื่อโครงการ:</strong> {item?.project_name || '-'}
+              <span className='text-white/50'>ชื่อโครงการ:</span> {item?.project_name || '-'}
             </p>
           </Tooltip>
-          <p><strong>รหัสโครงการ:</strong> {item?.project_no || '-'}</p>
-          <p><strong>เลขที่สัญญา:</strong> {item?.contract_no || '-'}</p>
-          <p><strong>สถานะการค้ำประกัน:</strong> <span className={warrantyClassName}>{renderWarrantyDuration.warranty_status || '-'}</span></p>
+          <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+          <p><span className='text-white/50'>เลขที่สัญญา:</span> {item?.contract_no || '-'}</p>
+          <p><span className='text-white/50'>สถานะการค้ำประกัน:</span> <span className={warrantyClassName}>{renderWarrantyDuration.warranty_status || '-'}</span></p>
         </div>
       </section>
       <section className='mt-3'>
