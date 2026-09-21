@@ -51,7 +51,7 @@ interface FormCreateCameraValues {
 const FormCreateCamera: React.FC<Props> = (props) => {
   const { data, locations, defaultLocationId, submitRef, onSuccess } = props
   const { message } = App.useApp()
-  const { createLocation, nextLocationName, isCreating: isCreatingLocation } = useProjectContext()
+  const { roadSolution, createLocation, nextLocationName, isCreating: isCreatingLocation } = useProjectContext()
 
   // Inline "create a จุดติดตั้ง" field inside the dropdown — a road often
   // gains its point and its first camera in the same sitting, and bouncing
@@ -137,7 +137,21 @@ const FormCreateCamera: React.FC<Props> = (props) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Same header block as FormCreateDevice, so the two modals on this
+          page read alike. It names the สายทาง rather than a จุดติดตั้ง:
+          CCTV covers the whole road, and which point the camera stands at
+          is a field below, not fixed context. */}
       <section>
+        <div className='rounded-lg p-3 bg-(--light-gray-2)'>
+          <div className='flex justify-between items-center flex-wrap gap-3'>
+            <h4>อุปกรณ์ CCTV</h4>
+            <div className='rounded-2xl px-3 border border-(--yellow)'>
+              <p className='fs-12'>{roadSolution?.road?.road_code || '-'}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className='mt-5'>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
             <Controller

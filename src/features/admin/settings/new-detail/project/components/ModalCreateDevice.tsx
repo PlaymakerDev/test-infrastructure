@@ -5,6 +5,7 @@ import { ConfigProvider, Modal } from 'antd'
 import React, { RefObject, useCallback, useMemo, useRef } from 'react'
 import { APIResponseSolutionByID } from '@/types/manage/project-detail-api'
 import { FormUpdateSolutionLocation, FormCreateDevice, FormCreateCamera } from '../components'
+import { useProjectContext } from '../context'
 import { TbDeviceCctv, TbTools } from 'react-icons/tb'
 
 interface Props {
@@ -21,7 +22,8 @@ interface ContentProps {
 }
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { item, data, record, type, submitRef, onSuccess } = props
+  const { item, data, type, submitRef, onSuccess } = props
+  const { roadSolution } = useProjectContext()
 
   const renderContentType = useMemo(() => {
     switch (type) {
@@ -32,11 +34,22 @@ const Content: React.FC<ContentProps> = (props) => {
       case 'EDIT_SOLUTION_NAME':
         return <FormUpdateSolutionLocation item={item} type={type} submitRef={submitRef} onSuccess={onSuccess} />
       case 'CREATE_CAMERA':
-        return <FormCreateCamera item={item} record={record} submitRef={submitRef} onSuccess={onSuccess} />
+        // A camera belongs to a จุดติดตั้ง, not to a CCTV solution row — one
+        // CCTV solution now covers the whole สายทาง. So the form takes the
+        // road's points and preselects the one this modal was opened from,
+        // rather than the `record` (solution) it used to receive.
+        return (
+          <FormCreateCamera
+            locations={roadSolution.solution_locations}
+            defaultLocationId={item?.solution_location_id ?? null}
+            submitRef={submitRef}
+            onSuccess={onSuccess}
+          />
+        )
       default:
         return null
     }
-  }, [type, item, record, submitRef, onSuccess, data])
+  }, [type, item, submitRef, onSuccess, data, roadSolution.solution_locations])
 
   return renderContentType
 }

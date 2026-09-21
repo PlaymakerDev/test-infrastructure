@@ -1,9 +1,9 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { App, Button, ConfigProvider } from 'antd'
+import { App, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
-import { TbVideo } from 'react-icons/tb'
+import { TbChevronDown, TbChevronUp, TbVideo } from 'react-icons/tb'
 import { getProjectRoadCamerasAPI } from '@/services/routes/ProjectDetailService'
 import { manageKeys, useDeleteCamera } from '@/hooks/queries/manage'
 import { ProjectRoadCamera } from '@/types/manage/project-detail-api'
@@ -27,6 +27,12 @@ const CctvEquipmentSection: React.FC<Props> = () => {
 
   const [editing, setEditing] = useState<ProjectRoadCamera | null>(null)
   const [isModalOpen, setModalOpen] = useState(false)
+  // Starts collapsed: the camera list can run to dozens of rows and would
+  // otherwise push the จุดติดตั้ง tabs below the fold on every visit. The
+  // header still shows the camera count, so the panel is worth opening only
+  // when there is something to do in it. Same shape as the settings
+  // feature's CollapseDeptCard.
+  const [isCollapsed, setCollapsed] = useState(true)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: manageKeys.solutions.camerasAtProjectRoad(projectRoadId),
@@ -73,8 +79,22 @@ const CctvEquipmentSection: React.FC<Props> = () => {
       className='bg-(--dark-black) py-4 px-8 rounded-lg mb-6'
       style={{ boxShadow: '0px 8px 10px 0px #00000040' }}
     >
-      <div className='flex items-center justify-between flex-wrap gap-3 mb-4'>
-        <div className='flex items-center gap-3'>
+      <div className={`flex items-center justify-between flex-wrap gap-3 ${isCollapsed ? '' : 'mb-4'}`}>
+        {/* Only the title cluster toggles — the "เพิ่มกล้อง" button sits
+            outside it, so opening the form never folds the panel shut. */}
+        <div
+          className='flex items-center gap-3 cursor-pointer select-none'
+          role='button'
+          tabIndex={0}
+          aria-expanded={!isCollapsed}
+          onClick={() => setCollapsed(!isCollapsed)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setCollapsed(!isCollapsed)
+            }
+          }}
+        >
           <TbVideo className='fs-24 text-(--yellow)' />
           <h4 className='text-(--yellow)'>อุปกรณ์ CCTV</h4>
           {data?.solution?.solution_name && (
@@ -83,29 +103,34 @@ const CctvEquipmentSection: React.FC<Props> = () => {
           <span className='rounded-2xl px-3 border border-white fs-12'>
             {cameras.length} กล้อง
           </span>
+          {isCollapsed
+            ? <TbChevronDown className='text-(--yellow) fs-18' />
+            : <TbChevronUp className='text-(--yellow) fs-18' />}
         </div>
-        <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
-          <Button
-            ghost
-            type='primary'
-            htmlType='button'
-            shape='round'
-            icon={<PlusOutlined />}
-            onClick={openCreate}
-          >
-            เพิ่มกล้อง
-          </Button>
-        </ConfigProvider>
+        {/* Same styling as SolutionTitle's "เพิ่มประเภทงาน": solid primary
+            (brand yellow), round, label in fs-12 — no ConfigProvider
+            override. The two buttons sit a few rows apart on this page and
+            read as one control when they match. */}
+        <Button
+          type='primary'
+          icon={<PlusOutlined />}
+          shape='round'
+          onClick={openCreate}
+        >
+          <p className='fs-12'>เพิ่มกล้อง</p>
+        </Button>
       </div>
 
-      <TableRoadCameras
-        data={cameras}
-        isLoading={isLoading}
-        isError={isError}
-        onEdit={openEdit}
-        onDelete={handleDelete}
-        isDeleting={isDeleting}
-      />
+      {!isCollapsed && (
+        <TableRoadCameras
+          data={cameras}
+          isLoading={isLoading}
+          isError={isError}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
+        />
+      )}
 
       <ModalCreateCamera
         open={isModalOpen}
