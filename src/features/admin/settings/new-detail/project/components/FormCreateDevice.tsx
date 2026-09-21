@@ -1,29 +1,25 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { RefObject } from 'react'
-import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, GeometryPoint, SolutionLocation } from '@/types/manage/project-detail-api'
+import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, SolutionLocation } from '@/types/manage/project-detail-api'
 import { App, Col, Input, Row, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { getSolutionTypesAPI } from '@/services/routes/SolutionService'
+import { SOLUTION_TYPE } from '@/constants'
 import { useCreateProjectSolution, useUpdateProjectSolution } from '@/hooks/queries/manage'
+import { SOLUTION_TYPE_CCTV } from '../data/solutionType'
+import {
+  IP_PATTERN,
+  LAT_LNG_PATTERN,
+  STA_FORMAT_MESSAGE,
+  STA_PATTERN,
+  readErrorMessage,
+  sanitizeIP,
+  sanitizeLatLng,
+  sanitizeSta,
+  toGeometryPoint,
+} from '../utils/form'
 import { useProjectContext } from '../context'
-
-/** Best-effort extractor for the backend's Thai error message — mirrors
- *  FormCreateITSUser's own helper. */
-const readErrorMessage = (error: unknown, fallback: string): string => {
-  if (error && typeof error === 'object') {
-    const withResponse = error as {
-      response?: { data?: { message?: string } }
-      message?: string
-    }
-    return (
-      withResponse.response?.data?.message ??
-      withResponse.message ??
-      fallback
-    )
-  }
-  return fallback
-}
 
 interface Props {
   data?: APIResponseSolutionByID | null
@@ -31,35 +27,6 @@ interface Props {
   submitRef: RefObject<HTMLButtonElement | null>
   onSuccess?: () => void
 }
-
-/** Latitude/longitude are entered as plain decimals (Thailand's coordinates
- *  are always positive) — strip anything that isn't a digit or dot, and
- *  collapse a second/third dot instead of leaving e.g. "12.34.56". */
-const sanitizeLatLng = (value: string) => {
-  const cleaned = value.replace(/[^0-9.]/g, '')
-  const [head, ...rest] = cleaned.split('.')
-  return rest.length ? `${head}.${rest.join('')}` : head
-}
-
-/** Digits, optionally followed by a single "." and more digits — rejects a
- *  bare "." or "12." left over from mid-typing, still allowed while the
- *  field isn't submitted yet. */
-const LAT_LNG_PATTERN = /^\d+(\.\d+)?$/
-
-/** IPv4 (used for both Local IP and the ZeroTier IP) — allow digits and
- *  dots while typing (unlike lat/lng, multiple dots are valid here, so no
- *  collapsing to a single one). */
-const sanitizeIP = (value: string) => value.replace(/[^0-9.]/g, '')
-
-/** Strict IPv4: four 0–255 octets separated by dots. */
-const IP_PATTERN = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
-
-/** Backend reads longitude FIRST and rejects WKT strings — GeoJSON only.
- *  Shared by both the create and update bodies. */
-const toGeometryPoint = (longitude: string, latitude: string): GeometryPoint => ({
-  coordinates: [Number(longitude), Number(latitude)],
-  type: 'Point',
-})
 
 interface FormCreateDeviceValues {
   anydesk_id: string
@@ -90,6 +57,29 @@ const FormCreateDevice: React.FC<Props> = (props) => {
     queryKey: ['solution-type'],
     queryFn: () => getSolutionTypesAPI()
   })
+
+  // CCTV is managed at the สายทาง level (see SOLUTION_TYPE_CCTV) — the
+  // backend rejects POST /manage/solution for it, so offering it here would
+  // only produce an error.
+  //
+  // Labels are resolved here rather than via `fieldNames`, because
+  // tbl_solution_type.solution_name_atlas is EMPTY for all 9 rows in
+  // production: pointing the label at it made every option render as its
+  // own id ("1", "2", …) and left the input blank after picking one. Fall
+  // back to the same SOLUTION_TYPE map TableSolution displays, so the
+  // dropdown and the table agree, then to the raw backend name.
+  const solutionTypeOptions = useMemo(
+    () => (solutionType?.data ?? [])
+      .filter((type) => type.id !== SOLUTION_TYPE_CCTV)
+      .map((type) => ({
+        label:
+          type.solution_name_atlas?.trim() ||
+          SOLUTION_TYPE[String(type.id) as keyof typeof SOLUTION_TYPE] ||
+          type.solution_name,
+        value: type.id,
+      })),
+    [solutionType],
+  )
 
   const form = useForm<FormCreateDeviceValues>({
     defaultValues: {
@@ -234,13 +224,9 @@ const FormCreateDevice: React.FC<Props> = (props) => {
                         placeholder="กรุณาเลือกประเภทงาน..."
                         size='large'
                         allowClear
-                        showSearch={{ optionFilterProp: 'solution_name_atlas' }}
-                        fieldNames={{
-                          label: 'solution_name_atlas',
-                          value: 'id'
-                        }}
+                        showSearch={{ optionFilterProp: 'label' }}
                         loading={isSolutionTypeLoading}
-                        options={solutionType?.data}
+                        options={solutionTypeOptions}
                         className="w-full!"
                       />
                       {errors.solution_type_id && <p className='fs-12 text-red-500'>{errors.solution_type_id.message}</p>}
@@ -308,7 +294,10 @@ const FormCreateDevice: React.FC<Props> = (props) => {
             <Controller
               control={control}
               name='sta'
-              rules={{ required: 'กรุณาระบุเลขที่ กม.' }}
+              rules={{
+                required: 'กรุณาระบุเลขที่ กม.',
+                pattern: { value: STA_PATTERN, message: STA_FORMAT_MESSAGE },
+              }}
               render={({ field }) => {
                 return (
                   <fieldset>
@@ -316,8 +305,9 @@ const FormCreateDevice: React.FC<Props> = (props) => {
                     <Input
                       {...field}
                       name={field.name}
-                      placeholder="กรุณาระบุเลขที่ กม...."
+                      placeholder="เช่น 0+500"
                       size='large'
+                      onChange={(e) => field.onChange(sanitizeSta(e.target.value))}
                     />
                     {errors.sta && <p className='fs-12 text-red-500'>{errors.sta.message}</p>}
                   </fieldset>
@@ -330,13 +320,13 @@ const FormCreateDevice: React.FC<Props> = (props) => {
               control={control}
               name='ip_address'
               rules={{
-                required: 'กรุณาระบุ Local IP Adress',
-                pattern: { value: IP_PATTERN, message: 'รูปแบบ Local IP Adress ไม่ถูกต้อง' },
+                validate: (value) =>
+                  !value || IP_PATTERN.test(value) || 'รูปแบบ Local IP Adress ไม่ถูกต้อง',
               }}
               render={({ field }) => {
                 return (
                   <fieldset>
-                    <label className='text-(--yellow)'>Local IP Adress <span className='text-red-500'>*</span></label>
+                    <label className='text-(--yellow)'>Local IP Adress</label>
                     <Input
                       {...field}
                       name={field.name}
@@ -356,11 +346,10 @@ const FormCreateDevice: React.FC<Props> = (props) => {
             <Controller
               control={control}
               name='anydesk_id'
-              rules={{ required: 'กรุณาระบุ Anydesk' }}
               render={({ field }) => {
                 return (
                   <fieldset>
-                    <label className='text-(--yellow)'>Anydesk <span className='text-red-500'>*</span></label>
+                    <label className='text-(--yellow)'>Anydesk</label>
                     <Input
                       {...field}
                       name={field.name}
@@ -378,13 +367,13 @@ const FormCreateDevice: React.FC<Props> = (props) => {
               control={control}
               name='zt_ip_address'
               rules={{
-                required: 'กรุณาระบุ ZT IP Adress',
-                pattern: { value: IP_PATTERN, message: 'รูปแบบ ZT IP Adress ไม่ถูกต้อง' },
+                validate: (value) =>
+                  !value || IP_PATTERN.test(value) || 'รูปแบบ ZT IP Adress ไม่ถูกต้อง',
               }}
               render={({ field }) => {
                 return (
                   <fieldset>
-                    <label className='text-(--yellow)'>ZT IP Adress <span className='text-red-500'>*</span></label>
+                    <label className='text-(--yellow)'>ZT IP Adress</label>
                     <Input
                       {...field}
                       name={field.name}
@@ -404,11 +393,10 @@ const FormCreateDevice: React.FC<Props> = (props) => {
             <Controller
               control={control}
               name='remarks'
-              rules={{ required: 'กรุณาระบุหมายเหตุ' }}
               render={({ field }) => {
                 return (
                   <fieldset>
-                    <label className='text-(--yellow)'>หมายเหตุ <span className='text-red-500'>*</span></label>
+                    <label className='text-(--yellow)'>หมายเหตุ</label>
                     <Input
                       {...field}
                       name={field.name}

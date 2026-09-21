@@ -232,3 +232,38 @@ export interface SolutionCameraList {
   contractor_id: string
   updated_at: string
 }
+
+// GET ROAD-LEVEL CCTV (/manage/solution/camera/by_project_road/{id})
+//
+// CCTV is one solution per (โครงการ + สายทาง), not per install point, so the
+// settings page shows it once above the จุดติดตั้ง tabs. Each camera carries
+// the point it actually stands at — that is a column in the table, and the
+// value the add/edit form picks.
+
+export interface ProjectRoadCCTVSolution {
+  solution_id: number
+  solution_name: string
+  /** The chainage span its cameras cover, e.g. "0+100 - 6+000". */
+  sta: string | null
+}
+
+export interface ProjectRoadCamera {
+  id: string
+  camera_name: string
+  sta: string
+  ip_address: string
+  hls_url: string
+  remark: string | null
+  point_geometry: number[] | null
+  curl_status: boolean
+  curl_updated: string | null
+  solution_id: number | null
+  solution_location_id: number
+  location_name: string
+}
+
+export interface APIResponseProjectRoadCameras {
+  /** null when the road has no CCTV yet — the first camera creates it. */
+  solution: ProjectRoadCCTVSolution | null
+  cameras: ProjectRoadCamera[]
+}

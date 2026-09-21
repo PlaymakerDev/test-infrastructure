@@ -2,7 +2,7 @@ import { Card, ConfigProvider, TabsProps } from 'antd'
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons'
 import React, { useCallback, useMemo } from 'react'
 import { Tabs } from 'antd'
-import { EmptyRoadSolution, SolutionContent } from '../components'
+import { CctvEquipmentSection, EmptyRoadSolution, SolutionContent } from '../components'
 import { useProjectContext } from '../context'
 
 interface Props {
@@ -64,36 +64,41 @@ const MainContent: React.FC<Props> = (props) => {
   if (!roadSolution.solution_locations.length) return <EmptyRoadSolution />
 
   return (
-    <div
-      className='bg-(--dark-black) py-4 px-8 rounded-lg'
-      style={{
-        boxShadow: '0px 8px 10px 0px #00000040',
-      }}
-    >
-      <ConfigProvider
-        theme={{
-          components: {
-            Tabs: {
-              // No dark algorithm → default inactive tab text is too dark on this bg.
-              itemColor: "rgba(255,255,255,0.55)",
-              itemHoverColor: "#FFFFFF",
-              itemActiveColor: "var(--default-blue)",
-              itemSelectedColor: "var(--default-blue)",
-              inkBarColor: "var(--default-blue)",
-            }
-          }
+    <>
+      {/* CCTV is scoped to the whole สายทาง, not to one จุดติดตั้ง, so it sits
+          above the tabs rather than inside one of them. */}
+      <CctvEquipmentSection />
+      <div
+        className='bg-(--dark-black) py-4 px-8 rounded-lg'
+        style={{
+          boxShadow: '0px 8px 10px 0px #00000040',
         }}
       >
-        <Tabs
-          activeKey={activeKey}
-          items={items}
-          onChange={handleChange}
-          indicator={{ align: 'center' }}
-          className='[&_.ant-tabs-nav::before]:hidden! [&_.ant-tabs-nav-list]:relative! [&_.ant-tabs-nav-list::after]:content-[""]! [&_.ant-tabs-nav-list::after]:absolute! [&_.ant-tabs-nav-list::after]:inset-x-0! [&_.ant-tabs-nav-list::after]:bottom-0! [&_.ant-tabs-nav-list::after]:border-b! [&_.ant-tabs-nav-list::after]:border-(--light-gray-3)!'
-          destroyOnHidden
-        />
-      </ConfigProvider>
-    </div>
+        <ConfigProvider
+          theme={{
+            components: {
+              Tabs: {
+                // No dark algorithm → default inactive tab text is too dark on this bg.
+                itemColor: "rgba(255,255,255,0.55)",
+                itemHoverColor: "#FFFFFF",
+                itemActiveColor: "var(--default-blue)",
+                itemSelectedColor: "var(--default-blue)",
+                inkBarColor: "var(--default-blue)",
+              }
+            }
+          }}
+        >
+          <Tabs
+            activeKey={activeKey}
+            items={items}
+            onChange={handleChange}
+            indicator={{ align: 'center' }}
+            className='[&_.ant-tabs-nav::before]:hidden! [&_.ant-tabs-nav-list]:relative! [&_.ant-tabs-nav-list::after]:content-[""]! [&_.ant-tabs-nav-list::after]:absolute! [&_.ant-tabs-nav-list::after]:inset-x-0! [&_.ant-tabs-nav-list::after]:bottom-0! [&_.ant-tabs-nav-list::after]:border-b! [&_.ant-tabs-nav-list::after]:border-(--light-gray-3)!'
+            destroyOnHidden
+          />
+        </ConfigProvider>
+      </div>
+    </>
   )
 }
 

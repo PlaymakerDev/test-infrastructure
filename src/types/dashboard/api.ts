@@ -69,6 +69,11 @@ export interface DashboardPositionLocation {
     solution_name: string
     solution_type_id: number
     solution_type_name: string
+    /** BE 2026-09-21: the install point this marker stands at. A CCTV
+     *  solution covers a whole (project, road) and emits one marker per
+     *  point, so `solution_id` alone no longer identifies a marker —
+     *  markers key on the pair. 0 from a backend that predates the field. */
+    solution_location_id?: number
   }
   geometry_point: [number, number] | null
   /** BE ships this per location once the manage service joins to each

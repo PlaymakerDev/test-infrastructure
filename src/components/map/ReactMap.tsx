@@ -83,7 +83,19 @@ const apiLocationToDevice = (loc: DashboardPositionLocation): Device | null => {
   const coord = loc.geometry_point
   if (!Array.isArray(coord) || coord.length !== 2) return null
   return {
-    id: String(loc.solution.solution_id),
+    // Keyed on (solution, install point), not solution alone: one CCTV
+    // solution covers a whole road and the position endpoint emits a marker
+    // per point, so a solution-only id would collapse them into one marker.
+    // Falls back to the bare solution id against a backend that predates
+    // solution_location_id.
+    //
+    // The detail route still wants the bare solution id — that is what
+    // `detailId` is for (LPR already prefixes its marker ids the same way);
+    // see DeviceClusterMarker's `detailId ?? id`.
+    id: loc.solution.solution_location_id
+      ? `${loc.solution.solution_id}-${loc.solution.solution_location_id}`
+      : String(loc.solution.solution_id),
+    detailId: String(loc.solution.solution_id),
     type: t,
     unitId: loc.road.department_id ?? 0,
     stch: loc.road.stch ?? 0,

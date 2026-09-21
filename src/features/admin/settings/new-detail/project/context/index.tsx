@@ -2,8 +2,22 @@
 import { App } from 'antd'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { deleteSolutionLocationAPI, getRoadSolutionAPI, postRoadSolutionAPI } from '@/services/routes/ProjectDetailService'
-import { Road, RoadSolutionList } from '@/types/manage/project-detail-api'
-import { createContext, useCallback, useContext, useState } from 'react'
+import { Road, RoadSolutionList, SolutionLocation } from '@/types/manage/project-detail-api'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+
+/** The next "จุดติดตั้งที่ N" for a road.
+ *
+ * Derived from the highest existing suffix rather than `length + 1`: the
+ * array can be shorter than the highest number in use (a deleted point),
+ * which would otherwise mint a name that collides with a live one.
+ */
+export const nextLocationNameFor = (locations: SolutionLocation[]): string => {
+  const nextIndex = locations.reduce((max, item) => {
+    const match = /^จุดติดตั้งที่ (\d+)$/.exec(item.location_name)
+    return match ? Math.max(max, Number(match[1])) : max
+  }, 0) + 1
+  return `จุดติดตั้งที่ ${nextIndex}`
+}
 
 export interface ContextProps {
   id: string | string[] | undefined
@@ -11,6 +25,19 @@ export interface ContextProps {
   setRoadSolution: (roadSolution: RoadSolutionList) => void
   onCreate: () => void
   isCreating: boolean
+  /** Creates one จุดติดตั้ง under the current สายทาง and resolves with it
+   *  once the tabs list has caught up — so a caller can select what it just
+   *  made. Resolves `undefined` on failure (the error toast has already
+   *  fired), never rejects.
+   *
+   *  `onCreate` is the tab-strip's "+" and additionally activates the new
+   *  tab; this is the bare create, used by the CCTV camera form's
+   *  จุดติดตั้ง dropdown, which must not move the tab out from under an
+   *  open modal. */
+  createLocation: (locationName: string) => Promise<SolutionLocation | undefined>
+  /** The name "+ เพิ่มจุดติดตั้ง" would generate next — prefilled into the
+   *  dropdown's inline create field so the common case is one click. */
+  nextLocationName: string
   /** `options.onSuccess` runs once the delete AND the follow-up
    *  `refreshRoadSolution` (tabs list + active-tab fallback) have finished —
    *  it is a `mutate`-level callback, which TanStack fires after the
@@ -107,22 +134,36 @@ export const ProjectProvider = (props: PageProviderProps) => {
     }
   }, [id, queryClient])
 
-  const createRoadSolution = useMutation({
-    mutationFn: postRoadSolutionAPI,
-    onSuccess: async (_res, variables) => {
+  const [isCreatingLocation, setCreatingLocation] = useState(false)
+
+  /** The one place a จุดติดตั้ง is created. Written as a plain async
+   *  function rather than a mutation because both callers need the created
+   *  row back — `onCreate` to activate its tab, the camera form's dropdown
+   *  to select it — and resolving that out of a mutation would mean
+   *  `mutateAsync` and its unhandled-rejection footgun. Swallows the error
+   *  after toasting it, so neither caller has to guard. */
+  const createLocation = useCallback(async (locationName: string) => {
+    if (!roadSolution.project_road_id || isCreatingLocation) return undefined
+    setCreatingLocation(true)
+    try {
+      await postRoadSolutionAPI({
+        project_road_id: roadSolution.project_road_id,
+        location_name: locationName,
+      })
       message.success('เพิ่มจุดติดตั้งสำเร็จ')
-      const updated = await refreshRoadSolution(variables.project_road_id)
+      const updated = await refreshRoadSolution(roadSolution.project_road_id)
       // Match by name rather than assuming the new point lands last in the
       // array — robust regardless of how the backend orders the list.
-      const created = updated?.solution_locations.find(
-        (loc) => loc.location_name === variables.location_name,
+      return updated?.solution_locations.find(
+        (loc) => loc.location_name === locationName,
       )
-      setActiveLocationId(created ? String(created.solution_location_id) : undefined)
-    },
-    onError: (err) => {
+    } catch (err) {
       message.error(errText(err, 'เพิ่มจุดติดตั้งไม่สำเร็จ'))
-    },
-  })
+      return undefined
+    } finally {
+      setCreatingLocation(false)
+    }
+  }, [roadSolution.project_road_id, isCreatingLocation, message, refreshRoadSolution])
 
   const deleteSolutionLocation = useMutation({
     mutationFn: ({ id: solutionLocationId }: { id: number | string; fallbackId?: number }) =>
@@ -143,21 +184,16 @@ export const ProjectProvider = (props: PageProviderProps) => {
     },
   })
 
-  const onCreate = useCallback(() => {
-    if (!roadSolution.project_road_id || createRoadSolution.isPending) return
-    // Derive the next number from the highest existing "จุดติดตั้งที่ N"
-    // suffix rather than `solution_locations.length + 1` — the array can be
-    // shorter than the highest number used (e.g. a deleted point), which
-    // would otherwise mint a name that collides with a still-existing one.
-    const nextIndex = roadSolution.solution_locations.reduce((max, item) => {
-      const match = /^จุดติดตั้งที่ (\d+)$/.exec(item.location_name)
-      return match ? Math.max(max, Number(match[1])) : max
-    }, 0) + 1
-    createRoadSolution.mutate({
-      project_road_id: roadSolution.project_road_id,
-      location_name: `จุดติดตั้งที่ ${nextIndex}`,
-    })
-  }, [roadSolution, createRoadSolution])
+  const nextLocationName = useMemo(
+    () => nextLocationNameFor(roadSolution.solution_locations),
+    [roadSolution.solution_locations],
+  )
+
+  const onCreate = useCallback(async () => {
+    const created = await createLocation(nextLocationName)
+    // The tab strip's "+" is expected to land you on what you just added.
+    if (created) setActiveLocationId(String(created.solution_location_id))
+  }, [createLocation, nextLocationName])
 
   const onDelete = useCallback((solutionLocationId: number | string, options?: { onSuccess?: () => void }) => {
     if (deleteSolutionLocation.isPending) return
@@ -174,7 +210,9 @@ export const ProjectProvider = (props: PageProviderProps) => {
         roadSolution,
         setRoadSolution,
         onCreate,
-        isCreating: createRoadSolution.isPending,
+        isCreating: isCreatingLocation,
+        createLocation,
+        nextLocationName,
         onDelete,
         isDeleting: deleteSolutionLocation.isPending,
         refreshRoadSolution,

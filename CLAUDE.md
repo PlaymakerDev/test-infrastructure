@@ -460,6 +460,22 @@ The DISPLAY tab's day-filter calendar (`FormSearchCalendar` badges + click-to-fi
 
 Verified: `npx tsc --noEmit` clean (only the pre-existing `MaintenanceService.ts` errors); ESLint clean; 77/77 tests pass (schemas untouched by this change); `next build` Turbopack compile succeeds.
 
+### CCTV is one solution per (โครงการ + สายทาง) (2026-09-21)
+
+**CCTV is no longer a per-install-point "ประเภทงาน".** It used to be: one `tbl_solution` type=1 row per `solution_location`, which is why one road showed up as several unrelated CCTV entries (`ชม.2025 0+500` and `ชม.2025 1+500`). There is now exactly **one CCTV solution per `project_road_id`**, and a camera's install point lives on the camera.
+
+- **`cctv.tbl_camera.solution_location_id`** (nullable, FK, `db_migrations/2026-09-21_camera_solution_location.sql`) is the source of truth for where a camera stands. **Every read path COALESCEs to `solution.solution_location_id`** so rows the backfill missed still resolve — keep that fallback in anything new.
+- **Never create a CCTV solution directly.** `POST /manage/solution` with `solution_type_id=1` returns 400 (`ErrCCTVSolutionNotCreatable`). Cameras are added with `POST /cctv/cameras { solution_location_id, … }`; the service resolves — or creates — the road's CCTV solution in the same transaction (`cctv/internal/dto/camera/solution.go: ResolveCCTVSolution`).
+- **The solution's name is derived, not typed:** `<road_code> <min_sta> - <max_sta>` over its cameras' `sta` (e.g. `ชม.2025 0+100 - 6+000`). `RecomputeCCTVSolutionName` runs after every camera create/move/delete. The canonical chainage parser is **`utils/sta.go`** (`ParseSta` / `BuildCCTVSolutionName` / `StaMetresSQL`) — tolerant of `4+800 RT`, trailing spaces, and values carrying no chainage at all (1,888 of 10,226 cameras). **Never sort `sta` as a string** — `18+465` sorts before `4+768`.
+- **`/manage/solution/camera/list/{solution_location_id}` stays point-scoped** — it is what the Counting/Analytic/Crosswalk/WIM camera pickers read. The road-level list is the new **`GET /manage/solution/camera/by_project_road/{project_road_id}`**.
+- **Markers are keyed on (solution, install point), not solution.** `SolutionPosition`'s `cctv_pt` LATERAL fans CCTV out to one row per point; `ReactMap.tsx` builds `id` as `${solution_id}-${solution_location_id}` and carries the bare solution id in `detailId` for the detail route (same trick LPR already used).
+- **Anything labelled "จุด" must count install points**, not rows: the overview base query exposes `install_point.total` / `install_point.active` and the totals SUM them. Counting rows silently became "CCTV entries" when CCTV merged.
+- **Both sync workers know about this** — `solution_sync` matches CCTV on `(project_road, type)` instead of `(location, type)` (otherwise it re-splits every 30 min), and `tbl_work_master_migration.solution_location_id` carries the point so `camera_sync` can stamp it.
+
+Frontend: the road-level panel is `settings/new-detail/project/components/CctvEquipmentSection.tsx` (above the จุดติดตั้ง tabs); CCTV is filtered out of the ประเภทงาน dropdown via `data/solutionType.ts`. Note `new-detail/project/` is the **live** tree — `settings/detail/project/` is an older, unrouted implementation.
+
+One-off merge: `db_migrations/2026-09-21b_cctv_merge_per_project_road.sql` (idempotent, aborts on surprise; 614→514 solutions, 530 cameras repointed on the 2026-09-21 snapshot). It must run **after** the read-path deploy — the read paths were written to return identical results either side of it.
+
 ### settings — project detail page wired to real API + full CRUD (2026-07-18) — RESOLVED
 
 `settings/overall` (list of projects/routes/contractors/users) had been backend-integrated since 2026-07-06, but `settings/detail/project` — the nested "จัดการข้อมูลโครงการ" page with routes → installation points → task types (Solutions) → equipment (Cameras) — was **100% mock** (all state in `useState<ProjectDetail>` seeded from a `MOCK_PROJECT_DETAIL` const). This slice replaced the whole mock scaffold with real API + built out modals for every solution type from the Figma spec + fixed the backend bugs the audit surfaced along the way.

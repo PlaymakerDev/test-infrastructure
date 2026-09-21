@@ -8,7 +8,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { App, Button, ConfigProvider, Empty, Table, TableProps } from 'antd';
 import { AxiosError } from 'axios';
 import React, { useCallback } from 'react'
-import { TbPencilMinus, TbShieldLock, TbTrash, TbVideo } from 'react-icons/tb';
+import { TbPencilMinus, TbShieldLock, TbTrash } from 'react-icons/tb';
 
 interface Props {
   item: SolutionLocation
@@ -107,6 +107,9 @@ const TableSolution: React.FC<Props> = (props) => {
       key: 'crossing_code',
       width: 200,
       render: (_, record) => {
+        // CCTV (1) no longer reaches this table at all — the backend filters
+        // it out of GET /manage/solution because it is managed at the สายทาง
+        // level. Left in the list so the intent survives if that changes.
         const unavailableTypes = [1, 6, 8, 10]
         if (unavailableTypes.includes(record.solution_type.id)) return
         return (
@@ -123,7 +126,9 @@ const TableSolution: React.FC<Props> = (props) => {
       key: 'device',
       width: 200,
       render: (_, record) => {
-        if (record.solution_type.solution_name === 'CCTV') return <TbVideo className='fs-28 text-(--yellow) cursor-pointer' />
+        // The CCTV branch that used to sit here rendered a click-less icon.
+        // CCTV cameras now live in the สายทาง-level อุปกรณ์ CCTV panel
+        // (CctvEquipmentSection) and no CCTV row reaches this table.
         return (
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
             <Button
