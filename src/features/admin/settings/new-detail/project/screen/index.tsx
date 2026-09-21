@@ -1,7 +1,19 @@
 "use client"
 import React from 'react'
 import { ProjectProvider } from '@/features/admin/settings/new-detail/project/context'
-import { MainContent, ModalCreateDevice, ModalViewCCTV, ModalViewCrossingCode, ModalConfirmDelete, TitleSection } from '../components'
+import {
+  EquipmentCCTVListModal,
+  EquipmentSelectModal,
+  MainContent,
+  ModalConfirmDelete,
+  ModalCreateDevice,
+  ModalLiveStream,
+  ModalViewCCTV,
+  ModalViewCrossingCode,
+  TitleSection,
+  TrafficSignalCameraModal,
+  VMSSolutionModal,
+} from '../components'
 
 interface Props {
   id?: string | string[]
@@ -30,8 +42,14 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <ProjectDetailContent />
       <ModalCreateDevice />
       <ModalViewCCTV />
+      <EquipmentCCTVListModal />
+      <EquipmentSelectModal />
+      <TrafficSignalCameraModal />
+      <VMSSolutionModal />
       <ModalViewCrossingCode />
       <ModalConfirmDelete />
+      {/* Last, so the viewer stacks above the equipment modals that open it. */}
+      <ModalLiveStream />
     </ProjectProvider>
   )
 }

@@ -1,12 +1,13 @@
 import React, { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { RefObject } from 'react'
-import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, GeometryPoint, SolutionLocation } from '@/types/manage/project-detail-api'
+import { APIRequestCreateSolution, APIRequestUpdateSolution, APIResponseSolutionByID, SolutionLocation } from '@/types/manage/project-detail-api'
 import { App, Col, Input, Row, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { getSolutionTypesAPI } from '@/services/routes/SolutionService'
 import { useCreateProjectSolution, useUpdateProjectSolution } from '@/hooks/queries/manage'
 import { useProjectContext } from '../context'
+import { IP_PATTERN, LAT_LNG_PATTERN, sanitizeIP, sanitizeLatLng, toGeometryPoint } from '../data/formHelpers'
 
 /** Best-effort extractor for the backend's Thai error message — mirrors
  *  FormCreateITSUser's own helper. */
@@ -31,35 +32,6 @@ interface Props {
   submitRef: RefObject<HTMLButtonElement | null>
   onSuccess?: () => void
 }
-
-/** Latitude/longitude are entered as plain decimals (Thailand's coordinates
- *  are always positive) — strip anything that isn't a digit or dot, and
- *  collapse a second/third dot instead of leaving e.g. "12.34.56". */
-const sanitizeLatLng = (value: string) => {
-  const cleaned = value.replace(/[^0-9.]/g, '')
-  const [head, ...rest] = cleaned.split('.')
-  return rest.length ? `${head}.${rest.join('')}` : head
-}
-
-/** Digits, optionally followed by a single "." and more digits — rejects a
- *  bare "." or "12." left over from mid-typing, still allowed while the
- *  field isn't submitted yet. */
-const LAT_LNG_PATTERN = /^\d+(\.\d+)?$/
-
-/** IPv4 (used for both Local IP and the ZeroTier IP) — allow digits and
- *  dots while typing (unlike lat/lng, multiple dots are valid here, so no
- *  collapsing to a single one). */
-const sanitizeIP = (value: string) => value.replace(/[^0-9.]/g, '')
-
-/** Strict IPv4: four 0–255 octets separated by dots. */
-const IP_PATTERN = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
-
-/** Backend reads longitude FIRST and rejects WKT strings — GeoJSON only.
- *  Shared by both the create and update bodies. */
-const toGeometryPoint = (longitude: string, latitude: string): GeometryPoint => ({
-  coordinates: [Number(longitude), Number(latitude)],
-  type: 'Point',
-})
 
 interface FormCreateDeviceValues {
   anydesk_id: string

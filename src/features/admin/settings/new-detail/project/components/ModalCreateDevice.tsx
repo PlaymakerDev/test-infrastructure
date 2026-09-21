@@ -1,11 +1,11 @@
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetCreateDeviceModalData } from '@/stores/reducers/modal/customModalSlice'
-import { SolutionLocation } from '@/types/manage/project-detail-api'
+import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api'
 import { ConfigProvider, Modal } from 'antd'
 import React, { RefObject, useCallback, useMemo, useRef } from 'react'
 import { APIResponseSolutionByID } from '@/types/manage/project-detail-api'
-import { FormUpdateSolutionLocation, FormCreateDevice } from '../components'
-import { TbTools } from 'react-icons/tb'
+import { FormUpdateSolutionLocation, FormCreateDevice, FormCreateCamera } from '../components'
+import { TbDeviceCctv, TbTools } from 'react-icons/tb'
 
 interface Props {
 
@@ -14,13 +14,14 @@ interface Props {
 interface ContentProps {
   data?: APIResponseSolutionByID | null
   item?: SolutionLocation | null
-  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
+  record?: SolutionList | null
+  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME' | 'CREATE_CAMERA'
   submitRef: RefObject<HTMLButtonElement | null>
   onSuccess?: () => void
 }
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { item, data, type, submitRef, onSuccess } = props
+  const { item, data, record, type, submitRef, onSuccess } = props
 
   const renderContentType = useMemo(() => {
     switch (type) {
@@ -30,17 +31,19 @@ const Content: React.FC<ContentProps> = (props) => {
         return <FormCreateDevice data={data} item={item} submitRef={submitRef} onSuccess={onSuccess} />
       case 'EDIT_SOLUTION_NAME':
         return <FormUpdateSolutionLocation item={item} type={type} submitRef={submitRef} onSuccess={onSuccess} />
+      case 'CREATE_CAMERA':
+        return <FormCreateCamera item={item} record={record} submitRef={submitRef} onSuccess={onSuccess} />
       default:
         return null
     }
-  }, [type, item, submitRef, onSuccess, data])
+  }, [type, item, record, submitRef, onSuccess, data])
 
   return renderContentType
 }
 
 const ModalCreateDevice: React.FC<Props> = (props) => {
   const { } = props
-  const { open, data, item, type } = useAppSelector(state => state.custom_modal.create_device_modal)
+  const { open, data, item, record, type } = useAppSelector(state => state.custom_modal.create_device_modal)
   const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement | null>(null)
 
@@ -70,6 +73,15 @@ const ModalCreateDevice: React.FC<Props> = (props) => {
         )
       case 'EDIT_SOLUTION_NAME':
         return 'แก้ไขชื่อจุดติดตั้ง'
+      case 'CREATE_CAMERA':
+        return (
+          <div className='flex items-center flex-wrap gap-3'>
+            <TbDeviceCctv className='fs-24 text-(--default-blue)' />
+            <h3 className='text-(--default-blue)'>
+              {'เพิ่มข้อมูลอุปกรณ์'}
+            </h3>
+          </div>
+        )
       default:
         return ''
     }
@@ -105,6 +117,7 @@ const ModalCreateDevice: React.FC<Props> = (props) => {
       >
         <Content
           item={item}
+          record={record}
           type={type}
           submitRef={submitRef}
           onSuccess={handleClose}
