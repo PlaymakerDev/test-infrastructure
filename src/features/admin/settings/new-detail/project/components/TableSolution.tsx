@@ -2,13 +2,15 @@ import { SOLUTION_TYPE } from '@/constants';
 import { getSolutionByIDAPI, getSolutionCameraListAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
 import { useAppDispatch } from '@/stores/hooks';
-import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setEquipmentModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { getEquipmentModalType } from '@/features/admin/settings/new-detail/project/data/equipmentModal';
 import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import { PlusOutlined } from '@ant-design/icons';
 import { App, Button, ConfigProvider, Empty, Table, TableProps } from 'antd';
 import { AxiosError } from 'axios';
 import React, { useCallback } from 'react'
 import { TbPencilMinus, TbShieldLock, TbTrash } from 'react-icons/tb';
+import Link from 'next/link';
 
 interface Props {
   item: SolutionLocation
@@ -71,7 +73,23 @@ const TableSolution: React.FC<Props> = (props) => {
     }))
   }, [dispatch, item])
 
-  const openSolutionCameraListModal = useCallback(async (record: SolutionList) => {
+  /** "รายการอุปกรณ์" button. Kinds with a managed picker (CCTV list, camera
+   *  select, Traffic Signal, VMS — see getEquipmentModalType) open it through
+   *  `equipment_modal`; the modal reads the camera list live itself, so there
+   *  is nothing to fetch here. Lighting / Tunnel / Bridge Lighting have no
+   *  camera endpoint and keep the read-only list. */
+  const openEquipmentModal = useCallback(async (record: SolutionList) => {
+    const type = getEquipmentModalType(record.solution_type.id)
+    if (type) {
+      dispatch(setEquipmentModalOpen({
+        open: true,
+        type,
+        item: item,
+        record: record,
+        solutions: data ?? [],
+      }))
+      return
+    }
     try {
       const response = await getSolutionCameraListAPI(item.solution_location_id)
       if (response.status === 200) {
@@ -88,7 +106,7 @@ const TableSolution: React.FC<Props> = (props) => {
         console.error(error)
       }
     }
-  }, [item.solution_location_id, message, dispatch])
+  }, [item, data, message, dispatch])
 
   const columns: TableProps<SolutionList>['columns'] = [
     {
@@ -126,9 +144,12 @@ const TableSolution: React.FC<Props> = (props) => {
       key: 'device',
       width: 200,
       render: (_, record) => {
-        // The CCTV branch that used to sit here rendered a click-less icon.
-        // CCTV cameras now live in the สายทาง-level อุปกรณ์ CCTV panel
-        // (CctvEquipmentSection) and no CCTV row reaches this table.
+        // No CCTV branch here on purpose: CCTV is one solution per
+        // (โครงการ + สายทาง) and the backend filters it out of
+        // GET /manage/solution, so no CCTV row reaches this table. Its
+        // cameras are managed by the road-level CctvEquipmentSection above
+        // the จุดติดตั้ง tabs.
+        if (record.solution_type.solution_name_atlas === 'Traffic Lighting') return
         return (
           <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
             <Button
@@ -137,7 +158,7 @@ const TableSolution: React.FC<Props> = (props) => {
               htmlType='button'
               icon={<PlusOutlined />}
               shape='circle'
-              onClick={() => openSolutionCameraListModal(record)}
+              onClick={() => openEquipmentModal(record)}
             />
           </ConfigProvider>
         )
@@ -148,6 +169,12 @@ const TableSolution: React.FC<Props> = (props) => {
       dataIndex: 'redirect',
       key: 'redirect',
       width: 200,
+      render: (_, record) => {
+        if (record.solution_name) {
+          return <Link href={`/solutions/${record.id}`}>{record.solution_name}</Link>
+        }
+        return '-'
+      }
     },
     {
       title: 'จัดการ',

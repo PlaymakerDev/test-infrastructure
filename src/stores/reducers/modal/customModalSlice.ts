@@ -4,6 +4,7 @@ import { RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
 import { APIResponseCameraCrossingCode, APIResponseSolutionByID, APIResponseSolutionCameraList, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
+import type { APIResponseCamera } from '@/types/manage/solution-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
@@ -14,6 +15,8 @@ export interface CustomModalState {
   create_device_modal: CreateDeviceModalState
   confirm_delete_solution_modal: ConfirmDeleteSolutionModalState
   view_device_modal: ViewDeviceModalState
+  equipment_modal: EquipmentModalState
+  live_stream_modal: LiveStreamModalState
 }
 
 export interface UserModalState {
@@ -53,13 +56,35 @@ export interface CreateDeviceModalState {
   data?: APIResponseSolutionByID | null
   record?: SolutionList | null
   item?: SolutionLocation | null
-  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME'
+  type?: 'CREATE' | 'UPDATE' | 'EDIT_SOLUTION_NAME' | 'CREATE_CAMERA'
 }
 
 export interface ViewDeviceModalState {
   open: boolean
   data?: APIResponseSolutionCameraList | null
   type?: 'CCTV' | 'DEVICE'
+}
+
+/** "รายการอุปกรณ์" modals, opened from TableSolution. `type` picks which one
+ *  shows (each modal renders only for its own type); `record` is the solution
+ *  (task type) being managed, `item` its install point. Only ids/rows travel
+ *  here — the camera list itself is read live by each modal via
+ *  useSolutionCameras so it refreshes after add / delete / attach. `solutions`
+ *  is every solution at the point (to tell whether `record` is the sole one of
+ *  its kind when pre-ticking attached cameras). */
+export interface EquipmentModalState {
+  open: boolean
+  type?: 'CCTV_LIST' | 'CAMERA_SELECT' | 'TRAFFIC_SIGNAL' | 'VMS'
+  item?: SolutionLocation | null
+  record?: SolutionList | null
+  solutions?: SolutionList[] | null
+}
+
+/** Live-stream viewer, opened from any of the equipment modals. */
+export interface LiveStreamModalState {
+  open: boolean
+  data?: APIResponseCamera | null
+  item?: SolutionLocation | null
 }
 
 export interface ConfirmDeleteSolutionModalState {
@@ -93,6 +118,12 @@ const initialState: CustomModalState = {
     open: false
   },
   view_device_modal: {
+    open: false,
+  },
+  equipment_modal: {
+    open: false,
+  },
+  live_stream_modal: {
     open: false,
   }
 }
@@ -151,6 +182,18 @@ const customModalSlice = createSlice({
     resetViewDeviceModalData: (state) => {
       state.view_device_modal = initialState.view_device_modal;
     },
+    setEquipmentModalOpen: (state, action) => {
+      state.equipment_modal = action.payload;
+    },
+    resetEquipmentModalData: (state) => {
+      state.equipment_modal = initialState.equipment_modal;
+    },
+    setLiveStreamModalOpen: (state, action) => {
+      state.live_stream_modal = action.payload;
+    },
+    resetLiveStreamModalData: (state) => {
+      state.live_stream_modal = initialState.live_stream_modal;
+    },
   },
 })
 
@@ -171,6 +214,10 @@ export const {
   resetConfirmDeleteSolutionModalData,
   setViewDeviceModalOpen,
   resetViewDeviceModalData,
+  setEquipmentModalOpen,
+  resetEquipmentModalData,
+  setLiveStreamModalOpen,
+  resetLiveStreamModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

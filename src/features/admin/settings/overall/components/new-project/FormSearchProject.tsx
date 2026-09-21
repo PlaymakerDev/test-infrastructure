@@ -150,7 +150,7 @@ const FormSearchProject: React.FC<Props> = (props) => {
                     showSearch={{ optionFilterProp: 'company_name' }}
                     loading={cLoading}
                     options={contractors}
-                    fieldNames={{ label: 'company_name', value: 'contractor_id' }}
+                    fieldNames={{ label: 'company_name', value: 'user_id' }}
                     onChange={(e) => {
                       // See budget_year's onChange — same undefined-vs-null defense.
                       field.onChange(e ?? null)
