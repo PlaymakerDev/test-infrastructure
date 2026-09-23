@@ -19,7 +19,14 @@ interface Props {
     agency: string
     warrantyStatus: string
     repairDate: string
+    /** กำหนดแล้วเสร็จ (due_date) */
+    dueDate?: string
+    /** วันที่ปิด case — only when this save closed it. */
+    closedDate?: string
   }
+  /** Where "รับทราบ" goes. Closing a case lands on ประวัติการซ่อม so the
+   *  contractor sees the row they just finished. */
+  onConfirm?: () => void
 }
 
 const ModalSaveSuccess: React.FC<Props> = ({
@@ -30,6 +37,7 @@ const ModalSaveSuccess: React.FC<Props> = ({
   detailQuery = '',
   returnToAllRepairs = false,
   data,
+  onConfirm,
 }) => {
   const router = useRouter()
 
@@ -39,6 +47,10 @@ const ModalSaveSuccess: React.FC<Props> = ({
 
   const handleConfirm = () => {
     onClose()
+    if (onConfirm) {
+      onConfirm()
+      return
+    }
     if (returnToAllRepairs) {
       router.push('/admin/maintenance?repair&all_repairs')
     } else if (solutionId) {
@@ -91,6 +103,12 @@ const ModalSaveSuccess: React.FC<Props> = ({
           <div><span style={{ color: '#979797' }}>หน่วยงานที่รับผิดชอบหรือมอบหมาย : </span><span style={{ color: '#212121' }}>{data.agency}</span></div>
           <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: isExpired ? '#E94C4C' : '#66AEFF', fontWeight: 700, fontSize: "var(--fs-12)" }}>{data.warrantyStatus}</span></div>
           <div><span style={{ color: '#979797' }}>วันที่แจ้งซ่อม : </span><span style={{ color: '#212121' }}>{data.repairDate}</span></div>
+          {data.dueDate && (
+            <div><span style={{ color: '#979797' }}>วันที่ควรดำเนินการแล้วเสร็จ : </span><span style={{ color: '#212121' }}>{data.dueDate}</span></div>
+          )}
+          {data.closedDate && (
+            <div><span style={{ color: '#979797' }}>วันที่ปิด Case : </span><span style={{ color: '#212121' }}>{data.closedDate}</span></div>
+          )}
         </div>
 
         {/* Buttons */}

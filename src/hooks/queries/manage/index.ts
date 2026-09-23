@@ -49,11 +49,13 @@ export { useSsoSearch } from './useSsoSearch'
 export { useNotificationSummary } from './useNotificationSummary'
 // Per-source aggregate over an explicit date range (Statistics overview/status).
 export { useNotificationsSummary } from './useNotificationsSummary'
+// Bell feed — camera outages + maintenance cases in one list.
 export {
-  useCameraOutageBadge,
-  useCameraOutageListInfinite,
-  useMarkCameraOutageRead,
-} from './useCameraOutageNotifications'
+  FEED_WINDOW_HOURS,
+  useMarkNotificationFeedRead,
+  useNotificationFeedBadges,
+  useNotificationFeedInfinite,
+} from './useNotificationFeed'
 
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'

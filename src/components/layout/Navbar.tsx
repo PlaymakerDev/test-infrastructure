@@ -48,7 +48,7 @@ import { useAppDispatch } from "@/stores/hooks";
 import { setDrawerOpen } from "@/stores/reducers/layout/layoutSlice";
 import { resetAuthTokenState, resetAuthInfoState } from "@/stores/reducers/auth/authSlice";
 import useMapFocusMode from "@/utils/hooks/useMapFocusMode";
-import { useHomeDeptId, deptQuery } from "@/hooks/queries/manage";
+import { useHomeDeptId, deptQuery, useNotificationFeedBadges } from "@/hooks/queries/manage";
 import { useUserRole } from "@/hooks/useUserRole";
 import IconTracking from "@/components/icon/IconTracking";
 import IconLPR from "@/components/icon/IconLPR";
@@ -191,6 +191,9 @@ export default function Navbar() {
   const [extraOpen, setExtraOpen] = useState(false)
   const [focusMenuOpen, setFocusMenuOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
+  // Same query keys the bell itself uses, so this is the same cached poll —
+  // it only exists here to badge the mobile "..." entry.
+  const { caseCount: bellCaseCount, outageCount: bellOutageCount } = useNotificationFeedBadges()
   const closeOtherPopouts = useCallback((keep: 'find' | 'bell' | 'focus' | 'extra') => {
     if (keep !== 'find') setFindOpen(false)
     if (keep !== 'bell') setBellOpen(false)
@@ -370,10 +373,46 @@ export default function Navbar() {
     {
       key: 'notifications',
       label: 'แจ้งเตือน',
-      icon: <TbBellRinging2 size={22} />,
-      active: false,
-      // No behavior yet — mirrors the desktop bell placeholder.
-      onClick: () => setMobileMoreOpenAt(null),
+      // The bell's own trigger lives in .nav-side-menu, which layout.css
+      // hides under 900px — this entry IS the trigger on mobile, so it
+      // carries the counts too, split the same way as the desktop bell:
+      // cases (yellow) above dead cameras (red).
+      icon: (
+        <span className="relative inline-flex">
+          <TbBellRinging2 size={22} />
+          {(bellCaseCount > 0 || bellOutageCount > 0) && (
+            <span className="absolute -top-1.5 left-full -translate-x-2 flex flex-col items-start gap-0.5 pointer-events-none">
+              {[
+                { key: 'case', n: bellCaseCount, bg: 'var(--yellow)', fg: '#191919' },
+                { key: 'outage', n: bellOutageCount, bg: '#ff4d4f', fg: '#fff' },
+              ].filter((c) => c.n > 0).map((c) => (
+                <span
+                  key={c.key}
+                  className="flex items-center justify-center rounded-full font-bold"
+                  style={{
+                    background: c.bg,
+                    color: c.fg,
+                    lineHeight: 1,
+                    fontSize: 10,
+                    height: 15,
+                    minWidth: 15,
+                    padding: '2px 4px 0',
+                    boxShadow: '0 0 0 1.5px #191919',
+                  }}
+                >
+                  {c.n > 99 ? '99+' : c.n}
+                </span>
+              ))}
+            </span>
+          )}
+        </span>
+      ),
+      active: bellOpen,
+      onClick: () => {
+        setMobileMoreOpenAt(null)
+        closeOtherPopouts('bell')
+        setBellOpen(true)
+      },
     },
     ...(canOpenSettings ? [{
       key: 'settings',

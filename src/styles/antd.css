@@ -341,6 +341,41 @@ body .bridge-projects-table .ant-table-tbody > tr > td {
   border-bottom: 1px solid #FCD116 !important;
 }
 
+/* "new" chip beside the Case No. of a case opened within the last day
+ * (ประวัติการซ่อม — see data/recentCase.ts). Replaces a whole-row tint that
+ * keyed off a sessionStorage breadcrumb, so only the tab that closed the case
+ * ever saw it — in practice it never showed (user 2026-09-22). A faint glow,
+ * no movement, and it holds still for anyone who prefers reduced motion. */
+/* Cyan #00CFFF, picked by the user for contrast: the Case No. beside it is
+ * already yellow, so a yellow chip on a yellow number barely registered. */
+@keyframes maintenance-new-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 207, 255, 0); }
+  50% { box-shadow: 0 0 7px 1px rgba(0, 207, 255, 0.6); }
+}
+
+.maintenance-new-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1px solid #00CFFF;
+  border-radius: 999px;
+  color: #00CFFF;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  animation: maintenance-new-glow 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maintenance-new-badge {
+    animation: none;
+    box-shadow: 0 0 7px 1px rgba(0, 207, 255, 0.45);
+  }
+}
+
 /* Antd 6 may add a scroll shadow on right-fixed columns when `scroll: { x }`
  * is active — kill any such shadow on our tables for a clean edge. */
 body .bridge-projects-table .ant-table-cell-fix-right-first::after,

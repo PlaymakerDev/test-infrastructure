@@ -65,18 +65,46 @@ const loadReportFont = () => loadMeasureFont('NotoSansThai__measure')
  *  closing bracket) joins the token before it, an opening bracket joins the
  *  token after it. The result is one unbreakable token per blank. */
 const LEADER = /^[.…]+$/
+/** U+00A0. Callers emit it where a break would be wrong — between the groups
+ *  of a phone number, say. ICU still segments at it (verified), and the font
+ *  draws it exactly like a normal space, so the "don't break here" part has to
+ *  be enforced right here in the tokenizer. */
+const NBSP_ONLY = /^ +$/
+/** A hyphen BETWEEN DIGITS is part of a number (๐๘๑-๒๓๔-๕๖๗๘, a range, a
+ *  document number), never a place to start a new line. ICU segments at it the
+ *  same as a space, and neither U+2011 nor U+2060 is usable here — Sarabun has
+ *  no glyph for either, so they print as a box. Handle it as a wrap rule. */
+const HYPHEN_ONLY = /^-+$/
+const DIGIT_END = /[0-9๐-๙]$/
+const DIGIT_START = /^[0-9๐-๙]/
 function glueLeaders(tokens: string[]): string[] {
   const out: string[] = []
   let pendingOpen = ''
-  for (const tok of tokens) {
+  // Armed by a NBSP (or a numeric hyphen): whatever comes next belongs to the
+  // token before it.
+  let glueNext = false
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i]
     if (tok === '(' || tok === '[') {
       pendingOpen += tok
       continue
     }
     const glued = pendingOpen + tok
     pendingOpen = ''
+    const previous = out.length > 0 ? out[out.length - 1] : ''
+    const isNbsp = NBSP_ONLY.test(glued)
+    const isNumericHyphen =
+      HYPHEN_ONLY.test(glued) &&
+      DIGIT_END.test(previous) &&
+      DIGIT_START.test(tokens[i + 1] ?? '')
+    if ((glueNext || isNbsp || isNumericHyphen) && out.length > 0) {
+      out[out.length - 1] += glued
+      glueNext = isNbsp || isNumericHyphen
+      continue
+    }
+    glueNext = false
     const joinsPrevious = LEADER.test(tok) || tok === ')' || tok === ']'
-    if (joinsPrevious && out.length > 0 && out[out.length - 1].trim() !== '') {
+    if (joinsPrevious && out.length > 0 && previous.trim() !== '') {
       out[out.length - 1] += glued
       continue
     }

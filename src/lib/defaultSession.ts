@@ -16,6 +16,21 @@ export interface SessionData {
    *  edge and can't resolve the dept without an extra authenticated fetch on
    *  every login-page hit — so login stores it here instead (2026-08-10). */
   home_dept_id?: number;
+  /** Which kind of account is signed in — drives the per-role UI (the
+   *  maintenance pages show a contractor a different screen than an officer).
+   *
+   *  ⚠ This is NOT the route-level `role` above (that one stays "ADMIN" or
+   *  `proxy.ts` would lock every account out of /admin/*). It is resolved at
+   *  login from `GET /manage/info` — the only endpoint that describes the
+   *  signed-in account (`/auth/me` returns a bare user_id and the JWT carries
+   *  no role claim). See `resolveAccount` in app/api/auth/[...all]/route.ts.
+   *  `undefined` on sessions created before this field existed → treated as
+   *  "admin", i.e. the pre-2026-09-16 behaviour. */
+  user_kind?: "admin" | "contractor" | "user";
+  /** tbl_contractors PK of the signed-in vendor (contractors only) — the id
+   *  the maintenance case table wants, which the project payload cannot give
+   *  (its own `contractor_id` is a user id). */
+  contractor_id?: string;
 }
 
 export const defaultSession: SessionData = {

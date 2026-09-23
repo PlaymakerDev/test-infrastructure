@@ -39,6 +39,38 @@ async function fetchHomeDeptId(accessToken: string): Promise<number | undefined>
   }
 }
 
+/** Who is signed in — `GET /manage/info` describes the token's own account:
+ *
+ *    user_type_id 1  + contractor{contractor_id}  → ผู้รับจ้าง
+ *    user_type_id 2  + general_user.role 'admin'  → เจ้าหน้าที่ส่วนกลาง
+ *    user_type_id 2  + general_user.role 'user'   → บัญชีทั่วไป (สำนัก/ขทช.)
+ *
+ *  (`/auth/me` returns only a user_id and the JWT has no role claim, so this
+ *  endpoint is the single source of truth. Thanks to the user for pointing at
+ *  it — 2026-09-16.) Non-fatal: any failure returns 'admin', exactly how every
+ *  session behaved before this existed. */
+async function resolveAccount(accessToken: string): Promise<{
+  kind: SessionData['user_kind']
+  contractorId?: string
+}> {
+  try {
+    const { data } = await axios.get(`${process.env.NEXT_PUBLIC_HOST_BACKEND}/manage/info`, {
+      headers: {
+        ['x-api-key']: process.env.NEXT_PUBLIC_API_KEY || '',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      timeout: 8000,
+    })
+    const info = data?.res_data ?? data
+    if (info?.user_type_id === 1) {
+      return { kind: 'contractor', contractorId: info?.contractor?.contractor_id }
+    }
+    return { kind: info?.general_user?.role === 'admin' ? 'admin' : 'user' }
+  } catch {
+    return { kind: 'admin' }
+  }
+}
+
 // Read `exp` (unix seconds) from the JWT payload — no signature check needed, the
 // token is issued by our backend. Returns exp − lead, clamped so it's never in
 // the past; falls back to a fixed lead if the token can't be parsed.
@@ -67,6 +99,10 @@ export const GET = async (
       return NextResponse.json({
         access_token: session.access_token ?? null,
         refresh_at: session.refresh_at ?? 0,
+        // Drives the per-role UI (see SessionData.user_kind). Sessions created
+        // before the field existed report 'admin'.
+        user_kind: session.user_kind ?? 'admin',
+        contractor_id: session.contractor_id ?? null,
       }, { status: 200 })
     }
 
@@ -108,7 +144,14 @@ export const POST = async (
         // Landing department — resolved server-side with the fresh token so
         // EVERY entry path lands on the same scope (login form, and
         // proxy.ts's already-logged-in redirect). See SessionData.home_dept_id.
-        session.home_dept_id = await fetchHomeDeptId(response.data.access_token)
+        // Runs alongside the account lookup so login pays one round trip.
+        const [homeDeptId, account] = await Promise.all([
+          fetchHomeDeptId(response.data.access_token),
+          resolveAccount(response.data.access_token),
+        ])
+        session.home_dept_id = homeDeptId
+        session.user_kind = account.kind
+        session.contractor_id = account.contractorId
         await session.save()
         return NextResponse.json({ message: 'success' }, { status: 200 })
       }

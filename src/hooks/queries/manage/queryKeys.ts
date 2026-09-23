@@ -185,14 +185,15 @@ export const manageKeys = {
     all: ['manage', 'notifications'] as const,
     summary: (params: { start_date: string; end_date: string }) =>
       [...manageKeys.notifications.all, 'summary', params] as const,
-    /** Prefix for every camera-outage read — invalidate this after mark-read. */
-    cameraOutage: () =>
-      [...manageKeys.notifications.all, 'camera-outage'] as const,
-    /** Bell badge — unread_only&limit=1 poll; value lives in meta_data.count. */
-    cameraOutageBadge: () =>
-      [...manageKeys.notifications.cameraOutage(), 'badge'] as const,
+    /** Prefix for the whole bell feed — invalidate this after mark-read. */
+    feed: () => [...manageKeys.notifications.all, 'feed'] as const,
+    /** Bell badge, one per kind — unread_only&limit=1 poll; the value lives in
+     *  meta_data.count. Cases and camera outages are counted apart because
+     *  the bell shows them as two numbers. */
+    feedBadge: (kind: 'case' | 'camera_outage') =>
+      [...manageKeys.notifications.feed(), 'badge', kind] as const,
     /** Panel list (infinite, page-keyed inside the query itself). */
-    cameraOutageList: (params: Record<string, unknown>) =>
-      [...manageKeys.notifications.cameraOutage(), 'list', params] as const,
+    feedList: (params: Record<string, unknown>) =>
+      [...manageKeys.notifications.feed(), 'list', params] as const,
   },
 } as const

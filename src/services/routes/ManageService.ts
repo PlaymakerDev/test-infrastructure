@@ -52,11 +52,11 @@ import type {
   APIResponseRegionList,
 } from '@/types/manage/department-api'
 import {
-  APIRequestMarkCameraOutageRead,
-  APIResponseCameraOutageList,
-  APIResponseMarkCameraOutageRead,
+  APIRequestMarkFeedRead,
+  APIResponseMarkFeedRead,
+  APIResponseNotificationFeed,
   APIResponseNotificationSummary,
-  CameraOutageListParams,
+  NotificationFeedParams,
 } from '@/types/manage/notification-api'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
@@ -342,26 +342,29 @@ export const getNotificationsSummaryAPI = (start_date: string, end_date: string)
     params: { start_date, end_date },
   })
 
-/** GET /manage/notifications/camera-outage — per-camera stream-outage feed
- *  (docs/notifications/FRONTEND_NOTIFICATIONS.md). Fixed sort started_at
- *  DESC; success = HTTP 200 (GET success carries no res_code). JWT scopes
- *  rows server-side — no role/scope params. Badge use: pass
- *  { unread_only: true, status: 'open', since_hours: 24, limit: 1 } and read
- *  meta_data.count. */
-export const getCameraOutageNotificationsAPI = (params: CameraOutageListParams) =>
-  ApiService.fetchData<APIResponseCameraOutageList>({
-    url: '/manage/notifications/camera-outage',
+/** GET /manage/notifications/feed — camera outages AND maintenance cases in
+ *  one time-ordered list (FRONTEND_NOTIFICATION_FEED.md §1). Fixed sort
+ *  occurred_at DESC then id DESC — no sort params. Success = HTTP 200 (GET
+ *  carries no res_code). The JWT scopes rows server-side: a contractor sees
+ *  only their own cameras and cases.
+ *
+ *  Supersedes /notifications/camera-outage, which still exists but must not
+ *  be called any more. */
+export const getNotificationFeedAPI = (params: NotificationFeedParams) =>
+  ApiService.fetchData<APIResponseNotificationFeed>({
+    url: '/manage/notifications/feed',
     method: 'GET',
     params,
   })
 
-/** POST /manage/notifications/camera-outage/read — mark `{ids:[...]}` (≤500
- *  per call) or `{all:true}` (everything visible to the user, ignores
- *  since_hours). Idempotent: repeats give marked:0, never an error. Read
- *  state is per-user. */
-export const markCameraOutageReadAPI = (body: APIRequestMarkCameraOutageRead) =>
-  ApiService.fetchData<APIResponseMarkCameraOutageRead>({
-    url: '/manage/notifications/camera-outage/read',
+/** POST /manage/notifications/feed/read — mark `{items:[{kind,id}]}` (≤500
+ *  per call) or `{all:true}` (optionally narrowed to one `kind`). Idempotent:
+ *  repeats, unknown ids and out-of-scope ids all return marked:0 with a 200,
+ *  so refresh the list instead of reading `marked` (§4). Read state is
+ *  per-user and cannot be undone. */
+export const markNotificationFeedReadAPI = (body: APIRequestMarkFeedRead) =>
+  ApiService.fetchData<APIResponseMarkFeedRead>({
+    url: '/manage/notifications/feed/read',
     method: 'POST',
     data: body,
   })

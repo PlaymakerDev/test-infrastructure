@@ -17,6 +17,20 @@ import type {
   HistoryCase,
 } from '@/types/maintenance'
 import { offlineDaysSince } from '../../data/offlineDays'
+import dayjs from 'dayjs'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import 'dayjs/locale/th'
+
+dayjs.extend(buddhistEra)
+dayjs.locale('th')
+
+/** Thai Buddhist date, matching every other maintenance table (this one used
+ *  to print the raw "2026-09-16 15:40:40" the API returns). */
+const formatThaiDate = (value: string | null | undefined): string => {
+  if (!value) return '-'
+  const d = dayjs(value)
+  return d.isValid() ? d.format('DD MMM BBBB') : '-'
+}
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -118,7 +132,9 @@ interface RepairRecord {
   warranty: 'ในค้ำ' | 'หมดค้ำ'
   type: string
   problemCategory: string
+  /** Empty since the history endpoint went multi-device — see `deviceCount`. */
   device: string
+  deviceCount: number
   repairDate: string
   offlineDays: number
   repairStatus: 'pending' | 'in_progress' | 'completed'
@@ -148,7 +164,7 @@ const REPAIR_EXPORT_COLUMNS: {
     { header: 'การค้ำประกัน', width: 12, widthPct: 6, value: (r) => r.warranty },
     { header: 'ประเภท', width: 14, widthPct: 7, value: (r) => r.type || '-' },
     { header: 'หมวดหมู่ปัญหา', width: 16, widthPct: 8, value: (r) => r.problemCategory || '-' },
-    { header: 'อุปกรณ์', width: 20, widthPct: 10, align: 'left', value: (r) => r.device || '-' },
+    { header: 'จำนวนอุปกรณ์', width: 14, widthPct: 10, align: 'center', value: (r) => `${r.deviceCount} เครื่อง` },
     { header: 'วันที่แจ้งซ่อม', width: 14, widthPct: 8, value: (r) => r.repairDate || '-' },
     { header: 'จำนวนวันออฟไลน์', width: 14, widthPct: 7, value: (r) => `${r.offlineDays} วัน` },
     { header: 'สถานะการซ่อม', width: 18, widthPct: 9, value: (r) => STATUS_MAP[r.repairStatus]?.label ?? r.repairStatus },
@@ -171,10 +187,11 @@ const QueryErrorNotice: React.FC<QueryErrorNoticeProps> = ({ message, onRetry })
   </div>
 )
 
-// Map API status (open|in_progress|closed) → UI repairStatus (pending|in_progress|completed)
+// Map API status → UI repairStatus. `pending_approval` (contractor submitted,
+// officer hasn't approved) belongs with "กำลังดำเนินการ", not "ปิด Case".
 const mapStatusToRepairStatus = (status: HistoryCase['status']): RepairRecord['repairStatus'] => {
   if (status === 'open') return 'pending'
-  if (status === 'in_progress') return 'in_progress'
+  if (status === 'in_progress' || status === 'pending_approval') return 'in_progress'
   return 'completed' // 'closed'
 }
 
@@ -197,7 +214,8 @@ const mapHistoryToRecords = (regions: HistoryRegion[]): RepairRecord[] => {
         type: c.solution_type ?? '',
         problemCategory: c.category?.trim() || '-',
         device: c.device_name ?? '',
-        repairDate: c.reported_at ?? '',
+        deviceCount: c.camera_count ?? 1,
+        repairDate: formatThaiDate(c.reported_at),
         offlineDays: offlineDaysSince(c.curl_updated_at, c.offline_days ?? 0),
         repairStatus: mapStatusToRepairStatus(c.status),
       })
@@ -450,7 +468,12 @@ const RepairRecordsSection: React.FC = () => {
     },
     { title: 'ประเภท', dataIndex: 'type', key: 'type', width: 140 },
     { title: 'หมวดหมู่ปัญหา', dataIndex: 'problemCategory', key: 'problemCategory', width: 160 },
-    { title: 'อุปกรณ์', dataIndex: 'device', key: 'device', width: 180 },
+    {
+      // A case can cover several devices since 2026-09-16, and the history
+      // endpoint replaced the single device name with a count.
+      title: 'จำนวนอุปกรณ์', dataIndex: 'deviceCount', key: 'deviceCount', width: 140, align: 'center',
+      render: (count: number) => `${count} เครื่อง`,
+    },
     { title: 'วันที่แจ้งซ่อม', dataIndex: 'repairDate', key: 'repairDate', width: 130 },
     {
       title: 'จำนวนวันออฟไลน์', dataIndex: 'offlineDays', key: 'offlineDays', width: 150, align: 'center',

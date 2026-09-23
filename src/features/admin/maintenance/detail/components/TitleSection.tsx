@@ -2,7 +2,7 @@
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, ConfigProvider } from 'antd'
-import { TbArrowBigLeftFilled, TbPrinter } from 'react-icons/tb'
+import { TbArrowBigLeftFilled, TbPlus, TbPrinter } from 'react-icons/tb'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 
@@ -31,9 +31,15 @@ interface Props {
   coord?: [number, number] | null
   /** Opens the นำออกเอกสาร export modal — omit to hide the button. */
   onExport?: () => void
+  /** จำนวนอุปกรณ์ออฟไลน์ที่ยังไม่มีเคส — 0 = ปุ่ม "+ เปิด Case" เป็นสีเทา
+   *  (2026-09-10 redesign: ไม่มีเคสให้เปิด/เปิดหมดแล้ว → ปุ่มเทา). */
+  openableCount?: number
+  /** เปิด device-picker modal (OpenCaseModal) — no pre-selection.
+   *  Omit to hide the button entirely (contractor role can't open cases). */
+  onOpenCase?: () => void
 }
 
-const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ', projectId, roadId, coord = null, onExport }) => {
+const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, offlineCount = 0, warranty = 'หมดค้ำ', projectId, roadId, coord = null, onExport, openableCount = 0, onOpenCase }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
@@ -122,7 +128,33 @@ const TitleSection: React.FC<Props> = ({ id, title, subtitle, onlineCount = 0, o
                 <p className='fs-12'>Google Map</p>
               </Button>
             </ConfigProvider>
-            <ConfigProvider theme={{ token: { colorPrimary: '#FCD116', colorTextLightSolid: '#212121' } }}>
+            {/* + เปิด Case — opens the device-picker modal with nothing
+              * pre-ticked (per-row buttons pre-tick their device). Yellow when
+              * there are offline devices without a case, gray otherwise.
+              * Hidden when onOpenCase is absent (contractor role). */}
+            {onOpenCase && (
+              <ConfigProvider
+                theme={{
+                  token: openableCount > 0
+                    ? { colorPrimary: '#FCD116', colorTextLightSolid: '#212121' }
+                    : { colorPrimary: '#5B5B5B', colorTextLightSolid: '#B0B0B0' },
+                }}
+              >
+                <Button
+                  type='primary'
+                  size='middle'
+                  shape='round'
+                  icon={<TbPlus />}
+                  title={openableCount > 0 ? `มีอุปกรณ์ให้เปิด Case ${openableCount} ตัว` : 'ไม่มีเคสให้เปิด'}
+                  style={{ cursor: openableCount > 0 ? 'pointer' : 'not-allowed' }}
+                  onClick={() => { if (openableCount > 0) onOpenCase() }}
+                >
+                  <p className='fs-12'>เปิด Case</p>
+                </Button>
+              </ConfigProvider>
+            )}
+            {/* ประวัติการซ่อม — orange per the 2026-09-10 redesign mock. */}
+            <ConfigProvider theme={{ token: { colorPrimary: '#FF8A00', colorTextLightSolid: '#212121' } }}>
               <Button
                 type='primary'
                 size='middle'
