@@ -79,10 +79,23 @@ export interface APIRequestCCTVOverviewList {
   search?: string
 }
 
+/** How many จุดติดตั้ง one CCTV entry covers, and how many have at least one
+ *  online camera.
+ *
+ *  A CCTV solution spans a whole (โครงการ + สายทาง), so a row is no longer
+ *  one install point — anything labelled "จุด" reads these rather than
+ *  counting rows. Optional: absent against a backend that predates the
+ *  field, in which case callers fall back to treating the row as one point. */
+export interface CctvInstallPointCount {
+  total: number
+  active: number
+}
+
 export interface CCTVOverviewListItem {
   road: CctvRoadRef
   solution: CctvSolutionRef
   camera: CctvCameraCount
+  install_point?: CctvInstallPointCount
   project: CctvProjectRef
   is_warranty: boolean
 }

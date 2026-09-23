@@ -171,9 +171,16 @@ export const manageKeys = {
     /** GET /solution/type/{solution_location_id} — task type presence + counts. */
     typesAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'types-at-location', solutionLocationId] as const,
-    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location. */
+    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location.
+     *  Point-scoped: this is what the Counting/Analytic/Crosswalk/WIM camera
+     *  pickers read. For the whole road use camerasAtProjectRoad below. */
     camerasAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'cameras-at-location', solutionLocationId] as const,
+    /** GET /solution/camera/by_project_road/{project_road_id} — the road's one
+     *  CCTV solution plus every camera under it, each tagged with its own
+     *  install point. Backs the road-level อุปกรณ์ CCTV panel. */
+    camerasAtProjectRoad: (projectRoadId: number | string) =>
+      [...manageKeys.solutions.all, 'cameras-at-project-road', projectRoadId] as const,
     /** GET /solution/camera/vms/{solution_id} */
     vmsCameras: (solutionId: number | string) =>
       [...manageKeys.solutions.all, 'vms-cameras', solutionId] as const,

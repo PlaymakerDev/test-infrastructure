@@ -12,6 +12,7 @@ import {
   useTrafficOverview,
   useTrafficCentralList,
 } from '@/hooks/queries/traffic-signal'
+import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 import type {
   TrafficSignalProject,
@@ -61,6 +62,15 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
   // — keep it just for the road code in the title bar. Cache shared with the
   // overall page when the user came from there.
   const overview = useTrafficOverview(deptId, { solution_id: id })
+  // …and that endpoint reads road_code through the CAMERA's road, so a signal
+  // with no camera attached yet has none. The project's route tree still does,
+  // via the ids the navigation already carries.
+  const overviewRoadCode = overview.data?.locations[0]?.road.code_name
+  const roadFallback = useSolutionRoadFallback(
+    resolvedProjectId,
+    resolvedRoadId,
+    !overviewRoadCode,
+  )
 
   // Combine multi-endpoint data into the legacy `TrafficSignalProject` shape
   // so existing components (which read fields off context.project) keep
@@ -112,7 +122,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
 
     // `road.code_name` only lives on the overview endpoint.
     const overviewLoc = overview.data?.locations[0]
-    const roadCode = overviewLoc?.road.code_name ?? '-'
+    const roadCode = overviewLoc?.road.code_name ?? roadFallback ?? '-'
 
     // Everything else (solution name, anydesk, coords) is sourced from
     // `/manage/solution/details/{id}` — the canonical record for one signal.
@@ -155,7 +165,7 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       peakPhase: detailItem.max_active_phase,
       phaseTiming,
     }
-  }, [id, resolvedProjectId, resolvedRoadId, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data])
+  }, [id, resolvedProjectId, resolvedRoadId, contractInfo.data, solutionDetail.data, details.data, phaseDetails.data, overview.data, roadFallback])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {

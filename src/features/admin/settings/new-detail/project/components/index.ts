@@ -15,7 +15,16 @@ export { default as EmptyRoadSolution } from './EmptyRoadSolution'
 export { default as FormUpdateSolutionLocation } from './FormUpdateSolutionLocation'
 export { default as ModalConfirmDelete } from './ModalConfirmDelete'
 export { default as TableCameraList } from './TableCameraList'
+
+// สายทาง-level CCTV: one solution per (โครงการ + สายทาง), so its cameras
+// live above the จุดติดตั้ง tabs rather than inside one.
+export { default as CctvEquipmentSection } from './CctvEquipmentSection'
+export { default as TableRoadCameras } from './TableRoadCameras'
+export { default as ModalCreateCamera } from './ModalCreateCamera'
 export { default as FormCreateCamera } from './FormCreateCamera'
+
+// Per-จุดติดตั้ง equipment pickers for the NON-CCTV task types, reached from
+// TableSolution's "รายการอุปกรณ์" column (see data/equipmentModal.ts).
 export { default as EquipmentModalShell } from './EquipmentModalShell'
 export { default as EquipmentModalFooter } from './EquipmentModalFooter'
 export { default as EquipmentStatusPill } from './EquipmentStatusPill'

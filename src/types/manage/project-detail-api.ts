@@ -167,6 +167,32 @@ export interface APIRequestCreateSolution {
   solution_type_id: number
   sta: string
   zt_ip_address: string
+  /** Required when `solution_type_id` is 6 (Traffic Lighting) — without it
+   *  the backend creates a bare `tbl_lighting` row with no IoT device, so the
+   *  solution has no IMEI and therefore no diagram, logs or electricity data. */
+  lighting?: APIRequestLightingConfig
+}
+
+/** The Lighting fan-out block on `POST /manage/solution`.
+ *
+ *  `lighting_type` 2 = IoT4G-67 (the IMEI-bearing device — everything below
+ *  applies), 1 = Lora Gateway (only a status row is created; the rest is
+ *  ignored). */
+export interface APIRequestLightingConfig {
+  lighting_type: 1 | 2
+  imei?: string
+  /** '1p' | '3p' | '1p_cab' */
+  phase_type?: string
+  /** Datalog profile, e.g. 'nbiot_cab_1p'. */
+  sem_type?: string
+  /** The name of a `lighting.tbl_diagram_template` row. The backend copies
+   *  that template into the new device's diagram, so picking one here is what
+   *  makes the circuit drawing exist. */
+  diagram_type?: string
+  /** 'NB-IoT' | 'LTE-M' | '4G_LTE' | 'WiFi' */
+  connection_type?: string
+  /** 'every_5min' | 'hourly' | … */
+  send_frequency?: string
 }
 
 export interface GeometryPoint {
@@ -231,4 +257,39 @@ export interface SolutionCameraList {
   curl_status: boolean
   contractor_id: string
   updated_at: string
+}
+
+// GET ROAD-LEVEL CCTV (/manage/solution/camera/by_project_road/{id})
+//
+// CCTV is one solution per (โครงการ + สายทาง), not per install point, so the
+// settings page shows it once above the จุดติดตั้ง tabs. Each camera carries
+// the point it actually stands at — that is a column in the table, and the
+// value the add/edit form picks.
+
+export interface ProjectRoadCCTVSolution {
+  solution_id: number
+  solution_name: string
+  /** The chainage span its cameras cover, e.g. "0+100 - 6+000". */
+  sta: string | null
+}
+
+export interface ProjectRoadCamera {
+  id: string
+  camera_name: string
+  sta: string
+  ip_address: string
+  hls_url: string
+  remark: string | null
+  point_geometry: number[] | null
+  curl_status: boolean
+  curl_updated: string | null
+  solution_id: number | null
+  solution_location_id: number
+  location_name: string
+}
+
+export interface APIResponseProjectRoadCameras {
+  /** null when the road has no CCTV yet — the first camera creates it. */
+  solution: ProjectRoadCCTVSolution | null
+  cameras: ProjectRoadCamera[]
 }
