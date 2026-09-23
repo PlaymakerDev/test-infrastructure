@@ -460,21 +460,26 @@ The DISPLAY tab's day-filter calendar (`FormSearchCalendar` badges + click-to-fi
 
 Verified: `npx tsc --noEmit` clean (only the pre-existing `MaintenanceService.ts` errors); ESLint clean; 77/77 tests pass (schemas untouched by this change); `next build` Turbopack compile succeeds.
 
-### CCTV is one solution per (โครงการ + สายทาง) (2026-09-21)
+### CCTV is one solution per (โครงการ + สายทาง) — FORWARD-ONLY (2026-09-22)
 
-**CCTV is no longer a per-install-point "ประเภทงาน".** It used to be: one `tbl_solution` type=1 row per `solution_location`, which is why one road showed up as several unrelated CCTV entries (`ชม.2025 0+500` and `ชม.2025 1+500`). There is now exactly **one CCTV solution per `project_road_id`**, and a camera's install point lives on the camera.
+**CCTV is no longer a per-install-point "ประเภทงาน".** It used to be: one `tbl_solution` type=1 row per `solution_location`, which is why one road showed up as several unrelated CCTV entries (`ชม.2025 0+500` and `ชม.2025 1+500`). From now on a road gets **one CCTV solution per `project_road_id`**, and a camera's install point lives on the camera.
+
+**⚠ This is a rule about NEW data only — existing data is deliberately left split.** A one-off merge migration was written and then **deleted on request** (commit `506a289`): roads migrated from 2566-and-earlier projects keep one CCTV solution per legacy install point, each with its own `tbl_work_master` row, and nothing merges or deletes them. Do not re-introduce that migration without asking.
+
+What the rule means in practice on such a road: a newly added camera **joins the road's existing CCTV solution (lowest id)** rather than minting another. The road-level view users see is assembled at read time (`GetProjectRoadCameras`), so a legacy road with eight CCTV solutions still reads as one CCTV entry regardless.
 
 - **`cctv.tbl_camera.solution_location_id`** (nullable, FK, `db_migrations/2026-09-21_camera_solution_location.sql`) is the source of truth for where a camera stands. **Every read path COALESCEs to `solution.solution_location_id`** so rows the backfill missed still resolve — keep that fallback in anything new.
-- **Never create a CCTV solution directly.** `POST /manage/solution` with `solution_type_id=1` returns 400 (`ErrCCTVSolutionNotCreatable`). Cameras are added with `POST /cctv/cameras { solution_location_id, … }`; the service resolves — or creates — the road's CCTV solution in the same transaction (`cctv/internal/dto/camera/solution.go: ResolveCCTVSolution`).
+- **Four paths can create a CCTV solution — all four are road-scoped.** Change all of them together or the rule leaks: `camera.ResolveCCTVSolution` (`POST /cctv/cameras`, get-or-create inside the camera's tx), `worker/solution_sync` (`FindExistingCCTVSolution(projectRoadID)` — matching on the point instead would re-split every 30 min), `manage` Excel import (folds CCTV rows per `project_road_id`), and `POST /manage/solution` (400 `ErrCCTVAlreadyOnRoad` when the road already has one — the FIRST is still creatable there, which is how it gets its legacy work_master link).
+- **Cameras are added with `POST /cctv/cameras { solution_location_id, … }`** — never by creating a solution first. A solution born in the cctv service has no legacy `wid`, so its cameras are not mirrored to legacy `tbl_cctv`; it logs loudly when that happens.
 - **The solution's name is derived, not typed:** `<road_code> <min_sta> - <max_sta>` over its cameras' `sta` (e.g. `ชม.2025 0+100 - 6+000`). `RecomputeCCTVSolutionName` runs after every camera create/move/delete. The canonical chainage parser is **`utils/sta.go`** (`ParseSta` / `BuildCCTVSolutionName` / `StaMetresSQL`) — tolerant of `4+800 RT`, trailing spaces, and values carrying no chainage at all (1,888 of 10,226 cameras). **Never sort `sta` as a string** — `18+465` sorts before `4+768`.
 - **`/manage/solution/camera/list/{solution_location_id}` stays point-scoped** — it is what the Counting/Analytic/Crosswalk/WIM camera pickers read. The road-level list is the new **`GET /manage/solution/camera/by_project_road/{project_road_id}`**.
 - **Markers are keyed on (solution, install point), not solution.** `SolutionPosition`'s `cctv_pt` LATERAL fans CCTV out to one row per point; `ReactMap.tsx` builds `id` as `${solution_id}-${solution_location_id}` and carries the bare solution id in `detailId` for the detail route (same trick LPR already used).
-- **Anything labelled "จุด" must count install points**, not rows: the overview base query exposes `install_point.total` / `install_point.active` and the totals SUM them. Counting rows silently became "CCTV entries" when CCTV merged.
-- **Both sync workers know about this** — `solution_sync` matches CCTV on `(project_road, type)` instead of `(location, type)` (otherwise it re-splits every 30 min), and `tbl_work_master_migration.solution_location_id` carries the point so `camera_sync` can stamp it.
+- **Anything labelled "จุด" must count install points**, not rows: the overview base query exposes `install_point.total` / `install_point.active` and the totals SUM them. Counting rows was only ever right while one row meant one point.
+- **`tbl_work_master_migration.solution_location_id`** (`db_migrations/2026-09-21c_...sql`) carries the point each legacy wid meant, so `camera_sync` can stamp a camera's own install point even when several wids now share one road-scoped solution. Without it a road-scoped CCTV solution would lose per-camera location.
 
 Frontend: the road-level panel is `settings/new-detail/project/components/CctvEquipmentSection.tsx` (above the จุดติดตั้ง tabs); CCTV is filtered out of the ประเภทงาน dropdown via `data/solutionType.ts`. Note `new-detail/project/` is the **live** tree — `settings/detail/project/` is an older, unrouted implementation.
 
-One-off merge: `db_migrations/2026-09-21b_cctv_merge_per_project_road.sql` (idempotent, aborts on surprise; 614→514 solutions, 530 cameras repointed on the 2026-09-21 snapshot). It must run **after** the read-path deploy — the read paths were written to return identical results either side of it.
+Scale of the legacy split it does NOT touch (2026-09-21 production snapshot): 614 CCTV solutions across 514 (project, road) groups — only **23 groups hold more than one**, the largest being ชร.4068 with 22. So the "leave it alone" decision costs very little; 491 roads already satisfy the rule.
 
 ### settings — project detail page wired to real API + full CRUD (2026-07-18) — RESOLVED
 

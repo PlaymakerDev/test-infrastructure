@@ -64,6 +64,9 @@ export { useCreateProjectSolution } from './useCreateProjectSolution'
 export { useUpdateProjectSolution } from './useUpdateProjectSolution'
 export { useDeleteProjectSolution } from './useDeleteProjectSolution'
 
+// Detail-header fallback — สายทาง for a solution with no equipment attached yet
+export { useSolutionRoadFallback } from './useSolutionRoadFallback'
+
 // Project detail — road_solution / solution / cameras / equipments
 export {
   useSolutionTypes,

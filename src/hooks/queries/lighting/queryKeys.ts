@@ -54,6 +54,8 @@ export const lightingKeys = {
     reportType: 'hourly' | 'daily' | 'monthly' | 'yearly',
   ) => [...lightingKeys.all, 'electricity', imei, startDate ?? null, endDate ?? null, reportType] as const,
   diagram: (imei: string) => [...lightingKeys.all, 'diagram', imei] as const,
+  /** GET /lighting/templates — the reusable diagram layouts. */
+  diagramTemplates: () => [...lightingKeys.all, 'diagramTemplates'] as const,
   alerts: (imei: string, page: number, limit: number, sort: 'ASC' | 'DESC') =>
     [...lightingKeys.all, 'alerts', imei, page, limit, sort] as const,
 } as const

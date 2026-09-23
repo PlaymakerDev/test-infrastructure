@@ -7,7 +7,18 @@ import { useQuery } from '@tanstack/react-query'
 import { getSolutionTypesAPI } from '@/services/routes/SolutionService'
 import { SOLUTION_TYPE } from '@/constants'
 import { useCreateProjectSolution, useUpdateProjectSolution } from '@/hooks/queries/manage'
+import { useLightingDiagramTemplates } from '@/hooks/queries/lighting'
 import { SOLUTION_TYPE_CCTV } from '../data/solutionType'
+import {
+  IMEI_PATTERN,
+  LIGHTING_CONNECTION_TYPE_OPTIONS,
+  LIGHTING_PHASE_OPTIONS,
+  LIGHTING_SEM_TYPE_OPTIONS,
+  LIGHTING_SEND_FREQUENCY_OPTIONS,
+  LIGHTING_TYPE_IOT,
+  LIGHTING_TYPE_OPTIONS,
+  SOLUTION_TYPE_LIGHTING,
+} from '../data/lighting'
 import {
   IP_PATTERN,
   LAT_LNG_PATTERN,
@@ -39,6 +50,16 @@ interface FormCreateDeviceValues {
   solution_type_id: number | string | null
   sta: string
   zt_ip_address: string
+  // Lighting (solution_type_id = 6) only — sent as the nested `lighting`
+  // block. Flat here because RHF handles flat fields more simply and the
+  // shape is assembled once at submit.
+  lighting_type: 1 | 2 | null
+  lighting_imei: string
+  lighting_phase_type: string
+  lighting_sem_type: string
+  lighting_diagram_type: string
+  lighting_connection_type: string
+  lighting_send_frequency: string
 }
 
 const FormCreateDevice: React.FC<Props> = (props) => {
@@ -95,15 +116,36 @@ const FormCreateDevice: React.FC<Props> = (props) => {
       solution_type_id: data?.solution_type_id ?? null,
       solution_name: data?.solution_name ?? '',
       sta: data?.sta ?? '',
-      zt_ip_address: data?.zt_ip_address ?? ''
+      zt_ip_address: data?.zt_ip_address ?? '',
+      // Lighting config is create-only — PUT /manage/solution/{id} has no
+      // `lighting` block, so an EDIT never seeds or sends these.
+      lighting_type: null,
+      lighting_imei: '',
+      lighting_phase_type: '',
+      lighting_sem_type: '',
+      lighting_diagram_type: '',
+      lighting_connection_type: '',
+      lighting_send_frequency: '',
     }
   })
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors }
   } = form
+
+  // The Lighting block only exists on create, and only for the IMEI-bearing
+  // device — a Lora gateway gets just a status row, so the IoT fields below
+  // would be written nowhere.
+  const isLighting = !isUpdate && Number(watch('solution_type_id')) === SOLUTION_TYPE_LIGHTING
+  const isLightingIoT = isLighting && Number(watch('lighting_type')) === LIGHTING_TYPE_IOT
+
+  const {
+    data: diagramTemplates,
+    isLoading: isTemplatesLoading,
+  } = useLightingDiagramTemplates(isLightingIoT)
 
   const onCreate = useCallback((values: FormCreateDeviceValues) => {
     if (!item?.solution_location_id) return
@@ -118,6 +160,25 @@ const FormCreateDevice: React.FC<Props> = (props) => {
       solution_type_id: Number(values.solution_type_id),
       sta: values.sta,
       zt_ip_address: values.zt_ip_address,
+    }
+
+    // Without this block the backend creates a bare tbl_lighting row with no
+    // IoT device — no IMEI, so no diagram, no logs, no electricity data.
+    if (Number(values.solution_type_id) === SOLUTION_TYPE_LIGHTING && values.lighting_type) {
+      body.lighting =
+        Number(values.lighting_type) === LIGHTING_TYPE_IOT
+          ? {
+            lighting_type: LIGHTING_TYPE_IOT,
+            imei: values.lighting_imei.trim(),
+            phase_type: values.lighting_phase_type,
+            sem_type: values.lighting_sem_type,
+            // The template name — the backend copies that template into this
+            // device's diagram, which is what makes the circuit drawing exist.
+            diagram_type: values.lighting_diagram_type,
+            connection_type: values.lighting_connection_type || undefined,
+            send_frequency: values.lighting_send_frequency || undefined,
+          }
+          : { lighting_type: 1 }
     }
 
     createSolution(body, {
@@ -235,6 +296,162 @@ const FormCreateDevice: React.FC<Props> = (props) => {
                 }}
               />
             </Col>
+          )}
+          {isLighting && (
+            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+              <Controller
+                control={control}
+                name='lighting_type'
+                rules={{ required: 'กรุณาเลือกชนิดอุปกรณ์' }}
+                render={({ field }) => (
+                  <fieldset>
+                    <label className='text-(--yellow)'>ชนิดอุปกรณ์ <span className='text-red-500'>*</span></label>
+                    <Select
+                      {...field}
+                      placeholder='เลือกชนิดอุปกรณ์...'
+                      size='large'
+                      options={LIGHTING_TYPE_OPTIONS}
+                      className='w-full!'
+                    />
+                    {errors.lighting_type && <p className='fs-12 text-red-500'>{errors.lighting_type.message}</p>}
+                  </fieldset>
+                )}
+              />
+            </Col>
+          )}
+          {isLightingIoT && (
+            <>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_imei'
+                  rules={{
+                    required: 'กรุณาระบุ IMEI',
+                    pattern: { value: IMEI_PATTERN, message: 'IMEI ควรเป็นตัวเลข 14-20 หลัก' },
+                  }}
+                  render={({ field }) => (
+                    <fieldset>
+                      <label className='text-(--yellow)'>IMEI <span className='text-red-500'>*</span></label>
+                      <Input
+                        {...field}
+                        name={field.name}
+                        placeholder='กรุณาระบุ IMEI...'
+                        size='large'
+                        inputMode='numeric'
+                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                      />
+                      {errors.lighting_imei && <p className='fs-12 text-red-500'>{errors.lighting_imei.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_phase_type'
+                  rules={{ required: 'กรุณาเลือก Phase' }}
+                  render={({ field }) => (
+                    <fieldset>
+                      <label className='text-(--yellow)'>Phase <span className='text-red-500'>*</span></label>
+                      <Select
+                        {...field}
+                        placeholder='เลือก Phase...'
+                        size='large'
+                        options={LIGHTING_PHASE_OPTIONS}
+                        className='w-full!'
+                      />
+                      {errors.lighting_phase_type && <p className='fs-12 text-red-500'>{errors.lighting_phase_type.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_sem_type'
+                  rules={{ required: 'กรุณาเลือกประเภท Datalog' }}
+                  render={({ field }) => (
+                    <fieldset>
+                      <label className='text-(--yellow)'>ประเภท Datalog <span className='text-red-500'>*</span></label>
+                      <Select
+                        {...field}
+                        placeholder='เลือกประเภท Datalog...'
+                        size='large'
+                        showSearch={{ optionFilterProp: 'label' }}
+                        options={LIGHTING_SEM_TYPE_OPTIONS}
+                        className='w-full!'
+                      />
+                      {errors.lighting_sem_type && <p className='fs-12 text-red-500'>{errors.lighting_sem_type.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_diagram_type'
+                  rules={{ required: 'กรุณาเลือกแบบผังวงจร' }}
+                  render={({ field }) => (
+                    <fieldset>
+                      {/* The value IS a template name — the backend copies
+                          that template into this device's diagram on create,
+                          so the circuit drawing exists without anyone
+                          opening the editor. */}
+                      <label className='text-(--yellow)'>แบบผังวงจร (Diagram) <span className='text-red-500'>*</span></label>
+                      <Select
+                        {...field}
+                        placeholder='เลือกแบบผังวงจร...'
+                        size='large'
+                        showSearch={{ optionFilterProp: 'label' }}
+                        loading={isTemplatesLoading}
+                        options={(diagramTemplates ?? []).map((t) => ({ label: t.name, value: t.name }))}
+                        notFoundContent={isTemplatesLoading ? 'กำลังโหลด...' : 'ยังไม่มีแบบผังวงจรในระบบ'}
+                        className='w-full!'
+                      />
+                      {errors.lighting_diagram_type && <p className='fs-12 text-red-500'>{errors.lighting_diagram_type.message}</p>}
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_connection_type'
+                  render={({ field }) => (
+                    <fieldset>
+                      <label className='text-(--yellow)'>ประเภทการเชื่อมต่อ</label>
+                      <Select
+                        {...field}
+                        placeholder='เลือกประเภทการเชื่อมต่อ...'
+                        size='large'
+                        allowClear
+                        options={LIGHTING_CONNECTION_TYPE_OPTIONS}
+                        className='w-full!'
+                      />
+                    </fieldset>
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
+                <Controller
+                  control={control}
+                  name='lighting_send_frequency'
+                  render={({ field }) => (
+                    <fieldset>
+                      <label className='text-(--yellow)'>ความถี่การส่งข้อมูล</label>
+                      <Select
+                        {...field}
+                        placeholder='เลือกความถี่การส่งข้อมูล...'
+                        size='large'
+                        allowClear
+                        options={LIGHTING_SEND_FREQUENCY_OPTIONS}
+                        className='w-full!'
+                      />
+                    </fieldset>
+                  )}
+                />
+              </Col>
+            </>
           )}
           <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
             <Controller

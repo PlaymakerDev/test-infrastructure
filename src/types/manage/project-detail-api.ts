@@ -167,6 +167,32 @@ export interface APIRequestCreateSolution {
   solution_type_id: number
   sta: string
   zt_ip_address: string
+  /** Required when `solution_type_id` is 6 (Traffic Lighting) — without it
+   *  the backend creates a bare `tbl_lighting` row with no IoT device, so the
+   *  solution has no IMEI and therefore no diagram, logs or electricity data. */
+  lighting?: APIRequestLightingConfig
+}
+
+/** The Lighting fan-out block on `POST /manage/solution`.
+ *
+ *  `lighting_type` 2 = IoT4G-67 (the IMEI-bearing device — everything below
+ *  applies), 1 = Lora Gateway (only a status row is created; the rest is
+ *  ignored). */
+export interface APIRequestLightingConfig {
+  lighting_type: 1 | 2
+  imei?: string
+  /** '1p' | '3p' | '1p_cab' */
+  phase_type?: string
+  /** Datalog profile, e.g. 'nbiot_cab_1p'. */
+  sem_type?: string
+  /** The name of a `lighting.tbl_diagram_template` row. The backend copies
+   *  that template into the new device's diagram, so picking one here is what
+   *  makes the circuit drawing exist. */
+  diagram_type?: string
+  /** 'NB-IoT' | 'LTE-M' | '4G_LTE' | 'WiFi' */
+  connection_type?: string
+  /** 'every_5min' | 'hourly' | … */
+  send_frequency?: string
 }
 
 export interface GeometryPoint {
