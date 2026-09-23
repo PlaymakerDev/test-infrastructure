@@ -1,3 +1,5 @@
+import { useAppDispatch } from '@/stores/hooks'
+import { setContactModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { APIResponseContractorList } from '@/types/manage/contractor-api'
 import { fmtNumber } from '@/utils/formatNumber'
 import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons'
@@ -11,7 +13,6 @@ interface Props {
   setType: (type: 'TABLE' | 'GRID') => void
   search: string
   setSearch: (search: string) => void
-  onAdd: () => void
   onExport: () => void
   data?: APIResponseContractorList
 }
@@ -21,7 +22,8 @@ interface FormSearchContactForm {
 }
 
 const FormSearchContact: React.FC<Props> = (props) => {
-  const { setType, type, search, setSearch, onAdd, onExport, data } = props
+  const { setType, type, search, setSearch, onExport, data } = props
+  const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -36,6 +38,10 @@ const FormSearchContact: React.FC<Props> = (props) => {
   const onSubmit = useCallback((data: FormSearchContactForm) => {
     setSearch(data.name)
   }, [setSearch])
+
+  const onOpenCreateContactModal = useCallback(() => {
+    dispatch(setContactModalOpen({ open: true, type: 'CREATE' }))
+  }, [dispatch])
 
   return (
     <form
@@ -79,7 +85,7 @@ const FormSearchContact: React.FC<Props> = (props) => {
           icon={<PlusOutlined />}
           shape='round'
           className='flex-1 min-w-35 md:flex-none md:w-auto!'
-          onClick={onAdd}
+          onClick={onOpenCreateContactModal}
         >
           <p className='fs-12 whitespace-nowrap'>เพิ่มผู้รับจ้าง</p>
         </Button>

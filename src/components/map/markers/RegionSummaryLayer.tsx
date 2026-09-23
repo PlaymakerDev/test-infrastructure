@@ -1,6 +1,5 @@
 "use client"
 import React, { createElement, useEffect, useMemo, useState } from 'react'
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { SYSTEMS, type SystemType } from '@/features/admin/dashboard/data/systems'
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { SYSTEM_ICONS } from '../hooks/useDeviceIcon'
@@ -8,7 +7,7 @@ import { useDashboardPosition } from '@/hooks/queries/dashboard'
 import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
-import { useBureauFeatures } from '../hooks/useBureauFeatures'
+import { useBureauFeatures, isPointInBureau, findBureauAt } from '../hooks/useBureauFeatures'
 import { useMap } from '../hooks/useMap'
 import HTMLMarker from '../primitives/HTMLMarker'
 
@@ -117,14 +116,10 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
             deptId: l.road.department_id ?? 0,
           }))
 
-    const inBureau = (lng: number, lat: number, stch: number): boolean | null => {
-      if (!bureauFeatures) return null
-      const bf = bureauFeatures.find((b) => b.stch === stch)
-      if (!bf) return null
-      const [minX, minY, maxX, maxY] = bf.bbox
-      if (lng < minX || lng > maxX || lat < minY || lat > maxY) return false
-      return booleanPointInPolygon([lng, lat], bf.feature)
-    }
+    // Same test as before, now via the shared memo — ReactMap asks this for
+    // the same device set, so whichever runs first warms the other's cache.
+    const inBureau = (lng: number, lat: number, stch: number): boolean | null =>
+      isPointInBureau(bureauFeatures, stch, lng, lat)
 
     const stchAcc: Record<number, Acc> = {}
     const deptAcc: Record<number, Acc> = {}
@@ -137,11 +132,7 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
       const inOwn = inBureau(p.lng, p.lat, p.stch)
       if (inOwn === false) trusted = false
       if (!BUREAU_BY_STCH[bucket] && bureauFeatures) {
-        const hit = bureauFeatures.find((b) => {
-          const [minX, minY, maxX, maxY] = b.bbox
-          if (p.lng < minX || p.lng > maxX || p.lat < minY || p.lat > maxY) return false
-          return booleanPointInPolygon([p.lng, p.lat], b.feature)
-        })
+        const hit = findBureauAt(bureauFeatures, p.lng, p.lat)
         bucket = hit ? hit.stch : 0
         // Bucket chosen FROM the coordinate — by construction trustworthy.
         trusted = hit ? true : trusted
@@ -176,7 +167,7 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
   const Icon = SYSTEM_ICONS[type]
 
   const bubble = (count: number, label: string, size: number) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+    <div className='map-marker-in' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       {/* Same visual language as the menu's cluster circles (menu color fill,
           white ring, glyph over count) — just aggregated per org tier. */}
       <div
@@ -222,21 +213,24 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
 
   return (
     <>
-      {Object.entries(stchSummaries).map(([k, info]) => {
+      {/* Only the active tier is mounted. A hidden marker is still attached to
+          the map, and mapbox re-projects + rewrites the transform of EVERY
+          attached marker on every move frame no matter its CSS — so the
+          off-tier bubbles were pure per-frame cost. */}
+      {tier === 'stch' && Object.entries(stchSummaries).map(([k, info]) => {
         const stch = Number(k)
         if (!info || info.count === 0) return null
         return (
           <HTMLMarker
             key={`stch-${stch}`}
             lngLat={info.centroid}
-            visible={tier === 'stch'}
             onClick={() => map?.flyTo({ center: info.centroid, zoom: 7.5, duration: 1200 })}
           >
             {bubble(info.count, stchShortLabel(stch), 48)}
           </HTMLMarker>
         )
       })}
-      {Object.entries(deptSummaries).map(([k, info]) => {
+      {tier === 'dept' && Object.entries(deptSummaries).map(([k, info]) => {
         const id = Number(k)
         if (!info || info.count === 0) return null
         const label = deptLabels.get(id) ?? (id === 0 ? 'ส่วนกลาง' : `ขทช. #${id}`)
@@ -244,7 +238,6 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
           <HTMLMarker
             key={`dept-${id}`}
             lngLat={info.centroid}
-            visible={tier === 'dept'}
             onClick={() => map?.flyTo({ center: info.centroid, zoom: 10, duration: 1200 })}
           >
             {bubble(info.count, label, 40)}

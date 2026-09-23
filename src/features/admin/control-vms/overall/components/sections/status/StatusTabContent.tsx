@@ -30,7 +30,16 @@ const fmtThaiDate = (v: string) => (v ? dayjs(v).locale('th').format('DD MMM BBB
  *  line per schedule with its active days + time window (what the DayList
  *  tooltips show on screen). */
 const scheduleConditionText = (item: VMSSettingByStatus): string => {
-  if (item.is_all_day) return 'แสดงผลตลอดเวลา'
+  if (item.is_all_day) {
+    // "แสดงผลตลอดเวลา" เฉย ๆ ทำให้คนอ่านรายงานเข้าใจว่าไม่มีวันจบ — ที่จริงมันคือ
+    // ช่วงเดียวต่อเนื่องที่ปิดด้วย (วันจบ + เวลาจบ) ต้องพิมพ์เวลาจริงติดไปด้วย
+    const s = item.schedules?.[0]
+    const since = (s?.time_since ?? '').slice(0, 5)
+    const to = (s?.time_to ?? '').slice(0, 5)
+    return since && to
+      ? `แสดงผลตลอดเวลา (ต่อเนื่อง ขึ้นจอ ${since} ของวันเริ่ม → ดับจอ ${to} ของวันจบ)`
+      : 'แสดงผลตลอดเวลา'
+  }
   const lines = (item.schedules ?? []).map((s) => {
     const days = (s.days_of_week ?? []).map((d) => DAY_ABBR[d] ?? String(d)).join(' ')
     return `${s.schedule_name} (${days || '-'}) ${s.time_since}-${s.time_to}`

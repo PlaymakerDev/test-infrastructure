@@ -8,6 +8,7 @@ import { useVMSSettingByVMSID } from '@/features/admin/control-vms/overall/hooks
 import { useDispatchCommand } from '../hooks/useDispatchCommand'
 import CommandSetCard from './CommandSetCard'
 import { conflictingSetIds, createCommandSet, isCommandSetValid, type CommandSetValue } from '../utils/commandSet'
+import { describeWindow, type CommandTiming } from '../utils/displayWindow'
 import type { ScheduleByVMSID } from '@/types/control-vms/display-api'
 import type { APIRequestVMSDispatch } from '@/types/vms/command-center-api'
 
@@ -62,6 +63,20 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
       </li>
     ))
   }
+
+  /**
+   * แปลงชุดคำสั่งบนฟอร์มเป็นรูปเดียวกับที่ API/ป้ายเห็น เพื่อให้ประโยคบนหน้ายืนยัน
+   * คำนวณจากสูตรเดียวกับ LiveMonitor (utils/displayWindow) ไม่ใช่สูตรของตัวเอง
+   * ช่วงแรกคือช่วงที่ describeWindow สนใจ (โหมดต่อเนื่องบังคับมีช่วงเดียวอยู่แล้ว)
+   */
+  const timingOf = (set: CommandSetValue): CommandTiming => ({
+    date_since: set.dateRange[0].format(dateFmt),
+    date_to: set.dateRange[1].format(dateFmt),
+    is_all_day: set.isAllDay,
+    time_since: set.timeSlots[0]?.range[0].format(timeFmt),
+    time_to: set.timeSlots[0]?.range[1].format(timeFmt),
+    days_of_week: 0,
+  })
 
   const dateConflictIds = conflictingSetIds(sets)
   const canDispatch = vmsIds.length > 0 && sets.every(isCommandSetValid) && dateConflictIds.size === 0
@@ -241,6 +256,12 @@ const Composer: React.FC<Props> = React.memo(function Composer({ vmsIds, targetS
                       <li key={slot.id}>{slot.range[0].format('HH:mm')} – {slot.range[1].format('HH:mm')}</li>
                     ))}
                   </ul>
+                  {/* ผลลัพธ์จริงเป็นประโยค ไม่ใช่ค่าที่กรอก — โหมด "แสดงผลตลอดเวลา"
+                      อ่านจากค่าดิบแล้วเข้าใจผิดว่าเป็นรอบรายวันมาแล้วของจริง
+                      (19 ก.ย. 2569 ตั้ง 22:51–23:51 นึกว่าติดยาว ที่จริงได้ 1 ชม.) */}
+                  <p className="fs-12 text-(--default-blue) mt-1 mb-0">
+                    ผลที่ป้ายจะทำจริง: {describeWindow(timingOf(set))}
+                  </p>
                 </div>
               ))}
             </div>

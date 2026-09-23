@@ -1,4 +1,6 @@
 import { useBudgetYears, useDepartments, useProjectContractors } from '@/hooks/queries/manage'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Col, ConfigProvider, Input, Row, Segmented, Select } from 'antd'
 import React, { useCallback, useRef } from 'react'
@@ -19,14 +21,14 @@ export interface ProjectSearchFormValues {
 
 interface Props {
   onSearch: (values: ProjectSearchFormValues) => void
-  onAdd?: () => void
   onExport?: () => void
   displayType: 'LIST' | 'GRID'
   setDisplayType: (displayType: 'LIST' | 'GRID') => void
 }
 
 const FormSearchProject: React.FC<Props> = (props) => {
-  const { onSearch, onAdd, onExport, displayType, setDisplayType } = props
+  const { onSearch, onExport, displayType, setDisplayType } = props
+  const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -48,6 +50,10 @@ const FormSearchProject: React.FC<Props> = (props) => {
   const onSubmit = useCallback((data: ProjectSearchFormValues) => {
     onSearch(data)
   }, [onSearch])
+
+  const onOpenCreateProjectModal = useCallback(() => {
+    dispatch(setProjectModalOpen({ open: true, type: 'CREATE' }))
+  }, [dispatch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -144,7 +150,7 @@ const FormSearchProject: React.FC<Props> = (props) => {
                     showSearch={{ optionFilterProp: 'company_name' }}
                     loading={cLoading}
                     options={contractors}
-                    fieldNames={{ label: 'company_name', value: 'contractor_id' }}
+                    fieldNames={{ label: 'company_name', value: 'user_id' }}
                     onChange={(e) => {
                       // See budget_year's onChange — same undefined-vs-null defense.
                       field.onChange(e ?? null)
@@ -195,7 +201,7 @@ const FormSearchProject: React.FC<Props> = (props) => {
             size="large"
             icon={<PlusOutlined />}
             shape='round'
-            onClick={onAdd}
+            onClick={onOpenCreateProjectModal}
           >
             <p className='fs-12 whitespace-nowrap'>เพิ่มโครงการ</p>
           </Button>

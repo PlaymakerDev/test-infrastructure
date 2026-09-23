@@ -4,13 +4,10 @@ import { Result, Spin } from 'antd'
 import { useUserRole } from '@/hooks/useUserRole'
 import {
   TitleSection,
-  ProjectSection,
-  RouteSection,
-  ContactSection,
   NewContactSection,
-  UserSection,
   NewProjectSection,
   NewUserSection,
+  NewRoadSection,
 } from '../components'
 import { OverallProvider } from '../context'
 import { allowedSettingsTabs, type SettingsTab } from '../data/tabs'
@@ -33,7 +30,7 @@ const SettingScreen = () => {
       case 'PROJECT':
         return <NewProjectSection />
       case 'ROUTE':
-        return <RouteSection />
+        return <NewRoadSection />
       case 'CONTACT':
         return <NewContactSection />
       case 'USER':
@@ -67,7 +64,7 @@ const SettingScreen = () => {
 
   return (
     <div
-      className='main-screen px-10 flex flex-col'
+      className='main-screen px-8 flex flex-col'
       style={{ height: 'calc(100vh - var(--nav-h))' }}
     >
       <div className='shrink-0'>

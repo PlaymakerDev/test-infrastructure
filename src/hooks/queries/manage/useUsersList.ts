@@ -2,6 +2,22 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { getGeneralUsersAPI } from '@/services/routes/ManageService'
 import { manageKeys } from './queryKeys'
 import type { ListParams } from '@/types/manage/params'
+import type { APIResponseGeneralUser } from '@/types/manage/general-user-api'
+
+/** True if `row` matches `needle` (an already-lowercased search term) on
+ *  first_name+lastname / username / role — the ONE client-side filter this
+ *  hook's `select` uses, shared with the users export's "ทั้งหมด" scope so
+ *  the two never drift apart. */
+export const matchesUserSearch = (row: APIResponseGeneralUser, needle: string): boolean => {
+  const name = `${row.first_name ?? ''} ${row.lastname ?? ''}`.toLowerCase()
+  const username = row.user?.username?.toLowerCase() ?? ''
+  const role = row.role?.toLowerCase() ?? ''
+  return (
+    name.includes(needle) ||
+    username.includes(needle) ||
+    role.includes(needle)
+  )
+}
 
 /** GET /manage/general_user — server-paginated but NOT server-searched.
  *
@@ -29,16 +45,7 @@ export const useUsersList = (params: ListParams = {}) => {
     select: (envelope) => {
       if (!search) return envelope
       const needle = search.toLowerCase()
-      const filtered = envelope.res_data.filter((row) => {
-        const name = `${row.first_name ?? ''} ${row.lastname ?? ''}`.toLowerCase()
-        const username = row.user?.username?.toLowerCase() ?? ''
-        const role = row.role?.toLowerCase() ?? ''
-        return (
-          name.includes(needle) ||
-          username.includes(needle) ||
-          role.includes(needle)
-        )
-      })
+      const filtered = envelope.res_data.filter((row) => matchesUserSearch(row, needle))
       return {
         ...envelope,
         res_data: filtered,

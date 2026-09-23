@@ -5,6 +5,7 @@
 // /manage/departments to render the label.
 
 export type { ListParams, APIResponseMetaData } from './params'
+import { MetaData } from '../shared'
 import type { APIResponseMetaData } from './params'
 
 // ── GET /manage/roads ────────────────────────────────────────────────────────
@@ -45,4 +46,60 @@ export interface APIRequestRoad {
   end_sta: string
   department_id: number
   distance?: number
+}
+
+export interface APIRequestPaginateRoadList {
+  region_id?: number
+  department_id?: number
+  is_exist?: boolean
+  province?: string
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: 'ASC' | 'DESC'
+}
+
+export interface APIResponsePaginateRoadList {
+  res_data: RoadData[]
+  meta_data: MetaData
+}
+
+export interface RoadData {
+  id: number
+  road_name: string
+  road_code: string
+  subdistrict: string
+  district: string
+  province: string
+  department_id: number
+  start_sta: string
+  end_sta: string
+  distance: number
+  created_at: string
+  created_by: string
+  department: RoadDepartment
+}
+
+export interface RoadDepartment {
+  id: number
+  department_group: number
+  province: string
+  department_office_no: number
+  department_name: string
+  department_short_name: string
+  is_external: number
+  province_id: number
+  line_token: string
+  line_group_token: string
+  is_urban: number
+  department_type: number
+  region_id: number
+  region: DepartmentRegion
+}
+
+export interface DepartmentRegion {
+  id: number
+  name_th: string
+  name_en: string
 }

@@ -163,3 +163,17 @@ p {
 ::-webkit-scrollbar-corner {
   background: #2B2B2B;
 }
+/* Map markers fade in instead of popping — bubbles arrive whenever their data
+   or zoom tier does, and an instant appearance reads as a jump. */
+@keyframes map-marker-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+.map-marker-in {
+  animation: map-marker-in 260ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-marker-in { animation: none; }
+}

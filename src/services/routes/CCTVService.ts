@@ -158,11 +158,19 @@ export const getCctvCameraCentralListAPI = (roadId: string | number) =>
 
 // ── Camera CRUD (settings/project-detail rewrite) ──────────────────────────
 
-/** POST /cctv/cameras — create a physical CCTV camera and attach it to
- *  a Solution row. Backend enforces `solution_id, camera_name, sta,
- *  hls_url, geometry_point`. */
+/** POST /cctv/cameras — create a physical CCTV camera.
+ *
+ *  Send `solution_location_id`: the backend resolves (or creates) the single
+ *  CCTV solution covering that install point's (project, road) and stamps
+ *  the camera with the point itself. `solution_id` is the older way in and
+ *  still accepted, but it can only ever mean the solution's own anchor
+ *  point — prefer the location.
+ *
+ *  Backend enforces `camera_name, sta, hls_url, geometry_point` plus one of
+ *  the two ids. */
 export interface CreateCameraRequest {
-  solution_id: number
+  solution_location_id?: number
+  solution_id?: number
   camera_name: string
   sta: string
   hls_url: string

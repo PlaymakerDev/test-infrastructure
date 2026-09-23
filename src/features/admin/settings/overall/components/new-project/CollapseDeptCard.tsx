@@ -1,6 +1,6 @@
 import { manageKeys } from '@/hooks/queries/manage'
 import { getProjectListAPI } from '@/services/routes/ManageService'
-import { ProjectDepartmentData, ProjectListData } from '@/types/manage/project-api'
+import { ProjectDepartmentData } from '@/types/manage/project-api'
 import { fmtNumber } from '@/utils/formatNumber'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import React, { useCallback, useState } from 'react'
@@ -14,12 +14,10 @@ interface Props {
   search?: string
   budgetYear?: number
   contractorId?: string
-  onEdit?: (row: ProjectListData) => void
-  onDelete?: (row: ProjectListData) => void
 }
 
 const CollapseDeptCard: React.FC<Props> = (props) => {
-  const { data, search, budgetYear, contractorId, onEdit, onDelete } = props
+  const { data, search, budgetYear, contractorId } = props
   const hasFilter = !!(search?.trim() || budgetYear || contractorId)
 
   const [manualCollapsed, setManualCollapsed] = useState(!hasFilter)
@@ -109,8 +107,6 @@ const CollapseDeptCard: React.FC<Props> = (props) => {
           isLoading={isLoading}
           isError={isError}
           handlePageChange={handlePageChange}
-          onEdit={onEdit}
-          onDelete={onDelete}
         />
       )}
     </>

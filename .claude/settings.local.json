@@ -6,7 +6,12 @@
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(grep -E \"^src[/\\\\\\\\\\\\\\\\]\")",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(docker exec *)",
+      "Bash(docker exec my-postgres psql -U postgres -d drr_its_migration_test -c ' *)",
+      "Bash(node --check js/polling.js)",
+      "Bash(node --check js/init.js)",
+      "Bash(grep -v \"^.*//\")"
     ]
   }
 }

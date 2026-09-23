@@ -55,6 +55,16 @@ export interface ScreenInfoItem {
   setting_type_name: string | null
   media_url: string | null
 
+  // กำหนดการของคำสั่งที่อยู่บนป้ายตอนนี้ — ใช้บอกว่า "ตามตารางแล้วจอควรสว่างไหม"
+  // ห้ามเอาไปแทนค่า setting_status ที่ป้ายรายงาน (ดู utils/displayWindow.ts)
+  // time_since/time_to/days_of_week = ช่วงแรกของคำสั่ง (ช่วงเดียวเสมอเมื่อ is_all_day)
+  date_since: string | null
+  date_to: string | null
+  is_all_day: boolean | null
+  time_since: string | null
+  time_to: string | null
+  days_of_week: number | null
+
   // capability gating
   is_controllable: boolean // is_reported AND is_online AND app_version >= min_controllable_version
   // is_reported AND app_version >= min_controllable_version — WITHOUT the

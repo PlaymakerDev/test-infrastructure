@@ -1,21 +1,26 @@
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { APIResponseProjectList, ProjectDepartmentData, ProjectListData } from '@/types/manage/project-api'
 import { CaretRightOutlined } from '@ant-design/icons'
 import { Collapse, Empty, TableProps, Tooltip } from 'antd'
 import dayjs from 'dayjs'
 import { useRouter } from 'next/navigation'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { TbCalendarWeekFilled, TbHourglassHigh, TbPencilMinus, TbTrash } from 'react-icons/tb'
 
 interface Props {
   data?: ProjectDepartmentData
   item?: ProjectListData
-  onEdit?: (row: ProjectListData) => void
-  onDelete?: (row: ProjectListData) => void
 }
 
 const ProjectCard: React.FC<Props> = (props) => {
-  const { data, item, onEdit, onDelete } = props
+  const { data, item } = props
   const router = useRouter()
+  const dispatch = useAppDispatch()
+
+  const onOpenProjectModal = useCallback((type: 'UPDATE' | 'DELETE') => {
+    if (item) dispatch(setProjectModalOpen({ open: true, type, data: item }))
+  }, [dispatch, item])
 
   const warrantyClassName = useMemo(() => {
     let className = 'text-white'
@@ -69,32 +74,32 @@ const ProjectCard: React.FC<Props> = (props) => {
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
               title='แก้ไขข้อมูลโครงการ'
-              onClick={() => item && onEdit?.(item)}
+              onClick={() => onOpenProjectModal('UPDATE')}
             />
             <TbTrash
               className='fs-22 text-red-500 cursor-pointer'
               title='ลบโครงการ'
-              onClick={() => item && onDelete?.(item)}
+              onClick={() => onOpenProjectModal('DELETE')}
             />
           </div>
         </div>
       </section>
       <section className='mt-3'>
-        <h4 className='text-(--yellow)'>
+        <h4 className='text-(--yellow) font-normal!'>
           {item?.contractor.contractor.company_name || '-'}
         </h4>
         <div className="mt-1.5">
           <Tooltip title="กดเพื่อดูรายละเอียด">
             <p
               className='line-clamp-2 cursor-pointer hover:text-(--yellow) transition-colors duration-200'
-              onClick={() => router.push(`/admin/settings/detail/project?id=${item?.id}`)}
+              onClick={() => router.push(`/admin/settings/detail/project/${item?.id}`)}
             >
-              <strong>ชื่อโครงการ:</strong> {item?.project_name || '-'}
+              <span className='text-white/50'>ชื่อโครงการ:</span> {item?.project_name || '-'}
             </p>
           </Tooltip>
-          <p><strong>รหัสโครงการ:</strong> {item?.project_no || '-'}</p>
-          <p><strong>เลขที่สัญญา:</strong> {item?.contract_no || '-'}</p>
-          <p><strong>สถานะการค้ำประกัน:</strong> <span className={warrantyClassName}>{renderWarrantyDuration.warranty_status || '-'}</span></p>
+          <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+          <p><span className='text-white/50'>เลขที่สัญญา:</span> {item?.contract_no || '-'}</p>
+          <p><span className='text-white/50'>สถานะการค้ำประกัน:</span> <span className={warrantyClassName}>{renderWarrantyDuration.warranty_status || '-'}</span></p>
         </div>
       </section>
       <section className='mt-3'>

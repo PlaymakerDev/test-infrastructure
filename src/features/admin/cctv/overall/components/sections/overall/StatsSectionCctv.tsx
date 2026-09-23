@@ -23,15 +23,22 @@ const StatsSectionCctv: React.FC<Props> = ({ totals, roadId }) => {
   const camera = totals?.camera
   const warranty = totals?.warranty
 
+  // Counted in จุดติดตั้ง, matching the "จุด" label and the totals below.
+  // One CCTV entry now covers a whole สายทาง, so `install_point.active` (the
+  // points under it with at least one online camera) is what an entry
+  // contributes — counting entries would undercount every merged road.
+  // Falls back to 1 point per entry against a backend without the field.
   const active = useMemo(() => {
     let inWarrantyActive = 0
     let expiredActive = 0
     for (const bureau of dedupeCctvSolutions(central ?? [])) {
       for (const sub of bureau.sub_department) {
         for (const sol of sub.solutions) {
-          if ((sol.camera.online ?? 0) > 0) {
-            if (sol.is_warranty) inWarrantyActive++
-            else expiredActive++
+          const activePoints =
+            sol.install_point?.active ?? ((sol.camera.online ?? 0) > 0 ? 1 : 0)
+          if (activePoints > 0) {
+            if (sol.is_warranty) inWarrantyActive += activePoints
+            else expiredActive += activePoints
           }
         }
       }

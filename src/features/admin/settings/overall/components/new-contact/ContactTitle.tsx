@@ -1,18 +1,23 @@
+import { useAppDispatch } from '@/stores/hooks'
+import { setContactModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { ContractorData } from '@/types/manage/contractor-api'
 import { fmtNumber } from '@/utils/formatNumber'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { TbInfoSquareRoundedFilled, TbPencilMinus, TbTrash } from 'react-icons/tb'
 import { useOverallContext } from '../../context'
 
 interface Props {
   item: ContractorData
-  onEdit: (item: ContractorData) => void
-  onDelete: (item: ContractorData) => void
 }
 
 const ContactTitle: React.FC<Props> = (props) => {
-  const { item, onEdit, onDelete } = props
+  const { item } = props
   const { setContactInfo } = useOverallContext()
+  const dispatch = useAppDispatch()
+
+  const onOpenContactModal = useCallback((type: 'UPDATE' | 'DELETE') => {
+    dispatch(setContactModalOpen({ open: true, type, data: item }))
+  }, [dispatch, item])
 
   return (
     <div className='flex flex-wrap items-center gap-3'>
@@ -42,12 +47,12 @@ const ContactTitle: React.FC<Props> = (props) => {
         <TbPencilMinus
           className='fs-22 text-orange-300 cursor-pointer'
           title='แก้ไขข้อมูลผู้รับจ้าง'
-          onClick={() => onEdit(item)}
+          onClick={() => onOpenContactModal('UPDATE')}
         />
         <TbTrash
           className='fs-22 text-red-500 cursor-pointer'
           title='ลบผู้รับจ้าง'
-          onClick={() => onDelete(item)}
+          onClick={() => onOpenContactModal('DELETE')}
         />
       </div>
     </div>

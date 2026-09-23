@@ -1,18 +1,16 @@
 import React, { useMemo } from 'react'
 import { ContentContactorList } from '../../components'
-import { APIResponseContractorList, ContractorData } from '@/types/manage/contractor-api'
+import { APIResponseContractorList } from '@/types/manage/contractor-api'
 
 interface Props {
   type: 'TABLE' | 'GRID'
   data?: APIResponseContractorList
   isLoading: boolean
   isError: boolean
-  onEdit: (item: ContractorData) => void
-  onDelete: (item: ContractorData) => void
 }
 
 const ListViewContact: React.FC<Props> = (props) => {
-  const { type, data, onEdit, onDelete } = props
+  const { type, data } = props
 
   const renderContent = useMemo(() => {
     return data?.res_data.map((item) => {
@@ -21,12 +19,10 @@ const ListViewContact: React.FC<Props> = (props) => {
           key={item.contractor_id}
           item={item}
           type={type}
-          onEdit={onEdit}
-          onDelete={onDelete}
         />
       )
     })
-  }, [data, type, onEdit, onDelete])
+  }, [data, type])
 
   return renderContent
 }

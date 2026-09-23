@@ -6,6 +6,7 @@
 
 import type { ListParams, RoadListParams } from '@/types/manage/params'
 import type { APIRequestProjectDepartment, APIRequestProjectList } from '@/types/manage/project-api'
+import type { APIRequestPaginateRoadList } from '@/types/manage/road-api'
 
 // Normalize `ListParams` into a stable object used as the trailing key node
 // so React Query cache-slots per unique (page, limit, search). Undefined /
@@ -106,6 +107,21 @@ export const manageKeys = {
           department_id: params.department_id ?? 0,
         },
       ] as const,
+    /** NewRoadSection's variant — same /manage/roads endpoint, but grouped
+     *  server-side by region/department (RoadData) and filtered by
+     *  region_id instead of province/department_id. Nested under the same
+     *  `roads.all` prefix so create/update/delete invalidation reaches this
+     *  view too, not just the LIST view's `list` key above. */
+    listFiltered: (params: APIRequestPaginateRoadList = {}) =>
+      [
+        ...manageKeys.roads.all,
+        'list-filtered',
+        {
+          ...listKey(params),
+          region_id: params.region_id ?? 0,
+          department_id: params.department_id ?? 0,
+        },
+      ] as const,
   },
 
   users: {
@@ -155,9 +171,16 @@ export const manageKeys = {
     /** GET /solution/type/{solution_location_id} — task type presence + counts. */
     typesAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'types-at-location', solutionLocationId] as const,
-    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location. */
+    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location.
+     *  Point-scoped: this is what the Counting/Analytic/Crosswalk/WIM camera
+     *  pickers read. For the whole road use camerasAtProjectRoad below. */
     camerasAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'cameras-at-location', solutionLocationId] as const,
+    /** GET /solution/camera/by_project_road/{project_road_id} — the road's one
+     *  CCTV solution plus every camera under it, each tagged with its own
+     *  install point. Backs the road-level อุปกรณ์ CCTV panel. */
+    camerasAtProjectRoad: (projectRoadId: number | string) =>
+      [...manageKeys.solutions.all, 'cameras-at-project-road', projectRoadId] as const,
     /** GET /solution/camera/vms/{solution_id} */
     vmsCameras: (solutionId: number | string) =>
       [...manageKeys.solutions.all, 'vms-cameras', solutionId] as const,

@@ -73,6 +73,13 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
     }
   }, [map, isLoaded, hideAtZoom])
 
+  // Unmount instead of display:none — a hidden marker is still attached to the
+  // map, and mapbox re-projects + rewrites the transform of EVERY attached
+  // marker on every move frame regardless of CSS. Only one tier is ever on
+  // screen, so the rest were pure per-frame cost. Same rule OverlapStackMarker
+  // already follows.
+  if (!visible) return null
+
   return (
     <>
       {Object.entries(summaries).map(([stchStr, info]) => {
@@ -82,7 +89,6 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
           <HTMLMarker
             key={stch}
             lngLat={info.centroid}
-            visible={visible}
             title={`${stchLabel(stch)} · ${info.count} จุดติดตั้ง`}
             onClick={() => {
               onMarkerClick?.()
@@ -94,7 +100,7 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
               })
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div className='map-marker-in' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               {/* Count bubble — yellow circle, unchanged size + shadow. */}
               <div
                 className="stch-marker-inner"

@@ -1,4 +1,4 @@
-import { APIResponseProjectList, ProjectDepartmentData, ProjectListData } from '@/types/manage/project-api'
+import { APIResponseProjectList, ProjectDepartmentData } from '@/types/manage/project-api'
 import { Empty, Pagination, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import ProjectCard from './ProjectCard'
@@ -15,12 +15,10 @@ interface Props {
   isLoading: boolean
   isError: boolean
   handlePageChange: (newPage: number, newLimit: number) => void
-  onEdit?: (row: ProjectListData) => void
-  onDelete?: (row: ProjectListData) => void
 }
 
 const ProjectCardList: React.FC<Props> = (props) => {
-  const { data, item: dptData, page, limit, isLoading, isError, handlePageChange, onEdit, onDelete } = props
+  const { data, item: dptData, page, limit, isLoading, isError, handlePageChange } = props
 
   const renderCardList = useMemo(() => {
     return data?.res_data.map((row) => {
@@ -29,12 +27,10 @@ const ProjectCardList: React.FC<Props> = (props) => {
           key={row.id}
           data={dptData}
           item={row}
-          onEdit={onEdit}
-          onDelete={onDelete}
         />
       )
     })
-  }, [data, dptData, onEdit, onDelete])
+  }, [data, dptData])
 
   if (isLoading) return <Skeleton loading={true} active paragraph={{ rows: 4 }} />
 

@@ -1,8 +1,10 @@
+import { useAppDispatch } from '@/stores/hooks';
+import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { APIResponseProjectList, ProjectListData } from '@/types/manage/project-api';
 import { Empty, Table, TableProps, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
-import React from 'react'
+import React, { useCallback } from 'react'
 import StatusBadge from '../project/StatusBadge';
 import { TbPencilMinus, TbTrash } from 'react-icons/tb';
 
@@ -11,13 +13,16 @@ interface Props {
   isLoading?: boolean
   isError?: boolean
   onTableChange?: NonNullable<TableProps<ProjectListData>['onChange']>
-  onEdit?: (row: ProjectListData) => void
-  onDelete?: (row: ProjectListData) => void
 }
 
 const ProjectListView: React.FC<Props> = (props) => {
-  const { data, isLoading, isError, onTableChange, onEdit, onDelete } = props
+  const { data, isLoading, isError, onTableChange } = props
   const router = useRouter()
+  const dispatch = useAppDispatch()
+
+  const onOpenProjectModal = useCallback((data: ProjectListData, type: 'UPDATE' | 'DELETE') => {
+    dispatch(setProjectModalOpen({ open: true, type, data }))
+  }, [dispatch])
 
   const columns: TableProps<ProjectListData>['columns'] = [
     {
@@ -48,7 +53,7 @@ const ProjectListView: React.FC<Props> = (props) => {
       width: 500,
       onCell: (row) => {
         return {
-          onClick: () => router.push(`/admin/settings/detail/project?id=${row.id}`),
+          onClick: () => router.push(`/admin/settings/detail/project/${row.id}`),
           className: 'cursor-pointer hover:text-(--yellow) transition-colors duration-200'
         }
       },
@@ -120,12 +125,12 @@ const ProjectListView: React.FC<Props> = (props) => {
             <TbPencilMinus
               className='fs-22 text-orange-300 cursor-pointer'
               title='แก้ไขข้อมูลโครงการ'
-              onClick={() => onEdit?.(record)}
+              onClick={() => onOpenProjectModal(record, 'UPDATE')}
             />
             <TbTrash
               className='fs-22 text-red-500 cursor-pointer'
               title='ลบโครงการ'
-              onClick={() => onDelete?.(record)}
+              onClick={() => onOpenProjectModal(record, 'DELETE')}
             />
           </div>
         )

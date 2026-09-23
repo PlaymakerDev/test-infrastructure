@@ -1,11 +1,12 @@
 import { ContractorData } from '@/types/manage/contractor-api';
-import { APIResponseProjectList } from '@/types/manage/project-api';
+import { APIResponseProjectList, ProjectListData } from '@/types/manage/project-api';
 import { Empty, Pagination, Skeleton, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import React, { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation';
 import StatusBadge from '../project/StatusBadge';
 import SolutionTagList from './SolutionTagList';
+import { TbCalendarWeekFilled, TbHourglassHigh } from 'react-icons/tb';
 
 interface Props {
   data?: APIResponseProjectList
@@ -26,51 +27,100 @@ const CardContact: React.FC<Props> = (props) => {
     return `${startDate ? dayjs(startDate).format('DD MMM BBBB') : '-'} - ${endDate ? dayjs(endDate).format('DD MMM BBBB') : '-'}`
   }, [])
 
+  const warrantyClassName = useCallback((item: ProjectListData) => {
+    let className = 'text-white'
+    if (dayjs().isBefore(dayjs(item?.warranty_start_date))) {
+      className = 'text-[#66AEFF]'
+    } else {
+      if (item?.is_warranty) {
+        className = 'text-[#05F2DB]'
+      } else {
+        className = 'text-[#FF6666]'
+      }
+    }
+    return className
+  }, [])
+
+  const renderWarrantyDuration = useCallback((item: ProjectListData) => {
+    if (dayjs().isBefore(dayjs(item?.warranty_start_date))) {
+      return {
+        remaining_days: '0 วัน',
+        remaining_status: 'ระยะเวลาที่เหลือ',
+        warranty_status: 'ระหว่างส่งมอบ'
+      }
+    } else {
+      if (item?.is_warranty) {
+        return {
+          remaining_days: dayjs(item?.warranty_end_date).diff(dayjs(item?.warranty_start_date), 'day') + ' วัน',
+          remaining_status: 'ระยะเวลาที่เหลือ',
+          warranty_status: 'ในค้ำ'
+        }
+      } else {
+        return {
+          remaining_days: '0 วัน',
+          remaining_status: 'หมดค้ำประกัน',
+          warranty_status: 'หมดค้ำ'
+        }
+      }
+    }
+  }, [])
+
   const renderProjectList = useMemo(() => {
     if (isLoading) return <Skeleton loading={true} active paragraph={{ rows: 4 }} />
     return data?.res_data.map((item) => {
-      const solutionGroup = item.solution_group || []
       return (
-        <div key={item.id} className="rounded-xl p-5 bg-(--gray)">
+        <div key={item?.id} className="rounded-xl p-5 bg-(--gray)">
           <section>
-            <span
-              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
-              style={{ border: `1px solid var(--default-blue)`, color: 'var(--default-blue)' }}
-            >
-              {item.project_no || '-'}
-            </span>
-          </section>
-          <section className='mt-5'>
-            <Tooltip title='กดเพื่อดูรายละเอียด'>
-              <h3
-                className='cursor-pointer hover:text-(--yellow) transition-colors duration-200'
-                onClick={() => router.push(`/admin/settings/detail/project?id=${item.id}`)}
+            <div className='flex items-center justify-between gap-1.5'>
+              <span
+                className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12 whitespace-nowrap'
+                style={{ border: `1px solid var(--default-blue)`, color: 'var(--default-blue)' }}
               >
-                ชื่อโครงการ: {item.project_name || '-'}
-              </h3>
-            </Tooltip>
-            <div className="mt-1.5">
-              <p><strong>ผู้ว่าจ้าง:</strong> {item.department.department_short_name || '-'}</p>
-              <p><strong>เลขที่สัญญา:</strong> {item.contract_no || '-'}</p>
-              <p><strong>เริ่มต้น - สิ้นสุด:</strong> {renderWarrantyDate(item.warranty_start_date, item.warranty_end_date)}</p>
+                {item?.department.department_short_name || '-'}
+              </span>
             </div>
           </section>
-          <section className='mt-5'>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className='flex flex-col justify-start items-center gap-1.5'>
-                <h4>การทำงาน</h4>
-                <SolutionTagList items={solutionGroup} />
+          <section className='mt-3'>
+            <h4 className='text-(--yellow) font-normal!'>
+              {item?.contractor.contractor.company_name || '-'}
+            </h4>
+            <div className="mt-1.5">
+              <Tooltip title="กดเพื่อดูรายละเอียด">
+                <p
+                  className='line-clamp-2 cursor-pointer hover:text-(--yellow) transition-colors duration-200'
+                  onClick={() => router.push(`/admin/settings/detail/project/${item?.id}`)}
+                >
+                  <span className='text-white/50'>ชื่อโครงการ:</span> {item?.project_name || '-'}
+                </p>
+              </Tooltip>
+              <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+              <p><span className='text-white/50'>เลขที่สัญญา:</span> {item?.contract_no || '-'}</p>
+              <p><span className='text-white/50'>สถานะการค้ำประกัน:</span> <span className={warrantyClassName(item)}>{renderWarrantyDuration(item).warranty_status || '-'}</span></p>
+            </div>
+          </section>
+          <section className='mt-3'>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className='flex flex-col justify-start items-center'>
+                <TbCalendarWeekFilled className='fs-24' />
+                <h3>{item?.warranty_start_date ? dayjs(item?.warranty_start_date).format('DD MMM BBBB') : '-'}</h3>
+                <p className='fs-12 text-white/50'>เริ่มต้นการรับประกัน</p>
               </div>
-              <div className='flex flex-col justify-start items-center gap-1.5'>
-                <h4>สถานะการค้ำประกัน</h4>
-                <StatusBadge status={item.is_warranty ? 'in-warranty' : 'expired'} />
+              <div className='flex flex-col justify-start items-center'>
+                <TbCalendarWeekFilled className='fs-24' />
+                <h3>{item?.warranty_end_date ? dayjs(item?.warranty_end_date).format('DD MMM BBBB') : '-'}</h3>
+                <p className='fs-12 text-white/50'>สิ้นสุดการรับประกัน</p>
+              </div>
+              <div className='flex flex-col justify-start items-center'>
+                <TbHourglassHigh className={`fs-24 ${warrantyClassName(item)}`} />
+                <h3 className={warrantyClassName(item)}>{renderWarrantyDuration(item).remaining_days || '-'}</h3>
+                <p className='fs-12 text-white/50'>{renderWarrantyDuration(item).remaining_status || '-'}</p>
               </div>
             </div>
           </section>
         </div>
       )
     })
-  }, [data, isLoading, renderWarrantyDate, router])
+  }, [data?.res_data, isLoading, renderWarrantyDuration, router, warrantyClassName])
 
   // FALLBACK UI for error or empty data
   if (isError) {

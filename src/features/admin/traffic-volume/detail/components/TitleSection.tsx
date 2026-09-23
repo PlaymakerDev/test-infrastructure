@@ -8,6 +8,7 @@ import {
   useTrafficVolumeCentralList,
   useTrafficVolumeSolutionDetail,
 } from '@/hooks/queries/traffic-volume'
+import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../context'
 
@@ -68,8 +69,14 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const isOnline = status?.isOnline ?? false
   const isInWarranty = status?.isWarranty ?? false
 
-  const roadCode = location?.road.code_name ?? '-'
-  const installPoint = location?.solution.solution_name ?? '-'
+  // `/counting/…/overview` is anchored on counting.tbl_counting, so a solution
+  // with no camera attached is absent from it and `location` is null — reached
+  // from settings, that left both สายทาง and จุดติดตั้ง as '-'. Both are
+  // recoverable: the install point from the solution record itself (already
+  // fetched above for AnyDesk), the road from the project's route tree.
+  const roadFallback = useSolutionRoadFallback(projectId, roadId, !location)
+  const roadCode = location?.road.code_name ?? roadFallback ?? '-'
+  const installPoint = location?.solution.solution_name ?? solDetail?.solution_name ?? '-'
   const coord = location?.geometry_point ?? null
 
   return (
