@@ -15,7 +15,9 @@ import {
 import type {
   HistoryRegion,
   HistoryCase,
+  SummaryItem,
 } from '@/types/maintenance'
+import { SOLUTION_TYPE } from '@/types/manage/solution-api'
 import { offlineDaysSince } from '../../data/offlineDays'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -108,18 +110,15 @@ const getPeriodRange = (period: string): { date_from?: string; date_to?: string 
 const SOLUTION_DISPLAY: Record<string, string> = { Lighting: 'Street Light' }
 const displayType = (t: string) => SOLUTION_DISPLAY[t] ?? t
 
-// Map solution type name → ID for detail API
-const SOLUTION_TYPE_ID_MAP: Record<string, number> = {
-  CCTV: 1,
-  Counting: 2,
-  Analytic: 3,
-  Traffic: 4,
-  Crosswalk: 5,
-  VMS: 6,
-  Lighting: 7,
-  Tunnel: 8,
-  WIM: 9,
-}
+// Only CCTV is selectable for now (user 2026-09-24): the other types'
+// maintenance data isn't finished on the backend yet and overlaps between
+// menus. They stay listed, greyed out, so their counts are still visible.
+const ENABLED_SOLUTION_TYPES = new Set<number>([SOLUTION_TYPE.CCTV])
+const isTypeEnabled = (item: SummaryItem) => ENABLED_SOLUTION_TYPES.has(item.solution_type_id)
+
+/** st1..st9.png are numbered by solution_type_id, not by list position. */
+const typeIcon = (solutionTypeId: number | undefined) =>
+  `${BASE_PATH}/images/Maintenance/st${solutionTypeId ?? SOLUTION_TYPE.CCTV}.png`
 
 interface RepairRecord {
   key: string
@@ -261,14 +260,17 @@ const RepairRecordsSection: React.FC = () => {
   const summaryQuery = useMaintenanceSummary()
   const summaryData = useMemo(() => summaryQuery.data ?? [], [summaryQuery.data])
 
-  // Seed the initial type tab from the first summary row — adjusted during
-  // render (not an effect); the `!selectedType` guard keeps a later
+  // Seed the initial type tab from the first selectable summary row — adjusted
+  // during render (not an effect); the `!selectedType` guard keeps a later
   // background refetch from clobbering the user's pick.
   if (!selectedType && summaryData.length > 0) {
-    setSelectedType(summaryData[0].type)
+    setSelectedType((summaryData.find(isTypeEnabled) ?? summaryData[0]).type)
   }
 
-  const detailQuery = useMaintenanceDetail(SOLUTION_TYPE_ID_MAP[selectedType])
+  // The id comes from the summary row itself. A hand-written name→id map used
+  // to swap VMS (7) and Lighting (6), so Street Light loaded VMS's tree.
+  const selectedSummary = summaryData.find(s => s.type === selectedType)
+  const detailQuery = useMaintenanceDetail(selectedSummary?.solution_type_id)
   const detailData = useMemo(() => detailQuery.data ?? [], [detailQuery.data])
   const detailLoading = detailQuery.isLoading
 
@@ -522,9 +524,42 @@ const RepairRecordsSection: React.FC = () => {
     </span>
   )
 
-  const selectedSummary = summaryData.find(s => s.type === selectedType)
-  const selectedTypeIconIdx = summaryData.findIndex(s => s.type === selectedType)
-  const selectedTypeIcon = `${BASE_PATH}/images/Maintenance/st${selectedTypeIconIdx >= 0 ? selectedTypeIconIdx + 1 : 1}.png`
+  const selectedTypeIcon = typeIcon(selectedSummary?.solution_type_id)
+
+  /** One Solution Types row — shared by the desktop sidebar and the mobile
+   *  drawer so both grey out the same types. */
+  const renderTypeOption = (item: SummaryItem, onPick: () => void) => {
+    const enabled = isTypeEnabled(item)
+    const selected = selectedType === item.type
+    return (
+      <div
+        key={item.type}
+        title={enabled ? undefined : 'ยังไม่เปิดใช้งาน'}
+        className={`flex items-center justify-between px-3 py-2 rounded-[10px] ${enabled ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        style={{
+          background: selected ? '#2A2A2A' : '#363636',
+          border: selected ? '1px solid #66AEFF' : '1px solid transparent',
+          opacity: enabled ? 1 : 0.45,
+        }}
+        onClick={enabled ? onPick : undefined}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <img
+            src={typeIcon(item.solution_type_id)}
+            alt=""
+            width={24}
+            height={24}
+            className="w-6 h-6 shrink-0"
+            style={enabled ? undefined : { filter: 'grayscale(1)' }}
+          />
+          <span className="fs-12 font-normal shrink-0" style={{ color: enabled ? '#66AEFF' : '#979797' }}>{displayType(item.type)}</span>
+        </span>
+        <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
+          {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -549,25 +584,7 @@ const RepairRecordsSection: React.FC = () => {
                 <p className="text-[16px] font-normal" style={{ color: '#66AEFF' }}>Solution Types</p>
                 <p className="font-normal mt-1" style={{ color: '#979797', fontSize: "var(--fs-12)" }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
                 <div className="mt-4 flex flex-col gap-2">
-                  {summaryData.map((item, idx) => (
-                    <div
-                      key={item.type}
-                      className="flex items-center justify-between px-3 py-2 rounded-[10px] cursor-pointer"
-                      style={{
-                        background: selectedType === item.type ? '#2A2A2A' : '#363636',
-                        border: selectedType === item.type ? '1px solid #66AEFF' : '1px solid transparent',
-                      }}
-                      onClick={() => setSelectedType(item.type)}
-                    >
-                      <span className="flex items-center gap-2 min-w-0">
-                        <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
-                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{displayType(item.type)}</span>
-                      </span>
-                      <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
-                        {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
-                      </span>
-                    </div>
-                  ))}
+                  {summaryData.map((item) => renderTypeOption(item, () => setSelectedType(item.type)))}
                 </div>
               </div>
             </div>
@@ -611,28 +628,10 @@ const RepairRecordsSection: React.FC = () => {
               <div className="p-4">
                 <p className="font-normal mt-1" style={{ color: '#979797', fontSize: "var(--fs-12)" }}>เลือก Solution ที่ต้องการติดตามสถานะการทำงาน</p>
                 <div className="mt-3 flex flex-col gap-2">
-                  {summaryData.map((item, idx) => (
-                    <div
-                      key={item.type}
-                      className="flex items-center justify-between px-3 py-2 rounded-[10px] cursor-pointer"
-                      style={{
-                        background: selectedType === item.type ? '#2A2A2A' : '#363636',
-                        border: selectedType === item.type ? '1px solid #66AEFF' : '1px solid transparent',
-                      }}
-                      onClick={() => {
-                        setSelectedType(item.type)
-                        setDrawerOpen(false)
-                      }}
-                    >
-                      <span className="flex items-center gap-2 min-w-0">
-                        <img src={`${BASE_PATH}/images/Maintenance/st${idx + 1}.png`} alt="" width={24} height={24} className="w-6 h-6 shrink-0" />
-                        <span className="fs-12 font-normal shrink-0" style={{ color: '#66AEFF' }}>{displayType(item.type)}</span>
-                      </span>
-                      <span className="fs-12 font-normal whitespace-nowrap" style={{ color: '#979797' }}>
-                        {item.location_count} จุดติดตั้ง {item.device_count.toLocaleString()} อุปกรณ์
-                      </span>
-                    </div>
-                  ))}
+                  {summaryData.map((item) => renderTypeOption(item, () => {
+                    setSelectedType(item.type)
+                    setDrawerOpen(false)
+                  }))}
                 </div>
               </div>
             </div>

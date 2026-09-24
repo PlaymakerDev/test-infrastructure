@@ -244,10 +244,8 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
       due_date: form.dueDate
         ? dayjs(form.dueDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD')
         : null,
-      // ⚠ contractor_id is deliberately NOT sent: the project's contractor_id
-      // is a USER id while the case column wants the tbl_contractors PK, and
-      // sending the wrong one fails with "violates key constraint".
-      // TODO(BE): derive the contractor from solution_id/project_id server-side.
+      // TODO(BE): derive contractor_id from solution_id server-side, like the
+      // auto-open worker does, so this client-side mapping can go.
     }, {
       onSuccess: async () => {
         const caseNo = await resolveNewCaseNo()
