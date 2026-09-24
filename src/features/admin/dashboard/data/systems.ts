@@ -53,6 +53,13 @@ export const SYSTEM_BRIGHT: Record<SystemType, string> = {
   VMS: "#FF9F45", // ← #874600
   BridgeLighting: "#FF6B57", // ← #871000
   Tunnel: "#B57BFF", // ← #4D0087
-  WIM: "#E879DE", // ← #70196D
+  // Hot magenta since 2026-09-24 (user pick). The old #E879DE sat between
+  // Tunnel and LPR and read as either (ΔE2000 12.5 / 10.0); #FF1FF2 keeps the
+  // hue at ~15 from both. Keep DEVICE_BADGE.wim_camera in step.
+  WIM: "#FF1FF2", // ← #70196D
   LPR: "#FF6FB5", // ← #87004D
 }
+
+/** Map popups keep WIM's original bright tone — only the chips and the
+ *  dashboard ratio chart moved to the new WIM colour (user 2026-09-24). */
+export const MAP_BRIGHT: Record<SystemType, string> = { ...SYSTEM_BRIGHT, WIM: "#E879DE" }

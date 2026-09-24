@@ -18,7 +18,7 @@ import IconTracking from '@/components/icon/IconTracking'
 import IconLPR from '@/components/icon/IconLPR'
 import {
   SYSTEMS,
-  SYSTEM_BRIGHT,
+  MAP_BRIGHT,
   SYSTEM_TYPES,
   type SystemType,
 } from '@/features/admin/dashboard/data/systems'
@@ -144,7 +144,7 @@ export function DefaultDevicePopup({
     : null
   // Bright variant of the marker color — the raw SYSTEMS color reads too dim as
   // a popup border/label on the dark map (per Figma: brighter).
-  const brightColor = SYSTEM_BRIGHT[device.type] ?? color
+  const brightColor = MAP_BRIGHT[device.type] ?? color
 
   // Tri-state status pill — hidden entirely when BE hasn't sent is_online for
   // this marker (isOnline === undefined), so unpatched types don't get a
