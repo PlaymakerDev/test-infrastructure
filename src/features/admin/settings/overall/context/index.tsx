@@ -214,6 +214,9 @@ export const OverallProvider = (props: PageProviderProps) => {
           warranty_end_date: values.warrantyEnd,
           // Create-flow: no existing project_road ids yet.
           project_road: values.roads.map((r) => ({ road_id: Number(r.roadId) })),
+          // Legacy ProjectModal path (not rendered — FormCreateProject is the live
+          // form) has no document upload; the backend rejects an empty document.
+          contract_document: { document_url: '', file_name: '' },
         })
         message.success('เพิ่มโครงการสำเร็จ')
       } catch (err) {
@@ -245,6 +248,7 @@ export const OverallProvider = (props: PageProviderProps) => {
             road_id: Number(r.roadId),
             ...(r.projectRoadId ? { project_road_id: r.projectRoadId } : {}),
           })),
+          contract_document: { document_url: '', file_name: '' },
         })
         message.success('แก้ไขโครงการสำเร็จ')
       } catch (err) {

@@ -1,12 +1,13 @@
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice';
-import { APIResponseProjectList, ProjectListData } from '@/types/manage/project-api';
+import { APIResponseProjectList, ContractDocument, ProjectListData } from '@/types/manage/project-api';
 import { Empty, Table, TableProps, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import React, { useCallback } from 'react'
 import StatusBadge from '../project/StatusBadge';
 import { TbPencilMinus, TbTrash } from 'react-icons/tb';
+import { FaFilePdf } from 'react-icons/fa';
 import { isAdmin } from '@/utils/isAdmin';
 
 interface Props {
@@ -115,6 +116,30 @@ const ProjectListView: React.FC<Props> = (props) => {
         const status = text ? 'in-warranty' : 'expired'
         if (text) return <StatusBadge status={status} />
         return '-'
+      }
+    },
+    {
+      title: 'เอกสารเชื่อมต่อระบบ',
+      key: 'contract_document',
+      dataIndex: 'contract_document',
+      width: 180,
+      align: 'center',
+      render: (doc: ContractDocument | null | undefined) => {
+        if (!doc?.document_url) return '-'
+        // Opens in the browser's own PDF viewer; same icon/colour as "Export as PDF".
+        return (
+          <Tooltip title={doc.file_name}>
+            <a
+              href={doc.document_url}
+              target='_blank'
+              rel='noopener noreferrer'
+              aria-label={`เปิดเอกสาร ${doc.file_name}`}
+              className='inline-flex'
+            >
+              <FaFilePdf className='fs-22' style={{ color: '#DC2626' }} />
+            </a>
+          </Tooltip>
+        )
       }
     },
     {
