@@ -49,6 +49,12 @@ export interface LightingOverviewListItem {
  *  (`?road_id=`), same as CCTV/incident-detection/traffic-volume. */
 export interface APIRequestLightingCentralList {
   road_id?: number
+  /** Narrow to ONE solution (`ts.id`). Backed by the same
+   *  `LightingOverviewQueryParams` struct as `road_id`, so it works on every
+   *  endpoint in this family; `/overview` + this is how a caller holding only a
+   *  solution id gets that device's `imei` and `lighting.equipment.type`
+   *  without pulling and scanning a department-wide list. */
+  solution_id?: number
   /** Include this department's descendant units. Required when resolving a
    *  device from the nationwide Alert statistic tree. */
   scope?: 'all'

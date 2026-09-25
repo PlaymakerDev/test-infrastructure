@@ -17,6 +17,7 @@ export interface CustomModalState {
   view_device_modal: ViewDeviceModalState
   equipment_modal: EquipmentModalState
   live_stream_modal: LiveStreamModalState
+  diagram_modal: DiagramModalState
 }
 
 export interface UserModalState {
@@ -87,6 +88,17 @@ export interface LiveStreamModalState {
   item?: SolutionLocation | null
 }
 
+/** ผังวงจร viewer for a Street Light row, opened from TableSolution.
+ *  Keyed by IMEI, not by solution: the diagram belongs to the IoT device, so
+ *  TableSolution resolves the imei first and only puts it here once it has
+ *  one. `record` / `item` are carried for the modal header only. */
+export interface DiagramModalState {
+  open: boolean
+  imei?: string | null
+  record?: SolutionList | null
+  item?: SolutionLocation | null
+}
+
 export interface ConfirmDeleteSolutionModalState {
   open: boolean
   type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
@@ -124,6 +136,9 @@ const initialState: CustomModalState = {
     open: false,
   },
   live_stream_modal: {
+    open: false,
+  },
+  diagram_modal: {
     open: false,
   }
 }
@@ -194,6 +209,12 @@ const customModalSlice = createSlice({
     resetLiveStreamModalData: (state) => {
       state.live_stream_modal = initialState.live_stream_modal;
     },
+    setDiagramModalOpen: (state, action) => {
+      state.diagram_modal = action.payload;
+    },
+    resetDiagramModalData: (state) => {
+      state.diagram_modal = initialState.diagram_modal;
+    },
   },
 })
 
@@ -218,6 +239,8 @@ export const {
   resetEquipmentModalData,
   setLiveStreamModalOpen,
   resetLiveStreamModalData,
+  setDiagramModalOpen,
+  resetDiagramModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

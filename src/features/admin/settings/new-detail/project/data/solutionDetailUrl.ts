@@ -78,9 +78,10 @@ export interface LightingRowRef {
 export type SolutionDetailTarget =
   /** Ready to navigate. */
   | { kind: 'ready'; href: string }
-  /** Traffic Lighting — addressed by IMEI, which lives in the lighting
-   *  central list rather than on the solution row. The caller looks the row up
-   *  and calls {@link buildLightingSolutionHref}. */
+  /** Traffic Lighting — addressed by the device's IMEI, which is not on the
+   *  solution row. The caller resolves it on click through
+   *  `GET /lighting/departments/{deptId}/diagram/{solutionId}` and then calls
+   *  {@link buildLightingSolutionHref}, so there is no href to hand back here. */
   | { kind: 'needs-lighting-row' }
   /** No correct URL exists from this page. `reason` is shown to the user
    *  instead of a link. */

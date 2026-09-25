@@ -34,3 +34,6 @@ export { default as EquipmentCCTVListModal } from './EquipmentCCTVListModal'
 export { default as TrafficSignalCameraModal } from './TrafficSignalCameraModal'
 export { default as VMSSolutionModal } from './VMSSolutionModal'
 export { default as ModalLiveStream } from './ModalLiveStream'
+
+// ผังวงจร viewer for a Street Light row — reuses traffic-lighting's own iframe.
+export { default as ModalLightingDiagram } from './ModalLightingDiagram'
