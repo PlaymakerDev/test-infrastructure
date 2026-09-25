@@ -1,9 +1,12 @@
-import { Button, ConfigProvider, Input, Select, Spin, message } from 'antd'
+import { Button, ConfigProvider, Input, Select, Spin, Upload, message } from 'antd'
+import type { UploadFile } from 'antd'
+import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
-import { TbPlus, TbTrash } from 'react-icons/tb'
+import { FaFilePdf } from 'react-icons/fa'
+import { TbFileTypePdf, TbPlus, TbTrash } from 'react-icons/tb'
 import BuddhistDatePicker from '@/components/date-picker/BuddhistDatePicker'
 import { thBuddhistLocale } from '@/components/date-picker/thBuddhistLocale'
 import {
@@ -13,6 +16,7 @@ import {
   useProjectContractors,
   useProjectDetail,
   useUpdateProject,
+  useUploadProjectDocument,
 } from '@/hooks/queries/manage'
 import { useRoadsInfinite } from '@/hooks/queries/shared/useRoadsInfinite'
 import type { APIRequestProject, APIResponseProject, ProjectListData } from '@/types/manage/project-api'
@@ -37,6 +41,9 @@ interface FormValues {
   roads: { roadId: number | null; projectRoadId?: number }[]
   warrantyStart: dayjs.Dayjs | null
   warrantyEnd: dayjs.Dayjs | null
+  /** "เอกสารเชื่อมต่อระบบ" — antd list holding at most one PDF; `url` is set
+   *  once the upload finishes and becomes `contract_document.document_url`. */
+  documents: UploadFile[]
 }
 
 /** Runtime shape returned by GET /manage/project/{id}. The public type doesn't
@@ -99,7 +106,14 @@ const DEFAULT_VALUES: FormValues = {
   roads: [{ roadId: null }],
   warrantyStart: null,
   warrantyEnd: null,
+  documents: [],
 }
+
+/** Upload service caps PDFs at 30 MB (upload/internal/dto/upload validateImageFile). */
+const MAX_DOCUMENT_SIZE = 30 * 1024 * 1024
+
+const isPdf = (file: { type?: string; name: string }) =>
+  file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
 
 const FormCreateProject: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
@@ -109,7 +123,7 @@ const FormCreateProject: React.FC<Props> = (props) => {
 
   const { mutate: createProject, isPending: isCreatePending } = useCreateProject()
   const { mutate: updateProject, isPending: isUpdatePending } = useUpdateProject()
-  const isSubmitting = isCreatePending || isUpdatePending
+  const { mutateAsync: uploadDocument } = useUploadProjectDocument()
 
   const { data: budgetYears } = useBudgetYears()
   const { data: departments } = useDepartments()
@@ -124,8 +138,42 @@ const FormCreateProject: React.FC<Props> = (props) => {
     control,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
+    watch,
     formState: { errors },
   } = form
+
+  const isUploading = (watch('documents') ?? []).some((f) => f.status === 'uploading')
+  const isSubmitting = isCreatePending || isUpdatePending || isUploading
+
+  // Patch one list item by uid, reading the latest list at resolution time —
+  // several uploads can finish in any order.
+  const patchDocument = useCallback((uid: string, patch: Partial<UploadFile>) => {
+    setValue(
+      'documents',
+      getValues('documents').map((f) => (f.uid === uid ? { ...f, ...patch } : f)),
+      { shouldValidate: true },
+    )
+  }, [getValues, setValue])
+
+  const uploadDocumentFile = useCallback(async (file: UploadFile) => {
+    try {
+      const fd = new FormData()
+      fd.append('upload', file.originFileObj as File)
+      const response = await uploadDocument(fd)
+      const path = response.data?.path?.trim()
+      if (!path) throw new Error('อัปโหลดไม่สำเร็จ: ระบบไม่ส่งที่อยู่ไฟล์กลับมา')
+      patchDocument(file.uid, { status: 'done', url: path })
+    } catch (err) {
+      patchDocument(file.uid, { status: 'error' })
+      message.error(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'อัปโหลดเอกสารไม่สำเร็จ')
+          : 'เกิดข้อผิดพลาดในการอัปโหลดเอกสาร',
+      )
+    }
+  }, [uploadDocument, patchDocument])
 
   const { fields, append, remove } = useFieldArray({ control, name: 'roads' })
 
@@ -176,10 +224,23 @@ const FormCreateProject: React.FC<Props> = (props) => {
           : [{ roadId: null }],
       warrantyStart: d.warranty_start_date ? dayjs(d.warranty_start_date) : null,
       warrantyEnd: d.warranty_end_date ? dayjs(d.warranty_end_date) : null,
+      documents: d.contract_document
+        ? [{
+            uid: 'contract-document',
+            name: d.contract_document.file_name,
+            status: 'done',
+            url: d.contract_document.document_url,
+          }]
+        : [],
     })
   }, [isEdit, detail, reset])
 
   const onSubmit = useCallback((values: FormValues) => {
+    if (values.documents.some((f) => f.status === 'uploading')) {
+      message.warning('กรุณารอให้อัปโหลดเอกสารเสร็จก่อน')
+      return
+    }
+    const doc = values.documents.find((f) => f.status === 'done' && f.url)
     const body: APIRequestProject = {
       budget_year: values.budgetYear as number,
       contract_no: values.contractNo,
@@ -198,6 +259,8 @@ const FormCreateProject: React.FC<Props> = (props) => {
           road_id: Number(r.roadId),
           ...(r.projectRoadId ? { project_road_id: r.projectRoadId } : {}),
         })),
+      // Required by the Controller rule below, so `doc` is always present here.
+      contract_document: { document_url: doc?.url ?? '', file_name: doc?.name ?? '' },
     }
 
     if (isEdit && editingId != null) {
@@ -510,6 +573,98 @@ const FormCreateProject: React.FC<Props> = (props) => {
             />
           </div>
         </ConfigProvider>
+
+        <fieldset className='mt-4'>
+          <Controller
+            control={control}
+            name='documents'
+            rules={{
+              validate: (v) =>
+                v.some((f) => f.status === 'done' && f.url) || 'กรุณาแนบเอกสารเชื่อมต่อระบบ',
+            }}
+            render={({ field }) => {
+              // One document per project: once a file is picked the dropzone is
+              // replaced by the file row; deleting it brings the dropzone back.
+              const doc = field.value[0]
+              return (
+                <fieldset>
+                  <label className='text-(--yellow)'>เอกสารเชื่อมต่อระบบ <span className='text-red-500'>*</span></label>
+                  {doc ? (
+                    <div className='flex items-center gap-3 rounded-lg border border-white/30 px-4 py-3'>
+                      {/* Same icon/colour as ExportFileModal's "Export as PDF". */}
+                      <FaFilePdf size={28} className='shrink-0' style={{ color: '#DC2626' }} />
+                      <div className='min-w-0 flex-1'>
+                        {doc.status === 'done' && doc.url ? (
+                          <a href={doc.url} target='_blank' rel='noopener noreferrer' className='block truncate' title={doc.name}>
+                            {doc.name}
+                          </a>
+                        ) : (
+                          <p className='truncate' title={doc.name}>{doc.name}</p>
+                        )}
+                        {doc.status === 'uploading' && <p className='fs-12 opacity-60'>กำลังอัปโหลด...</p>}
+                        {doc.status === 'error' && (
+                          <p className='fs-12 text-red-500'>อัปโหลดไม่สำเร็จ กรุณาลบแล้วอัปโหลดใหม่</p>
+                        )}
+                      </div>
+                      {doc.status === 'uploading' && <Spin size='small' />}
+                      <Button
+                        onClick={() => field.onChange([])}
+                        icon={<TbTrash className='text-white!' />}
+                        danger
+                        disabled={isCreatePending || isUpdatePending}
+                        size='large'
+                        type='primary'
+                        htmlType='button'
+                        aria-label='ลบไฟล์'
+                      />
+                    </div>
+                  ) : (
+                    <Upload.Dragger
+                      accept='.pdf,application/pdf'
+                      showUploadList={false}
+                      disabled={isCreatePending || isUpdatePending}
+                      // Controlled and always empty here — the picked file is
+                      // rendered by the row above instead of antd's list.
+                      fileList={[]}
+                      beforeUpload={(file) => {
+                        if (!isPdf(file)) {
+                          message.error('รองรับเฉพาะไฟล์ PDF')
+                          return Upload.LIST_IGNORE
+                        }
+                        if (file.size > MAX_DOCUMENT_SIZE) {
+                          message.error('ไฟล์ต้องมีขนาดไม่เกิน 30 MB')
+                          return Upload.LIST_IGNORE
+                        }
+                        return false
+                      }}
+                      onChange={({ file }) => {
+                        // With beforeUpload → false antd hands back the raw File
+                        // (uid attached) rather than a wrapper, and spreading a File
+                        // drops name/size/content — build the list item explicitly.
+                        const raw = (file.originFileObj ?? file) as NonNullable<UploadFile['originFileObj']>
+                        const item: UploadFile = {
+                          uid: file.uid,
+                          name: raw.name,
+                          size: raw.size,
+                          type: raw.type,
+                          status: 'uploading',
+                          originFileObj: raw,
+                        }
+                        field.onChange([item])
+                        uploadDocumentFile(item)
+                      }}
+                    >
+                      <TbFileTypePdf className='mx-auto' size={36} />
+                      <p className='mt-1'>คลิกหรือลากไฟล์มาวาง</p>
+                      <p className='fs-12 opacity-60'>ไฟล์ PDF ขนาดไม่เกิน 30 MB</p>
+                    </Upload.Dragger>
+                  )}
+                  {errors.documents && <p className='fs-12 text-red-500'>{errors.documents.message}</p>}
+                </fieldset>
+              )
+            }}
+          />
+        </fieldset>
 
         <button ref={submitRef} type='submit' hidden disabled={isSubmitting} />
       </form>

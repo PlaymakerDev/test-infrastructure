@@ -44,6 +44,14 @@ export interface ProjectRoadLink {
   project_road_id?: number
 }
 
+/** The project's "เอกสารเชื่อมต่อระบบ" PDF. `document_url` is the full URL from
+ *  POST /upload/project?full_url=true; `file_name` keeps the original
+ *  client-side name (the stored file is renamed to a uuid). */
+export interface ContractDocument {
+  document_url: string
+  file_name: string
+}
+
 // ── GET /manage/project ──────────────────────────────────────────────────────
 
 export interface APIResponseProject {
@@ -63,6 +71,8 @@ export interface APIResponseProject {
   updated_by: string | null
   budget_year: number
   is_warranty: boolean
+  /** `null` for projects created before the field existed. */
+  contract_document?: ContractDocument | null
   /** Present on list rows so the UI can render "ผู้รับจ้าง" without a
    *  second fetch — read `contractor.contractor.company_name`. */
   contractor?: ProjectContractorUser | null
@@ -120,6 +130,8 @@ export interface APIRequestProject {
   warranty_end_date: string
   /** Must contain at least one road; server rejects an empty array. */
   project_road: ProjectRoadLink[]
+  /** Required on both POST and PUT. */
+  contract_document: ContractDocument
 }
 
 /** PUT /manage/project — same body as create, but the numeric project id
@@ -160,6 +172,8 @@ export interface ProjectListData {
   updated_by: any
   updated_at: string
   is_warranty: boolean
+  /** `null` for projects created before the field existed. */
+  contract_document?: ContractDocument | null
   contractor: ProjSubContractor
   department: ProjSubDepartment
   solution_group?: ProjSubSolutionGroup[]
