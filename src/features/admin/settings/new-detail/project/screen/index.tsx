@@ -1,7 +1,12 @@
 "use client"
 import React, { useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ProjectProvider } from '@/features/admin/settings/new-detail/project/context'
+import { useRouter } from 'next/navigation'
+import { App } from 'antd'
+import { ProjectProvider, errText } from '@/features/admin/settings/new-detail/project/context'
+import { useDeleteProject } from '@/hooks/queries/manage'
+import { useAppDispatch } from '@/stores/hooks'
+import { resetProjectModalData } from '@/stores/reducers/modal/customModalSlice'
 import {
   EquipmentCCTVListModal,
   EquipmentSelectModal,
@@ -17,6 +22,8 @@ import {
   VMSSolutionModal,
 } from '../components'
 import ModalCreateProject from '@/features/admin/settings/overall/components/new-project/ModalCreateProject'
+import ModalConfirmDeleteProject from '@/features/admin/settings/overall/components/new-project/ModalConfirmDelete'
+import { ProjectInfoModal } from '@/components/modal'
 
 interface Props {
   id?: string | string[]
@@ -47,6 +54,25 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
     queryClient.invalidateQueries({ queryKey: ['roadSolution', id] })
   }, [queryClient, id])
 
+  // Same delete flow as NewProjectSection, except the project no longer
+  // exists afterwards — leave the detail page for the overview.
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  const { message } = App.useApp()
+  const { mutate: deleteProject, isPending: isDeletePending } = useDeleteProject()
+  const onDeleteProject = useCallback((projectId: number) => {
+    deleteProject(projectId, {
+      onSuccess: () => {
+        message.success('ลบโครงการสำเร็จ')
+        dispatch(resetProjectModalData())
+        router.replace('/admin/settings?tab=PROJECT')
+      },
+      onError: (error) => {
+        message.error(errText(error, 'ลบโครงการไม่สำเร็จ'))
+      },
+    })
+  }, [deleteProject, dispatch, message, router])
+
   return (
     <ProjectProvider
       id={id}
@@ -61,8 +87,11 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <ModalViewCrossingCode />
       <ModalConfirmDelete />
       <ModalLightingDiagram />
+      <ModalCreateProject onSuccess={onProjectUpdated} />
+      <ModalConfirmDeleteProject onDelete={onDeleteProject} isPending={isDeletePending} />
       {/* Last, so the viewer stacks above the equipment modals that open it. */}
       <ModalLiveStream />
+      <ProjectInfoModal />
     </ProjectProvider>
   )
 }

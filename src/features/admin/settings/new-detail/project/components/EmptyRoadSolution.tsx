@@ -1,10 +1,12 @@
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { Button, Empty } from 'antd'
 import React, { useCallback } from 'react'
 import { TbRoad } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
+import { useProjectDetail } from '@/hooks/queries/manage'
 import { useProjectContext } from '../context'
+import { isAdmin } from '@/utils/isAdmin'
 
 interface Props {
 
@@ -12,17 +14,25 @@ interface Props {
 
 const EmptyRoadSolution: React.FC<Props> = (props) => {
   const { } = props
+  const { info } = useAppSelector(state => state.auth)
   const dispatch = useAppDispatch()
   const { id } = useProjectContext()
+  const isAdminUser = isAdmin(info)
 
-  // Same UPDATE modal ProjectListView opens from its pencil icon — roads are
-  // linked to a project through that form. FormCreateProject only reads
-  // `data.id` and fetches the full project (incl. project_roads) itself, so
-  // the id is all it needs here.
-  const onOpenProjectModal = useCallback(() => {
-    if (!id) return
-    dispatch(setProjectModalOpen({ open: true, type: 'UPDATE', data: { id: Number(id) } }))
-  }, [dispatch, id])
+  const projectId = id ? Number(id) : null
+  // Same query (and cache entry) FormCreateProject uses for its edit seed.
+  // The delete confirm modal renders name / budget year / contractor /
+  // warranty from `data`, so it needs the full record, not just the id.
+  const { data: project } = useProjectDetail(projectId)
+
+  // Same UPDATE / DELETE modals ProjectListView opens from its pencil / trash
+  // icons — roads are linked to a project through the UPDATE form.
+  const onOpenProjectModal = useCallback((type: 'UPDATE' | 'DELETE') => {
+    if (!projectId) return
+    dispatch(setProjectModalOpen({ open: true, type, data: project ?? { id: projectId } }))
+  }, [dispatch, projectId, project])
+
+  if (!isAdminUser) return <Empty description='คุณไม่มีสิทธิ์เข้าถึงส่วนนี้' />
 
   return (
     <div>
@@ -35,7 +45,7 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
               type='primary'
               shape='round'
               icon={<PlusOutlined />}
-              onClick={onOpenProjectModal}
+              onClick={() => onOpenProjectModal('UPDATE')}
             >
               <p className='fs-12'>เพิ่มสายทาง</p>
             </Button>
@@ -52,7 +62,12 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
               }}
             />
             <p className='fs-12'>คุณสามารถลบโครงการนี้ได้ เนื่องจากไม่มีจุดติดตั้งในโครงการนี้</p>
-            <p className='fs-14 font-semibold underline cursor-pointer'>คุณต้องการลบโครงการหรือไม่ ?</p>
+            <p
+              className='fs-14 font-semibold underline cursor-pointer'
+              onClick={() => onOpenProjectModal('DELETE')}
+            >
+              คุณต้องการลบโครงการหรือไม่ ?
+            </p>
           </div>
         </div>
       </section>

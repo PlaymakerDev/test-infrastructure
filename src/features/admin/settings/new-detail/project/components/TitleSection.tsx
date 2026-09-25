@@ -1,12 +1,14 @@
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
-import { TbArrowBigLeftFilled } from 'react-icons/tb'
+import { TbArrowBigLeftFilled, TbInfoSquareRoundedFilled } from 'react-icons/tb'
 import { Empty, Skeleton } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { useProjectContext } from '../context';
 import { getProjectByIDAPI, getRoadSolutionAPI } from '@/services/routes/ProjectDetailService';
 import { SwapButton } from '../components';
 import { RoadSolutionList } from '@/types/manage/project-detail-api';
+import { useAppDispatch } from '@/stores/hooks';
+import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice';
 
 interface Props {
 
@@ -22,6 +24,7 @@ const TitleSection: React.FC<Props> = (props) => {
   const { } = props
   const router = useRouter()
   const { id, setRoadSolution } = useProjectContext()
+  const dispatch = useAppDispatch()
 
   const {
     data: project,
@@ -83,7 +86,32 @@ const TitleSection: React.FC<Props> = (props) => {
         />
         <div>
           <h1 className='text-(--yellow)'>จัดการข้อมูลโครงการ</h1>
-          <p>{project?.data.project_name || '-'}</p>
+          <div className='flex flex-wrap items-center gap-2'>
+            <p>{project?.data.project_name || '-'}</p>
+            <TbInfoSquareRoundedFilled
+              size={24}
+              title='ดูข้อมูลโครงการ'
+              className='text-white cursor-pointer hover:text-(--yellow) shrink-0'
+              onClick={() => {
+                dispatch(
+                  setProjectInfoModalOpen({
+                    open: true,
+                    project_id: project?.data?.id,
+                    road_id: null,
+                  }),
+                )
+              }}
+            />
+            <span
+              className='inline-flex items-center justify-center gap-1.5 py-0.5 px-3.5 rounded-full fs-12 whitespace-nowrap border'
+              style={{
+                borderColor: project?.data?.is_warranty ? '#05F2DB' : '#979797',
+                color: project?.data?.is_warranty ? '#05F2DB' : '#979797'
+              }}
+            >
+              {project?.data?.is_warranty ? 'ในค้ำ' : 'หมดค้ำ'}
+            </span>
+          </div>
         </div>
       </section>
       {renderSwapButton}
