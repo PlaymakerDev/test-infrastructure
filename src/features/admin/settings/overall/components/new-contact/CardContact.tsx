@@ -16,10 +16,11 @@ interface Props {
   isLoading: boolean;
   isError: boolean;
   handlePageChange: (newPage: number, newLimit: number) => void;
+  canEdit: boolean;
 }
 
 const CardContact: React.FC<Props> = (props) => {
-  const { data, page, limit, isLoading, isError, handlePageChange } = props
+  const { data, page, limit, isLoading, isError, handlePageChange, canEdit } = props
   const router = useRouter();
 
   const renderWarrantyDate = useCallback((startDate?: string, endDate?: string) => {
@@ -93,7 +94,9 @@ const CardContact: React.FC<Props> = (props) => {
                   <span className='text-white/50'>ชื่อโครงการ:</span> {item?.project_name || '-'}
                 </p>
               </Tooltip>
-              <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+              {canEdit && (
+                <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+              )}
               <p><span className='text-white/50'>เลขที่สัญญา:</span> {item?.contract_no || '-'}</p>
               <p><span className='text-white/50'>สถานะการค้ำประกัน:</span> <span className={warrantyClassName(item)}>{renderWarrantyDuration(item).warranty_status || '-'}</span></p>
             </div>
@@ -120,7 +123,7 @@ const CardContact: React.FC<Props> = (props) => {
         </div>
       )
     })
-  }, [data?.res_data, isLoading, renderWarrantyDuration, router, warrantyClassName])
+  }, [data?.res_data, isLoading, renderWarrantyDuration, router, warrantyClassName, canEdit])
 
   // FALLBACK UI for error or empty data
   if (isError) {

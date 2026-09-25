@@ -7,11 +7,14 @@ import { TbClipboardList } from 'react-icons/tb'
 import FormCreateProject from './FormCreateProject'
 
 interface Props {
-
+  /** Extra work after a successful create/update — e.g. the project detail
+   *  page refreshing its own hand-keyed ['project', id] / ['roadSolution', id]
+   *  queries, which useUpdateProject's invalidation doesn't reach. */
+  onSuccess?: () => void
 }
 
 const ModalCreateProject: React.FC<Props> = (props) => {
-  const { } = props
+  const { onSuccess } = props
   const submitRef = useRef<HTMLButtonElement | null>(null)
   const { open, type, data } = useAppSelector((state) => state.custom_modal.project_modal)
   const dispatch = useAppDispatch()
@@ -22,6 +25,11 @@ const ModalCreateProject: React.FC<Props> = (props) => {
   const handleClose = useCallback(() => {
     dispatch(resetProjectModalData())
   }, [dispatch])
+
+  const handleSuccess = useCallback(() => {
+    handleClose()
+    onSuccess?.()
+  }, [handleClose, onSuccess])
 
   return (
     <ConfigProvider
@@ -64,7 +72,7 @@ const ModalCreateProject: React.FC<Props> = (props) => {
           <FormCreateProject
             data={data}
             submitRef={submitRef}
-            onSuccess={handleClose}
+            onSuccess={handleSuccess}
           />
         </div>
       </Modal>

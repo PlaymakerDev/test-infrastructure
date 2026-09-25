@@ -1,5 +1,6 @@
 "use client"
-import React from 'react'
+import React, { useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ProjectProvider } from '@/features/admin/settings/new-detail/project/context'
 import {
   EquipmentCCTVListModal,
@@ -14,6 +15,7 @@ import {
   TrafficSignalCameraModal,
   VMSSolutionModal,
 } from '../components'
+import ModalCreateProject from '@/features/admin/settings/overall/components/new-project/ModalCreateProject'
 
 interface Props {
   id?: string | string[]
@@ -34,6 +36,15 @@ const ProjectDetailContent: React.FC<Props> = (props) => {
 
 const ProjectDetailScreen: React.FC<Props> = (props) => {
   const { id } = props
+  const queryClient = useQueryClient()
+
+  // TitleSection reads the project + its roads under hand-written keys that
+  // useUpdateProject doesn't invalidate — refresh them so a road added via
+  // the project modal shows up immediately.
+  const onProjectUpdated = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['project', id] })
+    queryClient.invalidateQueries({ queryKey: ['roadSolution', id] })
+  }, [queryClient, id])
 
   return (
     <ProjectProvider
@@ -48,6 +59,7 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <VMSSolutionModal />
       <ModalViewCrossingCode />
       <ModalConfirmDelete />
+      <ModalCreateProject onSuccess={onProjectUpdated} />
       {/* Last, so the viewer stacks above the equipment modals that open it. */}
       <ModalLiveStream />
     </ProjectProvider>

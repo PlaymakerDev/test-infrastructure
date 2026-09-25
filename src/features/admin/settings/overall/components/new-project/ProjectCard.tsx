@@ -100,7 +100,9 @@ const ProjectCard: React.FC<Props> = (props) => {
               <span className='text-white/50'>ชื่อโครงการ:</span> {item?.project_name || '-'}
             </p>
           </Tooltip>
-          <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+          {canEdit && (
+            <p><span className='text-white/50'>รหัสโครงการ:</span> {item?.project_no || '-'}</p>
+          )}
           <p><span className='text-white/50'>เลขที่สัญญา:</span> {item?.contract_no || '-'}</p>
           <p><span className='text-white/50'>สถานะการค้ำประกัน:</span> <span className={warrantyClassName}>{renderWarrantyDuration.warranty_status || '-'}</span></p>
         </div>

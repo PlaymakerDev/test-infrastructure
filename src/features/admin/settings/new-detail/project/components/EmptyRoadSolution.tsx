@@ -1,7 +1,10 @@
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { TbRoad } from 'react-icons/tb'
+import { useAppDispatch } from '@/stores/hooks'
+import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
+import { useProjectContext } from '../context'
 
 interface Props {
 
@@ -9,6 +12,17 @@ interface Props {
 
 const EmptyRoadSolution: React.FC<Props> = (props) => {
   const { } = props
+  const dispatch = useAppDispatch()
+  const { id } = useProjectContext()
+
+  // Same UPDATE modal ProjectListView opens from its pencil icon — roads are
+  // linked to a project through that form. FormCreateProject only reads
+  // `data.id` and fetches the full project (incl. project_roads) itself, so
+  // the id is all it needs here.
+  const onOpenProjectModal = useCallback(() => {
+    if (!id) return
+    dispatch(setProjectModalOpen({ open: true, type: 'UPDATE', data: { id: Number(id) } }))
+  }, [dispatch, id])
 
   return (
     <div>
@@ -21,6 +35,7 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
               type='primary'
               shape='round'
               icon={<PlusOutlined />}
+              onClick={onOpenProjectModal}
             >
               <p className='fs-12'>เพิ่มสายทาง</p>
             </Button>

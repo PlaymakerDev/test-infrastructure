@@ -3,6 +3,8 @@ import { CardContact, ContactTitle, TableContact } from '../../components'
 import { ContractorData } from '@/types/manage/contractor-api'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { getProjectListAPI } from '@/services/routes/ManageService'
+import { useAppSelector } from '@/stores/hooks'
+import { isAdmin } from '@/utils/isAdmin'
 
 interface Props {
   item: ContractorData
@@ -11,6 +13,9 @@ interface Props {
 
 const ContentContactorList: React.FC<Props> = (props) => {
   const { item, type } = props
+  const { info } = useAppSelector(state => state.auth)
+  const isAdminUser = isAdmin(info)
+
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
 
@@ -59,11 +64,12 @@ const ContentContactorList: React.FC<Props> = (props) => {
           isLoading={isLoading}
           isError={isError}
           handlePageChange={handlePageChange}
+          canEdit={isAdminUser}
         />
       )
     }
     return null
-  }, [item, type, data, page, limit, isLoading, isError, handlePageChange])
+  }, [item, type, data, page, limit, isLoading, isError, handlePageChange, isAdminUser])
 
   return (
     <div className='mt-5'>

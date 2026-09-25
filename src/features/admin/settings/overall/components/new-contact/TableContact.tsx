@@ -7,6 +7,8 @@ import React from 'react'
 import StatusBadge from '../project/StatusBadge';
 import SolutionTagList from './SolutionTagList';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/stores/hooks';
+import { isAdmin } from '@/utils/isAdmin';
 
 interface Props {
   data?: APIResponseProjectList
@@ -21,6 +23,8 @@ interface Props {
 const TableContact: React.FC<Props> = (props) => {
   const { data, page, limit, isLoading, isError, handlePageChange } = props
   const router = useRouter();
+  const { info } = useAppSelector(state => state.auth)
+  const isAdminUser = isAdmin(info)
 
   const columns: TableProps<ProjectListData>['columns'] = [
     {
@@ -111,11 +115,13 @@ const TableContact: React.FC<Props> = (props) => {
     },
   ];
 
+  const userColumns = columns.filter(col => col.key !== 'project_no').filter(col => col.key !== 'action')
+
   if (isError) return <Empty description="เกิดข้อผิดพลาด" />
 
   return (
     <Table<ProjectListData>
-      columns={columns}
+      columns={isAdminUser ? columns : userColumns}
       dataSource={data?.res_data}
       loading={isLoading}
       rowKey='id'
