@@ -2,7 +2,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetProjectModalData } from '@/stores/reducers/modal/customModalSlice'
 import { useCreateProject, useUpdateProject } from '@/hooks/queries/manage'
 import { ConfigProvider, Modal } from 'antd'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { TbClipboardList } from 'react-icons/tb'
 import FormCreateProject from './FormCreateProject'
 
@@ -30,6 +30,19 @@ const ModalCreateProject: React.FC<Props> = (props) => {
     handleClose()
     onSuccess?.()
   }, [handleClose, onSuccess])
+
+  // The open state lives in Redux, so it outlives the page: leaving with the
+  // modal still open (browser back/forward — the mask blocks every other way
+  // out) would pop it up again on the next page that mounts this modal, and
+  // both the settings list and the project detail page do. Close it on the
+  // way out — on popstate, before the next page renders, and on unmount.
+  useEffect(() => {
+    window.addEventListener('popstate', handleClose)
+    return () => {
+      window.removeEventListener('popstate', handleClose)
+      handleClose()
+    }
+  }, [handleClose])
 
   return (
     <ConfigProvider

@@ -13,6 +13,9 @@ import ProjectInfoModal, {
   type ProjectInfoField,
 } from '@/components/project-info-modal/ProjectInfoModal'
 import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects'
+import { useProjectDetail } from '@/hooks/queries/manage'
+import { useAppSelector } from '@/stores/hooks'
+import { isAdmin } from '@/utils/isAdmin'
 
 interface Props {
   project: TrafficLightingProject | null
@@ -20,15 +23,28 @@ interface Props {
 }
 
 const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
+  // Same rule as the settings project table: only these viewers see the code.
+  const { info } = useAppSelector((state) => state.auth)
+  const showProjectCode = isAdmin(info)
+  // The lighting list carries only the project's database id — the code comes
+  // from /manage/project/{id}, fetched once the modal opens for such a viewer.
+  const { data: projectDetail, isLoading: isCodeLoading } = useProjectDetail(
+    showProjectCode && project?.projectId != null ? project.projectId : null,
+  )
+  const projectCode = projectDetail?.project_no
+
   const rows: ProjectInfoField[][] = useMemo(() => {
     if (!project) return []
+    const codeField: ProjectInfoField[] = showProjectCode
+      ? [{
+        icon: <TbLock size={30} />,
+        label: 'รหัสโครงการ',
+        value: isCodeLoading ? 'กำลังโหลด…' : projectCode || '-',
+      }]
+      : []
     return [
       [
-        {
-          icon: <TbLock size={30} />,
-          label: 'รหัสโครงการ',
-          value: project.projectId != null ? String(project.projectId) : '-',
-        },
+        ...codeField,
         {
           icon: <TbClipboardList size={30} />,
           label: 'เลขที่สัญญา',
@@ -70,7 +86,7 @@ const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
         },
       ],
     ]
-  }, [project])
+  }, [project, showProjectCode, isCodeLoading, projectCode])
 
   return (
     <ProjectInfoModal

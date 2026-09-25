@@ -1,9 +1,14 @@
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { Button, Empty, Skeleton } from 'antd'
 import React, { useCallback } from 'react'
 import { TbRoad } from 'react-icons/tb'
-import { useAppDispatch } from '@/stores/hooks'
+import { useQuery } from '@tanstack/react-query'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
+import { getProjectByIDAPI, getRoadSolutionAPI } from '@/services/routes/ProjectDetailService'
+import { useProjectContractors } from '@/hooks/queries/manage'
+import type { ProjectListData } from '@/types/manage/project-api'
+import { isAdmin } from '@/utils/isAdmin'
 import { useProjectContext } from '../context'
 
 interface Props {
@@ -13,7 +18,32 @@ interface Props {
 const EmptyRoadSolution: React.FC<Props> = (props) => {
   const { } = props
   const dispatch = useAppDispatch()
-  const { id } = useProjectContext()
+  const { id, roadSolution } = useProjectContext()
+  // Adding a road and deleting the project both change the project (the add
+  // form also shows รหัสโครงการ) — offered to the same viewers the settings
+  // table shows its pencil / trash icons to.
+  const { info } = useAppSelector((state) => state.auth)
+  const canEditProject = isAdmin(info)
+
+  // Same queries (and cache entries) as TitleSection. A project the viewer may
+  // not open comes back as [] rather than an error.
+  const { data: projectRes, isLoading: isProjectLoading } = useQuery({
+    queryKey: ['project', id],
+    queryFn: () => getProjectByIDAPI(String(id)),
+    enabled: !!id,
+  })
+  const { data: roadsRes, isLoading: isRoadsLoading } = useQuery({
+    queryKey: ['roadSolution', id],
+    queryFn: () => getRoadSolutionAPI({ project_id: String(id) }),
+    enabled: !!id,
+  })
+  const { data: contractors } = useProjectContractors({ enabled: canEditProject })
+
+  const project = projectRes?.data?.id != null ? projectRes.data : null
+  const roads = Array.isArray(roadsRes?.data) ? roadsRes.data : []
+  // The backend refuses to delete a project any install point still references
+  // (res_code 40098) — this road having none isn't enough, no road may.
+  const hasInstallPoints = roads.some((road) => (road.solution_locations ?? []).length > 0)
 
   // Same UPDATE modal ProjectListView opens from its pencil icon — roads are
   // linked to a project through that form. FormCreateProject only reads
@@ -24,38 +54,75 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
     dispatch(setProjectModalOpen({ open: true, type: 'UPDATE', data: { id: Number(id) } }))
   }, [dispatch, id])
 
+  // Same confirm dialog + DELETE /manage/project/{id} as the settings table's
+  // trash icon. The dialog reads a list row; /manage/project/{id} has the same
+  // fields except the contractor's company name, which only the list nests.
+  const onOpenDeleteModal = useCallback(() => {
+    if (!project) return
+    const companyName = contractors?.find((c) => c.user_id === project.contractor_id)?.company_name ?? ''
+    const data = {
+      ...project,
+      contractor: { ...project.contractor, contractor: { company_name: companyName } },
+    } as unknown as ProjectListData
+    dispatch(setProjectModalOpen({ open: true, type: 'DELETE', data }))
+  }, [dispatch, project, contractors])
+
+  // Wait for the project, its roads, and the road picker to settle on one —
+  // a project that has roads would otherwise flash this empty state first.
+  if (isProjectLoading || isRoadsLoading || (roads.length > 0 && !roadSolution.project_road_id)) {
+    return <Skeleton active paragraph={{ rows: 4 }} />
+  }
+  if (!project) return <Empty description='ไม่พบข้อมูลโครงการ' />
+
   return (
     <div>
       <section>
         <div className='p-5 rounded-lg border-2 border-(--default-blue)'>
           <div className='flex flex-col items-center justify-center gap-3 my-6'>
             <TbRoad className='fs-36 text-(--default-blue)' />
-            <p className='fs-12'>กรุณาเพิ่มสายทาง ภายในโครงการนี้</p>
-            <Button
-              type='primary'
-              shape='round'
-              icon={<PlusOutlined />}
-              onClick={onOpenProjectModal}
-            >
-              <p className='fs-12'>เพิ่มสายทาง</p>
-            </Button>
+            <p className='fs-12'>{canEditProject ? 'กรุณาเพิ่มสายทาง ภายในโครงการนี้' : 'ยังไม่มีสายทางในโครงการนี้'}</p>
+            {canEditProject && (
+              <Button
+                type='primary'
+                shape='round'
+                icon={<PlusOutlined />}
+                onClick={onOpenProjectModal}
+              >
+                <p className='fs-12'>เพิ่มสายทาง</p>
+              </Button>
+            )}
           </div>
         </div>
       </section>
-      <section className='mt-5'>
-        <div className='p-5 rounded-lg border-2 border-(--default-red)'>
-          <div className='flex flex-col items-center justify-center gap-3 my-6'>
-            <ExclamationCircleOutlined
-              style={{
-                fontSize: 'clamp(2.25rem, 9.6vw, 2.625rem)',
-                color: 'var(--default-red)',
-              }}
-            />
-            <p className='fs-12'>คุณสามารถลบโครงการนี้ได้ เนื่องจากไม่มีจุดติดตั้งในโครงการนี้</p>
-            <p className='fs-14 font-semibold underline cursor-pointer'>คุณต้องการลบโครงการหรือไม่ ?</p>
+      {canEditProject && !hasInstallPoints && (
+        <section className='mt-5'>
+          <div className='p-5 rounded-lg border-2 border-(--default-red)'>
+            <div className='flex flex-col items-center justify-center gap-3 my-6'>
+              <ExclamationCircleOutlined
+                style={{
+                  fontSize: 'clamp(2.25rem, 9.6vw, 2.625rem)',
+                  color: 'var(--default-red)',
+                }}
+              />
+              <p className='fs-12'>คุณสามารถลบโครงการนี้ได้ เนื่องจากไม่มีจุดติดตั้งในโครงการนี้</p>
+              <p
+                role='button'
+                tabIndex={0}
+                className='fs-14 font-semibold underline cursor-pointer'
+                onClick={onOpenDeleteModal}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onOpenDeleteModal()
+                  }
+                }}
+              >
+                คุณต้องการลบโครงการหรือไม่ ?
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   )
 }

@@ -11,15 +11,16 @@ import {
   useDepartments,
   useProjectContractors,
 } from '@/hooks/queries/manage'
-import { useAppDispatch } from '@/stores/hooks'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetProjectModalData } from '@/stores/reducers/modal/customModalSlice'
 import type { APIRequestProjectList, ProjectListData } from '@/types/manage/project-api'
 import type { TableProps } from 'antd'
 import { mapProject } from '../context'
 import type { Project } from '../types/project'
-import { PROJECT_EXPORT_COLUMNS } from '../data/projectExportColumns'
+import { projectExportColumns } from '../data/projectExportColumns'
 import { fetchAllPages } from '../utils/fetchAllPages'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { isAdmin } from '@/utils/isAdmin'
 
 interface Props {
 
@@ -58,6 +59,10 @@ const NewProjectSection: React.FC<Props> = (props) => {
   const [exportOpen, setExportOpen] = useState(false)
 
   const dispatch = useAppDispatch()
+  const { info } = useAppSelector(state => state.auth)
+  // Same rule as ProjectListView's รหัสโครงการ column — the export must not
+  // hand out what the table hides.
+  const exportColumns = useMemo(() => projectExportColumns(isAdmin(info)), [info])
 
   const { data: departments } = useDepartments()
   // Same cached /manage/project/contractor list FormSearchProject's dropdown
@@ -237,7 +242,7 @@ const NewProjectSection: React.FC<Props> = (props) => {
             filenameBase: 'Settings_Projects_Report',
             title: 'รายงานรายชื่อโครงการ (Project Management)',
             filterNote: exportFilterNote,
-            columns: PROJECT_EXPORT_COLUMNS.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
+            columns: exportColumns.map(({ header, widthPct, align, value }) => ({ header, widthPct, align, value })),
             rows,
           })
         }}
@@ -249,7 +254,7 @@ const NewProjectSection: React.FC<Props> = (props) => {
             sheetName: 'Projects',
             title: 'รายงานรายชื่อโครงการ (Project Management)',
             filterNote: exportFilterNote,
-            columns: PROJECT_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
+            columns: exportColumns.map(({ header, width, value }) => ({ header, width, value })),
             rows,
           })
         }}

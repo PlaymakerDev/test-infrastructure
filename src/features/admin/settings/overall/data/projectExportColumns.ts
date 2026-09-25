@@ -44,3 +44,17 @@ export const PROJECT_EXPORT_COLUMNS: {
   { header: 'วันที่สิ้นสุดค้ำประกัน', width: 15, widthPct: 13, value: (r) => fmtThaiDate(r.warrantyEnd) },
   { header: 'สถานะการค้ำประกัน', width: 15, widthPct: 11, value: (r) => WARRANTY_LABELS[r.warrantyStatus] },
 ]
+
+export const PROJECT_CODE_HEADER = 'รหัสโครงการ'
+
+/** PROJECT_EXPORT_COLUMNS for a viewer who may (or may not) see project codes —
+ *  the same `isAdmin` rule ProjectListView uses to drop its รหัสโครงการ column.
+ *  Without it, the column's PDF share goes to ชื่อโครงการ so `widthPct` still
+ *  sums to 100. */
+export const projectExportColumns = (showProjectCode: boolean) => {
+  if (showProjectCode) return PROJECT_EXPORT_COLUMNS
+  const codeWidthPct = PROJECT_EXPORT_COLUMNS.find((c) => c.header === PROJECT_CODE_HEADER)?.widthPct ?? 0
+  return PROJECT_EXPORT_COLUMNS
+    .filter((c) => c.header !== PROJECT_CODE_HEADER)
+    .map((c) => (c.header === 'ชื่อโครงการ' ? { ...c, widthPct: c.widthPct + codeWidthPct } : c))
+}

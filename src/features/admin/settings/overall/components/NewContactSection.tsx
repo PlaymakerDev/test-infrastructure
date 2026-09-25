@@ -14,13 +14,15 @@ import {
   useContractorListInfinite,
   useDeleteContractor,
 } from '@/hooks/queries/manage'
-import { useAppDispatch } from '@/stores/hooks'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetContactModalData } from '@/stores/reducers/modal/customModalSlice'
 import type {
   APIResponseContractorList,
   ContractorData,
 } from '@/types/manage/contractor-api'
 import type { Contractor } from '../types/contractor'
+import { PROJECT_CODE_HEADER } from '../data/projectExportColumns'
+import { isAdmin } from '@/utils/isAdmin'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 
@@ -74,6 +76,10 @@ const NewContactSection: React.FC<Props> = (props) => {
 
   const dispatch = useAppDispatch()
   const { mutate: deleteContractor, isPending: isDeletePending } = useDeleteContractor()
+  // The backend report always carries รหัสโครงการ — strip it for the viewers
+  // TableContact hides that column from.
+  const { info } = useAppSelector(state => state.auth)
+  const showProjectCode = isAdmin(info)
 
   // onScroll pagination — a search-term change swaps the query key (search
   // is part of manageKeys.contractors.listInfinite) so TanStack starts a
@@ -145,8 +151,14 @@ const NewContactSection: React.FC<Props> = (props) => {
   const onExportXlsx = useCallback(async () => {
     try {
       const response = await getExportContractorAPI({ format: 'xlsx' }, 'blob')
+      let file: Blob = response.data
+      if (!showProjectCode) {
+        const { removeXlsxColumnByHeader } = await import('@/utils/export/removeColumn')
+        const stripped = await removeXlsxColumnByHeader(await file.arrayBuffer(), PROJECT_CODE_HEADER)
+        if (stripped) file = new Blob([stripped as BlobPart])
+      }
       // 1. Create a local URL for the binary platform object (Blob)
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([file]));
 
       // 2. Create a temporary hidden anchor element
       const link = document.createElement('a');
@@ -169,7 +181,7 @@ const NewContactSection: React.FC<Props> = (props) => {
         console.log(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
       }
     }
-  }, [message])
+  }, [message, showProjectCode])
 
   // The backend only renders a report as HTML — there is no native PDF
   // output — so "export PDF" opens that HTML in a new tab and lets the user
@@ -181,8 +193,13 @@ const NewContactSection: React.FC<Props> = (props) => {
   const onExportPDF = useCallback(async () => {
     try {
       const response = await getExportContractorAPI({ format: 'html' }, 'blob')
+      let report: Blob | string = response.data
+      if (!showProjectCode) {
+        const { removeHtmlTableColumnByHeader } = await import('@/utils/export/removeColumn')
+        report = removeHtmlTableColumnByHeader(await response.data.text(), PROJECT_CODE_HEADER)
+      }
       const url = window.URL.createObjectURL(
-        new Blob([response.data], { type: 'text/html;charset=utf-8' }),
+        new Blob([report], { type: 'text/html;charset=utf-8' }),
       )
 
       const reportWindow = window.open(url, '_blank')
@@ -207,7 +224,7 @@ const NewContactSection: React.FC<Props> = (props) => {
         console.log(readErrorMessage(error, 'เกิดข้อผิดพลาดในการส่งออกไฟล์'))
       }
     }
-  }, [message])
+  }, [message, showProjectCode])
 
   const renderContent = useMemo(() => {
     if (isLoading) return <Skeleton loading={true} active />

@@ -6,8 +6,9 @@ import { manageKeys } from './queryKeys'
  *  the contractor dropdown inside the project create/edit modal. Kept
  *  separate from `useContractorsList` because this endpoint may return a
  *  narrower slice (project-eligible contractors only). */
-export const useProjectContractors = () =>
+export const useProjectContractors = (options: { enabled?: boolean } = {}) =>
   useQuery({
     queryKey: manageKeys.dropdowns.contractors(),
     queryFn: () => getProjectContractorsAPI().then((r) => r.data),
+    enabled: options.enabled ?? true,
   })
