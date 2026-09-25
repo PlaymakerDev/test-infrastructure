@@ -1,17 +1,17 @@
 import { SOLUTION_TYPE } from '@/constants';
 import { getProjectByIDAPI, getSolutionByIDAPI, getSolutionCameraListAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
-import { getLightingIMEIBySolutionAPI } from '@/services/routes/LightingService';
+import { getLightingOverviewAPI } from '@/services/routes/LightingService';
+import { unwrapLightingResponse } from '@/hooks/queries/lighting/unwrapLightingResponse';
+import type { LightingOverviewResponse } from '@/types/lighting';
 import { useAppDispatch } from '@/stores/hooks';
-import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setEquipmentModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setDiagramModalOpen, setEquipmentModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { getEquipmentModalType } from '@/features/admin/settings/new-detail/project/data/equipmentModal';
 import {
   buildLightingSolutionHref,
   buildSolutionDetailUrl,
   type SolutionDetailContext,
 } from '@/features/admin/settings/new-detail/project/data/solutionDetailUrl';
-import { useLightingCentralList } from '@/hooks/queries/lighting';
-import { mapCentralListToProjects } from '@/features/admin/traffic-lighting/overall/data/trafficLightingProjects';
 import { SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import { PlusOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { TbCircuitCapacitor, TbPencilMinus, TbShieldLock, TbTrash } from 'react-icons/tb';
 import { useProjectContext } from '../context';
 import { SOLUTION_TYPE_LIGHTING } from '../data/lighting';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Props {
@@ -35,7 +36,9 @@ const TableSolution: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
   const { message } = App.useApp()
   const { id: projectId, roadSolution } = useProjectContext()
+  const router = useRouter()
   const [openingDiagramFor, setOpeningDiagramFor] = useState<number | null>(null)
+  const [openingDetailFor, setOpeningDetailFor] = useState<number | null>(null)
 
   // Same key AND same queryFn shape as TitleSection's — this reads its cache
   // rather than firing a second request. Only `is_warranty` is needed: VMS and
@@ -55,28 +58,55 @@ const TableSolution: React.FC<Props> = (props) => {
     isWarranty: project?.data.is_warranty ?? null,
   }), [roadSolution, project])
 
-  // Traffic Lighting is addressed by IMEI, which lives in the lighting central
-  // list, not on the solution row. Road-scoped so it is a small payload, and
-  // only fetched when a Traffic Lighting row is actually on screen.
-  const hasLightingRow = useMemo(
-    () => (data ?? []).some((row) => row.solution_type?.id === SOLUTION_TYPE_LIGHTING),
-    [data],
-  )
-  // `|| null` on the department too, not just a falsy check on hasLightingRow:
-  // INIT_ROAD seeds department_id as 0, and 0 is a VALID dept id to the lighting
-  // hook's guard — it would fire the nationwide list while the road is still
-  // loading.
-  const lightingList = useLightingCentralList(
-    hasLightingRow ? roadSolution.road?.department_id || null : null,
-    roadSolution.road_id || null,
-  )
-  const lightingBySolutionId = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof mapCentralListToProjects>[number]>()
-    for (const row of mapCentralListToProjects(lightingList.data ?? [])) {
-      if (row.solutionId != null) map.set(String(row.solutionId), row)
+  /** The device behind a Street Light row — its IMEI (what both the ผังวงจร
+   *  viewer and the traffic-lighting detail route are addressed by) and its
+   *  equipment type (`lamp` picks the โคมไฟ layout).
+   *
+   *  `GET /lighting/departments/{deptId}/overview/?solution_id=` returns exactly
+   *  this one row with both fields, so nothing here pulls a department-wide
+   *  list to scan for it. Two reasons this beats the other candidate,
+   *  `/lighting/departments/{deptId}/diagram/{solutionId}`: that one returns the
+   *  imei alone (no equipment type, so a โคมไฟ would open the cabinet layout),
+   *  and its SQL matches `tp.department_id` only, while this one matches
+   *  `(tp.department_id OR tr.department_id)` — so the project/road bureau split
+   *  on a cross-jurisdiction project cannot make a real device look missing.
+   *
+   *  The bureau passed here is the ROAD's, not the project's, and that matters
+   *  downstream: the traffic-lighting detail page resolves its header through
+   *  `overview/central/list`, whose filter is `tr.department_id = ?` — the road
+   *  alone, with no `tp.department_id` alternative (applyCentralLightingFilters
+   *  in lighting/internal/dto/overview/repository.go). Hand it the project's
+   *  bureau on a cross-jurisdiction project and that list comes back empty, so
+   *  the page falls through to its placeholder and renders สายทาง, จุดติดตั้ง
+   *  and the ⓘ project modal all blank. The lookup below tolerates either
+   *  (`tp OR tr`), so the road's is the one to carry.
+   *
+   *  Fetched here rather than through a hook because it is a click-time lookup
+   *  on one row, the same way this file's other row actions read their data.
+   *  Resolves `null` after saying why, so callers just early-return. */
+  const resolveLightingDevice = useCallback(async (record: SolutionList) => {
+    const deptId = roadSolution.road?.department_id || project?.data.department_id
+    if (!deptId) {
+      message.warning('ยังไม่ทราบหน่วยงานของโครงการนี้ จึงยังเปิดข้อมูลอุปกรณ์ไม่ได้')
+      return null
     }
-    return map
-  }, [lightingList.data])
+    try {
+      const response = await getLightingOverviewAPI(Number(deptId), { solution_id: record.id })
+      const location = unwrapLightingResponse<LightingOverviewResponse>(response.data)?.locations?.[0]
+      const imei = location?.imei?.trim()
+      if (imei) {
+        return { imei, deptId, equipmentType: location?.lighting?.equipment?.type ?? '' }
+      }
+      message.warning('อุปกรณ์นี้ไม่มี IMEI จึงยังไม่มีข้อมูลผังวงจร (เช่น Lora Gateway)')
+      return null
+    } catch (error) {
+      console.error('getLightingOverviewAPI', error)
+      if (error instanceof AxiosError) {
+        message.error(error.message)
+      }
+      return null
+    }
+  }, [roadSolution.road?.department_id, project?.data.department_id, message])
 
   const openCrossingCodeModal = useCallback(async (record: SolutionList) => {
     try {
@@ -162,39 +192,40 @@ const TableSolution: React.FC<Props> = (props) => {
     }
   }, [item, data, message, dispatch])
 
-  /** Opens the circuit-diagram editor for a Street Light row.
+  /** Opens the ผังวงจร viewer for a Street Light row.
    *
-   *  The diagram is keyed by IMEI, not by solution, so the imei has to be
-   *  resolved first. A Lora gateway has no IoT device and therefore no
-   *  diagram — say so rather than opening an editor on a blank name. */
-  const openDiagramEditor = useCallback(async (record: SolutionList) => {
-    const deptId = roadSolution.road?.department_id
-    if (!deptId && deptId !== 0) return
+   *  The result goes to `ModalLightingDiagram` (which renders
+   *  traffic-lighting's own `DiagramIframe`) instead of a new tab: the previous
+   *  `window.open` sent the user to `${HOST_BACKEND}/lighting/diagram?imei=…`,
+   *  which is the lighting service's standalone circuit EDITOR — a different,
+   *  unauthenticated app — rather than the read-only viewer this row wants. */
+  const openDiagram = useCallback(async (record: SolutionList) => {
     setOpeningDiagramFor(record.id as number)
     try {
-      const response = await getLightingIMEIBySolutionAPI(deptId, record.id as number)
-      const imei = response.data?.imei?.trim()
-      if (!imei) {
-        message.warning('อุปกรณ์นี้ไม่มี IMEI จึงยังไม่มีผังวงจร (เช่น Lora Gateway)')
-        return
-      }
-      // New tab: the editor is a separate app with its own chrome, and the
-      // half-filled project page behind it should survive.
-      window.open(
-        `${process.env.NEXT_PUBLIC_HOST_BACKEND}/lighting/diagram?imei=${encodeURIComponent(imei)}`,
-        '_blank',
-        'noopener,noreferrer',
-      )
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        message.error(error.message)
-      } else {
-        console.error(error)
-      }
+      const resolved = await resolveLightingDevice(record)
+      if (!resolved) return
+      dispatch(setDiagramModalOpen({ open: true, imei: resolved.imei, record, item }))
     } finally {
       setOpeningDiagramFor(null)
     }
-  }, [roadSolution.road?.department_id, message])
+  }, [resolveLightingDevice, dispatch, item])
+
+  /** Navigates to a Street Light row's traffic-lighting detail page — resolved
+   *  on click, since the route is keyed by the device's IMEI. `equipmentType`
+   *  is what picks `/detail/lamp/` over the controller-cabinet layout. */
+  const goToLightingDetail = useCallback(async (record: SolutionList) => {
+    setOpeningDetailFor(record.id as number)
+    try {
+      const resolved = await resolveLightingDevice(record)
+      if (!resolved) return
+      router.push(buildLightingSolutionHref(
+        { id: resolved.imei, imei: resolved.imei, equipmentType: resolved.equipmentType },
+        resolved.deptId,
+      ))
+    } finally {
+      setOpeningDetailFor(null)
+    }
+  }, [resolveLightingDevice, router])
 
   /** The ไปยังหน้าเว็บ cell.
    *
@@ -219,22 +250,24 @@ const TableSolution: React.FC<Props> = (props) => {
     if (target.kind === 'blocked') return blocked(target.reason)
 
     if (target.kind === 'needs-lighting-row') {
-      const deptId = roadSolution.road?.department_id || null
-      const row = lightingBySolutionId.get(String(record.id))
-      if (!deptId || !row) {
-        return blocked(lightingList.isLoading
-          ? 'กำลังโหลดข้อมูลอุปกรณ์ไฟฟ้าส่องสว่าง'
-          : 'ไม่พบอุปกรณ์ของงานนี้ในระบบไฟฟ้าส่องสว่าง จึงยังไม่มีหน้ารายละเอียด')
-      }
+      // A button, not a Link: the route is keyed by the device's IMEI, which
+      // only the per-solution lookup knows, so the href does not exist until
+      // the click resolves it.
       return (
-        <Link href={buildLightingSolutionHref(row, deptId)} className='text-(--default-blue)'>
+        <Button
+          type='link'
+          htmlType='button'
+          loading={openingDetailFor === record.id}
+          onClick={() => goToLightingDetail(record)}
+          className='text-(--default-blue)! px-0!'
+        >
           {label}
-        </Link>
+        </Button>
       )
     }
 
     return <Link href={target.href} className='text-(--default-blue)'>{label}</Link>
-  }, [detailContext, lightingBySolutionId, lightingList.isLoading, roadSolution.road?.department_id])
+  }, [detailContext, goToLightingDetail, openingDetailFor])
 
   const columns: TableProps<SolutionList>['columns'] = [
     {
@@ -290,7 +323,7 @@ const TableSolution: React.FC<Props> = (props) => {
               htmlType='button'
               icon={<TbCircuitCapacitor className='fs-22' />}
               loading={openingDiagramFor === record.id}
-              onClick={() => openDiagramEditor(record)}
+              onClick={() => openDiagram(record)}
               className='text-(--default-blue)! px-0!'
             >
               <span className='fs-12'>ผังวงจร</span>

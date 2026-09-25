@@ -7,6 +7,7 @@ import {
   MainContent,
   ModalConfirmDelete,
   ModalCreateDevice,
+  ModalLightingDiagram,
   ModalLiveStream,
   ModalViewCCTV,
   ModalViewCrossingCode,
@@ -48,6 +49,7 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <VMSSolutionModal />
       <ModalViewCrossingCode />
       <ModalConfirmDelete />
+      <ModalLightingDiagram />
       {/* Last, so the viewer stacks above the equipment modals that open it. */}
       <ModalLiveStream />
     </ProjectProvider>

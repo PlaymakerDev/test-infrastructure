@@ -43,8 +43,6 @@ const TitleSection: React.FC = () => {
     [resolvedCoord],
   )
 
-  console.log(coords)
-
   return (
     <>
       <DetailTitleSection
