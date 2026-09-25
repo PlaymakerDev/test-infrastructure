@@ -8,6 +8,7 @@ import {
   useCrosswalkCentralList,
   useCrosswalkSolutionDetail,
 } from '@/hooks/queries/crosswalk'
+import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useDetailContext } from '../context'
 
@@ -54,8 +55,14 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   const isOnline = status?.isOnline ?? false
   const isInWarranty = status?.isWarranty ?? false
 
-  const roadCode = location?.road.code_name ?? '-'
-  const installPoint = location?.solution.solution_name ?? '-'
+  // `/crosswalk/…/overview` reads road_code through the CAMERA's road, so a
+  // solution with no camera attached resolves neither สายทาง nor จุดติดตั้ง —
+  // visible when the page is opened from settings. Recover both: the install
+  // point from the solution record (already fetched above for AnyDesk), the
+  // road from the project's route tree.
+  const roadFallback = useSolutionRoadFallback(projectIdParam, roadIdParam, !location)
+  const roadCode = location?.road.code_name ?? roadFallback ?? '-'
+  const installPoint = location?.solution.solution_name ?? solDetail?.solution_name ?? '-'
   const coord = location?.GeometryPoint ?? null
 
   return (

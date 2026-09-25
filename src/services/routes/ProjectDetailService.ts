@@ -1,4 +1,4 @@
-import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation } from "@/types/manage/project-detail-api";
+import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseProjectRoadCameras, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation } from "@/types/manage/project-detail-api";
 import ApiService from "../ApiService";
 
 export const getProjectByIDAPI = (id: string | number) =>
@@ -75,8 +75,19 @@ export const deleteSolutionAPI = (id: string | number) =>
 
 
 
+/** Cameras standing at ONE install point — what the Counting/Analytic/
+ *  Crosswalk/WIM camera pickers read. */
 export const getSolutionCameraListAPI = (id: string | number) =>
   ApiService.fetchData<APIResponseSolutionCameraList>({
     url: `/manage/solution/camera/list/${id}`,
+    method: 'GET',
+  })
+
+/** The (project, road)'s single CCTV solution plus every camera under it,
+ *  each tagged with its own install point. Backs the road-level
+ *  "อุปกรณ์ CCTV" panel. */
+export const getProjectRoadCamerasAPI = (projectRoadId: string | number) =>
+  ApiService.fetchData<APIResponseProjectRoadCameras>({
+    url: `/manage/solution/camera/by_project_road/${projectRoadId}`,
     method: 'GET',
   })

@@ -1,10 +1,18 @@
-/** before_image/after_image come back as a JSON-stringified array in a string
- *  field (or the literal text "null", or ""). Never a real array or null. */
-export const parseImageUrls = (raw: string | null | undefined): string[] => {
+/** Image list off a case payload.
+ *
+ *  The backend switched these fields from a JSON-stringified array to a real
+ *  array (2026-09-18: "Always an array — [] when there are none, never null"),
+ *  so both shapes are accepted: older responses (and anything cached) still
+ *  arrive as `"[\"https://…\"]"`, `"null"` or `""`. */
+export const parseImageUrls = (raw: string[] | string | null | undefined): string[] => {
+  const keep = (list: unknown[]): string[] =>
+    list.filter((u): u is string => typeof u === 'string' && u.length > 0)
+
+  if (Array.isArray(raw)) return keep(raw)
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((u): u is string => typeof u === 'string' && u.length > 0) : []
+    return Array.isArray(parsed) ? keep(parsed) : []
   } catch {
     return []
   }

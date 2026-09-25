@@ -29,6 +29,33 @@ function fetchableUrl(url: string): string {
   }
 }
 
+/** Save a remote file to the user's machine.
+ *
+ *  `<a download>` is ignored for a cross-origin href — the browser navigates
+ *  to the file instead of saving it — so the bytes are fetched first (through
+ *  the same proxy the PDF path uses when CORS blocks us) and handed over as a
+ *  blob URL. If even that fails, open the file so the user still has a way to
+ *  keep it.
+ */
+export async function downloadRemoteFile(url: string, filename?: string): Promise<void> {
+  if (!url) return
+  const name = filename || decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? '') || 'download'
+  try {
+    const res = await fetch(fetchableUrl(url))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const href = URL.createObjectURL(await res.blob())
+    const a = document.createElement('a')
+    a.href = href
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(href), 10_000)
+  } catch {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
 export async function fetchImageAsDataUrl(url: string, maxWidth = 640): Promise<FetchedImage | null> {
   if (!url) return null
   try {

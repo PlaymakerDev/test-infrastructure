@@ -183,3 +183,35 @@ export const getLightingElectricityAPI = async (
   })
 }
 
+
+// ── Diagram templates + IMEI lookup (settings project-detail) ───────────────
+
+/** One reusable circuit-diagram layout. `name` doubles as the value stored in
+ *  `tbl_lighting_iot.diagram_type` — the create form picks from this list, and
+ *  the backend seeds the new device's diagram from the template of that name. */
+export interface LightingDiagramTemplate {
+  id: number
+  name: string
+}
+
+/** GET /lighting/templates — the layouts a new Lighting device can start from. */
+export const getLightingDiagramTemplatesAPI = async () =>
+  ApiService.fetchData<LightingDiagramTemplate[]>({
+    url: '/lighting/templates',
+    method: 'GET',
+  })
+
+/** GET /lighting/departments/{deptId}/diagram/{solutionId}
+ *  → `{ imei }`, the device whose diagram belongs to this solution.
+ *
+ *  The diagram is keyed by IMEI, not by solution, so this is the only way to
+ *  get from a row in the settings table to its circuit drawing. Returns an
+ *  empty imei for a solution with no IoT device (e.g. a Lora gateway). */
+export const getLightingIMEIBySolutionAPI = async (
+  deptId: string | number,
+  solutionId: string | number,
+) =>
+  ApiService.fetchData<{ imei: string }>({
+    url: `/lighting/departments/${deptId}/diagram/${solutionId}`,
+    method: 'GET',
+  })

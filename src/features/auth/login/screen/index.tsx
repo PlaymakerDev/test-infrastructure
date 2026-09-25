@@ -19,6 +19,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setLoading } from '@/stores/reducers/layout/layoutSlice'
 import { setAuthInfoFailed, setAuthInfoState } from '@/stores/reducers/auth/authSlice'
 import { syncAuthTokenToStore } from '@/services/BaseService'
+import { markLoginForNotice } from '@/components/system-notice/maintenanceNotice'
 
 interface Props {
   username?: string
@@ -122,6 +123,8 @@ const AuthScreen: React.FC<Props> = (props) => {
           } catch {
             // department lookup failed — keep the default landing
           }
+          // The maintenance notice shows once per login, on the first page.
+          markLoginForNotice()
           router.push(target)
         }
       } catch (error) {

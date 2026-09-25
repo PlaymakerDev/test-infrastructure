@@ -10,6 +10,7 @@ import {
   useIncidentCameraTotals,
   useIncidentSolutionDetail,
 } from '@/hooks/queries/incident-detection'
+import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 
 interface Props {
@@ -62,7 +63,10 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
     return null
   }, [central, solutionId])
 
-  const roadCode = solution?.road.code_name ?? '-'
+  // Resolved below, once project_id / road_id are known: central/list is
+  // anchored on analytic.tbl_analytic (one row per attached camera), so a
+  // solution with no camera yet is absent from it entirely and has no road.
+  const roadCodeFromList = solution?.road.code_name
   // Prefer /manage's solution_name (authoritative canonical name) — falls back
   // to central/list while /manage is loading or fails.
   const installPoint =
@@ -89,6 +93,10 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
     searchParams.get('project_id') ?? (solution ? String(solution.project.id) : null)
   const roadIdParam =
     searchParams.get('road_id') ?? (solution ? String(solution.road.id) : null)
+
+  // The project's route tree still knows the road when central/list does not.
+  const roadFallback = useSolutionRoadFallback(projectIdParam, roadIdParam, !roadCodeFromList)
+  const roadCode = roadCodeFromList ?? roadFallback ?? '-'
 
   // Coord priority: /manage geometry (canonical) → cameras endpoint centroid →
   // first camera with a coord → null (disable button).

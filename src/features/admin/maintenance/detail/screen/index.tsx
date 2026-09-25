@@ -3,13 +3,12 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Spin, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { TbWifi, TbWifiOff, TbX } from 'react-icons/tb'
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TitleSection } from '../components'
 import {
-  useCreateMaintenanceCase,
   useMaintenanceSolution,
   useProjectBySolution,
   useSolutionMapLocation,
@@ -19,6 +18,9 @@ import { ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import type { CameraItem, SolutionDetailResponse } from '@/types/maintenance'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
+import OpenCaseModal from '../components/OpenCaseModal'
+import { parseDeviceTypes } from '../../data/deviceTypes'
+import { useUserKind } from '@/utils/hooks/useUserKind'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -30,6 +32,7 @@ interface Props {
 }
 
 interface TableRow {
+  types: { label: string; color: string }[]
   key: string
   status: 'online' | 'offline'
   cameraName: string
@@ -68,22 +71,29 @@ const DEVICE_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (r: TableRow) => string | number
 }[] = [
-    { header: 'สถานะ', width: 12, widthPct: 8, value: (r) => (r.status === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
-    { header: 'Case No.', width: 16, widthPct: 9, value: (r) => r.caseNo || '-' },
-    { header: 'ประเภท', width: 12, widthPct: 8, value: (r) => r.category },
-    { header: 'ยี่ห้อ', width: 12, widthPct: 8, value: (r) => r.brand },
-    { header: 'รุ่น', width: 12, widthPct: 8, value: (r) => r.model },
-    { header: 'ชื่ออุปกรณ์', width: 20, widthPct: 12, align: 'left', value: (r) => r.cameraName },
-    { header: 'Hostname', width: 14, widthPct: 9, value: (r) => r.hostname },
-    { header: 'Anydesk', width: 13, widthPct: 8, value: (r) => r.anydesk },
-    { header: 'ZeroTier', width: 13, widthPct: 8, value: (r) => r.zerotier },
-    { header: 'Username', width: 12, widthPct: 7, value: (r) => r.username },
-    { header: 'Password', width: 12, widthPct: 6, value: (r) => r.password },
+    { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => (r.status === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
+    { header: 'Case No.', width: 18, widthPct: 13, value: (r) => r.caseNo || '-' },
+    // ประเภท mirrors the on-screen badges (labels joined).
+    { header: 'ประเภท', width: 20, widthPct: 14, value: (r) => (r.types.length ? r.types.map((t) => t.label).join(', ') : '-') },
+    { header: 'ยี่ห้อ', width: 12, widthPct: 9, value: (r) => r.brand },
+    { header: 'รุ่น', width: 12, widthPct: 9, value: (r) => r.model },
+    { header: 'Hostname', width: 28, widthPct: 32, align: 'left', value: (r) => (r.hostname && r.hostname !== '-' ? r.hostname : r.cameraName || '-') },
+    // Hidden with the on-screen columns (2026-09-10 redesign) — kept for a
+    // possible future revision:
+    // { header: 'ชื่ออุปกรณ์', value: (r) => r.cameraName },
+    // { header: 'Anydesk', value: (r) => r.anydesk },
+    // { header: 'ZeroTier', value: (r) => r.zerotier },
+    // { header: 'Username', value: (r) => r.username },
+    // { header: 'Password', value: (r) => r.password },
     // IP last — mirrors the on-screen column order (2026-08-17, app-wide rule).
-    { header: 'IP Address', width: 14, widthPct: 9, value: (r) => r.ipAddress },
+    { header: 'IP Address', width: 16, widthPct: 13, value: (r) => r.ipAddress },
   ]
 
 interface TitleSectionWithDataProps {
+  /** อุปกรณ์ออฟไลน์ที่ยังไม่มีเคส — ขับสถานะปุ่ม "+ เปิด Case" บนหัว */
+  openableCount: number
+  /** Absent = hide the header เปิด Case button (contractor role). */
+  onOpenCase?: () => void
   id: string
   data: SolutionDetailResponse | null
   coord: [number, number] | null
@@ -96,6 +106,8 @@ interface TitleSectionWithDataProps {
 
 /** Route context is URL-scoped; a direct visit falls back to solution API data. */
 const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
+  openableCount,
+  onOpenCase,
   id,
   data,
   coord,
@@ -121,6 +133,8 @@ const TitleSectionWithData: React.FC<TitleSectionWithDataProps> = ({
       projectId={resolvedProjectId}
       roadId={routeRoadId}
       coord={coord}
+      openableCount={openableCount}
+      onOpenCase={onOpenCase}
       onExport={onExport}
     />
   )
@@ -130,10 +144,18 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { modal } = App.useApp()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedRow, setSelectedRow] = useState<TableRow | null>(null)
+  const { userKind } = useUserKind()
+  // เปิด Case modal (2026-09-11 redesign) — one device-picker dialog shared by
+  // the header button (no pre-tick) and the per-row buttons (pre-ticked).
+  const [openCase, setOpenCase] = useState<{ open: boolean; preselectId: string | null }>({ open: false, preselectId: null })
   const [exportOpen, setExportOpen] = useState(false)
   const numericId = Number(id)
+
+  // ผู้รับจ้างเปิดเคสไม่ได้ (user 2026-09-11) — ปุ่ม +เปิด Case ทั้งบนหัวและใน
+  // ตารางซ่อนทั้งหมด เหลือลิงก์ Case No. เข้าไปกรอกบันทึกแจ้งซ่อมเท่านั้น.
+  // มาจาก session (user_kind ตอน login); `?role=contractor` = override ให้
+  // เจ้าหน้าที่ดูมุมมองผู้รับจ้างได้ (mirror case/screen/index.tsx).
+  const isContractor = searchParams.get('role') === 'contractor' || userKind === 'contractor'
 
   // The URL is the source of truth for optional navigation context. Validate
   // the dynamic prefix before interpolating it into an API path; missing or
@@ -200,7 +222,21 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     return point && point.length === 2 ? [point[0], point[1]] : null
   }, [mapLocationQuery.data])
 
-  const createCase = useCreateMaintenanceCase()
+  /** เปิด Case (2026-09-11 flow v2): the modal does NOT create anything —
+   *  it routes to /case/new (the officer's letter-creation page). The case +
+   *  its auto Case No. are created when the letter is saved there (pending
+   *  the BE multi-device endpoint). */
+  const handleOpenCaseSubmit = (cameraIds: string[]) => {
+    const params = new URLSearchParams(routeQuery)
+    // `source` says which table the user came FROM. Opening a case starts a new
+    // trail from this device table, so a stale `source=repair_history` (left by
+    // an earlier visit) must not ride along — it would send the back arrow to
+    // the history page instead of here (user 2026-09-21).
+    params.delete('source')
+    params.set('solution_id', id)
+    params.set('camera_ids', cameraIds.join(','))
+    router.push(`/admin/maintenance/case/new?${params.toString()}`)
+  }
 
   // Deep link from the notification bell: ?camera_id=<uuid> scrolls the
   // device table to that camera's row once the data lands. antd/rc-table
@@ -237,6 +273,7 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     caseNo: item.case_no ?? null,
     cameraId: item.camera_id,
     category: item.category ?? '-',
+    types: parseDeviceTypes(item.solution_group),
     brand: item.brand ?? '-',
     model: item.model ?? '-',
     hostname: item.hostname ?? '-',
@@ -290,35 +327,67 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
             </span>
           )
         }
-        // ไม่มี case_no และ offline → โชว์ปุ่มเปิดเคส
-        if (record.status === 'offline') {
+        // ไม่มี case_no และ offline → โชว์ปุ่มเปิดเคส (เฉพาะเจ้าหน้าที่)
+        if (record.status === 'offline' && !isContractor) {
           return (
             <button
               type='button'
               className='px-3 py-1 rounded-full fs-12 font-normal whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity'
               style={{ background: '#FCD116', color: '#212121' }}
-              onClick={() => {
-                setSelectedRow(record)
-                setIsModalOpen(true)
-              }}
+              onClick={() => setOpenCase({ open: true, preselectId: record.cameraId })}
             >
-              เปิด Case
+              + เปิด Case
             </button>
           )
         }
-        // online และไม่มี case_no → ไม่โชว์ปุ่ม
+        // online และไม่มี case_no (หรือผู้รับจ้าง) → ไม่โชว์ปุ่ม
         return <span>-</span>
       },
     },
-    { title: 'ประเภท', dataIndex: 'category', key: 'category', width: 120, align: 'center' },
+    // ประเภท = multi-type badges from the DEVICE_BADGE registry (new design
+    // 2026-09-10) — a camera can serve several solutions (CCTV + Incident +
+    // Volume). Falls back to '-' until the BE fills `category`.
+    {
+      title: 'ประเภท',
+      dataIndex: 'types',
+      key: 'types',
+      width: 230,
+      render: (types: TableRow['types']) =>
+        types.length ? (
+          <div className='flex flex-wrap items-center gap-1.5'>
+            {types.map((t) => (
+              <span
+                key={t.label}
+                className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
+                style={{ border: `1px solid ${t.color}`, color: t.color }}
+              >
+                {t.label}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span>-</span>
+        ),
+    },
     { title: 'ยี่ห้อ', dataIndex: 'brand', key: 'brand', width: 120, align: 'center' },
     { title: 'รุ่น', dataIndex: 'model', key: 'model', width: 120, align: 'center' },
-    { title: 'ชื่ออุปกรณ์', dataIndex: 'cameraName', key: 'cameraName', width: 200 },
-    { title: 'Hostname', dataIndex: 'hostname', key: 'hostname', width: 140, align: 'center' },
-    { title: 'Anydesk', dataIndex: 'anydesk', key: 'anydesk', width: 130, align: 'center' },
-    { title: 'ZeroTier', dataIndex: 'zerotier', key: 'zerotier', width: 130, align: 'center' },
-    { title: 'Username', dataIndex: 'username', key: 'username', width: 120, align: 'center' },
-    { title: 'Password', dataIndex: 'password', key: 'password', width: 120, align: 'center' },
+    // Hostname shows the device name while the BE's `hostname` field is still
+    // empty — the new design merged ชื่ออุปกรณ์ into this column.
+    {
+      title: 'Hostname',
+      dataIndex: 'hostname',
+      key: 'hostname',
+      width: 260,
+      render: (v: string, r: TableRow) => (v && v !== '-' ? v : r.cameraName || '-'),
+    },
+    // Columns hidden per the 2026-09-10 redesign (7-column layout ending at
+    // IP Address) — kept here, not deleted, in case the next revision brings
+    // them back:
+    // { title: 'ชื่ออุปกรณ์', dataIndex: 'cameraName', key: 'cameraName', width: 200 },
+    // { title: 'Anydesk', dataIndex: 'anydesk', key: 'anydesk', width: 130, align: 'center' },
+    // { title: 'ZeroTier', dataIndex: 'zerotier', key: 'zerotier', width: 130, align: 'center' },
+    // { title: 'Username', dataIndex: 'username', key: 'username', width: 120, align: 'center' },
+    // { title: 'Password', dataIndex: 'password', key: 'password', width: 120, align: 'center' },
     // IP Address is the LAST column on every detail-page table (2026-08-17
     // request, applied app-wide).
     { title: 'IP Address', dataIndex: 'ipAddress', key: 'ipAddress', width: 140, align: 'center' },
@@ -344,6 +413,8 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
     <div className='main-screen maintenance-font-min-14'>
       <MaintenanceMinimumFontSize />
       <TitleSectionWithData
+        openableCount={tableData.filter((r) => r.status === 'offline' && !r.caseNo).length}
+        onOpenCase={isContractor ? undefined : () => setOpenCase({ open: true, preselectId: null })}
         id={id}
         data={solutionData}
         coord={coord}
@@ -415,181 +486,32 @@ const DetailContent: React.FC<{ id: string }> = ({ id }) => {
         </ConfigProvider>
       </section>
 
-      {/* Custom White Modal */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          {/* Overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.65)',
-              zIndex: 1,
-            }}
-          />
-
-          {/* Modal Content */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 2,
-              width: 'calc(100% - 32px)',
-              maxWidth: 800,
-              minHeight: 400,
-              borderRadius: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-              padding: '20px 24px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* ปิด */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                }}
-              >
-                <TbX size={20} color='#999' />
-              </button>
-            </div>
-
-            {/* รูป */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-              <img
-                src={warranty === 'ในค้ำ' ? `${BASE_PATH}/images/Maintenance/icmd2.png` : `${BASE_PATH}/images/Maintenance/icmd1.png`}
-                alt='maintenance'
-                style={{ width: 100, height: 100, objectFit: 'contain' }}
-              />
-            </div>
-
-            {/* หัวข้อ */}
-            <h3 style={{ fontSize: 24, fontWeight: 700, color: '#525252', margin: '0 0 8px 0', textAlign: 'center' }}>
-              ยืนยันเปิด Case อุปกรณ์นี้หรือไม่?
-            </h3>
-            <p style={{ fontSize: "var(--fs-12)", fontWeight: 400, color: '#525252', margin: '0 0 24px 0', textAlign: 'center' }}>
-              ระบบจะออก Case No. ให้อัตโนมัติ
-            </p>
-
-            {/* เนื้อหา */}
-            <div
-              style={{
-                fontSize: "var(--fs-12)",
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                padding: 16,
-                borderRadius: 12,
-                backgroundColor: warranty === 'ในค้ำ' ? '#66AEFF33' : '#E94C4C33',
-                border: `2px solid ${warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C'}`,
-              }}
-            >
-              <div><span style={{ color: '#979797' }}>ชื่อโครงการ : </span><span style={{ color: '#212121' }}>{projectDetail?.project_name || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>ผู้รับจ้าง : </span><span style={{ color: '#212121' }}>{contractorName || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>หน่วยงานรับผิดชอบ : </span><span style={{ color: '#212121' }}>{projectDetail?.department?.department_short_name || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>เลขที่สัญญา : </span><span style={{ color: '#212121' }}>{projectDetail?.contract_no || '-'}</span></div>
-              <div><span style={{ color: '#979797' }}>สถานะการค้ำประกัน : </span><span style={{ color: warranty === 'ในค้ำ' ? '#66AEFF' : '#E94C4C', fontWeight: 700, fontSize: "var(--fs-12)" }}>{warranty}</span></div>
-              <div><span style={{ color: '#979797' }}>วันที่เริ่มต้น - สิ้นสุดการค้ำประกัน : </span><span style={{ color: '#212121' }}>{warrantyRangeText}</span></div>
-            </div>
-
-            {/* ปุ่ม */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: 12,
-                marginTop: 'auto',
-                paddingTop: 32,
-              }}
-            >
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 88,
-                  fontSize: "var(--fs-12)",
-                  fontWeight: 500,
-                  border: '1px solid #C4C4C4',
-                  backgroundColor: '#FFFFFF',
-                  color: '#212121',
-                  cursor: 'pointer',
-                }}
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={() => {
-                  if (!selectedRow || createCase.isPending) return
-                  // `mutate` + callbacks (not mutateAsync) per the canonical
-                  // write pattern — the hook itself invalidates the solution/
-                  // cases/history reads so the device table refreshes.
-                  createCase.mutate({ camera_id: selectedRow.cameraId }, {
-                    onSuccess: () => {
-                      setIsModalOpen(false)
-                      modal.success({
-                        title: 'เปิด Case สำเร็จ',
-                        content: `สร้าง Case สำหรับอุปกรณ์ ${selectedRow.cameraName} เรียบร้อยแล้ว`,
-                        okText: 'ตกลง',
-                        centered: true,
-                      })
-                    },
-                    onError: (err) => {
-                      console.error('Error creating case:', err)
-                      modal.error({
-                        title: 'ไม่สามารถเปิด Case ได้',
-                        content: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-                        okText: 'ตกลง',
-                        centered: true,
-                      })
-                    },
-                  })
-                }}
-                disabled={createCase.isPending}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 88,
-                  fontSize: "var(--fs-12)",
-                  fontWeight: 500,
-                  border: 'none',
-                  backgroundColor: createCase.isPending ? '#C4C4C4' : '#FCD116',
-                  color: '#212121',
-                  cursor: createCase.isPending ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {createCase.isPending ? 'กำลังสร้าง...' : 'เปิด Case'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* เปิด Case — device picker (2026-09-11 redesign). Devices = offline
+        * rows without an open case; the project box mirrors the old dialog.
+        * Never mounts for contractors — they can't open cases. */}
+      {!isContractor && <OpenCaseModal
+        open={openCase.open}
+        preselectId={openCase.preselectId}
+        devices={tableData
+          .filter((r) => r.status === 'offline' && !r.caseNo)
+          .map((r) => ({
+            cameraId: r.cameraId,
+            name: (r.hostname && r.hostname !== '-' ? r.hostname : r.cameraName) || '-',
+            ip: r.ipAddress || '-',
+            types: r.types,
+          }))}
+        project={{
+          projectName: projectDetail?.project_name || '-',
+          contractor: contractorName || '-',
+          department: projectDetail?.department?.department_short_name || '-',
+          contractNo: projectDetail?.contract_no || '-',
+          warranty: warranty === 'ในค้ำ' ? 'ในค้ำ' : 'หมดค้ำ',
+          warrantyRange: warrantyRangeText,
+        }}
+        submitting={false}
+        onClose={() => setOpenCase({ open: false, preselectId: null })}
+        onSubmit={handleOpenCaseSubmit}
+      />}
 
       {/* Global Project Info modal — opens from the ⓘ icon in the title bar. Reads project_id/road_id from Redux. */}
       <ProjectInfoModal />

@@ -36,6 +36,22 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
 
 export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
 
+/** Each system's navbar menu path (configs/menu/admin.ts) — the root every one
+ *  of that menu's pages sits under. */
+export const SYSTEM_MENU_PATH: Record<SystemType, string> = {
+  CCTV: "/admin/cctv",
+  Counting: "/admin/traffic-volume",
+  Analytic: "/admin/incident-detection",
+  Traffic: "/admin/traffic-signal",
+  CrossWalk: "/admin/crosswalk",
+  Lighting: "/admin/traffic-lighting",
+  VMS: "/admin/vms",
+  BridgeLighting: "/admin/bridge-lighting",
+  Tunnel: "/admin/tunnel",
+  WIM: "/admin/tracking",
+  LPR: "/admin/lpr",
+}
+
 /**
  * Bright variant of each system color — same hue as `SYSTEMS[type].color` but
  * lightened for readability on the dark map. Use for map-popup borders + the
@@ -53,6 +69,13 @@ export const SYSTEM_BRIGHT: Record<SystemType, string> = {
   VMS: "#FF9F45", // ← #874600
   BridgeLighting: "#FF6B57", // ← #871000
   Tunnel: "#B57BFF", // ← #4D0087
-  WIM: "#E879DE", // ← #70196D
+  // Hot magenta since 2026-09-24 (user pick). The old #E879DE sat between
+  // Tunnel and LPR and read as either (ΔE2000 12.5 / 10.0); #FF1FF2 keeps the
+  // hue at ~15 from both. Keep DEVICE_BADGE.wim_camera in step.
+  WIM: "#FF1FF2", // ← #70196D
   LPR: "#FF6FB5", // ← #87004D
 }
+
+/** Map popups keep WIM's original bright tone — only the chips and the
+ *  dashboard ratio chart moved to the new WIM colour (user 2026-09-24). */
+export const MAP_BRIGHT: Record<SystemType, string> = { ...SYSTEM_BRIGHT, WIM: "#E879DE" }

@@ -23,8 +23,12 @@ export interface ContractorUser {
 // ── GET /manage/contractor ───────────────────────────────────────────────────
 
 export interface APIResponseContractor {
-  /** Primary key. UUID. */
+  /** The contractor's LOGIN user id. ⚠ Not this row's own key — that is
+   *  `contractor_id` below. A project's `contractor_id` holds THIS value. */
   user_id: string
+  /** tbl_contractors primary key — what a maintenance case's `contractor_id`
+   *  column references (sending the user id there fails the FK). */
+  contractor_id?: string
   company_name: string
   short_name: string
   address: string | null

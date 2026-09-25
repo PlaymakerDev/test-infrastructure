@@ -41,6 +41,15 @@ export const theme: ConfigProviderProps = {
         colorText: "var(--white)",
         colorSplit: "var(--white)",
       },
+      Image: {
+        // Same trap as Tooltip below: the global colorTextLightSolid is dark
+        // (it's meant for text on the yellow primary button), but the image
+        // preview always renders over a near-black overlay. Every affordance
+        // there derives from this token — the hover cover label, the close
+        // button and previewOperationColor (the toolbar icons) — so they all
+        // came out black-on-black.
+        colorTextLightSolid: "#FFFFFF",
+      },
       Input: {
         // DEFAULT
         colorBorder: "var(--yellow)",

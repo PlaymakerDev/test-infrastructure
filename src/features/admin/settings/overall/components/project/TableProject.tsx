@@ -42,7 +42,7 @@ const TableProject: React.FC<Props> = ({ onEdit, onDelete, scrollY }) => {
 
   const goToDetail = useCallback(
     (project: Project) => {
-      router.push(`/admin/settings/detail/project?id=${project.id}`)
+      router.push(`/admin/settings/detail/project/${project.id}`)
     },
     [router],
   )

@@ -171,9 +171,16 @@ export const manageKeys = {
     /** GET /solution/type/{solution_location_id} — task type presence + counts. */
     typesAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'types-at-location', solutionLocationId] as const,
-    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location. */
+    /** GET /solution/camera/list/{solution_location_id} — CCTVs at a location.
+     *  Point-scoped: this is what the Counting/Analytic/Crosswalk/WIM camera
+     *  pickers read. For the whole road use camerasAtProjectRoad below. */
     camerasAtLocation: (solutionLocationId: number | string) =>
       [...manageKeys.solutions.all, 'cameras-at-location', solutionLocationId] as const,
+    /** GET /solution/camera/by_project_road/{project_road_id} — the road's one
+     *  CCTV solution plus every camera under it, each tagged with its own
+     *  install point. Backs the road-level อุปกรณ์ CCTV panel. */
+    camerasAtProjectRoad: (projectRoadId: number | string) =>
+      [...manageKeys.solutions.all, 'cameras-at-project-road', projectRoadId] as const,
     /** GET /solution/camera/vms/{solution_id} */
     vmsCameras: (solutionId: number | string) =>
       [...manageKeys.solutions.all, 'vms-cameras', solutionId] as const,
@@ -201,14 +208,21 @@ export const manageKeys = {
     all: ['manage', 'notifications'] as const,
     summary: (params: { start_date: string; end_date: string }) =>
       [...manageKeys.notifications.all, 'summary', params] as const,
-    /** Prefix for every camera-outage read — invalidate this after mark-read. */
-    cameraOutage: () =>
-      [...manageKeys.notifications.all, 'camera-outage'] as const,
-    /** Bell badge — unread_only&limit=1 poll; value lives in meta_data.count. */
-    cameraOutageBadge: () =>
-      [...manageKeys.notifications.cameraOutage(), 'badge'] as const,
+    /** Prefix for the whole bell feed — invalidate this after mark-read. */
+    feed: () => [...manageKeys.notifications.all, 'feed'] as const,
+    /** Bell badge, one per kind — unread_only&limit=1 poll; the value lives in
+     *  meta_data.count. Cases and camera outages are counted apart because
+     *  the bell shows them as two numbers. */
+    feedBadge: (kind: 'case' | 'camera_outage') =>
+      [...manageKeys.notifications.feed(), 'badge', kind] as const,
     /** Panel list (infinite, page-keyed inside the query itself). */
-    cameraOutageList: (params: Record<string, unknown>) =>
-      [...manageKeys.notifications.cameraOutage(), 'list', params] as const,
+    feedList: (params: Record<string, unknown>) =>
+      [...manageKeys.notifications.feed(), 'list', params] as const,
+  },
+
+  // GET /feature-updates/:feature — the "ระบบปรับปรุง" notice, one key per menu.
+  featureUpdates: {
+    all: ['manage', 'feature-updates'] as const,
+    byFeature: (feature: string) => [...manageKeys.featureUpdates.all, feature] as const,
   },
 } as const

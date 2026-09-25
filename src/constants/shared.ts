@@ -30,7 +30,11 @@ export const SOLUTION_TYPE = {
   "3": "Incident Detection",
   "4": "Traffic Signal",
   "5": "Crosswalk",
-  "6": "Traffic Lighting",
+  // Display renamed Lighting → Street Light 2026-08-31 (customer request).
+  // This map was the last user-facing spot still saying "Traffic Lighting";
+  // the menu, dashboard and every maintenance surface already say Street
+  // Light. Backend names (`solution_name`, RBAC keys, routes) are untouched.
+  "6": "Street Light",
   "7": "VMS",
   "8": "Tunnel",
   "9": "Tracking",

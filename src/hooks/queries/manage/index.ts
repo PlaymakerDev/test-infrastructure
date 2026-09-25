@@ -50,11 +50,14 @@ export { useSsoSearch } from './useSsoSearch'
 export { useNotificationSummary } from './useNotificationSummary'
 // Per-source aggregate over an explicit date range (Statistics overview/status).
 export { useNotificationsSummary } from './useNotificationsSummary'
+// Bell feed — camera outages + maintenance cases in one list.
 export {
-  useCameraOutageBadge,
-  useCameraOutageListInfinite,
-  useMarkCameraOutageRead,
-} from './useCameraOutageNotifications'
+  FEED_WINDOW_HOURS,
+  useMarkNotificationFeedRead,
+  useNotificationFeedBadges,
+  useNotificationFeedInfinite,
+} from './useNotificationFeed'
+export { useFeatureUpdates, type FeatureUpdatesResult } from './useFeatureUpdates'
 
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
@@ -63,6 +66,9 @@ export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'
 export { useCreateProjectSolution } from './useCreateProjectSolution'
 export { useUpdateProjectSolution } from './useUpdateProjectSolution'
 export { useDeleteProjectSolution } from './useDeleteProjectSolution'
+
+// Detail-header fallback — สายทาง for a solution with no equipment attached yet
+export { useSolutionRoadFallback } from './useSolutionRoadFallback'
 
 // Project detail — road_solution / solution / cameras / equipments
 export {

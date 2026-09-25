@@ -5,22 +5,21 @@ import dayjs from 'dayjs'
 export const isRealTimestamp = (value: string | null | undefined): boolean =>
   !!value && !value.startsWith('0001-01-01')
 
-/** Days a device has been unreachable, derived from `curl_updated_at` (the last
- *  time a health check actually succeeded) against now.
+/** Days a device has been unreachable.
  *
- *  The maintenance history endpoint returns `offline_days: 0` for every case —
- *  it never computes the field — so the count has to come from the timestamp.
- *  A device that came back online carries a fresh `curl_updated_at`, which makes
- *  this naturally read 0 again; no separate online/offline flag is needed.
- *
- *  `fallback` is used when the timestamp is missing or is the Go zero value, so
- *  a backend that does start populating `offline_days` wins automatically. */
+ *  `backendDays` (history's `offline_days`) wins whenever it is a real count:
+ *  the 2026-09-16 backend release started computing it, and it is the only
+ *  trustworthy source — `curl_updated_at` marks the last health CHECK, which
+ *  keeps moving while a device stays offline, so deriving from it reads 0 for
+ *  everything. The timestamp is still the fallback for endpoints that ship no
+ *  day count at all (the solution list and a case's `cameras[]`). */
 export const offlineDaysSince = (
   curlUpdatedAt: string | null | undefined,
-  fallback = 0,
+  backendDays = 0,
 ): number => {
-  if (!isRealTimestamp(curlUpdatedAt)) return fallback
+  if (backendDays > 0) return backendDays
+  if (!isRealTimestamp(curlUpdatedAt)) return backendDays
   const lastSeen = dayjs(curlUpdatedAt)
-  if (!lastSeen.isValid()) return fallback
+  if (!lastSeen.isValid()) return backendDays
   return Math.max(0, dayjs().diff(lastSeen, 'day'))
 }
