@@ -57,6 +57,7 @@ export {
   useNotificationFeedBadges,
   useNotificationFeedInfinite,
 } from './useNotificationFeed'
+export { useFeatureUpdates, type FeatureUpdatesResult } from './useFeatureUpdates'
 
 // Project detail — camera CRUD (via /cctv/cameras)
 export { useCreateCamera, useDeleteCamera, useUpdateCamera } from './camera'

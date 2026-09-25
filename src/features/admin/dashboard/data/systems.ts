@@ -36,6 +36,22 @@ export const SYSTEMS: Record<SystemType, { color: string; label: string; icon: s
 
 export const SYSTEM_TYPES = Object.keys(SYSTEMS) as SystemType[]
 
+/** Each system's navbar menu path (configs/menu/admin.ts) — the root every one
+ *  of that menu's pages sits under. */
+export const SYSTEM_MENU_PATH: Record<SystemType, string> = {
+  CCTV: "/admin/cctv",
+  Counting: "/admin/traffic-volume",
+  Analytic: "/admin/incident-detection",
+  Traffic: "/admin/traffic-signal",
+  CrossWalk: "/admin/crosswalk",
+  Lighting: "/admin/traffic-lighting",
+  VMS: "/admin/vms",
+  BridgeLighting: "/admin/bridge-lighting",
+  Tunnel: "/admin/tunnel",
+  WIM: "/admin/tracking",
+  LPR: "/admin/lpr",
+}
+
 /**
  * Bright variant of each system color — same hue as `SYSTEMS[type].color` but
  * lightened for readability on the dark map. Use for map-popup borders + the

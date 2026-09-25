@@ -219,4 +219,10 @@ export const manageKeys = {
     feedList: (params: Record<string, unknown>) =>
       [...manageKeys.notifications.feed(), 'list', params] as const,
   },
+
+  // GET /feature-updates/:feature — the "ระบบปรับปรุง" notice, one key per menu.
+  featureUpdates: {
+    all: ['manage', 'feature-updates'] as const,
+    byFeature: (feature: string) => [...manageKeys.featureUpdates.all, feature] as const,
+  },
 } as const

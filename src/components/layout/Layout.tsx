@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { PageProvider } from '../provider/ContextProvider';
+import SystemMaintenanceNotice from '../system-notice/SystemMaintenanceNotice';
 import { usePathname } from 'next/navigation';
 
 interface Props {
@@ -19,6 +20,7 @@ const Layout: React.FC<Props> = (props) => {
         <Navbar />
       </Suspense>
       <Sidebar />
+      <SystemMaintenanceNotice />
       <main className={`h-screen w-screen ${isDashboard ? '' : 'pt-(--nav-offset)'}`}>
         {children}
       </main>

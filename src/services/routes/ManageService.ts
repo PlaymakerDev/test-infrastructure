@@ -61,6 +61,7 @@ import {
   NotificationFeedParams,
 } from '@/types/manage/notification-api'
 import { APIResponseRoadList } from '@/types/shared'
+import type { APIResponseFeatureUpdates } from '@/types/manage/feature-update-api'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
 // keys whose value is undefined / null / empty-string. Mirrors the
@@ -378,6 +379,14 @@ export const markNotificationFeedReadAPI = (body: APIRequestMarkFeedRead) =>
     url: '/manage/notifications/feed/read',
     method: 'POST',
     data: body,
+  })
+
+/** GET /manage/feature-updates/:feature — active notices for one feature key
+ *  (a menu's URL segment, e.g. `lpr`), newest first; [] when there are none. */
+export const getFeatureUpdatesAPI = (feature: string) =>
+  ApiService.fetchData<APIResponseFeatureUpdates>({
+    url: `/manage/feature-updates/${encodeURIComponent(feature)}`,
+    method: 'GET',
   })
 
 // DOWNLOAD
