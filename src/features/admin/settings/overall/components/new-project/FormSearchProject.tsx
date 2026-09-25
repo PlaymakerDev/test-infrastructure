@@ -1,5 +1,5 @@
 import { useBudgetYears, useDepartments, useProjectContractors } from '@/hooks/queries/manage'
-import { useAppDispatch } from '@/stores/hooks'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Col, ConfigProvider, Input, Row, Segmented, Select } from 'antd'
@@ -7,6 +7,7 @@ import React, { useCallback, useRef } from 'react'
 import dayjs from 'dayjs'
 import { Controller, useForm } from 'react-hook-form'
 import { TbPrinter, TbSearch } from 'react-icons/tb'
+import { isAdmin } from '@/utils/isAdmin'
 
 export interface ProjectSearchFormValues {
   /** Numeric — MUST match budgetYears' element type (useBudgetYears returns
@@ -31,6 +32,8 @@ const FormSearchProject: React.FC<Props> = (props) => {
   const dispatch = useAppDispatch()
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { info } = useAppSelector(state => state.auth)
+  const isAdminUser = isAdmin(info)
 
   const { data: budgetYears, isLoading: byLoading } = useBudgetYears()
   const { data: departments, isLoading: deptLoading } = useDepartments()
@@ -193,19 +196,21 @@ const FormSearchProject: React.FC<Props> = (props) => {
             }}
           />
         </Col>
-        <Col xs={24} sm={24} md={5} lg={4} xl={3} xxl={2} xxxl={2}>
-          <Button
-            block
-            htmlType="button"
-            type='primary'
-            size="large"
-            icon={<PlusOutlined />}
-            shape='round'
-            onClick={onOpenCreateProjectModal}
-          >
-            <p className='fs-12 whitespace-nowrap'>เพิ่มโครงการ</p>
-          </Button>
-        </Col>
+        {isAdminUser && (
+          <Col xs={24} sm={24} md={5} lg={4} xl={3} xxl={2} xxxl={2}>
+            <Button
+              block
+              htmlType="button"
+              type='primary'
+              size="large"
+              icon={<PlusOutlined />}
+              shape='round'
+              onClick={onOpenCreateProjectModal}
+            >
+              <p className='fs-12 whitespace-nowrap'>เพิ่มโครงการ</p>
+            </Button>
+          </Col>
+        )}
         <Col xs={24} sm={24} md={5} lg={3} xl={2} xxl={2} xxxl={2}>
           <Segmented
             block

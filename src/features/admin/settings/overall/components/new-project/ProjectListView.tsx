@@ -1,4 +1,4 @@
-import { useAppDispatch } from '@/stores/hooks';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { APIResponseProjectList, ProjectListData } from '@/types/manage/project-api';
 import { Empty, Table, TableProps, Tooltip } from 'antd';
@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback } from 'react'
 import StatusBadge from '../project/StatusBadge';
 import { TbPencilMinus, TbTrash } from 'react-icons/tb';
+import { isAdmin } from '@/utils/isAdmin';
 
 interface Props {
   data?: APIResponseProjectList
@@ -19,6 +20,8 @@ const ProjectListView: React.FC<Props> = (props) => {
   const { data, isLoading, isError, onTableChange } = props
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { info } = useAppSelector(state => state.auth)
+  const isAdminUser = isAdmin(info)
 
   const onOpenProjectModal = useCallback((data: ProjectListData, type: 'UPDATE' | 'DELETE') => {
     dispatch(setProjectModalOpen({ open: true, type, data }))
@@ -138,12 +141,14 @@ const ProjectListView: React.FC<Props> = (props) => {
     },
   ];
 
+  const userColumns = columns.filter(col => col.key !== 'project_no').filter(col => col.key !== 'action')
+
   if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
   return (
     <Table<ProjectListData>
       rowKey={"id"}
-      columns={columns}
+      columns={isAdminUser ? columns : userColumns}
       dataSource={data?.res_data || []}
       loading={isLoading}
       pagination={{

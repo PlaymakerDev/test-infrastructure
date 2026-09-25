@@ -2,6 +2,9 @@ import { APIResponseProjectList, ProjectDepartmentData } from '@/types/manage/pr
 import { Empty, Pagination, Skeleton } from 'antd'
 import React, { useMemo } from 'react'
 import ProjectCard from './ProjectCard'
+import { useAppSelector } from '@/stores/hooks'
+import { isAdmin } from '@/utils/isAdmin'
+import { is } from 'zod/v4/locales'
 
 interface Props {
   /** The fetched project list — owned/fetched by CollapseDeptCard (same
@@ -19,6 +22,8 @@ interface Props {
 
 const ProjectCardList: React.FC<Props> = (props) => {
   const { data, item: dptData, page, limit, isLoading, isError, handlePageChange } = props
+  const { info } = useAppSelector(state => state.auth)
+  const isAdminUser = isAdmin(info)
 
   const renderCardList = useMemo(() => {
     return data?.res_data.map((row) => {
@@ -27,10 +32,11 @@ const ProjectCardList: React.FC<Props> = (props) => {
           key={row.id}
           data={dptData}
           item={row}
+          canEdit={isAdminUser}
         />
       )
     })
-  }, [data, dptData])
+  }, [data, dptData, isAdminUser])
 
   if (isLoading) return <Skeleton loading={true} active paragraph={{ rows: 4 }} />
 

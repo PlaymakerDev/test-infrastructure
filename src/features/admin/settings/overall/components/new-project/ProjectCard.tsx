@@ -11,10 +11,11 @@ import { TbCalendarWeekFilled, TbHourglassHigh, TbPencilMinus, TbTrash } from 'r
 interface Props {
   data?: ProjectDepartmentData
   item?: ProjectListData
+  canEdit?: boolean
 }
 
 const ProjectCard: React.FC<Props> = (props) => {
-  const { data, item } = props
+  const { data, item, canEdit } = props
   const router = useRouter()
   const dispatch = useAppDispatch()
 
@@ -70,18 +71,20 @@ const ProjectCard: React.FC<Props> = (props) => {
           >
             {item?.department.department_short_name || '-'}
           </span>
-          <div className='flex items-center gap-2 shrink-0'>
-            <TbPencilMinus
-              className='fs-22 text-orange-300 cursor-pointer'
-              title='แก้ไขข้อมูลโครงการ'
-              onClick={() => onOpenProjectModal('UPDATE')}
-            />
-            <TbTrash
-              className='fs-22 text-red-500 cursor-pointer'
-              title='ลบโครงการ'
-              onClick={() => onOpenProjectModal('DELETE')}
-            />
-          </div>
+          {canEdit && (
+            <div className='flex items-center gap-2 shrink-0'>
+              <TbPencilMinus
+                className='fs-22 text-orange-300 cursor-pointer'
+                title='แก้ไขข้อมูลโครงการ'
+                onClick={() => onOpenProjectModal('UPDATE')}
+              />
+              <TbTrash
+                className='fs-22 text-red-500 cursor-pointer'
+                title='ลบโครงการ'
+                onClick={() => onOpenProjectModal('DELETE')}
+              />
+            </div>
+          )}
         </div>
       </section>
       <section className='mt-3'>
