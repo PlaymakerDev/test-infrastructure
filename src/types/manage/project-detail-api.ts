@@ -81,8 +81,17 @@ export interface RoadSolutionList {
   project_road_id: number
   project_id: number
   road_id: number
+  /** Always an array — `getRoadSolutionAPI` fills in `[]` for the roads the
+   *  backend sends without it (see `RoadSolutionListRaw`). */
   solution_locations: SolutionLocation[]
   road: Road
+}
+
+/** A road as GET /manage/solution/road_solution actually sends it: one with no
+ *  จุดติดตั้ง arrives with the `solution_locations` key left out entirely — not
+ *  `[]`, not `null`. Only `getRoadSolutionAPI` should see this shape. */
+export type RoadSolutionListRaw = Omit<RoadSolutionList, 'solution_locations'> & {
+  solution_locations?: SolutionLocation[] | null
 }
 
 export interface SolutionLocation {

@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { getProjectByIDAPI, getRoadSolutionAPI } from '@/services/routes/ProjectDetailService'
 import { useProjectContractors } from '@/hooks/queries/manage'
+import { useUserRole } from '@/hooks/useUserRole'
 import type { ProjectListData } from '@/types/manage/project-api'
 import { isAdmin } from '@/utils/isAdmin'
 import { useProjectContext } from '../context'
@@ -19,11 +20,14 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
   const { } = props
   const dispatch = useAppDispatch()
   const { id, roadSolution } = useProjectContext()
-  // Adding a road and deleting the project both change the project (the add
-  // form also shows รหัสโครงการ) — offered to the same viewers the settings
-  // table shows its pencil / trash icons to.
+  // Deleting the project is offered to the same viewers the settings table
+  // shows its trash icon to. Adding a road is also open to a central-office
+  // admin (general_user.role 'admin', e.g. drr), whom isAdmin doesn't cover —
+  // the backend lets every role but 'user' add one.
   const { info } = useAppSelector((state) => state.auth)
-  const canEditProject = isAdmin(info)
+  const { isAdmin: isAdminRole } = useUserRole()
+  const canDeleteProject = isAdmin(info)
+  const canAddRoad = canDeleteProject || isAdminRole
 
   // Same queries (and cache entries) as TitleSection. A project the viewer may
   // not open comes back as [] rather than an error.
@@ -37,7 +41,8 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
     queryFn: () => getRoadSolutionAPI({ project_id: String(id) }),
     enabled: !!id,
   })
-  const { data: contractors } = useProjectContractors({ enabled: canEditProject })
+  // Only the delete dialog reads it (for the contractor's company name).
+  const { data: contractors } = useProjectContractors({ enabled: canDeleteProject })
 
   const project = projectRes?.data?.id != null ? projectRes.data : null
   const roads = Array.isArray(roadsRes?.data) ? roadsRes.data : []
@@ -80,8 +85,8 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
         <div className='p-5 rounded-lg border-2 border-(--default-blue)'>
           <div className='flex flex-col items-center justify-center gap-3 my-6'>
             <TbRoad className='fs-36 text-(--default-blue)' />
-            <p className='fs-12'>{canEditProject ? 'กรุณาเพิ่มสายทาง ภายในโครงการนี้' : 'ยังไม่มีสายทางในโครงการนี้'}</p>
-            {canEditProject && (
+            <p className='fs-12'>{canAddRoad ? 'กรุณาเพิ่มสายทาง ภายในโครงการนี้' : 'ยังไม่มีสายทางในโครงการนี้'}</p>
+            {canAddRoad && (
               <Button
                 type='primary'
                 shape='round'
@@ -94,7 +99,7 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
           </div>
         </div>
       </section>
-      {canEditProject && !hasInstallPoints && (
+      {canDeleteProject && !hasInstallPoints && (
         <section className='mt-5'>
           <div className='p-5 rounded-lg border-2 border-(--default-red)'>
             <div className='flex flex-col items-center justify-center gap-3 my-6'>

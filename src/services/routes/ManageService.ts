@@ -28,6 +28,7 @@ import type {
   APIRequestProjectDepartment,
   APIResponseProjectDepartment,
 } from '@/types/manage/project-api'
+import type { UploadResponse } from '@/types/shared'
 import type {
   APIResponseContractor,
   APIResponseContractorListEnvelope,
@@ -127,6 +128,16 @@ export const updateProjectAPI = (body: APIRequestProjectUpdate) => {
     data: rest,
   })
 }
+
+/** "เอกสารเชื่อมต่อระบบ" PDF upload — `full_url` makes `path` an absolute URL,
+ *  stored as-is in `contract_document[].document_url`. */
+export const postUploadProjectDocumentAPI = (form: FormData) =>
+  ApiService.fetchData<UploadResponse, FormData>({
+    url: '/upload/project',
+    method: 'POST',
+    data: form,
+    params: { full_url: true },
+  })
 
 export const deleteProjectAPI = (id: number) =>
   ApiService.fetchData<void>({

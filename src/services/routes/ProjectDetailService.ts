@@ -1,4 +1,4 @@
-import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseProjectRoadCameras, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation } from "@/types/manage/project-detail-api";
+import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseProjectRoadCameras, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation, RoadSolutionListRaw } from "@/types/manage/project-detail-api";
 import ApiService from "../ApiService";
 
 export const getProjectByIDAPI = (id: string | number) =>
@@ -7,12 +7,28 @@ export const getProjectByIDAPI = (id: string | number) =>
     method: 'GET',
   })
 
+/** The backend leaves `solution_locations` out of a road that has no
+ *  จุดติดตั้ง, and the project detail page reads it as an array everywhere
+ *  (the next point's name, the tabs, the CCTV panel) — a missing one crashed
+ *  the whole page, e.g. right after deleting a road's last point. Anything
+ *  but an array becomes `[]`, and a body that isn't an array becomes no roads. */
+export const normalizeRoadSolutions = (rows: unknown): APIResponseRoadSolution =>
+  Array.isArray(rows)
+    ? rows.map((row: RoadSolutionListRaw) => ({
+        ...row,
+        solution_locations: Array.isArray(row.solution_locations) ? row.solution_locations : [],
+      }))
+    : []
+
+// Normalized here rather than at each reader: TitleSection and
+// EmptyRoadSolution share the ['roadSolution', id] cache entry, so both must
+// get the same shape back — still the AxiosResponse, only `data` is fixed up.
 export const getRoadSolutionAPI = (params: APIRequestRoadSolution) =>
-  ApiService.fetchData<APIResponseRoadSolution, APIRequestRoadSolution>({
+  ApiService.fetchData<RoadSolutionListRaw[], APIRequestRoadSolution>({
     url: `/manage/solution/road_solution`,
     method: 'GET',
     params
-  })
+  }).then((res) => ({ ...res, data: normalizeRoadSolutions(res.data) }))
 
 export const getSolutionAPI = (params: APIRequestSolution) =>
   ApiService.fetchData<APIResponseSolution, APIRequestSolution>({

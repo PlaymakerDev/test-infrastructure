@@ -23,6 +23,7 @@ import {
 } from '../components'
 import ModalCreateProject from '@/features/admin/settings/overall/components/new-project/ModalCreateProject'
 import ModalConfirmDeleteProject from '@/features/admin/settings/overall/components/new-project/ModalConfirmDelete'
+import { ProjectInfoModal } from '@/components/modal'
 
 interface Props {
   id?: string | string[]
@@ -93,6 +94,7 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <ModalConfirmDeleteProject onDelete={onDeleteProject} isPending={isDeletePending} />
       {/* Last, so the viewer stacks above the equipment modals that open it. */}
       <ModalLiveStream />
+      <ProjectInfoModal />
     </ProjectProvider>
   )
 }
