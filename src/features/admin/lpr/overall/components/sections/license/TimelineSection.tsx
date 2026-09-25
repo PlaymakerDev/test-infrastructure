@@ -77,11 +77,11 @@ const TimelineSection: React.FC = () => {
     return isWimOnly || isWimType
       ? [vehicleTypeCard]
       : [
-          { label: 'ประเภทป้ายทะเบียน', value: clean(m?.plate_type) },
-          vehicleTypeCard,
-          { label: 'ยี่ห้อ', value: clean(m?.vehicle_brand) },
-          { label: 'สียานพาหนะ', value: clean(m?.vehicle_color) },
-        ]
+        { label: 'ประเภทป้ายทะเบียน', value: clean(m?.plate_type) },
+        vehicleTypeCard,
+        { label: 'ยี่ห้อ', value: clean(m?.vehicle_brand) },
+        { label: 'สียานพาหนะ', value: clean(m?.vehicle_color) },
+      ]
   }, [detail, isWimOnly])
 
   // ── Export (PDF only — timeline report, no Excel per spec) ────────────────

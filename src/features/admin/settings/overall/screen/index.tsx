@@ -1,5 +1,6 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Result, Spin } from 'antd'
 import { useUserRole } from '@/hooks/useUserRole'
 import {
@@ -10,10 +11,21 @@ import {
   NewRoadSection,
 } from '../components'
 import { OverallProvider } from '../context'
-import { allowedSettingsTabs, type SettingsTab } from '../data/tabs'
+import { allowedSettingsTabs, SETTINGS_TAB_OPTIONS, type SettingsTab } from '../data/tabs'
+
+const isSettingsTab = (value: string | null): value is SettingsTab =>
+  SETTINGS_TAB_OPTIONS.some((o) => o.value === value)
 
 const SettingScreen = () => {
-  const [requestedTab, setRequestedTab] = useState<SettingsTab>('PROJECT')
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  // Seed from `?tab=` so back-navigation from a project detail page lands on
+  // the tab the user left from (mirrors tracking/overall's context).
+  const [requestedTab, setRequestedTabState] = useState<SettingsTab>(
+    isSettingsTab(tabParam) ? tabParam : 'PROJECT'
+  )
   const { role, isResolved } = useUserRole()
 
   const allowedTabs = useMemo(() => allowedSettingsTabs(role), [role])
@@ -24,6 +36,25 @@ const SettingScreen = () => {
   const currentTab: SettingsTab | undefined = allowedTabs.includes(requestedTab)
     ? requestedTab
     : allowedTabs[0]
+
+  const writeTabParam = useCallback((value: SettingsTab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (params.get('tab') === value) return
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [router, pathname, searchParams])
+
+  const setRequestedTab = useCallback((value: SettingsTab) => {
+    setRequestedTabState(value)
+    writeTabParam(value)
+  }, [writeTabParam])
+
+  // Bring `?tab=` back in line when the role clamp overrode what the URL asked
+  // for. Wait for the role to resolve — before that `allowedTabs` is the empty
+  // `user` set and `currentTab` is undefined.
+  useEffect(() => {
+    if (isResolved && currentTab && currentTab !== requestedTab) writeTabParam(currentTab)
+  }, [isResolved, currentTab, requestedTab, writeTabParam])
 
   const renderContent = useMemo(() => {
     switch (currentTab) {

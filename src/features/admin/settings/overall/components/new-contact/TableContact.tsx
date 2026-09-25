@@ -47,7 +47,7 @@ const TableContact: React.FC<Props> = (props) => {
       width: 500,
       onCell: (row) => {
         return {
-          onClick: () => router.push(`/admin/settings/detail/project?id=${row.id}`),
+          onClick: () => router.push(`/admin/settings/detail/project/${row.id}`),
           className: 'cursor-pointer hover:text-(--yellow) transition-colors duration-200'
         }
       },
