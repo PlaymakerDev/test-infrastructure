@@ -1,3 +1,25 @@
 export { default as TitleSection } from './TitleSection'
 export { default as OverallSection } from './OverallSection'
 export { default as DetectionSection } from './DetectionSection'
+
+// NEW OVERALL
+export { default as NewOverallSection } from './NewOverallSection'
+export { default as ChartLicenseDetection } from './sections/new-overall/ChartLicenseDetection'
+export { default as ChartLicensePerCam } from './sections/new-overall/ChartLicensePerCam'
+export { default as ContentCard } from './sections/new-overall/ContentCard'
+export { default as ContentCCTV } from './sections/new-overall/ContentCCTV'
+export { default as ContentChart } from './sections/new-overall/ContentChart'
+export { default as ContentLicenseDetail } from './sections/new-overall/ContentLicenseDetail'
+export { default as ContentMap } from './sections/new-overall/ContentMap'
+export { default as DataDisplaySection } from './sections/new-overall/DataDisplaySection'
+export { default as ModalLicenseDetail } from './sections/new-overall/ModalLicenseDetail'
+export { default as TableCCTVData } from './sections/new-overall/TableCCTVData'
+export { default as TableDailyLicenseData } from './sections/new-overall/TableDailyLicenseData'
+export { default as TableTop5DetectionData } from './sections/new-overall/TableTop5DetectionData'
+
+// DETECTION
+export { default as NewDetectionSection } from './NewDetectionSection'
+export { default as FormSearchDetection } from './sections/detection/FormSearchDetection'
+export { default as TableDetectionData } from './sections/detection/TableDetectionData'
+export { default as GridDetectionData } from './sections/detection/GridDetectionData'
+export { default as CardDetectionVehicle } from './sections/detection/CardDetectionVehicle'

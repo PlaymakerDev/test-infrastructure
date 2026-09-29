@@ -13,13 +13,22 @@ export interface BarConfig {
   label: string
 }
 
+/** A per-category color override for one bar value — use instead of a plain
+ *  number when each row needs its own color (a ranked/leaderboard list)
+ *  rather than one color per series. Falls back to the owning `BarConfig`'s
+ *  `color` when `color` is omitted here. */
+export interface BarChartColoredValue {
+  value: number
+  color?: string
+}
+
 export interface BarChartDataPoint {
   /** ชื่อบน X-axis รองรับ 2 บรรทัด โดยใช้ \n เช่น "จ.\n27/03" */
   label: string
   /** ข้อความหัว tooltip (option) — ใส่ field `tooltipLabel` ในจุดข้อมูลเพื่อ
    *  แทน label เช่นเวลาที่ซ้ำกันข้ามวันให้ระบุวันที่เต็มได้
    *  ("29 มิ.ย. 2569 19:00"). อ่านผ่าน index signature; default = label. */
-  [key: string]: string | number
+  [key: string]: string | number | BarChartColoredValue
 }
 
 export interface BarChartStat {
@@ -121,6 +130,21 @@ export interface BarChartProps {
    *  labels aren't clipped at the card edge ("10 ส.ค." losing its "1").
    *  Opt-in to avoid shifting existing charts' plot area. */
   xAxisContainLabel?: boolean
+
+  // ── Horizontal (ranked/leaderboard) mode ────────────────────────────────
+  /** `'vertical'` (default) draws bars exactly as before. `'horizontal'`
+   *  swaps the axes (category down the left, value along the bottom) and
+   *  adds a full-scale background track (`showBackground`) + an in-bar value
+   *  label — the ranked-comparison look (e.g. "per-camera today" lists).
+   *  When horizontal, every `xAxisLabel*` prop (fontSize/color/lineHeight/
+   *  fontFamily/width/maxWidth) controls the CATEGORY axis label instead
+   *  (it becomes the Y axis) — reusing the names rather than adding a
+   *  parallel set. `yAxisTicks`/`yAxisDomain` likewise control the VALUE
+   *  axis, which becomes the X axis. */
+  layout?: 'vertical' | 'horizontal'
+  /** Left gutter (px) reserved for the category axis labels — only applies
+   *  when `layout='horizontal'` (default 120). */
+  categoryAxisWidth?: number
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -161,6 +185,8 @@ const BarChart: React.FC<BarChartProps> = ({
   tooltipUnit,
   dataZoom = false,
   xAxisContainLabel = false,
+  layout = 'vertical',
+  categoryAxisWidth = 120,
 }) => {
   const [internalActivePeriod, setInternalActivePeriod] = useState(defaultPeriod ?? periods?.[0] ?? '')
   const activePeriod = controlledActivePeriod ?? internalActivePeriod
@@ -192,15 +218,31 @@ const BarChart: React.FC<BarChartProps> = ({
     // modes (it renders outside the grid, pinned to the card bottom).
     const labelLane = xAxisLabelRotate >= 60 ? 100 : xAxisLabelRotate ? 80 : 44
 
+    const isHorizontal = layout === 'horizontal'
+
+    // The category axis label — driven by the same `xAxisLabel*` props in
+    // both orientations (see the `layout` doc comment on why they're shared
+    // rather than duplicated per-axis).
+    const categoryAxisLabel = {
+      color: xAxisLabelColor,
+      fontSize: xAxisLabelFontSize,
+      lineHeight: xAxisLabelLineHeight,
+      ...(xAxisLabelFontFamily ? { fontFamily: xAxisLabelFontFamily } : {}),
+      ...(typeof xAxisLabelWidth === 'number' ? { width: xAxisLabelWidth } : {}),
+      ...(truncate ? { width: xAxisLabelMaxWidth, overflow: 'truncate' } : {}),
+    }
+
     return {
       backgroundColor: 'transparent',
-      grid: {
-        top: 16,
-        right: 8,
-        bottom: (xAxisContainLabel ? 6 : labelLane) + (zoomEnabled ? 30 : 0),
-        left: 40,
-        containLabel: xAxisContainLabel,
-      },
+      grid: isHorizontal
+        ? { top: 16, right: 24, bottom: 30, left: categoryAxisWidth, containLabel: false }
+        : {
+          top: 16,
+          right: 8,
+          bottom: (xAxisContainLabel ? 6 : labelLane) + (zoomEnabled ? 30 : 0),
+          left: 40,
+          containLabel: xAxisContainLabel,
+        },
       ...(zoomEnabled
         ? {
             dataZoom: [
@@ -222,38 +264,56 @@ const BarChart: React.FC<BarChartProps> = ({
             ],
           }
         : {}),
-      xAxis: {
-        type: 'category',
-        data: data.map((d) => d.label),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          color: xAxisLabelColor,
-          fontSize: xAxisLabelFontSize,
-          lineHeight: xAxisLabelLineHeight,
-          ...(xAxisLabelFontFamily ? { fontFamily: xAxisLabelFontFamily } : {}),
-          ...(typeof xAxisLabelWidth === 'number' ? { width: xAxisLabelWidth } : {}),
-          align: 'center',
-          // Force every label only when rotated (rotation is how we fit many
-          // labels); otherwise let ECharts auto-thin so dense time labels don't
-          // overlap into an unreadable blur. `hideOverlap` is the safety net.
-          interval: xAxisLabelRotate ? 0 : 'auto',
-          hideOverlap: true,
-          ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
-          ...(truncate ? { width: xAxisLabelMaxWidth, overflow: 'truncate' } : {}),
+      xAxis: isHorizontal
+        ? {
+          type: 'value',
+          min: yMin,
+          max: yMax,
+          ...(yInterval ? { interval: yInterval } : {}),
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: '#ffffff', fontSize: "var(--fs-12)" },
+          splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
+        }
+        : {
+          type: 'category',
+          data: data.map((d) => d.label),
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: {
+            ...categoryAxisLabel,
+            align: 'center',
+            // Force every label only when rotated (rotation is how we fit many
+            // labels); otherwise let ECharts auto-thin so dense time labels don't
+            // overlap into an unreadable blur. `hideOverlap` is the safety net.
+            interval: xAxisLabelRotate ? 0 : 'auto',
+            hideOverlap: true,
+            ...(xAxisLabelRotate ? { rotate: xAxisLabelRotate } : {}),
+          },
+          splitLine: { show: false },
         },
-        splitLine: { show: false },
-      },
-      yAxis: {
-        type: 'value',
-        min: yMin,
-        max: yMax,
-        ...(yInterval ? { interval: yInterval } : {}),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: '#ffffff', fontSize: "var(--fs-12)" },
-        splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
-      },
+      yAxis: isHorizontal
+        ? {
+          type: 'category',
+          // Keep the first data row on top, reading top-to-bottom like the
+          // source list, instead of ECharts' default bottom-up category order.
+          inverse: true,
+          data: data.map((d) => d.label),
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: categoryAxisLabel,
+          splitLine: { show: false },
+        }
+        : {
+          type: 'value',
+          min: yMin,
+          max: yMax,
+          ...(yInterval ? { interval: yInterval } : {}),
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: '#ffffff', fontSize: "var(--fs-12)" },
+          splitLine: { lineStyle: { color: '#1f2d3d', type: 'solid' } },
+        },
       tooltip: {
         trigger: 'axis',
         backgroundColor: '#1e2533',
@@ -280,13 +340,19 @@ const BarChart: React.FC<BarChartProps> = ({
             .map((p) => {
               const cfg = bars[p.seriesIndex]
               const value = Number(p.value)
+              // Per-row color override (see `BarChartColoredValue`) wins over
+              // the series' own color — everything else about the row
+              // (label, unit, %) stays series-driven as before.
+              const rawPoint = cfg ? dp?.[cfg.dataKey] : undefined
+              const color =
+                (rawPoint && typeof rawPoint === 'object' ? rawPoint.color : undefined) ?? cfg?.color
               const pct =
                 tooltipShowPercent && total > 0
                   ? ` <span style="color:rgba(255,255,255,0.5)">(${((value / total) * 100).toFixed(1)}%)</span>`
                   : ''
               return `<div style="display:flex;justify-content:space-between;gap:24px">
-                <span style="color:${cfg?.color};display:inline-flex;align-items:center;gap:6px;">
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cfg?.color};"></span>
+                <span style="color:${color};display:inline-flex;align-items:center;gap:6px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};"></span>
                   ${cfg?.label ?? p.seriesName}
                 </span>
                 <span style="color:#fff;font-weight:700">${value.toLocaleString()}${tooltipUnit ? ` ${tooltipUnit}` : ''}${pct}</span>
@@ -303,7 +369,15 @@ const BarChart: React.FC<BarChartProps> = ({
         // Only the last (top) series gets a top border-radius; the rest stay
         // square so segments meet cleanly.
         stack: stacked ? 'total' : undefined,
-        data: data.map((d) => d[bar.dataKey] ?? 0),
+        data: data.map((d) => {
+          const raw = d[bar.dataKey]
+          // Per-row color override — see `BarChartColoredValue`. Plain
+          // numbers (every existing consumer) pass through unchanged.
+          if (raw && typeof raw === 'object') {
+            return { value: raw.value, itemStyle: { color: raw.color ?? bar.color } }
+          }
+          return raw ?? 0
+        }),
         itemStyle: {
           color: barFill === 'gradient'
             ? {
@@ -317,15 +391,31 @@ const BarChart: React.FC<BarChartProps> = ({
             : bar.color,
           borderRadius: stacked
             ? idx === bars.length - 1
-              ? [3, 3, 0, 0]
+              ? (isHorizontal ? [0, 3, 3, 0] : [3, 3, 0, 0])
               : [0, 0, 0, 0]
-            : [3, 3, 0, 0],
+            : (isHorizontal ? [0, 3, 3, 0] : [3, 3, 0, 0]),
         },
         barMaxWidth: 32,
         barGap: '20%',
+        // Ranked/leaderboard look: a full-scale track behind the bar plus the
+        // value printed inside its end — see the `layout` doc comment.
+        ...(isHorizontal
+          ? {
+            showBackground: true,
+            backgroundStyle: { color: 'rgba(255,255,255,0.08)', borderRadius: [0, 3, 3, 0] },
+            label: {
+              show: true,
+              position: 'insideRight',
+              color: '#0d0d0d',
+              fontWeight: 700,
+              fontSize: "var(--fs-12)",
+              formatter: (p: { value: number }) => Number(p.value).toLocaleString(),
+            },
+          }
+          : {}),
       })),
     }
-  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelFontSize, xAxisLabelLineHeight, xAxisLabelColor, xAxisLabelFontFamily, xAxisLabelWidth, xAxisLabelMaxWidth, dataZoom, xAxisContainLabel])
+  }, [data, bars, yAxisTicks, yAxisDomain, barFill, stacked, tooltipShowPercent, tooltipUnit, xAxisLabelRotate, xAxisLabelFontSize, xAxisLabelLineHeight, xAxisLabelColor, xAxisLabelFontFamily, xAxisLabelWidth, xAxisLabelMaxWidth, dataZoom, xAxisContainLabel, layout, categoryAxisWidth])
 
   return (
     <div

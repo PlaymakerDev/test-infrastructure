@@ -1,31 +1,47 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { TitleSection, OverallSection, DetectionSection } from '../components'
-import { DetailProvider } from '../context'
+import { TitleSection, OverallSection, NewOverallSection, ModalLicenseDetail, NewDetectionSection } from '../components'
+import { DetailProvider, useLPRDetailContext, type LPRDetailTab } from '../context'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 
-const LPRDetailScreen = () => {
-  const [currentTab, setCurrentTab] = useState('OVERALL')
+const LPRDetailContent = () => {
+  const { currentTab, setCurrentTab } = useLPRDetailContext()
 
   const content = useMemo(() => {
     switch (currentTab) {
       case 'OVERALL':
-        return <OverallSection onShowAllDetections={() => setCurrentTab('DETECTIONS')} />
+        // return <OverallSection onShowAllDetections={() => setCurrentTab('DETECTIONS')} />
+        return <NewOverallSection />
       case 'DETECTIONS':
-        return <DetectionSection />
+        // return <DetectionSection />
+        return <NewDetectionSection />
       default:
         return <OverallSection onShowAllDetections={() => setCurrentTab('DETECTIONS')} />
     }
-  }, [currentTab])
+  }, [currentTab, setCurrentTab])
 
   return (
-    <DetailProvider>
-      <div className='main-screen'>
-        <TitleSection currentTab={currentTab} setCurrentTab={setCurrentTab} />
-        <section className='mt-8 px-10 pb-8'>{content}</section>
-        <ProjectInfoModal />
-        <CCTVModal />
-      </div>
+    <div className='main-screen'>
+      <TitleSection />
+      <section className='mt-8 px-10 pb-8'>
+        {content}
+      </section>
+    </div>
+  )
+}
+
+const LPRDetailScreen = () => {
+  // Owned here (above DetailProvider) and handed in as props so the provider
+  // can expose it via context — any section nested under it can then read
+  // or switch tabs without prop-drilling through LPRDetailContent.
+  const [currentTab, setCurrentTab] = useState<LPRDetailTab>('OVERALL')
+
+  return (
+    <DetailProvider currentTab={currentTab} setCurrentTab={setCurrentTab}>
+      <LPRDetailContent />
+      <ProjectInfoModal />
+      <CCTVModal />
+      <ModalLicenseDetail />
     </DetailProvider>
   )
 }
