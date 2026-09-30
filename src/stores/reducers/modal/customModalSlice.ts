@@ -18,6 +18,11 @@ export interface CustomModalState {
   equipment_modal: EquipmentModalState
   live_stream_modal: LiveStreamModalState
   diagram_modal: DiagramModalState
+  license_detail_modal: LicenseDetailModalState
+}
+
+export interface LicenseDetailModalState {
+  open: boolean
 }
 
 export interface UserModalState {
@@ -140,6 +145,9 @@ const initialState: CustomModalState = {
   },
   diagram_modal: {
     open: false,
+  },
+  license_detail_modal: {
+    open: false,
   }
 }
 
@@ -215,6 +223,12 @@ const customModalSlice = createSlice({
     resetDiagramModalData: (state) => {
       state.diagram_modal = initialState.diagram_modal;
     },
+    setLicenseDetailModalOpen: (state, action) => {
+      state.license_detail_modal = action.payload;
+    },
+    resetLicenseDetailModalData: (state) => {
+      state.license_detail_modal = initialState.license_detail_modal;
+    },
   },
 })
 
@@ -241,6 +255,8 @@ export const {
   resetLiveStreamModalData,
   setDiagramModalOpen,
   resetDiagramModalData,
+  setLicenseDetailModalOpen,
+  resetLicenseDetailModalData,
 } = customModalSlice.actions
 
 export default customModalSlice.reducer

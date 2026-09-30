@@ -7,11 +7,10 @@ import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { useLPRDetailContext } from '../context'
 
 interface Props {
-  currentTab: string
-  setCurrentTab: (value: string) => void
 }
 
 const OPTIONS = [
+  // { label: 'ภาพรวม', value: 'OVERALL' },
   { label: 'ภาพรวม', value: 'OVERALL' },
   { label: 'รายการตรวจจับ', value: 'DETECTIONS' },
 ]
@@ -19,11 +18,11 @@ const OPTIONS = [
 /** Header for the LPR install-point detail page. Reuses `DetailTitleSection`
  *  so tabs / back / info / Google Map behave exactly like the other feature
  *  detail pages (traffic-signal, incident-detection, etc.). */
-const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
+const TitleSection: React.FC<Props> = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
-  const { point } = useLPRDetailContext()
+  const { currentTab, setCurrentTab, point } = useLPRDetailContext()
 
   const roadCode = point?.road_code ?? '-'
   const installPoint = point?.solution_name ?? '-'
@@ -60,7 +59,7 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
         options: OPTIONS,
         defaultActive: 'OVERALL',
         activeValue: currentTab,
-        onChange: setCurrentTab,
+        onChange: (value: string) => setCurrentTab(value as 'OVERALL' | 'DETECTIONS'),
       }}
     />
   )

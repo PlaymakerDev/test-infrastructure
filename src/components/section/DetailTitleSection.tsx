@@ -224,7 +224,7 @@ const DetailTitleSection: React.FC<DetailTitleSectionProps> = ({
         </div>
       </section>
       {tabs && (
-        <section className='mt-5 px-10'>
+        <section className='mt-5 lg:px-10'>
           <SwapButton
             options={tabs.options}
             defaultActive={tabs.defaultActive}
