@@ -6,6 +6,8 @@
  * Turn on with `?maptrace=1` in the URL (or `localStorage.maptrace = '1'`).
  * It records a mark per step, watches frame times while the camera moves, and
  * prints the step table when the map first goes idle.
+ *
+ * The two console outputs are commented out — uncomment them to measure again.
  */
 
 type Mark = { label: string; t: number; detail?: Record<string, unknown> }
@@ -42,9 +44,11 @@ let watching = false
 // DOM markers created/destroyed and viewport recomputes during one camera
 // move. Mount churn is invisible in a frame-time average but is exactly what
 // a fly-to across every zoom tier produces.
+/* eslint-disable @typescript-eslint/no-unused-vars -- read only by the commented-out report below */
 let mounts = 0
 let unmounts = 0
 let viewportRecalcs = 0
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 export function countMarkerMount(delta: 1 | -1): void {
   if (!traceOn()) return
@@ -74,16 +78,17 @@ export function watchFrames(map: MapLike): () => void {
   const onMoveStart = () => { frames = []; lastFrame = 0; mounts = 0; unmounts = 0; viewportRecalcs = 0 }
   const onMoveEnd = () => {
     if (frames.length < 5) return
-    const sorted = [...frames].sort((a, b) => a - b)
-    const p = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))]
-    const long = frames.filter((f) => f > 50).length
-    console.log(
-      `%c[map] move @z${map.getZoom().toFixed(1)}  frames ${frames.length}  ` +
-      `median ${p(0.5).toFixed(1)}ms  p95 ${p(0.95).toFixed(1)}ms  worst ${sorted[sorted.length - 1].toFixed(1)}ms  ` +
-      `>50ms: ${long} (${((long / frames.length) * 100).toFixed(0)}%)  ~${(1000 / p(0.5)).toFixed(0)} fps  ` +
-      `| markers +${mounts}/-${unmounts}  viewport recalc ${viewportRecalcs}`,
-      'color:#FCD116',
-    )
+    // Per-move frame report — uncomment to print.
+    // const sorted = [...frames].sort((a, b) => a - b)
+    // const p = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))]
+    // const long = frames.filter((f) => f > 50).length
+    // console.log(
+    //   `%c[map] move @z${map.getZoom().toFixed(1)}  frames ${frames.length}  ` +
+    //   `median ${p(0.5).toFixed(1)}ms  p95 ${p(0.95).toFixed(1)}ms  worst ${sorted[sorted.length - 1].toFixed(1)}ms  ` +
+    //   `>50ms: ${long} (${((long / frames.length) * 100).toFixed(0)}%)  ~${(1000 / p(0.5)).toFixed(0)} fps  ` +
+    //   `| markers +${mounts}/-${unmounts}  viewport recalc ${viewportRecalcs}`,
+    //   'color:#FCD116',
+    // )
   }
   map.on('render', onRender)
   map.on('movestart', onMoveStart)
@@ -108,18 +113,19 @@ export function dumpTraceSoon(ms = 15000): void {
 export function dumpTrace(): void {
   if (!traceOn() || dumped || marks.length === 0) return
   dumped = true
-  const t0 = marks[0].t
-  let prev = t0
-  const rows = marks.map((m) => {
-    const row = {
-      step: m.label,
-      'since start (ms)': Math.round(m.t - t0),
-      'took (ms)': Math.round(m.t - prev),
-      ...(m.detail ?? {}),
-    }
-    prev = m.t
-    return row
-  })
-  console.log('%c[map] ลำดับการโหลดแผนที่', 'color:#FCD116;font-weight:bold')
-  console.table(rows)
+  // Load-step table — uncomment to print.
+  // const t0 = marks[0].t
+  // let prev = t0
+  // const rows = marks.map((m) => {
+  //   const row = {
+  //     step: m.label,
+  //     'since start (ms)': Math.round(m.t - t0),
+  //     'took (ms)': Math.round(m.t - prev),
+  //     ...(m.detail ?? {}),
+  //   }
+  //   prev = m.t
+  //   return row
+  // })
+  // console.log('%c[map] ลำดับการโหลดแผนที่', 'color:#FCD116;font-weight:bold')
+  // console.table(rows)
 }
