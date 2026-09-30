@@ -1,5 +1,6 @@
 "use client"
 import type { Map as MapboxMap } from 'mapbox-gl'
+import { mark } from '../utils/mapTrace'
 
 /** The basemap's place-name layers, in the order Standard declares them. */
 const PLACE_LABEL_IDS = [
@@ -131,6 +132,18 @@ export function addThaiOnlyPlaceLabels(
   // The originals are already off (preloadThaiPlaceLabels). If not one copy
   // made it, give them back rather than leaving the map nameless.
   if (added.length === 0) cfg.setConfigProperty?.('basemap', 'showPlaceLabels', true)
+  else {
+    // The layers exist immediately; their tiles do not. That gap is what the
+    // trace needs to show.
+    const onData = () => {
+      let loaded = false
+      try { loaded = map.isSourceLoaded(SOURCE_ID) } catch { loaded = false }
+      if (!loaded) return
+      map.off('sourcedata', onData)
+      mark('label tiles loaded')
+    }
+    map.on('sourcedata', onData)
+  }
 
   return () => {
     try {

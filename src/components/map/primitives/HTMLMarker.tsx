@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import type { Marker as MapboxMarker, PopupOptions } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
 import { closeReactPopup, showReactPopup } from './popupHelper'
+import { countMarkerMount } from '../utils/mapTrace'
 
 export interface HTMLMarkerProps {
   /** [lng, lat] */
@@ -129,6 +130,7 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
 
     import('mapbox-gl').then(({ default: mb }) => {
       if (cancelled || !map || !elRef.current) return
+      countMarkerMount(1)
       marker = new mb.Marker({
         element: elRef.current,
         anchor,
@@ -142,6 +144,7 @@ const HTMLMarker: React.FC<HTMLMarkerProps> = ({
     return () => {
       cancelled = true
       el.removeEventListener('click', handleClick)
+      if (marker) countMarkerMount(-1)
       marker?.remove()
       markerRef.current = null
     }

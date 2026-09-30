@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import bboxOf from '@turf/bbox'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { loadGeoJsonOnce } from './geojsonCache'
+import { mark } from '../utils/mapTrace'
 
 /** One bureau polygon + precomputed centroid + bbox — matches the shape written
  *  by `tools/build_bureaus.mjs` into `public/data/th-bureaus.geojson`. */
@@ -55,6 +56,7 @@ async function loadOnce(): Promise<BureauFeature[]> {
         feature: f,
       }))
       cache = parsed
+      mark('bureau polygons ready', { bureaus: parsed.length })
       return parsed
     } finally {
       // Cleared on failure too — the old version only cleared on success, so

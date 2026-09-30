@@ -1,7 +1,12 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
+import { useChunkedReveal } from '../hooks/useChunkedReveal'
 import HTMLMarker from '../primitives/HTMLMarker'
+
+/** Stable identity so the chunked reveal doesn't restart every render. */
+const EMPTY: [string, DeptSummary][] = []
 
 export interface DeptSummary {
   /** Total devices in this ขทช./แขวง. */
@@ -46,28 +51,20 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
   zoomOnClick = 10.5,
   onSelect,
 }) => {
-  const { map, isLoaded } = useMap()
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    const update = () => {
-      const z = map.getZoom()
-      setVisible(z >= minZoom && z < hideAtZoom)
-    }
-    update()
-    map.on('zoom', update)
-    return () => {
-      map.off('zoom', update)
-    }
-  }, [map, isLoaded, minZoom, hideAtZoom])
+  const { map } = useMap()
+  const visible = useZoomTierVisible((z) => z >= minZoom && z < hideAtZoom)
+  const entries = useMemo(
+    () => Object.entries(summaries).filter(([, info]) => info && info.count > 0),
+    [summaries],
+  )
+  const shown = useChunkedReveal(visible ? entries : EMPTY)
 
   // Unmount rather than display:none — see the note in StchSummaryMarker.
   if (!visible) return null
 
   return (
     <>
-      {Object.entries(summaries).map(([idStr, info]) => {
+      {shown.map(([idStr, info]) => {
         const deptId = Number(idStr)
         if (!info || info.count === 0) return null
         const label = labels.get(deptId) ?? (deptId === 0 ? 'ส่วนกลาง' : `ขทช. #${deptId}`)

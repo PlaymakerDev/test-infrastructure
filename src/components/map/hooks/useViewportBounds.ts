@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { useMap } from './useMap'
+import { countViewportRecalc } from '../utils/mapTrace'
 
 /** [west, south, east, north] */
 export type Bounds = [number, number, number, number]
@@ -46,6 +47,7 @@ export const useViewportBounds = (pad = 1): Bounds | null => {
       // margin is what makes this quiet, so don't recompute while inside it.
       if (current && boundsContain(current, view)) return
       current = padBounds(view, pad)
+      countViewportRecalc()
       setBounds(current)
     }
 

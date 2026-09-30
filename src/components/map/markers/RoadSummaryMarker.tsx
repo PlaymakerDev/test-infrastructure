@@ -1,9 +1,14 @@
 "use client"
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { LngLatBoundsLike } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
+import { useChunkedReveal } from '../hooks/useChunkedReveal'
 import { useViewportBounds, inBounds } from '../hooks/useViewportBounds'
 import HTMLMarker from '../primitives/HTMLMarker'
+
+/** Stable identity so the chunked reveal doesn't restart every render. */
+const EMPTY: [string, RoadSummary][] = []
 
 export interface RoadSummary {
   /** Total devices on this road. */
@@ -43,21 +48,8 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
   suppressed = false,
   onSelect,
 }) => {
-  const { map, isLoaded } = useMap()
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    const update = () => {
-      const z = map.getZoom()
-      setVisible(z >= minZoom && z < hideAtZoom)
-    }
-    update()
-    map.on('zoom', update)
-    return () => {
-      map.off('zoom', update)
-    }
-  }, [map, isLoaded, minZoom, hideAtZoom])
+  const { map } = useMap()
+  const visible = useZoomTierVisible((z) => z >= minZoom && z < hideAtZoom)
 
   // There is one bubble per road nationwide, but this tier only shows between
   // z9 and z11.5 where the screen holds a province or two — so all but a few
@@ -79,11 +71,13 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
 
   // Unmount rather than display:none — see the note in StchSummaryMarker. This
   // is the tier that matters most: one marker per road with devices.
+  const shown = useChunkedReveal(visible && !suppressed ? nearby : EMPTY)
+
   if (!visible || suppressed) return null
 
   return (
     <>
-      {nearby.map(([idStr, info]) => {
+      {shown.map(([idStr, info]) => {
         const roadId = Number(idStr)
         return (
           <HTMLMarker

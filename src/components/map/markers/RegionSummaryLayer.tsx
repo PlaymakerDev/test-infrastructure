@@ -1,5 +1,5 @@
 "use client"
-import React, { createElement, useEffect, useMemo, useState } from 'react'
+import React, { createElement, useMemo } from 'react'
 import { SYSTEMS, type SystemType } from '@/features/admin/dashboard/data/systems'
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { SYSTEM_ICONS } from '../hooks/useDeviceIcon'
@@ -9,6 +9,8 @@ import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useBureauFeatures, isPointInBureau, findBureauAt } from '../hooks/useBureauFeatures'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
+import { useChunkedReveal } from '../hooks/useChunkedReveal'
 import HTMLMarker from '../primitives/HTMLMarker'
 
 // Same aggregation ladder cutoffs as the dashboard (ReactMap): สทช. bubbles
@@ -40,6 +42,11 @@ const stchShortLabel = (stch: number): string => {
   if (stch === 0) return 'ทช.ส่วนกลาง'
   return `สทช.${stch}`
 }
+
+type Summary = { count: number; centroid: [number, number] }
+/** Stable identities so the chunked reveal doesn't restart every render. */
+const EMPTY_STCH: [string, Summary][] = []
+const EMPTY_DEPT: [string, Summary][] = []
 
 interface Acc {
   count: number
@@ -85,7 +92,7 @@ interface Props {
  * shared hooks. Must render inside a `BaseMap`.
  */
 const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
-  const { map, isLoaded } = useMap()
+  const { map } = useMap()
   const deptId = useDeptId()
   const isLpr = type === 'LPR'
   // Both hooks are cache-shared with the dashboard; the unused one is disabled.
@@ -148,20 +155,22 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
     return { stchSummaries: stch, deptSummaries: dept }
   }, [type, isLpr, position, lprPoints, bureauFeatures])
 
-  // Which tier shows — tracks zoom exactly like the dashboard's summary tiers.
-  const [tier, setTier] = useState<'stch' | 'dept' | 'none'>('stch')
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    const update = () => {
-      const z = map.getZoom()
-      setTier(z < STCH_HIDE_ZOOM ? 'stch' : z < DEPT_HIDE_ZOOM ? 'dept' : 'none')
-    }
-    update()
-    map.on('zoom', update)
-    return () => {
-      map.off('zoom', update)
-    }
-  }, [map, isLoaded])
+  // Which tier shows — same ladder as the dashboard, and like it the swap waits
+  // for the camera to stop so a fly-to doesn't mount a tier mid-flight.
+  const showStch = useZoomTierVisible((z) => z < STCH_HIDE_ZOOM, true)
+  const showDept = useZoomTierVisible((z) => z >= STCH_HIDE_ZOOM && z < DEPT_HIDE_ZOOM)
+
+  // Mount a chunk per frame rather than a whole tier in one commit.
+  const stchEntries = useMemo(
+    () => Object.entries(stchSummaries).filter(([, i]) => i && i.count > 0),
+    [stchSummaries],
+  )
+  const deptEntries = useMemo(
+    () => Object.entries(deptSummaries).filter(([, i]) => i && i.count > 0),
+    [deptSummaries],
+  )
+  const shownStch = useChunkedReveal(showStch ? stchEntries : EMPTY_STCH)
+  const shownDept = useChunkedReveal(showDept ? deptEntries : EMPTY_DEPT)
 
   const color = SYSTEMS[type].color
   const Icon = SYSTEM_ICONS[type]
@@ -217,9 +226,8 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
           the map, and mapbox re-projects + rewrites the transform of EVERY
           attached marker on every move frame no matter its CSS — so the
           off-tier bubbles were pure per-frame cost. */}
-      {tier === 'stch' && Object.entries(stchSummaries).map(([k, info]) => {
+      {shownStch.map(([k, info]) => {
         const stch = Number(k)
-        if (!info || info.count === 0) return null
         return (
           <HTMLMarker
             key={`stch-${stch}`}
@@ -230,9 +238,8 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
           </HTMLMarker>
         )
       })}
-      {tier === 'dept' && Object.entries(deptSummaries).map(([k, info]) => {
+      {shownDept.map(([k, info]) => {
         const id = Number(k)
-        if (!info || info.count === 0) return null
         const label = deptLabels.get(id) ?? (id === 0 ? 'ส่วนกลาง' : `ขทช. #${id}`)
         return (
           <HTMLMarker

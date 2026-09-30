@@ -22,6 +22,7 @@ import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useRouter } from 'next/navigation'
 import HTMLMarker from '../primitives/HTMLMarker'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
 import { showReactPopup } from '../primitives/popupHelper'
 import { DefaultDevicePopup } from './DeviceClusterMarker'
 
@@ -90,7 +91,6 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   // a silent no-op — `PopupDetailLink` navigates ONLY via `onNavigate`.
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
-  const [zoomVisible, setZoomVisible] = useState(false)
   // Which side of AUTO_EXPAND_ZOOM the camera was on at the last zoom event —
   // auto expand/collapse fires only when CROSSING the line, so a manual
   // click-toggle between crossings isn't fought by the effect.
@@ -99,12 +99,15 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   // Track zoom — hide while the country-level STCH summary owns the view;
   // fan out automatically at street zoom + fold back up when zooming away
   // (per 2026-07-24 request — clicking still toggles at any zoom).
+  // Mounting is the expensive half, so it waits for the camera to stop (see
+  // useZoomTierVisible). The fan-out toggle is just local state on an already
+  // mounted marker, so it keeps following the zoom live.
+  const zoomVisible = useZoomTierVisible((z) => z >= minZoom)
+
   useEffect(() => {
     if (!map || !isLoaded) return
     const update = () => {
-      const z = map.getZoom()
-      setZoomVisible(z >= minZoom)
-      const street = z >= AUTO_EXPAND_ZOOM
+      const street = map.getZoom() >= AUTO_EXPAND_ZOOM
       if (street !== wasStreetZoomRef.current) {
         wasStreetZoomRef.current = street
         setExpanded(street)
@@ -113,7 +116,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
     update()
     map.on('zoom', update)
     return () => { map.off('zoom', update) }
-  }, [map, isLoaded, minZoom])
+  }, [map, isLoaded])
 
   // Open a device popup using the shared single-popup helper. Returns void —
   // call sites just dispatch and let the helper handle close/cleanup.

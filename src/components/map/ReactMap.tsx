@@ -37,6 +37,8 @@ import BureauMaskLayer, {
 } from './markers/BureauMaskLayer'
 import { useBureauFeatures, isPointInBureau, findBureauAt } from './hooks/useBureauFeatures'
 import { useViewportBounds, inBounds } from './hooks/useViewportBounds'
+import { useChunkedReveal } from './hooks/useChunkedReveal'
+import { mark } from './utils/mapTrace'
 import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
 import SystemFilterPills from './overlays/SystemFilterPills'
@@ -551,6 +553,16 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
           : [a.minLng, a.minLat, a.maxLng, a.maxLat],
       }
     }
+    mark('devices aggregated', {
+      'API rows': position?.locations?.length ?? 0,
+      devices: pool.length,
+      'single pins': singles.length,
+      'stacked coords': groups.length,
+      'stacked devices': groups.reduce((n, g) => n + g.length, 0),
+      สทช: Object.keys(summaries).length,
+      ขทช: Object.keys(deptSums).length,
+      สายทาง: Object.keys(roadSums).length,
+    })
     return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
   }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord, roadFilterNum])
 
@@ -566,6 +578,9 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         : overlapGroups,
     [overlapGroups, viewport],
   )
+  // A chunk per frame — mounting every stack in one commit is what made a
+  // tier swap cost a whole frame (see useChunkedReveal).
+  const shownOverlapGroups = useChunkedReveal(nearbyOverlapGroups)
 
   // Fly-to target for a `?road_id=` landing. Priority: the road-scoped payload
   // (BE-filtered — authoritative) → the road's own aggregate inside the
@@ -1038,7 +1053,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
-      {nearbyOverlapGroups.map((group) => (
+      {shownOverlapGroups.map((group) => (
         <OverlapStackMarker
           key={`${group[0].coord[0]},${group[0].coord[1]}`}
           group={group}
