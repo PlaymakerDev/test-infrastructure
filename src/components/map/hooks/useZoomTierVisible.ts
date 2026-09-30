@@ -20,6 +20,10 @@ type EasingMap = { isEasing?: () => boolean }
 export function useZoomTierVisible(
   test: (zoom: number) => boolean,
   initial = false,
+  /** Re-evaluate when the THRESHOLD moves. `test` lives in a ref (a new
+   *  closure every render must not re-bind the listeners), so a changed
+   *  cutoff is invisible to the effect without this. */
+  dep?: unknown,
 ): boolean {
   const { map, isLoaded } = useMap()
   const [visible, setVisible] = useState(initial)
@@ -53,7 +57,7 @@ export function useZoomTierVisible(
       map.off('zoom', onZoom)
       map.off('moveend', onMoveEnd)
     }
-  }, [map, isLoaded])
+  }, [map, isLoaded, dep])
 
   return visible
 }

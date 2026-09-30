@@ -5,7 +5,7 @@ import { MapContext } from './MapContext'
 import RoadLayer from './markers/RoadLayer'
 import { loadGeoJsonOnce } from './hooks/geojsonCache'
 import { addThaiOnlyPlaceLabels, preloadThaiPlaceLabels } from './hooks/thaiPlaceLabels'
-import { mark, dumpTrace, dumpTraceSoon, watchFrames } from './utils/mapTrace'
+import { mark, dumpTrace, dumpTraceSoon, watchFrames, watchLongFrames } from './utils/mapTrace'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,6 +295,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
 
       // Frame cost while the camera moves, plus the step table once settled.
       watchFrames(instance as unknown as Parameters<typeof watchFrames>[0])
+      watchLongFrames(instance as unknown as Parameters<typeof watchLongFrames>[0])
       instance.once('idle', () => { mark('first idle'); dumpTrace() })
       dumpTraceSoon()
 

@@ -1,5 +1,5 @@
 "use client"
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { useMap } from '../hooks/useMap'
 import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
 import { useChunkedReveal } from '../hooks/useChunkedReveal'
@@ -60,8 +60,9 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
   const shown = useChunkedReveal(visible ? entries : EMPTY)
 
   // Unmount rather than display:none — see the note in StchSummaryMarker.
-  if (!visible) return null
-
+  // No early return when the tier is off: `shown` drains to empty a chunk
+  // per frame, and bailing out here instead tore every marker down in one
+  // commit — the 69ms frame the chunking was added to prevent.
   return (
     <>
       {shown.map(([idStr, info]) => {
@@ -129,4 +130,6 @@ const DeptSummaryMarker: React.FC<DeptSummaryMarkerProps> = ({
   )
 }
 
-export default DeptSummaryMarker
+// Memoised: ReactMap re-renders on every viewport recalc while panning, and
+// this tier's whole marker list was re-rendering with it.
+export default memo(DeptSummaryMarker)

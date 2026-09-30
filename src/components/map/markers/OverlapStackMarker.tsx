@@ -22,7 +22,6 @@ import type { Device } from '@/features/admin/dashboard/data/mockDevices'
 import { useRouter } from 'next/navigation'
 import HTMLMarker from '../primitives/HTMLMarker'
 import { useMap } from '../hooks/useMap'
-import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
 import { showReactPopup } from '../primitives/popupHelper'
 import { DefaultDevicePopup } from './DeviceClusterMarker'
 
@@ -48,8 +47,6 @@ export interface OverlapStackMarkerProps {
   /** Hide everything when a SystemType filter excludes ALL devices in the group. */
   visibleTypes?: Set<SystemType>
   /** Only render at/above this zoom (the country-level STCH summary owns the
-   *  lower zooms). Mirrors `DeviceClusterMarker.minZoom`. */
-  minZoom?: number
   /** Fired on ANY interaction with this stack (expand, single pin, or a fanned
    *  device). The dashboard uses it to reveal its map-only landing overlays. */
   onMarkerClick?: () => void
@@ -82,7 +79,6 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   group,
   center,
   visibleTypes,
-  minZoom = 6.5,
   onMarkerClick,
 }) => {
   const { map, isLoaded } = useMap()
@@ -96,13 +92,11 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   // click-toggle between crossings isn't fought by the effect.
   const wasStreetZoomRef = useRef<boolean | null>(null)
 
-  // Track zoom — hide while the country-level STCH summary owns the view;
-  // fan out automatically at street zoom + fold back up when zooming away
-  // (per 2026-07-24 request — clicking still toggles at any zoom).
-  // Mounting is the expensive half, so it waits for the camera to stop (see
-  // useZoomTierVisible). The fan-out toggle is just local state on an already
-  // mounted marker, so it keeps following the zoom live.
-  const zoomVisible = useZoomTierVisible((z) => z >= minZoom)
+  // Whether this tier is on at all is the PARENT's call — one decision for
+  // the whole list, so the mount burst goes through its chunked reveal
+  // instead of every stack flipping itself on in the same commit.
+  // Fanning out at street zoom stays here: local state on a marker that is
+  // already mounted (per 2026-07-24 request — clicking toggles at any zoom).
 
   useEffect(() => {
     if (!map || !isLoaded) return
@@ -144,7 +138,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
     [group, visibleTypes],
   )
 
-  if (!zoomVisible || visible.length === 0) return null
+  if (visible.length === 0) return null
   // After filtering, a stack might collapse to a single device — render it as
   // a normal pin (no fan-out / no count badge), still with shared popup.
   if (visible.length === 1) {
@@ -320,4 +314,6 @@ const DeviceIcon: React.FC<{ device: Device; size: number }> = memo(function Dev
   )
 })
 
-export default OverlapStackMarker
+// Memoised: a viewport recalc mid-pan re-renders ReactMap, and without this
+// every mounted stack re-rendered its badge + fan with it.
+export default memo(OverlapStackMarker)

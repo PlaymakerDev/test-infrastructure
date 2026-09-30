@@ -38,6 +38,7 @@ import BureauMaskLayer, {
 import { useBureauFeatures, isPointInBureau, findBureauAt } from './hooks/useBureauFeatures'
 import { useViewportBounds, inBounds } from './hooks/useViewportBounds'
 import { useChunkedReveal } from './hooks/useChunkedReveal'
+import { useZoomTierVisible } from './hooks/useZoomTierVisible'
 import { mark } from './utils/mapTrace'
 import { useProvinceFeatures, type ProvinceFeature } from './hooks/useProvinceFeatures'
 import { BUREAU_STCH_SET } from '@/features/admin/dashboard/data/bureaus'
@@ -54,6 +55,8 @@ const PROVINCE_ZOOM_THRESHOLD = 6.5
 // bubbles 6.5–9 → สายทาง (road) bubbles 9–11.5 → raw device markers above.
 const ROAD_ZOOM_THRESHOLD = 9
 const DEVICE_ZOOM_THRESHOLD = 11.5
+/** Stable identity for "this tier is off" — see useChunkedReveal. */
+const EMPTY_GROUPS: Device[][] = []
 // Above this zoom, drop the province/bureau hover chrome (yellow outlines,
 // parent-สำนัก glow, tooltip, pointer cursor). It's a country/province-picker
 // affordance; once the user has drilled in enough to see roads/markers, the
@@ -353,7 +356,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   //     OverlapStackMarker which collapses them to a count badge + spider
   //     fan-out on click. Keeps the API coord untouched (no jitter), so
   //     "where it is on the map" still matches reality.
-  const { singletons, overlapGroups, stchSummaries, deptSummaries, roadSummaries } = useMemo(() => {
+  const { singletons, overlapGroups, stchSummaries, deptSummariesRaw, roadSummaries } = useMemo(() => {
     const byCoord = new Map<string, Device[]>()
     // Per-stch accumulator — sum coords as we go, then divide at the end to
     // get the centroid. The marker lands on real devices instead of the mock
@@ -531,12 +534,11 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     const deptSums: Record<number, DeptSummary> = {}
     for (const [id, a] of Object.entries(deptAcc)) {
       const mean = meanOf(a)
-      // Province center for this ขทช.; depts with no mapped province (ids
-      // missing from /departments, e.g. 100/101) fall back to the mean.
-      const provCenter = deptProvinceCoord.get(Number(id))
+      // Centroid stays the device mean here; the province middle is applied
+      // in a second pass below, off this memo's dependencies.
       deptSums[Number(id)] = {
         count: a.count,
-        centroid: provCenter ?? mean,
+        centroid: mean,
         flyTo: mean,
       }
     }
@@ -563,8 +565,25 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       ขทช: Object.keys(deptSums).length,
       สายทาง: Object.keys(roadSums).length,
     })
-    return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummaries: deptSums, roadSummaries: roadSums }
-  }, [position, lprPoints, originalDeptId, bureauFeatures, deptProvinceCoord, roadFilterNum])
+    return { singletons: singles, overlapGroups: groups, stchSummaries: summaries, deptSummariesRaw: deptSums, roadSummaries: roadSums }
+  }, [position, lprPoints, originalDeptId, bureauFeatures, roadFilterNum])
+
+  // Move each ขทช. bubble onto the middle of its province (2026-08-05
+  // request). Deliberately a second pass: the province geojson lands ~100ms
+  // after the devices do, and as a dependency of the memo above it re-ran the
+  // whole 3,702-device aggregation just to reposition 68 bubbles — a 66ms
+  // frame in the load trace, for work already done.
+  const deptSummaries = useMemo(() => {
+    if (deptProvinceCoord.size === 0) return deptSummariesRaw
+    const out: Record<number, DeptSummary> = {}
+    for (const [id, s] of Object.entries(deptSummariesRaw)) {
+      // Depts with no mapped province (ids missing from /departments, e.g.
+      // 100/101) keep the device mean.
+      const provCenter = deptProvinceCoord.get(Number(id))
+      out[Number(id)] = provCenter ? { ...s, centroid: provCenter } : s
+    }
+    return out
+  }, [deptSummariesRaw, deptProvinceCoord])
 
   // Overlap stacks are DOM markers and, unlike the tiers above, they stay
   // mounted from z9 all the way in — at street zoom almost every one sits far
@@ -578,9 +597,15 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         : overlapGroups,
     [overlapGroups, viewport],
   )
+  // One gate for the whole tier, decided here rather than inside each stack.
+  // Per-stack it bypassed the chunking below entirely: the list never changed
+  // when the camera crossed the cutoff, so every stack turned itself on in
+  // the same commit — the exact burst chunking exists to prevent.
+  const stackMinZoom = roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD
+  const stacksVisible = useZoomTierVisible((z) => z >= stackMinZoom, false, stackMinZoom)
   // A chunk per frame — mounting every stack in one commit is what made a
   // tier swap cost a whole frame (see useChunkedReveal).
-  const shownOverlapGroups = useChunkedReveal(nearbyOverlapGroups)
+  const shownOverlapGroups = useChunkedReveal(stacksVisible ? nearbyOverlapGroups : EMPTY_GROUPS)
 
   // Fly-to target for a `?road_id=` landing. Priority: the road-scoped payload
   // (BE-filtered — authoritative) → the road's own aggregate inside the
@@ -768,6 +793,21 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     container.appendChild(tooltip)
     let hoverCode: string | null = null
 
+    // Cached because the hover test below runs on every mousemove and
+    // `getStyle()` serialises the whole style. Dropped whenever the style
+    // changes, so layers added later (the device pins themselves) are picked
+    // up on the next hover.
+    let markerLayerIds: string[] | null = null
+    const dropMarkerLayerIds = () => { markerLayerIds = null }
+    const getMarkerLayerIds = (): string[] => {
+      if (!markerLayerIds) {
+        markerLayerIds = (map.getStyle()?.layers ?? [])
+          .map((l) => l.id)
+          .filter((id) => id.startsWith('markerlayer-'))
+      }
+      return markerLayerIds
+    }
+
     const clearHover = () => {
       hoverCode = null
       map.getCanvas().style.cursor = ''
@@ -792,9 +832,16 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       // Cursor is over a canvas-drawn device pin — the pin's own จุดติดตั้ง
       // tooltip owns that spot; showing the province box too stacked two
       // tooltips on top of each other (reported 2026-07-27).
-      const overDevicePin = map
-        .queryRenderedFeatures(e.point)
-        .some((f) => f.layer?.id?.startsWith('markerlayer-') && f.layer.id.includes('device-'))
+      // SCOPED to the marker layers on purpose. Unscoped, this asks mapbox
+      // for every feature under the cursor in the whole style — the imported
+      // Standard basemap included, 3D buildings and all its labels — on every
+      // mousemove, drags included. That single call was the 203ms frame in
+      // the trace, and it is the one thing the eye reads as the map fighting
+      // back while you drag it.
+      const ids = getMarkerLayerIds()
+      const overDevicePin =
+        ids.length > 0 &&
+        map.queryRenderedFeatures(e.point, { layers: ids }).some((f) => f.layer?.id?.includes('device-'))
       if (overDevicePin) { clearHover(); return }
       const code = e.features?.[0]?.properties?.code as string | undefined
       const province = code ? (PROVINCE_BY_CODE[code] as Province | undefined) : undefined
@@ -842,11 +889,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     map.on('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
     map.on('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
     map.on('zoom', onZoom)
+    map.on('styledata', dropMarkerLayerIds)
     return () => {
       map.off('click', PROVINCE_CLICK_LAYER_ID, onClick)
       map.off('mousemove', PROVINCE_CLICK_LAYER_ID, onMove)
       map.off('mouseleave', PROVINCE_CLICK_LAYER_ID, clearHover)
       map.off('zoom', onZoom)
+      map.off('styledata', dropMarkerLayerIds)
       container.removeEventListener('mousemove', onDomMove)
       tooltip.remove()
     }
@@ -1027,6 +1076,22 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // the intro should still reveal the cards in those cases.
   const onProvinceActivateRef = useRef(onProvinceActivate)
   useEffect(() => { onProvinceActivateRef.current = onProvinceActivate }, [onProvinceActivate])
+
+  // Marker handlers are kept identity-stable through refs. The marker layers
+  // are memoised, and an inline arrow here would defeat that on every render.
+  const onMarkerClickRef = useRef(onMarkerClick)
+  useEffect(() => { onMarkerClickRef.current = onMarkerClick }, [onMarkerClick])
+  const handleMarkerClick = useCallback(() => { onMarkerClickRef.current?.() }, [])
+  const handleDeptSelect = useCallback((id: number) => {
+    onMarkerClickRef.current?.()
+    const next = String(id)
+    markFlown(next)
+    if (next !== deptIdRef.current) onDeptIdChangeRef.current(next)
+  }, [markFlown])
+  const handleRoadSelect = useCallback(() => {
+    onMarkerClickRef.current?.()
+    setRoadFocus(true)
+  }, [])
   useEffect(() => {
     if (province) onProvinceActivateRef.current?.()
   }, [province])
@@ -1048,8 +1113,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         devices={singletons}
         visibleTypes={visibleTypes}
         minZoom={roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD}
-        onClick={() => onMarkerClick?.()}
-        onClusterClick={() => onMarkerClick?.()}
+        onClick={handleMarkerClick}
+        onClusterClick={handleMarkerClick}
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
@@ -1059,8 +1124,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
           group={group}
           center={group[0].coord}
           visibleTypes={visibleTypes}
-          minZoom={roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD}
-          onMarkerClick={onMarkerClick}
+          onMarkerClick={handleMarkerClick}
         />
       ))}
       {/* Country tier — สทช. bubbles. zoomOnClick 8 lands inside the ขทช.
@@ -1069,7 +1133,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         summaries={stchSummaries}
         hideAtZoom={PROVINCE_ZOOM_THRESHOLD}
         zoomOnClick={8}
-        onMarkerClick={onMarkerClick}
+        onMarkerClick={handleMarkerClick}
       />
       {/* Middle tier — ขทช./แขวง bubbles (6.5 ≤ z < 9). Clicking flies into
         * the สายทาง band + rescopes the dashboard cards to that แขวง. */}
@@ -1078,12 +1142,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         labels={deptNameById}
         minZoom={PROVINCE_ZOOM_THRESHOLD}
         hideAtZoom={ROAD_ZOOM_THRESHOLD}
-        onSelect={(deptId) => {
-          onMarkerClick?.()
-          const next = String(deptId)
-          markFlown(next)
-          if (next !== deptIdRef.current) onDeptIdChangeRef.current(next)
-        }}
+        onSelect={handleDeptSelect}
       />
       {/* Third tier — สายทาง bubbles (9 ≤ z < 11.5). Clicking fits the road's
         * device bbox, hides this tier, and lets the raw markers render at the
@@ -1093,10 +1152,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         minZoom={ROAD_ZOOM_THRESHOLD}
         hideAtZoom={DEVICE_ZOOM_THRESHOLD}
         suppressed={roadFocus}
-        onSelect={() => {
-          onMarkerClick?.()
-          setRoadFocus(true)
-        }}
+        onSelect={handleRoadSelect}
       />
 
       {/* Vertical rhythm under the navbar: search box 60–~100 → pills 112 →

@@ -1,5 +1,5 @@
 "use client"
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { STCH_UNITS } from '@/features/admin/dashboard/data/units'
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { useMap } from '../hooks/useMap'
@@ -79,8 +79,9 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
   // marker on every move frame regardless of CSS. Only one tier is ever on
   // screen, so the rest were pure per-frame cost. Same rule OverlapStackMarker
   // already follows.
-  if (!visible) return null
-
+  // No early return when the tier is off: `shown` drains to empty a chunk
+  // per frame, and bailing out here instead tore every marker down in one
+  // commit — the 69ms frame the chunking was added to prevent.
   return (
     <>
       {shown.map(([stchStr, info]) => {
@@ -149,4 +150,6 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
   )
 }
 
-export default StchSummaryMarker
+// Memoised: ReactMap re-renders on every viewport recalc while panning, and
+// this tier's whole marker list was re-rendering with it.
+export default memo(StchSummaryMarker)

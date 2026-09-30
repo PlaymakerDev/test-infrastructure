@@ -1,5 +1,5 @@
 "use client"
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import type { LngLatBoundsLike } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
 import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
@@ -56,25 +56,28 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
   // are off-screen. Cull them: mapbox re-projects every attached marker on
   // every move frame, on-screen or not.
   const viewport = useViewportBounds()
+  // Built in two steps on purpose: the reveal below tracks entries by
+  // reference, and rebuilding the tuples on every viewport recalc would make
+  // every marker look new.
+  const entries = useMemo(
+    () => Object.entries(summaries).filter(([, info]) => info && info.count > 0),
+    [summaries],
+  )
   const nearby = useMemo(
     () =>
-      visible
-        ? Object.entries(summaries).filter(
-            ([, info]) =>
-              info &&
-              info.count > 0 &&
-              (!viewport || inBounds(viewport, info.centroid[0], info.centroid[1])),
-          )
-        : [],
-    [summaries, viewport, visible],
+      viewport
+        ? entries.filter(([, info]) => inBounds(viewport, info.centroid[0], info.centroid[1]))
+        : entries,
+    [entries, viewport],
   )
 
   // Unmount rather than display:none — see the note in StchSummaryMarker. This
   // is the tier that matters most: one marker per road with devices.
   const shown = useChunkedReveal(visible && !suppressed ? nearby : EMPTY)
 
-  if (!visible || suppressed) return null
-
+  // No early return when the tier is off: `shown` drains to empty a chunk
+  // per frame, and bailing out here instead tore every marker down in one
+  // commit — the 69ms frame the chunking was added to prevent.
   return (
     <>
       {shown.map(([idStr, info]) => {
@@ -153,4 +156,6 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
   )
 }
 
-export default RoadSummaryMarker
+// Memoised: ReactMap re-renders on every viewport recalc while panning, and
+// this tier's whole marker list was re-rendering with it.
+export default memo(RoadSummaryMarker)
