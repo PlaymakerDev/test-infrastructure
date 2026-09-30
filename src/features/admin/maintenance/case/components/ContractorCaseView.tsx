@@ -48,8 +48,12 @@ export interface ContractorCaseViewProps {
   detailQuery: string
   returnToAllRepairs: boolean
   returnToRepairHistory?: boolean
-  /** หนังสือแจ้งซ่อม (orange) — direct letter-PDF download. */
+  /** หนังสือแจ้งซ่อม (orange) — direct letter-PDF download. Only for cases
+   *  with no signed notice (opened by the auto-open worker, or before the
+   *  signed-notice step existed). */
   onExportLetter: () => void | Promise<void>
+  /** หนังสือแจ้งซ่อม (blue) — the officer's signed PDF. */
+  onOpenSignedLetter: () => void | Promise<void>
 }
 
 /** มุมมองผู้รับจ้าง (mock 7/8/9, 2026-09-11 redesign): บันทึกแจ้งซ่อม form +
@@ -72,8 +76,10 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
   returnToAllRepairs,
   returnToRepairHistory,
   onExportLetter,
+  onOpenSignedLetter,
 }) => {
   const { modal, message } = App.useApp()
+  const signedLetter = !!caseData.signed_document?.document_url
   const dispatch = useAppDispatch()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -289,11 +295,13 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
         isOnline={allOnline}
         rightContent={
           <>
+            {/* Same label either way (user 2026-09-28) — blue when it is the
+                signed notice the officer attached, orange for the generated one. */}
             <button
               type='button'
               className={styles.btnSecondary}
-              style={{ background: '#FF8A00', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              onClick={onExportLetter}
+              style={{ background: signedLetter ? '#66AEFF' : '#FF8A00', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              onClick={signedLetter ? onOpenSignedLetter : onExportLetter}
             >
               <TbPrinter size={16} />
               หนังสือแจ้งซ่อม

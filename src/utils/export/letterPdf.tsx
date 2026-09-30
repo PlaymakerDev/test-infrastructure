@@ -493,15 +493,20 @@ async function loadAttachments(
   )
 }
 
-/** Render the official-letter report and trigger the download. */
-export async function exportLetterPdf(args: ExportLetterPdfArgs): Promise<void> {
+/** Render the official letter to a PDF blob — for an on-screen preview. */
+export async function renderLetterPdfBlob(args: ExportLetterPdfArgs): Promise<Blob> {
   const [emblemDataUrl, prepared, attachments] = await Promise.all([
     fetchEmblemDataUrl(),
     wrapLetterArgs(args),
     loadAttachments(args.attachments),
   ])
-  const blob = await pdf(
+  return pdf(
     <LetterDocument {...prepared} attachments={attachments} emblemDataUrl={emblemDataUrl} />,
   ).toBlob()
+}
+
+/** Render the official-letter report and trigger the download. */
+export async function exportLetterPdf(args: ExportLetterPdfArgs): Promise<void> {
+  const blob = await renderLetterPdfBlob(args)
   download(blob, `${args.filenameBase}_${dayjs().format('YYYYMMDD_HHmmss')}.pdf`)
 }

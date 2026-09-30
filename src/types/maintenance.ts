@@ -42,7 +42,33 @@ export interface CreateCaseRequest {
   due_date?: string | null
 }
 
-export type CaseStatus = 'open' | 'in_progress' | 'pending_approval' | 'closed'
+/** `waiting_doc` (backend 2026-09-28): an officer-created case starts here,
+ *  hidden from the contractor until the signed repair notice is attached
+ *  (POST case/{no}/document), which moves it to `open`. */
+export type CaseStatus = 'waiting_doc' | 'open' | 'in_progress' | 'pending_approval' | 'closed'
+
+/** หนังสือแจ้งซ่อมที่ลงนามแล้ว — a plain link into /images/maintenance, which
+ *  needs no signature (see useAttachCaseDocument). */
+export interface CaseSignedDocument {
+  document_url: string
+  file_name: string
+}
+
+/** POST /manage/maintenance/case/{case_no}/document — officers only. */
+export interface AttachCaseDocumentRequest {
+  /** Full URL returned by the upload service (`/upload/maintenance?full_url=true`). */
+  document_url: string
+  /** The client's original file name. */
+  file_name: string
+}
+
+export interface AttachCaseDocumentResponse {
+  case_no: string
+  /** `open` when the case was waiting_doc; otherwise unchanged. */
+  status: CaseStatus
+  opened_at: string | null
+  signed_document: CaseSignedDocument
+}
 
 /** ⚠ This PUT overwrites every plain-string field it does NOT receive with ""
  *  — verified live 2026-09-21: sending only `problem_found` blanked both
@@ -305,6 +331,11 @@ export interface CaseDetail {
   created_by: string
   camera_count: number
   cameras: CaseCamera[]
+  /** Null while the case is waiting_doc. */
+  signed_document?: CaseSignedDocument | null
+  /** When the case reached `open` (signed notice attached, or opened by the
+   *  auto-open worker). Null while waiting_doc. */
+  opened_at?: string | null
 }
 
 export interface CaseHistoryItem {

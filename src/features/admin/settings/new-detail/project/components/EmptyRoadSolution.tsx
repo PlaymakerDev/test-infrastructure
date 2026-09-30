@@ -1,33 +1,36 @@
 import { ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Empty, Skeleton } from 'antd'
-import React, { useCallback } from 'react'
-import { TbRoad } from 'react-icons/tb'
+import React, { useCallback, useState } from 'react'
+import { TbMapPinPlus, TbRoad } from 'react-icons/tb'
 import { useQuery } from '@tanstack/react-query'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { setProjectModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { getProjectByIDAPI, getRoadSolutionAPI } from '@/services/routes/ProjectDetailService'
 import { useProjectContractors } from '@/hooks/queries/manage'
-import { useUserRole } from '@/hooks/useUserRole'
 import type { ProjectListData } from '@/types/manage/project-api'
 import { isAdmin } from '@/utils/isAdmin'
 import { useProjectContext } from '../context'
+import { useCanEditProjectRoads } from '../hooks/useCanEditProjectRoads'
+import ModalAddRoad from './ModalAddRoad'
 
 interface Props {
 
 }
 
+/** What MainContent shows when the selected road has no จุดติดตั้ง — or when
+ *  the project has no road at all. The two need different next steps (user
+ *  2026-09-29): a road without points gets "เพิ่มจุดติดตั้ง" (the first point,
+ *  then the tabs appear); only a project without roads gets "เพิ่มสายทาง". */
 const EmptyRoadSolution: React.FC<Props> = (props) => {
   const { } = props
   const dispatch = useAppDispatch()
-  const { id, roadSolution } = useProjectContext()
+  const { id, roadSolution, onCreate, isCreating } = useProjectContext()
   // Deleting the project is offered to the same viewers the settings table
-  // shows its trash icon to. Adding a road is also open to a central-office
-  // admin (general_user.role 'admin', e.g. drr), whom isAdmin doesn't cover —
-  // the backend lets every role but 'user' add one.
+  // shows its trash icon to; adding a road or a point to every role but 'user'.
   const { info } = useAppSelector((state) => state.auth)
-  const { isAdmin: isAdminRole } = useUserRole()
   const canDeleteProject = isAdmin(info)
-  const canAddRoad = canDeleteProject || isAdminRole
+  const canEdit = useCanEditProjectRoads()
+  const [isAddRoadOpen, setAddRoadOpen] = useState(false)
 
   // Same queries (and cache entries) as TitleSection. A project the viewer may
   // not open comes back as [] rather than an error.
@@ -50,15 +53,6 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
   // (res_code 40098) — this road having none isn't enough, no road may.
   const hasInstallPoints = roads.some((road) => (road.solution_locations ?? []).length > 0)
 
-  // Same UPDATE modal ProjectListView opens from its pencil icon — roads are
-  // linked to a project through that form. FormCreateProject only reads
-  // `data.id` and fetches the full project (incl. project_roads) itself, so
-  // the id is all it needs here.
-  const onOpenProjectModal = useCallback(() => {
-    if (!id) return
-    dispatch(setProjectModalOpen({ open: true, type: 'UPDATE', data: { id: Number(id) } }))
-  }, [dispatch, id])
-
   // Same confirm dialog + DELETE /manage/project/{id} as the settings table's
   // trash icon. The dialog reads a list row; /manage/project/{id} has the same
   // fields except the contractor's company name, which only the list nests.
@@ -79,26 +73,50 @@ const EmptyRoadSolution: React.FC<Props> = (props) => {
   }
   if (!project) return <Empty description='ไม่พบข้อมูลโครงการ' />
 
+  const hasRoads = roads.length > 0
+
   return (
     <div>
       <section>
         <div className='p-5 rounded-lg border-2 border-(--default-blue)'>
-          <div className='flex flex-col items-center justify-center gap-3 my-6'>
-            <TbRoad className='fs-36 text-(--default-blue)' />
-            <p className='fs-12'>{canAddRoad ? 'กรุณาเพิ่มสายทาง ภายในโครงการนี้' : 'ยังไม่มีสายทางในโครงการนี้'}</p>
-            {canAddRoad && (
-              <Button
-                type='primary'
-                shape='round'
-                icon={<PlusOutlined />}
-                onClick={onOpenProjectModal}
-              >
-                <p className='fs-12'>เพิ่มสายทาง</p>
-              </Button>
-            )}
-          </div>
+          {hasRoads ? (
+            <div className='flex flex-col items-center justify-center gap-3 my-6'>
+              <TbMapPinPlus className='fs-36 text-(--default-blue)' />
+              <p className='fs-12'>{canEdit ? 'กรุณาเพิ่มจุดติดตั้ง ภายในสายทางนี้' : 'ยังไม่มีจุดติดตั้งในสายทางนี้'}</p>
+              {canEdit && (
+                // The tab strip's "+ เพิ่มจุดติดตั้ง": creates "จุดติดตั้งที่ 1"
+                // and selects it, which brings up the tabs.
+                <Button
+                  type='primary'
+                  shape='round'
+                  icon={<PlusOutlined />}
+                  loading={isCreating}
+                  onClick={onCreate}
+                >
+                  <p className='fs-12'>เพิ่มจุดติดตั้ง</p>
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className='flex flex-col items-center justify-center gap-3 my-6'>
+              <TbRoad className='fs-36 text-(--default-blue)' />
+              <p className='fs-12'>{canEdit ? 'กรุณาเพิ่มสายทาง ภายในโครงการนี้' : 'ยังไม่มีสายทางในโครงการนี้'}</p>
+              {canEdit && (
+                <Button
+                  type='primary'
+                  shape='round'
+                  icon={<PlusOutlined />}
+                  onClick={() => setAddRoadOpen(true)}
+                >
+                  <p className='fs-12'>เพิ่มสายทาง</p>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </section>
+      {/* The first road of a project; later ones come from beside the tabs. */}
+      <ModalAddRoad open={isAddRoadOpen} onClose={() => setAddRoadOpen(false)} />
       {canDeleteProject && !hasInstallPoints && (
         <section className='mt-5'>
           <div className='p-5 rounded-lg border-2 border-(--default-red)'>

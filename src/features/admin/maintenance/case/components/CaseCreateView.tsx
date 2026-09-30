@@ -1,8 +1,8 @@
 "use client"
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { App, ConfigProvider, DatePicker, Input, Modal, Spin, Upload } from 'antd'
-import type { UploadFile } from 'antd'
+import { App, ConfigProvider, DatePicker, Input, Spin, Upload } from 'antd'
+import type { InputRef, UploadFile } from 'antd'
 import { AxiosError } from 'axios'
 import thTH from 'antd/locale/th_TH'
 import dayjs from 'dayjs'
@@ -11,13 +11,18 @@ import styles from '../screen/maintenance-case.module.css'
 import TitleSection from './TitleSection'
 import ProjectInfoCard from './ProjectInfoCard'
 import CaseDeviceTable from './CaseDeviceTable'
+import LetterPreviewModal, { previewActionButton } from './LetterPreviewModal'
+import ConfirmCreateLetterModal from './ConfirmCreateLetterModal'
+import SignedLetterReminderModal from './SignedLetterReminderModal'
 import type { CaseDeviceRow, CaseProjectInfo } from './caseViewTypes'
+import type { RepairLetterInput } from '../data/repairLetter'
 import { useCreateMaintenanceCase, useMaintenanceSolution, useProjectBySolution, useUploadMaintenance } from '@/hooks/queries/maintenance'
 import { getMaintenanceCasesAPI } from '@/services/routes/MaintenanceService'
 import { useProjectContractors } from '@/hooks/queries/manage'
 import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import { compressImage } from '../../data/compressImage'
 import { deviceTypeText, deviceTypeThaiText } from '../../data/deviceTypes'
+import { caretAfterFormat, formatBudgetInput, significantBefore } from '../../data/budgetInput'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -61,13 +66,26 @@ interface LetterForm {
  *  Every letter field has a column since the 2026-09-18 release, so the whole
  *  form round-trips. ⚠ PENDING BE: the create response still carries no
  *  `case_no`, so the new number is read back from the solution's case list
- *  (newest wins — see `resolveNewCaseNo`). */
+ *  (newest wins — see `resolveNewCaseNo`).
+ *
+ *  Saving takes three steps (user 2026-09-28): บันทึกแบบฟอร์มหนังสือแจ้งซ่อม →
+ *  preview the PDF (แก้ไข / บันทึก) → confirm, the only step that writes →
+ *  a 20-second reminder to upload the signed copy → the new case's page. */
 const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, detailQuery }) => {
   const { modal, message } = App.useApp()
   const router = useRouter()
-  // Set with the case_no the create endpoint returns → opens the
-  // "บันทึกสำเร็จ → ดาวน์โหลดหนังสือ?" dialog (the agreed save-then-ask flow).
-  const [savedCaseNo, setSavedCaseNo] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [preview, setPreview] = useState<{ url: string | null; loading: boolean; failed: boolean }>({ url: null, loading: false, failed: false })
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  // Between the create call answering and the case number being read back —
+  // the confirm button must stay locked or a second click opens a second case.
+  const [finishing, setFinishing] = useState(false)
+  const [reminderOpen, setReminderOpen] = useState(false)
+  // The case the reminder leads to; null = saved, but its number wasn't found.
+  const savedCaseNoRef = useRef<string | null>(null)
+  const reminderDoneRef = useRef(false)
+  // Bumped whenever the preview closes, so a render still in flight is dropped.
+  const previewRunRef = useRef(0)
 
   // Device rows for every selected camera. One solution-scoped request covers
   // them all (name / IP / status / ประเภท) — the picker only ever offers
@@ -138,6 +156,7 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     dueDate: '',
   })
   const [letterFiles, setLetterFiles] = useState<UploadFile[]>([])
+  const budgetInputRef = useRef<InputRef>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const clearFieldError = (key: string) =>
     setFieldErrors(prev => (prev[key] ? { ...prev, [key]: false } : prev))
@@ -167,17 +186,27 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
   const createCase = useCreateMaintenanceCase()
   const saving = createCase.isPending
 
-  /** Leaving the success dialog goes to the case that was just opened, so the
-   *  officer lands on its tracking page instead of an already-saved form. */
-  const goToSavedCase = () => {
-    const caseNo = savedCaseNo
-    setSavedCaseNo(null)
-    if (!caseNo) return
+  /** After the reminder: the case that was just opened, so the officer lands
+   *  on its tracking page (where the signed copy goes) instead of an
+   *  already-saved form. Both the close button and the countdown call it. */
+  const finishReminder = useCallback(() => {
+    if (reminderDoneRef.current) return
+    reminderDoneRef.current = true
+    setReminderOpen(false)
+    const caseNo = savedCaseNoRef.current
     const params = new URLSearchParams(detailQuery)
-    if (solutionId) params.set('solution_id', String(solutionId))
+    if (caseNo) {
+      if (solutionId) params.set('solution_id', String(solutionId))
+      const query = params.toString()
+      router.push(`/admin/maintenance/case/${caseNo}${query ? `?${query}` : ''}`)
+      return
+    }
+    // Saved, but the number couldn't be read back (no solution context) — leave
+    // the form anyway, so it can't be submitted a second time.
+    message.info('ระบบเปิด Case ให้แล้ว แต่ยังอ่านเลข Case No. กลับมาไม่ได้ — ดูได้ที่หน้าประวัติการซ่อม')
     const query = params.toString()
-    router.push(`/admin/maintenance/case/${caseNo}${query ? `?${query}` : ''}`)
-  }
+    router.push(solutionId ? `/admin/maintenance/detail/${solutionId}${query ? `?${query}` : ''}` : '/admin/maintenance')
+  }, [detailQuery, message, router, solutionId])
 
   /** The create endpoint answers "request successfully" with no case_no, so
    *  the number is read back from the solution's (freshly written) case list.
@@ -194,8 +223,8 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     }
   }
 
-  const handleSave = () => {
-    if (uploading || saving) return
+  /** Every letter field is required; the empty ones get a red outline. */
+  const validate = (): boolean => {
     const missing: [keyof LetterForm, string][] = []
     if (!form.letterNo.trim()) missing.push(['letterNo', 'เลขที่หนังสือแจ้งซ่อม'])
     if (!form.budget.trim()) missing.push(['budget', 'วงเงินของโครงการ'])
@@ -211,12 +240,97 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
       // — listing all eight made it span the whole screen (user 2026-09-21).
       setFieldErrors(Object.fromEntries(missing.map(([k]) => [k, true])))
       message.error('กรุณากรอกข้อมูลให้ครบถ้วน')
-      return
+      return false
+    }
+    // The picker already refuses these days; this catches a form left open
+    // past midnight, or a letter date moved after the due date.
+    const due = dayjs(form.dueDate, 'DD MMM BBBB', 'th')
+    if (!due.isAfter(dayjs(), 'day')) {
+      setFieldErrors({ dueDate: true })
+      message.error('ลงวันที่ดำเนินการแล้วเสร็จ ต้องเป็นวันพรุ่งนี้เป็นต้นไป')
+      return false
+    }
+    if (!due.isAfter(dayjs(form.reportDate, 'DD MMM BBBB', 'th'), 'day')) {
+      setFieldErrors({ dueDate: true })
+      message.error('ลงวันที่ดำเนินการแล้วเสร็จ ต้องอยู่หลังลงวันที่แจ้งซ่อม')
+      return false
     }
     setFieldErrors({})
-    const statusImages = letterFiles
-      .filter((f) => f.status === 'done' && f.url)
-      .map((f) => f.url as string)
+    return true
+  }
+
+  const statusImageUrls = () => letterFiles
+    .filter((f) => f.status === 'done' && f.url)
+    .map((f) => f.url as string)
+
+  /** The letter exactly as this form issues it — what the preview shows. */
+  const letterInput = (): RepairLetterInput => ({
+    // Not issued until the save; it would only name the file anyway.
+    caseNo: '',
+    project,
+    letterNo: form.letterNo,
+    // The contract's ลงวันที่ = warranty start (no contract-date column).
+    // Raw dates in — the letter formats them itself.
+    contractDate: projectDetail?.warranty_start_date,
+    letterDate: form.reportDate
+      ? dayjs(form.reportDate, 'DD MMM BBBB', 'th').toDate()
+      : undefined,
+    budget: form.budget,
+    defect: form.reason,
+    deviceType: letterDeviceType,
+    deadline: form.dueDate
+      ? dayjs(form.dueDate, 'DD MMM BBBB', 'th').toDate()
+      : undefined,
+    contractClause: form.contractClause,
+    coordinatorName: form.assignee,
+    coordinatorPosition: form.position,
+    coordinatorPhone: form.contact,
+    // What the officer attached. Left empty, the backend builds the sheet from
+    // the cameras' frames after the save — too late for this preview.
+    deviceStatusImages: statusImageUrls(),
+  })
+
+  // The rendered letter is an object URL — release each one once it is
+  // replaced, closed, or the page goes away.
+  useEffect(() => {
+    const url = preview.url
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [preview.url])
+
+  /** บันทึกแบบฟอร์มหนังสือแจ้งซ่อม (header) — check the form, then show the
+   *  letter it would issue. Nothing is saved yet. */
+  const openPreview = async () => {
+    if (uploading || saving || previewOpen) return
+    if (!validate()) return
+    const run = ++previewRunRef.current
+    setPreviewOpen(true)
+    setPreview({ url: null, loading: true, failed: false })
+    try {
+      const [{ renderLetterPdfBlob }, { buildRepairLetter }] = await Promise.all([
+        import('@/utils/export/letterPdf'),
+        import('../data/repairLetter'),
+      ])
+      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput()))
+      if (run !== previewRunRef.current) return
+      setPreview({ url: URL.createObjectURL(blob), loading: false, failed: false })
+    } catch {
+      if (run !== previewRunRef.current) return
+      setPreview({ url: null, loading: false, failed: true })
+    }
+  }
+
+  /** แก้ไข / กลับไปแก้ไข, and after a save — close the preview + confirm. */
+  const closeLetterModals = () => {
+    previewRunRef.current++
+    setConfirmOpen(false)
+    setPreviewOpen(false)
+    setPreview({ url: null, loading: false, failed: false })
+  }
+
+  /** บันทึกแบบฟอร์มหนังสือแจ้งซ่อม (confirm) — the one step that writes. */
+  const handleConfirmSave = () => {
+    if (saving || finishing) return
+    const statusImages = statusImageUrls()
     createCase.mutate({
       camera_ids: cameraIds,
       solution_id: solutionId ?? null,
@@ -248,20 +362,16 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
       // auto-open worker does, so this client-side mapping can go.
     }, {
       onSuccess: async () => {
-        const caseNo = await resolveNewCaseNo()
-        if (caseNo) {
-          setSavedCaseNo(caseNo)
-          return
-        }
-        // Saved, but the number couldn't be read back (no solution context).
-        modal.success({
-          title: 'บันทึกหนังสือแจ้งซ่อมสำเร็จ',
-          content: 'ระบบเปิด Case ให้แล้ว แต่ยังอ่านเลข Case No. กลับมาไม่ได้ — ดูได้ที่หน้าประวัติการซ่อม',
-          okText: 'ตกลง',
-          centered: true,
-        })
+        setFinishing(true)
+        savedCaseNoRef.current = await resolveNewCaseNo()
+        setFinishing(false)
+        closeLetterModals()
+        reminderDoneRef.current = false
+        setReminderOpen(true)
       },
       onError: (err) => {
+        // Back to the preview — the letter is still the one they checked.
+        setConfirmOpen(false)
         const message = err instanceof AxiosError
           ? (err.response?.data?.res_data?.message ?? err.response?.data?.message)
           : undefined
@@ -300,14 +410,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
           <button
             type='button'
             className={styles.btnPrimary}
-            onClick={handleSave}
+            onClick={openPreview}
             disabled={uploading || saving}
             style={{ opacity: uploading || saving ? 0.6 : 1, cursor: uploading || saving ? 'not-allowed' : 'pointer' }}
           >
-            {/* Label per the mock (user 2026-09-11, for clarity) — behaviour is
-              * still save-then-ask: the download itself stays optional in the
-              * post-save dialog. */}
-            {uploading ? 'กำลังอัปโหลด...' : saving ? 'กำลังบันทึก...' : 'บันทึก + นำออกหนังสือแจ้งซ่อม'}
+            {/* Opens the PDF preview — the save itself waits behind its confirm. */}
+            {uploading ? 'กำลังอัปโหลด...' : saving ? 'กำลังบันทึก...' : 'บันทึกแบบฟอร์มหนังสือแจ้งซ่อม'}
           </button>
         }
       />
@@ -363,11 +471,22 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
             </div>
             <div className='flex-1'>
               <p style={labelStyle}>วงเงินของโครงการ<span style={{ color: '#E94C4C' }}>*</span></p>
+              {/* Thousands commas as it is typed (user 2026-09-28); `parseBudget`
+                  strips them again for the request. */}
               <Input
+                ref={budgetInputRef}
+                inputMode='decimal'
                 placeholder='กรุณาระบุวงเงินของโครงการ เช่น 5,000,000...'
                 style={inputStyle('budget')}
                 value={form.budget}
-                onChange={(e) => set('budget')(e.target.value)}
+                onChange={(e) => {
+                  const typed = e.target.value
+                  const next = formatBudgetInput(typed)
+                  const caret = caretAfterFormat(next, significantBefore(typed, e.target.selectionStart ?? typed.length))
+                  set('budget')(next)
+                  // The re-render would otherwise drop the caret at the end.
+                  requestAnimationFrame(() => budgetInputRef.current?.input?.setSelectionRange(caret, caret))
+                }}
               />
             </div>
           </div>
@@ -507,6 +626,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
                 <DatePicker
                   placeholder='กรุณาเลือกวันที่...'
                   format='DD MMM BBBB'
+                  // From tomorrow on — never today or earlier (user 2026-09-28),
+                  // and never on or before the letter's own date.
+                  disabledDate={(day) =>
+                    !day.isAfter(dayjs(), 'day') ||
+                    (!!form.reportDate && !day.isAfter(dayjs(form.reportDate, 'DD MMM BBBB', 'th'), 'day'))
+                  }
                   style={{ ...inputStyle('dueDate'), color: undefined }}
                   suffixIcon={<img src={`${BASE_PATH}/images/Maintenance/icdate.png`} alt='' width={24} height={24} />}
                   value={form.dueDate ? dayjs(form.dueDate, 'DD MMM BBBB', 'th') : null}
@@ -518,87 +643,37 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
         </div>
       </section>
 
-      {/* บันทึกสำเร็จ → ถามดาวน์โหลดหนังสือ (save-then-ask, ตกลง 2026-09-11).
-        * Closing it lands on the new case's tracking page. */}
-      <ConfigProvider
-        theme={{ components: { Modal: { contentBg: '#1A1A1A', headerBg: '#1A1A1A', colorIcon: '#FFFFFF', borderRadiusLG: 16 } } }}
-      >
-        <Modal
-          open={savedCaseNo !== null}
-          onCancel={goToSavedCase}
-          footer={null}
-          centered
-          width={440}
-          title={null}
-        >
-          <div className='flex flex-col items-center pt-4 pb-2 text-center'>
-            <img src={`${BASE_PATH}/images/Maintenance/icmd3.png`} alt='' width={88} height={88} />
-            <p style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 700, margin: '12px 0 0' }}>บันทึกหนังสือแจ้งซ่อมสำเร็จ</p>
-            <p className='fs-12' style={{ color: '#979797', margin: '6px 0 0' }}>ระบบออกเลขเคสให้แล้ว</p>
-            <span
-              className='mt-3 inline-flex items-center px-4 py-1 rounded-full'
-              style={{ border: '1px solid #FCD116', color: '#FCD116', fontSize: 16, fontWeight: 600 }}
-            >
-              Case No. {savedCaseNo}
-            </span>
-            <p className='fs-12 mt-4' style={{ color: '#C9C9C9', margin: 0 }}>ต้องการดาวน์โหลดหนังสือแจ้งซ่อม (PDF) เลยหรือไม่?</p>
-            <div className='mt-4 flex gap-3'>
-              <button
-                type='button'
-                className='px-5 py-2 rounded-full fs-12 cursor-pointer hover:opacity-90'
-                style={{ background: '#C4C4C4', color: '#212121', border: 'none' }}
-                onClick={goToSavedCase}
-              >
-                ปิด
-              </button>
-              <button
-                type='button'
-                className='px-5 py-2 rounded-full fs-12 font-medium cursor-pointer hover:opacity-90'
-                style={{ background: '#FF8A00', color: '#212121', border: 'none' }}
-                onClick={async () => {
-                  const [{ exportLetterPdf }, { buildRepairLetter }] = await Promise.all([
-                    import('@/utils/export/letterPdf'),
-                    import('../data/repairLetter'),
-                  ])
-                  // Everything the officer just typed goes into the letter —
-                  // this is the only moment the letter-only fields exist, since
-                  // the backend has no columns for them yet.
-                  await exportLetterPdf(buildRepairLetter({
-                    caseNo: savedCaseNo ?? '',
-                    project,
-                    letterNo: form.letterNo,
-                    // The contract's ลงวันที่ = warranty start (no contract-date
-                    // column). Raw dates in — the letter formats them itself.
-                    contractDate: projectDetail?.warranty_start_date,
-                    letterDate: form.reportDate
-                      ? dayjs(form.reportDate, 'DD MMM BBBB', 'th').toDate()
-                      : undefined,
-                    budget: form.budget,
-                    defect: form.reason,
-                    deviceType: letterDeviceType,
-                    deadline: form.dueDate
-                      ? dayjs(form.dueDate, 'DD MMM BBBB', 'th').toDate()
-                      : undefined,
-                    contractClause: form.contractClause,
-                    coordinatorName: form.assignee,
-                    coordinatorPosition: form.position,
-                    coordinatorPhone: form.contact,
-                    // What the officer attached. When the box was left empty the
-                    // backend builds the sheet asynchronously, so it isn't ready
-                    // for this immediate download — the orange button on the case
-                    // page picks it up once the job finishes.
-                    deviceStatusImages: letterFiles
-                      .filter((f) => f.status === 'done' && f.url)
-                      .map((f) => f.url as string),
-                  }))
-                }}
-              >
-                ดาวน์โหลดหนังสือแจ้งซ่อม
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </ConfigProvider>
+      <LetterPreviewModal
+        open={previewOpen}
+        url={preview.url}
+        loading={preview.loading}
+        failed={preview.failed}
+        title='ตัวอย่างแบบฟอร์มหนังสือแจ้งซ่อม'
+        subtitle='กรุณาตรวจสอบความถูกต้องของเอกสารก่อนบันทึก'
+        loadingText='กำลังสร้างตัวอย่างเอกสาร...'
+        failedText='สร้างตัวอย่างเอกสารไม่สำเร็จ กรุณาลองอีกครั้ง'
+        note={statusImageUrls().length === 0
+          ? 'หน้าแนบรูปภาพสถานะการทำงานของอุปกรณ์ ระบบจะสร้างจากภาพล่าสุดของอุปกรณ์ให้หลังบันทึก จึงยังไม่แสดงในตัวอย่างนี้'
+          : undefined}
+        onClose={closeLetterModals}
+        actions={
+          <>
+            <button type='button' className={previewActionButton} style={{ background: '#C4C4C4', color: '#212121' }} onClick={closeLetterModals}>
+              แก้ไข
+            </button>
+            <button type='button' className={previewActionButton} style={{ background: '#FCD116', color: '#212121' }} onClick={() => setConfirmOpen(true)} disabled={preview.loading}>
+              บันทึก
+            </button>
+          </>
+        }
+      />
+      <ConfirmCreateLetterModal
+        open={confirmOpen}
+        saving={saving || finishing}
+        onBack={closeLetterModals}
+        onConfirm={handleConfirmSave}
+      />
+      <SignedLetterReminderModal open={reminderOpen} onClose={finishReminder} />
     </>
   )
 }

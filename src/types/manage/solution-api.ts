@@ -70,6 +70,8 @@ export interface APIResponseRoadSolution {
     road_code: string
     road_name?: string | null
     province?: string | null
+    /** The road's own bureau — what the feature menus list its solutions under. */
+    department_id?: number | null
   }
   solution_locations?: APIResponseSolutionLocation[] | null
 }

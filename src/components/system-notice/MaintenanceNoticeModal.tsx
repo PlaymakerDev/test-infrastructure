@@ -1,6 +1,7 @@
 'use client'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { ConfigProvider, Modal } from 'antd'
+import CountdownBar from '@/components/common/CountdownBar'
 import { SYSTEMS, SYSTEM_BRIGHT, type SystemType } from '@/features/admin/dashboard/data/systems'
 import { DEFAULT_NOTICE_TITLE, groupNoticeMessages, type NoticeText } from './noticeRules'
 
@@ -15,24 +16,6 @@ interface Props {
   sessionId: number
   durationMs: number
   onClose: () => void
-}
-
-/** Drains along the bottom edge over `durationMs` — the notice closes itself,
- *  and this is the only hint that it will. */
-const CountdownBar: React.FC<{ durationMs: number }> = ({ durationMs }) => {
-  const barRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const animation = barRef.current?.animate(
-      [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }],
-      { duration: durationMs, easing: 'linear', fill: 'forwards' },
-    )
-    return () => animation?.cancel()
-  }, [durationMs])
-  return (
-    <div className='mt-6 h-[3px] w-full overflow-hidden rounded-full bg-(--mid-gray)' aria-hidden>
-      <div ref={barRef} className='h-full w-full origin-left bg-(--yellow)' />
-    </div>
-  )
 }
 
 /** "ขออภัยในความไม่สะดวก" — a system (or several) is under maintenance.

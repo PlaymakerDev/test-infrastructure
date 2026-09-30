@@ -34,6 +34,9 @@ const dotJoin = (...parts: Array<string | null | undefined>) => {
  *  pending_approval separate — an officer watching the bell wants to know a
  *  case is waiting on *them*, which the page's 3-state pill folds away. */
 const CASE_STATUS: Record<CaseFeedItem['case']['status'], { label: string; color: string }> = {
+  // Opened by an officer, signed notice not attached yet — the contractor
+  // can't see it until then (backend 2026-09-28).
+  waiting_doc: { label: 'รอนำเข้าหนังสือ', color: '#E94C4C' },
   open: { label: 'เปิด', color: '#E94C4C' },
   in_progress: { label: 'กำลังดำเนินการ', color: '#FCD116' },
   pending_approval: { label: 'รอตรวจรับ', color: '#66AEFF' },
@@ -130,7 +133,8 @@ const OutageStatus: React.FC<{ item: CameraOutageFeedItem }> = ({ item }) => (
 )
 
 const CaseStatus: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
-  const meta = CASE_STATUS[item.case.status]
+  // A status added to the backend later still renders, just unstyled.
+  const meta = CASE_STATUS[item.case.status] ?? { label: item.case.status, color: '#979797' }
   const overdue = Boolean(
     item.is_open && item.case.due_date && dayjs(item.case.due_date).isBefore(dayjs()),
   )

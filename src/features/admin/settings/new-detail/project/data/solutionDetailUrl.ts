@@ -95,6 +95,18 @@ const asId = (value: number | string | null | undefined): string | null => {
   return text === '' || text === '0' ? null : text
 }
 
+/** A department id, where 0 IS real: กรมทางหลวงชนบท's own central group, which
+ *  roads such as ทช.9999 belong to. `?dept_id=0` opens their detail pages —
+ *  checked 2026-09-29 on CCTV 5479 (road dept 0), which the project's dept 2
+ *  answers with ไม่พบข้อมูล — so only a MISSING id (which useDeptId() would
+ *  turn into dept 50) is unknown. The links are only built once the road has
+ *  loaded, so INIT_ROAD's 0 never gets here. */
+const asDeptId = (value: number | string | null | undefined): string | null => {
+  if (value === null || value === undefined) return null
+  const text = String(value).trim()
+  return text === '' ? null : text
+}
+
 export const buildSolutionDetailUrl = (
   solutionTypeId: number,
   solutionId: number | string,
@@ -124,7 +136,7 @@ export const buildSolutionDetailUrl = (
     return { kind: 'ready', href: `/admin/vms/detail/${solutionId}${query}` }
   }
 
-  const deptId = asId(ctx.deptId)
+  const deptId = asDeptId(ctx.deptId)
   if (!deptId) {
     return {
       kind: 'blocked',

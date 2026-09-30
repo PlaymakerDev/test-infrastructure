@@ -6,7 +6,8 @@ import type { CaseStatus } from '@/types/maintenance'
  *  longer guesses from `closed_at`/filled fields — a contractor who saved work
  *  without closing reads "กำลังดำเนินการ" instead of "ดำเนินการเสร็จสิ้น".
  *  `pending_approval` (contractor done, officer hasn't approved) sits in the
- *  same in-progress bucket the all-repairs tabs use. */
+ *  same in-progress bucket the all-repairs tabs use, and `waiting_doc` (signed
+ *  notice not attached yet) reads "ยังไม่ดำเนินการ" like `open`. */
 export const caseStatusMeta = (
   status: CaseStatus | undefined,
   closedAt?: string | null,

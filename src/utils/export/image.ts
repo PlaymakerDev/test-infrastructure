@@ -29,6 +29,14 @@ function fetchableUrl(url: string): string {
   }
 }
 
+/** A remote file's bytes, read through the proxy when CORS would block it —
+ *  e.g. the signed repair notice shown in a case page's preview. */
+export async function fetchRemoteBlob(url: string): Promise<Blob> {
+  const res = await fetch(fetchableUrl(url))
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.blob()
+}
+
 /** Save a remote file to the user's machine.
  *
  *  `<a download>` is ignored for a cross-origin href — the browser navigates

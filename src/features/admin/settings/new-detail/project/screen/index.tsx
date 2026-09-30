@@ -89,7 +89,8 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
       <ModalViewCrossingCode />
       <ModalConfirmDelete />
       <ModalLightingDiagram />
-      {/* Both opened from EmptyRoadSolution ("เพิ่มสายทาง" / ลบโครงการ). */}
+      {/* The full project form (opened from ModalAddRoad when the project is
+          missing a field the update needs) and EmptyRoadSolution's ลบโครงการ. */}
       <ModalCreateProject onSuccess={onProjectUpdated} />
       <ModalConfirmDeleteProject onDelete={onDeleteProject} isPending={isDeletePending} />
       {/* Last, so the viewer stacks above the equipment modals that open it. */}

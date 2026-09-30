@@ -1,7 +1,8 @@
 "use client"
-import React, { Suspense, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Spin } from 'antd'
+import { TbDownload } from 'react-icons/tb'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
@@ -9,12 +10,15 @@ import 'dayjs/locale/th'
 import OfficerCaseView from '../components/OfficerCaseView'
 import ContractorCaseView from '../components/ContractorCaseView'
 import CaseCreateView from '../components/CaseCreateView'
+import LetterPreviewModal, { previewActionButton } from '../components/LetterPreviewModal'
 import type { CaseDeviceRow, CaseProjectInfo } from '../components/caseViewTypes'
 import {
   useMaintenanceCase,
   useMaintenanceSolution,
   useProjectBySolution,
 } from '@/hooks/queries/maintenance'
+import { useRoadSolutions, useSolutionDetail } from '@/hooks/queries/manage'
+import { resolveCaseWebLink, solutionTypeFromPrefix } from '../data/caseWebLink'
 import { useCCTVDetail } from '@/hooks/queries/shared/useCCTVDetail'
 import { CCTVModal } from '@/components/modal'
 import type { CameraSolutionGroup, CaseDetail } from '@/types/maintenance'
@@ -43,7 +47,6 @@ const normalizeSolutionType = (value: string | null): string =>
  *  any query param. `?role=contractor` stays as a manual override so an
  *  officer can preview what the vendor sees. */
 const CaseContent: React.FC<Props> = ({ id }) => {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { userKind } = useUserKind()
 
@@ -136,6 +139,27 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   const projectBySolutionQuery = useProjectBySolution(solutionId)
   const projectDetail = projectBySolutionQuery.data ?? null
 
+  // ไปยังหน้าเว็บ — the solution's page in its own menu (see data/caseWebLink).
+  // Its type comes from the solution, its bureau from the road whose จุดติดตั้ง
+  // holds it; the detail page's own context stands in when those can't be read.
+  const solutionDetailQuery = useSolutionDetail(solutionId)
+  const roadSolutionsQuery = useRoadSolutions(projectDetail?.id)
+  const webLink = resolveCaseWebLink({
+    solutionId,
+    solution: solutionDetailQuery.data,
+    roads: roadSolutionsQuery.data,
+    context: hasMatchingDetailContext
+      ? {
+        typeId: solutionTypeFromPrefix(searchParams.get('prefix')),
+        deptId: searchParams.get('dept_id'),
+        roadId: searchParams.get('road_id'),
+      }
+      : null,
+    projectId: projectDetail?.id,
+    isWarranty: projectDetail?.is_warranty,
+    pending: solutionDetailQuery.isLoading || projectBySolutionQuery.isLoading || roadSolutionsQuery.isLoading,
+  })
+
   const project: CaseProjectInfo = {
     projectName: projectDetail?.project_name || '-',
     contractor: projectDetail?.contractor?.username || '-',
@@ -217,12 +241,50 @@ const CaseContent: React.FC<Props> = ({ id }) => {
     }))
   }
 
-  const handleGoToDetail = () => {
-    if (solutionId) {
-      router.push(`/admin/maintenance/detail/${solutionId}${detailQuery ? `?${detailQuery}` : ''}`)
-    } else {
-      router.push('/admin/maintenance?repair')
+  // หนังสือแจ้งซ่อมพร้อมลายเซ็น — shown in the same preview modal as /case/new,
+  // with ดาวน์โหลดเอกสาร on top (user 2026-09-28). The PDF is read into a blob
+  // (through the app's proxy while the media host sends no CORS headers), so
+  // the download needs no second request and gets a proper file name.
+  const [signedView, setSignedView] = useState<{ open: boolean; url: string | null; loading: boolean; failed: boolean }>(
+    { open: false, url: null, loading: false, failed: false },
+  )
+  const signedRunRef = useRef(0)
+  useEffect(() => {
+    const url = signedView.url
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [signedView.url])
+
+  const handleOpenSignedLetter = async () => {
+    const run = ++signedRunRef.current
+    setSignedView({ open: true, url: null, loading: true, failed: false })
+    try {
+      // Read the link fresh rather than from the page's copy of the case.
+      const fresh = await caseQuery.refetch()
+      const link = fresh.data?.signed_document?.document_url
+      if (!link) throw new Error('no signed document')
+      const { fetchRemoteBlob } = await import('@/utils/export/image')
+      const blob = await fetchRemoteBlob(link)
+      if (run !== signedRunRef.current) return
+      setSignedView({ open: true, url: URL.createObjectURL(new Blob([blob], { type: 'application/pdf' })), loading: false, failed: false })
+    } catch {
+      if (run !== signedRunRef.current) return
+      setSignedView({ open: true, url: null, loading: false, failed: true })
     }
+  }
+
+  const closeSignedLetter = () => {
+    signedRunRef.current++
+    setSignedView({ open: false, url: null, loading: false, failed: false })
+  }
+
+  const downloadSignedLetter = () => {
+    if (!signedView.url) return
+    const link = document.createElement('a')
+    link.href = signedView.url
+    link.download = `หนังสือแจ้งซ่อมพร้อมลายเซ็น_${id}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   if (loading) {
@@ -269,6 +331,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           returnToAllRepairs={returnToAllRepairs}
           returnToRepairHistory={returnToRepairHistory}
           onExportLetter={handleExportLetter}
+          onOpenSignedLetter={handleOpenSignedLetter}
         />
       ) : (
         <OfficerCaseView
@@ -280,10 +343,34 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           detailQuery={detailQuery}
           returnToAllRepairs={returnToAllRepairs}
           returnToRepairHistory={returnToRepairHistory}
-          onGoToDetail={handleGoToDetail}
+          webLink={webLink}
           onExportLetter={handleExportLetter}
+          onOpenSignedLetter={handleOpenSignedLetter}
+          viewer={role}
         />
       )}
+
+      <LetterPreviewModal
+        open={signedView.open}
+        url={signedView.url}
+        loading={signedView.loading}
+        failed={signedView.failed}
+        // Each side keeps the name its own button carries.
+        title={role === 'officer' ? 'หนังสือแจ้งซ่อมพร้อมลายเซ็น' : 'หนังสือแจ้งซ่อม'}
+        subtitle={caseData.signed_document?.file_name}
+        onClose={closeSignedLetter}
+        actions={
+          <>
+            <button type='button' className={previewActionButton} style={{ background: '#C4C4C4', color: '#212121' }} onClick={closeSignedLetter}>
+              ปิด
+            </button>
+            <button type='button' className={previewActionButton} style={{ background: '#FCD116', color: '#212121' }} onClick={downloadSignedLetter} disabled={!signedView.url}>
+              <TbDownload size={16} />
+              ดาวน์โหลดเอกสาร
+            </button>
+          </>
+        }
+      />
 
       {/* Global CCTV modal — fires from the Live buttons in ข้อมูลอุปกรณ์. */}
       <CCTVModal />
