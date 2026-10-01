@@ -33,6 +33,12 @@ type FeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, Record<stri
  *  this component's internal naming convention. */
 export const markerLayerSourceId = (id: string) => `markerlayer-src-${id}`
 
+// Module-level so the default keeps one identity: `textOffset` is a dep of the
+// rebuild effect below, and an inline `[0, 0.5]` default is a new array each
+// render — every re-render (e.g. a data refetch) tore down and re-added the
+// source + all layers instead of just calling setData.
+const DEFAULT_TEXT_OFFSET: [number, number] = [0, 0.5]
+
 /**
  * Generic marker layer — wraps a GeoJSON source plus 1-3 mapbox layers.
  *
@@ -144,7 +150,7 @@ const MarkerLayer: React.FC<MarkerLayerProps> = ({
   clusterColorSumProperty,
   countCapThreshold,
   textAnchor = 'top',
-  textOffset = [0, 0.5],
+  textOffset = DEFAULT_TEXT_OFFSET,
   textSize = 12,
   textColor = '#ffffff',
   minZoom,

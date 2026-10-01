@@ -26,6 +26,52 @@ type ConfigMap = MapboxMap & {
   setConfigProperty?: (importId: string, name: string, value: Json) => void
   getConfigProperty?: (importId: string, name: string) => Json
 }
+type LayerFilter = Parameters<MapboxMap['setFilter']>[1]
+
+/** Below this many degrees under a gate's limit, switch back to the cheap
+ *  filter. The full filter is correct at every pitch, so the gap only costs
+ *  speed — it stops a tilt hovering at the limit from swapping (and
+ *  re-laying-out the label tiles) on every frame. */
+const PITCH_GATE_HYSTERESIS = 2
+
+const isPitchGate = (node: Json): node is [string, [string, Json, number], true, Json] =>
+  Array.isArray(node) &&
+  node.length === 4 &&
+  node[0] === 'case' &&
+  node[2] === true &&
+  Array.isArray(node[1]) &&
+  node[1][0] === '<=' &&
+  Array.isArray(node[1][1]) &&
+  node[1][1].length === 1 &&
+  node[1][1][0] === 'pitch' &&
+  typeof node[1][2] === 'number'
+
+const usesCameraExpression = (node: Json): boolean => {
+  const s = JSON.stringify(node)
+  return s.includes('["pitch"]') || s.includes('["distance-from-center"]')
+}
+
+/**
+ * Standard thins its labels out at high pitch with
+ *   ["case", ["<=", ["pitch"], P], true, ["<=", ["distance-from-center"], D]]
+ * which is `true` whenever pitch ≤ P. Returns the filter with every such gate
+ * replaced by `true`, plus the lowest P — the pitch up to which the result is
+ * exactly equivalent. Null when a camera expression appears in any other
+ * shape, since nothing can then be proven about it.
+ */
+export function ungatePitch(filter: Json): { filter: Json; limit: number } | null {
+  let limit = Infinity
+  const walk = (node: Json): Json => {
+    if (isPitchGate(node)) {
+      limit = Math.min(limit, node[1][2])
+      return true
+    }
+    return Array.isArray(node) ? node.map(walk) : node
+  }
+  const out = walk(filter)
+  if (limit === Infinity || usesCameraExpression(out)) return null
+  return { filter: out, limit }
+}
 
 /**
  * Start the label tileset downloading, and switch the basemap's own place
@@ -66,6 +112,17 @@ export function preloadThaiPlaceLabels(map: MapboxMap): void {
  * Costs one extra vector source (~the place tileset) since a root layer can't
  * reference a source that belongs to the import.
  *
+ * The copied filters carry Standard's pitch gate (see `ungatePitch`). A filter
+ * using `pitch`/`distance-from-center` becomes a mapbox "dynamic filter", and
+ * the WHOLE filter — `within` included — is then re-evaluated for every label
+ * on every placement pass, on the main thread. `within` re-projects all of
+ * Thailand's ~15.6k outline vertices per call, so that alone was 650–1650ms of
+ * main-thread time per zoom/pan in the z5–10 band (measured 2026-10-02, the
+ * dashboard stutter). So each layer runs with the gate stripped — identical
+ * output while pitch ≤ the gate's limit, and `within` is evaluated once per
+ * tile in the worker — and swaps to the full filter only while the camera is
+ * tilted past it.
+ *
  * Returns a cleanup that removes everything it added.
  */
 export function addThaiOnlyPlaceLabels(
@@ -97,6 +154,8 @@ export function addThaiOnlyPlaceLabels(
 
   const within = ['within', thailand]
   const added: string[] = []
+  const gated: Array<{ id: string; full: Json; fast: Json; limit: number; fastOn: boolean }> = []
+  const initialPitch = map.getPitch()
 
   try {
     if (!map.getSource(SOURCE_ID)) {
@@ -112,7 +171,16 @@ export function addThaiOnlyPlaceLabels(
     const copy = resolve(JSON.parse(JSON.stringify(spec))) as Record<string, Json> & { id: string }
     copy.id = `${LAYER_PREFIX}${id}`
     copy.source = SOURCE_ID
-    copy.filter = copy.filter ? ['all', copy.filter, within] : within
+    const full: Json = copy.filter ? ['all', copy.filter, within] : within
+    const ungated = copy.filter ? ungatePitch(copy.filter) : null
+    const gate = ungated && {
+      id: copy.id,
+      full,
+      fast: ['all', ungated.filter, within] as Json,
+      limit: ungated.limit,
+      fastOn: initialPitch <= ungated.limit,
+    }
+    copy.filter = gate?.fastOn ? gate.fast : full
     // Standard gates these layers on its own switch:
     //   visibility: ["case", ["config","showPlaceLabels"], "visible", "none"]
     // which is already off by the time we copy, so the copy would inherit
@@ -124,6 +192,7 @@ export function addThaiOnlyPlaceLabels(
     try {
       map.addLayer(copy as Parameters<MapboxMap['addLayer']>[0])
       added.push(copy.id)
+      if (gate) gated.push(gate)
     } catch {
       // Standard changed this layer's shape — skip it rather than fail the map.
     }
@@ -145,7 +214,25 @@ export function addThaiOnlyPlaceLabels(
     map.on('sourcedata', onData)
   }
 
+  // Swap each layer between its fast and full filter as the camera tilts past
+  // the gate. Fires per frame during a tilt; only a crossing calls setFilter.
+  const onPitch = () => {
+    const pitch = map.getPitch()
+    for (const g of gated) {
+      const fastOn = g.fastOn ? pitch <= g.limit : pitch <= g.limit - PITCH_GATE_HYSTERESIS
+      if (fastOn === g.fastOn) continue
+      g.fastOn = fastOn
+      try {
+        if (map.getLayer(g.id)) map.setFilter(g.id, (fastOn ? g.fast : g.full) as LayerFilter)
+      } catch {
+        // Layer gone mid-teardown.
+      }
+    }
+  }
+  if (gated.length > 0) map.on('pitch', onPitch)
+
   return () => {
+    map.off('pitch', onPitch)
     try {
       for (const id of added) if (map.getLayer(id)) map.removeLayer(id)
       if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID)
