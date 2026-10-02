@@ -79,7 +79,7 @@ export interface CaseFeedItem extends NotificationFeedBase {
   kind: 'case'
   case: {
     case_no: string
-    status: 'open' | 'in_progress' | 'pending_approval' | 'closed'
+    status: 'waiting_doc' | 'open' | 'in_progress' | 'pending_approval' | 'closed'
     /** Can be "" (empty string, not null) — test with truthiness (§9.6). */
     category: string
     problem: string

@@ -1,18 +1,22 @@
 "use client"
-import React from 'react'
-import { Empty, Image } from 'antd'
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { Empty, Image, Tooltip } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { TbDownload, TbExternalLink, TbFileText, TbPrinter, TbTool } from 'react-icons/tb'
 import styles from '../screen/maintenance-case.module.css'
 import TitleSection from './TitleSection'
 import ProjectInfoCard from './ProjectInfoCard'
 import CaseDeviceTable from './CaseDeviceTable'
+import SignedLetterUploadModal from './SignedLetterUploadModal'
 import { deviceSummary, type CaseDeviceRow, type CaseProjectInfo } from './caseViewTypes'
 import type { CaseDetail } from '@/types/maintenance'
 import { parseImageUrls } from '../../data/parseImageUrls'
 import { caseStatusMeta } from '../../data/caseStatus'
 import { contractorProblem, isContractorFilled } from '../../data/contractorProblem'
 import { downloadRemoteFile } from '@/utils/export/image'
+import type { CaseWebLink } from '../data/caseWebLink'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -25,9 +29,14 @@ export interface OfficerCaseViewProps {
   detailQuery: string
   returnToAllRepairs: boolean
   returnToRepairHistory?: boolean
-  /** Link target for ไปยังหน้าเว็บ (the owning detail page). */
-  onGoToDetail: () => void
+  /** ไปยังหน้าเว็บ — the solution's own page in its menu (e.g. CCTV). */
+  webLink: CaseWebLink
   onExportLetter: () => void | Promise<void>
+  /** Opens the signed notice (หนังสือแจ้งซ่อมพร้อมลายเซ็น). */
+  onOpenSignedLetter: () => void | Promise<void>
+  /** Who is looking. A contractor lands here only for a closed case, and gets
+   *  their own single letter button instead of the officer's two. */
+  viewer?: 'officer' | 'contractor'
 }
 
 /** มุมมองเจ้าหน้าที่สำหรับเคสที่มีอยู่แล้ว (mock 4/5, 2026-09-11 redesign) —
@@ -47,9 +56,13 @@ const OfficerCaseView: React.FC<OfficerCaseViewProps> = ({
   detailQuery,
   returnToAllRepairs,
   returnToRepairHistory,
-  onGoToDetail,
+  webLink,
   onExportLetter,
+  onOpenSignedLetter,
+  viewer = 'officer',
 }) => {
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const signedLetter = !!caseData.signed_document?.document_url
   const contractorFilled = isContractorFilled(caseData)
   const statusMeta = caseStatusMeta(caseData.status, caseData.closed_at)
 
@@ -147,15 +160,54 @@ const OfficerCaseView: React.FC<OfficerCaseViewProps> = ({
             >
               {statusMeta.label}
             </span>
-            <button
-              type='button'
-              className={styles.btnSecondary}
-              style={{ background: '#FF8A00', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              onClick={onExportLetter}
-            >
-              <TbPrinter size={16} />
-              หนังสือแจ้งซ่อม
-            </button>
+            {viewer === 'officer' ? (
+              <>
+                <button
+                  type='button'
+                  className={styles.btnSecondary}
+                  style={{ background: '#FF8A00', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={onExportLetter}
+                >
+                  <TbPrinter size={16} />
+                  แบบฟอร์มหนังสือแจ้งซ่อม
+                </button>
+                {/* Once the signed copy is in, this is where it opens (blue);
+                    until then, where it goes in (yellow). A closed case with
+                    none left to sign for shows neither. */}
+                {signedLetter ? (
+                  <button
+                    type='button'
+                    className={styles.btnSecondary}
+                    style={{ background: '#66AEFF', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    onClick={onOpenSignedLetter}
+                  >
+                    <TbPrinter size={16} />
+                    หนังสือแจ้งซ่อมพร้อมลายเซ็น
+                  </button>
+                ) : caseData.status !== 'closed' && (
+                  <button
+                    type='button'
+                    className={styles.btnSecondary}
+                    style={{ background: '#FCD116', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setUploadOpen(true)}
+                  >
+                    <TbPrinter size={16} />
+                    นำเข้าหนังสือแจ้งซ่อมพร้อมลายเซ็น
+                  </button>
+                )}
+              </>
+            ) : (
+              // The contractor's one letter button, as on their own view.
+              <button
+                type='button'
+                className={styles.btnSecondary}
+                style={{ background: signedLetter ? '#66AEFF' : '#FF8A00', color: '#212121', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                onClick={signedLetter ? onOpenSignedLetter : onExportLetter}
+              >
+                <TbPrinter size={16} />
+                หนังสือแจ้งซ่อม
+              </button>
+            )}
           </>
         }
       />
@@ -179,15 +231,27 @@ const OfficerCaseView: React.FC<OfficerCaseViewProps> = ({
                 <TbTool size={12} />
                 {devices.length}
               </span>
-              <button
-                type='button'
-                className='inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full fs-12 cursor-pointer hover:opacity-85'
-                style={{ background: '#66AEFF', color: '#0A0A0A', border: 'none' }}
-                onClick={onGoToDetail}
-              >
-                <TbExternalLink size={14} />
-                ไปยังหน้าเว็บ
-              </button>
+              {webLink.kind === 'ready' ? (
+                <Link
+                  href={webLink.href}
+                  className='inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full fs-12 hover:opacity-85'
+                  style={{ background: '#66AEFF', color: '#0A0A0A' }}
+                >
+                  <TbExternalLink size={14} />
+                  ไปยังหน้าเว็บ
+                </Link>
+              ) : (
+                // Still resolving, or no page to go to (the reason on hover).
+                <Tooltip title={webLink.kind === 'blocked' ? webLink.reason : undefined}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full fs-12 opacity-50 ${webLink.kind === 'loading' ? 'cursor-wait' : 'cursor-not-allowed'}`}
+                    style={{ background: '#66AEFF', color: '#0A0A0A' }}
+                  >
+                    {webLink.kind === 'loading' ? <LoadingOutlined style={{ fontSize: 12 }} /> : <TbExternalLink size={14} />}
+                    ไปยังหน้าเว็บ
+                  </span>
+                </Tooltip>
+              )}
             </div>
             <div className='mt-4'>
               <CaseDeviceTable rows={devices} />
@@ -273,6 +337,10 @@ const OfficerCaseView: React.FC<OfficerCaseViewProps> = ({
           </div>
         </div>
       </section>
+
+      {viewer === 'officer' && (
+        <SignedLetterUploadModal open={uploadOpen} caseNo={caseId} onClose={() => setUploadOpen(false)} />
+      )}
     </>
   )
 }

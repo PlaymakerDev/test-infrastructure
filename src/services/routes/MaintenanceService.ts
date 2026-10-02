@@ -17,6 +17,8 @@ import type {
   RegionItem,
   UptimeStatistics,
   ContractorSummaryRow,
+  AttachCaseDocumentRequest,
+  AttachCaseDocumentResponse,
 } from "@/types/maintenance"
 import type { APIResponseProjectDetail, UploadResponse } from "@/types/shared"
 
@@ -154,6 +156,16 @@ export const updateMaintenanceCaseAPI = async (caseNo: string, data: UpdateCaseR
     data,
   })
 }
+
+/** Attaches the signed repair notice (already uploaded) — moves a waiting_doc
+ *  case to open, or replaces the document on a later one. Officers only
+ *  (a contractor gets 403); a closed case answers 409. */
+export const attachMaintenanceCaseDocumentAPI = async (caseNo: string, data: AttachCaseDocumentRequest) =>
+  ApiService.fetchData<AttachCaseDocumentResponse, AttachCaseDocumentRequest>({
+    url: `/manage/maintenance/case/${caseNo}/document`,
+    method: 'POST',
+    data,
+  })
 
 /** Before/after repair image or video upload for a case, mirrors `postUploadVMSAPI`'s shape. */
 export const postUploadMaintenanceAPI = async (form: FormData) =>

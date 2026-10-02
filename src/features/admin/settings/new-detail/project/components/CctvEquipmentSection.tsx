@@ -1,15 +1,22 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
-import { App, Button } from 'antd'
+import Link from 'next/link'
+import { App, Button, Tooltip } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
-import { TbChevronDown, TbChevronUp, TbVideo } from 'react-icons/tb'
+import { TbChevronDown, TbChevronUp, TbExternalLink, TbVideo } from 'react-icons/tb'
 import { getProjectRoadCamerasAPI } from '@/services/routes/ProjectDetailService'
 import { manageKeys, useDeleteCamera } from '@/hooks/queries/manage'
 import { ProjectRoadCamera } from '@/types/manage/project-detail-api'
 import { useProjectContext, errText } from '../context'
+import { buildSolutionDetailUrl, DETAIL_SOLUTION_TYPE } from '../data/solutionDetailUrl'
 import ModalCreateCamera from './ModalCreateCamera'
 import TableRoadCameras from './TableRoadCameras'
+
+// Same pill as the maintenance case page's "ไปยังหน้าเว็บ" (OfficerCaseView),
+// sized to sit level with "เพิ่มกล้อง".
+const detailLinkClass = 'inline-flex items-center gap-1.5 h-8 px-4 rounded-full fs-12 whitespace-nowrap'
+const detailLinkStyle: React.CSSProperties = { background: 'var(--default-blue)', color: '#0A0A0A' }
 
 interface Props { }
 
@@ -43,6 +50,21 @@ const CctvEquipmentSection: React.FC<Props> = () => {
   const { mutate: deleteCamera, isPending: isDeleting } = useDeleteCamera()
 
   const cameras = useMemo(() => data?.cameras ?? [], [data])
+
+  // ไปยังหน้าเว็บ — the road's CCTV solution on the CCTV menu, through the same
+  // builder as TableSolution's ไปยังหน้าเว็บ column (user 2026-09-29). The
+  // road's own bureau picks the list the detail page resolves it from; the
+  // project's can differ and then finds nothing. No solution until the road's
+  // first camera, so nothing to link to before that.
+  const solution = data?.solution ?? null
+  const detailTarget = useMemo(() => {
+    if (!solution) return null
+    return buildSolutionDetailUrl(DETAIL_SOLUTION_TYPE.CCTV, solution.solution_id, {
+      deptId: roadSolution.road?.department_id,
+      projectId: roadSolution.project_id,
+      roadId: roadSolution.road_id,
+    })
+  }, [solution, roadSolution])
 
   const openCreate = useCallback(() => {
     setEditing(null)
@@ -107,18 +129,34 @@ const CctvEquipmentSection: React.FC<Props> = () => {
             ? <TbChevronDown className='text-(--yellow) fs-18' />
             : <TbChevronUp className='text-(--yellow) fs-18' />}
         </div>
-        {/* Same styling as SolutionTitle's "เพิ่มประเภทงาน": solid primary
-            (brand yellow), round, label in fs-12 — no ConfigProvider
-            override. The two buttons sit a few rows apart on this page and
-            read as one control when they match. */}
-        <Button
-          type='primary'
-          icon={<PlusOutlined />}
-          shape='round'
-          onClick={openCreate}
-        >
-          <p className='fs-12'>เพิ่มกล้อง</p>
-        </Button>
+        <div className='flex items-center gap-2 flex-wrap'>
+          {detailTarget?.kind === 'ready' && (
+            <Link href={detailTarget.href} className={`${detailLinkClass} hover:opacity-85`} style={detailLinkStyle}>
+              <TbExternalLink className='fs-16' />
+              ไปยังหน้าเว็บ
+            </Link>
+          )}
+          {detailTarget?.kind === 'blocked' && (
+            <Tooltip title={detailTarget.reason}>
+              <span className={`${detailLinkClass} opacity-50 cursor-not-allowed`} style={detailLinkStyle}>
+                <TbExternalLink className='fs-16' />
+                ไปยังหน้าเว็บ
+              </span>
+            </Tooltip>
+          )}
+          {/* Same styling as SolutionTitle's "เพิ่มประเภทงาน": solid primary
+              (brand yellow), round, label in fs-12 — no ConfigProvider
+              override. The two buttons sit a few rows apart on this page and
+              read as one control when they match. */}
+          <Button
+            type='primary'
+            icon={<PlusOutlined />}
+            shape='round'
+            onClick={openCreate}
+          >
+            <p className='fs-12'>เพิ่มกล้อง</p>
+          </Button>
+        </div>
       </div>
 
       {!isCollapsed && (

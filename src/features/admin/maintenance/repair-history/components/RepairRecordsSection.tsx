@@ -189,7 +189,9 @@ const QueryErrorNotice: React.FC<QueryErrorNoticeProps> = ({ message, onRetry })
 // Map API status → UI repairStatus. `pending_approval` (contractor submitted,
 // officer hasn't approved) belongs with "กำลังดำเนินการ", not "ปิด Case".
 const mapStatusToRepairStatus = (status: HistoryCase['status']): RepairRecord['repairStatus'] => {
-  if (status === 'open') return 'pending'
+  // waiting_doc (signed notice not attached yet) hasn't started either — it
+  // used to fall through to 'completed' below.
+  if (status === 'waiting_doc' || status === 'open') return 'pending'
   if (status === 'in_progress' || status === 'pending_approval') return 'in_progress'
   return 'completed' // 'closed'
 }

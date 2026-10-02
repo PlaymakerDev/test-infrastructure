@@ -1,9 +1,14 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { memo, useMemo } from 'react'
 import { STCH_UNITS } from '@/features/admin/dashboard/data/units'
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
+import { useChunkedReveal } from '../hooks/useChunkedReveal'
 import HTMLMarker from '../primitives/HTMLMarker'
+
+/** Stable identity so the chunked reveal doesn't restart every render. */
+const EMPTY: [string, StchSummary][] = []
 
 export interface StchSummary {
   /** Total devices in this สทช. */
@@ -60,31 +65,27 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
   zoomOnClick = 9.5,
   onMarkerClick,
 }) => {
-  const { map, isLoaded } = useMap()
-  const [visible, setVisible] = useState(true)
-
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    const update = () => setVisible(map.getZoom() < hideAtZoom)
-    update()
-    map.on('zoom', update)
-    return () => {
-      map.off('zoom', update)
-    }
-  }, [map, isLoaded, hideAtZoom])
+  const { map } = useMap()
+  const visible = useZoomTierVisible((z) => z < hideAtZoom, true)
+  const entries = useMemo(
+    () => Object.entries(summaries).filter(([, info]) => info && info.count > 0),
+    [summaries],
+  )
+  // Spread the mount across frames — see useChunkedReveal.
+  const shown = useChunkedReveal(visible ? entries : EMPTY)
 
   // Unmount instead of display:none — a hidden marker is still attached to the
   // map, and mapbox re-projects + rewrites the transform of EVERY attached
   // marker on every move frame regardless of CSS. Only one tier is ever on
   // screen, so the rest were pure per-frame cost. Same rule OverlapStackMarker
   // already follows.
-  if (!visible) return null
-
+  // No early return when the tier is off: `shown` drains to empty a chunk
+  // per frame, and bailing out here instead tore every marker down in one
+  // commit — the 69ms frame the chunking was added to prevent.
   return (
     <>
-      {Object.entries(summaries).map(([stchStr, info]) => {
+      {shown.map(([stchStr, info]) => {
         const stch = Number(stchStr)
-        if (!info || info.count === 0) return null
         return (
           <HTMLMarker
             key={stch}
@@ -149,4 +150,6 @@ const StchSummaryMarker: React.FC<StchSummaryMarkerProps> = ({
   )
 }
 
-export default StchSummaryMarker
+// Memoised: ReactMap re-renders on every viewport recalc while panning, and
+// this tier's whole marker list was re-rendering with it.
+export default memo(StchSummaryMarker)

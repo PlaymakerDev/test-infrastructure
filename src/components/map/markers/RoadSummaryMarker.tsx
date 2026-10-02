@@ -1,9 +1,14 @@
 "use client"
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 import type { LngLatBoundsLike } from 'mapbox-gl'
 import { useMap } from '../hooks/useMap'
+import { useZoomTierVisible } from '../hooks/useZoomTierVisible'
+import { useChunkedReveal } from '../hooks/useChunkedReveal'
 import { useViewportBounds, inBounds } from '../hooks/useViewportBounds'
 import HTMLMarker from '../primitives/HTMLMarker'
+
+/** Stable identity so the chunked reveal doesn't restart every render. */
+const EMPTY: [string, RoadSummary][] = []
 
 export interface RoadSummary {
   /** Total devices on this road. */
@@ -43,47 +48,39 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
   suppressed = false,
   onSelect,
 }) => {
-  const { map, isLoaded } = useMap()
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!map || !isLoaded) return
-    const update = () => {
-      const z = map.getZoom()
-      setVisible(z >= minZoom && z < hideAtZoom)
-    }
-    update()
-    map.on('zoom', update)
-    return () => {
-      map.off('zoom', update)
-    }
-  }, [map, isLoaded, minZoom, hideAtZoom])
+  const { map } = useMap()
+  const visible = useZoomTierVisible((z) => z >= minZoom && z < hideAtZoom)
 
   // There is one bubble per road nationwide, but this tier only shows between
   // z9 and z11.5 where the screen holds a province or two — so all but a few
   // are off-screen. Cull them: mapbox re-projects every attached marker on
   // every move frame, on-screen or not.
   const viewport = useViewportBounds()
+  // Built in two steps on purpose: the reveal below tracks entries by
+  // reference, and rebuilding the tuples on every viewport recalc would make
+  // every marker look new.
+  const entries = useMemo(
+    () => Object.entries(summaries).filter(([, info]) => info && info.count > 0),
+    [summaries],
+  )
   const nearby = useMemo(
     () =>
-      visible
-        ? Object.entries(summaries).filter(
-            ([, info]) =>
-              info &&
-              info.count > 0 &&
-              (!viewport || inBounds(viewport, info.centroid[0], info.centroid[1])),
-          )
-        : [],
-    [summaries, viewport, visible],
+      viewport
+        ? entries.filter(([, info]) => inBounds(viewport, info.centroid[0], info.centroid[1]))
+        : entries,
+    [entries, viewport],
   )
 
   // Unmount rather than display:none — see the note in StchSummaryMarker. This
   // is the tier that matters most: one marker per road with devices.
-  if (!visible || suppressed) return null
+  const shown = useChunkedReveal(visible && !suppressed ? nearby : EMPTY)
 
+  // No early return when the tier is off: `shown` drains to empty a chunk
+  // per frame, and bailing out here instead tore every marker down in one
+  // commit — the 69ms frame the chunking was added to prevent.
   return (
     <>
-      {nearby.map(([idStr, info]) => {
+      {shown.map(([idStr, info]) => {
         const roadId = Number(idStr)
         return (
           <HTMLMarker
@@ -159,4 +156,6 @@ const RoadSummaryMarker: React.FC<RoadSummaryMarkerProps> = ({
   )
 }
 
-export default RoadSummaryMarker
+// Memoised: ReactMap re-renders on every viewport recalc while panning, and
+// this tier's whole marker list was re-rendering with it.
+export default memo(RoadSummaryMarker)

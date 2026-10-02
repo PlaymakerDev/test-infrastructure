@@ -5,6 +5,7 @@ import { MapContext } from './MapContext'
 import RoadLayer from './markers/RoadLayer'
 import { loadGeoJsonOnce } from './hooks/geojsonCache'
 import { addThaiOnlyPlaceLabels, preloadThaiPlaceLabels } from './hooks/thaiPlaceLabels'
+import { mark, dumpTrace, dumpTraceSoon, watchFrames, watchLongFrames } from './utils/mapTrace'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,7 +220,10 @@ const BaseMap: React.FC<BaseMapProps> = ({
   // Start the country outline before the map does anything else — the mask and
   // the Thai-only labels both wait on it, and both are what crop the view.
   useEffect(() => {
-    loadGeoJsonOnce(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`).catch(() => {})
+    mark('outline fetch start')
+    loadGeoJsonOnce(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/thailand.geojson`)
+      .then(() => mark('outline ready'))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -229,8 +233,10 @@ const BaseMap: React.FC<BaseMapProps> = ({
     let instance: MapboxMap | null = null
     let cleanupLabels: (() => void) | null = null
 
+    mark('mapbox-gl import start')
     import('mapbox-gl').then(({ default: mb }) => {
       if (cancelled || !containerRef.current) return
+      mark('mapbox-gl imported')
       mb.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ''
       instance = new mb.Map({
         container: containerRef.current,
@@ -278,12 +284,24 @@ const BaseMap: React.FC<BaseMapProps> = ({
       // As early as the style allows — before the first basemap tile paints, so
       // the foreign place names never get a frame on screen, and their
       // replacements' tiles start downloading alongside everything else.
-      const preload = () => { if (!cancelled && instance) preloadThaiPlaceLabels(instance) }
+      mark('map created')
+      const preload = () => {
+        if (cancelled || !instance) return
+        mark('style.load')
+        preloadThaiPlaceLabels(instance)
+      }
       if (instance.isStyleLoaded()) preload()
       else instance.once('style.load', preload)
 
+      // Frame cost while the camera moves, plus the step table once settled.
+      watchFrames(instance as unknown as Parameters<typeof watchFrames>[0])
+      watchLongFrames(instance as unknown as Parameters<typeof watchLongFrames>[0])
+      instance.once('idle', () => { mark('first idle'); dumpTrace() })
+      dumpTraceSoon()
+
       instance.on('load', () => {
         if (cancelled) return
+        mark('load (first tiles)')
         preload()
         // This style is one root layer (`sky`) plus an IMPORT of Mapbox
         // Standard, and imported layers sit in another scope: `getStyle()`
@@ -303,6 +321,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
             const th = gj.features?.[0]
             if (cancelled || !th) return
             cleanupLabels = addThaiOnlyPlaceLabels(instance!, th)
+            mark('thai labels added')
           })
           .catch(() => {
             // No outline available — leave the basemap's own labels alone.
@@ -327,6 +346,7 @@ const BaseMap: React.FC<BaseMapProps> = ({
         }
 
         if (cancelled) return
+        mark('isLoaded -> children mount')
         setIsLoaded(true)
       })
 

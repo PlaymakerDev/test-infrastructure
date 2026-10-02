@@ -69,9 +69,16 @@ describe('settings → solution detail navigation', () => {
   it('blocks rather than linking when the department is unknown', () => {
     // useDeptId() falls back to dept 50 when ?dept_id= is missing, so a link
     // built without one would silently show another bureau's data.
-    for (const deptId of [null, undefined, '', 0, '0']) {
+    for (const deptId of [null, undefined, '']) {
       const target = buildSolutionDetailUrl(DETAIL_SOLUTION_TYPE.CROSSWALK, 900, { ...CTX, deptId })
       expect(target.kind).toBe('blocked')
+    }
+  })
+
+  it('links a road of the central group (dept 0) with dept_id=0', () => {
+    for (const deptId of [0, '0']) {
+      const parsed = readyHref(DETAIL_SOLUTION_TYPE.CCTV, { ...CTX, deptId })
+      expect(parsed.searchParams.get('dept_id')).toBe('0')
     }
   })
 

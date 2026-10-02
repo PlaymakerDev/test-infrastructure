@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { NextRequest, NextResponse } from "next/server";
 import { SessionData, sessionOptions } from "@/lib/defaultSession";
 
-// Same-origin image proxy for PDF exports.
+// Same-origin image (and PDF) proxy for exports.
 //
 // Detection photos live on hosts that don't send CORS headers (e.g.
 // wts.drr.go.th) — an on-screen <img> renders them fine, but the export needs
@@ -13,7 +13,8 @@ import { SessionData, sessionOptions } from "@/lib/defaultSession";
 // Guards (this is otherwise an open SSRF proxy):
 //  • session required — same iron-session the rest of the app uses
 //  • host allowlist — *.drr.go.th plus the configured backend host only
-//  • http(s) only, 10s timeout, image/* responses only
+//  • http(s) only, 10s timeout, image/* or application/pdf responses only
+//    (PDF: the signed repair notice, previewed and saved from a case page)
 
 const ALLOWED_HOST_SUFFIX = ".drr.go.th";
 
@@ -61,8 +62,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: `upstream ${upstream.status}` }, { status: 502 });
     }
     const contentType = upstream.headers.get("content-type") ?? "";
-    if (!contentType.startsWith("image/")) {
-      return NextResponse.json({ message: "not an image" }, { status: 502 });
+    if (!contentType.startsWith("image/") && !contentType.startsWith("application/pdf")) {
+      return NextResponse.json({ message: "not an image or PDF" }, { status: 502 });
     }
     return new NextResponse(upstream.body, {
       status: 200,

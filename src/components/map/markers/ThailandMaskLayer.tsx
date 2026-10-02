@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import { useMap } from '../hooks/useMap'
 import { loadGeoJsonOnce } from '../hooks/geojsonCache'
+import { mark } from '../utils/mapTrace'
 
 export interface ThailandMaskLayerProps {
   /** URL of the country outline (single feature, Polygon or MultiPolygon) */
@@ -145,6 +146,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
 
         const src = map.getSource('thailand-mask') as { setData?: (d: unknown) => void } | undefined
         src?.setData?.(maskOf(tHoles))
+        mark('crop applied')
         map.setPaintProperty('thailand-mask-fill', 'fill-opacity', maskOpacity)
 
 
@@ -152,6 +154,7 @@ const ThailandMaskLayer: React.FC<ThailandMaskLayerProps> = ({
         if (cancelled || !map) return
 
         // Order unchanged for consumers that do use provinces.
+        mark('provinces ready')
         if (provincesData && !map.getSource('th-provinces')) {
           map.addSource('th-provinces', { type: 'geojson', data: provincesData })
           map.addLayer(

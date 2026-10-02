@@ -47,8 +47,6 @@ export interface OverlapStackMarkerProps {
   /** Hide everything when a SystemType filter excludes ALL devices in the group. */
   visibleTypes?: Set<SystemType>
   /** Only render at/above this zoom (the country-level STCH summary owns the
-   *  lower zooms). Mirrors `DeviceClusterMarker.minZoom`. */
-  minZoom?: number
   /** Fired on ANY interaction with this stack (expand, single pin, or a fanned
    *  device). The dashboard uses it to reveal its map-only landing overlays. */
   onMarkerClick?: () => void
@@ -81,7 +79,6 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   group,
   center,
   visibleTypes,
-  minZoom = 6.5,
   onMarkerClick,
 }) => {
   const { map, isLoaded } = useMap()
@@ -90,21 +87,21 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
   // a silent no-op — `PopupDetailLink` navigates ONLY via `onNavigate`.
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
-  const [zoomVisible, setZoomVisible] = useState(false)
   // Which side of AUTO_EXPAND_ZOOM the camera was on at the last zoom event —
   // auto expand/collapse fires only when CROSSING the line, so a manual
   // click-toggle between crossings isn't fought by the effect.
   const wasStreetZoomRef = useRef<boolean | null>(null)
 
-  // Track zoom — hide while the country-level STCH summary owns the view;
-  // fan out automatically at street zoom + fold back up when zooming away
-  // (per 2026-07-24 request — clicking still toggles at any zoom).
+  // Whether this tier is on at all is the PARENT's call — one decision for
+  // the whole list, so the mount burst goes through its chunked reveal
+  // instead of every stack flipping itself on in the same commit.
+  // Fanning out at street zoom stays here: local state on a marker that is
+  // already mounted (per 2026-07-24 request — clicking toggles at any zoom).
+
   useEffect(() => {
     if (!map || !isLoaded) return
     const update = () => {
-      const z = map.getZoom()
-      setZoomVisible(z >= minZoom)
-      const street = z >= AUTO_EXPAND_ZOOM
+      const street = map.getZoom() >= AUTO_EXPAND_ZOOM
       if (street !== wasStreetZoomRef.current) {
         wasStreetZoomRef.current = street
         setExpanded(street)
@@ -113,7 +110,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
     update()
     map.on('zoom', update)
     return () => { map.off('zoom', update) }
-  }, [map, isLoaded, minZoom])
+  }, [map, isLoaded])
 
   // Open a device popup using the shared single-popup helper. Returns void —
   // call sites just dispatch and let the helper handle close/cleanup.
@@ -141,7 +138,7 @@ const OverlapStackMarker: React.FC<OverlapStackMarkerProps> = ({
     [group, visibleTypes],
   )
 
-  if (!zoomVisible || visible.length === 0) return null
+  if (visible.length === 0) return null
   // After filtering, a stack might collapse to a single device — render it as
   // a normal pin (no fan-out / no count badge), still with shared popup.
   if (visible.length === 1) {
@@ -317,4 +314,6 @@ const DeviceIcon: React.FC<{ device: Device; size: number }> = memo(function Dev
   )
 })
 
-export default OverlapStackMarker
+// Memoised: a viewport recalc mid-pan re-renders ReactMap, and without this
+// every mounted stack re-rendered its badge + fan with it.
+export default memo(OverlapStackMarker)
