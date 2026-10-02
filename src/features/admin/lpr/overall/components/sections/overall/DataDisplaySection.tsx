@@ -10,10 +10,10 @@ import SearchBar, {
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 import { TableLPRData, LPRList, FormSearchLPR } from '../../../components'
-import { filterLPRList } from '../../../data/filterLPRList'
+import { filterLPRList, searchLPRList } from '../../../data/filterLPRList'
 import { LPR_EXPORT_COLUMNS, toLPRExportRows } from '../../../data/lprExport'
 import { useDeptId } from '@/hooks/useDeptId'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { getLPRListAPI, getLPRTotalAPI } from '@/services/routes/NewLPRService'
 import { Empty, Skeleton } from 'antd'
 
@@ -85,8 +85,8 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [exportOpen, setExportOpen] = useState(false)
-  // Search is a server-side road-code lookup (debounced by FormSearchLPR).
-  const roadCode = search.trim()
+  // Search is client-side (debounced by FormSearchLPR) — the list is fetched once.
+  const searchTerm = search.trim()
 
   const {
     data: lprTotal,
@@ -105,15 +105,11 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     isLoading: isLPRListLoading,
     isError: isLPRListError
   } = useQuery({
-    queryKey: ['lpr-list', deptId, roadCode],
+    queryKey: ['lpr-list', deptId],
     queryFn: () => getLPRListAPI(deptId, {
-      scope: 'all',
-      road_code: roadCode || undefined,
+      scope: 'all'
     }),
     enabled: !!deptId,
-    // Keep the current table on screen while the next search result loads,
-    // instead of flashing the skeleton on every debounced keystroke.
-    placeholderData: keepPreviousData,
   })
 
   const renderStats = useMemo(() => {
@@ -128,11 +124,16 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     }
   }, [lprTotal, isLPRTotalLoading, isLPRTotalError])
 
-  // Status chip → keep only the matching install points (table re-groups and
-  // recounts "N โครงการ" from the filtered tree).
+  // Search box (หน่วยงาน / สายทาง / ชื่อโครงการ) then status chip → keep only the
+  // matching install points (table / grid re-group and recount "N โครงการ"
+  // from the filtered tree).
+  const searchedList = useMemo(
+    () => searchLPRList(lprList?.data, searchTerm),
+    [lprList?.data, searchTerm],
+  )
   const filteredList = useMemo(
-    () => filterLPRList(lprList?.data, activeFilter),
-    [lprList?.data, activeFilter],
+    () => filterLPRList(searchedList, activeFilter),
+    [searchedList, activeFilter],
   )
 
   // Export rows in the SAME order the table displays, from the same filtered
@@ -145,9 +146,9 @@ const DataDisplaySection: React.FC<Props> = (props) => {
     const parts: string[] = []
     const filterLabel = LPR_FILTERS.find((f) => f.key === activeFilter)?.label
     if (activeFilter !== 'all' && filterLabel) parts.push(`สถานะ ${filterLabel}`)
-    if (roadCode) parts.push(`ค้นหารหัสสายทาง "${roadCode}"`)
+    if (searchTerm) parts.push(`ค้นหา "${searchTerm}"`)
     return parts.length ? parts.join(' · ') : undefined
-  }, [activeFilter, roadCode])
+  }, [activeFilter, searchTerm])
 
   const renderContent = useMemo(() => {
     switch (viewMode) {

@@ -14,6 +14,7 @@ const sol = (
   lpr: { total_camera: 2, total_online: 2, total_offline: 0 },
   is_online: true,
   is_warranty: true,
+  plates: { today: 0, yesterday: 0 },
 })
 
 const list = (...solutions: SubDptSolution[]): ListData[] => [
