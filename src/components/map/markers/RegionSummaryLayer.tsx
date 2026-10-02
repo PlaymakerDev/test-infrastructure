@@ -76,23 +76,9 @@ const addTo = (m: Record<number, Acc>, key: number, lng: number, lat: number, tr
 const centroidOf = (a: Acc): [number, number] =>
   a.tCount > 0 ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount] : [a.sumLng / a.count, a.sumLat / a.count]
 
-export interface RegionSummaryPoint {
-  lng: number
-  lat: number
-  /** Owning ขทช. id. Optional — omit when the caller's payload doesn't carry it. */
-  deptId?: number
-}
-
 interface Props {
   /** Menu system — picks data slice, bubble color, and glyph. */
   type: SystemType
-  /** Caller-supplied points — replace the type's default source (/position, or
-   *  /lpr/points for LPR) so the bubbles count exactly what the caller's own
-   *  pin layer plots. `[]` (still loading) renders nothing rather than falling
-   *  back to the default source. When NO point carries a `deptId` the ขทช. tier
-   *  is skipped — สทช. bubbles stay up to the pin zoom instead of lumping
-   *  everything under "ส่วนกลาง". */
-  points?: RegionSummaryPoint[]
 }
 
 /**
@@ -105,12 +91,12 @@ interface Props {
  * grouping matches the dashboard's and scope=all vs own is handled by the
  * shared hooks. Must render inside a `BaseMap`.
  */
-const RegionSummaryLayer: React.FC<Props> = ({ type, points: pointsProp }) => {
-  const { map, isLoaded } = useMap()
+const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
+  const { map } = useMap()
   const deptId = useDeptId()
   const isLpr = type === 'LPR'
   // Both hooks are cache-shared with the dashboard; the unused one is disabled.
-  const { data: position } = useDashboardPosition(isLpr || pointsProp ? null : deptId)
+  const { data: position } = useDashboardPosition(isLpr ? null : deptId)
   const { data: lprPoints } = useLPRPoints()
   const { data: departments } = useDepartments()
   const bureauFeatures = useBureauFeatures()
@@ -123,21 +109,19 @@ const RegionSummaryLayer: React.FC<Props> = ({ type, points: pointsProp }) => {
 
   const { stchSummaries, deptSummaries } = useMemo(() => {
     const typeId = SOLUTION_TYPE_ID[type]
-    const points: { lng: number; lat: number; stch: number; deptId: number }[] = pointsProp
-      ? pointsProp.map((p) => ({ lng: p.lng, lat: p.lat, stch: 0, deptId: p.deptId ?? 0 }))
-      : isLpr
-        ? (lprPoints ?? [])
-          .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat) && !(p.lng === 0 && p.lat === 0))
-          .map((p) => ({ lng: p.lng, lat: p.lat, stch: 0, deptId: p.department_id ?? 0 }))
-        : (position?.locations ?? [])
-          .filter((l) => l.solution.solution_type_id === typeId)
-          .filter((l) => Array.isArray(l.geometry_point) && l.geometry_point.length === 2)
-          .map((l) => ({
-            lng: l.geometry_point![0],
-            lat: l.geometry_point![1],
-            stch: l.road.stch ?? 0,
-            deptId: l.road.department_id ?? 0,
-          }))
+    const points: { lng: number; lat: number; stch: number; deptId: number }[] = isLpr
+      ? (lprPoints ?? [])
+        .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat) && !(p.lng === 0 && p.lat === 0))
+        .map((p) => ({ lng: p.lng, lat: p.lat, stch: 0, deptId: p.department_id ?? 0 }))
+      : (position?.locations ?? [])
+        .filter((l) => l.solution.solution_type_id === typeId)
+        .filter((l) => Array.isArray(l.geometry_point) && l.geometry_point.length === 2)
+        .map((l) => ({
+          lng: l.geometry_point![0],
+          lat: l.geometry_point![1],
+          stch: l.road.stch ?? 0,
+          deptId: l.road.department_id ?? 0,
+        }))
 
     // Same test as before, now via the shared memo — ReactMap asks this for
     // the same device set, so whichever runs first warms the other's cache.
@@ -169,11 +153,7 @@ const RegionSummaryLayer: React.FC<Props> = ({ type, points: pointsProp }) => {
     const dept: Record<number, { count: number; centroid: [number, number] }> = {}
     for (const [k, a] of Object.entries(deptAcc)) dept[Number(k)] = { count: a.count, centroid: centroidOf(a) }
     return { stchSummaries: stch, deptSummaries: dept }
-  }, [type, isLpr, pointsProp, position, lprPoints, bureauFeatures])
-
-  // Caller-supplied points without any deptId can't be grouped by ขทช. — the
-  // ขทช. tier would be one mislabelled "ส่วนกลาง" bubble. Keep สทช. up instead.
-  const hasDeptInfo = !pointsProp || pointsProp.some((p) => p.deptId != null)
+  }, [type, isLpr, position, lprPoints, bureauFeatures])
 
   // Which tier shows — same ladder as the dashboard, and like it the swap waits
   // for the camera to stop so a fly-to doesn't mount a tier mid-flight.
@@ -246,21 +226,19 @@ const RegionSummaryLayer: React.FC<Props> = ({ type, points: pointsProp }) => {
           the map, and mapbox re-projects + rewrites the transform of EVERY
           attached marker on every move frame no matter its CSS — so the
           off-tier bubbles were pure per-frame cost. */}
-      {(tier === 'stch' || (tier === 'dept' && !hasDeptInfo)) && Object.entries(stchSummaries).map(([k, info]) => {
+      {shownStch.map(([k, info]) => {
         const stch = Number(k)
         return (
           <HTMLMarker
             key={`stch-${stch}`}
             lngLat={info.centroid}
-            // Without a ขทช. tier there is no bubble to land on at 7.5 — go
-            // straight to the pin zoom.
-            onClick={() => map?.flyTo({ center: info.centroid, zoom: hasDeptInfo ? 7.5 : REGION_DEVICE_MIN_ZOOM + 0.5, duration: 1200 })}
+            onClick={() => map?.flyTo({ center: info.centroid, zoom: 7.5, duration: 1200 })}
           >
             {bubble(info.count, stchShortLabel(stch), 48)}
           </HTMLMarker>
         )
       })}
-      {tier === 'dept' && hasDeptInfo && Object.entries(deptSummaries).map(([k, info]) => {
+      {shownDept.map(([k, info]) => {
         const id = Number(k)
         const label = deptLabels.get(id) ?? (id === 0 ? 'ส่วนกลาง' : `ขทช. #${id}`)
         return (
