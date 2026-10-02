@@ -167,7 +167,7 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // LPR is the one tile NOT fed by /position (BE has no LPR solution type
   // there) — it counts GET /lpr/points instead, FE-scoped by department_id
   // the same way lpr/overall's DataDisplaySection does. `null` = loading.
-  const { data: lprPoints } = useLPRPoints()
+  const { data: lprPoints } = useLPRPoints(false)
   const lprCount = useMemo(() => {
     if (!lprPoints) return null
     const byDept = !deptId || String(deptId) === '0'

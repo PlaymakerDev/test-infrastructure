@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
-import { TbCamera, TbLicense, TbBolt, TbShield } from 'react-icons/tb'
-import { useLPRPoints } from '@/hooks/queries/lpr'
+import { TbShield } from 'react-icons/tb'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useQuery } from '@tanstack/react-query'
 import { getLPRTotalAPI } from '@/services/routes/NewLPRService'

@@ -6,10 +6,11 @@ import { lprKeys } from './queryKeys'
  *  with today/hour event counters + averaged coord + camera list. One query
  *  drives the whole overall page (map + KPIs + list). Refetches every 60s
  *  so counters stay warm without a WebSocket. */
-export const useLPRPoints = () =>
+export const useLPRPoints = (enabled = true) =>
   useQuery({
     queryKey: lprKeys.points.list(),
     queryFn: () => getLPRPointsAPI().then((r) => r.data),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    enabled,
   })

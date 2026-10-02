@@ -314,7 +314,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // LPR install points — /position has no LPR solution type, so the pins come
   // from the feature's own GET /lpr/points (same source as the LPR tile in
   // RatioChart and the lpr/overall page; solid, one fetch, 60s refetch).
-  const { data: lprPoints } = useLPRPoints()
+  const { data: lprPoints } = useLPRPoints(false)
   // Dept list — used to map the landed dept's row id → its สทช. group so the
   // fly-to can fall back to the bureau polygon when the position endpoint
   // returns no device coords (see the fly-to effect below).
@@ -952,7 +952,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       }
       tooltip.style.display = 'block'
       tooltip.style.left = `${e.point.x + 14}px`
-      tooltip.style.top  = `${e.point.y + 14}px`
+      tooltip.style.top = `${e.point.y + 14}px`
     }
 
     const onClick = (e: MapMouseEvent & { features?: GeoJSON.Feature[] }) => {

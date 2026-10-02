@@ -42,7 +42,7 @@ export const DetailProvider: React.FC<DetailProviderProps> = ({
 }) => {
   const params = useParams()
   const solutionId = String(Array.isArray(params.id) ? params.id[0] : params.id ?? '')
-  const { data: points, isLoading } = useLPRPoints()
+  const { data: points, isLoading } = useLPRPoints(false)
 
   const point = useMemo(() => {
     if (!points || !solutionId) return null

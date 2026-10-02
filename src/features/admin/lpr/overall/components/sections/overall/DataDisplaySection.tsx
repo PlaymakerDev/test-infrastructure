@@ -10,16 +10,11 @@ import SearchBar, {
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { hideProjectNameColumns } from '@/constants/featureFlags'
 import { TableLPRData, LPRList, FormSearchLPR } from '../../../components'
-import type { LPRRow } from '../../../data/lprRows'
 import { filterLPRList } from '../../../data/filterLPRList'
 import { LPR_EXPORT_COLUMNS, toLPRExportRows } from '../../../data/lprExport'
-import { useLPRPoints } from '@/hooks/queries/lpr'
-import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
-import { matchesSearchTerm } from '@/utils/searchMatch'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getLPRListAPI, getLPRTotalAPI } from '@/services/routes/NewLPRService'
-import { is } from 'zod/v4/locales'
 import { Empty, Skeleton } from 'antd'
 
 dayjs.extend(buddhistEra)
