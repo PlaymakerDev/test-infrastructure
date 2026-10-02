@@ -1,72 +1,77 @@
 "use client"
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/th'
 import {
   TbCamera,
-  TbLicense,
-  TbBolt,
+  TbWifi,
+  TbWifiOff,
   TbInfoSquareRoundedFilled,
 } from 'react-icons/tb'
-
-dayjs.extend(relativeTime)
-import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
+import { Empty, Skeleton, Tooltip } from 'antd'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import type { LPRInstallPoint } from '@/types/lpr/lpr-api'
+import type { ListData, SubDptSolution } from '@/types/lpr/new-lpr-api'
+import { groupLPRSections } from '../../../data/groupLPRList'
 
-const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
+// ── Pill badge ───────────────────────────────────────────────────────────────
+
+const Pill: React.FC<{ text: string; color: string; icon?: React.ReactNode }> = ({
+  text,
+  color,
+  icon,
+}) => (
   <span
-    className='inline-flex items-center px-3 py-1 rounded-full fs-12 whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
     style={{ border: `1.5px solid ${color}`, color }}
   >
+    {icon}
     {text}
   </span>
 )
 
-/** One LPR install-point card — same visual language as the shared
- *  `ProjectCardGrid` card (cctv / incident-detection / traffic-signal /
- *  traffic-volume): yellow project title, road-code pill, ⓘ Project-Info
- *  icon, จุดติดตั้ง link row, big fs-24 stat row. The stat trio is
- *  LPR-specific (กล้อง / ตรวจจับวันนี้ / ชั่วโมงล่าสุด) since LPR points
- *  carry detection counts, not online/offline camera status. */
-const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
-  point: p,
-  onDetail,
-}) => {
+// ── Single install-point card ────────────────────────────────────────────────
+
+/** One LPR install-point card — same layout as the CCTV card (CardGridCctv):
+ *  yellow project title, road-code / warranty pills + ⓘ Project-Info icon,
+ *  จุดติดตั้ง link + เลขที่สัญญา rows, and a camera stat trio. LPR adds the
+ *  solution's own ออนไลน์/ออฟไลน์ pill (the status chips filter on it). */
+const LPRCard: React.FC<{ item: SubDptSolution; onDetail: () => void }> = ({ item, onDetail }) => {
   const dispatch = useAppDispatch()
-  const hasContract = !!(p.contract_no && p.contract_no.trim())
+  const project = item.project
+  const warrantyColor = item.is_warranty ? '#05F2DB' : '#979797'
+  const warrantyText = item.is_warranty ? 'ในค้ำ' : 'หมดค้ำ'
+  // No contract → show the budget year (พ.ศ.) and disable the project ⓘ.
+  const hasContract = !!(project?.contract_no && project.contract_no.trim())
+  const contractText = hasContract
+    ? project?.contract_no
+    : project?.budget_year
+      ? `ปีงบประมาณ ${project.budget_year}`
+      : '-'
+  const lpr = item.lpr
 
   return (
     <div
       className='flex flex-col gap-4 rounded-2xl p-5'
       style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
     >
-      {/* Title — project name, clamped to keep card heights even. */}
-      {SHOW_PROJECT_NAME && (
-        <h4
-          className='text-base font-semibold leading-snug mb-0 line-clamp-2 wrap-break-word'
-          style={{ color: 'var(--yellow)' }}
-          title={p.project_name}
-        >
-          {p.project_name || '-'}
+      {/* Title — project name. Clamped so long names don't make cards wildly
+        * different heights; full text on hover. */}
+      <Tooltip title={project?.project_name}>
+        <h4 className='font-normal! text-(--yellow) leading-snug mb-0 line-clamp-2 wrap-break-word'>
+          {project?.project_name || '-'}
         </h4>
-      )}
+      </Tooltip>
 
       {/* Badges row */}
       <div className='flex flex-wrap items-center gap-2'>
-        <Pill text={p.road_code || '-'} color='#66AEFF' />
-        {/* Status pill — same wording + colours as the filter chips and every
-          * other overall menu (blue ออนไลน์ / red ออฟไลน์), keyed off
-          * events_hour since /lpr/points has no is_online (2026-08-10). */}
-        {p.events_hour > 0 ? (
-          <Pill text='ออนไลน์' color='#66AEFF' />
+        <Pill text={item.road?.code_name || '-'} color='#66AEFF' />
+        <Pill text={warrantyText} color={warrantyColor} />
+        {item.is_online ? (
+          <Pill text='ออนไลน์' color='#66AEFF' icon={<TbWifi size={14} />} />
         ) : (
-          <Pill text='ออฟไลน์' color='#E94C4C' />
+          <Pill text='ออฟไลน์' color='#E94C4C' icon={<TbWifiOff size={14} />} />
         )}
         <TbInfoSquareRoundedFilled
           size={32}
@@ -79,8 +84,8 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
                 dispatch(
                   setProjectInfoModalOpen({
                     open: true,
-                    project_id: p.project_id ?? null,
-                    road_id: p.road_id ?? null,
+                    project_id: project?.id ?? null,
+                    road_id: item.road?.id ?? null,
                   }),
                 )
               : undefined
@@ -95,59 +100,59 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
           <span
             className='text-white cursor-pointer hover:text-(--yellow) hover:underline'
             onClick={onDetail}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onDetail()
+              }
+            }}
             role='link'
             tabIndex={0}
           >
-            {p.solution_name}
+            {item.solution?.solution_name || '-'}
           </span>
         </div>
         <div className='flex gap-2'>
           <span className='text-white/50 whitespace-nowrap shrink-0'>เลขที่สัญญา :</span>
-          <span className='text-white'>{hasContract ? p.contract_no : '-'}</span>
-        </div>
-        <div className='flex gap-2'>
-          <span className='text-white/50 whitespace-nowrap shrink-0'>ตรวจจับล่าสุด :</span>
-          <span className='text-white'>
-            {p.latest_captured_at
-              ? dayjs(p.latest_captured_at).locale('th').fromNow()
-              : '-'}
-          </span>
+          <span className='text-white'>{contractText}</span>
         </div>
       </div>
 
-      {/* Stats — กล้อง / ตรวจจับวันนี้ / ชั่วโมงล่าสุด (same layout as ProjectCard). */}
-      <div className='mt-auto flex items-center justify-around pt-2'>
+      {/* Stats — กล้องตรวจจับป้ายทะเบียน: ทั้งหมด / ออนไลน์ / ออฟไลน์ */}
+      <div className='flex items-center justify-around pt-2'>
         <div className='flex flex-col items-center gap-2'>
           <span className='fs-24 font-bold tabular-nums leading-none text-white'>
-            {p.camera_count.toLocaleString('th-TH')}
+            {(lpr?.total_camera ?? 0).toLocaleString('th-TH')}
           </span>
           <div className='flex items-center gap-1 fs-12 text-white/50'>
             <TbCamera size={16} />
-            <span>กล้อง</span>
+            <span>กล้องทั้งหมด</span>
           </div>
         </div>
+
         <div className='flex flex-col items-center gap-2'>
           <span
             className='fs-24 font-bold tabular-nums leading-none'
-            style={{ color: p.events_today === 0 ? '#FCD11655' : '#FCD116' }}
+            style={{ color: !lpr?.total_online ? '#66AEFF55' : '#66AEFF' }}
           >
-            {p.events_today.toLocaleString('th-TH')}
-          </span>
-          <div className='flex items-center gap-1 fs-12' style={{ color: '#FCD11699' }}>
-            <TbLicense size={16} />
-            <span>วันนี้</span>
-          </div>
-        </div>
-        <div className='flex flex-col items-center gap-2'>
-          <span
-            className='fs-24 font-bold tabular-nums leading-none'
-            style={{ color: p.events_hour === 0 ? '#66AEFF55' : '#66AEFF' }}
-          >
-            {p.events_hour.toLocaleString('th-TH')}
+            {(lpr?.total_online ?? 0).toLocaleString('th-TH')}
           </span>
           <div className='flex items-center gap-1 fs-12' style={{ color: '#66AEFF99' }}>
-            <TbBolt size={16} />
-            <span>ชม.ล่าสุด</span>
+            <TbWifi size={16} />
+            <span>ออนไลน์</span>
+          </div>
+        </div>
+
+        <div className='flex flex-col items-center gap-2'>
+          <span
+            className='fs-24 font-bold tabular-nums leading-none'
+            style={{ color: !lpr?.total_offline ? '#E94C4C55' : '#E94C4C' }}
+          >
+            {(lpr?.total_offline ?? 0).toLocaleString('th-TH')}
+          </span>
+          <div className='flex items-center gap-1 fs-12' style={{ color: '#E94C4C99' }}>
+            <TbWifiOff size={16} />
+            <span>ออฟไลน์</span>
           </div>
         </div>
       </div>
@@ -155,42 +160,65 @@ const LPRCard: React.FC<{ point: LPRInstallPoint; onDetail: () => void }> = ({
   )
 }
 
+// ── Grid (grouped by แขวง) ───────────────────────────────────────────────────
+
 interface Props {
-  /** Filtered rows from DataDisplaySection (already dept-scoped). */
-  points: LPRInstallPoint[]
+  data?: ListData[]
+  isLoading?: boolean
+  isError?: boolean
 }
 
-/** Grid view of LPR install-points — card per solution, sorted busiest-first.
- *  Same responsive column set as `ProjectCardGrid`. */
-const LPRList: React.FC<Props> = ({ points }) => {
+/** Grid view of the LPR overall list: a bureau divider ("N โครงการ") per
+ *  sub-department followed by one card per install point. Grouped by the same
+ *  `groupLPRList` the table uses, so both views agree on order and counts. */
+const LPRList: React.FC<Props> = ({ data, isLoading, isError }) => {
   const router = useRouter()
-  const deptIdFromUrl = useDeptId()
-  const deptId = String(deptIdFromUrl ?? '0')
+  const deptId = String(useDeptId() ?? '0')
 
-  const list = useMemo(
-    () => points.slice().sort((a, b) => b.events_today - a.events_today),
-    [points],
+  const sections = useMemo(() => groupLPRSections(data), [data])
+
+  const goToDetail = useCallback(
+    (item: SubDptSolution) => {
+      router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}${scopeQuerySuffix()}`)
+    },
+    [router, deptId],
   )
 
-  if (list.length === 0) {
+  if (isError) return <Empty description="Error loading data" />
+  if (isLoading) return <Skeleton active paragraph={{ rows: 4 }} />
+
+  if (sections.length === 0) {
     return <div className='py-12 text-center text-white/30 fs-12'>ไม่พบข้อมูล</div>
   }
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-      {list.map((p) => (
-        <LPRCard
-          key={p.solution_id}
-          point={p}
-          onDetail={() =>
-            router.push(
-              `/admin/lpr/detail/${p.solution_id}?dept_id=${deptId}${scopeQuerySuffix()}`,
-            )
-          }
-        />
+    <div className='flex flex-col gap-6'>
+      {sections.map((section) => (
+        <section key={section.id} className='flex flex-col gap-3'>
+          {/* Bureau header — matches the table's divider style */}
+          <div
+            className='flex items-center gap-3 px-4 py-2.5 rounded-lg'
+            style={{ background: '#2a2a2a' }}
+          >
+            <span className='text-white font-bold'>{section.bureau}</span>
+            <span
+              className='inline-flex items-center justify-center px-3 py-0.5 rounded-full fs-12'
+              style={{ border: '1px solid #fff', color: '#fff' }}
+            >
+              {section.count} โครงการ
+            </span>
+          </div>
+
+          {/* Cards for this bureau */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+            {section.rows.map(({ id, item }) => (
+              <LPRCard key={id} item={item} onDetail={() => goToDetail(item)} />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   )
 }
 
-export default React.memo(LPRList)
+export default React.memo<Props>(LPRList)

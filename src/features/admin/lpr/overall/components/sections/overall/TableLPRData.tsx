@@ -1,102 +1,83 @@
 "use client"
 import React, { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Table } from 'antd'
+import { Empty, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/th'
-
-dayjs.extend(relativeTime)
+import { TbWifi, TbWifiOff } from 'react-icons/tb'
 import { ContractInfoCell } from '@/components/modal'
 import DetailLinkText from '@/components/table/DetailLinkText'
 import { SHOW_PROJECT_NAME } from '@/constants/featureFlags'
 import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
-import type { LPRRow } from '../../../data/lprRows'
-import { countDistinctProjects, projectKey } from '@/features/admin/traffic-volume/shared/utils/groupByBureau'
-
-/** Table row — a bureau (ขทช.) divider header or a real install-point row.
- *  Same interleaved shape as cctv / incident-detection / traffic-signal. */
-type TableRow =
-  | { kind: 'bureau'; id: string; bureau: string; count: number }
-  | { kind: 'project'; id: string; item: LPRRow; roadCodeSpan: number }
-
-// Visible column count — the bureau divider row spans all of them.
-const TOTAL_COLS = SHOW_PROJECT_NAME ? 8 : 7
+import type { ListData, SubDptSolution } from '@/types/lpr/new-lpr-api'
+import { groupLPRList, type LPRTableRow } from '../../../data/groupLPRList'
 
 interface Props {
-  /** Filtered + display-ordered rows from DataDisplaySection. */
-  rows: LPRRow[]
-  loading?: boolean
+  data?: ListData[]
+  isLoading?: boolean
+  isError?: boolean
 }
 
-/** Overall list table for LPR install-points, following the shared overall-
- *  table pattern (cctv / incident-detection / traffic-signal): bureau divider
- *  rows + road-code rowSpan merge + DetailLinkText link cells +
- *  ContractInfoCell + `.bridge-projects-table` skin, no column sorters. */
-const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
-  const router = useRouter()
-  const deptIdFromUrl = useDeptId()
-  const deptId = String(deptIdFromUrl ?? '0')
+const Pill: React.FC<{
+  text: string
+  color: string
+  icon?: React.ReactNode
+}> = ({ text, color, icon }) => (
+  <span
+    // className='inline-flex items-center gap-1 px-3 py-1 rounded-full fs-12 whitespace-nowrap'
+    className='inline-flex items-center gap-1 px-3 rounded-full fs-12 whitespace-nowrap'
+    style={{ border: `1px solid ${color}`, color }}
+  >
+    {icon}
+    {text}
+  </span>
+)
 
-  // Interleave bureau dividers + install-point rows. The incoming list is
-  // already sorted bureau → road code, so consecutive same-code rows merge
-  // via rowSpan (the code shows once per group — same as the sibling menus).
-  const data = useMemo<TableRow[]>(() => {
-    const groups = new Map<string, LPRRow[]>()
-    for (const r of rows) {
-      const list = groups.get(r.bureau) ?? []
-      list.push(r)
-      groups.set(r.bureau, list)
-    }
-    const out: TableRow[] = []
-    for (const [bureau, items] of groups) {
-      out.push({ kind: 'bureau', id: `bureau-${bureau}`, bureau, count: countDistinctProjects(items, (r) => projectKey(r.project_id, r.contract_no)) })
-      let i = 0
-      while (i < items.length) {
-        const code = items[i].road_code
-        let span = 1
-        while (i + span < items.length && items[i + span].road_code === code) span++
-        out.push({ kind: 'project', id: String(items[i].solution_id), item: items[i], roadCodeSpan: span })
-        for (let j = 1; j < span; j++) {
-          out.push({ kind: 'project', id: String(items[i + j].solution_id), item: items[i + j], roadCodeSpan: 0 })
-        }
-        i += span
-      }
-    }
-    return out
-  }, [rows])
+// Bureau divider row spans every visible column — one less while ชื่อโครงการ is hidden.
+const TOTAL_COLS = SHOW_PROJECT_NAME ? 9 : 8
+
+/** Cells that describe the PROJECT (road code / name / contract / warranty) are
+ *  merged across every install point of that project; the rest are per-row. */
+const mergedCell = (row: LPRTableRow) =>
+  row.kind === 'bureau' ? { colSpan: 0 } : { rowSpan: row.groupSpan }
+const rowCell = (row: LPRTableRow) => (row.kind === 'bureau' ? { colSpan: 0 } : {})
+
+/** Overall list table for LPR, grouped like the other overall menus:
+ *  bureau divider ("N โครงการ") → project (road code / name / contract /
+ *  warranty merged via rowSpan) → one row per install point. */
+const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
+  const router = useRouter()
+  const deptId = String(useDeptId() ?? '0')
+
+  const rows = useMemo(() => groupLPRList(data), [data])
 
   // AntD leaves a stale `rowSpan` DOM attribute behind when a row keeps its
-  // rowKey but its span changes across a filter toggle — merged cells then
-  // overlap and the table visibly breaks. Remount whenever the merged-row
-  // structure (ids + spans) changes so rowSpans rebuild cleanly.
+  // rowKey but its span changes across a refetch — merged cells then overlap
+  // and the table visibly breaks. Remount whenever the merged-row structure
+  // (ids + spans) changes so rowSpans rebuild cleanly.
   const tableKey = useMemo(
-    () => data.map((d) => (d.kind === 'project' ? `${d.id}:${d.roadCodeSpan}` : d.id)).join('|'),
-    [data],
+    () => rows.map((r) => (r.kind === 'solution' ? `${r.id}:${r.groupSpan}` : r.id)).join('|'),
+    [rows],
   )
 
   const goToDetail = useCallback(
-    (item: LPRRow) => {
-      router.push(
-        `/admin/lpr/detail/${item.solution_id}?dept_id=${deptId}${scopeQuerySuffix()}`,
-      )
+    (item: SubDptSolution) => {
+      router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}${scopeQuerySuffix()}`)
     },
     [router, deptId],
   )
 
-  const columns: ColumnsType<TableRow> = useMemo(
-    () => ([
+  const columns: ColumnsType<LPRTableRow> = useMemo(() => {
+    const all: (ColumnsType<LPRTableRow>[number] & { key: string })[] = [
       {
         title: 'รหัสสายทาง',
         key: 'road_code',
         className: 'col-road-code',
-        width: 150,
+        width: 130,
         onCell: (row) =>
           row.kind === 'bureau'
             ? { colSpan: TOTAL_COLS, style: { background: '#2a2a2a', padding: '10px 16px' } }
-            : { rowSpan: row.roadCodeSpan },
+            : { rowSpan: row.groupSpan },
         render: (_, row) => {
           if (row.kind === 'bureau') {
             return (
@@ -113,7 +94,7 @@ const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
           }
           return (
             <DetailLinkText onClick={() => goToDetail(row.item)}>
-              {row.item.road_code || '-'}
+              {row.item.road?.code_name || '-'}
             </DetailLinkText>
           )
         },
@@ -123,117 +104,123 @@ const TableLPRData: React.FC<Props> = ({ rows, loading }) => {
         key: 'project_name',
         className: 'col-project-name',
         ellipsis: true,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        onCell: mergedCell,
         render: (_, row) =>
-          row.kind === 'project' ? (
+          row.kind === 'solution' ? (
             <DetailLinkText onClick={() => goToDetail(row.item)}>
-              {row.item.project_name || '-'}
-            </DetailLinkText>
-          ) : null,
-      },
-      {
-        title: 'จุดติดตั้ง',
-        key: 'solution_name',
-        width: 240,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_, row) =>
-          row.kind === 'project' ? (
-            <DetailLinkText onClick={() => goToDetail(row.item)}>
-              {row.item.solution_name || '-'}
+              {row.item.project?.project_name || '-'}
             </DetailLinkText>
           ) : null,
       },
       {
         title: 'เลขที่สัญญา',
         key: 'contract_no',
-        width: 190,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        width: 200,
+        onCell: mergedCell,
         render: (_, row) =>
-          row.kind === 'project' ? (
+          row.kind === 'solution' ? (
             <ContractInfoCell
-              contractNo={row.item.contract_no}
-              projectId={row.item.project_id}
-              roadId={row.item.road_id}
+              contractNo={row.item.project?.contract_no}
+              budgetYear={row.item.project?.budget_year}
+              projectId={row.item.project?.id}
+              roadId={row.item.road?.id}
             />
           ) : null,
       },
       {
-        title: 'กล้อง',
-        key: 'camera_count',
-        width: 110,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        title: 'การค้ำประกัน',
+        key: 'is_warranty',
+        width: 130,
+        onCell: mergedCell,
+        render: (_, row) => {
+          if (row.kind !== 'solution') return null
+          return row.item.is_warranty ? (
+            <Pill text='ในค้ำ' color='#05F2DB' />
+          ) : (
+            <Pill text='หมดค้ำ' color='#979797' />
+          )
+        },
+      },
+      {
+        title: 'จุดติดตั้ง',
+        key: 'solution_name',
+        width: 260,
+        onCell: rowCell,
         render: (_, row) =>
-          row.kind === 'project' ? (
-            <span className='text-white font-semibold tabular-nums'>
-              {row.item.camera_count.toLocaleString('th-TH')} ตัว
+          row.kind === 'solution' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.solution?.solution_name || '-'}
+            </DetailLinkText>
+          ) : null,
+      },
+      {
+        title: 'กล้องตรวจจับป้ายทะเบียน',
+        key: 'total_camera',
+        width: 200,
+        onCell: rowCell,
+        render: (_, row) =>
+          row.kind === 'solution' ? (
+            <span className='tabular-nums'>
+              {(row.item.lpr?.total_camera ?? 0).toLocaleString('th-TH')}
             </span>
           ) : null,
       },
       {
-        title: 'ตรวจจับวันนี้',
-        key: 'events_today',
-        width: 120,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_, row) => {
-          if (row.kind !== 'project') return null
-          const n = row.item.events_today
-          return (
-            <span
-              className='font-semibold tabular-nums'
-              style={{ color: n > 0 ? '#ffffff' : '#ffffff40' }}
-            >
-              {n.toLocaleString('th-TH')}
-            </span>
-          )
-        },
+        // The central-list contract carries camera counts only — no per-install-
+        // point detected-plate total — so this column has nothing to bind to yet.
+        title: 'ป้ายทะเบียน',
+        key: 'total_detect_license',
+        width: 130,
+        onCell: rowCell,
+        render: (_, row) => (row.kind === 'solution' ? <span className='text-white/30'>-</span> : null),
       },
       {
-        title: 'ชั่วโมงล่าสุด',
-        key: 'events_hour',
-        width: 130,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
+        title: 'สถานะ',
+        key: 'status',
+        width: 140,
+        onCell: rowCell,
         render: (_, row) => {
-          if (row.kind !== 'project') return null
-          const n = row.item.events_hour
-          return n > 0 ? (
-            <span className='inline-flex items-center gap-1 text-(--yellow) font-semibold tabular-nums'>
-              <span
-                className='inline-block w-1.5 h-1.5 rounded-full bg-(--yellow)'
-                style={{ boxShadow: '0 0 6px rgba(252,209,22,0.7)' }}
-              />
-              {n.toLocaleString('th-TH')}
-            </span>
+          if (row.kind !== 'solution') return null
+          return row.item.is_online ? (
+            <Pill text='ออนไลน์' color='#66AEFF' icon={<TbWifi className='fs-14' />} />
           ) : (
-            <span className='text-gray-500 tabular-nums'>0</span>
+            <Pill text='ออฟไลน์' color='#E94C4C' icon={<TbWifiOff className='fs-14' />} />
           )
         },
       },
       {
-        title: 'ล่าสุด',
-        key: 'latest_captured_at',
-        width: 130,
-        onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
-        render: (_, row) =>
-          row.kind === 'project'
-            ? row.item.latest_captured_at
-              ? dayjs(row.item.latest_captured_at).locale('th').fromNow()
-              : '-'
-            : null,
+        title: 'Stream',
+        key: 'stream',
+        width: 140,
+        onCell: rowCell,
+        render: (_, row) => {
+          if (row.kind !== 'solution') return null
+          return row.item.is_online ? (
+            <Pill text='Connect' color='#66AEFF' />
+          ) : (
+            <Pill text='Disconnect' color='#E94C4C' />
+          )
+        },
       },
-    ] satisfies ColumnsType<TableRow>).filter((c) => SHOW_PROJECT_NAME || c.title !== 'ชื่อโครงการ'),
-    [goToDetail],
-  )
+    ]
+    // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
+    return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'project_name')
+  }, [goToDetail])
+
+  if (isError) return <Empty description="Error loading data" />
 
   return (
-    <Table<TableRow>
+    <Table<LPRTableRow>
       key={tableKey}
       rowKey='id'
       columns={columns}
-      dataSource={data}
-      loading={loading}
+      dataSource={rows}
+      loading={isLoading}
       pagination={false}
       size='middle'
       scroll={{ x: 1500 }}
+      locale={{ emptyText: 'ไม่พบข้อมูล' }}
+      // Shared table skin — yellow row dividers + dark pagination styling.
       className='bridge-projects-table'
     />
   )
