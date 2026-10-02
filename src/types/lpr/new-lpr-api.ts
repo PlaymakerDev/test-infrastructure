@@ -62,6 +62,12 @@ export interface SubDptSolution {
   lpr: LPR
   is_online: boolean
   is_warranty: boolean
+  plates: LPRPlates
+}
+
+export interface LPRPlates {
+  today: number
+  yesterday: number
 }
 
 export interface Project {

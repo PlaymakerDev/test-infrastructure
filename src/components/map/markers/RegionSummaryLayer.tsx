@@ -97,7 +97,7 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
   const isLpr = type === 'LPR'
   // Both hooks are cache-shared with the dashboard; the unused one is disabled.
   const { data: position } = useDashboardPosition(isLpr ? null : deptId)
-  const { data: lprPoints } = useLPRPoints(isLpr)
+  const { data: lprPoints } = useLPRPoints(false)
   const { data: departments } = useDepartments()
   const bureauFeatures = useBureauFeatures()
 
