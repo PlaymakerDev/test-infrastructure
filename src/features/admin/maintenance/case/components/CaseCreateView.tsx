@@ -16,6 +16,7 @@ import ConfirmCreateLetterModal from './ConfirmCreateLetterModal'
 import SignedLetterReminderModal from './SignedLetterReminderModal'
 import type { CaseDeviceRow, CaseProjectInfo } from './caseViewTypes'
 import type { RepairLetterInput } from '../data/repairLetter'
+import { letterContractorName } from '../data/contractorName'
 import { useCreateMaintenanceCase, useMaintenanceSolution, useProjectBySolution, useUploadMaintenance } from '@/hooks/queries/maintenance'
 import { getMaintenanceCasesAPI } from '@/services/routes/MaintenanceService'
 import { useProjectContractors } from '@/hooks/queries/manage'
@@ -69,8 +70,9 @@ interface LetterForm {
  *  (newest wins — see `resolveNewCaseNo`).
  *
  *  Saving takes three steps (user 2026-09-28): บันทึกแบบฟอร์มหนังสือแจ้งซ่อม →
- *  preview the PDF (แก้ไข / บันทึก) → confirm, the only step that writes →
- *  a 20-second reminder to upload the signed copy → the new case's page. */
+ *  preview the PDF (แก้ไข / บันทึก) → confirm, the only step that writes, and
+ *  which also downloads the letter for signing (user 2026-10-02) → a 20-second
+ *  reminder to upload the signed copy → the new case's page. */
 const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, detailQuery }) => {
   const { modal, message } = App.useApp()
   const router = useRouter()
@@ -142,6 +144,14 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     warrantyStart: projectDetail?.warranty_start_date ? dayjs(projectDetail.warranty_start_date).format('DD MMM BBBB') : '-',
     warrantyEnd: projectDetail?.warranty_end_date ? dayjs(projectDetail.warranty_end_date).format('DD MMM BBBB') : '-',
     warrantyStatus: projectDetail ? (projectDetail.is_warranty ? 'active' : 'expired') : 'expired',
+  }
+
+  /** The letter's addressee: the company's full name, not the login name the
+   *  card above shows (see letterContractorName). Waits for the contractor
+   *  list if it hasn't arrived, so a quick click can't print "lpc" instead. */
+  const resolveLetterContractor = async (): Promise<string> => {
+    const rows = contractorsQuery.data ?? (await contractorsQuery.refetch()).data
+    return letterContractorName(rows, projectDetail?.contractor_id, project.contractor)
   }
 
   const [form, setForm] = useState<LetterForm>({
@@ -264,10 +274,10 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     .map((f) => f.url as string)
 
   /** The letter exactly as this form issues it — what the preview shows. */
-  const letterInput = (): RepairLetterInput => ({
+  const letterInput = (contractor: string): RepairLetterInput => ({
     // Not issued until the save; it would only name the file anyway.
     caseNo: '',
-    project,
+    project: { ...project, contractor },
     letterNo: form.letterNo,
     // The contract's ลงวันที่ = warranty start (no contract-date column).
     // Raw dates in — the letter formats them itself.
@@ -306,11 +316,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     setPreviewOpen(true)
     setPreview({ url: null, loading: true, failed: false })
     try {
-      const [{ renderLetterPdfBlob }, { buildRepairLetter }] = await Promise.all([
+      const [{ renderLetterPdfBlob }, { buildRepairLetter }, contractor] = await Promise.all([
         import('@/utils/export/letterPdf'),
         import('../data/repairLetter'),
+        resolveLetterContractor(),
       ])
-      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput()))
+      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput(contractor)))
       if (run !== previewRunRef.current) return
       setPreview({ url: URL.createObjectURL(blob), loading: false, failed: false })
     } catch {
@@ -325,6 +336,22 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     setConfirmOpen(false)
     setPreviewOpen(false)
     setPreview({ url: null, loading: false, failed: false })
+  }
+
+  /** The letter just filed, as a PDF named after its new case — rendered from
+   *  the same form as the preview, so the copy printed is the one checked. */
+  const downloadSavedLetter = async (caseNo: string | null) => {
+    try {
+      const [{ exportLetterPdf }, { buildRepairLetter }, contractor] = await Promise.all([
+        import('@/utils/export/letterPdf'),
+        import('../data/repairLetter'),
+        resolveLetterContractor(),
+      ])
+      await exportLetterPdf(buildRepairLetter({ ...letterInput(contractor), caseNo: caseNo ?? '' }))
+    } catch {
+      // The case is saved either way, and its page re-issues the letter.
+      message.warning('บันทึกเรียบร้อยแล้ว แต่ดาวน์โหลดหนังสือไม่สำเร็จ — ดาวน์โหลดได้จากปุ่ม "แบบฟอร์มหนังสือแจ้งซ่อม" ในหน้า Case')
+    }
   }
 
   /** บันทึกแบบฟอร์มหนังสือแจ้งซ่อม (confirm) — the one step that writes. */
@@ -363,7 +390,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     }, {
       onSuccess: async () => {
         setFinishing(true)
-        savedCaseNoRef.current = await resolveNewCaseNo()
+        const caseNo = await resolveNewCaseNo()
+        savedCaseNoRef.current = caseNo
+        // The officer prints and signs this copy — the signed scan is what hands
+        // the case to the contractor — so it downloads straight away, as the
+        // save always did before the preview step (user 2026-10-02).
+        await downloadSavedLetter(caseNo)
         setFinishing(false)
         closeLetterModals()
         reminderDoneRef.current = false

@@ -17,8 +17,9 @@ import {
   useMaintenanceSolution,
   useProjectBySolution,
 } from '@/hooks/queries/maintenance'
-import { useRoadSolutions, useSolutionDetail } from '@/hooks/queries/manage'
+import { useProjectContractors, useRoadSolutions, useSolutionDetail } from '@/hooks/queries/manage'
 import { resolveCaseWebLink, solutionTypeFromPrefix } from '../data/caseWebLink'
+import { letterContractorName } from '../data/contractorName'
 import { useCCTVDetail } from '@/hooks/queries/shared/useCCTVDetail'
 import { CCTVModal } from '@/components/modal'
 import type { CameraSolutionGroup, CaseDetail } from '@/types/maintenance'
@@ -138,6 +139,9 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
   const projectBySolutionQuery = useProjectBySolution(solutionId)
   const projectDetail = projectBySolutionQuery.data ?? null
+  // The letter is addressed to the company's full name (letterContractorName) —
+  // this list answers an officer (every row) and the contractor (its own) alike.
+  const contractorsQuery = useProjectContractors()
 
   // ไปยังหน้าเว็บ — the solution's page in its own menu (see data/caseWebLink).
   // Its type comes from the solution, its bureau from the road whose จุดติดตั้ง
@@ -212,16 +216,17 @@ const CaseContent: React.FC<Props> = ({ id }) => {
   // หนังสือแจ้งซ่อม — the ministry's outgoing letter (ครุฑ letterhead, TH
   // Sarabun New). Direct download per the agreed flow (no export dialog).
   const handleExportLetter = async () => {
-    const [{ exportLetterPdf }, { buildRepairLetter }] = await Promise.all([
+    const [{ exportLetterPdf }, { buildRepairLetter }, contractorRows] = await Promise.all([
       import('@/utils/export/letterPdf'),
       import('../data/repairLetter'),
+      contractorsQuery.data ?? contractorsQuery.refetch().then((result) => result.data),
     ])
     // Every letter field is stored on the case since the 2026-09-18 backend
     // release, so re-issuing the letter reproduces what the officer filed —
     // including the device-status sheet (theirs, or the one the backend built).
     await exportLetterPdf(buildRepairLetter({
       caseNo: id,
-      project,
+      project: { ...project, contractor: letterContractorName(contractorRows, projectDetail?.contractor_id, project.contractor) },
       letterNo: caseData?.document_no,
       letterDate: caseData?.document_date ?? caseData?.created_at,
       // The contract's ลงวันที่ = warranty start (no contract-date column).

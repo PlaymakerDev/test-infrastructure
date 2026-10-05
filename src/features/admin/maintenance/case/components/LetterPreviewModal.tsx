@@ -24,6 +24,39 @@ export interface LetterPreviewModalProps {
 /** Class for the header buttons, so both uses of this modal look alike. */
 export const previewActionButton = 'inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[14px] font-medium cursor-pointer border-none hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed'
 
+/** Phones' browsers (Android Chrome) have no inline PDF viewer, so a frame
+ *  would stay blank there. */
+export const canShowPdfInline = () => typeof navigator === 'undefined' || navigator.pdfViewerEnabled !== false
+
+/** A PDF filling its parent — or, with no inline viewer, a button that opens
+ *  it in its own tab. Shared by this modal and the signed-letter upload. */
+export const PdfFrame: React.FC<{ url: string; title: string }> = ({ url, title }) =>
+  canShowPdfInline() ? (
+    // No toolbar: the buttons around it are what act on the document. No
+    // `view=` either: the viewer's default (actual size, or fit to width when
+    // the page is wider than the frame) already fits.
+    <iframe
+      title={title}
+      src={`${url}#toolbar=0&navpanes=0`}
+      className='w-full h-full border-0 block'
+    />
+  ) : (
+    <div className='h-full flex flex-col items-center justify-center gap-3 px-6 text-center'>
+      <TbFileText size={56} color='#FCD116' />
+      <p style={{ color: '#E6E6E6', fontSize: 14, margin: 0 }}>เบราว์เซอร์นี้แสดง PDF ในหน้าไม่ได้</p>
+      <a
+        href={url}
+        target='_blank'
+        rel='noreferrer'
+        className='inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[14px] font-medium'
+        style={{ background: '#FCD116', color: '#212121' }}
+      >
+        <TbExternalLink size={16} />
+        เปิดดูเอกสาร (PDF)
+      </a>
+    </div>
+  )
+
 /** A PDF shown in a modal with its buttons on top. Two uses (user 2026-09-28):
  *  the letter a /case/new form would issue, checked before anything is saved
  *  (แก้ไข / บันทึก), and a case's signed notice (ปิด / ดาวน์โหลดเอกสาร). */
@@ -40,9 +73,7 @@ const LetterPreviewModal: React.FC<LetterPreviewModalProps> = ({
   loadingText = 'กำลังโหลดเอกสาร...',
   failedText = 'โหลดเอกสารไม่สำเร็จ กรุณาลองอีกครั้ง',
 }) => {
-  // Phones' browsers (Android Chrome) have no inline PDF viewer, so the frame
-  // would stay blank there — offer the file in its own tab instead.
-  const canShowInline = typeof navigator === 'undefined' || navigator.pdfViewerEnabled !== false
+  const canShowInline = canShowPdfInline()
 
   return (
     <ConfigProvider
@@ -84,30 +115,8 @@ const LetterPreviewModal: React.FC<LetterPreviewModalProps> = ({
             <div className='h-full flex items-center justify-center'>
               <Empty description={<span style={{ color: '#E6E6E6' }}>{failedText}</span>} />
             </div>
-          ) : canShowInline ? (
-            // No toolbar: the buttons above are what act on the document. No
-            // `view=` either: the viewer's default (actual size, or fit to
-            // width when the page is wider than the frame) already fits.
-            <iframe
-              title={title}
-              src={`${url}#toolbar=0&navpanes=0`}
-              className='w-full h-full border-0 block'
-            />
           ) : (
-            <div className='h-full flex flex-col items-center justify-center gap-3 px-6 text-center'>
-              <TbFileText size={56} color='#FCD116' />
-              <p style={{ color: '#E6E6E6', fontSize: 14, margin: 0 }}>เบราว์เซอร์นี้แสดง PDF ในหน้าไม่ได้</p>
-              <a
-                href={url}
-                target='_blank'
-                rel='noreferrer'
-                className='inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[14px] font-medium'
-                style={{ background: '#FCD116', color: '#212121' }}
-              >
-                <TbExternalLink size={16} />
-                เปิดดูเอกสาร (PDF)
-              </a>
-            </div>
+            <PdfFrame url={url} title={title} />
           )}
         </div>
 

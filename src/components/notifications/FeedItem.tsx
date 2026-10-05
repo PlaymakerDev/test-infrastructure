@@ -6,6 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TbAlertTriangle, TbTool, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { useProjectBySolution } from '@/hooks/queries/maintenance'
 import type {
   CameraOutageFeedItem,
   CaseFeedItem,
@@ -22,22 +23,23 @@ export const formatDuration = (minutes: number): string => {
   return `${Math.round(minutes / 1440)} วัน`
 }
 
-/** Joins present parts with " · ", skipping blanks — solution / road /
- *  department are each nullable, so a line renders whatever it has or '-'. */
+/** Joins present parts with " • " (the Figma's separator), skipping blanks —
+ *  solution / road / department are each nullable, so a line renders
+ *  whatever it has or '-'. */
 const dotJoin = (...parts: Array<string | null | undefined>) => {
   const present = parts.filter((p): p is string => !!p)
-  return present.length ? present.join(' · ') : '-'
+  return present.length ? present.join(' • ') : '-'
 }
 
-/** Colours mirror the maintenance case pill (`caseStatus.ts`) so the same
- *  case reads the same in the bell and on its page. The bell keeps
- *  pending_approval separate — an officer watching the bell wants to know a
- *  case is waiting on *them*, which the page's 3-state pill folds away. */
+/** The bell keeps pending_approval separate from the case page's 3-state
+ *  pill — an officer watching the bell wants to know a case is waiting on
+ *  *them*. The first two speak of the signed notice (Figma, user
+ *  2026-10-02): an officer-opened case stays waiting_doc, out of the
+ *  contractor's sight, until it is uploaded (backend 2026-09-28), and goes
+ *  open the moment it is. */
 const CASE_STATUS: Record<CaseFeedItem['case']['status'], { label: string; color: string }> = {
-  // Opened by an officer, signed notice not attached yet — the contractor
-  // can't see it until then (backend 2026-09-28).
-  waiting_doc: { label: 'รอนำเข้าหนังสือ', color: '#E94C4C' },
-  open: { label: 'เปิด', color: '#E94C4C' },
+  waiting_doc: { label: 'ยังไม่อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็น', color: '#E94C4C' },
+  open: { label: 'อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็นเรียบร้อย', color: '#05F2DB' },
   in_progress: { label: 'กำลังดำเนินการ', color: '#FCD116' },
   pending_approval: { label: 'รอตรวจรับ', color: '#66AEFF' },
   closed: { label: 'ปิดแล้ว', color: '#05F2DB' },
@@ -60,17 +62,11 @@ interface Props {
   onClick: (item: NotificationFeedItem) => void
 }
 
-/** One feed row. Both kinds share this anatomy so the mixed list reads as one
- *  list: unread dot + title + relative time · descriptor · place · status. */
+/** One feed row: unread dot + kind glyph + title + relative time, then the
+ *  kind's own lines. A case row follows the Figma (2026-10-02): its project in
+ *  yellow, bureau • road, จุดติดตั้ง, then the status pill. */
 const FeedItem: React.FC<Props> = ({ item, clickable, onClick }) => {
   const title = item.kind === 'case' ? item.case.case_no : item.camera.name
-
-  // category is "" rather than null when unset, so a truthy test is the right
-  // check; the problem text then stands in for it.
-  const descriptor =
-    item.kind === 'case'
-      ? item.case.category || item.case.problem
-      : item.camera.ip_address
 
   return (
     <button
@@ -91,35 +87,67 @@ const FeedItem: React.FC<Props> = ({ item, clickable, onClick }) => {
         {/* Kind glyph — the only always-visible cue telling the two apart
             before reading any text. */}
         {item.kind === 'case' ? (
-          <TbTool size={14} className="shrink-0 text-(--yellow)" />
+          <TbTool size={16} className="shrink-0 text-(--yellow)" />
         ) : (
-          <TbWifiOff size={14} className="shrink-0 text-(--light-gray-3)" />
+          <TbWifiOff size={16} className="shrink-0 text-(--light-gray-3)" />
         )}
-        <span
-          className={`fs-14 truncate ${item.is_read ? 'font-normal text-white/85' : 'font-bold text-white'}`}
-        >
+        {/* Regular weight, as in the Figma — the dot is what marks unread.
+            One step above the lines below, no more (user 2026-10-02). */}
+        <span className={`fs-14 font-normal truncate ${item.is_read ? 'text-white/85' : 'text-white'}`}>
           {title}
         </span>
         {/* occurred_at is the feed's own sort key — the one timestamp that
             means the same thing for both kinds. */}
         <Tooltip title={dayjs(item.occurred_at).locale('th').format('D MMM BBBB HH:mm:ss น.')}>
-          <span className="ml-auto fs-12 text-(--light-gray-3) whitespace-nowrap shrink-0">
+          <span className="ml-auto fs-14 text-(--light-gray) whitespace-nowrap shrink-0">
             {dayjs(item.occurred_at).locale('th').fromNow()}
           </span>
         </Tooltip>
       </div>
 
-      <p className="m-0 mt-1 fs-12 text-white/60 truncate">{descriptor || '-'}</p>
-      <p className="m-0 mt-0.5 fs-12 text-white/60 truncate">
-        {dotJoin(item.department?.short_name, item.road?.code, item.solution?.name)}
-      </p>
-
-      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-        {item.kind === 'case' ? <CaseStatus item={item} /> : <OutageStatus item={item} />}
-      </div>
+      {item.kind === 'case' ? <CaseLines item={item} /> : <OutageLines item={item} />}
     </button>
   )
 }
+
+/** The case's project in yellow, bureau • road, its จุดติดตั้ง, the pill. The
+ *  feed names no project, so it comes from the solution — the same cached
+ *  lookup the maintenance pages make; no project (or no access) falls back
+ *  to the road's name. */
+const CaseLines: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
+  const project = useProjectBySolution(item.solution?.id)
+  const projectName = project.data?.project_name || (project.isLoading ? null : item.road?.name || null)
+  return (
+    <>
+      {project.isLoading ? (
+        <span className="block mt-1.5 h-3.5 w-3/4 rounded bg-white/10 animate-pulse" aria-hidden />
+      ) : projectName ? (
+        <p className="m-0 mt-1 fs-12 text-(--yellow) line-clamp-2" title={projectName}>{projectName}</p>
+      ) : null}
+      <p className="m-0 mt-0.5 fs-12 text-(--light-gray-3) truncate">
+        {dotJoin(item.department?.short_name, item.road?.code)}
+      </p>
+      {item.solution?.name && (
+        <p className="m-0 mt-0.5 fs-12 text-(--light-gray-3) truncate">จุดติดตั้ง : {item.solution.name}</p>
+      )}
+      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+        <CaseStatus item={item} />
+      </div>
+    </>
+  )
+}
+
+const OutageLines: React.FC<{ item: CameraOutageFeedItem }> = ({ item }) => (
+  <>
+    <p className="m-0 mt-1 fs-12 text-(--light-gray-3) truncate">{item.camera.ip_address || '-'}</p>
+    <p className="m-0 mt-0.5 fs-12 text-(--light-gray-3) truncate">
+      {dotJoin(item.department?.short_name, item.road?.code, item.solution?.name)}
+    </p>
+    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+      <OutageStatus item={item} />
+    </div>
+  </>
+)
 
 const OutageStatus: React.FC<{ item: CameraOutageFeedItem }> = ({ item }) => (
   <>
@@ -128,7 +156,7 @@ const OutageStatus: React.FC<{ item: CameraOutageFeedItem }> = ({ item }) => (
       {item.is_open ? 'กำลังดับ' : 'กลับมาแล้ว'}
     </StatusPill>
     {/* Recomputed server-side each poll while the camera is still down. */}
-    <span className="fs-12 text-white/60">{formatDuration(item.duration_minutes)}</span>
+    <span className="fs-12 text-(--light-gray-3)">{formatDuration(item.duration_minutes)}</span>
   </>
 )
 
@@ -150,7 +178,7 @@ const CaseStatus: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
       {/* 0 means the case is filed against an install point, not a device
           list — showing "กล้อง 0 ตัว" would just be wrong. */}
       {item.case.camera_count > 0 && (
-        <span className="fs-12 text-white/60">กล้อง {item.case.camera_count} ตัว</span>
+        <span className="fs-12 text-(--light-gray-3)">กล้อง {item.case.camera_count} ตัว</span>
       )}
     </>
   )

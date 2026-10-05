@@ -1,4 +1,4 @@
-import { Button, ConfigProvider, Input, Select, Spin, Upload, message } from 'antd'
+import { App, Button, ConfigProvider, Input, Select, Spin, Upload } from 'antd'
 import type { UploadFile } from 'antd'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
@@ -20,6 +20,8 @@ import {
 } from '@/hooks/queries/manage'
 import { useRoadsInfinite } from '@/hooks/queries/shared/useRoadsInfinite'
 import type { APIRequestProject, APIResponseProject, ProjectListData } from '@/types/manage/project-api'
+import { projectErrorMessage } from '../../data/projectErrors'
+import { projectNoForForm, projectNoForSave } from '../../data/projectNo'
 import { PlusOutlined } from '@ant-design/icons'
 
 interface Props {
@@ -77,25 +79,6 @@ type ProjectDetailRuntime = APIResponseProject & {
 const getProjectRoads = (d: ProjectDetailRuntime | undefined) =>
   d?.project_roads ?? d?.project_road ?? []
 
-/** Best-effort extractor for the backend's Thai error message — same shape
- *  NewProjectSection's own `errText` helper reads (`res_data.details` /
- *  `details`), since that's what's proven correct for /manage/project. */
-const readErrorMessage = (error: unknown, fallback: string): string => {
-  if (error && typeof error === 'object') {
-    const withResponse = error as {
-      response?: { data?: { details?: unknown; res_data?: { details?: unknown } } }
-      message?: string
-    }
-    const details =
-      withResponse.response?.data?.res_data?.details ??
-      withResponse.response?.data?.details
-    if (typeof details === 'string') return details
-    if (details && typeof details === 'object') return JSON.stringify(details)
-    return withResponse.message ?? fallback
-  }
-  return fallback
-}
-
 const DEFAULT_VALUES: FormValues = {
   name: '',
   budgetYear: null,
@@ -117,6 +100,9 @@ const isPdf = (file: { type?: string; name: string }) =>
 
 const FormCreateProject: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
+  // The App instance, not antd's static `message` — the static one can't read
+  // the theme and logs a warning on every toast.
+  const { message } = App.useApp()
 
   const isEdit = !!data?.id
   const editingId = data?.id ?? null
@@ -173,7 +159,7 @@ const FormCreateProject: React.FC<Props> = (props) => {
           : 'เกิดข้อผิดพลาดในการอัปโหลดเอกสาร',
       )
     }
-  }, [uploadDocument, patchDocument])
+  }, [uploadDocument, patchDocument, message])
 
   const { fields, append, remove } = useFieldArray({ control, name: 'roads' })
 
@@ -215,7 +201,7 @@ const FormCreateProject: React.FC<Props> = (props) => {
       name: d.project_name,
       budgetYear: d.budget_year,
       contractNo: d.contract_no,
-      code: d.project_no === '-' ? '' : d.project_no,
+      code: projectNoForForm(d.project_no),
       owner: d.department_id,
       contractor: d.contractor_id,
       roads:
@@ -244,7 +230,8 @@ const FormCreateProject: React.FC<Props> = (props) => {
     const body: APIRequestProject = {
       budget_year: values.budgetYear as number,
       contract_no: values.contractNo,
-      project_no: values.code || '',
+      // Optional — left empty it goes as the "-" stand-in the PUT accepts.
+      project_no: projectNoForSave(values.code),
       project_name: values.name,
       department_id: values.owner as number,
       contractor_id: values.contractor ?? '',
@@ -270,7 +257,7 @@ const FormCreateProject: React.FC<Props> = (props) => {
           onSuccess?.()
         },
         onError: (error) => {
-          message.error(readErrorMessage(error, 'แก้ไขโครงการไม่สำเร็จ'))
+          message.error(projectErrorMessage(error, 'แก้ไขโครงการไม่สำเร็จ'))
         },
       })
     } else {
@@ -280,11 +267,11 @@ const FormCreateProject: React.FC<Props> = (props) => {
           onSuccess?.()
         },
         onError: (error) => {
-          message.error(readErrorMessage(error, 'เพิ่มโครงการไม่สำเร็จ'))
+          message.error(projectErrorMessage(error, 'เพิ่มโครงการไม่สำเร็จ'))
         },
       })
     }
-  }, [isEdit, editingId, createProject, updateProject, onSuccess])
+  }, [isEdit, editingId, createProject, updateProject, onSuccess, message])
 
   // ── Option lists with edit-time fallbacks ───────────────────────────────
   // Each Select is bound to a foreign key that lives on the fetched project

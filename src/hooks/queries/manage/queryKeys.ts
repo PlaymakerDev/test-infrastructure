@@ -7,6 +7,7 @@
 import type { ListParams, RoadListParams } from '@/types/manage/params'
 import type { APIRequestProjectDepartment, APIRequestProjectList } from '@/types/manage/project-api'
 import type { APIRequestPaginateRoadList } from '@/types/manage/road-api'
+import type { APIRequestProjectDeviceStatusList } from '@/types/manage/device-status-api'
 
 // Normalize `ListParams` into a stable object used as the trailing key node
 // so React Query cache-slots per unique (page, limit, search). Undefined /
@@ -89,6 +90,33 @@ export const manageKeys = {
         'list-infinite',
         { limit: params.limit ?? 10, search: params.search ?? '' },
       ] as const,
+    /** One contractor by user_id — the list has no id filter, so the hook
+     *  pages through it. Under `.all` so contractor writes refresh it. */
+    byId: (userId: string) => [...manageKeys.contractors.all, 'by-id', userId] as const,
+  },
+
+  // GET /project/device-status(/{id}) — สรุปข้อมูลผู้รับจ้าง (BE 2026-10-01).
+  deviceStatus: {
+    all: ['manage', 'device-status'] as const,
+    list: (params: APIRequestProjectDeviceStatusList) =>
+      [
+        ...manageKeys.deviceStatus.all,
+        'list',
+        {
+          contractor_id: params.contractor_id ?? '',
+          is_warranty: params.is_warranty ?? null,
+          search: params.search ?? '',
+          page: params.page ?? 1,
+          limit: params.limit ?? 10,
+        },
+      ] as const,
+    /** Every project id of one contractor (all pages), for the Tunnel ring. */
+    projectIds: (contractorUserId: string) =>
+      [...manageKeys.deviceStatus.all, 'project-ids', contractorUserId] as const,
+    detail: (projectId: number) => [...manageKeys.deviceStatus.all, 'detail', projectId] as const,
+    /** One system's uptime-statistics filtered to one contractor. */
+    uptime: (contractorUserId: string, prefix: string) =>
+      [...manageKeys.deviceStatus.all, 'uptime', contractorUserId, prefix] as const,
   },
 
   roads: {
@@ -215,6 +243,10 @@ export const manageKeys = {
      *  the bell shows them as two numbers. */
     feedBadge: (kind: 'case' | 'camera_outage') =>
       [...manageKeys.notifications.feed(), 'badge', kind] as const,
+    /** Every still-open notification of a kind, read or not — the number the
+     *  panel uses to pick the tab it opens on. */
+    feedOpenTotal: (kind: 'case' | 'camera_outage') =>
+      [...manageKeys.notifications.feed(), 'open-total', kind] as const,
     /** Panel list (infinite, page-keyed inside the query itself). */
     feedList: (params: Record<string, unknown>) =>
       [...manageKeys.notifications.feed(), 'list', params] as const,

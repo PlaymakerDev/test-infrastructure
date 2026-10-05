@@ -72,20 +72,25 @@ const Content: React.FC<ContentProps> = (props) => {
   )
 }
 
-const ModalContactInfo: React.FC<Props> = (props) => {
-  const { } = props
-  const { contactInfo, setContactInfo } = useOverallContext()
+interface ContactInfoDialogProps {
+  open: boolean
+  data: ContractorData | null
+  onClose: () => void
+}
 
+/** The ⓘ dialog itself, free of the settings page's context — also opened
+ *  from the contractor summary page (settings/contractor-summary). */
+export const ContactInfoDialog: React.FC<ContactInfoDialogProps> = ({ open, data, onClose }) => {
   const renderContent = useMemo(() => {
-    if (!contactInfo.data) {
+    if (!data) {
       return (
         <div className="block m-auto py-18">
           <Empty description="ไม่มีข้อมูล" />
         </div>
       )
     }
-    return <Content data={contactInfo.data} />
-  }, [contactInfo.data])
+    return <Content data={data} />
+  }, [data])
 
   return (
     <ConfigProvider
@@ -102,10 +107,9 @@ const ModalContactInfo: React.FC<Props> = (props) => {
         title={false}
         // title="Basic Modal"
         closable={{ 'aria-label': 'Custom Close Button' }}
-        open={contactInfo.open}
+        open={open}
         footer={false}
-        // onOk={() => setContactInfo(INIT_CONTACT_INFO)}
-        onCancel={() => setContactInfo(INIT_CONTACT_INFO)}
+        onCancel={onClose}
         width={1000}
         classNames={{
           container: 'border-2! border-(--default-blue)!'
@@ -115,6 +119,18 @@ const ModalContactInfo: React.FC<Props> = (props) => {
         {renderContent}
       </Modal>
     </ConfigProvider>
+  )
+}
+
+const ModalContactInfo: React.FC<Props> = (props) => {
+  const { } = props
+  const { contactInfo, setContactInfo } = useOverallContext()
+  return (
+    <ContactInfoDialog
+      open={contactInfo.open}
+      data={contactInfo.data}
+      onClose={() => setContactInfo(INIT_CONTACT_INFO)}
+    />
   )
 }
 

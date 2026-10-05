@@ -57,6 +57,7 @@ export {
   useMarkNotificationFeedRead,
   useNotificationFeedBadges,
   useNotificationFeedInfinite,
+  useOpenCaseTotal,
 } from './useNotificationFeed'
 export { useFeatureUpdates, type FeatureUpdatesResult } from './useFeatureUpdates'
 
@@ -100,3 +101,7 @@ export {
   useAppendVmsCameras,
   useLinkWimStation,
 } from './solution'
+
+// สรุปข้อมูลผู้รับจ้าง (settings → ผู้รับจ้าง)
+export { useContractorById } from './useContractorById'
+export { useProjectDeviceStatusList, useProjectDeviceStatus } from './useProjectDeviceStatus'

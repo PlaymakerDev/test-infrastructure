@@ -89,11 +89,17 @@ describe('fields the backend requires before it takes the update', () => {
     expect(missingProjectFields(DETAIL)).toEqual([])
   })
 
-  it('names a missing document and project code — the common real cases', () => {
+  it('names a missing document — the common real case', () => {
     expect(missingProjectFields({ ...DETAIL, contract_document: null })).toEqual(['เอกสารเชื่อมต่อระบบ'])
-    expect(missingProjectFields({ ...DETAIL, project_no: null as unknown as string })).toEqual(['รหัสโครงการ'])
     expect(missingProjectFields({ ...DETAIL, project_no: '  ', contract_document: { document_url: '', file_name: '' } }))
-      .toEqual(['รหัสโครงการ', 'เอกสารเชื่อมต่อระบบ'])
+      .toEqual(['เอกสารเชื่อมต่อระบบ'])
+  })
+
+  it('never blocks on รหัสโครงการ — optional, sent as the "-" stand-in', () => {
+    expect(missingProjectFields({ ...DETAIL, project_no: null as unknown as string })).toEqual([])
+    expect(missingProjectFields({ ...DETAIL, project_no: '' })).toEqual([])
+    expect(buildAddRoadBody({ ...DETAIL, project_no: '' }, 1).project_no).toBe('-')
+    expect(buildAddRoadBody({ ...DETAIL, project_no: null as unknown as string }, 1).project_no).toBe('-')
   })
 
   it('reads the keys of a 400 "required" answer', () => {
