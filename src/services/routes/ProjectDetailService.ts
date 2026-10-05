@@ -1,9 +1,15 @@
-import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseProjectRoadCameras, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation, RoadSolutionListRaw } from "@/types/manage/project-detail-api";
+import { APIRequestCreateRoadSolution, APIRequestCreateSolution, APIRequestRoadSolution, APIRequestSolution, APIRequestUpdateSolution, APIRequestUpdateSolutionLocation, APIResponseCameraCrossingCode, APIResponseCreateRoadSolution, APIResponseDeleteSolution, APIResponseDeleteSolutionLocation, APIResponseProjectByID, APIResponseProjectBySolutionID, APIResponseProjectRoadCameras, APIResponseRoadSolution, APIResponseSolution, APIResponseSolutionByID, APIResponseSolutionCameraList, APIResponseUpdateSolution, APIResponseUpdateSolutionLocation, RoadSolutionListRaw } from "@/types/manage/project-detail-api";
 import ApiService from "../ApiService";
 
 export const getProjectByIDAPI = (id: string | number) =>
   ApiService.fetchData<APIResponseProjectByID>({
     url: `/manage/project/${id}`,
+    method: 'GET',
+  })
+
+export const getProjectBySolutionIDAPI = (solutionId: string | number) =>
+  ApiService.fetchData<APIResponseProjectBySolutionID>({
+    url: `/manage/project/solution/${solutionId}`,
     method: 'GET',
   })
 
@@ -15,9 +21,9 @@ export const getProjectByIDAPI = (id: string | number) =>
 export const normalizeRoadSolutions = (rows: unknown): APIResponseRoadSolution =>
   Array.isArray(rows)
     ? rows.map((row: RoadSolutionListRaw) => ({
-        ...row,
-        solution_locations: Array.isArray(row.solution_locations) ? row.solution_locations : [],
-      }))
+      ...row,
+      solution_locations: Array.isArray(row.solution_locations) ? row.solution_locations : [],
+    }))
     : []
 
 // Normalized here rather than at each reader: TitleSection and

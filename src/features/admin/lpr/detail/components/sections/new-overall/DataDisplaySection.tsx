@@ -1,6 +1,11 @@
 import SearchBar, { FilterConfig, ViewMode } from '@/components/searchable/SearchBar'
 import React, { useMemo, useState } from 'react'
 import { ContentCCTV, TableCCTVData } from '../../../components'
+import { useQuery } from '@tanstack/react-query'
+import { useLPRDetailContext } from '../../../context'
+import { getLPRRandomOnlineAPI } from '@/services/routes/NewLPRService'
+import type { APIResponseLPRRandomOnline } from '@/types/lpr/new-lpr-api'
+import { Empty, Skeleton } from 'antd'
 
 interface Props {
 
@@ -37,35 +42,85 @@ const DataDisplaySection: React.FC<Props> = (props) => {
   const { } = props
   const [displayType, setDisplayType] = useState<ViewMode>('GRID')
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const { departmentId, roadId, solutionId } = useLPRDetailContext()
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['lpr-random-cctv', departmentId, roadId, solutionId],
+    queryFn: () => getLPRRandomOnlineAPI(departmentId, {
+      road_id: Number(roadId),
+      solution_id: Number(solutionId),
+      scope: 'all'
+    }),
+    enabled: !!departmentId && !!roadId && !!solutionId,
+  })
+
+
+  const cameras = data?.data
+
+  // Badge numbers come from the rows actually fetched (not the API's `count`,
+  // which can exceed what a `limit` returned) so each badge equals the number
+  // of cards/rows its filter shows. A camera with no `is_online` flag is
+  // counted in "ทั้งหมด" only — unknown is neither online nor offline.
+  const stats = useMemo(() => {
+    const rows = cameras?.data ?? []
+    return {
+      all: rows.length,
+      online: rows.filter((item) => item.camera.is_online === true).length,
+      offline: rows.filter((item) => item.camera.is_online === false).length,
+    }
+  }, [cameras])
+
+  // Same response shape with `data` narrowed, so both views (grid + table)
+  // take it as a drop-in for `cameras`.
+  const filteredCameras = useMemo<APIResponseLPRRandomOnline | undefined>(() => {
+    if (!cameras) return undefined
+    if (activeFilter === 'online') {
+      return { ...cameras, data: cameras.data.filter((item) => item.camera.is_online === true) }
+    }
+    if (activeFilter === 'offline') {
+      return { ...cameras, data: cameras.data.filter((item) => item.camera.is_online === false) }
+    }
+    return cameras
+  }, [cameras, activeFilter])
 
   const renderContent = useMemo(() => {
     switch (displayType) {
       case 'TABLE':
-        return <TableCCTVData />
+        return <TableCCTVData data={filteredCameras} isLoading={isLoading} isError={isError} />
       case 'GRID':
-        return <ContentCCTV />
+        return <ContentCCTV data={filteredCameras} isLoading={isLoading} isError={isError} />
       default:
         return null
     }
-  }, [displayType])
+  }, [displayType, filteredCameras, isLoading, isError])
+
+  const renderDataLoading = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+    if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+    return renderContent
+  }, [isError, isLoading, renderContent])
+
+  const renderSearchBar = useMemo(() => {
+    if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+    if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+    return (
+      <SearchBar
+        filters={LPR_FILTERS}
+        stats={stats}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        defaultViewMode={displayType}
+        onViewModeChange={setDisplayType}
+      // formSearch={<FormSearchVMS onSearch={onSearch} />}
+      // onExport={() => setExportOpen(true)}
+      />
+    )
+  }, [activeFilter, displayType, isError, isLoading, stats])
 
   return (
     <div>
       <section>
-        <SearchBar
-          filters={LPR_FILTERS}
-          stats={{
-            all: 0,
-            online: 0,
-            offline: 0,
-          }}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          defaultViewMode={displayType}
-          onViewModeChange={setDisplayType}
-        // formSearch={<FormSearchVMS onSearch={onSearch} />}
-        // onExport={() => setExportOpen(true)}
-        />
+        {renderSearchBar}
       </section>
 
       {/* ── นำออกเอกสาร — exports the CURRENTLY FILTERED rows (what the
@@ -98,7 +153,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
             /> */}
 
       <section className='mt-5'>
-        {renderContent}
+        {renderDataLoading}
       </section>
     </div>
   )

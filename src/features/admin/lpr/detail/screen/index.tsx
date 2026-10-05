@@ -3,6 +3,11 @@ import React, { useMemo, useState } from 'react'
 import { TitleSection, OverallSection, NewOverallSection, ModalLicenseDetail, NewDetectionSection } from '../components'
 import { DetailProvider, useLPRDetailContext, type LPRDetailTab } from '../context'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
+import { useSearchParams } from 'next/navigation'
+
+interface Props {
+  id: string[] | string | number | undefined;
+}
 
 const LPRDetailContent = () => {
   const { currentTab, setCurrentTab } = useLPRDetailContext()
@@ -30,14 +35,27 @@ const LPRDetailContent = () => {
   )
 }
 
-const LPRDetailScreen = () => {
+const LPRDetailScreen: React.FC<Props> = (props) => {
+  const { id } = props
+  // PARAMS
+  const params = useSearchParams()
+  const solutionId = String(Array.isArray(id) ? id[0] : id ?? '')
+  const departmentId = params.get('dept_id') ?? ''
+  const roadId = params.get('road_id') ?? ''
+
   // Owned here (above DetailProvider) and handed in as props so the provider
   // can expose it via context — any section nested under it can then read
   // or switch tabs without prop-drilling through LPRDetailContent.
   const [currentTab, setCurrentTab] = useState<LPRDetailTab>('OVERALL')
 
   return (
-    <DetailProvider currentTab={currentTab} setCurrentTab={setCurrentTab}>
+    <DetailProvider
+      solutionId={solutionId}
+      departmentId={departmentId}
+      roadId={roadId}
+      currentTab={currentTab}
+      setCurrentTab={setCurrentTab}
+    >
       <LPRDetailContent />
       <ProjectInfoModal />
       <CCTVModal />

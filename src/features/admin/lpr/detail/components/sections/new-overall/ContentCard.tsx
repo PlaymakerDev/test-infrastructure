@@ -27,7 +27,7 @@ const ContentCard: React.FC<Props> = (props) => {
             <TbBroadcast className='text-[#C8FF00] fs-24' />
             <h3 className='text-[#C8FF00]'>ป้ายทะเบียนเฉลี่ยรายชั่วโมง</h3>
           </div>
-          <p className='text-white/50'><span className='text-white fs-22 font-bold'>24</span> คัน</p>
+          <p className='text-white/50'><span className='text-white fs-22 font-bold'>24</span> คัน/ชั่วโมง</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={12} lg={24} xl={24} xxl={24} xxxl={24}>

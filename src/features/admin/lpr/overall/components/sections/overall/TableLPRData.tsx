@@ -62,7 +62,7 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
 
   const goToDetail = useCallback(
     (item: SubDptSolution) => {
-      router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}${scopeQuerySuffix()}`)
+      router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}&road_id=${item.road.id}${scopeQuerySuffix()}`)
     },
     [router, deptId],
   )

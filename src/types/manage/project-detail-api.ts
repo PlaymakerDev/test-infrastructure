@@ -1,5 +1,8 @@
 import { APIResponsePost } from "../shared"
 
+// PROJECT BY SOLUTION ID
+export type APIResponseProjectBySolutionID = APIResponseProjectByID
+
 // PROJECT BY ID
 export interface APIResponseProjectByID {
   id: number
@@ -14,8 +17,9 @@ export interface APIResponseProjectByID {
   created_by: string
   budget_year: number
   legacy_pj_id: number
-  updated_by: string
+  updated_by: any
   updated_at: string
+  contract_document: any
   is_warranty: boolean
   contractor: ProjectContractor
   department: ProjectDepartment
@@ -45,7 +49,7 @@ export interface ProjectDepartment {
   line_group_token: string
   is_urban: number
   department_type: number
-  region_id: any
+  region_id: number
 }
 
 export interface ProjectRoad {

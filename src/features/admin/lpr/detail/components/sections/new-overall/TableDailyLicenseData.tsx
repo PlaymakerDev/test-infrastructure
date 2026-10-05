@@ -96,8 +96,18 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
       key: 'license_type',
       width: 150,
       render: (item) => {
-        if (item) return item
-        return '-'
+        const color = item === 'รถยนต์' ? '#66AEFF' : '#E94C4C'
+        return (
+          <span
+            className='inline-flex items-center gap-1 px-3 rounded-full fs-12 whitespace-nowrap'
+            style={{
+              border: `1px solid ${color}`,
+              color: color
+            }}
+          >
+            {item}
+          </span>
+        )
       }
     },
     {
