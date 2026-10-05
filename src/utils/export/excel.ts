@@ -16,12 +16,21 @@ export interface ExportColumn<Row> {
   value: (row: Row, index: number) => string | number
 }
 
+/** Emphasis for one whole data row — e.g. a bureau's subtotal row. */
+export interface ExcelRowStyle {
+  bold?: boolean
+  /** Solid fill, 6-digit hex without '#' (e.g. 'B8CCE4'). */
+  fill?: string
+}
+
 /** One sheet's worth of config — shared by the single-sheet `exportExcel`
  *  and the multi-sheet `exportExcelSheets`. */
 export interface ExportSheetArgs<Row> {
   sheetName: string
   columns: ExportColumn<Row>[]
   rows: Row[]
+  /** Per-row emphasis; undefined (or no callback) = a plain row. */
+  rowStyle?: (row: Row, index: number) => ExcelRowStyle | undefined
   /** Report title printed above the table — same string the page passes to
    *  `exportTablePdf`, so PDF and Excel share one header. When present the
    *  sheet gains the PDF-style header block (title + "ข้อมูล ณ วันที่ …" +
@@ -46,6 +55,8 @@ export interface ErasedExportSheet {
   filterNote?: string
   headers: { header: string; width?: number }[]
   cells: (string | number)[][]
+  /** Parallel to `cells`. */
+  rowStyles?: (ExcelRowStyle | undefined)[]
 }
 
 export interface ExportExcelSheetsArgs {
@@ -57,13 +68,14 @@ export interface ExportExcelSheetsArgs {
 /** Resolve one typed sheet config into an `ErasedExportSheet`, so a workbook
  *  can carry several sheets with unrelated row types (e.g. a status table, a
  *  latest-readings table and a time-series table on one device report). */
-export function excelSheet<Row>({ sheetName, columns, rows, title, filterNote }: ExportSheetArgs<Row>): ErasedExportSheet {
+export function excelSheet<Row>({ sheetName, columns, rows, title, filterNote, rowStyle }: ExportSheetArgs<Row>): ErasedExportSheet {
   return {
     sheetName,
     title,
     filterNote,
     headers: columns.map((c) => ({ header: c.header, width: c.width })),
     cells: rows.map((row, i) => columns.map((c) => c.value(row, i))),
+    rowStyles: rowStyle ? rows.map((row, i) => rowStyle(row, i)) : undefined,
   }
 }
 
@@ -78,7 +90,7 @@ const THIN_BORDER = {
 
 /** Build one styled worksheet: optional PDF-style header block, a filled
  *  header row, then bordered data cells. */
-function buildWorksheet({ title, filterNote, headers, cells }: ErasedExportSheet): XLSX.WorkSheet {
+function buildWorksheet({ title, filterNote, headers, cells, rowStyles }: ErasedExportSheet): XLSX.WorkSheet {
   const colCount = headers.length
   const aoa: (StyledCell | string | number)[][] = []
   const merges: XLSX.Range[] = []
@@ -118,15 +130,21 @@ function buildWorksheet({ title, filterNote, headers, cells }: ErasedExportSheet
       },
     })),
   )
-  for (const row of cells) {
+  cells.forEach((row, r) => {
+    const emphasis = rowStyles?.[r]
     aoa.push(
       row.map<StyledCell>((v) => ({
         v,
         t: typeof v === 'number' ? 'n' : 's',
-        s: { border: THIN_BORDER, alignment: { vertical: 'top' } },
+        s: {
+          border: THIN_BORDER,
+          alignment: { vertical: 'top' },
+          ...(emphasis?.bold ? { font: { bold: true } } : {}),
+          ...(emphasis?.fill ? { fill: { patternType: 'solid', fgColor: { rgb: `FF${emphasis.fill}` } } } : {}),
+        },
       })),
     )
-  }
+  })
 
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = headers.map((c) => ({ wch: c.width ?? 16 }))

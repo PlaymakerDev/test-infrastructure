@@ -34,6 +34,25 @@ describe('excel export', () => {
     expect(ws['!cols']?.[1]).toEqual({ wch: 5 })
   })
 
+  it('rowStyle emphasises whole rows (bold + fill) and leaves the rest plain', () => {
+    exportExcel({
+      filenameBase: 'X',
+      sheetName: 'S',
+      columns: [{ header: 'หน่วยงาน', value: (r: { name: string; total: boolean }) => r.name }, { header: 'รวม', value: () => 3 }],
+      rows: [{ name: 'สทช.1 (รวม)', total: true }, { name: 'ขทช.ปทุมธานี', total: false }],
+      rowStyle: (r) => (r.total ? { bold: true, fill: 'B8CCE4' } : undefined),
+    })
+    const ws = written[written.length - 1].Sheets['S']
+    for (const ref of ['A2', 'B2']) {
+      expect(ws[ref].s.font).toEqual({ bold: true })
+      expect(ws[ref].s.fill).toEqual({ patternType: 'solid', fgColor: { rgb: 'FFB8CCE4' } })
+      expect(ws[ref].s.border).toBeDefined()
+    }
+    expect(ws['B2'].t).toBe('n') // still a number
+    expect(ws['A3'].s.font).toBeUndefined()
+    expect(ws['A3'].s.fill).toBeUndefined()
+  })
+
   it('exportExcelSheets builds one tab per sheet, sanitising names', () => {
     exportExcelSheets({
       filenameBase: 'Bridge_Lighting_Report',

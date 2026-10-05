@@ -1,7 +1,7 @@
 "use client"
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Spin } from 'antd'
+import { App, Spin } from 'antd'
 import { TbDownload } from 'react-icons/tb'
 import { AxiosError } from 'axios'
 import dayjs from 'dayjs'
@@ -27,7 +27,7 @@ import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontS
 import { useUserKind } from '@/utils/hooks/useUserKind'
 import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import { deviceTypeText, deviceTypeThaiText } from '../../data/deviceTypes'
-import { parseImageUrls } from '../../data/parseImageUrls'
+import { SHEET_WARNING_SECONDS, waitForDeviceStatusImages } from '../data/deviceStatusSheet'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -50,6 +50,7 @@ const normalizeSolutionType = (value: string | null): string =>
 const CaseContent: React.FC<Props> = ({ id }) => {
   const searchParams = useSearchParams()
   const { userKind } = useUserKind()
+  const { message } = App.useApp()
 
   const role: 'officer' | 'contractor' =
     searchParams.get('role') === 'contractor' || userKind === 'contractor'
@@ -215,35 +216,64 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 
   // หนังสือแจ้งซ่อม — the ministry's outgoing letter (ครุฑ letterhead, TH
   // Sarabun New). Direct download per the agreed flow (no export dialog).
+  const exportingLetterRef = useRef(false)
   const handleExportLetter = async () => {
-    const [{ exportLetterPdf }, { buildRepairLetter }, contractorRows] = await Promise.all([
-      import('@/utils/export/letterPdf'),
-      import('../data/repairLetter'),
-      contractorsQuery.data ?? contractorsQuery.refetch().then((result) => result.data),
-    ])
-    // Every letter field is stored on the case since the 2026-09-18 backend
-    // release, so re-issuing the letter reproduces what the officer filed —
-    // including the device-status sheet (theirs, or the one the backend built).
-    await exportLetterPdf(buildRepairLetter({
-      caseNo: id,
-      project: { ...project, contractor: letterContractorName(contractorRows, projectDetail?.contractor_id, project.contractor) },
-      letterNo: caseData?.document_no,
-      letterDate: caseData?.document_date ?? caseData?.created_at,
-      // The contract's ลงวันที่ = warranty start (no contract-date column).
-      // Raw dates — the letter formats them full-month itself.
-      contractDate: projectDetail?.warranty_start_date,
-      budget: caseData?.project_budget != null ? String(caseData.project_budget) : undefined,
-      defect: caseData?.problem,
-      // Thai, and every type on the case — the letter is a formal document,
-      // not the table's English badge (user 2026-09-22).
-      deviceType: deviceTypeThaiText(caseCameras.map((c) => groupsByCamera[c.camera_id])),
-      deadline: caseData?.due_date,
-      contractClause: caseData?.contract_clause,
-      coordinatorName: caseData?.assignee_name,
-      coordinatorPosition: caseData?.assignee_position,
-      coordinatorPhone: caseData?.assignee_contact,
-      deviceStatusImages: parseImageUrls(caseData?.device_status_image),
-    }))
+    // The download can take a while now (see below) — one at a time.
+    if (exportingLetterRef.current) return
+    exportingLetterRef.current = true
+    let hide: (() => void) | undefined
+    try {
+      // The page's copy of the case can predate the camera-status sheet — open
+      // it straight after the save and the backend is still building it — so
+      // read the case fresh, and wait while the sheet is being built.
+      const sheet = await waitForDeviceStatusImages(
+        () => caseQuery.refetch().then((result) => result.data),
+        {
+          timeoutMs: 30_000,
+          onWaiting: () => { hide = message.loading('กำลังเตรียมหนังสือพร้อมรูปภาพสถานะการทำงานของอุปกรณ์...', 0) },
+        },
+      )
+      const [{ exportLetterPdf }, { buildRepairLetter }, contractorRows] = await Promise.all([
+        import('@/utils/export/letterPdf'),
+        import('../data/repairLetter'),
+        contractorsQuery.data ?? contractorsQuery.refetch().then((result) => result.data),
+      ])
+      // Every letter field is stored on the case since the 2026-09-18 backend
+      // release, so re-issuing the letter reproduces what the officer filed —
+      // including the device-status sheet (theirs, or the one the backend built).
+      await exportLetterPdf(buildRepairLetter({
+        caseNo: id,
+        project: { ...project, contractor: letterContractorName(contractorRows, projectDetail?.contractor_id, project.contractor) },
+        letterNo: caseData?.document_no,
+        letterDate: caseData?.document_date ?? caseData?.created_at,
+        // The contract's ลงวันที่ = warranty start (no contract-date column).
+        // Raw dates — the letter formats them full-month itself.
+        contractDate: projectDetail?.warranty_start_date,
+        budget: caseData?.project_budget != null ? String(caseData.project_budget) : undefined,
+        defect: caseData?.problem,
+        // Thai, and every type on the case — the letter is a formal document,
+        // not the table's English badge (user 2026-09-22).
+        deviceType: deviceTypeThaiText(caseCameras.map((c) => groupsByCamera[c.camera_id])),
+        deadline: caseData?.due_date,
+        contractClause: caseData?.contract_clause,
+        coordinatorName: caseData?.assignee_name,
+        coordinatorPosition: caseData?.assignee_position,
+        coordinatorPhone: caseData?.assignee_contact,
+        deviceStatusImages: sheet.images,
+      }))
+      // A case with a job should carry its sheet; one without (opened before
+      // the sheet existed) never had it, so stays quiet.
+      if (sheet.images.length === 0 && sheet.state !== 'none') {
+        message.warning(sheet.state === 'timeout'
+          ? 'ระบบยังสร้างรูปภาพสถานะการทำงานของอุปกรณ์ไม่เสร็จ หนังสือที่ดาวน์โหลดจึงยังไม่มีหน้ารูป กรุณาดาวน์โหลดใหม่อีกครั้งในภายหลัง'
+          : 'ระบบสร้างรูปภาพสถานะการทำงานของอุปกรณ์ไม่สำเร็จ หนังสือที่ดาวน์โหลดจึงไม่มีหน้ารูป', SHEET_WARNING_SECONDS)
+      }
+    } catch {
+      message.error('ดาวน์โหลดหนังสือแจ้งซ่อมไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
+    } finally {
+      hide?.()
+      exportingLetterRef.current = false
+    }
   }
 
   // หนังสือแจ้งซ่อมพร้อมลายเซ็น — shown in the same preview modal as /case/new,
@@ -387,6 +417,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
  *  OpenCaseModal. No case exists yet; devices arrive via `camera_ids`. */
 const CaseCreateContent: React.FC = () => {
   const searchParams = useSearchParams()
+  const { userKind, isLoading: userKindLoading } = useUserKind()
   const cameraIds = (searchParams.get('camera_ids') ?? '')
     .split(',')
     .map((v) => v.trim())
@@ -400,6 +431,25 @@ const CaseCreateContent: React.FC = () => {
   // Never inherit a stale entry point — a case created here belongs to the
   // device table it was opened from.
   detailParams.delete('source')
+
+  // ผู้รับจ้างเปิดเคสไม่ได้ (user 2026-09-11): the device table hides its
+  // เปิด Case buttons from them, and this keeps the officer's letter form out of
+  // reach of a typed-in URL too (found 2026-10-05). Wait for the account kind
+  // first — it defaults to admin while loading, which would flash the form.
+  if (userKindLoading) {
+    return (
+      <div className='main-screen flex items-center justify-center h-64'>
+        <Spin size='large' />
+      </div>
+    )
+  }
+  if (userKind === 'contractor') {
+    return (
+      <div className='main-screen flex items-center justify-center h-64 text-[#E94C4C]'>
+        คุณไม่มีสิทธิ์เปิด Case
+      </div>
+    )
+  }
 
   return (
     <div className='main-screen maintenance-font-min-14'>
