@@ -18,31 +18,13 @@ import type { TableProps } from 'antd'
 import { mapProject } from '../context'
 import type { Project } from '../types/project'
 import { projectExportColumns } from '../data/projectExportColumns'
+import { projectErrorMessage } from '../data/projectErrors'
 import { fetchAllPages } from '../utils/fetchAllPages'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { isAdmin } from '@/utils/isAdmin'
 
 interface Props {
 
-}
-
-/** Best-effort extractor for the backend's Thai error message — same shape
- *  the project Context's own `errText` helper reads (`res_data.details` /
- *  `details`), since that's what's proven correct for /manage/project. */
-const readErrorMessage = (error: unknown, fallback: string): string => {
-  if (error && typeof error === 'object') {
-    const withResponse = error as {
-      response?: { data?: { details?: unknown; res_data?: { details?: unknown } } }
-      message?: string
-    }
-    const details =
-      withResponse.response?.data?.res_data?.details ??
-      withResponse.response?.data?.details
-    if (typeof details === 'string') return details
-    if (details && typeof details === 'object') return JSON.stringify(details)
-    return withResponse.message ?? fallback
-  }
-  return fallback
 }
 
 const NewProjectSection: React.FC<Props> = (props) => {
@@ -177,7 +159,7 @@ const NewProjectSection: React.FC<Props> = (props) => {
         dispatch(resetProjectModalData())
       },
       onError: (error) => {
-        message.error(readErrorMessage(error, 'ลบโครงการไม่สำเร็จ'))
+        message.error(projectErrorMessage(error, 'ลบโครงการไม่สำเร็จ'))
       },
     })
   }, [deleteProject, dispatch, message])

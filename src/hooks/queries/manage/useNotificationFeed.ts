@@ -76,6 +76,25 @@ export const useNotificationFeedBadges = () => {
   }
 }
 
+/** Still-open repair cases in the window, read ones included — 0 means the
+ *  แจ้งซ่อม tab would open on an empty list, so the panel opens on กล้องดับ
+ *  instead (user 2026-10-02). The unread badge can't tell that apart: a case
+ *  everyone has seen is still in the list. Polled with the badges, so the
+ *  answer is ready the moment the panel opens. */
+export const useOpenCaseTotal = () =>
+  useQuery({
+    queryKey: manageKeys.notifications.feedOpenTotal('case'),
+    queryFn: () =>
+      getNotificationFeedAPI({
+        kind: 'case',
+        status: FEED_STATUS,
+        since_hours: FEED_WINDOW_HOURS,
+        limit: 1,
+      }).then((r) => r.data),
+    select: (data) => data.meta_data.count,
+    refetchInterval: 60_000,
+  })
+
 /** Panel list — page-based infinite query. Enabled only while the panel is
  *  open; the badge poll is what runs in the background. */
 export const useNotificationFeedInfinite = (

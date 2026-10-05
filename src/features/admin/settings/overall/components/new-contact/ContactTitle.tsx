@@ -1,10 +1,11 @@
+import Link from 'next/link'
 import { useAppDispatch } from '@/stores/hooks'
 import { setContactModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { ContractorData } from '@/types/manage/contractor-api'
-import { fmtNumber } from '@/utils/formatNumber'
 import React, { useCallback } from 'react'
 import { TbInfoSquareRoundedFilled, TbPencilMinus, TbTrash } from 'react-icons/tb'
 import { useOverallContext } from '../../context'
+import ContractorCountPills from './ContractorCountPills'
 
 interface Props {
   item: ContractorData
@@ -32,21 +33,20 @@ const ContactTitle: React.FC<Props> = (props) => {
       </div>
 
       <div className='flex flex-wrap items-center gap-2'>
-        <div className='shrink-0 rounded-3xl border border-(--default-blue) text-(--default-blue) px-5 py-1'>
-          <p className='fs-12 whitespace-nowrap'>{fmtNumber(Number(item.project_count)) || 0} โครงการ</p>
-        </div>
-        {/* GET /manage/contractor counts the contractor's solutions two ways:
-            `solution_count` = every one (COUNT tbl_solution), shown as จุดติดตั้ง,
-            and `solution_type_count` = distinct ประเภทงาน — the same set as the
-            การทำงาน tags below — shown as Solution (user 2026-09-30; the two
-            were swapped). The payload has no count of the จุดติดตั้ง rows
-            themselves (tbl_solution_location). */}
-        <div className='shrink-0 rounded-3xl border border-(--yellow) text-(--yellow) px-5 py-1'>
-          <p className='fs-12 whitespace-nowrap'>{fmtNumber(Number(item.solution_count)) || 0} จุดติดตั้ง</p>
-        </div>
-        <div className='shrink-0 rounded-3xl border border-(--default-orange) text-(--default-orange) px-5 py-1'>
-          <p className='fs-12 whitespace-nowrap'>{fmtNumber(Number(item.solution_type_count)) || 0} Solution</p>
-        </div>
+        <ContractorCountPills item={item} />
+        {/* สรุปข้อมูลผู้รับจ้าง (user 2026-09-30) — a link, so it opens in a new
+            tab too; keyed by the contractor's user_id, which is what every
+            device-status / uptime filter takes. #FF9D00 is the Figma fill
+            (user 2026-10-01). The `!`s are needed: antd's global link style
+            (`a { color: colorLink; background-color: transparent }`) sits
+            outside Tailwind's layers, so it beats plain utilities — without
+            them this rendered as blue text on no fill. */}
+        <Link
+          href={`/admin/settings/detail/contractor/${item.user_id}`}
+          className='shrink-0 rounded-3xl border border-[#FF9D00] bg-[#FF9D00]! text-(--light-black)! hover:text-(--light-black)! px-5 py-1 hover:opacity-85'
+        >
+          <p className='fs-12 whitespace-nowrap'>สรุปข้อมูลผู้รับจ้าง</p>
+        </Link>
       </div>
 
       <div className='flex items-center gap-2 shrink-0'>

@@ -148,6 +148,7 @@ export interface LetterAttachment {
 
 // A4 portrait in points; งานสารบรรณ margins: left 3cm, right 2cm.
 const PAGE_W = 595.28
+const PAGE_H = 841.89
 const MARGIN_LEFT = 85 // 3cm
 const MARGIN_RIGHT = 57 // 2cm
 const CONTENT_W = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT
@@ -166,18 +167,37 @@ const LINE_H = BODY_SIZE * 1.05
 // occupies. Both were one line lower until the user matched them to the
 // department's sample form (2026-09-22).
 const TAGLINE_BOTTOM = 6 + LINE_H
-// Gap the originating-division block leaves above the page edge: what it used
-// to have (18) plus the two-line lift, which is measured from the block's own
-// old position — NOT stacked on top of the tagline's lift.
-const FOOTER_CLEARANCE = 18 + LINE_H * 2
+// The flow stops above the tagline's strip (its one line plus a small gap), so
+// a body long enough to fill a sheet never runs under it — it used to print
+// straight through “ทช.โปร่งใส…” (user 2026-10-05). The tagline is absolutely
+// placed, so this moves nothing on a letter that already fit.
+const PAGE_PAD_BOTTOM = TAGLINE_BOTTOM + LINE_H + 4
+// Where the originating-division block ends above the page edge: what it used
+// to have (the old 20pt padding + 18) plus the two-line lift, measured from the
+// block's own old position — NOT stacked on top of the tagline's lift…
+const FOOTER_FROM_EDGE = 20 + 18 + LINE_H * 2
+// …kept exactly there now that the bottom padding is taller.
+const FOOTER_CLEARANCE = FOOTER_FROM_EDGE - PAGE_PAD_BOTTOM
+// Room left under ขอแสดงความนับถือ to sign by hand (no printed signer block):
+// the signature plus the (name) and position lines written beneath it.
+const SIGNATURE_SPACE = LINE_H * 5
 // 3cm tall — the ครุฑ size ระเบียบงานสารบรรณ specifies for หนังสือภายนอก.
 const EMBLEM_H = 85
 const EMBLEM_W = Math.round((EMBLEM_H * 420) / 447) // asset is 420×447
+// The first sheet's vertical rhythm. Named because closingFitsFirstPage() sums
+// the very same values the styles below lay out.
+const PAGE_PAD_TOP = 30
+const EMBLEM_GAP = 6
+const DATE_GAP = 10 // above and below the date
+const FIELD_GAP = 4 // under each เรื่อง / เรียน / อ้างถึง row
+const PARA_GAP = 8
+const CLOSING_GAP = 16 // above ขอแสดงความนับถือ
+const SIGN_NAME_GAP = 32
 
 const s = StyleSheet.create({
   page: {
-    paddingTop: 30,
-    paddingBottom: 20,
+    paddingTop: PAGE_PAD_TOP,
+    paddingBottom: PAGE_PAD_BOTTOM,
     paddingLeft: MARGIN_LEFT,
     paddingRight: MARGIN_RIGHT,
     fontFamily: 'THSarabunNew',
@@ -190,7 +210,7 @@ const s = StyleSheet.create({
     lineHeight: 1.05,
     color: '#000000',
   },
-  emblem: { width: EMBLEM_W, height: EMBLEM_H, alignSelf: 'center', marginBottom: 6, objectFit: 'contain' },
+  emblem: { width: EMBLEM_W, height: EMBLEM_H, alignSelf: 'center', marginBottom: EMBLEM_GAP, objectFit: 'contain' },
   headRow: { flexDirection: 'row', justifyContent: 'space-between' },
   refNo: { width: '46%' },
   // No fixed width: the block shrink-wraps its longest line so `space-between`
@@ -198,17 +218,31 @@ const s = StyleSheet.create({
   // sitting mid-page with dead space to its right. maxWidth matches the width
   // wrapLetterArgs measures the lines against.
   sender: { maxWidth: '52%' },
-  date: { textAlign: 'center', marginTop: 10, marginBottom: 10 },
-  fieldRow: { flexDirection: 'row', marginBottom: 4 },
+  date: { textAlign: 'center', marginTop: DATE_GAP, marginBottom: DATE_GAP },
+  fieldRow: { flexDirection: 'row', marginBottom: FIELD_GAP },
   // Regular weight, not bold — งานสารบรรณ sets เรื่อง/เรียน/อ้างถึง in the
   // same face as the body.
   fieldLabel: {},
   fieldValue: { flex: 1 },
-  paragraph: { marginTop: 8 },
-  closing: { marginTop: 16, marginLeft: '52%' },
-  signName: { marginTop: 32, marginLeft: '52%' },
+  paragraph: { marginTop: PARA_GAP },
+  // ขอแสดงความนับถือ → room to sign → the originating-division lines, kept as
+  // one unit (user 2026-10-05): when the body runs long the whole block moves
+  // to the next page instead of splitting there. It grows to fill its page so
+  // that, on the letter's own page, the footer can sit at the foot.
+  closingBlock: { flexGrow: 1 },
+  signatureSpace: { height: SIGNATURE_SPACE },
+  closing: { marginTop: CLOSING_GAP, marginLeft: '52%' },
+  signName: { marginTop: SIGN_NAME_GAP, marginLeft: '52%' },
   signPosition: { marginLeft: '52%' },
   footerBlock: { marginTop: 'auto', marginBottom: FOOTER_CLEARANCE },
+  // Carried to a later page, the footer follows the signing room directly —
+  // the set keeps its spacing instead of stretching down the sheet. It keeps
+  // the same (invisible) bottom margin, so both drawings are exactly as tall:
+  // without it a block that overflowed by under ~52pt came out short enough to
+  // fit page 1 after all — one page, footer not at the foot (found 2026-10-05).
+  footerBlockCarried: { marginBottom: FOOTER_CLEARANCE },
+  // Out of the flow, so the first-pass probe can't move anything it measures.
+  pageProbe: { position: 'absolute', top: 0, left: 0 },
   footerLine: { fontSize: 14 },
   // Pinned to the page edge (not the flow) and `fixed` at render time, so it
   // repeats on every printed page — the letter and each attachment sheet
@@ -243,8 +277,18 @@ const Tagline: React.FC<{ text?: string }> = ({ text }) =>
 
 export function LetterDocument({
   emblemDataUrl,
+  closingCarried = false,
+  onLetterPages,
   ...args
-}: ExportLetterPdfArgs & { emblemDataUrl: string | null }) {
+}: ExportLetterPdfArgs & {
+  emblemDataUrl: string | null
+  /** The closing block lands past the letter's first sheet — see
+   *  `letterDocument`, which finds this out in a first layout pass. */
+  closingCarried?: boolean
+  /** Layout probe for that first pass: reports how many sheets the letter
+   *  page broke into. */
+  onLetterPages?: (pages: number) => void
+}) {
   const { refNo, senderAddress, date, fields, labelWidth, paragraphs, closing, signerName, signerPosition, footerLines, tagline } = args
 
   return (
@@ -298,16 +342,34 @@ export function LetterDocument({
           </View>
         ))}
 
-        <Text style={s.closing}>{`${closing} `}</Text>
-        {signerName ? <Text style={s.signName}>{`${signerName} `}</Text> : null}
-        {signerPosition ? <Text style={s.signPosition}>{`${signerPosition} `}</Text> : null}
+        {/* wrap={false}: from ขอแสดงความนับถือ down, never split across a
+            page — a long letter takes the whole block to its next sheet.
+            On the first sheet the footer keeps its place at the foot (the
+            department's form); carried to a later sheet, the set comes down
+            as it is instead of stretching down the page (user 2026-10-05). */}
+        <View wrap={false} style={closingCarried ? undefined : s.closingBlock}>
+          <Text style={s.closing}>{`${closing} `}</Text>
+          {signerName ? <Text style={s.signName}>{`${signerName} `}</Text> : null}
+          {signerPosition ? <Text style={s.signPosition}>{`${signerPosition} `}</Text> : null}
+          {signerName ? null : <View style={s.signatureSpace} />}
 
-        {footerLines?.length ? (
-          <View style={s.footerBlock}>
-            {footerLines.map((line, i) => (
-              <Text key={i} style={s.footerLine}>{`${line} `}</Text>
-            ))}
-          </View>
+          {footerLines?.length ? (
+            <View style={closingCarried ? s.footerBlockCarried : s.footerBlock}>
+              {footerLines.map((line, i) => (
+                <Text key={i} style={s.footerLine}>{`${line} `}</Text>
+              ))}
+            </View>
+          ) : null}
+        </View>
+        {onLetterPages ? (
+          <Text
+            fixed
+            style={s.pageProbe}
+            render={({ totalPages }) => {
+              if (totalPages) onLetterPages(totalPages)
+              return ''
+            }}
+          />
         ) : null}
         <Tagline text={tagline} />
       </Page>
@@ -331,14 +393,48 @@ export function LetterDocument({
   )
 }
 
+type MeasureFont = NonNullable<Awaited<ReturnType<typeof loadMeasureFont>>>
+
+const loadLetterFonts = () => Promise.all([
+  loadMeasureFont('THSarabunNew__measure'),
+  loadMeasureFont('THSarabunNew__measureBold'),
+])
+
 /** Pre-wrap every Thai string to the width it will actually render at — the
  *  same rule as prewrapTableArgs, see the hyphenation note in pdf.tsx. */
 export async function wrapLetterArgs(args: ExportLetterPdfArgs): Promise<ExportLetterPdfArgs> {
-  const [fk, fkBold] = await Promise.all([
-    loadMeasureFont('THSarabunNew__measure'),
-    loadMeasureFont('THSarabunNew__measureBold'),
-  ])
+  const [fk, fkBold] = await loadLetterFonts()
   if (!fk) return args
+  const { wrap, measure, wrapParagraph } = letterWrapper(fk, fkBold)
+
+  // Labels are bold and measured on the regular face — bold Sarabun runs a few
+  // percent wider, so LABEL_GAP absorbs the difference.
+  const labelWidth = Math.ceil(Math.max(...args.fields.map((f) => measure(f.label))) + LABEL_GAP)
+  const fieldValueW = CONTENT_W - labelWidth - 4
+
+  return {
+    ...args,
+    refNo: wrap(args.refNo, CONTENT_W * 0.46 - 4),
+    senderAddress: args.senderAddress.map((line) => wrap(line, CONTENT_W * 0.5 - 4)),
+    labelWidth,
+    fields: args.fields.map((f) => ({ label: f.label, value: wrap(f.value, fieldValueW) })),
+    // The first line is PARA_INDENT narrower and gets that same marginLeft at
+    // render time, so both edges line up with the rest of the paragraph.
+    paragraphs: args.paragraphs.map(wrapParagraph),
+    footerLines: args.footerLines?.map((line) => wrap(line, CONTENT_W, 14)),
+    tagline: args.tagline ? wrap(args.tagline, CONTENT_W, 14) : args.tagline,
+  }
+}
+
+/** One body paragraph, wrapped exactly as wrapLetterArgs wraps it — for a
+ *  caller that re-measures one paragraph many times (the reason budget). */
+export async function wrapLetterParagraph(p: LetterParagraph): Promise<LetterParagraph> {
+  const [fk, fkBold] = await loadLetterFonts()
+  return fk ? letterWrapper(fk, fkBold).wrapParagraph(p) : p
+}
+
+/** The letter's wrapping rules, bound to its measuring faces. */
+function letterWrapper(fk: MeasureFont, fkBold: MeasureFont | null) {
   const wrap = (text: string, maxPt: number, size = BODY_SIZE, firstMaxPt?: number) =>
     wrapPdfText(fk, text, maxPt, size, firstMaxPt)
   const measure = (text: string, size = BODY_SIZE) =>
@@ -390,12 +486,25 @@ export async function wrapLetterArgs(args: ExportLetterPdfArgs): Promise<ExportL
     // measures inside the column FOR REAL, on its own mix of faces.
     let runsPerLine: LetterRun[][] = []
     let texts: string[] = []
+    // A line the writer ended by hand (Enter — a reason pasted from another
+    // document arrives full of them) stays where it is but is never stretched
+    // to the margin: justifying it spread its few words letter by letter
+    // across the line (user 2026-10-05).
+    let handEnded: boolean[] = []
     let budget = CONTENT_W
     for (let attempt = 0; attempt < 8; attempt++) {
       const scale = budget / CONTENT_W
-      texts = wrap(p.text, budget, BODY_SIZE, firstW * scale)
-        .split('\n')
-        .map((line) => line.trimEnd())
+      texts = []
+      handEnded = []
+      p.text.split('\n').forEach((segment, si) => {
+        const lines = wrap(segment, budget, BODY_SIZE, si === 0 ? firstW * scale : undefined)
+          .split('\n')
+          .map((line) => line.trimEnd())
+        lines.forEach((line, li) => {
+          texts.push(line)
+          handEnded.push(li === lines.length - 1)
+        })
+      })
       runsPerLine = lineRuns(p.text, texts, boldFrom, boldTo)
       if (boldFrom < 0) break
       const overflows = runsPerLine.some(
@@ -409,7 +518,8 @@ export async function wrapLetterArgs(args: ExportLetterPdfArgs): Promise<ExportL
       ...p,
       lines: runsPerLine.map((runs, li) => ({
         runs,
-        letterSpacing: li === texts.length - 1 ? 0 : justifySpacing(runs, avail(li)),
+        // The paragraph's last line is hand-ended too — ragged, like Word.
+        letterSpacing: handEnded[li] ? 0 : justifySpacing(runs, avail(li)),
       })),
     }
   }
@@ -431,23 +541,7 @@ export async function wrapLetterArgs(args: ExportLetterPdfArgs): Promise<ExportL
     return Math.max(0, Math.min(MAX_LETTER_SPACING_PT, deficit / glyphs))
   }
 
-  // Labels are bold and measured on the regular face — bold Sarabun runs a few
-  // percent wider, so LABEL_GAP absorbs the difference.
-  const labelWidth = Math.ceil(Math.max(...args.fields.map((f) => measure(f.label))) + LABEL_GAP)
-  const fieldValueW = CONTENT_W - labelWidth - 4
-
-  return {
-    ...args,
-    refNo: wrap(args.refNo, CONTENT_W * 0.46 - 4),
-    senderAddress: args.senderAddress.map((line) => wrap(line, CONTENT_W * 0.5 - 4)),
-    labelWidth,
-    fields: args.fields.map((f) => ({ label: f.label, value: wrap(f.value, fieldValueW) })),
-    // The first line is PARA_INDENT narrower and gets that same marginLeft at
-    // render time, so both edges line up with the rest of the paragraph.
-    paragraphs: args.paragraphs.map(wrapParagraph),
-    footerLines: args.footerLines?.map((line) => wrap(line, CONTENT_W, 14)),
-    tagline: args.tagline ? wrap(args.tagline, CONTENT_W, 14) : args.tagline,
-  }
+  return { wrap, measure, wrapParagraph }
 }
 
 /** Read the emblem straight through as a PNG data URL. Deliberately NOT
@@ -493,6 +587,48 @@ async function loadAttachments(
   )
 }
 
+/** Whether the closing block (ขอแสดงความนับถือ → room to sign → footer) still
+ *  fits on the letter's first sheet. Everything on that sheet is a fixed height
+ *  or one line-height per pre-wrapped line, so it sums without a render — cheap
+ *  enough to run as the officer types (the reason field's live budget).
+ *  `prepared` = wrapLetterArgs output. letterPdf.test.ts locks the sum against
+ *  @react-pdf's own pagination. */
+export function closingFitsFirstPage(prepared: ExportLetterPdfArgs, withEmblem = true): boolean {
+  const lines = (text: string) => text.split('\n').length
+  const emblem = withEmblem ? EMBLEM_H + EMBLEM_GAP : 0
+  const head = Math.max(lines(prepared.refNo), prepared.senderAddress.reduce((n, l) => n + lines(l), 0)) * LINE_H
+  const date = DATE_GAP * 2 + lines(prepared.date) * LINE_H
+  const fields = prepared.fields.reduce((h, f) => h + Math.max(lines(f.label), lines(f.value)) * LINE_H + FIELD_GAP, 0)
+  const body = prepared.paragraphs.reduce((h, p) => h + PARA_GAP + (p.lines?.length ?? lines(p.text)) * LINE_H, 0)
+  const footer = prepared.footerLines?.length
+    ? prepared.footerLines.reduce((n, l) => n + lines(l), 0) * LINE_H + FOOTER_CLEARANCE
+    : 0
+  const closing = CLOSING_GAP + LINE_H
+    + (prepared.signerName ? SIGN_NAME_GAP + LINE_H : SIGNATURE_SPACE)
+    + (prepared.signerPosition ? LINE_H : 0)
+    + footer
+  return PAGE_PAD_TOP + emblem + head + date + fields + body + closing <= PAGE_H - PAGE_PAD_BOTTOM
+}
+
+/** The letter, ready to render. Laid out twice: where the closing block lands
+ *  decides how it is drawn (footer at the foot of the first sheet, or a
+ *  compact set on a later one), and only a layout can tell — so a first pass
+ *  renders the letter page alone, with no attachment images, just to count
+ *  its sheets. The block is the page's last element, so more than one sheet
+ *  means it was carried. Both drawings are the same height, so the real pass
+ *  breaks the pages exactly where the probe did. */
+export async function letterDocument(
+  prepared: ExportLetterPdfArgs,
+  emblemDataUrl: string | null,
+  attachments?: LetterAttachment[],
+): Promise<React.JSX.Element> {
+  let letterPages = 1
+  await pdf(
+    <LetterDocument {...prepared} attachments={undefined} emblemDataUrl={emblemDataUrl} onLetterPages={(n) => { letterPages = n }} />,
+  ).toBlob()
+  return <LetterDocument {...prepared} attachments={attachments} emblemDataUrl={emblemDataUrl} closingCarried={letterPages > 1} />
+}
+
 /** Render the official letter to a PDF blob — for an on-screen preview. */
 export async function renderLetterPdfBlob(args: ExportLetterPdfArgs): Promise<Blob> {
   const [emblemDataUrl, prepared, attachments] = await Promise.all([
@@ -500,9 +636,7 @@ export async function renderLetterPdfBlob(args: ExportLetterPdfArgs): Promise<Bl
     wrapLetterArgs(args),
     loadAttachments(args.attachments),
   ])
-  return pdf(
-    <LetterDocument {...prepared} attachments={attachments} emblemDataUrl={emblemDataUrl} />,
-  ).toBlob()
+  return pdf(await letterDocument(prepared, emblemDataUrl, attachments)).toBlob()
 }
 
 /** Render the official-letter report and trigger the download. */

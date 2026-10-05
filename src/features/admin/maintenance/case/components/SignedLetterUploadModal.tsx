@@ -1,10 +1,11 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { App, ConfigProvider, Modal, Spin, Upload } from 'antd'
 import { AxiosError } from 'axios'
 import { FaFilePdf } from 'react-icons/fa'
-import { TbPrinter, TbTrash } from 'react-icons/tb'
+import { TbExternalLink, TbPrinter, TbTrash } from 'react-icons/tb'
 import { useAttachCaseDocument } from '@/hooks/queries/maintenance'
+import { PdfFrame, canShowPdfInline } from './LetterPreviewModal'
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
@@ -24,16 +25,28 @@ export interface SignedLetterUploadModalProps {
 
 /** นำเข้าหนังสือแจ้งซ่อมพร้อมลายเซ็น — the officer uploads the signed PDF of
  *  the letter. Attaching it is what hands a waiting_doc case to the contractor
- *  (backend 2026-09-28); on a case already open it replaces the document. */
+ *  (backend 2026-09-28); on a case already open it replaces the document.
+ *  The picked file is shown before it goes anywhere (user 2026-10-02), so the
+ *  officer can see it is the right, signed letter — the contractor is notified
+ *  the moment it is imported. */
 const SignedLetterUploadModal: React.FC<SignedLetterUploadModalProps> = ({ open, caseNo, onClose }) => {
   const { message } = App.useApp()
-  const [file, setFile] = useState<File | null>(null)
+  // The picked file and the object URL its preview reads — made together on
+  // pick, so the preview never trails the file.
+  const [picked, setPicked] = useState<{ file: File; url: string } | null>(null)
+  const file = picked?.file ?? null
   const attach = useAttachCaseDocument(caseNo)
   const busy = attach.isPending
 
+  // Release each preview URL once it is replaced, cleared, or the modal goes.
+  useEffect(() => {
+    const url = picked?.url
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [picked])
+
   const close = () => {
     if (busy) return
-    setFile(null)
+    setPicked(null)
     onClose()
   }
 
@@ -42,7 +55,7 @@ const SignedLetterUploadModal: React.FC<SignedLetterUploadModalProps> = ({ open,
     attach.mutate(file, {
       onSuccess: () => {
         message.success('นำเข้าหนังสือแจ้งซ่อมพร้อมลายเซ็นเรียบร้อยแล้ว')
-        setFile(null)
+        setPicked(null)
         onClose()
       },
       onError: (err) => {
@@ -69,7 +82,8 @@ const SignedLetterUploadModal: React.FC<SignedLetterUploadModalProps> = ({ open,
         footer={null}
         title={null}
         centered
-        width={{ xs: '92vw', sm: 560, md: 640 }}
+        // Room for the document once one is picked — as wide as the letter preview.
+        width={picked ? { xs: '96vw', md: 900, lg: 1000 } : { xs: '92vw', sm: 560, md: 640 }}
         // Nothing may dismiss it half-way through the upload.
         closable={!busy}
         keyboard={!busy}
@@ -109,7 +123,7 @@ const SignedLetterUploadModal: React.FC<SignedLetterUploadModalProps> = ({ open,
                   aria-label='ลบไฟล์'
                   className='inline-flex items-center justify-center rounded-lg cursor-pointer border-none hover:opacity-90'
                   style={{ width: 36, height: 36, background: '#E94C4C' }}
-                  onClick={() => setFile(null)}
+                  onClick={() => setPicked(null)}
                 >
                   <TbTrash size={18} color='#FFFFFF' />
                 </button>
@@ -134,15 +148,33 @@ const SignedLetterUploadModal: React.FC<SignedLetterUploadModalProps> = ({ open,
                 }
                 return false
               }}
-              onChange={({ file: picked }) => {
+              onChange={({ file: chosen }) => {
                 // beforeUpload → false hands back the raw File (uid attached).
-                setFile((picked.originFileObj ?? picked) as unknown as File)
+                const raw = (chosen.originFileObj ?? chosen) as unknown as File
+                setPicked({ file: raw, url: URL.createObjectURL(raw) })
               }}
             >
               <img src={`${BASE_PATH}/images/Maintenance/cloud-upload.png`} alt='' width={44} height={44} style={{ display: 'block', margin: '0 auto' }} />
               <p style={{ color: '#FFFFFF', fontSize: 16, margin: '4px 0 0 0' }}>ลากหรือวางไฟล์</p>
               <p style={{ color: '#7C7C7C', fontSize: 14, margin: '2px 0 0 0' }}>ไฟล์ PDF ขนาดไม่เกิน 30 MB</p>
             </Upload.Dragger>
+          )}
+
+          {/* The document itself, in the same viewer as the letter preview. */}
+          {picked && (
+            <>
+              <div className='mt-3 rounded-lg overflow-hidden h-[50vh] sm:h-[min(62vh,900px)]' style={{ background: '#525659' }}>
+                <PdfFrame url={picked.url} title={picked.file.name} />
+              </div>
+              {canShowPdfInline() && (
+                <div className='mt-2 flex justify-end'>
+                  <a href={picked.url} target='_blank' rel='noreferrer' className='inline-flex items-center gap-1' style={{ color: '#66AEFF', fontSize: 14 }}>
+                    <TbExternalLink size={14} />
+                    เปิดในแท็บใหม่
+                  </a>
+                </div>
+              )}
+            </>
           )}
         </div>
 

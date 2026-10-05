@@ -222,7 +222,10 @@ const IncidentSection: React.FC = () => {
     const rows = byDeptData?.rows ?? []
     return rows.map((r, idx) => ({
       key: `${r.department_id}-${idx}`,
-      agency: r.department_short_name,
+      // A bureau's roll-up row and its own row carry the same name (the bureau
+      // is counted "as itself" among its children), so the roll-up says so —
+      // on screen and in both exports (user 2026-10-05).
+      agency: r.is_aggregate ? `${r.department_short_name} (รวม)` : r.department_short_name,
       accident: r.counts[0] ?? 0,
       breakdown: r.counts[1] ?? 0,
       shoulder: r.counts[2] ?? 0,
@@ -338,6 +341,8 @@ const IncidentSection: React.FC = () => {
             filterNote: `ช่วงเวลา: ${PERIOD_OPTIONS.find((option) => option.value === comparisonPeriod)?.label ?? comparisonPeriod}`,
             columns: INCIDENT_COMPARISON_EXPORT_COLUMNS.map(({ header, width, value }) => ({ header, width, value })),
             rows: comparisonExportRows,
+            // Roll-up rows stand out the way the user marked them up (2026-10-05).
+            rowStyle: (r) => (r.isChild ? undefined : { bold: true, fill: 'B8CCE4' }),
           })
         }}
       />

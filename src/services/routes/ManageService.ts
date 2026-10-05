@@ -30,6 +30,11 @@ import type {
 } from '@/types/manage/project-api'
 import type { UploadResponse } from '@/types/shared'
 import type {
+  APIRequestProjectDeviceStatusList,
+  APIResponseProjectDeviceStatus,
+  APIResponseProjectDeviceStatusList,
+} from '@/types/manage/device-status-api'
+import type {
   APIResponseContractor,
   APIResponseContractorListEnvelope,
   APIRequestRegisterContractor,
@@ -420,4 +425,42 @@ export const getProjectDepartmentAPI = (params: APIRequestProjectDepartment) =>
     url: '/manage/project/department',
     method: 'GET',
     params,
+  })
+
+// ── Device status per project (สรุปข้อมูลผู้รับจ้าง, BE 2026-10-01) ─────────────
+
+/** Projects with camera / VMS / lighting online-offline counts. Pass the
+ *  contractor's user_id as `contractor_id`; `limit` tops out at 100. */
+export const getProjectDeviceStatusListAPI = (params: APIRequestProjectDeviceStatusList) =>
+  ApiService.fetchData<APIResponseProjectDeviceStatusList, APIRequestProjectDeviceStatusList>({
+    url: '/manage/project/device-status',
+    method: 'GET',
+    params,
+  })
+
+/** One project's CCTV cameras grouped by road + sta. */
+export const getProjectDeviceStatusAPI = (projectId: number) =>
+  ApiService.fetchData<APIResponseProjectDeviceStatus>({
+    url: `/manage/project/device-status/${projectId}`,
+    method: 'GET',
+  })
+
+/** The same cameras as a print-ready HTML report, a picture of each online
+ *  camera embedded (browser → Save as PDF). Synchronous on the server: a few
+ *  seconds per 8 online cameras. */
+export const getProjectDeviceStatusExportAPI = (projectId: number) =>
+  ApiService.fetchData<Blob>({
+    url: `/manage/project/device-status/${projectId}/export`,
+    method: 'GET',
+    responseType: 'blob',
+  })
+
+/** `/{prefix}/departments/0/{cameras|overview}/uptime-statistics` for one
+ *  contractor, nationwide (dept 0 + scope=all). Each service names its block
+ *  differently — see `readUptimeTotals` in settings/contractor-summary. */
+export const getContractorUptimeAPI = (prefix: string, contractorUserId: string) =>
+  ApiService.fetchData<unknown>({
+    url: `/${prefix}/departments/0/${prefix === 'cctv' ? 'cameras' : 'overview'}/uptime-statistics`,
+    method: 'GET',
+    params: { scope: 'all', contractor_id: contractorUserId },
   })

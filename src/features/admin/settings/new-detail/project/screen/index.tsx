@@ -3,7 +3,8 @@ import React, { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { App } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
-import { ProjectProvider, errText } from '@/features/admin/settings/new-detail/project/context'
+import { ProjectProvider } from '@/features/admin/settings/new-detail/project/context'
+import { projectErrorMessage } from '@/features/admin/settings/overall/data/projectErrors'
 import { useDeleteProject } from '@/hooks/queries/manage'
 import { useAppDispatch } from '@/stores/hooks'
 import { resetProjectModalData } from '@/stores/reducers/modal/customModalSlice'
@@ -70,7 +71,7 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
         router.replace('/admin/settings?tab=PROJECT')
       },
       onError: (error) => {
-        message.error(errText(error, 'ลบโครงการไม่สำเร็จ'))
+        message.error(projectErrorMessage(error, 'ลบโครงการไม่สำเร็จ'))
       },
     })
   }, [deleteProject, dispatch, message, router])

@@ -16,8 +16,10 @@ import ConfirmCreateLetterModal from './ConfirmCreateLetterModal'
 import SignedLetterReminderModal from './SignedLetterReminderModal'
 import type { CaseDeviceRow, CaseProjectInfo } from './caseViewTypes'
 import type { RepairLetterInput } from '../data/repairLetter'
+import { letterContractorName } from '../data/contractorName'
 import { useCreateMaintenanceCase, useMaintenanceSolution, useProjectBySolution, useUploadMaintenance } from '@/hooks/queries/maintenance'
-import { getMaintenanceCasesAPI } from '@/services/routes/MaintenanceService'
+import { getMaintenanceCaseAPI, getMaintenanceCasesAPI } from '@/services/routes/MaintenanceService'
+import { SHEET_WARNING_SECONDS, waitForDeviceStatusImages, type SheetResult } from '../data/deviceStatusSheet'
 import { useProjectContractors } from '@/hooks/queries/manage'
 import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import { compressImage } from '../../data/compressImage'
@@ -69,8 +71,9 @@ interface LetterForm {
  *  (newest wins — see `resolveNewCaseNo`).
  *
  *  Saving takes three steps (user 2026-09-28): บันทึกแบบฟอร์มหนังสือแจ้งซ่อม →
- *  preview the PDF (แก้ไข / บันทึก) → confirm, the only step that writes →
- *  a 20-second reminder to upload the signed copy → the new case's page. */
+ *  preview the PDF (แก้ไข / บันทึก) → confirm, the only step that writes, and
+ *  which also downloads the letter for signing (user 2026-10-02) → a 20-second
+ *  reminder to upload the signed copy → the new case's page. */
 const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, detailQuery }) => {
   const { modal, message } = App.useApp()
   const router = useRouter()
@@ -142,6 +145,14 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     warrantyStart: projectDetail?.warranty_start_date ? dayjs(projectDetail.warranty_start_date).format('DD MMM BBBB') : '-',
     warrantyEnd: projectDetail?.warranty_end_date ? dayjs(projectDetail.warranty_end_date).format('DD MMM BBBB') : '-',
     warrantyStatus: projectDetail ? (projectDetail.is_warranty ? 'active' : 'expired') : 'expired',
+  }
+
+  /** The letter's addressee: the company's full name, not the login name the
+   *  card above shows (see letterContractorName). Waits for the contractor
+   *  list if it hasn't arrived, so a quick click can't print "lpc" instead. */
+  const resolveLetterContractor = async (): Promise<string> => {
+    const rows = contractorsQuery.data ?? (await contractorsQuery.refetch()).data
+    return letterContractorName(rows, projectDetail?.contractor_id, project.contractor)
   }
 
   const [form, setForm] = useState<LetterForm>({
@@ -264,10 +275,10 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     .map((f) => f.url as string)
 
   /** The letter exactly as this form issues it — what the preview shows. */
-  const letterInput = (): RepairLetterInput => ({
+  const letterInput = (contractor: string): RepairLetterInput => ({
     // Not issued until the save; it would only name the file anyway.
     caseNo: '',
-    project,
+    project: { ...project, contractor },
     letterNo: form.letterNo,
     // The contract's ลงวันที่ = warranty start (no contract-date column).
     // Raw dates in — the letter formats them itself.
@@ -290,6 +301,33 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     deviceStatusImages: statusImageUrls(),
   })
 
+  // เหตุผลการแจ้งซ่อม — how long it can run before ขอแสดงความนับถือ is carried
+  // to page 2. Not one number: the rest of THIS letter decides it (65–324
+  // characters across projects), so it is worked out from the form as it fills
+  // in (user 2026-10-05). Keyed on the letter's content as a string so the
+  // effect re-runs exactly when the letter changes.
+  const [reasonBudget, setReasonBudget] = useState<number | null>(null)
+  const budgetRunRef = useRef(0)
+  const budgetSource = projectDetail && contractorsQuery.data
+    ? JSON.stringify({
+      ...letterInput(letterContractorName(contractorsQuery.data, projectDetail.contractor_id, project.contractor)),
+      deviceStatusImages: undefined,
+    })
+    : null
+  useEffect(() => {
+    if (!budgetSource) return
+    const run = ++budgetRunRef.current
+    const timer = setTimeout(() => {
+      import('../data/reasonBudget')
+        .then(({ reasonCharBudget }) => reasonCharBudget(JSON.parse(budgetSource) as RepairLetterInput, () => run !== budgetRunRef.current))
+        .then((budget) => { if (budget !== null && run === budgetRunRef.current) setReasonBudget(budget) })
+        // No hint at all beats a wrong one.
+        .catch(() => {})
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [budgetSource])
+  const reasonOver = reasonBudget !== null && form.reason.length > reasonBudget
+
   // The rendered letter is an object URL — release each one once it is
   // replaced, closed, or the page goes away.
   useEffect(() => {
@@ -306,11 +344,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     setPreviewOpen(true)
     setPreview({ url: null, loading: true, failed: false })
     try {
-      const [{ renderLetterPdfBlob }, { buildRepairLetter }] = await Promise.all([
+      const [{ renderLetterPdfBlob }, { buildRepairLetter }, contractor] = await Promise.all([
         import('@/utils/export/letterPdf'),
         import('../data/repairLetter'),
+        resolveLetterContractor(),
       ])
-      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput()))
+      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput(contractor)))
       if (run !== previewRunRef.current) return
       setPreview({ url: URL.createObjectURL(blob), loading: false, failed: false })
     } catch {
@@ -325,6 +364,47 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     setConfirmOpen(false)
     setPreviewOpen(false)
     setPreview({ url: null, loading: false, failed: false })
+  }
+
+  /** The letter just filed, as a PDF named after its new case — rendered from
+   *  the same form as the preview, so the copy printed is the one checked,
+   *  plus the camera-status page the preview couldn't have. */
+  const downloadSavedLetter = async (caseNo: string | null) => {
+    // Left without images, the backend builds the camera-status sheet after
+    // the save (~10 s). This is the file the officer prints and signs, so wait
+    // for it — a download before it exists is how the signed copies lost their
+    // last page (user 2026-10-05).
+    let deviceStatusImages = statusImageUrls()
+    let sheet: SheetResult | null = null
+    if (deviceStatusImages.length === 0 && caseNo) {
+      let hide: (() => void) | undefined
+      try {
+        sheet = await waitForDeviceStatusImages(
+          () => getMaintenanceCaseAPI(caseNo).then((r) => r.data),
+          { onWaiting: () => { hide = message.loading('กำลังเตรียมหนังสือพร้อมรูปภาพสถานะการทำงานของอุปกรณ์...', 0) } },
+        )
+        deviceStatusImages = sheet.images
+      } finally {
+        hide?.()
+      }
+    }
+    try {
+      const [{ exportLetterPdf }, { buildRepairLetter }, contractor] = await Promise.all([
+        import('@/utils/export/letterPdf'),
+        import('../data/repairLetter'),
+        resolveLetterContractor(),
+      ])
+      await exportLetterPdf(buildRepairLetter({ ...letterInput(contractor), caseNo: caseNo ?? '', deviceStatusImages }))
+      // The sheet was expected (the officer attached none), so say why it's missing.
+      if (sheet && sheet.images.length === 0) {
+        message.warning(sheet.state === 'timeout'
+          ? 'ระบบยังสร้างรูปภาพสถานะการทำงานของอุปกรณ์ไม่เสร็จ หนังสือที่ดาวน์โหลดจึงยังไม่มีหน้ารูป — ดาวน์โหลดฉบับครบได้จากปุ่ม "แบบฟอร์มหนังสือแจ้งซ่อม" ในหน้า Case'
+          : 'ระบบสร้างรูปภาพสถานะการทำงานของอุปกรณ์ไม่สำเร็จ หนังสือที่ดาวน์โหลดจึงไม่มีหน้ารูป', SHEET_WARNING_SECONDS)
+      }
+    } catch {
+      // The case is saved either way, and its page re-issues the letter.
+      message.warning('บันทึกเรียบร้อยแล้ว แต่ดาวน์โหลดหนังสือไม่สำเร็จ — ดาวน์โหลดได้จากปุ่ม "แบบฟอร์มหนังสือแจ้งซ่อม" ในหน้า Case')
+    }
   }
 
   /** บันทึกแบบฟอร์มหนังสือแจ้งซ่อม (confirm) — the one step that writes. */
@@ -363,7 +443,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     }, {
       onSuccess: async () => {
         setFinishing(true)
-        savedCaseNoRef.current = await resolveNewCaseNo()
+        const caseNo = await resolveNewCaseNo()
+        savedCaseNoRef.current = caseNo
+        // The officer prints and signs this copy — the signed scan is what hands
+        // the case to the contractor — so it downloads straight away, as the
+        // save always did before the preview step (user 2026-10-02).
+        await downloadSavedLetter(caseNo)
         setFinishing(false)
         closeLetterModals()
         reminderDoneRef.current = false
@@ -492,7 +577,14 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
           </div>
 
           <div className='mt-3'>
-            <p style={labelStyle}>เหตุผลการแจ้งซ่อม<span style={{ color: '#E94C4C' }}>*</span></p>
+            <p style={labelStyle}>
+              เหตุผลการแจ้งซ่อม<span style={{ color: '#E94C4C' }}>*</span>
+              {reasonBudget !== null && (
+                <span className='fs-12' style={{ color: '#979797', marginLeft: 8 }}>
+                  (หากระบุเหตุผลเกิน {reasonBudget.toLocaleString()} ตัวอักษร คำลงท้าย “ขอแสดงความนับถือ” จะปรากฏในหน้าที่ 2)
+                </span>
+              )}
+            </p>
             <Input.TextArea
               placeholder='กรุณาระบุเหตุผลหรือปัญหาที่พบ...'
               style={{ background: 'transparent', border: `1px solid ${fieldErrors.reason ? '#E94C4C' : '#FCD116'}`, borderRadius: 10, color: '#FFFFFF', resize: 'none' }}
@@ -500,6 +592,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
               value={form.reason}
               onChange={(e) => set('reason')(e.target.value)}
             />
+            {reasonBudget !== null && (
+              <p className='fs-12' style={{ margin: '4px 0 0', textAlign: 'right', color: reasonOver ? '#E94C4C' : '#979797' }}>
+                {reasonOver ? 'เกินจำนวนที่กำหนด คำลงท้ายจะปรากฏในหน้าที่ 2 · ' : ''}
+                {form.reason.length.toLocaleString()} / {reasonBudget.toLocaleString()} ตัวอักษร
+              </p>
+            )}
           </div>
 
           <div className='mt-3 flex flex-col sm:flex-row gap-4'>

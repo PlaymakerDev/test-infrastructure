@@ -9,6 +9,7 @@ import {
   useMarkNotificationFeedRead,
   useNotificationFeedBadges,
   useNotificationFeedInfinite,
+  useOpenCaseTotal,
 } from '@/hooks/queries/manage'
 import type {
   NotificationFeedItem,
@@ -35,8 +36,9 @@ type FeedTab = NotificationFeedKind | 'all'
  *
  *  Order is priority, and แจ้งซ่อม is also where the panel opens (user
  *  2026-09-23): a case is work someone has to act on, a dead camera usually
- *  becomes a case anyway. ทั้งหมด goes last — it's the view you reach for
- *  least. */
+ *  becomes a case anyway — unless no case is open at all, when it opens on
+ *  กล้องดับ rather than an empty list (user 2026-10-02). ทั้งหมด goes last —
+ *  it's the view you reach for least. */
 const KIND_TABS: Array<{ key: FeedTab; label: string }> = [
   { key: 'case', label: 'แจ้งซ่อม' },
   { key: 'camera_outage', label: 'กล้องดับ' },
@@ -125,7 +127,23 @@ const NotificationBell: React.FC<Props> = ({
   const { userKind } = useUserKind()
   const caseIsReachable = userKind !== 'user'
 
-  const [kind, setKind] = useState<FeedTab>(DEFAULT_TAB)
+  // The tab in view. Every opening starts on แจ้งซ่อม — or on กล้องดับ when
+  // no case is open, since แจ้งซ่อม would be an empty panel then. Settled
+  // once per opening, so a poll landing mid-read never swaps the list out,
+  // and a tab the user clicks always wins. Reset while rendering (React's
+  // "adjust state on a prop change"), not in an effect.
+  const { data: openCaseTotal } = useOpenCaseTotal()
+  const [pickedTab, setPickedTab] = useState<FeedTab | null>(null)
+  const [openingTab, setOpeningTab] = useState<FeedTab | null>(null)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    setPickedTab(null)
+    setOpeningTab(null)
+  } else if (open && openingTab === null && openCaseTotal !== undefined) {
+    setOpeningTab(openCaseTotal > 0 ? 'case' : 'camera_outage')
+  }
+  const kind: FeedTab = pickedTab ?? openingTab ?? DEFAULT_TAB
 
   // limit=5 — the panel shows exactly 5 rows, so fetch just one screenful
   // per page; โหลดเพิ่ม/infinite scroll pulls the next 5 as needed.
@@ -161,24 +179,27 @@ const NotificationBell: React.FC<Props> = ({
     }
   }
 
-  // "Show exactly 5 rows": measure a real rendered row instead of guessing a
-  // pixel budget — row height shifts with fonts/padding and a hardcoded cap
-  // kept clipping the 5th row. Rows are uniform (every line truncates), so
-  // the first row is representative.
-  const [rowHeight, setRowHeight] = useState<number | null>(null)
+  // "Show exactly 5 rows": the height of the first five real rows, not a
+  // guessed pixel budget (a hardcoded cap kept clipping the 5th row). Rows
+  // differ since case rows carry a one- or two-line project name that lands
+  // after its lookup, so the five are summed and re-measured on any resize.
+  const [fiveRowsHeight, setFiveRowsHeight] = useState<number | null>(null)
   useEffect(() => {
-    if (!open || items.length === 0) return
-    // rAF: measure after paint (and keeps setState out of the synchronous
-    // effect body, per the react-compiler lint rule).
-    const raf = requestAnimationFrame(() => {
-      const first = listScrollRef.current?.querySelector('button')
-      if (first instanceof HTMLElement && first.offsetHeight > 0) {
-        const h = first.offsetHeight
-        setRowHeight((prev) => (prev === h ? prev : h))
-      }
+    const list = listScrollRef.current
+    if (!open || items.length === 0 || !list) return
+    const rows = Array.from(list.children)
+      .filter((el): el is HTMLButtonElement => el instanceof HTMLButtonElement)
+      .slice(0, 5)
+    // The observer reports each row once on observe and again on every
+    // resize — state is only set from its callback, never in the synchronous
+    // effect body (react-compiler lint rule).
+    const observer = new ResizeObserver(() => {
+      const h = rows.reduce((sum, row) => sum + row.offsetHeight, 0)
+      if (h > 0) setFiveRowsHeight((prev) => (prev === h ? prev : h))
     })
-    return () => cancelAnimationFrame(raf)
-  }, [open, items.length])
+    rows.forEach((row) => observer.observe(row))
+    return () => observer.disconnect()
+  }, [open, items])
 
   // Escape closes — same global-while-open listener as the find overlay.
   useEffect(() => {
@@ -301,7 +322,7 @@ const NotificationBell: React.FC<Props> = ({
           className="overflow-y-auto min-h-0"
           // 5 measured rows; once auto-load removes the 40px footer the list
           // absorbs that space so the panel's total height never changes.
-          style={{ maxHeight: (rowHeight ? rowHeight * 5 : 565) + (autoLoad ? 40 : 0) }}
+          style={{ maxHeight: (fiveRowsHeight ?? 565) + (autoLoad ? 40 : 0) }}
         >
           {items.map((item) => (
             // kind + id: the two kinds have independent id spaces.
@@ -405,7 +426,9 @@ const NotificationBell: React.FC<Props> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -12, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-            className="fixed left-2 right-2 sm:left-auto sm:right-4 sm:w-[380px] z-50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden flex flex-col"
+            // 420 (was 380) so a case row's long upload-status pill and its
+            // camera count share one line, as in the Figma (2026-10-02).
+            className="fixed left-2 right-2 sm:left-auto sm:right-4 sm:w-105 z-50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden flex flex-col"
             style={{
               top: 'calc(var(--nav-h, 72px) - 12px)', // 60px — shared popout line
               // Viewport clamp only — the "exactly 5 rows" cap lives on the
@@ -458,7 +481,7 @@ const NotificationBell: React.FC<Props> = ({
                     aria-selected={active}
                     // Switching filters starts a fresh list, so the
                     // Facebook-style auto-scroll arms again from scratch.
-                    onClick={() => { setKind(tab.key); setAutoLoad(false) }}
+                    onClick={() => { setPickedTab(tab.key); setAutoLoad(false) }}
                     className={`px-3 py-1 rounded-full fs-12 cursor-pointer border border-solid transition-colors ${active
                       ? 'border-(--yellow) text-(--yellow) bg-[rgba(252,209,22,0.12)]'
                       : 'border-white/15 text-white/60 bg-transparent hover:text-white hover:border-white/35'

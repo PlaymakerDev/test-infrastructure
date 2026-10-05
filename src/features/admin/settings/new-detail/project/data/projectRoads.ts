@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import type { APIRequestProjectUpdate, APIResponseProject } from '@/types/manage/project-api'
 import type { RoadSolutionList } from '@/types/manage/project-detail-api'
+import { projectNoForSave } from '@/features/admin/settings/overall/data/projectNo'
 
 /** GET /manage/project/{id} as it actually arrives: the public type doesn't
  *  declare the road links, which the server ships as `project_roads` (the
@@ -33,7 +34,9 @@ const isBlank = (value: unknown) =>
 /** The fields a PUT would be refused for (400 "required"). There is no
  *  endpoint that adds one road on its own, so adding a road re-sends the whole
  *  project — which the backend only takes once these are filled in. Most
- *  projects made before 2026-09-25 have no เอกสารเชื่อมต่อระบบ yet. */
+ *  projects made before 2026-09-25 have no เอกสารเชื่อมต่อระบบ yet.
+ *  รหัสโครงการ isn't one: a project without a code goes as the "-" stand-in
+ *  (see projectNoForSave), so it never blocks adding a road. */
 export const missingProjectFields = (detail: ProjectDetailWithRoads): string[] => {
   const missing: string[] = []
   const check = (key: string, value: unknown) => {
@@ -42,7 +45,6 @@ export const missingProjectFields = (detail: ProjectDetailWithRoads): string[] =
   check('project_name', detail.project_name)
   check('contract_no', detail.contract_no)
   check('budget_year', detail.budget_year)
-  check('project_no', detail.project_no)
   check('department_id', detail.department_id)
   check('contractor_id', detail.contractor_id)
   check('warranty_start_date', detail.warranty_start_date)
@@ -76,7 +78,7 @@ export const buildAddRoadBody = (detail: ProjectDetailWithRoads, roadId: number)
   id: detail.id,
   project_name: detail.project_name,
   contract_no: detail.contract_no,
-  project_no: detail.project_no ?? '',
+  project_no: projectNoForSave(detail.project_no),
   budget_year: detail.budget_year,
   department_id: detail.department_id,
   contractor_id: detail.contractor_id,

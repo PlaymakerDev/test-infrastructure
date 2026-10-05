@@ -165,6 +165,8 @@ const thaiAmount = (value: string | null | undefined): string | null => {
 export interface RepairLetterInput {
   caseNo: string
   project: {
+    /** เรียน / ¶1 / ¶2 — the contractor's full company name, not its login
+     *  name (see `letterContractorName`). */
     contractor: string
     contractNo: string
     /** Recited in ¶1 and ¶2. */
@@ -267,7 +269,8 @@ export function buildRepairLetter(input: RepairLetterInput): ExportLetterPdfArgs
     'พร้อมทั้งกำหนดวันที่เข้าดำเนินการซ่อม'
 
   return {
-    filenameBase: `หนังสือขอให้ซ่อมแซม_${caseNo}`,
+    // No case number yet (or it couldn't be read back) → no dangling "_".
+    filenameBase: caseNo ? `หนังสือขอให้ซ่อมแซม_${caseNo}` : 'หนังสือขอให้ซ่อมแซม',
     // The officer types the whole running number (เช่น คค 0729.2/2569); the
     // department's default prefix stays for a letter issued without one.
     refNo: has(input.letterNo) ? `ที่ ${toThaiDigits(input.letterNo!.trim())}` : 'ที่ คค ๐๗๐๒.๒/',
