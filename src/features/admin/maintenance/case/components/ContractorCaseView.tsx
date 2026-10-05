@@ -1,5 +1,5 @@
 "use client"
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { App, ConfigProvider, DatePicker, Input, Modal, Spin, Upload } from 'antd'
 import type { UploadFile } from 'antd'
@@ -29,6 +29,11 @@ const ALLOWED_UPLOAD_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif
 const MAX_UPLOAD_SIZE = 200 * 1024 * 1024
 /** ≤4 attachments per box (2026-09-11 redesign). */
 const MAX_FILES = 4
+
+/** camera_id → online, as the page last checked it. */
+type DeviceStatusSnapshot = Record<string, boolean>
+const statusOf = (rows: CaseDeviceRow[]): DeviceStatusSnapshot =>
+  Object.fromEntries(rows.map((row) => [row.cameraId, row.isOnline]))
 
 const urlToUploadFile = (url: string, index: number): UploadFile => ({
   uid: `existing-${index}`,
@@ -142,12 +147,44 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
   const saving = updateCase.isPending
   const uploading = [...beforeFiles, ...afterFiles].some(f => f.status === 'uploading')
 
+  // The device status this page acts on — the header pill, the button
+  // (บันทึก / บันทึก + ปิด Case) and what a save sends. Taken when the page
+  // opens and again each time ข้อมูลอุปกรณ์ is opened, never from a background
+  // refetch (a save's, the letter button's…): a camera coming back while the
+  // page sat open used to flip the button, and close the case on the next
+  // click, without anyone having looked (user/BE 2026-10-05). The modal shows
+  // the same snapshot, so the page and ข้อมูลอุปกรณ์ always agree.
+  const [statusById, setStatusById] = useState<DeviceStatusSnapshot>(() => statusOf(devices))
+  const [checkingStatus, setCheckingStatus] = useState(false)
+  const shownDevices = useMemo(
+    () => devices.map((row) => {
+      const online = statusById[row.cameraId] ?? row.isOnline
+      return { ...row, isOnline: online, hasLive: online }
+    }),
+    [devices, statusById],
+  )
+
+  /** ข้อมูลอุปกรณ์ — the one place the status is read again. */
+  const openDeviceModal = async () => {
+    setDeviceModalOpen(true)
+    setCheckingStatus(true)
+    try {
+      await queryClient.refetchQueries({ queryKey: maintenanceKeys.case(caseId), exact: true })
+      const fresh = queryClient.getQueryData<CaseDetail>(maintenanceKeys.case(caseId))
+      if (fresh?.cameras) {
+        setStatusById(Object.fromEntries(fresh.cameras.map((camera) => [camera.camera_id, !!camera.status])))
+      }
+    } finally {
+      setCheckingStatus(false)
+    }
+  }
+
   // ปิด Case ได้ต่อเมื่อครบสองอย่าง (user 2026-09-17):
   //   1. อุปกรณ์ที่เปิด case มาออนไลน์ครบทุกตัว (สถานะเดียวกับ modal ข้อมูลอุปกรณ์)
   //   2. กรอกเอกสารบันทึกแจ้งซ่อมครบทุกช่อง* + แนบรูปก่อน/หลังซ่อม
   // ยังไม่ครบข้อไหนก็ตาม = ปุ่ม "บันทึก" เหลืองตามเดิม (บันทึกความคืบหน้าได้
   // เรื่อย ๆ) แล้วกลับเข้ามาปิดทีหลังเมื่ออุปกรณ์กลับมาออนไลน์.
-  const allOnline = devices.length > 0 && devices.every(d => d.isOnline)
+  const allOnline = shownDevices.length > 0 && shownDevices.every(d => d.isOnline)
   const hasUploaded = (files: UploadFile[]) => files.some(f => f.status === 'done' && f.url)
   const formComplete = Boolean(
     formData.problemFound.trim() &&
@@ -157,12 +194,17 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
     hasUploaded(afterFiles),
   )
   const canClose = allOnline && formComplete
+  // What the last save actually did — the success dialog reports that, not
+  // whatever the button would do by the time the dialog is read.
+  const [savedClosing, setSavedClosing] = useState(false)
 
   const handleSave = () => {
     if (saving || uploading) return
+    // The click does what the button said when it was clicked.
+    const closing = canClose
     const missing: [string, string][] = []
     if (!formData.problemFound.trim()) missing.push(['problemFound', 'ปัญหาที่พบ'])
-    if (canClose) {
+    if (closing) {
       // Safety net — the teal button only shows once these already pass.
       if (!formData.solution.trim()) missing.push(['solution', 'การดำเนินการหรือวิธีการแก้ไข'])
       if (!formData.inspectDate) missing.push(['inspectDate', 'วันที่ตรวจสอบ'])
@@ -190,13 +232,14 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
       inspection_date: formData.inspectDate ? dayjs(formData.inspectDate, 'DD MMM BBBB', 'th').format('YYYY-MM-DD') : null,
       before_image: beforeFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
       after_image: afterFiles.filter(f => f.status === 'done' && f.url).map(f => f.url as string),
-      is_closed: canClose ? true : undefined,
+      is_closed: closing ? true : undefined,
       // Saving without closing moves the case off "ยังไม่ดำเนินการ" — the
       // backend keeps it `open` otherwise, so the officer's tracking pill and
       // the all-repairs tabs would never show work in progress.
-      status: canClose ? undefined : 'in_progress',
+      status: closing ? undefined : 'in_progress',
     }, {
       onSuccess: () => {
+        setSavedClosing(closing)
         setModalOpen(true)
       },
       onError: (err) => {
@@ -426,13 +469,10 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
                 type='button'
                 className='inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full fs-12 cursor-pointer hover:opacity-85'
                 style={{ background: '#66AEFF', color: '#0A0A0A', border: 'none' }}
-                onClick={() => {
-                  // "สถานะปัจจุบัน" must be current: the contractor opens this
-                  // to check whether the devices came back online, which is
-                  // what unlocks the teal ปิด Case button.
-                  void queryClient.invalidateQueries({ queryKey: maintenanceKeys.case(caseId) })
-                  setDeviceModalOpen(true)
-                }}
+                // "สถานะปัจจุบัน" must be current: the contractor opens this to
+                // check whether the devices came back online, which is what
+                // unlocks the teal ปิด Case button — and the only thing that does.
+                onClick={() => { void openDeviceModal() }}
               >
                 <TbTool size={14} />
                 ข้อมูลอุปกรณ์
@@ -464,11 +504,17 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
                 <TbTool size={12} />
                 {devices.length}
               </span>
+              {checkingStatus && (
+                <span className='inline-flex items-center gap-2 ml-2 fs-12' style={{ color: '#979797' }}>
+                  <Spin size='small' />
+                  กำลังตรวจสอบสถานะล่าสุด...
+                </span>
+              )}
             </span>
           }
         >
           <CaseDeviceTable
-            rows={devices}
+            rows={shownDevices}
             showStatusLive
             onLive={(cameraId) => dispatch(setCCTVModalOpen({ open: true, camera_id: cameraId }))}
           />
@@ -478,7 +524,7 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
       <ModalSaveSuccess
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        isClosingCase={canClose}
+        isClosingCase={savedClosing}
         solutionId={solutionId}
         detailQuery={detailQuery}
         returnToAllRepairs={returnToAllRepairs}
@@ -490,11 +536,11 @@ const ContractorCaseView: React.FC<ContractorCaseViewProps> = ({
           repairDate: reportDateText,
           dueDate: caseData.due_date ? dayjs(caseData.due_date).format('DD MMM BBBB') : undefined,
           // The case closes with THIS save, so the close date is today.
-          closedDate: canClose ? dayjs().format('DD MMM BBBB') : undefined,
+          closedDate: savedClosing ? dayjs().format('DD MMM BBBB') : undefined,
         }}
         // Closing sends the contractor to ประวัติการซ่อม, where the row they
         // just finished is highlighted for a few minutes.
-        onConfirm={canClose && solutionId ? () => {
+        onConfirm={savedClosing && solutionId ? () => {
           const query = detailQuery ? `?${detailQuery}` : ''
           router.push(`/admin/maintenance/detail/${solutionId}/repair-history${query}`)
         } : undefined}
