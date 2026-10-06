@@ -123,3 +123,156 @@ export interface RandomOnlineCamera {
   ip_address: string
   is_online: boolean
 }
+
+// DAILY COUNT
+export interface APIRequestLPRDailyCount {
+  date?: string
+}
+
+export interface APIResponseLPRDailyCount {
+  solution_id: number
+  date: string
+  total: number
+  cameras: CountCamera[]
+}
+
+export interface CountCamera {
+  camera_id: string
+  camera_name: string
+  crossing_index: string
+  count: number
+}
+
+// LPR PLATE STATS
+export interface APIResponseLPRStat {
+  total: number
+  total_yesterday: number
+  avg_speed: number
+  hourly_today: HourlyToday[]
+  hourly_yesterday: HourlyYesterday[]
+  province_top: ProvinceTop[]
+  vehicle_type_top: VehicleTypeTop[]
+  top_province: TopProvince
+  peak_hour: PeakHour
+}
+
+export interface HourlyToday {
+  hour: number
+  count: number
+}
+
+export interface HourlyYesterday {
+  hour: number
+  count: number
+}
+
+export interface ProvinceTop {
+  province: string
+  count: number
+}
+
+export interface VehicleTypeTop {
+  vehicle_type_name: string
+  count: number
+}
+
+export interface TopProvince {
+  province: string
+  count: number
+}
+
+export interface PeakHour {
+  hour: number
+  count: number
+}
+
+// LPR PLATES
+export interface APIRequestLPRPlate {
+  cursor?: string
+  limit?: number
+  from?: string
+  to?: string
+  q?: string
+  source?: 'anpr' | 'wim' | string
+}
+
+export interface APIResponseLPRPlate {
+  res_data: LPRPlateData[]
+  next_cursor: string
+  has_more: boolean
+}
+
+export interface LPRPlateData {
+  id: number
+  source: string
+  captured_at: string
+  captured_at_display: string
+  plate_number: string
+  plate_province: string
+  vehicle_type_name: string
+  vehicle_brand: string
+  vehicle_color: string
+  camera_name: string
+  camera_ip: string
+  detection_point: string
+  vehicle_image: string
+  plate_image: string
+  speed: number
+  confidence: number
+}
+
+// LPR PLATE LIST
+export interface APIRequestLPRPlateList {
+  page?: number
+  limit?: number
+  search?: string
+  vehicle_type?: string
+  start_date?: string
+  end_date?: string
+}
+
+export interface APIResponseLPRPlateList {
+  res_data: LPRPlateData[]
+  meta_data: MetaData
+}
+
+export interface LPRPlateData {
+  id: number
+  source: string
+  captured_at: string
+  captured_at_display: string
+  plate_number: string
+  plate_province: string
+  vehicle_type_name: string
+  vehicle_brand: string
+  vehicle_color: string
+  camera_name: string
+  camera_ip: string
+  detection_point: string
+  vehicle_image: string
+  plate_image: string
+  speed: number
+  confidence: number
+}
+
+export interface MetaData {
+  count: number
+  page: number
+  limit: number
+  total_pages: number
+}
+
+// HOURLY COUNT
+export type APIRequestLPRHourlyCount = APIRequestLPRDailyCount
+
+export interface APIResponseLPRHourlyCount {
+  solution_id: number
+  date: string
+  total: number
+  hourly: Hourly[]
+}
+
+export interface Hourly {
+  hour: number
+  count: number
+}

@@ -1,9 +1,14 @@
-import { FALLBACK } from '@/constants'
+import { FALLBACK, VEHICLE_TYPE_COLOR } from '@/constants'
 import { useAppDispatch } from '@/stores/hooks'
 import { setLicenseDetailModalOpen } from '@/stores/reducers/modal/customModalSlice'
-import { Button, Image } from 'antd'
+import { Button, Empty, Image, Skeleton } from 'antd'
 import React, { useCallback } from 'react'
 import { TbCar } from 'react-icons/tb'
+import { useLPRDetailContext } from '../../../context'
+import { useQuery } from '@tanstack/react-query'
+import { getLPRPlateAPI } from '@/services/routes/NewLPRService'
+import { LPRPlateData } from '@/types/lpr/new-lpr-api'
+import { getConfidenceColor, parseConfidence } from '../detection/TableDetectionData'
 
 interface Props {
 
@@ -12,10 +17,22 @@ interface Props {
 const ContentLicenseDetail: React.FC<Props> = (props) => {
   const { } = props
   const dispatch = useAppDispatch()
+  const { solutionId } = useLPRDetailContext()
 
-  const handleOpenModal = useCallback(() => {
-    dispatch(setLicenseDetailModalOpen({ open: true }))
+  const handleOpenModal = useCallback((data: LPRPlateData) => {
+    dispatch(setLicenseDetailModalOpen({ open: true, data }))
   }, [dispatch])
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['lpr-plate', solutionId],
+    queryFn: () => getLPRPlateAPI(solutionId, { limit: 1 }),
+    enabled: !!solutionId,
+  })
+
+  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+
+  const confidence = parseConfidence(data?.data?.res_data?.[0]?.confidence)
 
   return (
     <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
@@ -28,7 +45,7 @@ const ContentLicenseDetail: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <figure className='h-52 rounded-lg overflow-hidden mb-3'>
           <Image
-            src='https://i.pinimg.com/736x/9d/ff/86/9dff86e548aa89219d77f3f3891791fa.jpg'
+            src={data?.data?.res_data?.[0]?.vehicle_image}
             alt='img-01'
             width={'100%'}
             height={'100%'}
@@ -38,7 +55,7 @@ const ContentLicenseDetail: React.FC<Props> = (props) => {
         </figure>
         <figure className='h-40 rounded-lg overflow-hidden'>
           <Image
-            src='https://i.pinimg.com/1200x/07/c0/cc/07c0ccabd8468a9e91076e94f4f74856.jpg'
+            src={data?.data?.res_data?.[0]?.plate_image}
             alt='img-02'
             width={'100%'}
             height={'100%'}
@@ -50,17 +67,27 @@ const ContentLicenseDetail: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex flex-col'>
-            <h2>6กต4724</h2>
-            <p>กรุงเทพมหานคร</p>
+            <h2>{data?.data?.res_data?.[0]?.plate_number || '-'}</h2>
+            <p>{data?.data?.res_data?.[0]?.plate_province || '-'}</p>
           </div>
-          <span className={`shrink-0 fs-12 border rounded-full px-3 py-0.5 whitespace-nowrap border-[#00DDFF] text-[#00DDFF]`}>
-            รถยนต์
+          <span
+            className='shrink-0 fs-12 border rounded-full px-3 py-0.5 whitespace-nowrap'
+            style={{
+              color: VEHICLE_TYPE_COLOR[data?.data?.res_data?.[0]?.vehicle_type_name as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
+              borderColor: VEHICLE_TYPE_COLOR[data?.data?.res_data?.[0]?.vehicle_type_name as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
+            }}
+          >
+            {data?.data?.res_data?.[0]?.vehicle_type_name || 'ไม่ระบุ'}
           </span>
         </div>
         <div className='flex flex-col'>
-          <p className='text-white/50'>Confidence : 46.0%</p>
-          <p>25 เม.ย. 2569 14:14:29</p>
-          <p className='text-(--default-blue)'>ชื่อกล้อง : 69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำบลน้ำตาล</p>
+          {confidence == null ? (
+            <p className='text-white/50'>Confidence : -</p>
+          ) : (
+            <p style={{ color: getConfidenceColor(confidence) }}>Confidence : {confidence.toFixed(1)}%</p>
+          )}
+          <p>{data?.data?.res_data?.[0]?.captured_at_display}</p>
+          <p className='text-(--default-blue)'>ชื่อกล้อง : {data?.data?.res_data?.[0]?.camera_name || '-'}</p>
         </div>
       </section>
       <section className='mt-5'>
@@ -68,7 +95,7 @@ const ContentLicenseDetail: React.FC<Props> = (props) => {
           block
           type="primary"
           shape='round'
-          onClick={handleOpenModal}
+          onClick={() => handleOpenModal(data?.data?.res_data?.[0] as LPRPlateData)}
         >
           ดูประวัติ
         </Button>

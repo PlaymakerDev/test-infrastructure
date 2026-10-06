@@ -1,65 +1,43 @@
-import { Button, Table, TableProps } from 'antd'
+import { Button, Empty, Table, TableProps } from 'antd'
 import React from 'react'
 import { TbCar } from 'react-icons/tb';
+import { useLPRDetailContext } from '../../../context';
+import { useQuery } from '@tanstack/react-query';
+import { getLPRPlateAPI } from '@/services/routes/NewLPRService';
+import { LPRPlateData } from '@/types/lpr/new-lpr-api';
+import { useRouter } from 'next/navigation';
 
 interface Props {
 
 }
 
-interface DataType {
-  id: string;
-  datetime: string;
-  camera_name: string;
-  install_location: string;
-  province: string;
-}
-
 const TableTop5DetectionData: React.FC<Props> = (props) => {
   const { } = props
+  const { solutionId, departmentId } = useLPRDetailContext()
+  const router = useRouter()
 
-  const data: DataType[] = [
-    {
-      id: '1',
-      datetime: '25 เม.ย. 2569 14:12:14',
-      camera_name: '69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำ...',
-      install_location: 'สห.2006 กม.0+500',
-      province: 'สิงห์บุรี',
-    },
-    {
-      id: '2',
-      datetime: '25 เม.ย. 2569 12:56:59',
-      camera_name: '69MST-SBR2006-LPR001-จุดที่1-กม.0+500-มุ่งหน้าทางหลวงหมายเลข 32',
-      install_location: 'สห.2006 กม.0+500',
-      province: 'สิงห์บุรี',
-    },
-    {
-      id: '3',
-      datetime: '20 เม.ย. 2569 10:28:01',
-      camera_name: '69MST-SBR2006-LPR004-จุดที่3-กม.7+400-มุ่งหน้าอินทร์บุรี',
-      install_location: 'สห.2006 กม.7+400',
-      province: 'สิงห์บุรี',
-    },
-    {
-      id: '4',
-      datetime: '18 เม.ย. 2569 18:02:29',
-      camera_name: '69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำ...',
-      install_location: 'สห.2006 กม.0+500',
-      province: 'สิงห์บุรี',
-    },
-    {
-      id: '5',
-      datetime: '17 เม.ย. 2569 12:02:18',
-      camera_name: '69MST-SBR2006-LPR004-จุดที่3-กม.7+400-มุ่งหน้าอินทร์บุรี',
-      install_location: 'สห.2006 กม.7+400',
-      province: 'สิงห์บุรี',
-    },
-  ]
+  // → overall page, plate-search tab, whole department scope. `departmentId` is
+  // '' when the detail page was opened without ?dept_id — omit it then so the
+  // overall page falls back to its own default instead of reading `dept_id=`.
+  const handleViewHistory = () => {
+    const params = new URLSearchParams()
+    if (departmentId) params.set('dept_id', departmentId)
+    params.set('scope', 'all')
+    params.set('tab', 'LICENSE')
+    router.push(`/admin/lpr?${params.toString()}`)
+  }
 
-  const columns: TableProps<DataType>['columns'] = [
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['lpr-plate-table-top5', solutionId],
+    queryFn: () => getLPRPlateAPI(solutionId, { limit: 5 }),
+    enabled: !!solutionId,
+  })
+
+  const columns: TableProps<LPRPlateData>['columns'] = [
     {
       title: 'วันที่และเวลา',
-      dataIndex: 'datetime',
-      key: 'datetime',
+      dataIndex: 'captured_at_display',
+      key: 'captured_at_display',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -79,8 +57,8 @@ const TableTop5DetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'จุดติดตั้ง',
-      dataIndex: 'install_location',
-      key: 'install_location',
+      dataIndex: 'detection_point',
+      key: 'detection_point',
       width: 200,
       render: (item) => {
         if (item) return item
@@ -89,8 +67,8 @@ const TableTop5DetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'จังหวัด',
-      dataIndex: 'province',
-      key: 'province',
+      dataIndex: 'plate_province',
+      key: 'plate_province',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -98,6 +76,8 @@ const TableTop5DetectionData: React.FC<Props> = (props) => {
       }
     },
   ];
+
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
   return (
     <>
@@ -110,19 +90,20 @@ const TableTop5DetectionData: React.FC<Props> = (props) => {
           <Button
             type="primary"
             shape='round'
+            onClick={handleViewHistory}
           >
             ดูประวัติการเดินทาง
           </Button>
         </div>
       </section>
       <section className='mt-5'>
-        <Table<DataType>
+        <Table<LPRPlateData>
           rowKey={'id'}
           columns={columns}
-          dataSource={data}
-          loading={false}
+          dataSource={data?.data?.res_data}
+          loading={isLoading}
           pagination={false}
-          size='medium'
+          // size='medium'
           scroll={{ x: "max-content" }}
         />
       </section>

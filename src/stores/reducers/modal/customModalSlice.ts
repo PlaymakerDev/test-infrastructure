@@ -5,6 +5,7 @@ import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
 import { APIResponseCameraCrossingCode, APIResponseSolutionByID, APIResponseSolutionCameraList, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
 import type { APIResponseCamera } from '@/types/manage/solution-api';
+import { LPRPlateData } from '@/types/lpr/new-lpr-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
@@ -23,6 +24,7 @@ export interface CustomModalState {
 
 export interface LicenseDetailModalState {
   open: boolean
+  data?: LPRPlateData | null
 }
 
 export interface UserModalState {

@@ -98,7 +98,7 @@ const LPRPopup: React.FC<LPRPopupProps> = ({ feature, detailUrl, onNavigate }) =
         <span className='text-green-400'>ออนไลน์ {Number(p.total_online ?? 0).toLocaleString()}</span>
         <span className='text-red-400'>ออฟไลน์ {Number(p.total_offline ?? 0).toLocaleString()}</span>
       </section>
-      {/* <PopupDetailLink url={detailUrl(Number(p.id))} onNavigate={onNavigate} /> */}
+      <PopupDetailLink url={detailUrl(Number(p.id))} onNavigate={onNavigate} />
     </div>
   )
 }

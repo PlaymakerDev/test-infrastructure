@@ -4,8 +4,10 @@ import dayjs from 'dayjs'
 import { IconLPR } from '@/components/icon'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
 import { thaiDateBE } from '@/utils/thaiDate'
-import { useLPRPointStats } from '@/hooks/queries/lpr'
 import { useLPRDetailContext } from '../../../context'
+import { useQuery } from '@tanstack/react-query'
+import { Empty, Skeleton } from 'antd'
+import { getLPRHourlyCountAPI } from '@/services/routes/NewLPRService'
 
 interface Props {
 
@@ -13,7 +15,14 @@ interface Props {
 
 const ChartLicenseDetection: React.FC<Props> = () => {
   const { solutionId } = useLPRDetailContext()
-  const { data } = useLPRPointStats(solutionId)
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['lpr-hourly-count', solutionId],
+    queryFn: () => getLPRHourlyCountAPI(solutionId, {
+      date: dayjs().format('YYYY-MM-DD')
+    }),
+    enabled: !!solutionId,
+  })
 
   const dateLabel = useMemo(() => thaiDateBE(dayjs().format('YYYY-MM-DD')), [])
 
@@ -21,15 +30,17 @@ const ChartLicenseDetection: React.FC<Props> = () => {
   // of being skipped — keeps the x-axis evenly spaced regardless of which
   // hours the backend actually returned data for.
   const hours = useMemo<LineChartDataPoint[]>(() => {
-    const byHour = new Map((data?.hourly_today ?? []).map((b) => [b.hour, b.count]))
+    const byHour = new Map((data?.data?.hourly ?? []).map((b) => [b.hour, b.count]))
     return Array.from({ length: 24 }, (_, h) => ({
       label: `${String(h).padStart(2, '0')}.00`,
       total: byHour.get(h) ?? 0,
     }))
   }, [data])
 
-  return (
+  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 6 }} />
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
+  return (
     <LineChart
       title='ปริมาณการตรวจจับป้ายทะเบียนรายชั่วโมง'
       icon={<IconLPR size={22} color='var(--yellow)' />}

@@ -1,93 +1,44 @@
+import { VEHICLE_TYPE_COLOR } from '@/constants';
 import { useAppDispatch } from '@/stores/hooks';
 import { setLicenseDetailModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { APIResponseLPRPlateList, LPRPlateData } from '@/types/lpr/new-lpr-api';
 import { Image, Table, TableProps } from 'antd';
-import React, { useState } from 'react'
+import React from 'react'
 
 interface Props {
-
+  data?: APIResponseLPRPlateList
+  isLoading?: boolean
+  isError?: boolean
+  page: number
+  limit: number
+  onPageChange: (page: number, limit: number) => void
 }
 
-interface DataType {
-  id: string
-  timestamp: string
-  license_number: string
-  license_province: string
-  license_type: string
-  confidence_level: string
-  camera_name: string
-  ip_address: string
-  license_image: string
+// confidence is a 0–100 percent: 0–20 orange, 21–40 yellow, 41–100 green.
+// Boundaries are `<=` so a fractional value (20.5, 40.5) lands in the next band up.
+export const getConfidenceColor = (confidence: number): string => {
+  if (confidence <= 20) return '#FF7B00'
+  if (confidence <= 40) return 'var(--yellow)'
+  return '#B2FF00'
+}
+
+/** API value → a usable percent, or null when it's missing/blank/non-numeric
+ *  (callers show '-'). Number('') is 0, so blanks are rejected before the cast. */
+export const parseConfidence = (value: unknown): number | null => {
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return null
+  const n = Number(value)
+  return Number.isNaN(n) ? null : n
 }
 
 const TableDetectionData: React.FC<Props> = (props) => {
-  const { } = props
+  const { data, isLoading, page, limit, onPageChange } = props
   const dispatch = useAppDispatch()
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
 
-  const data: DataType[] = [
-    {
-      id: '1',
-      timestamp: '20 เม.ย. 2569 15:20:36',
-      license_number: 'กจ3849',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถกระบะ',
-      confidence_level: '44.0%',
-      camera_name: '69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำบลน้ำตาล',
-      ip_address: '192.168.3.171',
-      license_image: 'https://i.pinimg.com/1200x/10/98/6b/10986b50aa46e4326e085125534046bd.jpg',
-    },
-    {
-      id: '2',
-      timestamp: '20 เม.ย. 2569 14:19:03',
-      license_number: 'วง5692',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถยนต์',
-      confidence_level: '44.0%',
-      camera_name: '69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำบลน้ำตาล',
-      ip_address: '192.168.3.171',
-      license_image: 'https://i.pinimg.com/1200x/10/98/6b/10986b50aa46e4326e085125534046bd.jpg',
-    },
-    {
-      id: '3',
-      timestamp: '20 เม.ย. 2569 12:29:29',
-      license_number: 'กบ6554',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถกระบะ',
-      confidence_level: '50.0%',
-      camera_name: '69MST-SBR2006-LPR002-จุดที่1-กม.0+500-มุ่งหน้าที่พักสายตรวจตำบลน้ำตาล',
-      ip_address: '192.168.3.171',
-      license_image: 'https://i.pinimg.com/1200x/10/98/6b/10986b50aa46e4326e085125534046bd.jpg',
-    },
-    {
-      id: '4',
-      timestamp: '20 เม.ย. 2569 11:37:28',
-      license_number: 'กว5168',
-      license_province: 'สุพรรณบุรี',
-      license_type: 'รถกระบะ',
-      confidence_level: '51.0%',
-      camera_name: '69MST-SBR2006-LPR001-จุดที่1-กม.0+500-มุ่งหน้าทางหลวงหมายเลข 32',
-      ip_address: '192.168.3.170',
-      license_image: 'https://i.pinimg.com/1200x/10/98/6b/10986b50aa46e4326e085125534046bd.jpg',
-    },
-    {
-      id: '5',
-      timestamp: '20 เม.ย. 2569 11:02:17',
-      license_number: '2ขร2201',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถกระบะ',
-      confidence_level: '12.8%',
-      camera_name: '69MST-SBR2006-LPR001-จุดที่1-กม.0+500-มุ่งหน้าทางหลวงหมายเลข 32',
-      ip_address: '192.168.3.170',
-      license_image: 'https://i.pinimg.com/1200x/10/98/6b/10986b50aa46e4326e085125534046bd.jpg',
-    },
-  ]
-
-  const columns: TableProps<DataType>['columns'] = [
+  const columns: TableProps<LPRPlateData>['columns'] = [
     {
       title: 'วันที่และเวลา',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
+      dataIndex: 'captured_at_display',
+      key: 'captured_at_display',
       width: 200,
       render: (item) => {
         if (item) return item
@@ -96,8 +47,8 @@ const TableDetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'ป้ายทะเบียน',
-      dataIndex: 'license_number',
-      key: 'license_number',
+      dataIndex: 'plate_number',
+      key: 'plate_number',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -106,8 +57,8 @@ const TableDetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'จังหวัด',
-      dataIndex: 'license_province',
-      key: 'license_province',
+      dataIndex: 'plate_province',
+      key: 'plate_province',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -116,34 +67,41 @@ const TableDetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'ประเภทรถ',
-      dataIndex: 'license_type',
-      key: 'license_type',
+      dataIndex: 'vehicle_type_name',
+      key: 'vehicle_type_name',
       width: 150,
       render: (item) => {
-        if (item) {
-          return (
-            <div className='inline-block text-[#00FFAA] border border-[#00FFAA] rounded-3xl px-3 text-center'>
-              <p className='fs-12'>{item}</p>
-            </div>
-          )
-        }
-        return '-'
+        const tagClassName = `inline-block border rounded-3xl px-3 text-center`
+        return (
+          <div
+            className={tagClassName}
+            style={{
+              color: VEHICLE_TYPE_COLOR[item as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
+              borderColor: VEHICLE_TYPE_COLOR[item as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
+            }}
+          >
+            <p className='fs-12'>{item || 'ไม่ระบุ'}</p>
+          </div>
+        )
       }
     },
     {
       title: 'Confidence',
-      dataIndex: 'confidence_level',
-      key: 'confidence_level',
+      dataIndex: 'confidence',
+      key: 'confidence',
       width: 150,
       render: (item) => {
-        if (item) {
-          return (
-            <div className='inline-block text-(--yellow) border border-(--yellow) rounded-3xl px-3 text-center'>
-              <p className='fs-12'>{item}</p>
-            </div>
-          )
-        }
-        return '-'
+        const confidence = parseConfidence(item)
+        if (confidence == null) return '-'
+        const color = getConfidenceColor(confidence)
+        return (
+          <div
+            className='inline-block border rounded-3xl px-3 text-center'
+            style={{ color, borderColor: color }}
+          >
+            <p className='fs-12'>{confidence.toFixed(1)}%</p>
+          </div>
+        )
       }
     },
     {
@@ -158,8 +116,8 @@ const TableDetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'IP Address',
-      dataIndex: 'ip_address',
-      key: 'ip_address',
+      dataIndex: 'camera_ip',
+      key: 'camera_ip',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -168,14 +126,14 @@ const TableDetectionData: React.FC<Props> = (props) => {
     },
     {
       title: 'ภาพป้ายทะเบียน',
-      dataIndex: 'license_image',
-      key: 'license_image',
+      dataIndex: 'plate_image',
+      key: 'plate_image',
       width: 150,
       render: (item) => {
         return (
           <div className='inline-flex justify-center'>
             <figure
-              className='w-full h-28 relative overflow-hidden rounded-sm'
+              className='w-full h-16 relative overflow-hidden rounded-sm'
               onClick={(e) => e.stopPropagation()}
             >
               <Image
@@ -193,27 +151,25 @@ const TableDetectionData: React.FC<Props> = (props) => {
   ];
 
   return (
-    <Table<DataType>
+    <Table<LPRPlateData>
       rowKey="id"
       columns={columns}
-      dataSource={data}
+      dataSource={data?.res_data}
+      loading={isLoading}
       size="middle"
       pagination={{
-        current: currentPage,
-        pageSize: pageSize,
-        total: data.length,
+        current: page,
+        pageSize: limit,
+        total: data?.meta_data?.count,
         showSizeChanger: true,
         placement: ['bottomEnd'],
-        onChange: (page, size) => {
-          setCurrentPage(page)
-          setPageSize(size)
-        },
+        onChange: onPageChange,
         locale: { items_per_page: '/ หน้า' }
       }}
-      onRow={() => {
+      onRow={(record) => {
         return {
           className: 'cursor-pointer',
-          onClick: () => dispatch(setLicenseDetailModalOpen({ open: true }))
+          onClick: () => dispatch(setLicenseDetailModalOpen({ open: true, data: record }))
         }
       }}
       scroll={{ x: 'max-content' }}

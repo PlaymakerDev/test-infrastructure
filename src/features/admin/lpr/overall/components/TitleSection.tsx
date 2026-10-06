@@ -3,6 +3,7 @@ import SwapButton from '@/components/swap-button/SwapButton'
 import React from 'react'
 
 interface Props {
+  currentTab: string;
   setCurrentTab: (value: string) => void;
 }
 
@@ -12,7 +13,7 @@ const OPTIONS = [
 ]
 
 const TitleSection: React.FC<Props> = (props) => {
-  const { setCurrentTab } = props
+  const { currentTab, setCurrentTab } = props
 
   return (
     <div className='px-10'>
@@ -23,7 +24,7 @@ const TitleSection: React.FC<Props> = (props) => {
       <section className='mt-5'>
         <SwapButton
           options={OPTIONS}
-          defaultActive="LPR"
+          activeValue={currentTab}
           setLabelValue={(value) => setCurrentTab(value)}
         />
       </section>

@@ -1,79 +1,34 @@
-import { Button, Table, TableProps } from 'antd'
+import { Button, Empty, Skeleton, Table, TableProps } from 'antd'
 import React from 'react'
 import { TbCar } from 'react-icons/tb'
 import { useLPRDetailContext } from '../../../context';
+import { useQuery } from '@tanstack/react-query';
+import { getLPRPlateAPI } from '@/services/routes/NewLPRService';
+import { LPRPlateData } from '@/types/lpr/new-lpr-api';
+import { VEHICLE_TYPE_COLOR } from '@/constants';
 
 interface Props {
 
 }
 
-interface DataType {
-  license_number: string;
-  license_province: string;
-  license_type: string;
-  datetime: string;
-}
-
 const TableDailyLicenseData: React.FC<Props> = (props) => {
   const { } = props
-  const { setCurrentTab } = useLPRDetailContext()
+  const { setCurrentTab, solutionId } = useLPRDetailContext()
 
-  const data: DataType[] = [
-    {
-      license_number: 'กต196',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถยนต์',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: '809619',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถบรรทุก',
-      datetime: '25 เม.ย. 2569 14:10:37',
-    },
-    {
-      license_number: 'กจ9236',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถยนต์',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: 'บฉ2540',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถยนต์',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: '1ขร774',
-      license_province: 'กรุงเทพมหานคร',
-      license_type: 'รถยนต์',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: 'บง806',
-      license_province: 'สิงห์บุรี',
-      license_type: 'รถกระบะ',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: '713153',
-      license_province: 'นครสวรรค์',
-      license_type: 'รถพ่วง',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-    {
-      license_number: 'บจ7898',
-      license_province: 'อุทัยธานี',
-      license_type: 'รถยนต์',
-      datetime: '25 เม.ย. 2569 14:12:14',
-    },
-  ]
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['lpr-plate-table', solutionId],
+    queryFn: () => getLPRPlateAPI(solutionId, { limit: 10 }),
+    enabled: !!solutionId,
+  })
 
-  const columns: TableProps<DataType>['columns'] = [
+  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+
+  const columns: TableProps<LPRPlateData>['columns'] = [
     {
       title: 'ป้ายทะเบียน',
-      dataIndex: 'license_number',
-      key: 'license_number',
+      dataIndex: 'plate_number',
+      key: 'plate_number',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -82,8 +37,8 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
     },
     {
       title: 'จังหวัด',
-      dataIndex: 'license_province',
-      key: 'license_province',
+      dataIndex: 'plate_province',
+      key: 'plate_province',
       width: 150,
       render: (item) => {
         if (item) return item
@@ -92,28 +47,27 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
     },
     {
       title: 'ประเภท',
-      dataIndex: 'license_type',
-      key: 'license_type',
+      dataIndex: 'vehicle_type_name',
+      key: 'vehicle_type_name',
       width: 150,
       render: (item) => {
-        const color = item === 'รถยนต์' ? '#66AEFF' : '#E94C4C'
         return (
           <span
-            className='inline-flex items-center gap-1 px-3 rounded-full fs-12 whitespace-nowrap'
+            className={`shrink-0 fs-12 border rounded-full px-3 whitespace-nowrap`}
             style={{
-              border: `1px solid ${color}`,
-              color: color
+              color: VEHICLE_TYPE_COLOR[item as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
+              borderColor: VEHICLE_TYPE_COLOR[item as keyof typeof VEHICLE_TYPE_COLOR] || '#FFFFFF50',
             }}
           >
-            {item}
+            {item || 'ไม่ระบุ'}
           </span>
         )
       }
     },
     {
       title: 'วันที่และเวลา',
-      dataIndex: 'datetime',
-      key: 'datetime',
+      dataIndex: 'captured_at_display',
+      key: 'captured_at_display',
       width: 200,
       render: (item) => {
         if (item) return item
@@ -140,17 +94,18 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
         </div>
       </section>
       <section className='mt-5'>
-        <Table<DataType>
+        <Table<LPRPlateData>
           key={'key'}
           rowKey="id"
           columns={columns}
-          dataSource={data}
-          loading={false}
-          pagination={{
-            showSizeChanger: true,
-            onChange: (page, pageSize) => console.log(page, pageSize),
-            locale: { items_per_page: '/ หน้า' }
-          }}
+          dataSource={data?.data.res_data || []}
+          loading={isLoading}
+          pagination={false}
+          // pagination={{
+          //   showSizeChanger: true,
+          //   onChange: (page, pageSize) => console.log(page, pageSize),
+          //   locale: { items_per_page: '/ หน้า' }
+          // }}
           scroll={{ x: 'max-content' }}
         />
       </section>

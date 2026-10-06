@@ -14,13 +14,14 @@
  *           their original names.
  */
 export const DEVICE_BADGE = {
-  cctv:       { label: 'CCTV',      color: '#4DA3FF' }, // blue   (legend #003F87)
-  vms:        { label: 'VMS',       color: '#FF9F45' }, // orange (legend #874600)
+  cctv: { label: 'CCTV', color: '#4DA3FF' }, // blue   (legend #003F87)
+  vms: { label: 'VMS', color: '#FF9F45' }, // orange (legend #874600)
   wim_camera: { label: 'Truck Tracking', color: '#FF1FF2' }, // magenta (legend #70196D) — same as SYSTEM_BRIGHT.WIM
-  counting:   { label: 'Volume',    color: '#2DD4BF' }, // teal   (legend #007787)
-  analytic:   { label: 'Incident',  color: '#3DD68C' }, // green  (legend #00873B)
-  traffic:    { label: 'Traffic',   color: '#A3E635' }, // lime   (legend #518700)
-  crosswalk:  { label: 'Crosswalk', color: '#7C8CFF' }, // indigo (legend #001287)
+  counting: { label: 'Volume', color: '#2DD4BF' }, // teal   (legend #007787)
+  analytic: { label: 'Incident', color: '#3DD68C' }, // green  (legend #00873B)
+  traffic: { label: 'Traffic', color: '#A3E635' }, // lime   (legend #518700)
+  crosswalk: { label: 'Crosswalk', color: '#7C8CFF' }, // indigo (legend #001287)
+  lpr: { label: 'LPR', color: '#87004D' }, // pink (legend #87003F)
 } as const
 
 export type DeviceBadgeKey = keyof typeof DEVICE_BADGE
@@ -32,12 +33,13 @@ export type DeviceBadgeKey = keyof typeof DEVICE_BADGE
  * Label + color are sourced from DEVICE_BADGE (single source of truth).
  */
 export const SOLUTION_BADGE_MAP = [
-  { key: 'vms',        ...DEVICE_BADGE.vms },
+  { key: 'vms', ...DEVICE_BADGE.vms },
   { key: 'wim_camera', ...DEVICE_BADGE.wim_camera },
-  { key: 'counting',   ...DEVICE_BADGE.counting },
-  { key: 'analytic',   ...DEVICE_BADGE.analytic },
-  { key: 'traffic',    ...DEVICE_BADGE.traffic },
-  { key: 'crosswalk',  ...DEVICE_BADGE.crosswalk },
+  { key: 'counting', ...DEVICE_BADGE.counting },
+  { key: 'analytic', ...DEVICE_BADGE.analytic },
+  { key: 'traffic', ...DEVICE_BADGE.traffic },
+  { key: 'crosswalk', ...DEVICE_BADGE.crosswalk },
+  { key: 'lpr', ...DEVICE_BADGE.lpr },
 ] as const
 
 export const TEXT_CAMERA_STATUS = {

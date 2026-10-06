@@ -60,12 +60,12 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
     [rows],
   )
 
-  // const goToDetail = useCallback(
-  //   (item: SubDptSolution) => {
-  //     router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}&road_id=${item.road.id}${scopeQuerySuffix()}`)
-  //   },
-  //   [router, deptId],
-  // )
+  const goToDetail = useCallback(
+    (item: SubDptSolution) => {
+      router.push(`/admin/lpr/detail/${item.solution?.id}?dept_id=${deptId}&road_id=${item.road.id}${scopeQuerySuffix()}`)
+    },
+    [router, deptId],
+  )
 
   const columns: ColumnsType<LPRTableRow> = useMemo(() => {
     const all: (ColumnsType<LPRTableRow>[number] & { key: string })[] = [
@@ -92,12 +92,11 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
               </div>
             )
           }
-          return row.item.road?.code_name || '-'
-          // return (
-          //   <DetailLinkText onClick={() => goToDetail(row.item)}>
-          //     {row.item.road?.code_name || '-'}
-          //   </DetailLinkText>
-          // )
+          return (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.road?.code_name || '-'}
+            </DetailLinkText>
+          )
         },
       },
       {
@@ -107,12 +106,11 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
         ellipsis: true,
         onCell: mergedCell,
         render: (_, row) =>
-          row.kind === 'solution' ?
-            row.item.project?.project_name || '-'
-            // <DetailLinkText onClick={() => goToDetail(row.item)}>
-            //   {row.item.project?.project_name || '-'}
-            // </DetailLinkText>
-            : null,
+          row.kind === 'solution' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.project?.project_name || '-'}
+            </DetailLinkText>
+          ) : null,
       },
       {
         title: 'เลขที่สัญญา',
@@ -149,12 +147,11 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
         width: 260,
         onCell: rowCell,
         render: (_, row) =>
-          row.kind === 'solution' ?
-            row.item.solution?.solution_name || '-'
-            // <DetailLinkText onClick={() => goToDetail(row.item)}>
-            //   {row.item.solution?.solution_name || '-'}
-            // </DetailLinkText>
-            : null,
+          row.kind === 'solution' ? (
+            <DetailLinkText onClick={() => goToDetail(row.item)}>
+              {row.item.solution?.solution_name || '-'}
+            </DetailLinkText>
+          ) : null,
       },
       {
         title: 'กล้องตรวจจับป้ายทะเบียน',
@@ -208,7 +205,7 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
     ]
     // ชื่อโครงการ hidden app-wide while SHOW_PROJECT_NAME is off.
     return SHOW_PROJECT_NAME ? all : all.filter((col) => col.key !== 'project_name')
-  }, [/*goToDetail*/])
+  }, [goToDetail])
 
   if (isError) return <Empty description="Error loading data" />
 

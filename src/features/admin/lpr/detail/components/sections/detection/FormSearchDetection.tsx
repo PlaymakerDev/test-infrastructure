@@ -3,10 +3,11 @@ import { Controller, useForm } from 'react-hook-form'
 import dayjs, { Dayjs } from 'dayjs'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
-import { Button, Col, ConfigProvider, DatePicker, Row, Segmented } from 'antd'
+import { Button, Col, ConfigProvider, DatePicker, Input, Row, Segmented, Select } from 'antd'
 import thTH from 'antd/locale/th_TH'
-import { TbPrinter } from "react-icons/tb";
+import { TbPrinter, TbSearch } from "react-icons/tb";
 import { AppstoreOutlined, BarsOutlined } from '@ant-design/icons'
+import { APIRequestLPRPlateList } from '@/types/lpr/new-lpr-api'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -19,15 +20,20 @@ export interface MobileVehicleSearchParams {
   is_open?: number
 }
 
+export type DetectionSearchParams = Pick<APIRequestLPRPlateList, 'search' | 'vehicle_type' | 'start_date' | 'end_date'>
+
 interface Props {
   viewMode: 'TABLE' | 'GRID'
   setViewMode: (viewMode: 'TABLE' | 'GRID') => void
+  onSearch: (params: DetectionSearchParams) => void
+  onExport: () => void
 }
 
 interface FormSearchValues {
   date: [Dayjs | null, Dayjs | null] | null
   period: 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH'
-  type: 'MOTOR_BICYCLE' | 'VEHICLE' | 'PICKUP' | 'TAXI' | 'BUS' | 'TRUCK' | 'SEMI_TRUCK' | 'ALL'
+  // 'ALL' = omit vehicle_type; 'ไม่ระบุ' is a real backend value (reads with no vehicle type)
+  type: 'ALL' | 'รถจักรยานยนต์' | 'รถยนต์' | 'รถกระบะ' | 'แท็กซี่' | 'รถบัส' | 'รถบรรทุก' | 'รถพ่วง' | 'ไม่ระบุ'
   license_plate: string
 }
 
@@ -40,13 +46,14 @@ const PERIOD_OPTIONS: Array<{ label: string; value: FormSearchValues['period'] }
 
 const TYPE_OPTIONS: Array<{ label: string; value: FormSearchValues['type'] }> = [
   { label: "ทั้งหมด", value: "ALL" },
-  { label: "รถจักรยานยนต์", value: "MOTOR_BICYCLE" },
-  { label: "รถยนต์", value: "VEHICLE" },
-  { label: "รถกระบะ", value: "PICKUP" },
-  { label: "แท็กซี่", value: "TAXI" },
-  { label: "รถบัส", value: "BUS" },
-  { label: "รถบรรทุก", value: "TRUCK" },
-  { label: "รถพ่วง", value: "SEMI_TRUCK" },
+  { label: "รถจักรยานยนต์", value: "รถจักรยานยนต์" },
+  { label: "รถยนต์", value: "รถยนต์" },
+  { label: "รถกระบะ", value: "รถกระบะ" },
+  { label: "แท็กซี่", value: "แท็กซี่" },
+  { label: "รถบัส", value: "รถบัส" },
+  { label: "รถบรรทุก", value: "รถบรรทุก" },
+  { label: "รถพ่วง", value: "รถพ่วง" },
+  { label: "ไม่ระบุประเภท", value: "ไม่ระบุ" },
 ]
 
 const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchValues['date'] => {
@@ -67,7 +74,7 @@ const getDateRangeByPeriod = (period: FormSearchValues['period']): FormSearchVal
 }
 
 const FormSearchDetection: React.FC<Props> = (props) => {
-  const { viewMode, setViewMode } = props
+  const { viewMode, setViewMode, onSearch, onExport } = props
   const submitRef = useRef<HTMLButtonElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -93,13 +100,21 @@ const FormSearchDetection: React.FC<Props> = (props) => {
   } = form
 
   const onSubmit = useCallback((data: FormSearchValues) => {
-    console.log(data)
-  }, [])
+    const [start, end] = data.date ?? []
+    const search = data.license_plate.trim()
+    onSearch({
+      search: search || undefined,
+      // allowClear on the Select yields undefined → also means "all"
+      vehicle_type: !data.type || data.type === 'ALL' ? undefined : data.type,
+      start_date: start?.format('YYYY-MM-DD'),
+      end_date: end?.format('YYYY-MM-DD'),
+    })
+  }, [onSearch])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Row gutter={[16, 16]} align={'bottom'}>
-        <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={6} xxxl={4}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={5}>
           <Controller
             control={control}
             name='date'
@@ -130,7 +145,7 @@ const FormSearchDetection: React.FC<Props> = (props) => {
             }}
           />
         </Col>
-        <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={6} xxxl={6}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={5}>
           <Controller
             control={control}
             name='period'
@@ -144,7 +159,7 @@ const FormSearchDetection: React.FC<Props> = (props) => {
                 }, 700)
               }
               return (
-                <div>
+                <fieldset>
                   <label className='block fs-12 text-(--yellow)'>ช่วงเวลา</label>
                   <div className='overflow-x-auto'>
                     <Segmented
@@ -158,45 +173,70 @@ const FormSearchDetection: React.FC<Props> = (props) => {
                       }}
                     />
                   </div>
-                </div>
+                </fieldset>
               )
             }}
           />
         </Col>
-        <Col xs={24} sm={24} md={24} lg={18} xl={20} xxl={12} xxxl={10}>
+        <Col xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={5}>
           <Controller
             control={control}
             name='type'
             render={({ field }) => {
-              const handleTypeChange = (value: FormSearchValues['type']) => {
-                field.onChange(value)
-                if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                timeoutRef.current = setTimeout(() => {
-                  submitRef.current?.click()
-                }, 700)
-              }
               return (
-                <div>
+                <fieldset>
                   <label className='block fs-12 text-(--yellow)'>ประเภทรถ</label>
-                  <div className='overflow-x-auto'>
-                    <Segmented
-                      block
-                      {...field}
-                      onChange={handleTypeChange}
-                      options={TYPE_OPTIONS}
-                      size='large'
-                      classNames={{
-                        root: 'min-w-max border! border-(--yellow)!',
-                      }}
-                    />
-                  </div>
-                </div>
+                  <Select
+                    {...field}
+                    placeholder='ประเภทรถทั้งหมด...'
+                    size="large"
+                    className='w-full'
+                    allowClear
+                    showSearch
+                    options={TYPE_OPTIONS}
+                    onChange={(value: FormSearchValues['type']) => {
+                      field.onChange(value)
+                      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                      timeoutRef.current = setTimeout(() => {
+                        submitRef.current?.click()
+                      }, 700)
+                    }}
+                  />
+                </fieldset>
               )
             }}
           />
         </Col>
-        <Col xs={24} sm={24} md={24} lg={6} xl={4} xxl={24} xxxl={4}>
-          <div className='flex gap-3'>
+        <Col xs={24} sm={24} md={12} lg={12} xl={6} xxl={6} xxxl={5}>
+          <Controller
+            control={control}
+            name='license_plate'
+            render={({ field }) => {
+              return (
+                <fieldset>
+                  <label className='block fs-12 text-(--yellow)'>ป้ายทะเบียน</label>
+                  <Input
+                    {...field}
+                    name={field.name}
+                    placeholder='ค้นหาป้ายทะเบียน...'
+                    size="large"
+                    className='w-full'
+                    suffix={<TbSearch className='text-(--yellow)' />}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                      timeoutRef.current = setTimeout(() => {
+                        submitRef.current?.click()
+                      }, 700)
+                    }}
+                  />
+                </fieldset>
+              )
+            }}
+          />
+        </Col>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={4}>
+          <div className='flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto lg:shrink-0'>
             <Segmented
               value={viewMode}
               onChange={(value) => setViewMode(value as 'TABLE' | 'GRID')}
@@ -213,7 +253,7 @@ const FormSearchDetection: React.FC<Props> = (props) => {
                 size="large"
                 shape="round"
                 icon={<TbPrinter />}
-              // onClick={() => onExport?.()}
+                onClick={onExport}
               >
                 <p className='fs-12'>นำออกเอกสาร</p>
               </Button>

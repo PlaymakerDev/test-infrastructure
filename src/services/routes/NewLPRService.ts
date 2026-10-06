@@ -6,7 +6,16 @@ import {
   APIRequestLPRTotal,
   APIResponseLPRTotal,
   APIRequestLPRRandomOnline,
-  APIResponseLPRRandomOnline
+  APIResponseLPRRandomOnline,
+  APIRequestLPRDailyCount,
+  APIResponseLPRDailyCount,
+  APIRequestLPRPlate,
+  APIResponseLPRPlate,
+  APIRequestLPRPlateList,
+  APIResponseLPRPlateList,
+  APIResponseLPRStat,
+  APIRequestLPRHourlyCount,
+  APIResponseLPRHourlyCount
 } from "@/types/lpr/new-lpr-api"
 import ApiService from "../ApiService"
 
@@ -42,3 +51,41 @@ export const getLPRRandomOnlineAPI = async (id: string | number, params: APIRequ
   })
 }
 
+export const getLPRDailyCountAPI = async (solutionId: string | number, params: APIRequestLPRDailyCount) => {
+  return ApiService.fetchData<APIResponseLPRDailyCount, APIRequestLPRDailyCount>({
+    url: `/lpr/solutions/${solutionId}/cameras/daily-count`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getLPRHourlyCountAPI = async (solutionId: string | number, params: APIRequestLPRHourlyCount) => {
+  return ApiService.fetchData<APIResponseLPRHourlyCount, APIRequestLPRHourlyCount>({
+    url: `/lpr/solutions/${solutionId}/hourly-count`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getLPRPlateAPI = async (solutionId: string | number, params: APIRequestLPRPlate) => {
+  return ApiService.fetchData<APIResponseLPRPlate, APIRequestLPRPlate>({
+    url: `/lpr/solutions/${solutionId}/plates`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getLPRPlateListAPI = async (solutionId: string | number, params: APIRequestLPRPlateList) => {
+  return ApiService.fetchData<APIResponseLPRPlateList, APIRequestLPRPlateList>({
+    url: `/lpr/solutions/${solutionId}/plates/list`,
+    method: 'GET',
+    params,
+  })
+}
+
+export const getLPRStatAPI = async (solutionId: string | number) => {
+  return ApiService.fetchData<APIResponseLPRStat>({
+    url: `/lpr/solutions/${solutionId}/stats`,
+    method: 'GET',
+  })
+}
