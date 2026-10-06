@@ -61,7 +61,7 @@ const TableCCTVData: React.FC<Props> = (props) => {
       key: 'solution',
       width: 200,
       render: () => {
-        const color = '#87004D'
+        const color = '#FF6FB5'
         return (
           <span
             className='inline-flex items-center gap-1 px-3 rounded-full fs-12 whitespace-nowrap'

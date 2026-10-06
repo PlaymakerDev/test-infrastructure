@@ -21,7 +21,7 @@ export const DEVICE_BADGE = {
   analytic: { label: 'Incident', color: '#3DD68C' }, // green  (legend #00873B)
   traffic: { label: 'Traffic', color: '#A3E635' }, // lime   (legend #518700)
   crosswalk: { label: 'Crosswalk', color: '#7C8CFF' }, // indigo (legend #001287)
-  lpr: { label: 'LPR', color: '#87004D' }, // pink (legend #87003F)
+  lpr: { label: 'LPR', color: '#FF6FB5' }, // pink (legend #87003F)
 } as const
 
 export type DeviceBadgeKey = keyof typeof DEVICE_BADGE
