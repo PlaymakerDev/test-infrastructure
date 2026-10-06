@@ -24,14 +24,18 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
   if (isLoading) {
     return (
       <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
-        <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+        <div className='m-auto block'>
+          <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+        </div>
       </div>
     )
   }
   if (isError) {
     return (
       <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
-        <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+        <div className='m-auto block'>
+          <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+        </div>
       </div>
     )
   }
