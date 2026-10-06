@@ -24,7 +24,7 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
   if (isLoading) {
     return (
       <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
-        <div className='m-auto block'>
+        <div className='flex flex-col items-center justify-center h-full'>
           <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
         </div>
       </div>
@@ -33,7 +33,7 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
   if (isError) {
     return (
       <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
-        <div className='m-auto block'>
+        <div className='flex flex-col items-center justify-center h-full'>
           <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
         </div>
       </div>
