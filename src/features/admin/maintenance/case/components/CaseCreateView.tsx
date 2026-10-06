@@ -304,8 +304,9 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
   // เหตุผลการแจ้งซ่อม — how long it can run before ขอแสดงความนับถือ is carried
   // to page 2. Not one number: the rest of THIS letter decides it (65–324
   // characters across projects), so it is worked out from the form as it fills
-  // in (user 2026-10-05). Keyed on the letter's content as a string so the
-  // effect re-runs exactly when the letter changes.
+  // in (user 2026-10-05), and follows the typing (user 2026-10-06). Keyed on
+  // the letter's content as a string so the effect re-runs exactly when the
+  // letter changes.
   const [reasonBudget, setReasonBudget] = useState<number | null>(null)
   const budgetRunRef = useRef(0)
   const budgetSource = projectDetail && contractorsQuery.data
@@ -326,7 +327,8 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     }, 400)
     return () => clearTimeout(timer)
   }, [budgetSource])
-  const reasonOver = reasonBudget !== null && form.reason.length > reasonBudget
+  // 0 = no room at all, which the label says — not something to flag in red.
+  const reasonOver = !!reasonBudget && form.reason.length > reasonBudget
 
   // The rendered letter is an object URL — release each one once it is
   // replaced, closed, or the page goes away.
@@ -344,12 +346,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
     setPreviewOpen(true)
     setPreview({ url: null, loading: true, failed: false })
     try {
-      const [{ renderLetterPdfBlob }, { buildRepairLetter }, contractor] = await Promise.all([
+      const [{ renderLetterPdfBlob }, { printableRepairLetter }, contractor] = await Promise.all([
         import('@/utils/export/letterPdf'),
-        import('../data/repairLetter'),
+        import('../data/reasonBudget'),
         resolveLetterContractor(),
       ])
-      const blob = await renderLetterPdfBlob(buildRepairLetter(letterInput(contractor)))
+      const blob = await renderLetterPdfBlob(await printableRepairLetter(letterInput(contractor)))
       if (run !== previewRunRef.current) return
       setPreview({ url: URL.createObjectURL(blob), loading: false, failed: false })
     } catch {
@@ -389,12 +391,12 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
       }
     }
     try {
-      const [{ exportLetterPdf }, { buildRepairLetter }, contractor] = await Promise.all([
+      const [{ exportLetterPdf }, { printableRepairLetter }, contractor] = await Promise.all([
         import('@/utils/export/letterPdf'),
-        import('../data/repairLetter'),
+        import('../data/reasonBudget'),
         resolveLetterContractor(),
       ])
-      await exportLetterPdf(buildRepairLetter({ ...letterInput(contractor), caseNo: caseNo ?? '', deviceStatusImages }))
+      await exportLetterPdf(await printableRepairLetter({ ...letterInput(contractor), caseNo: caseNo ?? '', deviceStatusImages }))
       // The sheet was expected (the officer attached none), so say why it's missing.
       if (sheet && sheet.images.length === 0) {
         message.warning(sheet.state === 'timeout'
@@ -581,7 +583,11 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
               เหตุผลการแจ้งซ่อม<span style={{ color: '#E94C4C' }}>*</span>
               {reasonBudget !== null && (
                 <span className='fs-12' style={{ color: '#979797', marginLeft: 8 }}>
-                  (หากระบุเหตุผลเกิน {reasonBudget.toLocaleString()} ตัวอักษร คำลงท้าย “ขอแสดงความนับถือ” จะปรากฏในหน้าที่ 2)
+                  {reasonBudget > 0
+                    ? `(หากระบุเหตุผลเกิน ${reasonBudget.toLocaleString()} ตัวอักษร คำลงท้าย “ขอแสดงความนับถือ” จะปรากฏในหน้าที่ 2)`
+                    // Even with the closing block brought down, the rest of
+                    // the letter already fills page 1 — no number to give.
+                    : '(เนื่องจากข้อความในหนังสือฉบับนี้เต็มหน้าที่ 1 แล้ว คำลงท้าย “ขอแสดงความนับถือ” จะปรากฏในหน้าที่ 2)'}
                 </span>
               )}
             </p>
@@ -595,7 +601,8 @@ const CaseCreateView: React.FC<CaseCreateViewProps> = ({ cameraIds, solutionId, 
             {reasonBudget !== null && (
               <p className='fs-12' style={{ margin: '4px 0 0', textAlign: 'right', color: reasonOver ? '#E94C4C' : '#979797' }}>
                 {reasonOver ? 'เกินจำนวนที่กำหนด คำลงท้ายจะปรากฏในหน้าที่ 2 · ' : ''}
-                {form.reason.length.toLocaleString()} / {reasonBudget.toLocaleString()} ตัวอักษร
+                {form.reason.length.toLocaleString()}
+                {reasonBudget > 0 ? ` / ${reasonBudget.toLocaleString()}` : ''} ตัวอักษร
               </p>
             )}
           </div>

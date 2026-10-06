@@ -82,6 +82,9 @@ export interface LetterLine {
   /** Extra advance per glyph that stretches this line out to the right margin;
    *  0 on a paragraph's last line, which stays ragged as justified text should. */
   letterSpacing: number
+  /** How much wider (pt) the line's text could grow before a word of it wraps
+   *  to the next line. */
+  room?: number
 }
 
 /** One body paragraph. `indent: false` keeps it flush left — for the tail
@@ -132,6 +135,13 @@ export interface ExportLetterPdfArgs {
   footerLines?: string[]
   /** Centered italic slogan on the very last line of the letter page. */
   tagline?: string
+  /** Let the closing block come down into the room under the footer, towards
+   *  the tagline, when that keeps it on the first sheet — only as far as it
+   *  must. With the footer at the foot of the paper, the room left to sign
+   *  then tightens, down to MIN_SIGNATURE_SPACE. Past that it is carried to
+   *  the next sheet as usual. Off, the footer always keeps its place on the
+   *  department's form. */
+  closingMayDrop?: boolean
   /** Extra sheets appended after the letter — the maintenance letter uses one
    *  for รูปภาพสถานะการทำงานของอุปกรณ์. Sources may be remote URLs; they are
    *  fetched to data URLs at export time and an image that fails to load is
@@ -178,9 +188,18 @@ const PAGE_PAD_BOTTOM = TAGLINE_BOTTOM + LINE_H + 4
 const FOOTER_FROM_EDGE = 20 + 18 + LINE_H * 2
 // …kept exactly there now that the bottom padding is taller.
 const FOOTER_CLEARANCE = FOOTER_FROM_EDGE - PAGE_PAD_BOTTOM
+// A `closingMayDrop` closing block comes down by what the sheet overruns plus
+// this margin, so rounding in the layout engine can't leave it a hair too tall.
+const CLOSING_DROP_MARGIN = 1
 // Room left under ขอแสดงความนับถือ to sign by hand (no printed signer block):
 // the signature plus the (name) and position lines written beneath it.
 const SIGNATURE_SPACE = LINE_H * 5
+// What a `closingMayDrop` letter can still tighten that room to, once its
+// footer is down at the foot of the paper — the letter then stays one sheet
+// (user 2026-10-06: "สุดกระดาษให้เป็นแบบ t1"). The signature goes on the right
+// half and the footer sits on the left, so beside it there is still room for
+// the name and position.
+const MIN_SIGNATURE_SPACE = LINE_H * 2
 // 3cm tall — the ครุฑ size ระเบียบงานสารบรรณ specifies for หนังสือภายนอก.
 const EMBLEM_H = 85
 const EMBLEM_W = Math.round((EMBLEM_H * 420) / 447) // asset is 420×447
@@ -278,6 +297,7 @@ const Tagline: React.FC<{ text?: string }> = ({ text }) =>
 export function LetterDocument({
   emblemDataUrl,
   closingCarried = false,
+  closingDrop = 0,
   onLetterPages,
   ...args
 }: ExportLetterPdfArgs & {
@@ -285,11 +305,17 @@ export function LetterDocument({
   /** The closing block lands past the letter's first sheet — see
    *  `letterDocument`, which finds this out in a first layout pass. */
   closingCarried?: boolean
+  /** pt the closing block gives up to stay on the first sheet
+   *  (`closingMayDrop`): the footer comes down from its place on the form
+   *  first, then the room left to sign tightens. */
+  closingDrop?: number
   /** Layout probe for that first pass: reports how many sheets the letter
    *  page broke into. */
   onLetterPages?: (pages: number) => void
 }) {
   const { refNo, senderAddress, date, fields, labelWidth, paragraphs, closing, signerName, signerPosition, footerLines, tagline } = args
+  const footerDrop = Math.min(closingDrop, FOOTER_CLEARANCE)
+  const signingRoom = SIGNATURE_SPACE - (closingDrop - footerDrop)
 
   return (
     <Document>
@@ -345,16 +371,25 @@ export function LetterDocument({
         {/* wrap={false}: from ขอแสดงความนับถือ down, never split across a
             page — a long letter takes the whole block to its next sheet.
             On the first sheet the footer keeps its place at the foot (the
-            department's form); carried to a later sheet, the set comes down
-            as it is instead of stretching down the page (user 2026-10-05). */}
+            department's form) — or, by closingDrop, comes down towards the
+            tagline and then closes in on ขอแสดงความนับถือ, when that is all
+            it takes to stay there; carried to a later sheet, the set comes
+            down as it is instead of stretching down the page (user
+            2026-10-05). */}
         <View wrap={false} style={closingCarried ? undefined : s.closingBlock}>
           <Text style={s.closing}>{`${closing} `}</Text>
           {signerName ? <Text style={s.signName}>{`${signerName} `}</Text> : null}
           {signerPosition ? <Text style={s.signPosition}>{`${signerPosition} `}</Text> : null}
-          {signerName ? null : <View style={s.signatureSpace} />}
+          {signerName ? null : <View style={signingRoom < SIGNATURE_SPACE ? { height: signingRoom } : s.signatureSpace} />}
 
           {footerLines?.length ? (
-            <View style={closingCarried ? s.footerBlockCarried : s.footerBlock}>
+            <View
+              style={closingCarried
+                ? s.footerBlockCarried
+                : footerDrop > 0
+                  ? { ...s.footerBlock, marginBottom: FOOTER_CLEARANCE - footerDrop }
+                  : s.footerBlock}
+            >
               {footerLines.map((line, i) => (
                 <Text key={i} style={s.footerLine}>{`${line} `}</Text>
               ))}
@@ -520,6 +555,7 @@ function letterWrapper(fk: MeasureFont, fkBold: MeasureFont | null) {
         runs,
         // The paragraph's last line is hand-ended too — ragged, like Word.
         letterSpacing: handEnded[li] ? 0 : justifySpacing(runs, avail(li)),
+        room: Math.max(0, avail(li) - JUSTIFY_SAFETY_PT - measureRuns(runs)),
       })),
     }
   }
@@ -587,13 +623,14 @@ async function loadAttachments(
   )
 }
 
-/** Whether the closing block (ขอแสดงความนับถือ → room to sign → footer) still
- *  fits on the letter's first sheet. Everything on that sheet is a fixed height
- *  or one line-height per pre-wrapped line, so it sums without a render — cheap
- *  enough to run as the officer types (the reason field's live budget).
- *  `prepared` = wrapLetterArgs output. letterPdf.test.ts locks the sum against
- *  @react-pdf's own pagination. */
-export function closingFitsFirstPage(prepared: ExportLetterPdfArgs, withEmblem = true): boolean {
+/** How far the letter's first sheet runs past its foot, in pt, with the closing
+ *  block (ขอแสดงความนับถือ → room to sign → footer) where the department's form
+ *  puts it: ≤ 0 means it fits, with that much to spare. Everything on that sheet
+ *  is a fixed height or one line-height per pre-wrapped line, so it sums without
+ *  a render — cheap enough to run as the officer types (the reason field's live
+ *  budget). `prepared` = wrapLetterArgs output. letterPdf.test.ts locks the sum
+ *  against @react-pdf's own pagination. */
+export function firstPageOverflow(prepared: ExportLetterPdfArgs, withEmblem = true): number {
   const lines = (text: string) => text.split('\n').length
   const emblem = withEmblem ? EMBLEM_H + EMBLEM_GAP : 0
   const head = Math.max(lines(prepared.refNo), prepared.senderAddress.reduce((n, l) => n + lines(l), 0)) * LINE_H
@@ -607,26 +644,113 @@ export function closingFitsFirstPage(prepared: ExportLetterPdfArgs, withEmblem =
     + (prepared.signerName ? SIGN_NAME_GAP + LINE_H : SIGNATURE_SPACE)
     + (prepared.signerPosition ? LINE_H : 0)
     + footer
-  return PAGE_PAD_TOP + emblem + head + date + fields + body + closing <= PAGE_H - PAGE_PAD_BOTTOM
+  return PAGE_PAD_TOP + emblem + head + date + fields + body + closing - (PAGE_H - PAGE_PAD_BOTTOM)
 }
 
-/** The letter, ready to render. Laid out twice: where the closing block lands
- *  decides how it is drawn (footer at the foot of the first sheet, or a
- *  compact set on a later one), and only a layout can tell — so a first pass
- *  renders the letter page alone, with no attachment images, just to count
- *  its sheets. The block is the page's last element, so more than one sheet
- *  means it was carried. Both drawings are the same height, so the real pass
- *  breaks the pages exactly where the probe did. */
+/** How far a first sheet that overruns by `overflow` pt has to drop its closing
+ *  block to keep it — more than maxClosingDrop means it can't. */
+const closingDropFor = (overflow: number) => Math.max(overflow, 0) + CLOSING_DROP_MARGIN
+
+/** The most a `closingMayDrop` closing block can give up: the footer's
+ *  clearance — www.drr.go.th then sits just above the tagline (user
+ *  2026-10-06) — and then the signing room down to MIN_SIGNATURE_SPACE. A
+ *  printed signer block has no signing room to give. */
+const maxClosingDrop = (prepared: ExportLetterPdfArgs) =>
+  FOOTER_CLEARANCE + (prepared.signerName ? 0 : SIGNATURE_SPACE - MIN_SIGNATURE_SPACE)
+
+/** How much taller (pt) the body can still grow before the closing block is
+ *  carried off the first sheet — with `closingMayDrop`, counting what the
+ *  block may give up. Negative = it is carried already. */
+export function firstPageRoom(prepared: ExportLetterPdfArgs, withEmblem = true): number {
+  const mayGiveUp = prepared.closingMayDrop ? maxClosingDrop(prepared) - CLOSING_DROP_MARGIN : 0
+  return mayGiveUp - firstPageOverflow(prepared, withEmblem)
+}
+
+/** Whether the closing block still fits on the letter's first sheet — with
+ *  `closingMayDrop`, counting what it may give up. */
+export function closingFitsFirstPage(prepared: ExportLetterPdfArgs, withEmblem = true): boolean {
+  return firstPageRoom(prepared, withEmblem) >= 0
+}
+
+/** How much more text, in pt of body line, fits into paragraph `index` at
+ *  offset `at` of its text (default: its end) before the closing block is
+ *  carried: the whole lines still free on the first sheet, plus what is left
+ *  at the end of every line from the one holding `at` on — the text after
+ *  `at` flows on through those. Counting only the last line's end, the room
+ *  seemed not to shrink as text went in until a whole word wrapped. Each of
+ *  those lines keeps `lineEndWaste` back: a line of prose never fills to the
+ *  margin. Negative = carried already. */
+export function paragraphRoom(
+  prepared: ExportLetterPdfArgs,
+  index: number,
+  { at = Infinity, lineEndWaste = 0 }: { at?: number; lineEndWaste?: number } = {},
+  withEmblem = true,
+): number {
+  const room = firstPageRoom(prepared, withEmblem)
+  if (room < 0) return room
+  const { text = '', lines = [] } = prepared.paragraphs[index] ?? {}
+  // Every line is a verbatim slice of the text (see lineRuns), in order.
+  let from = lines.length - 1
+  let cursor = 0
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li].runs.map((r) => r.text).join('')
+    const start = line ? text.indexOf(line, cursor) : cursor
+    if (start > at) break
+    from = li
+    if (start >= 0) cursor = start + line.length
+  }
+  const flowsThrough = lines.slice(Math.max(from, 0))
+  const lineEnds = flowsThrough.reduce((sum, line) => sum + (line.room ?? 0), 0)
+  return Math.max(0, Math.floor(room / LINE_H) * CONTENT_W + lineEnds - flowsThrough.length * lineEndWaste)
+}
+
+/** How prose like `sample` fills the letter body, for turning room in pt into
+ *  characters: the width one character takes on average, what is left at line
+ *  ends included (`perChar`), and what a full line leaves at its end on
+ *  average (`lineEndWaste`). null = the fonts could not load. */
+export async function bodyProseMetrics(sample: string): Promise<{ perChar: number; lineEndWaste: number } | null> {
+  const [fk, fkBold] = await loadLetterFonts()
+  if (!fk || !sample) return null
+  const lines = letterWrapper(fk, fkBold).wrapParagraph({ text: sample, indent: false }).lines ?? []
+  if (lines.length < 2) return null
+  const full = lines.slice(0, -1)
+  return {
+    perChar: (lines.length * CONTENT_W - (lines.at(-1)?.room ?? 0)) / sample.length,
+    lineEndWaste: full.reduce((sum, line) => sum + (line.room ?? 0), 0) / full.length,
+  }
+}
+
+/** The letter, ready to render. Laid out up to three times: where the closing
+ *  block lands decides how it is drawn — footer at the foot of the first
+ *  sheet; that same block come down, and tightened, just enough to stay on it
+ *  (`closingMayDrop`); or a compact set on a later sheet — and only a layout
+ *  can tell. So the probe passes render the letter page alone, with no
+ *  attachment images, just to count its sheets: the block is the page's last
+ *  element, so more than one sheet means it was carried. The final drawing is
+ *  as tall as the probe it follows, so it breaks the pages exactly where that
+ *  probe did. */
 export async function letterDocument(
   prepared: ExportLetterPdfArgs,
   emblemDataUrl: string | null,
   attachments?: LetterAttachment[],
 ): Promise<React.JSX.Element> {
-  let letterPages = 1
-  await pdf(
-    <LetterDocument {...prepared} attachments={undefined} emblemDataUrl={emblemDataUrl} onLetterPages={(n) => { letterPages = n }} />,
-  ).toBlob()
-  return <LetterDocument {...prepared} attachments={attachments} emblemDataUrl={emblemDataUrl} closingCarried={letterPages > 1} />
+  const letterPages = async (closingDrop?: number) => {
+    let pages = 1
+    await pdf(
+      <LetterDocument {...prepared} attachments={undefined} emblemDataUrl={emblemDataUrl} closingDrop={closingDrop} onLetterPages={(n) => { pages = n }} />,
+    ).toBlob()
+    return pages
+  }
+  const drawn = (layout: { closingCarried?: boolean; closingDrop?: number }) =>
+    <LetterDocument {...prepared} attachments={attachments} emblemDataUrl={emblemDataUrl} {...layout} />
+
+  if ((await letterPages()) === 1) return drawn({})
+  if (prepared.closingMayDrop) {
+    const drop = closingDropFor(firstPageOverflow(prepared, !!emblemDataUrl))
+    if (drop <= maxClosingDrop(prepared) && (await letterPages(drop)) === 1) return drawn({ closingDrop: drop })
+  }
+  // The carried drawing is as tall as the first probe's (see footerBlockCarried).
+  return drawn({ closingCarried: true })
 }
 
 /** Render the official letter to a PDF blob — for an on-screen preview. */
