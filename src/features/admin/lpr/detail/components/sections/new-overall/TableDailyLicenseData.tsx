@@ -21,8 +21,20 @@ const TableDailyLicenseData: React.FC<Props> = (props) => {
     enabled: !!solutionId,
   })
 
-  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
-  if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+  if (isLoading) {
+    return (
+      <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
+        <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
+      </div>
+    )
+  }
+  if (isError) {
+    return (
+      <div className='p-5 bg-(--dark-black) rounded-2xl h-full'>
+        <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
+      </div>
+    )
+  }
 
   const columns: TableProps<LPRPlateData>['columns'] = [
     {

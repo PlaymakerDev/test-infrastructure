@@ -25,8 +25,13 @@ const ContentCard: React.FC<Props> = (props) => {
   if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
   if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
-  const topProvincePercentage = (Number(data?.data?.top_province?.count) / Number(data?.data?.total)) * 100
-  const peakHourPercentage = (Number(data?.data?.peak_hour?.count) / Number(data?.data?.total)) * 100
+  // count/total can be undefined (→ NaN) or total can be 0 (→ NaN / Infinity) — show '-' instead of "NaN%"
+  const toPercentLabel = (count: unknown, total: unknown) => {
+    const pct = (Number(count) / Number(total)) * 100
+    return Number.isFinite(pct) ? `${pct.toFixed(1)}%` : '-'
+  }
+  const topProvincePercentage = toPercentLabel(data?.data?.top_province?.count, data?.data?.total)
+  const peakHourPercentage = toPercentLabel(data?.data?.peak_hour?.count, data?.data?.total)
 
   // average over the hourly buckets the backend returned for today
   const hourlyToday = data?.data?.hourly_today ?? []
@@ -49,7 +54,7 @@ const ContentCard: React.FC<Props> = (props) => {
             <IconLPR size={28} />
             <h3>ตรวจจับป้ายทะเบียนประจำวัน</h3>
           </div>
-          <p className='text-white/50'><span className='text-white fs-22 font-bold'>{fmtNumber(Number(data?.data?.total)) || 0}</span> คัน</p>
+          <p className='text-white/50'><span className='text-white fs-22 font-bold'>{fmtNumber(Number(data?.data?.total))}</span> คัน</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={12} lg={24} xl={24} xxl={24} xxxl={24}>
@@ -68,7 +73,7 @@ const ContentCard: React.FC<Props> = (props) => {
             <h3 className='text-[#00FF00]'>ป้ายทะเบียนจังหวัดที่พบสูงสุด</h3>
           </div>
           <p className='text-[#00FF00] fs-22 font-bold'>{data?.data?.top_province?.province || '-'}</p>
-          <p className='text-white/50 fs-12'>{fmtNumber(Number(data?.data?.top_province?.count)) || 0} คัน ({topProvincePercentage.toFixed(1)}%)</p>
+          <p className='text-white/50 fs-12'>{fmtNumber(Number(data?.data?.top_province?.count))} คัน ({topProvincePercentage})</p>
         </div>
       </Col>
       <Col xs={24} sm={12} md={12} lg={24} xl={24} xxl={24} xxxl={24}>
@@ -78,7 +83,7 @@ const ContentCard: React.FC<Props> = (props) => {
             <h3 className='text-[#00FFAA]'>ช่วงเวลาตรวจจับป้ายทะเบียนสูงสุด</h3>
           </div>
           <p className='text-white fs-22 font-bold'>{peakHourLabel}</p>
-          <p className='text-white/50 fs-12'>({peakHourPercentage.toFixed(1)}%)</p>
+          <p className='text-white/50 fs-12'>({peakHourPercentage})</p>
         </div>
       </Col>
     </Row>
