@@ -25,6 +25,7 @@ import { CCTVModal } from '@/components/modal'
 import type { CameraSolutionGroup, CaseDetail } from '@/types/maintenance'
 import MaintenanceMinimumFontSize from '../../components/MaintenanceMinimumFontSize'
 import { useUserKind } from '@/utils/hooks/useUserKind'
+import { useHydrated } from '@/hooks/useHydrated'
 import { isRealTimestamp, offlineDaysSince } from '../../data/offlineDays'
 import { deviceTypeText, deviceTypeThaiText } from '../../data/deviceTypes'
 import { SHEET_WARNING_SECONDS, waitForDeviceStatusImages } from '../data/deviceStatusSheet'
@@ -233,15 +234,15 @@ const CaseContent: React.FC<Props> = ({ id }) => {
           onWaiting: () => { hide = message.loading('กำลังเตรียมหนังสือพร้อมรูปภาพสถานะการทำงานของอุปกรณ์...', 0) },
         },
       )
-      const [{ exportLetterPdf }, { buildRepairLetter }, contractorRows] = await Promise.all([
+      const [{ exportLetterPdf }, { printableRepairLetter }, contractorRows] = await Promise.all([
         import('@/utils/export/letterPdf'),
-        import('../data/repairLetter'),
+        import('../data/reasonBudget'),
         contractorsQuery.data ?? contractorsQuery.refetch().then((result) => result.data),
       ])
       // Every letter field is stored on the case since the 2026-09-18 backend
       // release, so re-issuing the letter reproduces what the officer filed —
       // including the device-status sheet (theirs, or the one the backend built).
-      await exportLetterPdf(buildRepairLetter({
+      await exportLetterPdf(await printableRepairLetter({
         caseNo: id,
         project: { ...project, contractor: letterContractorName(contractorRows, projectDetail?.contractor_id, project.contractor) },
         letterNo: caseData?.document_no,
@@ -418,6 +419,7 @@ const CaseContent: React.FC<Props> = ({ id }) => {
 const CaseCreateContent: React.FC = () => {
   const searchParams = useSearchParams()
   const { userKind, isLoading: userKindLoading } = useUserKind()
+  const hydrated = useHydrated()
   const cameraIds = (searchParams.get('camera_ids') ?? '')
     .split(',')
     .map((v) => v.trim())
@@ -436,7 +438,9 @@ const CaseCreateContent: React.FC = () => {
   // เปิด Case buttons from them, and this keeps the officer's letter form out of
   // reach of a typed-in URL too (found 2026-10-05). Wait for the account kind
   // first — it defaults to admin while loading, which would flash the form.
-  if (userKindLoading) {
+  // And for hydration: the navbar's bell often has the kind cached by the time
+  // this hydrates, and the form then mismatched the server's spinner.
+  if (!hydrated || userKindLoading) {
     return (
       <div className='main-screen flex items-center justify-center h-64'>
         <Spin size='large' />
