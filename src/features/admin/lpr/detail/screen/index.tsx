@@ -32,7 +32,7 @@ interface Props {
 }
 
 const LPRDetailContent = () => {
-  const { currentTab, setCurrentTab } = useLPRDetailContext()
+  const { currentTab } = useLPRDetailContext()
 
   const content = useMemo(() => {
     switch (currentTab) {
@@ -43,9 +43,10 @@ const LPRDetailContent = () => {
         // return <DetectionSection />
         return <NewDetectionSection />
       default:
-        return <OverallSection onShowAllDetections={() => setCurrentTab('DETECTIONS')} />
+        // return <OverallSection onShowAllDetections={() => setCurrentTab('DETECTIONS')} />
+        return <NewOverallSection />
     }
-  }, [currentTab, setCurrentTab])
+  }, [currentTab])
 
   return (
     <div className='main-screen'>

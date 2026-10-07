@@ -276,3 +276,21 @@ export interface Hourly {
   hour: number
   count: number
 }
+
+// SOLUTION CAMERA
+export interface APIResponseSolutionCamera {
+  solution_id: number
+  cameras: SolutionCamera[]
+}
+
+export interface SolutionCamera {
+  camera_id: string
+  camera_name: string
+  ip_address: string
+  hls_url: string
+  sta: string
+  lat: number
+  lng: number
+  is_online: boolean
+  crossing_index: string
+}

@@ -67,7 +67,7 @@ const Content: React.FC<ContentProps> = (props) => {
           <p className='text-(--default-blue)'>ชื่อกล้อง : {data?.camera_name || '-'}</p>
         </section>
         <section className='mt-5'>
-          <TableTop5DetectionData />
+          <TableTop5DetectionData data={data} />
         </section>
       </Col>
     </Row>
@@ -102,7 +102,7 @@ const ModalLicenseDetail: React.FC<Props> = (props) => {
         onCancel={handleCloseModal}
         footer={false}
         destroyOnHidden
-        width={1400}
+        width={1600}
       >
         <Content data={data} />
       </Modal>

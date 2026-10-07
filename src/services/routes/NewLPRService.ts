@@ -15,7 +15,8 @@ import {
   APIResponseLPRPlateList,
   APIResponseLPRStat,
   APIRequestLPRHourlyCount,
-  APIResponseLPRHourlyCount
+  APIResponseLPRHourlyCount,
+  APIResponseSolutionCamera
 } from "@/types/lpr/new-lpr-api"
 import ApiService from "../ApiService"
 
@@ -86,6 +87,13 @@ export const getLPRPlateListAPI = async (solutionId: string | number, params: AP
 export const getLPRStatAPI = async (solutionId: string | number) => {
   return ApiService.fetchData<APIResponseLPRStat>({
     url: `/lpr/solutions/${solutionId}/stats`,
+    method: 'GET',
+  })
+}
+
+export const getLPRSolutionCameraAPI = async (solutionId: string | number) => {
+  return ApiService.fetchData<APIResponseSolutionCamera>({
+    url: `/lpr/solutions/${solutionId}/cameras`,
     method: 'GET',
   })
 }

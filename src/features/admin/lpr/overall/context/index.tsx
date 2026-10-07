@@ -1,5 +1,7 @@
 "use client"
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useAppDispatch, useAppSelector } from '@/stores/hooks'
+import { resetLPRLicenseSearch } from '@/stores/reducers/lpr/lprSlice'
 import type { LPRSource } from '@/types/lpr/lpr-api'
 
 // (plate_number, plate_province) is the composite identity of a plate — the
@@ -17,6 +19,10 @@ export interface SelectedPlate {
 export interface ContextProps {
   selected: SelectedPlate | null
   setSelected: React.Dispatch<React.SetStateAction<SelectedPlate | null>>
+  /** Text the plate-search box starts with — '' unless the page was opened from
+   *  the detail page's "ดูประวัติการเดินทาง". Fixed at mount so every
+   *  SearchSection (side panel + drawer) seeds from the same value. */
+  initialSearch: string
 }
 
 export interface PageProviderProps {
@@ -27,12 +33,24 @@ export const OverallContext = createContext<ContextProps | null>(null)
 
 export const OverallProvider = (props: PageProviderProps) => {
   const { children } = props
+  const dispatch = useAppDispatch()
   const [selected, setSelected] = useState<SelectedPlate | null>(null)
+
+  // One-shot hand-off from the detail page (lprSlice): capture it into state
+  // for this mount, then reset the store so a later visit — back/forward, the
+  // sidebar — starts with an empty search.
+  const handedOffSearch = useAppSelector((state) => state.lpr.license_search.q)
+  const [initialSearch] = useState(handedOffSearch)
+  useEffect(() => {
+    if (handedOffSearch) dispatch(resetLPRLicenseSearch())
+  }, [handedOffSearch, dispatch])
+
   return (
     <OverallContext.Provider
       value={{
         selected,
         setSelected,
+        initialSearch,
       }}
     >
       {children}

@@ -23,11 +23,14 @@ export const getConfidenceColor = (confidence: number): string => {
 }
 
 /** API value → a usable percent, or null when it's missing/blank/non-numeric
- *  (callers show '-'). Number('') is 0, so blanks are rejected before the cast. */
+ *  (callers show '-'). The API sends `confidence` as a 0–1 fraction (0.95), so
+ *  it is ×100 here — the single place every display (table, card, modals) and
+ *  the export read it through. Number('') is 0, so blanks are rejected before
+ *  the cast. */
 export const parseConfidence = (value: unknown): number | null => {
   if (value == null || (typeof value === 'string' && value.trim() === '')) return null
   const n = Number(value)
-  return Number.isNaN(n) ? null : n
+  return Number.isNaN(n) ? null : n * 100
 }
 
 const TableDetectionData: React.FC<Props> = (props) => {

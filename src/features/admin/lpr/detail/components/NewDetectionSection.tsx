@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { FormSearchDetection, GridDetectionData, TableDetectionData } from '../components'
 import type { DetectionSearchParams } from './sections/detection/FormSearchDetection'
+import { parseConfidence } from './sections/detection/TableDetectionData'
 import { getLPRPlateListAPI } from '@/services/routes/NewLPRService'
 import { useLPRDetailContext } from '../context'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
@@ -36,7 +37,11 @@ const EXPORT_COLUMNS: {
     header: 'Confidence',
     width: 12,
     widthPct: 9,
-    value: (r) => (r.confidence == null || Number.isNaN(Number(r.confidence)) ? '-' : `${Number(r.confidence).toFixed(1)}%`),
+    // Same ×100 + blank handling as the on-screen column (parseConfidence).
+    value: (r) => {
+      const confidence = parseConfidence(r.confidence)
+      return confidence == null ? '-' : `${confidence.toFixed(1)}%`
+    },
   },
   { header: 'ชื่อกล้อง', width: 42, widthPct: 20, value: (r) => r.camera_name || '-' },
   { header: 'IP Address', width: 16, widthPct: 11, value: (r) => r.camera_ip || '-' },

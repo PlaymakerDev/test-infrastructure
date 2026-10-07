@@ -51,10 +51,12 @@ const toSelected = (p: LPRPlateListItem): SelectedPlate => ({
 
 const SearchSection: React.FC<Props> = (props) => {
   const { openFromDrawer } = props
-  const { selected, setSelected } = useOverallContext()
+  const { selected, setSelected, initialSearch } = useOverallContext()
 
-  const [search, setSearch] = useState('')
-  const [q, setQ] = useState('')
+  // Seeded with the plate handed over from the detail page ('' otherwise) —
+  // `search` is what the box shows, `q` is what the query uses.
+  const [search, setSearch] = useState(initialSearch)
+  const [q, setQ] = useState(initialSearch)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const onSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

@@ -11,6 +11,7 @@ import { useDeptId } from '@/hooks/useDeptId'
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 import type { ListData, SubDptSolution } from '@/types/lpr/new-lpr-api'
 import { groupLPRList, type LPRTableRow } from '../../../data/groupLPRList'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
   data?: ListData[]
@@ -172,7 +173,13 @@ const TableLPRData: React.FC<Props> = ({ data, isLoading, isError }) => {
         key: 'total_detect_license',
         width: 130,
         onCell: rowCell,
-        render: (_, row) => (row.kind === 'solution' ? <span className='text-white/30'>-</span> : null),
+        render: (_, row) =>
+          row.kind === 'solution' ? (
+            <span className='tabular-nums'>
+              {fmtNumber(Number(row.item.plates.today))} คัน
+            </span>
+          ) : null
+        ,
       },
       {
         title: 'สถานะ',

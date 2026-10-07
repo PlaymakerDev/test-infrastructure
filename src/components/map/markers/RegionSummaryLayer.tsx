@@ -4,7 +4,6 @@ import { SYSTEMS, type SystemType } from '@/features/admin/dashboard/data/system
 import { BUREAU_BY_STCH } from '@/features/admin/dashboard/data/bureaus'
 import { SYSTEM_ICONS } from '../hooks/useDeviceIcon'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
-import { useLPRPoints } from '@/hooks/queries/lpr'
 import { useDepartments } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useBureauFeatures, isPointInBureau, findBureauAt } from '../hooks/useBureauFeatures'
@@ -22,7 +21,8 @@ export const REGION_DEVICE_MIN_ZOOM = DEPT_HIDE_ZOOM
 
 // solution_type_id in /manage/solution/{dept}/position — keyed by the FE
 // SystemType (matches SOLUTION_TYPE in types/manage/solution-api.ts). LPR is
-// absent from /position; its points come from GET /lpr/points instead.
+// absent from /position; its map passes its own overview points via the
+// `points` prop instead.
 const SOLUTION_TYPE_ID: Partial<Record<SystemType, number>> = {
   CCTV: 1,
   Counting: 2,
@@ -76,9 +76,23 @@ const addTo = (m: Record<number, Acc>, key: number, lng: number, lat: number, tr
 const centroidOf = (a: Acc): [number, number] =>
   a.tCount > 0 ? [a.tSumLng / a.tCount, a.tSumLat / a.tCount] : [a.sumLng / a.count, a.sumLat / a.count]
 
+export interface RegionSummaryPoint {
+  lng: number
+  lat: number
+  /** Owning ขทช. id. Optional — omit when the caller's payload doesn't carry it. */
+  deptId?: number
+}
+
 interface Props {
   /** Menu system — picks data slice, bubble color, and glyph. */
   type: SystemType
+  /** Caller-supplied points — replace the type's default /position source so
+   *  the bubbles count exactly what the caller's own pin layer plots. Required
+   *  for LPR (no /position solution type). `[]` (still loading) renders nothing
+   *  rather than falling back to /position. When NO point carries a `deptId`
+   *  the ขทช. tier is skipped — สทช. bubbles stay up to the pin zoom instead of
+   *  lumping everything under "ส่วนกลาง". */
+  points?: RegionSummaryPoint[]
 }
 
 /**
@@ -87,17 +101,16 @@ interface Props {
  * layer takes over (give it `minZoom={REGION_DEVICE_MIN_ZOOM}`). Bubbles wear
  * the menu's own color + glyph (NOT the dashboard's yellow) with the org name
  * pinned underneath — per 2026-08-05 request. Counts come from the same
- * /position endpoint the dashboard aggregates (LPR: /lpr/points), so the
- * grouping matches the dashboard's and scope=all vs own is handled by the
- * shared hooks. Must render inside a `BaseMap`.
+ * /position endpoint the dashboard aggregates (or the caller's own `points`,
+ * e.g. LPR's overview), so the grouping matches the dashboard's and
+ * scope=all vs own is handled by the shared hooks. Must render inside a
+ * `BaseMap`.
  */
-const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
+const RegionSummaryLayer: React.FC<Props> = ({ type, points: pointsProp }) => {
   const { map } = useMap()
   const deptId = useDeptId()
-  const isLpr = type === 'LPR'
-  // Both hooks are cache-shared with the dashboard; the unused one is disabled.
-  const { data: position } = useDashboardPosition(isLpr ? null : deptId)
-  const { data: lprPoints } = useLPRPoints(false)
+  // Cache-shared with the dashboard; disabled when the caller supplies points.
+  const { data: position } = useDashboardPosition(pointsProp ? null : deptId)
   const { data: departments } = useDepartments()
   const bureauFeatures = useBureauFeatures()
 
@@ -109,10 +122,8 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
 
   const { stchSummaries, deptSummaries } = useMemo(() => {
     const typeId = SOLUTION_TYPE_ID[type]
-    const points: { lng: number; lat: number; stch: number; deptId: number }[] = isLpr
-      ? (lprPoints ?? [])
-        .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat) && !(p.lng === 0 && p.lat === 0))
-        .map((p) => ({ lng: p.lng, lat: p.lat, stch: 0, deptId: p.department_id ?? 0 }))
+    const points: { lng: number; lat: number; stch: number; deptId: number }[] = pointsProp
+      ? pointsProp.map((p) => ({ lng: p.lng, lat: p.lat, stch: 0, deptId: p.deptId ?? 0 }))
       : (position?.locations ?? [])
         .filter((l) => l.solution.solution_type_id === typeId)
         .filter((l) => Array.isArray(l.geometry_point) && l.geometry_point.length === 2)
@@ -153,12 +164,20 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
     const dept: Record<number, { count: number; centroid: [number, number] }> = {}
     for (const [k, a] of Object.entries(deptAcc)) dept[Number(k)] = { count: a.count, centroid: centroidOf(a) }
     return { stchSummaries: stch, deptSummaries: dept }
-  }, [type, isLpr, position, lprPoints, bureauFeatures])
+  }, [type, pointsProp, position, bureauFeatures])
+
+  // Caller-supplied points without any deptId can't be grouped by ขทช. — the
+  // ขทช. tier would be one mislabelled "ส่วนกลาง" bubble. Keep สทช. up instead.
+  const hasDeptInfo = !pointsProp || pointsProp.some((p) => p.deptId != null)
 
   // Which tier shows — same ladder as the dashboard, and like it the swap waits
-  // for the camera to stop so a fly-to doesn't mount a tier mid-flight.
-  const showStch = useZoomTierVisible((z) => z < STCH_HIDE_ZOOM, true)
-  const showDept = useZoomTierVisible((z) => z >= STCH_HIDE_ZOOM && z < DEPT_HIDE_ZOOM)
+  // for the camera to stop so a fly-to doesn't mount a tier mid-flight. With no
+  // ขทช. info the สทช. tier stretches up to the pin zoom (`hasDeptInfo` is the
+  // hook's `dep` so the moved cutoff re-evaluates).
+  const stchCutoff = hasDeptInfo ? STCH_HIDE_ZOOM : DEPT_HIDE_ZOOM
+  const showStch = useZoomTierVisible((z) => z < stchCutoff, true, stchCutoff)
+  const deptInZoom = useZoomTierVisible((z) => z >= STCH_HIDE_ZOOM && z < DEPT_HIDE_ZOOM)
+  const showDept = hasDeptInfo && deptInZoom
 
   // Mount a chunk per frame rather than a whole tier in one commit.
   const stchEntries = useMemo(
@@ -232,7 +251,9 @@ const RegionSummaryLayer: React.FC<Props> = ({ type }) => {
           <HTMLMarker
             key={`stch-${stch}`}
             lngLat={info.centroid}
-            onClick={() => map?.flyTo({ center: info.centroid, zoom: 7.5, duration: 1200 })}
+            // Without a ขทช. tier there is no bubble to land on at 7.5 — go
+            // straight to the pin zoom.
+            onClick={() => map?.flyTo({ center: info.centroid, zoom: hasDeptInfo ? 7.5 : REGION_DEVICE_MIN_ZOOM + 0.5, duration: 1200 })}
           >
             {bubble(info.count, stchShortLabel(stch), 48)}
           </HTMLMarker>

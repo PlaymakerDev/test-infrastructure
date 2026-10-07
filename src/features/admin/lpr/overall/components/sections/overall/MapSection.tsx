@@ -184,7 +184,7 @@ const MapSection: React.FC<Props> = ({ deptId: deptIdProp }) => {
         edgeFade={{ all: 10 }}
       >
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-        <RegionSummaryLayer type='LPR' />
+        <RegionSummaryLayer type='LPR' points={regionPoints} />
         <LprMarkerLayer
           plotted={plotted}
           deptId={deptId}

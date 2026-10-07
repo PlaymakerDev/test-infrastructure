@@ -1,31 +1,48 @@
 import { Button, Empty, Table, TableProps } from 'antd'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { TbCar } from 'react-icons/tb';
 import { useLPRDetailContext } from '../../../context';
 import { useQuery } from '@tanstack/react-query';
 import { getLPRPlateAPI } from '@/services/routes/NewLPRService';
 import { LPRPlateData } from '@/types/lpr/new-lpr-api';
 import { useRouter } from 'next/navigation';
+import { useAppDispatch } from '@/stores/hooks';
+import { resetLicenseDetailModalData } from '@/stores/reducers/modal/customModalSlice';
+import { setLPRLicenseSearch } from '@/stores/reducers/lpr/lprSlice';
 
 interface Props {
-
+  data?: LPRPlateData | null
 }
 
 const TableTop5DetectionData: React.FC<Props> = (props) => {
-  const { } = props
+  const { data: plateData } = props
   const { solutionId, departmentId } = useLPRDetailContext()
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
-  // → overall page, plate-search tab, whole department scope. `departmentId` is
-  // '' when the detail page was opened without ?dept_id — omit it then so the
-  // overall page falls back to its own default instead of reading `dept_id=`.
-  const handleViewHistory = () => {
+  const handleCloseModal = useCallback(() => {
+    dispatch(resetLicenseDetailModalData())
+  }, [dispatch])
+
+  const plateNumber = plateData?.plate_number?.trim()
+
+  // → overall page, plate-search tab, whole department scope, with the search
+  // box pre-filled with this plate. `departmentId` is '' when the detail page
+  // was opened without ?dept_id — omit it then so the overall page falls back to
+  // its own default instead of reading `dept_id=`.
+  const handleViewHistory = useCallback(() => {
+    // CLOSE MODAL BEFORE NAVIGATING TO HISTORY PAGE
+    handleCloseModal()
+    // The plate rides in the store (silent), not the URL — the overall page
+    // consumes it once at mount. See lprSlice.
+    if (plateNumber) dispatch(setLPRLicenseSearch(plateNumber))
+    // DO THE NAVIGATION AFTER CLOSING THE MODAL
     const params = new URLSearchParams()
     if (departmentId) params.set('dept_id', departmentId)
     params.set('scope', 'all')
     params.set('tab', 'LICENSE')
     router.push(`/admin/lpr?${params.toString()}`)
-  }
+  }, [departmentId, router, handleCloseModal, dispatch, plateNumber])
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['lpr-plate-table-top5', solutionId],

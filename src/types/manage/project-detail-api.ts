@@ -56,7 +56,36 @@ export interface ProjectRoad {
   project_road_id: number
   project_id: number
   road_id: number
+  solution_locations: PrjSolutionLocationData[]
   road: Road
+}
+
+export interface PrjSolutionLocationData {
+  solution_location_id: number
+  project_id: number
+  location_name: string
+  created_at: string
+  created_by: string
+  solutions: PrjSolutionData[]
+}
+
+export interface PrjSolutionData {
+  id: number
+  solution_location_id: number
+  solution_type_id: number
+  wid: number
+  sta: string
+  solution_name: string
+  ip_address: string
+  zt_ip_address: string
+  geometry_point: number[]
+  remarks: string
+  anydesk: string
+  created_at: string
+  created_by: string
+  updated_by: any
+  updated_at: string
+  solution_type: SolutionType
 }
 
 export interface Road {

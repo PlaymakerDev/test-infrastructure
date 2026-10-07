@@ -62,7 +62,7 @@ const TitleSection: React.FC<Props> = () => {
           )
         }
         googleMap={{ coord, keepWhenEmpty: true }}
-        anydesk={{ id: '-' }}
+        anydesk={{ id: projectData?.project_roads?.[0]?.solution_locations?.[0]?.solutions[0]?.anydesk || '-' }}
         warranty={
           projectData
             ? {
