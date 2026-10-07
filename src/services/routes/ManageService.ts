@@ -457,10 +457,18 @@ export const getProjectDeviceStatusExportAPI = (projectId: number) =>
 
 /** `/{prefix}/departments/0/{cameras|overview}/uptime-statistics` for one
  *  contractor, nationwide (dept 0 + scope=all). Each service names its block
- *  differently — see `readUptimeTotals` in settings/contractor-summary. */
-export const getContractorUptimeAPI = (prefix: string, contractorUserId: string) =>
+ *  differently — see `readUptimeTotals` in settings/contractor-summary.
+ *  `isWarranty`: true = in warranty, false = expired, omitted = all — by the
+ *  warranty dates of each device's own project.
+ *  ⚠ The camera-based services (cctv, traffic, lpr, counting, analytic,
+ *  crosswalk, wim) match `contractor_id` against the contractor stamped on
+ *  each camera (`cctv.tbl_camera.contractor_id`), not the project's contractor
+ *  the device-status table filters on, so a ring can count devices outside
+ *  the contractor's projects (2026-10-07: CCTV 277 vs 28 in its 4 projects).
+ *  Reported to the backend. */
+export const getContractorUptimeAPI = (prefix: string, contractorUserId: string, isWarranty?: boolean) =>
   ApiService.fetchData<unknown>({
     url: `/${prefix}/departments/0/${prefix === 'cctv' ? 'cameras' : 'overview'}/uptime-statistics`,
     method: 'GET',
-    params: { scope: 'all', contractor_id: contractorUserId },
+    params: { scope: 'all', contractor_id: contractorUserId, is_warranty: isWarranty },
   })

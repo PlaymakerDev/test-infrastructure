@@ -6,7 +6,7 @@ import { useTunnelCentralList } from '@/hooks/queries/tunnel/useTunnelCentralLis
 import type { ContractorData } from '@/types/manage/contractor-api'
 import type { DeviceTotals } from '@/types/manage/device-status-api'
 import { SUMMARY_SYSTEMS, TUNNEL_SOLUTION_TYPE_ID, type SummarySystem } from '../data/systems'
-import { hasDevices, readUptimeTotals, tunnelTotalsFor } from '../data/deviceStatus'
+import { hasDevices, readUptimeTotals, tunnelTotalsFor, warrantyParam, type WarrantyFilter } from '../data/deviceStatus'
 
 export interface DeviceRing {
   system: SummarySystem
@@ -28,20 +28,23 @@ const fetchContractorProjectIds = async (contractorUserId: string): Promise<numb
 }
 
 /** The rings of "ภาพรวมสถานะการทำงานของอุปกรณ์ทุกโครงการ": each system's
- *  uptime-statistics filtered to the contractor (user_id), nationwide. Only
- *  the systems the contractor has get a ring.
+ *  uptime-statistics filtered to the contractor (user_id), nationwide, under
+ *  the page's ทั้งหมด / ในค้ำ / หมดค้ำ (user 2026-10-07: the rings follow it
+ *  too). Only the systems the contractor has under that filter get a ring.
  *
  *  Tunnel is the exception: its uptime-statistics takes no `contractor_id` and
  *  answers everyone the same nationwide totals, so for a contractor whose
  *  solution_group lists Tunnel it is counted from the tunnel list instead —
  *  the tunnels on that contractor's projects. */
-export const useContractorDeviceRings = (contractor: ContractorData | null | undefined) => {
+export const useContractorDeviceRings = (contractor: ContractorData | null | undefined, warranty: WarrantyFilter) => {
   const userId = contractor?.user_id ?? ''
+  const isWarranty = warrantyParam(warranty)
 
   const uptime = useQueries({
     queries: UPTIME_SYSTEMS.map((system) => ({
-      queryKey: manageKeys.deviceStatus.uptime(userId, system.prefix),
-      queryFn: () => getContractorUptimeAPI(system.prefix, userId).then((r) => readUptimeTotals(system.block, r.data)),
+      queryKey: manageKeys.deviceStatus.uptime(userId, system.prefix, isWarranty),
+      queryFn: () =>
+        getContractorUptimeAPI(system.prefix, userId, isWarranty).then((r) => readUptimeTotals(system.block, r.data)),
       enabled: !!userId,
     })),
   })
@@ -57,7 +60,7 @@ export const useContractorDeviceRings = (contractor: ContractorData | null | und
 
   const rings = useMemo(() => {
     const tunnel = hasTunnel && projectIds.data && tunnelCentral.data
-      ? tunnelTotalsFor(tunnelCentral.data, new Set(projectIds.data))
+      ? tunnelTotalsFor(tunnelCentral.data, new Set(projectIds.data), isWarranty)
       : null
     return SUMMARY_SYSTEMS.flatMap((system): DeviceRing[] => {
       const totals = system.key === 'tunnel'
@@ -65,7 +68,7 @@ export const useContractorDeviceRings = (contractor: ContractorData | null | und
         : uptime[UPTIME_SYSTEMS.indexOf(system)]?.data ?? null
       return hasDevices(totals) ? [{ system, totals }] : []
     })
-  }, [uptime, hasTunnel, projectIds.data, tunnelCentral.data])
+  }, [uptime, hasTunnel, projectIds.data, tunnelCentral.data, isWarranty])
 
   const isLoading =
     !contractor ||

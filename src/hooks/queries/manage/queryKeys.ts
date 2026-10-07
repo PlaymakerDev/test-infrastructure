@@ -114,9 +114,10 @@ export const manageKeys = {
     projectIds: (contractorUserId: string) =>
       [...manageKeys.deviceStatus.all, 'project-ids', contractorUserId] as const,
     detail: (projectId: number) => [...manageKeys.deviceStatus.all, 'detail', projectId] as const,
-    /** One system's uptime-statistics filtered to one contractor. */
-    uptime: (contractorUserId: string, prefix: string) =>
-      [...manageKeys.deviceStatus.all, 'uptime', contractorUserId, prefix] as const,
+    /** One system's uptime-statistics filtered to one contractor (and, when
+     *  given, to in- or out-of-warranty solutions). */
+    uptime: (contractorUserId: string, prefix: string, isWarranty?: boolean) =>
+      [...manageKeys.deviceStatus.all, 'uptime', contractorUserId, prefix, isWarranty ?? null] as const,
   },
 
   roads: {

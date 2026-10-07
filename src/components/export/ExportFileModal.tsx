@@ -60,6 +60,12 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
     <ConfigProvider
       theme={{ components: { Modal: { contentBg: '#ffffff', headerBg: '#ffffff', titleColor: '#212121' } } }}
     >
+      {/* destroyOnHidden: a fresh portal at the end of <body> on every open,
+          so the dialog lands above whatever modal it was opened from. Kept,
+          its portal stayed where it was first created — a modal that
+          destroys itself on close (Live Stream, the tracking log modals) and
+          was opened again came back after it in the DOM, at the same z-index,
+          and covered this dialog until a reload (user 2026-10-07). */}
       <Modal
         title={<span style={{ color: '#212121', fontWeight: 700 }}>Export File</span>}
         open={open}
@@ -68,6 +74,7 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
         centered
         width={400}
         className='light-modal'
+        destroyOnHidden
       >
         <div style={{ padding: '8px 0 4px' }}>
           <p style={{ color: '#212121', fontWeight: 500, marginBottom: 6 }}>

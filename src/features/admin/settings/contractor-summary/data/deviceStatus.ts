@@ -34,10 +34,12 @@ export const offlinePercent = (totals: DeviceTotals): number =>
 
 /** Tunnel's uptime-statistics ignores `contractor_id` (it answers the same
  *  nationwide totals for everyone, checked 2026-10-01), so its ring is counted
- *  here instead: the tunnels whose project belongs to the contractor. */
+ *  here instead: the tunnels whose project belongs to the contractor — and,
+ *  under ในค้ำ / หมดค้ำ, whose own `is_warranty` matches. */
 export const tunnelTotalsFor = (
   central: TunnelCentralItem[] | null | undefined,
   projectIds: ReadonlySet<number>,
+  isWarranty?: boolean,
 ): DeviceTotals => {
   let total = 0
   let online = 0
@@ -45,6 +47,7 @@ export const tunnelTotalsFor = (
     for (const dept of bureau.sub_department ?? []) {
       for (const row of dept.solutions ?? []) {
         if (!projectIds.has(row.project?.id)) continue
+        if (isWarranty !== undefined && row.is_warranty !== isWarranty) continue
         total++
         if (row.tunnel?.is_online) online++
       }

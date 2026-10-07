@@ -2,17 +2,26 @@
 import React from 'react'
 import { Empty, Skeleton } from 'antd'
 import type { DeviceRing } from '../hooks/useContractorDeviceRings'
+import type { WarrantyFilter } from '../data/deviceStatus'
 import StatusRing from './StatusRing'
 
 interface Props {
   rings: DeviceRing[]
   isLoading: boolean
   isError: boolean
+  /** The page's ทั้งหมด / ในค้ำ / หมดค้ำ — only for the empty message. */
+  warranty: WarrantyFilter
+}
+
+const EMPTY_MESSAGE: Record<WarrantyFilter, string> = {
+  all: 'ผู้รับจ้างนี้ยังไม่มีอุปกรณ์ในระบบ',
+  in: 'ไม่มีอุปกรณ์ที่อยู่ในระยะค้ำประกัน',
+  out: 'ไม่มีอุปกรณ์ที่หมดระยะค้ำประกัน',
 }
 
 /** ภาพรวมสถานะการทำงานของอุปกรณ์ทุกโครงการ — one ring per system the
  *  contractor has, in the fixed system order. */
-const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError }) => {
+const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError, warranty }) => {
   const renderBody = () => {
     if (isLoading) {
       return (
@@ -24,7 +33,7 @@ const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError }) => {
       )
     }
     if (isError) return <Empty description={<span className='fs-12'>โหลดสถานะอุปกรณ์ไม่สำเร็จ</span>} />
-    if (!rings.length) return <Empty description={<span className='fs-12'>ผู้รับจ้างนี้ยังไม่มีอุปกรณ์ในระบบ</span>} />
+    if (!rings.length) return <Empty description={<span className='fs-12'>{EMPTY_MESSAGE[warranty]}</span>} />
     const large = rings.filter((ring) => ring.system.large)
     const small = rings.filter((ring) => !ring.system.large)
     // One row when the screen is wide enough for all ten (as in the design);
