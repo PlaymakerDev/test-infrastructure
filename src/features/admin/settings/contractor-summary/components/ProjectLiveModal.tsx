@@ -20,31 +20,6 @@ interface Props {
   onClose: () => void
 }
 
-const PRINT_HINT = 'กด Print (Ctrl/Cmd+P) แล้วเลือก "Save as PDF" เพื่อบันทึกเป็น PDF'
-
-/** The ผู้รับจ้าง tab's export opens the backend's HTML report in a new tab
- *  and then tells the user how to save it; this one does the same. The tab is
- *  opened up front, inside the click: the report is built on demand (a few
- *  seconds per 8 online cameras), and a tab opened after that wait would be
- *  blocked as a pop-up. */
-const showWhenLoaded = (win: Window) => {
-  const started = Date.now()
-  const timer = window.setInterval(() => {
-    try {
-      if (win.closed || Date.now() - started > 60_000) {
-        window.clearInterval(timer)
-        return
-      }
-      if (win.location.protocol === 'blob:' && win.document.readyState === 'complete') {
-        window.clearInterval(timer)
-        win.alert(PRINT_HINT)
-      }
-    } catch {
-      // The tab is mid-navigation — try again on the next tick.
-    }
-  }, 200)
-}
-
 /** Figma values (user 2026-10-01): the label stays gray while the border,
  *  icon and number take the status colour; offline is the CCTV pages' red,
  *  the same as an offline camera's name below. */
@@ -120,6 +95,11 @@ const ProjectLiveModal: React.FC<Props> = ({ project, onClose }) => {
 
   const openCamera = (cameraId: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: cameraId }))
 
+  // The backend's HTML report, in a tab of its own with ดาวน์โหลด PDF on top
+  // (see withSavePdfBar), like the ผู้รับจ้าง tab's report. The tab is opened up
+  // front, inside the click: the report is built on demand (a few seconds per
+  // 8 online cameras), and a tab opened after that wait would be blocked as a
+  // pop-up.
   const exportPdf = async () => {
     if (!project) return
     const win = window.open('', '_blank')
@@ -130,10 +110,15 @@ const ProjectLiveModal: React.FC<Props> = ({ project, onClose }) => {
     win.document.title = 'กำลังสร้างรายงาน...'
     win.document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px">กำลังสร้างรายงานสถานะกล้อง กรุณารอสักครู่...</p>'
     try {
-      const response = await getProjectDeviceStatusExportAPI(project.project_id)
-      const url = URL.createObjectURL(new Blob([response.data], { type: 'text/html;charset=utf-8' }))
-      win.location.href = url
-      showWhenLoaded(win)
+      const [response, { withSavePdfBar }] = await Promise.all([
+        getProjectDeviceStatusExportAPI(project.project_id),
+        import('@/utils/export/reportHtml'),
+      ])
+      const report = withSavePdfBar(
+        await response.data.text(),
+        `รายงานสถานะกล้อง_${project.contract_no?.trim() || project.project_id}`,
+      )
+      win.location.href = URL.createObjectURL(new Blob([report], { type: 'text/html;charset=utf-8' }))
     } catch (error) {
       win.close()
       message.error('สร้างรายงานไม่สำเร็จ กรุณาลองอีกครั้ง')

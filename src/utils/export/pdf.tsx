@@ -251,15 +251,19 @@ const styles = StyleSheet.create({
   },
 })
 
+/** "ข้อมูล ณ วันที่ …" under every report's title. */
+const asOfLine = () => `ข้อมูล ณ วันที่ ${dayjs().locale('th').format('D MMMM BBBB เวลา HH:mm น.')}`
+
 export function TableReportDocument<Row>({ title, filterNote, columns, rows, orientation }: ExportTablePdfArgs<Row>) {
   return (
     <Document>
       <Page size='A4' orientation={orientation ?? 'landscape'} style={styles.page}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>
-          ข้อมูล ณ วันที่ {dayjs().locale('th').format('D MMMM BBBB เวลา HH:mm น.')}
-        </Text>
-        {filterNote ? <Text style={styles.filterNote}>เงื่อนไข: {filterNote}</Text> : null}
+        {/* The heading lines take the same trailing space as every cell (see
+            the header row below): without it the title lost its last glyph
+            ("…จำกัด" → "…จำกั", contractor summary, user 2026-10-07). */}
+        <Text style={styles.title}>{`${title} `}</Text>
+        <Text style={styles.subtitle}>{`${asOfLine()} `}</Text>
+        {filterNote ? <Text style={styles.filterNote}>{`เงื่อนไข: ${filterNote} `}</Text> : null}
 
         {/* Header row — `fixed` repeats it on every page. The first column
             keeps its left border via borderLeftWidth override. */}
@@ -316,7 +320,7 @@ export function TableReportDocument<Row>({ title, filterNote, columns, rows, ori
 
         <Text
           style={styles.footer}
-          render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages}`}
+          render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages} `}
           fixed
         />
       </Page>
@@ -704,14 +708,11 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
       {segments.map((seg, si) => (
         <Page key={si} size='A4' orientation={orientation ?? 'portrait'} style={styles.page}>
           {/* Document heading on the first page only — same as before, when a
-              wrapped single Page printed it once at the top. */}
-          {si === 0 ? <Text style={styles.title}>{title}</Text> : null}
-          {si === 0 ? (
-            <Text style={styles.subtitle}>
-              ข้อมูล ณ วันที่ {dayjs().locale('th').format('D MMMM BBBB เวลา HH:mm น.')}
-            </Text>
-          ) : null}
-          {si === 0 && subtitleNote ? <Text style={styles.filterNote}>{subtitleNote}</Text> : null}
+              wrapped single Page printed it once at the top. Trailing spaces:
+              see TableReportDocument's heading. */}
+          {si === 0 ? <Text style={styles.title}>{`${title} `}</Text> : null}
+          {si === 0 ? <Text style={styles.subtitle}>{`${asOfLine()} `}</Text> : null}
+          {si === 0 && subtitleNote ? <Text style={styles.filterNote}>{`${subtitleNote} `}</Text> : null}
 
           {seg.table
             ? renderTableRows(seg.items[0].block as Extract<PdfReportBlock, { type: 'table' }>, seg.items[0].bi)
@@ -721,7 +722,7 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
               continuous across the segment pages. */}
           <Text
             style={styles.footer}
-            render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages}`}
+            render={({ pageNumber, totalPages }) => `หน้า ${pageNumber} / ${totalPages} `}
             fixed
           />
         </Page>

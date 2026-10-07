@@ -47,22 +47,28 @@ describe('which rings show', () => {
 })
 
 describe('Tunnel counted from the contractor’s projects', () => {
-  const tunnel = (projectId: number, online: boolean) => ({
+  const tunnel = (projectId: number, online: boolean, isWarranty = true) => ({
     road: { id: 1, code_name: 'x' },
     project: { id: projectId, project_name: '', budget_year: 2567, contract_no: '' },
     solution: { id: projectId * 10, solution_name: '' },
     tunnel: { camera_count: 0, lighting_count: 0, is_online: online },
-    is_warranty: true,
+    is_warranty: isWarranty,
   })
   const central = [
     { department_id: 0, department_short_name: 'ทช. ส่วนกลาง', sub_department: [{ department_id: 97, department_short_name: '', solutions: [tunnel(181, true)] }] },
-    { department_id: 23, department_short_name: '', sub_department: [{ department_id: 50, department_short_name: '', solutions: [tunnel(7, false), tunnel(8, true)] }] },
+    { department_id: 23, department_short_name: '', sub_department: [{ department_id: 50, department_short_name: '', solutions: [tunnel(7, false, false), tunnel(8, true)] }] },
   ] as unknown as TunnelCentralItem[]
 
   it('counts only that contractor’s tunnels', () => {
     expect(tunnelTotalsFor(central, new Set([181, 7]))).toEqual({ total: 2, online: 1, offline: 1 })
     expect(tunnelTotalsFor(central, new Set([99]))).toEqual({ total: 0, online: 0, offline: 0 })
     expect(tunnelTotalsFor(undefined, new Set([181]))).toEqual({ total: 0, online: 0, offline: 0 })
+  })
+
+  it('follows ในค้ำ / หมดค้ำ by each tunnel’s own warranty', () => {
+    expect(tunnelTotalsFor(central, new Set([181, 7]), true)).toEqual({ total: 1, online: 1, offline: 0 })
+    expect(tunnelTotalsFor(central, new Set([181, 7]), false)).toEqual({ total: 1, online: 0, offline: 1 })
+    expect(tunnelTotalsFor(central, new Set([181, 7]), undefined)).toEqual({ total: 2, online: 1, offline: 1 })
   })
 })
 

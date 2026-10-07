@@ -49,9 +49,10 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
 
   const contractorQuery = useContractorById(id)
   const contractor = contractorQuery.data ?? null
-  const { rings, isLoading: isRingsLoading, isError: isRingsError } = useContractorDeviceRings(contractor)
 
+  // ทั้งหมด / ในค้ำ / หมดค้ำ governs both the rings and the table.
   const [warranty, setWarranty] = useState<WarrantyFilter>('all')
+  const { rings, isLoading: isRingsLoading, isError: isRingsError } = useContractorDeviceRings(contractor, warranty)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const listQuery = useProjectDeviceStatusList({
@@ -117,7 +118,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
         />
       </div>
       <div className='mt-10 px-4 sm:px-8 lg:px-18'>
-        <DeviceStatusRings rings={rings} isLoading={isRingsLoading} isError={isRingsError} />
+        <DeviceStatusRings rings={rings} isLoading={isRingsLoading} isError={isRingsError} warranty={warranty} />
       </div>
       <div className='mt-14 px-4 sm:px-8 lg:px-18 pb-10'>
         <ProjectStatusTable
@@ -137,7 +138,8 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
 
       <ContactInfoDialog open={isInfoOpen} data={contractor} onClose={() => setInfoOpen(false)} />
       {/* ทั้งหมด = every project under the current filter, fetched at export
-          time; หน้าปัจจุบัน = the page on screen. The rings go in either way. */}
+          time; หน้าปัจจุบัน = the page on screen. The rings (under the same
+          filter) go in either way. */}
       <ExportFileModal
         open={isExportOpen}
         onClose={() => setExportOpen(false)}

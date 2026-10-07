@@ -184,38 +184,30 @@ const NewContactSection: React.FC<Props> = (props) => {
   }, [message, showProjectCode])
 
   // The backend only renders a report as HTML — there is no native PDF
-  // output — so "export PDF" opens that HTML in a new tab and lets the user
-  // print it themselves (Ctrl/Cmd+P → Save as PDF) instead of auto-opening
-  // the print preview. This keeps the report as real, selectable, Thai-safe
-  // text (the browser's own print engine renders it) instead of trying to
-  // smuggle raw HTML bytes into a mislabeled .pdf download, which would not
-  // open in any PDF viewer.
+  // output — so "export PDF" opens that HTML in a new tab with ดาวน์โหลด PDF on
+  // top (the browser's own Save as PDF — see withSavePdfBar). This keeps the
+  // report as real, selectable, Thai-safe text (the browser's own print engine
+  // renders it) instead of trying to smuggle raw HTML bytes into a mislabeled
+  // .pdf download, which would not open in any PDF viewer.
   const onExportPDF = useCallback(async () => {
     try {
-      const response = await getExportContractorAPI({ format: 'html' }, 'blob')
-      let report: Blob | string = response.data
+      const [response, { withSavePdfBar }] = await Promise.all([
+        getExportContractorAPI({ format: 'html' }, 'blob'),
+        import('@/utils/export/reportHtml'),
+      ])
+      let report = await response.data.text()
       if (!showProjectCode) {
         const { removeHtmlTableColumnByHeader } = await import('@/utils/export/removeColumn')
-        report = removeHtmlTableColumnByHeader(await response.data.text(), PROJECT_CODE_HEADER)
+        report = removeHtmlTableColumnByHeader(report, PROJECT_CODE_HEADER)
       }
       const url = window.URL.createObjectURL(
-        new Blob([report], { type: 'text/html;charset=utf-8' }),
+        new Blob([withSavePdfBar(report, 'รายงานผู้รับจ้างและโครงการ')], { type: 'text/html;charset=utf-8' }),
       )
 
       const reportWindow = window.open(url, '_blank')
       if (!reportWindow) {
         message.error('เบราว์เซอร์บล็อกการเปิดแท็บใหม่ กรุณาอนุญาต pop-up สำหรับเว็บไซต์นี้')
         window.URL.revokeObjectURL(url)
-        return
-      }
-
-      // Wait for the report to actually finish loading before alerting —
-      // alerting immediately blocks the new tab's own rendering, so the user
-      // would see the alert pop up over a still-blank page. The alert also
-      // runs on reportWindow itself so it appears attached to that tab, not
-      // the settings page underneath.
-      reportWindow.onload = () => {
-        reportWindow.alert('กด Print (Ctrl/Cmd+P) แล้วเลือก "Save as PDF" เพื่อบันทึกเป็น PDF')
       }
     } catch (error) {
       if (error instanceof AxiosError) {
