@@ -96,13 +96,13 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
     {
       title: 'ช่วงเวลาไฟเขียวต่อ 1 รอบสัญญาณจราจร (s)',
       key: 'green',
-      width: 180,
+      width: 250,
       render: (_, row) => phaseCell(row, fmtNumber(row.greenSec, 2)),
     },
     {
       title: 'ช่วงเวลารอไฟเขียวต่อ 1 รอบสัญญาณจราจร (s)',
       key: 'red',
-      width: 180,
+      width: 250,
       render: (_, row) => phaseCell(row, fmtNumber(row.redSec, 2)),
     },
     {
