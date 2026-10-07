@@ -51,7 +51,7 @@ const toSelected = (p: LPRPlateListItem): SelectedPlate => ({
 
 const SearchSection: React.FC<Props> = (props) => {
   const { openFromDrawer } = props
-  const { selected, setSelected, initialSearch } = useOverallContext()
+  const { selected, setSelected, initialSearch, setSearchLoading } = useOverallContext()
 
   // Seeded with the plate handed over from the detail page ('' otherwise) —
   // `search` is what the box shows, `q` is what the query uses.
@@ -78,6 +78,17 @@ const SearchSection: React.FC<Props> = (props) => {
     hasNextPage,
     isFetchingNextPage,
   } = usePlatesInfinite({ q })
+
+  // Report list loading to the selection-driven panels (see `searchLoading`).
+  // Only the side panel reports: it is always mounted with the license tab and
+  // is the list that produces the initial selection — the drawer copy is a
+  // second, lazily-mounted view with its own `q`. The cleanup re-arms the flag
+  // so a remount of the tab starts on a skeleton, not a stale "loaded".
+  useEffect(() => {
+    if (openFromDrawer) return
+    setSearchLoading(isLoading)
+    return () => setSearchLoading(true)
+  }, [openFromDrawer, isLoading, setSearchLoading])
 
   // Keep the raw API rows (they carry `sources`, needed for the WIM-only vs
   // ANPR decision) alongside the display-mapped items.

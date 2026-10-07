@@ -69,6 +69,7 @@ const toGeoJSON = (plotted: PlottedLocation[]): LprFeatureCollection => ({
       total_camera: loc.lpr.total_camera,
       total_online: loc.lpr.total_online,
       total_offline: loc.lpr.total_offline,
+      road_id: loc.road.id,
     },
     geometry: { type: 'Point', coordinates: coord },
   })),
@@ -139,7 +140,7 @@ const LprMarkerLayer: React.FC<MarkerLayerProps> = ({ plotted, deptId, isReady }
           <LPRPopup
             feature={f}
             onNavigate={router.push}
-            detailUrl={(solutionId) => `/admin/lpr/detail/${solutionId}?dept_id=${deptId}&scope=${MAP_SCOPE}`}
+            detailUrl={(solutionId) => `/admin/lpr/detail/${solutionId}?dept_id=${deptId}&road_id=${f?.properties?.road_id}&scope=${MAP_SCOPE}`}
           />
         )}
       />

@@ -2,7 +2,7 @@
 import BaseMap from '@/components/map/BaseMap'
 import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
-import { Button, Empty } from 'antd'
+import { Button, Empty, Skeleton, Spin } from 'antd'
 import React, { useMemo, useState } from 'react'
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand, TbMapPin } from 'react-icons/tb'
 import { DrawerSearchSection, SearchSection, StatSection, TimelineSection } from '../components'
@@ -16,7 +16,7 @@ const formatCoords = (lat: number, lng: number): string => {
 
 const MapSection: React.FC = () => {
   const { selected } = useOverallContext()
-  const { data: detail } = usePlateDetail(selected?.plate_province, selected?.plate_number)
+  const { data: detail, isLoading } = usePlateDetail(selected?.plate_province, selected?.plate_number)
 
   // Every location the vehicle passed (all-time unique points), sorted latest
   // first by the backend. detection_location = [lat, lng] → convert to [lng, lat]
@@ -103,20 +103,56 @@ const MapSection: React.FC = () => {
           {activeCoordsText && <p className='fs-12 text-white/60'>{activeCoordsText}</p>}
         </div>
       )}
+
+      {/* Same loading overlay as the other overall maps — pins arrive with the
+          plate detail, so the map is empty until then. */}
+      {isLoading && (
+        <div className='absolute inset-0 flex items-center justify-center bg-black/40 z-10 rounded-[20px]'>
+          <div className='flex flex-col items-center gap-2'>
+            <div className='w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin' />
+            <span className='text-yellow-400 fs-12'>กำลังโหลด...</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 const LicenseSection: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(true)
-  const { selected } = useOverallContext()
+  const { selected, searchLoading } = useOverallContext()
+
+  // No `selected` yet + the plate list still loading means "waiting for a
+  // selection", not "ไม่พบข้อมูลป้ายทะเบียน" — that Empty is only right once the
+  // list has loaded and produced nothing.
+  const isSearching = !selected && searchLoading
 
   const renderTimelineSection = useMemo(() => {
+    if (isSearching) {
+      return (
+        <div className='lg:px-8'>
+          <div className='flex flex-col justify-center items-center gap-2'>
+            <Spin spinning={isSearching} />
+            <p>กำลังค้นหาข้อมูล...</p>
+          </div>
+        </div>
+      )
+    }
     if (!selected) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
     return <TimelineSection />
-  }, [selected])
+  }, [selected, isSearching])
 
   const renderMapAndStatSection = useMemo(() => {
+    if (isSearching) {
+      return (
+        <div className='w-full xl:w-80 2xl:w-96 xl:shrink-0 xl:overflow-y-auto flex flex-col gap-4 p-4 xl:border-l xl:border-white/5'>
+          <div className='flex flex-col justify-center items-center gap-2'>
+            <Spin spinning={isSearching} />
+            <p>กำลังค้นหาข้อมูล...</p>
+          </div>
+        </div>
+      )
+    }
     if (!selected) return <Empty description='ไม่พบข้อมูลป้ายทะเบียน' />
     return (
       <>
@@ -124,7 +160,7 @@ const LicenseSection: React.FC = () => {
         <StatSection />
       </>
     )
-  }, [selected])
+  }, [selected, isSearching])
 
   return (
     <>

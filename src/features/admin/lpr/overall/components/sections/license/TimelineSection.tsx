@@ -181,11 +181,11 @@ const TimelineSection: React.FC = () => {
               นำออกเอกสาร
             </Button>
           </ConfigProvider>
-          <ConfigProvider theme={{ token: { colorPrimary: '#979797', colorTextLightSolid: '#0A0A0A' } }}>
+          {/* <ConfigProvider theme={{ token: { colorPrimary: '#979797', colorTextLightSolid: '#0A0A0A' } }}>
             <Button type='primary' size='medium' shape='round'>
               ดูเพิ่มเติม
             </Button>
-          </ConfigProvider>
+          </ConfigProvider> */}
         </div>
       </section>
 

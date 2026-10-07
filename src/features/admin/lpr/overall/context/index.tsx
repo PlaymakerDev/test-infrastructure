@@ -1,5 +1,5 @@
 "use client"
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/stores/hooks'
 import { resetLPRLicenseSearch } from '@/stores/reducers/lpr/lprSlice'
 import type { LPRSource } from '@/types/lpr/lpr-api'
@@ -20,9 +20,19 @@ export interface ContextProps {
   selected: SelectedPlate | null
   setSelected: React.Dispatch<React.SetStateAction<SelectedPlate | null>>
   /** Text the plate-search box starts with — '' unless the page was opened from
-   *  the detail page's "ดูประวัติการเดินทาง". Fixed at mount so every
-   *  SearchSection (side panel + drawer) seeds from the same value. */
+   *  the detail page's "ดูประวัติการเดินทาง". Set at mount so every
+   *  SearchSection (side panel + drawer) seeds from the same value, and
+   *  cleared once the user switches tab (`clearInitialSearch`) so it applies
+   *  only to that first visit of the license tab. */
   initialSearch: string
+  clearInitialSearch: () => void
+  /** True while the plate list's first page is loading. The list lives in
+   *  SearchSection (its own `q`) but is what produces `selected`, so the
+   *  selection-driven panels read this to show a skeleton instead of
+   *  "ไม่พบข้อมูลป้ายทะเบียน" before any plate could have been selected. Starts
+   *  true so nothing flashes "not found" on the first paint. */
+  searchLoading: boolean
+  setSearchLoading: (loading: boolean) => void
 }
 
 export interface PageProviderProps {
@@ -40,10 +50,15 @@ export const OverallProvider = (props: PageProviderProps) => {
   // for this mount, then reset the store so a later visit — back/forward, the
   // sidebar — starts with an empty search.
   const handedOffSearch = useAppSelector((state) => state.lpr.license_search.q)
-  const [initialSearch] = useState(handedOffSearch)
+  const [initialSearch, setInitialSearch] = useState(handedOffSearch)
   useEffect(() => {
     if (handedOffSearch) dispatch(resetLPRLicenseSearch())
   }, [handedOffSearch, dispatch])
+  // The license tab unmounts when the user switches away, so without this every
+  // return to it would remount SearchSection and re-apply the same plate.
+  const clearInitialSearch = useCallback(() => setInitialSearch(''), [])
+
+  const [searchLoading, setSearchLoading] = useState(true)
 
   return (
     <OverallContext.Provider
@@ -51,6 +66,9 @@ export const OverallProvider = (props: PageProviderProps) => {
         selected,
         setSelected,
         initialSearch,
+        clearInitialSearch,
+        searchLoading,
+        setSearchLoading,
       }}
     >
       {children}

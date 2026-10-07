@@ -5,7 +5,7 @@ import {
   LPRSection,
   LicenseSection
 } from '../components'
-import { OverallProvider } from '../context'
+import { OverallProvider, useOverallContext } from '../context'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import { useSearchParams } from 'next/navigation'
 
@@ -16,6 +16,14 @@ const LPRContent = () => {
   // detail page's "ดูประวัติการเดินทาง" (TableTop5DetectionData.handleViewHistory)
   // sets it. Anything else opens the overview.
   const [currentTab, setCurrentTab] = useState(() => wantsLicenseTab ? 'LICENSE' : 'LPR')
+  const { clearInitialSearch } = useOverallContext()
+
+  // Leaving the tab drops the plate handed over from the detail page, so it is
+  // applied exactly once — coming back to the license tab starts empty.
+  const handleTabChange = (value: string) => {
+    if (value !== currentTab) clearInitialSearch()
+    setCurrentTab(value)
+  }
 
   // Consume the deep link: drop `tab` from THIS history entry once the tab has
   // been picked. Left in the URL, every later arrival at the entry — router.back()
@@ -48,7 +56,7 @@ const LPRContent = () => {
 
   return (
     <div className='main-screen'>
-      <TitleSection currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <TitleSection currentTab={currentTab} setCurrentTab={handleTabChange} />
       <section className='mt-8'>
         {renderContent}
       </section>
