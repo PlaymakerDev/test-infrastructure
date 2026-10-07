@@ -195,7 +195,13 @@ const FormSearchDetection: React.FC<Props> = (props) => {
                     showSearch
                     options={TYPE_OPTIONS}
                     onChange={(value: FormSearchValues['type']) => {
-                      field.onChange(value)
+                      // SEARCH VALUE
+                      if (value) {
+                        field.onChange(value)
+                      } else {
+                        field.onChange(null)
+                      }
+                      // AUTO SEARCH
                       if (timeoutRef.current) clearTimeout(timeoutRef.current)
                       timeoutRef.current = setTimeout(() => {
                         submitRef.current?.click()

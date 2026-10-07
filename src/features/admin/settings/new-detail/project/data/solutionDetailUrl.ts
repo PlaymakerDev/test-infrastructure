@@ -4,7 +4,7 @@ import { SOLUTION_TYPE_LIGHTING } from './lighting'
 
 /** Where the ไปยังหน้าเว็บ column sends the user when a solution name is clicked.
  *
- *  There is no shared query-param shape across the ten menus — surveyed
+ *  There is no shared query-param shape across the eleven menus — surveyed
  *  2026-09-23, every detail page reads a different set:
  *
  *    CCTV (1)                       dept_id
@@ -18,6 +18,7 @@ import { SOLUTION_TYPE_LIGHTING } from './lighting'
  *    Tunnel (8)                     no page in this app at all
  *    Tracking / WIM (9)             path id is wim.station_id, not solution id
  *    Bridge Lighting (10)           dept_id + project_id + is_warranty
+ *    LPR (11)                       dept_id + road_id + scope=all
  *
  *  So this is a switch, not a template. The two types this page cannot address
  *  come back as `blocked` instead of a link that would open the wrong record.
@@ -37,6 +38,7 @@ export const DETAIL_SOLUTION_TYPE = {
   TUNNEL: 8,
   WIM: 9,
   BRIDGE_LIGHTING: 10,
+  LPR: 11,
 } as const
 
 /** The four menus that share one URL shape: dept_id + project_id + road_id.
@@ -162,6 +164,17 @@ export const buildSolutionDetailUrl = (
     if (projectId) params.set('project_id', projectId)
     if (ctx.isWarranty != null) params.set('is_warranty', String(ctx.isWarranty))
     return { kind: 'ready', href: `/admin/bridge-lighting/detail/${solutionId}?${params}` }
+  }
+
+  if (solutionTypeId === DETAIL_SOLUTION_TYPE.LPR) {
+    // Path id is the solution_id (as in the overall tables' own row click).
+    // `scope=all` is what the LPR overall pages append — the detail screen
+    // reads only dept_id + road_id itself.
+    const params = new URLSearchParams({ dept_id: deptId })
+    const roadId = asId(ctx.roadId)
+    if (roadId) params.set('road_id', roadId)
+    params.set('scope', 'all')
+    return { kind: 'ready', href: `/admin/lpr/detail/${solutionId}?${params}` }
   }
 
   const route = ROAD_SCOPED_ROUTE[solutionTypeId]

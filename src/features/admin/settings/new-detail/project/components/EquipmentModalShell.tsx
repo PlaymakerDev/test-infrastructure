@@ -68,7 +68,7 @@ const EquipmentModalShell: React.FC<Props> = ({
         <div className='flex items-start justify-between gap-4 mb-4'>
           <div className='flex-1 min-w-0'>
             <h2 className='text-(--default-blue) text-2xl font-bold m-0 mb-1.5'>{title}</h2>
-            <p className='text-white/75 fs-12 break-words m-0'>{subtitle}</p>
+            <p className='text-white/75 fs-12 wrap-break-word m-0'>{subtitle}</p>
           </div>
           {headerExtra}
         </div>

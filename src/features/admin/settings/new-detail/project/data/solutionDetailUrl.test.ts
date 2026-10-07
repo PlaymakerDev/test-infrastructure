@@ -61,6 +61,15 @@ describe('settings → solution detail navigation', () => {
     expect(parsed.searchParams.has('road_id')).toBe(false)
   })
 
+  it('gives LPR dept + road + scope=all, keyed on the solution id, and no project_id', () => {
+    const parsed = readyHref(DETAIL_SOLUTION_TYPE.LPR, { ...CTX, deptId: 0, roadId: 7 })
+    expect(parsed.pathname).toBe('/admin/lpr/detail/900')
+    expect(parsed.searchParams.get('dept_id')).toBe('0')
+    expect(parsed.searchParams.get('road_id')).toBe('7')
+    expect(parsed.searchParams.get('scope')).toBe('all')
+    expect(parsed.searchParams.has('project_id')).toBe(false)
+  })
+
   it('blocks the two types this page cannot address correctly', () => {
     expect(buildSolutionDetailUrl(DETAIL_SOLUTION_TYPE.TUNNEL, 900, CTX).kind).toBe('blocked')
     expect(buildSolutionDetailUrl(DETAIL_SOLUTION_TYPE.WIM, 900, CTX).kind).toBe('blocked')

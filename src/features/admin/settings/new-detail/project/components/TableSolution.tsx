@@ -1,11 +1,11 @@
 import { SOLUTION_TYPE } from '@/constants';
-import { getProjectByIDAPI, getSolutionByIDAPI, getSolutionCameraListAPI } from '@/services/routes/ProjectDetailService';
+import { getProjectByIDAPI, getSolutionByIDAPI } from '@/services/routes/ProjectDetailService';
 import { getCrossingCodesAPI } from '@/services/routes/SolutionService';
 import { getLightingOverviewAPI } from '@/services/routes/LightingService';
 import { unwrapLightingResponse } from '@/hooks/queries/lighting/unwrapLightingResponse';
 import type { LightingOverviewResponse } from '@/types/lighting';
 import { useAppDispatch } from '@/stores/hooks';
-import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setDiagramModalOpen, setEquipmentModalOpen, setViewDeviceModalOpen } from '@/stores/reducers/modal/customModalSlice';
+import { setConfirmDeleteSolutionModalOpen, setCreateDeviceModalOpen, setCrossingCodeModalOpen, setDiagramModalOpen, setEquipmentModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { getEquipmentModalType } from '@/features/admin/settings/new-detail/project/data/equipmentModal';
 import {
   buildLightingSolutionHref,
@@ -161,36 +161,18 @@ const TableSolution: React.FC<Props> = (props) => {
    *  select, Traffic Signal, VMS — see getEquipmentModalType) open it through
    *  `equipment_modal`; the modal reads the camera list live itself, so there
    *  is nothing to fetch here. Lighting / Tunnel / Bridge Lighting have no
-   *  camera endpoint and keep the read-only list. */
-  const openEquipmentModal = useCallback(async (record: SolutionList) => {
+   *  camera endpoint, so the click does nothing for them. */
+  const openEquipmentModal = useCallback((record: SolutionList) => {
     const type = getEquipmentModalType(record.solution_type.id)
-    if (type) {
-      dispatch(setEquipmentModalOpen({
-        open: true,
-        type,
-        item: item,
-        record: record,
-        solutions: data ?? [],
-      }))
-      return
-    }
-    try {
-      const response = await getSolutionCameraListAPI(item.solution_location_id)
-      if (response.status === 200) {
-        dispatch(setViewDeviceModalOpen({
-          open: true,
-          data: response.data,
-          type: 'DEVICE'
-        }))
-      }
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        message.error(error.message)
-      } else {
-        console.error(error)
-      }
-    }
-  }, [item, data, message, dispatch])
+    if (!type) return
+    dispatch(setEquipmentModalOpen({
+      open: true,
+      type,
+      item: item,
+      record: record,
+      solutions: data ?? [],
+    }))
+  }, [item, data, dispatch])
 
   /** Opens the ผังวงจร viewer for a Street Light row.
    *
@@ -276,6 +258,7 @@ const TableSolution: React.FC<Props> = (props) => {
       key: 'solution_name',
       width: 200,
       render: (_, record) => {
+        console.log(record)
         if (record.solution_type.solution_name) return SOLUTION_TYPE[String(record.solution_type.id) as keyof typeof SOLUTION_TYPE]
         return '-'
       }

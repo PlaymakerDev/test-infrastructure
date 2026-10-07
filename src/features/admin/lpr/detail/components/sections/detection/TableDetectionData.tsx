@@ -1,4 +1,4 @@
-import { VEHICLE_TYPE_COLOR } from '@/constants';
+import { FALLBACK, VEHICLE_TYPE_COLOR } from '@/constants';
 import { useAppDispatch } from '@/stores/hooks';
 import { setLicenseDetailModalOpen } from '@/stores/reducers/modal/customModalSlice';
 import { APIResponseLPRPlateList, LPRPlateData } from '@/types/lpr/new-lpr-api';
@@ -145,6 +145,7 @@ const TableDetectionData: React.FC<Props> = (props) => {
                 width={'100%'}
                 height={'100%'}
                 className='object-cover object-center'
+                fallback={FALLBACK}
               />
             </figure>
           </div>

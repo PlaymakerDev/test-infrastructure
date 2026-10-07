@@ -16,7 +16,6 @@ import {
   ModalCreateDevice,
   ModalLightingDiagram,
   ModalLiveStream,
-  ModalViewCCTV,
   ModalViewCrossingCode,
   TitleSection,
   TrafficSignalCameraModal,
@@ -82,7 +81,6 @@ const ProjectDetailScreen: React.FC<Props> = (props) => {
     >
       <ProjectDetailContent />
       <ModalCreateDevice />
-      <ModalViewCCTV />
       <EquipmentCCTVListModal />
       <EquipmentSelectModal />
       <TrafficSignalCameraModal />

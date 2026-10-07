@@ -22,7 +22,7 @@
 //
 "use client"
 import React, { useMemo, useState } from 'react'
-import { TitleSection, OverallSection, NewOverallSection, ModalLicenseDetail, NewDetectionSection } from '../components'
+import { TitleSection, NewOverallSection, ModalLicenseDetail, NewDetectionSection } from '../components'
 import { DetailProvider, useLPRDetailContext, type LPRDetailTab } from '../context'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import { useSearchParams } from 'next/navigation'
