@@ -45,15 +45,15 @@ const SUMMARY_EXPORT_COLUMNS: {
   align?: 'left' | 'center' | 'right'
   value: (row: SummaryExportRow, index: number) => string | number
 }[] = [
-  { header: 'วันที่', width: 22, widthPct: 14, align: 'left', value: (r) => r.date },
-  { header: 'Phase', width: 8, widthPct: 6, value: (r) => r.phase },
-  { header: 'ช่วงเวลาไฟเขียว (s)', width: 18, widthPct: 13, value: (r) => fmtNumber(r.greenSec, 2) },
-  { header: 'ช่วงเวลาไฟแดง (s)', width: 18, widthPct: 13, value: (r) => fmtNumber(r.redSec, 2) },
-  { header: 'รวม PCU', width: 14, widthPct: 12, value: (r) => fmtNumber(r.pcu, 2) },
-  { header: 'ประสิทธิภาพ (%)', width: 16, widthPct: 13, value: (r) => `${fmtNumber(r.efficiency, 2)} %` },
-  { header: 'ประหยัดเวลา (m)', width: 16, widthPct: 14, value: (r) => fmtNumber(r.timeSaved, 2) },
-  { header: 'ลดปริมาณ CO2 (kg)', width: 18, widthPct: 15, value: (r) => fmtNumber(r.co2, 2) },
-]
+    { header: 'วันที่', width: 22, widthPct: 14, align: 'left', value: (r) => r.date },
+    { header: 'Phase', width: 8, widthPct: 6, value: (r) => r.phase },
+    { header: 'ช่วงเวลาไฟเขียวต่อ 1 รอบสัญญาณจราจร (s)', width: 18, widthPct: 13, value: (r) => fmtNumber(r.greenSec, 2) },
+    { header: 'ช่วงเวลารอไฟเขียวต่อ 1 รอบสัญญาณจราจร (s)', width: 18, widthPct: 13, value: (r) => fmtNumber(r.redSec, 2) },
+    { header: 'รวม PCU', width: 14, widthPct: 12, value: (r) => fmtNumber(r.pcu, 2) },
+    { header: 'ประสิทธิภาพ (%)', width: 16, widthPct: 13, value: (r) => `${fmtNumber(r.efficiency, 2)} %` },
+    { header: 'ประหยัดเวลา (m)', width: 16, widthPct: 14, value: (r) => fmtNumber(r.timeSaved, 2) },
+    { header: 'ลดปริมาณ CO2 (kg)', width: 18, widthPct: 15, value: (r) => fmtNumber(r.co2, 2) },
+  ]
 
 const SummaryTrafficSection: React.FC<Props> = () => {
   const { project } = useDetailContext()
@@ -207,7 +207,7 @@ const SummaryTrafficSection: React.FC<Props> = () => {
           const PDF_PHASE_TABLE_WIDTHS = [13, 8, 11, 11, 11, 15, 15, 16]
           blocks.push({
             type: 'table',
-            title: 'ตารางข้อมูลแยกจราจรย้อนหลัง 7 วัน',
+            title: 'ตารางค่าเฉลี่ยของข้อมูลแยกจราจรย้อนหลัง 7 วัน',
             columns: SUMMARY_EXPORT_COLUMNS.map(({ header, align }, i) => ({
               // Explicit newline — wrapPdfText splits on \n before measuring,
               // so the header breaks cleanly as "ลดปริมาณ CO2" / "(kg)"
@@ -264,7 +264,7 @@ const SummaryTrafficSection: React.FC<Props> = () => {
       </section>
 
       <section>
-        <h3 className='text-(--yellow) mb-4'>ตารางข้อมูลแยกจราจรย้อนหลัง 7 วัน</h3>
+        <h3 className='text-(--yellow) mb-4'>ตารางค่าเฉลี่ยของข้อมูลแยกจราจรย้อนหลัง 7 วัน</h3>
         <TableSummaryTraffic startDate={startDate} endDate={endDate} />
       </section>
     </div>
