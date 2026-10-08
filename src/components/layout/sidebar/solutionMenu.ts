@@ -44,6 +44,36 @@ export const SOLUTION_ICON_MAP: Record<string, ComponentType<{ className?: strin
   "Smart Search": IconAIChat,
 }
 
+/** solution_type_id → the key SOLUTION_ICON_MAP / buildPathMap / SOLUTION_DISPLAY_LABEL
+ *  are indexed by. The sidebar endpoints sometimes ship `solution_type_name: ""`,
+ *  so the id is the reliable identity; the name is only a fallback for ids this
+ *  table doesn't know yet. Ids 1–10 mirror SOLUTION_TYPE in
+ *  @/types/manage/solution-api (value comments there give the names); 11 (LPR)
+ *  is in @/constants/shared. Keep 6 as "Traffic Lighting" — that is the raw API
+ *  / menu key, the "Street Light" wording is applied by SOLUTION_DISPLAY_LABEL. */
+const SOLUTION_KEY_BY_TYPE_ID: Record<number, string> = {
+  1: "CCTV",
+  2: "Traffic Volume",
+  3: "Incident Detection",
+  4: "Traffic Signal",
+  5: "Crosswalk",
+  6: "Traffic Lighting",
+  7: "VMS",
+  8: "Tunnel",
+  9: "Tracking",
+  10: "Bridge Lighting",
+  11: "LPR",
+}
+
+/** Resolve the lookup key for a sidebar solution row — id first, name second. */
+export const resolveSolutionKey = (solution: {
+  solution_type_id?: number | null
+  solution_type_name?: string | null
+}): string => {
+  const byId = solution.solution_type_id != null ? SOLUTION_KEY_BY_TYPE_ID[solution.solution_type_id] : undefined
+  return byId ?? solution.solution_type_name ?? ""
+}
+
 // Display-name overrides for API solution_type_name values. Key = raw API
 // string, value = label rendered in the sidebar. Icon/route lookups still
 // key off the API string above.

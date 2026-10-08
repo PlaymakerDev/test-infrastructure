@@ -10,6 +10,7 @@ import {
   SOLUTION_ICON_MAP,
   SOLUTION_DISPLAY_LABEL,
   buildPathMap,
+  resolveSolutionKey,
   collapseVariants,
   solutionContainerVariants,
   solutionItemVariants,
@@ -119,8 +120,9 @@ const SidebarContent: React.FC<Props> = (props) => {
                                 animate="show"
                               >
                                 {dept.solutions.map((solution) => {
-                                  const IconComp = SOLUTION_ICON_MAP[solution.solution_type_name]
-                                  const route = pathMap[solution.solution_type_name]
+                                  const typeKey = resolveSolutionKey(solution)
+                                  const IconComp = SOLUTION_ICON_MAP[typeKey]
+                                  const route = pathMap[typeKey]
                                   // Active only when the path matches AND the URL's dept_id matches
                                   // THIS sub-department. Without the dept_id check, the same solution
                                   // (e.g. CCTV) lights up under every bureau/แขวง group at once, since
@@ -142,7 +144,7 @@ const SidebarContent: React.FC<Props> = (props) => {
                                           <IconComp className={`fs-18 shrink-0 ${isActive ? 'text-black' : 'text-(--default-blue)'}`} />
                                         )}
                                         <span className={`fs-12 ${isActive ? 'text-black font-medium' : 'text-(--default-blue)'}`}>
-                                          {SOLUTION_DISPLAY_LABEL[solution.solution_type_name] ?? solution.solution_type_name}
+                                          {SOLUTION_DISPLAY_LABEL[typeKey] ?? typeKey}
                                         </span>
                                       </div>
                                       {solution.roads_count > 0 && (

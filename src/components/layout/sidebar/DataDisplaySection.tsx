@@ -9,6 +9,7 @@ import {
   SOLUTION_ICON_MAP,
   SOLUTION_DISPLAY_LABEL,
   buildPathMap,
+  resolveSolutionKey,
   collapseVariants,
   solutionContainerVariants,
   solutionItemVariants,
@@ -93,15 +94,16 @@ const DataDisplaySection: React.FC<Props> = (props) => {
                 animate="show"
               >
                 {solutions.map((solution) => {
-                  const IconComp = SOLUTION_ICON_MAP[solution.solution_type_name]
-                  const route = pathMap[solution.solution_type_name]
+                  const typeKey = resolveSolutionKey(solution)
+                  const IconComp = SOLUTION_ICON_MAP[typeKey]
+                  const route = pathMap[typeKey]
                   const pathActive = route
                     ? pathname === route.path || pathname === route.path_active || route.path_list.includes(pathname)
                     : false
                   const isActive = pathActive && activeDeptId === String(road.departmentId)
                   return (
                     <motion.div
-                      key={solution.solution_type_id ?? solution.solution_type_name}
+                      key={solution.solution_type_id ?? typeKey}
                       variants={solutionItemVariants}
                       onClick={() => route && router.push(`${route.path}?dept_id=${road.departmentId}&road_id=${road.id}&scope=all`)}
                       className={`pl-10 py-3 pr-3 flex items-center justify-between mb-2 rounded-md transition-colors ${route ? 'cursor-pointer' : 'cursor-default opacity-50'} ${isActive ? 'bg-(--yellow)' : 'bg-(--light-black) hover:bg-(--mid-gray)'}`}
@@ -111,7 +113,7 @@ const DataDisplaySection: React.FC<Props> = (props) => {
                           <IconComp className={`fs-18 shrink-0 ${isActive ? 'text-black' : 'text-(--default-blue)'}`} />
                         )}
                         <span className={`fs-12 ${isActive ? 'text-black font-medium' : 'text-(--default-blue)'}`}>
-                          {SOLUTION_DISPLAY_LABEL[solution.solution_type_name] ?? solution.solution_type_name}
+                          {SOLUTION_DISPLAY_LABEL[typeKey] ?? typeKey}
                         </span>
                       </div>
                       {!!solution.roads_count && (
