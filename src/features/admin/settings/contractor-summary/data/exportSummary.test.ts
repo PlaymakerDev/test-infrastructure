@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
-import { exportSummaryExcel, exportSummaryPdf, type SummaryExportInput } from './exportSummary'
+import type { ProjectCameraListCamera, ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
+import { exportSummaryExcel, exportSummaryPdf, offlineCameraSections, type SummaryExportInput } from './exportSummary'
 import { SUMMARY_SYSTEMS } from './systems'
 
 // Capture what the page hands the export kit instead of writing files.
@@ -28,15 +28,43 @@ const project = (id: number, contractNo: string | null): ProjectDeviceStatusRow 
   lighting: { total: 0, online: 0, offline: 0 },
 })
 
+const camera = (id: string, overrides: Partial<ProjectCameraListCamera> = {}): ProjectCameraListCamera => ({
+  id,
+  camera_name: `กล้อง ${id}`,
+  ip_address: '10.0.0.1',
+  hls_url: '',
+  is_online: false,
+  last_updated: null,
+  solution_types: [{ id: 1, name: 'CCTV' }],
+  road_id: 1,
+  road_code: 'สห.4014',
+  sta: '16+700',
+  ...overrides,
+})
+
 const input: SummaryExportInput = {
   companyName: 'บริษัท ที ไอ เค คอร์ปอเรชั่น จำกัด',
   shortName: 'tik',
   warrantyLabel: 'ในค้ำ',
   rings: [{ system: SUMMARY_SYSTEMS[0], totals: { total: 269, online: 230, offline: 39 } }],
   projects: [project(163, 'สทช.ที่ 2/26/2567'), project(504, null)],
+  // Backend order (504 first), an online camera among the offline ones, and a
+  // project the table doesn't list.
+  cameraProjects: [
+    {
+      project_id: 504,
+      project_name: 'โครงการ 504',
+      contract_no: null,
+      cameras: [camera('c3', { sta: 'กม. 2+000', ip_address: '', solution_types: [{ id: 7, name: 'VMS' }] })],
+    },
+    { project_id: 163, project_name: 'โครงการ 163', contract_no: 'สทช.ที่ 2/26/2567', cameras: [camera('c1'), camera('c2', { is_online: true })] },
+    { project_id: 999, project_name: 'โครงการอื่น', contract_no: 'x', cameras: [camera('c9')] },
+  ],
 }
 
 type Table = { type: 'table'; title: string; columns: { header: string; widthPct: number }[]; rows: (string | number)[][] }
+type BandedTable = Omit<Table, 'rows'> & { rows: ((string | number)[] | { group: string })[] }
+type Sheet = { sheetName: string; title?: string; filterNote?: string; headers: { header: string }[]; cells: (string | number)[][] }
 
 beforeEach(() => {
   calls.pdf.length = 0
@@ -57,12 +85,60 @@ describe('สรุปข้อมูลผู้รับจ้าง export', 
     expect(args.blocks[0].rows[0]).toEqual(['CCTV', 269, 230, 39, '14%'])
   })
 
-  it('Excel: the same third column on the projects sheet, the filter on both sheets', async () => {
+  it('Excel: the same third column on the projects sheet, the filter on every sheet', async () => {
     await exportSummaryExcel(input)
-    const { sheets } = calls.excel[0] as { sheets: { sheetName: string; filterNote?: string; headers: { header: string }[]; cells: (string | number)[][] }[] }
+    const { sheets } = calls.excel[0] as { sheets: Sheet[] }
     const projects = sheets.find((s) => s.sheetName === 'โครงการ')!
     expect(projects.headers.map((h) => h.header).slice(0, 4)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'CCTV ออนไลน์'])
     expect(projects.cells[0].slice(0, 3)).toEqual([1, 'โครงการ 163', 'สทช.ที่ 2/26/2567'])
-    expect(sheets.map((s) => s.filterNote)).toEqual(['สถานะค้ำประกัน: ในค้ำ', 'สถานะค้ำประกัน: ในค้ำ'])
+    expect(sheets.map((s) => s.filterNote)).toEqual(['สถานะค้ำประกัน: ในค้ำ', 'สถานะค้ำประกัน: ในค้ำ', 'สถานะค้ำประกัน: ในค้ำ'])
+  })
+})
+
+describe('สรุปข้อมูลผู้รับจ้าง export — offline cameras (user 2026-10-08)', () => {
+  it('keeps the table’s projects in the table’s order, offline cameras only', () => {
+    const sections = offlineCameraSections(input.projects, input.cameraProjects)
+    expect(sections.map((s) => [s.project.project_id, s.cameras.map((c) => c.id)])).toEqual([[163, ['c1']], [504, ['c3']]])
+  })
+
+  it('drops a project with no offline camera', () => {
+    const sections = offlineCameraSections(input.projects, [{ ...input.cameraProjects[1], cameras: [camera('c2', { is_online: true })] }])
+    expect(sections).toEqual([])
+  })
+
+  it('PDF: a last table, a band per project with its contract, then its cameras', async () => {
+    await exportSummaryPdf(input)
+    const { blocks } = calls.pdf[0] as { blocks: BandedTable[] }
+    expect(blocks).toHaveLength(3)
+    const offline = blocks[2]
+    expect(offline.title).toBe('รายการกล้องออฟไลน์แยกตามโครงการ (2 โครงการ, กล้อง 2 ตัว)')
+    expect(offline.columns.map((c) => c.header)).toEqual(['ลำดับ', 'ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'IP Address'])
+    expect(offline.columns.reduce((sum, c) => sum + c.widthPct, 0)).toBe(100)
+    expect(offline.rows).toEqual([
+      { group: 'โครงการ 163\nเลขที่สัญญา สทช.ที่ 2/26/2567 · ออฟไลน์ 1 ตัว' },
+      [1, 'กล้อง c1', '16+700', 'CCTV', '10.0.0.1'],
+      // กม. the backend may prefix is dropped; no IP → '-'; tags as on the Live cards.
+      { group: 'โครงการ 504\nเลขที่สัญญา - · ออฟไลน์ 1 ตัว' },
+      [1, 'กล้อง c3', '2+000', 'CCTV, VMS', '-'],
+    ])
+  })
+
+  it('PDF: says so when no project has an offline camera', async () => {
+    await exportSummaryPdf({ ...input, cameraProjects: [] })
+    const offline = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[2]
+    expect(offline.title).toBe('รายการกล้องออฟไลน์แยกตามโครงการ (0 โครงการ, กล้อง 0 ตัว)')
+    expect(offline.rows).toEqual([{ group: 'ไม่มีกล้องออฟไลน์' }])
+  })
+
+  it('Excel: one sheet, the project leading every row, numbered straight through', async () => {
+    await exportSummaryExcel(input)
+    const { sheets } = calls.excel[0] as { sheets: Sheet[] }
+    const offline = sheets.find((s) => s.sheetName === 'กล้องออฟไลน์')!
+    expect(offline.title).toBe('สรุปข้อมูลผู้รับจ้าง — บริษัท ที ไอ เค คอร์ปอเรชั่น จำกัด · รายการกล้องออฟไลน์แยกตามโครงการ (2 โครงการ, กล้อง 2 ตัว)')
+    expect(offline.headers.map((h) => h.header)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'IP Address'])
+    expect(offline.cells).toEqual([
+      [1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 'กล้อง c1', '16+700', 'CCTV', '10.0.0.1'],
+      [2, 'โครงการ 504', '-', 'กล้อง c3', '2+000', 'CCTV, VMS', '-'],
+    ])
   })
 })

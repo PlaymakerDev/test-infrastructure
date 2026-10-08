@@ -5,7 +5,7 @@ import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
 import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
-import { getProjectDeviceStatusListAPI } from '@/services/routes/ManageService'
+import { getProjectDeviceStatusCamerasAPI, getProjectDeviceStatusListAPI } from '@/services/routes/ManageService'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
@@ -85,8 +85,13 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
     if (!contractor) return null
     const warrantyLabel = WARRANTY_FILTER_OPTIONS.find((option) => option.value === warranty)?.label ?? 'ทั้งหมด'
-    const projects = scope === 'page' ? rows : await fetchAllProjects(id, warrantyParam(warranty))
-    return { companyName: contractor.company_name, shortName: contractor.short_name, warrantyLabel, rings, projects }
+    // The offline cameras of every project, in one call; the report keeps the
+    // projects it lists.
+    const [projects, cameraProjects] = await Promise.all([
+      scope === 'page' ? rows : fetchAllProjects(id, warrantyParam(warranty)),
+      getProjectDeviceStatusCamerasAPI({ contractor_id: id, is_online: false }).then((response) => response.data ?? []),
+    ])
+    return { companyName: contractor.company_name, shortName: contractor.short_name, warrantyLabel, rings, projects, cameraProjects }
   }
 
   const runExport = (exporter: (input: SummaryExportInput) => Promise<void>) => async (scope?: 'all' | 'page') => {

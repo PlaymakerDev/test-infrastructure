@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { App, Button, ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import { TbMapPin, TbPlayerTrackNext, TbPrinter, TbVideo, TbWifi, TbWifiOff } from 'react-icons/tb'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
@@ -12,7 +12,6 @@ import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { fmtNumber } from '@/utils/formatNumber'
 import type { DeviceTotals, ProjectCameraItem, ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
 import { cameraBadges, staLabel } from '../data/deviceStatus'
-import { useCameraStreams } from '../hooks/useCameraStreams'
 
 interface Props {
   /** The table row whose ▷▷ was pressed; null = closed. */
@@ -49,13 +48,13 @@ const CountPills: React.FC<{ totals: DeviceTotals }> = ({ totals }) => (
 /** Same card as the CCTV detail page's camera grid (CameraGridView): live
  *  picture, name in blue or red by status, IP, and the camera's function tags.
  *  An offline camera gets no stream — its tile keeps the player's Loading. */
-const CameraCard: React.FC<{ camera: ProjectCameraItem; hlsUrl?: string; onOpen: () => void }> = ({ camera, hlsUrl, onOpen }) => (
+const CameraCard: React.FC<{ camera: ProjectCameraItem; onOpen: () => void }> = ({ camera, onOpen }) => (
   <div className='flex flex-col gap-3 rounded-2xl p-3' style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}>
     <div className='rounded-2xl overflow-hidden cursor-pointer' onClick={onOpen}>
       <HLSLivePlayer
         figureClassName='aspect-video rounded-2xl'
         cameraId={camera.id}
-        hlsUrl={camera.is_online ? hlsUrl : undefined}
+        hlsUrl={camera.is_online ? camera.hls_url : undefined}
         showLiveBadge={camera.is_online}
         enableViewportPause
         style={{ pointerEvents: 'none' }}
@@ -86,12 +85,6 @@ const ProjectLiveModal: React.FC<Props> = ({ project, onClose }) => {
   const { message } = App.useApp()
   const [isExportOpen, setExportOpen] = useState(false)
   const { data, isLoading, isError } = useProjectDeviceStatus(project?.project_id)
-
-  const roadIds = useMemo(
-    () => Array.from(new Set((data?.groups ?? []).map((group) => group.road_id))),
-    [data],
-  )
-  const { streams } = useCameraStreams(roadIds)
 
   const openCamera = (cameraId: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: cameraId }))
 
@@ -180,7 +173,7 @@ const ProjectLiveModal: React.FC<Props> = ({ project, onClose }) => {
           </div>
           <div className='grid gap-4' style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
             {group.cameras.map((camera) => (
-              <CameraCard key={camera.id} camera={camera} hlsUrl={streams.get(camera.id)} onOpen={() => openCamera(camera.id)} />
+              <CameraCard key={camera.id} camera={camera} onOpen={() => openCamera(camera.id)} />
             ))}
           </div>
         </section>
