@@ -94,6 +94,7 @@ export {
   useAttachCountingCameras,
   useAttachAnalyticCameras,
   useAttachCrosswalkCameras,
+  useAttachLPRCameras,
   useAttachWimCameras,
   useAttachTrafficCameras,
   useCreateVMSSolutionExistingCamera,

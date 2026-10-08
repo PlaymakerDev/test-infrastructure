@@ -6,10 +6,12 @@ import {
   useAttachAnalyticCameras,
   useAttachCountingCameras,
   useAttachCrosswalkCameras,
+  useAttachLPRCameras,
   useAttachWimCameras,
 } from '@/hooks/queries/manage'
 import { SOLUTION_TYPE, type APIResponseCamera } from '@/types/manage/solution-api'
 import { errText } from '@/features/admin/settings/new-detail/project/context'
+import { SOLUTION_TYPE_LPR } from '../data/equipmentModal'
 import { useEquipmentModal } from '../hooks/useEquipmentModal'
 import { EquipmentLiveButton, EquipmentModalFooter, EquipmentModalShell, EquipmentStatusPill } from '../components'
 
@@ -17,10 +19,10 @@ interface Props {
 
 }
 
-/** Camera picker for Counting / Analytic / Crosswalk / WIM, opened from the
- *  "รายการอุปกรณ์" column of TableSolution (`equipment_modal`, type
+/** Camera picker for Counting / Analytic / Crosswalk / WIM / LPR, opened from
+ *  the "รายการอุปกรณ์" column of TableSolution (`equipment_modal`, type
  *  CAMERA_SELECT). Backend contract: the corresponding /solution/camera/
- *  {counting|analytic|crosswalk|wim} endpoint DELETES existing rows then
+ *  {counting|analytic|crosswalk|wim|lpr} endpoint DELETES existing rows then
  *  INSERTs the incoming set — so the UI treats this as "the full list going
  *  forward". */
 const EquipmentSelectModal: React.FC<Props> = (props) => {
@@ -33,8 +35,13 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
   const attachAnalytic = useAttachAnalyticCameras()
   const attachCrosswalk = useAttachCrosswalkCameras()
   const attachWim = useAttachWimCameras()
+  const attachLpr = useAttachLPRCameras()
   const isSubmitting =
-    attachCounting.isPending || attachAnalytic.isPending || attachCrosswalk.isPending || attachWim.isPending
+    attachCounting.isPending ||
+    attachAnalytic.isPending ||
+    attachCrosswalk.isPending ||
+    attachWim.isPending ||
+    attachLpr.isPending
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   // User has toggled something this open - stop auto-reseeding over their edits.
@@ -51,7 +58,7 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
    *  exposes no solution id (old crosswalk payloads, wim - shape unverified),
    *  presence pre-ticks only when this task is the point's sole solution of
    *  that type; otherwise we can't attribute the link and leave it unticked
-   *  rather than guess wrong. */
+   *  rather than guess wrong. LPR follows the WIM rule (link shape unverified). */
   const seed = useMemo(() => {
     if (!record) return [] as string[]
     const soleOfKind = solutions.filter((s) => s.solution_type.id === kindId).length <= 1
@@ -66,6 +73,10 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
         if (kindId === SOLUTION_TYPE.WIM) {
           const linkedTo = c.wim?.solution_id ?? c.wim?.wim?.solution_id ?? null
           return linkedTo != null ? linkedTo === record.id : c.wim != null && soleOfKind
+        }
+        if (kindId === SOLUTION_TYPE_LPR) {
+          const linkedTo = c.lpr?.solution_id ?? c.lpr?.lpr?.solution_id ?? null
+          return linkedTo != null ? linkedTo === record.id : c.lpr != null && soleOfKind
         }
         return false
       })
@@ -151,9 +162,10 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
         : kindId === SOLUTION_TYPE.Analytic ? attachAnalytic
           : kindId === SOLUTION_TYPE.Crosswalk ? attachCrosswalk
             : kindId === SOLUTION_TYPE.WIM ? attachWim
-              : null
+              : kindId === SOLUTION_TYPE_LPR ? attachLpr
+                : null
     if (!attach) {
-      // getEquipmentModalType only routes the four kinds above here, so this
+      // getEquipmentModalType only routes the five kinds above here, so this
       // is a guard, not an expected path.
       message.warning(
         `การผูกกล้องสำหรับประเภทงาน "${record.solution_type.solution_name_atlas}" ยังไม่รองรับผ่านตัวเลือกนี้`,
@@ -172,7 +184,7 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
         },
       },
     )
-  }, [record, kindId, attachCounting, attachAnalytic, attachCrosswalk, attachWim, selectedIds, message, close])
+  }, [record, kindId, attachCounting, attachAnalytic, attachCrosswalk, attachWim, attachLpr, selectedIds, message, close])
 
   return (
     <EquipmentModalShell

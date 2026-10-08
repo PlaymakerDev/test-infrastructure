@@ -322,6 +322,19 @@ export interface CameraWimLink {
   } | null
 }
 
+/** LPR attach link. Shape UNVERIFIED (no LPR link probed on the camera-list
+ *  endpoint) — typed like CameraWimLink: accept the owning solution id either
+ *  directly or via an embedded parent row, whichever the BE ships. */
+export interface CameraLPRLink {
+  id?: number
+  camera_id: string
+  solution_id?: number | null
+  lpr?: {
+    id: number
+    solution_id: number
+  } | null
+}
+
 export interface APIResponseCamera {
   id: string
   ip_address?: string | null
@@ -335,6 +348,7 @@ export interface APIResponseCamera {
   analytic?: CameraAnalyticLink | null
   crosswalk?: CameraCrosswalkLink | null
   wim?: CameraWimLink | null
+  lpr?: CameraLPRLink | null
   point_geometry?: GeometryRead | null
   remark?: string | null
   serial_number?: string | null

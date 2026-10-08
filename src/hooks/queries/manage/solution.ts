@@ -11,6 +11,7 @@ import {
   attachAnalyticCamerasAPI,
   attachCountingCamerasAPI,
   attachCrosswalkCamerasAPI,
+  attachLPRCamerasAPI,
   attachTrafficCamerasAPI,
   attachWimCamerasAPI,
   createRoadSolutionAPI,
@@ -284,6 +285,18 @@ export const useAttachCrosswalkCameras = () => {
       qc.invalidateQueries({
         queryKey: manageKeys.solutions.crossingCodes(variables.solution_id),
       })
+    },
+  })
+}
+
+/** Attach cameras to an LPR solution. */
+export const useAttachLPRCameras = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: APIRequestSolutionAddCamera) =>
+      attachLPRCamerasAPI(body).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: manageKeys.solutions.all })
     },
   })
 }

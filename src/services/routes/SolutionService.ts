@@ -150,6 +150,14 @@ export const attachCrosswalkCamerasAPI = (body: APIRequestSolutionAddCamera) =>
     data: body,
   })
 
+/** Attach cameras to an LPR solution (solution_type 11). Replaces. */
+export const attachLPRCamerasAPI = (body: APIRequestSolutionAddCamera) =>
+  ApiService.fetchData<void, APIRequestSolutionAddCamera>({
+    url: '/manage/solution/camera/lpr',
+    method: 'POST',
+    data: body,
+  })
+
 /** Attach cameras to a WIM solution. Replaces.
  *  BUG WATCH: backend `Delete(&models.Wim{})` filters by wim_id but calls
  *  Delete on the parent Wim table — verify before shipping. */
