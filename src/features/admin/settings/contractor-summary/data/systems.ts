@@ -17,7 +17,7 @@ export const SUMMARY_SYSTEMS: readonly SummarySystem[] = [
   { key: 'vms', label: 'VMS', color: '#FF9966', prefix: 'vms', block: 'vms', large: true },
   { key: 'lighting', label: 'Street Light', color: '#D4FF66', prefix: 'lighting', block: 'lighting', large: true },
   { key: 'counting', label: 'Traffic Volume', color: '#35CAB7', prefix: 'counting', block: 'counting' },
-  { key: 'analytic', label: 'Detection', color: '#44CB87', prefix: 'analytic', block: 'analytic' },
+  { key: 'analytic', label: 'Incident Detection', color: '#44CB87', prefix: 'analytic', block: 'analytic' },
   { key: 'traffic', label: 'Traffic Signal', color: '#A0DC4B', prefix: 'traffic', block: 'traffic' },
   { key: 'lpr', label: 'LPR', color: '#FF6FB5', prefix: 'lpr', block: 'lpr' },
   { key: 'bridge_lighting', label: 'Bridge Lighting', color: '#FC6953', prefix: 'bridge_lighting', block: 'bridge_lighting' },

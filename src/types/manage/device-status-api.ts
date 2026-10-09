@@ -77,10 +77,11 @@ export interface APIResponseProjectDeviceStatus extends ProjectDeviceStatusBase,
   groups: ProjectCameraGroup[]
 }
 
-export interface APIRequestProjectDeviceStatusCameras {
+/** Query of the per-project device lists — /cameras, /lighting and /vms. */
+export interface APIRequestProjectDeviceStatusItems {
   /** The contractor's user_id, as for the list. */
   contractor_id?: string
-  /** true = online cameras only, false = offline only, omitted = all. */
+  /** true = online devices only, false = offline only, omitted = all. */
   is_online?: boolean
 }
 
@@ -99,4 +100,52 @@ export interface ProjectCameraListItem {
   project_name: string
   contract_no: string | null
   cameras: ProjectCameraListCamera[]
+}
+
+/** One street-light cabinet (lighting.tbl_lighting), IoT or LoRa. */
+export interface ProjectLightingItem {
+  id: number
+  solution_id: number
+  /** The cabinet's install point, chainage included ("รย.4036 ตู้ที่ 10 กม.12+300"). */
+  solution_name: string
+  /** null for a LoRa cabinet. */
+  imei: string | null
+  is_online: boolean
+  last_updated: string | null
+  road_id: number
+  road_code: string
+  /** Empty for every cabinet so far — the backend is filling it in (2026-10-09). */
+  sta: string
+}
+
+/** GET /manage/project/device-status/lighting — same projects as /cameras. */
+export interface ProjectLightingListItem {
+  project_id: number
+  project_name: string
+  contract_no: string | null
+  lighting: ProjectLightingItem[]
+}
+
+/** One VMS sign (vms.tbl_vms). */
+export interface ProjectVMSItem {
+  id: number
+  solution_id: number
+  /** The sign's install point ("TrafficSign : นฐ.3011 - จุดที่ 1"). */
+  solution_name: string
+  ip_address: string
+  is_online: boolean
+  last_updated: string | null
+  desktop_screen: string
+  road_id: number
+  road_code: string
+  /** "" when the sign has none. */
+  sta: string
+}
+
+/** GET /manage/project/device-status/vms — same projects as /cameras. */
+export interface ProjectVMSListItem {
+  project_id: number
+  project_name: string
+  contract_no: string | null
+  vms: ProjectVMSItem[]
 }

@@ -5,7 +5,12 @@ import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
 import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
-import { getProjectDeviceStatusCamerasAPI, getProjectDeviceStatusListAPI } from '@/services/routes/ManageService'
+import {
+  getProjectDeviceStatusCamerasAPI,
+  getProjectDeviceStatusLightingAPI,
+  getProjectDeviceStatusListAPI,
+  getProjectDeviceStatusVMSAPI,
+} from '@/services/routes/ManageService'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import type { ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
@@ -85,13 +90,25 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
     if (!contractor) return null
     const warrantyLabel = WARRANTY_FILTER_OPTIONS.find((option) => option.value === warranty)?.label ?? 'ทั้งหมด'
-    // The offline cameras of every project, in one call; the report keeps the
-    // projects it lists.
-    const [projects, cameraProjects] = await Promise.all([
+    // The offline cameras, cabinets and signs of every project, one call
+    // each; the report keeps the projects it lists.
+    const offline = { contractor_id: id, is_online: false }
+    const [projects, cameraProjects, lightingProjects, vmsProjects] = await Promise.all([
       scope === 'page' ? rows : fetchAllProjects(id, warrantyParam(warranty)),
-      getProjectDeviceStatusCamerasAPI({ contractor_id: id, is_online: false }).then((response) => response.data ?? []),
+      getProjectDeviceStatusCamerasAPI(offline).then((response) => response.data ?? []),
+      getProjectDeviceStatusLightingAPI(offline).then((response) => response.data ?? []),
+      getProjectDeviceStatusVMSAPI(offline).then((response) => response.data ?? []),
     ])
-    return { companyName: contractor.company_name, shortName: contractor.short_name, warrantyLabel, rings, projects, cameraProjects }
+    return {
+      companyName: contractor.company_name,
+      shortName: contractor.short_name,
+      warrantyLabel,
+      rings,
+      projects,
+      cameraProjects,
+      lightingProjects,
+      vmsProjects,
+    }
   }
 
   const runExport = (exporter: (input: SummaryExportInput) => Promise<void>) => async (scope?: 'all' | 'page') => {

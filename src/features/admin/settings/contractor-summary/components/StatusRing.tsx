@@ -22,8 +22,10 @@ const StatusRing: React.FC<Props> = ({ system, totals }) => {
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
 
+  // A floor, not a fixed width: the one-line title widens its own ring rather
+  // than spilling onto the next one ("Incident Detection" is ~205px).
   return (
-    <div className='flex flex-col items-center gap-2 shrink-0' style={{ width: large ? 200 : 140 }}>
+    <div className='flex flex-col items-center gap-2 shrink-0' style={{ minWidth: large ? 200 : 140 }}>
       <div className='relative' style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className='-rotate-90' aria-hidden>
           <circle cx={size / 2} cy={size / 2} r={radius} fill='none' stroke='var(--dark-black)' strokeWidth={stroke} />

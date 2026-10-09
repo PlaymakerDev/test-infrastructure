@@ -30,11 +30,13 @@ import type {
 } from '@/types/manage/project-api'
 import type { UploadResponse } from '@/types/shared'
 import type {
-  APIRequestProjectDeviceStatusCameras,
+  APIRequestProjectDeviceStatusItems,
   APIRequestProjectDeviceStatusList,
   APIResponseProjectDeviceStatus,
   APIResponseProjectDeviceStatusList,
   ProjectCameraListItem,
+  ProjectLightingListItem,
+  ProjectVMSListItem,
 } from '@/types/manage/device-status-api'
 import type {
   APIResponseContractor,
@@ -442,9 +444,25 @@ export const getProjectDeviceStatusListAPI = (params: APIRequestProjectDeviceSta
 
 /** Every project of a contractor with its cameras, in one call (not
  *  paginated) — `is_online: false` keeps the offline ones only. */
-export const getProjectDeviceStatusCamerasAPI = (params: APIRequestProjectDeviceStatusCameras) =>
-  ApiService.fetchData<ProjectCameraListItem[], APIRequestProjectDeviceStatusCameras>({
+export const getProjectDeviceStatusCamerasAPI = (params: APIRequestProjectDeviceStatusItems) =>
+  ApiService.fetchData<ProjectCameraListItem[], APIRequestProjectDeviceStatusItems>({
     url: '/manage/project/device-status/cameras',
+    method: 'GET',
+    params,
+  })
+
+/** The same for street-light cabinets — one per lighting.tbl_lighting. */
+export const getProjectDeviceStatusLightingAPI = (params: APIRequestProjectDeviceStatusItems) =>
+  ApiService.fetchData<ProjectLightingListItem[], APIRequestProjectDeviceStatusItems>({
+    url: '/manage/project/device-status/lighting',
+    method: 'GET',
+    params,
+  })
+
+/** The same for VMS signs — one per vms.tbl_vms. */
+export const getProjectDeviceStatusVMSAPI = (params: APIRequestProjectDeviceStatusItems) =>
+  ApiService.fetchData<ProjectVMSListItem[], APIRequestProjectDeviceStatusItems>({
+    url: '/manage/project/device-status/vms',
     method: 'GET',
     params,
   })
@@ -471,15 +489,14 @@ export const getProjectDeviceStatusExportAPI = (projectId: number) =>
  *  differently — see `readUptimeTotals` in settings/contractor-summary.
  *  `isWarranty`: true = in warranty, false = expired, omitted = all — by the
  *  warranty dates of each device's own project.
- *  ⚠ The camera-based services (cctv, traffic, lpr, counting, analytic,
- *  crosswalk, wim) match `contractor_id` against the contractor stamped on
- *  each camera (`cctv.tbl_camera.contractor_id`), not the project's contractor
- *  the device-status table filters on, so a ring can count devices outside
- *  the contractor's projects (2026-10-07: CCTV 277 vs 28 in its 4 projects).
- *  Reported to the backend. */
+ *  `is_project: true` keeps the real projects only, as the device-status table
+ *  does (BE 2026-10-09): the camera-based services match `contractor_id` on
+ *  the contractor stamped on each camera, and those stamps also sat on
+ *  is_project = false records (a test cabinet, among others) — CCTV 69
+ *  against the table's 19 for one contractor, 277 against 32 for another. */
 export const getContractorUptimeAPI = (prefix: string, contractorUserId: string, isWarranty?: boolean) =>
   ApiService.fetchData<unknown>({
     url: `/${prefix}/departments/0/${prefix === 'cctv' ? 'cameras' : 'overview'}/uptime-statistics`,
     method: 'GET',
-    params: { scope: 'all', contractor_id: contractorUserId, is_warranty: isWarranty },
+    params: { scope: 'all', contractor_id: contractorUserId, is_warranty: isWarranty, is_project: true },
   })

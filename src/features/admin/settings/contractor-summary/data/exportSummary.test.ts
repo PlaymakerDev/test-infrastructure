@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectCameraListCamera, ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
-import { exportSummaryExcel, exportSummaryPdf, offlineCameraSections, type SummaryExportInput } from './exportSummary'
+import type {
+  ProjectCameraListCamera,
+  ProjectDeviceStatusRow,
+  ProjectLightingItem,
+  ProjectVMSItem,
+} from '@/types/manage/device-status-api'
+import { exportSummaryExcel, exportSummaryPdf, offlineSections, type SummaryExportInput } from './exportSummary'
 import { SUMMARY_SYSTEMS } from './systems'
 
 // Capture what the page hands the export kit instead of writing files.
@@ -42,6 +47,33 @@ const camera = (id: string, overrides: Partial<ProjectCameraListCamera> = {}): P
   ...overrides,
 })
 
+const cabinet = (id: number, overrides: Partial<ProjectLightingItem> = {}): ProjectLightingItem => ({
+  id,
+  solution_id: id,
+  solution_name: `ตู้ ${id}`,
+  imei: null,
+  is_online: false,
+  last_updated: null,
+  road_id: 1,
+  road_code: 'สห.4014',
+  sta: '',
+  ...overrides,
+})
+
+const sign = (id: number, overrides: Partial<ProjectVMSItem> = {}): ProjectVMSItem => ({
+  id,
+  solution_id: id,
+  solution_name: `ป้าย ${id}`,
+  ip_address: '',
+  is_online: false,
+  last_updated: null,
+  desktop_screen: '',
+  road_id: 1,
+  road_code: 'สห.4014',
+  sta: '',
+  ...overrides,
+})
+
 const input: SummaryExportInput = {
   companyName: 'บริษัท ที ไอ เค คอร์ปอเรชั่น จำกัด',
   shortName: 'tik',
@@ -59,6 +91,27 @@ const input: SummaryExportInput = {
     },
     { project_id: 163, project_name: 'โครงการ 163', contract_no: 'สทช.ที่ 2/26/2567', cameras: [camera('c1'), camera('c2', { is_online: true })] },
     { project_id: 999, project_name: 'โครงการอื่น', contract_no: 'x', cameras: [camera('c9')] },
+  ],
+  // sta: empty (every cabinet today), filled, filled with a กม. prefix; an
+  // online cabinet; a project the table doesn't list.
+  lightingProjects: [
+    {
+      project_id: 163,
+      project_name: 'โครงการ 163',
+      contract_no: 'สทช.ที่ 2/26/2567',
+      lighting: [
+        cabinet(1, { solution_name: 'สห.4014 ตู้ที่ 1 กม.16+700' }),
+        cabinet(2, { sta: '12+300' }),
+        cabinet(3, { sta: 'กม. 13+700' }),
+        cabinet(4, { is_online: true }),
+      ],
+    },
+    { project_id: 999, project_name: 'โครงการอื่น', contract_no: 'x', lighting: [cabinet(9)] },
+  ],
+  // 504's signs: one with a chainage, one without; 163's only sign is online.
+  vmsProjects: [
+    { project_id: 504, project_name: 'โครงการ 504', contract_no: null, vms: [sign(11, { sta: '0+180' }), sign(12)] },
+    { project_id: 163, project_name: 'โครงการ 163', contract_no: 'สทช.ที่ 2/26/2567', vms: [sign(13, { is_online: true })] },
   ],
 }
 
@@ -91,25 +144,26 @@ describe('สรุปข้อมูลผู้รับจ้าง export', 
     const projects = sheets.find((s) => s.sheetName === 'โครงการ')!
     expect(projects.headers.map((h) => h.header).slice(0, 4)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'CCTV ออนไลน์'])
     expect(projects.cells[0].slice(0, 3)).toEqual([1, 'โครงการ 163', 'สทช.ที่ 2/26/2567'])
-    expect(sheets.map((s) => s.filterNote)).toEqual(['สถานะค้ำประกัน: ในค้ำ', 'สถานะค้ำประกัน: ในค้ำ', 'สถานะค้ำประกัน: ในค้ำ'])
+    expect(sheets.map((s) => s.sheetName)).toEqual(['ภาพรวมอุปกรณ์', 'โครงการ', 'กล้องออฟไลน์', 'Street Light ออฟไลน์', 'VMS ออฟไลน์'])
+    expect(new Set(sheets.map((s) => s.filterNote))).toEqual(new Set(['สถานะค้ำประกัน: ในค้ำ']))
   })
 })
 
 describe('สรุปข้อมูลผู้รับจ้าง export — offline cameras (user 2026-10-08)', () => {
   it('keeps the table’s projects in the table’s order, offline cameras only', () => {
-    const sections = offlineCameraSections(input.projects, input.cameraProjects)
-    expect(sections.map((s) => [s.project.project_id, s.cameras.map((c) => c.id)])).toEqual([[163, ['c1']], [504, ['c3']]])
+    const sections = offlineSections(input.projects, input.cameraProjects, (list) => list.cameras)
+    expect(sections.map((s) => [s.project.project_id, s.items.map((c) => c.id)])).toEqual([[163, ['c1']], [504, ['c3']]])
   })
 
   it('drops a project with no offline camera', () => {
-    const sections = offlineCameraSections(input.projects, [{ ...input.cameraProjects[1], cameras: [camera('c2', { is_online: true })] }])
+    const sections = offlineSections(input.projects, [{ ...input.cameraProjects[1], cameras: [camera('c2', { is_online: true })] }], (list) => list.cameras)
     expect(sections).toEqual([])
   })
 
-  it('PDF: a last table, a band per project with its contract, then its cameras', async () => {
+  it('PDF: after the project table, a band per project with its contract, then its cameras', async () => {
     await exportSummaryPdf(input)
     const { blocks } = calls.pdf[0] as { blocks: BandedTable[] }
-    expect(blocks).toHaveLength(3)
+    expect(blocks).toHaveLength(5)
     const offline = blocks[2]
     expect(offline.title).toBe('รายการกล้องออฟไลน์แยกตามโครงการ (2 โครงการ, กล้อง 2 ตัว)')
     expect(offline.columns.map((c) => c.header)).toEqual(['ลำดับ', 'ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'IP Address'])
@@ -139,6 +193,61 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     expect(offline.cells).toEqual([
       [1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 'กล้อง c1', '16+700', 'CCTV', '10.0.0.1'],
       [2, 'โครงการ 504', '-', 'กล้อง c3', '2+000', 'CCTV, VMS', '-'],
+    ])
+  })
+})
+
+describe('สรุปข้อมูลผู้รับจ้าง export — offline Street Light and VMS (user 2026-10-09)', () => {
+  it('PDF: Street Light after the cameras — install point and กม.ที่', async () => {
+    await exportSummaryPdf(input)
+    const lighting = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[3]
+    expect(lighting.title).toBe('รายการ Street Light ออฟไลน์แยกตามโครงการ (1 โครงการ, ตู้ป้องกันโจรกรรม 3 ตู้)')
+    expect(lighting.columns.map((c) => c.header)).toEqual(['ลำดับ', 'จุดติดตั้งตู้ป้องกันโจรกรรม', 'กม.ที่'])
+    expect(lighting.columns.reduce((sum, c) => sum + c.widthPct, 0)).toBe(100)
+    expect(lighting.rows).toEqual([
+      { group: 'โครงการ 163\nเลขที่สัญญา สทช.ที่ 2/26/2567 · ออฟไลน์ 3 ตู้' },
+      // No sta yet → '-'; a กม. prefix from the backend is dropped.
+      [1, 'สห.4014 ตู้ที่ 1 กม.16+700', '-'],
+      [2, 'ตู้ 2', '12+300'],
+      [3, 'ตู้ 3', '13+700'],
+    ])
+  })
+
+  it('PDF: VMS last — install point and กม.ที่', async () => {
+    await exportSummaryPdf(input)
+    const vms = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[4]
+    expect(vms.title).toBe('รายการ VMS ออฟไลน์แยกตามโครงการ (1 โครงการ, ป้าย VMS 2 ป้าย)')
+    expect(vms.columns.map((c) => c.header)).toEqual(['ลำดับ', 'จุดติดตั้งป้าย VMS', 'กม.ที่'])
+    expect(vms.columns.reduce((sum, c) => sum + c.widthPct, 0)).toBe(100)
+    expect(vms.rows).toEqual([
+      { group: 'โครงการ 504\nเลขที่สัญญา - · ออฟไลน์ 2 ป้าย' },
+      [1, 'ป้าย 11', '0+180'],
+      [2, 'ป้าย 12', '-'],
+    ])
+  })
+
+  it('PDF: says so when nothing is offline', async () => {
+    await exportSummaryPdf({ ...input, lightingProjects: [], vmsProjects: [] })
+    const { blocks } = calls.pdf[0] as { blocks: BandedTable[] }
+    expect(blocks[3].rows).toEqual([{ group: 'ไม่มี Street Light ออฟไลน์' }])
+    expect(blocks[4].rows).toEqual([{ group: 'ไม่มี VMS ออฟไลน์' }])
+  })
+
+  it('Excel: a sheet each, the project leading every row', async () => {
+    await exportSummaryExcel(input)
+    const { sheets } = calls.excel[0] as { sheets: Sheet[] }
+    const lighting = sheets.find((s) => s.sheetName === 'Street Light ออฟไลน์')!
+    expect(lighting.headers.map((h) => h.header)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'จุดติดตั้งตู้ป้องกันโจรกรรม', 'กม.ที่'])
+    expect(lighting.cells).toEqual([
+      [1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 'สห.4014 ตู้ที่ 1 กม.16+700', '-'],
+      [2, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 'ตู้ 2', '12+300'],
+      [3, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 'ตู้ 3', '13+700'],
+    ])
+    const vms = sheets.find((s) => s.sheetName === 'VMS ออฟไลน์')!
+    expect(vms.headers.map((h) => h.header)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'จุดติดตั้งป้าย VMS', 'กม.ที่'])
+    expect(vms.cells).toEqual([
+      [1, 'โครงการ 504', '-', 'ป้าย 11', '0+180'],
+      [2, 'โครงการ 504', '-', 'ป้าย 12', '-'],
     ])
   })
 })

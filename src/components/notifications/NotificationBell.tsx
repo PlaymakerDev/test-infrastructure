@@ -126,6 +126,9 @@ const NotificationBell: React.FC<Props> = ({
   // endpoint, so those rows must never navigate (§6).
   const { userKind } = useUserKind()
   const caseIsReachable = userKind !== 'user'
+  // หนังสือแจ้งซ่อมพร้อมลายเซ็น is the officer's errand, not the contractor's:
+  // their case rows show the progress status alone (user 2026-10-09).
+  const showDocStatus = userKind !== 'contractor'
 
   // The tab in view. Every opening starts on แจ้งซ่อม — or on กล้องดับ when
   // no case is open, since แจ้งซ่อม would be an empty panel then. Settled
@@ -330,6 +333,7 @@ const NotificationBell: React.FC<Props> = ({
               key={`${item.kind}:${item.id}`}
               item={item}
               clickable={targetFor(item) !== null}
+              showDocStatus={showDocStatus}
               onClick={handleItemClick}
             />
           ))}

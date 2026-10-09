@@ -6,6 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import buddhistEra from 'dayjs/plugin/buddhistEra'
 import 'dayjs/locale/th'
 import { TbAlertTriangle, TbTool, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { caseStatusMeta } from '@/features/admin/maintenance/data/caseStatus'
 import { useProjectBySolution } from '@/hooks/queries/maintenance'
 import type {
   CameraOutageFeedItem,
@@ -31,19 +32,21 @@ const dotJoin = (...parts: Array<string | null | undefined>) => {
   return present.length ? present.join(' • ') : '-'
 }
 
-/** The bell keeps pending_approval separate from the case page's 3-state
- *  pill — an officer watching the bell wants to know a case is waiting on
- *  *them*. The first two speak of the signed notice (Figma, user
- *  2026-10-02): an officer-opened case stays waiting_doc, out of the
- *  contractor's sight, until it is uploaded (backend 2026-09-28), and goes
- *  open the moment it is. */
-const CASE_STATUS: Record<CaseFeedItem['case']['status'], { label: string; color: string }> = {
-  waiting_doc: { label: 'ยังไม่อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็น', color: '#E94C4C' },
-  open: { label: 'อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็นเรียบร้อย', color: '#05F2DB' },
-  in_progress: { label: 'กำลังดำเนินการ', color: '#FCD116' },
-  pending_approval: { label: 'รอตรวจรับ', color: '#66AEFF' },
-  closed: { label: 'ปิดแล้ว', color: '#05F2DB' },
-}
+/** หนังสือแจ้งซ่อมพร้อมลายเซ็น — the signed-notice pill, shown to
+ *  **เจ้าหน้าที่ only** (user 2026-10-09). It tracks the officer’s own
+ *  to-do: a case they opened sits at waiting_doc, out of the contractor’s
+ *  sight, until the notice is attached (backend 2026-09-28), and every
+ *  later status means it is attached. The contractor has nothing to do
+ *  with the notice, so their rows drop this pill and carry the progress
+ *  one alone.
+ *
+ *  WARNING: a worker-opened case has no notice at all yet is born `open`,
+ *  so it still reads "…เรียบร้อย" — the feed carries no signed_document
+ *  flag to tell the two apart. */
+const docStatusMeta = (status: CaseFeedItem['case']['status']) =>
+  status === 'waiting_doc'
+    ? { label: 'ยังไม่อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็น', color: '#E94C4C' }
+    : { label: 'อัพโหลดหนังสือแจ้งซ่อมพร้อมลายเซ็นเรียบร้อย', color: '#05F2DB' }
 
 const StatusPill: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => (
   <span
@@ -59,13 +62,16 @@ interface Props {
   /** False → the row still marks itself read but never navigates (role
    *  `user` on a case row, or an outage with no install point). */
   clickable: boolean
+  /** Officer (admin / user) — their rows carry the signed-notice pill as
+   *  well as the progress one. False for a contractor (user 2026-10-09). */
+  showDocStatus: boolean
   onClick: (item: NotificationFeedItem) => void
 }
 
 /** One feed row: unread dot + kind glyph + title + relative time, then the
  *  kind's own lines. A case row follows the Figma (2026-10-02): its project in
  *  yellow, bureau • road, จุดติดตั้ง, then the status pill. */
-const FeedItem: React.FC<Props> = ({ item, clickable, onClick }) => {
+const FeedItem: React.FC<Props> = ({ item, clickable, showDocStatus, onClick }) => {
   const title = item.kind === 'case' ? item.case.case_no : item.camera.name
 
   return (
@@ -105,7 +111,11 @@ const FeedItem: React.FC<Props> = ({ item, clickable, onClick }) => {
         </Tooltip>
       </div>
 
-      {item.kind === 'case' ? <CaseLines item={item} /> : <OutageLines item={item} />}
+      {item.kind === 'case' ? (
+        <CaseLines item={item} showDocStatus={showDocStatus} />
+      ) : (
+        <OutageLines item={item} />
+      )}
     </button>
   )
 }
@@ -114,7 +124,10 @@ const FeedItem: React.FC<Props> = ({ item, clickable, onClick }) => {
  *  feed names no project, so it comes from the solution — the same cached
  *  lookup the maintenance pages make; no project (or no access) falls back
  *  to the road's name. */
-const CaseLines: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
+const CaseLines: React.FC<{ item: CaseFeedItem; showDocStatus: boolean }> = ({
+  item,
+  showDocStatus,
+}) => {
   const project = useProjectBySolution(item.solution?.id)
   const projectName = project.data?.project_name || (project.isLoading ? null : item.road?.name || null)
   return (
@@ -131,7 +144,7 @@ const CaseLines: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
         <p className="m-0 mt-0.5 fs-12 text-(--light-gray-3) truncate">จุดติดตั้ง : {item.solution.name}</p>
       )}
       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-        <CaseStatus item={item} />
+        <CaseStatus item={item} showDocStatus={showDocStatus} />
       </div>
     </>
   )
@@ -160,15 +173,22 @@ const OutageStatus: React.FC<{ item: CameraOutageFeedItem }> = ({ item }) => (
   </>
 )
 
-const CaseStatus: React.FC<{ item: CaseFeedItem }> = ({ item }) => {
-  // A status added to the backend later still renders, just unstyled.
-  const meta = CASE_STATUS[item.case.status] ?? { label: item.case.status, color: '#979797' }
+const CaseStatus: React.FC<{ item: CaseFeedItem; showDocStatus: boolean }> = ({
+  item,
+  showDocStatus,
+}) => {
+  // สถานะการดำเนินการ — the very pill the case page shows, from the page's own
+  // helper, so the bell and the page can never drift apart (user 2026-10-09).
+  // A status the backend adds later still renders through it.
+  const progress = caseStatusMeta(item.case.status)
+  const doc = docStatusMeta(item.case.status)
   const overdue = Boolean(
     item.is_open && item.case.due_date && dayjs(item.case.due_date).isBefore(dayjs()),
   )
   return (
     <>
-      <StatusPill color={meta.color}>{meta.label}</StatusPill>
+      {showDocStatus && <StatusPill color={doc.color}>{doc.label}</StatusPill>}
+      <StatusPill color={progress.color}>{progress.label}</StatusPill>
       {overdue && (
         <StatusPill color="var(--red)">
           <TbAlertTriangle size={14} />
