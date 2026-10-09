@@ -114,6 +114,48 @@ function glueLeaders(tokens: string[]): string[] {
   return out
 }
 
+/** fontkit picks its shaper from the first letter of the string it lays out,
+ *  and with NotoSansThai a string that starts in Latin and holds ฬ plus an
+ *  above mark ("68PSK-NPT4006-F017-…-หอนาฬิกา") throws inside its GPOS code —
+ *  the Latin shaper skips the Thai substitution ฬ's marks rely on (a camera
+ *  name broke the ผู้รับจ้าง export, 2026-10-08). @react-pdf lays text out one
+ *  script run at a time (textkit's scriptItemizer), so measuring does the
+ *  same: a new run wherever the script changes, with Common / Inherited
+ *  characters (digits, spaces, punctuation) riding in the run they sit in. */
+const NEUTRAL_SCRIPT = /[\p{Script=Common}\p{Script=Inherited}]/u
+const THAI_SCRIPT = /\p{Script=Thai}/u
+const LATIN_SCRIPT = /\p{Script=Latin}/u
+const scriptOf = (ch: string): string | null =>
+  NEUTRAL_SCRIPT.test(ch) ? null : THAI_SCRIPT.test(ch) ? 'Thai' : LATIN_SCRIPT.test(ch) ? 'Latin' : 'Other'
+
+export function scriptRuns(text: string): string[] {
+  const runs: string[] = []
+  let run = ''
+  let runScript: string | null = null
+  for (const ch of text) {
+    const script = scriptOf(ch)
+    if (script && runScript && script !== runScript) {
+      runs.push(run)
+      run = ''
+    }
+    if (script) runScript = script
+    run += ch
+  }
+  if (run) runs.push(run)
+  return runs
+}
+
+/** NotoSansThai draws ำ as two glyphs (nikhahit + sara aa), and fontkit's
+ *  glyph cache keeps each glyph's FIRST code points: once a real "า" has been
+ *  drawn, the sara-aa glyph of every later ำ claims a character of its own, so
+ *  @react-pdf's string↔glyph mapping runs one ahead per ำ and the line loses
+ *  that many glyphs off its end — the trailing space covers one, a second ำ
+ *  costs a letter ("…ออฟไลน์ 39 ตัว" → "…39 ตั", 2026-10-08). Spelling ำ as
+ *  those same two characters (ํ + า, its Unicode compatibility form: same
+ *  glyphs, same width) keeps the mapping one to one. For DRAWN text only —
+ *  wrap first, on the real spelling, so the word segmenter still sees words. */
+export const drawableThai = (text: string): string => text.replace(/\u0E33/g, '\u0E4D\u0E32')
+
 /** Greedy line-wrap `text` to `maxPt` points at `fontSize`, breaking at Thai
  *  word boundaries (grapheme hard-split only when a single word is wider than
  *  the column). Lines are joined with ' \n' — the trailing space per line is
@@ -130,7 +172,7 @@ export function wrapPdfText(
   firstLineMaxPt?: number,
 ): string {
   const scale = fontSize / fk.unitsPerEm
-  const w = (s: string) => fk.layout(s).advanceWidth * scale
+  const w = (s: string) => scriptRuns(s).reduce((sum, run) => sum + fk.layout(run).advanceWidth, 0) * scale
   const wrapParagraph = (para: string): string[] => {
     const firstMax = firstLineMaxPt ?? maxPt
     if (!para || w(para) <= firstMax) return [para]
@@ -341,6 +383,7 @@ const CELL_CHROME_PT = 12
 export async function prewrapTableArgs<Row>(args: ExportTablePdfArgs<Row>): Promise<ExportTablePdfArgs<Row>> {
   const fk = await loadReportFont()
   if (!fk) return args
+  const wrap = (text: string, maxPt: number, fontSize: number) => drawableThai(wrapPdfText(fk, text, maxPt, fontSize))
   const pageW = PAGE_INNER_W[args.orientation ?? 'landscape']
   const spaceW = fk.layout(' ').advanceWidth * (CELL_FONT_SIZE / fk.unitsPerEm)
   const colMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - CELL_CHROME_PT - spaceW)
@@ -349,18 +392,18 @@ export async function prewrapTableArgs<Row>(args: ExportTablePdfArgs<Row>): Prom
     const max = colMax(c.widthPct)
     // Image cells hold a data URL, not prose — wrap only the header. The
     // text fallback ('-') is a single glyph and never needs breaking.
-    if (c.image) return { ...c, header: wrapPdfText(fk, c.header, max, CELL_FONT_SIZE) }
-    const wrappedRows = args.rows.map((row, ri) => wrapPdfText(fk, String(c.value(row, ri)), max, CELL_FONT_SIZE))
+    if (c.image) return { ...c, header: wrap(c.header, max, CELL_FONT_SIZE) }
+    const wrappedRows = args.rows.map((row, ri) => wrap(String(c.value(row, ri)), max, CELL_FONT_SIZE))
     return {
       ...c,
-      header: wrapPdfText(fk, c.header, max, CELL_FONT_SIZE),
+      header: wrap(c.header, max, CELL_FONT_SIZE),
       value: (_row: Row, ri: number) => wrappedRows[ri] ?? '',
     }
   })
   return {
     ...args,
-    title: wrapPdfText(fk, args.title, pageW - 10, 15),
-    filterNote: args.filterNote ? wrapPdfText(fk, args.filterNote, pageW - 60, CELL_FONT_SIZE) : args.filterNote,
+    title: wrap(args.title, pageW - 10, 15),
+    filterNote: args.filterNote ? wrap(args.filterNote, pageW - 60, CELL_FONT_SIZE) : args.filterNote,
     columns,
   }
 }
@@ -735,6 +778,7 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
 async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportReportPdfArgs> {
   const fk = await loadReportFont()
   if (!fk) return args
+  const wrap = (text: string, maxPt: number, fontSize: number) => drawableThai(wrapPdfText(fk, text, maxPt, fontSize))
   const pageW = PAGE_INNER_W[args.orientation ?? 'portrait']
 
   const blocks = args.blocks.map((block): PdfReportBlock => {
@@ -743,17 +787,17 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
       const itemW = (pageW - (cols === 1 ? 0 : 10 * cols)) / cols
       return {
         ...block,
-        title: block.title ? wrapPdfText(fk, block.title, pageW - 10, 10.5) : block.title,
+        title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
         items: block.items.map((it) => ({
-          label: wrapPdfText(fk, it.label, itemW * 0.55 - 6, 9),
-          value: wrapPdfText(fk, it.value, itemW * 0.45 - 6, 9),
+          label: wrap(it.label, itemW * 0.55 - 6, 9),
+          value: wrap(it.value, itemW * 0.45 - 6, 9),
         })),
       }
     }
     if (block.type === 'image') {
       return {
         ...block,
-        title: block.title ? wrapPdfText(fk, block.title, pageW - 10, 10.5) : block.title,
+        title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
       }
     }
     if (block.type === 'entries') {
@@ -763,14 +807,14 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
       const fieldW = rightW / 2 - 8
       return {
         ...block,
-        title: block.title ? wrapPdfText(fk, block.title, pageW - 10, 10.5) : block.title,
+        title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
         items: block.items.map((item) => ({
           ...item,
-          heading: wrapPdfText(fk, item.heading, rightW - 80, 9.5),
-          subheading: item.subheading ? wrapPdfText(fk, item.subheading, rightW - 6, 8.5) : item.subheading,
+          heading: wrap(item.heading, rightW - 80, 9.5),
+          subheading: item.subheading ? wrap(item.subheading, rightW - 6, 8.5) : item.subheading,
           fields: item.fields.map((f) => ({
-            label: wrapPdfText(fk, f.label, fieldW * 0.55 - 4, 8.5),
-            value: wrapPdfText(fk, f.value, fieldW * 0.45 - 4, 8.5),
+            label: wrap(f.label, fieldW * 0.55 - 4, 8.5),
+            value: wrap(f.value, fieldW * 0.45 - 4, 8.5),
           })),
         })),
       }
@@ -785,13 +829,13 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
     const cellMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - chrome - cellSpaceW)
     return {
       ...block,
-      title: block.title ? wrapPdfText(fk, block.title, pageW - 10, 10.5) : block.title,
-      columns: block.columns.map((c) => ({ ...c, header: wrapPdfText(fk, c.header, cellMax(c.widthPct), cellFont) })),
+      title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
+      columns: block.columns.map((c) => ({ ...c, header: wrap(c.header, cellMax(c.widthPct), cellFont) })),
       rows: block.rows.map((row): PdfTableRow => {
         // Band rows measure against the whole table width, not a column.
-        if (isGroupRow(row)) return { group: wrapPdfText(fk, row.group, cellMax(100), cellFont) }
+        if (isGroupRow(row)) return { group: wrap(row.group, cellMax(100), cellFont) }
         const cells = tableRowCells(row).map((cell, ci) =>
-          wrapPdfText(fk, String(cell), cellMax(block.columns[ci]?.widthPct ?? 10), cellFont)
+          wrap(String(cell), cellMax(block.columns[ci]?.widthPct ?? 10), cellFont)
         )
         return Array.isArray(row) ? cells : { ...row, cells }
       }),
@@ -800,8 +844,8 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
 
   return {
     ...args,
-    title: wrapPdfText(fk, args.title, pageW - 10, 15),
-    subtitleNote: args.subtitleNote ? wrapPdfText(fk, args.subtitleNote, pageW - 60, CELL_FONT_SIZE) : args.subtitleNote,
+    title: wrap(args.title, pageW - 10, 15),
+    subtitleNote: args.subtitleNote ? wrap(args.subtitleNote, pageW - 60, CELL_FONT_SIZE) : args.subtitleNote,
     blocks,
   }
 }

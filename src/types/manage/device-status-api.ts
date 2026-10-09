@@ -55,6 +55,9 @@ export interface ProjectCameraItem {
   id: string
   camera_name: string
   ip_address: string
+  /** The camera's own stream, the same as GET /cctv/cameras/{id} (BE added
+   *  it 2026-10-08 — before that the modal had to look it up elsewhere). */
+  hls_url: string
   is_online: boolean
   last_updated: string | null
   /** Every module the camera serves (1 CCTV, 2 Counting, 3 Analytic, …). */
@@ -72,4 +75,28 @@ export interface ProjectCameraGroup extends DeviceTotals {
 /** GET /manage/project/device-status/{id} — ordered by road_code, then chainage. */
 export interface APIResponseProjectDeviceStatus extends ProjectDeviceStatusBase, DeviceTotals {
   groups: ProjectCameraGroup[]
+}
+
+export interface APIRequestProjectDeviceStatusCameras {
+  /** The contractor's user_id, as for the list. */
+  contractor_id?: string
+  /** true = online cameras only, false = offline only, omitted = all. */
+  is_online?: boolean
+}
+
+/** A camera of the flat per-project list: the same item plus its road. */
+export interface ProjectCameraListCamera extends ProjectCameraItem {
+  road_id: number
+  road_code: string
+  sta: string
+}
+
+/** GET /manage/project/device-status/cameras — every visible project with its
+ *  cameras in one call (not paginated), ordered by road_code then chainage. A
+ *  project with no matching camera still comes back, with `cameras: []`. */
+export interface ProjectCameraListItem {
+  project_id: number
+  project_name: string
+  contract_no: string | null
+  cameras: ProjectCameraListCamera[]
 }

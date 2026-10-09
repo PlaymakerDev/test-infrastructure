@@ -30,9 +30,11 @@ import type {
 } from '@/types/manage/project-api'
 import type { UploadResponse } from '@/types/shared'
 import type {
+  APIRequestProjectDeviceStatusCameras,
   APIRequestProjectDeviceStatusList,
   APIResponseProjectDeviceStatus,
   APIResponseProjectDeviceStatusList,
+  ProjectCameraListItem,
 } from '@/types/manage/device-status-api'
 import type {
   APIResponseContractor,
@@ -434,6 +436,15 @@ export const getProjectDepartmentAPI = (params: APIRequestProjectDepartment) =>
 export const getProjectDeviceStatusListAPI = (params: APIRequestProjectDeviceStatusList) =>
   ApiService.fetchData<APIResponseProjectDeviceStatusList, APIRequestProjectDeviceStatusList>({
     url: '/manage/project/device-status',
+    method: 'GET',
+    params,
+  })
+
+/** Every project of a contractor with its cameras, in one call (not
+ *  paginated) — `is_online: false` keeps the offline ones only. */
+export const getProjectDeviceStatusCamerasAPI = (params: APIRequestProjectDeviceStatusCameras) =>
+  ApiService.fetchData<ProjectCameraListItem[], APIRequestProjectDeviceStatusCameras>({
+    url: '/manage/project/device-status/cameras',
     method: 'GET',
     params,
   })
