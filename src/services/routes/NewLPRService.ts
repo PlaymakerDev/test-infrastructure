@@ -73,6 +73,7 @@ export const getLPRPlateAPI = async (solutionId: string | number, params: APIReq
     url: `/lpr/solutions/${solutionId}/plates`,
     method: 'GET',
     params,
+    timeout: 30000, // 30 seconds timeout for the request
   })
 }
 

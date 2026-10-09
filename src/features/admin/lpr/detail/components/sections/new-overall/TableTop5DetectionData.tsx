@@ -66,7 +66,12 @@ const TableTop5DetectionData: React.FC<Props> = (props) => {
       dataIndex: 'camera_name',
       key: 'camera_name',
       width: 300,
-      ellipsis: true,
+      onCell: () => ({
+        style: {
+          whiteSpace: 'normal',
+          wordBreak: 'break-word',
+        }
+      }),
       render: (item) => {
         if (item) return item
         return '-'
