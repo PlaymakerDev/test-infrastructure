@@ -21,6 +21,7 @@ import {
 } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { PdfKvItem, PdfReportBlock } from '@/utils/export/pdf'
+import { naOr, phfOr } from './honestMetrics'
 
 interface Props {}
 
@@ -93,13 +94,13 @@ const AnalyticVolume: React.FC<Props> = () => {
         { label: 'Peak Period', value: ts?.peak_period ?? '-' },
         { label: 'Peak Volume', value: ts ? `${fmtNumber(ts.peak_volume, 0)} คัน` : '-' },
         { label: 'อัตราการไหล', value: ts ? `${fmtNumber(ts.traffic_flow, 1)} PCU / ชั่วโมง` : '-' },
-        { label: 'V/C Ratio', value: ts ? fmtNumber(ts.vc_ratio, 1) : '-' },
+        { label: 'V/C Ratio', value: ts ? naOr(ts.vc_ratio, 2) : '-' },
       ]),
       kv('การวิเคราะห์ปริมาณจราจร', [
         { label: 'ปริมาณจราจร 24 ชั่วโมง', value: ta ? `${fmtNumber(ta.total_count, 0)} คัน` : '-' },
         { label: 'PCU รวม', value: ta ? `${fmtNumber(ta.total_pcu, 1)} PCU` : '-' },
         { label: 'ปริมาณสูงสุด / ชั่วโมง', value: ta ? `${fmtNumber(ta.peak_hour, 0)} คัน` : '-' },
-        { label: 'Peak Hour Factor', value: ta ? fmtNumber(ta.peak_hour_factor, 1) : '-' },
+        { label: 'Peak Hour Factor', value: ta ? phfOr(ta.peak_hour_factor) : '-' },
       ]),
       kv('การกระจายยานพาหนะ', [
         { label: 'ยานพาหนะหลัก', value: vd?.main_vehicle ?? '-' },
@@ -145,8 +146,8 @@ const AnalyticVolume: React.FC<Props> = () => {
           label: 'ช่วงเวลาปริมาณจราจรสูงสุด',
           value: g ? `${g.peak_hour} น. (${g.peak_volume.toLocaleString()} คัน)` : '-',
         },
-        { label: 'Peak Hour Factor (PHF)', value: g ? g.phf.toFixed(1) : '-' },
-        { label: 'V/C Ratio', value: g ? g.vc_ratio.toFixed(1) : '-' },
+        { label: 'Peak Hour Factor (PHF)', value: g ? phfOr(g.phf) : '-' },
+        { label: 'V/C Ratio', value: g ? naOr(g.vc_ratio, 2) : '-' },
       ]),
       kv('ลักษณะการไหลของจราจร', [
         { label: 'Rush Hour Pattern', value: g?.flow_characteristic.rush_hour_patten ?? '-' },
@@ -177,11 +178,11 @@ const AnalyticVolume: React.FC<Props> = () => {
         { label: 'Traffic Variability', value: g?.traffic_quality.traffic_variability ?? '-' },
         {
           label: 'Capacity Utilization',
-          value: g ? `${g.traffic_quality.capacity_utilization.toFixed(1)}%` : '-',
+          value: g ? naOr(g.traffic_quality.capacity_utilization, 1, '%') : '-',
         },
         {
           label: 'Flow Efficiency',
-          value: g ? `${g.traffic_quality.flow_efficiency.toFixed(1)}%` : '-',
+          value: g ? naOr(g.traffic_quality.flow_efficiency, 1, '%') : '-',
         },
       ])
     )
@@ -232,7 +233,7 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'V/C Ratio',
-              value: ts ? fmtNumber(ts.vc_ratio, 1) : '-',
+              value: ts ? naOr(ts.vc_ratio, 2) : '-',
             },
           ]}
         />
@@ -257,7 +258,7 @@ const AnalyticVolume: React.FC<Props> = () => {
             },
             {
               label: 'Peak Hour Factor',
-              value: ta ? fmtNumber(ta.peak_hour_factor, 1) : '-',
+              value: ta ? phfOr(ta.peak_hour_factor) : '-',
             },
           ]}
         />

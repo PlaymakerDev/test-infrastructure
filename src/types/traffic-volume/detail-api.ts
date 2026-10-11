@@ -116,14 +116,14 @@ export interface CountingAnalyticTrafficSummary {
   /** ปริมาณการไหล (PCU/ชั่วโมง). */
   traffic_flow: number
   /** Volume-to-Capacity ratio. */
-  vc_ratio: number
+  vc_ratio: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
 }
 
 export interface CountingAnalyticTrafficAnalytic {
   total_count: number
   total_pcu: number
   peak_hour: number
-  peak_hour_factor: number
+  peak_hour_factor: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
 }
 
 export interface CountingAnalyticVehicleDistribution {
@@ -260,9 +260,9 @@ export interface CountingTrafficQuality {
   /** Thai descriptor for variability, e.g. "สูง". */
   traffic_variability: string
   /** Percent (0–100). */
-  capacity_utilization: number
+  capacity_utilization: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
   /** Percent (0–100). */
-  flow_efficiency: number
+  flow_efficiency: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
 }
 
 export interface APIResponseTrafficVolumeAnalyticGraph {
@@ -278,10 +278,10 @@ export interface APIResponseTrafficVolumeAnalyticGraph {
   /** Volume during the peak hour (คัน). */
   peak_volume: number
   /** Peak Hour Factor (PHF, ความสม่ำเสมอ). */
-  phf: number
+  phf: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
   /** Volume-to-Capacity ratio. */
-  vc_ratio: number
-  capacity: number
+  vc_ratio: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
+  capacity: number | null  // null = ประเมินไม่ได้/ข้อมูลไม่ครบ (backend 11 ต.ค. 2569)
   max_traffic: number
   min_traffic: number
   /** Thai-labelled flow characteristics — drives the "ลักษณะการไหลของจราจร" box. */

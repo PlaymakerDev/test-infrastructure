@@ -8,6 +8,7 @@ import { thaiDateBE } from '@/utils/thaiDate'
 import { useTrafficVolumeAnalyticGraph } from '@/hooks/queries/traffic-volume'
 import { useDetailContext } from '../../../context'
 import type { CountingAnalyticGraphPoint } from '@/types/traffic-volume/detail-api'
+import { naOr, phfOr } from './honestMetrics'
 
 interface Props {
   /** YYYY-MM-DD — selected by the FilterBarAnalytic. Forwarded to the
@@ -143,13 +144,13 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
         />
         <MiniStatCard
           color='#2CEABE'
-          value={apiData ? apiData.phf.toFixed(1) : '-'}
+          value={apiData ? phfOr(apiData.phf) : '-'}
           label='Peak Hour Factor'
           sublabel='PHF (ความสม่ำเสมอ)'
         />
         <MiniStatCard
           color='#00DDFF'
-          value={apiData ? apiData.vc_ratio.toFixed(1) : '-'}
+          value={apiData ? naOr(apiData.vc_ratio, 2) : '-'}
           label='V/C Ratio'
           sublabel='Volume/Capacity'
         />
@@ -230,7 +231,7 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
               value: apiData?.traffic_quality.level_of_service ?? '-',
               tone: '#22C55E',
               // `status` from API as sub-label — e.g. "คล่องตัวดีมาก".
-              sub: apiData?.traffic_quality.status ?? 'ไหลลื่น',
+              sub: apiData?.traffic_quality.status ?? '-',
             },
             {
               label: 'Traffic Variability',
@@ -240,17 +241,13 @@ const TrafficPatternPanel: React.FC<Props> = ({ date }) => {
             },
             {
               label: 'Capacity Utilization',
-              value: apiData
-                ? `${apiData.traffic_quality.capacity_utilization.toFixed(1)}%`
-                : '-',
+              value: apiData ? naOr(apiData.traffic_quality.capacity_utilization, 1, '%') : '-',
               tone: '#06B6D4',
               sub: 'การใช้ความจุ',
             },
             {
               label: 'Flow Efficiency',
-              value: apiData
-                ? `${apiData.traffic_quality.flow_efficiency.toFixed(1)}%`
-                : '-',
+              value: apiData ? naOr(apiData.traffic_quality.flow_efficiency, 1, '%') : '-',
               tone: '#3B82F6',
               sub: 'ประสิทธิภาพ',
             },
