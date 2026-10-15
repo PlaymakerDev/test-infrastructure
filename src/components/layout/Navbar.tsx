@@ -61,6 +61,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSidebarAPI } from "@/services/routes/LayoutService";
 import FindOnPageOverlay from "./FindOnPageOverlay";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import { resolveSolutionKey } from "./sidebar/solutionMenu";
 
 // Feature systems — link to their overall page scoped to the logged-in user's
 // own department (?dept_id=สำนัก/แขวง). The remaining management menus
@@ -79,8 +80,11 @@ const DEPT_SCOPED_KEYS = new Set([
   "lpr",
 ]);
 
-// Map menu label_key to the corresponding solution name returned by Sidebar API.
-// Dashboard is always available. Menu entries not listed here remain unchanged.
+// Menus gated on the Sidebar API: label_key → the solution key that
+// `resolveSolutionKey` (sidebar/solutionMenu.ts) yields for that solution
+// type. A menu is disabled when the user's side_menu carries no solution of
+// that type. Menus not listed here (dashboard, control_vms, statistic,
+// maintenance) are never gated.
 const SOLUTION_KEY_BY_MENU_LABEL_KEY: Record<string, string> = {
   cctv: "CCTV",
   traffic_volume: "Traffic Volume",
@@ -93,28 +97,11 @@ const SOLUTION_KEY_BY_MENU_LABEL_KEY: Record<string, string> = {
   tunnel: "Tunnel",
   tracking: "Tracking",
   lpr: "LPR",
-  control_vms: "Control VMS",
-  statistic: "Statistic",
-  maintenance: "Maintenance",
-};
-
-// Known solution_type_id values returned by Sidebar API.
-const SOLUTION_KEY_BY_TYPE_ID: Record<number, string> = {
-  1: "CCTV",
-  2: "Traffic Volume",
-  3: "Incident Detection",
-  4: "Traffic Signal",
-  5: "Crosswalk",
-  6: "Traffic Lighting",
-  7: "VMS",
-  8: "Tunnel",
-  9: "Tracking",
-  10: "Bridge Lighting",
-  11: "LPR",
 };
 
 // Normalize names so small differences in spaces/capitalization do not
-// prevent a solution from matching a menu entry.
+// prevent a solution from matching a menu entry (the name is only a fallback
+// for ids resolveSolutionKey doesn't know yet).
 const normalizeSolutionKey = (value: string | null | undefined) =>
   (value ?? "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
@@ -342,41 +329,22 @@ export default function Navbar() {
 
     const keys = departments.flatMap((department) =>
       (department.sub_department ?? []).flatMap((subDepartment) =>
-        (subDepartment.solutions ?? []).map((solution) => {
-          const keyById =
-            solution.solution_type_id != null
-              ? SOLUTION_KEY_BY_TYPE_ID[solution.solution_type_id]
-              : undefined;
-
-          return normalizeSolutionKey(
-            keyById ?? solution.solution_type_name
-          );
-        })
+        (subDepartment.solutions ?? []).map((solution) =>
+          normalizeSolutionKey(resolveSolutionKey(solution))
+        )
       )
     );
 
     return new Set(keys.filter(Boolean));
   }, [sidebarResponse]);
 
-  // Return true if a menu entry should be usable.
-  // Dashboard and menus not mapped to a solution are left unchanged.
-  // If the API is still loading or has failed, do not disable menus based on
-  // incomplete data.
+  // Return true if a menu entry should be usable. Menus not mapped to a
+  // solution are never gated. While the API is loading or has failed, keep
+  // every menu enabled rather than disabling on incomplete data.
   const isSolutionMenuAvailable = useCallback(
     (labelKey: string) => {
-      const alwaysEnabled = new Set([
-        "control_vms",
-        "statistic",
-        "maintenance",
-      ]);
-
-      if (alwaysEnabled.has(labelKey)) return true;
-      if (labelKey === "dashboard") return true;
-
       const solutionKey = SOLUTION_KEY_BY_MENU_LABEL_KEY[labelKey];
-
       if (!solutionKey) return true;
-
       if (isSidebarLoading || isSidebarError) return true;
 
       return availableSolutionKeys.has(normalizeSolutionKey(solutionKey));
@@ -647,7 +615,9 @@ export default function Navbar() {
     []
   );
 
-  // Trapezoid = shared admin menu minus Settings/Smart Search.
+  // Trapezoid = shared admin menu minus Settings/Smart Search. The LPR menu
+  // (formerly a design-only placeholder) is a real admin.ts entry now, ordered
+  // right after Tracking in the config itself.
   const navItems = useMemo(
     () =>
       menu["ADMIN"].filter(
@@ -659,6 +629,11 @@ export default function Navbar() {
   // Enriched entries shared by the desktop trapezoid AND the mobile popup
   // grid, so both always agree on icon overrides, active state, hrefs and
   // whether a solution exists in the Sidebar API.
+  // Dashboard → house icon; Tracking / LPR → shared design glyphs (the same
+  // components the map markers/pills use); everything else uses its admin.ts
+  // icon. (Navbar-only overrides — admin.ts stays icon-string.)
+  // Owned menus land on the user's own department; others navigate plainly.
+  // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
   const navEntries = useMemo(
     () =>
       navItems.map((item) => {
@@ -675,7 +650,10 @@ export default function Navbar() {
           ? `${item.path}?${deptQuery(homeDeptId)}`
           : item.path;
 
-        // Active on the overall page AND every subpage (detail/[id], tabs…).
+        // Active on the overall page AND every subpage (detail/[id], tabs…) —
+        // exact-only matching left the menu unlit on detail routes. The
+        // trailing '/' keeps sibling prefixes apart (e.g. /admin/traffic-signal
+        // never matches /admin/traffic-volume/...).
         const active =
           pathname === item.path_active ||
           !!pathname?.startsWith(item.path_active + "/");
@@ -698,17 +676,25 @@ export default function Navbar() {
       const { OverrideIcon, active, disabled } = item;
 
       return (
+        // Hover mirrors the active look (soft-yellow icon + label below) —
+        // replaces the native `title` tooltip, whose OS delay made the icons
+        // hard to identify. Active stays full brand yellow. A disabled entry
+        // is the exception: it gets a `title` explaining WHY it's disabled,
+        // since the hover label alone can't say that.
+        //
+        // The label animates open via max-width+opacity instead of a
+        // display:none↔block flip — the instant flip made the whole row
+        // jump sideways on every icon the cursor swept across (reported
+        // 2026-07-21). max-w-36 (144px) covers the longest label
+        // ("Incident Detection" ≈ 110px @13px); overflow-hidden clips
+        // during the tween so the text wipes open smoothly.
         <button
           key={item.key}
           type="button"
           disabled={disabled}
-          onClick={() => {
-            if (disabled) return;
-            router.push(item.href);
-          }}
+          onClick={() => router.push(item.href)}
           aria-label={item.title}
-          aria-disabled={disabled}
-          title={disabled ? `${item.title} (ไม่มี Solution ในระบบ)` : item.title}
+          title={disabled ? `${item.title} (ไม่มี Solution ในระบบ)` : undefined}
           className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 ${disabled
             ? "cursor-not-allowed text-gray-500 opacity-40"
             : active
@@ -755,13 +741,18 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* CENTER — trapezoid nav */}
+        {/* CENTER — trapezoid nav (from phu2 backup): flush to top, 72px tall
+            (= navbar height --nav-h), 900px wide centered, absolutely
+            positioned so it never affects the left/right sections. */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 z-20 hidden lg:block"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-          {/* Peek nub */}
+          {/* Peek nub (ติ่ง) — hangs at top-center while the trapezoid is
+            * hidden so users know the menu lives up here. Sits inside the
+            * hover wrapper, so pointing at it reveals the menu; the nub
+            * itself is pointer-events-none (the wrapper owns the hover). */}
           <div
             aria-hidden
             className={`absolute top-0 left-1/2 -translate-x-1/2 flex items-center justify-center transition-opacity duration-500 ${hovered || locked || intro ? "opacity-0" : "opacity-100"
@@ -769,6 +760,8 @@ export default function Navbar() {
             style={{
               width: 76,
               height: 14,
+              // Softer than the trapezoid's #000000E6 — the nub should hint,
+              // not block the map behind it.
               background: "#00000023",
               borderInline: "1px solid rgba(252,209,22,0.35)",
               borderBottom: "1px solid rgba(252,209,22,0.35)",
@@ -787,7 +780,7 @@ export default function Navbar() {
               }`}
             style={{ height: 72, width: "fit-content", maxWidth: "90vw" }}
           >
-            {/* Background shape — trapezoid */}
+            {/* Background shape — trapezoid (height scaled to 60) */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
               viewBox="0 0 810 60"
@@ -806,7 +799,13 @@ export default function Navbar() {
 
             {renderTrapezoidNav}
 
-            {/* Lock toggle */}
+            {/* Lock toggle (last item) — pins the menu open so it no longer
+              * auto-hides on mouse-leave; click again to return to hover mode.
+              * Built with the SAME column layout as the menu items above
+              * (24px icon + hover/active label), so it sits flush on the same
+              * row — no size or vertical offset. While locked the icon breathes
+              * a yellow glow and its label stays lit like an active item;
+              * unlocked, the label wipes in on hover just like the others. */}
             <motion.button
               type="button"
               onClick={() => setLocked((v) => !v)}
@@ -872,9 +871,16 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE (< lg) system-menu popup */}
+        {/* MOBILE (< lg) system-menu popup — trigger button lives in
+            .mobile-side-menu below (beside the ... button; a centered tab
+            covered page text like the map-hint chip). Kept in an untransformed
+            wrapper: a CSS transform on an ancestor would re-anchor the `fixed`
+            backdrop to that ancestor instead of the viewport. */}
         <div className="lg:hidden">
           <AnimatePresence>
+            {/* Backdrop — dims the page; tap anywhere outside to close. Both
+                children sit DIRECTLY under AnimatePresence as keyed motion
+                components (fragments/plain wrappers break exit tracking). */}
             {mobileNavOpen && (
               <motion.div
                 key="mobile-nav-backdrop"
@@ -888,6 +894,10 @@ export default function Navbar() {
               />
             )}
 
+            {/* Popup grid — 3 columns, same entries/order as desktop. The
+                centering -50% lives in motion's x (constant across states)
+                because motion owns the transform and would overwrite a
+                Tailwind -translate-x-1/2. */}
             {mobileNavOpen && (
               <motion.div
                 key="mobile-nav-panel"
@@ -914,12 +924,9 @@ export default function Navbar() {
                         type="button"
                         disabled={disabled}
                         onClick={() => {
-                          if (disabled) return;
-
                           setMobileNavOpenAt(null);
                           router.push(item.href);
                         }}
-                        aria-disabled={disabled}
                         className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 transition-colors ${disabled
                           ? "cursor-not-allowed text-gray-500 opacity-40"
                           : active
@@ -950,7 +957,9 @@ export default function Navbar() {
               </motion.div>
             )}
 
-            {/* "..." utilities popup */}
+            {/* "..." utilities popup — same backdrop/panel treatment as the
+                system menu above; entries carry labels so each glyph is
+                self-explanatory (the old dropdown was icon-only). */}
             {mobileMoreOpen && (
               <motion.div
                 key="mobile-more-backdrop"
@@ -1011,12 +1020,18 @@ export default function Navbar() {
         </div>
 
         <div className="nav-side-menu">
-          {/* Focus-mode picker */}
+          {/* Focus-mode picker — the old single-button (off ↔ both) is now a
+            * dropdown with 4 modes so users can hide LEFT / RIGHT / BOTH.
+            * Left-click opens the menu; keyboard/`aria-pressed` still track
+            * whether ANY side is currently hidden. */}
           <Dropdown
             trigger={focusAvailable && !directFocusToggle ? ["click"] : []}
             disabled={!focusAvailable || directFocusToggle}
             menu={{
               selectedKeys: [mapFocusMode],
+              // Truck Tracking overall (/admin/tracking): only ทั้งหมด/ซ่อนทั้งคู่ —
+              // its tabs' side rails are one visual unit, so per-side hiding
+              // reads broken there (2026-07-22).
               items: [
                 {
                   key: "off",
@@ -1103,7 +1118,10 @@ export default function Navbar() {
             </motion.button>
           </Dropdown>
 
-          {/* Find-on-page trigger */}
+          {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
+              icon *is* the shortcut. Open state paints the icon yellow with
+              a breathing glow; the small "Ctrl+F" chip below only appears on
+              hover so it doesn't fight the tighter icons for space. */}
           <motion.button
             type="button"
             onClick={() => {
@@ -1146,6 +1164,8 @@ export default function Navbar() {
               <TbSearch className={iconClassName} />
             </motion.span>
 
+            {/* Hover chip — Ctrl+F hint. Positioned below so it never clips
+                the trapezoid above. */}
             <span
               className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums whitespace-nowrap"
               style={{
@@ -1158,7 +1178,8 @@ export default function Navbar() {
             </span>
           </motion.button>
 
-          {/* Smart Search */}
+          {/* Smart Search — AI-chat glyph (Hugeicons ai-chat-01 via IconAIChat);
+            * active = yellow, same as every other menu icon. */}
           <motion.button
             type="button"
             onClick={() => router.push("/admin/smart-search")}
@@ -1216,15 +1237,19 @@ export default function Navbar() {
         </div>
 
         <div className="mobile-side-menu">
-          {/* Inner flex wrapper */}
+          {/* Inner flex wrapper — layout.css forces .mobile-side-menu itself
+              to `display: block` (unlayered, beats Tailwind utilities), so
+              the gap must live one level down. */}
           <div className="flex items-center gap-4">
-            {/* System-menu trigger */}
+            {/* System-menu trigger — pops the nav grid (same entries as the
+                desktop trapezoid). Sits beside the ... button instead of a
+                centered tab so it never covers page text under the navbar. */}
             <Button
               shape="circle"
               aria-label={mobileNavOpen ? "ปิดเมนูระบบ" : "เปิดเมนูระบบ"}
               aria-expanded={mobileNavOpen}
               onClick={() => {
-                setMobileMoreOpenAt(null);
+                setMobileMoreOpenAt(null); // one popup at a time
                 setMobileNavOpenAt(
                   mobileNavOpen ? null : mobileNavKey
                 );
@@ -1240,7 +1265,8 @@ export default function Navbar() {
               icon={<TbApps />}
             />
 
-            {/* "..." utilities */}
+            {/* "..." utilities — pops the labeled grid panel (same look as the
+                system menu); replaces the old icon-only antd Dropdown. */}
             <Button
               shape="circle"
               aria-label={
