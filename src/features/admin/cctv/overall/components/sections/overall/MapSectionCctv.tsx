@@ -60,7 +60,7 @@ const MapSectionCctv: React.FC<Props> = ({ deptId, roadId, edgeFade }) => {
 
   return (
     <BaseMap initialZoom={5.4} edgeFade={edgeFade}>
-      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={12} />
+      <FitBoundsEffect coords={coords} padding={fitPadding} maxZoom={12} trimOutliers />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
       {/* สทช./ขทช. aggregate bubbles (dashboard-style ladder, menu colors) —
           the pin layer below only shows past the ขทช. tier. */}

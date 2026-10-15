@@ -1,6 +1,7 @@
 "use client"
 import { useEffect } from 'react'
 import { useMap } from '../hooks/useMap'
+import { trimOutlierCoords } from '../utils/trimOutlierCoords'
 
 type Padding = number | { top: number; bottom: number; left: number; right: number }
 
@@ -19,6 +20,10 @@ interface Props {
   /** Tilt (deg) to keep after framing. `fitBounds` computes a top-down (pitch 0)
    *  camera, so detail maps that want the 3D look must pass this (e.g. 55). */
   pitch?: number
+  /** Ignore points far from where the rest cluster (see `trimOutlierCoords`)
+   *  so one mistyped/placeholder coordinate can't widen the frame to the whole
+   *  country. For overall maps that frame a department's whole fleet. */
+  trimOutliers?: boolean
 }
 
 /**
@@ -26,14 +31,23 @@ interface Props {
  * of a hard-coded center/zoom. Re-runs whenever the set of points changes.
  * A single point falls back to `flyTo` at `maxZoom`.
  */
-const FitBoundsEffect: React.FC<Props> = ({ coords, padding = 48, maxZoom = 14, duration = 900, pitch }) => {
+const FitBoundsEffect: React.FC<Props> = ({ coords: rawCoords, padding = 48, maxZoom = 14, duration = 900, pitch, trimOutliers = false }) => {
   const { map, isLoaded } = useMap()
+  const coords = trimOutliers ? trimOutlierCoords(rawCoords) : rawCoords
   // Stable key from the coord set — identical points (new array ref each render)
   // must NOT re-trigger the camera animation.
   const key = coords.map((c) => `${c[0].toFixed(6)},${c[1].toFixed(6)}`).join('|')
 
   useEffect(() => {
     if (!map || !isLoaded || coords.length === 0) return
+
+    if (process.env.NODE_ENV !== 'production' && coords.length < rawCoords.length) {
+      const kept = new Set(coords)
+      console.warn(
+        '[FitBoundsEffect] ignored outlier coordinate(s) when framing — check their geometry_point:',
+        rawCoords.filter((c) => !kept.has(c)),
+      )
+    }
 
     // Count UNIQUE positions — several cameras often share one exact
     // coordinate (a spiderfy group). Sending an identical-point set through

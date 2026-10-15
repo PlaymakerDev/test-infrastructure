@@ -1,11 +1,11 @@
 "use client"
 import { scopeQuerySuffix } from '@/services/routes/scopeParam'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
 import DeviceMarkerLayer from '@/components/map/markers/DeviceMarkerLayer'
 import RegionSummaryLayer, { REGION_DEVICE_MIN_ZOOM } from '@/components/map/markers/RegionSummaryLayer'
-import { useMap } from '@/components/map/hooks/useMap'
+import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import PopupDetailLink from '@/components/map/primitives/PopupDetailLink'
 import { useTrafficVolumeOverview } from '@/hooks/queries/traffic-volume'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -93,68 +93,23 @@ const TrafficVolumePopup: React.FC<{
 
 interface MarkerLayerGroupProps {
   locations: CountingLocation[]
-  centroid: [number, number] | null
   isReady: boolean
 }
 
 const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   locations,
-  centroid,
   isReady,
 }) => {
-  const { map, isLoaded } = useMap()
   const router = useRouter()
   const deptId = useDeptId()
 
-  // Fit the map to all markers so the user sees the whole fleet at once.
-  // Single-marker case can't form bounds → fall back to `flyTo` at a
-  // sensible street-level zoom. `maxZoom` caps how close we zoom when the
-  // markers are clustered tightly (e.g. one bureau's stations within a
-  // few hundred meters of each other).
-  useEffect(() => {
-    if (!map || !isLoaded || !isReady) return
-
-    const valid = locations
-      .map((l) => l.geometry_point)
-      .filter(
-        (pt): pt is [number, number] =>
-          Array.isArray(pt) &&
-          pt.length === 2 &&
-          !(pt[0] === 0 && pt[1] === 0)
-      )
-
-    if (valid.length === 0) {
-      // No coords at all — use the centroid if it's non-zero.
-      if (centroid && (centroid[0] !== 0 || centroid[1] !== 0)) {
-        map.flyTo({ center: centroid, zoom: 6, duration: 1200 })
-      }
-      return
-    }
-
-    if (valid.length === 1) {
-      map.flyTo({ center: valid[0], zoom: 13, duration: 1200 })
-      return
-    }
-
-    let minLng = valid[0][0],
-      maxLng = valid[0][0],
-      minLat = valid[0][1],
-      maxLat = valid[0][1]
-    for (const [lng, lat] of valid) {
-      if (lng < minLng) minLng = lng
-      if (lng > maxLng) maxLng = lng
-      if (lat < minLat) minLat = lat
-      if (lat > maxLat) maxLat = lat
-    }
-
-    map.fitBounds(
-      [
-        [minLng, minLat],
-        [maxLng, maxLat],
-      ],
-      { padding: 60, maxZoom: 12, duration: 1200 }
-    )
-  }, [map, isLoaded, isReady, locations, centroid])
+  // Frame every station with a coordinate — same FitBoundsEffect (and the
+  // same outlier guard) as the cctv / incident-detection overall maps, so a
+  // bureau opens framed on the bureau instead of the whole country.
+  const coords = useMemo<[number, number][]>(
+    () => locations.map((l) => l.geometry_point).filter(isValidCoord),
+    [locations]
+  )
 
   // One source for all markers — lets Mapbox cluster nearby stations together.
   const allData = useMemo(() => toGeoJSON(locations), [locations])
@@ -162,18 +117,21 @@ const TrafficVolumeMarkerLayer: React.FC<MarkerLayerGroupProps> = ({
   if (!isReady) return null
 
   return (
-    <DeviceMarkerLayer
-      minZoom={REGION_DEVICE_MIN_ZOOM}
-      type='Counting'
-      id='traffic-volume'
-      data={allData}
-      cluster
-      size={18}
-      popup={(f) => (
-        <TrafficVolumePopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
-      )}
-      popupOptions={{ offset: 10, closeButton: false }}
-    />
+    <>
+      <FitBoundsEffect coords={coords} padding={60} maxZoom={12} trimOutliers />
+      <DeviceMarkerLayer
+        minZoom={REGION_DEVICE_MIN_ZOOM}
+        type='Counting'
+        id='traffic-volume'
+        data={allData}
+        cluster
+        size={18}
+        popup={(f) => (
+          <TrafficVolumePopup feature={f} deptId={deptId} onNavigate={(u) => router.push(u)} />
+        )}
+        popupOptions={{ offset: 10, closeButton: false }}
+      />
+    </>
   )
 }
 
@@ -196,7 +154,6 @@ const MapTrafficVolume: React.FC<Props> = ({ roadId }) => {
         <RegionSummaryLayer type='Counting' />
         <TrafficVolumeMarkerLayer
           locations={data?.locations ?? []}
-          centroid={data?.centroid ?? null}
           isReady={isSuccess}
         />
       </BaseMap>

@@ -59,7 +59,7 @@ const MapSection: React.FC<Props> = (props) => {
 
   return (
     <BaseMap initialZoom={5.4} edgeFade={{ left: 10, right: 10, top: 10, bottom: 10 }}>
-      <FitBoundsEffect coords={coords} padding={56} maxZoom={12} />
+      <FitBoundsEffect coords={coords} padding={56} maxZoom={12} trimOutliers />
       <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
       <RegionSummaryLayer type='Analytic' />
       <DeviceMarkerLayer
