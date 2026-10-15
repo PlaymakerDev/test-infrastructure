@@ -57,7 +57,8 @@ import IconAIChat from "@/components/icon/IconAIChat";
 import { Button, Dropdown, MenuProps, Modal } from "antd";
 import { AnimatePresence, motion } from "motion/react";
 import axios, { AxiosError } from "axios";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSidebarAPI } from "@/services/routes/LayoutService";
 import FindOnPageOverlay from "./FindOnPageOverlay";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
@@ -77,6 +78,45 @@ const DEPT_SCOPED_KEYS = new Set([
   "tunnel",
   "lpr",
 ]);
+
+// Map menu label_key to the corresponding solution name returned by Sidebar API.
+// Dashboard is always available. Menu entries not listed here remain unchanged.
+const SOLUTION_KEY_BY_MENU_LABEL_KEY: Record<string, string> = {
+  cctv: "CCTV",
+  traffic_volume: "Traffic Volume",
+  incident_detection: "Incident Detection",
+  traffic_signal: "Traffic Signal",
+  crosswalk: "Crosswalk",
+  traffic_lighting: "Traffic Lighting",
+  vms: "VMS",
+  bridge_lighting: "Bridge Lighting",
+  tunnel: "Tunnel",
+  tracking: "Tracking",
+  lpr: "LPR",
+  control_vms: "Control VMS",
+  statistic: "Statistic",
+  maintenance: "Maintenance",
+};
+
+// Known solution_type_id values returned by Sidebar API.
+const SOLUTION_KEY_BY_TYPE_ID: Record<number, string> = {
+  1: "CCTV",
+  2: "Traffic Volume",
+  3: "Incident Detection",
+  4: "Traffic Signal",
+  5: "Crosswalk",
+  6: "Traffic Lighting",
+  7: "VMS",
+  8: "Tunnel",
+  9: "Tracking",
+  10: "Bridge Lighting",
+  11: "LPR",
+};
+
+// Normalize names so small differences in spaces/capitalization do not
+// prevent a solution from matching a menu entry.
+const normalizeSolutionKey = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
 // Overall pages where the focus-mode picker collapses to a single click:
 // instead of opening the left/right/both dropdown, clicking the button just
@@ -104,7 +144,10 @@ dayjs.extend(buddhistEra);
 dayjs().format("BBBB BB");
 dayjs.locale(th);
 
-const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_LIST: Record<
+  string,
+  React.ComponentType<{ size?: number; className?: string }>
+> = {
   TbForms,
   TbBrandDatabricks,
   // ADMIN
@@ -127,7 +170,7 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
   TbShieldHalf,
   TbSettings,
   TbBrandGithubCopilot,
-}
+};
 
 // The LPR scan-frame glyph (design's text.svg) lives in
 // @/components/icon/IconLPR — shared with the map pills/markers so the
@@ -138,77 +181,101 @@ const ICON_LIST: Record<string, React.ComponentType<{ size?: number; className?:
  *  feature is active — extracted from the find-on-page button so all five
  *  buttons (map-focus / find / smart-search / bell / more-menu) light up the
  *  same way. */
-const IconGlow: React.FC<{ active: boolean; children: React.ReactNode }> = ({ active, children }) => (
+const IconGlow: React.FC<{
+  active: boolean;
+  children: React.ReactNode;
+}> = ({ active, children }) => (
   <motion.span
     className="flex"
     animate={
       active
         ? {
           filter: [
-            'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
-            'drop-shadow(0 0 8px rgba(252,209,22,1))',
-            'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+            "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
+            "drop-shadow(0 0 8px rgba(252,209,22,1))",
+            "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
           ],
         }
-        : { filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))' }
+        : { filter: "drop-shadow(0 0 0 rgba(0,0,0,0))" }
     }
-    transition={active ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+    transition={
+      active
+        ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+        : { duration: 0.2 }
+    }
   >
     {children}
   </motion.span>
-)
+);
 
 export default function Navbar() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const iconClassName = "fs-24 cursor-pointer"
-  const dispatch = useAppDispatch()
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const iconClassName = "fs-24 cursor-pointer";
+  const dispatch = useAppDispatch();
+
   // STATE
-  const [currentTime, setCurrentTime] = useState(dayjs().format('HH:mm:ss'))
-  const [scrolled, setScrolled] = useState(false)
-  const [hovered, setHovered] = useState(false)
+  const [currentTime, setCurrentTime] = useState(dayjs().format("HH:mm:ss"));
+  const [scrolled, setScrolled] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
   // Lock the trapezoid open — the lock icon at the end toggles this. When
   // locked the menu ignores hover and stays visible. Persists while navigating
   // (layout doesn't remount); resets on a full page reload.
-  const [locked, setLocked] = useState(false)
+  const [locked, setLocked] = useState(false);
+
   // Post-login intro — the trapezoid shows for 5s when the admin shell first
   // mounts (login redirect / hard reload) so users learn the menu exists,
-  // then slowly fades back to hover mode; the peek nub below stays as the
+  // then slowly fades back to hover mode; the peek nub below stays the
   // permanent hint. Client-side navigation never remounts this, so the intro
   // plays once per entry into /admin, not on every page change.
-  const [intro, setIntro] = useState(true)
+  const [intro, setIntro] = useState(true);
+
   useEffect(() => {
-    const t = setTimeout(() => setIntro(false), 5000)
-    return () => clearTimeout(t)
-  }, [])
+    const t = setTimeout(() => setIntro(false), 5000);
+    return () => clearTimeout(t);
+  }, []);
+
   // Find-on-page overlay (Ctrl+F clone). Owned here because the trigger
   // buttons live in this nav — the overlay itself renders as a portal-like
   // fixed element that visually attaches under the navbar.
-  const [findOpen, setFindOpen] = useState(false)
+  const [findOpen, setFindOpen] = useState(false);
+
   // Right-cluster popouts are mutually exclusive — the find overlay, the
   // bell panel, the focus-mode menu and the "..." menu can never be open at
   // the same time. Each opener calls closeOtherPopouts with its own key.
-  const [extraOpen, setExtraOpen] = useState(false)
-  const [focusMenuOpen, setFocusMenuOpen] = useState(false)
-  const [bellOpen, setBellOpen] = useState(false)
+  const [extraOpen, setExtraOpen] = useState(false);
+  const [focusMenuOpen, setFocusMenuOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+
   // Same query keys the bell itself uses, so this is the same cached poll —
   // it only exists here to badge the mobile "..." entry.
-  const { caseCount: bellCaseCount, outageCount: bellOutageCount } = useNotificationFeedBadges()
-  const closeOtherPopouts = useCallback((keep: 'find' | 'bell' | 'focus' | 'extra') => {
-    if (keep !== 'find') setFindOpen(false)
-    if (keep !== 'bell') setBellOpen(false)
-    if (keep !== 'focus') setFocusMenuOpen(false)
-    if (keep !== 'extra') setExtraOpen(false)
-  }, [])
+  const {
+    caseCount: bellCaseCount,
+    outageCount: bellOutageCount,
+  } = useNotificationFeedBadges();
+
+  const closeOtherPopouts = useCallback(
+    (keep: "find" | "bell" | "focus" | "extra") => {
+      if (keep !== "find") setFindOpen(false);
+      if (keep !== "bell") setBellOpen(false);
+      if (keep !== "focus") setFocusMenuOpen(false);
+      if (keep !== "extra") setExtraOpen(false);
+    },
+    []
+  );
+
   // Mobile (< lg) replacement for the hover trapezoid: a single trapezoid tab
   // at top-center that pops a grid of the same nav entries. Closes on backdrop
   // tap, tapping the tab again — and on ANY navigation (path or query) without
   // an effect: open state stores the URL it was opened at, so a route/query
   // change derives it closed on the next render.
-  const [mobileNavOpenAt, setMobileNavOpenAt] = useState<string | null>(null)
+  const [mobileNavOpenAt, setMobileNavOpenAt] = useState<string | null>(null);
+
   // Department of the logged-in user — appended to the owned menus' links.
-  const homeDeptId = useHomeDeptId()
+  const homeDeptId = useHomeDeptId();
+
   // Global "focus the map" toggle — hides every card/panel on overall pages
   // that host a map. Bound to the TbZoomInArea button below.
   // `focusAvailable` comes from live consumer registration (MapFocusGrid /
@@ -223,30 +290,99 @@ export default function Navbar() {
     setMapFocus,
     setMode: setMapFocusMode,
     toggle: toggleMapFocus,
-  } = useMapFocusMode()
+  } = useMapFocusMode();
+
   // This Navbar hydrates inside a Suspense boundary, so a page's own mount
   // effects (dashboard turns focus ON, MapFocusGrid registers consumers) can
   // land BEFORE it. Render the server's values for the hydration pass, then
   // the live ones — otherwise React sees markup the SSR HTML never had.
-  const hydrated = useHydrated()
-  const mapFocusMode = hydrated ? liveFocusMode : 'off'
-  const isMapFocus = hydrated && liveIsMapFocus
-  const focusAvailable = hydrated && liveFocusAvailable
+  const hydrated = useHydrated();
+  const mapFocusMode = hydrated ? liveFocusMode : "off";
+  const isMapFocus = hydrated && liveIsMapFocus;
+  const focusAvailable = hydrated && liveFocusAvailable;
+
   // On the listed overall pages the picker becomes a plain click-to-toggle
   // (off ↔ both) — no dropdown, per 2026-07-24 request.
-  const directFocusToggle = focusAvailable && DIRECT_FOCUS_TOGGLE_ROUTES.has(pathname)
+  const directFocusToggle =
+    focusAvailable && DIRECT_FOCUS_TOGGLE_ROUTES.has(pathname);
+
   // ระบบและการตั้งค่า is dropped for a general `user`: every tab on that page
   // is admin-only (`/manage/roads` write, `/manage/contractor`,
   // `/manage/general_user`) and `/manage/project` doesn't admit role `user`
   // either — see `features/admin/settings/overall/data/tabs.ts`. Their menu is
   // just ออกจากระบบ. `isUser` only turns true once the role has resolved, so an
   // admin's entry never blinks out from under them.
-  const { isUser } = useUserRole()
-  const canOpenSettings = !isUser
+  const { isUser } = useUserRole();
+  const canOpenSettings = !isUser;
+
   // MODAL
-  const [modal, contextHolder] = Modal.useModal()
+  const [modal, contextHolder] = Modal.useModal();
+
   // QUERY CLIENT
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+
+  // Sidebar API — use the same query key as the Sidebar component so React
+  // Query can share the cached response. This query runs even when the drawer
+  // is closed because the navbar needs the solution list to enable/disable
+  // its menu entries.
+  const {
+    data: sidebarResponse,
+    isLoading: isSidebarLoading,
+    isError: isSidebarError,
+  } = useQuery({
+    queryKey: ["sidebar_data"],
+    queryFn: getSidebarAPI,
+  });
+
+  // Build a set of solutions available in the Sidebar API.
+  // The response data shape is:
+  // department -> sub_department -> solutions.
+  const availableSolutionKeys = useMemo(() => {
+    const departments = sidebarResponse?.data ?? [];
+
+    const keys = departments.flatMap((department) =>
+      (department.sub_department ?? []).flatMap((subDepartment) =>
+        (subDepartment.solutions ?? []).map((solution) => {
+          const keyById =
+            solution.solution_type_id != null
+              ? SOLUTION_KEY_BY_TYPE_ID[solution.solution_type_id]
+              : undefined;
+
+          return normalizeSolutionKey(
+            keyById ?? solution.solution_type_name
+          );
+        })
+      )
+    );
+
+    return new Set(keys.filter(Boolean));
+  }, [sidebarResponse]);
+
+  // Return true if a menu entry should be usable.
+  // Dashboard and menus not mapped to a solution are left unchanged.
+  // If the API is still loading or has failed, do not disable menus based on
+  // incomplete data.
+  const isSolutionMenuAvailable = useCallback(
+    (labelKey: string) => {
+      const alwaysEnabled = new Set([
+        "control_vms",
+        "statistic",
+        "maintenance",
+      ]);
+
+      if (alwaysEnabled.has(labelKey)) return true;
+      if (labelKey === "dashboard") return true;
+
+      const solutionKey = SOLUTION_KEY_BY_MENU_LABEL_KEY[labelKey];
+
+      if (!solutionKey) return true;
+
+      if (isSidebarLoading || isSidebarError) return true;
+
+      return availableSolutionKeys.has(normalizeSolutionKey(solutionKey));
+    },
+    [availableSolutionKeys, isSidebarLoading, isSidebarError]
+  );
 
   // Reset focus mode on ANY navigation — path OR query (e.g. picking another
   // แขวง from the sidebar keeps the same pathname but swaps ?dept_id). Without
@@ -257,92 +393,106 @@ export default function Navbar() {
   // a Suspense boundary it could otherwise land AFTER a page's own mount
   // effect and clobber an intentional landing state (dashboard's map-only
   // intro turns focus ON on mount and relies on winning the landing frame).
-  const searchKey = searchParams.toString()
-  const focusResetFirstRunRef = useRef(true)
+  const searchKey = searchParams.toString();
+  const focusResetFirstRunRef = useRef(true);
+
   useEffect(() => {
     if (focusResetFirstRunRef.current) {
-      focusResetFirstRunRef.current = false
-      return
+      focusResetFirstRunRef.current = false;
+      return;
     }
-    setMapFocus(false)
-  }, [pathname, searchKey, setMapFocus])
+    setMapFocus(false);
+  }, [pathname, searchKey, setMapFocus]);
 
   // Derived: the popup is open only while still on the URL it was opened at.
-  const mobileNavKey = `${pathname}?${searchKey}`
-  const mobileNavOpen = mobileNavOpenAt === mobileNavKey
+  const mobileNavKey = `${pathname}?${searchKey}`;
+  const mobileNavOpen = mobileNavOpenAt === mobileNavKey;
+
   // Mobile "..." utilities popup — same URL-keyed open state + same grid panel
   // styling as the system-menu popup above, holding what the desktop right-icon
   // row offers (map focus / find / smart search / notifications / settings /
   // logout) with labels, replacing the old 3-icon label-less dropdown.
-  const [mobileMoreOpenAt, setMobileMoreOpenAt] = useState<string | null>(null)
-  const mobileMoreOpen = mobileMoreOpenAt === mobileNavKey
+  const [mobileMoreOpenAt, setMobileMoreOpenAt] = useState<string | null>(null);
+  const mobileMoreOpen = mobileMoreOpenAt === mobileNavKey;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(dayjs().format('HH:mm:ss'))
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
+      setCurrentTime(dayjs().format("HH:mm:ss"));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Global Ctrl+F / Cmd+F — hijack the browser's native find-in-page and
   // route it to our in-app overlay instead. Users who explicitly want the
   // browser's search can still use it via the menu or Ctrl+G on Firefox.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
-        e.preventDefault()
-        closeOtherPopouts('find')
-        setFindOpen(true)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.shiftKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "f"
+      ) {
+        e.preventDefault();
+        closeOtherPopouts("find");
+        setFindOpen(true);
       }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [closeOtherPopouts])
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeOtherPopouts]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const performLogout = useCallback(async () => {
     try {
-      const response = await axios.post(`${process.env.__NEXT_ROUTER_BASEPATH ?? ''}/api/auth/logout`, {})
+      const response = await axios.post(
+        `${process.env.__NEXT_ROUTER_BASEPATH ?? ""}/api/auth/logout`,
+        {}
+      );
+
       if (response.status === 200) {
         // Drop this user's cached (token-scoped) data so the next login starts clean.
-        queryClient.clear()
-        dispatch(resetAuthTokenState())
-        dispatch(resetAuthInfoState())
+        queryClient.clear();
+        dispatch(resetAuthTokenState());
+        dispatch(resetAuthInfoState());
 
         modal.success({
-          title: 'คุณได้ออกจากระบบเรียบร้อยแล้ว',
-          onOk: () => router.push('/auth/login'),
+          title: "คุณได้ออกจากระบบเรียบร้อยแล้ว",
+          onOk: () => router.push("/auth/login"),
           onCancel: () => Modal.destroyAll(),
-        })
+        });
       }
     } catch (error) {
       if (error instanceof AxiosError) {
         modal.error({
-          title: 'Logout failed',
+          title: "Logout failed",
           content: error.response?.data?.res_data?.message,
           onOk: () => Modal.destroyAll(),
           onCancel: () => Modal.destroyAll(),
-        })
+        });
       }
     }
-  }, [modal, router, queryClient, dispatch])
+  }, [modal, router, queryClient, dispatch]);
 
   // Confirm before logging out — "ออกจากระบบ" (OK) proceeds, "ยกเลิก" (Cancel)
   // keeps the session. Both the desktop dropdown and the mobile grid call this.
   const onLogout = useCallback(() => {
     modal.confirm({
-      title: 'ต้องการออกจากระบบใช่หรือไม่?',
-      content: 'หากออกจากระบบ คุณจะต้องเข้าสู่ระบบใหม่อีกครั้ง',
-      okText: 'ออกจากระบบ',
-      cancelText: 'ยกเลิก',
+      title: "ต้องการออกจากระบบใช่หรือไม่?",
+      content: "หากออกจากระบบ คุณจะต้องเข้าสู่ระบบใหม่อีกครั้ง",
+      okText: "ออกจากระบบ",
+      cancelText: "ยกเลิก",
       onOk: performLogout,
-    })
-  }, [modal, performLogout])
+    });
+  }, [modal, performLogout]);
 
   // Entries for the mobile "..." grid panel — everything the desktop
   // right-icon row offers, now with visible labels (the old label-less
@@ -350,45 +500,45 @@ export default function Navbar() {
   // settings / logout entirely).
   const moreEntries = [
     {
-      key: 'map-focus',
-      label: isMapFocus ? 'ปิดเน้นแผนที่' : 'เน้นแผนที่',
+      key: "map-focus",
+      label: isMapFocus ? "ปิดเน้นแผนที่" : "เน้นแผนที่",
       icon: isMapFocus
         ? <TbZoomReset size={22} />
         : <TbZoomInArea size={22} />,
       disabled: !focusAvailable,
       active: isMapFocus,
-      title: !focusAvailable ? 'หน้านี้ไม่มีแผนที่ให้เน้น' : undefined,
+      title: !focusAvailable ? "หน้านี้ไม่มีแผนที่ให้เน้น" : undefined,
       // Close the panel so the focus result is immediately visible — keeping
       // it open left the backdrop over a layout that just changed underneath.
       onClick: () => {
-        setMobileMoreOpenAt(null)
-        toggleMapFocus()
+        setMobileMoreOpenAt(null);
+        toggleMapFocus();
       },
     },
     {
-      key: 'find',
-      label: 'ค้นหาในหน้า',
+      key: "find",
+      label: "ค้นหาในหน้า",
       icon: <TbSearch size={22} />,
       active: findOpen,
       onClick: () => {
-        setMobileMoreOpenAt(null)
-        closeOtherPopouts('find')
-        setFindOpen(true)
+        setMobileMoreOpenAt(null);
+        closeOtherPopouts("find");
+        setFindOpen(true);
       },
     },
     {
-      key: 'smart-search',
-      label: 'Smart Search',
+      key: "smart-search",
+      label: "Smart Search",
       icon: <IconAIChat size={22} />,
-      active: !!pathname?.startsWith('/admin/smart-search'),
+      active: !!pathname?.startsWith("/admin/smart-search"),
       onClick: () => {
-        setMobileMoreOpenAt(null)
-        router.push('/admin/smart-search')
+        setMobileMoreOpenAt(null);
+        router.push("/admin/smart-search");
       },
     },
     {
-      key: 'notifications',
-      label: 'แจ้งเตือน',
+      key: "notifications",
+      label: "แจ้งเตือน",
       // The bell's own trigger lives in .nav-side-menu, which layout.css
       // hides under 900px — this entry IS the trigger on mobile, so it
       // carries the counts too, split the same way as the desktop bell:
@@ -399,103 +549,116 @@ export default function Navbar() {
           {(bellCaseCount > 0 || bellOutageCount > 0) && (
             <span className="absolute -top-1.5 left-full -translate-x-2 flex flex-col items-start gap-0.5 pointer-events-none">
               {[
-                { key: 'case', n: bellCaseCount, bg: 'var(--yellow)', fg: '#191919' },
-                { key: 'outage', n: bellOutageCount, bg: '#ff4d4f', fg: '#fff' },
-              ].filter((c) => c.n > 0).map((c) => (
-                <span
-                  key={c.key}
-                  className="flex items-center justify-center rounded-full font-bold"
-                  style={{
-                    background: c.bg,
-                    color: c.fg,
-                    lineHeight: 1,
-                    fontSize: 10,
-                    height: 15,
-                    minWidth: 15,
-                    padding: '2px 4px 0',
-                    boxShadow: '0 0 0 1.5px #191919',
-                  }}
-                >
-                  {c.n > 99 ? '99+' : c.n}
-                </span>
-              ))}
+                {
+                  key: "case",
+                  n: bellCaseCount,
+                  bg: "var(--yellow)",
+                  fg: "#191919",
+                },
+                {
+                  key: "outage",
+                  n: bellOutageCount,
+                  bg: "#ff4d4f",
+                  fg: "#fff",
+                },
+              ]
+                .filter((c) => c.n > 0)
+                .map((c) => (
+                  <span
+                    key={c.key}
+                    className="flex items-center justify-center rounded-full font-bold"
+                    style={{
+                      background: c.bg,
+                      color: c.fg,
+                      lineHeight: 1,
+                      fontSize: 10,
+                      height: 15,
+                      minWidth: 15,
+                      padding: "2px 4px 0",
+                      boxShadow: "0 0 0 1.5px #191919",
+                    }}
+                  >
+                    {c.n > 99 ? "99+" : c.n}
+                  </span>
+                ))}
             </span>
           )}
         </span>
       ),
       active: bellOpen,
       onClick: () => {
-        setMobileMoreOpenAt(null)
-        closeOtherPopouts('bell')
-        setBellOpen(true)
+        setMobileMoreOpenAt(null);
+        closeOtherPopouts("bell");
+        setBellOpen(true);
       },
     },
-    ...(canOpenSettings ? [{
-      key: 'settings',
-      label: 'ระบบและการตั้งค่า',
-      icon: <TbSettings size={22} />,
-      active: !!pathname?.startsWith('/admin/settings'),
-      onClick: () => {
-        setMobileMoreOpenAt(null)
-        router.push('/admin/settings')
-      },
-    }] : []),
+    ...(canOpenSettings
+      ? [
+        {
+          key: "settings",
+          label: "ระบบและการตั้งค่า",
+          icon: <TbSettings size={22} />,
+          active: !!pathname?.startsWith("/admin/settings"),
+          onClick: () => {
+            setMobileMoreOpenAt(null);
+            router.push("/admin/settings");
+          },
+        },
+      ]
+      : []),
     {
-      key: 'logout',
-      label: 'ออกจากระบบ',
+      key: "logout",
+      label: "ออกจากระบบ",
       icon: <TbLogout size={22} />,
       active: false,
       onClick: () => {
-        setMobileMoreOpenAt(null)
-        onLogout()
+        setMobileMoreOpenAt(null);
+        onLogout();
       },
     },
-  ]
+  ];
 
-  const extraItems: MenuProps['items'] = [
-    ...(canOpenSettings ? [{
-      key: '1',
-      label: 'ระบบและการตั้งค่า',
-      icon: <TbSettings size={24} />,
-      onClick: () => router.push("/admin/settings"),
-    }] : []),
+  const extraItems: MenuProps["items"] = [
+    ...(canOpenSettings
+      ? [
+        {
+          key: "1",
+          label: "ระบบและการตั้งค่า",
+          icon: <TbSettings size={24} />,
+          onClick: () => router.push("/admin/settings"),
+        },
+      ]
+      : []),
     {
-      key: '2',
-      label: 'ออกจากระบบ',
+      key: "2",
+      label: "ออกจากระบบ",
       icon: <TbLogout size={24} />,
       onClick: () => onLogout(),
-
-    }
-  ]
+    },
+  ];
 
   // Fallback to a location icon for menu items without one (e.g. Tracking,
   // whose icon is empty in the shared admin menu — left untouched here).
   const Icon = useCallback(
     (iconName: string, props: { size?: number; className?: string }) => {
-      const IconComponent = ICON_LIST[iconName] ?? TbCurrentLocation
-      return <IconComponent {...props} />
+      const IconComponent = ICON_LIST[iconName] ?? TbCurrentLocation;
+      return <IconComponent {...props} />;
     },
     []
-  )
+  );
 
-  // Trapezoid = shared admin menu minus Settings/Smart Search. The LPR menu
-  // (formerly a design-only placeholder) is a real admin.ts entry now, ordered
-  // right after Tracking in the config itself.
+  // Trapezoid = shared admin menu minus Settings/Smart Search.
   const navItems = useMemo(
     () =>
       menu["ADMIN"].filter(
         (m) => m.label_key !== "settings" && m.label_key !== "smart_search"
       ),
     []
-  )
+  );
 
   // Enriched entries shared by the desktop trapezoid AND the mobile popup
-  // grid, so both always agree on icon overrides, active state, and hrefs.
-  // Dashboard → house icon; Tracking / LPR → shared design glyphs (the same
-  // components the map markers/pills use); everything else uses its admin.ts
-  // icon. (Navbar-only overrides — admin.ts stays icon-string.)
-  // Owned menus land on the user's own department; others navigate plainly.
-  // dept 0 (ส่วนกลาง) adds scope=all so the overall page shows every bureau.
+  // grid, so both always agree on icon overrides, active state, hrefs and
+  // whether a solution exists in the Sidebar API.
   const navEntries = useMemo(
     () =>
       navItems.map((item) => {
@@ -506,61 +669,76 @@ export default function Navbar() {
               ? IconTracking
               : item.label_key === "lpr"
                 ? IconLPR
-                : undefined
+                : undefined;
+
         const href = DEPT_SCOPED_KEYS.has(item.label_key)
           ? `${item.path}?${deptQuery(homeDeptId)}`
-          : item.path
-        // Active on the overall page AND every subpage (detail/[id], tabs…) —
-        // exact-only matching left the menu unlit on detail routes. The
-        // trailing '/' keeps sibling prefixes apart (e.g. /admin/traffic-signal
-        // never matches /admin/traffic-volume/...).
+          : item.path;
+
+        // Active on the overall page AND every subpage (detail/[id], tabs…).
         const active =
           pathname === item.path_active ||
-          !!pathname?.startsWith(item.path_active + '/')
-        return { ...item, OverrideIcon, href, active }
+          !!pathname?.startsWith(item.path_active + "/");
+
+        const disabled = !isSolutionMenuAvailable(item.label_key);
+
+        return {
+          ...item,
+          OverrideIcon,
+          href,
+          active,
+          disabled,
+        };
       }),
-    [navItems, pathname, homeDeptId]
-  )
+    [navItems, pathname, homeDeptId, isSolutionMenuAvailable]
+  );
 
   const renderTrapezoidNav = useMemo(() => {
     return navEntries.map((item) => {
-      const { OverrideIcon, active } = item
+      const { OverrideIcon, active, disabled } = item;
+
       return (
-        // Hover mirrors the active look (soft-yellow icon + label below) —
-        // replaces the native `title` tooltip, whose OS delay made the icons
-        // hard to identify. Active stays full brand yellow.
-        //
-        // The label animates open via max-width+opacity instead of a
-        // display:none↔block flip — the instant flip made the whole row
-        // jump sideways on every icon the cursor swept across (reported
-        // 2026-07-21). max-w-36 (144px) covers the longest label
-        // ("Incident Detection" ≈ 110px @13px); overflow-hidden clips
-        // during the tween so the text wipes open smoothly.
         <button
           key={item.key}
-          onClick={() => router.push(item.href)}
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            if (disabled) return;
+            router.push(item.href);
+          }}
           aria-label={item.title}
-          className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${active ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
+          aria-disabled={disabled}
+          title={disabled ? `${item.title} (ไม่มี Solution ในระบบ)` : item.title}
+          className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 ${disabled
+            ? "cursor-not-allowed text-gray-500 opacity-40"
+            : active
+              ? "cursor-pointer text-(--yellow)"
+              : "cursor-pointer text-white/70 hover:text-[#FFE97A]"
             }`}
         >
           <span className="transition-colors duration-300">
-            {OverrideIcon ? <OverrideIcon size={24} /> : Icon(item.icon, { size: 24 })}
+            {OverrideIcon
+              ? <OverrideIcon size={24} />
+              : Icon(item.icon, { size: 24 })}
           </span>
+
           <span
-            className={`hidden lg:block overflow-hidden fs-12 font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${active
-              ? "max-w-36 opacity-100 text-(--yellow)"
-              : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
+            className={`hidden lg:block overflow-hidden fs-12 font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${disabled
+              ? "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-gray-500"
+              : active
+                ? "max-w-36 opacity-100 text-(--yellow)"
+                : "max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 text-[#FFE97A]"
               }`}
           >
             {item.label}
           </span>
         </button>
-      )
-    })
-  }, [navEntries, router, Icon])
+      );
+    });
+  }, [navEntries, router, Icon]);
 
   return (
-    <nav className={`navbar ${scrolled ? ' scrolled' : ''}`}>
+    <nav className={`navbar${scrolled ? " scrolled" : ""}`}>
       <div className="nav-container">
         <div className="nav-main-menu">
           <TbMenu2
@@ -568,40 +746,40 @@ export default function Navbar() {
             onClick={() => dispatch(setDrawerOpen({ open: true }))}
           />
           <div>
-            <p className="fs-12" suppressHydrationWarning>{currentTime}</p>
-            <p className="fs-12" suppressHydrationWarning>{dayjs().format('DD MMMM BBBB')}</p>
+            <p className="fs-12" suppressHydrationWarning>
+              {currentTime}
+            </p>
+            <p className="fs-12" suppressHydrationWarning>
+              {dayjs().format("DD MMMM BBBB")}
+            </p>
           </div>
         </div>
-        {/* CENTER — trapezoid nav (from phu2 backup): flush to top, 72px tall
-            (= navbar height --nav-h), 900px wide centered, absolutely
-            positioned so it never affects the left/right sections. */}
+
+        {/* CENTER — trapezoid nav */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 z-20 hidden lg:block"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-          {/* Peek nub (ติ่ง) — hangs at top-center while the trapezoid is
-            * hidden so users know the menu lives up here. Sits inside the
-            * hover wrapper, so pointing at it reveals the menu; the nub
-            * itself is pointer-events-none (the wrapper owns the hover). */}
+          {/* Peek nub */}
           <div
             aria-hidden
-            className={`absolute top-0 left-1/2 -translate-x-1/2 flex items-center justify-center transition-opacity duration-500 ${hovered || locked || intro ? 'opacity-0' : 'opacity-100'}`}
+            className={`absolute top-0 left-1/2 -translate-x-1/2 flex items-center justify-center transition-opacity duration-500 ${hovered || locked || intro ? "opacity-0" : "opacity-100"
+              }`}
             style={{
               width: 76,
               height: 14,
-              // Softer than the trapezoid's #000000E6 — the nub should hint,
-              // not block the map behind it.
-              background: '#00000023',
-              borderInline: '1px solid rgba(252,209,22,0.35)',
-              borderBottom: '1px solid rgba(252,209,22,0.35)',
-              borderRadius: '0 0 10px 10px',
-              boxShadow: '0 2px 10px rgba(252,209,22,0.35)',
-              pointerEvents: 'none',
+              background: "#00000023",
+              borderInline: "1px solid rgba(252,209,22,0.35)",
+              borderBottom: "1px solid rgba(252,209,22,0.35)",
+              borderRadius: "0 0 10px 10px",
+              boxShadow: "0 2px 10px rgba(252,209,22,0.35)",
+              pointerEvents: "none",
             }}
           >
             <TbGripHorizontal size={12} className="text-(--yellow)" />
           </div>
+
           <div
             className={`relative flex items-center justify-center gap-0.5 lg:gap-1 px-8 lg:px-10 transition-all duration-500 ${hovered || locked || intro
               ? "opacity-100 translate-y-0"
@@ -609,12 +787,14 @@ export default function Navbar() {
               }`}
             style={{ height: 72, width: "fit-content", maxWidth: "90vw" }}
           >
-            {/* Background shape — trapezoid (height scaled to 60) */}
+            {/* Background shape — trapezoid */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
               viewBox="0 0 810 60"
               preserveAspectRatio="none"
-              style={{ filter: "drop-shadow(0px 2px 15px rgba(252, 209, 22, 0.6))" }}
+              style={{
+                filter: "drop-shadow(0px 2px 15px rgba(252, 209, 22, 0.6))",
+              }}
             >
               <path
                 d="M0,0 L810,0 L790,52.5 Q787,60 780,60 L30,60 Q23,60 20,52.5 L0,0Z"
@@ -623,21 +803,19 @@ export default function Navbar() {
                 strokeWidth="1"
               />
             </svg>
+
             {renderTrapezoidNav}
-            {/* Lock toggle (last item) — pins the menu open so it no longer
-              * auto-hides on mouse-leave; click again to return to hover mode.
-              * Built with the SAME column layout as the menu items above
-              * (24px icon + hover/active label), so it sits flush on the same
-              * row — no size or vertical offset. While locked the icon breathes
-              * a yellow glow and its label stays lit like an active item;
-              * unlocked, the label wipes in on hover just like the others. */}
+
+            {/* Lock toggle */}
             <motion.button
               type="button"
               onClick={() => setLocked((v) => !v)}
               title={locked ? "ปลดล็อก (ซ่อนเมนูอัตโนมัติ)" : "ล็อกเมนูให้แสดงตลอด"}
               aria-pressed={locked}
               aria-label={locked ? "ปลดล็อกเมนู" : "ล็อกเมนู"}
-              className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${locked ? "text-(--yellow)" : "text-white/70 hover:text-[#FFE97A]"
+              className={`group relative flex flex-col items-center justify-center gap-0.5 px-1.5 lg:px-2 h-full transition-colors duration-300 shrink-0 cursor-pointer ${locked
+                ? "text-(--yellow)"
+                : "text-white/70 hover:text-[#FFE97A]"
                 }`}
               whileTap={{ scale: 0.9 }}
             >
@@ -657,17 +835,31 @@ export default function Navbar() {
                         "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
                       ],
                     }
-                    : { rotate: 0, scale: 1, opacity: 1, filter: "drop-shadow(0 0 0 rgba(0,0,0,0))" }
+                    : {
+                      rotate: 0,
+                      scale: 1,
+                      opacity: 1,
+                      filter: "drop-shadow(0 0 0 rgba(0,0,0,0))",
+                    }
                 }
                 transition={{
                   rotate: { type: "spring", stiffness: 420, damping: 18 },
                   scale: { type: "spring", stiffness: 420, damping: 18 },
                   opacity: { duration: 0.2 },
-                  ...(locked ? { filter: { duration: 2, repeat: Infinity, ease: "easeInOut" } } : {}),
+                  ...(locked
+                    ? {
+                      filter: {
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      },
+                    }
+                    : {}),
                 }}
               >
                 {locked ? <TbLock size={24} /> : <TbLockOpen size={24} />}
               </motion.span>
+
               <span
                 className={`hidden lg:block overflow-hidden fs-12 font-medium whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${locked
                   ? "max-w-36 opacity-100 text-(--yellow)"
@@ -679,21 +871,15 @@ export default function Navbar() {
             </motion.button>
           </div>
         </div>
-        {/* MOBILE (< lg) system-menu popup — trigger button lives in
-            .mobile-side-menu below (beside the ... button; a centered tab
-            covered page text like the map-hint chip). Kept in an untransformed
-            wrapper: a CSS transform on an ancestor would re-anchor the `fixed`
-            backdrop to that ancestor instead of the viewport. */}
+
+        {/* MOBILE (< lg) system-menu popup */}
         <div className="lg:hidden">
           <AnimatePresence>
-            {/* Backdrop — dims the page; tap anywhere outside to close. Both
-                children sit DIRECTLY under AnimatePresence as keyed motion
-                components (fragments/plain wrappers break exit tracking). */}
             {mobileNavOpen && (
               <motion.div
                 key="mobile-nav-backdrop"
                 className="fixed inset-0 z-10"
-                style={{ background: 'rgba(0, 0, 0, 0.45)' }}
+                style={{ background: "rgba(0, 0, 0, 0.45)" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -701,57 +887,75 @@ export default function Navbar() {
                 onClick={() => setMobileNavOpenAt(null)}
               />
             )}
-            {/* Popup grid — 3 columns, same entries/order as desktop. The
-                centering -50% lives in motion's x (constant across states)
-                because motion owns the transform and would overwrite a
-                Tailwind -translate-x-1/2. */}
+
             {mobileNavOpen && (
               <motion.div
                 key="mobile-nav-panel"
                 className="absolute left-1/2 z-20 rounded-2xl overflow-hidden"
                 style={{
-                  top: 'calc(100% + 10px)',
-                  width: 'min(92vw, 400px)',
-                  background: '#000000E6',
-                  border: '1px solid rgba(252,209,22,0.3)',
-                  boxShadow: '0px 2px 15px rgba(252, 209, 22, 0.45)',
+                  top: "calc(100% + 10px)",
+                  width: "min(92vw, 400px)",
+                  background: "#000000E6",
+                  border: "1px solid rgba(252,209,22,0.3)",
+                  boxShadow: "0px 2px 15px rgba(252, 209, 22, 0.45)",
                 }}
-                initial={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
-                animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
-                exit={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: -12, scale: 0.96, x: "-50%" }}
+                animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                exit={{ opacity: 0, y: -12, scale: 0.96, x: "-50%" }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
               >
                 <div className="grid grid-cols-3 py-1">
                   {navEntries.map((item) => {
-                    const { OverrideIcon, active } = item
+                    const { OverrideIcon, active, disabled } = item;
+
                     return (
                       <button
                         key={item.key}
+                        type="button"
+                        disabled={disabled}
                         onClick={() => {
-                          setMobileNavOpenAt(null)
-                          router.push(item.href)
+                          if (disabled) return;
+
+                          setMobileNavOpenAt(null);
+                          router.push(item.href);
                         }}
-                        className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 cursor-pointer transition-colors ${active ? 'text-(--yellow)' : 'text-white/75 active:text-white'}`}
-                        title={item.title}
+                        aria-disabled={disabled}
+                        className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 transition-colors ${disabled
+                          ? "cursor-not-allowed text-gray-500 opacity-40"
+                          : active
+                            ? "cursor-pointer text-(--yellow)"
+                            : "cursor-pointer text-white/75 active:text-white"
+                          }`}
+                        title={
+                          disabled
+                            ? `${item.title} (ไม่มี Solution ในระบบ)`
+                            : item.title
+                        }
                       >
-                        <span>{OverrideIcon ? <OverrideIcon size={22} /> : Icon(item.icon, { size: 22 })}</span>
-                        <span className={`fs-12 leading-tight text-center ${active ? 'font-semibold' : ''}`}>
+                        <span>
+                          {OverrideIcon
+                            ? <OverrideIcon size={22} />
+                            : Icon(item.icon, { size: 22 })}
+                        </span>
+                        <span
+                          className={`fs-12 leading-tight text-center ${active && !disabled ? "font-semibold" : ""
+                            }`}
+                        >
                           {item.label}
                         </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </motion.div>
             )}
-            {/* "..." utilities popup — same backdrop/panel treatment as the
-                system menu above; entries carry labels so each glyph is
-                self-explanatory (the old dropdown was icon-only). */}
+
+            {/* "..." utilities popup */}
             {mobileMoreOpen && (
               <motion.div
                 key="mobile-more-backdrop"
                 className="fixed inset-0 z-10"
-                style={{ background: 'rgba(0, 0, 0, 0.45)' }}
+                style={{ background: "rgba(0, 0, 0, 0.45)" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -759,38 +963,43 @@ export default function Navbar() {
                 onClick={() => setMobileMoreOpenAt(null)}
               />
             )}
+
             {mobileMoreOpen && (
               <motion.div
                 key="mobile-more-panel"
                 className="absolute left-1/2 z-20 rounded-2xl overflow-hidden"
                 style={{
-                  top: 'calc(100% + 10px)',
-                  width: 'min(92vw, 400px)',
-                  background: '#000000E6',
-                  border: '1px solid rgba(252,209,22,0.3)',
-                  boxShadow: '0px 2px 15px rgba(252, 209, 22, 0.45)',
+                  top: "calc(100% + 10px)",
+                  width: "min(92vw, 400px)",
+                  background: "#000000E6",
+                  border: "1px solid rgba(252,209,22,0.3)",
+                  boxShadow: "0px 2px 15px rgba(252, 209, 22, 0.45)",
                 }}
-                initial={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
-                animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
-                exit={{ opacity: 0, y: -12, scale: 0.96, x: '-50%' }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: -12, scale: 0.96, x: "-50%" }}
+                animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                exit={{ opacity: 0, y: -12, scale: 0.96, x: "-50%" }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
               >
                 <div className="grid grid-cols-3 py-1">
                   {moreEntries.map((item) => (
                     <button
                       key={item.key}
+                      type="button"
                       disabled={item.disabled}
                       onClick={item.disabled ? undefined : item.onClick}
                       className={`flex flex-col items-center justify-center gap-1.5 py-3 px-1 transition-colors ${item.disabled
-                        ? 'opacity-40 cursor-not-allowed text-white/75'
+                        ? "opacity-40 cursor-not-allowed text-white/75"
                         : item.active
-                          ? 'text-(--yellow) cursor-pointer'
-                          : 'text-white/75 active:text-white cursor-pointer'
+                          ? "text-(--yellow) cursor-pointer"
+                          : "text-white/75 active:text-white cursor-pointer"
                         }`}
                       title={item.title}
                     >
                       <span>{item.icon}</span>
-                      <span className={`fs-12 leading-tight text-center ${item.active ? 'font-semibold' : ''}`}>
+                      <span
+                        className={`fs-12 leading-tight text-center ${item.active ? "font-semibold" : ""
+                          }`}
+                      >
                         {item.label}
                       </span>
                     </button>
@@ -800,40 +1009,51 @@ export default function Navbar() {
             )}
           </AnimatePresence>
         </div>
+
         <div className="nav-side-menu">
-          {/* Focus-mode picker — the old single-button (off ↔ both) is now a
-            * dropdown with 4 modes so users can hide LEFT / RIGHT / BOTH.
-            * Left-click opens the menu; keyboard/`aria-pressed` still track
-            * whether ANY side is currently hidden. */}
+          {/* Focus-mode picker */}
           <Dropdown
-            trigger={focusAvailable && !directFocusToggle ? ['click'] : []}
+            trigger={focusAvailable && !directFocusToggle ? ["click"] : []}
             disabled={!focusAvailable || directFocusToggle}
             menu={{
               selectedKeys: [mapFocusMode],
-              // Truck Tracking overall (/admin/tracking): only ทั้งหมด/ซ่อนทั้งคู่ —
-              // its tabs' side rails are one visual unit, so per-side hiding
-              // reads broken there (2026-07-22).
               items: [
-                { key: 'off', label: 'แสดงทั้งหมด', icon: <TbZoomReset size={16} /> },
-                ...(pathname === '/admin/tracking'
+                {
+                  key: "off",
+                  label: "แสดงทั้งหมด",
+                  icon: <TbZoomReset size={16} />,
+                },
+                ...(pathname === "/admin/tracking"
                   ? []
                   : [
-                    { key: 'left', label: 'ซ่อนแผงฝั่งซ้าย', icon: <TbLayoutSidebarLeftCollapse size={16} /> },
-                    { key: 'right', label: 'ซ่อนแผงฝั่งขวา', icon: <TbLayoutSidebarRightCollapse size={16} /> },
+                    {
+                      key: "left",
+                      label: "ซ่อนแผงฝั่งซ้าย",
+                      icon: <TbLayoutSidebarLeftCollapse size={16} />,
+                    },
+                    {
+                      key: "right",
+                      label: "ซ่อนแผงฝั่งขวา",
+                      icon: <TbLayoutSidebarRightCollapse size={16} />,
+                    },
                   ]),
-                { key: 'both', label: 'ซ่อนทั้งสองฝั่ง', icon: <TbZoomInArea size={16} /> },
+                {
+                  key: "both",
+                  label: "ซ่อนทั้งสองฝั่ง",
+                  icon: <TbZoomInArea size={16} />,
+                },
               ],
               onClick: ({ key }) => {
-                setMapFocusMode(key as 'off' | 'left' | 'right' | 'both')
-                setFocusMenuOpen(false)
+                setMapFocusMode(key as "off" | "left" | "right" | "both");
+                setFocusMenuOpen(false);
               },
             }}
             placement="bottomLeft"
-            classNames={{ root: 'nav-glow-menu' }}
+            classNames={{ root: "nav-glow-menu" }}
             open={focusMenuOpen}
             onOpenChange={(v) => {
-              setFocusMenuOpen(v)
-              if (v) closeOtherPopouts('focus')
+              setFocusMenuOpen(v);
+              if (v) closeOtherPopouts("focus");
             }}
           >
             <motion.button
@@ -843,51 +1063,61 @@ export default function Navbar() {
               whileHover={focusAvailable ? { scale: 1.15 } : undefined}
               whileTap={focusAvailable ? { scale: 0.9 } : undefined}
               className={`inline-flex items-center justify-center transition-colors ${!focusAvailable
-                ? 'text-white/25 cursor-not-allowed'
+                ? "text-white/25 cursor-not-allowed"
                 : isMapFocus
-                  ? 'text-(--yellow) cursor-pointer'
-                  : 'text-inherit hover:text-white cursor-pointer'}`}
-              aria-label={isMapFocus ? 'Exit map focus mode' : 'Enter map focus mode'}
+                  ? "text-(--yellow) cursor-pointer"
+                  : "text-inherit hover:text-white cursor-pointer"
+                }`}
+              aria-label={
+                isMapFocus ? "Exit map focus mode" : "Enter map focus mode"
+              }
               aria-pressed={isMapFocus}
               aria-disabled={!focusAvailable}
-              title={!focusAvailable
-                ? 'หน้านี้ไม่มีแผนที่ให้เน้น'
-                : directFocusToggle
-                  ? (isMapFocus ? 'แสดงทั้งหมด' : 'ซ่อนทั้งสองฝั่ง')
-                  : mapFocusMode === 'left'
-                    ? 'ซ่อนฝั่งซ้าย — คลิกเพื่อเปลี่ยน'
-                    : mapFocusMode === 'right'
-                      ? 'ซ่อนฝั่งขวา — คลิกเพื่อเปลี่ยน'
-                      : mapFocusMode === 'both'
-                        ? 'ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน'
-                        : 'เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)'}
+              title={
+                !focusAvailable
+                  ? "หน้านี้ไม่มีแผนที่ให้เน้น"
+                  : directFocusToggle
+                    ? isMapFocus
+                      ? "แสดงทั้งหมด"
+                      : "ซ่อนทั้งสองฝั่ง"
+                    : mapFocusMode === "left"
+                      ? "ซ่อนฝั่งซ้าย — คลิกเพื่อเปลี่ยน"
+                      : mapFocusMode === "right"
+                        ? "ซ่อนฝั่งขวา — คลิกเพื่อเปลี่ยน"
+                        : mapFocusMode === "both"
+                          ? "ซ่อนทั้งสองฝั่ง — คลิกเพื่อเปลี่ยน"
+                          : "เน้นแผนที่ (คลิกเพื่อเลือกฝั่งที่จะซ่อน)"
+              }
             >
               <IconGlow active={focusAvailable && isMapFocus}>
-                {mapFocusMode === 'left'
-                  ? <TbLayoutSidebarLeftCollapse className="fs-24" />
-                  : mapFocusMode === 'right'
-                    ? <TbLayoutSidebarRightCollapse className="fs-24" />
-                    : mapFocusMode === 'both'
-                      ? <TbZoomReset className="fs-24" />
-                      : <TbZoomInArea className="fs-24" />}
+                {mapFocusMode === "left" ? (
+                  <TbLayoutSidebarLeftCollapse className="fs-24" />
+                ) : mapFocusMode === "right" ? (
+                  <TbLayoutSidebarRightCollapse className="fs-24" />
+                ) : mapFocusMode === "both" ? (
+                  <TbZoomReset className="fs-24" />
+                ) : (
+                  <TbZoomInArea className="fs-24" />
+                )}
               </IconGlow>
             </motion.button>
           </Dropdown>
-          {/* Find-on-page trigger — mirrors the Ctrl+F affordance so the
-              icon *is* the shortcut. Open state paints the icon yellow with
-              a breathing glow; the small "Ctrl+F" chip below only appears on
-              hover so it doesn't fight the tighter icons for space. */}
+
+          {/* Find-on-page trigger */}
           <motion.button
             type="button"
             onClick={() => {
-              closeOtherPopouts('find')
-              setFindOpen((v) => !v)
+              closeOtherPopouts("find");
+              setFindOpen((v) => !v);
             }}
             title="ค้นหาในหน้า (Ctrl+F)"
-            className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors ${findOpen ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+            className={`group relative inline-flex items-center justify-center cursor-pointer transition-colors ${findOpen
+              ? "text-(--yellow)"
+              : "text-inherit hover:text-white"
+              }`}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
-            aria-label={findOpen ? 'ปิดค้นหาในหน้า' : 'เปิดค้นหาในหน้า'}
+            aria-label={findOpen ? "ปิดค้นหาในหน้า" : "เปิดค้นหาในหน้า"}
             aria-pressed={findOpen}
           >
             <motion.span
@@ -896,39 +1126,49 @@ export default function Navbar() {
                 findOpen
                   ? {
                     filter: [
-                      'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
-                      'drop-shadow(0 0 8px rgba(252,209,22,1))',
-                      'drop-shadow(0 0 2px rgba(252,209,22,0.7))',
+                      "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
+                      "drop-shadow(0 0 8px rgba(252,209,22,1))",
+                      "drop-shadow(0 0 2px rgba(252,209,22,0.7))",
                     ],
                   }
-                  : { filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))' }
+                  : { filter: "drop-shadow(0 0 0 rgba(0,0,0,0))" }
               }
-              transition={findOpen ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+              transition={
+                findOpen
+                  ? {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+                  : { duration: 0.2 }
+              }
             >
               <TbSearch className={iconClassName} />
             </motion.span>
-            {/* Hover chip — Ctrl+F hint. Positioned below so it never clips
-                the trapezoid above. */}
+
             <span
               className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums whitespace-nowrap"
               style={{
-                background: 'rgba(0,0,0,0.75)',
-                color: 'rgba(255,255,255,0.85)',
-                border: '1px solid rgba(252,209,22,0.35)',
+                background: "rgba(0,0,0,0.75)",
+                color: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(252,209,22,0.35)",
               }}
             >
               Ctrl + F
             </span>
           </motion.button>
-          {/* Smart Search — AI-chat glyph (Hugeicons ai-chat-01 via IconAIChat);
-            * active = yellow, same as every other menu icon. */}
+
+          {/* Smart Search */}
           <motion.button
             type="button"
             onClick={() => router.push("/admin/smart-search")}
             title="Smart Search"
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
-            className={`inline-flex items-center justify-center cursor-pointer transition-colors ${pathname?.startsWith("/admin/smart-search") ? "text-(--yellow)" : "text-inherit hover:text-white"}`}
+            className={`inline-flex items-center justify-center cursor-pointer transition-colors ${pathname?.startsWith("/admin/smart-search")
+              ? "text-(--yellow)"
+              : "text-inherit hover:text-white"
+              }`}
             aria-label="Smart Search"
             aria-pressed={!!pathname?.startsWith("/admin/smart-search")}
           >
@@ -936,30 +1176,35 @@ export default function Navbar() {
               <IconAIChat className={iconClassName} />
             </IconGlow>
           </motion.button>
+
           <NotificationBell
             iconClassName={iconClassName}
             open={bellOpen}
             onOpenChange={(v) => {
-              setBellOpen(v)
-              if (v) closeOtherPopouts('bell')
+              setBellOpen(v);
+              if (v) closeOtherPopouts("bell");
             }}
           />
+
           <Dropdown
             menu={{ items: extraItems }}
             trigger={["click"]}
             placement="bottom"
             open={extraOpen}
             onOpenChange={(v) => {
-              setExtraOpen(v)
-              if (v) closeOtherPopouts('extra')
+              setExtraOpen(v);
+              if (v) closeOtherPopouts("extra");
             }}
-            classNames={{ root: 'nav-glow-menu nav-glow-menu-right' }}
+            classNames={{ root: "nav-glow-menu nav-glow-menu-right" }}
           >
             <motion.button
               type="button"
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
-              className={`inline-flex items-center justify-center cursor-pointer transition-colors ${extraOpen ? 'text-(--yellow)' : 'text-inherit hover:text-white'}`}
+              className={`inline-flex items-center justify-center cursor-pointer transition-colors ${extraOpen
+                ? "text-(--yellow)"
+                : "text-inherit hover:text-white"
+                }`}
               aria-label="เมนูเพิ่มเติม"
               aria-expanded={extraOpen}
             >
@@ -969,42 +1214,51 @@ export default function Navbar() {
             </motion.button>
           </Dropdown>
         </div>
+
         <div className="mobile-side-menu">
-          {/* Inner flex wrapper — layout.css forces .mobile-side-menu itself
-              to `display: block` (unlayered, beats Tailwind utilities), so
-              the gap must live one level down. */}
+          {/* Inner flex wrapper */}
           <div className="flex items-center gap-4">
-            {/* System-menu trigger — pops the nav grid (same entries as the
-                desktop trapezoid). Sits beside the ... button instead of a
-                centered tab so it never covers page text under the navbar. */}
+            {/* System-menu trigger */}
             <Button
               shape="circle"
-              aria-label={mobileNavOpen ? 'ปิดเมนูระบบ' : 'เปิดเมนูระบบ'}
+              aria-label={mobileNavOpen ? "ปิดเมนูระบบ" : "เปิดเมนูระบบ"}
               aria-expanded={mobileNavOpen}
               onClick={() => {
-                setMobileMoreOpenAt(null) // one popup at a time
-                setMobileNavOpenAt(mobileNavOpen ? null : mobileNavKey)
+                setMobileMoreOpenAt(null);
+                setMobileNavOpenAt(
+                  mobileNavOpen ? null : mobileNavKey
+                );
               }}
               style={
                 mobileNavOpen
-                  ? { color: 'var(--yellow)', borderColor: 'rgba(252,209,22,0.6)' }
+                  ? {
+                    color: "var(--yellow)",
+                    borderColor: "rgba(252,209,22,0.6)",
+                  }
                   : undefined
               }
               icon={<TbApps />}
             />
-            {/* "..." utilities — pops the labeled grid panel (same look as the
-                system menu); replaces the old icon-only antd Dropdown. */}
+
+            {/* "..." utilities */}
             <Button
               shape="circle"
-              aria-label={mobileMoreOpen ? 'ปิดเมนูเพิ่มเติม' : 'เปิดเมนูเพิ่มเติม'}
+              aria-label={
+                mobileMoreOpen ? "ปิดเมนูเพิ่มเติม" : "เปิดเมนูเพิ่มเติม"
+              }
               aria-expanded={mobileMoreOpen}
               onClick={() => {
-                setMobileNavOpenAt(null) // one popup at a time
-                setMobileMoreOpenAt(mobileMoreOpen ? null : mobileNavKey)
+                setMobileNavOpenAt(null);
+                setMobileMoreOpenAt(
+                  mobileMoreOpen ? null : mobileNavKey
+                );
               }}
               style={
                 mobileMoreOpen
-                  ? { color: 'var(--yellow)', borderColor: 'rgba(252,209,22,0.6)' }
+                  ? {
+                    color: "var(--yellow)",
+                    borderColor: "rgba(252,209,22,0.6)",
+                  }
                   : undefined
               }
               icon={<TbDots />}
@@ -1012,8 +1266,12 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      <FindOnPageOverlay open={findOpen} onClose={() => setFindOpen(false)} />
+
+      <FindOnPageOverlay
+        open={findOpen}
+        onClose={() => setFindOpen(false)}
+      />
       {contextHolder}
     </nav>
-  )
+  );
 }
