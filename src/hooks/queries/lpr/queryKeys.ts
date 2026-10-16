@@ -1,7 +1,7 @@
 // Centralized query key factory for the LPR feature.
 
 import type { LPRSourceFilter } from '@/types/lpr/lpr-api'
-import type { APIRequestLPROverview } from '@/types/lpr/new-lpr-api'
+import type { APIRequestLPROverview, APIRequestLPRTotal } from '@/types/lpr/new-lpr-api'
 
 export const lprKeys = {
   all: ['lpr'] as const,
@@ -24,6 +24,12 @@ export const lprKeys = {
     // very different payloads, so they must not share a cache entry.
     list: (deptId: string, params: APIRequestLPROverview) =>
       [...lprKeys.overview.root(), deptId, params] as const,
+  },
+
+  totals: {
+    // Install-point totals (central/totals) — keyed on dept + scope / road_id.
+    list: (deptId: string, params: APIRequestLPRTotal) =>
+      [...lprKeys.all, 'totals', deptId, params] as const,
   },
 
   project: {

@@ -13,10 +13,10 @@ import IconTracking from '@/components/icon/IconTracking'
 import IconLPR from '@/components/icon/IconLPR'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
 import { useDashboardPosition } from '@/hooks/queries/dashboard'
-import { useLPRPoints } from '@/hooks/queries/lpr'
+import { useLPRTotals } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useRoadId } from '@/hooks/useRoadId'
-import { scopeQuerySuffix } from '@/services/routes/scopeParam'
+import { centralScope, scopeQuerySuffix } from '@/services/routes/scopeParam'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
 // One row per KPI: which solution_type_name to count in the /position payload,
@@ -165,21 +165,15 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   const { data: position } = useDashboardPosition(deptId, roadId)
 
   // LPR is the one tile NOT fed by /position (BE has no LPR solution type
-  // there) — it counts GET /lpr/points instead, FE-scoped by department_id
-  // the same way lpr/overall's DataDisplaySection does. `null` = loading.
-  const { data: lprPoints } = useLPRPoints()
-  const lprCount = useMemo(() => {
-    if (!lprPoints) return null
-    const byDept = !deptId || String(deptId) === '0'
-      ? lprPoints
-      : lprPoints.filter((p) => p.department_id === Number(deptId))
-    // Road scope is applied FE-side here too — `/lpr/points` takes neither a
-    // dept nor a road param, but each point carries `road_id`.
-    const scoped = roadId
-      ? byDept.filter((p) => p.road_id === Number(roadId))
-      : byDept
-    return scoped.length
-  }, [lprPoints, deptId, roadId])
+  // there) — it reads the same central/totals endpoint the LPR overall page's
+  // ทั้งหมด card uses, so the two always agree. Scoped server-side (scope=all
+  // aggregates a สำนัก's ขทช.; `/lpr/points` + an FE `department_id ===` match
+  // missed every point owned by a ขทช. under a สำนัก). `null` = loading.
+  const { data: lprTotals, isError: lprTotalsError } = useLPRTotals(deptId ?? undefined, {
+    ...centralScope(deptId ?? 0),
+    ...(roadId ? { road_id: Number(roadId) } : {}),
+  })
+  const lprCount = lprTotals ? lprTotals.solution.total : lprTotalsError ? 0 : null
 
   const countsByType = useMemo(() => {
     const acc: Record<string, number> = {}
