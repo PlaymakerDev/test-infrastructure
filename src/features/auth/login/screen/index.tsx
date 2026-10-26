@@ -51,7 +51,7 @@ const RED = 'var(--red)'
 
 // BE res_code when too many failed logins locked the account; res_data carries
 // `retry_after` (seconds until the lock lifts).
-const RES_CODE_LOGIN_LOCKED = 42901
+const RES_CODE_LOGIN_LOCKED = 42900
 
 const AuthScreen: React.FC<Props> = (props) => {
   const { username = '', password = '' } = props
@@ -93,7 +93,7 @@ const AuthScreen: React.FC<Props> = (props) => {
     )
   }, [])
 
-  // Temporary lockout (BE 42901). `lockUntil` is an absolute deadline so the
+  // Temporary lockout (BE 42900). `lockUntil` is an absolute deadline so the
   // countdown can't drift if the 1s interval is throttled in a background tab.
   const [lockUntil, setLockUntil] = useState<number | null>(null)
   const [lockRemaining, setLockRemaining] = useState(0)
