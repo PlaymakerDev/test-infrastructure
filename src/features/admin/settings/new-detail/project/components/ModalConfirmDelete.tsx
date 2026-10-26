@@ -4,10 +4,13 @@ import { APIResponseCameraCrossingCode, SolutionLocation } from '@/types/manage/
 import { SolutionList } from '@/types/manage/project-detail-api'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { App, ConfigProvider, Modal } from 'antd'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { useDeleteProjectSolution } from '@/hooks/queries/manage'
 import { errText, useProjectContext } from '../context'
 import { fmtNumber } from '@/utils/formatNumber'
+
+// Devices listed before the rest collapse behind "แสดงเพิ่มเติม".
+const MAX_VISIBLE_DEVICES = 5
 
 interface Props {
 }
@@ -22,6 +25,8 @@ interface ContentProps {
 
 const Content: React.FC<ContentProps> = (props) => {
   const { type, data, item, record, crossingIndexData } = props
+  // Modal uses destroyOnHidden, so this resets to collapsed on every open.
+  const [showAllDevices, setShowAllDevices] = useState(false)
 
   const renderSolutionTag = useMemo(() => {
     if (!data?.length) return
@@ -103,11 +108,33 @@ const Content: React.FC<ContentProps> = (props) => {
       solutionTypeName = record?.solution_type?.solution_name
     }
 
-    const solutionList = crossingIndexData?.camera_crossing_index_code?.map((crIt) => {
+    const devices = crossingIndexData?.camera_crossing_index_code ?? []
+    const hiddenCount = devices.length - MAX_VISIBLE_DEVICES
+    const visibleDevices = showAllDevices ? devices : devices.slice(0, MAX_VISIBLE_DEVICES)
+
+    const solutionList = visibleDevices.map((crIt) => {
       return (
         <li key={crIt.camera_id}>{crIt.camera_name || '-'}</li>
       )
     })
+
+    let toggleItem: React.ReactNode = null
+    if (hiddenCount > 0) {
+      toggleItem = showAllDevices ? (
+        <li key='toggle-devices'>
+          <button type='button' className='underline cursor-pointer' onClick={() => setShowAllDevices(false)}>
+            แสดงน้อยลง
+          </button>
+        </li>
+      ) : (
+        <li key='toggle-devices'>
+          และอีก {fmtNumber(hiddenCount)} รายการ{' '}
+          <button type='button' className='underline cursor-pointer' onClick={() => setShowAllDevices(true)}>
+            แสดงเพิ่มเติม
+          </button>
+        </li>
+      )
+    }
 
     return (
       <div className='mt-5'>
@@ -126,6 +153,7 @@ const Content: React.FC<ContentProps> = (props) => {
               <h4>ประเภทงาน <span className='text-(--default-red) font-bold'>{solutionTypeName || '-'}</span> มีอุปกรณ์ที่ใช้งาน ดังนี้</h4>
               <ul className='list-disc! flex flex-col w-fit mx-auto pl-5 text-left'>
                 {solutionList}
+                {toggleItem}
               </ul>
             </div>
           </div>
@@ -135,6 +163,7 @@ const Content: React.FC<ContentProps> = (props) => {
 
   }, [
     crossingIndexData?.camera_crossing_index_code,
+    showAllDevices,
     record?.solution_type?.solution_name_atlas,
     record?.solution_type?.solution_name
   ])
