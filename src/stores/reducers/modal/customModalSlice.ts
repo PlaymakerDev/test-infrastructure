@@ -112,6 +112,7 @@ export interface ConfirmDeleteSolutionModalState {
   data?: SolutionList[] | null
   item?: SolutionLocation | null
   record?: SolutionList | null
+  crossing_index_data?: APIResponseCameraCrossingCode | null
 }
 
 const initialState: CustomModalState = {

@@ -216,3 +216,14 @@ export interface SideMenuRoadData {
   solution_type_id?: number
   solution_type_name: string
 }
+
+// AUTH ERROR
+export interface APIResponseAuthAttemptError {
+  res_code: number
+  res_data: AuthAttemptError
+}
+
+export interface AuthAttemptError {
+  message: string
+  retry_after: number
+}

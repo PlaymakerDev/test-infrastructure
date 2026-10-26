@@ -148,13 +148,23 @@ const TableSolution: React.FC<Props> = (props) => {
     }
   }, [dispatch, item, message])
 
-  const openConfirmDeleteModal = useCallback((record: SolutionList) => {
-    dispatch(setConfirmDeleteSolutionModalOpen({
-      open: true,
-      type: 'DELETE_SOLUTION_TYPE',
-      item: item,
-      record: record,
-    }))
+  const openConfirmDeleteModal = useCallback(async (record: SolutionList) => {
+    try {
+      const response = await getCrossingCodesAPI(record.id as number)
+      dispatch(setConfirmDeleteSolutionModalOpen({
+        open: true,
+        type: 'DELETE_SOLUTION_TYPE',
+        crossing_index_data: response.data,
+        item: item,
+        record: record,
+      }))
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.message)
+      } else {
+        console.error(error)
+      }
+    }
   }, [dispatch, item])
 
   /** "รายการอุปกรณ์" button. Kinds with a managed picker (CCTV list, camera

@@ -46,6 +46,12 @@ const REMEMBER_KEY = 'drr_remember_username'
 const YELLOW = '#FCD116'
 const BLUE = '#66AEFF'
 const GREY = '#A2A2A2'
+// globals.css --red (#FF6666) — danger palette token.
+const RED = 'var(--red)'
+
+// BE res_code when too many failed logins locked the account; res_data carries
+// `retry_after` (seconds until the lock lifts).
+const RES_CODE_LOGIN_LOCKED = 42901
 
 const AuthScreen: React.FC<Props> = (props) => {
   const { username = '', password = '' } = props
@@ -80,11 +86,33 @@ const AuthScreen: React.FC<Props> = (props) => {
   // Notice when BaseService redirected here on session expiry (?session_expired=1).
   // Read location.search (not useSearchParams) to avoid a Suspense requirement.
   const [sessionExpired, setSessionExpired] = useState(false)
+
   useEffect(() => {
     setSessionExpired(
       new URLSearchParams(window.location.search).get('session_expired') === '1'
     )
   }, [])
+
+  // Temporary lockout (BE 42901). `lockUntil` is an absolute deadline so the
+  // countdown can't drift if the 1s interval is throttled in a background tab.
+  const [lockUntil, setLockUntil] = useState<number | null>(null)
+  const [lockRemaining, setLockRemaining] = useState(0)
+
+  useEffect(() => {
+    if (lockUntil === null) return
+    const id = setInterval(() => {
+      const left = Math.ceil((lockUntil - Date.now()) / 1000)
+      if (left <= 0) {
+        setLockUntil(null)
+        setLockRemaining(0)
+      } else {
+        setLockRemaining(left)
+      }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [lockUntil])
+
+  const isLocked = lockUntil !== null
 
   const onSubmit = useCallback(
     async (value: FormLogin) => {
@@ -129,6 +157,18 @@ const AuthScreen: React.FC<Props> = (props) => {
         }
       } catch (error) {
         if (error instanceof AxiosError) {
+          const data = error.response?.data
+          const retryAfter = Number(data?.res_data?.retry_after)
+          console.log("data", data)
+          if (
+            data?.res_code === RES_CODE_LOGIN_LOCKED &&
+            Number.isFinite(retryAfter) &&
+            retryAfter > 0
+          ) {
+            setLockRemaining(Math.ceil(retryAfter))
+            setLockUntil(Date.now() + retryAfter * 1000)
+            return
+          }
           modal.error({
             title: 'เข้าสู่ระบบไม่สำเร็จ',
             content:
@@ -299,6 +339,22 @@ const AuthScreen: React.FC<Props> = (props) => {
                   เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง
                 </div>
               )}
+              {isLocked && (
+                <div
+                  role='alert'
+                  className='mt-4 rounded-lg px-3 py-2 text-center'
+                  style={{
+                    background: 'rgba(255,102,102,0.10)',
+                    border: `1px solid ${RED}`,
+                    color: RED,
+                    fontSize: "var(--fs-12)",
+                  }}
+                >
+                  พยายามเข้าสู่ระบบมากเกินไป บัญชีถูกล็อกชั่วคราว
+                  <br />
+                  กรุณาลองใหม่อีกครั้งใน {lockRemaining} วินาที
+                </div>
+              )}
 
               <form onSubmit={handleSubmit(onSubmit)} className='mt-6'>
                 <Controller
@@ -374,6 +430,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                   htmlType='submit'
                   type='primary'
                   loading={loading}
+                  disabled={isLocked}
                   block
                   style={{
                     height: 50,
