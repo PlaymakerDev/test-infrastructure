@@ -159,7 +159,6 @@ const AuthScreen: React.FC<Props> = (props) => {
         if (error instanceof AxiosError) {
           const data = error.response?.data
           const retryAfter = Number(data?.res_data?.retry_after)
-          console.log("data", data)
           if (
             data?.res_code === RES_CODE_LOGIN_LOCKED &&
             Number.isFinite(retryAfter) &&
