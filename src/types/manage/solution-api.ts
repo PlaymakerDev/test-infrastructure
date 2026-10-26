@@ -401,3 +401,16 @@ export type APIResponseSolutionCameraList = APIResponseCamera[]
 /** GET /solution/camera/vms/{solution_id} — cameras belonging to a
  *  VMS solution. */
 export type APIResponseSolutionVmsCameraList = APIResponseCamera[]
+
+export interface APIResponseGetCCTVByID {
+  id: string
+  camera_name: string
+  road_code: string
+  hls_url: string
+  solutions: SolutionArr[]
+}
+
+export interface SolutionArr {
+  solution_type_id: number
+  solution_name: string
+}

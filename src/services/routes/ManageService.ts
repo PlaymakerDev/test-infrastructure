@@ -70,8 +70,9 @@ import {
   APIResponseNotificationSummary,
   NotificationFeedParams,
 } from '@/types/manage/notification-api'
-import { APIResponseRoadList } from '@/types/shared'
+// import { APIResponseRoadList } from '@/types/shared'
 import type { APIResponseFeatureUpdates } from '@/types/manage/feature-update-api'
+import { APIResponseGetCCTVByID } from '@/types/manage/solution-api'
 
 // Normalize `{ page, limit, search }` into a query-string object, dropping
 // keys whose value is undefined / null / empty-string. Mirrors the
@@ -499,4 +500,11 @@ export const getContractorUptimeAPI = (prefix: string, contractorUserId: string,
     url: `/${prefix}/departments/0/${prefix === 'cctv' ? 'cameras' : 'overview'}/uptime-statistics`,
     method: 'GET',
     params: { scope: 'all', contractor_id: contractorUserId, is_warranty: isWarranty, is_project: true },
+  })
+
+
+export const getCCTVByID = (uuid: string) =>
+  ApiService.fetchData<APIResponseGetCCTVByID>({
+    url: `/cctv/${uuid}`,
+    method: 'GET',
   })

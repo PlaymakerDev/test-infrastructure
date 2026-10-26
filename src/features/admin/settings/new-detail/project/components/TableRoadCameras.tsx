@@ -1,7 +1,12 @@
-import React, { useMemo } from 'react'
-import { ConfigProvider, Empty, Popconfirm, Table, TableProps } from 'antd'
+import React, { useCallback, useMemo } from 'react'
+import { ConfigProvider, Empty, message, Table, TableProps } from 'antd'
 import { TbPencilMinus, TbTrash } from 'react-icons/tb'
 import { ProjectRoadCamera } from '@/types/manage/project-detail-api'
+import { useAppDispatch } from '@/stores/hooks'
+import { getCCTVByID } from '@/services/routes/ManageService'
+import { setConfirmDeleteSolutionModalOpen } from '@/stores/reducers/modal/customModalSlice'
+import { AxiosError } from 'axios'
+import { getCCTVDetailAPI } from '@/services/routes/SharedService'
 
 /** Camera connection pill.
  *
@@ -29,8 +34,6 @@ interface Props {
   isLoading?: boolean
   isError?: boolean
   onEdit: (camera: ProjectRoadCamera) => void
-  onDelete: (camera: ProjectRoadCamera) => void
-  isDeleting?: boolean
 }
 
 /** "0+500" → 500 metres. Mirrors utils.ParseSta on the backend: find the
@@ -60,7 +63,28 @@ const compareSta = (a: ProjectRoadCamera, b: ProjectRoadCamera) => {
  * project's CCTV spans several of them.
  */
 const TableRoadCameras: React.FC<Props> = (props) => {
-  const { data, isLoading, isError, onEdit, onDelete, isDeleting } = props
+  const { data, isLoading, isError, onEdit } = props
+  const dispatch = useAppDispatch()
+
+  // Delete is confirmed in ModalConfirmDelete (mounted app-wide for this
+  // page): fetch the camera first so the modal can tell whether it is still
+  // attached to a solution type and block the delete if so.
+  const openConfirmDeleteModal = useCallback(async (record: ProjectRoadCamera) => {
+    try {
+      const response = await getCCTVDetailAPI(record.id as string)
+      dispatch(setConfirmDeleteSolutionModalOpen({
+        open: true,
+        type: 'DELETE_CCTV',
+        cctv_data: response?.data
+      }))
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        message.error(error.message)
+      } else {
+        console.error(error)
+      }
+    }
+  }, [dispatch])
 
   // Widths are sized from the real data (measured 2026-09-21 over the 10,226
   // CCTV cameras in production):
@@ -123,20 +147,15 @@ const TableRoadCameras: React.FC<Props> = (props) => {
             title='แก้ไขกล้อง'
             onClick={() => onEdit(record)}
           />
-          <Popconfirm
-            title='ลบกล้องนี้?'
-            description='การลบไม่สามารถย้อนกลับได้'
-            okText='ลบ'
-            cancelText='ยกเลิก'
-            okButtonProps={{ danger: true, loading: isDeleting }}
-            onConfirm={() => onDelete(record)}
-          >
-            <TbTrash className='fs-22 text-(--default-red) cursor-pointer' title='ลบกล้อง' />
-          </Popconfirm>
+          <TbTrash
+            className='fs-22 text-(--default-red) cursor-pointer'
+            title='ลบกล้อง'
+            onClick={() => openConfirmDeleteModal(record)}
+          />
         </div>
       ),
     },
-  ], [onEdit, onDelete, isDeleting])
+  ], [onEdit, openConfirmDeleteModal])
 
   if (isError) return <Empty description='เกิดข้อผิดพลาดในการโหลดข้อมูล' />
 

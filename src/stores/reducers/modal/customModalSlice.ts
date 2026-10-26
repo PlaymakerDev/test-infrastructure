@@ -4,8 +4,9 @@ import { RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
 import { APIResponseCameraCrossingCode, APIResponseSolutionByID, APIResponseSolutionCameraList, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
-import type { APIResponseCamera } from '@/types/manage/solution-api';
+import type { APIResponseCamera, APIResponseGetCCTVByID } from '@/types/manage/solution-api';
 import { LPRPlateData } from '@/types/lpr/new-lpr-api';
+import { APIResponseCCTVDetail } from '@/types/cctv/shared-api';
 
 export interface CustomModalState {
   user_modal: UserModalState
@@ -108,11 +109,12 @@ export interface DiagramModalState {
 
 export interface ConfirmDeleteSolutionModalState {
   open: boolean
-  type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
+  type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE' | 'DELETE_CCTV'
   data?: SolutionList[] | null
   item?: SolutionLocation | null
   record?: SolutionList | null
   crossing_index_data?: APIResponseCameraCrossingCode | null
+  cctv_data?: APIResponseCCTVDetail | null
 }
 
 const initialState: CustomModalState = {

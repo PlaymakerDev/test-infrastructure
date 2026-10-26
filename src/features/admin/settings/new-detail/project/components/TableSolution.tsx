@@ -165,7 +165,7 @@ const TableSolution: React.FC<Props> = (props) => {
         console.error(error)
       }
     }
-  }, [dispatch, item])
+  }, [dispatch, item, message])
 
   /** "รายการอุปกรณ์" button. Kinds with a managed picker (CCTV list, camera
    *  select, Traffic Signal, VMS — see getEquipmentModalType) open it through

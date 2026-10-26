@@ -5,26 +5,35 @@ import { SolutionList } from '@/types/manage/project-detail-api'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { App, ConfigProvider, Modal } from 'antd'
 import React, { useCallback, useMemo, useState } from 'react'
-import { useDeleteProjectSolution } from '@/hooks/queries/manage'
+import { useDeleteCamera, useDeleteProjectSolution } from '@/hooks/queries/manage'
 import { errText, useProjectContext } from '../context'
 import { fmtNumber } from '@/utils/formatNumber'
+import { APIResponseCCTVDetail } from '@/types/cctv/shared-api'
+import { SOLUTION_BADGE_MAP } from '@/constants'
 
 // Devices listed before the rest collapse behind "แสดงเพิ่มเติม".
 const MAX_VISIBLE_DEVICES = 5
+
+// Same check as CCTVModal's `deviceTypeBadges`: CCTV is the base type every
+// camera has, so it never blocks a delete. The extra solution types are
+// whichever SOLUTION_BADGE_MAP keys the camera-detail payload carries.
+const getCctvBlockers = (cctv?: APIResponseCCTVDetail | null) =>
+  SOLUTION_BADGE_MAP.filter((badge) => cctv?.[badge.key as keyof APIResponseCCTVDetail])
 
 interface Props {
 }
 
 interface ContentProps {
-  type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE'
+  type?: 'DELETE_SOLUTION' | 'DELETE_SOLUTION_TYPE' | 'DELETE_CCTV'
   data?: SolutionList[] | null
   item?: SolutionLocation | null
   record?: SolutionList | null
   crossingIndexData?: APIResponseCameraCrossingCode | null
+  cctvData?: APIResponseCCTVDetail | null
 }
 
 const Content: React.FC<ContentProps> = (props) => {
-  const { type, data, item, record, crossingIndexData } = props
+  const { type, data, item, record, crossingIndexData, cctvData } = props
   // Modal uses destroyOnHidden, so this resets to collapsed on every open.
   const [showAllDevices, setShowAllDevices] = useState(false)
 
@@ -202,17 +211,86 @@ const Content: React.FC<ContentProps> = (props) => {
     renderWarningSolutionType
   ])
 
+  const cctvBlockers = useMemo(() => getCctvBlockers(cctvData), [cctvData])
+
+  const renderCCTVSolutionTag = useMemo(() => {
+    if (!cctvBlockers.length) return
+    return cctvBlockers.map((badge) => (
+      <div key={badge.key} className='px-5 py-0.5 bg-(--default-red) rounded-4xl'>
+        <p>{badge.label}</p>
+      </div>
+    ))
+  }, [cctvBlockers])
+
+  const renderNonDeleteCCTV = useMemo(() => {
+    return (
+      <div className='mt-5'>
+        <section>
+          <div className='flex flex-col items-center justify-center gap-5'>
+            <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-red)' }} />
+            <div className='text-center'>
+              <h2>ไม่สามารถลบ {cctvData?.camera_name || '-'} ได้</h2>
+              <p>เนื่องจากระบบตรวจพบประเภทงาน <span className='text-(--default-red)'>{cctvBlockers.length} ประเภท</span></p>
+            </div>
+          </div>
+        </section>
+        <section className='mt-5'>
+          <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
+            <div className='text-center'>
+              <p>กล้องนี้ไม่สามารถลบได้ เนื่องจากยังถูกใช้งานในประเภทงาน</p>
+              <p>กรุณานำกล้องออกจาก <span className='font-semibold underline'>ประเภทงาน</span> ก่อน จึงจะสามารถลบกล้องได้</p>
+            </div>
+            <div className='flex flex-wrap justify-center items-center gap-2 mt-3'>
+              {renderCCTVSolutionTag}
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }, [cctvData?.camera_name, cctvBlockers.length, renderCCTVSolutionTag])
+
+  const renderWarningCCTV = useMemo(() => {
+    return (
+      <div className='mt-5'>
+        <section>
+          <div className='flex flex-col items-center justify-center gap-5'>
+            <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-orange)' }} />
+            <div className='text-center'>
+              <h2>ยืนยันลบกล้องหรือไม่?</h2>
+              <p>ระบบจะลบกล้องโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
+            </div>
+          </div>
+        </section>
+        <section className='mt-5'>
+          <div className='rounded-lg border border-(--default-orange) bg-(--default-orange)/20 p-5'>
+            <div className='text-center'>
+              <h4>กล้อง : {cctvData?.camera_name || '-'}</h4>
+              <p>ไม่มีประเภทงานที่ใช้งานกล้องนี้อยู่</p>
+              <p>สามารถลบกล้องออกจากระบบได้อย่างปลอดภัย</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }, [cctvData?.camera_name])
+
+  const renderDeleteCCTVContent = useMemo(() => {
+    if (cctvBlockers.length) return renderNonDeleteCCTV
+    if (!cctvBlockers.length) return renderWarningCCTV
+  }, [cctvBlockers.length, renderNonDeleteCCTV, renderWarningCCTV])
+
   const renderContent = useMemo(() => {
-    console.log(type)
     switch (type) {
       case 'DELETE_SOLUTION':
         return renderDeleteSolutionContent
       case 'DELETE_SOLUTION_TYPE':
         return renderDeleteSolutionTypeContent
+      case 'DELETE_CCTV':
+        return renderDeleteCCTVContent
       default:
         return null
     }
-  }, [type, renderDeleteSolutionContent, renderDeleteSolutionTypeContent])
+  }, [type, renderDeleteSolutionContent, renderDeleteSolutionTypeContent, renderDeleteCCTVContent])
 
 
   return renderContent
@@ -220,18 +298,23 @@ const Content: React.FC<ContentProps> = (props) => {
 
 const ModalConfirmDelete: React.FC<Props> = (props) => {
   const { } = props
-  const { open, data, item, type, record, crossing_index_data } = useAppSelector((state) => state.custom_modal.confirm_delete_solution_modal)
+  const { open, data, item, type, record, crossing_index_data, cctv_data } = useAppSelector((state) => state.custom_modal.confirm_delete_solution_modal)
   const { onDelete, isDeleting } = useProjectContext()
   const { message } = App.useApp()
   const { mutate: deleteSolution, isPending: isDeletingSolution } = useDeleteProjectSolution()
+  const { mutate: deleteCamera, isPending: isDeletingCamera } = useDeleteCamera()
   const dispatch = useAppDispatch()
-  const isBusy = isDeleting || isDeletingSolution
-  // DELETE_SOLUTION is blocked while the point still holds solutions (`data`);
-  // DELETE_SOLUTION_TYPE is blocked while the solution still has attached
-  // devices (`crossing_index_data`).
-  const canDelete = type === 'DELETE_SOLUTION_TYPE'
-    ? !crossing_index_data?.camera_crossing_index_code?.length
-    : !data?.length
+  const isBusy = isDeleting || isDeletingSolution || isDeletingCamera
+  // Each type is blocked by something different still hanging off the target:
+  //   DELETE_SOLUTION       → solutions at the point (`data`)
+  //   DELETE_SOLUTION_TYPE  → devices attached to the solution (`crossing_index_data`)
+  //   DELETE_CCTV           → solution types the camera still serves (`cctv_data`)
+  const blockerCount = type === 'DELETE_SOLUTION_TYPE'
+    ? crossing_index_data?.camera_crossing_index_code?.length
+    : type === 'DELETE_CCTV'
+      ? getCctvBlockers(cctv_data).length
+      : data?.length
+  const canDelete = !blockerCount
 
   const handleClose = useCallback(() => {
     dispatch(resetConfirmDeleteSolutionModalData())
@@ -261,10 +344,23 @@ const ModalConfirmDelete: React.FC<Props> = (props) => {
           },
         })
         return
+      case 'DELETE_CCTV':
+        // One camera: the hook refetches the road's camera list.
+        if (!cctv_data?.id) return
+        deleteCamera(cctv_data.id, {
+          onSuccess: () => {
+            message.success('ลบกล้องสำเร็จ')
+            handleClose()
+          },
+          onError: (error) => {
+            message.error(errText(error, 'ลบกล้องไม่สำเร็จ'))
+          },
+        })
+        return
       default:
         return
     }
-  }, [type, item, record, onDelete, deleteSolution, handleClose, message])
+  }, [type, item, record, cctv_data, onDelete, deleteSolution, deleteCamera, handleClose, message])
 
   return (
     <ConfigProvider
@@ -303,6 +399,7 @@ const ModalConfirmDelete: React.FC<Props> = (props) => {
           item={item}
           record={record}
           crossingIndexData={crossing_index_data}
+          cctvData={cctv_data}
         />
       </Modal>
     </ConfigProvider>

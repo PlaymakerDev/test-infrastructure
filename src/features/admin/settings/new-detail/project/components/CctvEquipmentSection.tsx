@@ -1,14 +1,14 @@
 "use client"
 import React, { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { App, Button, Tooltip } from 'antd'
+import { Button, Tooltip } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { TbChevronDown, TbChevronUp, TbExternalLink, TbVideo } from 'react-icons/tb'
 import { getProjectRoadCamerasAPI } from '@/services/routes/ProjectDetailService'
-import { manageKeys, useDeleteCamera } from '@/hooks/queries/manage'
+import { manageKeys } from '@/hooks/queries/manage'
 import { ProjectRoadCamera } from '@/types/manage/project-detail-api'
-import { useProjectContext, errText } from '../context'
+import { useProjectContext } from '../context'
 import { buildSolutionDetailUrl, DETAIL_SOLUTION_TYPE } from '../data/solutionDetailUrl'
 import ModalCreateCamera from './ModalCreateCamera'
 import TableRoadCameras from './TableRoadCameras'
@@ -29,7 +29,6 @@ interface Props { }
  */
 const CctvEquipmentSection: React.FC<Props> = () => {
   const { roadSolution, activeLocationId } = useProjectContext()
-  const { message } = App.useApp()
   const projectRoadId = roadSolution.project_road_id
 
   const [editing, setEditing] = useState<ProjectRoadCamera | null>(null)
@@ -46,8 +45,6 @@ const CctvEquipmentSection: React.FC<Props> = () => {
     queryFn: () => getProjectRoadCamerasAPI(projectRoadId).then((res) => res.data),
     enabled: projectRoadId > 0,
   })
-
-  const { mutate: deleteCamera, isPending: isDeleting } = useDeleteCamera()
 
   const cameras = useMemo(() => data?.cameras ?? [], [data])
 
@@ -80,13 +77,6 @@ const CctvEquipmentSection: React.FC<Props> = () => {
     setModalOpen(false)
     setEditing(null)
   }, [])
-
-  const handleDelete = useCallback((camera: ProjectRoadCamera) => {
-    deleteCamera(camera.id, {
-      onSuccess: () => message.success('ลบกล้องสำเร็จ'),
-      onError: (err) => message.error(errText(err, 'ลบกล้องไม่สำเร็จ')),
-    })
-  }, [deleteCamera, message])
 
   const locations = roadSolution.solution_locations
 
@@ -165,8 +155,6 @@ const CctvEquipmentSection: React.FC<Props> = () => {
           isLoading={isLoading}
           isError={isError}
           onEdit={openEdit}
-          onDelete={handleDelete}
-          isDeleting={isDeleting}
         />
       )}
 
