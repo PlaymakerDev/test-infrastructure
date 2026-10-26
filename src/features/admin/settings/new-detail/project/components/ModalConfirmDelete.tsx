@@ -7,6 +7,7 @@ import { App, ConfigProvider, Modal } from 'antd'
 import React, { useCallback, useMemo } from 'react'
 import { useDeleteProjectSolution } from '@/hooks/queries/manage'
 import { errText, useProjectContext } from '../context'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
 }
@@ -115,7 +116,7 @@ const Content: React.FC<ContentProps> = (props) => {
             <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-red)' }} />
             <div className='text-center'>
               <h2>ไม่สามารถลบประเภทงานได้</h2>
-              <p>เนื่องจากระบบตรวจพบอุปกรณ์ <span className='text-(--default-red) font-bold'>5 อุปกรณ์</span></p>
+              <p>เนื่องจากระบบตรวจพบอุปกรณ์ <span className='text-(--default-red) font-bold'>{fmtNumber(Number(crossingIndexData?.camera_crossing_index_code?.length || 0))} อุปกรณ์</span></p>
             </div>
           </div>
         </section>
