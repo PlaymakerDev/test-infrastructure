@@ -9,7 +9,7 @@ import { useDeleteCamera, useDeleteProjectSolution } from '@/hooks/queries/manag
 import { errText, useProjectContext } from '../context'
 import { fmtNumber } from '@/utils/formatNumber'
 import { APIResponseCCTVDetail } from '@/types/cctv/shared-api'
-import { SOLUTION_BADGE_MAP } from '@/constants'
+import { CCTV_SOLUTION_BADGE_MAP } from '@/constants'
 
 // Devices listed before the rest collapse behind "แสดงเพิ่มเติม".
 const MAX_VISIBLE_DEVICES = 5
@@ -18,7 +18,7 @@ const MAX_VISIBLE_DEVICES = 5
 // camera has, so it never blocks a delete. The extra solution types are
 // whichever SOLUTION_BADGE_MAP keys the camera-detail payload carries.
 const getCctvBlockers = (cctv?: APIResponseCCTVDetail | null) =>
-  SOLUTION_BADGE_MAP.filter((badge) => cctv?.[badge.key as keyof APIResponseCCTVDetail])
+  CCTV_SOLUTION_BADGE_MAP.filter((badge) => cctv?.[badge.key as keyof APIResponseCCTVDetail])
 
 interface Props {
 }
@@ -229,7 +229,8 @@ const Content: React.FC<ContentProps> = (props) => {
           <div className='flex flex-col items-center justify-center gap-5'>
             <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-red)' }} />
             <div className='text-center'>
-              <h2>ไม่สามารถลบ {cctvData?.camera_name || '-'} ได้</h2>
+              {/* <h2>ไม่สามารถลบอุปกรณ์ CCTV {cctvData?.camera_name || '-'} ได้</h2> */}
+              <h2>ไม่สามารถลบอุปกรณ์ได้</h2>
               <p>เนื่องจากระบบตรวจพบประเภทงาน <span className='text-(--default-red)'>{cctvBlockers.length} ประเภท</span></p>
             </div>
           </div>
@@ -237,8 +238,10 @@ const Content: React.FC<ContentProps> = (props) => {
         <section className='mt-5'>
           <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
             <div className='text-center'>
-              <p>กล้องนี้ไม่สามารถลบได้ เนื่องจากยังถูกใช้งานในประเภทงาน</p>
-              <p>กรุณานำกล้องออกจาก <span className='font-semibold underline'>ประเภทงาน</span> ก่อน จึงจะสามารถลบกล้องได้</p>
+              {/* <p>กล้องนี้ไม่สามารถลบได้ เนื่องจากยังถูกใช้งานในประเภทงาน</p> */}
+              <p>อุปกรณ์นี้ไม่สามารถลบได้ เนื่องจากยังถูกใช้งานในประเภทงาน</p>
+              {/* <p>กรุณานำกล้องออกจาก <span className='font-semibold underline'>ประเภทงาน</span> ก่อน จึงจะสามารถลบกล้องได้</p> */}
+              <p>กรุณานำอุปกรณ์ออกจาก <span className='font-semibold underline'>ประเภทงาน</span> ก่อน จึงจะสามารถลบอุปกรณ์ได้</p>
             </div>
             <div className='flex flex-wrap justify-center items-center gap-2 mt-3'>
               {renderCCTVSolutionTag}
@@ -247,7 +250,7 @@ const Content: React.FC<ContentProps> = (props) => {
         </section>
       </div>
     )
-  }, [cctvData?.camera_name, cctvBlockers.length, renderCCTVSolutionTag])
+  }, [cctvBlockers.length, renderCCTVSolutionTag])
 
   const renderWarningCCTV = useMemo(() => {
     return (

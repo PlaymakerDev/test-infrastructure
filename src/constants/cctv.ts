@@ -60,3 +60,25 @@ export const TEXT_CAMERA_STATUS = {
     "color": "#FF0000"
   },
 }
+
+// NEW BADGE MAP FOR SETTING
+export const CCTV_DEVICE_BADGE = {
+  cctv: { label: 'CCTV', color: '#4DA3FF' }, // blue   (legend #003F87)
+  vms: { label: 'VMS', color: '#FF9F45' }, // orange (legend #874600)
+  wim_camera: { label: 'Tracking', color: '#FF1FF2' }, // magenta (legend #70196D) — same as SYSTEM_BRIGHT.WIM
+  counting: { label: 'Traffic Volume', color: '#2DD4BF' }, // teal   (legend #007787)
+  analytic: { label: 'Incident Detection', color: '#3DD68C' }, // green  (legend #00873B)
+  traffic: { label: 'Traffic Volume', color: '#A3E635' }, // lime   (legend #518700)
+  crosswalk: { label: 'Crosswalk', color: '#7C8CFF' }, // indigo (legend #001287)
+  lpr: { label: 'LPR', color: '#FF6FB5' }, // pink (legend #87003F)
+}
+
+export const CCTV_SOLUTION_BADGE_MAP = [
+  { key: 'vms', ...CCTV_DEVICE_BADGE.vms },
+  { key: 'wim_camera', ...CCTV_DEVICE_BADGE.wim_camera },
+  { key: 'counting', ...CCTV_DEVICE_BADGE.counting },
+  { key: 'analytic', ...CCTV_DEVICE_BADGE.analytic },
+  { key: 'traffic', ...CCTV_DEVICE_BADGE.traffic },
+  { key: 'crosswalk', ...CCTV_DEVICE_BADGE.crosswalk },
+  { key: 'lpr', ...CCTV_DEVICE_BADGE.lpr },
+]
