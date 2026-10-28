@@ -34,6 +34,8 @@ import type {
   APIRequestProjectDeviceStatusList,
   APIResponseProjectDeviceStatus,
   APIResponseProjectDeviceStatusList,
+  APIResponseProjectDeviceSummaryList,
+  APIResponseProjectDeviceSolutionsList,
   ProjectCameraListItem,
   ProjectLightingListItem,
   ProjectVMSListItem,
@@ -439,6 +441,26 @@ export const getProjectDepartmentAPI = (params: APIRequestProjectDepartment) =>
 export const getProjectDeviceStatusListAPI = (params: APIRequestProjectDeviceStatusList) =>
   ApiService.fetchData<APIResponseProjectDeviceStatusList, APIRequestProjectDeviceStatusList>({
     url: '/manage/project/device-status',
+    method: 'GET',
+    params,
+  })
+
+/** The same projects with every system's online-offline counts (BE
+ *  2026-10-27) — the export's สรุป sheet. Same query as the list; `limit`
+ *  tops out at 100 here too. */
+export const getProjectDeviceSummaryListAPI = (params: APIRequestProjectDeviceStatusList) =>
+  ApiService.fetchData<APIResponseProjectDeviceSummaryList, APIRequestProjectDeviceStatusList>({
+    url: '/manage/project/device-status/summary',
+    method: 'GET',
+    params,
+  })
+
+/** The same projects with the solutions and devices behind each summary
+ *  count (BE 2026-10-27) — the export's โครงการ sheet. Same query; `limit`
+ *  tops out at 100. */
+export const getProjectDeviceSolutionsListAPI = (params: APIRequestProjectDeviceStatusList) =>
+  ApiService.fetchData<APIResponseProjectDeviceSolutionsList, APIRequestProjectDeviceStatusList>({
+    url: '/manage/project/device-status/solutions',
     method: 'GET',
     params,
   })

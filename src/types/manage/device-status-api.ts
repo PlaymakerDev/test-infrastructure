@@ -51,6 +51,137 @@ export interface APIResponseProjectDeviceStatusList {
   meta_data: { count: number; page: number; limit: number; total_pages: number }
 }
 
+/** A system that runs controllers of its own with cameras attached (Traffic
+ *  Signal, Crosswalk, VMS): `system` counts the controllers on the system's
+ *  own online rule, `camera` the distinct cameras linked to them. */
+export interface SystemCameraTotals {
+  system: DeviceTotals
+  camera: DeviceTotals
+}
+
+/** GET /manage/project/device-status/summary (BE 2026-10-27) — the projects of
+ *  /device-status, in its order and under its filters, with every system
+ *  counted. It also lists a project whose devices are all outside CCTV / VMS /
+ *  Street Light (traffic controllers and no camera), which the list leaves out. */
+export interface ProjectDeviceSummaryRow extends ProjectDeviceStatusBase {
+  /** Cameras under a CCTV solution that no other counted system uses. */
+  cctv: DeviceTotals
+  /** Cameras linked to the project's Counting / Analytic / LPR solutions. */
+  counting: DeviceTotals
+  analytic: DeviceTotals
+  lpr: DeviceTotals
+  traffic: SystemCameraTotals
+  crosswalk: SystemCameraTotals
+  lighting: DeviceTotals
+  vms: SystemCameraTotals
+  bridge_lighting: DeviceTotals
+  /** The tunnel's sensors (legacy devices). */
+  tunnel: DeviceTotals
+}
+
+export interface APIResponseProjectDeviceSummaryList {
+  res_data: ProjectDeviceSummaryRow[]
+  meta_data: { count: number; page: number; limit: number; total_pages: number }
+}
+
+/** A camera as /device-status/solutions lists it, ordered by chainage. */
+export interface SolutionCamera {
+  id: string
+  camera_name: string
+  /** "5+800"; "" when it has none. */
+  sta: string
+  ip_address: string
+  /** curl_status */
+  is_online: boolean
+  /** Every solution type the camera serves, anywhere — its own solution and
+   *  each module that links it — as upper-cased tbl_solution_type names in
+   *  type order: ["CCTV", "COUNTING"], ["CCTV", "WIM"] … (BE 2026-10-27). */
+  solution_group: string[]
+}
+
+/** A Counting / Analytic / LPR / CCTV solution — an install point — and its cameras. */
+export interface CameraSolution {
+  solution_id: number
+  solution_name: string
+  cameras: SolutionCamera[]
+}
+
+/** A traffic / crosswalk / VMS controller (`id` = its module row) with its
+ *  own online state and linked cameras. */
+export interface SystemSolution extends CameraSolution {
+  id: number
+  is_online: boolean
+}
+
+/** A bridge-lighting installation (`id` = its module row). */
+export interface StatusSolution {
+  id: number
+  solution_id: number
+  solution_name: string
+  is_online: boolean
+}
+
+/** A lamp (โคม) of a street-light cabinet, named by its pole number ("โคมที่ 1"). */
+export interface LightingLamp {
+  id: number
+  name: string
+  pole_number: number | null
+  /** "" when it has none. */
+  sta: string
+  /** The legacy status "1". */
+  is_online: boolean
+  last_connectd: string | null
+}
+
+/** A street-light cabinet (`id` = its tbl_lighting row) with its lamps. */
+export interface LightingSolution extends StatusSolution {
+  /** The cabinet's chainage (its solution's); "" when it has none. */
+  sta: string
+  /** The lighting overview's has_broken_wire: some node of one of the
+   *  cabinet's IoT boxes reads its wire broken at both ends. */
+  has_broken_wire: boolean
+  lamps: LightingLamp[]
+}
+
+export interface TunnelDevice {
+  id: string
+  device_name: string
+  /** lastupdate within the last hour */
+  is_online: boolean
+  last_update: string | null
+}
+
+export interface TunnelSolution {
+  solution_id: number
+  solution_name: string
+  /** Empty when the tunnel has no wid or no legacy device. */
+  devices: TunnelDevice[]
+}
+
+/** GET /manage/project/device-status/summary's projects with the rows behind
+ *  each count (BE 2026-10-27, /device-status/solutions) — the same rules,
+ *  except `cctv`: every CCTV solution of the project with all of its cameras,
+ *  so a camera another system uses is listed under both. A camera of the
+ *  project's systems registered under another project's CCTV solution is in
+ *  that system's list only. */
+export interface ProjectDeviceSolutionsRow extends ProjectDeviceStatusBase {
+  cctv: CameraSolution[]
+  counting: CameraSolution[]
+  analytic: CameraSolution[]
+  lpr: CameraSolution[]
+  traffic: SystemSolution[]
+  crosswalk: SystemSolution[]
+  vms: SystemSolution[]
+  lighting: LightingSolution[]
+  bridge_lighting: StatusSolution[]
+  tunnel: TunnelSolution[]
+}
+
+export interface APIResponseProjectDeviceSolutionsList {
+  res_data: ProjectDeviceSolutionsRow[]
+  meta_data: { count: number; page: number; limit: number; total_pages: number }
+}
+
 export interface ProjectCameraItem {
   id: string
   camera_name: string

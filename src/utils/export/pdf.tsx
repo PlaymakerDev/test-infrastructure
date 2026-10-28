@@ -443,12 +443,39 @@ export interface PdfSimpleColumn {
   /** Percent of table width — should sum to ~100 within the block. */
   widthPct: number
   align?: 'left' | 'center' | 'right'
+  /** Header text colour, e.g. '#4E95D9'. */
+  headerColor?: string
 }
+
+/** A header over the columns under it — nest for a header several rows deep
+ *  (a system → its parts → ออนไลน์ / ออฟไลน์). A column beside a group then
+ *  reaches down through every header row. Same idea as excel.ts's
+ *  ExportColumnGroup. */
+export interface PdfColumnGroup {
+  header: string
+  children: PdfTableColumn[]
+}
+
+export type PdfTableColumn = PdfSimpleColumn | PdfColumnGroup
+
+const isPdfColumnGroup = (column: PdfTableColumn): column is PdfColumnGroup => 'children' in column
+
+/** The data columns of a column tree, left to right. */
+const pdfLeafColumns = (columns: PdfTableColumn[]): PdfSimpleColumn[] =>
+  columns.flatMap((column) => (isPdfColumnGroup(column) ? pdfLeafColumns(column.children) : [column]))
+
+/** The share of the table a column or group covers. */
+const columnPct = (column: PdfTableColumn): number =>
+  isPdfColumnGroup(column) ? column.children.reduce((sum, child) => sum + columnPct(child), 0) : column.widthPct
 
 /** One row of a report `table` block:
  *  • plain array            — a normal data row
  *  • `{ group }`            — full-width band row, i.e. the on-screen grouped
- *                             table's divider (a camera name, a bureau…)
+ *                             table's divider (a camera name, a bureau…);
+ *                             `tone: 'soft'` for a band under a band;
+ *                             `keepAhead` = how many points of the rows after
+ *                             it must share its page (default ~2 rows) — the
+ *                             band moves to the next page otherwise
  *  • `{ cells, emphasis? }` — data row; `emphasis` renders it bold on a tinted
  *                             fill, for "รวม/รวมเฉลี่ย" summary lines
  *  Grouped `exportTablePdf` reports flatten their dividers into lead columns
@@ -457,10 +484,12 @@ export interface PdfSimpleColumn {
  *  column would eat width the hour cells need. */
 export type PdfTableRow =
   | (string | number)[]
-  | { group: string }
+  | PdfGroupRow
   | { cells: (string | number)[]; emphasis?: boolean }
 
-const isGroupRow = (row: PdfTableRow): row is { group: string } =>
+type PdfGroupRow = { group: string; tone?: 'soft'; keepAhead?: number }
+
+const isGroupRow = (row: PdfTableRow): row is PdfGroupRow =>
   !Array.isArray(row) && 'group' in row
 
 const tableRowCells = (row: PdfTableRow): (string | number)[] =>
@@ -485,7 +514,9 @@ export type PdfReportBlock =
   | {
       type: 'table'
       title?: string
-      columns: PdfSimpleColumn[]
+      /** Plain columns for a one-row header; groups among them for several
+       *  rows. A row's cells follow the plain columns left to right. */
+      columns: PdfTableColumn[]
       rows: PdfTableRow[]
       /** Cell font size, default `CELL_FONT_SIZE` (9). Lower it for very wide
        *  tables so many columns still fit one row — it feeds BOTH the render
@@ -537,6 +568,8 @@ const reportStyles = StyleSheet.create({
   // Grouped-table band row + "รวมเฉลี่ย" summary row (print-safe greys — the
   // screen's yellow-on-dark doesn't translate to a white report page).
   groupCell: { backgroundColor: '#e5e7eb', fontWeight: 700, borderLeftWidth: 1 },
+  // A band under a band (a section inside a project): lighter, not bold.
+  groupSoftCell: { backgroundColor: '#f3f4f6', fontWeight: 400 },
   emphasisCell: { backgroundColor: '#f7f7f7', fontWeight: 700 },
   entryCard: {
     flexDirection: 'row',
@@ -600,21 +633,64 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
   const renderTableRows = (block: Extract<PdfReportBlock, { type: 'table' }>, bi: number) => {
     // Font/padding overrides must match what prewrapReportArgs measured with.
     const sizing = { fontSize: block.fontSize ?? CELL_FONT_SIZE, padding: block.cellPadding ?? 4 }
+    const leaves = pdfLeafColumns(block.columns)
+    // A grouped header as nested flex boxes: a group is its label over a row
+    // of its children, and a column stretches to the height its row has — so
+    // a label spans its columns and a lone column spans the rows, the way a
+    // merged spreadsheet header does. Borders as the flat header's: right and
+    // bottom on every box, the top on the first row, the left on column one.
+    const renderHeaderTree = (columns: PdfTableColumn[], parentPct: number, firstColumn: boolean, top: boolean): React.ReactNode[] =>
+      columns.map((column, i) => {
+        const edges = {
+          ...(firstColumn && i === 0 ? { borderLeftWidth: 1 } : {}),
+          ...(top ? {} : { borderTopWidth: 0 }),
+        }
+        const label = (color?: string) => (
+          <Text style={{ fontSize: sizing.fontSize, textAlign: 'center', ...(color ? { color } : {}) }}>{`${column.header} `}</Text>
+        )
+        const width = `${(columnPct(column) / parentPct) * 100}%`
+        if (!isPdfColumnGroup(column)) {
+          return (
+            <View key={`${column.header}-${i}`} style={{ ...styles.headCell, ...sizing, ...edges, width, justifyContent: 'center' }}>
+              {label(column.headerColor)}
+            </View>
+          )
+        }
+        return (
+          <View key={`${column.header}-${i}`} style={{ width }}>
+            <View style={{ ...styles.headCell, ...sizing, ...edges }}>{label()}</View>
+            <View style={{ flexDirection: 'row', flexGrow: 1 }}>
+              {renderHeaderTree(column.children, columnPct(column), firstColumn && i === 0, false)}
+            </View>
+          </View>
+        )
+      })
     const renderCells = (row: PdfTableRow) => {
       // Group band — one cell spanning the table, mirroring the on-screen
       // grouped matrix (camera name on its own full-width row).
       if (isGroupRow(row)) {
         return (
-          <Text style={{ ...styles.cell, ...sizing, ...reportStyles.groupCell, width: '100%', textAlign: 'left' }}>
+          <Text
+            style={{
+              ...styles.cell,
+              ...sizing,
+              ...reportStyles.groupCell,
+              ...(row.tone === 'soft' ? reportStyles.groupSoftCell : {}),
+              width: '100%',
+              textAlign: 'left',
+            }}
+          >
             {`${row.group} `}
           </Text>
         )
       }
       const cells = tableRowCells(row)
       const emphasis = !Array.isArray(row) && 'emphasis' in row && row.emphasis
-      return block.columns.map((c, ci) => (
+      // Keyed by position: a grouped header repeats leaf names (ออนไลน์ / ออฟไลน์
+      // under every part).
+      return leaves.map((c, ci) => (
         <Text
-          key={c.header}
+          key={ci}
           style={{
             ...styles.cell,
             ...sizing,
@@ -631,22 +707,34 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
     return (
       <React.Fragment key={bi}>
         {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
-        <View style={styles.row} fixed>
-          {block.columns.map((c, i) => (
-            <Text
-              key={c.header}
-              style={{ ...styles.headCell, ...sizing, width: `${c.widthPct}%`, ...(i === 0 ? { borderLeftWidth: 1 } : {}) }}
-            >
-              {`${c.header} `}
-            </Text>
-          ))}
-        </View>
+        {block.columns.some(isPdfColumnGroup) ? (
+          <View style={styles.row} fixed>
+            {renderHeaderTree(block.columns, 100, true, true)}
+          </View>
+        ) : (
+          <View style={styles.row} fixed>
+            {leaves.map((c, i) => (
+              <Text
+                key={i}
+                style={{
+                  ...styles.headCell,
+                  ...sizing,
+                  width: `${c.widthPct}%`,
+                  ...(i === 0 ? { borderLeftWidth: 1 } : {}),
+                  ...(c.headerColor ? { color: c.headerColor } : {}),
+                }}
+              >
+                {`${c.header} `}
+              </Text>
+            ))}
+          </View>
+        )}
         {block.rows.map((row, ri) => (
           // A group band needs rows under it to mean anything, so it demands
           // ~2 rows of space ahead and moves to the next page otherwise. Safe
           // here in a way it wouldn't be for the header: the header is `fixed`,
           // so it reprints on the next page regardless of what moves.
-          <View style={styles.row} key={ri} wrap={false} minPresenceAhead={isGroupRow(row) ? 44 : undefined}>
+          <View style={styles.row} key={ri} wrap={false} minPresenceAhead={isGroupRow(row) ? (row.keepAhead ?? 44) : undefined}>
             {renderCells(row)}
           </View>
         ))}
@@ -827,15 +915,19 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
     const chrome = block.cellPadding != null ? block.cellPadding * 2 + 3 : CELL_CHROME_PT
     const cellSpaceW = fk.layout(' ').advanceWidth * (cellFont / fk.unitsPerEm)
     const cellMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - chrome - cellSpaceW)
+    // A group label measures against every column it spans.
+    const wrapColumns = (columns: PdfTableColumn[]): PdfTableColumn[] =>
+      columns.map((c) => ({ ...c, header: wrap(c.header, cellMax(columnPct(c)), cellFont), ...(isPdfColumnGroup(c) ? { children: wrapColumns(c.children) } : {}) }))
+    const leaves = pdfLeafColumns(block.columns)
     return {
       ...block,
       title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
-      columns: block.columns.map((c) => ({ ...c, header: wrap(c.header, cellMax(c.widthPct), cellFont) })),
+      columns: wrapColumns(block.columns),
       rows: block.rows.map((row): PdfTableRow => {
         // Band rows measure against the whole table width, not a column.
-        if (isGroupRow(row)) return { group: wrap(row.group, cellMax(100), cellFont) }
+        if (isGroupRow(row)) return { ...row, group: wrap(row.group, cellMax(100), cellFont) }
         const cells = tableRowCells(row).map((cell, ci) =>
-          wrap(String(cell), cellMax(block.columns[ci]?.widthPct ?? 10), cellFont)
+          wrap(String(cell), cellMax(leaves[ci]?.widthPct ?? 10), cellFont)
         )
         return Array.isArray(row) ? cells : { ...row, cells }
       }),

@@ -1,6 +1,5 @@
 import type { DeviceBadgeKey } from '@/constants/cctv'
 import type { DeviceTotals } from '@/types/manage/device-status-api'
-import type { TunnelCentralItem } from '@/types/tunnel/overview-api'
 
 const toCount = (value: unknown): number | null => {
   const n = Number(value)
@@ -32,30 +31,6 @@ export const hasDevices = (totals: DeviceTotals | null | undefined): totals is D
 export const offlinePercent = (totals: DeviceTotals): number =>
   totals.total > 0 ? Math.round((totals.offline / totals.total) * 100) : 0
 
-/** Tunnel's uptime-statistics ignores `contractor_id` (it answers the same
- *  nationwide totals for everyone, checked 2026-10-01), so its ring is counted
- *  here instead: the tunnels whose project belongs to the contractor — and,
- *  under ในค้ำ / หมดค้ำ, whose own `is_warranty` matches. */
-export const tunnelTotalsFor = (
-  central: TunnelCentralItem[] | null | undefined,
-  projectIds: ReadonlySet<number>,
-  isWarranty?: boolean,
-): DeviceTotals => {
-  let total = 0
-  let online = 0
-  for (const bureau of central ?? []) {
-    for (const dept of bureau.sub_department ?? []) {
-      for (const row of dept.solutions ?? []) {
-        if (!projectIds.has(row.project?.id)) continue
-        if (isWarranty !== undefined && row.is_warranty !== isWarranty) continue
-        total++
-        if (row.tunnel?.is_online) online++
-      }
-    }
-  }
-  return { total, online, offline: total - online }
-}
-
 /** "กม. 2+800" — the word once, even when the chainage already carries it;
  *  nothing at all for a group without one (the backend sends "" or null). */
 export const staLabel = (sta: string | null | undefined): string => {
@@ -73,8 +48,9 @@ const BADGE_BY_TYPE: Record<number, DeviceBadgeKey> = {
   5: 'crosswalk',
   9: 'wim_camera',
   7: 'vms',
+  11: 'lpr',
 }
-const BADGE_ORDER: DeviceBadgeKey[] = ['cctv', 'counting', 'analytic', 'traffic', 'crosswalk', 'wim_camera', 'vms']
+const BADGE_ORDER: DeviceBadgeKey[] = ['cctv', 'counting', 'analytic', 'traffic', 'crosswalk', 'wim_camera', 'vms', 'lpr']
 
 /** A camera's function tags. CCTV is always first — every camera here is one. */
 export const cameraBadges = (types: { id: number }[] | null | undefined): DeviceBadgeKey[] => {
