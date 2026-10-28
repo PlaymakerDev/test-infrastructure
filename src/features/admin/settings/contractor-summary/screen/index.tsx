@@ -6,10 +6,9 @@ import ExportFileModal from '@/components/export/ExportFileModal'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
 import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
 import {
-  getProjectDeviceStatusCamerasAPI,
-  getProjectDeviceStatusLightingAPI,
-  getProjectDeviceStatusListAPI,
-  getProjectDeviceStatusVMSAPI,
+  getProjectDeviceSolutionsListAPI,
+  getProjectDeviceSummaryListAPI,
+  getProjectListAPI,
 } from '@/services/routes/ManageService'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
@@ -19,7 +18,7 @@ import ProjectLiveModal from '../components/ProjectLiveModal'
 import ProjectStatusTable from '../components/ProjectStatusTable'
 import SummaryHeader from '../components/SummaryHeader'
 import { WARRANTY_FILTER_OPTIONS, warrantyParam, type WarrantyFilter } from '../data/deviceStatus'
-import { exportSummaryExcel, exportSummaryPdf, type SummaryExportInput } from '../data/exportSummary'
+import { exportSummaryExcel, exportSummaryPdf, summaryForProjects, type SummaryExportInput } from '../data/exportSummary'
 import { useContractorDeviceRings } from '../hooks/useContractorDeviceRings'
 
 interface Props {
@@ -29,16 +28,15 @@ interface Props {
 
 const EXPORT_PAGE_LIMIT = 100
 
-/** Every project under the current filter, for นำออกเอกสาร's ทั้งหมด. */
-const fetchAllProjects = async (contractorUserId: string, isWarranty: boolean | undefined) => {
-  const rows: ProjectDeviceStatusRow[] = []
+/** Every page of a project listing under the current filter, for
+ *  นำออกเอกสาร (the listings cap `limit` at 100). */
+const fetchAllPages = async <Row, Query extends { page?: number; limit?: number }>(
+  fetchPage: (query: Query) => Promise<{ data: { res_data: Row[] | null; meta_data?: { total_pages?: number } } }>,
+  query: Query,
+) => {
+  const rows: Row[] = []
   for (let page = 1; ; page++) {
-    const { data } = await getProjectDeviceStatusListAPI({
-      contractor_id: contractorUserId,
-      is_warranty: isWarranty,
-      page,
-      limit: EXPORT_PAGE_LIMIT,
-    })
+    const { data } = await fetchPage({ ...query, page, limit: EXPORT_PAGE_LIMIT })
     const pageRows = data.res_data ?? []
     rows.push(...pageRows)
     if (pageRows.length < EXPORT_PAGE_LIMIT || page >= (data.meta_data?.total_pages ?? page)) return rows
@@ -90,24 +88,24 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
     if (!contractor) return null
     const warrantyLabel = WARRANTY_FILTER_OPTIONS.find((option) => option.value === warranty)?.label ?? 'ทั้งหมด'
-    // The offline cameras, cabinets and signs of every project, one call
-    // each; the report keeps the projects it lists.
-    const offline = { contractor_id: id, is_online: false }
-    const [projects, cameraProjects, lightingProjects, vmsProjects] = await Promise.all([
-      scope === 'page' ? rows : fetchAllProjects(id, warrantyParam(warranty)),
-      getProjectDeviceStatusCamerasAPI(offline).then((response) => response.data ?? []),
-      getProjectDeviceStatusLightingAPI(offline).then((response) => response.data ?? []),
-      getProjectDeviceStatusVMSAPI(offline).then((response) => response.data ?? []),
+    const query = { contractor_id: id, is_warranty: warrantyParam(warranty) }
+    const [summary, solutions, projectSolutions] = await Promise.all([
+      // All of it either way: the summary can list a project the page's table
+      // doesn't, so its pages don't line up with the table's.
+      fetchAllPages(getProjectDeviceSummaryListAPI, query),
+      // The same projects' devices, system by system — the โครงการ sheet.
+      fetchAllPages(getProjectDeviceSolutionsListAPI, query),
+      // The Solutions each project is set up with — the โครงการ sheet's boxes.
+      fetchAllPages(getProjectListAPI, { contractor_id: id }),
     ])
     return {
       companyName: contractor.company_name,
       shortName: contractor.short_name,
       warrantyLabel,
       rings,
-      projects,
-      cameraProjects,
-      lightingProjects,
-      vmsProjects,
+      summary: scope === 'page' ? summaryForProjects(summary, rows) : summary,
+      solutions,
+      projectSolutions,
     }
   }
 

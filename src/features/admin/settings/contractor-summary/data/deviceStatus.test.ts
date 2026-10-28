@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { TunnelCentralItem } from '@/types/tunnel/overview-api'
 import {
   cameraBadges,
   hasDevices,
   offlinePercent,
   readUptimeTotals,
   staLabel,
-  tunnelTotalsFor,
   warrantyParam,
 } from './deviceStatus'
 
@@ -46,32 +44,6 @@ describe('which rings show', () => {
   })
 })
 
-describe('Tunnel counted from the contractor’s projects', () => {
-  const tunnel = (projectId: number, online: boolean, isWarranty = true) => ({
-    road: { id: 1, code_name: 'x' },
-    project: { id: projectId, project_name: '', budget_year: 2567, contract_no: '' },
-    solution: { id: projectId * 10, solution_name: '' },
-    tunnel: { camera_count: 0, lighting_count: 0, is_online: online },
-    is_warranty: isWarranty,
-  })
-  const central = [
-    { department_id: 0, department_short_name: 'ทช. ส่วนกลาง', sub_department: [{ department_id: 97, department_short_name: '', solutions: [tunnel(181, true)] }] },
-    { department_id: 23, department_short_name: '', sub_department: [{ department_id: 50, department_short_name: '', solutions: [tunnel(7, false, false), tunnel(8, true)] }] },
-  ] as unknown as TunnelCentralItem[]
-
-  it('counts only that contractor’s tunnels', () => {
-    expect(tunnelTotalsFor(central, new Set([181, 7]))).toEqual({ total: 2, online: 1, offline: 1 })
-    expect(tunnelTotalsFor(central, new Set([99]))).toEqual({ total: 0, online: 0, offline: 0 })
-    expect(tunnelTotalsFor(undefined, new Set([181]))).toEqual({ total: 0, online: 0, offline: 0 })
-  })
-
-  it('follows ในค้ำ / หมดค้ำ by each tunnel’s own warranty', () => {
-    expect(tunnelTotalsFor(central, new Set([181, 7]), true)).toEqual({ total: 1, online: 1, offline: 0 })
-    expect(tunnelTotalsFor(central, new Set([181, 7]), false)).toEqual({ total: 1, online: 0, offline: 1 })
-    expect(tunnelTotalsFor(central, new Set([181, 7]), undefined)).toEqual({ total: 2, online: 1, offline: 1 })
-  })
-})
-
 describe('camera group heading', () => {
   it('writes กม. once, even when the chainage already has it', () => {
     expect(staLabel('2+800')).toBe('กม. 2+800')
@@ -93,6 +65,7 @@ describe('camera tags', () => {
     expect(cameraBadges([{ id: 7 }, { id: 2 }, { id: 4 }])).toEqual(['cctv', 'counting', 'traffic', 'vms'])
     expect(cameraBadges([])).toEqual(['cctv'])
     expect(cameraBadges([{ id: 99 }])).toEqual(['cctv'])
+    expect(cameraBadges([{ id: 11 }, { id: 2 }])).toEqual(['cctv', 'counting', 'lpr'])
   })
 })
 

@@ -24,7 +24,3 @@ export const SUMMARY_SYSTEMS: readonly SummarySystem[] = [
   { key: 'crosswalk', label: 'Crosswalk', color: '#6A87F7', prefix: 'crosswalk', block: 'crosswalk' },
   { key: 'tunnel', label: 'Tunnel', color: '#A67AF7', prefix: 'tunnel', block: 'tunnel' },
 ]
-
-/** `solution_type_id` of Tunnel — its ring is only worked out for a
- *  contractor whose solution_group lists it (see useContractorDeviceRings). */
-export const TUNNEL_SOLUTION_TYPE_ID = 8

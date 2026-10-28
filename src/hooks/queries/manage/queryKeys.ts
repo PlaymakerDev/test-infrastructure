@@ -110,9 +110,6 @@ export const manageKeys = {
           limit: params.limit ?? 10,
         },
       ] as const,
-    /** Every project id of one contractor (all pages), for the Tunnel ring. */
-    projectIds: (contractorUserId: string) =>
-      [...manageKeys.deviceStatus.all, 'project-ids', contractorUserId] as const,
     detail: (projectId: number) => [...manageKeys.deviceStatus.all, 'detail', projectId] as const,
     /** One system's uptime-statistics filtered to one contractor (and, when
      *  given, to in- or out-of-warranty solutions). */
