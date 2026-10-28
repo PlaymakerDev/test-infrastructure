@@ -8,7 +8,7 @@ import type {
   SystemSolution,
 } from '@/types/manage/device-status-api'
 import type { ExportColumn, ExportColumnNode } from '@/utils/export/excel'
-import type { PdfReportBlock, PdfSimpleColumn, PdfTableColumn } from '@/utils/export/pdf'
+import type { PdfReportBlock, PdfRun, PdfTableColumn } from '@/utils/export/pdf'
 import type { SummarySystem } from './systems'
 import { cameraBadges, offlinePercent } from './deviceStatus'
 import {
@@ -133,9 +133,6 @@ const summaryLeadCells = (row: ProjectDeviceSummaryRow, index: number): (string 
   row.contract_no?.trim() || '-',
 ]
 
-const summaryCountCells = (groups: SummaryGroup[], row: ProjectDeviceSummaryRow): number[] =>
-  groups.flatMap((group) => group.parts.flatMap((part) => STATUS_COUNTS.map((status) => status.count(part.totals(row)))))
-
 /** สรุป on one sheet, as the sample lays it out: ลำดับ / ชื่อโครงการ /
  *  เลขที่สัญญา, then system → part → ออนไลน์ / ออฟไลน์ three header rows deep. */
 export const SUMMARY_EXCEL_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] = [
@@ -157,45 +154,43 @@ export const SUMMARY_EXCEL_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] 
   })),
 ]
 
-/** สรุป in the PDF: all 26 counts don't fit an A4 row with ออนไลน์ / ออฟไลน์
- *  spelt out, so the cameras take one table and the other systems a second
- *  (user 2026-10-27), each with the project columns of its own. `widths` =
- *  ลำดับ / ชื่อโครงการ / เลขที่สัญญา / each count, summing to 100. */
-const summaryPdfBlock = (
-  title: string,
-  groups: SummaryGroup[],
-  rows: ProjectDeviceSummaryRow[],
-  widths: { lead: [number, number, number]; count: number },
-  sizing: { fontSize: number; cellPadding: number },
-): PdfReportBlock => ({
-  type: 'table',
-  title,
-  ...sizing,
-  columns: [
-    { header: 'ลำดับ', widthPct: widths.lead[0] },
-    { header: 'ชื่อโครงการ', widthPct: widths.lead[1] },
-    { header: 'เลขที่สัญญา', widthPct: widths.lead[2] },
-    ...groups.map((group): PdfTableColumn => ({
-      header: group.header,
-      children: group.parts.map((part) => ({
-        header: part.header,
-        children: STATUS_COUNTS.map((status): PdfSimpleColumn => ({
-          header: status.header,
-          widthPct: widths.count,
-          headerColor: `#${status.color}`,
+/** "1 / 0": a part's online count in blue, its offline count in red. */
+const countRuns = (totals: DeviceTotals | undefined): PdfRun[] => [
+  { text: String(totals?.online ?? 0), color: `#${ONLINE_COLOR}` },
+  { text: ' / ' },
+  { text: String(totals?.offline ?? 0), color: `#${OFFLINE_COLOR}` },
+]
+
+const ON_OFF_HEADER: PdfRun[] = [{ text: 'On', color: `#${ONLINE_COLOR}` }, { text: ' / ' }, { text: 'Off', color: `#${OFFLINE_COLOR}` }]
+
+/** สรุป in the PDF (user 2026-10-28): one table under the sample's three
+ *  header rows, but one column a part — "On / Off", its cell "1 / 0" — so
+ *  every system fits one A4 row and a contractor's projects are listed once,
+ *  not in two tables. 3 + 21.4 + 8 + 13 × 5.2 = 100; 5.2% at 7pt holds the
+ *  widest header word, "Detection", whole, and a count up to "999 / 999". */
+export const summaryPdfBlocks = (rows: ProjectDeviceSummaryRow[]): PdfReportBlock[] => {
+  const groups = [SUMMARY_CAMERA_GROUP, ...SUMMARY_SYSTEM_GROUPS]
+  const parts = groups.flatMap((group) => group.parts)
+  return [{
+    type: 'table',
+    title: PROJECTS_TITLE,
+    fontSize: 7,
+    cellPadding: 1.5,
+    columns: [
+      { header: 'ลำดับ', widthPct: 3 },
+      { header: 'ชื่อโครงการ', widthPct: 21.4 },
+      { header: 'เลขที่สัญญา', widthPct: 8 },
+      ...groups.map((group): PdfTableColumn => ({
+        header: group.header,
+        children: group.parts.map((part) => ({
+          header: part.header,
+          children: [{ header: 'On / Off', headerRuns: ON_OFF_HEADER, widthPct: 5.2 }],
         })),
       })),
-    })),
-  ],
-  rows: rows.map((row, index) => [...summaryLeadCells(row, index), ...summaryCountCells(groups, row)]),
-})
-
-export const summaryPdfBlocks = (rows: ProjectDeviceSummaryRow[]): PdfReportBlock[] => [
-  // 5 + 35 + 12 + 8 × 6 = 100
-  summaryPdfBlock(`${PROJECTS_TITLE} (1/2): ${SUMMARY_CAMERA_GROUP.header}`, [SUMMARY_CAMERA_GROUP], rows, { lead: [5, 35, 12], count: 6 }, { fontSize: 8, cellPadding: 3 }),
-  // 3 + 17 + 8 + 18 × 4 = 100 — the narrowest the spelt-out headers allow at 7pt.
-  summaryPdfBlock(`${PROJECTS_TITLE} (2/2): ระบบอื่น`, SUMMARY_SYSTEM_GROUPS, rows, { lead: [3, 17, 8], count: 4 }, { fontSize: 7, cellPadding: 1.5 }),
-]
+    ],
+    rows: rows.map((row, index) => [...summaryLeadCells(row, index), ...parts.map((part) => countRuns(part.totals(row)))]),
+  }]
+}
 
 /** หน้าปัจจุบัน: the summary rows of the projects on the page, in its order. */
 export const summaryForProjects = (summary: ProjectDeviceSummaryRow[], projects: { project_id: number }[]): ProjectDeviceSummaryRow[] => {
@@ -258,18 +253,26 @@ const cameraRow = (camera: SolutionCamera): ProjectSheetColumns => [
 ]
 
 /** A system's install points (or controllers) with their cameras — nothing
- *  when it has none. */
+ *  when it has none. `stateOf`: a controller's own state, which the sheet
+ *  writes after its install point. */
 const cameraSection = <Item extends CameraSolution>(
   solution: ProjectSolution,
   list: Item[] | undefined,
-  labelOf: (item: Item) => string = (item) => item.solution_name,
+  stateOf?: (item: Item) => boolean,
 ): ProjectSheetSection[] =>
   list?.length
-    ? [{ solution, columns: CAMERA_COLUMNS, points: list.map((item) => ({ label: labelOf(item), rows: (item.cameras ?? []).map(cameraRow) })) }]
+    ? [{
+        solution,
+        columns: CAMERA_COLUMNS,
+        points: list.map((item) => ({
+          label: item.solution_name,
+          ...(stateOf ? { online: stateOf(item) } : {}),
+          rows: (item.cameras ?? []).map(cameraRow),
+        })),
+      }]
     : []
 
-/** A controller's own state after its name, as the sample writes it. */
-const withState = (controller: SystemSolution) => `${controller.solution_name} (${controller.is_online ? 'ออนไลน์' : 'ออฟไลน์'})`
+const controllerState = (controller: SystemSolution) => controller.is_online
 
 /** WIM has no list of its own in /solutions: its cameras, by the CCTV install
  *  point each stands at. */
@@ -290,8 +293,8 @@ const projectSections = (solutions: ProjectDeviceSolutionsRow | undefined): Proj
     ...cameraSection('CCTV', solutions?.cctv),
     ...cameraSection('Traffic Volume', solutions?.counting),
     ...cameraSection('Incident Detection', solutions?.analytic),
-    ...cameraSection('Traffic Signal', solutions?.traffic, withState),
-    ...cameraSection('Crosswalk', solutions?.crosswalk, withState),
+    ...cameraSection('Traffic Signal', solutions?.traffic, controllerState),
+    ...cameraSection('Crosswalk', solutions?.crosswalk, controllerState),
     ...cameraSection('LPR', solutions?.lpr),
     ...cameraSection('WIM', wimPoints(solutions?.cctv)),
     ...(solutions?.lighting?.length
@@ -313,7 +316,7 @@ const projectSections = (solutions: ProjectDeviceSolutionsRow | undefined): Proj
       : []),
     // Each sign with its state and cameras, as Traffic Signal lists its
     // controllers (user 2026-10-28) — a sign without a camera too.
-    ...cameraSection('VMS', solutions?.vms, withState),
+    ...cameraSection('VMS', solutions?.vms, controllerState),
     ...(solutions?.bridge_lighting?.length
       ? [{
           solution: 'Bridge Lighting' as const,

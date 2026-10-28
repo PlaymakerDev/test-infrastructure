@@ -179,4 +179,28 @@ describe('excel export — sheets laid out row by row', () => {
     expect(outlineLevels).toEqual([0])
     expect(sheetXml(xlsxBytes(workbook, outlineLevels), 1)).not.toContain('sheetFormatPr')
   })
+
+  it('a cell in runs comes out as rich text — its style kept, one run in its own colour', () => {
+    const runs = [{ text: 'จุดติดตั้ง : ก & ข (ระบบ : ' }, { text: 'ออนไลน์', color: '00B050' }, { text: ')' }]
+    const sheet: ExcelLayoutSheet = {
+      sheetName: 'R',
+      widths: [10, 10],
+      rows: [
+        { cells: [{ col: 0, span: 2, value: 'จุดติดตั้ง : ก & ข (ระบบ : ออนไลน์)', style: { border: true }, runs }] },
+        { cells: [{ col: 0, value: 'ธรรมดา' }] },
+      ],
+    }
+    const { workbook, outlineLevels, richText } = buildWorkbook([sheet])
+    expect(richText).toEqual([[{ ref: 'A1', runs, style: { border: true } }]])
+    const bytes = xlsxBytes(workbook, outlineLevels, richText)
+    const xml = sheetXml(bytes, 1)
+    const run = (text: string, color = '') => `<r><rPr><sz val="11"/><rFont val="Calibri"/>${color}</rPr><t xml:space="preserve">${text}</t></r>`
+    expect(xml).toMatch(
+      new RegExp(`<c r="A1" s="\\d+" t="inlineStr"><is>${[run('จุดติดตั้ง : ก &amp; ข \\(ระบบ : '), run('ออนไลน์', '<color rgb="FF00B050"/>'), run('\\)')].join('')}</is></c>`),
+    )
+    // The plain cell stays as SheetJS wrote it.
+    expect(xml).toMatch(/<c r="A2"[^>]* t="str"><v>ธรรมดา<\/v><\/c>/)
+    // Read back, it's the one string.
+    expect(read(bytes, { type: 'array' }).Sheets['R']['A1'].v).toBe('จุดติดตั้ง : ก & ข (ระบบ : ออนไลน์)')
+  })
 })

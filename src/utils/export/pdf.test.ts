@@ -41,6 +41,35 @@ describe('wrapPdfText — Latin-first text with ฬ + an above mark', () => {
   })
 })
 
+describe('splitWrapped — coloured parts of a text wrapped as one', () => {
+  const band = 'Traffic Signal · จุดติดตั้ง : รย.4006 แยกจราจรบ้านแหลมมะขาม กม.12+000 (ระบบ : '
+  const runs = [{ text: band }, { text: 'ออฟไลน์', color: '#FF0000' }, { text: ')' }]
+  const joined = runs.map((run) => run.text).join('')
+
+  it('hands every character back to its part, the breaks with them, at any width', () => {
+    for (const maxPt of [600, 160, 90, 40]) {
+      const wrapped = kit.wrapPdfText(face, joined, maxPt, 7)
+      const parts = kit.splitWrapped(runs, wrapped)
+      expect(parts.map((part) => part.text).join('')).toBe(wrapped)
+      // The coloured word keeps its colour and its letters, wherever a break falls.
+      const red = parts.filter((part) => part.color === '#FF0000')
+      expect(red.map((part) => part.text).join('').replace(/ ?\n/g, '')).toBe('ออฟไลน์')
+      expect(parts.at(-1)!.text.replace(/ ?\n/g, '')).toBe(')')
+    }
+  })
+
+  it('a short text stays as it was', () => {
+    const count = [{ text: '12', color: '#4E95D9' }, { text: '/' }, { text: '3', color: '#FF0000' }]
+    expect(kit.splitWrapped(count, '12/3')).toEqual(count)
+  })
+
+  it('a space the wrap dropped at a break, and a break at a part’s edge', () => {
+    const parts = [{ text: 'ab ' }, { text: 'cd', color: '#00B050' }]
+    expect(kit.splitWrapped(parts, 'ab \ncd')).toEqual([{ text: 'ab \n' }, { text: 'cd', color: '#00B050' }])
+    expect(kit.splitWrapped([{ text: 'ab  ' }, { text: 'cd', color: '#00B050' }], 'ab \ncd')).toEqual([{ text: 'ab \n' }, { text: 'cd', color: '#00B050' }])
+  })
+})
+
 // Code points, not literals: the two spellings look the same on screen.
 const SARA_AM = String.fromCodePoint(0x0e33)
 const NIKHAHIT_SARA_AA = String.fromCodePoint(0x0e4d, 0x0e32)

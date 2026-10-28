@@ -266,6 +266,13 @@ export interface ExcelCellStyle {
   border?: boolean
 }
 
+/** A part of a cell's text with a colour of its own. */
+export interface ExcelTextRun {
+  text: string
+  /** Font colour, 6-digit hex without '#'; absent = the cell's. */
+  color?: string
+}
+
 export interface ExcelLayoutCell {
   /** 0-based column. */
   col: number
@@ -273,6 +280,9 @@ export interface ExcelLayoutCell {
   span?: number
   value: string | number
   style?: ExcelCellStyle
+  /** `value` in parts, so one word can stand out in its own colour ("(ระบบ :
+   *  ออนไลน์)" with ออนไลน์ green) — they must join to `value`. */
+  runs?: ExcelTextRun[]
 }
 
 export interface ExcelLayoutRow {
@@ -324,11 +334,20 @@ const layoutCellStyle = (style: ExcelCellStyle = {}) => {
 const outlineDepth = (sheet: ExcelSheet) =>
   isLayoutSheet(sheet) ? sheet.rows.reduce((depth, row) => Math.max(depth, row.level ?? 0), 0) : 0
 
-function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSheet): XLSX.WorkSheet {
+/** A cell written as plain text whose text is then split into coloured runs. */
+export interface RichTextCell {
+  /** A1 reference. */
+  ref: string
+  runs: ExcelTextRun[]
+  style: ExcelCellStyle
+}
+
+function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSheet): { ws: XLSX.WorkSheet; richText: RichTextCell[] } {
   const colCount = widths.length
   const aoa: SheetRows = []
   const merges: XLSX.Range[] = []
   const rowInfo: XLSX.RowInfo[] = []
+  const richText: RichTextCell[] = []
   if (title) {
     pushTitleBlock(aoa, merges, colCount, title, filterNote)
     rowInfo[0] = { hpt: 24 }
@@ -339,6 +358,7 @@ function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSh
     for (const cell of row.cells) {
       const span = cell.span ?? 1
       line[cell.col] = { v: cell.value, t: typeof cell.value === 'number' ? 'n' : 's', s: layoutCellStyle(cell.style) }
+      if (cell.runs?.length) richText.push({ ref: XLSX.utils.encode_cell({ r, c: cell.col }), runs: cell.runs, style: cell.style ?? {} })
       // The cells a merge covers carry the box too, or only its first cell gets one.
       for (let c = cell.col + 1; c < cell.col + span; c++) line[c] = { v: '', s: cell.style?.border ? { border: THIN_BORDER } : {} }
       if (span > 1) merges.push({ s: { r, c: cell.col }, e: { r, c: cell.col + span - 1 } })
@@ -352,7 +372,7 @@ function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSh
   if (rowInfo.length) ws['!rows'] = rowInfo
   // A group's +/− on the row above it (Excel's default puts it below).
   if (rows.some((row) => row.level)) ws['!outline'] = { above: true }
-  return ws
+  return { ws, richText }
 }
 
 /** Excel only draws a sheet's +/− gutter when its sheetFormatPr names the
@@ -373,21 +393,60 @@ export function withRowOutlines(xlsx: Uint8Array, levels: number[]): Uint8Array 
   return new Uint8Array(XLSX.CFB.write(zip, { fileType: 'zip', type: 'array', compression: true }) as ArrayLike<number>)
 }
 
-/** The workbook as .xlsx bytes, with the +/− gutter on its grouped sheets. */
-export function xlsxBytes(workbook: XLSX.WorkBook, outlineLevels: number[]): Uint8Array {
-  const bytes = new Uint8Array(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer)
-  return outlineLevels.some((level) => level > 0) ? withRowOutlines(bytes, outlineLevels) : bytes
+const xmlText = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** SheetJS writes no rich text, so each such cell of the written file is
+ *  swapped for an inline string in runs — every run in the cell's font, a
+ *  coloured one in its colour. `cells` = each sheet's, in workbook order. */
+export function withRichText(xlsx: Uint8Array, cells: RichTextCell[][]): Uint8Array {
+  const zip = XLSX.CFB.read(xlsx, { type: 'array' })
+  cells.forEach((sheetCells, index) => {
+    if (!sheetCells.length) return
+    const entry = XLSX.CFB.find(zip, `/xl/worksheets/sheet${index + 1}.xml`)
+    if (!entry?.content) return
+    let xml = new TextDecoder().decode(entry.content as Uint8Array)
+    for (const { ref, runs, style } of sheetCells) {
+      // The workbook's default font is Calibri 11.
+      const font = `<sz val="${style.size ?? 11}"/>${style.bold ? '<b/>' : ''}<rFont val="${style.font ?? 'Calibri'}"/>`
+      const text = runs
+        .map((run) => {
+          const color = run.color ?? style.color
+          return `<r><rPr>${font}${color ? `<color rgb="FF${color}"/>` : ''}</rPr><t xml:space="preserve">${xmlText(run.text)}</t></r>`
+        })
+        .join('')
+      // A text cell comes out as t="str" (or t="s" with shared strings).
+      xml = xml.replace(
+        new RegExp(`<c r="${ref}"([^>]*?) t="s(?:tr)?"([^>]*)>.*?</c>`),
+        (_cell, before: string, after: string) => `<c r="${ref}"${before} t="inlineStr"${after}><is>${text}</is></c>`,
+      )
+    }
+    entry.content = new TextEncoder().encode(xml) as unknown as typeof entry.content
+  })
+  return new Uint8Array(XLSX.CFB.write(zip, { fileType: 'zip', type: 'array', compression: true }) as ArrayLike<number>)
 }
 
-/** The workbook of the sheets, and each sheet's deepest row outline level. */
-export function buildWorkbook(sheets: ExcelSheet[]): { workbook: XLSX.WorkBook; outlineLevels: number[] } {
+/** The workbook as .xlsx bytes, with the +/− gutter on its grouped sheets and
+ *  its rich-text cells in colour. */
+export function xlsxBytes(workbook: XLSX.WorkBook, outlineLevels: number[], richText: RichTextCell[][] = []): Uint8Array {
+  let bytes: Uint8Array = new Uint8Array(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer)
+  if (outlineLevels.some((level) => level > 0)) bytes = withRowOutlines(bytes, outlineLevels)
+  if (richText.some((cells) => cells.length > 0)) bytes = withRichText(bytes, richText)
+  return bytes
+}
+
+/** The workbook of the sheets, each sheet's deepest row outline level and its
+ *  rich-text cells. */
+export function buildWorkbook(sheets: ExcelSheet[]): { workbook: XLSX.WorkBook; outlineLevels: number[]; richText: RichTextCell[][] } {
   const workbook = XLSX.utils.book_new()
+  const richText: RichTextCell[][] = []
   for (const sheet of sheets) {
     // Excel sheet names cap at 31 chars and reject \ / ? * [ ] :
     const name = sheet.sheetName.replace(/[\/?*[\]:]/g, ' ').slice(0, 31)
-    XLSX.utils.book_append_sheet(workbook, isLayoutSheet(sheet) ? buildLayoutWorksheet(sheet) : buildWorksheet(sheet), name)
+    const built = isLayoutSheet(sheet) ? buildLayoutWorksheet(sheet) : { ws: buildWorksheet(sheet), richText: [] }
+    XLSX.utils.book_append_sheet(workbook, built.ws, name)
+    richText.push(built.richText)
   }
-  return { workbook, outlineLevels: sheets.map(outlineDepth) }
+  return { workbook, outlineLevels: sheets.map(outlineDepth), richText }
 }
 
 function downloadXlsx(bytes: Uint8Array, filename: string) {
@@ -406,13 +465,13 @@ function downloadXlsx(bytes: Uint8Array, filename: string) {
  *  several differently-shaped tables (device status / latest readings / time
  *  series) that would otherwise need one file each. */
 export function exportExcelSheets({ filenameBase, sheets }: ExportExcelSheetsArgs): void {
-  const { workbook, outlineLevels } = buildWorkbook(sheets)
+  const { workbook, outlineLevels, richText } = buildWorkbook(sheets)
   const filename = `${filenameBase}_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
-  if (outlineLevels.every((level) => level === 0)) {
+  if (outlineLevels.every((level) => level === 0) && richText.every((cells) => cells.length === 0)) {
     XLSX.writeFile(workbook, filename)
     return
   }
-  downloadXlsx(xlsxBytes(workbook, outlineLevels), filename)
+  downloadXlsx(xlsxBytes(workbook, outlineLevels, richText), filename)
 }
 
 /** Build + download a single-sheet .xlsx from column config (same shape the

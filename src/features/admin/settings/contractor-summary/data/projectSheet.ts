@@ -1,5 +1,5 @@
-import type { ExcelCellStyle, ExcelLayoutCell, ExcelLayoutRow, ExcelLayoutSheet } from '@/utils/export/excel'
-import type { PdfReportBlock, PdfTableRow } from '@/utils/export/pdf'
+import type { ExcelCellStyle, ExcelLayoutCell, ExcelLayoutRow, ExcelLayoutSheet, ExcelTextRun } from '@/utils/export/excel'
+import type { PdfReportBlock, PdfRun, PdfTableRow } from '@/utils/export/pdf'
 
 /** The โครงการ sheet of นำออกเอกสาร (user's sample report, 2026-10-27): one
  *  sheet, project after project — its name, contract and Solution boxes, then
@@ -7,9 +7,8 @@ import type { PdfReportBlock, PdfTableRow } from '@/utils/export/pdf'
  *  devices. Every project collapses under its own name row (+/− on the left,
  *  as in the user's grouped-by-road sample).
  *
- *  Built from this layout model rather than from an API response: the backend
- *  endpoint behind the sheet is still to come, and only the step that turns
- *  its response into these projects will depend on it. */
+ *  Built from this layout model, not from the API response — exportSummary.ts
+ *  turns /device-status/solutions into these projects. */
 
 /** The Solution boxes, in the sample's order — columns C to M. */
 export const PROJECT_SOLUTIONS = [
@@ -47,8 +46,32 @@ export interface ProjectSheetSection {
   solution: ProjectSolution
   columns: ProjectSheetColumns
   /** In order. A point without a label lists its devices straight under the
-   *  header (the sample's Street Light). */
-  points: { label?: string; rows: ProjectSheetColumns[] }[]
+   *  header (the sample's Street Light); `online` is a controller's own state
+   *  (Traffic Signal, Crosswalk, VMS), written after its label. */
+  points: { label?: string; online?: boolean; rows: ProjectSheetColumns[] }[]
+}
+
+/** A controller's state after its install point, coloured as the user's
+ *  mockup has it (2026-10-28) — Excel's standard Green and Red. */
+const STATE = {
+  online: { text: 'ออนไลน์', color: '00B050' },
+  offline: { text: 'ออฟไลน์', color: 'FF0000' },
+}
+
+/** "จุดติดตั้ง : <label> (ระบบ : ออนไลน์)" in parts — the state alone in colour. */
+const pointLine = ({ label, online }: ProjectSheetSection['points'][number]): ExcelTextRun[] => {
+  if (online === undefined) return [{ text: `จุดติดตั้ง : ${label}` }]
+  const state = online ? STATE.online : STATE.offline
+  return [{ text: `จุดติดตั้ง : ${label} (ระบบ : ` }, state, { text: ')' }]
+}
+
+const pointText = (point: ProjectSheetSection['points'][number]) => pointLine(point).map((run) => run.text).join('')
+
+/** A point's PDF band ("Traffic Signal · จุดติดตั้ง : … (ระบบ : ออนไลน์)") in
+ *  parts, the state coloured as on the sheet. */
+const bandRuns = (solution: string, point: ProjectSheetSection['points'][number]): PdfRun[] => {
+  const [first, ...rest] = pointLine(point)
+  return [{ ...first, text: `${solution} · ${first.text}` }, ...rest].map((run) => (run.color ? { text: run.text, color: `#${run.color}` } : { text: run.text }))
 }
 
 export interface ProjectSheetProject {
@@ -135,7 +158,10 @@ export function projectDevicesSheet({
     for (const section of project.sections) {
       detail(columnCells(section.solution, section.columns, { fill: SECTION_FILL, align: 'center', vertical: 'center', wrap: true, border: true }, true))
       for (const point of section.points) {
-        if (point.label) detail([cell(0, `จุดติดตั้ง : ${point.label}`, { align: 'left', vertical: 'center', border: true }, WIDTHS.length)])
+        if (point.label) {
+          const runs = pointLine(point)
+          detail([{ ...cell(0, pointText(point), { align: 'left', vertical: 'center', border: true }, WIDTHS.length), ...(runs.length > 1 ? { runs } : {}) }])
+        }
         // Numbered from 1 at every install point (user 2026-10-28).
         point.rows.forEach((row, i) => detail(columnCells(i + 1, row, { align: 'center', vertical: 'center', border: true }, false)))
       }
@@ -186,8 +212,9 @@ const projectPdfRows = (project: ProjectSheetProject, index: number, inView: Pro
     const keepTogether = !sameColumns(section.columns, CAMERA_COLUMNS) && after <= PDF_KEEP_TOGETHER_PT
     section.points.forEach((point, pointIndex) => {
       rows.push({
-        group: point.label ? `${section.solution} · จุดติดตั้ง : ${point.label}` : section.solution,
+        group: point.label ? `${section.solution} · ${pointText(point)}` : section.solution,
         tone: 'soft',
+        ...(point.label && point.online !== undefined ? { runs: bandRuns(section.solution, point) } : {}),
         ...(pointIndex === 0 && keepTogether ? { keepAhead: after } : {}),
       })
       if (pointIndex === 0 && !sameColumns(section.columns, inView)) {

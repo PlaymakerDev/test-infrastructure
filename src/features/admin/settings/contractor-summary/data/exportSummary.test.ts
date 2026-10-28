@@ -178,25 +178,21 @@ beforeEach(() => {
 })
 
 describe('สรุปข้อมูลผู้รับจ้าง export', () => {
-  it('PDF: the rings, then the สรุป table split in two — cameras, then the other systems', async () => {
+  it('PDF: the rings, then สรุป as one table — a column a part, "On / Off", each cell "1 / 0" in blue and red', async () => {
     await exportSummaryPdf(input)
     const args = calls.pdf[0] as { subtitleNote: string; blocks: Table[] }
     // One filter for all: the rings were read under it too.
     expect(args.subtitleNote).toBe('สถานะค้ำประกัน: ในค้ำ')
     expect(args.blocks[0].rows[0]).toEqual(['CCTV', 269, 230, 39, '14%'])
 
-    const [cameras, systems] = [args.blocks[1], args.blocks[2]]
-    expect(cameras.title).toBe('ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ (1/2): CCTV (กล้อง)')
-    expect(cameras.columns.map((c) => c.header)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'CCTV (กล้อง)'])
-    expect(cameras.columns[3].children!.map((c) => c.header)).toEqual(['CCTV', 'Traffic Volume', 'Incident Detection', 'LPR'])
-    expect(leaves(cameras.columns).slice(3, 5).map((c) => [c.header, c.headerColor])).toEqual([['ออนไลน์', '#4E95D9'], ['ออฟไลน์', '#FF0000']])
-    expect(leaves(cameras.columns).reduce((sum, c) => sum + c.widthPct!, 0)).toBe(100)
-    // Contract trimmed; the cameras' counts in system order, online first.
-    expect(cameras.rows[0]).toEqual([1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 1, 2, 3, 4, 5, 6, 7, 8])
-    expect(cameras.rows[1]).toEqual([2, 'โครงการ 246', '-', 0, 0, 0, 0, 0, 0, 0, 0])
-
-    expect(systems.title).toBe('ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ (2/2): ระบบอื่น')
-    expect(systems.columns.slice(3).map((c) => [c.header, c.children!.map((part) => part.header)])).toEqual([
+    const summary = args.blocks[1]
+    expect(summary.title).toBe('ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ')
+    // The sample's three header rows: system → part → On / Off.
+    expect(summary.columns.map((c) => [c.header, c.children?.map((part) => part.header)])).toEqual([
+      ['ลำดับ', undefined],
+      ['ชื่อโครงการ', undefined],
+      ['เลขที่สัญญา', undefined],
+      ['CCTV (กล้อง)', ['CCTV', 'Traffic Volume', 'Incident Detection', 'LPR']],
       ['Traffic Signal', ['System', 'CCTV']],
       ['Crosswalk', ['System', 'CCTV']],
       ['Street Light', ['System']],
@@ -204,10 +200,20 @@ describe('สรุปข้อมูลผู้รับจ้าง export', 
       ['Bridge Lighting', ['System']],
       ['Tunnel', ['Sensor']],
     ])
-    expect(leaves(systems.columns)).toHaveLength(3 + 18)
-    expect(leaves(systems.columns).reduce((sum, c) => sum + c.widthPct!, 0)).toBe(100)
-    expect(systems.rows[0]).toEqual([1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
-    expect(systems.rows[1].slice(3, 5)).toEqual([2, 0])
+    const columns = leaves(summary.columns)
+    expect(columns).toHaveLength(3 + 13)
+    expect(columns[3]).toEqual({
+      header: 'On / Off',
+      headerRuns: [{ text: 'On', color: '#4E95D9' }, { text: ' / ' }, { text: 'Off', color: '#FF0000' }],
+      widthPct: 5.2,
+    })
+    expect(columns.reduce((sum, c) => sum + c.widthPct!, 0)).toBeCloseTo(100)
+    expect(summary.fontSize).toBe(7)
+    // Contract trimmed; each part's online/offline, in system order.
+    const count = (online: number, offline: number) => [{ text: String(online), color: '#4E95D9' }, { text: ' / ' }, { text: String(offline), color: '#FF0000' }]
+    expect(summary.rows[0]).toEqual([1, 'โครงการ 163', 'สทช.ที่ 2/26/2567', ...Array.from({ length: 13 }, (_, i) => count(2 * i + 1, 2 * i + 2))])
+    expect(summary.rows[1].slice(0, 3)).toEqual([2, 'โครงการ 246', '-'])
+    expect(summary.rows[1][7]).toEqual(count(2, 0))
   })
 
   it('Excel: สรุป follows the sample — three header rows, merged, all 26 counts', async () => {
@@ -276,9 +282,9 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
 
   it('each system by its own install points; a controller with its state after its name', () => {
     expect(section(p163, 'Traffic Volume').points).toEqual([{ label: 'สห.4014 กม.2+800', rows: [['กล้อง c3', '2+800', 'CCTV, Volume', 'Connect', '10.0.0.1']] }])
-    expect(section(p163, 'Traffic Signal').points.map((point) => [point.label, point.rows.map((row) => row[0])])).toEqual([
-      ['สห.4014 กม.2+800 จราจรจุด1 (ออนไลน์)', ['กล้อง c2']],
-      ['สห.4014 กม.16+700 จราจรจุด2 (ออฟไลน์)', ['กล้อง c1']],
+    expect(section(p163, 'Traffic Signal').points.map((point) => [point.label, point.online, point.rows.map((row) => row[0])])).toEqual([
+      ['สห.4014 กม.2+800 จราจรจุด1', true, ['กล้อง c2']],
+      ['สห.4014 กม.16+700 จราจรจุด2', false, ['กล้อง c1']],
     ])
     // A camera under another project's CCTV install point: here under LPR only.
     expect(section(p163, 'LPR').points).toEqual([{ label: 'สห.4014 กม. 16+700', rows: [['กล้อง c5', '16+700', 'CCTV, LPR', 'Connect', '10.0.0.5']] }])
@@ -304,8 +310,8 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
         solution: 'VMS',
         columns: ['ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'สถานะ', 'IP Address'],
         points: [
-          { label: 'ป้าย 11 (ออนไลน์)', rows: [['กล้อง c6', '-', 'CCTV, VMS', 'Disconnect', '10.1.1.2']] },
-          { label: 'ป้าย 12 (ออฟไลน์)', rows: [] },
+          { label: 'ป้าย 11', online: true, rows: [['กล้อง c6', '-', 'CCTV, VMS', 'Disconnect', '10.1.1.2']] },
+          { label: 'ป้าย 12', online: false, rows: [] },
         ],
       },
     ])
@@ -342,8 +348,8 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
   it('PDF: one table after the สรุป ones — a band per project, a lighter one per install point', async () => {
     await exportSummaryPdf(input)
     const { blocks } = calls.pdf[0] as { blocks: BandedTable[] }
-    expect(blocks).toHaveLength(4)
-    const devices = blocks[3]
+    expect(blocks).toHaveLength(3)
+    const devices = blocks[2]
     expect(devices.title).toBe('รายการอุปกรณ์ทั้งหมดแยกตามโครงการ (2 โครงการ)')
     expect(devices.columns.map((c) => c.header)).toEqual(['ลำดับ', 'ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'สถานะ', 'IP Address'])
     expect(devices.columns.reduce((sum, c) => sum + c.widthPct, 0)).toBe(100)
@@ -359,7 +365,12 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
       [2, 'กล้อง c3', '2+800', 'CCTV, Volume', 'Connect', '10.0.0.1'],
       [3, 'กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'Connect', '10.0.0.1'],
     ])
-    expect(devices.rows).toContainEqual({ group: 'Traffic Signal · จุดติดตั้ง : สห.4014 กม.16+700 จราจรจุด2 (ออฟไลน์)', tone: 'soft' })
+    // A controller's state coloured as on the sheet.
+    expect(devices.rows).toContainEqual({
+      group: 'Traffic Signal · จุดติดตั้ง : สห.4014 กม.16+700 จราจรจุด2 (ระบบ : ออฟไลน์)',
+      tone: 'soft',
+      runs: [{ text: 'Traffic Signal · จุดติดตั้ง : สห.4014 กม.16+700 จราจรจุด2 (ระบบ : ' }, { text: 'ออฟไลน์', color: '#FF0000' }, { text: ')' }],
+    })
     // A section with columns of its own repeats them under its band; a
     // four-column one leaves the last cell empty.
     const at = (group: string) => devices.rows.findIndex((row) => !Array.isArray(row) && 'group' in row && row.group === group)
@@ -373,17 +384,17 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     expect(devices.rows[at('LPR · จุดติดตั้ง : สห.4014 กม. 16+700') + 1]).toEqual([1, 'กล้อง c5', '16+700', 'CCTV, LPR', 'Connect', '10.0.0.5'])
     // VMS, project 2's only section: a band per sign; the camera header is
     // already in view after project 1's LPR.
-    expect(devices.rows.slice(at('VMS · จุดติดตั้ง : ป้าย 11 (ออนไลน์)') - 1)).toEqual([
+    expect(devices.rows.slice(at('VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ออนไลน์)') - 1)).toEqual([
       expect.objectContaining({ group: expect.stringMatching(/^โครงการที่ 2 :/) }),
-      { group: 'VMS · จุดติดตั้ง : ป้าย 11 (ออนไลน์)', tone: 'soft' },
+      { group: 'VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ออนไลน์)', tone: 'soft', runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ' }, { text: 'ออนไลน์', color: '#00B050' }, { text: ')' }] },
       [1, 'กล้อง c6', '-', 'CCTV, VMS', 'Disconnect', '10.1.1.2'],
-      { group: 'VMS · จุดติดตั้ง : ป้าย 12 (ออฟไลน์)', tone: 'soft' },
+      { group: 'VMS · จุดติดตั้ง : ป้าย 12 (ระบบ : ออฟไลน์)', tone: 'soft', runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 12 (ระบบ : ' }, { text: 'ออฟไลน์', color: '#FF0000' }, { text: ')' }] },
     ])
   })
 
   it('PDF: says so when there is no project', async () => {
     await exportSummaryPdf({ ...input, summary: [] })
-    const devices = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[3]
+    const devices = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[2]
     expect(devices.title).toBe('รายการอุปกรณ์ทั้งหมดแยกตามโครงการ (0 โครงการ)')
     expect(devices.rows).toEqual([{ group: 'ไม่มีโครงการ' }])
   })

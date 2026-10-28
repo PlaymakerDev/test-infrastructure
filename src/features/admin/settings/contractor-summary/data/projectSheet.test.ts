@@ -103,6 +103,40 @@ describe('โครงการ sheet', () => {
     ])
   })
 
+  it('a controller’s install point: its state after the label as (ระบบ : …), the state alone in green or red', () => {
+    const controllers: ProjectSheetProject = {
+      name: 'p',
+      contractNo: '-',
+      solutions: ['Traffic Signal'],
+      sections: [{ solution: 'Traffic Signal', columns: CAMERA_COLUMNS, points: [{ label: 'แยก 1', online: true, rows: [] }, { label: 'แยก 2', online: false, rows: [] }] }],
+    }
+    const { rows: lines } = projectDevicesSheet({ title: 'T', projects: [controllers] })
+    expect(lines[5].cells[0]).toMatchObject({
+      value: 'จุดติดตั้ง : แยก 1 (ระบบ : ออนไลน์)',
+      runs: [{ text: 'จุดติดตั้ง : แยก 1 (ระบบ : ' }, { text: 'ออนไลน์', color: '00B050' }, { text: ')' }],
+    })
+    expect(lines[6].cells[0]).toMatchObject({
+      value: 'จุดติดตั้ง : แยก 2 (ระบบ : ออฟไลน์)',
+      runs: [{ text: 'จุดติดตั้ง : แยก 2 (ระบบ : ' }, { text: 'ออฟไลน์', color: 'FF0000' }, { text: ')' }],
+    })
+    // A point without a state is plain text.
+    expect(rows[5].cells[0].runs).toBeUndefined()
+    // The PDF band says the same, coloured the same.
+    const [block] = projectDevicesPdfBlocks([controllers]) as { rows: unknown[] }[]
+    expect(block.rows.slice(1, 3)).toEqual([
+      {
+        group: 'Traffic Signal · จุดติดตั้ง : แยก 1 (ระบบ : ออนไลน์)',
+        tone: 'soft',
+        runs: [{ text: 'Traffic Signal · จุดติดตั้ง : แยก 1 (ระบบ : ' }, { text: 'ออนไลน์', color: '#00B050' }, { text: ')' }],
+      },
+      {
+        group: 'Traffic Signal · จุดติดตั้ง : แยก 2 (ระบบ : ออฟไลน์)',
+        tone: 'soft',
+        runs: [{ text: 'Traffic Signal · จุดติดตั้ง : แยก 2 (ระบบ : ' }, { text: 'ออฟไลน์', color: '#FF0000' }, { text: ')' }],
+      },
+    ])
+  })
+
   it('words a device’s state as the sample does', () => {
     expect([true, false, null].map(connectionLabel)).toEqual(['Connect', 'Disconnect', 'Disconnect'])
   })

@@ -373,6 +373,9 @@ export function TableReportDocument<Row>({ title, filterNote, columns, rows, ori
 // A4 in points, minus the page's 30pt left+right padding.
 const PAGE_INNER_W = { landscape: 841.89 - 60, portrait: 595.28 - 60 } as const
 const CELL_FONT_SIZE = 9
+/** One line of NotoSansThai in ems — (ascent 1061 + descent 450) / 1000,
+ *  the height @react-pdf gives a line — rounded up a little. */
+const LINE_HEIGHT_EM = 1.52
 // padding 4×2 + right border + rounding safety.
 const CELL_CHROME_PT = 12
 
@@ -438,6 +441,17 @@ export interface PdfKvItem {
   value: string
 }
 
+/** A part of a cell's text with a colour of its own. */
+export interface PdfRun {
+  text: string
+  /** e.g. '#4E95D9'; absent = the cell's. */
+  color?: string
+}
+
+/** A table cell: its text, or its text in parts — "1/0" with the online count
+ *  blue and the offline one red. */
+export type PdfCell = string | number | PdfRun[]
+
 export interface PdfSimpleColumn {
   header: string
   /** Percent of table width — should sum to ~100 within the block. */
@@ -445,6 +459,8 @@ export interface PdfSimpleColumn {
   align?: 'left' | 'center' | 'right'
   /** Header text colour, e.g. '#4E95D9'. */
   headerColor?: string
+  /** `header` in coloured parts ("ออน" blue / "ออฟ" red) — they must join to it. */
+  headerRuns?: PdfRun[]
 }
 
 /** A header over the columns under it — nest for a header several rows deep
@@ -475,7 +491,8 @@ const columnPct = (column: PdfTableColumn): number =>
  *                             `tone: 'soft'` for a band under a band;
  *                             `keepAhead` = how many points of the rows after
  *                             it must share its page (default ~2 rows) — the
- *                             band moves to the next page otherwise
+ *                             band moves to the next page otherwise; `runs` =
+ *                             `group` in coloured parts
  *  • `{ cells, emphasis? }` — data row; `emphasis` renders it bold on a tinted
  *                             fill, for "รวม/รวมเฉลี่ย" summary lines
  *  Grouped `exportTablePdf` reports flatten their dividers into lead columns
@@ -483,17 +500,50 @@ const columnPct = (column: PdfTableColumn): number =>
  *  ordinary tables. Band rows exist for wide matrix tables, where a group
  *  column would eat width the hour cells need. */
 export type PdfTableRow =
-  | (string | number)[]
+  | PdfCell[]
   | PdfGroupRow
-  | { cells: (string | number)[]; emphasis?: boolean }
+  | { cells: PdfCell[]; emphasis?: boolean }
 
-type PdfGroupRow = { group: string; tone?: 'soft'; keepAhead?: number }
+type PdfGroupRow = { group: string; tone?: 'soft'; keepAhead?: number; runs?: PdfRun[] }
 
 const isGroupRow = (row: PdfTableRow): row is PdfGroupRow =>
   !Array.isArray(row) && 'group' in row
 
-const tableRowCells = (row: PdfTableRow): (string | number)[] =>
+const tableRowCells = (row: PdfTableRow): PdfCell[] =>
   Array.isArray(row) ? row : 'cells' in row ? row.cells : []
+
+/** Coloured parts drawn inside one <Text> — textkit keeps the line breaks the
+ *  pre-wrap put in, whichever part they fall in. */
+const runTexts = (runs: PdfRun[]) =>
+  runs.map((run, i) => (
+    <Text key={i} style={run.color ? { color: run.color } : {}}>
+      {run.text}
+    </Text>
+  ))
+
+/** `wrapped` is the runs' joined text as wrapPdfText laid it out: line breaks
+ *  (' \n') put in, spaces at a break dropped. Hand each character back to the
+ *  run it came from — a break stays with the run it falls in. */
+export function splitWrapped(runs: PdfRun[], wrapped: string): PdfRun[] {
+  const owner: number[] = []
+  runs.forEach((run, r) => {
+    for (let k = 0; k < run.text.length; k++) owner.push(r)
+  })
+  const original = runs.map((run) => run.text).join('')
+  const out = runs.map((run) => ({ ...run, text: '' }))
+  let i = 0
+  let current = 0
+  for (const ch of wrapped.split('')) {
+    // A space the wrap dropped at a break.
+    while (i < original.length && original[i] !== ch && /\s/.test(original[i])) i++
+    if (i < original.length && original[i] === ch) {
+      current = owner[i]
+      i++
+    }
+    out[current].text += ch
+  }
+  return out.filter((run) => run.text !== '')
+}
 
 /** One photo-card entry (timeline events etc.): thumbnail on the left,
  *  heading/badge + field grid on the right — mirrors the on-screen cards. */
@@ -639,14 +689,31 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
     // a label spans its columns and a lone column spans the rows, the way a
     // merged spreadsheet header does. Borders as the flat header's: right and
     // bottom on every box, the top on the first row, the left on column one.
-    const renderHeaderTree = (columns: PdfTableColumn[], parentPct: number, firstColumn: boolean, top: boolean): React.ReactNode[] =>
+    // Each header row as tall as its tallest group label (pre-wrapped, so its
+    // lines are its '\n's), so the rows line up the way a spreadsheet's merged
+    // header does — the ones under a two-line label no longer sit lower.
+    const rowLines: number[] = []
+    const measureRows = (columns: PdfTableColumn[], depth: number) => {
+      for (const column of columns) {
+        if (!isPdfColumnGroup(column)) continue
+        rowLines[depth] = Math.max(rowLines[depth] ?? 1, column.header.split('\n').length)
+        measureRows(column.children, depth + 1)
+      }
+    }
+    measureRows(block.columns, 0)
+    // + padding top and bottom, + the bottom border (and the top one on the first row).
+    const rowHeight = (depth: number) => rowLines[depth] * sizing.fontSize * LINE_HEIGHT_EM + sizing.padding * 2 + (depth === 0 ? 2 : 1)
+    const renderHeaderTree = (columns: PdfTableColumn[], parentPct: number, firstColumn: boolean, depth: number): React.ReactNode[] =>
       columns.map((column, i) => {
+        const top = depth === 0
         const edges = {
           ...(firstColumn && i === 0 ? { borderLeftWidth: 1 } : {}),
           ...(top ? {} : { borderTopWidth: 0 }),
         }
         const label = (color?: string) => (
-          <Text style={{ fontSize: sizing.fontSize, textAlign: 'center', ...(color ? { color } : {}) }}>{`${column.header} `}</Text>
+          <Text style={{ fontSize: sizing.fontSize, textAlign: 'center', ...(color ? { color } : {}) }}>
+            {!isPdfColumnGroup(column) && column.headerRuns ? <>{runTexts(column.headerRuns)}{' '}</> : `${column.header} `}
+          </Text>
         )
         const width = `${(columnPct(column) / parentPct) * 100}%`
         if (!isPdfColumnGroup(column)) {
@@ -658,9 +725,9 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
         }
         return (
           <View key={`${column.header}-${i}`} style={{ width }}>
-            <View style={{ ...styles.headCell, ...sizing, ...edges }}>{label()}</View>
+            <View style={{ ...styles.headCell, ...sizing, ...edges, minHeight: rowHeight(depth), justifyContent: 'center' }}>{label()}</View>
             <View style={{ flexDirection: 'row', flexGrow: 1 }}>
-              {renderHeaderTree(column.children, columnPct(column), firstColumn && i === 0, false)}
+              {renderHeaderTree(column.children, columnPct(column), firstColumn && i === 0, depth + 1)}
             </View>
           </View>
         )
@@ -680,7 +747,7 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
               textAlign: 'left',
             }}
           >
-            {`${row.group} `}
+            {row.runs ? <>{runTexts(row.runs)}{' '}</> : `${row.group} `}
           </Text>
         )
       }
@@ -688,28 +755,31 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
       const emphasis = !Array.isArray(row) && 'emphasis' in row && row.emphasis
       // Keyed by position: a grouped header repeats leaf names (ออนไลน์ / ออฟไลน์
       // under every part).
-      return leaves.map((c, ci) => (
-        <Text
-          key={ci}
-          style={{
-            ...styles.cell,
-            ...sizing,
-            width: `${c.widthPct}%`,
-            textAlign: c.align ?? 'center',
-            ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
-            ...(emphasis ? reportStyles.emphasisCell : {}),
-          }}
-        >
-          {`${cells[ci] ?? ''} `}
-        </Text>
-      ))
+      return leaves.map((c, ci) => {
+        const cell = cells[ci]
+        return (
+          <Text
+            key={ci}
+            style={{
+              ...styles.cell,
+              ...sizing,
+              width: `${c.widthPct}%`,
+              textAlign: c.align ?? 'center',
+              ...(ci === 0 ? { borderLeftWidth: 1 } : {}),
+              ...(emphasis ? reportStyles.emphasisCell : {}),
+            }}
+          >
+            {Array.isArray(cell) ? <>{runTexts(cell)}{' '}</> : `${cell ?? ''} `}
+          </Text>
+        )
+      })
     }
     return (
       <React.Fragment key={bi}>
         {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
         {block.columns.some(isPdfColumnGroup) ? (
           <View style={styles.row} fixed>
-            {renderHeaderTree(block.columns, 100, true, true)}
+            {renderHeaderTree(block.columns, 100, true, 0)}
           </View>
         ) : (
           <View style={styles.row} fixed>
@@ -724,7 +794,7 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
                   ...(c.headerColor ? { color: c.headerColor } : {}),
                 }}
               >
-                {`${c.header} `}
+                {c.headerRuns ? <>{runTexts(c.headerRuns)}{' '}</> : `${c.header} `}
               </Text>
             ))}
           </View>
@@ -867,6 +937,10 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
   const fk = await loadReportFont()
   if (!fk) return args
   const wrap = (text: string, maxPt: number, fontSize: number) => drawableThai(wrapPdfText(fk, text, maxPt, fontSize))
+  // Coloured parts wrap as the one text they make, then split back.
+  const wrapRuns = (runs: PdfRun[], maxPt: number, fontSize: number) =>
+    splitWrapped(runs, wrapPdfText(fk, runs.map((run) => run.text).join(''), maxPt, fontSize)).map((run) => ({ ...run, text: drawableThai(run.text) }))
+  const joined = (runs: PdfRun[]) => runs.map((run) => run.text).join('')
   const pageW = PAGE_INNER_W[args.orientation ?? 'portrait']
 
   const blocks = args.blocks.map((block): PdfReportBlock => {
@@ -917,7 +991,12 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
     const cellMax = (pct: number) => Math.max(10, (pageW * pct) / 100 - chrome - cellSpaceW)
     // A group label measures against every column it spans.
     const wrapColumns = (columns: PdfTableColumn[]): PdfTableColumn[] =>
-      columns.map((c) => ({ ...c, header: wrap(c.header, cellMax(columnPct(c)), cellFont), ...(isPdfColumnGroup(c) ? { children: wrapColumns(c.children) } : {}) }))
+      columns.map((c) => {
+        if (isPdfColumnGroup(c)) return { ...c, header: wrap(c.header, cellMax(columnPct(c)), cellFont), children: wrapColumns(c.children) }
+        if (!c.headerRuns) return { ...c, header: wrap(c.header, cellMax(c.widthPct), cellFont) }
+        const headerRuns = wrapRuns(c.headerRuns, cellMax(c.widthPct), cellFont)
+        return { ...c, header: joined(headerRuns), headerRuns }
+      })
     const leaves = pdfLeafColumns(block.columns)
     return {
       ...block,
@@ -925,10 +1004,15 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
       columns: wrapColumns(block.columns),
       rows: block.rows.map((row): PdfTableRow => {
         // Band rows measure against the whole table width, not a column.
-        if (isGroupRow(row)) return { ...row, group: wrap(row.group, cellMax(100), cellFont) }
-        const cells = tableRowCells(row).map((cell, ci) =>
-          wrap(String(cell), cellMax(leaves[ci]?.widthPct ?? 10), cellFont)
-        )
+        if (isGroupRow(row)) {
+          if (!row.runs) return { ...row, group: wrap(row.group, cellMax(100), cellFont) }
+          const runs = wrapRuns(row.runs, cellMax(100), cellFont)
+          return { ...row, group: joined(runs), runs }
+        }
+        const cells = tableRowCells(row).map((cell, ci): PdfCell => {
+          const maxPt = cellMax(leaves[ci]?.widthPct ?? 10)
+          return Array.isArray(cell) ? wrapRuns(cell, maxPt, cellFont) : wrap(String(cell), maxPt, cellFont)
+        })
         return Array.isArray(row) ? cells : { ...row, cells }
       }),
     }
