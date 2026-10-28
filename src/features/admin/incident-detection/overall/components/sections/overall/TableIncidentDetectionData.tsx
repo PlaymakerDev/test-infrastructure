@@ -267,6 +267,8 @@ const TableIncidentDetectionData: React.FC<Props> = ({ rows, loading }) => {
   return (
     <>
       <Table<TableRow>
+        // antd's default empty text is English ("No data") — no global Thai locale.
+        locale={{ emptyText: 'ไม่พบข้อมูล' }}
         key={tableKey}
         rowKey='id'
         columns={columns}

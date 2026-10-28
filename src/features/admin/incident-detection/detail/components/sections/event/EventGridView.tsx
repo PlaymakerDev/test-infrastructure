@@ -68,7 +68,7 @@ const EventCard: React.FC<{ ev: IncidentTransactionItem; onSelect?: () => void }
         <span className='text-gray-400'>ชื่อกล้อง : </span>
         <span className='text-blue-400'>{ev.camera.camera_name}</span>
       </p>
-      <p className='fs-12 text-gray-400 mb-1'>IP Address : {ev.camera.ip_address}</p>
+      <p className='fs-12 text-gray-400 mb-1'>IP Address : {ev.camera.ip_address || '-'}</p>
       {/* 4:3 box matches the source snapshots (1024×768) so object-cover fills
         * without cropping the scene — h-40 was chopping off top/bottom. */}
       <EventSnapshot url={ev.image_path} className='w-full aspect-[4/3] rounded-lg' onClick={onSelect} />

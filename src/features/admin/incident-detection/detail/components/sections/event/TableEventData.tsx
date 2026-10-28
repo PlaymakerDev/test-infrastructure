@@ -86,12 +86,14 @@ const TableEventData: React.FC<Props> = ({ events, loading, onSelect, page, page
       key: 'ip',
       width: 160,
       fixed: 'right',
-      render: (_, r) => <span className='fs-12 text-white/70'>{r.camera.ip_address}</span>,
+      render: (_, r) => <span className='fs-12 text-white/70'>{r.camera.ip_address || '-'}</span>,
     },
   ], [onSelect])
 
   return (
     <Table<IncidentTransactionItem>
+      // antd's default empty text is English ("No data") — no global Thai locale.
+      locale={{ emptyText: 'ไม่พบเหตุการณ์' }}
       columns={columns}
       dataSource={events}
       rowKey='id'

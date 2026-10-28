@@ -121,8 +121,8 @@ const EventSection: React.FC<Props> = () => {
     if (!solutionId || !central) return undefined
     const target = String(solutionId)
     for (const bureau of central) {
-      for (const sub of bureau.sub_department) {
-        for (const sol of sub.solutions) {
+      for (const sub of bureau.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
           if (String(sol.solution.id) === target) return sol.road.code_name
         }
       }
@@ -153,11 +153,16 @@ const EventSection: React.FC<Props> = () => {
   // Export scope = EVERY event matching the current filters (date window +
   // type), not just the visible page — the on-screen pagination is only a
   // viewport (user request 2026-07-21: picking a wide date range must not cap
-  // the report at the 10-row page). Same two-step full-fetch pattern as the
-  // tracking weight-log exports: page 1 @100, then refetch at the reported
-  // total when it exceeds the first batch.
+  // the report at the 10-row page). Pages of 100 via fetchAllPages: the old
+  // "page 1 @100, then refetch at limit=count" step got HTTP 400 (40010
+  // `limit` max) from the analytic service for any range over 100 events —
+  // e.g. 308 for solution 1382 over 30 days — so "ทั้งหมด" exports failed
+  // exactly when they mattered (verified 2026-10-27).
   const fetchAllEvents = async (): Promise<IncidentTransactionItem[]> => {
-    const { getIncidentTransactionsAPI } = await import('@/services/routes/AnalyticService')
+    const [{ getIncidentTransactionsAPI }, { fetchAllPages }] = await Promise.all([
+      import('@/services/routes/AnalyticService'),
+      import('@/features/admin/settings/overall/utils/fetchAllPages'),
+    ])
     const baseParams = {
       // useParams can be undefined pre-hydration, but the export button only
       // exists once the page (and its solution-scoped query) has rendered.
@@ -166,11 +171,9 @@ const EventSection: React.FC<Props> = () => {
       end_date: filters.date ? filters.date[1].format('YYYY-MM-DD') : undefined,
       analytic_type_id: typeNameToId(filters.eventType),
     }
-    const first = await getIncidentTransactionsAPI({ ...baseParams, page: 1, limit: 100 })
-    const count = first.data?.meta_data?.count ?? 0
-    if (count <= 100) return first.data?.res_data ?? []
-    const full = await getIncidentTransactionsAPI({ ...baseParams, page: 1, limit: count })
-    return full.data?.res_data ?? []
+    return fetchAllPages((page, limit) =>
+      getIncidentTransactionsAPI({ ...baseParams, page, limit }).then((r) => r.data),
+    )
   }
 
   // PDF = photo cards mirroring the on-screen event cards (snapshot + ประเภท

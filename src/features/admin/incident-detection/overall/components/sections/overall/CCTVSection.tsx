@@ -17,12 +17,25 @@ const CCTVSection: React.FC<Props> = (props) => {
   const deptId = useDeptId()
   const dispatch = useAppDispatch()
   const openCamera = (id: string) => dispatch(setCCTVModalOpen({ open: true, camera_id: id }))
-  const { data } = useIncidentRandomOnline(deptId, roadId ? { road_id: Number(roadId), limit: 3 } : { limit: 3 })
+  const { data, isLoading } = useIncidentRandomOnline(deptId, roadId ? { road_id: Number(roadId), limit: 3 } : { limit: 3 })
   // Prefer online cameras; if none are online, still show the (offline) cards
   // rather than a blank slot (backend random-online backfills offline anyway).
   const cameras = data?.data ?? []
   const online = cameras.filter((item) => item.camera.is_online)
   const toShow = online.length > 0 ? online : cameras
+
+  // Placeholder cards while loading — without this the rail flashed
+  // "ไม่มีกล้องในขณะนี้" on every visit before the cameras arrived (same
+  // skeleton as the traffic-signal rail).
+  if (isLoading && cameras.length === 0) {
+    return (
+      <div className='h-full flex flex-col gap-4'>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className='bg-(--mid-gray) p-3 rounded-lg flex-1 min-h-0 animate-pulse' />
+        ))}
+      </div>
+    )
+  }
 
   if (toShow.length === 0) {
     return (
@@ -53,7 +66,7 @@ const CCTVSection: React.FC<Props> = (props) => {
           <Tooltip title={item.camera.name}>
             <h4 className='camera-code truncate'>{item.camera.name}</h4>
           </Tooltip>
-          <p className='camera-location'>IP Address : {item.camera.ip_address}</p>
+          <p className='camera-location'>IP Address : {item.camera.ip_address || '-'}</p>
         </div>
       ))}
     </div>

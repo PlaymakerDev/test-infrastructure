@@ -4,32 +4,31 @@
 // flatter shape that the tables, summary table, and detail navigation
 // all read from.
 
-import type { APIResponseTrafficVolumeCentralList } from '@/types/traffic-volume/overview-api'
+import type { APIResponseTrafficVolumeCentralList, CountingCentralSolution } from '@/types/traffic-volume/overview-api'
+import { joinRoadCodes, mergeSolutionRows } from '@/features/admin/traffic-volume/shared/utils/mergeSolutionRows'
 
-// The backend has been observed returning the same solution nested under two
-// different department nodes in one central/list response (same class of
-// bug documented for incident-detection's central/list). Table rows key off
-// solution.id alone (not department-scoped), so an unguarded duplicate
-// crashes into a React "duplicate key" warning and silently doubles up
-// export rows / inflates list-derived counts. Dedupe once, keeping the
-// first occurrence — shared by DataDisplayTrafficVolume (table/export) and
-// InfoCardTrafficVolume (active-by-warranty tally) so both agree.
-export const dedupeTrafficVolumeSolutions = (
-  bureaus: APIResponseTrafficVolumeCentralList
-): APIResponseTrafficVolumeCentralList => {
-  const seen = new Set<number | string>()
-  return bureaus.map((bureau) => ({
-    ...bureau,
-    sub_department: (bureau.sub_department ?? []).map((sub) => ({
-      ...sub,
-      solutions: (sub.solutions ?? []).filter((sol) => {
-        if (seen.has(sol.solution.id)) return false
-        seen.add(sol.solution.id)
-        return true
-      }),
-    })),
-  }))
-}
+/** Two rows of one install point — its cameras on two roads — as one: each
+ *  counts its own cameras (and their vehicles), so the counts add up. */
+const mergeTrafficVolumeRows = (into: CountingCentralSolution, row: CountingCentralSolution): CountingCentralSolution => ({
+  ...into,
+  road: { ...into.road, code_name: joinRoadCodes(into.road.code_name, row.road.code_name) },
+  camera: {
+    total: into.camera.total + row.camera.total,
+    is_online: into.camera.is_online || row.camera.is_online,
+    count: into.camera.count + row.camera.count,
+  },
+  online_count: into.online_count + row.online_count,
+  offline_count: into.offline_count + row.offline_count,
+})
+
+// The backend lists an install point once per road its cameras stand on, so
+// one solution can come back as several rows (see mergeSolutionRows). Table
+// rows key off solution.id alone, so each install point must be one row — one
+// carrying ALL its cameras (dropping the later rows hid cameras: 520 showed 2
+// of 3). Shared by DataDisplayTrafficVolume (table/export), InfoCardTrafficVolume
+// (active-by-warranty tally) and the detail title so all agree.
+export const mergeTrafficVolumeSolutions = (bureaus: APIResponseTrafficVolumeCentralList): APIResponseTrafficVolumeCentralList =>
+  mergeSolutionRows(bureaus, mergeTrafficVolumeRows)
 
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'

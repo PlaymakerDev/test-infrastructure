@@ -76,7 +76,7 @@ const EventCard: React.FC<{ ev: IncidentTransactionItem; onOpenDetail: () => voi
           <span className='text-gray-400'>ชื่อกล้อง : </span>
           <span className='text-blue-400'>{ev.camera.camera_name}</span>
         </p>
-        <p className='fs-12 text-gray-400 mb-0'>IP Address : {ev.camera.ip_address}</p>
+        <p className='fs-12 text-gray-400 mb-0'>IP Address : {ev.camera.ip_address || '-'}</p>
       </div>
     </div>
   )
@@ -110,8 +110,8 @@ const EventListSection: React.FC<Props> = ({ onShowAll }) => {
     if (!solutionId || !central) return undefined
     const target = String(solutionId)
     for (const bureau of central) {
-      for (const sub of bureau.sub_department) {
-        for (const sol of sub.solutions) {
+      for (const sub of bureau.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
           if (String(sol.solution.id) === target) return sol.road.code_name
         }
       }

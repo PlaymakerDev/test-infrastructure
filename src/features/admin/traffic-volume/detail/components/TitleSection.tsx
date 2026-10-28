@@ -10,6 +10,7 @@ import {
 } from '@/hooks/queries/traffic-volume'
 import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
+import { mergeTrafficVolumeSolutions } from '@/features/admin/traffic-volume/overall/data/trafficVolumes'
 import { useDetailContext } from '../context'
 
 interface Props {
@@ -42,7 +43,8 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
   // (next.config.ts). Manual useMemo with nested for-loops + early return
   // blocked the compiler ("could not preserve existing memoization").
   const { data: centralData } = useTrafficVolumeCentralList(deptId, {})
-  const match = (centralData ?? [])
+  // One row per install point, with every road's cameras — online if any is.
+  const match = mergeTrafficVolumeSolutions(centralData ?? [])
     .flatMap((bureau) => bureau.sub_department)
     .flatMap((subDept) => subDept.solutions)
     .find((sol) => String(sol.solution.id) === String(id))
