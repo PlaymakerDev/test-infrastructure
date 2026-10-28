@@ -103,3 +103,53 @@ export interface DepartmentRegion {
   name_th: string
   name_en: string
 }
+
+// PMMS
+export interface APIRequestPMMSRoad {
+  department_id?: number
+  is_geom?: boolean
+  is_pagination?: boolean
+  search?: string
+  page?: number
+  limit?: number
+  field?: string
+  sort?: 'ASC' | 'DESC'
+}
+
+export interface APIResponsePMMSRoad {
+  res_data: PMMSRoadData[]
+  meta_data: MetaData
+}
+
+export interface PMMSRoadData {
+  link_id: number
+  road_code: string
+  road_name: string
+  department_id: number
+  province_geocode: number
+  district: string
+  subdistrict: string
+  road_type: string
+  status: string
+  length_m: number
+  revision: number
+  remark: string
+  strategy: string
+  budget_year: number
+  updated_date: string
+  km_min: number
+  km_max: number
+  geom_from: string
+  sublink_gid: number
+  geom: number[][]
+  geom_l: number[][][]
+  geom_r: number[][][]
+  created_at: string
+  updated_at: string
+}
+
+// PROJECT COUNT
+export interface APIResponseProjectCount {
+  project_count: number
+  road_id: number
+}

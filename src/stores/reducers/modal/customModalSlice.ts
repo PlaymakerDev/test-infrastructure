@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { APIResponseGeneralUser } from '@/types/manage/general-user-api';
-import { RoadData } from '@/types/manage/road-api';
+import { APIResponsePMMSRoad, APIResponseProjectCount, RoadData } from '@/types/manage/road-api';
 import { ProjectListData } from '@/types/manage/project-api';
 import { ContractorData } from '@/types/manage/contractor-api';
 import { APIResponseCameraCrossingCode, APIResponseSolutionByID, APIResponseSolutionCameraList, SolutionList, SolutionLocation } from '@/types/manage/project-detail-api';
@@ -38,6 +38,8 @@ export interface RoadModalState {
   open: boolean
   data?: RoadData | null
   type?: 'CREATE' | 'UPDATE' | 'DELETE'
+  pmms?: APIResponsePMMSRoad | null
+  count?: APIResponseProjectCount | null
 }
 
 export interface ProjectModalState {

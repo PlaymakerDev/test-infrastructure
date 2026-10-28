@@ -60,6 +60,9 @@ import type {
   APIRequestRoad,
   APIRequestPaginateRoadList,
   APIResponsePaginateRoadList,
+  APIRequestPMMSRoad,
+  APIResponsePMMSRoad,
+  APIResponseProjectCount,
 } from '@/types/manage/road-api'
 import type {
   APIResponseDepartmentList,
@@ -528,5 +531,18 @@ export const getContractorUptimeAPI = (prefix: string, contractorUserId: string,
 export const getCCTVByID = (uuid: string) =>
   ApiService.fetchData<APIResponseGetCCTVByID>({
     url: `/cctv/${uuid}`,
+    method: 'GET',
+  })
+
+export const getPMMSRoad = (params: APIRequestPMMSRoad) =>
+  ApiService.fetchData<APIResponsePMMSRoad, APIRequestPMMSRoad>({
+    url: `/manage/pmms_roads`,
+    method: 'GET',
+    params,
+  })
+
+export const getProjectCount = (roadId: number) =>
+  ApiService.fetchData<APIResponseProjectCount>({
+    url: `/manage/roads/${roadId}/project-count`,
     method: 'GET',
   })

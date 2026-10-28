@@ -1,8 +1,11 @@
+import { getPMMSRoad, getProjectCount } from '@/services/routes/ManageService'
 import { useAppDispatch } from '@/stores/hooks'
 import { setRoadModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { APIResponsePaginateRoadList, RoadData } from '@/types/manage/road-api'
-import { Empty, Table, TableProps } from 'antd'
-import React, { useCallback, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Empty, message, Table, TableProps } from 'antd'
+import { AxiosError } from 'axios'
+import React, { useCallback, useMemo, useState } from 'react'
 import { TbPencilMinus, TbTrash } from 'react-icons/tb'
 
 interface Props {
@@ -58,12 +61,36 @@ const buildRows = (list: RoadData[]): RowData[] =>
 const TableRoadData: React.FC<Props> = (props) => {
   const { data, isLoading, isError, onPageChange } = props
   const dispatch = useAppDispatch()
+  const queryClient = useQueryClient()
+  const [loadingKey, setLoadingKey] = useState<string | null>(null) // which row/action is loading
 
   const rows = useMemo(() => buildRows(data?.res_data ?? []), [data?.res_data])
 
-  const onOpenRoadModal = useCallback((data: RoadData, type: 'UPDATE' | 'DELETE') => {
-    dispatch(setRoadModalOpen({ open: true, type, data }))
-  }, [dispatch])
+  const onOpenRoadModal = useCallback(async (data: RoadData, type: 'UPDATE' | 'DELETE') => {
+    const key = `${data.id}:${type}`
+    if (loadingKey) return            // ignore double clicks while a request is in flight
+    setLoadingKey(key)
+    try {
+      const [pmmsRes, countRes] = await Promise.all([
+        getPMMSRoad({ department_id: data.department_id, search: data.road_code, is_geom: true, is_pagination: true, page: 1, limit: 1 }),
+        getProjectCount(data.id),
+      ])
+      // Reaching this line means BOTH finished and BOTH succeeded.
+      dispatch(setRoadModalOpen({
+        open: true,
+        type,
+        data,
+        pmms: pmmsRes?.data,
+        count: countRes?.data
+      }))
+    } catch (error) {
+      // Reaching this line means AT LEAST ONE failed.
+      if (error instanceof AxiosError) message.error(error.response?.data?.res_data?.message)
+      else console.log(error)
+    } finally {
+      setLoadingKey(null)             // runs on both paths, so the spinner always clears
+    }
+  }, [dispatch, loadingKey])
 
   // AntD can leave a stale rowSpan DOM attribute behind when a rowKey stays
   // put but its span changes — remount whenever the merged-row structure
