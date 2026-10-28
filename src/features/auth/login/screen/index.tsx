@@ -257,7 +257,7 @@ const AuthScreen: React.FC<Props> = (props) => {
                 className='text-white mt-2'
                 style={{ fontSize: 'clamp(16px,1.5vw,26px)' }}
               >
-                ระบบบริหารจัดการจราจรอัจฉริยะส่วนกลาง
+                ระบบบริหารจัดการจราจรอัจฉริยะ
               </p>
             </div>
           </div>
