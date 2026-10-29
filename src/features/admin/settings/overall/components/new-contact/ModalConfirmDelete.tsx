@@ -34,12 +34,12 @@ const Content: React.FC<ContentProps> = (props) => {
           </div>
         </section>
         <section className='mt-5'>
-          <div className='rounded-lg border border-[#F59E0B] bg-[#F59E0B]/20 p-5'>
-            <p>ชื่อบริษัท: {data?.company_name || '-'}</p>
-            <p>ชื่อย่อภาษาอังกฤษ: {data?.short_name || '-'}</p>
-            <p>ที่อยู่: {data?.address || '-'}</p>
-            <p>ชื่อผู้ติดต่อ: {data?.name || '-'}</p>
-            <p>เบอร์ติดต่อ: {data?.phone || '-'}</p>
+          <div className='rounded-lg border border-(--default-orange) bg-(--default-orange)/20 p-5'>
+            <p><span className='text-(--default-orange)'>ชื่อบริษัท : </span>{data?.company_name || '-'}</p>
+            <p><span className='text-(--default-orange)'>ชื่อย่อภาษาอังกฤษ : </span>{data?.short_name || '-'}</p>
+            <p><span className='text-(--default-orange)'>ที่อยู่ : </span>{data?.address || '-'}</p>
+            <p><span className='text-(--default-orange)'>ชื่อผู้ติดต่อ : </span>{data?.name || '-'}</p>
+            <p><span className='text-(--default-orange)'>เบอร์ติดต่อ : </span>{data?.phone || '-'}</p>
           </div>
         </section>
       </div>
@@ -50,7 +50,7 @@ const Content: React.FC<ContentProps> = (props) => {
     <div className='mt-5'>
       <section>
         <div className='flex flex-col items-center justify-center gap-5'>
-          <ExclamationCircleOutlined style={{ fontSize: '7rem', color: '#E94C4C' }} />
+          <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-red)' }} />
           <div className='text-center'>
             <h2>ยืนยันลบผู้รับจ้างหรือไม่?</h2>
             <p>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
@@ -58,12 +58,12 @@ const Content: React.FC<ContentProps> = (props) => {
         </div>
       </section>
       <section className='mt-5'>
-        <div className='rounded-lg border border-[#E94C4C] bg-[#E94C4C]/20 p-5'>
-          <p>ชื่อบริษัท: {data?.company_name || '-'}</p>
-          <p>ชื่อย่อภาษาอังกฤษ: {data?.short_name || '-'}</p>
-          <p>ที่อยู่: {data?.address || '-'}</p>
-          <p>ชื่อผู้ติดต่อ: {data?.name || '-'}</p>
-          <p>เบอร์ติดต่อ: {data?.phone || '-'}</p>
+        <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
+          <p><span className='text-(--default-red)'>ชื่อบริษัท : </span>{data?.company_name || '-'}</p>
+          <p><span className='text-(--default-red)'>ชื่อย่อภาษาอังกฤษ : </span> {data?.short_name || '-'}</p>
+          <p><span className='text-(--default-red)'>ที่อยู่ : </span> {data?.address || '-'}</p>
+          <p><span className='text-(--default-red)'>ชื่อผู้ติดต่อ : </span> {data?.name || '-'}</p>
+          <p><span className='text-(--default-red)'>เบอร์ติดต่อ : </span> {data?.phone || '-'}</p>
         </div>
       </section>
     </div>

@@ -44,6 +44,22 @@ const Content: React.FC<ContentProps> = (props) => {
     return res.join(' - ')
   }, [])
 
+  const _componentClassName = useMemo(() => {
+    let className = {
+      container: 'border-(--default-orange) bg-(--default-orange)/20',
+      hilightText: 'text-(--default-orange) font-semibold',
+      text: 'text-(--default-orange)',
+    }
+    if (canDelete) {
+      className = {
+        container: 'border-(--default-red) bg-(--default-red)/20',
+        hilightText: 'text-(--default-red) font-semibold',
+        text: 'text-(--default-red)',
+      }
+    }
+    return className
+  }, [canDelete])
+
   return (
     <div className='mt-5'>
       <section>
@@ -51,7 +67,7 @@ const Content: React.FC<ContentProps> = (props) => {
           <ExclamationCircleOutlined
             style={{
               fontSize: '7rem',
-              color: canDelete ? 'var(--default-orange)' : 'var(--default-red)'
+              color: canDelete ? 'var(--default-red)' : 'var(--default-orange)'
             }}
           />
           <div className='text-center'>
@@ -59,24 +75,24 @@ const Content: React.FC<ContentProps> = (props) => {
             {canDelete ?
               <p>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
               :
-              <p>เนื่องจากระบบตรวจพบสายทางเกี่ยวข้อง <span className='text-(--default-red) font-bold'>{fmtNumber(Number(count?.project_count)) || 0} โครงการ</span></p>
+              <p>เนื่องจากระบบตรวจพบสายทางเกี่ยวข้อง <span className={_componentClassName.hilightText}>{fmtNumber(Number(count?.project_count)) || 0} โครงการ</span></p>
             }
           </div>
         </div>
       </section>
       <section className='mt-5'>
-        <div className={`rounded-lg border ${canDelete ? 'border-(--default-orange) bg-(--default-orange)/20' : 'border-(--default-red) bg-(--default-red)/20'} p-5`}>
-          <p>รหัสสายทาง : {data?.road_code || '-'}</p>
-          <p>ชื่อสายทาง : {data?.road_name || '-'}</p>
-          <p>ตำบล : {data?.subdistrict || '-'}</p>
-          <p>เขต : {data?.district || '-'}</p>
-          <p>จังหวัด : {data?.province || '-'}</p>
-          <p>ผู้ดูแลสายทาง : {renderDpt(data?.department_id)}</p>
-          <p>กม.เริ่มต้น - กม.สิ้นสุด : {checkSta(data?.start_sta, data?.end_sta)}</p>
-          <p>ระยะทาง : {data?.distance ? `${data?.distance} กิโลเมตร` : '-'}</p>
+        <div className={`rounded-lg border ${_componentClassName.container} p-5`}>
+          <p><span className={_componentClassName.text}>รหัสสายทาง : </span>{data?.road_code || '-'}</p>
+          <p><span className={_componentClassName.text}>ชื่อสายทาง : </span>{data?.road_name || '-'}</p>
+          <p><span className={_componentClassName.text}>ตำบล : </span>{data?.subdistrict || '-'}</p>
+          <p><span className={_componentClassName.text}>เขต : </span>{data?.district || '-'}</p>
+          <p><span className={_componentClassName.text}>จังหวัด : </span>{data?.province || '-'}</p>
+          <p><span className={_componentClassName.text}>ผู้ดูแลสายทาง : </span>{renderDpt(data?.department_id)}</p>
+          <p><span className={_componentClassName.text}>กม.เริ่มต้น - กม.สิ้นสุด : </span>{checkSta(data?.start_sta, data?.end_sta)}</p>
+          <p><span className={_componentClassName.text}>ระยะทาง : </span>{data?.distance ? `${data?.distance} กิโลเมตร` : '-'}</p>
           {coords.length > 0 ? (
             <>
-              <p>Latitude , Longitude :</p>
+              <p><span className={_componentClassName.text}>Latitude , Longitude :</span></p>
               {/* `!` — globals.css resets `ul { list-style: none }` unlayered, which beats the utility */}
               <ul className='list-disc! pl-5'>
                 <li>{fmtLatLng(coords[0])} (เริ่มต้น)</li>
@@ -84,7 +100,7 @@ const Content: React.FC<ContentProps> = (props) => {
               </ul>
             </>
           ) : (
-            <p>Latitude , Longitude : -</p>
+            <p><span className={_componentClassName.text}>Latitude , Longitude : </span>-</p>
           )}
           <div className='mt-3'>
             <figure className='rounded-lg overflow-hidden'>
@@ -136,7 +152,7 @@ const ModalConfirmDelete: React.FC<Props> = (props) => {
         onOk={() => canDelete ? data?.id != null && onDelete?.(data.id) : handleClose()}
         onCancel={handleClose}
         destroyOnHidden
-        width={600}
+        width={800}
         style={{ top: 10 }}
       >
         <Content
