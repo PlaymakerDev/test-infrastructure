@@ -4,7 +4,7 @@ import { useDepartments, useDeleteUser, useUsersList, matchesUserSearch } from '
 import type { UserSearchFormValues } from './new-user/FormSearchUser'
 import { useAppDispatch } from '@/stores/hooks'
 import { resetUserModalData } from '@/stores/reducers/modal/customModalSlice'
-import { message } from 'antd'
+import { App } from 'antd'
 import { getGeneralUsersAPI } from '@/services/routes/ManageService'
 import { fetchAllPages } from '../utils/fetchAllPages'
 import { toUserExportRow, USER_EXPORT_COLUMNS } from '../data/userExportColumns'
@@ -33,6 +33,7 @@ const readErrorMessage = (error: unknown, fallback: string): string => {
 
 const NewUserSection: React.FC<Props> = (props) => {
   const { } = props
+  const { message } = App.useApp()
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -103,7 +104,7 @@ const NewUserSection: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการลบข้อมูล'))
       },
     })
-  }, [deleteUser, dispatch])
+  }, [deleteUser, dispatch, message])
 
   return (
     <div>

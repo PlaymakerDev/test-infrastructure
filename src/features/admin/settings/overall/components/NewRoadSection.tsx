@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { FormSearchRoad, ModalCreateRoad, ModalConfirmDeleteRoad, TableRoadData } from '../components'
 import { RoadSearchFormValues } from './new-road/FormSearchRoad'
-import { message } from 'antd'
+import { App } from 'antd'
 import { usePaginateRoadList, useDeleteRoad, useRegions } from '@/hooks/queries/manage'
 import { useAppDispatch } from '@/stores/hooks'
 import { resetRoadModalData } from '@/stores/reducers/modal/customModalSlice'
@@ -29,6 +29,7 @@ const readErrorMessage = (error: unknown, fallback: string): string => {
 
 const NewRoadSection: React.FC<Props> = (props) => {
   const { } = props
+  const { message } = App.useApp()
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -78,7 +79,7 @@ const NewRoadSection: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการลบข้อมูลสายทาง'))
       },
     })
-  }, [deleteRoad, dispatch])
+  }, [deleteRoad, dispatch, message])
 
   // ── Export ──────────────────────────────────────────────────────────────
   // Current-page rows mapped to the shared export shape — feeds the 'page'
