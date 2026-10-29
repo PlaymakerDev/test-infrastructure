@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import type { RefObject } from 'react'
-import { Col, Input, message, Row, Select } from 'antd'
+import { App, Col, Input, Row, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { getDepartmentsAPI, getProvincesAPI } from '@/services/routes/ManageService'
 import { useCreateUser, useUpdateUser } from '@/hooks/queries/manage'
@@ -45,6 +45,7 @@ interface FormValues {
 
 const FormCreateITSUser: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
+  const { message } = App.useApp()
 
   const { mutate: createUser, isPending: isCreatePending } = useCreateUser()
   const { mutate: updateUser, isPending: isUpdatePending } = useUpdateUser()
@@ -109,7 +110,7 @@ const FormCreateITSUser: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน'))
       },
     })
-  }, [createUser, onSuccess])
+  }, [createUser, onSuccess, message])
 
   const onUpdate = useCallback((values: FormValues) => {
     if (!data?.user_id) return
@@ -139,7 +140,7 @@ const FormCreateITSUser: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลผู้ใช้งาน'))
       },
     })
-  }, [updateUser, onSuccess, data])
+  }, [updateUser, onSuccess, data, message])
 
   const onSubmit = useCallback((values: FormValues) => {
     if (data?.user_id) {

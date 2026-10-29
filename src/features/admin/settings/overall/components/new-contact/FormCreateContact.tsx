@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import type { RefObject } from 'react'
-import { Input, message } from 'antd'
+import { App, Input } from 'antd'
 import { Controller, useForm } from 'react-hook-form'
 import { useCreateContractor, useUpdateContractor } from '@/hooks/queries/manage'
 import type {
@@ -48,6 +48,7 @@ interface FormValues {
  *     only when the operator explicitly types a new one). */
 const FormCreateContact: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
+  const { message } = App.useApp()
 
   const { mutate: createContractor, isPending: isCreatePending } = useCreateContractor()
   const { mutate: updateContractor, isPending: isUpdatePending } = useUpdateContractor()
@@ -102,7 +103,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการเพิ่มผู้รับจ้าง'))
       },
     })
-  }, [createContractor, onSuccess])
+  }, [createContractor, onSuccess, message])
 
   const onUpdate = useCallback((values: FormValues) => {
     if (!data?.user_id) return
@@ -127,7 +128,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลผู้รับจ้าง'))
       },
     })
-  }, [updateContractor, onSuccess, data])
+  }, [updateContractor, onSuccess, data, message])
 
   const onSubmit = useCallback((values: FormValues) => {
     if (data?.user_id) {

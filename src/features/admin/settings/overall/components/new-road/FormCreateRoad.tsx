@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import type { RefObject } from 'react'
-import { Col, Input, message, Row, Select } from 'antd'
+import { App, Col, Input, Row, Select } from 'antd'
 import { Controller, useForm } from 'react-hook-form'
 import { useCreateRoad, useDepartments, useUpdateRoad } from '@/hooks/queries/manage'
 import type { APIRequestRoad, RoadData } from '@/types/manage/road-api'
@@ -41,6 +41,7 @@ interface FormValues {
 
 const FormCreateRoad: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
+  const { message } = App.useApp()
 
   const { mutate: createRoad, isPending: isCreatePending } = useCreateRoad()
   const { mutate: updateRoad, isPending: isUpdatePending } = useUpdateRoad()
@@ -93,7 +94,7 @@ const FormCreateRoad: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการเพิ่มข้อมูลสายทาง'))
       },
     })
-  }, [createRoad, onSuccess])
+  }, [createRoad, onSuccess, message])
 
   const onUpdate = useCallback((values: FormValues) => {
     if (!data?.id) return
@@ -119,7 +120,7 @@ const FormCreateRoad: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลสายทาง'))
       },
     })
-  }, [updateRoad, onSuccess, data])
+  }, [updateRoad, onSuccess, data, message])
 
   const onSubmit = useCallback((values: FormValues) => {
     if (data?.id) {

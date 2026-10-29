@@ -3,7 +3,7 @@ import { useAppDispatch } from '@/stores/hooks'
 import { setRoadModalOpen } from '@/stores/reducers/modal/customModalSlice'
 import { APIResponsePaginateRoadList, RoadData } from '@/types/manage/road-api'
 import { useQueryClient } from '@tanstack/react-query'
-import { Empty, message, Table, TableProps } from 'antd'
+import { App, Empty, Table, TableProps } from 'antd'
 import { AxiosError } from 'axios'
 import React, { useCallback, useMemo, useState } from 'react'
 import { TbPencilMinus, TbTrash } from 'react-icons/tb'
@@ -61,6 +61,7 @@ const buildRows = (list: RoadData[]): RowData[] =>
 const TableRoadData: React.FC<Props> = (props) => {
   const { data, isLoading, isError, onPageChange } = props
   const dispatch = useAppDispatch()
+  const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [loadingKey, setLoadingKey] = useState<string | null>(null) // which row/action is loading
 
@@ -90,7 +91,7 @@ const TableRoadData: React.FC<Props> = (props) => {
     } finally {
       setLoadingKey(null)             // runs on both paths, so the spinner always clears
     }
-  }, [dispatch, loadingKey])
+  }, [dispatch, loadingKey, message])
 
   // AntD can leave a stale rowSpan DOM attribute behind when a rowKey stays
   // put but its span changes — remount whenever the merged-row structure

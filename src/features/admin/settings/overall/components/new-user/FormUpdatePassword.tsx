@@ -1,6 +1,6 @@
 import { useUpdateUserPassword } from '@/hooks/queries/manage'
 import type { APIRequestUpdateGeneralUserPassword, APIResponseGeneralUser } from '@/types/manage/general-user-api'
-import { Col, Input, message, Row } from 'antd'
+import { App, Col, Input, Row } from 'antd'
 import React, { RefObject, useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
@@ -34,6 +34,7 @@ interface FormUpdatePasswordValues {
 
 const FormUpdatePassword: React.FC<Props> = (props) => {
   const { data, submitRef, onSuccess } = props
+  const { message } = App.useApp()
 
   const { mutate: updateUserPassword, isPending } = useUpdateUserPassword()
 
@@ -71,7 +72,7 @@ const FormUpdatePassword: React.FC<Props> = (props) => {
         message.error(readErrorMessage(error, 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน'))
       },
     })
-  }, [data, updateUserPassword, onSuccess])
+  }, [data, updateUserPassword, onSuccess, message])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
