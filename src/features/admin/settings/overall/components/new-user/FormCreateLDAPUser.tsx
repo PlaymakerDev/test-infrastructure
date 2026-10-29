@@ -101,12 +101,12 @@ const FormCreateLDAPUser: React.FC<Props> = (props) => {
 
   const form = useForm<FormValues>({
     defaultValues: {
-      department_id: null,
+      department_id: data?.department_id ?? null,
       first_name: data?.first_name || "",
       is_ldap: true,
       last_name: data?.lastname || "",
       password: "",
-      province_code: null,
+      province_code: data?.province_id ?? null,
       role: data?.role as 'user' | 'admin' | '' || "user",
       username: data?.user?.username || "",
       confirm_password: "",
