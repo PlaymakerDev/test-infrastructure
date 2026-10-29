@@ -57,22 +57,26 @@ const ModalDeleteRoad: React.FC<Props> = (props) => {
     <div className='mt-5'>
       <section>
         <div className='flex flex-col items-center justify-center gap-5'>
-          <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-red)' }} />
+          <ExclamationCircleOutlined
+            style={{
+              fontSize: '7rem',
+              color: 'var(--default-orange)'
+            }} />
           <div className='text-center'>
             <h2>ไม่สามารถลบสายทาง {label} ได้</h2>
-            <p>เนื่องจากระบบตรวจพบจุดติดตั้ง <span className='text-(--default-red)'>{locations.length} จุด</span></p>
+            <p>เนื่องจากระบบตรวจพบจุดติดตั้ง <span className='text-(--default-orange)'>{locations.length} จุด</span></p>
           </div>
         </div>
       </section>
       <section className='mt-5'>
-        <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
+        <div className='rounded-lg border border-(--default-orange) bg-(--default-orange)/20 p-5'>
           <div className='text-center'>
             <p>สายทางนี้ไม่สามารถลบได้ เนื่องจากยังมีจุดติดตั้ง</p>
             <p>กรุณาลบ <span className='font-semibold underline'>จุดติดตั้ง</span> ก่อน จึงจะสามารถลบสายทางได้</p>
           </div>
           <div className='flex flex-wrap justify-center items-center gap-2 mt-3'>
             {locations.map((location) => (
-              <div key={location.solution_location_id} className='px-5 py-0.5 bg-(--default-red) rounded-4xl'>
+              <div key={location.solution_location_id} className='px-5 py-0.5 bg-(--default-orange) rounded-4xl'>
                 <p>{location.location_name || '-'}</p>
               </div>
             ))}
@@ -86,7 +90,12 @@ const ModalDeleteRoad: React.FC<Props> = (props) => {
     <div className='mt-5'>
       <section>
         <div className='flex flex-col items-center justify-center gap-5'>
-          <ExclamationCircleOutlined style={{ fontSize: '7rem', color: 'var(--default-orange)' }} />
+          <ExclamationCircleOutlined
+            style={{
+              fontSize: '7rem',
+              color: 'var(--default-red)'
+            }}
+          />
           <div className='text-center'>
             <h2>ยืนยันลบสายทางหรือไม่?</h2>
             <p>ระบบจะลบคำสั่งโดยไม่สามารถกู้คืนหรือย้อนกลับได้</p>
@@ -94,7 +103,7 @@ const ModalDeleteRoad: React.FC<Props> = (props) => {
         </div>
       </section>
       <section className='mt-5'>
-        <div className='rounded-lg border border-(--default-orange) bg-(--default-orange)/20 p-5'>
+        <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
           <div className='text-center'>
             <h4>สายทาง : {label}</h4>
             <p>ไม่มีจุดติดตั้งในสายทางนี้</p>

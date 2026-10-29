@@ -50,13 +50,13 @@ const Content: React.FC<ContentProps> = (props) => {
         </div>
       </section>
       <section className='mt-5'>
-        <div className='rounded-lg border border-[#E94C4C] bg-[#E94C4C]/20 p-5'>
-          <p>Username: {data?.user?.username || '-'}</p>
-          <p>ชื่อ-นามสกุล: {renderName(data?.first_name || '', data?.lastname || '')}</p>
-          <p>หน่วยงาน : {renderDpt(String(data?.department_id))}</p>
-          <p>จังหวัด : {data?.province?.name_th || '-'}</p>
-          <p>สิทธิ์การเข้าถึงข้อมูล : {ROLE[data?.role as keyof typeof ROLE]?.text || '-'}</p>
-          <p>ช่องทางการเพิ่มข้อมูล : {data?.is_ldap ? 'LDAP' : 'DRR ITS'}</p>
+        <div className='rounded-lg border border-(--default-red) bg-(--default-red)/20 p-5'>
+          <p><span className='text-(--default-red)'>Username : </span>{data?.user?.username || '-'}</p>
+          <p><span className='text-(--default-red)'>ชื่อ-นามสกุล : </span>{renderName(data?.first_name || '', data?.lastname || '')}</p>
+          <p><span className='text-(--default-red)'>หน่วยงาน : </span>{renderDpt(String(data?.department_id))}</p>
+          <p><span className='text-(--default-red)'>จังหวัด : </span>{data?.province?.name_th || '-'}</p>
+          <p><span className='text-(--default-red)'>สิทธิ์การเข้าถึงข้อมูล : </span>{ROLE[data?.role as keyof typeof ROLE]?.text || '-'}</p>
+          <p><span className='text-(--default-red)'>ช่องทางการเพิ่มข้อมูล : </span>{data?.is_ldap ? 'LDAP' : 'DRR ITS'}</p>
         </div>
       </section>
     </div>
