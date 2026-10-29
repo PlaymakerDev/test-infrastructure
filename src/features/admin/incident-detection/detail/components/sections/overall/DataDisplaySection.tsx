@@ -122,14 +122,10 @@ const DataDisplaySection: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('GRID')
   const [exportOpen, setExportOpen] = useState(false)
 
-  // Server-side `limit` is capped at 100 — sending >100 makes BE return only 2
-  // rows with no meta_data (verified live 2026-06-23). For solutions with more
-  // than 100 cameras, switch to a paginated table. Most analytic solutions are
-  // under that bound (dept 50's largest is 42).
+  // Every camera of the solution — the hook walks the 100-row pages itself
+  // (solution 970 has 128).
   const { data: cameraList, isLoading } = useIncidentCameraList(deptId, {
     solution_id: solutionId,
-    page: 1,
-    limit: 100,
   })
   const { data: totals } = useIncidentCameraTotals(deptId, { solution_id: solutionId })
 
@@ -142,9 +138,10 @@ const DataDisplaySection: React.FC = () => {
   const matched = useMemo(() => {
     if (!central || !solutionId) return null
     const target = String(solutionId)
+    // Nested arrays are backend-sourced — guard like the overall page does.
     for (const bureau of central)
-      for (const sub of bureau.sub_department)
-        for (const sol of sub.solutions)
+      for (const sub of bureau.sub_department ?? [])
+        for (const sol of sub.solutions ?? [])
           if (String(sol.solution.id) === target) return sol
     return null
   }, [central, solutionId])
@@ -270,7 +267,7 @@ const DataDisplaySection: React.FC = () => {
       width: 100,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/80 fs-12'>{row.camera.km}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/80 fs-12'>{row.camera.km || '-'}</span> : null,
     },
     {
       title: 'เหตุการณ์',
@@ -304,7 +301,7 @@ const DataDisplaySection: React.FC = () => {
       width: 140,
       onCell: (row) => (row.kind === 'group' ? { colSpan: 0 } : {}),
       render: (_: unknown, row: Row) =>
-        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip}</span> : null,
+        row.kind === 'camera' ? <span className='text-white/70 fs-12'>{row.camera.ip || '-'}</span> : null,
     },
   ], [dispatch])
 
@@ -351,6 +348,8 @@ const DataDisplaySection: React.FC = () => {
 
       {viewMode === 'TABLE' ? (
         <Table<Row>
+          // antd's default empty text is English ("No data") — no global Thai locale.
+          locale={{ emptyText: 'ไม่พบข้อมูล' }}
           rowKey='id'
           columns={columns}
           dataSource={data}

@@ -12,6 +12,7 @@ import {
 } from '@/hooks/queries/incident-detection'
 import { useSolutionRoadFallback } from '@/hooks/queries/manage'
 import { useDeptId } from '@/hooks/useDeptId'
+import { mergeIncidentSolutions } from '@/features/admin/incident-detection/overall/data/incidentData'
 
 interface Props {
   currentTab: string
@@ -49,13 +50,14 @@ const TitleSection: React.FC<Props> = ({ currentTab, setCurrentTab }) => {
   // We only read its centroid as a fallback for the Google Map button.
   const { data: camerasGeo } = useIncidentSolutionCameras(deptId, solutionId)
 
-  // Find this solution inside the bureau → แขวง → solutions tree.
+  // Find this solution inside the bureau → แขวง → solutions tree — merged, as
+  // the overall table shows it, when its cameras sit on several roads.
   const solution = useMemo(() => {
     if (!solutionId || !central) return null
     const target = String(solutionId)
-    for (const bureau of central) {
-      for (const sub of bureau.sub_department) {
-        for (const sol of sub.solutions) {
+    for (const bureau of mergeIncidentSolutions(central)) {
+      for (const sub of bureau.sub_department ?? []) {
+        for (const sol of sub.solutions ?? []) {
           if (String(sol.solution.id) === target) return sol
         }
       }

@@ -4,9 +4,11 @@
 import type { APIResponseCCTVOverviewCentralList } from '@/types/cctv/overview-api'
 
 // The backend has been observed returning the same solution nested under two
-// different department nodes in one central/list response (same class of
-// bug documented for incident-detection's central/list — see
-// incidentData.ts's dedupeIncidentSolutions). Table/grid rows key off
+// different department nodes in one central/list response. On the incident /
+// traffic-volume lists that turned out to be one install point split across
+// its cameras' roads, so those pages merge the rows (mergeSolutionRows); CCTV's
+// list has shown no such split (one row per CCTV solution, checked
+// 2026-10-28), so a repeat here is dropped. Table/grid rows key off
 // solution.id alone (not department-scoped), so an unguarded duplicate
 // crashes into a React "duplicate key" warning and silently doubles up
 // export rows / inflates list-derived counts. Dedupe once, keeping the

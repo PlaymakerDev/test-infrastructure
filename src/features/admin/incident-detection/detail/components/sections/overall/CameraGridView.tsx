@@ -109,7 +109,7 @@ const CameraCard: React.FC<CardProps> = ({ camera, showKm, onSelect }) => (
 
     <div className='flex items-center justify-between gap-2 min-w-0'>
       <span className='fs-12 min-w-0 truncate' style={{ color: '#888' }}>
-        IP : {camera.ip}
+        IP : {camera.ip || '-'}
       </span>
       <div className='shrink-0'>
         <EventCountTag count={camera.events} />

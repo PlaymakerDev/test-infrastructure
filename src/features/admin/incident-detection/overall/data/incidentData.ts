@@ -2,32 +2,38 @@
 // detail). Flattened from /analytic …/overview/central/list, tagged with its
 // sub-department (แขวง) so the tables can group by bureau like traffic-signal.
 
-import type { APIResponseIncidentCentralList } from '@/types/incident-detection/overview-api'
+import type { APIResponseIncidentCentralList, IncidentCentralSolution } from '@/types/incident-detection/overview-api'
+import { joinRoadCodes, mergeSolutionRows } from '@/features/admin/traffic-volume/shared/utils/mergeSolutionRows'
 
-// The backend has been observed returning the same solution nested under two
-// different department nodes in one central/list response (e.g. solution
-// 964 under ขทช.นครราชสีมา — verified live). Table/grid rows key off
-// solution.id alone (not department-scoped), so an unguarded duplicate
-// crashes into a React "duplicate key" warning and silently doubles up
-// export rows / inflates list-derived counts. Dedupe once, keeping the
-// first occurrence — shared by DataDisplaySection (table/grid/export) and
-// InfoCardSection (active-by-warranty tally) so both agree.
-export const dedupeIncidentSolutions = (
-  bureaus: APIResponseIncidentCentralList
-): APIResponseIncidentCentralList => {
-  const seen = new Set<number | string>()
-  return bureaus.map((bureau) => ({
-    ...bureau,
-    sub_department: (bureau.sub_department ?? []).map((sub) => ({
-      ...sub,
-      solutions: (sub.solutions ?? []).filter((sol) => {
-        if (seen.has(sol.solution.id)) return false
-        seen.add(sol.solution.id)
-        return true
-      }),
-    })),
-  }))
-}
+// The backend leaves out a zero count, so either side can be missing.
+const onlineOf = (camera: IncidentCentralSolution['camera']) => camera.online_count ?? camera.total - (camera.offline_count ?? 0)
+const offlineOf = (camera: IncidentCentralSolution['camera']) => camera.offline_count ?? camera.total - (camera.online_count ?? 0)
+
+/** Two rows of one install point — its cameras on two roads — as one: each
+ *  counts its own cameras and today's events, so those add up; its
+ *  notifications are counted per install point, the same on every row. */
+const mergeIncidentRows = (into: IncidentCentralSolution, row: IncidentCentralSolution): IncidentCentralSolution => ({
+  ...into,
+  road: { ...into.road, code_name: joinRoadCodes(into.road.code_name, row.road.code_name) },
+  camera: {
+    total: into.camera.total + row.camera.total,
+    online_count: onlineOf(into.camera) + onlineOf(row.camera),
+    offline_count: offlineOf(into.camera) + offlineOf(row.camera),
+    events_count: into.camera.events_count + row.camera.events_count,
+  },
+  geometry_point: into.geometry_point ?? row.geometry_point,
+  noti_count: Math.max(into.noti_count, row.noti_count),
+})
+
+// The backend lists an install point once per road its cameras stand on, so
+// one solution can come back as several rows — e.g. 964, whose cameras sit on
+// นม.1016 and นม.3052 (see mergeSolutionRows). Table/grid rows key off
+// solution.id alone, so each install point must be one row — one carrying ALL
+// its cameras (dropping the later rows showed 964 with 2 of its 4). Shared by
+// DataDisplaySection (table/grid/export) and InfoCardSection (active-by-warranty
+// tally) so both agree.
+export const mergeIncidentSolutions = (bureaus: APIResponseIncidentCentralList): APIResponseIncidentCentralList =>
+  mergeSolutionRows(bureaus, mergeIncidentRows)
 
 export type WarrantyStatus = 'in-warranty' | 'expired'
 

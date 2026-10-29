@@ -1,7 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
 import { TitleSection, OverallSection, EventSection } from '../components'
-import { DetailProvider } from '../context'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 
 interface Props {
@@ -21,7 +20,7 @@ const IncidentDetectionDetailScreen: React.FC<Props> = (props) => {
   }, [currentTab])
 
   return (
-    <DetailProvider>
+    <>
       <div className='main-screen'>
         <TitleSection currentTab={currentTab} setCurrentTab={setCurrentTab} />
         <section className='mt-8 px-10 pb-8'>
@@ -34,7 +33,7 @@ const IncidentDetectionDetailScreen: React.FC<Props> = (props) => {
           * fetches /cctv/cameras/{id} so "ประเภทอุปกรณ์" is complete (like VMS). */}
         <CCTVModal />
       </div>
-    </DetailProvider>
+    </>
   )
 }
 

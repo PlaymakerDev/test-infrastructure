@@ -79,8 +79,6 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
   // /cameras/list. Same cache key as DataDisplaySection on this page.
   const { data: cameraList } = useIncidentCameraList(deptId, {
     solution_id: event?.camera.solution_id,
-    page: 1,
-    limit: 100,
   })
   const cameraStatus = useMemo(() => {
     if (!event || !cameraList) return null
@@ -238,7 +236,7 @@ const EventDetailModal: React.FC<Props> = ({ open, event, roadCode, onClose }) =
                         {event.camera.camera_name}
                       </p>
                       <p className='fs-12' style={{ color: '#9ca3af', margin: 0 }}>
-                        IP : {event.camera.ip_address}
+                        IP : {event.camera.ip_address || '-'}
                       </p>
                     </div>
                   )}
