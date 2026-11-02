@@ -167,6 +167,24 @@ const TableSolution: React.FC<Props> = (props) => {
     }
   }, [dispatch, item, message])
 
+  const openRawConfirmDeleteModal = useCallback(async (record: SolutionList) => {
+    dispatch(setConfirmDeleteSolutionModalOpen({
+      open: true,
+      type: 'DELETE_SOLUTION_TYPE',
+      item: item,
+      record: record,
+    }))
+  }, [dispatch, item])
+
+  const checkValidSolution = useCallback((record: SolutionList) => {
+    const unavailableTypes = [1, 6, 8, 10]
+    if (unavailableTypes.includes(record.solution_type.id)) {
+      openRawConfirmDeleteModal(record)
+    } else {
+      openConfirmDeleteModal(record)
+    }
+  }, [openRawConfirmDeleteModal, openConfirmDeleteModal])
+
   /** "รายการอุปกรณ์" button. Kinds with a managed picker (CCTV list, camera
    *  select, Traffic Signal, VMS — see getEquipmentModalType) open it through
    *  `equipment_modal`; the modal reads the camera list live itself, so there
@@ -268,7 +286,6 @@ const TableSolution: React.FC<Props> = (props) => {
       key: 'solution_name',
       width: 200,
       render: (_, record) => {
-        console.log(record)
         if (record.solution_type.solution_name) return SOLUTION_TYPE[String(record.solution_type.id) as keyof typeof SOLUTION_TYPE]
         return '-'
       }
@@ -360,7 +377,7 @@ const TableSolution: React.FC<Props> = (props) => {
             <TbTrash
               className='fs-22 text-(--default-red) cursor-pointer'
               title='ลบโครงการ'
-              onClick={() => openConfirmDeleteModal(record)}
+              onClick={() => checkValidSolution(record)}
             />
           </div>
         )
