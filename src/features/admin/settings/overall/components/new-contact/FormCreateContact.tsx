@@ -40,6 +40,7 @@ interface FormValues {
   email?: string | null
   address?: string | null
   password?: string | null
+  confirmPassword?: string | null
 }
 
 /** Fields mirror the real /manage/contractor request bodies:
@@ -68,6 +69,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
       // Password intentionally blank on edit — the API keeps the existing
       // password when this field is omitted.
       password: '',
+      confirmPassword: '',
     },
   })
 
@@ -75,6 +77,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
     control,
     handleSubmit,
     formState: { errors },
+    getValues
   } = form
 
   const optional = (v?: string | null): string | undefined => {
@@ -146,7 +149,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
         </div>
       ) : null}
 
-      <fieldset className='mb-4'>
+      <div className='mb-4'>
         <Controller
           control={control}
           name='companyName'
@@ -165,7 +168,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
             </fieldset>
           )}
         />
-      </fieldset>
+      </div>
 
       <div className='grid grid-cols-2 gap-4 mb-4'>
         <Controller
@@ -239,7 +242,7 @@ const FormCreateContact: React.FC<Props> = (props) => {
         />
       </div>
 
-      <fieldset className='mb-4'>
+      <div className='mb-4'>
         <Controller
           control={control}
           name='email'
@@ -260,9 +263,9 @@ const FormCreateContact: React.FC<Props> = (props) => {
             </fieldset>
           )}
         />
-      </fieldset>
+      </div>
 
-      <fieldset className='mb-4'>
+      <div className='mb-4'>
         <Controller
           control={control}
           name='address'
@@ -279,9 +282,9 @@ const FormCreateContact: React.FC<Props> = (props) => {
             </fieldset>
           )}
         />
-      </fieldset>
+      </div>
 
-      <fieldset>
+      <div className={isEdit ? 'mb-4' : 'grid grid-cols-2 gap-4 mb-4'}>
         <Controller
           control={control}
           name='password'
@@ -308,7 +311,32 @@ const FormCreateContact: React.FC<Props> = (props) => {
             </fieldset>
           )}
         />
-      </fieldset>
+        {isEdit ? null : (
+          <Controller
+            control={control}
+            name="confirmPassword"
+            rules={{
+              required: 'กรุณายืนยันรหัสผ่าน',
+              validate: (value) => value === getValues('password') || 'รหัสผ่านไม่ถูกต้อง'
+            }}
+            render={({ field }) => {
+              return (
+                <fieldset>
+                  <label className='text-(--yellow)'>ยืนยันรหัสผ่าน <span className="text-red-500">*</span></label>
+                  <Input.Password
+                    {...field}
+                    value={field.value ?? undefined}
+                    name={field.name}
+                    placeholder='กรุณายืนยันรหัสผ่าน...'
+                    size='large'
+                  />
+                  {errors.confirmPassword && <p className="fs-12 text-red-500">{errors.confirmPassword.message}</p>}
+                </fieldset>
+              )
+            }}
+          />
+        )}
+      </div>
 
       <button
         ref={submitRef}
