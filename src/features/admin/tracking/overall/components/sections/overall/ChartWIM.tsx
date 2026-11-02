@@ -43,7 +43,7 @@ const ChartWIM: React.FC<Props> = () => {
     if (isError) return <Empty description="ไม่พบข้อมูล" />
     return (
       <Barchart
-        title='WIM (Weigh-In-Motion)'
+        title='WIM (Weight-In-Motion)'
         subtitle='สถิติผลการตรวจสอบน้ำหนัก'
         icon={<TbFlag className='fs-22 shrink-0' />}
         iconCircle={false}
