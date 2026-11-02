@@ -212,11 +212,11 @@ const FormCreateProject: React.FC<Props> = (props) => {
       warrantyEnd: d.warranty_end_date ? dayjs(d.warranty_end_date) : null,
       documents: d.contract_document
         ? [{
-            uid: 'contract-document',
-            name: d.contract_document.file_name,
-            status: 'done',
-            url: d.contract_document.document_url,
-          }]
+          uid: 'contract-document',
+          name: d.contract_document.file_name,
+          status: 'done',
+          url: d.contract_document.document_url,
+        }]
         : [],
     })
   }, [isEdit, detail, reset])
@@ -379,6 +379,7 @@ const FormCreateProject: React.FC<Props> = (props) => {
                   className='w-full!'
                   options={yearOptions}
                   onChange={(v) => field.onChange(v ?? null)}
+                  showSearch={{ optionFilterProp: 'label' }}
                 />
                 {errors.budgetYear && <p className='fs-12 text-red-500'>{errors.budgetYear.message}</p>}
               </fieldset>
