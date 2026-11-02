@@ -245,24 +245,24 @@ const BarChart: React.FC<BarChartProps> = ({
         },
       ...(zoomEnabled
         ? {
-            dataZoom: [
-              { type: 'inside', start: zoomStart, end: 100 },
-              {
-                type: 'slider',
-                start: zoomStart,
-                end: 100,
-                bottom: 6,
-                height: 18,
-                borderColor: '#2e3a4e',
-                backgroundColor: '#00000040',
-                fillerColor: 'rgba(252,209,22,0.15)',
-                handleStyle: { color: '#FCD116' },
-                moveHandleStyle: { color: '#FCD116' },
-                textStyle: { color: '#FFFFFF80', fontSize: 10 },
-                brushSelect: false,
-              },
-            ],
-          }
+          dataZoom: [
+            { type: 'inside', start: zoomStart, end: 100 },
+            {
+              type: 'slider',
+              start: zoomStart,
+              end: 100,
+              bottom: 6,
+              height: 18,
+              borderColor: '#2e3a4e',
+              backgroundColor: '#00000040',
+              fillerColor: 'rgba(252,209,22,0.15)',
+              handleStyle: { color: '#FCD116' },
+              moveHandleStyle: { color: '#FCD116' },
+              textStyle: { color: '#FFFFFF80', fontSize: 10 },
+              brushSelect: false,
+            },
+          ],
+        }
         : {}),
       xAxis: isHorizontal
         ? {

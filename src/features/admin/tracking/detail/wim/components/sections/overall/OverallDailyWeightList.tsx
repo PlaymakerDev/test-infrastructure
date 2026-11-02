@@ -99,6 +99,9 @@ const OverallDailyWeightList: React.FC<Props> = (props) => {
                 setPage(nextPage)
                 setPageSize(nextPageSize)
               }}
+              locale={{
+                items_per_page: '/ หน้า'
+              }}
             />
           </div>
         </div>

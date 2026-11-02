@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { INIT_VEHICLE_DETAIL, useGPSContext } from '../../../context'
-import { Empty, Modal, Skeleton } from 'antd'
+import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { getTrackingGPSVehicleHistoryAPI } from '@/services/routes/TrackingGPSService'
 import { VehicleHistoryData } from '@/types/tracking/detail-gps-api'
@@ -59,21 +59,32 @@ const ModalVehicleDetail: React.FC<Props> = (props) => {
   }, [isLoading, isError, data, unit_id])
 
   return (
-    <Modal
-      title={'ข้อมูลรถบรรทุก'}
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={open}
-      onOk={() => setVehicleDetail(INIT_VEHICLE_DETAIL)}
-      onCancel={() => setVehicleDetail(INIT_VEHICLE_DETAIL)}
-      footer={null}
-      destroyOnHidden
-      classNames={{
-        container: 'border-2! border-(--default-blue)!'
+    <ConfigProvider
+      theme={{
+        components: {
+          Modal: {
+            colorIcon: '#FFFFFF',
+            colorIconHover: '#FFFFFF80',
+          }
+        }
       }}
-      width={1000}
     >
-      {renderContent}
-    </Modal>
+      <Modal
+        title={'ข้อมูลรถบรรทุก'}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={open}
+        onOk={() => setVehicleDetail(INIT_VEHICLE_DETAIL)}
+        onCancel={() => setVehicleDetail(INIT_VEHICLE_DETAIL)}
+        footer={null}
+        destroyOnHidden
+        classNames={{
+          container: 'border-2! border-(--default-blue)!'
+        }}
+        width={1000}
+      >
+        {renderContent}
+      </Modal>
+    </ConfigProvider>
   )
 }
 

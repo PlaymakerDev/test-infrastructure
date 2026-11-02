@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { INIT_MODAL_WEIGHT_LOG, useWIMContext } from '../../../context'
-import { Empty, Modal, Skeleton } from 'antd'
+import { ConfigProvider, Empty, Modal, Skeleton } from 'antd'
 import { CalibrationHistoryData } from '@/types/tracking/detail-api'
 import { useStationDetail, useCalibrationHistoryList } from '../../../hooks'
 import { TRACKING_STATION_TYPE } from '@/constants/tracking'
@@ -68,18 +68,29 @@ const ModalCalibrationHistory: React.FC<Props> = (props) => {
   }, [data, isLoading, isError, stationLabel, stationDetail])
 
   return (
-    <Modal
-      title={false}
-      closable={{ 'aria-label': 'Custom Close Button' }}
-      open={openCalibrationHistoryModal.open}
-      onOk={() => setOpenCalibrationHistoryModal(INIT_MODAL_WEIGHT_LOG)}
-      onCancel={() => setOpenCalibrationHistoryModal(INIT_MODAL_WEIGHT_LOG)}
-      footer={null}
-      destroyOnHidden
-      width={1700}
+    <ConfigProvider
+      theme={{
+        components: {
+          Modal: {
+            colorIcon: '#FFFFFF',
+            colorIconHover: '#FFFFFF80',
+          }
+        }
+      }}
     >
-      {renderContent}
-    </Modal>
+      <Modal
+        title={false}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={openCalibrationHistoryModal.open}
+        onOk={() => setOpenCalibrationHistoryModal(INIT_MODAL_WEIGHT_LOG)}
+        onCancel={() => setOpenCalibrationHistoryModal(INIT_MODAL_WEIGHT_LOG)}
+        footer={null}
+        destroyOnHidden
+        width={1700}
+      >
+        {renderContent}
+      </Modal>
+    </ConfigProvider>
   )
 }
 

@@ -64,7 +64,7 @@ const ChartWeeklyPattern: React.FC<Props> = (props) => {
         accentColor='transparent'
         cardBackground='transparent'
         height={260}
-        cardClassName='p-0'
+        cardClassName='pt-0! px-0! pb-0!'
       />
     )
   }, [isLoading, chartData, weekdayTotal, weekendTotal])
