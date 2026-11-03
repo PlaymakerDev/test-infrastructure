@@ -6,6 +6,8 @@ import HTMLMarker from '@/components/map/primitives/HTMLMarker'
 import { WhiteTeardropPin, OFFLINE_PIN_COLOR } from '@/components/map/markers/OverlapMarkers'
 import { useLPRPointOverview } from '@/hooks/queries/lpr'
 import { useLPRDetailContext } from '../../../context'
+import type { Location as LPRLocation } from '@/types/lpr/new-lpr-api'
+import { fmtNumber } from '@/utils/formatNumber'
 
 interface Props {
 
@@ -36,24 +38,24 @@ interface PointPopupProps {
   name?: string
   roadCode?: string
   cameras?: { total: number; online?: number; offline?: number }
+  location?: LPRLocation
 }
 
 /** Info card opened by clicking the pin. Dark panel + blue border/title, same
  *  look as the LPR detail's other map (`sections/overall/MapSection.tsx`). */
-const PointPopup: React.FC<PointPopupProps> = ({ name, roadCode, cameras }) => (
-  <div className='min-w-50 max-w-65 rounded-lg border border-(--default-blue) bg-(--dark-black) px-3 py-2.5'>
-    <p className='fs-12 font-semibold text-(--default-blue)'>{name || '-'}</p>
-    <p className='fs-12 mt-0.5'>รหัสสายทาง: <strong>{roadCode || '-'}</strong></p>
-    {cameras && (
-      <p className='fs-12 mt-1.5'>
-        กล้อง {cameras.total.toLocaleString('th-TH')}
-        {cameras.online != null && cameras.offline != null && (
-          <span> (ออนไลน์ {cameras.online.toLocaleString('th-TH')} / ออฟไลน์ {cameras.offline.toLocaleString('th-TH')})</span>
-        )}
-      </p>
-    )}
-  </div>
-)
+const PointPopup: React.FC<PointPopupProps> = (props) => {
+  const { name, roadCode, cameras, location } = props
+  return (
+    <div className='min-w-50 max-w-65 rounded-lg border border-(--default-blue) bg-(--dark-black) px-3 py-2.5'>
+      <p className='fs-12 font-semibold text-(--default-blue) mb-1.5'>{name || '-'}</p>
+      <p className='fs-12 mb-1.5 text-white/50'>รหัสสายทาง : <strong>{roadCode || '-'}</strong></p>
+      <p className={`fs-12 mb-1.5 ${location?.is_online ? 'text-green-500' : 'text-red-500'}`}>สถานะ : {location?.is_online ? 'ออนไลน์' : 'ออฟไลน์'} ●</p>
+      <p className='fs-12 mb-1.5 text-(--yellow)'>จำนวนกล้องทั้งหมด : {fmtNumber(Number(cameras?.total)) || 0}</p>
+      <p className='fs-12 mb-1.5 text-green-500'>จำนวนกล้องออนไลน์ : {fmtNumber(Number(cameras?.online)) || 0}</p>
+      <p className='fs-12 mb-1.5 text-red-500'>จำนวนกล้องออฟไลน์ : {fmtNumber(Number(cameras?.offline)) || 0}</p>
+    </div>
+  )
+}
 
 /** Center map — fills the full remaining device height below the fixed
  *  chrome above it (navbar + `DetailTitleSection` + the page's own margins),
@@ -130,7 +132,7 @@ const ContentMap: React.FC<Props> = () => {
               lngLat={coord}
               anchor='bottom'
               title={name}
-              popup={() => <PointPopup name={name} roadCode={roadCode} cameras={cameras} />}
+              popup={() => <PointPopup location={location} name={name} roadCode={roadCode} cameras={cameras} />}
               popupOptions={{ offset: 18, closeButton: false }}
             >
               {/* Shared detail-map teardrop — same marker language as vms /
