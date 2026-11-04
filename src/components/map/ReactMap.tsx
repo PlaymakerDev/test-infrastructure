@@ -186,6 +186,14 @@ function useNearestProvince(
   return province
 }
 
+/** A drill-in that lands the cards on dept 0 — กทม. (the one province mapped
+ *  there), a road or the bubble of ทช.ส่วนกลาง — asks for ทช.ส่วนกลาง's own
+ *  group: under the landing's `scope=all`, dept 0 alone is the whole country,
+ *  so zooming into กทม. never moved the cards off the nationwide numbers
+ *  (2026-11-02). For any other dept BE's group equals all, so the flag stays
+ *  off and those requests are unchanged. Back to the landing dept drops it. */
+const drillInGroup = (deptId: string) => deptId === '0'
+
 interface DashboardMapContentProps {
   /** The dept the user landed with — reset button reverts to this. */
   originalDeptId: string
@@ -198,8 +206,16 @@ interface DashboardMapContentProps {
    *  (click a province, pan into one, or zoom out). Parent wires this into
    *  the `DeptIdOverrideContext.Provider` value so every card that reads
    *  `useDeptId()` refetches. URL is intentionally NOT touched — updating
-   *  it via `router.replace` remounts the whole map and flickers. */
-  onDeptIdChange: (id: string) => void
+   *  it via `router.replace` remounts the whole map and flickers.
+   *  `scopeGroup` — the dept is 0 because the map drilled into กทม. (see
+   *  `drillInGroup`); the parent feeds it to the cards through
+   *  `ScopeGroupOverrideContext`. */
+  onDeptIdChange: (id: string, scopeGroup: boolean) => void
+  /** The cards' current `scopeGroup` — the parent's state, fed back like the
+   *  dept is through `DeptIdOverrideContext`. A prop, not that context: the
+   *  parent provides the context around the cards only, so this map's own
+   *  marker pool keeps the landing scope. */
+  scopeGroup?: boolean
   /** Fires when the province context becomes ACTIVE — the nearest-province
    *  watcher resolves non-null after any drill-in (click a province, click a
    *  marker, pan/zoom in past the threshold). The dashboard screen uses this
@@ -224,6 +240,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   originalDeptId,
   originalScopeAll = false,
   onDeptIdChange,
+  scopeGroup = false,
   onProvinceActivate,
   onMarkerClick,
   focusRoadId,
@@ -280,8 +297,48 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   // 77 จังหวัด polygons — containment source for the province watcher below.
   const provinceFeatures = useProvinceFeatures()
   const province = useNearestProvince(PROVINCE_ZOOM_THRESHOLD, provinceFeatures)
+  // A flight this map starts — a province click, "← ทั่วประเทศ" — lands where
+  // it was sent, but `province` only follows the camera on moveend: until then
+  // the dept watcher below read the province being LEFT and pulled the cards
+  // straight back onto it, flipping again on landing — a second round of card
+  // requests per click (seen leaving กทม., 2026-11-02). It reads the flight's
+  // destination instead until that moveend (null = the country view;
+  // undefined = no flight in the air).
+  const [flightProvince, setFlightProvince] = useState<Province | null | undefined>(undefined)
+  const clearFlight = useCallback(() => setFlightProvince(undefined), [])
   // province.code → dept_id (RBAC-scoped: only provinces the user has access to).
   const provinceDeptMap = useProvinceDeptMap()
+  // ── Landing hold — a dept-scoped landing flies INTO its markers (zoom 9.5),
+  // which puts one province under the camera, and the province watcher below
+  // then rescoped every card to that single ขทช.: drr-10 (สทช.10, dept 49)
+  // landed on ขทช.เชียงใหม่'s 976 cameras instead of its bureau's 1,123
+  // (2026-10-27). While held, the cards keep the landing dept and the
+  // breadcrumb names just the bureau; the first thing the USER does to the
+  // map — drag, wheel/pinch zoom, rotate, a province / bubble / road pick —
+  // releases it and the province watcher takes over as before.
+  // Keyed on the landing scope, so a later landing (the sidebar logo's
+  // ?dept_id=0&scope=all, another unit) never inherits a stale hold.
+  const landingKey = `${originalDeptId}|${originalScopeAll ? 'all' : ''}`
+  const [landingHoldKey, setLandingHoldKey] = useState<string | null>(null)
+  const landingHold = landingHoldKey === landingKey
+  useEffect(() => {
+    if (!map || !isLoaded || !landingHold) return
+    // User gestures only: the landing flyTo itself fires zoomstart with no
+    // originalEvent.
+    const release = (e: object) => {
+      if ('originalEvent' in e && e.originalEvent) setLandingHoldKey(null)
+    }
+    map.on('dragstart', release)
+    map.on('zoomstart', release)
+    map.on('rotatestart', release)
+    map.on('pitchstart', release)
+    return () => {
+      map.off('dragstart', release)
+      map.off('zoomstart', release)
+      map.off('rotatestart', release)
+      map.off('pitchstart', release)
+    }
+  }, [map, isLoaded, landingHold])
   // Reverse of the above: dept_id → the province's CENTER coord. Anchors each
   // ขทช. summary bubble at the middle of its province (2026-08-05 request —
   // device means often sit at a province's edge or, with bad coords, in the
@@ -684,10 +741,13 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
 
     if (!center) return
     markFlown(originalDeptId)
+    // Keep the cards on the landing dept until the user moves the map (see
+    // landingHold) — the province this flight ends over isn't their pick.
+    setLandingHoldKey(landingKey)
     // zoom 9.5 sits above PROVINCE_ZOOM_THRESHOLD (6.5) so the device markers
     // render (and the country summary bubbles hide) — same as a summary click.
     map.flyTo({ center, zoom: 9.5, pitch: 35, duration: 1500 })
-  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown, focusRoadId, roadFocusTarget, roadPositionFetched])
+  }, [map, isLoaded, originalDeptId, originalScopeAll, position?.centroid, position?.locations, positionFetched, departments, bureauFeatures, markFlown, focusRoadId, roadFocusTarget, roadPositionFetched, landingKey])
 
   // ── สายทาง landing (`?road_id=`) — the sidebar's สายทาง tab links EVERY
   // solution with `?dept_id=…&road_id=…&scope=all`; other features filter their
@@ -730,6 +790,8 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   useEffect(() => { onDeptIdChangeRef.current = onDeptIdChange }, [onDeptIdChange])
   const deptIdRef = useRef(deptId)
   useEffect(() => { deptIdRef.current = deptId }, [deptId])
+  const scopeGroupRef = useRef(scopeGroup)
+  useEffect(() => { scopeGroupRef.current = scopeGroup }, [scopeGroup])
 
   // Click a province polygon → immediate flyTo + broadcast the new dept
   // to every card via the parent-provided `onDeptIdChange`. NO URL update
@@ -765,6 +827,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       const p = PROVINCE_BY_CODE[code] as Province | undefined
       if (!p) return
       const nextStr = String(nextDeptId)
+      setLandingHoldKey(null)
       // Hide the hover outline/tooltip — the map is about to fly, so the
       // affordance for "what you're about to click" is no longer relevant
       // (and would otherwise linger until the next mouse move).
@@ -777,7 +840,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         pitch: 30,
         duration: 1400,
       })
-      if (nextStr !== deptIdRef.current) onDeptIdChangeRef.current(nextStr)
+      setFlightProvince(p)
+      map.once('moveend', clearFlight)
+      const group = drillInGroup(nextStr)
+      if (nextStr !== deptIdRef.current || group !== scopeGroupRef.current) onDeptIdChangeRef.current(nextStr, group)
     }
     // ── Hover affordance — outline the province under the cursor + a small
     // tooltip with its name, so the user knows WHAT they're about to click
@@ -899,7 +965,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       container.removeEventListener('mousemove', onDomMove)
       tooltip.remove()
     }
-  }, [map, isLoaded, markFlown])
+  }, [map, isLoaded, markFlown, clearFlight])
 
   // Bureau layer hover + click — mirrors the province handler above, but
   // fires on `BUREAU_CLICK_LAYER_ID` (only exists while zoom < threshold).
@@ -1024,6 +1090,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
     // "← ทั่วประเทศ" means ทั่วประเทศ — drop the road scope too, otherwise the
     // country view would come back holding a single road's bubble.
     setRoadFilterId(null)
+    setLandingHoldKey(null)
     // Revert dept scope to whatever the user landed with, so cards rescope
     // in sync with the "← ทั่วประเทศ" action. Suppress the auto-fly effect
     // (we're already flying to COUNTRY_VIEW here).
@@ -1035,39 +1102,53 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       bearing: 0,
       duration: 1200,
     })
-    if (deptId !== originalDeptId) onDeptIdChange(originalDeptId)
+    setFlightProvince(null)
+    map.once('moveend', clearFlight)
+    if (deptId !== originalDeptId || scopeGroup) onDeptIdChange(originalDeptId, false)
   }
 
   // ── Province watcher — broadcasts dept changes on EVERY map interaction
   // (pan/drag, marker-click flyTo, mousewheel zoom in). Driven by the
-  // `province` state that `useNearestProvince` updates on each moveend.
+  // `province` state that `useNearestProvince` updates on each moveend — or,
+  // while a flight this map started is in the air, its destination.
   // Zooming out below the threshold makes province null → reverts to
   // `originalDeptId`. NO URL update — parent is expected to hold the
   // current dept in local state and feed it back via `DeptIdOverrideContext`.
   useEffect(() => {
     if (!map || !isLoaded) return
+    const current = flightProvince !== undefined ? flightProvince : province
     // A road scope OWNS the dept while it's active — the cards belong to the
     // road's own department no matter which จังหวัด the camera drifts over.
     if (roadFilterDeptId) {
-      if (deptId === roadFilterDeptId) return
+      const group = drillInGroup(roadFilterDeptId)
+      if (deptId === roadFilterDeptId && scopeGroup === group) return
       markFlown(roadFilterDeptId)
-      onDeptIdChange(roadFilterDeptId)
+      onDeptIdChange(roadFilterDeptId, group)
       return
     }
-    if (!province) {
-      if (deptId === originalDeptId) return
+    if (!current) {
+      if (deptId === originalDeptId && !scopeGroup) return
       markFlown(originalDeptId)
-      onDeptIdChange(originalDeptId)
+      onDeptIdChange(originalDeptId, false)
       return
     }
-    const nextDeptId = provinceDeptMap.get(province.code)
+    const nextDeptId = provinceDeptMap.get(current.code)
     if (nextDeptId == null) return  // no RBAC access — keep the previous scope
+    // The landing flight's province isn't the user's pick — keep the landing
+    // dept until they move the map (landingHold).
+    if (landingHold) {
+      if (deptId === originalDeptId && !scopeGroup) return
+      markFlown(originalDeptId)
+      onDeptIdChange(originalDeptId, false)
+      return
+    }
     const nextStr = String(nextDeptId)
-    if (nextStr === deptId) return
+    const group = drillInGroup(nextStr)
+    if (nextStr === deptId && group === scopeGroup) return
     markFlown(nextStr)
-    onDeptIdChange(nextStr)
+    onDeptIdChange(nextStr, group)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [province, provinceDeptMap, map, isLoaded, originalDeptId, deptId, roadFilterDeptId])
+  }, [province, flightProvince, provinceDeptMap, map, isLoaded, originalDeptId, deptId, scopeGroup, roadFilterDeptId, landingHold])
 
   // Announce "province context is active" to the parent (see the prop doc).
   // Separate from the dept watcher above on purpose: this must fire even when
@@ -1082,19 +1163,37 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
   const onMarkerClickRef = useRef(onMarkerClick)
   useEffect(() => { onMarkerClickRef.current = onMarkerClick }, [onMarkerClick])
   const handleMarkerClick = useCallback(() => { onMarkerClickRef.current?.() }, [])
+  // A cluster click zooms the map in (a programmatic flyTo, so the gesture
+  // listeners above never see it) — that's the user moving the map.
+  const handleClusterClick = useCallback(() => {
+    onMarkerClickRef.current?.()
+    setLandingHoldKey(null)
+  }, [])
   const handleDeptSelect = useCallback((id: number) => {
     onMarkerClickRef.current?.()
+    setLandingHoldKey(null)
     const next = String(id)
+    const group = drillInGroup(next)
     markFlown(next)
-    if (next !== deptIdRef.current) onDeptIdChangeRef.current(next)
+    if (next !== deptIdRef.current || group !== scopeGroupRef.current) onDeptIdChangeRef.current(next, group)
   }, [markFlown])
   const handleRoadSelect = useCallback(() => {
     onMarkerClickRef.current?.()
+    setLandingHoldKey(null)
     setRoadFocus(true)
   }, [])
   useEffect(() => {
     if (province) onProvinceActivateRef.current?.()
   }, [province])
+  // While the landing hold keeps the cards off the province under the camera,
+  // the breadcrumb names the landing unit instead. Its short name already
+  // reads "สทช.10 (เชียงใหม่)" / "ทช. ส่วนกลาง" — the province crumb's wording.
+  const heldScopeLabel = useMemo(() => {
+    if (!landingHold || !province) return null
+    const provinceDept = provinceDeptMap.get(province.code)
+    if (provinceDept != null && String(provinceDept) === originalDeptId) return null
+    return deptNameById.get(Number(originalDeptId)) ?? null
+  }, [landingHold, province, provinceDeptMap, originalDeptId, deptNameById])
 
   return (
     <>
@@ -1114,7 +1213,7 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         visibleTypes={visibleTypes}
         minZoom={roadFocus ? ROAD_ZOOM_THRESHOLD : DEVICE_ZOOM_THRESHOLD}
         onClick={handleMarkerClick}
-        onClusterClick={handleMarkerClick}
+        onClusterClick={handleClusterClick}
       />
       {/* Coords shared by ≥ 2 devices → count badge + spider fan-out so each
         * device stays individually clickable without faking its location. */}
@@ -1166,10 +1265,14 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
       />
       <BreadcrumbBanner
         province={province}
+        scopeLabel={heldScopeLabel}
         onReset={resetView}
         top={164}
         roadLabel={roadFilterLabel}
-        onClearRoad={() => setRoadFilterId(null)}
+        onClearRoad={() => {
+          setRoadFilterId(null)
+          setLandingHoldKey(null)
+        }}
       />
       {/* Road-code search — nationwide autocomplete against /manage/roads.
         * Uses the already-fetched position payload to fly to the road's first
@@ -1178,7 +1281,10 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
         * be findable here, and picking one MOVES the filter onto it. */}
       <MapSearchBox
         positions={position?.locations ?? []}
-        onSelectRoad={(roadId) => setRoadFilterId(String(roadId))}
+        onSelectRoad={(roadId) => {
+          setRoadFilterId(String(roadId))
+          setLandingHoldKey(null)
+        }}
       />
     </>
   )
@@ -1187,7 +1293,9 @@ const DashboardMapContent: React.FC<DashboardMapContentProps> = ({
 interface ReactMapProps {
   originalDeptId: string
   originalScopeAll?: boolean
-  onDeptIdChange: (id: string) => void
+  onDeptIdChange: (id: string, scopeGroup: boolean) => void
+  /** The cards' current กทม. group flag — see DashboardMapContentProps. */
+  scopeGroup?: boolean
   onProvinceActivate?: () => void
   /** Fired when any device marker (singleton or overlap stack) is clicked. */
   onMarkerClick?: () => void
@@ -1202,6 +1310,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
   originalDeptId,
   originalScopeAll,
   onDeptIdChange,
+  scopeGroup,
   onProvinceActivate,
   onMarkerClick,
   focusRoadId,
@@ -1216,6 +1325,7 @@ const ReactMap: React.FC<ReactMapProps> = ({
         originalDeptId={originalDeptId}
         originalScopeAll={originalScopeAll}
         onDeptIdChange={onDeptIdChange}
+        scopeGroup={scopeGroup}
         onProvinceActivate={onProvinceActivate}
         onMarkerClick={onMarkerClick}
         focusRoadId={focusRoadId}

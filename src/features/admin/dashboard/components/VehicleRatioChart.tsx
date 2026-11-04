@@ -53,13 +53,15 @@ const VehicleRatioChart: React.FC<Props> = ({ className = '' }) => {
     if (!data) return VEHICLES.map((v) => ({ name: v.name, count: 0, pct: 0, color: v.color }))
     return VEHICLES.map((v) => ({
       name: v.name,
-      count: data.daily_vehicle_count[v.key]?.count ?? 0,
-      pct: data.daily_vehicle_count[v.key]?.percentage ?? 0,
+      // `?.` on the container too: a dept with no counting data must not take
+      // the whole dashboard down with a TypeError.
+      count: data.daily_vehicle_count?.[v.key]?.count ?? 0,
+      pct: data.daily_vehicle_count?.[v.key]?.percentage ?? 0,
       color: v.color,
     }))
   }, [data])
 
-  const total = data?.daily_vehicle_count.total?.count ?? rows.reduce((s, r) => s + r.count, 0)
+  const total = data?.daily_vehicle_count?.total?.count ?? rows.reduce((s, r) => s + r.count, 0)
 
   const pieData = useMemo(
     () => rows.map((r) => ({ name: r.name, value: r.count, color: r.color })),

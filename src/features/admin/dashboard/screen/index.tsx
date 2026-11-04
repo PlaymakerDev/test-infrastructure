@@ -8,6 +8,7 @@ import MapOverlayPanel from '@/components/section/MapOverlayPanel'
 import useMapFocusMode from '@/utils/hooks/useMapFocusMode'
 import { DeptIdOverrideContext } from '@/hooks/useDeptId'
 import { RoadIdOverrideContext } from '@/hooks/useRoadId'
+import { ScopeGroupOverrideContext } from '@/hooks/useScopeAll'
 import {
   AccidentChart,
   Notification,
@@ -54,6 +55,14 @@ const DashboardContent: React.FC<Props> = () => {
   const [currentDeptId, setCurrentDeptId] = useState<string>(
     () => searchParams.get('dept_id') ?? '0'
   )
+  // …and whether that dept 0 is กทม. — ReactMap sets it on a drill-in onto
+  // dept 0, where `scope=all` would otherwise mean the whole country. Fed to
+  // the cards through `ScopeGroupOverrideContext` (see useDashboardScope).
+  const [scopeGroup, setScopeGroup] = useState(false)
+  const handleDeptIdChange = useCallback((id: string, group: boolean) => {
+    setCurrentDeptId(id)
+    setScopeGroup(group)
+  }, [])
   // Snapshot scope on first mount (mirrors originalDeptId). scope=all + dept 0
   // is the nationwide overview; anything else is a dept-scoped landing.
   const [originalScopeAll] = useState<boolean>(
@@ -123,93 +132,97 @@ const DashboardContent: React.FC<Props> = () => {
           <ReactMap
             originalDeptId={originalDeptId}
             originalScopeAll={originalScopeAll}
-            onDeptIdChange={setCurrentDeptId}
+            scopeGroup={scopeGroup}
+            onDeptIdChange={handleDeptIdChange}
             onProvinceActivate={handleProvinceActivate}
             onMarkerClick={handleMarkerClick}
             focusRoadId={focusRoadId}
             onRoadFilterChange={setCurrentRoadId}
           />
 
-          {isDesktop === true && (
-            <>
-              {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
-              {/* bottom: 160 — the stack is bottom-anchored (flex-1 spacer above), so
-              * this pins AccidentChart's lower edge ~12px above the KPI tile strip
-              * (strip top ≈ 16 + ~132px bar) — same 12px rhythm as the panel's own
-              * gap-3 between StatusChart and AccidentChart (2026-07-20). */}
-              <MapOverlayPanel
-                position="left"
-                className="absolute left-4 z-10 flex flex-col gap-3"
-                style={{ top: 52, bottom: 160, width: 620 }}
-              >
-                <div className="flex-1" />
-                {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
-                <div className="flex">
-                  <StatusChart />
-                </div>
-                <AccidentChart />
-              </MapOverlayPanel>
-
-              {/* DESKTOP: KPI tile row — width follows content (140px per visible
-              * tile inside RatioChart). position="left" so the hide toggle slides
-              * it off the LEFT edge (not down) — it's a left-rail card, so it also
-              * hides together with the left panels under 'left' focus mode
-              * (2026-07-24 request). */}
-              <MapOverlayPanel
-                position="left"
-                className="absolute left-4 z-10 flex"
-                style={{ bottom: 16, maxWidth: 'calc(100vw - 32px)' }}
-              >
-                <RatioChart size={110} />
-              </MapOverlayPanel>
-
-              {/* DESKTOP: right absolute panel — top:70 clears the 72px navbar,
-              * matching the map's search box. Was 64, which tucked the
-              * Notification card under the navbar with no gap (2026-08-10).
-              * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
-              * Notification + TrafficStat don't use → no empty gap at the bottom. */}
-              <MapOverlayPanel
-                position="right"
-                className="absolute right-4 z-10 flex flex-col gap-2"
-                style={{ top: 70, bottom: 16, width: 340 }}
-              >
-                <Notification />
-                <VehicleRatioChart className="flex-1 min-h-0" />
-                <TrafficStat />
-              </MapOverlayPanel>
-            </>
-          )}
-
-          {isDesktop === false && (
-            <>
-              {/* MOBILE: notification — compact pill below the navbar (48px) so it
-              * sits beside the centered filter pills + breadcrumb without covering them. */}
-              <MapOverlayPanel
-                position="top"
-                className="absolute z-20 right-3"
-                style={{ top: 60 }}
-              >
-                <Notification compact />
-              </MapOverlayPanel>
-
-              {/* MOBILE: scrollable column — map takes top 60vh, cards bottom 40vh */}
-              <MapOverlayPanel
-                position="bottom"
-                className="absolute left-0 right-0 overflow-y-auto z-10"
-                style={{ top: "60vh", bottom: 0 }}
-              >
-                <div className="flex flex-col gap-3 p-3 pb-8">
+          {/* The cards only — the map's marker pool keeps the landing scope. */}
+          <ScopeGroupOverrideContext.Provider value={scopeGroup}>
+            {isDesktop === true && (
+              <>
+                {/* DESKTOP: left absolute panels — top:52 = navbar (48) + 4px breathing */}
+                {/* bottom: 160 — the stack is bottom-anchored (flex-1 spacer above), so
+                * this pins AccidentChart's lower edge ~12px above the KPI tile strip
+                * (strip top ≈ 16 + ~132px bar) — same 12px rhythm as the panel's own
+                * gap-3 between StatusChart and AccidentChart (2026-07-20). */}
+                <MapOverlayPanel
+                  position="left"
+                  className="absolute left-4 z-10 flex flex-col gap-3"
+                  style={{ top: 52, bottom: 160, width: 620 }}
+                >
+                  <div className="flex-1" />
+                  {/* Full rail width (620) — was 530; enlarged per design 2026-07-13. */}
                   <div className="flex">
                     <StatusChart />
                   </div>
                   <AccidentChart />
-                  <VehicleRatioChart />
-                  <RatioChart cols={4} size={90} />
+                </MapOverlayPanel>
+
+                {/* DESKTOP: KPI tile row — width follows content (140px per visible
+                * tile inside RatioChart). position="left" so the hide toggle slides
+                * it off the LEFT edge (not down) — it's a left-rail card, so it also
+                * hides together with the left panels under 'left' focus mode
+                * (2026-07-24 request). */}
+                <MapOverlayPanel
+                  position="left"
+                  className="absolute left-4 z-10 flex"
+                  style={{ bottom: 16, maxWidth: 'calc(100vw - 32px)' }}
+                >
+                  <RatioChart size={110} />
+                </MapOverlayPanel>
+
+                {/* DESKTOP: right absolute panel — top:70 clears the 72px navbar,
+                * matching the map's search box. Was 64, which tucked the
+                * Notification card under the navbar with no gap (2026-08-10).
+                * VehicleRatioChart `flex-1 min-h-0` so it absorbs whatever space
+                * Notification + TrafficStat don't use → no empty gap at the bottom. */}
+                <MapOverlayPanel
+                  position="right"
+                  className="absolute right-4 z-10 flex flex-col gap-2"
+                  style={{ top: 70, bottom: 16, width: 340 }}
+                >
+                  <Notification />
+                  <VehicleRatioChart className="flex-1 min-h-0" />
                   <TrafficStat />
-                </div>
-              </MapOverlayPanel>
-            </>
-          )}
+                </MapOverlayPanel>
+              </>
+            )}
+
+            {isDesktop === false && (
+              <>
+                {/* MOBILE: notification — compact pill below the navbar (48px) so it
+                * sits beside the centered filter pills + breadcrumb without covering them. */}
+                <MapOverlayPanel
+                  position="top"
+                  className="absolute z-20 right-3"
+                  style={{ top: 60 }}
+                >
+                  <Notification compact />
+                </MapOverlayPanel>
+
+                {/* MOBILE: scrollable column — map takes top 60vh, cards bottom 40vh */}
+                <MapOverlayPanel
+                  position="bottom"
+                  className="absolute left-0 right-0 overflow-y-auto z-10"
+                  style={{ top: "60vh", bottom: 0 }}
+                >
+                  <div className="flex flex-col gap-3 p-3 pb-8">
+                    <div className="flex">
+                      <StatusChart />
+                    </div>
+                    <AccidentChart />
+                    <VehicleRatioChart />
+                    <RatioChart cols={4} size={90} />
+                    <TrafficStat />
+                  </div>
+                </MapOverlayPanel>
+              </>
+            )}
+          </ScopeGroupOverrideContext.Provider>
         </div>
       </RoadIdOverrideContext.Provider>
     </DeptIdOverrideContext.Provider>

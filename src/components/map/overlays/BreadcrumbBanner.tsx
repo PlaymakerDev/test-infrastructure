@@ -4,6 +4,11 @@ import { STCH_UNITS } from '@/features/admin/dashboard/data/units'
 
 export interface BreadcrumbBannerProps {
   province: Province | null
+  /** Unit the cards are scoped to when that is NOT the province under the
+   *  camera (a bureau landing flies into one of its provinces but the cards
+   *  keep the whole bureau) — replaces the province crumbs with this one
+   *  label, e.g. "สทช.10 (เชียงใหม่)". */
+  scopeLabel?: string | null
   /** Called when user clicks "← ทั่วประเทศ" */
   onReset?: () => void
   /** Vertical position from top (default 116) */
@@ -19,6 +24,7 @@ export interface BreadcrumbBannerProps {
 
 const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
   province,
+  scopeLabel,
   onReset,
   top = 116,
   roadLabel,
@@ -29,7 +35,7 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
   // A province with no STCH_UNITS row has nothing to label — but a road filter
   // alone is still worth showing (e.g. the user zoomed back out past the
   // province threshold, which is exactly when they need the ✕).
-  if (province && !stchInfo && !roadLabel) return null
+  if (province && !stchInfo && !roadLabel && !scopeLabel) return null
 
   return (
     <div
@@ -52,7 +58,12 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
       <span className="fs-12 text-[#6b7f9a] whitespace-nowrap shrink-0">
         กำลังดู
       </span>
-      {province && province.central && (
+      {province && scopeLabel && (
+        <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
+          {scopeLabel}
+        </span>
+      )}
+      {province && !scopeLabel && province.central && (
         <>
           <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             ทช. ส่วนกลาง
@@ -63,7 +74,7 @@ const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
           </span>
         </>
       )}
-      {province && !province.central && stchInfo && (
+      {province && !scopeLabel && !province.central && stchInfo && (
         <>
           <span className="fs-12 font-semibold text-(--yellow) whitespace-nowrap shrink-0">
             สทช.{stchInfo.stch} ({stchInfo.hqProvinceName})

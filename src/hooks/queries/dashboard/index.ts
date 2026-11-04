@@ -1,4 +1,5 @@
 // Barrel for Dashboard query hooks.
+import { useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   getDashboardCctvUptimeAPI,
@@ -13,8 +14,8 @@ import {
   getDashboardTrafficAPI,
   getDashboardCountingAPI,
 } from '@/services/routes/DashboardService'
-import type { DashboardBucketType } from '@/types/dashboard/api'
-import { useScopeAll } from '@/hooks/useScopeAll'
+import type { DashboardBucketType, DashboardScope } from '@/types/dashboard/api'
+import { ScopeGroupOverrideContext, useScopeAll } from '@/hooks/useScopeAll'
 import { dashboardKeys } from './queryKeys'
 
 export { dashboardKeys } from './queryKeys'
@@ -22,12 +23,21 @@ export { dashboardKeys } from './queryKeys'
 // `deptId` is sometimes missing on first render — `enabled` keeps the hook idle
 // instead of firing the request with an empty path segment.
 //
-// Scope (`?scope=all` in the page URL) is read via the REACTIVE `useScopeAll()`
-// and passed explicitly into both the query key and (for the endpoints BE
-// supports) the request — never via render-time `window` reads, which went
-// stale during App Router transitions and pinned components to the previous
-// scope's cache entry (dashboard map showed 3 markers while cards showed the
-// 2,520-location scope).
+// Scope (`?scope=all` in the page URL) is read via the REACTIVE
+// `useDashboardScope()` and passed explicitly into both the query key and the
+// request — never via render-time `window` reads, which went stale during App
+// Router transitions and pinned components to the previous scope's cache entry
+// (dashboard map showed 3 markers while cards showed the 2,520-location scope).
+
+/** The URL's scope (`all` / `own`), except `group` while the map has drilled
+ *  into กทม. under `scope=all` (see `ScopeGroupOverrideContext`): dept 0 with
+ *  `scope=all` is the whole country — 13,735 cameras against กทม.'s 3,286
+ *  (2026-11-02). */
+export const useDashboardScope = (): DashboardScope => {
+  const all = useScopeAll()
+  const group = useContext(ScopeGroupOverrideContext)
+  return all ? (group ? 'group' : 'all') : 'own'
+}
 
 export const useDashboardCctvUptime = (
   deptId: string | number | null | undefined,
@@ -35,10 +45,10 @@ export const useDashboardCctvUptime = (
    *  endpoint, so the response stays dept-wide (see roadParam). */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('cctv', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardCctvUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardCctvUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -48,10 +58,10 @@ export const useDashboardVmsUptime = (
   /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('vms', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardVmsUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardVmsUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -61,10 +71,10 @@ export const useDashboardLightingUptime = (
   /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('lighting', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardLightingUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardLightingUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -74,10 +84,10 @@ export const useDashboardTrafficUptime = (
   /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('traffic', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardTrafficUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardTrafficUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -88,10 +98,10 @@ export const useDashboardWimUptime = (
    *  endpoint, so the response stays dept-wide (see roadParam). */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('wim', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardWimUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardWimUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -101,10 +111,10 @@ export const useDashboardCrosswalkUptime = (
   /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('crosswalk', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardCrosswalkUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -114,10 +124,10 @@ export const useDashboardTunnelUptime = (
   /** Optional สายทาง scope — this endpoint honours `&road_id=`. */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.uptime('tunnel', deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardTunnelUptimeAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardTunnelUptimeAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -129,13 +139,13 @@ export const useDashboardPosition = (
   deptId: string | number | null | undefined,
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   const scoped = roadId != null && roadId !== ''
   return useQuery({
     queryKey: scoped
       ? dashboardKeys.positionByRoad(deptId ?? '', scope, roadId)
       : dashboardKeys.position(deptId ?? '', scope),
-    queryFn: () => getDashboardPositionAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardPositionAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -157,10 +167,10 @@ export const useDashboardAnalytic = (
    *  endpoint, so the response stays dept-wide (see roadParam). */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.analytic(deptId ?? '', type, scope, roadId),
-    queryFn: () => getDashboardAnalyticAPI(deptId!, type, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardAnalyticAPI(deptId!, type, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
@@ -172,12 +182,14 @@ export const useDashboardTraffic = (
   /** สายทาง scope — forwarded as `&road_id=`; BE still ignores it on this
    *  endpoint, so the response stays dept-wide (see roadParam). */
   roadId?: string | number | null,
-) =>
-  useQuery({
-    queryKey: dashboardKeys.traffic(deptId ?? '', type, limit, roadId),
-    queryFn: () => getDashboardTrafficAPI(deptId!, type, limit, roadId).then((r) => r.data),
+) => {
+  const scope = useDashboardScope()
+  return useQuery({
+    queryKey: dashboardKeys.traffic(deptId ?? '', type, limit, scope, roadId),
+    queryFn: () => getDashboardTrafficAPI(deptId!, type, limit, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
+}
 
 export const useDashboardCounting = (
   deptId: string | number | null | undefined,
@@ -185,10 +197,10 @@ export const useDashboardCounting = (
    *  endpoint, so the response stays dept-wide (see roadParam). */
   roadId?: string | number | null,
 ) => {
-  const scope = useScopeAll() ? 'all' as const : 'own' as const
+  const scope = useDashboardScope()
   return useQuery({
     queryKey: dashboardKeys.counting(deptId ?? '', scope, roadId),
-    queryFn: () => getDashboardCountingAPI(deptId!, scope === 'all', roadId).then((r) => r.data),
+    queryFn: () => getDashboardCountingAPI(deptId!, scope, roadId).then((r) => r.data),
     enabled: !!deptId,
   })
 }
