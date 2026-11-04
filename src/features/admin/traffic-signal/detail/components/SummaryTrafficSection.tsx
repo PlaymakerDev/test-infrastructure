@@ -16,6 +16,7 @@ import { fmtNumber } from '@/utils/formatNumber'
 import { thaiDayName } from '@/utils/formatDate'
 import { thaiDateBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../context'
+import { peakPhaseOf, phasesFromRows } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 
 // `BBBB` (Buddhist-Era year) for the exported วันที่ column (`D MMM BBBB`).
 dayjs.extend(buddhistEra)
@@ -83,13 +84,16 @@ const SummaryTrafficSection: React.FC<Props> = () => {
   // exported numbers use the SAME source + math as the on-screen components.
   const { data: summaryData } = useTrafficSummary(project.id, { date: endDate })
 
-  // Flatten the 7-day response into per-phase rows — SAME slicing + date
-  // label expressions as TableSummaryTraffic (newline swapped for a space
-  // since export cells are single-line).
+  // Flatten the 7-day response into per-phase rows — SAME rows + date label
+  // expressions as TableSummaryTraffic (newline swapped for a space since
+  // export cells are single-line). Every phase the day reports, like the
+  // table: the old `.slice(0, project.phase)` dropped rows on 28 days whose
+  // data outran the declared phase count, and exported nothing at all for
+  // junctions declaring 0 phases (2026-10-26).
   const exportRows = useMemo<SummaryExportRow[]>(() => {
     const out: SummaryExportRow[] = []
     for (const day of reportData?.res_data ?? []) {
-      for (const p of (day.data ?? []).slice(0, project.phase)) {
+      for (const p of day.data ?? []) {
         out.push({
           date: `วัน${thaiDayName(day.day)} ${dayjs(day.date).locale('th').format('D MMM BBBB')}`,
           phase: p.phases_no,
@@ -103,7 +107,7 @@ const SummaryTrafficSection: React.FC<Props> = () => {
       }
     }
     return out
-  }, [reportData, project.phase])
+  }, [reportData])
 
   // Install point + resolved 7-day window — printed in the PDF header so a
   // reader knows which signal/date range they're looking at (mirrors the
@@ -167,15 +171,20 @@ const SummaryTrafficSection: React.FC<Props> = () => {
               { label: 'Avg Daily PCU', value: fmtNumber(sum.pcu / n, 1) },
               { label: 'Avg Efficiency', value: `${fmtNumber(sum.eff / n, 0)}%` },
               { label: 'Avg ET Rate', value: `${fmtNumber(sum.et / n, 0)}%` },
-              { label: 'Total Time Saved', value: `${fmtNumber(sum.time, 1)}h` },
+              // Minutes → hours, same as the on-screen footer.
+              { label: 'Total Time Saved', value: `${fmtNumber(sum.time / 60, 1)}h` },
             ],
           })
 
           // 3) เปรียบเทียบปริมาณจราจรรายวัน — the on-screen day cards
           //    (P1..Pn PCU + Total + Peak) flattened into a compact table.
+          // Same phase list as the on-screen cards (phases the days report).
+          // From the declared count, a 0-phase junction made this
+          // Math.floor(46 / 0) = Infinity → NaN column widths; with no phases
+          // the table keeps its date/total/peak columns, like the cards do.
+          const phaseNumbers = phasesFromRows(days.flatMap((d) => d.phases ?? []), project.phase)
           if (days.length > 0) {
-            const phaseNumbers = Array.from({ length: project.phase }, (_, i) => i + 1)
-            const phasePct = Math.floor(46 / phaseNumbers.length)
+            const phasePct = phaseNumbers.length ? Math.floor(46 / phaseNumbers.length) : 0
             blocks.push({
               type: 'table',
               title: 'เปรียบเทียบปริมาณจราจรย้อนหลัง 7 วัน',
@@ -188,11 +197,12 @@ const SummaryTrafficSection: React.FC<Props> = () => {
               rows: days.map((d) => {
                 const values: Record<number, number> = {}
                 for (const p of d.phases ?? []) values[p.phase_no] = p.pcu
+                const peak = peakPhaseOf(d)
                 return [
                   `วัน${thaiDayName(d.day)} ${dayjs(d.date).locale('th').format('D MMM BBBB')}`,
                   ...phaseNumbers.map((p) => fmtNumber(values[p] ?? 0, 2)),
                   fmtNumber(d.total_pcu, 2),
-                  `Phase ${d.peak_phase}`,
+                  peak > 0 ? `Phase ${peak}` : '-',
                 ]
               }),
             })

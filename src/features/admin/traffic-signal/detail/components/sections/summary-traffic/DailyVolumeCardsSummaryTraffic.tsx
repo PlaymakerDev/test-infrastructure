@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
-import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { getPhaseColor, peakPhaseOf, phasesFromRows } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficSummary } from '@/hooks/queries/traffic-signal'
 import { thaiDayName } from '@/utils/formatDate'
 import { fmtNumber } from '@/utils/formatNumber'
@@ -47,9 +47,14 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
   const { project } = useDetailContext()
   const { data } = useTrafficSummary(project.id, { date: endDate })
 
+  // Phase bars follow the phases the 7 days actually report, unioned so every
+  // card shares one bar order. Building the list from `project.phase`
+  // (total_phases) drew phantom zero-bars on junctions that declare more
+  // phases than they report — and dropped real ones on the 0-declared
+  // junctions that do report data (2026-10-26).
   const phaseNumbers = useMemo(
-    () => Array.from({ length: project.phase }, (_, i) => i + 1),
-    [project.phase]
+    () => phasesFromRows((data ?? []).flatMap((d) => d.phases ?? []), project.phase),
+    [data, project.phase]
   )
 
   const days = useMemo(() => {
@@ -68,7 +73,7 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
         date: date.format('D MMM BBBB').replace(/(\d+)/, (s) => s),
         values,
         total: d.total_pcu,
-        peakPhase: d.peak_phase,
+        peakPhase: peakPhaseOf(d),
       }
     })
   }, [data])
@@ -96,8 +101,13 @@ const DailyVolumeCardsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
               <p className='mb-0 text-white'>
                 Total : {fmtNumber(day.total, 2)} PCU
               </p>
-              <p className='mb-0' style={{ color: getPhaseColor(day.peakPhase) }}>
-                Peak : Phase {day.peakPhase}
+              {/* 0 = no phase carried traffic that day — getPhaseColor(0)
+                * has no color and "Phase 0" isn't a phase. */}
+              <p
+                className='mb-0'
+                style={{ color: day.peakPhase > 0 ? getPhaseColor(day.peakPhase) : '#9aa7b8' }}
+              >
+                Peak : Phase {day.peakPhase > 0 ? day.peakPhase : '-'}
               </p>
             </div>
           </div>

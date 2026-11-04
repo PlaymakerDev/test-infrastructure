@@ -62,7 +62,9 @@ const TrafficCycleTrafficSignal: React.FC = () => {
       // Per-second times (e.g. "15s") at fs-12 (14px), matching the Phase
       // Timing card (2026-07-24).
       outerLabelSubtitleSize={14}
-      centerValue={`${total}s`}
+      // No phase timing → dash, matching the Phase Timing card's empty state;
+      // "0s" claimed a measured zero-length cycle.
+      centerValue={phases.length > 0 ? `${total}s` : '-'}
       centerValueColor='#FCD116'
       centerValueSize={28}
       centerUnit='Total Cycle'

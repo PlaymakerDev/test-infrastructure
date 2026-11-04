@@ -45,7 +45,8 @@ const DetailSignalPopup: React.FC<{ project: TrafficSignalProject }> = ({
         ● {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
       </p>
       <p className='fs-12 text-slate-500 mt-0.5'>
-        PCU: {Number(project.dailyPCU ?? 0).toLocaleString()} · Phase: {project.phase}
+        PCU: {Number(project.dailyPCU ?? 0).toLocaleString()} · Phase:{' '}
+        {project.phase > 0 ? project.phase : '-'}
       </p>
     </div>
   )
@@ -129,7 +130,7 @@ const TrafficCongestionLayer: React.FC = () => {
 
 /** Color chip + label row for the traffic legend. */
 const LegendChip: React.FC<{ color: string; label: string }> = ({ color, label }) => (
-  <span className='inline-flex items-center gap-1.5'>
+  <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
     <span className='inline-block w-4 h-1.5 rounded-full' style={{ background: color }} />
     <span className='fs-12 text-white/85'>{label}</span>
   </span>
@@ -191,7 +192,9 @@ const MapDetailTrafficSignal: React.FC<Props> = ({ edgeFade }) => {
         style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
       >
         <p className='fs-12 text-white/60 mb-1'>สภาพจราจร</p>
-        <div className='flex items-center gap-3'>
+        {/* Chips wrap as whole units on a phone-width map — unwrapped, each
+          * Thai label broke mid-word ("คล่อง / ตัว"). One row from sm up. */}
+        <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
           <LegendChip color='#3BD16F' label='คล่องตัว' />
           <LegendChip color='#FFB930' label='ชะลอตัว' />
           <LegendChip color='#FF7A45' label='หนาแน่น' />

@@ -31,7 +31,11 @@ export const dedupeTrafficSignalSolutions = (
 
 export type WarrantyStatus = 'in-warranty' | 'expired'
 export type ConnectionStatus = 'online' | 'offline'
-export type SignalPhase = 3 | 4
+/** Phase count of a junction — the raw `total_phases` the API reports.
+ *  NOT narrowed to 3|4: production carries 0 (10 junctions, unconfigured), 5
+ *  (1) and 8 (2) as well, and the old `3 | 4` type forced every one of them
+ *  to display "4 Phase" (surveyed 2026-10-26). Treat 0 as "not configured". */
+export type SignalPhase = number
 export type OperatingMode = 'FixedTime' | 'Adaptive_ET' | 'Auto' | 'Flashing24Hr'
 
 /** Shared phase color palette — used by the cycle donut, phase timing card,
@@ -43,22 +47,88 @@ export const PHASE_COLORS = ['#05F2DB', '#B2FF00', '#FCD116', '#FF7B00'] as cons
 export const getPhaseColor = (phase: number): string =>
   PHASE_COLORS[(phase - 1) % PHASE_COLORS.length]
 
+/** Phase numbers a view should draw, taken from the rows the API actually
+ *  returned instead of the junction's declared `total_phases`.
+ *
+ *  The two disagree on 10 junctions in production (surveyed 2026-10-26): some
+ *  declare 4 phases but report data for only 1–3 (the extra series rendered as
+ *  phantom "Phase 4 — 0"), others declare 0 yet report 3–4. The two datasets on
+ *  ONE junction can disagree with each other too — solution 1582's efficiency
+ *  graph carries 4 phases while its PCU graph carries 3 — so each view must
+ *  call this with its own rows rather than share one count.
+ *
+ *  `declared` is the last-resort fallback for an empty response; 0 (the
+ *  "unconfigured" value) yields an empty list so nothing phantom is drawn. */
+export const phasesFromRows = (
+  rows: readonly { phases_no?: number | null; phase_no?: number | null }[] | null | undefined,
+  declared?: number,
+): number[] => {
+  const seen = new Set<number>()
+  for (const row of rows ?? []) {
+    const no = row.phases_no ?? row.phase_no
+    if (typeof no === 'number' && no > 0) seen.add(no)
+  }
+  if (seen.size > 0) return [...seen].sort((a, b) => a - b)
+  return declared && declared > 0
+    ? Array.from({ length: declared }, (_, i) => i + 1)
+    : []
+}
+
+/** `{ dataKey, color, label }` series config for the given phase numbers —
+ *  the shape LineChart's `lines` and BarChart's `bars` both take. Keys match
+ *  the `p{n}` fields the chart builders write. */
+export const phaseSeries = (phases: readonly number[]) =>
+  phases.map((no) => ({
+    dataKey: `p${no}`,
+    color: getPhaseColor(no),
+    label: `Phase ${no}`,
+  }))
+
+/** A day's peak phase: BE's `peak_phase`, else the highest-PCU phase.
+ *  BE's value IS that argmax on every day it sets one (511/511, surveyed
+ *  2026-10-26), but it reports 0 on 28 days that carry PCU — all on junctions
+ *  whose declared phase count is stale (e.g. 1611 declares 0 yet logs ~8,000
+ *  PCU/day on phase 4). 0 = no peak (no phase with traffic). */
+export const peakPhaseOf = (day: {
+  peak_phase?: number | null
+  phases?: readonly { phase_no: number; pcu: number }[] | null
+}): number => {
+  if (day.peak_phase && day.peak_phase > 0) return day.peak_phase
+  let peak = 0
+  let max = 0
+  for (const p of day.phases ?? []) {
+    if (p.pcu > max) {
+      max = p.pcu
+      peak = p.phase_no
+    }
+  }
+  return peak
+}
+
+/** A phase's green time as "25s", or a dash when the phase feed has no row
+ *  for it — a missing timing must not read as a measured zero-second green. */
+export const fmtGreenTime = (sec: number | null | undefined): string =>
+  sec == null ? '-' : `${sec}s`
+
 /** Single phase timing config — used by the Phase Timing card + donut chart on
- *  the detail page. Sum of all phases' (green + red) = full cycle (e.g. 240s). */
+ *  the detail page. Mapped from `/traffic/details/phase_details/{id}`. */
 export interface PhaseTimingConfig {
   /** Phase number (1–4) */
   phase: number
-  /** Green-light duration (seconds) */
+  /** Green-light duration (seconds) — `green_time`. Under early termination
+   *  this is the configured green; the phase may end sooner. */
   greenSec: number
-  /** Red-light duration before next phase (seconds) */
+  /** Seconds from the cycle start until this phase turns green — BE's
+   *  `waiting_time`: 0 for the first phase, then each earlier phase's green +
+   *  a ~5s intergreen (verified 2026-10-26). An OFFSET, not a red duration. */
   redSec: number
   /** Whether this phase is the currently active one (green) per the live API.
    *  Exactly one phase should have this true at any time. Undefined on mock
    *  data — the component falls back to a local simulation in that case. */
   isActive?: boolean
-  /** ISO timestamp at which this phase became active. Used to compute the
-   *  elapsed time in this phase (now − timestamp) so the countdown survives
-   *  page refresh / navigation. */
+  /** ISO start of the CURRENT CYCLE — every phase row of a junction carries
+   *  the same value; it is NOT when this phase turned green. The active
+   *  phase's green runs [redSec, redSec + greenSec) after it. */
   timestamp?: string
   /** Phase covers the main road. Maps to BE's `is_main_road`. Used by the
    *  Live Stream modal's "ประเภทถนน" cell (ถนนสายหลัก / ถนนสายรอง). */

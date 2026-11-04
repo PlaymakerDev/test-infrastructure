@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { OutlinePill, StatusPill } from '@/components/modal-live-stream/LiveStreamModal'
-import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { fmtGreenTime, getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { CameraEntry } from './CamerasGridTrafficSignal'
 
 interface Props {
@@ -69,9 +69,9 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
       dataIndex: 'greenTime',
       key: 'greenTime',
       width: 120,
-      render: (gt: number, row) =>
-        row.detectionMode === 'Counting' ? (
-          <span className='text-emerald-400 fs-12 font-semibold'>{gt}s</span>
+      render: (gt: number | null, row) =>
+        row.detectionMode === 'Counting' && gt != null ? (
+          <span className='text-emerald-400 fs-12 font-semibold'>{fmtGreenTime(gt)}</span>
         ) : (
           <span className='text-white/40 fs-12'>-</span>
         ),
@@ -114,6 +114,8 @@ const TableCameraTrafficSignal: React.FC<Props> = ({ cameras, onOpen }) => {
 
   return (
     <Table<CameraRow>
+      // antd's default empty text is English ("No data") — no global Thai locale.
+      locale={{ emptyText: 'ไม่พบข้อมูล' }}
       rowKey='id'
       columns={columns}
       dataSource={data}

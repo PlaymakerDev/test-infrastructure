@@ -3,19 +3,12 @@ import React, { useMemo } from 'react'
 import { TbCar } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import LineChart, { type LineChartDataPoint } from '@/components/chart/LineChart'
-import { PHASE_COLORS } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { phaseSeries, phasesFromRows } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
 import { thaiDateBE } from '@/utils/thaiDate'
 import { useDetailContext } from '../../../context'
 
 interface Props { }
-
-const ALL_LINES = [
-  { dataKey: 'p1', color: PHASE_COLORS[0], label: 'Phase 1' },
-  { dataKey: 'p2', color: PHASE_COLORS[1], label: 'Phase 2' },
-  { dataKey: 'p3', color: PHASE_COLORS[2], label: 'Phase 3' },
-  { dataKey: 'p4', color: PHASE_COLORS[3], label: 'Phase 4' },
-]
 
 /** Group PCU points (flat array from API) into per-hour series, one entry per
  *  `phases_no`. The chart's data shape requires `{ label, p1, p2, ... }`.
@@ -45,7 +38,15 @@ const ChartTrafficVolumeTrafficSignal: React.FC<Props> = () => {
   const { project } = useDetailContext()
   const { data } = useTrafficGraph(project.id)
 
-  const lines = useMemo(() => ALL_LINES.slice(0, project.phase), [project.phase])
+  // Phases come from THIS chart's own rows — `project.phase` (total_phases)
+  // disagrees with them on 10 junctions and is only the empty-response
+  // fallback here. Slicing a fixed 4-line list by it drew phantom zero series
+  // (ชร.1023 declares 4 phases, reports 1) and hid real ones (2026-10-26).
+  const phases = useMemo(
+    () => phasesFromRows(data?.traffic_pcu, project.phase),
+    [data, project.phase],
+  )
+  const lines = useMemo(() => phaseSeries(phases), [phases])
 
   const hours = useMemo(
     () => buildHourSeries(data?.traffic_pcu ?? []),
@@ -53,20 +54,29 @@ const ChartTrafficVolumeTrafficSignal: React.FC<Props> = () => {
   )
 
   const stats = useMemo(() => {
-    // Sum each phase's total PCU for the day → header stats.
-    const totals = [0, 0, 0, 0]
+    // Sum each phase's total PCU for the day → header stats. Keyed by phase
+    // number (not array position) so a gap like phases [1, 3] still totals
+    // into the right bucket.
+    const totals = new Map<number, number>()
     for (const p of data?.traffic_pcu ?? []) {
-      if (p.phases_no >= 1 && p.phases_no <= 4) {
-        totals[p.phases_no - 1] += p.total_pcu
-      }
+      totals.set(p.phases_no, (totals.get(p.phases_no) ?? 0) + p.total_pcu)
     }
-    return ALL_LINES.slice(0, project.phase).map((line, i) => ({
-      value: totals[i],
+    return lines.map((line, i) => ({
+      value: totals.get(phases[i]) ?? 0,
       label: line.label,
       color: line.color,
     }))
-  }, [data, project.phase])
+  }, [data, lines, phases])
 
+  // The Y axis scales to the data (no `yAxisTicks`). A fixed 0–800 ceiling
+  // CLIPPED every junction whose hourly PCU ran higher: ECharts drops the
+  // out-of-range segments outright, so รย.4006's 1,047-PCU rush-hour crest
+  // rendered as gaps along the 800 gridline and the chart under-reported the
+  // peak (7 junctions nationwide exceed 800, up to 1,196 — surveyed
+  // 2026-10-26). Quiet junctions had the mirror problem: a ~50-PCU day
+  // squashed into a flat line on the baseline. LineChart's default
+  // `yAxisDomain = [0, 'auto']` keeps the bottom pinned at zero, so only the
+  // ceiling follows the data.
   return (
     <LineChart
       title='ปริมาณจราจรสูงสุดย้อนหลังภายใน 24 ชั่วโมง'
@@ -79,7 +89,6 @@ const ChartTrafficVolumeTrafficSignal: React.FC<Props> = () => {
       lines={lines}
       stats={stats}
       height={260}
-      yAxisTicks={[0, 200, 400, 600, 800]}
       tooltipDateKey='dateLabel'
       tooltipUnit='PCU'
       tooltipShowDot

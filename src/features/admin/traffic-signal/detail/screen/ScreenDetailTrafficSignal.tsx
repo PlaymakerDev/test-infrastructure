@@ -150,7 +150,10 @@ const ScreenDetailTrafficSignal: React.FC<Props> = ({ id }) => {
       warrantyStatus,
       connection: isOnline ? 'online' : 'offline',
       stream: isOnline,
-      phase: (detailItem.total_phases === 3 ? 3 : 4) as SignalPhase,
+      // Report `total_phases` as-is. Clamping to 3|4 made every 0-, 5- and
+      // 8-phase junction claim "4 Phase" on the info card and render four
+      // chart series regardless of what the data held (2026-10-26).
+      phase: detailItem.total_phases as SignalPhase,
       operatingMode: detailItem.controller_mode as OperatingMode,
       bureau: contract?.department_name ?? '-',
       coord,

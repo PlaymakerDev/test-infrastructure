@@ -68,7 +68,8 @@ const TrafficSignalPopup: React.FC<{
         className='fs-12 font-bold tracking-wide'
         style={{ color: '#A3E635' }}
       >
-        Traffic Signal · {String(p.code_name)}
+        {/* A few legacy signals carry no road code (empty string). */}
+        Traffic Signal · {String(p.code_name || '-')}
       </p>
       <p className='fs-14 font-semibold text-white leading-snug mt-0.5'>
         {String(p.solution_name)}
@@ -81,7 +82,8 @@ const TrafficSignalPopup: React.FC<{
       </p>
       <p className='fs-12 text-slate-500 mt-0.5'>
         PCU: {Number(p.total_pcu ?? 0).toLocaleString()} · Phase:{' '}
-        {String(p.total_phases ?? '-')}
+        {/* 0 = no phase configuration — dash, same as the table. */}
+        {Number(p.total_phases) > 0 ? String(p.total_phases) : '-'}
       </p>
       {p.id != null && (
         <PopupDetailLink
