@@ -10,10 +10,11 @@ import { LampProvider } from '../context'
 import LampTitleSection from '../components/TitleSection'
 import { resolveLightingImei } from '@/features/admin/traffic-lighting/shared/lightingDetailNavigation'
 import { useLightingProject } from '@/features/admin/traffic-lighting/shared/useLightingProject'
-import { useLightingAmpGraph, useLightingDeviceDetails } from '@/hooks/queries/lighting'
+import { useLightingAmpGraph, useLightingDeviceDetails, useLightingSolution } from '@/hooks/queries/lighting'
 import TrafficLightingMinimumFontSize from '../../../shared/TrafficLightingMinimumFontSize'
 import LampStatusCard from '../components/LampStatusCard'
 import { MOCK_LAMP_DATA, buildMockLampRows, buildMockLampSummary } from '../data/mockLampData'
+import { lampRowsFromDevices, lampSummaryFromGateway, latestLampReport } from '../data/lampRows'
 
 interface Props {
   id: string
@@ -41,13 +42,23 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
   // Read the clock once at mount — render stays pure and the derived times
   // don't drift between renders.
   const [now] = React.useState(() => Date.now())
-  const lampRows = React.useMemo(
+  // The lamps themselves — a lamp point has no IMEI, so they come by solution
+  // id: the gateway's tally and one row per lamp (2026-11-02).
+  const solutionQuery = useLightingSolution(project.solutionId)
+  const devices = solutionQuery.data?.lighting?.devices
+  const apiRows = React.useMemo(() => lampRowsFromDevices(devices), [devices])
+  const mockRows = React.useMemo(
     () => (MOCK_LAMP_DATA && imei && totalLamps
       ? buildMockLampRows(imei, totalLamps, deviceQuery.data?.line_checks, now)
       : []),
     [imei, totalLamps, deviceQuery.data?.line_checks, now],
   )
-  const lampSummary = lampRows.length > 0 ? buildMockLampSummary(lampRows) : null
+  const fromApi = apiRows.length > 0
+  const lampRows = fromApi ? apiRows : mockRows
+  const lampSummary = fromApi
+    ? lampSummaryFromGateway(solutionQuery.data?.lighting?.lora)
+    : mockRows.length > 0 ? buildMockLampSummary(mockRows) : null
+  const reportedAt = React.useMemo(() => (fromApi ? latestLampReport(devices) : null), [fromApi, devices])
   const resolvedProject = deviceQuery.data
     ? {
         ...project,
@@ -133,7 +144,7 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
                 valueFontSize={24}
               />
             </div>
-            <LampStatusCard summary={lampSummary} />
+            <LampStatusCard summary={lampSummary} reportedAt={reportedAt} now={now} />
           </div>
         </section>
 
@@ -144,7 +155,11 @@ const LampDetailScreen: React.FC<Props> = ({ id, imeiParam }) => {
           lampCount={totalLamps}
           lineChecks={deviceQuery.data?.line_checks}
         />
-        <LampEquipmentTable rows={lampRows} />
+        <LampEquipmentTable
+          rows={lampRows}
+          loading={solutionQuery.isLoading}
+          isError={solutionQuery.isError}
+        />
       </div>
     </LampProvider>
   )

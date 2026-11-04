@@ -48,7 +48,9 @@ const ModalInfoTrafficLighting: React.FC<Props> = ({ project, onClose }) => {
         {
           icon: <TbClipboardList size={30} />,
           label: 'เลขที่สัญญา',
-          value: project.contractNo,
+          // Same fallback as the overall table's ContractInfoCell and its
+          // export — a project with no contract on record used to show blank.
+          value: project.contractNo || (project.budgetYear ? `ปีงบประมาณ ${project.budgetYear}` : '-'),
         },
         {
           icon: <TbUserShield size={30} />,

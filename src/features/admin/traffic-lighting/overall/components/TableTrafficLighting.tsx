@@ -82,14 +82,14 @@ const TableTrafficLighting: React.FC<Props> = ({ projects }) => {
         }
         out.push({
           kind: 'project',
-          id: items[i].id,
+          id: items[i].rowKey,
           project: items[i],
           roadCodeSpan: span,
         })
         for (let j = 1; j < span; j++) {
           out.push({
             kind: 'project',
-            id: items[i + j].id,
+            id: items[i + j].rowKey,
             project: items[i + j],
             roadCodeSpan: 0,
           })

@@ -170,7 +170,10 @@ const ElectricalSystemCard: React.FC<Props> = ({ expanded, onToggleExpanded }) =
             <MetricsGrid metrics={primaryMetrics} accentColor={PHASE_COLORS[0]} />
           </div>
         ) : (
-          <MetricsGrid metrics={primaryMetrics} accentColor={phaseAccentColor} />
+          // Collapsed, a 3-phase cabinet shows the average of its phases — the
+          // same numbers as the expanded card's blue Average block (user
+          // 2026-10-27); it used to show phase 1 alone, unlabelled.
+          <MetricsGrid metrics={electricityCount > 1 ? averageMetrics : primaryMetrics} accentColor={phaseAccentColor} />
         )}
         {expanded && extraPhases.map(({ phase, metrics }, index) => (
           <div key={phase} className='flex flex-col gap-1.5'>

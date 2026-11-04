@@ -8,6 +8,12 @@ export type LightingPhase = 1 | 3
 
 export interface TrafficLightingProject {
   id: string
+  /** React key of the row. `id` is the device's IMEI and the central list can
+   *  carry one device twice (sol 5296 "รย.4010 ตู้ที่ 2" — two identical rows,
+   *  2026-10-26); two table rows sharing a key left stale rows on screen,
+   *  without their road-code cell, once a search changed the list. A repeat
+   *  gets `~2`, `~3`, … — `id` itself stays the IMEI the detail link needs. */
+  rowKey: string
   /** Real device IMEI. Absent when the central list only identifies a solution. */
   imei?: string
   roadCode: string
@@ -36,6 +42,7 @@ export const mapCentralListToProjects = (
   items: OverviewCentralItem[],
 ): TrafficLightingProject[] => {
   const projects: TrafficLightingProject[] = []
+  const keyUses = new Map<string, number>()
   let fallbackSequence = 0
 
   for (const bureau of items) {
@@ -43,9 +50,13 @@ export const mapCentralListToProjects = (
       for (const solution of department.solutions ?? []) {
         const imei = solution.imei?.trim() ?? ''
         const lighting = solution.lighting
+        const id = imei || `${solution.solution.id}-${fallbackSequence++}`
+        const uses = (keyUses.get(id) ?? 0) + 1
+        keyUses.set(id, uses)
 
         projects.push({
-          id: imei || `${solution.solution.id}-${fallbackSequence++}`,
+          id,
+          rowKey: uses === 1 ? id : `${id}~${uses}`,
           imei: imei || undefined,
           roadCode: solution.road.code_name ?? '-',
           projectName: solution.project.project_name ?? solution.solution.solution_name ?? '-',

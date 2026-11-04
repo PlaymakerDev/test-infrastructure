@@ -13,6 +13,11 @@ import { useLightingElectricity } from '@/hooks/queries/lighting'
 import {
   COLOR_AMP_ORANGE,
   COLOR_VOLTAGE_CYAN,
+  REPORT_TYPE,
+  buildReportRows,
+  energyFromDailyRows,
+  type ReportRow,
+  type SummaryReportPeriod,
   type VoltageAmpTableRow,
 } from '../data/voltageAmpReport'
 import { useDetailContext } from '../context'
@@ -23,32 +28,33 @@ dayjs.locale('th')
 
 const { RangePicker } = DatePicker
 
-type ReportPeriod = 'HOURLY' | 'DAILY' | 'MONTHLY' | 'YEARLY'
-const REPORT_TYPE_MAP: Record<ReportPeriod, 'hourly' | 'daily' | 'monthly' | 'yearly'> = {
-  HOURLY: 'hourly',
-  DAILY: 'daily',
-  MONTHLY: 'monthly',
-  YEARLY: 'yearly',
+type ReportPeriod = SummaryReportPeriod
+type DateRangeValue = [Dayjs | null, Dayjs | null] | null
+
+// Worked out on mount, not once per bundle load — a module-level value kept
+// the day the app was first opened, so a later visit ended its range days ago.
+const defaultDateRange = (): DateRangeValue => [dayjs().subtract(7, 'day'), dayjs()]
+
+/** รายปี with nothing picked covers every year with data — asked from here (the
+ *  lighting electricity log only starts 2026-07-07, so this floor cuts nothing). */
+const ALL_DATA_FROM = '2000-01-01'
+
+/** A pick widened to the whole months / years the rows cover — the backend's
+ *  รายเดือน / รายปี rows average WHOLE months / years, so a 19–26 ต.ค. pick
+ *  used to sit above a "2569" row averaging the whole year (2026-10-26). The
+ *  end stops at today. */
+const toWholePeriods = (range: DateRangeValue, unit: 'month' | 'year'): DateRangeValue => {
+  if (!range) return range
+  const today = dayjs().endOf('day')
+  const [start, end] = range
+  const periodEnd = end?.endOf(unit)
+  return [start ? start.startOf(unit) : null, periodEnd ? (periodEnd.isAfter(today) ? today : periodEnd) : null]
 }
 
-const DEFAULT_DATE_RANGE: [Dayjs, Dayjs] = [dayjs().subtract(7, 'day'), dayjs()]
-
-// The API's `label` shape depends on report_type (verified live): daily
-// "YYYY-MM-DD", hourly "YYYY-MM-DD HH:mm", monthly "MM/YYYY", yearly "YYYY".
-// Parse with the matching input format and re-render as Thai Buddhist-era
-// text — used by the chart x-axis, the table's วันที่ column, and its export.
-const formatReportLabel = (label: string, period: ReportPeriod): string => {
-  switch (period) {
-    case 'HOURLY':
-      return dayjs(label, 'YYYY-MM-DD HH:mm').format('DD MMM BBBB HH:mm')
-    case 'DAILY':
-      return dayjs(label, 'YYYY-MM-DD').format('DD MMM BBBB')
-    case 'MONTHLY':
-      return dayjs(label, 'MM/YYYY').format('MMM BBBB')
-    case 'YEARLY':
-      return dayjs(label, 'YYYY').format('BBBB')
-  }
-}
+// Chart labels come with each row (buildReportRows) — hourly gets a compact
+// two-line axis label with the full text as the tooltip header.
+const chartLabelFields = (r: ReportRow): { label: string; tooltipLabel?: string } =>
+  r.chartTooltip ? { label: r.chartLabel, tooltipLabel: r.chartTooltip } : { label: r.chartLabel }
 
 const REPORT_PERIOD_OPTIONS: { label: string; value: ReportPeriod }[] = [
   { label: 'รายชั่วโมง', value: 'HOURLY' },
@@ -73,11 +79,6 @@ const SHARED_CHART_PROPS = {
   cardBorderColor: '#1f2d3d',
   height: 220,
 } as const
-
-const AMP_CHART_PROPS = {
-  ...SHARED_CHART_PROPS,
-  yAxisTicks: [0, 1, 2, 3, 4] as number[],
-}
 
 // Phase identity colors — same 3 colors across both the Volt and Amp charts
 // so a phase reads as the same color regardless of which metric is shown.
@@ -140,24 +141,62 @@ const SUMMARY_EXPORT_COLUMNS: {
     { header: 'กระแสไฟฟ้า (A)', width: 16, widthPct: 15, value: (r) => r.amp.toFixed(2) },
     { header: 'กำลังไฟฟ้า (W)', width: 16, widthPct: 15, value: (r) => r.watt.toFixed(2) },
     { header: 'Power Factor', width: 14, widthPct: 13, value: (r) => r.powerFactor.toFixed(2) },
-    { header: 'พลังงานไฟฟ้าที่ใช้ไป (kWh)', width: 22, widthPct: 9, value: (r) => r.kwh.toFixed(2) },
+    { header: 'พลังงานไฟฟ้าที่ใช้ไป (kWh)', width: 22, widthPct: 9, value: (r) => (r.kwh == null ? '-' : r.kwh.toFixed(2)) },
     { header: 'ความถี่ (Hz)', width: 14, widthPct: 9, value: (r) => r.frequency.toFixed(2) },
   ]
 
 const SummaryReportSection: React.FC = () => {
   const { imei } = useDetailContext()
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(DEFAULT_DATE_RANGE)
+  // Each report type keeps its own pick (user 2026-10-26): รายชั่วโมง / รายวัน
+  // the days picked (the last 8 to start), รายเดือน every month of this year
+  // and รายปี every year with data until the user picks otherwise. A รายเดือน /
+  // รายปี pick widens to the whole months / years its rows cover, so
+  // "วันที่แสดงข้อมูล" always matches the table.
+  const [dayPick, setDayPick] = useState<DateRangeValue>(defaultDateRange)
+  const [monthPick, setMonthPick] = useState<DateRangeValue>(null)
+  const [yearPick, setYearPick] = useState<DateRangeValue>(null)
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('DAILY')
   const [exportOpen, setExportOpen] = useState(false)
+  const allYears = reportPeriod === 'YEARLY' && !yearPick
+  const queryRange = useMemo<DateRangeValue>(() => {
+    switch (reportPeriod) {
+      case 'MONTHLY': return toWholePeriods(monthPick ?? [dayjs().startOf('year'), dayjs()], 'month')
+      case 'YEARLY': return yearPick ? toWholePeriods(yearPick, 'year') : [dayjs(ALL_DATA_FROM), dayjs().endOf('day')]
+      default: return dayPick
+    }
+  }, [reportPeriod, dayPick, monthPick, yearPick])
+  const setPick = reportPeriod === 'MONTHLY' ? setMonthPick : reportPeriod === 'YEARLY' ? setYearPick : setDayPick
+  const startDate = queryRange?.[0]?.format('YYYY-MM-DD')
+  const endDate = queryRange?.[1]?.format('YYYY-MM-DD')
 
   const electricityQuery = useLightingElectricity(imei, {
-    start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
-    end_date: dateRange?.[1]?.format('YYYY-MM-DD'),
-    report_type: REPORT_TYPE_MAP[reportPeriod],
+    start_date: startDate,
+    end_date: endDate,
+    report_type: REPORT_TYPE[reportPeriod],
   })
-  const rows = useMemo(
-    () => electricityQuery.data?.res_data ?? [],
-    [electricityQuery.data],
+  // Monthly / yearly kWh is summed from the same range's daily rows (see
+  // energyFromDailyRows) — the same cache entry the รายวัน view reads.
+  const needsDailyEnergy = reportPeriod === 'MONTHLY' || reportPeriod === 'YEARLY'
+  const dailyQuery = useLightingElectricity(imei, {
+    start_date: startDate,
+    end_date: endDate,
+    report_type: 'daily',
+    enabled: needsDailyEnergy,
+  })
+  const rows = useMemo(() => {
+    const now = dayjs()
+    const dailyEnergy = needsDailyEnergy && dailyQuery.data
+      ? energyFromDailyRows(dailyQuery.data.res_data ?? [], reportPeriod === 'MONTHLY' ? 'MONTHLY' : 'YEARLY', now)
+      : null
+    return buildReportRows(electricityQuery.data?.res_data ?? [], reportPeriod, now, dailyEnergy)
+  }, [electricityQuery.data, dailyQuery.data, needsDailyEnergy, reportPeriod])
+  // Every year with data shows as 1 ม.ค. of the first year the rows hold → today.
+  const firstYear = allYears ? electricityQuery.data?.res_data?.[0]?.label : undefined
+  const dateRange = useMemo<DateRangeValue>(
+    () => (allYears
+      ? [firstYear ? dayjs(`${firstYear}-01-01`) : dayjs().startOf('year'), dayjs().endOf('day')]
+      : queryRange),
+    [allYears, firstYear, queryRange],
   )
   const availablePhaseKeys = useMemo(
     () => new Set(rows.flatMap((row) => row.phases.map((phase) => `p${phase.phase}`))),
@@ -171,28 +210,10 @@ const SummaryReportSection: React.FC = () => {
     () => AMP_BARS.filter((bar) => availablePhaseKeys.has(bar.dataKey)),
     [availablePhaseKeys],
   )
-  // Chart x-axis labels: HOURLY spans hundreds of columns (8 days × 24h), so
-  // the full "17 ส.ค. 2569 21:00" per column overflowed into "…เหมือนขาดหาย"
-  // (auto-thinned + clipped, 2026-08-17). Compact it to a 2-line
-  // "17 ส.ค. 69⏎21:00" for the axis and keep the FULL text in `tooltipLabel`
-  // (BarChart's tooltip header override). Other periods keep the table's
-  // format unchanged.
-  const chartLabelFields = useMemo(
-    () => (r: { label: string }): { label: string; tooltipLabel?: string } => {
-      if (reportPeriod !== 'HOURLY') return { label: formatReportLabel(r.label, reportPeriod) }
-      const d = dayjs(r.label, 'YYYY-MM-DD HH:mm')
-      return {
-        label: `${d.format('DD MMM BB')}\n${d.format('HH:mm')}`,
-        tooltipLabel: d.format('DD MMM BBBB HH:mm'),
-      }
-    },
-    [reportPeriod],
-  )
-  // Derive chart + table data from the API rows. Each row has a `phases[]`
-  // array (phase 1/2/3); we flatten to per-row {p1, p2, p3} for the charts
-  // and average the phases for the table row.
+  // Each row has a `phases[]` array (phase 1/2/3); flatten to per-row
+  // {p1, p2, p3} for the charts.
   const voltageChartData: BarChartDataPoint[] = useMemo(
-    () => rows.filter((r) => r.phases.length > 0).map((r) => {
+    () => rows.map((r) => {
       const p1 = r.phases.find((p) => p.phase === '1')
       const p2 = r.phases.find((p) => p.phase === '2')
       const p3 = r.phases.find((p) => p.phase === '3')
@@ -203,10 +224,10 @@ const SummaryReportSection: React.FC = () => {
         p3: p3?.voltage ?? 0,
       }
     }),
-    [rows, chartLabelFields],
+    [rows],
   )
   const ampChartData: BarChartDataPoint[] = useMemo(
-    () => rows.filter((r) => r.phases.length > 0).map((r) => {
+    () => rows.map((r) => {
       const p1 = r.phases.find((p) => p.phase === '1')
       const p2 = r.phases.find((p) => p.phase === '2')
       const p3 = r.phases.find((p) => p.phase === '3')
@@ -217,7 +238,7 @@ const SummaryReportSection: React.FC = () => {
         p3: p3?.amplitude ?? 0,
       }
     }),
-    [rows, chartLabelFields],
+    [rows],
   )
   // Hourly data is dense enough to need pan/zoom; the other periods rarely
   // exceed a screenful. Threshold on actual column count so a 1-day hourly
@@ -228,30 +249,27 @@ const SummaryReportSection: React.FC = () => {
   // the วันที่ cell row-spanned across them (see the date column's onCell
   // below); a 1-phase date stays exactly one row, unchanged from before.
   const tableRows: VoltageAmpTableRow[] = useMemo(
-    () => rows.filter((r) => r.phases.length > 0).flatMap((r, i) => {
-      const dateLabel = formatReportLabel(r.label, reportPeriod)
-      return r.phases.map((p, phaseIndex) => ({
-        key: `${r.label}-${i}-${p.phase}`,
-        date: dateLabel,
-        dateRowSpan: phaseIndex === 0 ? r.phases.length : 0,
-        phaseIndex,
-        phaseLabel: p.phase,
-        voltage: p.voltage,
-        amp: p.amplitude,
-        watt: p.watt,
-        powerFactor: p.power_factor,
-        kwh: (p.watt * 3600) / 3600000,
-        frequency: p.frequency,
-      }))
-    }),
-    [rows, reportPeriod],
+    () => rows.flatMap((r, i) => r.phases.map((p, phaseIndex) => ({
+      key: `${r.key}-${i}-${p.phase}`,
+      date: r.display,
+      dateRowSpan: phaseIndex === 0 ? r.phases.length : 0,
+      phaseIndex,
+      phaseLabel: p.phase,
+      voltage: p.voltage,
+      amp: p.amplitude,
+      watt: p.watt,
+      powerFactor: p.power_factor,
+      kwh: p.kwh,
+      frequency: p.frequency,
+    }))),
+    [rows],
   )
   const hasData = electricityQuery.isSuccess && tableRows.length > 0
 
   // Per-date, phase-averaged rows — kept separate from tableRows (now one row
   // per phase) purely to feed the AvgFooter/"รวมเฉลี่ย" summary numbers.
   const dailyAverages = useMemo(
-    () => rows.filter((r) => r.phases.length > 0).map((r) => {
+    () => rows.map((r) => {
       const avg = (sel: (p: typeof r.phases[number]) => number) =>
         r.phases.reduce((s, p) => s + sel(p), 0) / r.phases.length
       return {
@@ -326,7 +344,7 @@ const SummaryReportSection: React.FC = () => {
         key: 'kwh',
         align: 'center',
         width: 170,
-        render: (value: number, record) => phaseCell(value.toFixed(2), record.phaseIndex),
+        render: (value: number | null, record) => phaseCell(value == null ? '-' : value.toFixed(2), record.phaseIndex),
       },
       {
         title: 'ความถี่ (Hz)',
@@ -405,8 +423,11 @@ const SummaryReportSection: React.FC = () => {
           />
         </Col>
         <Col xs={24} lg={12}>
+          {/* Value axis scales to the data, like the Volt chart beside it —
+              ticks fixed at 0–4 A cut off every bar above 4 A (a 1-phase
+              cabinet's daily average runs ~12 A). */}
           <BarChart
-            {...AMP_CHART_PROPS}
+            {...SHARED_CHART_PROPS}
             title='แผนภูมิแสดงค่าการทำงานของตู้ควบคุมไฟ (Amp)'
             icon={<TbBolt size={18} />}
             accentColor={COLOR_AMP_ORANGE}
@@ -478,7 +499,7 @@ const SummaryReportSection: React.FC = () => {
             <ConfigProvider locale={thTH}>
               <RangePicker
                 value={dateRange}
-                onChange={(dates) => setDateRange(dates)}
+                onChange={(dates) => setPick(dates)}
                 format='D MMM BBBB'
                 size='middle'
                 allowClear={false}
@@ -550,7 +571,7 @@ const SummaryReportSection: React.FC = () => {
           rowKey='key'
           columns={columns}
           dataSource={tableRows}
-          loading={electricityQuery.isFetching}
+          loading={electricityQuery.isFetching || (needsDailyEnergy && dailyQuery.isFetching)}
           pagination={false}
           size='middle'
           className='bridge-projects-table event-log-table'

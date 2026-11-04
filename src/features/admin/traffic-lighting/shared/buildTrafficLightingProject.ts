@@ -2,6 +2,7 @@ import type { TrafficLightingProject } from '@/features/admin/traffic-lighting/o
 
 const PLACEHOLDER_PROJECT = (id: string, equipmentType: string | null): TrafficLightingProject => ({
   id,
+  rowKey: id,
   imei: undefined,
   roadCode: '-',
   projectName: '-',
@@ -28,6 +29,7 @@ export function buildTrafficLightingProject(
   if (row?.roadCode || row?.projectName || row?.installPoint) {
     return {
       id,
+      rowKey: id,
       imei: row.imei,
       roadCode: row.roadCode ?? '-',
       projectName: row.projectName ?? '-',

@@ -26,6 +26,8 @@ export const lightingKeys = {
   randomOnline: (deptId: string | number, roadId?: number | null) =>
     [...lightingKeys.overview.root(deptId, roadId), 'randomOnline'] as const,
   deviceDetails: (imei: string) => [...lightingKeys.all, 'deviceDetails', imei] as const,
+  /** GET /lighting/solutions/{solution_id} — one install point and its lamps. */
+  solution: (solutionId: number) => [...lightingKeys.all, 'solution', solutionId] as const,
   voltGraph: (imei: string, phase?: number | null) =>
     [...lightingKeys.all, 'voltGraph', imei, phase ?? null] as const,
   ampGraph: (imei: string, phase?: number | null) =>
