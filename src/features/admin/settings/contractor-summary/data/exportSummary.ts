@@ -8,7 +8,7 @@ import type {
   SystemSolution,
 } from '@/types/manage/device-status-api'
 import type { ExportColumn, ExportColumnNode } from '@/utils/export/excel'
-import type { PdfReportBlock, PdfRun, PdfTableColumn } from '@/utils/export/pdf'
+import type { PdfReportBlock, PdfRun, PdfTableColumn, PdfTableRow } from '@/utils/export/pdf'
 import type { SummarySystem } from './systems'
 import { cameraBadges, offlinePercent } from './deviceStatus'
 import {
@@ -45,7 +45,27 @@ export interface SummaryExportInput {
   solutions: ProjectDeviceSolutionsRow[]
   /** GET /manage/project — the Solutions each project is set up with. */
   projectSolutions: { id: number; solution_group?: { id: number; name: string }[] }[]
+  /** รวมผู้รับจ้าง: the projects are every contractor's (read without
+   *  contractor_id) — grouped by contractor, each naming its own. */
+  allContractors?: boolean
 }
+
+/** A project's contractor, by its full name. */
+const contractorName = (row: Pick<ProjectDeviceSummaryRow, 'contractor'>) =>
+  row.contractor?.company_name?.trim() || row.contractor?.short_name?.trim() || '-'
+
+/** รวมผู้รับจ้าง: the projects contractor by contractor, by name (Thai
+ *  order — Thai names, then Latin ones), projects without a contractor last;
+ *  each contractor's in the backend's order. */
+const byContractor = (rows: ProjectDeviceSummaryRow[]) =>
+  rows
+    .map((row, index) => ({ row, index, name: contractorName(row) }))
+    .sort((a, b) => Number(a.name === '-') - Number(b.name === '-') || a.name.localeCompare(b.name, 'th') || a.index - b.index)
+    .map(({ row }) => row)
+
+/** The input as the report lays it out — a รวมผู้รับจ้าง one contractor by contractor. */
+const reportView = (input: SummaryExportInput): SummaryExportInput =>
+  input.allContractors ? { ...input, summary: byContractor(input.summary) } : input
 
 export const summaryReportTitle = (companyName: string) => `สรุปข้อมูลผู้รับจ้าง — ${companyName || '-'}`
 export const RINGS_TITLE = 'ภาพรวมสถานะการทำงานของอุปกรณ์ทุกโครงการ'
@@ -133,12 +153,15 @@ const summaryLeadCells = (row: ProjectDeviceSummaryRow, index: number): (string 
   row.contract_no?.trim() || '-',
 ]
 
-/** สรุป on one sheet, as the sample lays it out: ลำดับ / ชื่อโครงการ /
- *  เลขที่สัญญา, then system → part → ออนไลน์ / ออฟไลน์ three header rows deep. */
-export const SUMMARY_EXCEL_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] = [
+const SUMMARY_LEAD_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] = [
   { header: 'ลำดับ', width: 8, value: (_row, index) => index + 1 },
   { header: 'ชื่อโครงการ', width: 46, wrap: true, value: (row) => row.project_name || '-' },
   { header: 'เลขที่สัญญา', width: 20, wrap: true, value: (row) => row.contract_no?.trim() || '-' },
+]
+
+const CONTRACTOR_COLUMN: ExportColumnNode<ProjectDeviceSummaryRow> = { header: 'ผู้รับจ้าง', width: 32, wrap: true, value: contractorName }
+
+const SUMMARY_COUNT_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] = [
   ...[SUMMARY_CAMERA_GROUP, ...SUMMARY_SYSTEM_GROUPS].map((group) => ({
     header: group.header,
     children: group.parts.map((part) => ({
@@ -154,6 +177,15 @@ export const SUMMARY_EXCEL_COLUMNS: ExportColumnNode<ProjectDeviceSummaryRow>[] 
   })),
 ]
 
+/** สรุป on one sheet, as the sample lays it out: ลำดับ / ชื่อโครงการ /
+ *  เลขที่สัญญา (/ ผู้รับจ้าง when it is every contractor's), then system →
+ *  part → ออนไลน์ / ออฟไลน์ three header rows deep. */
+export const summaryExcelColumns = (withContractor = false): ExportColumnNode<ProjectDeviceSummaryRow>[] => [
+  ...SUMMARY_LEAD_COLUMNS,
+  ...(withContractor ? [CONTRACTOR_COLUMN] : []),
+  ...SUMMARY_COUNT_COLUMNS,
+]
+
 /** "1 / 0": a part's online count in blue, its offline count in red. */
 const countRuns = (totals: DeviceTotals | undefined): PdfRun[] => [
   { text: String(totals?.online ?? 0), color: `#${ONLINE_COLOR}` },
@@ -167,10 +199,23 @@ const ON_OFF_HEADER: PdfRun[] = [{ text: 'On', color: `#${ONLINE_COLOR}` }, { te
  *  header rows, but one column a part — "On / Off", its cell "1 / 0" — so
  *  every system fits one A4 row and a contractor's projects are listed once,
  *  not in two tables. 3 + 21.4 + 8 + 13 × 5.2 = 100; 5.2% at 7pt holds the
- *  widest header word, "Detection", whole, and a count up to "999 / 999". */
-export const summaryPdfBlocks = (rows: ProjectDeviceSummaryRow[]): PdfReportBlock[] => {
+ *  widest header word, "Detection", whole, and a count up to "999 / 999".
+ *  `byContractor` (every contractor's projects, already in contractor order):
+ *  a band above each contractor's projects instead of a column of its own,
+ *  which the row has no room for. */
+export const summaryPdfBlocks = (rows: ProjectDeviceSummaryRow[], { byContractor = false } = {}): PdfReportBlock[] => {
   const groups = [SUMMARY_CAMERA_GROUP, ...SUMMARY_SYSTEM_GROUPS]
   const parts = groups.flatMap((group) => group.parts)
+  const countRow = (row: ProjectDeviceSummaryRow, index: number): PdfTableRow => [...summaryLeadCells(row, index), ...parts.map((part) => countRuns(part.totals(row)))]
+  const projectsOf = new Map<string, number>()
+  for (const row of rows) projectsOf.set(contractorName(row), (projectsOf.get(contractorName(row)) ?? 0) + 1)
+  const tableRows = byContractor
+    ? rows.flatMap((row, index): PdfTableRow[] => {
+        const name = contractorName(row)
+        const first = index === 0 || contractorName(rows[index - 1]) !== name
+        return [...(first ? [{ group: `ผู้รับจ้าง : ${name} (${projectsOf.get(name)} โครงการ)` }] : []), countRow(row, index)]
+      })
+    : rows.map(countRow)
   return [{
     type: 'table',
     title: PROJECTS_TITLE,
@@ -188,7 +233,7 @@ export const summaryPdfBlocks = (rows: ProjectDeviceSummaryRow[]): PdfReportBloc
         })),
       })),
     ],
-    rows: rows.map((row, index) => [...summaryLeadCells(row, index), ...parts.map((part) => countRuns(part.totals(row)))]),
+    rows: tableRows,
   }]
 }
 
@@ -353,14 +398,16 @@ export const projectSheetProjects = (input: SummaryExportInput): ProjectSheetPro
     return {
       name: row.project_name || '-',
       contractNo: row.contract_no?.trim() || '-',
+      ...(input.allContractors ? { contractor: contractorName(row) } : {}),
       solutions: PROJECT_SOLUTIONS.filter((solution) => ticked.has(solution)),
       sections,
     }
   })
 }
 
-export const exportSummaryPdf = async (input: SummaryExportInput) => {
+export const exportSummaryPdf = async (report: SummaryExportInput) => {
   const { exportReportPdf } = await import('@/utils/export/pdf')
+  const input = reportView(report)
   await exportReportPdf({
     filenameBase: filenameBase(input),
     title: summaryReportTitle(input.companyName),
@@ -379,14 +426,15 @@ export const exportSummaryPdf = async (input: SummaryExportInput) => {
         ],
         rows: input.rings.map(ringCells),
       },
-      ...summaryPdfBlocks(input.summary),
+      ...summaryPdfBlocks(input.summary, { byContractor: input.allContractors }),
       ...projectDevicesPdfBlocks(projectSheetProjects(input)),
     ],
   })
 }
 
-export const exportSummaryExcel = async (input: SummaryExportInput) => {
+export const exportSummaryExcel = async (report: SummaryExportInput) => {
   const { exportExcelSheets, excelSheet } = await import('@/utils/export/excel')
+  const input = reportView(report)
   const title = summaryReportTitle(input.companyName)
   const note = warrantyNote(input)
   exportExcelSheets({
@@ -407,7 +455,7 @@ export const exportSummaryExcel = async (input: SummaryExportInput) => {
         sheetName: 'สรุป',
         title: `${title} · ${PROJECTS_TITLE}`,
         filterNote: note,
-        columns: SUMMARY_EXCEL_COLUMNS,
+        columns: summaryExcelColumns(input.allContractors),
         rows: input.summary,
       }),
       projectDevicesSheet({ title: `${title} · ${PROJECT_DEVICES_TITLE}`, filterNote: note, projects: projectSheetProjects(input) }),

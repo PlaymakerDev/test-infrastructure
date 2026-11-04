@@ -24,25 +24,39 @@ interface Props {
    *  loading state; the modal closes itself after a successful export. */
   onExportPdf?: (scope?: ExportScope) => void | Promise<void>
   onExportExcel?: (scope?: ExportScope) => void | Promise<void>
+  /** A third choice beside ทั้งหมด / หน้าปัจจุบัน, with handlers of its own —
+   *  picked, its buttons replace the page's (e.g. สรุปข้อมูลผู้รับจ้าง's
+   *  รวมผู้รับจ้าง). `note`: shown under the count while it is picked — what it
+   *  exports when that differs from the page. Needs `scope`. */
+  extraScope?: {
+    label: string
+    count?: number
+    note?: string
+    onExportPdf?: () => void | Promise<void>
+    onExportExcel?: () => void | Promise<void>
+  }
   /** Optional caller-supplied controls (e.g. a date-range picker) rendered
    *  between the heading and the count line. The caller owns the state; keep
    *  contents light-themed to match the white dialog. */
   extra?: React.ReactNode
 }
 
+const withCount = (label: string, count?: number) => (count != null ? `${label} (${count.toLocaleString()})` : label)
+
 /** Shared "นำออกเอกสาร" dialog — same layout as the drr-cm-fe original
  *  (white card, red PDF / green Excel buttons). Uses the app's `light-modal`
  *  override so AntD widgets inside stay dark-on-light. */
-const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExportPdf, onExportExcel, extra }) => {
+const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExportPdf, onExportExcel, extraScope, extra }) => {
   const [busy, setBusy] = useState<'pdf' | 'excel' | null>(null)
   // Scope toggle state — default ทั้งหมด (the common report need). Only
   // rendered when the page passes `scope`.
-  const [scopeValue, setScopeValue] = useState<ExportScope>('all')
+  const [scopeValue, setScopeValue] = useState<ExportScope | 'extra'>('all')
+  const isExtra = scope && extraScope && scopeValue === 'extra'
 
-  const run = (kind: 'pdf' | 'excel', fn: (scope?: ExportScope) => void | Promise<void>) => async () => {
+  const run = (kind: 'pdf' | 'excel', fn: () => void | Promise<void>) => async () => {
     setBusy(kind)
     try {
-      await fn(scope ? scopeValue : undefined)
+      await fn()
       onClose()
     } catch (e) {
       // Keep the modal open so the user can retry; surface the reason in dev.
@@ -51,9 +65,14 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
       setBusy(null)
     }
   }
+  // The page's handlers get the chosen scope; the extra scope runs its own.
+  const forScope = (fn?: (scope?: ExportScope) => void | Promise<void>) =>
+    fn && (() => fn(scope ? (scopeValue === 'page' ? 'page' : 'all') : undefined))
+  const handlePdf = isExtra ? extraScope.onExportPdf : forScope(onExportPdf)
+  const handleExcel = isExtra ? extraScope.onExportExcel : forScope(onExportExcel)
 
   const effectiveCount = scope
-    ? (scopeValue === 'all' ? scope.totalCount : scope.pageCount)
+    ? (isExtra ? extraScope.count : scopeValue === 'all' ? scope.totalCount : scope.pageCount)
     : count
 
   return (
@@ -83,34 +102,35 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
           {extra && <div style={{ marginBottom: 12 }}>{extra}</div>}
           {scope && (
             <div style={{ marginBottom: 10 }}>
-              <Segmented<ExportScope>
+              <Segmented<ExportScope | 'extra'>
                 size='small'
                 value={scopeValue}
                 onChange={(v) => setScopeValue(v)}
                 disabled={busy !== null}
                 options={[
-                  {
-                    label: scope.totalCount != null ? `ทั้งหมด (${scope.totalCount.toLocaleString()})` : 'ทั้งหมด',
-                    value: 'all',
-                  },
-                  { label: `หน้าปัจจุบัน (${scope.pageCount.toLocaleString()})`, value: 'page' },
+                  { label: withCount('ทั้งหมด', scope.totalCount), value: 'all' },
+                  { label: withCount('หน้าปัจจุบัน', scope.pageCount), value: 'page' },
+                  ...(extraScope ? [{ label: withCount(extraScope.label, extraScope.count), value: 'extra' as const }] : []),
                 ]}
               />
             </div>
           )}
           {effectiveCount != null && (
-            <p style={{ color: '#666', fontSize: "var(--fs-12)", marginBottom: 20 }}>
+            <p style={{ color: '#666', fontSize: "var(--fs-12)", marginBottom: isExtra && extraScope.note ? 4 : 20 }}>
               จำนวนข้อมูล: {effectiveCount.toLocaleString()} รายการ
             </p>
           )}
+          {isExtra && extraScope.note && (
+            <p style={{ color: '#666', fontSize: "var(--fs-12)", marginBottom: 20 }}>{extraScope.note}</p>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {onExportPdf && (
+            {handlePdf && (
               <Button
                 type='primary'
                 size='large'
                 icon={<FaFilePdf />}
-                onClick={run('pdf', onExportPdf)}
+                onClick={run('pdf', handlePdf)}
                 loading={busy === 'pdf'}
                 disabled={busy !== null && busy !== 'pdf'}
                 block
@@ -119,12 +139,12 @@ const ExportFileModal: React.FC<Props> = ({ open, onClose, count, scope, onExpor
                 Export as PDF
               </Button>
             )}
-            {onExportExcel && (
+            {handleExcel && (
               <Button
                 type='primary'
                 size='large'
                 icon={<FaFileExcel />}
-                onClick={run('excel', onExportExcel)}
+                onClick={run('excel', handleExcel)}
                 loading={busy === 'excel'}
                 disabled={busy !== null && busy !== 'excel'}
                 block

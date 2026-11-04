@@ -7,6 +7,15 @@
  *  (searching by project name still works while hidden). */
 export const SHOW_PROJECT_NAME = false
 
+/** สรุปข้อมูลผู้รับจ้าง → นำออกเอกสาร: a third scope beside ทั้งหมด /
+ *  หน้าปัจจุบัน, "รวมผู้รับจ้าง" — the same report over every contractor's
+ *  projects the signed-in account can see (the same endpoints without
+ *  contractor_id), their expired-warranty ones only (is_warranty=false),
+ *  whatever the page's filter, less the placeholder projects with no warranty
+ *  end date. Added for a download the user needs now
+ *  (2026-10-29): false hides the tab, true brings it back. */
+export const SHOW_ALL_CONTRACTORS_EXPORT = true
+
 /** Drop the ชื่อโครงการ column from an export column config when the flag is
  *  off, rescaling the remaining PDF `widthPct` so they still sum to ~100
  *  (Excel char widths need no rescale). Generic over the per-page column

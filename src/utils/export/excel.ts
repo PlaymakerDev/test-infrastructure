@@ -290,7 +290,8 @@ export interface ExcelLayoutRow {
   /** Outline (group) level. A run of rows deeper than the row above it
    *  collapses under that row, its +/− beside it, as Excel's Group does. */
   level?: number
-  /** Points; absent = Excel's own height. */
+  /** Points; absent = Excel's own height — or, when a merged cell's wrapped
+   *  text needs more than one line, enough for it (wrappedRowHeight). */
   height?: number
 }
 
@@ -342,6 +343,87 @@ export interface RichTextCell {
   style: ExcelCellStyle
 }
 
+// ── Wrapped text in merged cells ────────────────────────────────────────────
+// Excel grows a row for wrapped text in a plain cell, never in a merged one —
+// that text is cut at the row's one line. So a layout row whose merged cell
+// wraps gets its height from the estimate below.
+
+const THAI_NARROW = new Set('เะรใาำงวโไๆฯๅ')
+const THAI_WIDE = new Set('ฌญฑฒณ')
+const NARROW = new Set(" .,:;'!()[]{}-ijlIJ")
+const SLIM = new Set('frstz/')
+const WIDE = new Set('MWmw@%&')
+
+const latinPx = (ch: string) =>
+  NARROW.has(ch) ? 4.3 : SLIM.has(ch) ? 5.7 : WIDE.has(ch) ? 12.3 : ch >= '0' && ch <= '9' ? 7.55 : ch >= 'A' && ch <= 'Z' ? 8.6 : 7.5
+
+/** About how wide `text` draws in the workbook font (Calibri 11, Thai in
+ *  Windows' fallback), in pixels at `size` points — by character class, erring
+ *  wide. Calibrated against Chromium on Windows (2026-10-29) over the 21k
+ *  strings of the contractor report: none short by more than 0.5%, 4% wide
+ *  on average. */
+export function excelTextPx(text: string, size = 11): number {
+  let px = 0
+  for (const ch of text) {
+    const code = ch.charCodeAt(0)
+    // Thai vowel and tone marks sit on the consonant before them.
+    if (code === 0x0e31 || (code >= 0x0e34 && code <= 0x0e3a) || (code >= 0x0e47 && code <= 0x0e4e)) continue
+    px += code >= 0x0e00 && code <= 0x0e7f ? (THAI_NARROW.has(ch) ? 7.3 : THAI_WIDE.has(ch) ? 12.8 : 9.5) : latinPx(ch)
+  }
+  return (px * size) / 11
+}
+
+/** A column's width in pixels as Excel draws it: SheetJS writes `wch` as
+ *  (wch × 6 + 5) / 6 characters, which Calibri 11 draws at 7px each. */
+const columnPx = (wch: number) => Math.trunc(7 * (wch + 5 / 6) + 0.49)
+
+/** The room for text in a cell spanning `widths`, less its padding. */
+const cellRoomPx = (widths: number[]) => widths.reduce((sum, wch) => sum + columnPx(wch), 0) - 6
+
+/** How many lines `text` wraps to in `roomPx`: word by word at the spaces, a
+ *  word too long for a line running on over several; `\n` starts a line. */
+export function excelWrappedLines(text: string, roomPx: number, size = 11): number {
+  if (roomPx <= 0) return 1
+  const space = excelTextPx(' ', size)
+  return text.split('\n').reduce((total, paragraph) => {
+    let lines = 1
+    let used = 0
+    for (const word of paragraph.split(' ')) {
+      const width = excelTextPx(word, size)
+      const need = used === 0 ? width : used + space + width
+      if (need <= roomPx) {
+        used = need
+        continue
+      }
+      if (used > 0) lines += 1
+      const runOn = Math.max(0, Math.ceil(width / roomPx) - 1)
+      lines += runOn
+      used = width - runOn * roomPx
+    }
+    return total + lines
+  }, 0)
+}
+
+/** A line of 11pt text, in points — Excel's own row height for it. */
+const LINE_PT = 15
+
+/** The height a row needs when one of its merged cells wraps onto more lines
+ *  than one — tall enough for its tallest wrapped cell; none otherwise (Excel
+ *  sizes it). */
+const wrappedRowHeight = (row: ExcelLayoutRow, widths: number[]): number | undefined => {
+  let mergedWraps = false
+  let tallest = 0
+  for (const cell of row.cells) {
+    if (!cell.style?.wrap) continue
+    const span = cell.span ?? 1
+    const size = cell.style.size ?? 11
+    const lines = excelWrappedLines(String(cell.value), cellRoomPx(widths.slice(cell.col, cell.col + span)), size)
+    if (span > 1 && lines > 1) mergedWraps = true
+    tallest = Math.max(tallest, (lines * LINE_PT * size) / 11)
+  }
+  return mergedWraps ? Math.ceil(tallest) + 1 : undefined
+}
+
 function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSheet): { ws: XLSX.WorkSheet; richText: RichTextCell[] } {
   const colCount = widths.length
   const aoa: SheetRows = []
@@ -364,7 +446,8 @@ function buildLayoutWorksheet({ title, filterNote, widths, rows }: ExcelLayoutSh
       if (span > 1) merges.push({ s: { r, c: cell.col }, e: { r, c: cell.col + span - 1 } })
     }
     aoa.push(line)
-    if (row.level || row.height) rowInfo[r] = { ...(row.height ? { hpt: row.height } : {}), ...(row.level ? { level: row.level } : {}) }
+    const height = row.height ?? wrappedRowHeight(row, widths)
+    if (row.level || height) rowInfo[r] = { ...(height ? { hpt: height } : {}), ...(row.level ? { level: row.level } : {}) }
   }
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = widths.map((wch) => ({ wch }))
