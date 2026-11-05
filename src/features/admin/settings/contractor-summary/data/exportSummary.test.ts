@@ -399,3 +399,101 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     expect(devices.rows).toEqual([{ group: 'ไม่มีโครงการ' }])
   })
 })
+
+describe('สรุปข้อมูลผู้รับจ้าง export — รวมผู้รับจ้าง, every contractor’s projects (user 2026-10-29)', () => {
+  const by = (company_name: string | null, short_name: string | null = null) => ({ contractor: { id: `u-${company_name ?? short_name}`, company_name, short_name } })
+  // In the backend's order, the contractors interleaved; 304's has only its
+  // short name, 305 none at all.
+  const everyone: SummaryExportInput = {
+    ...input,
+    companyName: 'รวมผู้รับจ้าง',
+    shortName: 'รวมผู้รับจ้าง',
+    allContractors: true,
+    summary: [
+      summaryRow(305, 'ข-5', by(null)),
+      summaryRow(301, 'ข-1', { ...by('บริษัท เอ็ม จำกัด'), cctv: t(1, 2) }),
+      summaryRow(304, 'ข-4', by(null, 'ftd')),
+      summaryRow(302, 'ข-2', { ...by(' บริษัท บี จำกัด '), cctv: t(3, 4) }),
+      summaryRow(303, 'ข-3', { ...by('บริษัท เอ็ม จำกัด'), cctv: t(5, 6) }),
+    ],
+    solutions: [solutionsRow(303, { counting: [{ solution_id: 2, solution_name: 'สห.4014 กม.2+800', cameras: [c3] }] })],
+    projectSolutions: [],
+  }
+
+  it('PDF: สรุป contractor by contractor — Thai names, Latin ones, none last — a band naming each with its project count', async () => {
+    await exportSummaryPdf(everyone)
+    const args = calls.pdf[0] as { title: string; blocks: BandedTable[] }
+    expect(args.title).toBe('สรุปข้อมูลผู้รับจ้าง — รวมผู้รับจ้าง')
+    const summary = args.blocks[1]
+    // No column of its own — the row has no room for one.
+    expect(summary.columns.slice(0, 4).map((c) => c.header)).toEqual(['ลำดับ', 'ชื่อโครงการ', 'เลขที่สัญญา', 'CCTV (กล้อง)'])
+    const text = (row: BandedTable['rows'][number]) => (Array.isArray(row) ? row.slice(0, 3) : 'group' in row ? row.group : row)
+    expect(summary.rows.map(text)).toEqual([
+      'ผู้รับจ้าง : บริษัท บี จำกัด (1 โครงการ)',
+      [1, 'โครงการ 302', 'ข-2'],
+      // A contractor's projects in the backend's order.
+      'ผู้รับจ้าง : บริษัท เอ็ม จำกัด (2 โครงการ)',
+      [2, 'โครงการ 301', 'ข-1'],
+      [3, 'โครงการ 303', 'ข-3'],
+      'ผู้รับจ้าง : ftd (1 โครงการ)',
+      [4, 'โครงการ 304', 'ข-4'],
+      'ผู้รับจ้าง : - (1 โครงการ)',
+      [5, 'โครงการ 305', 'ข-5'],
+    ])
+    // A plain band; each row keeps its own counts.
+    expect(summary.rows[0]).toEqual({ group: 'ผู้รับจ้าง : บริษัท บี จำกัด (1 โครงการ)' })
+    expect((summary.rows[3] as unknown[])[3]).toEqual([{ text: '1', color: '#4E95D9' }, { text: ' / ' }, { text: '2', color: '#FF0000' }])
+  })
+
+  it('PDF: the devices project by project in the same order, each band naming its contractor', async () => {
+    await exportSummaryPdf(everyone)
+    const devices = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[2]
+    const bands = devices.rows.flatMap((row) => (!Array.isArray(row) && 'group' in row && !row.tone ? [row.group] : []))
+    expect(bands).toEqual([
+      'โครงการที่ 1 : โครงการ 302\nเลขที่สัญญา : ข-2 · ผู้รับจ้าง : บริษัท บี จำกัด · Solution : -',
+      'โครงการที่ 2 : โครงการ 301\nเลขที่สัญญา : ข-1 · ผู้รับจ้าง : บริษัท เอ็ม จำกัด · Solution : -',
+      'โครงการที่ 3 : โครงการ 303\nเลขที่สัญญา : ข-3 · ผู้รับจ้าง : บริษัท เอ็ม จำกัด · Solution : Traffic Volume',
+      'โครงการที่ 4 : โครงการ 304\nเลขที่สัญญา : ข-4 · ผู้รับจ้าง : ftd · Solution : -',
+      'โครงการที่ 5 : โครงการ 305\nเลขที่สัญญา : ข-5 · ผู้รับจ้าง : - · Solution : -',
+    ])
+  })
+
+  it('Excel: สรุป with a ผู้รับจ้าง column after เลขที่สัญญา; โครงการ naming each project’s', async () => {
+    await exportSummaryExcel(everyone)
+    const { filenameBase, sheets } = calls.excel[0] as { filenameBase: string; sheets: Sheet[] }
+    expect(filenameBase).toBe('สรุปข้อมูลผู้รับจ้าง_รวมผู้รับจ้าง')
+    const summary = sheets.find((s) => s.sheetName === 'สรุป')!
+    expect(summary.title).toBe('สรุปข้อมูลผู้รับจ้าง — รวมผู้รับจ้าง · ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ')
+    expect(summary.headers).toHaveLength(30)
+    expect(summary.headers.slice(2, 5)).toEqual([
+      { header: 'เลขที่สัญญา', width: 20, wrap: true },
+      { header: 'ผู้รับจ้าง', width: 32, wrap: true },
+      { header: 'ออนไลน์', width: 9, align: 'center', headerColor: '4E95D9' },
+    ])
+    // The column spans all three header rows; the counts move one right.
+    const cell = (header: string, r: number) => summary.headerGrid!.cells.find((c) => c.header === header && c.r === r)
+    expect(cell('ผู้รับจ้าง', 0)).toMatchObject({ c: 3, rowSpan: 3, colSpan: 1 })
+    expect(cell('CCTV (กล้อง)', 0)).toMatchObject({ c: 4, colSpan: 8 })
+    expect(summary.cells.map((row) => row.slice(0, 5))).toEqual([
+      [1, 'โครงการ 302', 'ข-2', 'บริษัท บี จำกัด', 3],
+      [2, 'โครงการ 301', 'ข-1', 'บริษัท เอ็ม จำกัด', 1],
+      [3, 'โครงการ 303', 'ข-3', 'บริษัท เอ็ม จำกัด', 5],
+      [4, 'โครงการ 304', 'ข-4', 'ftd', 0],
+      [5, 'โครงการ 305', 'ข-5', '-', 0],
+    ])
+
+    const projects = (sheets[2] as unknown as ExcelLayoutSheet).rows
+    const contractorRows = projects.filter((row) => row.cells[0]?.value === 'ผู้รับจ้าง :').map((row) => row.cells[1].value)
+    expect(contractorRows).toEqual(['บริษัท บี จำกัด', 'บริษัท เอ็ม จำกัด', 'บริษัท เอ็ม จำกัด', 'ftd', '-'])
+  })
+
+  it('one contractor’s report is as it was: no ผู้รับจ้าง anywhere, the backend’s order', async () => {
+    expect(projectSheetProjects(input).every((project) => !('contractor' in project))).toBe(true)
+    await exportSummaryExcel(input)
+    const { sheets } = calls.excel[0] as { sheets: Sheet[] }
+    expect(sheets[1].headers.some((h) => h.header === 'ผู้รับจ้าง')).toBe(false)
+    await exportSummaryPdf(input)
+    const summary = (calls.pdf[0] as { blocks: BandedTable[] }).blocks[1]
+    expect(summary.rows.every((row) => Array.isArray(row))).toBe(true)
+  })
+})

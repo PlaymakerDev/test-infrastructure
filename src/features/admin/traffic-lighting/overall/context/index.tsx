@@ -177,7 +177,17 @@ export const OverallProvider = ({ children }: OverallProviderProps) => {
 
   const phaseMetrics = useMemo(() => {
     if (!deviceLoaded) return PHASE_METRICS.map((m) => ({ ...m, value: '-' }))
-    const e = device?.electricity?.[0]
+    // A 3-phase cabinet reports one reading per phase — show their average,
+    // as the detail page's ระบบไฟฟ้า card does (user 2026-10-27); it used to
+    // show phase 1 alone. A single-phase cabinet shows its one reading.
+    const items = device?.electricity ?? []
+    const mean = (pick: (x: (typeof items)[number]) => number | null | undefined) => {
+      const values = items.map(pick).filter((n): n is number => n != null && isFinite(n))
+      return values.length ? values.reduce((sum, n) => sum + n, 0) / values.length : undefined
+    }
+    const e = items.length > 1
+      ? { voltage: mean((x) => x.voltage), amplitude: mean((x) => x.amplitude), watt: mean((x) => x.watt), frequency: mean((x) => x.frequency) }
+      : items[0]
     // API values can come back as long floats (e.g. 1209.2671710000002) that
     // overflow the fixed-width metric chip. Precision scales DOWN with
     // magnitude so every value stays ≤5 glyphs and fits one chip: this screen

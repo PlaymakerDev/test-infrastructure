@@ -12,11 +12,11 @@ import type { IconType } from 'react-icons'
 import IconTracking from '@/components/icon/IconTracking'
 import IconLPR from '@/components/icon/IconLPR'
 import { SYSTEM_BRIGHT } from '@/features/admin/dashboard/data/systems'
-import { useDashboardPosition } from '@/hooks/queries/dashboard'
+import { useDashboardPosition, useDashboardScope } from '@/hooks/queries/dashboard'
 import { useLPRTotals } from '@/hooks/queries/lpr'
 import { useDeptId } from '@/hooks/useDeptId'
 import { useRoadId } from '@/hooks/useRoadId'
-import { centralScope, scopeQuerySuffix } from '@/services/routes/scopeParam'
+import { scopeQuerySuffix } from '@/services/routes/scopeParam'
 
 // ── Tile configuration ────────────────────────────────────────────────────────
 // One row per KPI: which solution_type_name to count in the /position payload,
@@ -169,8 +169,10 @@ const RatioChart: React.FC<Props> = ({ size = 110, cols }) => {
   // ทั้งหมด card uses, so the two always agree. Scoped server-side (scope=all
   // aggregates a สำนัก's ขทช.; `/lpr/points` + an FE `department_id ===` match
   // missed every point owned by a ขทช. under a สำนัก). `null` = loading.
+  // The dashboard's scope, `group` over กทม. included (see useDashboardScope).
+  const scope = useDashboardScope()
   const { data: lprTotals, isError: lprTotalsError } = useLPRTotals(deptId ?? undefined, {
-    ...centralScope(deptId ?? 0),
+    ...(scope === 'own' ? {} : { scope }),
     ...(roadId ? { road_id: Number(roadId) } : {}),
   })
   const lprCount = lprTotals ? lprTotals.solution.total : lprTotalsError ? 0 : null

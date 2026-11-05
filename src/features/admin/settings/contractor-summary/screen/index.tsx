@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { App, Empty } from 'antd'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
+import { SHOW_ALL_CONTRACTORS_EXPORT } from '@/constants/featureFlags'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
 import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
 import {
@@ -17,8 +18,10 @@ import DeviceStatusRings from '../components/DeviceStatusRings'
 import ProjectLiveModal from '../components/ProjectLiveModal'
 import ProjectStatusTable from '../components/ProjectStatusTable'
 import SummaryHeader from '../components/SummaryHeader'
+import { allContractorsReport } from '../data/allContractors'
 import { WARRANTY_FILTER_OPTIONS, warrantyParam, type WarrantyFilter } from '../data/deviceStatus'
 import { exportSummaryExcel, exportSummaryPdf, summaryForProjects, type SummaryExportInput } from '../data/exportSummary'
+import { useAllContractorsProjects } from '../hooks/useAllContractorsProjects'
 import { useContractorDeviceRings } from '../hooks/useContractorDeviceRings'
 
 interface Props {
@@ -42,6 +45,15 @@ const fetchAllPages = async <Row, Query extends { page?: number; limit?: number 
     if (pageRows.length < EXPORT_PAGE_LIMIT || page >= (data.meta_data?.total_pages ?? page)) return rows
   }
 }
+
+const warrantyLabelOf = (filter: WarrantyFilter) =>
+  WARRANTY_FILTER_OPTIONS.find((option) => option.value === filter)?.label ?? 'ทั้งหมด'
+
+/** The รวมผู้รับจ้าง export's name, in its title and file name. */
+const ALL_CONTRACTORS = 'รวมผู้รับจ้าง'
+/** รวมผู้รับจ้าง is always the expired-warranty projects (is_warranty=false),
+ *  whatever the page's own filter (user 2026-10-29). */
+const ALL_CONTRACTORS_WARRANTY: WarrantyFilter = 'out'
 
 /** สรุปข้อมูลผู้รับจ้าง — reached from the ผู้รับจ้าง tab (user 2026-09-30):
  *  the contractor's device status across every project (one ring per system),
@@ -70,6 +82,11 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const [liveProject, setLiveProject] = useState<ProjectDeviceStatusRow | null>(null)
   const [isInfoOpen, setInfoOpen] = useState(false)
   const [isExportOpen, setExportOpen] = useState(false)
+  // รวมผู้รับจ้าง's projects, for its count — read once the dialog opens.
+  const allContractorsProjects = useAllContractorsProjects(
+    warrantyParam(ALL_CONTRACTORS_WARRANTY),
+    SHOW_ALL_CONTRACTORS_EXPORT && isExportOpen,
+  )
 
   const onWarrantyChange = useCallback((value: WarrantyFilter) => {
     setWarranty(value)
@@ -87,7 +104,6 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
 
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
     if (!contractor) return null
-    const warrantyLabel = WARRANTY_FILTER_OPTIONS.find((option) => option.value === warranty)?.label ?? 'ทั้งหมด'
     const query = { contractor_id: id, is_warranty: warrantyParam(warranty) }
     const [summary, solutions, projectSolutions] = await Promise.all([
       // All of it either way: the summary can list a project the page's table
@@ -101,7 +117,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     return {
       companyName: contractor.company_name,
       shortName: contractor.short_name,
-      warrantyLabel,
+      warrantyLabel: warrantyLabelOf(warranty),
       rings,
       summary: scope === 'page' ? summaryForProjects(summary, rows) : summary,
       solutions,
@@ -109,10 +125,40 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     }
   }
 
+  /** รวมผู้รับจ้าง (user 2026-10-29): the same report over every contractor's
+   *  projects the account can see — the same endpoints, without contractor_id —
+   *  their expired-warranty ones only (ALL_CONTRACTORS_WARRANTY), less the
+   *  projects with no warranty end date; its rings counted from the rest. */
+  const allContractorsInput = async (): Promise<SummaryExportInput> => {
+    const query = { is_warranty: warrantyParam(ALL_CONTRACTORS_WARRANTY) }
+    const [summary, solutions, projectSolutions] = await Promise.all([
+      fetchAllPages(getProjectDeviceSummaryListAPI, query),
+      fetchAllPages(getProjectDeviceSolutionsListAPI, query),
+      fetchAllPages(getProjectListAPI, {}),
+    ])
+    return {
+      companyName: ALL_CONTRACTORS,
+      shortName: ALL_CONTRACTORS,
+      warrantyLabel: warrantyLabelOf(ALL_CONTRACTORS_WARRANTY),
+      ...allContractorsReport(summary, solutions),
+      projectSolutions,
+      allContractors: true,
+    }
+  }
+
   const runExport = (exporter: (input: SummaryExportInput) => Promise<void>) => async (scope?: 'all' | 'page') => {
     try {
       const input = await exportInput(scope)
       if (input) await exporter(input)
+    } catch (error) {
+      message.error('นำออกเอกสารไม่สำเร็จ กรุณาลองอีกครั้ง')
+      throw error
+    }
+  }
+
+  const runAllContractors = (exporter: (input: SummaryExportInput) => Promise<void>) => async () => {
+    try {
+      await exporter(await allContractorsInput())
     } catch (error) {
       message.error('นำออกเอกสารไม่สำเร็จ กรุณาลองอีกครั้ง')
       throw error
@@ -159,13 +205,26 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
       <ContactInfoDialog open={isInfoOpen} data={contractor} onClose={() => setInfoOpen(false)} />
       {/* ทั้งหมด = every project under the current filter, fetched at export
           time; หน้าปัจจุบัน = the page on screen. The rings (under the same
-          filter) go in either way. */}
+          filter) go in either way. รวมผู้รับจ้าง (SHOW_ALL_CONTRACTORS_EXPORT)
+          = every contractor's expired-warranty projects, whatever the filter,
+          less those with no warranty end date. */}
       <ExportFileModal
         open={isExportOpen}
         onClose={() => setExportOpen(false)}
         scope={{ totalCount: total, pageCount: rows.length }}
         onExportPdf={runExport(exportSummaryPdf)}
         onExportExcel={runExport(exportSummaryExcel)}
+        extraScope={
+          SHOW_ALL_CONTRACTORS_EXPORT
+            ? {
+                label: ALL_CONTRACTORS,
+                count: allContractorsProjects.data?.length,
+                note: `ผู้รับจ้างทุกราย · เฉพาะโครงการ${warrantyLabelOf(ALL_CONTRACTORS_WARRANTY)} ไม่รวมโครงการที่ไม่มีวันค้ำประกัน`,
+                onExportPdf: runAllContractors(exportSummaryPdf),
+                onExportExcel: runAllContractors(exportSummaryExcel),
+              }
+            : undefined
+        }
       />
       <ProjectLiveModal project={liveProject} onClose={() => setLiveProject(null)} />
       <ProjectInfoModal />

@@ -1,12 +1,11 @@
 // Query key factory for Dashboard hooks.
-import type { DashboardBucketType } from '@/types/dashboard/api'
+import type { DashboardBucketType, DashboardScope } from '@/types/dashboard/api'
 
-/** Scope segment for uptime/position keys — responses differ per URL scope
- *  since BE shipped `scope=all`. Passed EXPLICITLY by the hooks (sourced from
- *  the reactive `useScopeAll()`), never read from `window` here: render-time
- *  window reads went stale during App Router transitions and pinned the map
- *  to the previous scope's cache entry. */
-export type DashboardScope = 'all' | 'own'
+// Scope segment for uptime/position keys — responses differ per scope since
+// BE shipped `scope=all`. Passed EXPLICITLY by the hooks (sourced from the
+// reactive `useDashboardScope()`), never read from `window` here: render-time
+// window reads went stale during App Router transitions and pinned the map to
+// the previous scope's cache entry.
 
 /** Appends `'road', roadId` only when a สายทาง scope is active, so entries
  *  cached dept-wide (before road scope existed / after it's cleared) keep their
@@ -51,9 +50,10 @@ export const dashboardKeys = {
     deptId: string | number,
     type: DashboardBucketType,
     limit: number,
+    scope: DashboardScope,
     roadId?: string | number | null,
   ) =>
-    withRoad([...dashboardKeys.all, 'traffic', deptId, type, limit], roadId),
+    withRoad([...dashboardKeys.all, 'traffic', deptId, type, limit, scope], roadId),
 
   counting: (
     deptId: string | number,

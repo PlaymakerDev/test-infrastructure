@@ -246,3 +246,79 @@ export interface PaginatedLogs4gCentral {
   meta_data: PaginationMeta
 }
 
+// ── GET /lighting/solutions/{solution_id} — one install point ────────────────
+// BE answers the payload bare (no res_data). A lamp point is a LoRa gateway
+// with no IMEI: `iot` is null and its lamps come in `devices`; a cabinet is
+// the other way round.
+
+/** One lamp (a tbl_lighting_device row). */
+export interface LightingSolutionDevice {
+  id: number
+  /** The lamp node's own id — a LoRa DevEUI such as "24E124746F069297", or
+   *  "xxx01" on a wired run — not an IMEI. */
+  device_id: string
+  pole_number: number | null
+  /** "SEM" / "SEM-Wired" */
+  device_type: string
+  /** "CT Sensor" on every lamp so far. */
+  device_desc: string
+  /** When the lamp last reported — "dd/mm/yyyy HH:mm:ss", Buddhist year;
+   *  `''` when never. */
+  last_connectd: string
+  /** Empty on every lamp so far. */
+  last_update: string
+}
+
+/** The LoRa gateway's own tally of its lamps. Counts are the last the gateway
+ *  sent — they stay put while it is silent. */
+export interface LightingSolutionLora {
+  online_count: number
+  offline_count: number
+  /** The gateway reported in the last 30 minutes. */
+  is_online: boolean
+}
+
+export interface LightingSolutionIot {
+  id: number
+  imei: string
+  phase_type: string
+  sem_type: string
+  diagram_type: string
+  connection_type: string
+  send_frequency: string
+  last_update: string
+  is_online: boolean
+  has_broken_wire: boolean
+}
+
+export interface LightingSolutionDetail {
+  project: {
+    id: number
+    project_name: string
+    contract_no: string | null
+    project_no: string | null
+    budget_year: number
+    warranty_start_date: string | null
+    warranty_end_date: string | null
+    is_warranty: boolean
+    department_id: number
+  }
+  road: { id: number; road_code: string; road_name: string }
+  solution: {
+    id: number
+    solution_name: string
+    sta: string | null
+    ip_address: string | null
+    remarks: string
+  }
+  lighting: {
+    id: number
+    lighting_type: number
+    proxy_url: string
+    iot: LightingSolutionIot | null
+    lora: LightingSolutionLora | null
+    /** null when the point has no lamp rows. */
+    devices: LightingSolutionDevice[] | null
+  }
+}
+

@@ -5,6 +5,12 @@
 // (cctv/vms/lighting/analytic/counting/traffic + /manage/solution position).
 // Mirrored from drr-cm-fe/types/dashboard/api.ts, narrowed to fields we render.
 
+/** The `scope` a dashboard request carries. `own` sends none (the one dept),
+ *  `all` expands the dept to its bureau group (dept 0: the whole country), and
+ *  `group` is `all` except that dept 0 means ทช.ส่วนกลาง's own
+ *  department_group — ทช.ส่วนกลาง + the 5 บทช. (BE 2026-11-02). */
+export type DashboardScope = 'all' | 'own' | 'group'
+
 // ── Uptime: /{feature}/departments/{deptId}/.../uptime-statistics ─────────────
 // Same shape across cctv / vms / lighting (key name differs by feature).
 

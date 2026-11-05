@@ -53,7 +53,12 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
   const { data } = useTrafficSummary(project.id, { date: endDate })
 
   const days = useMemo<BarChartDataPoint[]>(() => {
-    return (data ?? []).map((d) => ({
+    // Oldest → newest, left to right. The API lists the window newest-first,
+    // which ran the x-axis backwards in time (26/10 … 20/10); every other
+    // time chart in the app — incl. this page's 24h charts — reads forward.
+    // Daily cards below keep the API's newest-first order (legacy FE did too).
+    const chronological = [...(data ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+    return chronological.map((d) => ({
       label: formatDayLabel(d.date, d.day),
       // Tooltip header shows the full Thai BE date (e.g. "29 มิ.ย. 2569"); the
       // x-axis keeps the short "จ.\n29/06" label.
@@ -81,7 +86,10 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
       pcu: sum.pcu / n,
       efficiency: sum.eff / n,
       et: sum.et / n,
-      timeSaved: sum.time, // total across days, not avg
+      // Total across days, not avg. `total_time_saved` is in MINUTES (the
+      // per-phase table sums to it exactly and labels it "(m)"; the legacy
+      // FE divided by 60 for this same card) — the footer reads hours.
+      timeSavedHours: sum.time / 60,
     }
   }, [data])
 
@@ -125,8 +133,11 @@ const Perf7DayChartsSummaryTraffic: React.FC<Props> = ({ endDate }) => {
           title='เวลาที่ระบบช่วยประหยัด'
           accentColor={COLOR_TIME_SAVED}
           data={days}
-          bars={[{ dataKey: 'timeSaved', color: COLOR_TIME_SAVED, label: 'ชั่วโมง' }]}
-          footer={<AvgFooter value={`${fmtNumber(avgs.timeSaved, 1)}h`} label='Total Time Saved' color={COLOR_TIME_SAVED} />}
+          // Bars stay in minutes (the API unit); the footer converts the total
+          // to hours. Both used to claim hours — overstating the total 60×.
+          bars={[{ dataKey: 'timeSaved', color: COLOR_TIME_SAVED, label: 'ประหยัดเวลา' }]}
+          tooltipUnit='นาที'
+          footer={<AvgFooter value={`${fmtNumber(avgs.timeSavedHours, 1)}h`} label='Total Time Saved' color={COLOR_TIME_SAVED} />}
         />
       </Col>
     </Row>

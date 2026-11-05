@@ -53,7 +53,13 @@ const TitleSection: React.FC<Props> = ({ setCurrentTab }) => {
         )
       }
       warranty={{ label: warrantyLabel, color: warrantyColor }}
-      googleMap={{ coord: project.coord }}
+      // `coord` is the [0, 0] placeholder until the solution/overview
+      // endpoints load — keep the button visible but disabled meanwhile
+      // instead of linking to 0,0 (same as incident-detection / lpr / vms).
+      googleMap={{
+        coord: project.coord[0] !== 0 || project.coord[1] !== 0 ? project.coord : null,
+        keepWhenEmpty: true,
+      }}
       anydesk={{ id: project.anydeskId }}
       online={{ isOnline }}
       tabs={{

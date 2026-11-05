@@ -111,6 +111,10 @@ export const manageKeys = {
         },
       ] as const,
     detail: (projectId: number) => [...manageKeys.deviceStatus.all, 'detail', projectId] as const,
+    /** Every page of /device-status/summary for a contractor ('' = every
+     *  contractor the account can see) under a warranty filter. */
+    summaryRows: (contractorUserId: string, isWarranty?: boolean) =>
+      [...manageKeys.deviceStatus.all, 'summary-rows', contractorUserId, isWarranty ?? null] as const,
     /** One system's uptime-statistics filtered to one contractor (and, when
      *  given, to in- or out-of-warranty solutions). */
     uptime: (contractorUserId: string, prefix: string, isWarranty?: boolean) =>

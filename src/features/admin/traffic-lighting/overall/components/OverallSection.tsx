@@ -167,7 +167,7 @@ const OverallSection: React.FC = () => {
 
   const cardItems = useMemo<ProjectCardItem[]>(
     () => displayedProjects.map((p) => ({
-      key: p.id,
+      key: p.rowKey,
       roadId: p.roadId ?? 0,
       projectId: p.projectId,
       roadCode: p.roadCode,

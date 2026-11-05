@@ -42,10 +42,13 @@ const OverallSection: React.FC<Props> = () => {
 
         {/* Right rail — `gap-3` between every card. On desktop, absolute-positioned
           * on top of the map. `xl:bottom-3` matches the Cycle overlay's `bottom-3`
-          * so Phase Timing's bottom edge aligns with the Cycle overlay's bottom. */}
+          * so Phase Timing's bottom edge aligns with the Cycle overlay's bottom.
+          * No own side padding below xl: the screen's section already pads
+          * `px-10`, and a second `px-10` inset these cards 40px narrower than
+          * the map and Cycle card above/below them on phone + iPad. */}
         <MapOverlayPanel
           position='right'
-          className='flex flex-col gap-3 px-10 xl:px-0 xl:absolute xl:top-4 xl:right-4 xl:bottom-3 xl:z-10 xl:w-90'
+          className='flex flex-col gap-3 xl:absolute xl:top-4 xl:right-4 xl:bottom-3 xl:z-10 xl:w-90'
         >
           <InfoCardsTrafficSignal />
           {/* `mt-auto` pins Phase Timing to the bottom. `shrink-0` guards against

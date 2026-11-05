@@ -81,7 +81,8 @@ const TRAFFIC_SIGNAL_EXPORT_COLUMNS: {
     // Same fallback chain as the on-screen ContractInfoCell (contract → budget year).
     { header: 'เลขที่สัญญา', width: 20, widthPct: 11, value: (r) => r.contractNo || (r.budgetYear ? `ปีงบประมาณ ${r.budgetYear}` : '-') },
     { header: 'การค้ำประกัน', width: 13, widthPct: 8, value: (r) => (r.warranty === 'in-warranty' ? 'ในค้ำ' : 'หมดค้ำ') },
-    { header: 'Phase', width: 8, widthPct: 5, value: (r) => r.phase },
+    // Mirrors the on-screen cell: unconfigured (0) exports as a dash.
+    { header: 'Phase', width: 8, widthPct: 5, value: (r) => (r.phase > 0 ? r.phase : '-') },
     { header: 'สถานะ', width: 10, widthPct: 6, value: (r) => (r.connection === 'online' ? 'ออนไลน์' : 'ออฟไลน์') },
     { header: 'Stream', width: 12, widthPct: 6, value: (r) => (r.stream ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ') },
     { header: 'โหมดการทำงาน', width: 15, widthPct: 6, value: (r) => r.operatingMode || '-' },
@@ -110,7 +111,8 @@ const apiSolutionToProject = (
   // can still stream from its cameras even when its controller drops, and
   // vice-versa. Treat any online camera as "stream connected".
   stream: item.online_count > 0,
-  phase: (item.traffic.total_phases === 3 ? 3 : 4) as SignalPhase,
+  // Raw count — see the SignalPhase note; clamping mislabelled 13 junctions.
+  phase: item.traffic.total_phases as SignalPhase,
   operatingMode: item.traffic.controller_mode as OperatingMode,
   bureau,
   coord: [0, 0],

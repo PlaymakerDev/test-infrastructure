@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { CFB, read, utils, type WorkBook } from 'xlsx-js-style'
-import { buildWorkbook, exportExcel, exportExcelSheets, excelSheet, xlsxBytes, type ExcelLayoutSheet } from './excel'
+import { buildWorkbook, excelTextPx, excelWrappedLines, exportExcel, exportExcelSheets, excelSheet, xlsxBytes, type ExcelLayoutSheet } from './excel'
 
 // ESM namespaces aren't spy-able — intercept the module instead and capture
 // the workbook that would have been written to disk.
@@ -202,5 +202,40 @@ describe('excel export — sheets laid out row by row', () => {
     expect(xml).toMatch(/<c r="A2"[^>]* t="str"><v>ธรรมดา<\/v><\/c>/)
     // Read back, it's the one string.
     expect(read(bytes, { type: 'array' }).Sheets['R']['A1'].v).toBe('จุดติดตั้ง : ก & ข (ระบบ : ออนไลน์)')
+  })
+})
+
+describe('excel export — wrapped text in merged cells', () => {
+  it('measures text by character class, a Thai mark taking no room of its own', () => {
+    expect(excelTextPx('กิ่ง')).toBe(excelTextPx('กง'))
+    expect(excelTextPx('10.212.200.101')).toBeGreaterThan(excelTextPx('Connect'))
+    expect(excelTextPx('ab', 22)).toBeCloseTo(excelTextPx('ab') * 2)
+  })
+
+  it('wraps word by word; a word longer than a line runs on; a line break starts a line', () => {
+    expect(excelWrappedLines('CCTV, Volume', 1000)).toBe(1)
+    expect(excelWrappedLines('CCTV, Volume', excelTextPx('CCTV, Volume') - 1)).toBe(2)
+    expect(excelWrappedLines('ก\nข', 1000)).toBe(2)
+    expect(excelWrappedLines('x'.repeat(30), excelTextPx('x'.repeat(10)))).toBe(3)
+  })
+
+  it('a row whose merged cell wraps gets the height of its lines — Excel won’t grow it; other rows are left to Excel', () => {
+    const long = 'กล้อง '.repeat(40).trim()
+    const { workbook } = buildWorkbook([{
+      sheetName: 'W',
+      widths: [10, 10, 10],
+      rows: [
+        { cells: [{ col: 0, span: 3, value: long, style: { wrap: true } }] },
+        { cells: [{ col: 0, span: 3, value: 'สั้น', style: { wrap: true } }] },
+        // A plain cell Excel grows itself; an unwrapped one stays one line.
+        { cells: [{ col: 0, value: long, style: { wrap: true } }] },
+        { cells: [{ col: 0, span: 3, value: long }] },
+        { height: 42, cells: [{ col: 0, span: 3, value: long, style: { wrap: true } }] },
+      ],
+    }])
+    // Width 10 draws 76px wide; three of them less the cell's padding.
+    const lines = excelWrappedLines(long, 3 * 76 - 6)
+    expect(lines).toBeGreaterThan(2)
+    expect([0, 1, 2, 3, 4].map((r) => workbook.Sheets['W']['!rows']?.[r])).toEqual([{ hpt: lines * 15 + 1 }, undefined, undefined, undefined, { hpt: 42 }])
   })
 })

@@ -2,14 +2,17 @@
 import React from 'react'
 import { Empty } from 'antd'
 import { TbBulb } from 'react-icons/tb'
-import {
-  LAMP_FAULT_COLOR,
-  LAMP_WORKING_COLOR,
-  type MockLampSummary,
-} from '../data/mockLampData'
+import { LAMP_FAULT_COLOR, LAMP_WORKING_COLOR } from '../data/mockLampData'
+import { formatLampStamp, type LampSummary } from '../data/lampRows'
 
 interface Props {
-  summary: MockLampSummary | null
+  summary: LampSummary | null
+  /** When the newest lamp report came in. The split is the gateway's last
+   *  tally, which stays put while the gateway is silent — so the card says
+   *  how old it is, and claims "วันนี้" only when it is from today. */
+  reportedAt?: Date | null
+  /** The page's clock (read once at mount), for "today". */
+  now?: number
 }
 
 const DONUT_SIZE = 168
@@ -35,9 +38,11 @@ const Legend: React.FC<{ label: string; value: number; color: string; align: 'le
  *  legend), whereas this design places the legend either side of the ring
  *  inside a fixed 440×330 card. Two flat segments with no interaction don't
  *  justify fighting the wrapper's layout. */
-const LampStatusCard: React.FC<Props> = ({ summary }) => {
+const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, now = 0 }) => {
   const total = summary?.total ?? 0
   const workingPct = total > 0 ? (summary!.working / total) * 100 : 0
+  const fromToday = !reportedAt || reportedAt.toDateString() === new Date(now).toDateString()
+  const title = fromToday ? 'สถานะโคมไฟวันนี้' : 'สถานะโคมไฟ'
 
   return (
     <div
@@ -46,9 +51,16 @@ const LampStatusCard: React.FC<Props> = ({ summary }) => {
     >
       <div className='flex items-center gap-2.5 shrink-0'>
         <TbBulb size={30} style={{ color: '#05F2DB' }} className='shrink-0' />
-        <p className='m-0 font-bold leading-[19px]' style={{ color: '#05F2DB', fontSize: 16 }}>
-          สถานะโคมไฟวันนี้
-        </p>
+        <div className='min-w-0'>
+          <p className='m-0 font-bold leading-[19px]' style={{ color: '#05F2DB', fontSize: 16 }}>
+            {title}
+          </p>
+          {summary && reportedAt && (
+            <p className='m-0 mt-1 text-(--light-gray-3)' style={{ fontSize: 14 }}>
+              โคมรายงานล่าสุด {formatLampStamp(reportedAt)}
+            </p>
+          )}
+        </div>
       </div>
 
       {summary ? (

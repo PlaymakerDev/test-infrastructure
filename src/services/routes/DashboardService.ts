@@ -13,6 +13,7 @@ import type {
   APIResponseDashboardTraffic,
   APIResponseDashboardCounting,
   DashboardBucketType,
+  DashboardScope,
 } from '@/types/dashboard/api'
 
 // Dashboard composes across feature namespaces (no single `/dashboard` route).
@@ -22,11 +23,12 @@ import type {
 // ── Uptime % per system ──────────────────────────────────────────────────────
 
 // `scope=all` per the URL's intent, on every uptime endpoint (BE confirmed
-// support across all 7 features, 2026-07-13). The dashboard hook passes the
-// flag EXPLICITLY (from the reactive useScopeAll) so key and request always
-// agree; when omitted, falls back to reading the current URL.
-const scopeParams = (deptId: string | number, scopeAll?: boolean) =>
-  scopeAll === undefined ? centralScope(deptId) : scopeAll ? ({ scope: 'all' } as const) : undefined
+// support across all 7 features, 2026-07-13), and `scope=group` for กทม.
+// (see DashboardScope). The dashboard hook passes the scope EXPLICITLY (from
+// the reactive useDashboardScope) so key and request always agree; when
+// omitted, falls back to reading the current URL.
+const scopeParams = (deptId: string | number, scope?: DashboardScope) =>
+  scope === undefined ? centralScope(deptId) : scope === 'own' ? undefined : ({ scope } as const)
 
 /** `&road_id=` — narrows a dept-scoped endpoint to ONE สายทาง. EVERY dashboard
  *  endpoint below now forwards it (one pattern, no per-endpoint special cases),
@@ -53,38 +55,38 @@ const roadParam = (roadId?: string | number | null) =>
 
 export const getDashboardCctvUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ❌ ignored by BE today — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardCctvUptime>({
     url: `/cctv/departments/${deptId}/cameras/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 export const getDashboardVmsUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ✅ road_id supported here — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardVmsUptime>({
     url: `/vms/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 export const getDashboardLightingUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ✅ road_id supported here — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardLightingUptime>({
     url: `/lighting/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 // Traffic / WIM / Crosswalk / Tunnel — same `/overview/uptime-statistics`
@@ -92,50 +94,50 @@ export const getDashboardLightingUptimeAPI = (
 // with the key named after the feature).
 export const getDashboardTrafficUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ✅ road_id supported here — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardTrafficUptime>({
     url: `/traffic/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 export const getDashboardWimUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ❌ ignored by BE today — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardWimUptime>({
     url: `/wim/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 export const getDashboardCrosswalkUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ✅ road_id supported here — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardCrosswalkUptime>({
     url: `/crosswalk/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 export const getDashboardTunnelUptimeAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ✅ road_id supported here — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardTunnelUptime>({
     url: `/tunnel/departments/${deptId}/overview/uptime-statistics`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 // ── Map markers (all systems) ────────────────────────────────────────────────
@@ -149,13 +151,13 @@ export const getDashboardTunnelUptimeAPI = (
  *  fetches dept-wide and filters client-side (see ReactMap). */
 export const getDashboardPositionAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardPosition>({
     url: `/manage/solution/${deptId}/position`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 // ── Bucketed event counts (incident/analytic — drives AccidentChart) ─────────
@@ -163,14 +165,14 @@ export const getDashboardPositionAPI = (
 export const getDashboardAnalyticAPI = (
   deptId: string | number,
   type: DashboardBucketType = 'yearly',
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ❌ ignored by BE today — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardAnalytic>({
     url: `/analytic/details/${deptId}/dashboard`,
     method: 'GET',
-    params: { type, ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { type, ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 // ── Top solutions by traffic volume (informational, not wired yet) ───────────
@@ -179,25 +181,27 @@ export const getDashboardTrafficAPI = (
   deptId: string | number,
   type: DashboardBucketType = 'yearly',
   limit = 5,
+  /** Takes `scope` since 2026-11-02 (before, dept-only by project owner). */
+  scope?: DashboardScope,
   /** ❌ ignored by BE today — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardTraffic>({
     url: `/traffic/${deptId}/dashboard`,
     method: 'GET',
-    params: { type, limit, ...roadParam(roadId) },
+    params: { type, limit, ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })
 
 // ── Counting — vehicle counts (rose chart) + hourly buckets (peak hour) ──────
 
 export const getDashboardCountingAPI = (
   deptId: string | number,
-  scopeAll?: boolean,
+  scope?: DashboardScope,
   /** ❌ ignored by BE today — see roadParam. */
   roadId?: string | number | null,
 ) =>
   ApiService.fetchData<APIResponseDashboardCounting>({
     url: `/counting/${deptId}/dashboard`,
     method: 'GET',
-    params: { ...scopeParams(deptId, scopeAll), ...roadParam(roadId) },
+    params: { ...scopeParams(deptId, scope), ...roadParam(roadId) },
   })

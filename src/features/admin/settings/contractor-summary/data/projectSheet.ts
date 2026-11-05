@@ -77,6 +77,9 @@ const bandRuns = (solution: string, point: ProjectSheetSection['points'][number]
 export interface ProjectSheetProject {
   name: string
   contractNo: string
+  /** Its contractor — named only when the report is every contractor's
+   *  (รวมผู้รับจ้าง); one contractor's report has it in its title. */
+  contractor?: string
   /** The boxes ticked. */
   solutions: ProjectSolution[]
   /** In PROJECT_SOLUTIONS order, as the sample lists them. */
@@ -89,8 +92,12 @@ const PROJECT_FILL = 'DCEAF7'
 const SECTION_FILL = 'A6CAEC'
 
 // A–M: ลำดับ, the name over B–H, กม.ที่, การทำงาน over J–K, the last two —
-// and on the Solution row, a box in each of C–M.
-const WIDTHS = [11, 11, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+// and on the Solution row, a box in each of C–M. Wider than the sample where
+// its text didn't fit (user 2026-10-29): A for "โครงการที่ 431 :", B for
+// "เลขที่สัญญา :", J–K for "CCTV, Volume, Truck Tracking", L for
+// "การเชื่อมต่อ", M for an IP address. A longer name wraps (excel.ts sizes the
+// row).
+const WIDTHS = [16, 13, 10, 10, 10, 10, 10, 10, 10, 13, 13, 11, 16]
 const LAST_COL = WIDTHS.length - 1
 
 const cell = (col: number, value: string | number, style?: ExcelCellStyle, span?: number): ExcelLayoutCell => ({
@@ -111,9 +118,9 @@ const columnCells = (first: string | number, values: ProjectSheetColumns, firstS
   const centred: ExcelCellStyle = { align: 'center', vertical: 'center', border: true }
   const lead = [
     cell(0, first, firstStyle),
-    cell(1, values[0], header ? { align: 'center', border: true } : { align: 'left', border: true }, 7),
-    cell(8, values[1], { ...centred, wrap: header }),
-    cell(9, values[2], { align: 'center', wrap: true, border: true }, 2),
+    cell(1, values[0], header ? centred : { align: 'left', vertical: 'center', wrap: true, border: true }, 7),
+    cell(8, values[1], { ...centred, wrap: true }),
+    cell(9, values[2], { ...centred, wrap: true }, 2),
   ]
   return values.length === 5
     ? [...lead, cell(11, values[3], { ...centred, wrap: header }), cell(12, values[4], centred)]
@@ -136,14 +143,20 @@ export function projectDevicesSheet({
   projects.forEach((project, index) => {
     rows.push({
       cells: [
-        cell(0, `โครงการที่ ${index + 1} :`, { fill: PROJECT_FILL }),
-        cell(1, project.name || '-', { fill: PROJECT_FILL, align: 'left' }, LAST_COL),
+        cell(0, `โครงการที่ ${index + 1} :`, { fill: PROJECT_FILL, vertical: 'center' }),
+        cell(1, project.name || '-', { fill: PROJECT_FILL, align: 'left', vertical: 'center', wrap: true }, LAST_COL),
       ],
     })
     detail([
       cell(1, 'เลขที่สัญญา :', { vertical: 'center' }),
       cell(2, project.contractNo || '-', { align: 'left', vertical: 'center', wrap: true }, LAST_COL - 1),
     ])
+    if (project.contractor !== undefined) {
+      detail([
+        cell(1, 'ผู้รับจ้าง :', { vertical: 'center' }),
+        cell(2, project.contractor || '-', { align: 'left', vertical: 'center', wrap: true }, LAST_COL - 1),
+      ])
+    }
     detail(
       [
         cell(1, 'Solution :', { vertical: 'center' }),
@@ -200,9 +213,10 @@ const PDF_KEEP_TOGETHER_PT = 440
  *  in view (`inView`) — Street Light's, and a camera section after it gets the
  *  camera header back. Returns the header in view after the project as well. */
 const projectPdfRows = (project: ProjectSheetProject, index: number, inView: ProjectSheetColumns) => {
+  const contractor = project.contractor !== undefined ? ` · ผู้รับจ้าง : ${project.contractor || '-'}` : ''
   const rows: PdfTableRow[] = [
     {
-      group: `โครงการที่ ${index + 1} : ${project.name || '-'}\nเลขที่สัญญา : ${project.contractNo || '-'} · Solution : ${project.solutions.join(', ') || '-'}`,
+      group: `โครงการที่ ${index + 1} : ${project.name || '-'}\nเลขที่สัญญา : ${project.contractNo || '-'}${contractor} · Solution : ${project.solutions.join(', ') || '-'}`,
     },
   ]
   for (const section of project.sections) {

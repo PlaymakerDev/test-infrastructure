@@ -49,7 +49,7 @@ const CctvListTrafficSignal: React.FC<Props> = (props) => {
       {toShow.map((entry) => {
         const cam = entry.camera
         const ipAddress = cam.ip_address || '-'
-        const phaseCount = cam.phases_no
+        const phaseNo = cam.phases_no
         const cameraType = cam.camera_type
         // Counting → yellow accent, StopLine → white, default → muted.
         const modeColor =
@@ -83,12 +83,15 @@ const CctvListTrafficSignal: React.FC<Props> = (props) => {
               * flex-wrap stays as a last-resort fallback only. */}
             <div className='mt-1 flex items-center gap-1.5 flex-wrap'>
               <p className='camera-location mb-0 whitespace-nowrap'>IP : {ipAddress}</p>
-              {/* Phase pill — blue outline */}
+              {/* Phase pill — blue outline. `phases_no` is the phase this
+                * camera WATCHES (matches its P{n} on the detail page), not the
+                * junction's phase count — "2 Phase" read as "a 2-phase
+                * junction", so it's "Phase 2" like the Live Stream modal. */}
               <span
                 className='inline-flex items-center px-2.5 py-0.5 rounded-full fs-12 whitespace-nowrap'
                 style={{ border: '1px solid #66AEFF', color: '#66AEFF' }}
               >
-                {phaseCount ?? '-'} Phase
+                Phase {phaseNo || '-'}
               </span>
               {/* Detection mode pill — yellow=Counting, white=StopLine */}
               <span

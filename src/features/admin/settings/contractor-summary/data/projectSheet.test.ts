@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ExcelLayoutRow } from '@/utils/export/excel'
+import { buildWorkbook, excelTextPx, excelWrappedLines, type ExcelLayoutRow } from '@/utils/export/excel'
 import {
   CAMERA_COLUMNS,
   PDF_ROWS_PER_BLOCK,
@@ -85,6 +85,45 @@ describe('โครงการ sheet', () => {
     expect(rows[9].cells).toEqual([])
     // Header, points and devices are all boxed in.
     expect(rows.slice(4, 9).flatMap((row) => row.cells).every((cell) => cell.style?.border)).toBe(true)
+  })
+
+  it('every header and device cell sits in the middle of its row — ชื่อกล้อง and การทำงาน too (user 2026-10-29)', () => {
+    const header = rows[4].cells
+    const device = rows[6].cells
+    expect([...header, ...device].every((cell) => cell.style?.vertical === 'center')).toBe(true)
+    expect(header.map((cell) => cell.style?.align)).toEqual(['center', 'center', 'center', 'center', 'center', 'center'])
+    // A device's name reads from the left, wrapping when it's long.
+    expect(device[1].style).toMatchObject({ align: 'left', wrap: true })
+  })
+
+  it('wide enough for what the report holds: an IP address in M, the labels in A and B (user 2026-10-29)', () => {
+    // Width w draws trunc(7 × (w + 5/6) + 0.49) px; less 6 of padding.
+    const room = (col: number) => Math.trunc(7 * (sheet.widths[col] + 5 / 6) + 0.49) - 6
+    expect(excelTextPx('192.168.200.255')).toBeLessThanOrEqual(room(12))
+    expect(excelTextPx('โครงการที่ 431 :')).toBeLessThanOrEqual(room(0))
+    expect(excelTextPx('เลขที่สัญญา :')).toBeLessThanOrEqual(room(1))
+    expect(excelTextPx('Disconnect')).toBeLessThanOrEqual(room(11))
+    // การทำงาน over J–K: the usual tags on one line, the longest on two at most.
+    const tags = room(9) + room(10) + 6
+    expect(excelTextPx('CCTV, Volume, Incident')).toBeLessThanOrEqual(tags)
+    expect(excelWrappedLines('CCTV, Volume, Truck Tracking', tags)).toBeLessThanOrEqual(2)
+  })
+
+  it('a long name or project name wraps, its row as tall as its lines', () => {
+    const name = 'DRR-RYG1035PC1-CAM02-กม.1+518-ขาออกจากทางแยกสนามกีฬาบ้านฉาง มุ่งหน้าไปทางแยกพลา-บูรพาพัฒน์ ฝั่งขาเข้า'
+    const project = 'โครงการปรับปรุงจุดเสี่ยงจุดอันตราย ถนนสาย รย.4036 เฉลิมบูรพาชลทิต (ตอนระยอง) อำเภอแกลง อำเภอนายายอาม อำเภอท่าใหม่ จังหวัดระยอง (ระบบไฟฟ้า 3 เฟส)'
+    const long = projectDevicesSheet({
+      title: 'T',
+      projects: [{ name: project, contractNo: '-', solutions: ['CCTV'], sections: [{ solution: 'CCTV', columns: CAMERA_COLUMNS, points: [{ label: 'จุด', rows: [[name, '1+518', 'CCTV', 'Connect', '10.1.1.1'], ['สั้น', '-', 'CCTV', 'Connect', '10.1.1.2']] }] }] }],
+    })
+    const ws = buildWorkbook([long]).workbook.Sheets['โครงการ']
+    const heightOf = (value: string) => {
+      const r = Object.keys(ws).find((ref) => ws[ref]?.v === value)!.replace(/^[A-Z]+/, '')
+      return ws['!rows']?.[Number(r) - 1]?.hpt
+    }
+    expect(heightOf(project)).toBeGreaterThanOrEqual(31)
+    expect(heightOf(name)).toBeGreaterThanOrEqual(31)
+    expect(heightOf('สั้น')).toBeUndefined()
   })
 
   it('Street Light: its own columns, the cabinets straight under the header', () => {
@@ -226,5 +265,36 @@ describe('โครงการ in the PDF', () => {
       sections: [{ solution: 'Tunnel', columns: TUNNEL_COLUMNS, points: [{ label: 'A', rows: [['s1', '-', 'Tunnel', 'Connect'], ['s2', '-', 'Tunnel', 'Connect']] }, { label: 'B', rows: [] }] }],
     }
     expect(band(tunnels)).toEqual({ group: 'Tunnel · จุดติดตั้ง : A', tone: 'soft', keepAhead: 80 })
+  })
+})
+
+describe('รวมผู้รับจ้าง — each project names its contractor (user 2026-10-29)', () => {
+  const named: ProjectSheetProject[] = [
+    { ...projects[0], contractor: 'บริษัท เอ็ม จำกัด' },
+    { ...projects[1], contractor: '' },
+  ]
+
+  it('Excel: ผู้รับจ้าง under เลขที่สัญญา, folding with the rest of the project', () => {
+    const { rows } = projectDevicesSheet({ title: 'T', projects: named })
+    expect(values(rows[1])).toEqual([[1, 'เลขที่สัญญา :', 1], [2, 'ขทช.สห./30/2567', 11]])
+    expect(values(rows[2])).toEqual([[1, 'ผู้รับจ้าง :', 1], [2, 'บริษัท เอ็ม จำกัด', 11]])
+    expect(rows[2].level).toBe(1)
+    expect(rows[3].cells[0].value).toBe('Solution :')
+    const second = rows.findIndex((row) => row.cells[0]?.value === 'โครงการที่ 2 :')
+    expect(values(rows[second + 2])).toEqual([[1, 'ผู้รับจ้าง :', 1], [2, '-', 11]])
+  })
+
+  it('PDF: the contractor in the project band, between its contract and its Solutions', () => {
+    const [block] = projectDevicesPdfBlocks(named) as { rows: unknown[] }[]
+    expect(block.rows[0]).toEqual({
+      group: 'โครงการที่ 1 : โครงการงานบำรุงถนนสาย ชน.3018\nเลขที่สัญญา : ขทช.สห./30/2567 · ผู้รับจ้าง : บริษัท เอ็ม จำกัด · Solution : CCTV, Street Light',
+    })
+  })
+
+  it('one contractor’s report leaves it out — its title names the contractor', () => {
+    const { rows } = projectDevicesSheet({ title: 'T', projects })
+    expect(rows.some((row) => row.cells.some((cell) => cell.value === 'ผู้รับจ้าง :'))).toBe(false)
+    const [block] = projectDevicesPdfBlocks(projects) as { rows: { group?: string }[] }[]
+    expect(block.rows[0].group).not.toContain('ผู้รับจ้าง')
   })
 })

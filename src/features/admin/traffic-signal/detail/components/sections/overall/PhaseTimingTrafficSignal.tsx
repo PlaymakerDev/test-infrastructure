@@ -26,37 +26,38 @@ const PhaseDirectionArrow: React.FC<{ isMainRoad?: boolean; size?: number; color
   return <Icon size={size} color={color} aria-hidden />
 }
 
-/** Compute the active phase + elapsed seconds in that phase from the API.
+/** Where the active phase sits on its cycle clock, per the phase_details feed.
  *
- *  Uses `isActive` to pick the phase and `timestamp` (when this phase became
- *  active) to seed the countdown. This keeps the UI in sync with the real
- *  signal across page refreshes.
+ *  Feed semantics, verified against production 2026-10-26 (64 junctions, 192
+ *  samples): `timestamp` is the CYCLE's start — every phase row of a junction
+ *  carries the same value — and `waiting_time` (`redSec`) is this phase's
+ *  green START offset inside that cycle (0 for the first phase). So the active
+ *  phase is green during [redSec, redSec + greenSec) after `timestamp`. The
+ *  earlier reading (timestamp = this phase's own start, redSec = red time
+ *  after its green) put every non-first phase into "Red Time" mid-green — a
+ *  quarter of all live samples.
  *
- *  When `timestamp` is missing or older than one full cycle (greenSec +
- *  redSec), we treat it as stale and skip the countdown — the UI shows the
- *  configured green time instead of falling off the end into "Red Time : 0s". */
+ *  Outside that window there is no trustworthy countdown (most junctions hold
+ *  a cycle record minutes old between updates), so the card shows the
+ *  configured green time instead. A short grace past the window parks the
+ *  countdown at 0 through the intergreen until the next 5s poll moves the
+ *  active phase on, instead of jumping back to the full green time. */
+const INTERGREEN_GRACE_SEC = 10
+
 const computeApiState = (phases: PhaseTimingConfig[]) => {
   const apiActiveIdx = phases.findIndex((p) => p.isActive)
   const activeIdx = apiActiveIdx >= 0 ? apiActiveIdx : 0
   const active = phases[activeIdx]
-  if (!active) {
-    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  const noCountdown = { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
+  if (!active?.timestamp) return noCountdown
+  const cycleStartMs = new Date(active.timestamp).getTime()
+  if (isNaN(cycleStartMs)) return noCountdown
+  const elapsedInPhase =
+    Math.floor((Date.now() - cycleStartMs) / 1000) - active.redSec
+  if (elapsedInPhase < 0 || elapsedInPhase > active.greenSec + INTERGREEN_GRACE_SEC) {
+    return noCountdown
   }
-  if (!active.timestamp) {
-    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
-  }
-  const startMs = new Date(active.timestamp).getTime()
-  if (isNaN(startMs)) {
-    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
-  }
-  const elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000))
-  // Timestamp older than the configured cycle is treated as stale — the
-  // backend hasn't pushed an update in a full cycle so we can't trust it.
-  const cycle = active.greenSec + active.redSec
-  if (cycle > 0 && elapsed > cycle) {
-    return { activeIdx, elapsedInPhase: 0, hasValidTimestamp: false }
-  }
-  return { activeIdx, elapsedInPhase: elapsed, hasValidTimestamp: true }
+  return { activeIdx, elapsedInPhase, hasValidTimestamp: true }
 }
 
 /** Phase Timing card — shows the currently-active phase and live countdown,
@@ -89,39 +90,22 @@ const PhaseTimingTrafficSignal: React.FC = () => {
     return () => window.clearInterval(id)
   }, [phases])
 
-  const { activeIdx, inGreen, remaining } = useMemo(() => {
+  const { activeIdx, remaining } = useMemo(() => {
     if (phases.length === 0) {
-      return { activeIdx: 0, inGreen: true, remaining: 0 }
+      return { activeIdx: 0, remaining: 0 }
     }
     const active = phases[apiSeed.activeIdx]
-    // No valid timestamp from API — show the configured green time without a
-    // countdown. Avoids the misleading "Red Time : 0s" when timestamps are
-    // stale or missing.
-    if (!apiSeed.hasValidTimestamp) {
-      return {
-        activeIdx: apiSeed.activeIdx,
-        inGreen: true,
-        remaining: active.greenSec,
-      }
-    }
     const elapsed = apiSeed.elapsedInPhase + tick
-    // Display green while elapsed < green_time, then "red" wait before the
-    // next phase. After both elapse, hold at 0 until the next refetch.
-    if (elapsed < active.greenSec) {
-      return {
-        activeIdx: apiSeed.activeIdx,
-        inGreen: true,
-        remaining: active.greenSec - elapsed,
-      }
+    // No trustworthy position on the cycle clock (or the feed stalled past
+    // the grace) — show the configured green time without a countdown.
+    if (!apiSeed.hasValidTimestamp || elapsed > active.greenSec + INTERGREEN_GRACE_SEC) {
+      return { activeIdx: apiSeed.activeIdx, remaining: active.greenSec }
     }
-    if (elapsed < active.greenSec + active.redSec) {
-      return {
-        activeIdx: apiSeed.activeIdx,
-        inGreen: false,
-        remaining: active.greenSec + active.redSec - elapsed,
-      }
+    // The active phase IS the green one — count down what's left of it.
+    return {
+      activeIdx: apiSeed.activeIdx,
+      remaining: Math.max(0, active.greenSec - elapsed),
     }
-    return { activeIdx: apiSeed.activeIdx, inGreen: false, remaining: 0 }
   }, [phases, apiSeed, tick])
 
   // Empty state — render the card shell with a placeholder so the page
@@ -191,7 +175,7 @@ const PhaseTimingTrafficSignal: React.FC = () => {
           )}
         </div>
         <p className='mb-0 fs-12' style={{ color: activeColor }}>
-          {inGreen ? 'Green Time' : 'Red Time'} : {remaining}s
+          Green Time : {remaining}s
         </p>
       </div>
 

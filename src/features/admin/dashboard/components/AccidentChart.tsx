@@ -157,7 +157,7 @@ const AccidentChart: React.FC<Props> = () => {
   const deptId = useDeptId()
   const roadId = useRoadId()
   const type = TAB_TO_TYPE[tab]
-  const { data, isLoading } = useDashboardAnalytic(deptId, type, roadId)
+  const { data, isLoading, isError } = useDashboardAnalytic(deptId, type, roadId)
 
   const buckets = useMemo(
     () =>
@@ -231,6 +231,11 @@ const AccidentChart: React.FC<Props> = () => {
         {isLoading && buckets.length === 0 ? (
           <div className='flex items-center justify-center h-full fs-12' style={{ height: 196, color: '#6b7f9a' }}>
             กำลังโหลด...
+          </div>
+        ) : isError && buckets.length === 0 ? (
+          // A failed fetch must not read as "ไม่มีข้อมูล" (a real, empty period).
+          <div className='flex items-center justify-center fs-12' style={{ height: 196, color: '#6b7f9a' }}>
+            โหลดข้อมูลไม่สำเร็จ
           </div>
         ) : buckets.length === 0 ? (
           // BE returned no buckets at all → the period has no records to even

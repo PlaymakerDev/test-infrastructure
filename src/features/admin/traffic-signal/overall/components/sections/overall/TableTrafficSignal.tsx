@@ -214,7 +214,9 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) =>
           row.kind === 'project' ? (
-            <span className='text-white'>{row.project.phase}</span>
+            // 0 = the junction has no phase configuration; a literal "0"
+            // reads as a measurement, so show a dash (2026-10-26).
+            <span className='text-white'>{row.project.phase > 0 ? row.project.phase : '-'}</span>
           ) : null,
       },
       {
@@ -252,6 +254,10 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
         onCell: (row) => (row.kind === 'bureau' ? { colSpan: 0 } : {}),
         render: (_: unknown, row: Row) => {
           if (row.kind !== 'project') return null
+          // 14 junctions report `controller_mode: ""` — an empty outlined
+          // pill read as a rendering glitch. Dash, like the Phase cell and
+          // the export (2026-10-26).
+          if (!row.project.operatingMode) return <span className='text-white'>-</span>
           // Fall back to white border for unknown modes so the pill always
           // renders consistently — never plain text.
           return (
@@ -270,6 +276,8 @@ const TableTrafficSignal: React.FC<Props> = ({ projects }) => {
   return (
     <>
       <Table<Row>
+        // antd's default empty text is English ("No data") — no global Thai locale.
+        locale={{ emptyText: 'ไม่พบข้อมูล' }}
         key={tableKey}
         rowKey='id'
         columns={columns}

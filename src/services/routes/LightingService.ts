@@ -13,6 +13,8 @@ import type {
   TopPowerRoadItem,
   LightingDiagram,
   APIRequestLightingCentralList,
+  PaginationMeta,
+  LightingSolutionDetail,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -91,6 +93,17 @@ export const getLightingDiagramAPI = async (imei: string) => {
   })
 }
 
+/** GET /lighting/solutions/{solution_id} → project / road / solution and the
+ *  lighting record — its IoT cabinet, or its LoRa gateway with the gateway's
+ *  tally and every lamp (`devices`). The lamp page's source: a lamp point has
+ *  no IMEI, so none of the imei/* endpoints reach it. */
+export const getLightingSolutionAPI = async (solutionId: number) => {
+  return ApiService.fetchData<LightingSolutionDetail>({
+    url: `/lighting/solutions/${solutionId}`,
+    method: 'GET',
+  })
+}
+
 /** GET /lighting/imei/{imei}/details
  *  → device detail (imei, phase, electricity[], line_checks, is_online, has_broken_wire) */
 export const getLightingDeviceDetailsAPI = async (imei: string) => {
@@ -159,13 +172,15 @@ export const getLightingLogs4gCentralAPI = async (
 }
 
 /** GET /lighting/imei/{imei}/electricity → aggregated electricity per period.
- *  `report_type` drives the bucket size (hourly|daily|monthly|yearly). */
+ *  `report_type` drives the bucket size (hourly|daily|monthly|yearly). Paged
+ *  by period — use {@link fetchAllLightingPages} for a whole report. */
 export const getLightingElectricityAPI = async (
   imei: string,
   opts: {
     start_date?: string
     end_date?: string
     report_type?: 'hourly' | 'daily' | 'monthly' | 'yearly'
+    page?: number
     limit?: number
     sort?: 'ASC' | 'DESC'
   },
@@ -177,10 +192,36 @@ export const getLightingElectricityAPI = async (
       ...(opts.start_date ? { start_date: opts.start_date } : {}),
       ...(opts.end_date ? { end_date: opts.end_date } : {}),
       report_type: opts.report_type ?? 'daily',
-      limit: opts.limit ?? 100,
+      ...(opts.page ? { page: opts.page } : {}),
+      limit: opts.limit ?? LIGHTING_MAX_LIMIT,
       sort: opts.sort ?? 'ASC',
     },
   })
+}
+
+/** The lighting service answers 400 to any `limit` above 100 (checked
+ *  2026-10-26 on /logs4g/central and /imei/{imei}/electricity). */
+export const LIGHTING_MAX_LIMIT = 100
+
+/** Every page of a paged lighting list as one list: page 1 first for
+ *  `total_pages`, then the rest a few at a time. An hourly report over the
+ *  default 8 days is ~180 periods, and a day of one cabinet's log ~200 rows —
+ *  both used to stop at the first page (the export asked for `limit=count`,
+ *  which the backend refuses outright). */
+export const fetchAllLightingPages = async <Item>(
+  fetchPage: (page: number) => Promise<{ res_data: Item[] | null; meta_data: PaginationMeta }>,
+): Promise<{ res_data: Item[]; meta_data: PaginationMeta }> => {
+  const first = await fetchPage(1)
+  const items = [...(first.res_data ?? [])]
+  const totalPages = first.meta_data?.total_pages ?? 1
+  const PARALLEL = 6
+  for (let start = 2; start <= totalPages; start += PARALLEL) {
+    const pages = await Promise.all(
+      Array.from({ length: Math.min(PARALLEL, totalPages - start + 1) }, (_, i) => fetchPage(start + i)),
+    )
+    for (const page of pages) items.push(...(page.res_data ?? []))
+  }
+  return { res_data: items, meta_data: first.meta_data }
 }
 
 

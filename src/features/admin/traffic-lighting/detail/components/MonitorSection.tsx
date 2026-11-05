@@ -200,6 +200,18 @@ const MonitorSection: React.FC = () => {
     [dateRange, period],
   )
 
+  // The preset a picked range IS, if any. While a pick is in force it drives
+  // the query, so the ช่วงเวลา buttons stop highlighting the old preset
+  // (it read as if that preset were still applied); '' selects none.
+  const activePeriod = useMemo(() => {
+    if (!dateRange) return period
+    const [start, end] = dateRange
+    return PERIOD_OPTIONS.find(({ value }) => {
+      const bounds = periodToBounds(value)
+      return !!bounds && !!start && !!end && start.isSame(bounds[0], 'day') && end.isSame(bounds[1], 'day')
+    })?.value ?? ''
+  }, [dateRange, period])
+
   const dataTypeParam: 'circuit' | 'line_check' | 'volt_amp' | 'etc' | undefined =
     eventType === 'ALL' ? undefined : eventType
 
@@ -215,19 +227,22 @@ const MonitorSection: React.FC = () => {
   const totalCount = logsQuery.data?.meta_data?.count ?? 0
 
   // "ทั้งหมด" export scope — the on-screen table only ever holds one page
-  // (pageSize=50), so fetch the full filtered set separately at export time
-  // rather than paging through it client-side.
+  // (pageSize=50), so fetch the full filtered set separately at export time,
+  // 100 rows a request: the backend refuses any larger `limit` (asking for
+  // `limit=count` failed the export for any day over 100 rows).
   const fetchAllRecordsForExport = async (): Promise<Logs4gCentralItem[]> => {
     if (totalCount === 0) return []
-    const { getLightingLogs4gCentralAPI } = await import('@/services/routes/LightingService')
-    const res = await getLightingLogs4gCentralAPI(imei, {
-      start_date: effectiveRange?.[0].format('YYYY-MM-DD'),
-      end_date: effectiveRange?.[1].format('YYYY-MM-DD'),
-      data_type: dataTypeParam,
-      page: 1,
-      limit: totalCount,
-    })
-    return res.data.res_data ?? []
+    const { LIGHTING_MAX_LIMIT, fetchAllLightingPages, getLightingLogs4gCentralAPI } = await import('@/services/routes/LightingService')
+    const all = await fetchAllLightingPages((exportPage) =>
+      getLightingLogs4gCentralAPI(imei, {
+        start_date: effectiveRange?.[0].format('YYYY-MM-DD'),
+        end_date: effectiveRange?.[1].format('YYYY-MM-DD'),
+        data_type: dataTypeParam,
+        page: exportPage,
+        limit: LIGHTING_MAX_LIMIT,
+      }).then((res) => res.data),
+    )
+    return all.res_data
   }
 
   // `_rowKey` disambiguates records that share created_at/data_type/phase —
@@ -349,9 +364,13 @@ const MonitorSection: React.FC = () => {
           <span className='block fs-12 text-(--yellow)'>ช่วงเวลา</span>
           <div className={`${FILTER_BOX_CLASS} monitor-filter-segmented`}>
             <Segmented
-              value={period}
+              value={activePeriod}
               onChange={(value) => {
+                // A preset replaces a picked range — the pick used to keep
+                // winning, so after choosing dates the presets only moved
+                // their highlight and the table never changed.
                 setPeriod(value as PeriodFilter)
+                setDateRange(null)
                 setPage(1)
               }}
               options={PERIOD_OPTIONS}

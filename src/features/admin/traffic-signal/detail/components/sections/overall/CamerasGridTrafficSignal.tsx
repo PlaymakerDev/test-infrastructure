@@ -13,7 +13,7 @@ import { useTrafficSolutionCameras } from '@/hooks/queries/traffic-signal'
 import type { TrafficSolutionCamera } from '@/types/traffic-signal/detail-api'
 import { useAppDispatch } from '@/stores/hooks'
 import { setCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import { getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { fmtGreenTime, getPhaseColor } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import type { CCTVModalExtraCell } from '@/types/layout'
 import ExportFileModal from '@/components/export/ExportFileModal'
 
@@ -23,7 +23,11 @@ export interface CameraEntry {
   ipAddress: string
   phase: number
   detectionMode: 'Counting' | 'Stopline'
-  greenTime: number
+  /** Green time of the monitored phase; `null` when the junction's phase
+   *  feed has no row for it — 80 junctions (283 Counting cameras) carry no
+   *  phase timing at all, and rendering those as "0s" read as a measured
+   *  zero-second green (2026-10-26). */
+  greenTime: number | null
   volume: number
   connection: 'online' | 'offline'
   /** HLS playlist URL — passed to `HLSLivePlayer`. Empty string ⇒ no stream
@@ -47,7 +51,7 @@ const apiCameraToEntry = (
   ipAddress: cam.ip_address,
   phase: cam.phases_no,
   detectionMode: cam.camera_type === 'Counting' ? 'Counting' : 'Stopline',
-  greenTime: greenSecByPhase.get(cam.phases_no) ?? 0,
+  greenTime: greenSecByPhase.get(cam.phases_no) ?? null,
   volume: cam.total_count,
   connection: cam.is_online ? 'online' : 'offline',
   hlsUrl: cam.hls_url ?? '',
@@ -90,7 +94,7 @@ const CAMERA_EXPORT_COLUMNS: {
   { header: 'ชื่อกล้อง', width: 40, widthPct: 30, align: 'left', value: (r) => r.code || '-' },
   { header: 'Phase', width: 8, widthPct: 7, value: (r) => `P${r.phase}` },
   { header: 'การทำงาน', width: 12, widthPct: 12, value: (r) => r.detectionMode },
-  { header: 'Green Time', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? `${r.greenTime}s` : '-') },
+  { header: 'Green Time', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? fmtGreenTime(r.greenTime) : '-') },
   { header: 'Volume', width: 12, widthPct: 10, value: (r) => (r.detectionMode === 'Counting' ? r.volume.toLocaleString() : '-') },
   { header: 'สถานะ', width: 12, widthPct: 10, value: (r) => (r.connection === 'online' ? 'Connect' : 'Disconnect') },
   // IP last — mirrors the on-screen table column order (2026-08-17, app-wide rule).
@@ -139,13 +143,15 @@ const CameraTile: React.FC<{ cam: CameraEntry; onOpen: (cam: CameraEntry) => voi
       {cam.code}
     </p>
     {/* IP + Green Time + Volume on one row (IP left, pills right) — matches Figma.
-      * No flex-wrap: IP truncates (min-w-0) so the pills stay on the same line. */}
-    <div className='flex items-center justify-between gap-2 mt-1'>
+      * Desktop: no wrap, IP truncates (min-w-0) so the pills stay on the line.
+      * Below lg the tiles are too narrow for that — the IP shrank to "I…" on
+      * phone and "IP A…" on iPad — so the pills wrap under it there. */}
+    <div className='flex items-center justify-between gap-2 mt-1 max-lg:flex-wrap'>
       <p className='text-gray-400 mb-0 fs-12 min-w-0 truncate'>IP Address : {cam.ipAddress}</p>
       {cam.detectionMode === 'Counting' && (
         <div className='flex gap-2 shrink-0'>
           <span className='fs-12 border border-emerald-500 text-emerald-400 px-2 py-0.5 rounded-full'>
-            Green Time : {cam.greenTime}s
+            Green Time : {fmtGreenTime(cam.greenTime)}
           </span>
           <span className='fs-12 border border-(--yellow) text-(--yellow) px-2 py-0.5 rounded-full'>
             Volume : {cam.volume.toLocaleString()}
@@ -201,7 +207,7 @@ const CamerasGridTrafficSignal: React.FC = () => {
       { iconKey: 'phase', label: 'แยกจราจร', value: `Phase ${cam.phase}`, color: getPhaseColor(cam.phase) },
       { iconKey: 'mode', label: 'การทำงาน', value: cam.detectionMode, color: cam.detectionMode === 'Counting' ? '#FCD116' : '#ffffff', pill: true },
       { iconKey: 'pcu', label: 'ปริมาณ PCU', value: cam.volume.toLocaleString(), color: '#ffffff' },
-      { iconKey: 'green', label: 'Green Time', value: `${cam.greenTime}s`, color: '#ffffff' },
+      { iconKey: 'green', label: 'Green Time', value: fmtGreenTime(cam.greenTime), color: '#ffffff' },
       { iconKey: 'road', label: 'ประเภทถนน', value: roadType, color: '#ffffff' },
     ]
     dispatch(setCCTVModalOpen({ open: true, camera_id: cam.id, extra_cells }))

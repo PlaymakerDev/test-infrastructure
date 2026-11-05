@@ -61,8 +61,12 @@ const InfoCardsTrafficSignal: React.FC = () => {
       <Card
         icon={<TbTrafficLights />}
         label='โหมดการทำงานแยกจราจร'
-        value={project.operatingMode}
-        sublabel={`${project.phase} Phase`}
+        // An unconfigured junction reports `controller_mode: ""` and
+        // `total_phases: 0` — the card used to render a blank value and claim
+        // "0 Phase" even where live PCU data exists (solution 1611 reports
+        // phases 2–4). Show a dash instead of asserting either (2026-10-26).
+        value={project.operatingMode || '-'}
+        sublabel={project.phase > 0 ? `${project.phase} Phase` : undefined}
         color='#ffffff'
         colorLabel={false}
       />
@@ -92,7 +96,10 @@ const InfoCardsTrafficSignal: React.FC = () => {
             <span className='fs-12 font-normal' style={{ color: '#9aa7b8' }}>คัน</span>
           </>
         }
-        sublabel={`Phase ${project.peakPhase ?? '-'} : Peak`}
+        // `max_active_phase` is 0 — not null — on every junction without a
+        // peak yet (82 of 146, 2026-10-26), so `?? '-'` never fired and the
+        // card claimed "Phase 0 : Peak". Same dash rule as the mode card.
+        sublabel={`Phase ${project.peakPhase || '-'} : Peak`}
         color='#7CFC00'
       />
     </div>

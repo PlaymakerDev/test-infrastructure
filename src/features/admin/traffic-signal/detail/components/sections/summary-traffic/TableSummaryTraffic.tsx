@@ -32,7 +32,6 @@ interface RowData {
 
 const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
   const { project } = useDetailContext()
-  const phaseCount = project.phase
 
   // Fetch the full selected window in one request — backend pagination is
   // unreliable across pages (page=2 sometimes returns empty), and the data
@@ -51,7 +50,11 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
     for (const day of data?.res_data ?? []) {
       // Same null-guard as the daily cards: a day with no data can arrive
       // without its per-phase array.
-      const phasesForDay = (day.data ?? []).slice(0, phaseCount)
+      // Every phase the day reports — no slicing by the junction's declared
+      // `total_phases`, which truncated rows whenever a day carried more
+      // phases than the (often stale) declared count (2026-10-26). The
+      // response is already per-phase and self-describing via `phases_no`.
+      const phasesForDay = day.data ?? []
       const dateLabel = `วัน${thaiDayName(day.day)}\n${dayjs(day.date).locale('th').format('D MMM BBBB')}`
       phasesForDay.forEach((p, i) => {
         out.push({
@@ -69,7 +72,7 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
       })
     }
     return out
-  }, [data, phaseCount])
+  }, [data])
 
   const phaseCell = (row: RowData, text: string) => (
     <span className='fs-14' style={{ color: getPhaseColor(row.phase) }}>
@@ -133,6 +136,8 @@ const TableSummaryTraffic: React.FC<Props> = ({ startDate, endDate }) => {
 
   return (
     <Table<RowData>
+      // antd's default empty text is English ("No data") — no global Thai locale.
+      locale={{ emptyText: 'ไม่พบข้อมูล' }}
       rowKey='id'
       columns={columns}
       dataSource={rows}

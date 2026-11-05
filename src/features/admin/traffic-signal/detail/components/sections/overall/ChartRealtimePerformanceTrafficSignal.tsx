@@ -6,7 +6,7 @@ import BarChart, {
   type BarChartDataPoint,
   type BarChartStat,
 } from '@/components/chart/Barchart'
-import { PHASE_COLORS } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
+import { getPhaseColor, phaseSeries, phasesFromRows } from '@/features/admin/traffic-signal/overall/data/trafficSignals'
 import { useTrafficGraph } from '@/hooks/queries/traffic-signal'
 import { fmtNumber } from '@/utils/formatNumber'
 import { thaiDateTimeBE } from '@/utils/thaiDate'
@@ -22,18 +22,19 @@ const fmtThaiDateTime = (iso: string): string => {
   return thaiDateTimeBE(iso)
 }
 
-const ALL_BARS = [
-  { dataKey: 'p1', color: PHASE_COLORS[0], label: 'Phase 1' },
-  { dataKey: 'p2', color: PHASE_COLORS[1], label: 'Phase 2' },
-  { dataKey: 'p3', color: PHASE_COLORS[2], label: 'Phase 3' },
-  { dataKey: 'p4', color: PHASE_COLORS[3], label: 'Phase 4' },
-]
-
 const ChartRealtimePerformanceTrafficSignal: React.FC<Props> = () => {
   const { project } = useDetailContext()
   const { data } = useTrafficGraph(project.id)
 
-  const bars = useMemo(() => ALL_BARS.slice(0, project.phase), [project.phase])
+  // Phases come from the EFFICIENCY rows specifically — on solution 1582 the
+  // efficiency graph carries 4 phases while the PCU graph carries 3, so this
+  // chart cannot share a count with the volume chart (or with the junction's
+  // declared `total_phases`, which is only the empty-response fallback).
+  const phases = useMemo(() => {
+    const eff = data?.efficentcy ?? data?.efficiency
+    return phasesFromRows(eff?.graph, project.phase)
+  }, [data, project.phase])
+  const bars = useMemo(() => phaseSeries(phases), [phases])
 
   // `efficiency.graph` returns one row per (phase, hour) — group by hour to
   // form grouped bars `{ label, p1, p2, ... }`. Sort by timestamp first; key
@@ -61,13 +62,17 @@ const ChartRealtimePerformanceTrafficSignal: React.FC<Props> = () => {
 
   const stats: BarChartStat[] = useMemo(() => {
     const eff = data?.efficentcy ?? data?.efficiency
+    // `phases_avg` is positional and pairs with `phases_label`; both line up
+    // with the phases present in `graph`, so index by position and colour by
+    // the real phase number.
     const avgs = eff?.phases_avg ?? []
-    return ALL_BARS.slice(0, project.phase).map((bar, i) => ({
+    const labels = eff?.phases_label ?? []
+    return phases.map((no, i) => ({
       value: `${fmtNumber(avgs[i], 0)}%`,
-      label: bar.label,
-      color: bar.color,
+      label: labels[i] ?? `Phase ${no}`,
+      color: getPhaseColor(no),
     }))
-  }, [data, project.phase])
+  }, [data, phases])
 
   return (
     <BarChart
