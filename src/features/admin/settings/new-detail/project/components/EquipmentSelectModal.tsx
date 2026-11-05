@@ -1,5 +1,5 @@
 "use client"
-import { App, Popconfirm, Radio, Table } from 'antd'
+import { App, Popconfirm, Radio, Table, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import React, { useCallback, useMemo, useState } from 'react'
 import {
@@ -120,6 +120,23 @@ const EquipmentSelectModal: React.FC<Props> = (props) => {
         dataIndex: 'camera_name',
         key: 'camera_name',
         ellipsis: true,
+        width: 300,
+        render: (v: string) => {
+          if (v) {
+            return (
+              <Tooltip title={v}>
+                {v}
+              </Tooltip>
+            )
+          }
+          return '-'
+        }
+      },
+      {
+        title: 'IP Address',
+        dataIndex: 'ip_address',
+        key: 'ip_address',
+        width: 160,
         render: (v: string) => v || '-',
       },
       {
