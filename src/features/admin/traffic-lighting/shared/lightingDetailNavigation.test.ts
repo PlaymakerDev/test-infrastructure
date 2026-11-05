@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildLightingDetailUrl,
   resolveLightingImei,
+  resolveLightingSolutionId,
 } from './lightingDetailNavigation'
 
 describe('traffic-lighting detail navigation', () => {
@@ -50,5 +51,13 @@ describe('traffic-lighting detail navigation', () => {
     expect(url.searchParams.has('imei')).toBe(false)
     expect(url.searchParams.get('dept_id')).toBe('3')
     expect(resolveLightingImei('1910-1')).toBe('')
+  })
+
+  it('reads the solution id out of an IMEI-less device’s "<solution>-<n>" id', () => {
+    expect(resolveLightingSolutionId('4725-0')).toBe(4725)
+    expect(resolveLightingSolutionId(' 1910-12 ')).toBe(1910)
+    expect(resolveLightingSolutionId('860946061754746')).toBeNull()
+    expect(resolveLightingSolutionId('solution-12')).toBeNull()
+    expect(resolveLightingSolutionId('device/1')).toBeNull()
   })
 })

@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 import BaseMap from '@/components/map/BaseMap'
 import ThailandMaskLayer from '@/components/map/markers/ThailandMaskLayer'
-import OverlapMarkers from '@/components/map/markers/OverlapMarkers'
+import OverlapMarkers, { type OverlapMarkerItem } from '@/components/map/markers/OverlapMarkers'
 import FitBoundsEffect from '@/components/map/primitives/FitBoundsEffect'
 import { useLightingOverview } from '@/hooks/queries/lighting'
 import { useDeptId } from '@/hooks/useDeptId'
@@ -25,6 +25,11 @@ export interface MapLightingDetailProps {
   roadCode?: string
   installPoint?: string
   projectName?: string
+  /** A pin per device instead of the point's own pin — a lamp point's lamps,
+   *  each where it stands (Figma, user 2026-11-05). None → the point's pin. */
+  points?: OverlapMarkerItem[]
+  /** What a group of `points` at one spot counts — "โคม". */
+  pointUnit?: string
 }
 
 const COPIED_RESET_MS = 2000
@@ -101,9 +106,13 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
   roadCode = '-',
   installPoint = '-',
   projectName = '-',
+  points,
+  pointUnit,
 }) => {
   const resolvedCoord = useResolvedCoord(coord, imei)
-  const initialCenter = resolvedCoord ?? FALLBACK_CENTER
+  const pointCoords = useMemo(() => (points ?? []).map((point) => point.coord), [points])
+  const showPoints = pointCoords.length > 0
+  const initialCenter = (showPoints ? pointCoords[0] : resolvedCoord) ?? FALLBACK_CENTER
 
   const coords = useMemo<[number, number][]>(
     () => (resolvedCoord ? [resolvedCoord] : []),
@@ -136,7 +145,12 @@ const MapLightingDetail: React.FC<MapLightingDetailProps> = ({
         edgeFade={{ all: 20 }}
       >
         <ThailandMaskLayer maskColor='#212121' maskOpacity={1} />
-        {resolvedCoord && markerFeature && (
+        {showPoints ? (
+          <>
+            <FitBoundsEffect coords={pointCoords} padding={56} maxZoom={17} pitch={55} />
+            <OverlapMarkers variant='white' items={points!} unit={pointUnit} />
+          </>
+        ) : resolvedCoord && markerFeature && (
           <>
             <FitBoundsEffect coords={coords} padding={56} maxZoom={16} pitch={55} />
             <OverlapMarkers

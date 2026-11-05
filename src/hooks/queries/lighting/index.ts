@@ -9,6 +9,13 @@ export { useLightingCentralTotals } from './useLightingCentralTotals'
 export { useLightingRandomOnline } from './useLightingRandomOnline'
 export { useLightingDeviceDetails } from './useLightingDeviceDetails'
 export { useLightingSolution } from './useLightingSolution'
+export {
+  useLightingLampCurrentHourly,
+  useLightingLampSummary,
+  useLightingLamps,
+  useLightingLampsCurrentHourly,
+  useLightingLampsWeekly,
+} from './useLightingLamps'
 export { useLightingVoltGraph, useLightingAmpGraph } from './useLightingGraphs'
 export { useLightingLogs4gCentral } from './useLightingLogs4gCentral'
 export type { LightingLogs4gCentralOptions } from './useLightingLogs4gCentral'

@@ -15,6 +15,10 @@ import type {
   APIRequestLightingCentralList,
   PaginationMeta,
   LightingSolutionDetail,
+  LightingLampList,
+  LightingLampSummary,
+  LightingLampWeekly,
+  LightingLampCurrentHourly,
 } from "@/types/lighting"
 
 // NOTE: Lighting service base path is `/lighting` (different from manage).
@@ -101,6 +105,57 @@ export const getLightingSolutionAPI = async (solutionId: number) => {
   return ApiService.fetchData<LightingSolutionDetail>({
     url: `/lighting/solutions/${solutionId}`,
     method: 'GET',
+  })
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps → every lamp of a LoRa lamp
+ *  point, in pole order, with its status, connection, current and last
+ *  report — the legacy SEM page's values (a lamp silent for 13 hours reads
+ *  ดับ at 0 A). */
+export const getLightingLampsAPI = async (solutionId: number) => {
+  return ApiService.fetchData<LightingLampList>({
+    url: `/lighting/solutions/${solutionId}/lamps`,
+    method: 'GET',
+  })
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps/summary → the legacy work
+ *  master's tally and the point's position. */
+export const getLightingLampSummaryAPI = async (solutionId: number) => {
+  return ApiService.fetchData<LightingLampSummary>({
+    url: `/lighting/solutions/${solutionId}/lamps/summary`,
+    method: 'GET',
+  })
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps/weekly → working / not-working
+ *  per day for the last 7 days, oldest first. */
+export const getLightingLampsWeeklyAPI = async (solutionId: number) => {
+  return ApiService.fetchData<LightingLampWeekly>({
+    url: `/lighting/solutions/${solutionId}/lamps/weekly`,
+    method: 'GET',
+  })
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps/current/hourly?date= → the
+ *  point's average current per hour of a Bangkok day (today when `date` is
+ *  omitted). */
+export const getLightingLampsCurrentHourlyAPI = async (solutionId: number, date?: string) => {
+  return ApiService.fetchData<LightingLampCurrentHourly>({
+    url: `/lighting/solutions/${solutionId}/lamps/current/hourly`,
+    method: 'GET',
+    params: date ? { date } : undefined,
+  })
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps/{device_id}/current/hourly?date=
+ *  → one lamp's. `deviceId` exactly as `/lamps` sends it — BE answers 404 for
+ *  an id with its trailing spaces trimmed. */
+export const getLightingLampCurrentHourlyAPI = async (solutionId: number, deviceId: string, date?: string) => {
+  return ApiService.fetchData<LightingLampCurrentHourly>({
+    url: `/lighting/solutions/${solutionId}/lamps/${encodeURIComponent(deviceId)}/current/hourly`,
+    method: 'GET',
+    params: date ? { date } : undefined,
   })
 }
 

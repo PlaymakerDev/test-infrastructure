@@ -9,6 +9,7 @@ import MapLightingDetail from '@/features/admin/traffic-lighting/shared/MapLight
 import { useLightingAlerts } from '@/hooks/queries/lighting'
 import type { AlertItem } from '@/types/lighting'
 import { useDetailContext } from '../context'
+import StatusFilterChips from './StatusFilterChips'
 
 dayjs.extend(buddhistEra)
 dayjs.locale('th')
@@ -165,43 +166,11 @@ const MapEventSection: React.FC = () => {
         </h3>
 
         <div className='mt-3 flex flex-row flex-wrap items-center gap-2'>
-          {SUMMARY_STATS.map((stat) => {
-            const isActive = statusFilter === stat.key
-            return (
-              <div
-                key={stat.key}
-                role='button'
-                tabIndex={0}
-                onClick={() => setStatusFilter(stat.key)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setStatusFilter(stat.key) }}
-                className='box-border flex flex-row items-center justify-between rounded-[10px] px-2 w-[calc(50%-4px)] min-w-[110px] max-w-[130px] sm:w-[130px] h-[46px] cursor-pointer select-none transition-colors'
-                style={{
-                  ...(isActive
-                    ? { background: stat.color }
-                    : { background: 'transparent', border: `2px solid ${stat.color}` }),
-                }}
-              >
-                <span
-                  className='fs-12 font-normal m-0 leading-none shrink-0'
-                  style={{ color: isActive ? '#212121' : stat.color }}
-                >
-                  {stat.label}
-                </span>
-                <span
-                  className='flex items-center justify-center fs-12 font-normal m-0 leading-none shrink-0 rounded-[5px]'
-                  style={{
-                    width: 50,
-                    height: 30,
-                    ...(isActive
-                      ? { background: '#212121', color: stat.color }
-                      : { background: stat.color, color: '#212121' }),
-                  }}
-                >
-                  {alertsUnavailable ? '-' : summaryValues[stat.key]}
-                </span>
-              </div>
-            )
-          })}
+          <StatusFilterChips
+            chips={SUMMARY_STATS.map((stat) => ({ ...stat, count: alertsUnavailable ? null : summaryValues[stat.key] }))}
+            active={statusFilter}
+            onChange={setStatusFilter}
+          />
         </div>
 
         <div className='mt-5 w-full min-w-0 overflow-x-auto overflow-y-hidden'>

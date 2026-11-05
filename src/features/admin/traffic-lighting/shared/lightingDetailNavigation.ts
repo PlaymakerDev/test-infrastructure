@@ -17,6 +17,14 @@ export const resolveLightingImei = (
   return /^\d{14,17}$/.test(routeId) ? routeId : ''
 }
 
+/** A device with no IMEI is listed as "<solutionId>-<n>"
+ *  (`mapCentralListToProjects`), `n` being its place among such rows in that
+ *  list — so the solution id is the stable part. null for any other id. */
+export const resolveLightingSolutionId = (routeId: string): number | null => {
+  const m = /^(\d+)-\d+$/.exec(routeId.trim())
+  return m ? Number(m[1]) : null
+}
+
 /** Build a portable detail URL containing every identifier needed to refetch.
  *
  *  `imei` is only appended when it adds something the path doesn't already say.

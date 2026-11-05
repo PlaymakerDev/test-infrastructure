@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { apiResponseLightingSolutionSchema } from './lighting'
+import {
+  apiResponseLightingLampCurrentHourlySchema,
+  apiResponseLightingLampSummarySchema,
+  apiResponseLightingLampsSchema,
+  apiResponseLightingLampsWeeklySchema,
+  apiResponseLightingSolutionSchema,
+} from './lighting'
 
 // Shapes copied from the live /lighting/solutions/{solution_id} (2026-11-02).
 const project = {
@@ -87,5 +93,91 @@ describe('apiResponseLightingSolutionSchema', () => {
       },
     })
     expect(result.success).toBe(false)
+  })
+})
+
+// Shapes copied from the live /lighting/solutions/{solution_id}/lamps* (2026-11-05).
+const lamp = {
+  device_id: '24E124746F069297',
+  dev_eui: '',
+  device_type: 'SEM',
+  pole: '1',
+  lamp_type: '1',
+  current: 0,
+  status: 'ดับ',
+  state: 'ดับ 1 โคม',
+  is_online: false,
+  battery: 0,
+  rssi: -95,
+  sta: '',
+  highmast_group: '1',
+  lat: 13.824311,
+  lng: 100.446622,
+  last_update: '14/07/2568 22:05:10',
+}
+
+describe('lamp endpoints', () => {
+  it('parses the lamps of a point — status, connection, current and last report per lamp', () => {
+    const result = apiResponseLightingLampsSchema.safeParse({
+      solution_id: 4725,
+      wid: 2107,
+      total: 2,
+      lamps: [
+        lamp,
+        { ...lamp, device_id: '10D4B', pole: '2', status: 'ปกติ', state: 'ใช้งานได้', is_online: true, current: null, battery: 3.6, rssi: 0, highmast_group: '', last_update: '' },
+      ],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects a lamp whose pole comes as a number', () => {
+    const result = apiResponseLightingLampsSchema.safeParse({ solution_id: 1, wid: 1, total: 1, lamps: [{ ...lamp, pole: 1 }] })
+    expect(result.success).toBe(false)
+  })
+
+  it('parses the work-master tally with the point position', () => {
+    const result = apiResponseLightingLampSummarySchema.safeParse({
+      solution_id: 4725,
+      wid: 2107,
+      detail: 'ถ.นครอินทร์ - ทางแยกต่างระดับบางคูเวียง',
+      lat: 13.822369,
+      lng: 100.427275,
+      total: 180,
+      work: 1,
+      fail: 179,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('parses the 7-day tally, and a point with none', () => {
+    expect(apiResponseLightingLampsWeeklySchema.safeParse({
+      solution_id: 4396,
+      wid: 60,
+      days: [
+        { date: '30/10/69', total: 414, work: 286, fail: 128 },
+        { date: '31/10/69', total: 414, work: 286, fail: 128 },
+      ],
+    }).success).toBe(true)
+    expect(apiResponseLightingLampsWeeklySchema.safeParse({ solution_id: 4398, wid: 132, days: [] }).success).toBe(true)
+  })
+
+  it('parses the hourly current — the whole point, and one lamp by its raw id', () => {
+    const hour = (h: string, avg: number | null, lamps = 0) => ({
+      hour: h, avg_amp: avg, min_amp: avg, max_amp: avg, lamps, samples: lamps,
+    })
+    expect(apiResponseLightingLampCurrentHourlySchema.safeParse({
+      solution_id: 4788,
+      wid: 2437,
+      date: '2026-11-05',
+      device_id: null,
+      hours: [hour('00:00', null), hour('18:00', 0.42, 12), hour('07:00', 0, 3)],
+    }).success).toBe(true)
+    expect(apiResponseLightingLampCurrentHourlySchema.safeParse({
+      solution_id: 4788,
+      wid: 2437,
+      date: '2026-11-05',
+      device_id: '24E124746F137262 ',
+      hours: [hour('00:00', null)],
+    }).success).toBe(true)
   })
 })

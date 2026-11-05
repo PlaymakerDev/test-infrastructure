@@ -130,7 +130,7 @@ const FanLegs: React.FC<{ count: number; length: number }> = memo(function FanLe
 /** Renders one coordinate group: a single pin, or a count badge that fans out
  *  into individually-clickable pins on click. Popups use the shared
  *  single-popup-per-map helper so opening one closes any other. */
-const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ items, variant }) => {
+const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant; unit: string }> = ({ items, variant, unit }) => {
   const { map } = useMap()
   const [expanded, setExpanded] = useState(false)
   const center = items[0].coord
@@ -187,7 +187,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
           <button
             type='button'
             onClick={toggleFan}
-            title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
+            title={expanded ? `ปิด — ${n} ${unit}ที่จุดนี้` : `${n} ${unit}ที่จุดนี้ — คลิกเพื่อขยาย`}
             style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', position: 'relative', zIndex: 2 }}
           >
             <WhiteTeardropPin count={n} color={allOffline ? OFFLINE_PIN_COLOR : undefined} />
@@ -196,7 +196,7 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
           <button
             type='button'
             onClick={toggleFan}
-            title={expanded ? `ปิด — ${n} กล้องที่จุดนี้` : `${n} กล้องที่จุดนี้ — คลิกเพื่อขยาย`}
+            title={expanded ? `ปิด — ${n} ${unit}ที่จุดนี้` : `${n} ${unit}ที่จุดนี้ — คลิกเพื่อขยาย`}
             style={{
               width: MARKER_SIZE,
               height: MARKER_SIZE,
@@ -256,7 +256,12 @@ const Stack: React.FC<{ items: OverlapMarkerItem[]; variant: PinVariant }> = ({ 
  * that fans out (spider) so each item stays individually clickable. Mirrors the
  * dashboard's OverlapStackMarker UX, but generic over any popup content.
  */
-const OverlapMarkers: React.FC<{ items: OverlapMarkerItem[]; variant?: PinVariant }> = ({ items, variant = 'yellow' }) => {
+const OverlapMarkers: React.FC<{
+  items: OverlapMarkerItem[]
+  variant?: PinVariant
+  /** What a group counts, in its "N … ที่จุดนี้" title — "กล้อง" by default. */
+  unit?: string
+}> = ({ items, variant = 'yellow', unit = 'กล้อง' }) => {
   const groups = useMemo(() => {
     const m = new Map<string, OverlapMarkerItem[]>()
     for (const it of items) {
@@ -271,7 +276,7 @@ const OverlapMarkers: React.FC<{ items: OverlapMarkerItem[]; variant?: PinVarian
   return (
     <>
       {groups.map((g) => (
-        <Stack key={`${g[0].coord[0]},${g[0].coord[1]}`} items={g} variant={variant} />
+        <Stack key={`${g[0].coord[0]},${g[0].coord[1]}`} items={g} variant={variant} unit={unit} />
       ))}
     </>
   )

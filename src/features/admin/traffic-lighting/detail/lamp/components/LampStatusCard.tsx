@@ -1,32 +1,30 @@
 "use client"
 import React from 'react'
-import { Empty } from 'antd'
+import { Empty, Spin } from 'antd'
 import { TbBulb } from 'react-icons/tb'
 import { LAMP_FAULT_COLOR, LAMP_WORKING_COLOR } from '../data/mockLampData'
-import { formatLampStamp, type LampSummary } from '../data/lampRows'
+import { countWithShare, formatLampStamp, type LampSummary } from '../data/lampRows'
 
 interface Props {
   summary: LampSummary | null
-  /** When the newest lamp report came in. The split is the gateway's last
-   *  tally, which stays put while the gateway is silent — so the card says
-   *  how old it is, and claims "วันนี้" only when it is from today. */
+  /** When the newest lamp report came in. The split is today's — BE reads a
+   *  lamp silent for 13 hours as ดับ — so this tells "all ดับ" apart from
+   *  "nothing has reported since …". */
   reportedAt?: Date | null
-  /** The page's clock (read once at mount), for "today". */
-  now?: number
+  loading?: boolean
 }
 
 const DONUT_SIZE = 168
 const DONUT_THICKNESS = 26
 
-/** One legend column — big count, then a dot + caption underneath. */
-const Legend: React.FC<{ label: string; value: number; color: string; align: 'left' | 'right' }> = ({
-  label, value, color, align,
+/** One legend column — the state in its colour, then "128 (32.2%)" (Figma). */
+const Legend: React.FC<{ label: string; value: number; total: number; color: string; align: 'left' | 'right' }> = ({
+  label, value, total, color, align,
 }) => (
   <div className={`flex flex-col gap-[5px] ${align === 'right' ? 'items-end' : 'items-start'}`}>
     <span className='leading-6' style={{ color, fontSize: 20 }}>{label}</span>
-    <span className='flex items-center gap-[5px] leading-[15px]' style={{ fontSize: 12, color: '#FFFFFF' }}>
-      <span className='inline-block rounded-full shrink-0' style={{ width: 8, height: 8, background: color }} />
-      {value.toLocaleString('en-US')} โคม
+    <span className='leading-[15px] whitespace-nowrap' style={{ fontSize: 12, color: '#FFFFFF' }}>
+      {countWithShare(value, total)}
     </span>
   </div>
 )
@@ -38,11 +36,9 @@ const Legend: React.FC<{ label: string; value: number; color: string; align: 'le
  *  legend), whereas this design places the legend either side of the ring
  *  inside a fixed 440×330 card. Two flat segments with no interaction don't
  *  justify fighting the wrapper's layout. */
-const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, now = 0 }) => {
+const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, loading = false }) => {
   const total = summary?.total ?? 0
   const workingPct = total > 0 ? (summary!.working / total) * 100 : 0
-  const fromToday = !reportedAt || reportedAt.toDateString() === new Date(now).toDateString()
-  const title = fromToday ? 'สถานะโคมไฟวันนี้' : 'สถานะโคมไฟ'
 
   return (
     <div
@@ -53,7 +49,7 @@ const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, now = 0 }
         <TbBulb size={30} style={{ color: '#05F2DB' }} className='shrink-0' />
         <div className='min-w-0'>
           <p className='m-0 font-bold leading-[19px]' style={{ color: '#05F2DB', fontSize: 16 }}>
-            {title}
+            สถานะโคมไฟวันนี้
           </p>
           {summary && reportedAt && (
             <p className='m-0 mt-1 text-(--light-gray-3)' style={{ fontSize: 14 }}>
@@ -65,7 +61,7 @@ const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, now = 0 }
 
       {summary ? (
         <div className='flex-1 min-h-0 flex items-center justify-between gap-3 mt-2'>
-          <Legend label='ไม่ทำงาน' value={summary.notWorking} color={LAMP_FAULT_COLOR} align='left' />
+          <Legend label='ไม่ทำงาน' value={summary.notWorking} total={total} color={LAMP_FAULT_COLOR} align='left' />
 
           <div
             className='relative shrink-0 rounded-full'
@@ -91,11 +87,13 @@ const LampStatusCard: React.FC<Props> = ({ summary, reportedAt = null, now = 0 }
             </div>
           </div>
 
-          <Legend label='ทำงาน' value={summary.working} color={LAMP_WORKING_COLOR} align='right' />
+          <Legend label='ทำงาน' value={summary.working} total={total} color={LAMP_WORKING_COLOR} align='right' />
         </div>
       ) : (
         <div className='flex-1 flex items-center justify-center min-h-0 w-full'>
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ยังไม่มีข้อมูลสถานะรายโคมจาก API' />
+          {loading
+            ? <Spin />
+            : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='ไม่มีข้อมูลสถานะโคมไฟ' />}
         </div>
       )}
     </div>

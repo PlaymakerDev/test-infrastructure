@@ -322,3 +322,105 @@ export interface LightingSolutionDetail {
   }
 }
 
+// ── GET /lighting/solutions/{solution_id}/lamps[/summary|/weekly] ────────────
+// A LoRa lamp point's lamps as the legacy SEM page reads them (getMarkerSEM,
+// getStatusSEM, getChartWeekSEM — BE 2026-11-05). Answered bare.
+
+/** One lamp — a legacy tbl_device row. */
+export interface LightingLamp {
+  /** Legacy devid: the table's รหัสอุปกรณ์ (same value as the solution
+   *  detail's `devices[].device_id`, trailing spaces included) and the id the
+   *  logs endpoint takes. */
+  device_id: string
+  /** Empty on most points. */
+  dev_eui: string
+  /** "SEM" / "SEM-Wired" */
+  device_type: string
+  /** Pole number as text — "1". */
+  pole: string
+  /** Lamps on the pole: "1" or "2". */
+  lamp_type: string
+  /** The last non-zero current since the 07:00 reset (so 0 through the
+   *  day); 0 when not online; null when blank. */
+  current: number | null
+  /** "ปกติ" or "ดับ" — ดับ also when the lamp is not online. */
+  status: string
+  /** "ใช้งานได้" / "ดับ 1 โคม" / "ดับ 2 โคม"; null when no rule matches. */
+  state: string | null
+  /** Reported within the last 13 hours (false = the legacy ติดต่อไม่ได้). */
+  is_online: boolean
+  battery: number | null
+  rssi: number | null
+  sta: string
+  highmast_group: string
+  lat: number | null
+  lng: number | null
+  /** "dd/mm/yyyy HH:mm:ss", Buddhist year; `''` when never reported. */
+  last_update: string
+}
+
+export interface LightingLampList {
+  solution_id: number
+  wid: number
+  total: number
+  lamps: LightingLamp[] | null
+}
+
+/** The legacy work master's tally, recomputed every 2 hours — it can trail
+ *  the lamps (ทล.107 counts 70 working while none has reported since 2565),
+ *  so the page counts the lamps instead and reads only the position here. */
+export interface LightingLampSummary {
+  solution_id: number
+  wid: number
+  detail: string
+  lat: number | null
+  lng: number | null
+  total: number
+  work: number
+  fail: number
+}
+
+/** One day of the 7-day tally (legacy tbl_sem_sum_daily). */
+export interface LightingLampDay {
+  /** "dd/mm/yy", Buddhist year — "30/10/69". */
+  date: string
+  total: number
+  work: number
+  fail: number
+}
+
+export interface LightingLampWeekly {
+  solution_id: number
+  wid: number
+  /** Oldest first; empty when the point has no tally. */
+  days: LightingLampDay[] | null
+}
+
+/** One hour of `/lamps/current/hourly` — lamps averaged per hour first, then
+ *  together, so a lamp that reports often doesn't outweigh the rest. */
+export interface LightingLampCurrentHour {
+  /** "18:00" */
+  hour: string
+  /** null when no lamp reported in this hour; 0 = lamps reported no current. */
+  avg_amp: number | null
+  min_amp: number | null
+  max_amp: number | null
+  /** Lamps that reported in this hour. */
+  lamps: number
+  /** Readings in this hour. */
+  samples: number
+}
+
+/** GET /lighting/solutions/{solution_id}/lamps[/{device_id}]/current/hourly
+ *  — a Bangkok day (`?date=YYYY-MM-DD`, today when omitted), always 24 hours
+ *  from 00:00. Readings exist only from the day BE began sampling. */
+export interface LightingLampCurrentHourly {
+  solution_id: number
+  wid: number
+  /** "2026-11-05" */
+  date: string
+  /** Set on the one-lamp endpoint. */
+  device_id: string | null
+  hours: LightingLampCurrentHour[] | null
+}
+

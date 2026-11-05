@@ -28,6 +28,19 @@ export const lightingKeys = {
   deviceDetails: (imei: string) => [...lightingKeys.all, 'deviceDetails', imei] as const,
   /** GET /lighting/solutions/{solution_id} — one install point and its lamps. */
   solution: (solutionId: number) => [...lightingKeys.all, 'solution', solutionId] as const,
+  /** GET /lighting/solutions/{solution_id}/lamps — a lamp point's lamps. */
+  lamps: (solutionId: number) => [...lightingKeys.solution(solutionId), 'lamps'] as const,
+  /** GET /lighting/solutions/{solution_id}/lamps/summary */
+  lampSummary: (solutionId: number) => [...lightingKeys.solution(solutionId), 'lampSummary'] as const,
+  /** GET /lighting/solutions/{solution_id}/lamps/weekly */
+  lampsWeekly: (solutionId: number) => [...lightingKeys.solution(solutionId), 'lampsWeekly'] as const,
+  /** GET /lighting/solutions/{solution_id}/lamps/current/hourly — `date`
+   *  null = BE's today. */
+  lampsCurrentHourly: (solutionId: number, date: string | null) =>
+    [...lightingKeys.solution(solutionId), 'lampsCurrentHourly', date] as const,
+  /** GET /lighting/solutions/{solution_id}/lamps/{device_id}/current/hourly */
+  lampCurrentHourly: (solutionId: number, deviceId: string, date: string | null) =>
+    [...lightingKeys.solution(solutionId), 'lampCurrentHourly', deviceId, date] as const,
   voltGraph: (imei: string, phase?: number | null) =>
     [...lightingKeys.all, 'voltGraph', imei, phase ?? null] as const,
   ampGraph: (imei: string, phase?: number | null) =>
