@@ -37,6 +37,9 @@ export interface SummaryExportInput {
   shortName: string
   /** ทั้งหมด / ในค้ำ / หมดค้ำ — the filter the rings and the tables were read under. */
   warrantyLabel: string
+  /** The table's ค้นหาโครงการ, when one is on: the project tables were read
+   *  with it, the rings (the contractor's every project) without. */
+  search?: string
   rings: { system: SummarySystem; totals: DeviceTotals }[]
   /** GET /manage/project/device-status/summary — the projects of both tables, in order. */
   summary: ProjectDeviceSummaryRow[]
@@ -73,6 +76,12 @@ export const PROJECTS_TITLE = 'ตารางสรุปโครงการ�
 
 const filenameBase = (input: SummaryExportInput) => `สรุปข้อมูลผู้รับจ้าง_${input.shortName || 'ผู้รับจ้าง'}`
 export const warrantyNote = (input: Pick<SummaryExportInput, 'warrantyLabel'>) => `สถานะค้ำประกัน: ${input.warrantyLabel}`
+/** The project tables' filters: the warranty, then the search when one is on. */
+const projectsNote = (input: Pick<SummaryExportInput, 'warrantyLabel' | 'search'>) =>
+  input.search ? `${warrantyNote(input)} · ค้นหาโครงการ: "${input.search}"` : warrantyNote(input)
+/** The rings' title — said not to follow a search, which only the tables do. */
+const ringsTitle = (input: Pick<SummaryExportInput, 'search'>) =>
+  input.search ? `${RINGS_TITLE} (ไม่กรองตามคำค้นหา)` : RINGS_TITLE
 
 const ringCells = ({ system, totals }: SummaryExportInput['rings'][number]): (string | number)[] => [
   system.label,
@@ -411,12 +420,12 @@ export const exportSummaryPdf = async (report: SummaryExportInput) => {
   await exportReportPdf({
     filenameBase: filenameBase(input),
     title: summaryReportTitle(input.companyName),
-    subtitleNote: warrantyNote(input),
+    subtitleNote: projectsNote(input),
     orientation: 'landscape',
     blocks: [
       {
         type: 'table',
-        title: RINGS_TITLE,
+        title: ringsTitle(input),
         columns: [
           { header: RING_HEADERS[0], widthPct: 32 },
           { header: RING_HEADERS[1], widthPct: 17, align: 'right' },
@@ -436,14 +445,15 @@ export const exportSummaryExcel = async (report: SummaryExportInput) => {
   const { exportExcelSheets, excelSheet } = await import('@/utils/export/excel')
   const input = reportView(report)
   const title = summaryReportTitle(input.companyName)
-  const note = warrantyNote(input)
+  const note = projectsNote(input)
   exportExcelSheets({
     filenameBase: filenameBase(input),
     sheets: [
       excelSheet({
         sheetName: 'ภาพรวมอุปกรณ์',
         title: `${title} · ${RINGS_TITLE}`,
-        filterNote: note,
+        // The rings were read without the search.
+        filterNote: warrantyNote(input),
         columns: RING_HEADERS.map((header, index) => ({
           header,
           width: index === 0 ? 22 : 14,

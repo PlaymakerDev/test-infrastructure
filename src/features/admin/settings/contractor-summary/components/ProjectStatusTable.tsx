@@ -1,7 +1,7 @@
 "use client"
-import React, { useMemo } from 'react'
-import { Empty, Segmented, Table, type TableProps } from 'antd'
-import { TbInfoSquareRoundedFilled, TbPlayerTrackNext, TbWifi, TbWifiOff } from 'react-icons/tb'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Empty, Input, Segmented, Table, type TableProps } from 'antd'
+import { TbInfoSquareRoundedFilled, TbPlayerTrackNext, TbSearch, TbWifi, TbWifiOff } from 'react-icons/tb'
 import AppPagination from '@/components/pagination/AppPagination'
 import { fmtNumber } from '@/utils/formatNumber'
 import useIsMobile from '@/utils/hooks/useIsMobile'
@@ -17,6 +17,9 @@ interface Props {
   isError: boolean
   warranty: WarrantyFilter
   onWarrantyChange: (value: WarrantyFilter) => void
+  /** The search the table was read with (trimmed). */
+  search: string
+  onSearchChange: (value: string) => void
   onPageChange: (page: number, pageSize: number) => void
   onOpenLive: (row: ProjectDeviceStatusRow) => void
   onOpenProjectInfo: (row: ProjectDeviceStatusRow) => void
@@ -45,6 +48,51 @@ const DeviceCounts: React.FC<{ totals: DeviceTotals | null | undefined }> = ({ t
   </div>
 )
 
+const SEARCH_DELAY_MS = 700
+
+/** ค้นหาโครงการ — the box the settings tabs search with (user 2026-11-04):
+ *  applied 700 ms after the last keystroke, or at once on Enter. The backend
+ *  matches the text in project_name or contract_no. No fs class on purpose:
+ *  antd's 16px, as there — iOS zooms into an input under 16px. */
+const ProjectSearchInput: React.FC<{ value: string; onChange: (value: string) => void }> = ({ value, onChange }) => {
+  const [text, setText] = useState(value)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // What was last sent up: a space typed at either end changes nothing, so
+  // it must not send the table back to page 1.
+  const applied = useRef(value)
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current)
+  }
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current)
+  }, [])
+
+  const commit = (next: string) => {
+    cancel()
+    const search = next.trim()
+    if (search === applied.current) return
+    applied.current = search
+    onChange(search)
+  }
+
+  return (
+    <Input
+      size='large'
+      value={text}
+      placeholder='ค้นหาชื่อโครงการ / เลขที่สัญญา...'
+      aria-label='ค้นหาโครงการ'
+      suffix={<TbSearch className='text-(--yellow)' />}
+      onChange={(e) => {
+        const next = e.target.value
+        setText(next)
+        cancel()
+        timer.current = setTimeout(() => commit(next), SEARCH_DELAY_MS)
+      }}
+      onPressEnter={() => commit(text)}
+    />
+  )
+}
+
 /** ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ — one page of the
  *  contractor's projects; the ▷▷ button opens the project's cameras. */
 const ProjectStatusTable: React.FC<Props> = ({
@@ -56,6 +104,8 @@ const ProjectStatusTable: React.FC<Props> = ({
   isError,
   warranty,
   onWarrantyChange,
+  search,
+  onSearchChange,
   onPageChange,
   onOpenLive,
   onOpenProjectInfo,
@@ -142,16 +192,21 @@ const ProjectStatusTable: React.FC<Props> = ({
     <section>
       <div className='flex flex-wrap items-center justify-between gap-3 mb-4'>
         <p className='fs-18'>ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ</p>
-        {/* The app's yellow-outlined Segmented, as the statistics and
-            maintenance filters render it (user 2026-10-01: a roomier,
-            Figma-measured version was too big). */}
-        <Segmented
-          value={warranty}
-          options={warrantyOptions}
-          onChange={(value) => onWarrantyChange(value as WarrantyFilter)}
-          size={isMobile ? 'middle' : 'large'}
-          classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
-        />
+        <div className='flex flex-wrap items-center gap-3 w-full md:w-auto'>
+          <div className='w-full md:w-80 lg:w-100'>
+            <ProjectSearchInput value={search} onChange={onSearchChange} />
+          </div>
+          {/* The app's yellow-outlined Segmented, as the statistics and
+              maintenance filters render it (user 2026-10-01: a roomier,
+              Figma-measured version was too big). */}
+          <Segmented
+            value={warranty}
+            options={warrantyOptions}
+            onChange={(value) => onWarrantyChange(value as WarrantyFilter)}
+            size={isMobile ? 'middle' : 'large'}
+            classNames={{ root: 'min-w-max border! border-(--yellow)!' }}
+          />
+        </div>
       </div>
       <Table<ProjectDeviceStatusRow>
         rowKey='project_id'
@@ -161,7 +216,15 @@ const ProjectStatusTable: React.FC<Props> = ({
         pagination={false}
         scroll={{ x: 1300 }}
         locale={{
-          emptyText: <Empty description={<span className='fs-12'>{isError ? 'โหลดข้อมูลโครงการไม่สำเร็จ' : 'ไม่พบโครงการ'}</span>} />,
+          emptyText: (
+            <Empty
+              description={
+                <span className='fs-12'>
+                  {isError ? 'โหลดข้อมูลโครงการไม่สำเร็จ' : search ? 'ไม่พบโครงการที่ค้นหา' : 'ไม่พบโครงการ'}
+                </span>
+              }
+            />
+          ),
         }}
       />
       {/* Phone: antd's pagination row never wraps, so "10 จาก 82" gets squeezed

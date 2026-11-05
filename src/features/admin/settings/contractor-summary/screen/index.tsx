@@ -68,11 +68,15 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   // ทั้งหมด / ในค้ำ / หมดค้ำ governs both the rings and the table.
   const [warranty, setWarranty] = useState<WarrantyFilter>('all')
   const { rings, isLoading: isRingsLoading, isError: isRingsError } = useContractorDeviceRings(contractor, warranty)
+  // ค้นหาโครงการ (user 2026-11-04) — the table only: project_name /
+  // contract_no on the backend; the rings stay the contractor's every project.
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const listQuery = useProjectDeviceStatusList({
     contractor_id: id,
     is_warranty: warrantyParam(warranty),
+    search: search || undefined,
     page,
     limit: pageSize,
   })
@@ -93,6 +97,11 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     setPage(1)
   }, [])
 
+  const onSearchChange = useCallback((value: string) => {
+    setSearch(value)
+    setPage(1)
+  }, [])
+
   const onPageChange = useCallback((nextPage: number, nextPageSize: number) => {
     setPage(nextPageSize === pageSize ? nextPage : 1)
     setPageSize(nextPageSize)
@@ -104,7 +113,8 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
 
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
     if (!contractor) return null
-    const query = { contractor_id: id, is_warranty: warrantyParam(warranty) }
+    // The table's filters, its search included (the rings follow the warranty only).
+    const query = { contractor_id: id, is_warranty: warrantyParam(warranty), search: search || undefined }
     const [summary, solutions, projectSolutions] = await Promise.all([
       // All of it either way: the summary can list a project the page's table
       // doesn't, so its pages don't line up with the table's.
@@ -118,6 +128,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
       companyName: contractor.company_name,
       shortName: contractor.short_name,
       warrantyLabel: warrantyLabelOf(warranty),
+      search: search || undefined,
       rings,
       summary: scope === 'page' ? summaryForProjects(summary, rows) : summary,
       solutions,
@@ -196,6 +207,8 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
           isError={listQuery.isError}
           warranty={warranty}
           onWarrantyChange={onWarrantyChange}
+          search={search}
+          onSearchChange={onSearchChange}
           onPageChange={onPageChange}
           onOpenLive={setLiveProject}
           onOpenProjectInfo={onOpenProjectInfo}

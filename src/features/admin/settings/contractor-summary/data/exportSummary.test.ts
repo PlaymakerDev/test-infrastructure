@@ -252,6 +252,23 @@ describe('สรุปข้อมูลผู้รับจ้าง export', 
     expect(summaryForProjects(input.summary, page).map((row) => row.project_id)).toEqual([163])
     expect(summaryForProjects(input.summary, [{ project_id: 246 }, { project_id: 163 }]).map((row) => row.project_id)).toEqual([246, 163])
   })
+
+  it('ค้นหาโครงการ (user 2026-11-04): named with the warranty for the project tables; the rings say they don’t follow it', async () => {
+    const searched = { ...input, search: 'ปท.3035' }
+    await exportSummaryPdf(searched)
+    const pdf = calls.pdf[0] as { subtitleNote: string; blocks: Table[] }
+    expect(pdf.subtitleNote).toBe('สถานะค้ำประกัน: ในค้ำ · ค้นหาโครงการ: "ปท.3035"')
+    expect(pdf.blocks[0].title).toBe('ภาพรวมสถานะการทำงานของอุปกรณ์ทุกโครงการ (ไม่กรองตามคำค้นหา)')
+    expect(pdf.blocks[1].title).toBe('ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ')
+
+    await exportSummaryExcel(searched)
+    const { sheets } = calls.excel[0] as { sheets: Sheet[] }
+    expect(sheets.map((s) => [s.sheetName, s.filterNote])).toEqual([
+      ['ภาพรวมอุปกรณ์', 'สถานะค้ำประกัน: ในค้ำ'],
+      ['สรุป', 'สถานะค้ำประกัน: ในค้ำ · ค้นหาโครงการ: "ปท.3035"'],
+      ['โครงการ', 'สถานะค้ำประกัน: ในค้ำ · ค้นหาโครงการ: "ปท.3035"'],
+    ])
+  })
 })
 
 describe('สรุปข้อมูลผู้รับจ้าง export — every device, project by project (user 2026-10-27)', () => {
