@@ -1,6 +1,5 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { Col, Row } from 'antd'
 import HLSLivePlayer from '@/components/video/HLSLivePlayer'
 import SearchBar, {
   type FilterConfig,
@@ -100,6 +99,19 @@ const CAMERA_EXPORT_COLUMNS: {
   // IP last — mirrors the on-screen table column order (2026-08-17, app-wide rule).
   { header: 'IP Address', width: 16, widthPct: 15, value: (r) => r.ipAddress || '-' },
 ]
+
+/** The tile grid the CCTV / Incident Detection / Traffic Volume detail pages
+ *  use — ~4 per row on a 1920 desktop, fewer as the screen narrows — so a tile
+ *  is the same size whatever the count. Before, a block of fewer than 4
+ *  stretched to fill its row, and a lone Counting camera filled the whole
+ *  width above half-width Stopline tiles (user 2026-11-05, solution 1574).
+ *  Both blocks share these tracks, so Stopline tiles sit under the Counting
+ *  ones. `min(…, 100%)` keeps a phone's narrower column from overflowing. */
+const TILE_GRID: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(360px, 100%), 1fr))',
+  gap: '1rem',
+}
 
 /** Single camera tile — HLS player + code + IP + per-mode footer pills.
  *  Clicking the player area opens the central Live Stream modal. */
@@ -304,27 +316,21 @@ const CamerasGridTrafficSignal: React.FC = () => {
             onOpen={openLive}
           />
         ) : (
-          /* GRID view — Counting tiles on top + Stopline tiles below.
-           * A block with < 4 cameras fills the row evenly (3 → 3/row, 2 → 2/row);
-           * 4+ cameras use 4/row (lg=6). */
+          /* GRID view — Counting tiles on top + Stopline tiles below (Figma). */
           <>
             {filtered.counting.length > 0 && (
-              <Row gutter={[16, 16]} className='mb-4'>
+              <div style={TILE_GRID} className='mb-4'>
                 {filtered.counting.map((cam) => (
-                  <Col key={cam.id} xs={24} sm={12} md={12} lg={filtered.counting.length < 4 ? 24 / filtered.counting.length : 6}>
-                    <CameraTile cam={cam} onOpen={openLive} />
-                  </Col>
+                  <CameraTile key={cam.id} cam={cam} onOpen={openLive} />
                 ))}
-              </Row>
+              </div>
             )}
             {filtered.stopline.length > 0 && (
-              <Row gutter={[16, 16]}>
+              <div style={TILE_GRID}>
                 {filtered.stopline.map((cam) => (
-                  <Col key={cam.id} xs={24} sm={12} md={12} lg={filtered.stopline.length < 4 ? 24 / filtered.stopline.length : 6}>
-                    <CameraTile cam={cam} onOpen={openLive} />
-                  </Col>
+                  <CameraTile key={cam.id} cam={cam} onOpen={openLive} />
                 ))}
-              </Row>
+              </div>
             )}
           </>
         )}
