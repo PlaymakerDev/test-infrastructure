@@ -8,7 +8,8 @@ export interface DeviceTotals {
   offline: number
 }
 
-interface ProjectDeviceStatusBase {
+/** The project fields every /device-status listing opens each row with. */
+export interface ProjectDeviceStatusBase {
   project_id: number
   project_name: string
   contract_no: string | null
@@ -93,6 +94,9 @@ export interface SolutionCamera {
   ip_address: string
   /** curl_status */
   is_online: boolean
+  /** An open นอกเหนือการประกัน record on the camera — set wherever it is
+   *  listed (BE 2026-11-16). */
+  is_out_of_warranty?: boolean
   /** Every solution type the camera serves, anywhere — its own solution and
    *  each module that links it — as upper-cased tbl_solution_type names in
    *  type order: ["CCTV", "COUNTING"], ["CCTV", "WIM"] … (BE 2026-10-27). */
@@ -111,6 +115,9 @@ export interface CameraSolution {
 export interface SystemSolution extends CameraSolution {
   id: number
   is_online: boolean
+  /** An open นอกเหนือการประกัน record on the controller's solution (BE
+   *  2026-11-16). */
+  is_out_of_warranty?: boolean
 }
 
 /** A bridge-lighting installation (`id` = its module row). */
@@ -119,6 +126,8 @@ export interface StatusSolution {
   solution_id: number
   solution_name: string
   is_online: boolean
+  /** An open นอกเหนือการประกัน record on the solution (BE 2026-11-16). */
+  is_out_of_warranty?: boolean
 }
 
 /** A lamp (โคม) of a street-light cabinet, named by its pole number ("โคมที่ 1"). */
@@ -130,6 +139,8 @@ export interface LightingLamp {
   sta: string
   /** The legacy status "1". */
   is_online: boolean
+  /** The cabinet's — street lighting is recorded per solution. */
+  is_out_of_warranty?: boolean
   last_connectd: string | null
 }
 
@@ -148,6 +159,8 @@ export interface TunnelDevice {
   device_name: string
   /** lastupdate within the last hour */
   is_online: boolean
+  /** The tunnel solution's — a tunnel can't be recorded, so false today. */
+  is_out_of_warranty?: boolean
   last_update: string | null
 }
 
@@ -279,4 +292,128 @@ export interface ProjectVMSListItem {
   project_name: string
   contract_no: string | null
   vms: ProjectVMSItem[]
+}
+
+// ── อุปกรณ์นอกเหนือการค้ำประกัน (BE 2026-11-16) ──────────────────────────────
+// A device whose failure the warranty does not cover — a car hit it, a cable
+// cut or stolen, another accident — recorded per project with what the
+// inspection found and up to two photos. A record closes by itself once its
+// device is back online; uptime-statistics then stops counting it.
+
+/** What can be recorded: cameras one by one (camera_id), the other four per
+ *  solution (solution_id). Traffic Volume, Incident Detection, LPR,
+ *  Crosswalk and Tunnel count through their cameras. */
+export type OutOfWarrantyDeviceType = 'cctv' | 'vms' | 'lighting' | 'traffic' | 'bridge_lighting'
+
+/** A device as GET …/out-of-warranty/candidates lists it. */
+export interface OutOfWarrantyCandidate {
+  solution_id: number
+  solution_name: string
+  /** "5+800"; "" when it has none. */
+  sta: string
+  /** "" for a street-light cabinet. */
+  ip_address: string
+  /** Cameras: curl_status, online ones listed too. Systems: always false. */
+  is_online: boolean
+  /** When it was last heard from; null when online or never reached. */
+  offline_since: string | null
+  /** Already has an open record. */
+  is_out_of_warranty: boolean
+  record_id: number | null
+}
+
+export interface OutOfWarrantyCandidateCamera extends OutOfWarrantyCandidate {
+  camera_id: string
+  camera_name: string
+}
+
+/** GET /manage/project/device-status/out-of-warranty/candidates?project_id —
+ *  every camera of the project and its offline systems, by chainage. Admin
+ *  and contractor only (a role-user account gets 403). */
+export interface APIResponseOutOfWarrantyCandidates extends ProjectDeviceStatusBase {
+  cctv: OutOfWarrantyCandidateCamera[]
+  vms: OutOfWarrantyCandidate[]
+  lighting: OutOfWarrantyCandidate[]
+  traffic: OutOfWarrantyCandidate[]
+  bridge_lighting: OutOfWarrantyCandidate[]
+}
+
+/** The record part every out-of-warranty read carries. */
+export interface OutOfWarrantyRecordInfo {
+  /** The record id. */
+  id: number
+  /** ผลการตรวจสอบ */
+  inspection_result: string
+  /** Up to two photo URLs (or upload-service paths); [] when none. */
+  images: string[]
+  /** When the device was last heard from, as it stood when recorded. */
+  offline_since: string | null
+  created_at: string
+  created_by: string
+  /** The contractor's company name, else the user's full name or username. */
+  created_by_name: string
+  updated_at: string | null
+  updated_by: string | null
+}
+
+/** GET (and PUT) /manage/project/device-status/out-of-warranty/projects/{id} —
+ *  one open record, cameras by chainage first. */
+export interface OutOfWarrantyRecord extends OutOfWarrantyRecordInfo {
+  project_id: number
+  device_type: OutOfWarrantyDeviceType
+  /** Set for a camera, null for a system. */
+  camera_id: string | null
+  /** Set for a system, null for a camera. */
+  solution_id: number | null
+  /** camera_name / solution_name */
+  device_name: string
+  ip_address: string
+  sta: string
+  is_online: boolean
+}
+
+/** One device of the PUT body — camera_id or solution_id, exactly one. The
+ *  list sent becomes the project's open records: a device left out has its
+ *  record closed. */
+export interface OutOfWarrantyRecordRequest {
+  project_id: number
+  camera_id?: string
+  solution_id?: number
+  inspection_result: string
+  images: string[]
+}
+
+export interface OutOfWarrantySystemItem extends OutOfWarrantyRecordInfo {
+  solution_id: number
+  solution_name: string
+  sta: string
+  ip_address: string
+  is_online: boolean
+}
+
+export interface OutOfWarrantyCameraItem extends OutOfWarrantySystemItem {
+  camera_id: string
+  camera_name: string
+}
+
+/** GET /manage/project/device-status/out-of-warranty — the projects with open
+ *  records only, each with just its recorded devices. */
+export interface OutOfWarrantyProjectRow extends ProjectDeviceStatusBase {
+  cctv: OutOfWarrantyCameraItem[]
+  vms: OutOfWarrantySystemItem[]
+  lighting: OutOfWarrantySystemItem[]
+  traffic: OutOfWarrantySystemItem[]
+  bridge_lighting: OutOfWarrantySystemItem[]
+}
+
+export interface APIResponseOutOfWarrantyProjects {
+  res_data: OutOfWarrantyProjectRow[] | null
+  meta_data: { count: number; page: number; limit: number; total_pages: number }
+}
+
+/** The list's filters (as /device-status/solutions), plus one project or one
+ *  kind of device. */
+export interface APIRequestOutOfWarrantyProjects extends APIRequestProjectDeviceStatusList {
+  project_id?: number
+  device_type?: OutOfWarrantyDeviceType
 }

@@ -15,11 +15,16 @@ const JPEG_QUALITY = 0.8
 const COMPRESSIBLE = new Set(['image/jpeg', 'image/jpg', 'image/png'])
 const SKIP_IF_SMALLER_THAN = 300 * 1024
 
-export const compressImage = async (file: File): Promise<File> => {
+export const compressImage = async (
+  file: File,
+  // บันทึกเงื่อนไขนอกค้ำประกัน (contractor summary) sends its damage photos
+  // at 1280 px for slow lines; the maintenance uploads keep 1920.
+  { maxEdge = MAX_EDGE }: { maxEdge?: number } = {},
+): Promise<File> => {
   if (!COMPRESSIBLE.has(file.type) || file.size < SKIP_IF_SMALLER_THAN) return file
   try {
     const bitmap = await createImageBitmap(file)
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
     const width = Math.max(1, Math.round(bitmap.width * scale))
     const height = Math.max(1, Math.round(bitmap.height * scale))
     const canvas = document.createElement('canvas')

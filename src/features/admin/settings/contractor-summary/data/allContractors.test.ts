@@ -136,4 +136,27 @@ describe('รวมผู้รับจ้าง — the rings, in their uptime
     expect(rings.map(({ system }) => system.label)).toEqual(['CCTV', 'VMS', 'Tunnel'])
     expect(solutionRings([])).toEqual([])
   })
+
+  it('นอกเหนือการประกัน: an offline unit with a record leaves ทั้งหมด and ออฟไลน์, as on the page (option ก., user 2026-11-16)', () => {
+    const recorded = { ...camera('r', false), is_out_of_warranty: true }
+    const rings = ring([
+      solutionsRow(1, {
+        cctv: [point(1, [recorded, camera('b', false), camera('c', true)])],
+        counting: [point(2, [recorded]), point(3, [camera('b', false)])],
+        vms: [{ ...controller(4, false), is_out_of_warranty: true }, controller(5, false)],
+        traffic: [{ ...controller(6, false), is_out_of_warranty: true }, controller(7, true, [recorded])],
+        crosswalk: [controller(8, false, [recorded])],
+      }),
+      // The same camera again in another project: still once, still left out.
+      solutionsRow(2, { cctv: [point(9, [recorded])] }),
+    ])
+    expect(ring([solutionsRow(3, { cctv: [point(1, [camera('x', false)])] })]).cctv).toEqual({ total: 1, online: 0, offline: 1 })
+    expect(rings.cctv).toEqual({ total: 2, online: 1, offline: 1 })
+    expect(rings.counting).toEqual({ total: 1, online: 0, offline: 1 })
+    expect(rings.vms).toEqual({ total: 1, online: 0, offline: 1 })
+    // A controller counts by its own record, not its cameras'.
+    expect(rings.traffic).toEqual({ total: 1, online: 1, offline: 0 })
+    // A crosswalk through its cameras; with nothing left it gets no ring.
+    expect(rings.crosswalk).toBeUndefined()
+  })
 })

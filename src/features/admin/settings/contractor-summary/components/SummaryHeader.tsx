@@ -11,11 +11,13 @@ interface Props {
   isLoading: boolean
   onOpenInfo: () => void
   onExport: () => void
+  /** The export button's words — นอกเหนือการประกัน has a report of its own. */
+  exportLabel?: string
 }
 
 /** Page title + the contractor's name, ⓘ, the same three count pills as the
  *  ผู้รับจ้าง tab, and นำออกเอกสาร. */
-const SummaryHeader: React.FC<Props> = ({ contractor, isLoading, onOpenInfo, onExport }) => {
+const SummaryHeader: React.FC<Props> = ({ contractor, isLoading, onOpenInfo, onExport, exportLabel = 'นำออกเอกสาร' }) => {
   const router = useRouter()
 
   return (
@@ -54,7 +56,7 @@ const SummaryHeader: React.FC<Props> = ({ contractor, isLoading, onOpenInfo, onE
             {/* Same button as the ผู้รับจ้าง tab's toolbar. */}
             <ConfigProvider theme={{ token: { colorPrimary: '#66AEFF', colorTextLightSolid: '#0A0A0A' } }}>
               <Button type='primary' shape='round' icon={<TbPrinter />} onClick={onExport}>
-                <span className='fs-12 whitespace-nowrap'>นำออกเอกสาร</span>
+                <span className='fs-12 whitespace-nowrap'>{exportLabel}</span>
               </Button>
             </ConfigProvider>
           </div>

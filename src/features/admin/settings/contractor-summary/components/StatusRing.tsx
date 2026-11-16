@@ -1,21 +1,28 @@
 "use client"
 import React from 'react'
-import { TbWifi, TbWifiOff } from 'react-icons/tb'
+import { TbTool, TbWifi, TbWifiOff } from 'react-icons/tb'
 import { fmtNumber } from '@/utils/formatNumber'
-import type { DeviceTotals } from '@/types/manage/device-status-api'
-import type { SummarySystem } from '../data/systems'
-import { offlinePercent } from '../data/deviceStatus'
+import type { DeviceRing } from '../hooks/useContractorDeviceRings'
+import { offlinePercent, outOfWarrantyPercent } from '../data/deviceStatus'
 
 interface Props {
-  system: SummarySystem
-  totals: DeviceTotals
+  ring: DeviceRing
+  /** The นอกเหนือการประกัน tab: the arc is the share of the offline devices
+   *  that are recorded out of warranty, and the counts are as read. */
+  excluded?: boolean
 }
 
 /** One system's ring: the arc is its offline share, drawn in the system's
  *  colour over a dark track — same SVG technique as the maintenance page's
  *  Solution Overview rings. The first three systems get the wide ring. */
-const StatusRing: React.FC<Props> = ({ system, totals }) => {
-  const percent = offlinePercent(totals)
+const StatusRing: React.FC<Props> = ({ ring, excluded = false }) => {
+  const { system } = ring
+  const percent = excluded ? outOfWarrantyPercent(ring) : offlinePercent(ring.totals)
+  // A record or two among hundreds offline rounds to 0% — say "<1%" and draw
+  // a sliver, not an empty ring beside a count.
+  const underOne = excluded && ring.outOfWarranty > 0 && percent === 0
+  const arc = underOne ? 1 : percent
+  const totals = excluded ? ring.raw : ring.totals
   const large = !!system.large
   const size = large ? 190 : 116
   const stroke = large ? 26 : 17
@@ -36,13 +43,13 @@ const StatusRing: React.FC<Props> = ({ system, totals }) => {
             fill='none'
             stroke={system.color}
             strokeWidth={stroke}
-            strokeDasharray={`${(percent / 100) * circumference} ${circumference}`}
+            strokeDasharray={`${(arc / 100) * circumference} ${circumference}`}
           />
         </svg>
         <div className='absolute inset-0 flex flex-col items-center justify-center leading-tight' style={{ color: system.color }}>
-          <span className={`font-bold ${large ? 'fs-36' : 'fs-18'}`}>{percent}%</span>
+          <span className={`font-bold ${large ? 'fs-36' : 'fs-18'}`}>{underOne ? '<1' : percent}%</span>
           {/* fs-12 is the site's smallest size (14px). */}
-          <span className={large ? 'fs-18' : 'fs-12'}>Offline</span>
+          <span className={large ? 'fs-18' : 'fs-12'}>{excluded ? 'ของออฟไลน์' : 'Offline'}</span>
         </div>
       </div>
       <p className='fs-22 font-bold text-center whitespace-nowrap' style={{ color: system.color }}>
@@ -54,12 +61,19 @@ const StatusRing: React.FC<Props> = ({ system, totals }) => {
         <p className='fs-14 text-(--light-gray-3)'>
           ทั้งหมด <span className='text-(--yellow)'>{fmtNumber(totals.total)}</span>
         </p>
-        <p className='fs-14 inline-flex items-center gap-1.5 text-(--light-gray-3)'>
-          <TbWifi className='text-(--default-blue)' /> ออนไลน์ <span className='text-(--default-blue)'>{fmtNumber(totals.online)}</span>
-        </p>
+        {!excluded && (
+          <p className='fs-14 inline-flex items-center gap-1.5 text-(--light-gray-3)'>
+            <TbWifi className='text-(--default-blue)' /> ออนไลน์ <span className='text-(--default-blue)'>{fmtNumber(totals.online)}</span>
+          </p>
+        )}
         <p className='fs-14 inline-flex items-center gap-1.5 text-(--light-gray-3)'>
           <TbWifiOff className='text-(--red)' /> ออฟไลน์ <span className='text-(--red)'>{fmtNumber(totals.offline)}</span>
         </p>
+        {excluded && (
+          <p className='fs-14 inline-flex items-center gap-1.5 text-(--light-gray-3) whitespace-nowrap'>
+            <TbTool className='text-(--yellow)' /> นอกเหนือการประกัน <span className='text-(--yellow)'>{fmtNumber(ring.outOfWarranty)}</span>
+          </p>
+        )}
       </div>
     </div>
   )

@@ -9,12 +9,14 @@ interface Props {
   rings: DeviceRing[]
   isLoading: boolean
   isError: boolean
-  /** The page's ทั้งหมด / ในค้ำ / หมดค้ำ — only for the empty message. */
+  /** The page's filter — นอกเหนือการประกัน rings the recorded share; the
+   *  rest only pick the empty message. */
   warranty: WarrantyFilter
 }
 
 const EMPTY_MESSAGE: Record<WarrantyFilter, string> = {
   all: 'ผู้รับจ้างนี้ยังไม่มีอุปกรณ์ในระบบ',
+  excluded: 'ผู้รับจ้างนี้ยังไม่มีอุปกรณ์ในระบบ',
   in: 'ไม่มีอุปกรณ์ที่อยู่ในระยะค้ำประกัน',
   out: 'ไม่มีอุปกรณ์ที่หมดระยะค้ำประกัน',
 }
@@ -36,6 +38,7 @@ const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError, warrant
     if (!rings.length) return <Empty description={<span className='fs-12'>{EMPTY_MESSAGE[warranty]}</span>} />
     const large = rings.filter((ring) => ring.system.large)
     const small = rings.filter((ring) => !ring.system.large)
+    const excluded = warranty === 'excluded'
     // One row when the screen is wide enough for all ten (as in the design);
     // otherwise the wide rings and the small ones each take a centred row of
     // their own instead of a ragged spill. Bottom-aligned, so names and
@@ -44,12 +47,12 @@ const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError, warrant
       <div className='flex flex-wrap items-end justify-center gap-x-10 gap-y-10'>
         {large.length > 0 && (
           <div className='flex flex-wrap items-end justify-center gap-x-8 gap-y-10'>
-            {large.map((ring) => <StatusRing key={ring.system.key} system={ring.system} totals={ring.totals} />)}
+            {large.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} />)}
           </div>
         )}
         {small.length > 0 && (
           <div className='flex flex-wrap items-end justify-center gap-x-6 gap-y-10'>
-            {small.map((ring) => <StatusRing key={ring.system.key} system={ring.system} totals={ring.totals} />)}
+            {small.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} />)}
           </div>
         )}
       </div>

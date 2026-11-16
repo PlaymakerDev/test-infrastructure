@@ -7,10 +7,12 @@ import {
   STREET_LIGHT_COLUMNS,
   TUNNEL_COLUMNS,
   connectionLabel,
+  pointState,
   projectDevicesPdfBlocks,
   projectDevicesSheet,
   solutionBox,
   type ProjectSheetProject,
+  wireLabel,
 } from './projectSheet'
 
 // The user's sample report (2026-10-27): project 2 had CCTV, Traffic Volume
@@ -25,11 +27,11 @@ const projects: ProjectSheetProject[] = [
         solution: 'CCTV',
         columns: CAMERA_COLUMNS,
         points: [
-          { label: 'ชน.3018 จุดติดตั้งที่ 1', rows: [['กล้อง 1', '22+200', 'CCTV', 'Disconnect', '10.22.1.1']] },
-          { label: 'ชน.3018 จุด 2', rows: [['กล้อง 2', '23+000', 'CCTV, Incident', 'Connect', '10.22.2.3']] },
+          { label: 'ชน.3018 จุดติดตั้งที่ 1', rows: [['กล้อง 1', '22+200', 'CCTV', 'ไม่เชื่อมต่อ', '10.22.1.1']] },
+          { label: 'ชน.3018 จุด 2', rows: [['กล้อง 2', '23+000', 'CCTV, Incident', 'เชื่อมต่อ', '10.22.2.3']] },
         ],
       },
-      { solution: 'Street Light', columns: STREET_LIGHT_COLUMNS, points: [{ rows: [['ชน.3018 ตู้ที่ 1 กม.22+280', '22+280', 'Street Light', 'Disconnect', 'Connect']] }] },
+      { solution: 'Street Light', columns: STREET_LIGHT_COLUMNS, points: [{ rows: [['ชน.3018 ตู้ที่ 1 กม.22+280', '22+280', 'Street Light', 'ไม่เชื่อมต่อ', 'เชื่อมต่อ']] }] },
     ],
   },
   { name: 'โครงการ 2', contractNo: '', solutions: [], sections: [] },
@@ -78,7 +80,7 @@ describe('โครงการ sheet', () => {
     expect(values(rows[4])).toEqual([[0, 'CCTV', 1], [1, 'ชื่อกล้อง', 7], [8, 'กม.ที่', 1], [9, 'การทำงาน', 2], [11, 'สถานะ', 1], [12, 'IP Address', 1]])
     expect(rows[4].cells[0].style?.fill).toBe('A6CAEC')
     expect(values(rows[5])).toEqual([[0, 'จุดติดตั้ง : ชน.3018 จุดติดตั้งที่ 1', 13]])
-    expect(values(rows[6])).toEqual([[0, 1, 1], [1, 'กล้อง 1', 7], [8, '22+200', 1], [9, 'CCTV', 2], [11, 'Disconnect', 1], [12, '10.22.1.1', 1]])
+    expect(values(rows[6])).toEqual([[0, 1, 1], [1, 'กล้อง 1', 7], [8, '22+200', 1], [9, 'CCTV', 2], [11, 'ไม่เชื่อมต่อ', 1], [12, '10.22.1.1', 1]])
     expect(values(rows[7])).toEqual([[0, 'จุดติดตั้ง : ชน.3018 จุด 2', 13]])
     // The next install point starts again at 1 (user 2026-10-28).
     expect(rows[8].cells[0].value).toBe(1)
@@ -102,7 +104,8 @@ describe('โครงการ sheet', () => {
     expect(excelTextPx('192.168.200.255')).toBeLessThanOrEqual(room(12))
     expect(excelTextPx('โครงการที่ 431 :')).toBeLessThanOrEqual(room(0))
     expect(excelTextPx('เลขที่สัญญา :')).toBeLessThanOrEqual(room(1))
-    expect(excelTextPx('Disconnect')).toBeLessThanOrEqual(room(11))
+    expect(excelTextPx('ไม่เชื่อมต่อ')).toBeLessThanOrEqual(room(11))
+    expect(excelTextPx('นอกเหนือการประกัน')).toBeLessThanOrEqual(room(11))
     // การทำงาน over J–K: the usual tags on one line, the longest on two at most.
     const tags = room(9) + room(10) + 6
     expect(excelTextPx('CCTV, Volume, Incident')).toBeLessThanOrEqual(tags)
@@ -111,10 +114,11 @@ describe('โครงการ sheet', () => {
 
   it('a long name or project name wraps, its row as tall as its lines', () => {
     const name = 'DRR-RYG1035PC1-CAM02-กม.1+518-ขาออกจากทางแยกสนามกีฬาบ้านฉาง มุ่งหน้าไปทางแยกพลา-บูรพาพัฒน์ ฝั่งขาเข้า'
-    const project = 'โครงการปรับปรุงจุดเสี่ยงจุดอันตราย ถนนสาย รย.4036 เฉลิมบูรพาชลทิต (ตอนระยอง) อำเภอแกลง อำเภอนายายอาม อำเภอท่าใหม่ จังหวัดระยอง (ระบบไฟฟ้า 3 เฟส)'
+    // Longer than B–M even with L widened for นอกเหนือการประกัน (2026-11-16).
+    const project = 'โครงการปรับปรุงจุดเสี่ยงจุดอันตราย ถนนสาย รย.4036 เฉลิมบูรพาชลทิต (ตอนระยอง) อำเภอแกลง อำเภอนายายอาม อำเภอท่าใหม่ จังหวัดระยอง (ระบบไฟฟ้า 3 เฟส) พร้อมติดตั้งกล้องโทรทัศน์วงจรปิดและอุปกรณ์ประกอบ'
     const long = projectDevicesSheet({
       title: 'T',
-      projects: [{ name: project, contractNo: '-', solutions: ['CCTV'], sections: [{ solution: 'CCTV', columns: CAMERA_COLUMNS, points: [{ label: 'จุด', rows: [[name, '1+518', 'CCTV', 'Connect', '10.1.1.1'], ['สั้น', '-', 'CCTV', 'Connect', '10.1.1.2']] }] }] }],
+      projects: [{ name: project, contractNo: '-', solutions: ['CCTV'], sections: [{ solution: 'CCTV', columns: CAMERA_COLUMNS, points: [{ label: 'จุด', rows: [[name, '1+518', 'CCTV', 'เชื่อมต่อ', '10.1.1.1'], ['สั้น', '-', 'CCTV', 'เชื่อมต่อ', '10.1.1.2']] }] }] }],
     })
     const ws = buildWorkbook([long]).workbook.Sheets['โครงการ']
     const heightOf = (value: string) => {
@@ -128,7 +132,7 @@ describe('โครงการ sheet', () => {
 
   it('Street Light: its own columns, the cabinets straight under the header', () => {
     expect(values(rows[10]).map(([, value]) => value)).toEqual(['Street Light', 'ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ', 'สถานะสาย'])
-    expect(values(rows[11])).toEqual([[0, 1, 1], [1, 'ชน.3018 ตู้ที่ 1 กม.22+280', 7], [8, '22+280', 1], [9, 'Street Light', 2], [11, 'Disconnect', 1], [12, 'Connect', 1]])
+    expect(values(rows[11])).toEqual([[0, 1, 1], [1, 'ชน.3018 ตู้ที่ 1 กม.22+280', 7], [8, '22+280', 1], [9, 'Street Light', 2], [11, 'ไม่เชื่อมต่อ', 1], [12, 'เชื่อมต่อ', 1]])
     expect(rows[12].cells).toEqual([])
   })
 
@@ -147,7 +151,7 @@ describe('โครงการ sheet', () => {
       name: 'p',
       contractNo: '-',
       solutions: ['Traffic Signal'],
-      sections: [{ solution: 'Traffic Signal', columns: CAMERA_COLUMNS, points: [{ label: 'แยก 1', online: true, rows: [] }, { label: 'แยก 2', online: false, rows: [] }] }],
+      sections: [{ solution: 'Traffic Signal', columns: CAMERA_COLUMNS, points: [{ label: 'แยก 1', state: 'online', rows: [] }, { label: 'แยก 2', state: 'offline', rows: [] }] }],
     }
     const { rows: lines } = projectDevicesSheet({ title: 'T', projects: [controllers] })
     expect(lines[5].cells[0]).toMatchObject({
@@ -176,17 +180,46 @@ describe('โครงการ sheet', () => {
     ])
   })
 
-  it('words a device’s state as the sample does', () => {
-    expect([true, false, null].map(connectionLabel)).toEqual(['Connect', 'Disconnect', 'Disconnect'])
+  it('a controller recorded นอกเหนือการประกัน says so, in purple', () => {
+    const recorded: ProjectSheetProject = {
+      name: 'p',
+      contractNo: '-',
+      solutions: ['VMS'],
+      sections: [{ solution: 'VMS', columns: CAMERA_COLUMNS, points: [{ label: 'ป้าย 1', state: 'excluded', rows: [] }] }],
+    }
+    const { rows: lines } = projectDevicesSheet({ title: 'T', projects: [recorded] })
+    expect(lines[5].cells[0]).toMatchObject({
+      value: 'จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการประกัน)',
+      runs: [{ text: 'จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการประกัน', color: '7030A0' }, { text: ')' }],
+    })
+    const [block] = projectDevicesPdfBlocks([recorded]) as { rows: unknown[] }[]
+    expect(block.rows[1]).toEqual({
+      group: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการประกัน)',
+      tone: 'soft',
+      runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการประกัน', color: '#7030A0' }, { text: ')' }],
+    })
+  })
+
+  it('words a device’s state in Thai — นอกเหนือการประกัน before anything else (user 2026-11-16)', () => {
+    expect([true, false, null].map((online) => connectionLabel(online))).toEqual(['เชื่อมต่อ', 'ไม่เชื่อมต่อ', 'ไม่เชื่อมต่อ'])
+    expect(connectionLabel(false, true)).toBe('นอกเหนือการประกัน')
+    expect(connectionLabel(true, true)).toBe('นอกเหนือการประกัน')
+    expect(connectionLabel(true, false)).toBe('เชื่อมต่อ')
+    // สถานะสาย is the wire itself.
+    expect([false, true, null].map((broken) => wireLabel(broken))).toEqual(['เชื่อมต่อ', 'ไม่เชื่อมต่อ', 'เชื่อมต่อ'])
+    expect(pointState({ is_online: true })).toBe('online')
+    expect(pointState({ is_online: false })).toBe('offline')
+    expect(pointState({ is_online: false, is_out_of_warranty: true })).toBe('excluded')
+    expect(pointState({ is_online: true, is_out_of_warranty: true })).toBe('excluded')
   })
 
   it('a four-column section (Bridge Lighting, Tunnel) runs its last column across L–M', () => {
     const { rows: tunnelRows } = projectDevicesSheet({
       title: 'T',
-      projects: [{ name: 'p', contractNo: '-', solutions: ['Tunnel'], sections: [{ solution: 'Tunnel', columns: TUNNEL_COLUMNS, points: [{ label: 'อุโมงค์', rows: [['Lux Sensor1', '-', 'Tunnel', 'Connect']] }] }] }],
+      projects: [{ name: 'p', contractNo: '-', solutions: ['Tunnel'], sections: [{ solution: 'Tunnel', columns: TUNNEL_COLUMNS, points: [{ label: 'อุโมงค์', rows: [['Lux Sensor1', '-', 'Tunnel', 'เชื่อมต่อ']] }] }] }],
     })
     expect(values(tunnelRows[4])).toEqual([[0, 'Tunnel', 1], [1, 'ชื่ออุปกรณ์', 7], [8, 'กม.ที่', 1], [9, 'การทำงาน', 2], [11, 'การเชื่อมต่อ', 2]])
-    expect(values(tunnelRows[6])).toEqual([[0, 1, 1], [1, 'Lux Sensor1', 7], [8, '-', 1], [9, 'Tunnel', 2], [11, 'Connect', 2]])
+    expect(values(tunnelRows[6])).toEqual([[0, 1, 1], [1, 'Lux Sensor1', 7], [8, '-', 1], [9, 'Tunnel', 2], [11, 'เชื่อมต่อ', 2]])
   })
 })
 
@@ -196,7 +229,7 @@ describe('โครงการ in the PDF', () => {
     name: `โครงการ ${n}`,
     contractNo: '-',
     solutions: ['CCTV'],
-    sections: [{ solution: 'CCTV', columns: CAMERA_COLUMNS, points: [{ label: 'ถนน', rows: Array.from({ length: 120 }, (_, i) => [`กล้อง ${i}`, '-', 'CCTV', 'Connect', '-'] as const) }] }],
+    sections: [{ solution: 'CCTV', columns: CAMERA_COLUMNS, points: [{ label: 'ถนน', rows: Array.from({ length: 120 }, (_, i) => [`กล้อง ${i}`, '-', 'CCTV', 'เชื่อมต่อ', '-'] as const) }] }],
   })
   type Block = { title?: string; rows: (unknown[] | { group: string })[] }
 
@@ -214,7 +247,7 @@ describe('โครงการ in the PDF', () => {
   })
 
   it('keeps a project bigger than a block whole', () => {
-    const huge: ProjectSheetProject = { ...big(9), sections: [{ ...big(9).sections[0], points: [{ label: 'ถนน', rows: Array.from({ length: 400 }, () => ['ก', '-', 'CCTV', 'Connect', '-'] as const) }] }] }
+    const huge: ProjectSheetProject = { ...big(9), sections: [{ ...big(9).sections[0], points: [{ label: 'ถนน', rows: Array.from({ length: 400 }, () => ['ก', '-', 'CCTV', 'เชื่อมต่อ', '-'] as const) }] }] }
     expect((projectDevicesPdfBlocks([big(1), huge, big(2)]) as Block[]).map((block) => block.rows.length)).toEqual([122, 402, 122])
   })
 
@@ -223,7 +256,7 @@ describe('โครงการ in the PDF', () => {
     name: `โครงการ ${n}`,
     contractNo: '-',
     solutions: ['Street Light'],
-    sections: [{ solution: 'Street Light', columns: STREET_LIGHT_COLUMNS, points: [{ rows: Array.from({ length: count }, (_, i) => [`ตู้ ${i}`, '-', 'Street Light', 'Connect', 'Connect'] as const) }] }],
+    sections: [{ solution: 'Street Light', columns: STREET_LIGHT_COLUMNS, points: [{ rows: Array.from({ length: count }, (_, i) => [`ตู้ ${i}`, '-', 'Street Light', 'เชื่อมต่อ', 'เชื่อมต่อ'] as const) }] }],
   })
   const cameraHeader = { cells: ['ลำดับ', ...CAMERA_COLUMNS], emphasis: true }
 
@@ -234,21 +267,21 @@ describe('โครงการ in the PDF', () => {
       // Its header and both cabinets stay on the band's page.
       { group: 'Street Light', tone: 'soft', keepAhead: 60 },
       { cells: ['ลำดับ', ...STREET_LIGHT_COLUMNS], emphasis: true },
-      [1, 'ตู้ 0', '-', 'Street Light', 'Connect', 'Connect'],
-      [2, 'ตู้ 1', '-', 'Street Light', 'Connect', 'Connect'],
+      [1, 'ตู้ 0', '-', 'Street Light', 'เชื่อมต่อ', 'เชื่อมต่อ'],
+      [2, 'ตู้ 1', '-', 'Street Light', 'เชื่อมต่อ', 'เชื่อมต่อ'],
     ])
     expect(block.rows.slice(5, 9)).toEqual([
       expect.objectContaining({ group: expect.stringMatching(/^โครงการที่ 2 :/) }),
       { group: 'CCTV · จุดติดตั้ง : ถนน', tone: 'soft' },
       cameraHeader,
-      [1, 'กล้อง 0', '-', 'CCTV', 'Connect', '-'],
+      [1, 'กล้อง 0', '-', 'CCTV', 'เชื่อมต่อ', '-'],
     ])
   })
 
   it('a new block opens under the page header, so its cameras need no header of their own', () => {
     const blocks = projectDevicesPdfBlocks([cabinets(1, 240), big(2)]) as Block[]
     expect(blocks.map((block) => block.rows.length)).toEqual([243, 122])
-    expect(blocks[1].rows.slice(1, 3)).toEqual([{ group: 'CCTV · จุดติดตั้ง : ถนน', tone: 'soft' }, [1, 'กล้อง 0', '-', 'CCTV', 'Connect', '-']])
+    expect(blocks[1].rows.slice(1, 3)).toEqual([{ group: 'CCTV · จุดติดตั้ง : ถนน', tone: 'soft' }, [1, 'กล้อง 0', '-', 'CCTV', 'เชื่อมต่อ', '-']])
   })
 
   it('keeps a section with columns of its own on one page while it fits one; cameras only keep a couple of rows with their band', () => {
@@ -262,7 +295,7 @@ describe('โครงการ in the PDF', () => {
       name: 'p',
       contractNo: '-',
       solutions: ['Tunnel'],
-      sections: [{ solution: 'Tunnel', columns: TUNNEL_COLUMNS, points: [{ label: 'A', rows: [['s1', '-', 'Tunnel', 'Connect'], ['s2', '-', 'Tunnel', 'Connect']] }, { label: 'B', rows: [] }] }],
+      sections: [{ solution: 'Tunnel', columns: TUNNEL_COLUMNS, points: [{ label: 'A', rows: [['s1', '-', 'Tunnel', 'เชื่อมต่อ'], ['s2', '-', 'Tunnel', 'เชื่อมต่อ']] }, { label: 'B', rows: [] }] }],
     }
     expect(band(tunnels)).toEqual({ group: 'Tunnel · จุดติดตั้ง : A', tone: 'soft', keepAhead: 80 })
   })

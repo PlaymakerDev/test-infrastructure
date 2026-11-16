@@ -13,37 +13,68 @@ import { SUMMARY_SYSTEMS, type SummarySystem } from './systems'
  *  leaves them out (user 2026-10-29). */
 export const isPlaceholder = (row: Pick<ProjectDeviceSummaryRow, 'warranty_end_date'>) => !row.warranty_end_date
 
-/** One thing a ring counts, and whether it is up. */
+/** One thing a ring counts, whether it is up, and whether it is นอกเหนือการ
+ *  ประกัน (an open record). */
 interface RingUnit {
   key: string
   online: boolean
+  outOfWarranty: boolean
 }
 
 const anyOnline = (items: { is_online: boolean }[] | null | undefined) => (items ?? []).some((item) => item.is_online)
+const anyRecorded = (items: { is_out_of_warranty?: boolean }[] | null | undefined) =>
+  (items ?? []).some((item) => !!item.is_out_of_warranty)
 
 /** What each ring counts, in the units of its uptime-statistics: CCTV each
  *  camera; Traffic Volume, Incident Detection, LPR and Tunnel each install
  *  point, up while any of its cameras or sensors is; the rest each
- *  controller, sign, cabinet or bridge. */
+ *  controller, sign, cabinet or bridge. นอกเหนือการประกัน as uptime-statistics
+ *  counts it (BE 2026-11-16): a camera's own record; a sign's, cabinet's,
+ *  controller's or bridge's solution's; an install point (and a crosswalk)
+ *  through any camera of its. */
 const RING_UNITS: Record<string, (row: ProjectDeviceSolutionsRow) => RingUnit[]> = {
-  cctv: (row) => (row.cctv ?? []).flatMap((point) => (point.cameras ?? []).map((camera) => ({ key: camera.id, online: camera.is_online }))),
-  vms: (row) => (row.vms ?? []).map((sign) => ({ key: String(sign.id), online: sign.is_online })),
-  lighting: (row) => (row.lighting ?? []).map((cabinet) => ({ key: String(cabinet.id), online: cabinet.is_online })),
-  counting: (row) => (row.counting ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras) })),
-  analytic: (row) => (row.analytic ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras) })),
-  traffic: (row) => (row.traffic ?? []).map((controller) => ({ key: String(controller.id), online: controller.is_online })),
-  lpr: (row) => (row.lpr ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras) })),
-  bridge_lighting: (row) => (row.bridge_lighting ?? []).map((bridge) => ({ key: String(bridge.id), online: bridge.is_online })),
-  crosswalk: (row) => (row.crosswalk ?? []).map((controller) => ({ key: String(controller.id), online: controller.is_online })),
-  tunnel: (row) => (row.tunnel ?? []).map((tunnel) => ({ key: String(tunnel.solution_id), online: anyOnline(tunnel.devices) })),
+  cctv: (row) =>
+    (row.cctv ?? []).flatMap((point) =>
+      (point.cameras ?? []).map((camera) => ({ key: camera.id, online: camera.is_online, outOfWarranty: !!camera.is_out_of_warranty })),
+    ),
+  vms: (row) => (row.vms ?? []).map((sign) => ({ key: String(sign.id), online: sign.is_online, outOfWarranty: !!sign.is_out_of_warranty })),
+  lighting: (row) =>
+    (row.lighting ?? []).map((cabinet) => ({ key: String(cabinet.id), online: cabinet.is_online, outOfWarranty: !!cabinet.is_out_of_warranty })),
+  counting: (row) =>
+    (row.counting ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras), outOfWarranty: anyRecorded(point.cameras) })),
+  analytic: (row) =>
+    (row.analytic ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras), outOfWarranty: anyRecorded(point.cameras) })),
+  traffic: (row) =>
+    (row.traffic ?? []).map((controller) => ({ key: String(controller.id), online: controller.is_online, outOfWarranty: !!controller.is_out_of_warranty })),
+  lpr: (row) =>
+    (row.lpr ?? []).map((point) => ({ key: String(point.solution_id), online: anyOnline(point.cameras), outOfWarranty: anyRecorded(point.cameras) })),
+  bridge_lighting: (row) =>
+    (row.bridge_lighting ?? []).map((bridge) => ({ key: String(bridge.id), online: bridge.is_online, outOfWarranty: !!bridge.is_out_of_warranty })),
+  crosswalk: (row) =>
+    (row.crosswalk ?? []).map((controller) => ({
+      key: String(controller.id),
+      online: controller.is_online,
+      outOfWarranty: !!controller.is_out_of_warranty || anyRecorded(controller.cameras),
+    })),
+  tunnel: (row) =>
+    (row.tunnel ?? []).map((tunnel) => ({ key: String(tunnel.solution_id), online: anyOnline(tunnel.devices), outOfWarranty: anyRecorded(tunnel.devices) })),
 }
 
-/** Each counted once — a camera two projects share too. */
+/** Each counted once — a camera two projects share too. As the page's rings
+ *  (option ก., user 2026-11-16), an offline unit with a record leaves both
+ *  ทั้งหมด and ออฟไลน์. */
 const tally = (units: RingUnit[]): DeviceTotals => {
-  const byKey = new Map<string, boolean>()
-  for (const unit of units) byKey.set(unit.key, (byKey.get(unit.key) ?? false) || unit.online)
-  const online = [...byKey.values()].filter(Boolean).length
-  return { total: byKey.size, online, offline: byKey.size - online }
+  const byKey = new Map<string, { online: boolean; outOfWarranty: boolean }>()
+  for (const unit of units) {
+    const seen = byKey.get(unit.key)
+    byKey.set(unit.key, {
+      online: (seen?.online ?? false) || unit.online,
+      outOfWarranty: (seen?.outOfWarranty ?? false) || unit.outOfWarranty,
+    })
+  }
+  const counted = [...byKey.values()].filter((unit) => unit.online || !unit.outOfWarranty)
+  const online = counted.filter((unit) => unit.online).length
+  return { total: counted.length, online, offline: counted.length - online }
 }
 
 /** The rings counted from the report's own projects, so a project the report

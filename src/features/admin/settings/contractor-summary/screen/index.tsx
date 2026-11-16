@@ -1,28 +1,34 @@
 "use client"
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { App, Empty } from 'antd'
 import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { SHOW_ALL_CONTRACTORS_EXPORT } from '@/constants/featureFlags'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
 import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
+import { useUserRole } from '@/hooks/useUserRole'
 import {
+  getOutOfWarrantyProjectsAPI,
   getProjectDeviceSolutionsListAPI,
   getProjectDeviceSummaryListAPI,
   getProjectListAPI,
 } from '@/services/routes/ManageService'
 import { useAppDispatch } from '@/stores/hooks'
 import { setProjectInfoModalOpen } from '@/stores/reducers/layout/layoutSlice'
-import type { ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
+import type { ProjectDeviceStatusBase, ProjectDeviceStatusRow } from '@/types/manage/device-status-api'
 import DeviceStatusRings from '../components/DeviceStatusRings'
+import OutOfWarrantyModal from '../components/OutOfWarrantyModal'
 import ProjectLiveModal from '../components/ProjectLiveModal'
 import ProjectStatusTable from '../components/ProjectStatusTable'
 import SummaryHeader from '../components/SummaryHeader'
 import { allContractorsReport } from '../data/allContractors'
 import { WARRANTY_FILTER_OPTIONS, warrantyParam, type WarrantyFilter } from '../data/deviceStatus'
+import { exportOutOfWarrantyExcel, exportOutOfWarrantyPdf, type OutOfWarrantyExportInput } from '../data/exportOutOfWarranty'
 import { exportSummaryExcel, exportSummaryPdf, summaryForProjects, type SummaryExportInput } from '../data/exportSummary'
+import { OUT_OF_WARRANTY_TYPES } from '../data/outOfWarranty'
 import { useAllContractorsProjects } from '../hooks/useAllContractorsProjects'
 import { useContractorDeviceRings } from '../hooks/useContractorDeviceRings'
+import { useOutOfWarrantyProjectIds, useOutOfWarrantyProjects } from '../hooks/useOutOfWarranty'
 
 interface Props {
   /** The contractor's user_id. */
@@ -55,35 +61,53 @@ const ALL_CONTRACTORS = 'รวมผู้รับจ้าง'
  *  whatever the page's own filter (user 2026-10-29). */
 const ALL_CONTRACTORS_WARRANTY: WarrantyFilter = 'out'
 
+const NO_IDS: ReadonlySet<number> = new Set()
+
+/** นอกเหนือการประกัน's export button (user 2026-11-16) — a report of its own. */
+const EXCLUDED_EXPORT_LABEL = 'นำออกเอกสารนอกเหนือการประกัน'
+
 /** สรุปข้อมูลผู้รับจ้าง — reached from the ผู้รับจ้าง tab (user 2026-09-30):
  *  the contractor's device status across every project (one ring per system),
  *  then the projects one by one, each opening its cameras live. */
 const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const dispatch = useAppDispatch()
   const { message } = App.useApp()
+  const { isAdmin, isContractor } = useUserRole()
+  const canRecord = isAdmin || isContractor
 
   const contractorQuery = useContractorById(id)
   const contractor = contractorQuery.data ?? null
 
-  // ทั้งหมด / ในค้ำ / หมดค้ำ governs both the rings and the table.
+  // ทั้งหมด / นอกเหนือการประกัน / ในค้ำ / หมดค้ำ governs both the rings and the table.
   const [warranty, setWarranty] = useState<WarrantyFilter>('all')
+  const excluded = warranty === 'excluded'
   const { rings, isLoading: isRingsLoading, isError: isRingsError } = useContractorDeviceRings(contractor, warranty)
   // ค้นหาโครงการ (user 2026-11-04) — the table only: project_name /
   // contract_no on the backend; the rings stay the contractor's every project.
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const listQuery = useProjectDeviceStatusList({
-    contractor_id: id,
-    is_warranty: warrantyParam(warranty),
-    search: search || undefined,
-    page,
-    limit: pageSize,
-  })
+  const listParams = { contractor_id: id, search: search || undefined, page, limit: pageSize }
+  const listQuery = useProjectDeviceStatusList({ ...listParams, is_warranty: warrantyParam(warranty) }, { enabled: !excluded })
+  // นอกเหนือการประกัน: the projects with records, as the backend filters them.
+  const excludedQuery = useOutOfWarrantyProjects(listParams, excluded)
+  const activeQuery = excluded ? excludedQuery : listQuery
   const rows = listQuery.data?.res_data ?? []
-  const total = listQuery.data?.meta_data?.count ?? 0
+  const excludedRows = excludedQuery.data?.res_data ?? []
+  const total = activeQuery.data?.meta_data?.count ?? 0
+  const pageRowCount = excluded ? excludedRows.length : rows.length
+  // Every project with a record — blue whatever the tab.
+  const recordedIds = useOutOfWarrantyProjectIds(id).data ?? NO_IDS
+  // นอกเหนือการประกัน's columns: CCTV, VMS and Street Light as on the other
+  // tabs, Traffic Signal and Bridge Lighting when the contractor has them.
+  const excludedTypes = useMemo(
+    () => OUT_OF_WARRANTY_TYPES.filter((type) =>
+      ['cctv', 'vms', 'lighting'].includes(type.key) || rings.some((ring) => ring.system.key === type.key)),
+    [rings],
+  )
 
   const [liveProject, setLiveProject] = useState<ProjectDeviceStatusRow | null>(null)
+  const [outOfWarrantyProject, setOutOfWarrantyProject] = useState<ProjectDeviceStatusBase | null>(null)
   const [isInfoOpen, setInfoOpen] = useState(false)
   const [isExportOpen, setExportOpen] = useState(false)
   // รวมผู้รับจ้าง's projects, for its count — read once the dialog opens.
@@ -107,8 +131,8 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     setPageSize(nextPageSize)
   }, [pageSize])
 
-  const onOpenProjectInfo = useCallback((row: ProjectDeviceStatusRow) => {
-    dispatch(setProjectInfoModalOpen({ open: true, project_id: row.project_id, road_id: null }))
+  const onOpenProjectInfo = useCallback((project: ProjectDeviceStatusBase) => {
+    dispatch(setProjectInfoModalOpen({ open: true, project_id: project.project_id, road_id: null }))
   }, [dispatch])
 
   const exportInput = async (scope?: 'all' | 'page'): Promise<SummaryExportInput | null> => {
@@ -157,6 +181,34 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     }
   }
 
+  /** นอกเหนือการประกัน's report: the tab's rings, and the projects with
+   *  records — every page under the search, or the page on screen — from
+   *  GET /out-of-warranty, each with its recorded devices. */
+  const excludedExportInput = async (scope?: 'all' | 'page'): Promise<OutOfWarrantyExportInput | null> => {
+    if (!contractor) return null
+    const projects = scope === 'page'
+      ? excludedRows
+      : await fetchAllPages(getOutOfWarrantyProjectsAPI, { contractor_id: id, search: search || undefined })
+    return {
+      companyName: contractor.company_name,
+      shortName: contractor.short_name,
+      search: search || undefined,
+      rings,
+      projects,
+      types: excludedTypes,
+    }
+  }
+
+  const runExcludedExport = (exporter: (input: OutOfWarrantyExportInput) => Promise<void>) => async (scope?: 'all' | 'page') => {
+    try {
+      const input = await excludedExportInput(scope)
+      if (input) await exporter(input)
+    } catch (error) {
+      message.error('นำออกเอกสารไม่สำเร็จ กรุณาลองอีกครั้ง')
+      throw error
+    }
+  }
+
   const runExport = (exporter: (input: SummaryExportInput) => Promise<void>) => async (scope?: 'all' | 'page') => {
     try {
       const input = await exportInput(scope)
@@ -192,6 +244,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
           isLoading={contractorQuery.isLoading}
           onOpenInfo={() => setInfoOpen(true)}
           onExport={() => setExportOpen(true)}
+          exportLabel={excluded ? EXCLUDED_EXPORT_LABEL : undefined}
         />
       </div>
       <div className='mt-10 px-4 sm:px-8 lg:px-18'>
@@ -200,11 +253,13 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
       <div className='mt-14 px-4 sm:px-8 lg:px-18 pb-10'>
         <ProjectStatusTable
           rows={rows}
+          excludedRows={excludedRows}
+          excludedTypes={excludedTypes}
           total={total}
           page={page}
           pageSize={pageSize}
-          isLoading={listQuery.isLoading || listQuery.isPlaceholderData}
-          isError={listQuery.isError}
+          isLoading={activeQuery.isLoading || activeQuery.isPlaceholderData}
+          isError={activeQuery.isError}
           warranty={warranty}
           onWarrantyChange={onWarrantyChange}
           search={search}
@@ -212,6 +267,9 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
           onPageChange={onPageChange}
           onOpenLive={setLiveProject}
           onOpenProjectInfo={onOpenProjectInfo}
+          recordedIds={recordedIds}
+          canRecord={canRecord}
+          onOpenOutOfWarranty={setOutOfWarrantyProject}
         />
       </div>
 
@@ -220,15 +278,16 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
           time; หน้าปัจจุบัน = the page on screen. The rings (under the same
           filter) go in either way. รวมผู้รับจ้าง (SHOW_ALL_CONTRACTORS_EXPORT)
           = every contractor's expired-warranty projects, whatever the filter,
-          less those with no warranty end date. */}
+          less those with no warranty end date — not offered under
+          นอกเหนือการประกัน, whose report is its own. */}
       <ExportFileModal
         open={isExportOpen}
         onClose={() => setExportOpen(false)}
-        scope={{ totalCount: total, pageCount: rows.length }}
-        onExportPdf={runExport(exportSummaryPdf)}
-        onExportExcel={runExport(exportSummaryExcel)}
+        scope={{ totalCount: total, pageCount: pageRowCount }}
+        onExportPdf={excluded ? runExcludedExport(exportOutOfWarrantyPdf) : runExport(exportSummaryPdf)}
+        onExportExcel={excluded ? runExcludedExport(exportOutOfWarrantyExcel) : runExport(exportSummaryExcel)}
         extraScope={
-          SHOW_ALL_CONTRACTORS_EXPORT
+          SHOW_ALL_CONTRACTORS_EXPORT && !excluded
             ? {
                 label: ALL_CONTRACTORS,
                 count: allContractorsProjects.data?.length,
@@ -240,6 +299,12 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
         }
       />
       <ProjectLiveModal project={liveProject} onClose={() => setLiveProject(null)} />
+      <OutOfWarrantyModal
+        project={outOfWarrantyProject}
+        onClose={() => setOutOfWarrantyProject(null)}
+        onOpenProjectInfo={onOpenProjectInfo}
+      />
+      {/* After the two modals above, so its ⓘ opens on top of them. */}
       <ProjectInfoModal />
       {/* Last, so a camera opened from the Live Stream modal sits above it. */}
       <CCTVModal />

@@ -289,27 +289,27 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
   it('CCTV: each CCTV install point with every camera — tagged with all it serves', () => {
     const cctv = section(p163, 'CCTV')
     expect(cctv.points.map((point) => point.label)).toEqual(['ชน.3018 จุดติดตั้งที่ 1', 'สห.4014 กม.2+800 - 16+700'])
-    expect(cctv.points[0].rows).toEqual([['กล้อง c4', '-', 'CCTV', 'Disconnect', '-']])
+    expect(cctv.points[0].rows).toEqual([['กล้อง c4', '-', 'CCTV', 'ไม่เชื่อมต่อ', '-']])
     expect(cctv.points[1].rows).toEqual([
-      ['กล้อง c2', '2+800', 'CCTV, Traffic', 'Disconnect', '10.0.0.1'],
-      ['กล้อง c3', '2+800', 'CCTV, Volume', 'Connect', '10.0.0.1'],
-      ['กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'Connect', '10.0.0.1'],
+      ['กล้อง c2', '2+800', 'CCTV, Traffic', 'ไม่เชื่อมต่อ', '10.0.0.1'],
+      ['กล้อง c3', '2+800', 'CCTV, Volume', 'เชื่อมต่อ', '10.0.0.1'],
+      ['กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'เชื่อมต่อ', '10.0.0.1'],
     ])
   })
 
   it('each system by its own install points; a controller with its state after its name', () => {
-    expect(section(p163, 'Traffic Volume').points).toEqual([{ label: 'สห.4014 กม.2+800', rows: [['กล้อง c3', '2+800', 'CCTV, Volume', 'Connect', '10.0.0.1']] }])
-    expect(section(p163, 'Traffic Signal').points.map((point) => [point.label, point.online, point.rows.map((row) => row[0])])).toEqual([
-      ['สห.4014 กม.2+800 จราจรจุด1', true, ['กล้อง c2']],
-      ['สห.4014 กม.16+700 จราจรจุด2', false, ['กล้อง c1']],
+    expect(section(p163, 'Traffic Volume').points).toEqual([{ label: 'สห.4014 กม.2+800', rows: [['กล้อง c3', '2+800', 'CCTV, Volume', 'เชื่อมต่อ', '10.0.0.1']] }])
+    expect(section(p163, 'Traffic Signal').points.map((point) => [point.label, point.state, point.rows.map((row) => row[0])])).toEqual([
+      ['สห.4014 กม.2+800 จราจรจุด1', 'online', ['กล้อง c2']],
+      ['สห.4014 กม.16+700 จราจรจุด2', 'offline', ['กล้อง c1']],
     ])
     // A camera under another project's CCTV install point: here under LPR only.
-    expect(section(p163, 'LPR').points).toEqual([{ label: 'สห.4014 กม. 16+700', rows: [['กล้อง c5', '16+700', 'CCTV, LPR', 'Connect', '10.0.0.5']] }])
+    expect(section(p163, 'LPR').points).toEqual([{ label: 'สห.4014 กม. 16+700', rows: [['กล้อง c5', '16+700', 'CCTV, LPR', 'เชื่อมต่อ', '10.0.0.5']] }])
   })
 
   it('WIM: its cameras by the CCTV install point they stand at', () => {
     expect(section(p163, 'WIM').points).toEqual([
-      { label: 'สห.4014 กม.2+800 - 16+700', rows: [['กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'Connect', '10.0.0.1']] },
+      { label: 'สห.4014 กม.2+800 - 16+700', rows: [['กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'เชื่อมต่อ', '10.0.0.1']] },
     ])
   })
 
@@ -317,7 +317,7 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     expect(section(p163, 'Street Light')).toEqual({
       solution: 'Street Light',
       columns: ['ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ', 'สถานะสาย'],
-      points: [{ rows: [['สห.4014 ตู้ที่ 1 กม.22+280', '22+280', 'Street Light', 'Disconnect', 'Connect'], ['สห.4014 ตู้ที่ 2', '-', 'Street Light', 'Connect', 'Disconnect']] }],
+      points: [{ rows: [['สห.4014 ตู้ที่ 1 กม.22+280', '22+280', 'Street Light', 'ไม่เชื่อมต่อ', 'เชื่อมต่อ'], ['สห.4014 ตู้ที่ 2', '-', 'Street Light', 'เชื่อมต่อ', 'ไม่เชื่อมต่อ']] }],
     })
   })
 
@@ -327,23 +327,59 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
         solution: 'VMS',
         columns: ['ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'สถานะ', 'IP Address'],
         points: [
-          { label: 'ป้าย 11', online: true, rows: [['กล้อง c6', '-', 'CCTV, VMS', 'Disconnect', '10.1.1.2']] },
-          { label: 'ป้าย 12', online: false, rows: [] },
+          { label: 'ป้าย 11', state: 'online', rows: [['กล้อง c6', '-', 'CCTV, VMS', 'ไม่เชื่อมต่อ', '10.1.1.2']] },
+          { label: 'ป้าย 12', state: 'offline', rows: [] },
         ],
       },
     ])
   })
 
   it('Bridge Lighting and Tunnel: four columns; a tunnel without devices says so', () => {
-    expect(section(p163, 'Bridge Lighting').points).toEqual([{ rows: [['ไฟประดับ : สะพานปิ่นเกล้า', '-', 'Bridge Lighting', 'Connect']] }])
+    expect(section(p163, 'Bridge Lighting').points).toEqual([{ rows: [['ไฟประดับ : สะพานปิ่นเกล้า', '-', 'Bridge Lighting', 'เชื่อมต่อ']] }])
     expect(section(p163, 'Tunnel')).toEqual({
       solution: 'Tunnel',
       columns: ['ชื่ออุปกรณ์', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ'],
       points: [
-        { label: 'อุโมงค์ทางลอด A', rows: [['Lux Sensor1', '-', 'Tunnel', 'Disconnect']] },
+        { label: 'อุโมงค์ทางลอด A', rows: [['Lux Sensor1', '-', 'Tunnel', 'ไม่เชื่อมต่อ']] },
         { label: 'อุโมงค์ทางลอด B (ไม่มีข้อมูลอุปกรณ์)', rows: [] },
       ],
     })
+  })
+
+  it('นอกเหนือการประกัน before เชื่อมต่อ / ไม่เชื่อมต่อ and ออนไลน์ / ออฟไลน์, wherever a state is written (user 2026-11-16)', () => {
+    const recorded = camera('r1', { ip_address: '10.9.9.9', is_out_of_warranty: true })
+    const [project] = projectSheetProjects({
+      ...input,
+      summary: [summaryRow(500, 'ส.1/2569')],
+      solutions: [
+        solutionsRow(500, {
+          cctv: [{ solution_id: 51, solution_name: 'จุด 1', cameras: [recorded, camera('r2', { is_online: true })] }],
+          traffic: [{ id: 501, solution_id: 52, solution_name: 'แยก 1', is_online: false, is_out_of_warranty: true, cameras: [recorded] }],
+          crosswalk: [{ id: 502, solution_id: 53, solution_name: 'ทางข้าม 1', is_online: true, cameras: [] }],
+          vms: [{ id: 503, solution_id: 54, solution_name: 'ป้าย 1', is_online: false, is_out_of_warranty: true, cameras: [] }],
+          lighting: [
+            { id: 504, solution_id: 55, solution_name: 'ตู้ 1', sta: '', is_online: false, is_out_of_warranty: true, has_broken_wire: true, lamps: [] },
+            { id: 505, solution_id: 56, solution_name: 'ตู้ 2', sta: '', is_online: true, has_broken_wire: false, lamps: [] },
+          ],
+          bridge_lighting: [{ id: 506, solution_id: 57, solution_name: 'สะพาน 1', is_online: false, is_out_of_warranty: true }],
+          tunnel: [{ solution_id: 58, solution_name: 'อุโมงค์ 1', devices: [{ id: 'd1', device_name: 'Sensor', is_online: true, is_out_of_warranty: false, last_update: null }] }],
+        }),
+      ],
+      projectSolutions: [],
+    })
+    const states = (name: string) => section(project, name).points.map((point) => [point.state, point.rows.map((row) => row[3])])
+    expect(states('CCTV')).toEqual([[undefined, ['นอกเหนือการประกัน', 'เชื่อมต่อ']]])
+    // The camera reads นอกเหนือการประกัน under every system it serves.
+    expect(states('Traffic Signal')).toEqual([['excluded', ['นอกเหนือการประกัน']]])
+    expect(states('Crosswalk')).toEqual([['online', []]])
+    expect(states('VMS')).toEqual([['excluded', []]])
+    // A recorded cabinet: การเชื่อมต่อ says so; สถานะสาย stays the wire's own.
+    expect(section(project, 'Street Light').points[0].rows).toEqual([
+      ['ตู้ 1', '-', 'Street Light', 'นอกเหนือการประกัน', 'ไม่เชื่อมต่อ'],
+      ['ตู้ 2', '-', 'Street Light', 'เชื่อมต่อ', 'เชื่อมต่อ'],
+    ])
+    expect(states('Bridge Lighting')).toEqual([[undefined, ['นอกเหนือการประกัน']]])
+    expect(states('Tunnel')).toEqual([[undefined, ['เชื่อมต่อ']]])
   })
 
   it('without a /solutions row a project keeps its name and the Solutions it is set up with', () => {
@@ -373,14 +409,14 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     expect(devices.rows.slice(0, 4)).toEqual([
       { group: 'โครงการที่ 1 : โครงการ 163\nเลขที่สัญญา : สทช.ที่ 2/26/2567 · Solution : CCTV, Traffic Volume, Traffic Signal, Street Light, Bridge Lighting, Tunnel, WIM, LPR' },
       { group: 'CCTV · จุดติดตั้ง : ชน.3018 จุดติดตั้งที่ 1', tone: 'soft' },
-      [1, 'กล้อง c4', '-', 'CCTV', 'Disconnect', '-'],
+      [1, 'กล้อง c4', '-', 'CCTV', 'ไม่เชื่อมต่อ', '-'],
       { group: 'CCTV · จุดติดตั้ง : สห.4014 กม.2+800 - 16+700', tone: 'soft' },
     ])
     // Numbered from 1 at each install point.
     expect(devices.rows.slice(4, 7)).toEqual([
-      [1, 'กล้อง c2', '2+800', 'CCTV, Traffic', 'Disconnect', '10.0.0.1'],
-      [2, 'กล้อง c3', '2+800', 'CCTV, Volume', 'Connect', '10.0.0.1'],
-      [3, 'กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'Connect', '10.0.0.1'],
+      [1, 'กล้อง c2', '2+800', 'CCTV, Traffic', 'ไม่เชื่อมต่อ', '10.0.0.1'],
+      [2, 'กล้อง c3', '2+800', 'CCTV, Volume', 'เชื่อมต่อ', '10.0.0.1'],
+      [3, 'กล้อง c1', '16+700', 'CCTV, Traffic, Truck Tracking', 'เชื่อมต่อ', '10.0.0.1'],
     ])
     // A controller's state coloured as on the sheet.
     expect(devices.rows).toContainEqual({
@@ -393,18 +429,18 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     const at = (group: string) => devices.rows.findIndex((row) => !Array.isArray(row) && 'group' in row && row.group === group)
     const cameraHeader = { cells: ['ลำดับ', 'ชื่อกล้อง', 'กม.ที่', 'การทำงาน', 'สถานะ', 'IP Address'], emphasis: true }
     expect(devices.rows[at('Street Light') + 1]).toEqual({ cells: ['ลำดับ', 'ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ', 'สถานะสาย'], emphasis: true })
-    expect(devices.rows[at('Street Light') + 3]).toEqual([2, 'สห.4014 ตู้ที่ 2', '-', 'Street Light', 'Connect', 'Disconnect'])
+    expect(devices.rows[at('Street Light') + 3]).toEqual([2, 'สห.4014 ตู้ที่ 2', '-', 'Street Light', 'เชื่อมต่อ', 'ไม่เชื่อมต่อ'])
     expect(devices.rows[at('Bridge Lighting') + 1]).toEqual({ cells: ['ลำดับ', 'ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ'], emphasis: true })
-    expect(devices.rows[at('Bridge Lighting') + 2]).toEqual([1, 'ไฟประดับ : สะพานปิ่นเกล้า', '-', 'Bridge Lighting', 'Connect'])
+    expect(devices.rows[at('Bridge Lighting') + 2]).toEqual([1, 'ไฟประดับ : สะพานปิ่นเกล้า', '-', 'Bridge Lighting', 'เชื่อมต่อ'])
     // After Tunnel's header, WIM brings the camera one back; LPR after it needs none.
     expect(devices.rows[at('WIM · จุดติดตั้ง : สห.4014 กม.2+800 - 16+700') + 1]).toEqual(cameraHeader)
-    expect(devices.rows[at('LPR · จุดติดตั้ง : สห.4014 กม. 16+700') + 1]).toEqual([1, 'กล้อง c5', '16+700', 'CCTV, LPR', 'Connect', '10.0.0.5'])
+    expect(devices.rows[at('LPR · จุดติดตั้ง : สห.4014 กม. 16+700') + 1]).toEqual([1, 'กล้อง c5', '16+700', 'CCTV, LPR', 'เชื่อมต่อ', '10.0.0.5'])
     // VMS, project 2's only section: a band per sign; the camera header is
     // already in view after project 1's LPR.
     expect(devices.rows.slice(at('VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ออนไลน์)') - 1)).toEqual([
       expect.objectContaining({ group: expect.stringMatching(/^โครงการที่ 2 :/) }),
       { group: 'VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ออนไลน์)', tone: 'soft', runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 11 (ระบบ : ' }, { text: 'ออนไลน์', color: '#00B050' }, { text: ')' }] },
-      [1, 'กล้อง c6', '-', 'CCTV, VMS', 'Disconnect', '10.1.1.2'],
+      [1, 'กล้อง c6', '-', 'CCTV, VMS', 'ไม่เชื่อมต่อ', '10.1.1.2'],
       { group: 'VMS · จุดติดตั้ง : ป้าย 12 (ระบบ : ออฟไลน์)', tone: 'soft', runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 12 (ระบบ : ' }, { text: 'ออฟไลน์', color: '#FF0000' }, { text: ')' }] },
     ])
   })

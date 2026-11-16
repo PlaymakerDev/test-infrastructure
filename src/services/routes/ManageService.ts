@@ -30,14 +30,19 @@ import type {
 } from '@/types/manage/project-api'
 import type { UploadResponse } from '@/types/shared'
 import type {
+  APIRequestOutOfWarrantyProjects,
   APIRequestProjectDeviceStatusItems,
   APIRequestProjectDeviceStatusList,
+  APIResponseOutOfWarrantyCandidates,
+  APIResponseOutOfWarrantyProjects,
   APIResponseProjectDeviceStatus,
   APIResponseProjectDeviceStatusList,
   APIResponseProjectDeviceSummaryList,
   APIResponseProjectDeviceSolutionsList,
   ProjectCameraListItem,
   ProjectLightingListItem,
+  OutOfWarrantyRecord,
+  OutOfWarrantyRecordRequest,
   ProjectVMSListItem,
 } from '@/types/manage/device-status-api'
 import type {
@@ -525,6 +530,55 @@ export const getContractorUptimeAPI = (prefix: string, contractorUserId: string,
     url: `/${prefix}/departments/0/${prefix === 'cctv' ? 'cameras' : 'overview'}/uptime-statistics`,
     method: 'GET',
     params: { scope: 'all', contractor_id: contractorUserId, is_warranty: isWarranty, is_project: true },
+  })
+
+// ── อุปกรณ์นอกเหนือการค้ำประกัน (BE 2026-11-16) ──────────────────────────────
+
+/** The projects with open out-of-warranty records, each with just its
+ *  recorded devices — the นอกเหนือการประกัน tab, and which rows' button is
+ *  blue. The filters of /device-status/solutions; `limit` tops out at 100. */
+export const getOutOfWarrantyProjectsAPI = (params: APIRequestOutOfWarrantyProjects) =>
+  ApiService.fetchData<APIResponseOutOfWarrantyProjects, APIRequestOutOfWarrantyProjects>({
+    url: '/manage/project/device-status/out-of-warranty',
+    method: 'GET',
+    params,
+  })
+
+/** What a project can record: every camera (online ones too) and its offline
+ *  VMS / street lighting / traffic / bridge lighting, each with when it went
+ *  offline and its open record if any. Admin and contractor only. */
+export const getOutOfWarrantyCandidatesAPI = (projectId: number) =>
+  ApiService.fetchData<APIResponseOutOfWarrantyCandidates>({
+    url: '/manage/project/device-status/out-of-warranty/candidates',
+    method: 'GET',
+    params: { project_id: projectId },
+  })
+
+/** A project's open records — readable by every role. */
+export const getOutOfWarrantyRecordsAPI = (projectId: number) =>
+  ApiService.fetchData<OutOfWarrantyRecord[]>({
+    url: `/manage/project/device-status/out-of-warranty/projects/${projectId}`,
+    method: 'GET',
+  })
+
+/** Makes the list the project's open records: a listed device keeps (or gets)
+ *  its record with what is sent, a device left out has its record closed.
+ *  All or nothing; 409 when the records changed meanwhile. */
+export const putOutOfWarrantyRecordsAPI = (projectId: number, items: OutOfWarrantyRecordRequest[]) =>
+  ApiService.fetchData<OutOfWarrantyRecord[], OutOfWarrantyRecordRequest[]>({
+    url: `/manage/project/device-status/out-of-warranty/projects/${projectId}`,
+    method: 'PUT',
+    data: items,
+  })
+
+/** A damage photo for a record (form field `upload`) — `full_url` makes
+ *  `path` an absolute URL, stored as-is in the record's `images`. */
+export const postUploadOutOfWarrantyAPI = (form: FormData) =>
+  ApiService.fetchData<UploadResponse, FormData>({
+    url: '/upload/out_of_warranty',
+    method: 'POST',
+    data: form,
+    params: { full_url: true },
   })
 
 

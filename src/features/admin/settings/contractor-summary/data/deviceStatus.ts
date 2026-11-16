@@ -6,19 +6,45 @@ const toCount = (value: unknown): number | null => {
   return Number.isFinite(n) && n >= 0 ? n : null
 }
 
-/** A system's totals out of its uptime-statistics response. Each service
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+
+/** One system's uptime-statistics: as the backend counts them, and as the
+ *  rings of ทั้งหมด / ในค้ำ / หมดค้ำ show them. */
+export interface UptimeCounts {
+  /** As read — the นอกเหนือการประกัน devices among the offline. */
+  raw: DeviceTotals
+  /** Offline devices with an open นอกเหนือการประกัน record (a car hit it, its
+   *  cable was cut or stolen…): `out_of_warranty` in the system's own block,
+   *  "a part of offline" (BE 2026-11-16, all ten services — the camera-based
+   *  systems count the units whose camera has a record). */
+  outOfWarranty: number
+  /** `raw` less those devices — out of both ออฟไลน์ and ทั้งหมด (user
+   *  2026-11-16, option ก.), so ออนไลน์ + ออฟไลน์ still equals ทั้งหมด. */
+  totals: DeviceTotals
+}
+
+/** Takes the นอกเหนือการประกัน devices out of ออฟไลน์ and ทั้งหมด alike —
+ *  never more than the offline count, should the backend ever send more. */
+export const withoutOutOfWarranty = (totals: DeviceTotals, outOfWarranty: number): DeviceTotals => {
+  const removed = Math.min(Math.max(0, outOfWarranty), totals.offline)
+  return { total: totals.total - removed, online: totals.online, offline: totals.offline - removed }
+}
+
+/** A system's counts out of its uptime-statistics response. Each service
  *  names its block differently (`camera`, `vms`, `counting`, …) and Street
  *  Light wraps the object in an array. `null` when the block is missing. */
-export const readUptimeTotals = (block: string, body: unknown): DeviceTotals | null => {
-  const root = Array.isArray(body) ? body[0] : body
-  const totals = root && typeof root === 'object' ? (root as Record<string, unknown>)[block] : null
-  if (!totals || typeof totals !== 'object') return null
-  const { total, online, offline } = totals as Record<string, unknown>
-  const t = toCount(total)
-  const on = toCount(online)
-  const off = toCount(offline)
-  if (t === null || on === null || off === null) return null
-  return { total: t, online: on, offline: off }
+export const readUptimeCounts = (block: string, body: unknown): UptimeCounts | null => {
+  const root = asRecord(Array.isArray(body) ? body[0] : body)
+  const counts = asRecord(root?.[block])
+  if (!counts) return null
+  const total = toCount(counts.total)
+  const online = toCount(counts.online)
+  const offline = toCount(counts.offline)
+  if (total === null || online === null || offline === null) return null
+  const raw = { total, online, offline }
+  const outOfWarranty = Math.min(toCount(counts.out_of_warranty) ?? 0, offline)
+  return { raw, outOfWarranty, totals: withoutOutOfWarranty(raw, outOfWarranty) }
 }
 
 /** Whether a system gets a ring: the contractor has some of it. The backend
@@ -30,6 +56,11 @@ export const hasDevices = (totals: DeviceTotals | null | undefined): totals is D
 /** Offline share in whole percent — what each ring shows. */
 export const offlinePercent = (totals: DeviceTotals): number =>
   totals.total > 0 ? Math.round((totals.offline / totals.total) * 100) : 0
+
+/** นอกเหนือการประกัน's ring: the share of the system's offline devices that
+ *  are recorded out of warranty, in whole percent. */
+export const outOfWarrantyPercent = ({ raw, outOfWarranty }: Pick<UptimeCounts, 'raw' | 'outOfWarranty'>): number =>
+  raw.offline > 0 ? Math.round((outOfWarranty / raw.offline) * 100) : 0
 
 /** "กม. 2+800" — the word once, even when the chainage already carries it;
  *  nothing at all for a group without one (the backend sends "" or null). */
@@ -62,14 +93,18 @@ export const cameraBadges = (types: { id: number }[] | null | undefined): Device
   return BADGE_ORDER.filter((key) => keys.has(key))
 }
 
-/** ทั้งหมด / ในค้ำ / หมดค้ำ → the list's `is_warranty`. */
-export type WarrantyFilter = 'all' | 'in' | 'out'
+/** ทั้งหมด / นอกเหนือการประกัน / ในค้ำ / หมดค้ำ, in the Figma's order (user
+ *  2026-11-16). นอกเหนือการประกัน is not a warranty-date filter: its rings
+ *  are every project's recorded devices, its table the projects with records. */
+export type WarrantyFilter = 'all' | 'excluded' | 'in' | 'out'
 
 export const WARRANTY_FILTER_OPTIONS: { label: string; value: WarrantyFilter }[] = [
   { label: 'ทั้งหมด', value: 'all' },
+  { label: 'นอกเหนือการประกัน', value: 'excluded' },
   { label: 'ในค้ำ', value: 'in' },
   { label: 'หมดค้ำ', value: 'out' },
 ]
 
+/** The filter → the listings' and uptime-statistics' `is_warranty`. */
 export const warrantyParam = (filter: WarrantyFilter): boolean | undefined =>
   filter === 'in' ? true : filter === 'out' ? false : undefined

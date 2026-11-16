@@ -38,31 +38,50 @@ export const STREET_LIGHT_COLUMNS: ProjectSheetColumns = ['ชื่อจุด
 export const BRIDGE_LIGHTING_COLUMNS: ProjectSheetColumns = ['ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ']
 export const TUNNEL_COLUMNS: ProjectSheetColumns = ['ชื่ออุปกรณ์', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ']
 
-/** A device's สถานะ / การเชื่อมต่อ, worded as the sample has it. */
-export const connectionLabel = (isOnline: boolean | null | undefined) => (isOnline ? 'Connect' : 'Disconnect')
+/** A device that is นอกเหนือการประกัน — an open record (a car hit it, its
+ *  cable was cut or stolen…) — says so before anything else (user 2026-11-16). */
+export const OUT_OF_WARRANTY_LABEL = 'นอกเหนือการประกัน'
+
+/** A device's สถานะ / การเชื่อมต่อ in Thai (user 2026-11-16): นอกเหนือการ
+ *  ประกัน first, then เชื่อมต่อ / ไม่เชื่อมต่อ. */
+export const connectionLabel = (isOnline: boolean | null | undefined, isOutOfWarranty?: boolean | null) =>
+  isOutOfWarranty ? OUT_OF_WARRANTY_LABEL : isOnline ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ'
+
+/** A street-light cabinet's สถานะสาย — the wire itself, whole or broken;
+ *  a record is the การเชื่อมต่อ column's to show. */
+export const wireLabel = (hasBrokenWire: boolean | null | undefined) => (hasBrokenWire ? 'ไม่เชื่อมต่อ' : 'เชื่อมต่อ')
+
+/** A controller's own state, written after its install point. */
+export type PointState = 'online' | 'offline' | 'excluded'
+
+/** A controller (Traffic Signal, Crosswalk, VMS sign): นอกเหนือการประกัน
+ *  first, then ออนไลน์ / ออฟไลน์ (user 2026-11-16). */
+export const pointState = (item: { is_online: boolean; is_out_of_warranty?: boolean }): PointState =>
+  item.is_out_of_warranty ? 'excluded' : item.is_online ? 'online' : 'offline'
 
 export interface ProjectSheetSection {
   /** The system listed — its name heads the section. */
   solution: ProjectSolution
   columns: ProjectSheetColumns
   /** In order. A point without a label lists its devices straight under the
-   *  header (the sample's Street Light); `online` is a controller's own state
+   *  header (the sample's Street Light); `state` is a controller's own
    *  (Traffic Signal, Crosswalk, VMS), written after its label. */
-  points: { label?: string; online?: boolean; rows: ProjectSheetColumns[] }[]
+  points: { label?: string; state?: PointState; rows: ProjectSheetColumns[] }[]
 }
 
 /** A controller's state after its install point, coloured as the user's
- *  mockup has it (2026-10-28) — Excel's standard Green and Red. */
-const STATE = {
+ *  mockup has it (2026-10-28) — Excel's standard Green and Red, and its
+ *  standard Purple for นอกเหนือการประกัน. */
+const STATE: Record<PointState, ExcelTextRun> = {
   online: { text: 'ออนไลน์', color: '00B050' },
   offline: { text: 'ออฟไลน์', color: 'FF0000' },
+  excluded: { text: OUT_OF_WARRANTY_LABEL, color: '7030A0' },
 }
 
 /** "จุดติดตั้ง : <label> (ระบบ : ออนไลน์)" in parts — the state alone in colour. */
-const pointLine = ({ label, online }: ProjectSheetSection['points'][number]): ExcelTextRun[] => {
-  if (online === undefined) return [{ text: `จุดติดตั้ง : ${label}` }]
-  const state = online ? STATE.online : STATE.offline
-  return [{ text: `จุดติดตั้ง : ${label} (ระบบ : ` }, state, { text: ')' }]
+const pointLine = ({ label, state }: ProjectSheetSection['points'][number]): ExcelTextRun[] => {
+  if (state === undefined) return [{ text: `จุดติดตั้ง : ${label}` }]
+  return [{ text: `จุดติดตั้ง : ${label} (ระบบ : ` }, STATE[state], { text: ')' }]
 }
 
 const pointText = (point: ProjectSheetSection['points'][number]) => pointLine(point).map((run) => run.text).join('')
@@ -95,9 +114,9 @@ const SECTION_FILL = 'A6CAEC'
 // and on the Solution row, a box in each of C–M. Wider than the sample where
 // its text didn't fit (user 2026-10-29): A for "โครงการที่ 431 :", B for
 // "เลขที่สัญญา :", J–K for "CCTV, Volume, Truck Tracking", L for
-// "การเชื่อมต่อ", M for an IP address. A longer name wraps (excel.ts sizes the
-// row).
-const WIDTHS = [16, 13, 10, 10, 10, 10, 10, 10, 10, 13, 13, 11, 16]
+// "นอกเหนือการประกัน" (2026-11-16), M for an IP address. A longer name wraps
+// (excel.ts sizes the row).
+const WIDTHS = [16, 13, 10, 10, 10, 10, 10, 10, 10, 13, 13, 19, 16]
 const LAST_COL = WIDTHS.length - 1
 
 const cell = (col: number, value: string | number, style?: ExcelCellStyle, span?: number): ExcelLayoutCell => ({
@@ -189,10 +208,11 @@ export const PROJECT_DEVICES_TITLE = 'รายการอุปกรณ์ท
 
 const DEVICE_PDF_COLUMNS = [
   { header: 'ลำดับ', widthPct: 6 },
-  { header: CAMERA_COLUMNS[0], widthPct: 44, align: 'left' as const },
+  { header: CAMERA_COLUMNS[0], widthPct: 41, align: 'left' as const },
   { header: CAMERA_COLUMNS[1], widthPct: 10 },
   { header: CAMERA_COLUMNS[2], widthPct: 16 },
-  { header: CAMERA_COLUMNS[3], widthPct: 11 },
+  // Room for นอกเหนือการประกัน on one line.
+  { header: CAMERA_COLUMNS[3], widthPct: 14 },
   { header: CAMERA_COLUMNS[4], widthPct: 13 },
 ]
 
@@ -228,7 +248,7 @@ const projectPdfRows = (project: ProjectSheetProject, index: number, inView: Pro
       rows.push({
         group: point.label ? `${section.solution} · ${pointText(point)}` : section.solution,
         tone: 'soft',
-        ...(point.label && point.online !== undefined ? { runs: bandRuns(section.solution, point) } : {}),
+        ...(point.label && point.state !== undefined ? { runs: bandRuns(section.solution, point) } : {}),
         ...(pointIndex === 0 && keepTogether ? { keepAhead: after } : {}),
       })
       if (pointIndex === 0 && !sameColumns(section.columns, inView)) {

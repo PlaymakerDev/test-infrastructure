@@ -19,8 +19,11 @@ import {
   STREET_LIGHT_COLUMNS,
   TUNNEL_COLUMNS,
   connectionLabel,
+  pointState,
   projectDevicesPdfBlocks,
   projectDevicesSheet,
+  wireLabel,
+  type PointState,
   type ProjectSheetColumns,
   type ProjectSheetProject,
   type ProjectSheetSection,
@@ -302,7 +305,7 @@ const cameraRow = (camera: SolutionCamera): ProjectSheetColumns => [
   camera.camera_name?.trim() || '-',
   km(camera.sta),
   cameraTags(camera.solution_group),
-  connectionLabel(camera.is_online),
+  connectionLabel(camera.is_online, camera.is_out_of_warranty),
   camera.ip_address?.trim() || '-',
 ]
 
@@ -312,7 +315,7 @@ const cameraRow = (camera: SolutionCamera): ProjectSheetColumns => [
 const cameraSection = <Item extends CameraSolution>(
   solution: ProjectSolution,
   list: Item[] | undefined,
-  stateOf?: (item: Item) => boolean,
+  stateOf?: (item: Item) => PointState,
 ): ProjectSheetSection[] =>
   list?.length
     ? [{
@@ -320,13 +323,13 @@ const cameraSection = <Item extends CameraSolution>(
         columns: CAMERA_COLUMNS,
         points: list.map((item) => ({
           label: item.solution_name,
-          ...(stateOf ? { online: stateOf(item) } : {}),
+          ...(stateOf ? { state: stateOf(item) } : {}),
           rows: (item.cameras ?? []).map(cameraRow),
         })),
       }]
     : []
 
-const controllerState = (controller: SystemSolution) => controller.is_online
+const controllerState = (controller: SystemSolution) => pointState(controller)
 
 /** WIM has no list of its own in /solutions: its cameras, by the CCTV install
  *  point each stands at. */
@@ -356,14 +359,14 @@ const projectSections = (solutions: ProjectDeviceSolutionsRow | undefined): Proj
           solution: 'Street Light' as const,
           columns: STREET_LIGHT_COLUMNS,
           // The cabinets, as the sample lists them (not their lamps); สถานะสาย
-          // is Connect while the wire is whole.
+          // is เชื่อมต่อ while the wire is whole.
           points: [{
             rows: solutions.lighting.map((cabinet): ProjectSheetColumns => [
               cabinet.solution_name?.trim() || '-',
               km(cabinet.sta),
               'Street Light',
-              connectionLabel(cabinet.is_online),
-              connectionLabel(!cabinet.has_broken_wire),
+              connectionLabel(cabinet.is_online, cabinet.is_out_of_warranty),
+              wireLabel(cabinet.has_broken_wire),
             ]),
           }],
         }]
@@ -375,7 +378,7 @@ const projectSections = (solutions: ProjectDeviceSolutionsRow | undefined): Proj
       ? [{
           solution: 'Bridge Lighting' as const,
           columns: BRIDGE_LIGHTING_COLUMNS,
-          points: [{ rows: solutions.bridge_lighting.map((bridge): ProjectSheetColumns => [bridge.solution_name?.trim() || '-', '-', 'Bridge Lighting', connectionLabel(bridge.is_online)]) }],
+          points: [{ rows: solutions.bridge_lighting.map((bridge): ProjectSheetColumns => [bridge.solution_name?.trim() || '-', '-', 'Bridge Lighting', connectionLabel(bridge.is_online, bridge.is_out_of_warranty)]) }],
         }]
       : []),
     ...(solutions?.tunnel?.length
@@ -384,7 +387,7 @@ const projectSections = (solutions: ProjectDeviceSolutionsRow | undefined): Proj
           columns: TUNNEL_COLUMNS,
           points: solutions.tunnel.map((tunnel) => ({
             label: (tunnel.devices ?? []).length ? tunnel.solution_name : `${tunnel.solution_name} (ไม่มีข้อมูลอุปกรณ์)`,
-            rows: (tunnel.devices ?? []).map((device): ProjectSheetColumns => [device.device_name?.trim() || '-', '-', 'Tunnel', connectionLabel(device.is_online)]),
+            rows: (tunnel.devices ?? []).map((device): ProjectSheetColumns => [device.device_name?.trim() || '-', '-', 'Tunnel', connectionLabel(device.is_online, device.is_out_of_warranty)]),
           })),
         }]
       : []),

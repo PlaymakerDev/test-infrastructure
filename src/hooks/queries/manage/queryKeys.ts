@@ -116,9 +116,32 @@ export const manageKeys = {
     summaryRows: (contractorUserId: string, isWarranty?: boolean) =>
       [...manageKeys.deviceStatus.all, 'summary-rows', contractorUserId, isWarranty ?? null] as const,
     /** One system's uptime-statistics filtered to one contractor (and, when
-     *  given, to in- or out-of-warranty solutions). */
+     *  given, to in- or out-of-warranty solutions) — its counts as read and
+     *  its นอกเหนือการประกัน share. */
     uptime: (contractorUserId: string, prefix: string, isWarranty?: boolean) =>
-      [...manageKeys.deviceStatus.all, 'uptime', contractorUserId, prefix, isWarranty ?? null] as const,
+      [...manageKeys.deviceStatus.all, 'uptime-counts', contractorUserId, prefix, isWarranty ?? null] as const,
+    /** อุปกรณ์นอกเหนือการค้ำประกัน (BE 2026-11-16) — one root, so a save
+     *  refreshes every read of it. */
+    outOfWarranty: {
+      all: ['manage', 'device-status', 'out-of-warranty'] as const,
+      /** One page of the projects with records — the นอกเหนือการประกัน tab. */
+      projects: (params: APIRequestProjectDeviceStatusList) =>
+        [
+          ...manageKeys.deviceStatus.outOfWarranty.all,
+          'projects',
+          {
+            contractor_id: params.contractor_id ?? '',
+            search: params.search ?? '',
+            page: params.page ?? 1,
+            limit: params.limit ?? 10,
+          },
+        ] as const,
+      /** Every project of a contractor with a record — whose button is blue. */
+      projectIds: (contractorUserId: string) =>
+        [...manageKeys.deviceStatus.outOfWarranty.all, 'project-ids', contractorUserId] as const,
+      candidates: (projectId: number) => [...manageKeys.deviceStatus.outOfWarranty.all, 'candidates', projectId] as const,
+      records: (projectId: number) => [...manageKeys.deviceStatus.outOfWarranty.all, 'records', projectId] as const,
+    },
   },
 
   roads: {
