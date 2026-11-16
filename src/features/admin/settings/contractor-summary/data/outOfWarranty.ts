@@ -133,8 +133,8 @@ export interface OutOfWarrantyEntry {
   photos: OutOfWarrantyPhoto[]
 }
 
-/** Every type's entries — the form keeps a set per type, so its page
- *  numbers are always that type's table numbers. */
+/** Every type's entries — the form keeps a set of pages per type, in that
+ *  type's table order. */
 export type OutOfWarrantyEntries = Partial<Record<OutOfWarrantyDeviceType, OutOfWarrantyEntry[]>>
 
 const fileName = (url: string) => url.split(/[?#]/)[0].split('/').pop() || 'รูปภาพ'
@@ -180,13 +180,10 @@ export const deviceOrder = (devices: readonly OutOfWarrantyDevice[], deviceId: s
   return index < 0 ? null : index + 1
 }
 
-/** The right-hand pagination's label for an entry: its device's ลำดับ in the
- *  table (user 2026-11-16), "–" until a row is picked. */
-export const entryLabel = (entry: OutOfWarrantyEntry, devices: readonly OutOfWarrantyDevice[]): string =>
-  String(deviceOrder(devices, entry.deviceId) ?? '–')
-
 /** Entries in table order, the not-yet-picked ones last in the order they
- *  were added — the pagination then counts up like the table. */
+ *  were added — the right-hand pages run down the table. They are numbered
+ *  1, 2, 3 like any pages (user 2026-11-16: the table's own ลำดับ, 1 and 4,
+ *  read as pages missing); the table highlights the page's device. */
 export const sortEntries = (
   entries: readonly OutOfWarrantyEntry[],
   devices: readonly OutOfWarrantyDevice[],
@@ -213,8 +210,25 @@ export const initialEntries = (
   return { entries, currentKey: entries[0].key }
 }
 
-/** A table row was picked for the entry on screen. A device already on
- *  another page opens that page instead — one page per device. */
+/** Something written on the page — a cause or a photo (a saved record
+ *  always has both). */
+const isWritten = (entry: OutOfWarrantyEntry): boolean => entry.cause.trim() !== '' || entry.photos.length > 0
+
+/** The devices with something written for them — saved records and what
+ *  was typed this time. Their ลำดับ in the table turns blue (user
+ *  2026-11-16), and the dropdown counts them per type. */
+export const filledDeviceIds = (entries: readonly OutOfWarrantyEntry[]): Set<string> =>
+  new Set(entries.flatMap((entry) => (entry.deviceId && isWritten(entry) ? [entry.deviceId] : [])))
+
+/** A table row was picked. What was written for one device never moves to
+ *  another (user 2026-11-16: picking another row kept the cause and photos,
+ *  and saving would have closed the first device's record and given its
+ *  evidence to the second):
+ *  - a device that has a page opens it — one page per device;
+ *  - the page on screen takes the device while it has none (a cause typed
+ *    first stays), or while nothing is written on it (a wrong pick swapped);
+ *  - otherwise the device gets a page of its own, empty — the blank one
+ *    waiting if there is one — and the page on screen keeps its device. */
 export const pickDevice = (
   state: EntriesState,
   deviceId: string,
@@ -223,10 +237,15 @@ export const pickDevice = (
   const owner = state.entries.find((entry) => entry.deviceId === deviceId)
   if (owner) return { entries: state.entries, currentKey: owner.key }
   const deviceName = devices.find((device) => device.id === deviceId)?.hostname ?? ''
-  const entries = state.entries.map((entry) =>
-    entry.key === state.currentKey ? { ...entry, deviceId, deviceName } : entry,
-  )
-  return { entries: sortEntries(entries, devices), currentKey: state.currentKey }
+  const current = state.entries.find((entry) => entry.key === state.currentKey)
+  const target = current && (!current.deviceId || !isWritten(current))
+    ? current
+    : state.entries.find(isBlankEntry) ?? newEntry()
+  const entries = state.entries.some((entry) => entry.key === target.key) ? state.entries : [...state.entries, target]
+  return {
+    entries: sortEntries(entries.map((entry) => (entry.key === target.key ? { ...entry, deviceId, deviceName } : entry)), devices),
+    currentKey: target.key,
+  }
 }
 
 /** + เพิ่มอุปกรณ์: a new page — or the empty one already waiting. */

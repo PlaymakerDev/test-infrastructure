@@ -40,8 +40,8 @@ import {
   deviceOrder,
   droppedRecords,
   entryErrors,
-  entryLabel,
   failedItem,
+  filledDeviceIds,
   initialEntries,
   initialTypeKey,
   OUT_OF_WARRANTY_MAX_PHOTOS,
@@ -90,19 +90,17 @@ interface Props {
 const formatDate = (value: string | null | undefined) => (value ? thaiDateBE(value) : '-')
 
 /** "← ก่อนหน้า 1 2 3 … ถัดไป →" in one colour — blue under the table, yellow
- *  under the form, the active page a filled circle. `labelOf` renames the
- *  page buttons (the form's pages carry their table numbers). */
+ *  under the form, the active page a filled circle. */
 const ModalPagination: React.FC<{
   current: number
   total: number
   pageSize: number
   accent: string
   onChange: (page: number) => void
-  labelOf?: (page: number) => string
   label: string
-}> = ({ current, total, pageSize, accent, onChange, labelOf, label }) => {
+}> = ({ current, total, pageSize, accent, onChange, label }) => {
   const itemRender: PaginationProps['itemRender'] = (page, type, element) => {
-    if (type === 'page') return <a rel='nofollow' className='fs-12'>{labelOf ? labelOf(page) : page}</a>
+    if (type === 'page') return <a rel='nofollow' className='fs-12'>{page}</a>
     if ((type === 'prev' || type === 'next') && React.isValidElement(element)) {
       const content = type === 'prev'
         ? <><TbArrowNarrowLeft className='fs-18' /><span className='max-sm:hidden'>ก่อนหน้า</span></>
@@ -187,21 +185,33 @@ const ProjectFacts: React.FC<{ project: ProjectDeviceStatusBase }> = ({ project 
 
 /** The project's offline devices of the chosen type — a row click puts that
  *  device on the form. Same blue header as the maintenance case page's
- *  ข้อมูลอุปกรณ์ table (CaseDeviceTable). */
+ *  ข้อมูลอุปกรณ์ table (CaseDeviceTable). A device with something written
+ *  for it has its ลำดับ in blue (user 2026-11-16) — the main table's blue
+ *  for "recorded". */
 const DeviceTable: React.FC<{
   devices: OutOfWarrantyDevice[]
   typeLabel: string
   page: number
   selectedId: string | null
+  filledIds: ReadonlySet<string>
   emptyText: string
   onPick: (device: OutOfWarrantyDevice) => void
-}> = ({ devices, typeLabel, page, selectedId, emptyText, onPick }) => {
+}> = ({ devices, typeLabel, page, selectedId, filledIds, emptyText, onPick }) => {
   const start = (page - 1) * OUT_OF_WARRANTY_TABLE_PAGE_SIZE
   const red = (text: string) => <span className='fs-12' style={{ color: OFFLINE_COLOR }}>{text}</span>
   // Fixed widths fit the card at 1400 px; Hostname takes what is left and
   // wraps a long name instead of pushing the last columns out of sight.
   const columns: TableProps<OutOfWarrantyDevice>['columns'] = [
-    { title: <span className='fs-12'>ลำดับ</span>, key: 'no', width: 56, align: 'center', render: (_, __, index) => <span className='fs-12'>{start + index + 1}</span> },
+    {
+      title: <span className='fs-12'>ลำดับ</span>,
+      key: 'no',
+      width: 56,
+      align: 'center',
+      render: (_, device, index) =>
+        filledIds.has(device.id)
+          ? <span className='fs-12 font-bold' style={{ color: BLUE }} title='กรอกข้อมูลแล้ว'>{start + index + 1}</span>
+          : <span className='fs-12'>{start + index + 1}</span>,
+    },
     { title: <span className='fs-12'>ประเภท</span>, key: 'type', width: 96, render: () => <span className='fs-12'>{typeLabel}</span> },
     { title: <span className='fs-12'>Hostname</span>, dataIndex: 'hostname', key: 'hostname', render: (value: string) => <span className='fs-12 wrap-break-word'>{value || '-'}</span> },
     { title: <span className='fs-12'>IP Address</span>, dataIndex: 'ipAddress', key: 'ip', width: 112, render: (value: string) => <span className='fs-12'>{value || '-'}</span> },
@@ -312,8 +322,7 @@ const OutOfWarrantyForm: React.FC<FormProps> = ({ project, devices: devicesByTyp
   const hadRecords = useMemo(() => Object.values(openedWith).some((entries) => !!entries?.length), [openedWith])
   // The first type with a record, else CCTV.
   const [typeKey, setTypeKey] = useState<OutOfWarrantyDeviceType>(() => initialTypeKey(saved))
-  // One set of pages per type — the pagination's numbers are always the
-  // chosen type's table numbers.
+  // One set of pages per type, in that type's table order.
   const [forms, setForms] = useState(() =>
     Object.fromEntries(
       OUT_OF_WARRANTY_TYPES.map((type) => [type.key, initialEntries(saved[type.key], devicesByType[type.key])]),
@@ -459,7 +468,13 @@ const OutOfWarrantyForm: React.FC<FormProps> = ({ project, devices: devicesByTyp
               <Select
                 value={typeKey}
                 onChange={onTypeChange}
-                options={OUT_OF_WARRANTY_TYPES.map((option) => ({ value: option.key, label: option.label }))}
+                // How many of each type have something written — records of
+                // another type are a switch away otherwise. Plain text: the
+                // chosen option sits on yellow, where blue would not read.
+                options={OUT_OF_WARRANTY_TYPES.map((option) => {
+                  const filled = filledDeviceIds(forms[option.key].entries).size
+                  return { value: option.key, label: filled > 0 ? `${option.label} (${filled})` : option.label }
+                })}
                 aria-label='ประเภทอุปกรณ์'
                 className='flex-1 sm:flex-none sm:w-52'
               />
@@ -472,6 +487,7 @@ const OutOfWarrantyForm: React.FC<FormProps> = ({ project, devices: devicesByTyp
           typeLabel={type.label}
           page={page}
           selectedId={current.deviceId}
+          filledIds={filledDeviceIds(form.entries)}
           emptyText={readOnly ? 'ไม่มีอุปกรณ์ที่บันทึกไว้' : 'ไม่มีอุปกรณ์ออฟไลน์'}
           onPick={onPick}
         />
@@ -584,7 +600,6 @@ const OutOfWarrantyForm: React.FC<FormProps> = ({ project, devices: devicesByTyp
               pageSize={1}
               accent={YELLOW}
               onChange={onEntryPage}
-              labelOf={(entryPage) => entryLabel(form.entries[entryPage - 1], devices)}
             />
           )}
           {!readOnly && (
@@ -657,8 +672,8 @@ const OutOfWarrantyBody: React.FC<{ project: ProjectDeviceStatusBase; onDone: ()
  *  doesn't cover it (a car hit it, a cable cut or stolen, another accident):
  *  the inspection result and up to two photos. Left: the project and its
  *  offline devices of one type (the first with a record, else CCTV); right:
- *  one page per device — + เพิ่มอุปกรณ์ adds a page, the pages are numbered
- *  by the table. A project with records opens on them, to add to or change. */
+ *  one page per device — + เพิ่มอุปกรณ์ adds a page, the pages run in table
+ *  order. A project with records opens on them, to add to or change. */
 const OutOfWarrantyModal: React.FC<Props> = ({ project, onClose, onOpenProjectInfo }) => (
   <ConfigProvider
     theme={{ components: { Modal: { colorIcon: '#FFFFFF', contentBg: 'var(--light-black)', headerBg: 'var(--light-black)' } } }}

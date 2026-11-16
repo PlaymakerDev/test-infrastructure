@@ -5,9 +5,10 @@ import {
   addEntry,
   candidateDevices,
   clearEntry,
+  deviceOrder,
   droppedRecords,
-  entryLabel,
   failedItem,
+  filledDeviceIds,
   initialEntries,
   initialTypeKey,
   newEntry,
@@ -42,13 +43,13 @@ const filled = (deviceId: string, extra: Partial<OutOfWarrantyEntry> = {}): OutO
   ...extra,
 })
 
-describe('the form pages — one per device, numbered by the table', () => {
-  it('a picked row fills the page on screen with its hostname; the page is labelled with its ลำดับ', () => {
+describe('the form pages — one per device, in table order', () => {
+  it('a picked row fills the page on screen with its hostname', () => {
     const state = pickDevice(initialEntries(undefined), 'cam-3', DEVICES)
     expect(state.entries).toHaveLength(1)
     expect(state.entries[0]).toMatchObject({ deviceId: 'cam-3', deviceName: 'CAM-3' })
-    expect(entryLabel(state.entries[0], DEVICES)).toBe('3')
-    expect(entryLabel(newEntry(), DEVICES)).toBe('–')
+    expect(deviceOrder(DEVICES, 'cam-3')).toBe(3)
+    expect(deviceOrder(DEVICES, null)).toBeNull()
   })
 
   it('a row already on another page opens that page instead of taking it twice', () => {
@@ -60,12 +61,71 @@ describe('the form pages — one per device, numbered by the table', () => {
     expect(state.entries.filter((entry) => entry.deviceId === 'cam-2')).toHaveLength(1)
   })
 
+  it('another row after writing: a fresh page for it — the cause and photos stay with their own device', () => {
+    let state = pickDevice(initialEntries(undefined), 'cam-1', DEVICES)
+    const first = state.currentKey
+    state = updateEntry(state, first, () => ({ cause: 'รถชนเสา', photos: [photo] }))
+    state = pickDevice(state, 'cam-4', DEVICES)
+    expect(state.entries.map((entry) => [entry.deviceId, entry.cause, entry.photos.length])).toEqual([
+      ['cam-1', 'รถชนเสา', 1],
+      ['cam-4', '', 0],
+    ])
+    expect(state.currentKey).not.toBe(first)
+    expect(state.entries.find((entry) => entry.key === state.currentKey)?.deviceId).toBe('cam-4')
+  })
+
+  it('a saved record never moves to another device', () => {
+    const saved = filled('cam-2')
+    const state = pickDevice(initialEntries([saved], DEVICES), 'cam-5', DEVICES)
+    expect(state.entries.map((entry) => entry.deviceId)).toEqual(['cam-2', 'cam-5'])
+    expect(state.entries[0]).toEqual(saved)
+    expect(state.entries[1]).toMatchObject({ cause: '', photos: [] })
+  })
+
+  it('a wrong pick with nothing written yet is swapped — no stray page', () => {
+    let state = pickDevice(initialEntries(undefined), 'cam-1', DEVICES)
+    state = pickDevice(state, 'cam-3', DEVICES)
+    expect(state.entries.map((entry) => entry.deviceId)).toEqual(['cam-3'])
+  })
+
+  it('typed first, then picked: the device joins what was typed', () => {
+    let state = initialEntries(undefined)
+    state = updateEntry(state, state.currentKey, () => ({ cause: 'สายไฟขาด' }))
+    state = pickDevice(state, 'cam-2', DEVICES)
+    expect(state.entries).toHaveLength(1)
+    expect(state.entries[0]).toMatchObject({ deviceId: 'cam-2', cause: 'สายไฟขาด' })
+  })
+
+  it('the empty page already waiting takes the new device rather than another page', () => {
+    let state = pickDevice(initialEntries(undefined), 'cam-1', DEVICES)
+    const first = state.currentKey
+    state = updateEntry(state, first, () => ({ cause: 'รถชนเสา' }))
+    state = addEntry(state)
+    state = { ...state, currentKey: first }
+    state = pickDevice(state, 'cam-3', DEVICES)
+    expect(state.entries.map((entry) => entry.deviceId)).toEqual(['cam-1', 'cam-3'])
+  })
+
+  it('the devices with something written — saved or typed now — for the blue ลำดับ and the dropdown count', () => {
+    let state = initialEntries([filled('cam-2')], DEVICES)
+    state = pickDevice(state, 'cam-5', DEVICES)
+    // picked, nothing written yet: not filled
+    expect([...filledDeviceIds(state.entries)]).toEqual(['cam-2'])
+    state = updateEntry(state, state.currentKey, () => ({ cause: 'สายไฟขาด' }))
+    expect([...filledDeviceIds(state.entries)].sort()).toEqual(['cam-2', 'cam-5'])
+    // a cause typed before any device is picked counts for no row
+    expect(filledDeviceIds([{ ...newEntry(), cause: 'x' }]).size).toBe(0)
+    // ล้างข้อมูล takes it off again
+    expect([...filledDeviceIds(clearEntry(state).entries)]).toEqual(['cam-2'])
+  })
+
   it('pages run in table order, the unpicked one last', () => {
     let state = pickDevice(initialEntries(undefined), 'cam-6', DEVICES)
     state = addEntry(state)
     state = pickDevice(state, 'cam-2', DEVICES)
     state = addEntry(state)
-    expect(state.entries.map((entry) => entryLabel(entry, DEVICES))).toEqual(['2', '6', '–'])
+    // Pages 1, 2, 3 hold table rows 2, 6 and the one not yet picked.
+    expect(state.entries.map((entry) => entry.deviceId)).toEqual(['cam-2', 'cam-6', null])
     expect(sortEntries([...state.entries].reverse(), DEVICES).map((entry) => entry.deviceId)).toEqual(['cam-2', 'cam-6', null])
   })
 
