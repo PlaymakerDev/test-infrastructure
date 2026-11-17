@@ -43,8 +43,8 @@ const ProjectGridView: React.FC<Props> = (props) => {
   // only ever sees a single APIResponseProjectDepartment, same shape
   // useQuery used to hand it.
   const pages = useMemo(() => infiniteData?.pages ?? [], [infiniteData])
-  const allRows = useMemo(() => pages.flatMap((p) => p.res_data), [pages])
-  const metaData = pages[0]?.meta_data
+  const allRows = useMemo(() => pages?.flatMap((p) => p?.res_data), [pages])
+  const metaData = pages?.[0]?.meta_data
   const data: APIResponseProjectDepartment | undefined = useMemo(
     () =>
       infiniteData
@@ -57,22 +57,22 @@ const ProjectGridView: React.FC<Props> = (props) => {
   // next page of departments, replacing the old fixed page-1/limit-10 fetch.
   const loadMoreRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const el = loadMoreRef.current
+    const el = loadMoreRef?.current
     if (!el || !hasNextPage) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextPage) {
+        if (entries?.[0]?.isIntersecting && !isFetchingNextPage) {
           fetchNextPage()
         }
       },
       { rootMargin: '200px' },
     )
-    observer.observe(el)
-    return () => observer.disconnect()
+    observer?.observe(el)
+    return () => observer?.disconnect()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // FALLBACK UI for error or empty data
-  if (isLoading) return <Skeleton loading={true} active paragraph={{ rows: 4 }} />
+  if (isLoading) return <Skeleton loading={isLoading} active paragraph={{ rows: 4 }} />
 
   if (isError) {
     return (
@@ -82,7 +82,7 @@ const ProjectGridView: React.FC<Props> = (props) => {
     )
   }
 
-  if (!data?.res_data || data.res_data.length === 0) {
+  if (!data?.res_data || data?.res_data?.length === 0) {
     return (
       <div className="block m-auto py-18">
         <Empty description="ไม่มีข้อมูลโครงการ" />

@@ -26,15 +26,15 @@ interface RowData extends RoadData {
 const buildRows = (list: RoadData[]): RowData[] =>
   list.map((item, index) => {
     const prev = list[index - 1]
-    const sameRegion = !!prev && prev.department.region_id === item.department.region_id
-    const sameDepartment = sameRegion && prev!.department_id === item.department_id
+    const sameRegion = !!prev && prev?.department?.region_id === item?.department?.region_id
+    const sameDepartment = sameRegion && prev!.department_id === item?.department_id
 
     let regionSpan = 0
     if (!sameRegion) {
       regionSpan = 1
       for (
         let i = index + 1;
-        i < list.length && list[i].department.region_id === item.department.region_id;
+        i < list?.length && list?.[i]?.department?.region_id === item?.department?.region_id;
         i++
       ) {
         regionSpan++
@@ -47,8 +47,8 @@ const buildRows = (list: RoadData[]): RowData[] =>
       for (
         let i = index + 1;
         i < list.length &&
-        list[i].department.region_id === item.department.region_id &&
-        list[i].department_id === item.department_id;
+        list?.[i]?.department?.region_id === item?.department?.region_id &&
+        list?.[i]?.department_id === item?.department_id;
         i++
       ) {
         departmentSpan++
@@ -62,7 +62,7 @@ const TableRoadData: React.FC<Props> = (props) => {
   const { data, isLoading, isError, onPageChange } = props
   const dispatch = useAppDispatch()
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient()
   const [loadingKey, setLoadingKey] = useState<string | null>(null) // which row/action is loading
 
   const rows = useMemo(() => buildRows(data?.res_data ?? []), [data?.res_data])
@@ -73,8 +73,8 @@ const TableRoadData: React.FC<Props> = (props) => {
     setLoadingKey(key)
     try {
       const [pmmsRes, countRes] = await Promise.all([
-        getPMMSRoad({ department_id: data.department_id, search: data.road_code, is_geom: true, is_pagination: true, page: 1, limit: 1 }),
-        getProjectCount(data.id),
+        getPMMSRoad({ department_id: data?.department_id, search: data?.road_code, is_geom: true, is_pagination: true, page: 1, limit: 1 }),
+        getProjectCount(data?.id),
       ])
       // Reaching this line means BOTH finished and BOTH succeeded.
       dispatch(setRoadModalOpen({
@@ -86,7 +86,7 @@ const TableRoadData: React.FC<Props> = (props) => {
       }))
     } catch (error) {
       // Reaching this line means AT LEAST ONE failed.
-      if (error instanceof AxiosError) message.error(error.response?.data?.res_data?.message)
+      if (error instanceof AxiosError) message.error(error?.response?.data?.res_data?.message)
       else console.log(error)
     } finally {
       setLoadingKey(null)             // runs on both paths, so the spinner always clears
@@ -97,7 +97,7 @@ const TableRoadData: React.FC<Props> = (props) => {
   // put but its span changes — remount whenever the merged-row structure
   // changes so rowSpans rebuild cleanly.
   const tableKey = useMemo(
-    () => rows.map((r) => `${r.id}:${r.regionSpan}:${r.departmentSpan}`).join('|'),
+    () => rows.map((r) => `${r?.id}:${r?.regionSpan}:${r?.departmentSpan}`)?.join('|'),
     [rows],
   )
 
@@ -107,9 +107,9 @@ const TableRoadData: React.FC<Props> = (props) => {
       dataIndex: 'region',
       key: 'region',
       width: 150,
-      onCell: (record) => ({ rowSpan: record.regionSpan }),
+      onCell: (record) => ({ rowSpan: record?.regionSpan }),
       render: (_, record) => {
-        if (record.department.region.name_th) return record.department.region.name_th
+        if (record?.department?.region?.name_th) return record?.department?.region?.name_th
         return '-'
       }
     },
@@ -118,9 +118,9 @@ const TableRoadData: React.FC<Props> = (props) => {
       dataIndex: 'department',
       key: 'department',
       width: 150,
-      onCell: (record) => ({ rowSpan: record.departmentSpan }),
+      onCell: (record) => ({ rowSpan: record?.departmentSpan }),
       render: (_, record) => {
-        if (record.department.department_short_name) return record.department.department_short_name
+        if (record?.department?.department_short_name) return record?.department?.department_short_name
         return '-'
       }
     },
@@ -218,9 +218,9 @@ const TableRoadData: React.FC<Props> = (props) => {
       dataSource={rows}
       loading={isLoading}
       pagination={{
-        current: data?.meta_data.page || 1,
-        pageSize: data?.meta_data.limit,
-        total: data?.meta_data.count || 0,
+        current: data?.meta_data?.page || 1,
+        pageSize: data?.meta_data?.limit,
+        total: data?.meta_data?.count || 0,
         showSizeChanger: true,
         onChange: (page, pageSize) => onPageChange?.(page, pageSize),
         locale: { items_per_page: '/ หน้า' }

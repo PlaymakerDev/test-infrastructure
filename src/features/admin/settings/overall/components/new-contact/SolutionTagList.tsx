@@ -40,27 +40,27 @@ const SolutionTagList: React.FC<Props> = ({ items, display = 'collapsed', visibl
   if (display === 'all') {
     return (
       <div className='flex flex-wrap items-center gap-1'>
-        {items.map((s) => (
-          <SolutionTag key={s.id} name={s.name} />
+        {items?.map((s) => (
+          <SolutionTag key={s?.id} name={s?.name} />
         ))}
       </div>
     )
   }
 
-  const visible = items.slice(0, visibleCount)
-  const rest = items.slice(visibleCount)
+  const visible = items?.slice(0, visibleCount)
+  const rest = items?.slice(visibleCount)
 
   return (
     <div className='flex flex-wrap items-center justify-center gap-1'>
-      {visible.map((s) => (
-        <SolutionTag key={s.id} name={s.name} />
+      {visible?.map((s) => (
+        <SolutionTag key={s?.id} name={s?.name} />
       ))}
-      {rest.length > 0 && (
+      {rest?.length > 0 && (
         <Tooltip
           title={(
             <div className='flex flex-wrap gap-1'>
-              {rest.map((s) => (
-                <SolutionTag key={s.id} name={s.name} />
+              {rest?.map((s) => (
+                <SolutionTag key={s?.id} name={s?.name} />
               ))}
             </div>
           )}
@@ -69,7 +69,7 @@ const SolutionTagList: React.FC<Props> = ({ items, display = 'collapsed', visibl
             className={`${tagClassName} cursor-pointer`}
             style={{ border: '1px solid #fff', color: '#fff' }}
           >
-            ...อีก {rest.length} รายการ
+            ...อีก {rest?.length} รายการ
           </span>
         </Tooltip>
       )}

@@ -22,16 +22,16 @@ const ContentContactorList: React.FC<Props> = (props) => {
   const { data, isLoading, isError } = useQuery({
     queryKey: [
       'contract-project',
-      item.user_id,
+      item?.user_id,
       page,
       limit
     ],
     queryFn: () => getProjectListAPI({
       page: page,
       limit: limit,
-      contractor_id: item.user_id,
+      contractor_id: item?.user_id,
     }),
-    enabled: !!item.user_id,
+    enabled: !!item?.user_id,
     placeholderData: keepPreviousData,
   })
 

@@ -13,10 +13,10 @@ const ListViewContact: React.FC<Props> = (props) => {
   const { type, data } = props
 
   const renderContent = useMemo(() => {
-    return data?.res_data.map((item) => {
+    return data?.res_data?.map((item) => {
       return (
         <ContentContactorList
-          key={item.contractor_id}
+          key={item?.contractor_id}
           item={item}
           type={type}
         />

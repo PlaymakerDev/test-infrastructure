@@ -35,7 +35,7 @@ const ProjectListView: React.FC<Props> = (props) => {
       dataIndex: 'contractor_id',
       width: 200,
       render: (_, record) => {
-        const companyName = record.contractor?.contractor?.company_name
+        const companyName = record?.contractor?.contractor?.company_name
         if (companyName) return companyName
         return '-'
       }
@@ -72,7 +72,7 @@ const ProjectListView: React.FC<Props> = (props) => {
       dataIndex: 'department_id',
       width: 200,
       render: (_, record) => {
-        const departmentName = record.department?.department_short_name
+        const departmentName = record?.department?.department_short_name
         if (departmentName) return departmentName
         return '-'
       }
@@ -128,12 +128,12 @@ const ProjectListView: React.FC<Props> = (props) => {
         if (!doc?.document_url) return '-'
         // Opens in the browser's own PDF viewer; same icon/colour as "Export as PDF".
         return (
-          <Tooltip title={doc.file_name}>
+          <Tooltip title={doc?.file_name}>
             <a
-              href={doc.document_url}
+              href={doc?.document_url}
               target='_blank'
               rel='noopener noreferrer'
-              aria-label={`เปิดเอกสาร ${doc.file_name}`}
+              aria-label={`เปิดเอกสาร ${doc?.file_name}`}
               className='inline-flex'
             >
               <FaFilePdf className='fs-22' style={{ color: '#DC2626' }} />
@@ -166,7 +166,7 @@ const ProjectListView: React.FC<Props> = (props) => {
     },
   ];
 
-  const userColumns = columns.filter(col => col.key !== 'project_no').filter(col => col.key !== 'action')
+  const userColumns = columns?.filter(col => col?.key !== 'project_no')?.filter(col => col?.key !== 'action')
 
   if (isError) return <Empty description="เกิดข้อผิดพลาดในการโหลดข้อมูล" />
 
@@ -177,9 +177,9 @@ const ProjectListView: React.FC<Props> = (props) => {
       dataSource={data?.res_data || []}
       loading={isLoading}
       pagination={{
-        current: data?.meta_data.page,
-        pageSize: data?.meta_data.limit,
-        total: data?.meta_data.count,
+        current: data?.meta_data?.page,
+        pageSize: data?.meta_data?.limit,
+        total: data?.meta_data?.count,
         locale: { items_per_page: '/ หน้า' }
       }}
       onChange={onTableChange}

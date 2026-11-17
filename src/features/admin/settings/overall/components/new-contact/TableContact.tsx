@@ -32,7 +32,7 @@ const TableContact: React.FC<Props> = (props) => {
       dataIndex: 'no',
       key: 'no',
       width: 80,
-      render: (text, record, index) => getRowNumber(page, limit, index)
+      render: (_, __, index) => getRowNumber(page, limit, index)
     },
     {
       title: 'รหัสโครงการ',
@@ -51,7 +51,7 @@ const TableContact: React.FC<Props> = (props) => {
       width: 500,
       onCell: (row) => {
         return {
-          onClick: () => router.push(`/admin/settings/detail/project/${row.id}`),
+          onClick: () => router.push(`/admin/settings/detail/project/${row?.id}`),
           className: 'cursor-pointer hover:text-(--yellow) transition-colors duration-200'
         }
       },
@@ -76,7 +76,7 @@ const TableContact: React.FC<Props> = (props) => {
       title: 'ผู้ว่าจ้าง',
       key: 'client',
       width: 150,
-      render: (_, row) => row.department?.department_short_name || '-',
+      render: (_, row) => row?.department?.department_short_name || '-',
     },
     {
       title: 'เลขที่สัญญา',
@@ -110,25 +110,25 @@ const TableContact: React.FC<Props> = (props) => {
       key: 'guaranteeStatus',
       width: 150,
       render: (_, row) => (
-        <StatusBadge status={row.is_warranty ? 'in-warranty' : 'expired'} />
+        <StatusBadge status={row?.is_warranty ? 'in-warranty' : 'expired'} />
       ),
     },
   ];
 
-  const userColumns = columns.filter(col => col.key !== 'project_no').filter(col => col.key !== 'action')
+  const userColumns = columns?.filter(col => col?.key !== 'project_no')?.filter(col => col?.key !== 'action')
 
   if (isError) return <Empty description="เกิดข้อผิดพลาด" />
 
   return (
     <Table<ProjectListData>
       columns={isAdminUser ? columns : userColumns}
-      dataSource={data?.res_data}
+      dataSource={data?.res_data || []}
       loading={isLoading}
       rowKey='id'
       pagination={{
         current: page,
         pageSize: limit,
-        total: data?.meta_data.count,
+        total: data?.meta_data?.count,
         onChange: (newPage, newPageSize) => handlePageChange(newPage, newPageSize)
       }}
       scroll={{ x: "max-content" }}
