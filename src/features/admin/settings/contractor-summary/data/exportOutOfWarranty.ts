@@ -9,13 +9,13 @@ import type { ExportColumn } from '@/utils/export/excel'
 import type { FetchedImage } from '@/utils/export/image'
 import type { PdfEntryItem, PdfReportBlock, PdfTableColumn } from '@/utils/export/pdf'
 import { thaiDateBE, thaiDateTimeBE } from '@/utils/thaiDate'
-import { outOfWarrantyPercent } from './deviceStatus'
+import { outOfWarrantyShareText } from './deviceStatus'
 import { summaryReportTitle } from './exportSummary'
-import { OUT_OF_WARRANTY_TYPES, type OutOfWarrantyType } from './outOfWarranty'
+import { OUT_OF_WARRANTY_MAX_PHOTOS, OUT_OF_WARRANTY_PHOTO_EDGE, OUT_OF_WARRANTY_TYPES, type OutOfWarrantyType } from './outOfWarranty'
 import { OUT_OF_WARRANTY_LABEL } from './projectSheet'
 import type { SummarySystem } from './systems'
 
-/** นำออกเอกสารนอกเหนือการประกัน (user 2026-11-16) — the นอกเหนือการประกัน
+/** นำออกเอกสารนอกเหนือการรับประกัน (user 2026-11-16) — the นอกเหนือการรับประกัน
  *  tab's report: its rings (each system's recorded share of the offline), the
  *  projects with records and how many of each type (สรุป), then every record —
  *  the device, what the inspection found, its photos, who recorded it and
@@ -34,11 +34,11 @@ export interface OutOfWarrantyExportInput {
   types: readonly OutOfWarrantyType[]
 }
 
-export const OUT_OF_WARRANTY_RINGS_TITLE = 'ภาพรวมอุปกรณ์นอกเหนือการประกันทุกโครงการ'
-export const OUT_OF_WARRANTY_PROJECTS_TITLE = 'ตารางสรุปโครงการที่มีอุปกรณ์นอกเหนือการประกัน'
-export const OUT_OF_WARRANTY_RECORDS_TITLE = 'รายการอุปกรณ์นอกเหนือการประกัน'
+export const OUT_OF_WARRANTY_RINGS_TITLE = 'ภาพรวมอุปกรณ์นอกเหนือการรับประกันทุกโครงการ'
+export const OUT_OF_WARRANTY_PROJECTS_TITLE = 'ตารางสรุปโครงการที่มีอุปกรณ์นอกเหนือการรับประกัน'
+export const OUT_OF_WARRANTY_RECORDS_TITLE = 'รายการอุปกรณ์นอกเหนือการรับประกัน'
 
-const filenameBase = (input: OutOfWarrantyExportInput) => `สรุปข้อมูลผู้รับจ้าง_${input.shortName || 'ผู้รับจ้าง'}_นอกเหนือการประกัน`
+const filenameBase = (input: OutOfWarrantyExportInput) => `สรุปข้อมูลผู้รับจ้าง_${input.shortName || 'ผู้รับจ้าง'}_นอกเหนือการรับประกัน`
 const filterNote = (input: OutOfWarrantyExportInput) =>
   `สถานะค้ำประกัน: ${OUT_OF_WARRANTY_LABEL}${input.search ? ` · ค้นหาโครงการ: "${input.search}"` : ''}`
 const ringsTitle = (input: OutOfWarrantyExportInput) =>
@@ -48,18 +48,13 @@ const ringsTitle = (input: OutOfWarrantyExportInput) =>
 
 const RING_HEADERS = ['ระบบ', 'ทั้งหมด', 'ออฟไลน์', OUT_OF_WARRANTY_LABEL, `${OUT_OF_WARRANTY_LABEL} (% ของออฟไลน์)`]
 
-/** As the tab's ring says it: "<1%" when a record or two rounds to nothing. */
-export const excludedShare = (ring: OutOfWarrantyExportInput['rings'][number]): string => {
-  const percent = outOfWarrantyPercent(ring)
-  return ring.outOfWarranty > 0 && percent === 0 ? '<1%' : `${percent}%`
-}
-
+/** A ring as the tab shows it — its share written the same ("0.2%"). */
 export const ringCells = (ring: OutOfWarrantyExportInput['rings'][number]): (string | number)[] => [
   ring.system.label,
   ring.raw.total,
   ring.raw.offline,
   ring.outOfWarranty,
-  excludedShare(ring),
+  outOfWarrantyShareText(ring),
 ]
 
 // ── สรุป: the projects ──
@@ -90,6 +85,29 @@ const projectHeaders = (types: readonly OutOfWarrantyType[]) => [
   ...types.map((type) => type.label),
   'รวม',
 ]
+
+// The Excel sheets' widths: each (bold) header on one line — Excel would
+// break a Thai word anywhere to wrap it (2026-11-17).
+const RING_SHEET_WIDTHS = [22, 18, 18, 24, 41]
+const PROJECT_SHEET_WIDTHS = [8, 46, 20, 22, 18]
+const PROJECT_SHEET_COUNT_WIDTH = 17
+
+/** ภาพรวมอุปกรณ์'s columns. */
+export const RING_SHEET_COLUMNS: ExportColumn<OutOfWarrantyExportInput['rings'][number]>[] = RING_HEADERS.map((header, index) => ({
+  header,
+  width: RING_SHEET_WIDTHS[index],
+  value: (ring) => ringCells(ring)[index],
+}))
+
+/** สรุป's columns: the project, then a count per type the tab shows. */
+export const projectSheetColumns = (types: readonly OutOfWarrantyType[]): ExportColumn<OutOfWarrantyProjectRow>[] =>
+  projectHeaders(types).map((header, index) => ({
+    header,
+    width: PROJECT_SHEET_WIDTHS[index] ?? PROJECT_SHEET_COUNT_WIDTH,
+    ...(index === 1 || index === 2 ? { wrap: true } : {}),
+    ...(index >= 4 || index === 0 ? { align: 'center' as const } : {}),
+    value: (row, rowIndex) => projectCells(row, rowIndex, types)[index],
+  }))
 
 // ── the records ──
 
@@ -152,8 +170,8 @@ export const RECORD_COLUMNS: ExportColumn<OutOfWarrantyExportRecord>[] = [
   { header: 'จุดติดตั้ง', width: 28, wrap: true, value: (record) => record.point },
   { header: 'กม.ที่', width: 10, align: 'center', value: (record) => record.sta },
   { header: 'IP Address', width: 16, align: 'center', value: (record) => record.ip },
-  { header: 'วันที่เริ่มออฟไลน์', width: 16, align: 'center', value: (record) => record.offlineSince },
-  { header: 'จำนวนวันออฟไลน์', width: 15, align: 'center', value: daysText },
+  { header: 'วันที่เริ่มออฟไลน์', width: 17, align: 'center', value: (record) => record.offlineSince },
+  { header: 'จำนวนวันออฟไลน์', width: 18, align: 'center', value: daysText },
   { header: 'ผลการตรวจสอบ / สาเหตุ', width: 40, wrap: true, value: (record) => record.cause },
   { header: 'รูปภาพ 1', width: 30, value: (record) => record.images[0] ?? '-' },
   { header: 'รูปภาพ 2', width: 30, value: (record) => record.images[1] ?? '-' },
@@ -161,18 +179,26 @@ export const RECORD_COLUMNS: ExportColumn<OutOfWarrantyExportRecord>[] = [
   { header: 'วันที่บันทึก', width: 20, align: 'center', value: (record) => record.createdAt },
 ]
 
-// Printable dark tones for the PDF cards' type badge.
+// Printable dark tones of the rings' colours, for the PDF cards' type badge.
 const BADGE_COLOR: Record<OutOfWarrantyDeviceType, string> = {
   cctv: '#1d4ed8',
   vms: '#c2410c',
   lighting: '#4d7c0f',
   traffic: '#15803d',
+  crosswalk: '#4338ca',
   bridge_lighting: '#b91c1c',
+  tunnel: '#6d28d9',
 }
 
-/** A record as a PDF photo card: its photos, the device, then the fields. */
-export const recordEntry = (record: OutOfWarrantyExportRecord, image: PdfEntryItem['image']): PdfEntryItem => ({
-  image,
+/** A record's photos as the PDF carries them. */
+export type OutOfWarrantyPdfPhoto = NonNullable<PdfEntryItem['photos']>[number]
+
+/** A record as a PDF card: the device and its fields, its photos beside
+ *  them, each whole and apart (user 2026-11-17: both in the one thumbnail
+ *  ran together, too small to see) — the photos speak for themselves, no
+ *  "รูปภาพ N รูป" line (user, same day). */
+export const recordEntry = (record: OutOfWarrantyExportRecord, photos: OutOfWarrantyPdfPhoto[]): PdfEntryItem => ({
+  photos,
   heading: record.deviceName,
   subheading: `${record.projectName} · เลขที่สัญญา ${record.contractNo}`,
   badge: record.type.label,
@@ -184,80 +210,70 @@ export const recordEntry = (record: OutOfWarrantyExportRecord, image: PdfEntryIt
     { label: 'วันที่เริ่มออฟไลน์', value: record.offlineDays != null ? `${record.offlineSince} (${daysText(record)})` : '-' },
     { label: 'ผลการตรวจสอบ / สาเหตุ', value: record.cause },
     { label: 'ผู้บันทึก', value: `${record.createdBy} · ${record.createdAt}` },
-    { label: 'รูปภาพ', value: record.images.length ? `${record.images.length} รูป` : 'ไม่มีรูป' },
   ],
 })
 
 // ── photos for the PDF (browser only) ──
 
-const FRAME_W = 640
-const FRAME_H = 360
-
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = reject
-    img.src = src
-  })
-
-/** A record's photos as the card's one picture: the photo, or both side by
- *  side — each whole in its half of a 16:9 frame, which the card shows
- *  uncropped. Fetched through the app's proxy (its-media sends no CORS);
- *  null when none comes back. */
-const recordPicture = async (images: string[]): Promise<PdfEntryItem['image']> => {
+/** A record's photos, each on its own, through the app's proxy (its-media
+ *  sends no CORS) — sharp at the size the card prints them: one alone spans
+ *  the photos' whole width, so it comes at the upload's own 1280px. One that
+ *  doesn't come back is left out. */
+const recordPhotos = async (images: string[]): Promise<OutOfWarrantyPdfPhoto[]> => {
   const { fetchImageAsDataUrl } = await import('@/utils/export/image')
-  const shots = (await Promise.all(images.slice(0, 2).map((url) => fetchImageAsDataUrl(url, FRAME_W)))).filter((shot): shot is FetchedImage => shot !== null)
-  if (shots.length === 0) return null
-  const canvas = document.createElement('canvas')
-  canvas.width = FRAME_W
-  canvas.height = FRAME_H
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return shots[0]
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, FRAME_W, FRAME_H)
-  const slot = FRAME_W / shots.length
-  for (const [index, shot] of shots.entries()) {
-    const img = await loadImage(shot.dataUrl)
-    const scale = Math.min(slot / img.width, FRAME_H / img.height)
-    const w = img.width * scale
-    const h = img.height * scale
-    ctx.drawImage(img, index * slot + (slot - w) / 2, (FRAME_H - h) / 2, w, h)
-  }
-  return { dataUrl: canvas.toDataURL('image/jpeg', 0.85), width: FRAME_W, height: FRAME_H }
+  const urls = images.slice(0, OUT_OF_WARRANTY_MAX_PHOTOS)
+  const maxWidth = urls.length === 1 ? OUT_OF_WARRANTY_PHOTO_EDGE : 640
+  const shots = await Promise.all(urls.map((url) => fetchImageAsDataUrl(url, maxWidth)))
+  return shots.filter((shot): shot is FetchedImage => shot !== null)
 }
 
-/** Every card's picture, a few records at a time. */
-const recordPictures = async (records: OutOfWarrantyExportRecord[]): Promise<PdfEntryItem['image'][]> => {
-  const pictures: PdfEntryItem['image'][] = []
+/** Every card's photos, a few records at a time. */
+const recordPhotoSets = async (records: OutOfWarrantyExportRecord[]): Promise<OutOfWarrantyPdfPhoto[][]> => {
+  const sets: OutOfWarrantyPdfPhoto[][] = []
   for (let i = 0; i < records.length; i += 4) {
-    pictures.push(...(await Promise.all(records.slice(i, i + 4).map((record) => recordPicture(record.images).catch(() => null)))))
+    sets.push(...(await Promise.all(records.slice(i, i + 4).map((record) => recordPhotos(record.images).catch(() => [])))))
   }
-  return pictures
+  return sets
 }
 
 // ── the files ──
 
-const projectPdfColumns = (types: readonly OutOfWarrantyType[]): PdfTableColumn[] => {
-  // ลำดับ 5, name 27, contract 12, department 11, warranty 7 = 62; the counts
-  // share 38 — room for "Lighting", the widest header word, whole (5% split
-  // "Stree t Light").
-  const each = 38 / (types.length + 1)
+// สรุป's PDF table at 8pt, padding 3, each column as wide as its header's
+// widest word needs whole (one too wide is split — "Stree t Light"; ICU
+// breaks "รับผิด|ชอบ"): the Thai headers on one line, a count column per its
+// type ("Crosswalk" the widest) — measured 2026-11-17, kept by the test. The
+// name takes the rest: 29.5% with all seven types.
+const PROJECT_PDF_FONT = 8
+const PROJECT_PDF_PADDING = 3
+const COUNT_PCT: Record<OutOfWarrantyDeviceType, number> = {
+  cctv: 4.5,
+  vms: 4.5,
+  lighting: 4.5,
+  traffic: 4.5,
+  bridge_lighting: 5.5,
+  crosswalk: 6.5,
+  tunnel: 5,
+}
+const TOTAL_PCT = 4.5
+
+export const projectPdfColumns = (types: readonly OutOfWarrantyType[]): PdfTableColumn[] => {
+  // ลำดับ 4, contract 9, department 10, warranty 8 = 31.
+  const counts = types.reduce((sum, type) => sum + COUNT_PCT[type.key], TOTAL_PCT)
   return [
-    { header: 'ลำดับ', widthPct: 5 },
-    { header: 'ชื่อโครงการ', widthPct: 27, align: 'left' },
-    { header: 'เลขที่สัญญา', widthPct: 12 },
-    { header: 'หน่วยงานรับผิดชอบ', widthPct: 11 },
-    { header: 'สถานะค้ำประกัน', widthPct: 7 },
-    ...types.map((type): PdfTableColumn => ({ header: type.label, widthPct: each })),
-    { header: 'รวม', widthPct: each },
+    { header: 'ลำดับ', widthPct: 4 },
+    { header: 'ชื่อโครงการ', widthPct: 100 - 31 - counts, align: 'left' },
+    { header: 'เลขที่สัญญา', widthPct: 9 },
+    { header: 'หน่วยงานรับผิดชอบ', widthPct: 10 },
+    { header: 'สถานะค้ำประกัน', widthPct: 8 },
+    ...types.map((type): PdfTableColumn => ({ header: type.label, widthPct: COUNT_PCT[type.key] })),
+    { header: 'รวม', widthPct: TOTAL_PCT },
   ]
 }
 
 export const outOfWarrantyPdfBlocks = (
   input: OutOfWarrantyExportInput,
   records: OutOfWarrantyExportRecord[],
-  pictures: PdfEntryItem['image'][],
+  photos: OutOfWarrantyPdfPhoto[][],
 ): PdfReportBlock[] => [
   {
     type: 'table',
@@ -275,6 +291,8 @@ export const outOfWarrantyPdfBlocks = (
     type: 'table',
     title: `${OUT_OF_WARRANTY_PROJECTS_TITLE} (${input.projects.length} โครงการ)`,
     columns: projectPdfColumns(input.types),
+    fontSize: PROJECT_PDF_FONT,
+    cellPadding: PROJECT_PDF_PADDING,
     rows: input.projects.length
       ? input.projects.map((row, index) => projectCells(row, index, input.types))
       : [{ group: 'ไม่มีโครงการ' }],
@@ -282,20 +300,20 @@ export const outOfWarrantyPdfBlocks = (
   {
     type: 'entries',
     title: `${OUT_OF_WARRANTY_RECORDS_TITLE} (${records.length} รายการ)`,
-    items: records.map((record, index) => recordEntry(record, pictures[index] ?? null)),
+    items: records.map((record, index) => recordEntry(record, photos[index] ?? [])),
   },
 ]
 
 export const exportOutOfWarrantyPdf = async (input: OutOfWarrantyExportInput) => {
   const { exportReportPdf } = await import('@/utils/export/pdf')
   const records = exportRecords(input.projects)
-  const pictures = await recordPictures(records)
+  const photos = await recordPhotoSets(records)
   await exportReportPdf({
     filenameBase: filenameBase(input),
     title: summaryReportTitle(input.companyName),
     subtitleNote: filterNote(input),
     orientation: 'landscape',
-    blocks: outOfWarrantyPdfBlocks(input, records, pictures),
+    blocks: outOfWarrantyPdfBlocks(input, records, photos),
   })
 }
 
@@ -311,24 +329,14 @@ export const exportOutOfWarrantyExcel = async (input: OutOfWarrantyExportInput) 
         title: `${title} · ${OUT_OF_WARRANTY_RINGS_TITLE}`,
         // The rings were read without the search.
         filterNote: `สถานะค้ำประกัน: ${OUT_OF_WARRANTY_LABEL}`,
-        columns: RING_HEADERS.map((header, index) => ({
-          header,
-          width: index === 0 ? 22 : index === 4 ? 34 : 18,
-          value: (ring: OutOfWarrantyExportInput['rings'][number]) => ringCells(ring)[index],
-        })),
+        columns: RING_SHEET_COLUMNS,
         rows: input.rings,
       }),
       excelSheet({
         sheetName: 'สรุป',
         title: `${title} · ${OUT_OF_WARRANTY_PROJECTS_TITLE}`,
         filterNote: note,
-        columns: projectHeaders(input.types).map((header, index) => ({
-          header,
-          width: [8, 46, 20, 20, 14][index] ?? 14,
-          ...(index === 1 || index === 2 ? { wrap: true } : {}),
-          ...(index >= 4 || index === 0 ? { align: 'center' as const } : {}),
-          value: (row: OutOfWarrantyProjectRow, rowIndex: number) => projectCells(row, rowIndex, input.types)[index],
-        })),
+        columns: projectSheetColumns(input.types),
         rows: input.projects,
       }),
       excelSheet({

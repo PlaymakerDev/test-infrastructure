@@ -5,7 +5,7 @@ import { CCTVModal, ProjectInfoModal } from '@/components/modal'
 import ExportFileModal from '@/components/export/ExportFileModal'
 import { SHOW_ALL_CONTRACTORS_EXPORT } from '@/constants/featureFlags'
 import { ContactInfoDialog } from '@/features/admin/settings/overall/components/new-contact/ModalContactInfo'
-import { useContractorById, useProjectDeviceStatusList } from '@/hooks/queries/manage'
+import { useContractorById } from '@/hooks/queries/manage'
 import { useUserRole } from '@/hooks/useUserRole'
 import {
   getOutOfWarrantyProjectsAPI,
@@ -28,6 +28,7 @@ import { exportSummaryExcel, exportSummaryPdf, summaryForProjects, type SummaryE
 import { OUT_OF_WARRANTY_TYPES } from '../data/outOfWarranty'
 import { useAllContractorsProjects } from '../hooks/useAllContractorsProjects'
 import { useContractorDeviceRings } from '../hooks/useContractorDeviceRings'
+import { useContractorStatusRows } from '../hooks/useContractorStatusRows'
 import { useOutOfWarrantyProjectIds, useOutOfWarrantyProjects } from '../hooks/useOutOfWarranty'
 
 interface Props {
@@ -63,8 +64,8 @@ const ALL_CONTRACTORS_WARRANTY: WarrantyFilter = 'out'
 
 const NO_IDS: ReadonlySet<number> = new Set()
 
-/** นอกเหนือการประกัน's export button (user 2026-11-16) — a report of its own. */
-const EXCLUDED_EXPORT_LABEL = 'นำออกเอกสารนอกเหนือการประกัน'
+/** นอกเหนือการรับประกัน's export button (user 2026-11-16) — a report of its own. */
+const EXCLUDED_EXPORT_LABEL = 'นำออกเอกสารนอกเหนือการรับประกัน'
 
 /** สรุปข้อมูลผู้รับจ้าง — reached from the ผู้รับจ้าง tab (user 2026-09-30):
  *  the contractor's device status across every project (one ring per system),
@@ -78,7 +79,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const contractorQuery = useContractorById(id)
   const contractor = contractorQuery.data ?? null
 
-  // ทั้งหมด / นอกเหนือการประกัน / ในค้ำ / หมดค้ำ governs both the rings and the table.
+  // ทั้งหมด / นอกเหนือการรับประกัน / ในค้ำ / หมดค้ำ governs both the rings and the table.
   const [warranty, setWarranty] = useState<WarrantyFilter>('all')
   const excluded = warranty === 'excluded'
   const { rings, isLoading: isRingsLoading, isError: isRingsError } = useContractorDeviceRings(contractor, warranty)
@@ -88,19 +89,21 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const listParams = { contractor_id: id, search: search || undefined, page, limit: pageSize }
-  const listQuery = useProjectDeviceStatusList({ ...listParams, is_warranty: warrantyParam(warranty) }, { enabled: !excluded })
-  // นอกเหนือการประกัน: the projects with records, as the backend filters them.
+  const status = useContractorStatusRows({ ...listParams, is_warranty: warrantyParam(warranty) }, !excluded)
+  // นอกเหนือการรับประกัน: the projects with records, as the backend filters them.
   const excludedQuery = useOutOfWarrantyProjects(listParams, excluded)
-  const activeQuery = excluded ? excludedQuery : listQuery
-  const rows = listQuery.data?.res_data ?? []
+  const rows = status.rows
   const excludedRows = excludedQuery.data?.res_data ?? []
-  const total = activeQuery.data?.meta_data?.count ?? 0
+  const total = excluded ? excludedQuery.data?.meta_data?.count ?? 0 : status.total
   const pageRowCount = excluded ? excludedRows.length : rows.length
+  const isTableLoading = excluded ? excludedQuery.isLoading || excludedQuery.isPlaceholderData : status.isLoading || status.isPlaceholderData
+  const isTableError = excluded ? excludedQuery.isError : status.isError
   // Every project with a record — blue whatever the tab.
   const recordedIds = useOutOfWarrantyProjectIds(id).data ?? NO_IDS
-  // นอกเหนือการประกัน's columns: CCTV, VMS and Street Light as on the other
-  // tabs, Traffic Signal and Bridge Lighting when the contractor has them.
-  const excludedTypes = useMemo(
+  // Both tables' columns (user 2026-11-17): CCTV, VMS and Street Light always,
+  // Traffic Signal, Bridge Lighting, Crosswalk and Tunnel when the contractor
+  // has them — the seven types นอกเหนือการรับประกัน records.
+  const tableTypes = useMemo(
     () => OUT_OF_WARRANTY_TYPES.filter((type) =>
       ['cctv', 'vms', 'lighting'].includes(type.key) || rings.some((ring) => ring.system.key === type.key)),
     [rings],
@@ -181,7 +184,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
     }
   }
 
-  /** นอกเหนือการประกัน's report: the tab's rings, and the projects with
+  /** นอกเหนือการรับประกัน's report: the tab's rings, and the projects with
    *  records — every page under the search, or the page on screen — from
    *  GET /out-of-warranty, each with its recorded devices. */
   const excludedExportInput = async (scope?: 'all' | 'page'): Promise<OutOfWarrantyExportInput | null> => {
@@ -195,7 +198,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
       search: search || undefined,
       rings,
       projects,
-      types: excludedTypes,
+      types: tableTypes,
     }
   }
 
@@ -254,12 +257,12 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
         <ProjectStatusTable
           rows={rows}
           excludedRows={excludedRows}
-          excludedTypes={excludedTypes}
+          types={tableTypes}
           total={total}
           page={page}
           pageSize={pageSize}
-          isLoading={activeQuery.isLoading || activeQuery.isPlaceholderData}
-          isError={activeQuery.isError}
+          isLoading={isTableLoading}
+          isError={isTableError}
           warranty={warranty}
           onWarrantyChange={onWarrantyChange}
           search={search}
@@ -279,7 +282,7 @@ const ContractorSummaryScreen: React.FC<Props> = ({ id }) => {
           filter) go in either way. รวมผู้รับจ้าง (SHOW_ALL_CONTRACTORS_EXPORT)
           = every contractor's expired-warranty projects, whatever the filter,
           less those with no warranty end date — not offered under
-          นอกเหนือการประกัน, whose report is its own. */}
+          นอกเหนือการรับประกัน, whose report is its own. */}
       <ExportFileModal
         open={isExportOpen}
         onClose={() => setExportOpen(false)}

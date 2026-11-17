@@ -7,8 +7,8 @@ import { SUMMARY_SYSTEMS, type SummarySystem } from '../data/systems'
 import { hasDevices, readUptimeCounts, warrantyParam, type UptimeCounts, type WarrantyFilter } from '../data/deviceStatus'
 
 /** A system's ring: what ทั้งหมด / ในค้ำ / หมดค้ำ show (`totals`, the
- *  นอกเหนือการประกัน devices taken out), what was read (`raw`) and how many
- *  of those are นอกเหนือการประกัน. */
+ *  นอกเหนือการรับประกัน devices taken out), what was read (`raw`) and how many
+ *  of those are นอกเหนือการรับประกัน. */
 export interface DeviceRing extends UptimeCounts {
   system: SummarySystem
 }
@@ -17,7 +17,7 @@ export interface DeviceRing extends UptimeCounts {
  *  uptime-statistics filtered to the contractor (user_id), nationwide, under
  *  the page's ทั้งหมด / ในค้ำ / หมดค้ำ (user 2026-10-07: the rings follow it
  *  too). Only the systems the contractor has under that filter get a ring.
- *  นอกเหนือการประกัน reads every project (as ทั้งหมด, from the same cache) and
+ *  นอกเหนือการรับประกัน reads every project (as ทั้งหมด, from the same cache) and
  *  rings every system the contractor has, with its recorded share.
  *
  *  Tunnel included: its uptime-statistics used to ignore `contractor_id`, so

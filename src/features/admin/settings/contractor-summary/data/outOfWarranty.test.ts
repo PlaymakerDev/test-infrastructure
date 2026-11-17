@@ -223,15 +223,19 @@ describe('the API', () => {
     lighting: [{ ...base, solution_id: 4891, solution_name: 'ฉช.4050 ตู้ที่ 1 กม.0+600', ip_address: '' }],
     traffic: null,
     bridge_lighting: [],
+    // Since BE 2026-11-17; a backend from before sends no tunnel at all.
+    crosswalk: [{ ...base, solution_id: 7012, solution_name: 'Crosswalk >> ฉช.4050 หน้าโรงเรียน', ip_address: '10.1.2.3' }],
   } as unknown as APIResponseOutOfWarrantyCandidates
 
-  it('offers the five types the backend records, CCTV first', () => {
+  it('offers the seven types the backend records, CCTV first, in the rings’ order (Crosswalk and Tunnel since 2026-11-17)', () => {
     expect(OUT_OF_WARRANTY_TYPES.map((type) => [type.key, type.label])).toEqual([
       ['cctv', 'CCTV'],
       ['vms', 'VMS'],
       ['lighting', 'Street Light'],
       ['traffic', 'Traffic Signal'],
       ['bridge_lighting', 'Bridge Lighting'],
+      ['crosswalk', 'Crosswalk'],
+      ['tunnel', 'Tunnel'],
     ])
   })
 
@@ -251,6 +255,8 @@ describe('the API', () => {
     expect(devices.lighting[0]).toMatchObject({ id: '4891', ipAddress: '' })
     expect(devices.traffic).toEqual([])
     expect(devices.bridge_lighting).toEqual([])
+    expect(devices.crosswalk).toEqual([expect.objectContaining({ id: '7012', typeKey: 'crosswalk', hostname: 'Crosswalk >> ฉช.4050 หน้าโรงเรียน', ipAddress: '10.1.2.3' })])
+    expect(devices.tunnel).toEqual([])
   })
 
   const record = (over: Partial<OutOfWarrantyRecord>): OutOfWarrantyRecord => ({
@@ -276,6 +282,7 @@ describe('the API', () => {
   const records = [
     record({}),
     record({ id: 2, device_type: 'vms', camera_id: null, solution_id: 2881, device_name: 'VMS >> ฉช.4050 จุดที่ 1', images: [] }),
+    record({ id: 3, device_type: 'tunnel', camera_id: null, solution_id: 5120, device_name: 'อุโมงค์ทางลอด นม.1001', images: [] }),
   ]
 
   it('the records become the form’s pages, per type, photos by their URLs', () => {
@@ -298,19 +305,23 @@ describe('the API', () => {
     const devices = recordDevices(records, now)
     expect(devices.cctv.map((item) => [item.id, item.hostname, item.offlineDays])).toEqual([['c-off', 'จุดติดตั้งที่ 7 CAM-F13 RT <ขาออก>', 58]])
     expect(devices.vms.map((item) => item.id)).toEqual(['2881'])
+    expect(devices.tunnel.map((item) => [item.id, item.typeKey, item.hostname])).toEqual([['5120', 'tunnel', 'อุโมงค์ทางลอด นม.1001']])
     expect(devices.lighting).toEqual([])
+    expect(devices.crosswalk).toEqual([])
   })
 
   it('the PUT’s list: camera_id for a camera, solution_id for the rest, in dropdown then page order; a 400 leads back to its page', () => {
     const file = new File(['x'], 'b.jpg', { type: 'image/jpeg' })
     const newPhoto = { uid: 'n', name: 'b.jpg', url: 'blob:x', file }
     const sent = recordsToSave({
+      tunnel: [filled('5120', { cause: 'น้ำท่วมตู้ควบคุม' })],
       lighting: [filled('4891', { cause: ' สายไฟถูกขโมย ' })],
       cctv: [filled('c-off', { photos: [photo, newPhoto] })],
     })
     expect(sent.map(({ typeKey, cameraId, solutionId, inspectionResult }) => ({ typeKey, cameraId, solutionId, inspectionResult }))).toEqual([
       { typeKey: 'cctv', cameraId: 'c-off', solutionId: undefined, inspectionResult: 'รถชนเสา' },
       { typeKey: 'lighting', cameraId: undefined, solutionId: 4891, inspectionResult: 'สายไฟถูกขโมย' },
+      { typeKey: 'tunnel', cameraId: undefined, solutionId: 5120, inspectionResult: 'น้ำท่วมตู้ควบคุม' },
     ])
     expect(sent[0].photos).toEqual([photo.url, file])
     expect(failedItem('items[1]: device 4891 is online', sent)).toBe(sent[1])

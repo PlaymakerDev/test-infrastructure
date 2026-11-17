@@ -76,8 +76,16 @@ export interface ProjectDeviceSummaryRow extends ProjectDeviceStatusBase {
   lighting: DeviceTotals
   vms: SystemCameraTotals
   bridge_lighting: DeviceTotals
-  /** The tunnel's sensors (legacy devices). */
-  tunnel: DeviceTotals
+  tunnel: TunnelSummaryTotals
+}
+
+/** /summary's tunnel: its sensors (legacy devices), and since BE 2026-11-17
+ *  the tunnels themselves (`system`). Checked that day: `system` counts only
+ *  a tunnel with sensors, online when any reported within the hour — the
+ *  Tunnel ring (uptime-statistics) counts every tunnel, online when a camera
+ *  at the tunnel is, so the two differ until the backend picks one rule. */
+export interface TunnelSummaryTotals extends DeviceTotals {
+  system: DeviceTotals
 }
 
 export interface APIResponseProjectDeviceSummaryList {
@@ -94,7 +102,7 @@ export interface SolutionCamera {
   ip_address: string
   /** curl_status */
   is_online: boolean
-  /** An open นอกเหนือการประกัน record on the camera — set wherever it is
+  /** An open นอกเหนือการรับประกัน record on the camera — set wherever it is
    *  listed (BE 2026-11-16). */
   is_out_of_warranty?: boolean
   /** Every solution type the camera serves, anywhere — its own solution and
@@ -115,7 +123,7 @@ export interface CameraSolution {
 export interface SystemSolution extends CameraSolution {
   id: number
   is_online: boolean
-  /** An open นอกเหนือการประกัน record on the controller's solution (BE
+  /** An open นอกเหนือการรับประกัน record on the controller's solution (BE
    *  2026-11-16). */
   is_out_of_warranty?: boolean
 }
@@ -126,7 +134,7 @@ export interface StatusSolution {
   solution_id: number
   solution_name: string
   is_online: boolean
-  /** An open นอกเหนือการประกัน record on the solution (BE 2026-11-16). */
+  /** An open นอกเหนือการรับประกัน record on the solution (BE 2026-11-16). */
   is_out_of_warranty?: boolean
 }
 
@@ -159,7 +167,8 @@ export interface TunnelDevice {
   device_name: string
   /** lastupdate within the last hour */
   is_online: boolean
-  /** The tunnel solution's — a tunnel can't be recorded, so false today. */
+  /** The tunnel's — a tunnel is recorded per solution, its devices with it
+   *  (BE 2026-11-17). */
   is_out_of_warranty?: boolean
   last_update: string | null
 }
@@ -167,6 +176,8 @@ export interface TunnelDevice {
 export interface TunnelSolution {
   solution_id: number
   solution_name: string
+  /** An open นอกเหนือการรับประกัน record on the tunnel's solution (BE 2026-11-17). */
+  is_out_of_warranty?: boolean
   /** Empty when the tunnel has no wid or no legacy device. */
   devices: TunnelDevice[]
 }
@@ -300,10 +311,10 @@ export interface ProjectVMSListItem {
 // inspection found and up to two photos. A record closes by itself once its
 // device is back online; uptime-statistics then stops counting it.
 
-/** What can be recorded: cameras one by one (camera_id), the other four per
- *  solution (solution_id). Traffic Volume, Incident Detection, LPR,
- *  Crosswalk and Tunnel count through their cameras. */
-export type OutOfWarrantyDeviceType = 'cctv' | 'vms' | 'lighting' | 'traffic' | 'bridge_lighting'
+/** What can be recorded: cameras one by one (camera_id), the other six per
+ *  solution (solution_id) — Crosswalk and Tunnel since BE 2026-11-17. Traffic
+ *  Volume, Incident Detection and LPR count through their cameras. */
+export type OutOfWarrantyDeviceType = 'cctv' | 'vms' | 'lighting' | 'traffic' | 'crosswalk' | 'bridge_lighting' | 'tunnel'
 
 /** A device as GET …/out-of-warranty/candidates lists it. */
 export interface OutOfWarrantyCandidate {
@@ -335,7 +346,12 @@ export interface APIResponseOutOfWarrantyCandidates extends ProjectDeviceStatusB
   vms: OutOfWarrantyCandidate[]
   lighting: OutOfWarrantyCandidate[]
   traffic: OutOfWarrantyCandidate[]
+  /** Offline unless a camera answers and the crossing logged within the day. */
+  crosswalk: OutOfWarrantyCandidate[]
   bridge_lighting: OutOfWarrantyCandidate[]
+  /** Offline when none of its legacy devices reported within the hour; a
+   *  tunnel without legacy devices is not listed. */
+  tunnel: OutOfWarrantyCandidate[]
 }
 
 /** The record part every out-of-warranty read carries. */
@@ -403,7 +419,9 @@ export interface OutOfWarrantyProjectRow extends ProjectDeviceStatusBase {
   vms: OutOfWarrantySystemItem[]
   lighting: OutOfWarrantySystemItem[]
   traffic: OutOfWarrantySystemItem[]
+  crosswalk: OutOfWarrantySystemItem[]
   bridge_lighting: OutOfWarrantySystemItem[]
+  tunnel: OutOfWarrantySystemItem[]
 }
 
 export interface APIResponseOutOfWarrantyProjects {

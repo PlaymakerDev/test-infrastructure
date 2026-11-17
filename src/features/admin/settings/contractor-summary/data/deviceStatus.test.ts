@@ -4,6 +4,7 @@ import {
   hasDevices,
   offlinePercent,
   outOfWarrantyPercent,
+  outOfWarrantyShareText,
   readUptimeCounts,
   staLabel,
   WARRANTY_FILTER_OPTIONS,
@@ -32,7 +33,7 @@ describe('uptime-statistics → ring counts', () => {
   })
 })
 
-describe('นอกเหนือการประกัน — out of ออฟไลน์ and ทั้งหมด alike (option ก.)', () => {
+describe('นอกเหนือการรับประกัน — out of ออฟไลน์ and ทั้งหมด alike (option ก.)', () => {
   // แมสซีฟ's CCTV ring on 2026-11-16, with 12 cameras recorded out of warranty.
   const ring = { total: 1124, online: 662, offline: 462 }
 
@@ -62,10 +63,25 @@ describe('นอกเหนือการประกัน — out of ออ�
     expect(readUptimeCounts('vms', { vms: { total: 10, online: 5, offline: 5, out_of_warranty: 8 } })?.outOfWarranty).toBe(5)
   })
 
-  it('the นอกเหนือการประกัน tab’s ring: the share of the offline ones', () => {
+  it('the นอกเหนือการรับประกัน tab’s ring: the share of the offline ones — whole percent, a decimal under 1% only (user 2026-11-17)', () => {
     expect(outOfWarrantyPercent({ raw: ring, outOfWarranty: 12 })).toBe(3)
+    expect(outOfWarrantyPercent({ raw: { total: 2824, online: 1603, offline: 1221 }, outOfWarranty: 3 })).toBe(0.2)
     expect(outOfWarrantyPercent({ raw: { total: 4, online: 1, offline: 3 }, outOfWarranty: 3 })).toBe(100)
     expect(outOfWarrantyPercent({ raw: { total: 4, online: 4, offline: 0 }, outOfWarranty: 0 })).toBe(0)
+    // 0.96% would read 1.0 to a decimal — it is 1%, as the other tabs write it.
+    expect(outOfWarrantyPercent({ raw: { total: 2000, online: 1479, offline: 521 }, outOfWarranty: 5 })).toBe(1)
+  })
+
+  it('…written as the ring and the report show it', () => {
+    // The user's screens on 2026-11-17: เฟิร์สเทค CCTV, แมสซีฟ CCTV, แมสซีฟ Street Light.
+    expect(outOfWarrantyShareText({ raw: { total: 2824, online: 1603, offline: 1221 }, outOfWarranty: 3 })).toBe('0.2%')
+    expect(outOfWarrantyShareText({ raw: { total: 1124, online: 667, offline: 457 }, outOfWarranty: 3 })).toBe('0.7%')
+    expect(outOfWarrantyShareText({ raw: { total: 70, online: 49, offline: 21 }, outOfWarranty: 1 })).toBe('5%')
+    expect(outOfWarrantyShareText({ raw: { total: 4, online: 1, offline: 3 }, outOfWarranty: 3 })).toBe('100%')
+    expect(outOfWarrantyShareText({ raw: { total: 4, online: 2, offline: 2 }, outOfWarranty: 0 })).toBe('0%')
+    expect(outOfWarrantyShareText({ raw: { total: 2000, online: 1479, offline: 521 }, outOfWarranty: 5 })).toBe('1%')
+    // One record among thousands offline — not a 0% beside its count.
+    expect(outOfWarrantyShareText({ raw: { total: 3000, online: 500, offline: 2500 }, outOfWarranty: 1 })).toBe('<0.1%')
   })
 })
 
@@ -110,11 +126,11 @@ describe('camera tags', () => {
 })
 
 describe('warranty filter', () => {
-  it('ทั้งหมด / นอกเหนือการประกัน / ในค้ำ / หมดค้ำ, in the Figma’s order', () => {
-    expect(WARRANTY_FILTER_OPTIONS.map((option) => option.label)).toEqual(['ทั้งหมด', 'นอกเหนือการประกัน', 'ในค้ำ', 'หมดค้ำ'])
+  it('ทั้งหมด / นอกเหนือการรับประกัน / ในค้ำ / หมดค้ำ, in the Figma’s order', () => {
+    expect(WARRANTY_FILTER_OPTIONS.map((option) => option.label)).toEqual(['ทั้งหมด', 'นอกเหนือการรับประกัน', 'ในค้ำ', 'หมดค้ำ'])
   })
 
-  it('maps to the list’s is_warranty — นอกเหนือการประกัน reads every project', () => {
+  it('maps to the list’s is_warranty — นอกเหนือการรับประกัน reads every project', () => {
     expect(warrantyParam('all')).toBeUndefined()
     expect(warrantyParam('excluded')).toBeUndefined()
     expect(warrantyParam('in')).toBe(true)

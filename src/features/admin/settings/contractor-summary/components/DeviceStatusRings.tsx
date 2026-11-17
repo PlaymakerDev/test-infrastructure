@@ -2,14 +2,14 @@
 import React from 'react'
 import { Empty, Skeleton } from 'antd'
 import type { DeviceRing } from '../hooks/useContractorDeviceRings'
-import type { WarrantyFilter } from '../data/deviceStatus'
+import { outOfWarrantyShareText, type WarrantyFilter } from '../data/deviceStatus'
 import StatusRing from './StatusRing'
 
 interface Props {
   rings: DeviceRing[]
   isLoading: boolean
   isError: boolean
-  /** The page's filter — นอกเหนือการประกัน rings the recorded share; the
+  /** The page's filter — นอกเหนือการรับประกัน rings the recorded share; the
    *  rest only pick the empty message. */
   warranty: WarrantyFilter
 }
@@ -39,6 +39,10 @@ const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError, warrant
     const large = rings.filter((ring) => ring.system.large)
     const small = rings.filter((ring) => !ring.system.large)
     const excluded = warranty === 'excluded'
+    // นอกเหนือการรับประกัน: a row's shares in one size, the one its longest fits.
+    const longest = (row: DeviceRing[]) => (excluded ? Math.max(0, ...row.map((ring) => outOfWarrantyShareText(ring).length)) : 0)
+    const longestLarge = longest(large)
+    const longestSmall = longest(small)
     // One row when the screen is wide enough for all ten (as in the design);
     // otherwise the wide rings and the small ones each take a centred row of
     // their own instead of a ragged spill. Bottom-aligned, so names and
@@ -47,12 +51,12 @@ const DeviceStatusRings: React.FC<Props> = ({ rings, isLoading, isError, warrant
       <div className='flex flex-wrap items-end justify-center gap-x-10 gap-y-10'>
         {large.length > 0 && (
           <div className='flex flex-wrap items-end justify-center gap-x-8 gap-y-10'>
-            {large.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} />)}
+            {large.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} longestShare={longestLarge} />)}
           </div>
         )}
         {small.length > 0 && (
           <div className='flex flex-wrap items-end justify-center gap-x-6 gap-y-10'>
-            {small.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} />)}
+            {small.map((ring) => <StatusRing key={ring.system.key} ring={ring} excluded={excluded} longestShare={longestSmall} />)}
           </div>
         )}
       </div>

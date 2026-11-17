@@ -12,9 +12,9 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
 /** One system's uptime-statistics: as the backend counts them, and as the
  *  rings of ทั้งหมด / ในค้ำ / หมดค้ำ show them. */
 export interface UptimeCounts {
-  /** As read — the นอกเหนือการประกัน devices among the offline. */
+  /** As read — the นอกเหนือการรับประกัน devices among the offline. */
   raw: DeviceTotals
-  /** Offline devices with an open นอกเหนือการประกัน record (a car hit it, its
+  /** Offline devices with an open นอกเหนือการรับประกัน record (a car hit it, its
    *  cable was cut or stolen…): `out_of_warranty` in the system's own block,
    *  "a part of offline" (BE 2026-11-16, all ten services — the camera-based
    *  systems count the units whose camera has a record). */
@@ -24,7 +24,7 @@ export interface UptimeCounts {
   totals: DeviceTotals
 }
 
-/** Takes the นอกเหนือการประกัน devices out of ออฟไลน์ and ทั้งหมด alike —
+/** Takes the นอกเหนือการรับประกัน devices out of ออฟไลน์ and ทั้งหมด alike —
  *  never more than the offline count, should the backend ever send more. */
 export const withoutOutOfWarranty = (totals: DeviceTotals, outOfWarranty: number): DeviceTotals => {
   const removed = Math.min(Math.max(0, outOfWarranty), totals.offline)
@@ -57,10 +57,25 @@ export const hasDevices = (totals: DeviceTotals | null | undefined): totals is D
 export const offlinePercent = (totals: DeviceTotals): number =>
   totals.total > 0 ? Math.round((totals.offline / totals.total) * 100) : 0
 
-/** นอกเหนือการประกัน's ring: the share of the system's offline devices that
- *  are recorded out of warranty, in whole percent. */
-export const outOfWarrantyPercent = ({ raw, outOfWarranty }: Pick<UptimeCounts, 'raw' | 'outOfWarranty'>): number =>
-  raw.offline > 0 ? Math.round((outOfWarranty / raw.offline) * 100) : 0
+/** นอกเหนือการรับประกัน's ring: the share of the system's offline devices
+ *  that are recorded out of warranty — whole percent as the other tabs, one
+ *  decimal place under 1% only (user 2026-11-17: 3 of 1,221 is 0.2%, where
+ *  whole percent read 0). */
+export const outOfWarrantyPercent = ({ raw, outOfWarranty }: Pick<UptimeCounts, 'raw' | 'outOfWarranty'>): number => {
+  if (raw.offline <= 0) return 0
+  const share = (outOfWarranty / raw.offline) * 100
+  const tenths = Math.round(share * 10) / 10
+  return tenths < 1 ? tenths : Math.round(share)
+}
+
+/** That share as the ring and the report write it: "0%", "0.2%", "5%",
+ *  "100%" — "<0.1%" only for records too few to show even so, rather than a
+ *  0% beside their count. */
+export const outOfWarrantyShareText = (counts: Pick<UptimeCounts, 'raw' | 'outOfWarranty'>): string => {
+  const percent = outOfWarrantyPercent(counts)
+  if (percent === 0) return counts.outOfWarranty > 0 ? '<0.1%' : '0%'
+  return percent < 1 ? `${percent.toFixed(1)}%` : `${percent}%`
+}
 
 /** "กม. 2+800" — the word once, even when the chainage already carries it;
  *  nothing at all for a group without one (the backend sends "" or null). */
@@ -93,14 +108,14 @@ export const cameraBadges = (types: { id: number }[] | null | undefined): Device
   return BADGE_ORDER.filter((key) => keys.has(key))
 }
 
-/** ทั้งหมด / นอกเหนือการประกัน / ในค้ำ / หมดค้ำ, in the Figma's order (user
- *  2026-11-16). นอกเหนือการประกัน is not a warranty-date filter: its rings
+/** ทั้งหมด / นอกเหนือการรับประกัน / ในค้ำ / หมดค้ำ, in the Figma's order (user
+ *  2026-11-16). นอกเหนือการรับประกัน is not a warranty-date filter: its rings
  *  are every project's recorded devices, its table the projects with records. */
 export type WarrantyFilter = 'all' | 'excluded' | 'in' | 'out'
 
 export const WARRANTY_FILTER_OPTIONS: { label: string; value: WarrantyFilter }[] = [
   { label: 'ทั้งหมด', value: 'all' },
-  { label: 'นอกเหนือการประกัน', value: 'excluded' },
+  { label: 'นอกเหนือการรับประกัน', value: 'excluded' },
   { label: 'ในค้ำ', value: 'in' },
   { label: 'หมดค้ำ', value: 'out' },
 ]

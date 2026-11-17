@@ -105,7 +105,7 @@ describe('โครงการ sheet', () => {
     expect(excelTextPx('โครงการที่ 431 :')).toBeLessThanOrEqual(room(0))
     expect(excelTextPx('เลขที่สัญญา :')).toBeLessThanOrEqual(room(1))
     expect(excelTextPx('ไม่เชื่อมต่อ')).toBeLessThanOrEqual(room(11))
-    expect(excelTextPx('นอกเหนือการประกัน')).toBeLessThanOrEqual(room(11))
+    expect(excelTextPx('นอกเหนือการรับประกัน')).toBeLessThanOrEqual(room(11))
     // การทำงาน over J–K: the usual tags on one line, the longest on two at most.
     const tags = room(9) + room(10) + 6
     expect(excelTextPx('CCTV, Volume, Incident')).toBeLessThanOrEqual(tags)
@@ -114,7 +114,7 @@ describe('โครงการ sheet', () => {
 
   it('a long name or project name wraps, its row as tall as its lines', () => {
     const name = 'DRR-RYG1035PC1-CAM02-กม.1+518-ขาออกจากทางแยกสนามกีฬาบ้านฉาง มุ่งหน้าไปทางแยกพลา-บูรพาพัฒน์ ฝั่งขาเข้า'
-    // Longer than B–M even with L widened for นอกเหนือการประกัน (2026-11-16).
+    // Longer than B–M even with L widened for นอกเหนือการรับประกัน (2026-11-16).
     const project = 'โครงการปรับปรุงจุดเสี่ยงจุดอันตราย ถนนสาย รย.4036 เฉลิมบูรพาชลทิต (ตอนระยอง) อำเภอแกลง อำเภอนายายอาม อำเภอท่าใหม่ จังหวัดระยอง (ระบบไฟฟ้า 3 เฟส) พร้อมติดตั้งกล้องโทรทัศน์วงจรปิดและอุปกรณ์ประกอบ'
     const long = projectDevicesSheet({
       title: 'T',
@@ -180,7 +180,7 @@ describe('โครงการ sheet', () => {
     ])
   })
 
-  it('a controller recorded นอกเหนือการประกัน says so, in purple', () => {
+  it('a controller recorded นอกเหนือการรับประกัน says so, in purple', () => {
     const recorded: ProjectSheetProject = {
       name: 'p',
       contractNo: '-',
@@ -189,21 +189,21 @@ describe('โครงการ sheet', () => {
     }
     const { rows: lines } = projectDevicesSheet({ title: 'T', projects: [recorded] })
     expect(lines[5].cells[0]).toMatchObject({
-      value: 'จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการประกัน)',
-      runs: [{ text: 'จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการประกัน', color: '7030A0' }, { text: ')' }],
+      value: 'จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการรับประกัน)',
+      runs: [{ text: 'จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการรับประกัน', color: '7030A0' }, { text: ')' }],
     })
     const [block] = projectDevicesPdfBlocks([recorded]) as { rows: unknown[] }[]
     expect(block.rows[1]).toEqual({
-      group: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการประกัน)',
+      group: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : นอกเหนือการรับประกัน)',
       tone: 'soft',
-      runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการประกัน', color: '#7030A0' }, { text: ')' }],
+      runs: [{ text: 'VMS · จุดติดตั้ง : ป้าย 1 (ระบบ : ' }, { text: 'นอกเหนือการรับประกัน', color: '#7030A0' }, { text: ')' }],
     })
   })
 
-  it('words a device’s state in Thai — นอกเหนือการประกัน before anything else (user 2026-11-16)', () => {
+  it('words a device’s state in Thai — นอกเหนือการรับประกัน before anything else (user 2026-11-16)', () => {
     expect([true, false, null].map((online) => connectionLabel(online))).toEqual(['เชื่อมต่อ', 'ไม่เชื่อมต่อ', 'ไม่เชื่อมต่อ'])
-    expect(connectionLabel(false, true)).toBe('นอกเหนือการประกัน')
-    expect(connectionLabel(true, true)).toBe('นอกเหนือการประกัน')
+    expect(connectionLabel(false, true)).toBe('นอกเหนือการรับประกัน')
+    expect(connectionLabel(true, true)).toBe('นอกเหนือการรับประกัน')
     expect(connectionLabel(true, false)).toBe('เชื่อมต่อ')
     // สถานะสาย is the wire itself.
     expect([false, true, null].map((broken) => wireLabel(broken))).toEqual(['เชื่อมต่อ', 'ไม่เชื่อมต่อ', 'เชื่อมต่อ'])

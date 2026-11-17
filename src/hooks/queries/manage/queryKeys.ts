@@ -111,20 +111,41 @@ export const manageKeys = {
         },
       ] as const,
     detail: (projectId: number) => [...manageKeys.deviceStatus.all, 'detail', projectId] as const,
+    /** One page of /device-status/summary — สรุปข้อมูลผู้รับจ้าง's table. */
+    summaryPage: (params: APIRequestProjectDeviceStatusList) =>
+      [
+        ...manageKeys.deviceStatus.all,
+        'summary-page',
+        {
+          contractor_id: params.contractor_id ?? '',
+          is_warranty: params.is_warranty ?? null,
+          search: params.search ?? '',
+          page: params.page ?? 1,
+          limit: params.limit ?? 10,
+        },
+      ] as const,
+    /** Every page of /device-status under the filters (no page) — its
+     *  cameras per project, for that table's CCTV column. */
+    listAll: (params: APIRequestProjectDeviceStatusList) =>
+      [
+        ...manageKeys.deviceStatus.all,
+        'list-all',
+        { contractor_id: params.contractor_id ?? '', is_warranty: params.is_warranty ?? null, search: params.search ?? '' },
+      ] as const,
     /** Every page of /device-status/summary for a contractor ('' = every
      *  contractor the account can see) under a warranty filter. */
     summaryRows: (contractorUserId: string, isWarranty?: boolean) =>
       [...manageKeys.deviceStatus.all, 'summary-rows', contractorUserId, isWarranty ?? null] as const,
     /** One system's uptime-statistics filtered to one contractor (and, when
      *  given, to in- or out-of-warranty solutions) — its counts as read and
-     *  its นอกเหนือการประกัน share. */
+     *  its นอกเหนือการรับประกัน share. */
     uptime: (contractorUserId: string, prefix: string, isWarranty?: boolean) =>
       [...manageKeys.deviceStatus.all, 'uptime-counts', contractorUserId, prefix, isWarranty ?? null] as const,
     /** อุปกรณ์นอกเหนือการค้ำประกัน (BE 2026-11-16) — one root, so a save
      *  refreshes every read of it. */
     outOfWarranty: {
       all: ['manage', 'device-status', 'out-of-warranty'] as const,
-      /** One page of the projects with records — the นอกเหนือการประกัน tab. */
+      /** One page of the projects with records — the นอกเหนือการรับประกัน tab. */
       projects: (params: APIRequestProjectDeviceStatusList) =>
         [
           ...manageKeys.deviceStatus.outOfWarranty.all,

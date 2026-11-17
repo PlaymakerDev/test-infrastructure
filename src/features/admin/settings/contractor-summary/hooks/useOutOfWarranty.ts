@@ -16,9 +16,9 @@ import type { RecordToSave } from '../data/outOfWarranty'
 const PAGE_LIMIT = 100
 const toIdSet = (ids: number[]) => new Set(ids)
 
-/** One page of the contractor's projects with records — the นอกเหนือการ
- *  ประกัน tab's table (the backend lists those projects only, each with just
- *  its recorded devices). */
+/** One page of the contractor's projects with records — the
+ *  นอกเหนือการรับประกัน tab's table (the backend lists those projects only,
+ *  each with just its recorded devices). */
 export const useOutOfWarrantyProjects = (params: APIRequestProjectDeviceStatusList, enabled: boolean) =>
   useQuery({
     queryKey: manageKeys.deviceStatus.outOfWarranty.projects(params),

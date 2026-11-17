@@ -556,6 +556,12 @@ export interface PdfEntryItem {
   /** Badge border/text color — printable dark tones, e.g. '#1d4ed8'. */
   badgeColor?: string
   fields: PdfKvItem[]
+  /** For cards whose photos are the evidence, in place of `image` (too small
+   *  to read): the first two, each whole and apart — one alone takes both
+   *  places — beside the fields on a landscape page (the fields then one
+   *  column), under them otherwise. Pre-fetched like `image`; `[]` keeps the
+   *  layout, photo-less. */
+  photos?: { dataUrl: string; width: number; height: number }[]
 }
 
 export type PdfReportBlock =
@@ -586,6 +592,52 @@ export interface ExportReportPdfArgs {
   subtitleNote?: string
   blocks: PdfReportBlock[]
   orientation?: 'landscape' | 'portrait'
+}
+
+// An entry card's border (1) and padding (6), each side; its thumbnail with
+// the gap after it.
+const ENTRY_CARD_CHROME = 14
+const ENTRY_THUMB_SPACE = 132 + 8
+// `photos`: the first two, each whole within 200 × 150, apart — or one alone
+// across the pair's whole width, up to its 16:9 — beside the fields (one
+// column, label then value) on a landscape page, where two cards still share
+// it; under them otherwise.
+const ENTRY_PHOTOS_MAX = 2
+const ENTRY_PHOTO_MAX_W = 200
+const ENTRY_PHOTO_MAX_H = 150
+const ENTRY_PHOTO_GAP = 10
+const ENTRY_PHOTO_BORDER = 0.5
+const ENTRY_PHOTOS_W = ENTRY_PHOTOS_MAX * (ENTRY_PHOTO_MAX_W + ENTRY_PHOTO_BORDER * 2) + (ENTRY_PHOTOS_MAX - 1) * ENTRY_PHOTO_GAP
+const ENTRY_PHOTO_ALONE_W = ENTRY_PHOTOS_W - ENTRY_PHOTO_BORDER * 2
+const ENTRY_PHOTO_ALONE_H = (ENTRY_PHOTO_ALONE_W * 9) / 16
+const ENTRY_PHOTOS_BESIDE_GAP = 12
+const ENTRY_PHOTO_LABEL_W = 110
+const ENTRY_PHOTO_VALUE_PAD = 6
+const ENTRY_PHOTO_FIELDS_MIN_W = 260
+
+/** A card's text column: the card less its chrome and, when it has one,
+ *  the thumbnail. */
+const entryTextWidth = (item: PdfEntryItem, pageW: number) =>
+  pageW - ENTRY_CARD_CHROME - (item.image ? ENTRY_THUMB_SPACE : 0)
+
+/** The fields' column when a card's photos sit beside them. */
+const entryFieldsBesideWidth = (item: PdfEntryItem, pageW: number) =>
+  entryTextWidth(item, pageW) - ENTRY_PHOTOS_W - ENTRY_PHOTOS_BESIDE_GAP
+
+/** A card's photos go beside its fields when that leaves the fields room —
+ *  a landscape page; under them otherwise. */
+const entryPhotosBeside = (item: PdfEntryItem, pageW: number) =>
+  !!item.photos && entryFieldsBesideWidth(item, pageW) >= ENTRY_PHOTO_FIELDS_MIN_W
+
+/** A photo whole at its own shape, as large as its box allows: 200 × 150
+ *  beside another, the pair's whole place when alone (user 2026-11-17 — a
+ *  lone photo left the second one's place standing empty). */
+export const entryPhotoSize = (photo: { width: number; height: number }, alone: boolean) => {
+  const ratio = photo.width > 0 && photo.height > 0 ? photo.width / photo.height : 4 / 3
+  const width = alone
+    ? Math.min(ENTRY_PHOTO_ALONE_W, ENTRY_PHOTO_ALONE_H * ratio)
+    : Math.min(ENTRY_PHOTO_MAX_W, ENTRY_PHOTO_MAX_H * ratio)
+  return { width, height: width / ratio }
 }
 
 const reportStyles = StyleSheet.create({
@@ -638,6 +690,18 @@ const reportStyles = StyleSheet.create({
     objectFit: 'cover',
     marginRight: 8,
   },
+  entryPhotoBody: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 4 },
+  // Centred in their place, so a photo narrower than it (4:3, upright)
+  // leaves even margins rather than an empty slot to its right.
+  entryPhotosBeside: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    width: ENTRY_PHOTOS_W,
+    marginLeft: ENTRY_PHOTOS_BESIDE_GAP,
+  },
+  entryPhotosBelow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 6 },
+  entryPhotoFrame: { borderWidth: ENTRY_PHOTO_BORDER, borderColor: '#d1d5db', borderStyle: 'solid' },
   entryHeading: { fontSize: 9.5, color: '#111827', fontWeight: 700, flex: 1, paddingRight: 6 },
   entrySubheading: { fontSize: 8.5, color: '#6b7280', marginTop: 1 },
   entryBadge: {
@@ -855,6 +919,16 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
     }
 
     if (block.type === 'entries') {
+      const pageW = PAGE_INNER_W[orientation ?? 'portrait']
+      const renderEntryPhotos = (item: PdfEntryItem) => {
+        const photos = (item.photos ?? []).slice(0, ENTRY_PHOTOS_MAX)
+        return photos.map((photo, pi) => (
+          <View key={pi} style={{ ...reportStyles.entryPhotoFrame, marginLeft: pi ? ENTRY_PHOTO_GAP : 0 }}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf primitive, not a DOM <img> */}
+            <Image src={photo.dataUrl} style={entryPhotoSize(photo, photos.length === 1)} />
+          </View>
+        ))
+      }
       return (
         <View key={bi} style={reportStyles.tableBlock}>
           {block.title ? <Text style={reportStyles.blockTitle}>{`${block.title} `}</Text> : null}
@@ -882,16 +956,35 @@ function ReportDocument({ title, subtitleNote, blocks, orientation }: ExportRepo
                 {item.subheading ? (
                   <Text style={reportStyles.entrySubheading}>{`${item.subheading} `}</Text>
                 ) : null}
-                <View style={{ ...reportStyles.kvGrid, marginTop: 3 }}>
-                  {item.fields.map((f, fi) => (
-                    <View key={fi} style={{ width: '50%', paddingRight: 8 }}>
-                      <View style={reportStyles.entryFieldRow}>
-                        <Text style={{ ...reportStyles.kvLabel, fontSize: 8.5, maxWidth: '55%' }}>{`${f.label} `}</Text>
-                        <Text style={{ ...reportStyles.kvValue, fontSize: 8.5, maxWidth: '45%' }}>{`${f.value} `}</Text>
-                      </View>
+                {entryPhotosBeside(item, pageW) ? (
+                  <View style={reportStyles.entryPhotoBody}>
+                    <View style={{ flex: 1 }}>
+                      {item.fields.map((f, fi) => (
+                        <View key={fi} style={reportStyles.entryFieldRow}>
+                          <Text style={{ ...reportStyles.kvLabel, fontSize: 8.5, width: ENTRY_PHOTO_LABEL_W }}>{`${f.label} `}</Text>
+                          <Text style={{ ...reportStyles.kvValue, fontSize: 8.5, flex: 1, paddingLeft: ENTRY_PHOTO_VALUE_PAD }}>{`${f.value} `}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
+                    {/* Its width kept even without a photo: the fields were
+                        pre-wrapped to the column it leaves. */}
+                    <View style={reportStyles.entryPhotosBeside}>{renderEntryPhotos(item)}</View>
+                  </View>
+                ) : (
+                  <>
+                    <View style={{ ...reportStyles.kvGrid, marginTop: 3 }}>
+                      {item.fields.map((f, fi) => (
+                        <View key={fi} style={{ width: '50%', paddingRight: 8 }}>
+                          <View style={reportStyles.entryFieldRow}>
+                            <Text style={{ ...reportStyles.kvLabel, fontSize: 8.5, maxWidth: '55%' }}>{`${f.label} `}</Text>
+                            <Text style={{ ...reportStyles.kvValue, fontSize: 8.5, maxWidth: '45%' }}>{`${f.value} `}</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                    {item.photos?.length ? <View style={reportStyles.entryPhotosBelow}>{renderEntryPhotos(item)}</View> : null}
+                  </>
+                )}
               </View>
             </View>
           ))}
@@ -963,22 +1056,29 @@ async function prewrapReportArgs(args: ExportReportPdfArgs): Promise<ExportRepor
       }
     }
     if (block.type === 'entries') {
-      // Right column = page − thumb(132) − margins/padding; badge shares the
-      // heading row, so reserve room for it there.
-      const rightW = pageW - 132 - 8 - 14
-      const fieldW = rightW / 2 - 8
+      // Text column = the card less its chrome and its thumbnail, if any (a
+      // card without one runs full width); badge shares the heading row, so
+      // reserve room for it there. Fields: two columns, label then value in
+      // each — or one, beside the photos.
       return {
         ...block,
         title: block.title ? wrap(block.title, pageW - 10, 10.5) : block.title,
-        items: block.items.map((item) => ({
-          ...item,
-          heading: wrap(item.heading, rightW - 80, 9.5),
-          subheading: item.subheading ? wrap(item.subheading, rightW - 6, 8.5) : item.subheading,
-          fields: item.fields.map((f) => ({
-            label: wrap(f.label, fieldW * 0.55 - 4, 8.5),
-            value: wrap(f.value, fieldW * 0.45 - 4, 8.5),
-          })),
-        })),
+        items: block.items.map((item) => {
+          const rightW = entryTextWidth(item, pageW)
+          const fieldW = rightW / 2 - 8
+          const besideValueW = entryFieldsBesideWidth(item, pageW) - ENTRY_PHOTO_LABEL_W - ENTRY_PHOTO_VALUE_PAD
+          const beside = entryPhotosBeside(item, pageW)
+          return {
+            ...item,
+            heading: wrap(item.heading, rightW - 80, 9.5),
+            subheading: item.subheading ? wrap(item.subheading, rightW - 6, 8.5) : item.subheading,
+            fields: item.fields.map((f) =>
+              beside
+                ? { label: wrap(f.label, ENTRY_PHOTO_LABEL_W - 4, 8.5), value: wrap(f.value, besideValueW - 4, 8.5) }
+                : { label: wrap(f.label, fieldW * 0.55 - 4, 8.5), value: wrap(f.value, fieldW * 0.45 - 4, 8.5) },
+            ),
+          }
+        }),
       }
     }
     // Column-heavy tables shrink the font / trim the padding (see the block's

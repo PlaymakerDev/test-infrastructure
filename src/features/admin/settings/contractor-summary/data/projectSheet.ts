@@ -38,12 +38,12 @@ export const STREET_LIGHT_COLUMNS: ProjectSheetColumns = ['ชื่อจุด
 export const BRIDGE_LIGHTING_COLUMNS: ProjectSheetColumns = ['ชื่อจุดติดตั้ง', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ']
 export const TUNNEL_COLUMNS: ProjectSheetColumns = ['ชื่ออุปกรณ์', 'กม.ที่', 'การทำงาน', 'การเชื่อมต่อ']
 
-/** A device that is นอกเหนือการประกัน — an open record (a car hit it, its
+/** A device that is นอกเหนือการรับประกัน — an open record (a car hit it, its
  *  cable was cut or stolen…) — says so before anything else (user 2026-11-16). */
-export const OUT_OF_WARRANTY_LABEL = 'นอกเหนือการประกัน'
+export const OUT_OF_WARRANTY_LABEL = 'นอกเหนือการรับประกัน'
 
-/** A device's สถานะ / การเชื่อมต่อ in Thai (user 2026-11-16): นอกเหนือการ
- *  ประกัน first, then เชื่อมต่อ / ไม่เชื่อมต่อ. */
+/** A device's สถานะ / การเชื่อมต่อ in Thai (user 2026-11-16):
+ *  นอกเหนือการรับประกัน first, then เชื่อมต่อ / ไม่เชื่อมต่อ. */
 export const connectionLabel = (isOnline: boolean | null | undefined, isOutOfWarranty?: boolean | null) =>
   isOutOfWarranty ? OUT_OF_WARRANTY_LABEL : isOnline ? 'เชื่อมต่อ' : 'ไม่เชื่อมต่อ'
 
@@ -54,7 +54,7 @@ export const wireLabel = (hasBrokenWire: boolean | null | undefined) => (hasBrok
 /** A controller's own state, written after its install point. */
 export type PointState = 'online' | 'offline' | 'excluded'
 
-/** A controller (Traffic Signal, Crosswalk, VMS sign): นอกเหนือการประกัน
+/** A controller (Traffic Signal, Crosswalk, VMS sign): นอกเหนือการรับประกัน
  *  first, then ออนไลน์ / ออฟไลน์ (user 2026-11-16). */
 export const pointState = (item: { is_online: boolean; is_out_of_warranty?: boolean }): PointState =>
   item.is_out_of_warranty ? 'excluded' : item.is_online ? 'online' : 'offline'
@@ -71,7 +71,7 @@ export interface ProjectSheetSection {
 
 /** A controller's state after its install point, coloured as the user's
  *  mockup has it (2026-10-28) — Excel's standard Green and Red, and its
- *  standard Purple for นอกเหนือการประกัน. */
+ *  standard Purple for นอกเหนือการรับประกัน. */
 const STATE: Record<PointState, ExcelTextRun> = {
   online: { text: 'ออนไลน์', color: '00B050' },
   offline: { text: 'ออฟไลน์', color: 'FF0000' },
@@ -114,9 +114,9 @@ const SECTION_FILL = 'A6CAEC'
 // and on the Solution row, a box in each of C–M. Wider than the sample where
 // its text didn't fit (user 2026-10-29): A for "โครงการที่ 431 :", B for
 // "เลขที่สัญญา :", J–K for "CCTV, Volume, Truck Tracking", L for
-// "นอกเหนือการประกัน" (2026-11-16), M for an IP address. A longer name wraps
+// "นอกเหนือการรับประกัน" (2026-11-17), M for an IP address. A longer name wraps
 // (excel.ts sizes the row).
-const WIDTHS = [16, 13, 10, 10, 10, 10, 10, 10, 10, 13, 13, 19, 16]
+const WIDTHS = [16, 13, 10, 10, 10, 10, 10, 10, 10, 13, 13, 22, 16]
 const LAST_COL = WIDTHS.length - 1
 
 const cell = (col: number, value: string | number, style?: ExcelCellStyle, span?: number): ExcelLayoutCell => ({
@@ -211,7 +211,7 @@ const DEVICE_PDF_COLUMNS = [
   { header: CAMERA_COLUMNS[0], widthPct: 41, align: 'left' as const },
   { header: CAMERA_COLUMNS[1], widthPct: 10 },
   { header: CAMERA_COLUMNS[2], widthPct: 16 },
-  // Room for นอกเหนือการประกัน on one line.
+  // Room for นอกเหนือการรับประกัน on one line.
   { header: CAMERA_COLUMNS[3], widthPct: 14 },
   { header: CAMERA_COLUMNS[4], widthPct: 13 },
 ]

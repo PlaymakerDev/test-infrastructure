@@ -1,27 +1,30 @@
 "use client"
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Empty, Input, Segmented, Table, type TableProps } from 'antd'
-import { TbCopyPlusFilled, TbInfoSquareRoundedFilled, TbPlayerTrackNext, TbSearch, TbTool, TbWifi, TbWifiOff } from 'react-icons/tb'
+import { Empty, Input, Segmented, Table, Tooltip, type TableProps } from 'antd'
+import { TbCopyPlusFilled, TbInfoCircle, TbInfoSquareRoundedFilled, TbPlayerTrackNext, TbSearch, TbTool, TbWifi, TbWifiOff } from 'react-icons/tb'
 import AppPagination from '@/components/pagination/AppPagination'
 import { fmtNumber } from '@/utils/formatNumber'
 import useIsMobile from '@/utils/hooks/useIsMobile'
 import type {
   DeviceTotals,
+  OutOfWarrantyDeviceType,
   OutOfWarrantyProjectRow,
   ProjectDeviceStatusBase,
   ProjectDeviceStatusRow,
 } from '@/types/manage/device-status-api'
 import { WARRANTY_FILTER_OPTIONS, type WarrantyFilter } from '../data/deviceStatus'
 import type { OutOfWarrantyType } from '../data/outOfWarranty'
+import type { ProjectStatusTableRow } from '../data/statusTable'
 
 interface Props {
   /** ทั้งหมด / ในค้ำ / หมดค้ำ's page of projects. */
-  rows: ProjectDeviceStatusRow[]
-  /** นอกเหนือการประกัน's page — the projects with records, each with its
+  rows: ProjectStatusTableRow[]
+  /** นอกเหนือการรับประกัน's page — the projects with records, each with its
    *  recorded devices. */
   excludedRows: OutOfWarrantyProjectRow[]
-  /** นอกเหนือการประกัน's columns, one per recordable type the contractor has. */
-  excludedTypes: readonly OutOfWarrantyType[]
+  /** Both tables' columns: CCTV, VMS and Street Light, then Traffic Signal,
+   *  Bridge Lighting, Crosswalk and Tunnel when the contractor has them. */
+  types: readonly OutOfWarrantyType[]
   total: number
   page: number
   pageSize: number
@@ -42,35 +45,99 @@ interface Props {
   onOpenOutOfWarranty: (project: ProjectDeviceStatusBase) => void
 }
 
+/** A count by its icon; what it counts in the tooltip (and for a screen
+ *  reader) — the same words in every cell only made the table long (user
+ *  2026-11-17). */
+const IconCount: React.FC<{ label: string; icon: React.ReactNode; value: number; color: string }> = ({ label, icon, value, color }) => (
+  <Tooltip title={label}>
+    <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
+      {icon}
+      <span className='sr-only'>{label}</span>
+      <span className={value > 0 ? color : 'text-(--light-gray-3)'}>{fmtNumber(value)}</span>
+    </span>
+  </Tooltip>
+)
+
+/** A column header that explains itself on hover, its ⓘ saying there is
+ *  something to read: what the column counts (`lead`), then what else it
+ *  holds (`detail`). 300 wide (antd's 250 broke CCTV's lead before its last
+ *  word) — still inside a 390 phone. */
+const HintedHeader: React.FC<{ label: string; lead: string; detail: string }> = ({ label, lead, detail }) => (
+  <Tooltip
+    styles={{ root: { maxWidth: 300 } }}
+    title={
+      <span className='fs-12'>
+        <span className='block font-semibold'>{lead}</span>
+        <span className='block'>{detail}</span>
+      </span>
+    }
+  >
+    <span className='inline-flex items-center gap-1.5 fs-12 cursor-help'>
+      {label}
+      <TbInfoCircle className='fs-14 shrink-0 opacity-70' aria-hidden />
+    </span>
+  </Tooltip>
+)
+
+// CCTV's header (user 2026-11-17): Traffic Volume, Incident Detection and LPR
+// are cameras with no column of their own — counted here. The column is
+// /device-status's cameras: those of the project's CCTV install points, each
+// once — summed, the CCTV ring (checked 2026-11-17, all three filters).
+const CCTV_DETAIL = 'รวมกล้องที่ใช้กับ Traffic Volume, Incident Detection และ LPR'
+const CCTV_HINT = { lead: 'กล้องทุกตัวในจุดติดตั้ง CCTV ของโครงการ', detail: `${CCTV_DETAIL} — กล้องที่ใช้หลายระบบนับครั้งเดียว` }
+const CCTV_RECORDED_HINT = { lead: 'กล้องที่บันทึกนอกเหนือการรับประกัน', detail: CCTV_DETAIL }
+
 const OnlineCount: React.FC<{ value: number }> = ({ value }) => (
-  <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-    <TbWifi className='fs-18 text-(--default-blue) shrink-0' />
-    <span className='text-(--light-gray-3)'>ออนไลน์</span>
-    <span className={value > 0 ? 'text-(--default-blue)' : 'text-(--light-gray-3)'}>{fmtNumber(value)}</span>
-  </span>
+  <IconCount label='ออนไลน์' icon={<TbWifi className='fs-18 text-(--default-blue) shrink-0' />} value={value} color='text-(--default-blue)' />
 )
 
 const OfflineCount: React.FC<{ value: number }> = ({ value }) => (
-  <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
-    <TbWifiOff className='fs-18 text-(--red) shrink-0' />
-    <span className='text-(--light-gray-3)'>ออฟไลน์</span>
-    <span className={value > 0 ? 'text-(--red)' : 'text-(--light-gray-3)'}>{fmtNumber(value)}</span>
-  </span>
+  <IconCount label='ออฟไลน์' icon={<TbWifiOff className='fs-18 text-(--red) shrink-0' />} value={value} color='text-(--red)' />
 )
 
+/** What each column of ทั้งหมด / ในค้ำ / หมดค้ำ counts — each type's units,
+ *  CCTV every camera of the project. */
+const STATUS_TOTALS: Record<OutOfWarrantyDeviceType, (row: ProjectStatusTableRow) => DeviceTotals> = {
+  cctv: (row) => row.cameras,
+  vms: (row) => row.vms,
+  lighting: (row) => row.lighting,
+  traffic: (row) => row.traffic,
+  bridge_lighting: (row) => row.bridge_lighting,
+  crosswalk: (row) => row.crosswalk,
+  tunnel: (row) => row.tunnel,
+}
+
 const DeviceCounts: React.FC<{ totals: DeviceTotals | null | undefined }> = ({ totals }) => (
-  <div className='flex items-center gap-6 fs-12'>
+  <div className='flex flex-wrap items-center gap-x-4 gap-y-1 fs-12'>
     <OnlineCount value={totals?.online ?? 0} />
     <OfflineCount value={totals?.offline ?? 0} />
   </div>
 )
 
-/** นอกเหนือการประกัน's cell: how many of the type the project has recorded. */
+// ทั้งหมด / ในค้ำ / หมดค้ำ: CCTV (two counts and its ▷▷) 210, the other types
+// 140 each, the name 290 — with all seven, 80 + 290 + 210 + 6 × 140 + 130 +
+// 220 = 1770, as นอกเหนือการรับประกัน's: no scrolling on a 1920 screen.
+const STATUS_NAME_WIDTH = 290
+const STATUS_CCTV_WIDTH = 210
+const STATUS_COUNT_WIDTH = 140
+const STATUS_FIXED_WIDTH = 80 + STATUS_NAME_WIDTH + 130 + 220
+
+// นอกเหนือการรับประกัน's table: a narrow column per type (an icon and a count,
+// "Bridge Lighting" its widest header) and a narrower name, so all seven
+// types fit a 1920 screen without scrolling — 80 + 360 + 7 × 140 + 130 + 220.
+const RECORDED_COUNT_WIDTH = 140
+const EXCLUDED_NAME_WIDTH = 360
+const EXCLUDED_FIXED_WIDTH = 80 + EXCLUDED_NAME_WIDTH + 130 + 220
+
+/** นอกเหนือการรับประกัน's cell: how many of the type the project has recorded. */
 const RecordedCount: React.FC<{ value: number }> = ({ value }) => (
-  <span className='inline-flex items-center gap-1.5 whitespace-nowrap fs-12'>
-    <TbTool className={`fs-18 shrink-0 ${value > 0 ? 'text-(--yellow)' : 'text-(--light-gray-3)'}`} />
-    <span className='text-(--light-gray-3)'>นอกเหนือการประกัน</span>
-    <span className={value > 0 ? 'text-(--yellow)' : 'text-(--light-gray-3)'}>{fmtNumber(value)}</span>
+  <span className='fs-12'>
+    <IconCount
+      label='นอกเหนือการรับประกัน'
+      icon={<TbTool className={`fs-18 shrink-0 ${value > 0 ? 'text-(--yellow)' : 'text-(--light-gray-3)'}`} />}
+      value={value}
+      color='text-(--yellow)'
+    />
   </span>
 )
 
@@ -145,11 +212,11 @@ const ProjectSearchInput: React.FC<{ value: string; onChange: (value: string) =>
 
 /** ตารางสรุปโครงการและสถานะการทำงานของอุปกรณ์ทุกโครงการ — one page of the
  *  contractor's projects; the ▷▷ button opens the project's cameras. Under
- *  นอกเหนือการประกัน: the projects with records, how many of each type. */
+ *  นอกเหนือการรับประกัน: the projects with records, how many of each type. */
 const ProjectStatusTable: React.FC<Props> = ({
   rows,
   excludedRows,
-  excludedTypes,
+  types,
   total,
   page,
   pageSize,
@@ -216,7 +283,7 @@ const ProjectStatusTable: React.FC<Props> = ({
       align: 'center' as const,
       render: (_: unknown, row: ProjectDeviceStatusBase) => (
         <OutOfWarrantyButton
-          // นอกเหนือการประกัน lists recorded projects only.
+          // นอกเหนือการรับประกัน lists recorded projects only.
           recorded={excluded || recordedIds.has(row.project_id)}
           canRecord={canRecord}
           onClick={() => onOpenOutOfWarranty(row)}
@@ -225,60 +292,57 @@ const ProjectStatusTable: React.FC<Props> = ({
     },
   ], [excluded, recordedIds, canRecord, onOpenProjectInfo, onOpenOutOfWarranty])
 
-  const statusColumns = useMemo<TableProps<ProjectDeviceStatusRow>['columns']>(() => [
+  const statusColumns = useMemo<TableProps<ProjectStatusTableRow>['columns']>(() => [
     indexColumn,
-    nameColumn,
-    {
-      title: <span className='fs-12'>CCTV</span>,
-      key: 'cctv',
-      width: 340,
-      render: (_, row) => {
-        const hasCameras = (row.cameras?.total ?? 0) > 0
-        return (
-          <div className='flex items-center gap-6'>
-            <DeviceCounts totals={row.cameras} />
-            <button
-              type='button'
-              aria-label='ดูกล้องของโครงการ'
-              title={hasCameras ? 'ดูกล้องของโครงการ' : 'โครงการนี้ไม่มีกล้อง'}
-              disabled={!hasCameras}
-              onClick={() => onOpenLive(row)}
-              className='inline-flex items-center justify-center w-9 h-9 rounded-lg border-none shrink-0 cursor-pointer hover:opacity-85 disabled:cursor-not-allowed disabled:hover:opacity-100'
-              style={{ background: hasCameras ? 'var(--yellow)' : 'var(--light-gray-3)', color: 'var(--dark-black)' }}
-            >
-              <TbPlayerTrackNext size={22} />
-            </button>
-          </div>
-        )
-      },
-    },
-    {
-      title: <span className='fs-12'>VMS</span>,
-      key: 'vms',
-      width: 260,
-      render: (_, row) => <DeviceCounts totals={row.vms} />,
-    },
-    {
-      title: <span className='fs-12'>Street Light</span>,
-      key: 'lighting',
-      width: 260,
-      render: (_, row) => <DeviceCounts totals={row.lighting} />,
-    },
+    { ...nameColumn, width: STATUS_NAME_WIDTH },
+    ...types.map((type) => type.key === 'cctv'
+      ? {
+          title: <HintedHeader label={type.label} {...CCTV_HINT} />,
+          key: type.key,
+          width: STATUS_CCTV_WIDTH,
+          render: (_: unknown, row: ProjectStatusTableRow) => {
+            const hasCameras = (row.cameras?.total ?? 0) > 0
+            return (
+              <div className='flex items-center gap-4'>
+                <DeviceCounts totals={row.cameras} />
+                <button
+                  type='button'
+                  aria-label='ดูกล้องของโครงการ'
+                  title={hasCameras ? 'ดูกล้องของโครงการ' : 'โครงการนี้ไม่มีกล้อง'}
+                  disabled={!hasCameras}
+                  onClick={() => onOpenLive(row)}
+                  className='inline-flex items-center justify-center w-9 h-9 rounded-lg border-none shrink-0 cursor-pointer hover:opacity-85 disabled:cursor-not-allowed disabled:hover:opacity-100'
+                  style={{ background: hasCameras ? 'var(--yellow)' : 'var(--light-gray-3)', color: 'var(--dark-black)' }}
+                >
+                  <TbPlayerTrackNext size={22} />
+                </button>
+              </div>
+            )
+          },
+        }
+      : {
+          title: <span className='fs-12'>{type.label}</span>,
+          key: type.key,
+          width: STATUS_COUNT_WIDTH,
+          render: (_: unknown, row: ProjectStatusTableRow) => (
+            <DeviceCounts totals={STATUS_TOTALS[type.key](row)} />
+          ),
+        }),
     ...tailColumns,
-  ], [indexColumn, nameColumn, tailColumns, onOpenLive])
+  ], [indexColumn, nameColumn, types, tailColumns, onOpenLive])
 
   const excludedColumns = useMemo<TableProps<OutOfWarrantyProjectRow>['columns']>(() => [
     indexColumn,
-    nameColumn,
-    // 220 each: four of them still fit a 1920 screen without scrolling.
-    ...excludedTypes.map((type) => ({
-      title: <span className='fs-12'>{type.label}</span>,
+    { ...nameColumn, width: EXCLUDED_NAME_WIDTH },
+    ...types.map((type) => ({
+      title: type.key === 'cctv' ? <HintedHeader label={type.label} {...CCTV_RECORDED_HINT} /> : <span className='fs-12'>{type.label}</span>,
       key: type.key,
-      width: 220,
+      width: RECORDED_COUNT_WIDTH,
+      align: 'center' as const,
       render: (_: unknown, row: OutOfWarrantyProjectRow) => <RecordedCount value={row[type.key]?.length ?? 0} />,
     })),
     ...tailColumns,
-  ], [indexColumn, nameColumn, excludedTypes, tailColumns])
+  ], [indexColumn, nameColumn, types, tailColumns])
 
   const emptyText = (
     <Empty
@@ -289,7 +353,7 @@ const ProjectStatusTable: React.FC<Props> = ({
             : search
               ? 'ไม่พบโครงการที่ค้นหา'
               : excluded
-                ? 'ยังไม่มีโครงการที่บันทึกอุปกรณ์นอกเหนือการประกัน'
+                ? 'ยังไม่มีโครงการที่บันทึกอุปกรณ์นอกเหนือการรับประกัน'
                 : 'ไม่พบโครงการ'}
         </span>
       }
@@ -326,17 +390,17 @@ const ProjectStatusTable: React.FC<Props> = ({
           columns={excludedColumns}
           loading={isLoading}
           pagination={false}
-          scroll={{ x: 850 + excludedTypes.length * 220 }}
+          scroll={{ x: EXCLUDED_FIXED_WIDTH + types.length * RECORDED_COUNT_WIDTH }}
           locale={{ emptyText }}
         />
       ) : (
-        <Table<ProjectDeviceStatusRow>
+        <Table<ProjectStatusTableRow>
           rowKey='project_id'
           dataSource={rows}
           columns={statusColumns}
           loading={isLoading}
           pagination={false}
-          scroll={{ x: 1520 }}
+          scroll={{ x: STATUS_FIXED_WIDTH + STATUS_CCTV_WIDTH + Math.max(0, types.length - 1) * STATUS_COUNT_WIDTH }}
           locale={{ emptyText }}
         />
       )}

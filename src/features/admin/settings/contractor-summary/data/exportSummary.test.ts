@@ -55,7 +55,7 @@ const summaryRow = (id: number, contractNo: string | null, overrides: Partial<Pr
   lighting: none,
   vms: { system: none, camera: none },
   bridge_lighting: none,
-  tunnel: none,
+  tunnel: { ...none, system: none },
   ...overrides,
 })
 
@@ -103,7 +103,8 @@ const input: SummaryExportInput = {
       lighting: t(17, 18),
       vms: { system: t(19, 20), camera: t(21, 22) },
       bridge_lighting: t(23, 24),
-      tunnel: t(25, 26),
+      // The sample's Tunnel is its sensors — not the tunnels (`system`).
+      tunnel: { ...t(25, 26), system: t(90, 91) },
     }),
     summaryRow(246, null, { traffic: { system: t(2, 0), camera: none } }),
   ],
@@ -346,7 +347,7 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
     })
   })
 
-  it('นอกเหนือการประกัน before เชื่อมต่อ / ไม่เชื่อมต่อ and ออนไลน์ / ออฟไลน์, wherever a state is written (user 2026-11-16)', () => {
+  it('นอกเหนือการรับประกัน before เชื่อมต่อ / ไม่เชื่อมต่อ and ออนไลน์ / ออฟไลน์, wherever a state is written (user 2026-11-16)', () => {
     const recorded = camera('r1', { ip_address: '10.9.9.9', is_out_of_warranty: true })
     const [project] = projectSheetProjects({
       ...input,
@@ -368,17 +369,17 @@ describe('สรุปข้อมูลผู้รับจ้าง export �
       projectSolutions: [],
     })
     const states = (name: string) => section(project, name).points.map((point) => [point.state, point.rows.map((row) => row[3])])
-    expect(states('CCTV')).toEqual([[undefined, ['นอกเหนือการประกัน', 'เชื่อมต่อ']]])
-    // The camera reads นอกเหนือการประกัน under every system it serves.
-    expect(states('Traffic Signal')).toEqual([['excluded', ['นอกเหนือการประกัน']]])
+    expect(states('CCTV')).toEqual([[undefined, ['นอกเหนือการรับประกัน', 'เชื่อมต่อ']]])
+    // The camera reads นอกเหนือการรับประกัน under every system it serves.
+    expect(states('Traffic Signal')).toEqual([['excluded', ['นอกเหนือการรับประกัน']]])
     expect(states('Crosswalk')).toEqual([['online', []]])
     expect(states('VMS')).toEqual([['excluded', []]])
     // A recorded cabinet: การเชื่อมต่อ says so; สถานะสาย stays the wire's own.
     expect(section(project, 'Street Light').points[0].rows).toEqual([
-      ['ตู้ 1', '-', 'Street Light', 'นอกเหนือการประกัน', 'ไม่เชื่อมต่อ'],
+      ['ตู้ 1', '-', 'Street Light', 'นอกเหนือการรับประกัน', 'ไม่เชื่อมต่อ'],
       ['ตู้ 2', '-', 'Street Light', 'เชื่อมต่อ', 'เชื่อมต่อ'],
     ])
-    expect(states('Bridge Lighting')).toEqual([[undefined, ['นอกเหนือการประกัน']]])
+    expect(states('Bridge Lighting')).toEqual([[undefined, ['นอกเหนือการรับประกัน']]])
     expect(states('Tunnel')).toEqual([[undefined, ['เชื่อมต่อ']]])
   })
 

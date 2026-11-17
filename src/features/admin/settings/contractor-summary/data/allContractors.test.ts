@@ -30,7 +30,7 @@ const summaryRow = (id: number, warrantyEnd: string | null, contractor = header(
   lighting: none,
   vms: { system: none, camera: none },
   bridge_lighting: none,
-  tunnel: none,
+  tunnel: { ...none, system: none },
 })
 
 const solutionsRow = (id: number, overrides: Partial<ProjectDeviceSolutionsRow> = {}): ProjectDeviceSolutionsRow => ({
@@ -137,7 +137,7 @@ describe('รวมผู้รับจ้าง — the rings, in their uptime
     expect(solutionRings([])).toEqual([])
   })
 
-  it('นอกเหนือการประกัน: an offline unit with a record leaves ทั้งหมด and ออฟไลน์, as on the page (option ก., user 2026-11-16)', () => {
+  it('นอกเหนือการรับประกัน: an offline unit with a record leaves ทั้งหมด and ออฟไลน์, as on the page (option ก., user 2026-11-16)', () => {
     const recorded = { ...camera('r', false), is_out_of_warranty: true }
     const rings = ring([
       solutionsRow(1, {
@@ -158,5 +158,19 @@ describe('รวมผู้รับจ้าง — the rings, in their uptime
     expect(rings.traffic).toEqual({ total: 1, online: 1, offline: 0 })
     // A crosswalk through its cameras; with nothing left it gets no ring.
     expect(rings.crosswalk).toBeUndefined()
+  })
+
+  it('a tunnel by its own record (BE 2026-11-17) — its devices carry it as well', () => {
+    const device = (id: string, isOnline: boolean, recorded = false) => ({ id, device_name: id, is_online: isOnline, is_out_of_warranty: recorded, last_update: null })
+    const rings = ring([
+      solutionsRow(1, {
+        tunnel: [
+          { solution_id: 31, solution_name: 'อุโมงค์ 1', is_out_of_warranty: true, devices: [device('d1', false)] },
+          { solution_id: 32, solution_name: 'อุโมงค์ 2', devices: [device('d2', false, true)] },
+          { solution_id: 33, solution_name: 'อุโมงค์ 3', devices: [device('d3', false)] },
+        ],
+      }),
+    ])
+    expect(rings.tunnel).toEqual({ total: 1, online: 0, offline: 1 })
   })
 })

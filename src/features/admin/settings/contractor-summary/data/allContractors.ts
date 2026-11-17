@@ -13,8 +13,8 @@ import { SUMMARY_SYSTEMS, type SummarySystem } from './systems'
  *  leaves them out (user 2026-10-29). */
 export const isPlaceholder = (row: Pick<ProjectDeviceSummaryRow, 'warranty_end_date'>) => !row.warranty_end_date
 
-/** One thing a ring counts, whether it is up, and whether it is นอกเหนือการ
- *  ประกัน (an open record). */
+/** One thing a ring counts, whether it is up, and whether it is
+ *  นอกเหนือการรับประกัน (an open record). */
 interface RingUnit {
   key: string
   online: boolean
@@ -28,10 +28,10 @@ const anyRecorded = (items: { is_out_of_warranty?: boolean }[] | null | undefine
 /** What each ring counts, in the units of its uptime-statistics: CCTV each
  *  camera; Traffic Volume, Incident Detection, LPR and Tunnel each install
  *  point, up while any of its cameras or sensors is; the rest each
- *  controller, sign, cabinet or bridge. นอกเหนือการประกัน as uptime-statistics
+ *  controller, sign, cabinet or bridge. นอกเหนือการรับประกัน as uptime-statistics
  *  counts it (BE 2026-11-16): a camera's own record; a sign's, cabinet's,
- *  controller's or bridge's solution's; an install point (and a crosswalk)
- *  through any camera of its. */
+ *  controller's, bridge's or tunnel's (BE 2026-11-17) solution's; an install
+ *  point (and a crosswalk) through any camera of its. */
 const RING_UNITS: Record<string, (row: ProjectDeviceSolutionsRow) => RingUnit[]> = {
   cctv: (row) =>
     (row.cctv ?? []).flatMap((point) =>
@@ -57,7 +57,12 @@ const RING_UNITS: Record<string, (row: ProjectDeviceSolutionsRow) => RingUnit[]>
       outOfWarranty: !!controller.is_out_of_warranty || anyRecorded(controller.cameras),
     })),
   tunnel: (row) =>
-    (row.tunnel ?? []).map((tunnel) => ({ key: String(tunnel.solution_id), online: anyOnline(tunnel.devices), outOfWarranty: anyRecorded(tunnel.devices) })),
+    (row.tunnel ?? []).map((tunnel) => ({
+      key: String(tunnel.solution_id),
+      online: anyOnline(tunnel.devices),
+      // Recorded per solution since BE 2026-11-17; its devices carry it too.
+      outOfWarranty: !!tunnel.is_out_of_warranty || anyRecorded(tunnel.devices),
+    })),
 }
 
 /** Each counted once — a camera two projects share too. As the page's rings

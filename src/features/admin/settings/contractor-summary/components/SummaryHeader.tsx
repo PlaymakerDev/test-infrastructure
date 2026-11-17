@@ -11,7 +11,7 @@ interface Props {
   isLoading: boolean
   onOpenInfo: () => void
   onExport: () => void
-  /** The export button's words — นอกเหนือการประกัน has a report of its own. */
+  /** The export button's words — นอกเหนือการรับประกัน has a report of its own. */
   exportLabel?: string
 }
 

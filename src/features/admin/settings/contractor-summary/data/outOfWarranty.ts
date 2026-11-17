@@ -32,16 +32,22 @@ export interface OutOfWarrantyType {
   label: string
 }
 
-const RECORDABLE: readonly OutOfWarrantyDeviceType[] = ['cctv', 'vms', 'lighting', 'traffic', 'bridge_lighting']
+// In the rings' order.
+const RECORDABLE: readonly OutOfWarrantyDeviceType[] = ['cctv', 'vms', 'lighting', 'traffic', 'bridge_lighting', 'crosswalk', 'tunnel']
 
-/** What the device-type dropdown offers — the five the backend records:
- *  cameras one by one, VMS / Street Light / Traffic Signal / Bridge Lighting
- *  per solution. Traffic Volume, Incident Detection, LPR, Crosswalk and Tunnel
- *  count through their cameras. CCTV first, the default. */
+/** What the device-type dropdown offers — the seven the backend records:
+ *  cameras one by one, VMS / Street Light / Traffic Signal / Bridge Lighting /
+ *  Crosswalk / Tunnel per solution (the last two since BE 2026-11-17).
+ *  Traffic Volume, Incident Detection and LPR count through their cameras.
+ *  CCTV first, the default. */
 export const OUT_OF_WARRANTY_TYPES: readonly OutOfWarrantyType[] = RECORDABLE.map((key) => ({
   key,
   label: SUMMARY_SYSTEMS.find((system) => system.key === key)?.label ?? key,
 }))
+
+/** A list per type, each empty. */
+const byType = <T>(make: (key: OutOfWarrantyDeviceType) => T[]): Record<OutOfWarrantyDeviceType, T[]> =>
+  Object.fromEntries(RECORDABLE.map((key) => [key, make(key)])) as Record<OutOfWarrantyDeviceType, T[]>
 
 export const DEFAULT_OUT_OF_WARRANTY_TYPE: OutOfWarrantyDeviceType = 'cctv'
 
@@ -83,19 +89,14 @@ const toDevice = (
 /** The table's rows per type, from /candidates, in its order (chainage): the
  *  offline cameras — and one with a record still open, which closes by itself
  *  once the camera is back but not that instant — and the offline systems. */
-export const candidateDevices = (candidates: APIResponseOutOfWarrantyCandidates, now: Dayjs = dayjs()): DevicesByType => {
-  const systems = (typeKey: Exclude<OutOfWarrantyDeviceType, 'cctv'>) =>
-    (candidates[typeKey] ?? []).map((item) => toDevice(typeKey, String(item.solution_id), item.solution_name, item, now))
-  return {
-    cctv: (candidates.cctv ?? [])
-      .filter((camera) => !camera.is_online || camera.is_out_of_warranty)
-      .map((camera) => toDevice('cctv', camera.camera_id, camera.camera_name, camera, now)),
-    vms: systems('vms'),
-    lighting: systems('lighting'),
-    traffic: systems('traffic'),
-    bridge_lighting: systems('bridge_lighting'),
-  }
-}
+export const candidateDevices = (candidates: APIResponseOutOfWarrantyCandidates, now: Dayjs = dayjs()): DevicesByType =>
+  byType((typeKey) =>
+    typeKey === 'cctv'
+      ? (candidates.cctv ?? [])
+          .filter((camera) => !camera.is_online || camera.is_out_of_warranty)
+          .map((camera) => toDevice('cctv', camera.camera_id, camera.camera_name, camera, now))
+      : (candidates[typeKey] ?? []).map((item) => toDevice(typeKey, String(item.solution_id), item.solution_name, item, now)),
+  )
 
 const recordDeviceId = (record: OutOfWarrantyRecord): string =>
   record.device_type === 'cctv' ? record.camera_id ?? '' : String(record.solution_id ?? '')
@@ -103,7 +104,7 @@ const recordDeviceId = (record: OutOfWarrantyRecord): string =>
 /** A role-user account may not list the candidates (403): its table is the
  *  recorded devices themselves. */
 export const recordDevices = (records: readonly OutOfWarrantyRecord[], now: Dayjs = dayjs()): DevicesByType => {
-  const devices: DevicesByType = { cctv: [], vms: [], lighting: [], traffic: [], bridge_lighting: [] }
+  const devices: DevicesByType = byType(() => [])
   for (const record of records) {
     devices[record.device_type]?.push(toDevice(record.device_type, recordDeviceId(record), record.device_name, record, now))
   }

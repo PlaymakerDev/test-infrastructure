@@ -88,3 +88,23 @@ describe('drawableThai — ำ spelled as the two glyphs NotoSansThai draws for 
     expect(face.layout(kit.drawableThai(band)).advanceWidth).toBe(face.layout(band).advanceWidth)
   })
 })
+
+describe('entryPhotoSize — an entry card’s photos, each whole at its own shape', () => {
+  const size = (width: number, height: number, alone: boolean) => {
+    const box = kit.entryPhotoSize({ width, height }, alone)
+    return [Math.round(box.width * 10) / 10, Math.round(box.height * 10) / 10]
+  }
+
+  it('two side by side: each within 200 × 150', () => {
+    expect(size(640, 480, false)).toEqual([200, 150])
+    expect(size(1280, 720, false)).toEqual([200, 112.5])
+    expect(size(480, 640, false)).toEqual([112.5, 150])
+  })
+
+  it('one alone: the pair’s whole width, up to its 16:9 (user 2026-11-17)', () => {
+    expect(size(1280, 720, true)).toEqual([411, 231.2])
+    expect(size(640, 480, true)).toEqual([308.3, 231.2])
+    expect(size(480, 640, true)).toEqual([173.4, 231.2])
+    expect(size(3000, 1000, true)).toEqual([411, 137])
+  })
+})

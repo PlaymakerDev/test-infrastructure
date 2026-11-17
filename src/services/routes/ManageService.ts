@@ -535,7 +535,7 @@ export const getContractorUptimeAPI = (prefix: string, contractorUserId: string,
 // ── อุปกรณ์นอกเหนือการค้ำประกัน (BE 2026-11-16) ──────────────────────────────
 
 /** The projects with open out-of-warranty records, each with just its
- *  recorded devices — the นอกเหนือการประกัน tab, and which rows' button is
+ *  recorded devices — the นอกเหนือการรับประกัน tab, and which rows' button is
  *  blue. The filters of /device-status/solutions; `limit` tops out at 100. */
 export const getOutOfWarrantyProjectsAPI = (params: APIRequestOutOfWarrantyProjects) =>
   ApiService.fetchData<APIResponseOutOfWarrantyProjects, APIRequestOutOfWarrantyProjects>({
