@@ -386,6 +386,27 @@ body .bridge-projects-table .ant-table-ping-right .ant-table-cell-fix-right-last
   box-shadow: none !important;
 }
 
+/* A table that scrolls sideways (contractor summary, 2026-11-19): antd marks
+ * the side with more columns by a shadow in colorSplit — near-black, unseen
+ * on the #191919 rows. Darken the columns where they are cut instead — under
+ * a pinned column, or at the table's own edge when nothing is pinned — so a
+ * laptop-width table shows there is more to scroll to. */
+body .table-scroll-fade .ant-table-cell-fix-start-shadow-show::after,
+body .table-scroll-fade .ant-table-fix-start-shadow-show .ant-table-container::before,
+body .table-scroll-fade .ant-table-cell-fix-end-shadow-show::after,
+body .table-scroll-fade .ant-table-fix-end-shadow-show .ant-table-container::after {
+  width: 40px;
+  box-shadow: none;
+}
+body .table-scroll-fade .ant-table-cell-fix-start-shadow-show::after,
+body .table-scroll-fade .ant-table-fix-start-shadow-show .ant-table-container::before {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+}
+body .table-scroll-fade .ant-table-cell-fix-end-shadow-show::after,
+body .table-scroll-fade .ant-table-fix-end-shadow-show .ant-table-container::after {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+}
+
 /* Event log table (traffic-lighting detail) — natural height, no inner vertical scroll.
  * Horizontal overflow is handled by the outer wrapper on narrow viewports only. */
 body .event-log-table .ant-table-content,
