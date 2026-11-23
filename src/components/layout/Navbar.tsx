@@ -127,7 +127,7 @@ const DIRECT_FOCUS_TOGGLE_ROUTES = new Set([
   "/admin/traffic-lighting",
 ]);
 
-// "รายงาน" in the right-hand menu opens the system manual (public/report/) in
+// "คู่มือใช้งานระบบ" in the right-hand menu opens the system manual (public/report/) in
 // a new tab. `.pdf` isn't among the proxy's static-file exclusions, so the file
 // only loads for a logged-in session — the same people who can see this menu.
 const REPORT_PDF_URL = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/report/${encodeURIComponent("คู่มือการใช้งานระบบ.pdf")}`;
@@ -583,7 +583,7 @@ export default function Navbar() {
       : []),
     {
       key: "report",
-      label: "รายงาน",
+      label: "คู่มือใช้งานระบบ",
       icon: <TbFileText size={22} />,
       active: false,
       onClick: () => {
@@ -616,7 +616,7 @@ export default function Navbar() {
       : []),
     {
       key: "report",
-      label: "รายงาน",
+      label: "คู่มือใช้งานระบบ",
       icon: <TbFileText size={24} />,
       onClick: openReport,
     },
