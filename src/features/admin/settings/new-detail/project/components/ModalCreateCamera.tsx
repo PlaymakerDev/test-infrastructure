@@ -1,6 +1,7 @@
-import React, { useCallback, useMemo, useRef } from 'react'
-import { ConfigProvider, Modal } from 'antd'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { Alert, Button, ConfigProvider, Modal, Skeleton } from 'antd'
 import { TbVideo } from 'react-icons/tb'
+import { useCCTVDetail } from '@/hooks/queries/shared/useCCTVDetail'
 import { ProjectRoadCamera, SolutionLocation } from '@/types/manage/project-detail-api'
 import FormCreateCamera from './FormCreateCamera'
 
@@ -26,6 +27,22 @@ const ModalCreateCamera: React.FC<Props> = (props) => {
   const { open, camera, locations, defaultLocationId, onClose } = props
   const submitRef = useRef<HTMLButtonElement | null>(null)
 
+  // Editing reads the camera's own record first. The road's camera list
+  // doesn't carry access_url (Public URL), and PUT replaces the whole camera,
+  // so a form that never had the value would clear it on any save.
+  const detail = useCCTVDetail(camera?.id)
+
+  // The form seeds from the first FRESH read and then keeps its fields: a
+  // later refetch (network reconnect, the invalidation after saving) must not
+  // remount it under the user's typing. Reset on close, so reopening right
+  // after a save waits for the new value instead of seeding the old copy.
+  const [seededId, setSeededId] = useState<string | null>(null)
+  if (!camera && seededId !== null) setSeededId(null)
+  if (camera && seededId !== camera.id && detail.data !== undefined && !detail.isFetching) {
+    setSeededId(camera.id)
+  }
+  const isFormReady = !camera || seededId === camera.id
+
   const handleOk = useCallback(() => submitRef.current?.click(), [])
 
   const title = useMemo(() => (
@@ -36,6 +53,32 @@ const ModalCreateCamera: React.FC<Props> = (props) => {
       </h3>
     </div>
   ), [camera])
+
+  const renderBody = () => {
+    if (isFormReady) {
+      return (
+        <FormCreateCamera
+          data={camera}
+          accessUrl={detail.data?.access_url}
+          locations={locations}
+          defaultLocationId={defaultLocationId}
+          submitRef={submitRef}
+          onSuccess={onClose}
+        />
+      )
+    }
+    if (detail.isError && !detail.isFetching) {
+      return (
+        <Alert
+          type='error'
+          showIcon
+          title='โหลดข้อมูลกล้องไม่สำเร็จ'
+          action={<Button size='small' onClick={() => void detail.refetch()}>ลองใหม่</Button>}
+        />
+      )
+    }
+    return <Skeleton active paragraph={{ rows: 8 }} />
+  }
 
   return (
     <ConfigProvider
@@ -56,18 +99,12 @@ const ModalCreateCamera: React.FC<Props> = (props) => {
         onCancel={onClose}
         okText='ยืนยัน'
         cancelText='ยกเลิก'
-        okButtonProps={{ shape: 'round' }}
+        okButtonProps={{ shape: 'round', disabled: !isFormReady }}
         cancelButtonProps={{ shape: 'round' }}
         destroyOnHidden
         width={800}
       >
-        <FormCreateCamera
-          data={camera}
-          locations={locations}
-          defaultLocationId={defaultLocationId}
-          submitRef={submitRef}
-          onSuccess={onClose}
-        />
+        {renderBody()}
       </Modal>
     </ConfigProvider>
   )

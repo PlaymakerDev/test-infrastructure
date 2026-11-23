@@ -5,6 +5,7 @@ import { App, Button, Col, Divider, Input, Row, Select } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useCreateCamera, useUpdateCamera } from '@/hooks/queries/manage'
 import { ProjectRoadCamera, SolutionLocation } from '@/types/manage/project-detail-api'
+import { toHttpUrl } from '@/utils/httpUrl'
 import { useProjectContext } from '../context'
 import {
   IP_PATTERN,
@@ -21,6 +22,10 @@ import {
 interface Props {
   /** null → create. */
   data?: ProjectRoadCamera | null
+  /** The camera's current Public URL (edit only). Read from the camera's own
+   *  record by ModalCreateCamera — `data` comes from the road list, which
+   *  doesn't carry it. */
+  accessUrl?: string | null
   /** The road's install points — the จุดติดตั้ง this camera stands at. */
   locations: SolutionLocation[]
   /** Preselected point when the road has exactly one, or the last one used. */
@@ -34,11 +39,20 @@ interface FormCreateCameraValues {
   solution_location_id: number | null
   sta: string
   hls_url: string
+  access_url: string
   ip_address: string
   latitude: string
   longitude: string
   remark: string
 }
+
+/** Public URL field state: tucked away behind its "+ Public URL" text button
+ *  until needed (user spec — optional, rarely filled). 'added' = opened by
+ *  that click, so the new box takes focus; 'seeded' = the camera already
+ *  has one, shown as-is. */
+type PublicUrlField = 'hidden' | 'seeded' | 'added'
+
+const PUBLIC_URL_FORMAT_MESSAGE = 'รูปแบบ Public URL ไม่ถูกต้อง (ต้องขึ้นต้นด้วย http:// หรือ https://)'
 
 /**
  * Add/edit one CCTV camera on a สายทาง.
@@ -49,7 +63,7 @@ interface FormCreateCameraValues {
  * points without touching anything else.
  */
 const FormCreateCamera: React.FC<Props> = (props) => {
-  const { data, locations, defaultLocationId, submitRef, onSuccess } = props
+  const { data, accessUrl, locations, defaultLocationId, submitRef, onSuccess } = props
   const { message } = App.useApp()
   const { roadSolution, createLocation, nextLocationName, isCreating: isCreatingLocation } = useProjectContext()
 
@@ -57,6 +71,12 @@ const FormCreateCamera: React.FC<Props> = (props) => {
   // gains its point and its first camera in the same sitting, and bouncing
   // out to the tab strip to add one would throw away the half-filled form.
   const [newLocationName, setNewLocationName] = useState('')
+
+  // Once shown it stays shown (an emptied box just saves no Public URL), so
+  // hiding can never leave a value behind that the user can't see.
+  const [publicUrlField, setPublicUrlField] = useState<PublicUrlField>(
+    accessUrl?.trim() ? 'seeded' : 'hidden',
+  )
 
   const { mutate: createCamera, isPending: isCreatePending } = useCreateCamera()
   const { mutate: updateCamera, isPending: isUpdatePending } = useUpdateCamera()
@@ -70,6 +90,7 @@ const FormCreateCamera: React.FC<Props> = (props) => {
         (locations.length === 1 ? locations[0].solution_location_id : null),
       sta: data?.sta ?? '',
       hls_url: data?.hls_url ?? '',
+      access_url: accessUrl ?? '',
       ip_address: data?.ip_address ?? '',
       // point_geometry ships as a bare [lng, lat] array — longitude is FIRST.
       // Guard the index so a camera saved without a point doesn't seed the
@@ -106,6 +127,9 @@ const FormCreateCamera: React.FC<Props> = (props) => {
       camera_name: values.camera_name,
       sta: values.sta,
       hls_url: values.hls_url,
+      // Always sent, null when empty: PUT replaces the whole camera, so
+      // leaving it out would clear a Public URL the user never touched.
+      access_url: values.access_url.trim() || null,
       geometry_point: toGeometryPoint(values.longitude, values.latitude),
       ip_address: values.ip_address,
       remark: values.remark || null,
@@ -282,7 +306,25 @@ const FormCreateCamera: React.FC<Props> = (props) => {
               rules={{ required: 'กรุณาระบุ Live Stream URL' }}
               render={({ field }) => (
                 <fieldset>
-                  <label className='text-(--yellow)'>Live Stream (HLS) <span className='text-red-500'>*</span></label>
+                  <div className='flex items-center justify-between gap-3'>
+                    <label className='text-(--yellow)'>Live Stream (HLS) <span className='text-red-500'>*</span></label>
+                    {/* Public URL rides on this field's label row as a text
+                        button — optional and rarely filled, so it stays out
+                        of the way until asked for. Link-style text button in
+                        the same blue as TableSolution's on this page. */}
+                    {publicUrlField === 'hidden' && (
+                      <Button
+                        type='link'
+                        htmlType='button'
+                        size='small'
+                        icon={<PlusOutlined />}
+                        onClick={() => setPublicUrlField('added')}
+                        className='text-(--default-blue)! px-0! h-auto! fs-12'
+                      >
+                        Public URL
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     {...field}
                     name={field.name}
@@ -294,6 +336,34 @@ const FormCreateCamera: React.FC<Props> = (props) => {
               )}
             />
           </Col>
+          {publicUrlField !== 'hidden' && (
+            <Col xs={24} sm={24} md={24} lg={24} xl={24} xxl={24} xxxl={24}>
+              <Controller
+                control={control}
+                name='access_url'
+                rules={{
+                  validate: (value) =>
+                    !value.trim() || toHttpUrl(value) !== null || PUBLIC_URL_FORMAT_MESSAGE,
+                }}
+                render={({ field }) => (
+                  <fieldset>
+                    {/* Opened by the Live Stream modal's camera button
+                        (CCTVModal) — not required. */}
+                    <label className='text-(--yellow)'>Public URL</label>
+                    <Input
+                      {...field}
+                      name={field.name}
+                      placeholder='https://...'
+                      size='large'
+                      allowClear
+                      autoFocus={publicUrlField === 'added'}
+                    />
+                    {errors.access_url && <p className='fs-12 text-red-500'>{errors.access_url.message}</p>}
+                  </fieldset>
+                )}
+              />
+            </Col>
+          )}
           <Col xs={24} sm={24} md={24} lg={12} xl={12} xxl={12} xxxl={12}>
             <Controller
               control={control}

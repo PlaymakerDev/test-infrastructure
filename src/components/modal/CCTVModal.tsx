@@ -4,15 +4,16 @@ import { resetCCTVModalOpen } from '@/stores/reducers/layout/layoutSlice'
 import { APIResponseCCTVDetail } from '@/types/cctv/shared-api'
 import { CCTVModalExtraCell } from '@/types/layout'
 import { useQuery } from '@tanstack/react-query'
-import { Col, ConfigProvider, Empty, Modal, Row, Skeleton } from 'antd'
+import { Col, ConfigProvider, Empty, Modal, Row, Skeleton, Tooltip } from 'antd'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import HLSLivePlayer from '../video/HLSLivePlayer'
 import {
   TbFileDescription, TbMapPin, TbRefresh, TbRss, TbScan, TbVideo,
-  TbTrafficLights, TbCurlyLoop, TbTruck, TbVector, TbRoad,
+  TbTrafficLights, TbCurlyLoop, TbTruck, TbVector, TbRoad, TbDeviceCctv,
 } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import { DEVICE_BADGE, SOLUTION_BADGE_MAP, TEXT_CAMERA_STATUS } from '@/constants'
+import { toHttpUrl } from '@/utils/httpUrl'
 
 interface Props {
 
@@ -218,6 +219,36 @@ const CCTVModal: React.FC<Props> = (props) => {
     return <Content data={data?.data} extraCells={extra_cells} />
   }, [isLoading, isError, data, extra_cells])
 
+  // Public URL (access_url) — entered in จัดการข้อมูลโครงการ's add/edit CCTV
+  // form. Only a real http(s) URL becomes a link; nothing is shown otherwise.
+  const publicUrl = toHttpUrl(data?.data?.access_url)
+
+  const title = useMemo(() => (
+    // pe-10 keeps the camera button clear of the modal's own close (X).
+    <div className='flex items-center justify-between gap-3 pe-10'>
+      <span>Live Stream</span>
+      {publicUrl && (
+        <Tooltip title='เปิด Public URL'>
+          {/* Same 32px box as antd's close button and level with it: antd
+              puts the X 8px above the title row (top = (headerHeight − 32)/2
+              = 12px vs the 20px content padding), so `self-start -mt-2`
+              lifts this to match and `-mb-2` keeps the row at the title's
+              own height. `!` on colour: antd's unlayered `a { color }`
+              beats Tailwind. */}
+          <a
+            href={publicUrl}
+            target='_blank'
+            rel='noopener noreferrer'
+            aria-label='เปิด Public URL'
+            className='self-start -my-2 inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-full border border-(--default-blue) text-(--default-blue)! hover:opacity-80'
+          >
+            <TbDeviceCctv className='fs-18' />
+          </a>
+        </Tooltip>
+      )}
+    </div>
+  ), [publicUrl])
+
   return (
     <ConfigProvider
       theme={{
@@ -228,7 +259,7 @@ const CCTVModal: React.FC<Props> = (props) => {
         }
       }}>
       <Modal
-        title="Live Stream"
+        title={title}
         closable={{ 'aria-label': 'Custom Close Button' }}
         open={open}
         onOk={() => dispatch(resetCCTVModalOpen())}

@@ -179,6 +179,11 @@ export interface CreateCameraRequest {
   geometry_point: { type: 'Point'; coordinates: [number, number] }
   ip_address?: string
   remark?: string | null
+  /** Public URL — optional. ⚠ PUT replaces the whole camera, so an update
+   *  that leaves this out CLEARS the stored value (backend spec): an edit
+   *  must always send the camera's current value, read from
+   *  GET /cctv/cameras/{id} — the road camera list doesn't carry it. */
+  access_url?: string | null
 }
 
 export const createCameraAPI = (body: CreateCameraRequest) =>

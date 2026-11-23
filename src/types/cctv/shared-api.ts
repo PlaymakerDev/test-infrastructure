@@ -12,6 +12,10 @@ export interface APIResponseCCTVDetail {
   sta: string
   ip_address: string
   hls_url: string
+  /** Public URL — set in จัดการข้อมูลโครงการ (add/edit CCTV form); the Live
+   *  Stream modal (CCTVModal) opens it from its top-right camera button.
+   *  null when never set. */
+  access_url?: string | null
   geometry_point: number[]
   remark: string
   /** Hardware fields — added by BE (may be null until populated). */
