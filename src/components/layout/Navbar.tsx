@@ -38,6 +38,7 @@ import {
   TbLock,
   TbLockOpen,
   TbLogout,
+  TbFileText,
 } from "react-icons/tb";
 import { FaRegLightbulb } from "react-icons/fa6";
 /* SEY DEFAULT YEAR FORMAT */
@@ -125,6 +126,12 @@ const DIRECT_FOCUS_TOGGLE_ROUTES = new Set([
   // same as traffic-volume overall.
   "/admin/traffic-lighting",
 ]);
+
+// "รายงาน" in the right-hand menu opens the system manual (public/report/) in
+// a new tab. `.pdf` isn't among the proxy's static-file exclusions, so the file
+// only loads for a logged-in session — the same people who can see this menu.
+const REPORT_PDF_URL = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/report/${encodeURIComponent("คู่มือการใช้งานระบบ.pdf")}`;
+const openReport = () => window.open(REPORT_PDF_URL, "_blank", "noopener,noreferrer");
 
 /* VARIABLE */
 dayjs.extend(buddhistEra);
@@ -575,6 +582,16 @@ export default function Navbar() {
       ]
       : []),
     {
+      key: "report",
+      label: "รายงาน",
+      icon: <TbFileText size={22} />,
+      active: false,
+      onClick: () => {
+        setMobileMoreOpenAt(null);
+        openReport();
+      },
+    },
+    {
       key: "logout",
       label: "ออกจากระบบ",
       icon: <TbLogout size={22} />,
@@ -597,6 +614,12 @@ export default function Navbar() {
         },
       ]
       : []),
+    {
+      key: "report",
+      label: "รายงาน",
+      icon: <TbFileText size={24} />,
+      onClick: openReport,
+    },
     {
       key: "2",
       label: "ออกจากระบบ",
